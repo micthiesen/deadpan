@@ -2,6 +2,11 @@ use std::path::PathBuf;
 
 #[derive(Debug, thiserror::Error)]
 pub enum StoreError {
+    #[error("Render job metadata is invalid: {0}")]
+    RenderJob(String),
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[error(transparent)]
+    RenderMedia(#[from] crate::render_media::RenderMediaError),
     #[error("Project package must have a .deadpan extension")]
     PackageExtension,
     #[error("A project package already exists at {0}")]
@@ -101,6 +106,9 @@ impl StoreError {
     /// Stable protocol codes shared by GUI and headless callers.
     pub fn code(&self) -> &'static str {
         match self {
+            Self::RenderJob(_) => "RenderJobInvalid",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::RenderMedia(error) => error.code(),
             Self::PackageAlreadyExists(_) => "PackageAlreadyExists",
             Self::AlreadyOpen => "ProjectAlreadyOpen",
             Self::ReadOnly => "ProjectReadOnly",

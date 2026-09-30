@@ -2,6 +2,38 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Durable encoded checkpoints, 2026-09-29
+
+The [render job boundary](../RENDER_JOBS.md) persists immutable render intent,
+fresh attempts and exact transition sequences outside authored history. An I/O
+worker retains complete movie and strict manifest objects in a separate bounded
+`Media/RenderCandidates` namespace. The SQLite writer checkpoints opaque session
+and attempt tokens using cheap freshness checks.
+
+Writer reopen interrupts nonterminal attempts and preserves their checkpoints.
+An explicit new attempt freshly hashes both retained objects, reconstructs the
+captured historical contract and invokes the isolated finished-file verifier.
+Stored reports cannot create a live verified candidate. Closing the owning store
+revokes retained handles; final verifier admission checks session liveness.
+Schema 40 adds operational tables while preserving schema-39 authored JSON and
+patches byte-for-byte; older schemas retain strict replay.
+
+[Qualification](../qualification/render-jobs-2026-09-29.md) passes two real
+restart/reverification cases and independent readers over 138 pictures, 221,021
+authored sample frames and 414 complete planes. The workspace has 2,284 passing
+tests after correcting and rerunning three failed targets; all other full-run
+results are retained. Strict workspace Clippy and formatting pass. Evidence
+includes authentic schema-39 databases, final schema-40 backups, actual movies,
+readers, source differences and independent reviews. Orderly writer restart was
+qualified; process-death and power-loss injection remain open.
+
+Next implement durable publication intent/reconciliation around the report/movie
+commit. Qualify destination identity across restart and SQLite-to-filesystem
+durability ordering before using a journal to authorize rename or reconciliation.
+Then implement the complete native Render and public headless workflow. Scheduling,
+automatic platform policy, full mastering/effects, HDR and all release gates
+remain required. See the contract for ownership, limits and API sequencing.
+
 ## Verified destination publication, 2026-09-29
 
 The library [publication host](../RENDER_PUBLICATION.md) now takes a private
@@ -30,7 +62,7 @@ workspace Clippy and formatting. Independent review corrected cancellation-code
 loss and a post-rename content-check gap; both corrections have passing tests.
 The evidence retains actual bytes, SQLite backups and exact source/binary identities.
 
-Durable render jobs/recovery, native Render, public headless render commands,
+Durable publication recovery, native Render, public headless render commands,
 automatic platform policy, complete mastering/effects, HDR and release
 qualification remain open. No DP requirement or Gate A through G is complete.
 
@@ -59,8 +91,8 @@ encoder's capacity and fails explicitly. Structural/decode admission does not
 replace content, event-sync or hardware/runtime qualification. See the linked
 contract for the supported SDR interpretation and remaining limits.
 
-The library publication boundary is described above. Next add durable render
-jobs/recovery, native Render and public headless render commands. Complete mastering,
+The library publication and retained-checkpoint boundaries are described above.
+Next add durable publication recovery, native Render and public headless render commands. Complete mastering,
 remaining audio/picture effects, HDR, release-runtime coverage and the full
 specification remain required. DP-17 stays open; every DP requirement and Gate A
 through G remains open or partial. No native export workflow is complete.
@@ -92,7 +124,7 @@ No app UI changed.
 The [isolated verifier](../FINISHED_FILE_VERIFICATION.md) now reuses the
 descriptor-only source decoders and bounded MP4/packet observations. Its source
 capacity and content/runtime qualification limits remain explicit. Library
-publication now exists. Next add durable jobs/recovery, native Render and public
+publication now exists. Next add durable publication recovery, native Render and public
 headless render commands.
 Full audio/effects, HDR and every DP requirement and Gate A through G remain in
 scope and incomplete.
@@ -123,7 +155,7 @@ rejected attempts and partial outputs. No app UI changed in this milestone.
 The integration above now feeds committed pictures and canonical PCM directly
 into this encoder inside the supervised child, followed by the separate
 [finished-file verifier](../FINISHED_FILE_VERIFICATION.md). Library publication now
-exists. Add durable render jobs/recovery, native Render and public headless render
+exists. Add durable publication recovery, native Render and public headless render
 commands.
 Do not promote a synthetic adapter fixture into product export evidence. Full
 audio/effects, HDR, release hardware/OS coverage and all DP-01 through DP-24 and
@@ -160,7 +192,7 @@ conversion; it is not the H.264/AAC encoder.
 
 The [encoded-file verifier](../FINISHED_FILE_VERIFICATION.md) now provides the
 bounded structural/decode checks described above. Library publication is also
-described above. Durable render jobs/recovery, full audio/effects, native Render,
+described above. Durable publication recovery, full audio/effects, native Render,
 HDR and all remaining product requirements stay open. No DP requirement or
 Gate A through G is complete.
 
@@ -191,7 +223,7 @@ The later [encoded worker](../ENCODED_RENDER.md) now isolates this real producer
 and canonical PCM behind separate render messages and checked supervision. The
 [finished-file verifier](../FINISHED_FILE_VERIFICATION.md) adds independent
 structural/decode admission. Library publication is described above. Complete the
-shared audio/effects graphs, durable render jobs/recovery and native Render. This
+shared audio/effects graphs, durable publication recovery and native Render. This
 picture boundary alone produces no encoded file or export control. All DP
 requirements and Gates A through G remain in scope and incomplete.
 

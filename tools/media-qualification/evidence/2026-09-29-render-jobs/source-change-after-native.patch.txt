@@ -1,0 +1,91 @@
+--- crates/deadpan-cli/src/doctor.rs:native
++++ crates/deadpan-cli/src/doctor.rs:final
+@@ -14,7 +14,7 @@
+         },
+         "document_schema": deadpan_core::DOCUMENT_SCHEMA_VERSION,
+         "database_schema": deadpan_store::DATABASE_SCHEMA_VERSION,
+-        "partial": ["structural-editing-commands", "sqlite-project-history", "schema-1-through-38-migration", "single-original-project-baseline", "native-documents-project-library", "indexed-picture-plan", "indexed-audio-plan", "worker-dsp-adapter", "source-audio-preparation", "plan-driven-source-pcm", "transparent-audio-partitions", "retained-context-split", "atomic-sequence-pause-insertion", "logical-mark-bindings", "exact-boundary-selectors", "persistent-marks", "sparse-play-overrides", "nested-occurrence-edits", "persistent-generation-requests", "persistent-generation-attempts", "authored-generated-hold-semantics", "generated-media-conversion", "native-bridge-bundle-qualification", "durable-generated-bundle-acceptance", "durable-original-byte-ownership", "identity-checked-relinking", "persistent-source-decoding", "measured-source-audio-indexes", "independent-source-audio-mapping", "independent-source-video-mapping", "exact-source-stream-placement", "measured-import-timing-candidates", "measured-original-moment-candidates", "exact-source-audio-selections", "durable-source-qualification", "atomic-source-registration-and-insertion", "background-import-preparation", "automatic-presentation-basis", "timed-basis-locking", "explicit-canvas-geometry", "shared-sdr-picture-pipeline", "authored-framing-envelopes", "ordered-canvas-framing", "captured-hold-framing", "native-camera-draft", "native-source-preview", "native-project-workspace", "native-sequence-audition", "native-original-audition", "selection-loop-audition", "native-structural-speed-editing", "root-sound-event-commands-and-mixing", "root-sound-ripple-edit-history", "hold-audio-policy-commands"],
++        "partial": ["structural-editing-commands", "sqlite-project-history", "schema-1-through-39-migration", "single-original-project-baseline", "native-documents-project-library", "indexed-picture-plan", "indexed-audio-plan", "worker-dsp-adapter", "source-audio-preparation", "plan-driven-source-pcm", "transparent-audio-partitions", "retained-context-split", "atomic-sequence-pause-insertion", "logical-mark-bindings", "exact-boundary-selectors", "persistent-marks", "sparse-play-overrides", "nested-occurrence-edits", "persistent-generation-requests", "persistent-generation-attempts", "authored-generated-hold-semantics", "generated-media-conversion", "native-bridge-bundle-qualification", "durable-generated-bundle-acceptance", "durable-original-byte-ownership", "identity-checked-relinking", "persistent-source-decoding", "measured-source-audio-indexes", "independent-source-audio-mapping", "independent-source-video-mapping", "exact-source-stream-placement", "measured-import-timing-candidates", "measured-original-moment-candidates", "exact-source-audio-selections", "durable-source-qualification", "atomic-source-registration-and-insertion", "background-import-preparation", "automatic-presentation-basis", "timed-basis-locking", "explicit-canvas-geometry", "shared-sdr-picture-pipeline", "authored-framing-envelopes", "ordered-canvas-framing", "captured-hold-framing", "native-camera-draft", "native-source-preview", "native-project-workspace", "native-sequence-audition", "native-original-audition", "selection-loop-audition", "native-structural-speed-editing", "root-sound-event-commands-and-mixing", "root-sound-ripple-edit-history", "hold-audio-policy-commands"],
+         "time_mapped_pcm": "bounded-continuous-preserve-before-effects",
+         "room_tone_pcm": "explicit-source-range-exact-overlap-before-effects",
+         "edge_faded_pcm": "authored-boundary-exceptions-after-time-mapping-before-voice-effects",
+--- crates/deadpan-cli/tests/project_commands.rs:native
++++ crates/deadpan-cli/tests/project_commands.rs:final
+@@ -36,10 +36,10 @@
+ fn doctor_reports_hold_audio_document_and_migration_schemas() -> Result {
+     let report = success(&["doctor"])?;
+     assert_eq!(report["document_schema"], 33);
+-    assert_eq!(report["database_schema"], 39);
++    assert_eq!(report["database_schema"], 40);
+     let partial = report["partial"].as_array().unwrap();
+     for capability in [
+-        "schema-1-through-38-migration",
++        "schema-1-through-39-migration",
+         "hold-audio-policy-commands",
+         "native-original-audition",
+         "selection-loop-audition",
+--- crates/deadpan-playback/src/tests.rs:native
++++ crates/deadpan-playback/src/tests.rs:final
+@@ -655,10 +655,25 @@
+         render_cost_ns: 1,
+     });
+     device.now.store(15_333_333, Ordering::Release);
+-    assert_eq!(
+-        update(&engine, Phase::Playing).sample,
+-        Some(AudioSample(256))
+-    );
++    // Playing was already true before this report. Wait for its position so an
++    // earlier queued Playing update cannot satisfy the asynchronous handoff.
++    let mut prefix = None;
++    let ready = wait(|| {
++        if let Some(value) = engine.poll() {
++            prefix = Some(value);
++        }
++        prefix.as_ref().is_some_and(|value| {
++            value.phase == Phase::Failed
++                || (value.phase == Phase::Playing && value.sample == Some(AudioSample(256)))
++        })
++    });
++    assert!(
++        ready,
++        "timed out awaiting submitted prefix; last update: {prefix:?}"
++    );
++    let prefix = prefix.unwrap();
++    assert_eq!(prefix.phase, Phase::Playing, "{prefix:?}");
++    assert_eq!(prefix.sample, Some(AudioSample(256)));
+     device.now.store(15_666_667, Ordering::Release);
+     let failed = update(&engine, Phase::Failed);
+     assert_eq!(failed.sample, Some(AudioSample(272)));
+--- crates/deadpan-store/src/render_jobs.rs:native
++++ crates/deadpan-store/src/render_jobs.rs:final
+@@ -498,7 +498,8 @@
+     job: &RequestId,
+     id: &AttemptId,
+ ) -> Result<StoredRenderAttempt, StoreError> {
+-    let row:Option<(i64,Option<String>,Option<String>,i64,Option<String>)>=connection.query_row(
++    type AttemptRow = (i64, Option<String>, Option<String>, i64, Option<String>);
++    let row:Option<AttemptRow>=connection.query_row(
+         "SELECT ordinal,
+             CASE WHEN typeof(cancellation_token)='text' AND length(CAST(cancellation_token AS BLOB)) BETWEEN 1 AND 128 THEN cancellation_token END,
+             CASE WHEN typeof(state)='text' AND length(CAST(state AS BLOB)) BETWEEN 1 AND 16 THEN state END,
+--- crates/deadpan-store/tests/render_jobs.rs:native
++++ crates/deadpan-store/tests/render_jobs.rs:final
+@@ -6,6 +6,7 @@
+ use std::{
+     collections::BTreeMap,
+     error::Error,
++    os::unix::fs::PermissionsExt,
+     sync::atomic::AtomicBool,
+     time::{Duration, Instant},
+ };
+@@ -483,7 +484,9 @@
+                     "blake3-{}",
+                     token.media().movie().content().digest()
+                 ));
+-                std::fs::write(path, b"opaque movie byte changed")?;
++                std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600))?;
++                std::fs::write(&path, b"opaque movie byte changed")?;
++                std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o444))?;
+             }
+         }
+         assert!(

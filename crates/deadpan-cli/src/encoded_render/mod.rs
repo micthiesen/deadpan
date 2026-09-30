@@ -8,6 +8,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
 
 mod host;
+pub mod jobs;
 pub mod protocol;
 pub mod publication;
 pub mod verification;
@@ -45,9 +46,23 @@ pub enum EncodedRenderError {
     #[error(transparent)]
     Artifact(#[from] deadpan_jobs::artifact::ArtifactError),
     #[error(transparent)]
+    RetainedMedia(deadpan_store::render_media::RenderMediaError),
+    #[error(transparent)]
     Io(#[from] io::Error),
     #[error(transparent)]
     Json(#[from] serde_json::Error),
+}
+
+impl From<deadpan_store::render_media::RenderMediaError> for EncodedRenderError {
+    fn from(error: deadpan_store::render_media::RenderMediaError) -> Self {
+        // Preserve the host's control categories across the storage boundary.
+        // Other stable storage codes remain available on the retained source.
+        match error.code() {
+            "OperationCancelled" => Self::Cancelled,
+            "DeadlineExceeded" => Self::Deadline,
+            _ => Self::RetainedMedia(error),
+        }
+    }
 }
 
 fn check_control(cancelled: &AtomicBool, deadline: Instant) -> Result<(), EncodedRenderError> {

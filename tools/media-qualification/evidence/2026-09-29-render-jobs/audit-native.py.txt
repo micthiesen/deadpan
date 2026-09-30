@@ -1,0 +1,75 @@
+import hashlib
+import json
+from pathlib import Path
+import sqlite3
+import stat
+
+ROOT = Path(__file__).resolve().parent
+report = json.loads((ROOT / 'native-jobs-report-2.json').read_bytes())
+decode = json.loads((ROOT / 'decoded-recovered/report.json').read_bytes())
+assert report['status'] == 'passed' and decode['result'] == 'passed recovered publications'
+
+def identity(path):
+    metadata = path.stat()
+    assert stat.S_ISREG(metadata.st_mode) and metadata.st_nlink == 1
+    with path.open('rb') as file:
+        digest = hashlib.file_digest(file, 'sha256').hexdigest()
+    return {'path': str(path), 'bytes': metadata.st_size, 'sha256': digest, 'mode': oct(stat.S_IMODE(metadata.st_mode))}
+
+rows = []
+for case in report['cases']:
+    assert case['status'] == 'passed' and all(check['passed'] for check in case['checks'])
+    package = Path(case['package'])
+    target = ROOT / 'verified-databases' / (case['name'] + '.sqlite')
+    target.parent.mkdir(exist_ok=True)
+    assert not target.exists()
+    with sqlite3.connect((package / 'project.sqlite').as_uri() + '?mode=ro', uri=True) as source:
+        with sqlite3.connect(target) as db:
+            source.backup(db)
+            assert db.execute('PRAGMA integrity_check').fetchall() == [('ok',)]
+            assert db.execute('PRAGMA user_version').fetchone() == (40,)
+            intent = json.loads(db.execute('SELECT intent FROM render_jobs').fetchone()[0])
+            assert intent == case['intent']
+            original = db.execute('SELECT document FROM revisions WHERE id=?', (intent['revision_id'],)).fetchone()[0]
+            canonical = json.dumps(json.loads(original), separators=(',', ':'), ensure_ascii=False).encode()
+            assert hashlib.sha256(canonical).hexdigest() == intent['document_sha256']
+            attempts = [json.loads(row[0]) for row in db.execute('SELECT body FROM render_attempts ORDER BY ordinal')]
+            assert attempts == [case['interrupted_attempt'], case['verified_attempt']]
+            assert [attempt['state'] for attempt in attempts] == ['interrupted', 'verified']
+            assert attempts[1]['verification']['report'] == case['verification']
+            assert db.execute('SELECT COUNT(*) FROM render_candidate_checkpoints').fetchone() == (1,)
+            media = json.loads(db.execute('SELECT media FROM render_candidate_checkpoints').fetchone()[0])
+            assert media == case['checkpoint']['media']
+    retained = {}
+    for kind in ['movie', 'manifest']:
+        reference = media[kind]
+        assert reference['content']['algorithm'] == 'blake3'
+        path = package / 'Media/RenderCandidates' / ('blake3-' + reference['content']['digest'])
+        actual = identity(path)
+        assert actual['bytes'] == reference['byte_length'] and actual['sha256'] == media[kind + '_sha256']
+        assert actual['mode'] == '0o444'
+        retained[kind] = actual
+    manifest = json.loads(Path(retained['manifest']['path']).read_bytes())
+    assert manifest['schema_version'] == 1 and manifest['intent'] == intent
+    assert manifest['encoding_attempt_id'] == attempts[0]['attempt_id']
+    assert manifest['encoded'] == case['manifest']
+    published = {}
+    for kind in ['movie', 'report']:
+        actual = identity(Path(case['publication'][kind]))
+        assert actual['bytes'] == case['publication'][kind + '_bytes']
+        assert actual['sha256'] == case['publication'][kind + '_sha256']
+        assert actual['mode'] == '0o600'
+        published[kind] = actual
+    assert published['movie']['sha256'] == retained['movie']['sha256'] == case['verification']['movie_sha256']
+    rows.append({'name': case['name'], 'database': identity(target), 'historical_document_sha256': intent['document_sha256'],
+                 'attempt_states': [attempt['state'] for attempt in attempts], 'retained': retained, 'published': published})
+result = {'status': 'passed', 'scope': 'independent SQLite backups, exact historical document hashes, stored attempt/checkpoint/report agreement, actual retained and published SHA256/length/modes',
+          'source_manifest_sha256': json.loads((ROOT / 'native-jobs-2.json').read_bytes())['source_manifest_sha256'],
+          'pictures': sum(case['verification']['video_frames'] for case in report['cases']),
+          'authored_sample_frames': sum(case['verification']['audio_samples'] for case in report['cases']),
+          'complete_gops': sum(case['verification']['gops'] for case in report['cases']),
+          'compared_planes': sum(len(case['complete_planes']) for case in decode['cases']),
+          'compared_codes': sum(plane['codes'] for case in decode['cases'] for plane in case['complete_planes']),
+          'cases': rows}
+(ROOT / 'native-audit.json').write_text(json.dumps(result, indent=2) + '\n')
+print(json.dumps({key: value for key, value in result.items() if key != 'cases'}))

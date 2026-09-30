@@ -287,6 +287,7 @@ fn schema29_rejects_new_sound_bearing_split_even_without_new_route_fields() -> R
         "UPDATE revisions SET document=json_set(document,'$.schema_version',29)",
         [],
     )?;
+    remove_empty_render_tables(&database)?;
     database.pragma_update(None, "user_version", 35)?;
     for (_, wire) in docs(&database)? {
         legacy_v29::Document::from_json(&wire)?;

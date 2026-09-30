@@ -81,7 +81,7 @@ and `pitch`, retaining the ordinary Retime's child/input range. Both also have
 occurrence forms. The native `:retime` speed grammar resolves to these same
 commands. See [speed editing](RETIME_EDITING.md) for output-binding lifecycle.
 
-Documents use schema 33 in database schema 39. `set_sound` and `replace_sound`
+Documents use schema 33 in database schema 40. `set_sound` and `replace_sound`
 take an `id` and complete `event`; `delete_sound` takes its `id`.
 Events require a qualified source, root owner,
 natural-rate mapping, contained selection plus sample offset, explicit gain,
@@ -826,18 +826,21 @@ future-schema read-only inspection still needs a compatibility implementation.
 
 ## Schema migration
 
-Database schemas 1 through 38 return `MigrationRequired` when opened. Upgrade explicitly:
+Database schemas 1 through 39 return `MigrationRequired` when opened. Upgrade explicitly:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-39-*.sqlite`, named for the destination schema, and upgrades a separate candidate. It
+`Snapshots/before-schema-40-*.sqlite`, named for the destination schema, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 39 and core document schema 33. Database-38 replays frozen core 32,
+schema 40 and core document schema 33. Database 39 validates existing core-33
+history without rewriting authored JSON or patches, then adds empty operational
+[render job tables](RENDER_JOBS.md). Earlier schemas retain strict replay.
+Database-38 replays frozen core 32,
 including direct/occurrence Hold audio setters, while rejecting modern node
 treatments and gain setters. Database-37 replays frozen core 31,
 retaining exact sound allowances in snapshots and both patch directions. It

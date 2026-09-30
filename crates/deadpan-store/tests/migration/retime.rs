@@ -263,6 +263,7 @@ fn schema27_rejects_new_retime_commands_even_with_matching_modern_history() -> R
                 "UPDATE revisions SET document=json_set(document,'$.schema_version',27)",
                 [],
             )?;
+            remove_empty_render_tables(&database)?;
             database.pragma_update(None, "user_version", 33)?;
             for (_, wire) in docs(&database)? {
                 legacy_v27::Document::from_json(&wire)?;

@@ -1,0 +1,10 @@
+{
+  "/Users/michael/Code/deadpan/target/debug/deadpan-cli": {
+    "bytes": 170544256,
+    "sha256": "dd38414357f50cb7c5ae27cc318ce5e1093592c62bc381f6052c0be4f8441b50"
+  },
+  "/Users/michael/Code/deadpan/target/debug/examples/qualify_render_jobs": {
+    "bytes": 136980856,
+    "sha256": "9ab4e169ef4aa3001872d35387c7e4179430e12ef22deed3a517e0dbf114b259"
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "base_commit": "097f7358574c4da42cc2e607555978abf9d757a9",
+  "producer_sources": {
+    "Cargo.lock": "97767d9639a9590618e0f2188b0e8f3b0dc24b60d652bf125ff35ff8eb4dc988",
+    "Cargo.toml": "26e7ce81048d233045dd78f44db1de83aaee2e2440973bcf2ae98e05b2a5f299",
+    "src/main.rs": "ba578d99be4d8a8330490d49ae9d1b10759d10aafbbc2ec01e7b0443335bb49e"
+  },
+  "producer_binary": "/Users/michael/Code/deadpan/target/debug/deadpan-schema39-fixture-producer",
+  "producer_binary_sha256": "374804f7f240160b4e7c049ee7841f40bbf73e205658a9008546cdfcea83fc82",
+  "fixtures": [
+    {
+      "name": "focused",
+      "source": "/private/tmp/deadpan-render-jobs-95xpekq5/v39-fixtures/focused.deadpan",
+      "snapshot": "/private/tmp/deadpan-render-jobs-95xpekq5/v39-snapshots/focused.deadpan",
+      "database_sha256": "fafc6f013907fd5b15bad77ce4f46607435bf1edce26b88449dad16f4fb87592",
+      "sql": "crates/deadpan-store/tests/fixtures/v39-render-focused.sql",
+      "sql_sha256": "6ed52364b8a412da6f83917b629901768e804c78c87e12a250b7a1ef7144cdd4",
+      "rows": {
+        "generation_attempt_heads": 0,
+        "generation_attempts": 0,
+        "generation_bundle_receipts": 0,
+        "generation_candidate_receipts": 0,
+        "generation_requests": 0,
+        "history": 2,
+        "hold_request_clocks": 0,
+        "original_media": 1,
+        "redo": 1,
+        "revisions": 4,
+        "single_source": 1,
+        "source_qualifications": 1,
+        "state": 1
+      },
+      "method": "SQLite backup API then unmodified iterdump"
+    },
+    {
+      "name": "source",
+      "source": "/tmp/deadpan-publication-oywt_6il/project-inputs/picture.deadpan",
+      "snapshot": "/private/tmp/deadpan-render-jobs-95xpekq5/v39-snapshots/source.deadpan",
+      "database_sha256": "e9c3bea8081ab721647f3f061d458b8600a00aaa2cab9bb63b5ecf067c11b6e7",
+      "sql": "crates/deadpan-store/tests/fixtures/v39-render-source.sql",
+      "sql_sha256": "b6858c808bb2b9b1ea61abb6c4f2da4a8b71222e8774ca9837770e59ad95e966",
+      "rows": {
+        "generation_attempt_heads": 0,
+        "generation_attempts": 0,
+        "generation_bundle_receipts": 0,
+        "generation_candidate_receipts": 0,
+        "generation_requests": 0,
+        "history": 9,
+        "hold_request_clocks": 0,
+        "original_media": 1,
+        "redo": 0,
+        "revisions": 16,
+        "single_source": 0,
+        "source_qualifications": 1,
+        "state": 1
+      },
+      "method": "SQLite backup API then unmodified iterdump"
+    },
+    {
+      "name": "generated",
+      "source": "/tmp/deadpan-publication-oywt_6il/project-inputs/accepted.deadpan",
+      "snapshot": "/private/tmp/deadpan-render-jobs-95xpekq5/v39-snapshots/generated.deadpan",
+      "database_sha256": "7b258e374b8f46b800658b2f123007895205866d499cd14918a4bcce74c4a394",
+      "sql": "crates/deadpan-store/tests/fixtures/v39-render-generated.sql",
+      "sql_sha256": "4b609221a7c30a158bf98241eefa9895ca80dac4e2554c5a21c52efe186d00fc",
+      "rows": {
+        "generation_attempt_heads": 1,
+        "generation_attempts": 1,
+        "generation_bundle_receipts": 1,
+        "generation_candidate_receipts": 0,
+        "generation_requests": 1,
+        "history": 4,
+        "hold_request_clocks": 1,
+        "original_media": 0,
+        "redo": 1,
+        "revisions": 8,
+        "single_source": 0,
+        "source_qualifications": 0,
+        "state": 1
+      },
+      "method": "SQLite backup API then unmodified iterdump"
+    }
+  ]
+}

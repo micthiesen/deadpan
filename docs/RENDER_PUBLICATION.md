@@ -4,7 +4,9 @@
 `VerifiedCandidate`, its project package and an explicitly selected MP4 path.
 It runs off UI/audio threads, reads the captured historical revision and leaves
 project state unchanged. This library boundary leaves native Render, public
-headless render commands and durable render jobs as separate work.
+headless render commands and durable publication recovery as separate work.
+The [render job boundary](RENDER_JOBS.md) retains completed candidates for a fresh
+verification attempt after restart; it does not journal the publication commit.
 
 ## Destination transaction
 
@@ -51,7 +53,8 @@ claiming full success.
 
 Crash recovery must independently admit retained bytes before trusting them.
 Neither a serialized verification report nor a publication receipt can construct
-a `VerifiedCandidate`. Durable job records and recovery orchestration remain open.
+a `VerifiedCandidate`. Retained checkpoints use the separate render job boundary;
+durable destination publication records and reconciliation remain open.
 
 ## Report evidence and bounds
 
@@ -86,6 +89,6 @@ without truncation. Original media is not reopened: the completed movie and
 historical receipts supply the relevant byte identities.
 
 This boundary does not implement native Render, automatic hardware policy,
-resumable durable jobs, complete mastering/effects, HDR or release qualification.
+durable publication reconciliation, complete mastering/effects, HDR or release qualification.
 The generated-picture receipt flag is available for a future nonblocking upload
 disclosure reminder; it does not set any upload-service metadata.

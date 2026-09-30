@@ -31,6 +31,9 @@ const PROCESS_LIMIT: Duration = Duration::from_secs(60);
 #[path = "encoded_verification/publication.rs"]
 mod publication;
 
+#[path = "encoded_verification/jobs.rs"]
+mod jobs;
+
 fn deadline() -> Instant {
     Instant::now() + PROCESS_LIMIT
 }

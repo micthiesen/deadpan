@@ -1,0 +1,338 @@
+{
+  "status": "passed_with_scoped_continuation",
+  "base_commit": "097f7358574c4da42cc2e607555978abf9d757a9",
+  "native_source_inventory": "694db72c44d8a15f687d2f317a4926e7af413187e1f52d7b78bde5a39667a475",
+  "full_gate_source_inventory": "bc6522e204a6b385f5181a0a857e0fd8de16b852e8ebe372018b02fb4cb34b5c",
+  "final_source_inventory": "306a884f2d4618700019f240e01fc007fb8d6c3127954b38f7e341e584959482",
+  "source_changes_after_native": [
+    {
+      "path": "crates/deadpan-cli/src/doctor.rs",
+      "before": "3e1de240060ec741ad608d03662324af829a02c4896e3b7be797119fe4aef012",
+      "after": "b13627253c0f0058953bad809f05aa7a904e3b45d89cffd6dd67d7d04eefe4e1",
+      "scope": "doctor migration capability metadata"
+    },
+    {
+      "path": "crates/deadpan-cli/tests/project_commands.rs",
+      "before": "b4441c9d5660594499bf0d6485bb626974fdbacfda1f6fffb9b4b54116f56ec1",
+      "after": "3caf68cd6904f8a344dc59bbd651b83d290d88d5a91369616e6ed62ef4679e45",
+      "scope": "test-only correction; exact patch retained"
+    },
+    {
+      "path": "crates/deadpan-playback/src/tests.rs",
+      "before": "08bb4d5e82de8083c643f8ebb393641554dfe4566b941431cfcab35ce52c4a66",
+      "after": "7c04b6ce9a7a881e3146c1f62f94fc770547b858d4faa4bbb5bc3490c6e8594a",
+      "scope": "test-only correction; exact patch retained"
+    },
+    {
+      "path": "crates/deadpan-store/src/render_jobs.rs",
+      "before": "be13d82ae3c8b8662b47270a80a0ea2e34757f8fb4a67833b3abbd81e7cdb8fa",
+      "after": "4cdb5da9c47a4648132a0aadce27c437a05c04e8c77c59e7fb57432f40535bc6",
+      "scope": "local type alias only; field types, SQL and executable operations unchanged"
+    },
+    {
+      "path": "crates/deadpan-store/tests/render_jobs.rs",
+      "before": "ce9f3122486e4b0460bd065b3fbbd9b4fa15d3679bd8277bc04897c18c3ec766",
+      "after": "9a74690e0bfbef35a5b2ce30ce5914aefe359d3db3dca0d61d8f30acae664774",
+      "scope": "test-only correction; exact patch retained"
+    }
+  ],
+  "workspace": {
+    "suites": 165,
+    "passed": 2284,
+    "failed": 0,
+    "ignored": 0,
+    "method": "preserved all passing targets and doctests from the failed full run; replaced each of its three failed target results with one complete passing target continuation",
+    "original": {
+      "exit_code": 101,
+      "passed": 2281,
+      "failed": 3
+    },
+    "continuations": {
+      "Running tests/project_commands.rs (target/debug/deps/project_commands-835a719032b277c5)": {
+        "command": "doctor-tests-2",
+        "result": {
+          "target": "Running tests/project_commands.rs (target/debug/deps/project_commands-29bf985627b78bcc)",
+          "status": "ok",
+          "passed": 17,
+          "failed": 0,
+          "ignored": 0
+        }
+      },
+      "Running tests/render_jobs.rs (target/debug/deps/render_jobs-cfc33558d22d73c3)": {
+        "command": "store-tests-3",
+        "result": {
+          "target": "Running tests/render_jobs.rs (target/debug/deps/render_jobs-c794f1803d9c5e25)",
+          "status": "ok",
+          "passed": 12,
+          "failed": 0,
+          "ignored": 0
+        }
+      },
+      "Running unittests src/lib.rs (target/debug/deps/deadpan_playback-e4a6c13c0209ba22)": {
+        "command": "playback-tests-2",
+        "result": {
+          "target": "Running unittests src/lib.rs (target/debug/deps/deadpan_playback-4ee185cb64a4515c)",
+          "status": "ok",
+          "passed": 56,
+          "failed": 0,
+          "ignored": 0
+        }
+      }
+    }
+  },
+  "native": {
+    "pictures": 138,
+    "authored_sample_frames": 221021,
+    "complete_gops": 9,
+    "compared_planes": 414,
+    "compared_codes": 102643200
+  },
+  "commands": {
+    "focused-2": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "--test",
+        "encoded_verification",
+        "jobs::",
+        "--",
+        "--test-threads=1"
+      ],
+      "started": "2026-09-30T06:18:19.996772+00:00",
+      "base_commit": "097f7358574c4da42cc2e607555978abf9d757a9",
+      "diff_sha256": "bff92196616d68872574367f9890ea858eabd9fd7720c6f079dab94a7b4a8798",
+      "source_manifest_sha256": "694db72c44d8a15f687d2f317a4926e7af413187e1f52d7b78bde5a39667a475",
+      "pid": 65899,
+      "exit_code": 0,
+      "seconds": 10.23746179183945
+    },
+    "native-build-1": {
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "--bin",
+        "deadpan-cli",
+        "--example",
+        "qualify_render_jobs"
+      ],
+      "started": "2026-09-30T06:17:18.057937+00:00",
+      "base_commit": "097f7358574c4da42cc2e607555978abf9d757a9",
+      "diff_sha256": "bff92196616d68872574367f9890ea858eabd9fd7720c6f079dab94a7b4a8798",
+      "source_manifest_sha256": "694db72c44d8a15f687d2f317a4926e7af413187e1f52d7b78bde5a39667a475",
+      "pid": 65641,
+      "exit_code": 0,
+      "seconds": 38.74467945937067
+    },
+    "native-migrate-3": {
+      "command": [
+        "python3",
+        "/tmp/deadpan-render-jobs-95xpekq5/prepare-native.py"
+      ],
+      "started": "2026-09-30T06:19:40.367946+00:00",
+      "base_commit": "097f7358574c4da42cc2e607555978abf9d757a9",
+      "diff_sha256": "bff92196616d68872574367f9890ea858eabd9fd7720c6f079dab94a7b4a8798",
+      "source_manifest_sha256": "694db72c44d8a15f687d2f317a4926e7af413187e1f52d7b78bde5a39667a475",
+      "pid": 66165,
+      "exit_code": 0,
+      "seconds": 0.1483510839752853
+    },
+    "native-jobs-2": {
+      "command": [
+        "qualify_render_jobs",
+        "/tmp/deadpan-render-jobs-95xpekq5/native-inputs/source.deadpan",
+        "background",
+        "/tmp/deadpan-render-jobs-95xpekq5/native-inputs/generated.deadpan",
+        "ui-generated-ready",
+        "/Users/michael/Code/deadpan/target/debug/deadpan-cli",
+        "/tmp/deadpan-render-jobs-95xpekq5/native-jobs-report-2.json",
+        "/tmp/deadpan-render-jobs-95xpekq5/native-output-2"
+      ],
+      "started": "2026-09-30T06:19:40.746848+00:00",
+      "base_commit": "097f7358574c4da42cc2e607555978abf9d757a9",
+      "diff_sha256": "bff92196616d68872574367f9890ea858eabd9fd7720c6f079dab94a7b4a8798",
+      "source_manifest_sha256": "694db72c44d8a15f687d2f317a4926e7af413187e1f52d7b78bde5a39667a475",
+      "pid": 66188,
+      "exit_code": 0,
+      "seconds": 77.69413358299062
+    },
+    "recovered-decode-2": {
+      "command": [
+        "python3",
+        "/tmp/deadpan-render-jobs-95xpekq5/qualify-recovered.py"
+      ],
+      "started": "2026-09-30T06:21:30.390559+00:00",
+      "base_commit": "097f7358574c4da42cc2e607555978abf9d757a9",
+      "diff_sha256": "bff92196616d68872574367f9890ea858eabd9fd7720c6f079dab94a7b4a8798",
+      "source_manifest_sha256": "694db72c44d8a15f687d2f317a4926e7af413187e1f52d7b78bde5a39667a475",
+      "pid": 66817,
+      "exit_code": 0,
+      "seconds": 6.698276708833873
+    },
+    "native-audit-check": {
+      "command": [
+        "python3",
+        "/tmp/deadpan-render-jobs-95xpekq5/audit-native.py"
+      ],
+      "started": "2026-09-30T06:23:06.418723+00:00",
+      "base_commit": "097f7358574c4da42cc2e607555978abf9d757a9",
+      "diff_sha256": "bff92196616d68872574367f9890ea858eabd9fd7720c6f079dab94a7b4a8798",
+      "source_manifest_sha256": "694db72c44d8a15f687d2f317a4926e7af413187e1f52d7b78bde5a39667a475",
+      "pid": 67078,
+      "exit_code": 0,
+      "seconds": 0.07506724959239364
+    },
+    "workspace-clippy-2": {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-09-30T06:24:33.451165+00:00",
+      "base_commit": "097f7358574c4da42cc2e607555978abf9d757a9",
+      "diff_sha256": "bff92196616d68872574367f9890ea858eabd9fd7720c6f079dab94a7b4a8798",
+      "source_manifest_sha256": "bc6522e204a6b385f5181a0a857e0fd8de16b852e8ebe372018b02fb4cb34b5c",
+      "pid": 67345,
+      "exit_code": 0,
+      "seconds": 127.84783120825887
+    },
+    "workspace-tests": {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "--no-fail-fast"
+      ],
+      "started": "2026-09-30T06:26:53.782500+00:00",
+      "base_commit": "097f7358574c4da42cc2e607555978abf9d757a9",
+      "diff_sha256": "db83636c440467b37b6cfbe6862b431fe1ba6ec9282a035d93f34e4068d49028",
+      "source_manifest_sha256": "bc6522e204a6b385f5181a0a857e0fd8de16b852e8ebe372018b02fb4cb34b5c",
+      "pid": 67613,
+      "exit_code": 101,
+      "seconds": 542.745837750379
+    },
+    "format-final": {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "started": "2026-09-30T06:26:54.942847+00:00",
+      "base_commit": "097f7358574c4da42cc2e607555978abf9d757a9",
+      "diff_sha256": "db83636c440467b37b6cfbe6862b431fe1ba6ec9282a035d93f34e4068d49028",
+      "source_manifest_sha256": "bc6522e204a6b385f5181a0a857e0fd8de16b852e8ebe372018b02fb4cb34b5c",
+      "pid": 67645,
+      "exit_code": 0,
+      "seconds": 1.2345493342727423
+    },
+    "doctor-tests-2": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "--test",
+        "project_commands"
+      ],
+      "started": "2026-09-30T06:36:34.376445+00:00",
+      "base_commit": "097f7358574c4da42cc2e607555978abf9d757a9",
+      "diff_sha256": "78964ded626645727cf051683b99a268dea3afc9272f48228b9396067188fa3b",
+      "source_manifest_sha256": "753b7aa14b6b21ca40b4ab4c792e54175114a9935265aa9295dc64e7a32667ac",
+      "pid": 69857,
+      "exit_code": 0,
+      "seconds": 27.97794874990359
+    },
+    "store-tests-3": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-store",
+        "--test",
+        "render_jobs"
+      ],
+      "started": "2026-09-30T06:37:28.206900+00:00",
+      "base_commit": "097f7358574c4da42cc2e607555978abf9d757a9",
+      "diff_sha256": "78964ded626645727cf051683b99a268dea3afc9272f48228b9396067188fa3b",
+      "source_manifest_sha256": "753b7aa14b6b21ca40b4ab4c792e54175114a9935265aa9295dc64e7a32667ac",
+      "pid": 70508,
+      "exit_code": 0,
+      "seconds": 26.815939084161073
+    },
+    "playback-tests-2": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-playback",
+        "--lib"
+      ],
+      "started": "2026-09-30T06:39:43.135555+00:00",
+      "base_commit": "097f7358574c4da42cc2e607555978abf9d757a9",
+      "diff_sha256": "be6df24d021155f0b896a7c668dcfe494653da15d223870c0bff53a2a274bd17",
+      "source_manifest_sha256": "306a884f2d4618700019f240e01fc007fb8d6c3127954b38f7e341e584959482",
+      "pid": 71256,
+      "exit_code": 0,
+      "seconds": 109.23105149995536
+    },
+    "workspace-clippy-3": {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-09-30T06:42:52.028793+00:00",
+      "base_commit": "097f7358574c4da42cc2e607555978abf9d757a9",
+      "diff_sha256": "5d8cf4d8713f02b676c82ea878227e374786444cb7b9db78fd2094c8e01ef58c",
+      "source_manifest_sha256": "306a884f2d4618700019f240e01fc007fb8d6c3127954b38f7e341e584959482",
+      "pid": 71755,
+      "exit_code": 0,
+      "seconds": 76.53307537501678
+    },
+    "format-final-2": {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "started": "2026-09-30T06:44:08.868646+00:00",
+      "base_commit": "097f7358574c4da42cc2e607555978abf9d757a9",
+      "diff_sha256": "b3512c6ecb3f507c1074372fac8156173be2908ae6545d8bc40d118791ab7145",
+      "source_manifest_sha256": "306a884f2d4618700019f240e01fc007fb8d6c3127954b38f7e341e584959482",
+      "pid": 71963,
+      "exit_code": 0,
+      "seconds": 1.1818895828910172
+    }
+  },
+  "limitations": [
+    "orderly writer restart, no injected power/process crash",
+    "no durable publication journal",
+    "explicit hardware/no-B-frame engineering policy",
+    "no new native C sanitizer run",
+    "no UI changes or GUI check",
+    "all DP requirements and Gates A-G remain open or partial"
+  ]
+}

@@ -146,6 +146,7 @@ fn schema26_rejects_new_source_splice_without_promoting_valid_modern_history() -
         "UPDATE revisions SET document=json_set(document,'$.schema_version',26)",
         [],
     )?;
+    remove_empty_render_tables(&database)?;
     database.pragma_update(None, "user_version", 32)?;
     for (_, wire) in docs(&database)? {
         legacy_v26::Document::from_json(&wire)?;

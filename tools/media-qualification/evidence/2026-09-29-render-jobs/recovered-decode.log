@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/tmp/deadpan-render-jobs-95xpekq5/qualify-recovered.py", line 26, in <module>
+    admitted = {str(Path(row['path']).resolve()): row['expected'] for row in decoded['final_file_admission'] if row['passed']}
+                         ~~~^^^^^^^^
+KeyError: 'path'

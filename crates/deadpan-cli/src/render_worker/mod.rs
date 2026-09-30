@@ -4,12 +4,11 @@
 //! or publish a movie. The future encoder consumes these same frames inside
 //! the worker instead of spooling an uncompressed full-length product export.
 
-use std::io::{self, Write};
+use std::io;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
 
 use deadpan_jobs::Sha256;
-use sha2::{Digest, Sha256 as Sha256Hasher};
 
 use crate::picture::ProjectPictureSession;
 
@@ -80,47 +79,15 @@ pub(crate) fn document_hash(
     cancelled: &AtomicBool,
     deadline: Instant,
 ) -> Result<Sha256, RenderWorkerError> {
-    struct DocumentHash<'a> {
-        hasher: Sha256Hasher,
-        bytes: usize,
-        cancelled: &'a AtomicBool,
-        deadline: Instant,
-    }
-    impl Write for DocumentHash<'_> {
-        fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
-            if self.cancelled.load(Ordering::Acquire) || Instant::now() >= self.deadline {
-                return Err(io::Error::other("render document hashing interrupted"));
-            }
-            if bytes.len() > deadpan_core::MAX_DOCUMENT_JSON_BYTES.saturating_sub(self.bytes) {
-                return Err(io::Error::new(
-                    io::ErrorKind::FileTooLarge,
-                    "render document hash byte bound",
-                ));
-            }
-            self.bytes += bytes.len();
-            self.hasher.update(bytes);
-            Ok(bytes.len())
-        }
-        fn flush(&mut self) -> io::Result<()> {
-            Ok(())
-        }
-    }
-    let mut writer = DocumentHash {
-        hasher: Sha256Hasher::new(),
-        bytes: 0,
-        cancelled,
-        deadline,
-    };
-    let serialized = serde_json::to_writer(&mut writer, document);
-    check_control(cancelled, deadline)?;
-    serialized?;
-    let hex: String = writer
-        .hasher
-        .finalize()
-        .iter()
-        .map(|byte| format!("{byte:02x}"))
-        .collect();
-    Sha256::new(hex).map_err(|error| RenderWorkerError::Protocol(error.to_string()))
+    use deadpan_jobs::render::RenderError;
+    deadpan_jobs::render::document_sha256(document, cancelled, deadline).map_err(
+        |error| match error {
+            RenderError::Cancelled => RenderWorkerError::Cancelled,
+            RenderError::Deadline => RenderWorkerError::Deadline,
+            RenderError::Json(error) => RenderWorkerError::Json(error),
+            RenderError::Invalid(message) => RenderWorkerError::Protocol(message.into()),
+        },
+    )
 }
 
 #[cfg(test)]

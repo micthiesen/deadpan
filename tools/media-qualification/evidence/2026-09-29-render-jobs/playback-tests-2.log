@@ -1,0 +1,66 @@
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 26.67s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_playback-4ee185cb64a4515c)
+
+running 56 tests
+test sources::cache_tests::source_capacity_accepts_exact_numeric_limits_and_rejects_overages ... ok
+test target::tests::signed_origin_and_half_sample_ties_use_the_same_forward_and_inverse_clock ... ok
+test tests::resources::pcm_slot_stays_owned_until_detached_engine_workers_exit ... ok
+test tests::resources::waveform_shutdown_keeps_pcm_permit_until_its_preparation_owner_exits ... ok
+test tests::original::original_preserves_leading_audio_trailing_audio_and_exact_rounded_picture_clock ... ok
+test tests::proposed::two_gain_proposals_and_before_have_separate_real_pcm_and_tagged_device_generations ... ok
+test tests::proposed::proposed_source_failure_is_tagged_and_cannot_poison_later_before_playback ... ok
+test sources::cache_tests::seventeenth_qualified_source_evicts_lru_and_evicted_source_can_reopen ... ok
+test tests::invalid_gain_and_outside_start_are_explicit ... ok
+test tests::canonical_playback_consumes_pause_bindings_and_a_real_preserve_stage ... ok
+test tests::audio_range::selected_original_audio_keeps_complete_source_context_and_cold_seek_phase ... ok
+test tests::audio_range::audio_range_callbacks_stop_at_exact_end_loop_and_replace_same_source_ranges ... ok
+test tests::full_prefill_can_queue_eos_before_the_first_maximum_callback ... ok
+test tests::audio_range::selected_44100_samples_round_once_and_reject_wrong_contracts ... ok
+test tests::original::original_pcm_ignores_edits_and_target_cache_never_reuses_sequence_pcm ... ok
+test tests::canonical_source_pcm_uses_fixed_monitor_gain_and_delivery_clock ... ok
+test sources::cache_tests::failed_cold_snapshot_and_cancelled_requests_preserve_cache_and_recency ... ok
+test tests::original::loop_faults_invalid_windows_and_overflow_are_explicit ... ok
+test tests::proposed::proposal_admission_rejects_bad_identity_changed_assets_and_retargeted_public_fields ... ok
+test tests::original::loop_pcm_repeats_exact_content_with_monotonic_delivery_and_resumes_later_laps ... ok
+test tests::original::bounded_window_finishes_at_exact_delivery_deadline ... ok
+test tests::route_change_and_backwards_clock_stop_output ... ok
+test tests::seek_reuses_private_pcm_but_a_new_session_must_reopen_sources ... ok
+test tests::short_eos_waits_for_scheduled_prefix_and_seek_replaces_generation ... ok
+test tests::sound::decoded_44100_and_48000_spans_round_once_without_project_frame_slack ... ok
+test tests::sound::measured_sound_end_governs_default_audition_and_full_source_loop ... ok
+test tests::sound::sound_contract_rejects_wrong_receipt_rate_asset_revision_and_extended_windows ... ok
+test tests::sound::sound_rejects_a_picture_qualification ... ok
+test tests::sound::sound_retains_unknown_priming_and_original_sample_coordinates ... ok
+test tests::sound::sound_target_switches_canonical_caches_without_mutating_the_edit ... ok
+test tests::source_provider_rejects_foreign_contracts_and_revoked_cold_handles ... ok
+test tests::source_voice::catalog_voice_keeps_plan_receipt_layout_and_live_original_admission ... ok
+test tests::source_voice::catalog_voice_uses_exact_44100_phase_at_arbitrary_48000_onset_without_editing ... ok
+test tests::source_voice::events::authored_sound_fades_only_at_its_own_ends_and_silent_hold_edges_without_restarting ... ok
+test tests::source_voice::events::authored_sound_two_ntsc_pauses_preserve_real_sample_phase_and_transported_end ... ok
+test tests::source_voice::events::authored_sounds_reopen_undo_and_mix_on_exact_root_samples_before_one_limiter ... ok
+test tests::source_voice::events::silent_authored_sound_retains_source_admission_through_limiter_cache_and_recovery ... ok
+test tests::source_voice::independent_voice_preserve_uses_complete_intrinsic_pcm_for_cold_and_shuffled_reads ... ok
+test tests::source_voice::routed::fractional_window_keeps_filter_support_old_source_masks_and_prior_gap_silence ... ok
+test tests::source_voice::routed::masked_routes_still_admit_complete_live_dependencies_and_reject_foreign_plans ... ok
+test tests::source_voice::routed::point_ceil_route_copies_real_pcm_across_two_ntsc_insertions_without_changing_original ... ok
+test tests::source_voice::routed::round_even_route_keeps_complete_preserve_history_when_the_second_suffix_is_read_cold ... ok
+test tests::source_voice::silent_hold_suppresses_output_but_keeps_catalog_pcm_available_to_processing ... ok
+test tests::starvation_keeps_its_submitted_prefix_clock_then_fails_without_resume ... ok
+test tests::stop_restart_and_failure_never_publish_an_old_session ... ok
+test tests::waveform::active_output_and_ended_prefix_defer_analysis_until_device_teardown ... ok
+test tests::waveform::audition_cancels_analysis_before_admitting_its_exclusive_cache_owner ... ok
+test tests::waveform::cancelling_the_current_ticket_suppresses_its_late_result ... ok
+test tests::waveform::device_open_failure_releases_queued_analysis_but_worker_panic_revokes_it ... ok
+test tests::waveform::playback_stop_preserves_analysis_but_lifecycle_stop_revokes_it ... ok
+test tests::waveform::proposed_snapshots_and_foreign_owners_fail_without_opening_output ... ok
+test tests::waveform::real_definition_peaks_match_canonical_pcm_and_each_request_readmits_evidence ... ok
+test tests::waveform::replacement_coalesces_pending_work_and_drops_stale_success_and_failure ... ok
+test tests::waveform::silent_definition_measures_without_device_or_playback_updates ... ok
+test tests::waveform::starved_prefix_defers_analysis_then_fails_playback_without_resuming ... ok
+test tests::worker_panic_is_reported_and_disables_further_requests ... ok
+
+test result: ok. 56 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 82.52s
+

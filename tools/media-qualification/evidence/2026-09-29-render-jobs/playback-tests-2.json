@@ -1,0 +1,17 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-playback",
+    "--lib"
+  ],
+  "started": "2026-09-30T06:39:43.135555+00:00",
+  "base_commit": "097f7358574c4da42cc2e607555978abf9d757a9",
+  "diff_sha256": "be6df24d021155f0b896a7c668dcfe494653da15d223870c0bff53a2a274bd17",
+  "source_manifest_sha256": "306a884f2d4618700019f240e01fc007fb8d6c3127954b38f7e341e584959482",
+  "pid": 71256,
+  "exit_code": 0,
+  "seconds": 109.23105149995536
+}

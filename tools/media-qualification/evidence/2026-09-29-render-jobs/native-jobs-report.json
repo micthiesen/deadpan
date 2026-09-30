@@ -1,0 +1,87 @@
+{
+  "cases": [
+    {
+      "checks": [
+        {
+          "actual": {
+            "range": {
+              "end": 128,
+              "start": 20
+            }
+          },
+          "label": "representative picture coverage",
+          "passed": true
+        },
+        {
+          "actual": {
+            "bytes": 133462,
+            "sha256": "c20c0e5c88119af497839e1729c31fb2d41a3e0569de1b9abc3a0c62e090939b",
+            "table_rows": [
+              16,
+              9,
+              1,
+              0
+            ]
+          },
+          "label": "job allocation preserves authored rows and history",
+          "passed": true
+        }
+      ],
+      "coverage": {
+        "background": 5,
+        "freeze": 3,
+        "generated": 0,
+        "original": 103,
+        "scope": "indexed committed picture providers; native encode separately admits each sampled provider",
+        "source": 100
+      },
+      "encoding_attempt": {
+        "attempt_id": "structural-encode-1",
+        "cancellation_requested": false,
+        "cancellation_token": "structural-encode-cancel-1",
+        "checkpoint_attempt_id": null,
+        "diagnostic": null,
+        "job_id": "durable-structural",
+        "ordinal": 1,
+        "state": "encoding",
+        "transition_sequence": 2,
+        "verification": null
+      },
+      "encoding_error": "encoded render worker failed: media object is writable: blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "encoding_progress": [],
+      "error": "encoded render worker failed: media object is writable: blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "intent": {
+        "document_sha256": "af8e5672cee86b4d64827ef4e86b8af5ad9b9ca11d5c8b46e18e0f4d7d5663ff",
+        "job_id": "durable-structural",
+        "policy": {
+          "b_frames": "none",
+          "encoder": "hardware",
+          "schema_version": 1,
+          "selection": "explicit_engineering"
+        },
+        "project_id": "project-picture-qualification",
+        "range": {
+          "end": 128,
+          "start": 20
+        },
+        "revision_id": "background",
+        "schema_version": 1
+      },
+      "name": "structural",
+      "package": "/private/tmp/deadpan-render-jobs-95xpekq5/native-inputs/source.deadpan",
+      "status": "failed"
+    }
+  ],
+  "elapsed_seconds": 0.304696584,
+  "limitations": [
+    "explicit engineering hardware/no-B-frame policy",
+    "restart is an orderly writer close, not an injected process crash",
+    "no durable publication journal or publication crash reconciliation",
+    "independent content comparison remains a separate check",
+    "no native Render UI, automatic encoder selection, full audio/effects, HDR or release qualification"
+  ],
+  "schema_version": 1,
+  "scope": "two fresh native encodes, durable movie/manifest checkpoints, writer restart, fresh isolated verification and destination publication",
+  "status": "failed",
+  "worker": "/Users/michael/Code/deadpan/target/debug/deadpan-cli"
+}

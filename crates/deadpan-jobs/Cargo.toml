@@ -16,11 +16,11 @@ test = true
 deadpan-core.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+sha2.workspace = true
 thiserror.workspace = true
 
 [target.'cfg(any(target_os = "macos", target_os = "linux"))'.dependencies]
 rustix.workspace = true
-sha2.workspace = true
 tempfile.workspace = true
 deadpan-native-process.workspace = true
 

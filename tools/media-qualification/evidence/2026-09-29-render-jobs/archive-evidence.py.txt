@@ -1,0 +1,86 @@
+"""Retain task media and SQLite backups, then re-read every archive member."""
+import gzip
+import hashlib
+import io
+import json
+from pathlib import Path
+import shutil
+import tarfile
+
+ROOT = Path(__file__).resolve().parent
+REPO = Path('/Users/michael/Code/deadpan')
+DEST = REPO / 'tools/media-qualification/evidence/2026-09-29-render-jobs'
+DEST.mkdir(parents=True, exist_ok=True)
+
+def sha(path):
+    with path.open('rb') as file:
+        return hashlib.file_digest(file, 'sha256').hexdigest()
+
+files = {}
+def add(path, name):
+    assert path.is_file() and not path.is_symlink(), path
+    assert name not in files and not name.startswith('/') and '..' not in Path(name).parts
+    files[name] = path
+
+def tree(root, prefix, skip=()):
+    for path in sorted(root.rglob('*')):
+        if path.is_file() and path.name not in skip and not path.name.startswith('project.sqlite-'):
+            add(path, str(Path(prefix) / path.relative_to(root)))
+
+tree(ROOT / 'v39-snapshots', 'schema39')
+tree(ROOT / 'native-output-2', 'published')
+tree(ROOT / 'decoded-recovered', 'independent-readers')
+for name, database in [('source', 'structural'), ('generated', 'generated')]:
+    package = ROOT / 'native-inputs' / (name + '.deadpan')
+    tree(package, 'schema40/' + package.name, ('project.sqlite', '.writer.lock', '.render-candidates.lock'))
+    add(ROOT / 'verified-databases' / (database + '.sqlite'), 'schema40/' + package.name + '/project.sqlite')
+for row in json.loads((ROOT / 'recovered-reference-binding.json').read_bytes()):
+    for kind in ['picture_reference', 'audio_reference']:
+        path = Path(row[kind])
+        add(path, 'retained-input-references/' + path.name)
+
+members = []
+archive = DEST / 'native-artifacts.tar.gz'
+assert not archive.exists()
+with archive.open('wb') as output:
+    with gzip.GzipFile(fileobj=output, mode='wb', mtime=0) as compressed:
+        with tarfile.open(fileobj=compressed, mode='w|') as tar:
+            for name, path in sorted(files.items()):
+                before = sha(path)
+                info = tar.gettarinfo(str(path), arcname=name)
+                info.uid = info.gid = 0
+                info.uname = info.gname = ''
+                info.mtime = 0
+                with path.open('rb') as file:
+                    tar.addfile(info, file)
+                assert sha(path) == before
+                members.append({'path': name, 'source': str(path), 'bytes': info.size, 'sha256': before, 'mode': oct(info.mode)})
+expected = {row['path']: row for row in members}
+with tarfile.open(archive, 'r:gz') as tar:
+    observed = tar.getmembers()
+    assert len(observed) == len(expected)
+    for member in observed:
+        assert member.isfile() and member.name in expected
+        row = expected[member.name]
+        assert member.size == row['bytes']
+        with tar.extractfile(member) as file:
+            assert hashlib.file_digest(file, 'sha256').hexdigest() == row['sha256']
+(DEST / 'archive-members.json').write_text(json.dumps(members, indent=2) + '\n')
+audit = {'status': 'passed', 'members': len(members), 'uncompressed_bytes': sum(row['bytes'] for row in members),
+         'archive_bytes': archive.stat().st_size, 'archive_sha256': sha(archive), 'verification': 'every regular archive member was read and independently rehashed'}
+(DEST / 'archive-audit.json').write_text(json.dumps(audit, indent=2) + '\n')
+
+for path in sorted(ROOT.iterdir()):
+    if path.is_file() and path.name != 'next-publication-proposal.md' and path.suffix in ['.log', '.json', '.md', '.py', '.txt']:
+        if path.suffix == '.py':
+            target = DEST / (path.name + '.txt')
+            shutil.copyfile(path, target)
+        elif path.stat().st_size > 128 * 1024:
+            (DEST / (path.name + '.gz')).write_bytes(gzip.compress(path.read_bytes(), mtime=0))
+        else:
+            shutil.copyfile(path, DEST / path.name)
+for name in ['Cargo.toml', 'Cargo.lock', 'src/main.rs']:
+    target = DEST / ('schema39-producer-' + name.replace('/', '-') + '.txt')
+    shutil.copyfile(ROOT / 'fixture-producer' / name, target)
+(DEST / 'decoded-recovered-report.json.gz').write_bytes(gzip.compress((ROOT / 'decoded-recovered/report.json').read_bytes(), mtime=0))
+print(json.dumps(audit))

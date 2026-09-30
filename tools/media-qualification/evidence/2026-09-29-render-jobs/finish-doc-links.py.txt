@@ -1,0 +1,16 @@
+from pathlib import Path
+ROOT = Path('/Users/michael/Code/deadpan')
+
+def change(name, old, new):
+    path = ROOT / name
+    text = path.read_text()
+    assert text.count(old) == 1, (name, text.count(old), old)
+    path.write_text(text.replace(old, new))
+
+change('docs/ARCHITECTURE.md', 'generation requests/attempts, explicit bundle acceptance, writer ownership, checkpoints, and shared original/generated-object storage.', 'generation requests/attempts, render intents/attempts/checkpoints, explicit bundle acceptance, writer ownership, and shared Original/Generated/RenderCandidates object storage.')
+change('docs/ARCHITECTURE.md', 'The store persists generation attempts; app inference remains open.', 'The store persists generation and render attempts. Render intent and canonical document hashing are shared with the host; app inference remains open.')
+change('docs/ARCHITECTURE.md', 'The [publication host](RENDER_PUBLICATION.md) owns bounded destination copies', 'The [render job adapter](RENDER_JOBS.md) separates immutable capture, durable retention and fresh verification from short store transitions. The [publication host](RENDER_PUBLICATION.md) owns bounded destination copies')
+change('docs/REQUIREMENTS.md', 'Source capacity, content/runtime qualification, automatic platform policy and the native Render workflow remain open.', 'The [durable render boundary](RENDER_JOBS.md) retains completed encodes across reopen and requires a fresh verification attempt; [qualification](qualification/render-jobs-2026-09-29.md) covers two real recovered publications. Source capacity, content/runtime qualification, automatic platform policy and the native Render workflow remain open.')
+change('docs/REQUIREMENTS.md', 'while distinguishing a committed movie whose final durability or integrity could not be confirmed. |', 'while distinguishing a committed movie whose final durability or integrity could not be confirmed. [Durable render attempts](RENDER_JOBS.md) add immutable intent, exact transition tokens, retained movie/manifest checkpoints, restart interruption and fresh verification retries; owner closure cancels live encoder/verifier supervision. |')
+change('docs/REQUIREMENTS.md', 'using old-binary-validated fixtures with requests, attempts, admission, source placements, branches and redo. |', 'using old-binary-validated fixtures with requests, attempts, admission, source placements, branches and redo. [Schema-39-to-40 render migration](../crates/deadpan-store/tests/migration/render_jobs.rs) preserves every existing cell across three authentic qualified-media/history fixtures and adds empty operational render tables. |')
+change('docs/qualification/render-jobs-2026-09-29.md', 'No failed run supplied a\npublished movie or passing result.', 'Failed runs are excluded from the\npassing qualification totals.')

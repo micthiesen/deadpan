@@ -1,0 +1,27 @@
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>>: LowerHex` is not satisfied
+   --> crates/deadpan-store/tests/render_jobs.rs:323:58
+    |
+323 |     let hash = deadpan_jobs::Sha256::new(format!("{:x}", Sha256::digest(movie)))?;
+    |                                                   ----   ^^^^^^^^^^^^^^^^^^^^^ the trait `LowerHex` is not implemented for `Array<u8, UInt<UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>, ...>>`
+    |                                                   |
+    |                                                   required by this formatting parameter
+    |
+    = help: the following other types implement trait `LowerHex`:
+              &T
+              &mut T
+              OpenFlags
+              PrepFlags
+              Saturating<T>
+              Wrapping<T>
+              compiler_builtins::math::libm_math::support::big::i256
+              compiler_builtins::math::libm_math::support::big::u256
+            and 52 others
+    = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/debug/deps/render_jobs-c794f1803d9c5e25.long-type-17535862905975420850.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `deadpan-store` (test "render_jobs") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

@@ -8,6 +8,7 @@ use deadpan_jobs::artifact::{
 };
 use deadpan_jobs::process::{ProcessEvent, ProcessLimits, ProcessSpec, SupervisedProcess};
 use deadpan_jobs::{Sha256, WorkspaceRef};
+use deadpan_store::render_media::PreparedRenderSnapshot;
 
 use crate::export_picture::ExportPictureContract;
 use crate::picture::ProjectPictureSession;
@@ -53,7 +54,12 @@ pub struct EncodedCandidate {
     contract: ExportPictureContract,
     document_sha256: Sha256,
     manifest: EncodedManifest,
-    snapshot: HashedArtifactSnapshot,
+    snapshot: CandidateBytes,
+}
+
+enum CandidateBytes {
+    Worker(HashedArtifactSnapshot),
+    Retained(Box<PreparedRenderSnapshot>),
 }
 
 impl EncodedCandidate {
@@ -70,7 +76,56 @@ impl EncodedCandidate {
     }
 
     pub fn byte_length(&self) -> u64 {
-        self.snapshot.declaration().byte_length()
+        match &self.snapshot {
+            CandidateBytes::Worker(snapshot) => snapshot.declaration().byte_length(),
+            CandidateBytes::Retained(snapshot) => snapshot.media().movie().byte_length(),
+        }
+    }
+
+    pub(super) fn check_live(
+        &self,
+        cancelled: &AtomicBool,
+        deadline: Instant,
+    ) -> Result<(), EncodedRenderError> {
+        check_control(cancelled, deadline)?;
+        if let CandidateBytes::Retained(snapshot) = &self.snapshot {
+            snapshot.check_live(cancelled)?;
+        }
+        Ok(())
+    }
+
+    /// A narrow recovery constructor for the sibling job adapter. The opaque
+    /// store snapshot supplies fresh private bytes, never decoded-media trust.
+    /// Only the independent verifier may create a VerifiedCandidate from this.
+    pub(super) fn from_retained(
+        contract: ExportPictureContract,
+        document_sha256: Sha256,
+        manifest: EncodedManifest,
+        snapshot: PreparedRenderSnapshot,
+        cancelled: &AtomicBool,
+        deadline: Instant,
+    ) -> Result<Self, EncodedRenderError> {
+        check_control(cancelled, deadline)?;
+        snapshot.check_live(cancelled)?;
+        manifest.validate().map_err(EncodedRenderError::Protocol)?;
+        if !manifest.contract.picture.matches(&contract)
+            || manifest.document_sha256 != document_sha256
+            || manifest.movie.byte_length() != snapshot.media().movie().byte_length()
+            || manifest.movie.sha256() != snapshot.media().movie_sha256()
+        {
+            return Err(EncodedRenderError::Protocol(
+                "retained candidate differs from its captured contract or actual byte identity"
+                    .into(),
+            ));
+        }
+        let candidate = Self {
+            contract,
+            document_sha256,
+            manifest,
+            snapshot: CandidateBytes::Retained(Box::new(snapshot)),
+        };
+        candidate.check_live(cancelled, deadline)?;
+        Ok(candidate)
     }
 
     /// Read at most 64 KiB from the owned snapshot. Reading at EOF returns zero;
@@ -82,7 +137,7 @@ impl EncodedCandidate {
         cancelled: &AtomicBool,
         deadline: Instant,
     ) -> Result<usize, EncodedRenderError> {
-        check_control(cancelled, deadline)?;
+        self.check_live(cancelled, deadline)?;
         if output.len() > COPY_BUFFER_BYTES || offset > self.byte_length() {
             return Err(EncodedRenderError::Configuration(
                 "candidate read exceeds its byte or buffer bounds",
@@ -92,9 +147,24 @@ impl EncodedCandidate {
             (self.byte_length() - offset).min(u64::try_from(output.len()).expect("bounded buffer")),
         )
         .expect("bounded count");
-        self.snapshot.seek(SeekFrom::Start(offset))?;
-        self.snapshot.read_exact(&mut output[..count])?;
-        check_control(cancelled, deadline)?;
+        match &mut self.snapshot {
+            CandidateBytes::Worker(snapshot) => {
+                snapshot.seek(SeekFrom::Start(offset))?;
+                snapshot.read_exact(&mut output[..count])?;
+            }
+            CandidateBytes::Retained(snapshot) => {
+                let observed =
+                    snapshot.read_at(offset, &mut output[..count], cancelled, deadline)?;
+                if observed != count {
+                    return Err(io::Error::new(
+                        io::ErrorKind::UnexpectedEof,
+                        "retained candidate ended before its exact extent",
+                    )
+                    .into());
+                }
+            }
+        }
+        self.check_live(cancelled, deadline)?;
         Ok(count)
     }
 
@@ -107,14 +177,14 @@ impl EncodedCandidate {
         cancelled: &AtomicBool,
         deadline: Instant,
     ) -> Result<u64, EncodedRenderError> {
-        check_control(cancelled, deadline)?;
+        self.check_live(cancelled, deadline)?;
         let mut buffer = [0_u8; COPY_BUFFER_BYTES];
         let mut copied = 0;
         while copied < self.byte_length() {
             let count = self.read_at(copied, &mut buffer, cancelled, deadline)?;
             let mut written = 0;
             while written < count {
-                check_control(cancelled, deadline)?;
+                self.check_live(cancelled, deadline)?;
                 match output.write(&buffer[written..count]) {
                     Ok(0) => {
                         return Err(io::Error::new(
@@ -128,10 +198,10 @@ impl EncodedCandidate {
                     Err(error) => return Err(error.into()),
                 }
             }
-            check_control(cancelled, deadline)?;
+            self.check_live(cancelled, deadline)?;
             copied += u64::try_from(count).expect("bounded count");
         }
-        check_control(cancelled, deadline)?;
+        self.check_live(cancelled, deadline)?;
         Ok(copied)
     }
 }
@@ -147,7 +217,32 @@ pub fn encode(
     limits: EncodedWorkerLimits,
     cancelled: &AtomicBool,
     deadline: Instant,
+    progress: impl FnMut(EncodedProgress),
+) -> Result<EncodedCandidate, EncodedRenderError> {
+    encode_guarded(
+        runtime,
+        request,
+        choice,
+        limits,
+        cancelled,
+        deadline,
+        progress,
+        || Ok(()),
+    )
+}
+
+/// A durable job may revoke its owning session independently of user cancel.
+/// Poll that ownership with the supervisor so revocation stops owned work.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn encode_guarded(
+    runtime: &RenderWorkerRuntime,
+    request: RenderPictureRequest,
+    choice: EncoderChoice,
+    limits: EncodedWorkerLimits,
+    cancelled: &AtomicBool,
+    deadline: Instant,
     mut progress: impl FnMut(EncodedProgress),
+    check_owner: impl Fn() -> Result<(), EncodedRenderError>,
 ) -> Result<EncodedCandidate, EncodedRenderError> {
     let RenderPictureRequest {
         package,
@@ -157,6 +252,7 @@ pub fn encode(
         cancellation_token,
     } = request;
     check_control(cancelled, deadline)?;
+    check_owner()?;
     limits.encode.validate()?;
     let package = std::fs::canonicalize(package)?;
     if package.to_str().is_none() {
@@ -166,6 +262,7 @@ pub fn encode(
     }
     let pictures = ProjectPictureSession::open_revision(&package, &revision, range, cancelled);
     check_control(cancelled, deadline)?;
+    check_owner()?;
     let pictures = pictures?;
     let contract = ExportPictureContract::capture(&pictures)?;
     let evidence = EncodedRenderContract::from_contract(&contract, choice);
@@ -178,6 +275,7 @@ pub fn encode(
     let document_sha256 = document_sha256?;
     drop(pictures);
     check_control(cancelled, deadline)?;
+    check_owner()?;
 
     let workspace = tempfile::Builder::new()
         .prefix("deadpan-encoded-")
@@ -205,6 +303,7 @@ pub fn encode(
     let mut arguments = runtime.arguments.clone();
     arguments.push(PRIVATE_WORKER_ARGUMENT.into());
     arguments.push(package.into_os_string());
+    check_owner()?;
     let mut process = SupervisedProcess::<EncodedProtocol>::spawn(
         ProcessSpec {
             executable: runtime.executable.clone(),
@@ -225,7 +324,15 @@ pub fn encode(
     let mut last_progress = (0, 0);
     while !process.is_finished() {
         let now = Instant::now();
-        if cancelled.load(Ordering::Acquire) && !was_cancelled {
+        if failure.is_none()
+            && let Err(error) = check_owner()
+        {
+            failure = Some(error);
+            if let Err(error) = process.request_cancel(now) {
+                return Err(failure.unwrap_or_else(|| error.into()));
+            }
+        }
+        if cancelled.load(Ordering::Acquire) && !was_cancelled && failure.is_none() {
             was_cancelled = true;
             if let Err(error) = process.request_cancel(now) {
                 return Err(failure.unwrap_or_else(|| error.into()));
@@ -321,6 +428,7 @@ pub fn encode(
         return Err(EncodedRenderError::Cancelled);
     }
     check_control(cancelled, deadline)?;
+    check_owner()?;
     let manifest = completion.ok_or_else(|| {
         EncodedRenderError::Protocol("no clean completed encoded manifest".into())
     })?;
@@ -334,12 +442,17 @@ pub fn encode(
     manifest
         .validate_for(limits.encode)
         .map_err(EncodedRenderError::Protocol)?;
+    let mut owner_failure = None;
     let snapshot = pinned
         .snapshot_with_control(
             &output_scope,
             &manifest.movie,
             ArtifactLimits::new(limits.encode.maximum_output_bytes)?,
             || {
+                if let Err(error) = check_owner() {
+                    owner_failure = Some(error);
+                    return Err(SnapshotInterruption::Cancelled);
+                }
                 if cancelled.load(Ordering::Acquire) {
                     return Err(SnapshotInterruption::Cancelled);
                 }
@@ -349,13 +462,18 @@ pub fn encode(
                 Ok(())
             },
         )
-        .map_err(artifact_failure)?;
+        .map_err(artifact_failure);
+    if let Some(error) = owner_failure {
+        return Err(error);
+    }
+    let snapshot = snapshot?;
     check_control(cancelled, deadline)?;
+    check_owner()?;
     Ok(EncodedCandidate {
         contract,
         document_sha256,
         manifest,
-        snapshot,
+        snapshot: CandidateBytes::Worker(snapshot),
     })
 }
 

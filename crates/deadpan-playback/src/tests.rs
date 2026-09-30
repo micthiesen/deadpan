@@ -655,10 +655,25 @@ fn starvation_keeps_its_submitted_prefix_clock_then_fails_without_resume() {
         render_cost_ns: 1,
     });
     device.now.store(15_333_333, Ordering::Release);
-    assert_eq!(
-        update(&engine, Phase::Playing).sample,
-        Some(AudioSample(256))
+    // Playing was already true before this report. Wait for its position so an
+    // earlier queued Playing update cannot satisfy the asynchronous handoff.
+    let mut prefix = None;
+    let ready = wait(|| {
+        if let Some(value) = engine.poll() {
+            prefix = Some(value);
+        }
+        prefix.as_ref().is_some_and(|value| {
+            value.phase == Phase::Failed
+                || (value.phase == Phase::Playing && value.sample == Some(AudioSample(256)))
+        })
+    });
+    assert!(
+        ready,
+        "timed out awaiting submitted prefix; last update: {prefix:?}"
     );
+    let prefix = prefix.unwrap();
+    assert_eq!(prefix.phase, Phase::Playing, "{prefix:?}");
+    assert_eq!(prefix.sample, Some(AudioSample(256)));
     device.now.store(15_666_667, Ordering::Release);
     let failed = update(&engine, Phase::Failed);
     assert_eq!(failed.sample, Some(AudioSample(272)));

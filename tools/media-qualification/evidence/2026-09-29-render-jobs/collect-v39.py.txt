@@ -1,0 +1,70 @@
+"""Retain authentic pre-change schema39 databases through SQLite backup."""
+import hashlib
+import json
+from pathlib import Path
+import shutil
+import sqlite3
+import stat
+
+ROOT = Path(__file__).resolve().parent
+REPO = Path('/Users/michael/Code/deadpan')
+SOURCES = {
+    'focused': ROOT / 'v39-fixtures/focused.deadpan',
+    'source': Path('/tmp/deadpan-publication-oywt_6il/project-inputs/picture.deadpan'),
+    'generated': Path('/tmp/deadpan-publication-oywt_6il/project-inputs/accepted.deadpan'),
+}
+
+
+def digest(path):
+    with path.open('rb') as stream:
+        return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+
+inventory = []
+for name, source in SOURCES.items():
+    target = ROOT / 'v39-snapshots' / (name + '.deadpan')
+    target.mkdir(parents=True, exist_ok=False)
+    for path in sorted(source.rglob('*')):
+        relative = path.relative_to(source)
+        if path.name.startswith('project.sqlite') or path.name == '.writer.lock':
+            continue
+        if path.is_dir():
+            (target / relative).mkdir(exist_ok=True)
+        else:
+            assert stat.S_ISREG(path.lstat().st_mode)
+            shutil.copyfile(path, target / relative)
+    with sqlite3.connect((source / 'project.sqlite').as_uri() + '?mode=ro', uri=True) as original:
+        with sqlite3.connect(target / 'project.sqlite') as backup:
+            original.backup(backup)
+            assert backup.execute('PRAGMA integrity_check').fetchall() == [('ok',)]
+            assert backup.execute('PRAGMA user_version').fetchone()[0] == 39
+            assert all(json.loads(row[0])['schema_version'] == 33
+                       for row in backup.execute('SELECT document FROM revisions'))
+            application = backup.execute('PRAGMA application_id').fetchone()[0]
+            tables = [row[0] for row in backup.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")]
+            counts = {table: backup.execute('SELECT count(*) FROM ' + table).fetchone()[0]
+                      for table in tables}
+            assert all(table.replace('_', '').isalnum() for table in tables)
+            payload = '\n'.join(backup.iterdump()) + '\n'
+            header = (
+                '-- Authentic schema 39 / core schema 33 snapshot. No authored SQL modifications.\n'
+                '-- SQLite backup/dump retained before the render-job schema change at 097f735.\n'
+                '-- Source inventory: 8332c9d07a73d66364e6ff1468399a369355cefedcb7b68de5d91db4231c790d.\n'
+                f'-- Fixture: {name}; full producer/snapshot evidence retained with render-job qualification.\n'
+                f'PRAGMA application_id={application};\nPRAGMA user_version=39;\n')
+            fixture = REPO / 'crates/deadpan-store/tests/fixtures' / f'v39-render-{name}.sql'
+            with fixture.open('x') as file:
+                file.write(header + payload)
+    inventory.append({'name': name, 'source': str(source), 'snapshot': str(target),
+                      'database_sha256': digest(target / 'project.sqlite'),
+                      'sql': str(fixture.relative_to(REPO)), 'sql_sha256': digest(fixture),
+                      'rows': counts, 'method': 'SQLite backup API then unmodified iterdump'})
+producer = ROOT / 'fixture-producer'
+identities = {str(path.relative_to(producer)): digest(path)
+              for path in sorted(producer.rglob('*')) if path.is_file()}
+binary = REPO / 'target/debug/deadpan-schema39-fixture-producer'
+result = {'base_commit': '097f7358574c4da42cc2e607555978abf9d757a9',
+          'producer_sources': identities, 'producer_binary': str(binary),
+          'producer_binary_sha256': digest(binary), 'fixtures': inventory}
+(ROOT / 'v39-fixture-evidence.json').write_text(json.dumps(result, indent=2) + '\n')
+print(json.dumps(result, indent=2))

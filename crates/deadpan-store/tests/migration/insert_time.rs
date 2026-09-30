@@ -134,6 +134,7 @@ fn schema22_fixture(path: &Path) -> Result<ProjectDocument> {
         "UPDATE revisions SET document=json_set(document,'$.schema_version',16)",
         [],
     )?;
+    remove_empty_render_tables(&database)?;
     database.pragma_update(None, "user_version", 22)?;
     for (_, json) in docs(&database)? {
         legacy_v16::Document::from_json(&json)?;

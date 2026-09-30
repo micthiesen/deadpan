@@ -1,0 +1,64 @@
+use std::{error::Error, path::PathBuf, sync::atomic::AtomicBool, time::Duration};
+
+use deadpan_core::{AssetId, Command, CommandRequest, NodeId, ProjectDocument, ProjectId, RevisionId};
+use deadpan_media::{
+    audio_session::{AudioSession, AudioSessionLimits},
+    source_index::SourceContentIdentity,
+    source_input::VerifiedSourceInput,
+    source_qualification::DecodedSourceQualification,
+    source_session::{SourceSession, SourceSessionLimits},
+};
+use deadpan_store::{
+    ProjectStore, DATABASE_SCHEMA_VERSION,
+    original_media::{OriginalMediaLimits, OriginalOwnership},
+    single_source::SingleSourceInitialization,
+    source_registration::PreparedSourceRegistration,
+};
+
+fn revision(value: &str) -> RevisionId { RevisionId::new(value).unwrap() }
+fn node(value: &str) -> NodeId { NodeId::new(value).unwrap() }
+fn asset(value: &str) -> AssetId { AssetId::new(value).unwrap() }
+
+fn main() -> Result<(), Box<dyn Error>> {
+    assert_eq!(DATABASE_SCHEMA_VERSION, 39, "producer requires the original schema-39 implementation");
+    let mut args = std::env::args_os().skip(1);
+    let repository = PathBuf::from(args.next().ok_or("repository argument required")?);
+    let package = PathBuf::from(args.next().ok_or("package argument required")?);
+    assert!(args.next().is_none());
+    std::fs::create_dir_all(package.parent().ok_or("package parent required")?)?;
+    let document = ProjectDocument::new_automatic(
+        ProjectId::new("schema39-focused")?, revision("initial"), node("root"))?;
+    let mut store = ProjectStore::create_single_source(&package, &document)?;
+    let cancelled = AtomicBool::new(false);
+    let limits = OriginalMediaLimits::new(2_000_000, Duration::from_secs(10))?;
+    let fixture = repository.join("native/deadpan-source/tests/fixtures/offset-bframes.mp4");
+    let retained = store.retain_original(&fixture, OriginalOwnership::Managed, limits, &cancelled)?.record;
+    let mut original = store.original_import_handle()?.snapshot_original(&retained, limits, &cancelled)?;
+    let input = VerifiedSourceInput::copy_verified(
+        &mut original,
+        SourceContentIdentity::new(retained.sha256(), retained.object().byte_length())?,
+        2_000_000, Duration::from_secs(10), &cancelled)?;
+    let video = SourceSession::open_input(input.clone(), asset("decode"), SourceSessionLimits::default(), &cancelled)?;
+    let audio = AudioSession::open_input(input, 1, AudioSessionLimits::default(), &cancelled)?;
+    let decoded = DecodedSourceQualification::from_sessions(Some(&video), Some(&audio))?;
+    let prepared = PreparedSourceRegistration::from_decoded(original, &decoded, &cancelled)?;
+    store.initialize_prepared_source(&SingleSourceInitialization {
+        expected_revision: revision("initial"), new_revision: revision("baseline"),
+        new_asset_id: asset("original"), node: node("full-original"),
+        label: "Migration Original".into(),
+    }, &prepared, &cancelled)?;
+    assert_eq!(store.history_availability()?, (false, false));
+    let captured = store.snapshot()?;
+    store.commit(&CommandRequest {
+        project_id: captured.project_id().clone(), expected_revision: revision("baseline"),
+        new_revision: revision("deleted"), command: Command::Delete { node: node("full-original") },
+    })?;
+    assert_eq!(store.snapshot()?.duration()?.frames(), 0);
+    store.undo(&revision("deleted"), revision("restored"))?;
+    assert_eq!(store.history_availability()?, (false, true));
+    assert_eq!(store.snapshot()?.nodes(), captured.nodes());
+    store.validate()?;
+    drop(store);
+    println!("Produced genuine schema39 single-Original baseline, decoded receipt, edit, undo and redo state: {}", package.display());
+    Ok(())
+}

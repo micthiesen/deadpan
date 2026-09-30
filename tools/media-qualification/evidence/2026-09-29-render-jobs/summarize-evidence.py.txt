@@ -1,0 +1,83 @@
+import difflib
+import hashlib
+import json
+from pathlib import Path
+import re
+import subprocess
+
+ROOT = Path(__file__).resolve().parent
+REPO = Path('/Users/michael/Code/deadpan')
+NATIVE = '694db72c44d8a15f687d2f317a4926e7af413187e1f52d7b78bde5a39667a475'
+GATE = 'bc6522e204a6b385f5181a0a857e0fd8de16b852e8ebe372018b02fb4cb34b5c'
+names = ['focused-2', 'native-build-1', 'native-migrate-3', 'native-jobs-2', 'recovered-decode-2', 'native-audit-check', 'workspace-clippy-2', 'workspace-tests', 'format-final', 'doctor-tests-2', 'store-tests-3', 'playback-tests-2', 'workspace-clippy-3', 'format-final-2']
+commands = {name: json.loads((ROOT / (name + '.json')).read_bytes()) for name in names}
+assert commands['workspace-tests']['exit_code'] == 101
+assert all(row['exit_code'] == 0 for name, row in commands.items() if name != 'workspace-tests')
+FINAL = commands['workspace-clippy-3']['source_manifest_sha256']
+assert commands['format-final-2']['source_manifest_sha256'] == FINAL
+assert all(commands[name]['source_manifest_sha256'] == GATE for name in ['workspace-clippy-2', 'workspace-tests', 'format-final'])
+assert all(commands[name]['source_manifest_sha256'] == NATIVE for name in ['focused-2', 'native-build-1', 'native-migrate-3', 'native-jobs-2', 'recovered-decode-2', 'native-audit-check'])
+before = json.loads((ROOT / ('source-' + NATIVE + '.json')).read_bytes())
+after = json.loads((ROOT / ('source-' + FINAL + '.json')).read_bytes())
+changed = [path for path in sorted(before.keys() | after.keys()) if before.get(path) != after.get(path)]
+changes = []
+patches = []
+for path in changed:
+    new = (REPO / path).read_text()
+    if path == 'crates/deadpan-store/src/render_jobs.rs':
+        anchor = '    type AttemptRow = (i64, Option<String>, Option<String>, i64, Option<String>);\n    let row:Option<AttemptRow>'
+        assert new.count(anchor) == 1
+        old = new.replace(anchor, '    let row:Option<(i64,Option<String>,Option<String>,i64,Option<String>)>')
+        scope = 'local type alias only; field types, SQL and executable operations unchanged'
+    else:
+        backups = [ROOT / 'pre-doctor-fix' / path, ROOT / 'pre-gate-fixes' / path]
+        backups = [p for p in backups if p.is_file()]
+        assert len(backups) == 1, path
+        old = backups[0].read_text()
+        scope = 'doctor migration capability metadata' if path.endswith('/src/doctor.rs') else 'test-only correction; exact patch retained'
+    assert hashlib.sha256(old.encode()).hexdigest() == before[path], path
+    assert hashlib.sha256(new.encode()).hexdigest() == after[path], path
+    changes.append({'path': path, 'before': before[path], 'after': after[path], 'scope': scope})
+    patches.extend(difflib.unified_diff(old.splitlines(True), new.splitlines(True), fromfile=path + ':native', tofile=path + ':final'))
+(ROOT / 'source-change-after-native.patch.txt').write_text(''.join(patches))
+paths = subprocess.check_output(['git', '-c', 'core.fsmonitor=false', 'ls-files', '--cached', '--others', '--exclude-standard', '-z'], cwd=REPO).decode().split('\0')
+observed = {name: hashlib.sha256((REPO / name).read_bytes()).hexdigest() for name in sorted(set(paths))
+            if name and (REPO / name).is_file() and (Path(name).suffix in ('.rs', '.toml', '.lock', '.cpp', '.h', '.hpp', '.c', '.m', '.py') or name.startswith(('.cargo/', 'crates/', 'native/')))}
+assert observed == after
+for name in ['doctor-tests-2', 'store-tests-3', 'playback-tests-2']:
+    run_inventory = json.loads((ROOT / ('source-' + commands[name]['source_manifest_sha256'] + '.json')).read_bytes())
+    later_changes = [path for path in sorted(run_inventory.keys() | after.keys()) if run_inventory.get(path) != after.get(path)]
+    assert not later_changes or later_changes == ['crates/deadpan-playback/src/tests.rs'], (name, later_changes)
+
+def suites(name):
+    rows = []
+    for chunk in re.split(r'(?=     Running |   Doc-tests )', (ROOT / (name + '.log')).read_text()):
+        match = re.search(r'test result: (\w+)\. (\d+) passed; (\d+) failed; (\d+) ignored', chunk)
+        if match:
+            rows.append({'target': chunk.splitlines()[0].strip(), 'status': match[1], 'passed': int(match[2]), 'failed': int(match[3]), 'ignored': int(match[4])})
+    return rows
+
+original = suites('workspace-tests')
+assert len(original) == 165 and sum(row['failed'] for row in original) == 3
+continuations = {}
+for command, needle in [('doctor-tests-2', 'tests/project_commands.rs'), ('store-tests-3', 'tests/render_jobs.rs'), ('playback-tests-2', 'deadpan_playback-')]:
+    matched = [row for row in original if needle in row['target'] and row['status'] == 'FAILED']
+    assert len(matched) == 1, command
+    passing = suites(command)
+    assert len(passing) == 1 and passing[0]['status'] == 'ok' and passing[0]['failed'] == passing[0]['ignored'] == 0
+    assert passing[0]['passed'] == matched[0]['passed'] + matched[0]['failed']
+    continuations[matched[0]['target']] = {'command': command, 'result': passing[0]}
+resolved = [continuations[row['target']]['result'] if row['target'] in continuations else row for row in original]
+assert all(row['status'] == 'ok' and row['failed'] == row['ignored'] == 0 for row in resolved)
+counts = {'suites': len(resolved), 'passed': sum(row['passed'] for row in resolved), 'failed': 0, 'ignored': 0,
+          'method': 'preserved all passing targets and doctests from the failed full run; replaced each of its three failed target results with one complete passing target continuation',
+          'original': {'exit_code': 101, 'passed': sum(row['passed'] for row in original), 'failed': 3}, 'continuations': continuations}
+audit = json.loads((ROOT / 'native-audit.json').read_bytes())
+summary = {'status': 'passed_with_scoped_continuation', 'base_commit': commands['workspace-tests']['base_commit'],
+           'native_source_inventory': NATIVE, 'full_gate_source_inventory': GATE, 'final_source_inventory': FINAL,
+           'source_changes_after_native': changes, 'workspace': counts,
+           'native': {key: audit[key] for key in ['pictures', 'authored_sample_frames', 'complete_gops', 'compared_planes', 'compared_codes']},
+           'commands': commands,
+           'limitations': ['orderly writer restart, no injected power/process crash', 'no durable publication journal', 'explicit hardware/no-B-frame engineering policy', 'no new native C sanitizer run', 'no UI changes or GUI check', 'all DP requirements and Gates A-G remain open or partial']}
+(ROOT / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
+print(json.dumps({'workspace': counts, 'native': summary['native'], 'final_source_inventory': FINAL}))

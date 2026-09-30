@@ -1,0 +1,10 @@
+[package]
+name = "deadpan-schema39-fixture-producer"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.97.1"
+
+[dependencies]
+deadpan-core = { path = "/Users/michael/Code/deadpan/crates/deadpan-core" }
+deadpan-store = { path = "/Users/michael/Code/deadpan/crates/deadpan-store" }
+deadpan-media = { path = "/Users/michael/Code/deadpan/crates/deadpan-media" }

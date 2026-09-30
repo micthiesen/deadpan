@@ -1,0 +1,21 @@
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 26.40s
+     Running tests/render_jobs.rs (target/debug/deps/render_jobs-c794f1803d9c5e25)
+
+running 12 tests
+test invalid_immutable_binding_and_paging_are_rejected ... ok
+test transition_counter_exhaustion_rolls_back_and_reserves_terminal_recovery ... ok
+test stale_tokens_sequences_and_fresh_id_rules_fail_atomically ... ok
+test targeted_json_bounds_reject_before_deserializing_the_row ... ok
+test cancelling_failure_retains_cancellation_request_and_candidate ... ok
+test captured_history_and_operational_writes_preserve_redo ... ok
+test malformed_checkpoint_or_oversized_report_cannot_become_verified ... ok
+test durable_checkpoint_survives_interruption_and_explicit_verification_retry ... ok
+test readonly_open_never_recovers_and_writer_preserves_cancel_intent ... ok
+test targeted_operations_skip_unrelated_report_but_full_audit_rejects_it ... ok
+test missing_indexes_malformed_states_and_reports_block_recovery ... ok
+test checkpoint_requires_live_session_exact_transition_and_unchanged_objects ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.37s
+

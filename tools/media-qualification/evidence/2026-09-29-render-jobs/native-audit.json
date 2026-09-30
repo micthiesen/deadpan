@@ -1,0 +1,96 @@
+{
+  "status": "passed",
+  "scope": "independent SQLite backups, exact historical document hashes, stored attempt/checkpoint/report agreement, actual retained and published SHA256/length/modes",
+  "source_manifest_sha256": "694db72c44d8a15f687d2f317a4926e7af413187e1f52d7b78bde5a39667a475",
+  "pictures": 138,
+  "authored_sample_frames": 221021,
+  "complete_gops": 9,
+  "compared_planes": 414,
+  "compared_codes": 102643200,
+  "cases": [
+    {
+      "name": "structural",
+      "database": {
+        "path": "/private/tmp/deadpan-render-jobs-95xpekq5/verified-databases/structural.sqlite",
+        "bytes": 405504,
+        "sha256": "38793e05fd2d52cf41cf56b19b5c10a628350d4bdd60c71a13b62da61b1757ad",
+        "mode": "0o644"
+      },
+      "historical_document_sha256": "af8e5672cee86b4d64827ef4e86b8af5ad9b9ca11d5c8b46e18e0f4d7d5663ff",
+      "attempt_states": [
+        "interrupted",
+        "verified"
+      ],
+      "retained": {
+        "movie": {
+          "path": "/private/tmp/deadpan-render-jobs-95xpekq5/native-inputs/source.deadpan/Media/RenderCandidates/blake3-cc76ef2ee8f1401489c1618096352c3ceb86bac6fa1b46f0e8bcaa3fe84d192b",
+          "bytes": 97359,
+          "sha256": "12a48645584a9b83100b996c69e7fd93c2df29f576499afa0b3b27344fa03a79",
+          "mode": "0o444"
+        },
+        "manifest": {
+          "path": "/private/tmp/deadpan-render-jobs-95xpekq5/native-inputs/source.deadpan/Media/RenderCandidates/blake3-ac7fa9502a8e8c58e6a0979139948693e4fad5965238b7d50c6daeaa8284a75d",
+          "bytes": 1931,
+          "sha256": "b9616711cc6a4fa2eff0a1fdd39901866bab0aa4151cd9854ac20f7cee856f8c",
+          "mode": "0o444"
+        }
+      },
+      "published": {
+        "movie": {
+          "path": "/private/tmp/deadpan-render-jobs-95xpekq5/native-output-2/published-structural.mp4",
+          "bytes": 97359,
+          "sha256": "12a48645584a9b83100b996c69e7fd93c2df29f576499afa0b3b27344fa03a79",
+          "mode": "0o600"
+        },
+        "report": {
+          "path": "/private/tmp/deadpan-render-jobs-95xpekq5/native-output-2/deadpan-render-942e97ce-a77a-4e01-b673-9aa7f034adfd.json",
+          "bytes": 5751,
+          "sha256": "bb08efd803cf370f4e2df8bf52734540625cad9a8d88705fb25c7c8e7db2577f",
+          "mode": "0o600"
+        }
+      }
+    },
+    {
+      "name": "generated",
+      "database": {
+        "path": "/private/tmp/deadpan-render-jobs-95xpekq5/verified-databases/generated.sqlite",
+        "bytes": 241664,
+        "sha256": "b53a7a0aed9b31f5e67ed860702f90751ac97c76d0573a5fd171ce7f2191b212",
+        "mode": "0o644"
+      },
+      "historical_document_sha256": "2e7fca9f6df4f0282bf5b0e547ea15b7eaf4d89f46cbd48640b26a49789d94c7",
+      "attempt_states": [
+        "interrupted",
+        "verified"
+      ],
+      "retained": {
+        "movie": {
+          "path": "/private/tmp/deadpan-render-jobs-95xpekq5/native-inputs/generated.deadpan/Media/RenderCandidates/blake3-c83b18ff46d13e4691cb6a5d573a731f04d31263efa8a0105ba49229754d2b95",
+          "bytes": 227109,
+          "sha256": "d1104ed7265440be7e947e46a31d010d7af8341a93d3e583e6aabb20659b214a",
+          "mode": "0o444"
+        },
+        "manifest": {
+          "path": "/private/tmp/deadpan-render-jobs-95xpekq5/native-inputs/generated.deadpan/Media/RenderCandidates/blake3-5f5b2bf8d8aabddd9d8918ef724f6e6bb075656b47a21942508a31cca24f4e88",
+          "bytes": 1892,
+          "sha256": "07e5482991accf5cdc605c6629a40cfc96a1162450562a4c18e3251ffb56ed2f",
+          "mode": "0o444"
+        }
+      },
+      "published": {
+        "movie": {
+          "path": "/private/tmp/deadpan-render-jobs-95xpekq5/native-output-2/published-generated.mp4",
+          "bytes": 227109,
+          "sha256": "d1104ed7265440be7e947e46a31d010d7af8341a93d3e583e6aabb20659b214a",
+          "mode": "0o600"
+        },
+        "report": {
+          "path": "/private/tmp/deadpan-render-jobs-95xpekq5/native-output-2/deadpan-render-d69e7eb6-5485-4d91-a2d5-011ef9df5699.json",
+          "bytes": 6748,
+          "sha256": "513837860cfd71b4db6cf13e5057a7f359cd59fb39b1827485ad10fbf9c628a7",
+          "mode": "0o600"
+        }
+      }
+    }
+  ]
+}

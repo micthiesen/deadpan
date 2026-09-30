@@ -1,0 +1,1669 @@
+{
+  "cases": [
+    {
+      "checkpoint": {
+        "encoding_attempt_id": "structural-encode-1",
+        "job_id": "durable-structural",
+        "media": {
+          "manifest": {
+            "byte_length": 1931,
+            "content": {
+              "algorithm": "blake3",
+              "digest": "ac7fa9502a8e8c58e6a0979139948693e4fad5965238b7d50c6daeaa8284a75d"
+            }
+          },
+          "manifest_sha256": "b9616711cc6a4fa2eff0a1fdd39901866bab0aa4151cd9854ac20f7cee856f8c",
+          "movie": {
+            "byte_length": 97359,
+            "content": {
+              "algorithm": "blake3",
+              "digest": "cc76ef2ee8f1401489c1618096352c3ceb86bac6fa1b46f0e8bcaa3fe84d192b"
+            }
+          },
+          "movie_sha256": "12a48645584a9b83100b996c69e7fd93c2df29f576499afa0b3b27344fa03a79"
+        }
+      },
+      "checks": [
+        {
+          "actual": {
+            "range": {
+              "end": 128,
+              "start": 20
+            }
+          },
+          "label": "representative picture coverage",
+          "passed": true
+        },
+        {
+          "actual": {
+            "bytes": 133462,
+            "sha256": "c20c0e5c88119af497839e1729c31fb2d41a3e0569de1b9abc3a0c62e090939b",
+            "table_rows": [
+              16,
+              9,
+              1,
+              0
+            ]
+          },
+          "label": "job allocation preserves authored rows and history",
+          "passed": true
+        },
+        {
+          "actual": {
+            "completed_frames": 1,
+            "edit": "durable-live-edit",
+            "entry_revision": "encoded-live-redo",
+            "redo": "durable-live-redo",
+            "restoration_excludes_revision_identity": true,
+            "restored_revision": "durable-live-restored",
+            "total_frames": 108,
+            "undo": "durable-live-undo"
+          },
+          "label": "live edit, undo, redo and final undo restore authored content",
+          "passed": true
+        },
+        {
+          "actual": {
+            "authoring": {
+              "bytes": 167408,
+              "sha256": "174df29ae52501d2ad5d9e65420a4ff3f5152ce3b257b1c8f9116ac444f2271e",
+              "table_rows": [
+                20,
+                10,
+                1,
+                1
+              ]
+            },
+            "captured_revision": "background",
+            "live_revision": "durable-live-restored"
+          },
+          "label": "checkpoint preserves historical capture and current authored rows",
+          "passed": true
+        },
+        {
+          "actual": {
+            "state": "encoded_retained"
+          },
+          "label": "read-only reopen does not recover an active attempt",
+          "passed": true
+        },
+        {
+          "actual": {
+            "attempt_id": "structural-encode-1",
+            "cancellation_requested": false,
+            "cancellation_token": "structural-encode-cancel-1",
+            "checkpoint_attempt_id": "structural-encode-1",
+            "diagnostic": {
+              "code": "InterruptedOnOpen",
+              "detail": "Writable reopen interrupted abandoned render work; retry explicitly. Retained checkpoints remain available."
+            },
+            "job_id": "durable-structural",
+            "ordinal": 1,
+            "state": "interrupted",
+            "transition_sequence": 4,
+            "verification": null
+          },
+          "label": "writer reopen interrupts the attempt and preserves its checkpoint",
+          "passed": true
+        },
+        {
+          "actual": {
+            "attempt_count": 2
+          },
+          "label": "the job has exactly one encoding attempt and one verification retry",
+          "passed": true
+        },
+        {
+          "actual": {
+            "encoding_attempt": "structural-encode-1",
+            "movie_sha256": "12a48645584a9b83100b996c69e7fd93c2df29f576499afa0b3b27344fa03a79",
+            "verification_attempt": "structural-verify-2"
+          },
+          "label": "fresh verification uses the retained movie without another encode",
+          "passed": true
+        },
+        {
+          "actual": {
+            "contains_generated_pictures": false
+          },
+          "label": "published movie has the expected Generated coverage",
+          "passed": true
+        },
+        {
+          "actual": {
+            "bytes": 167408,
+            "sha256": "174df29ae52501d2ad5d9e65420a4ff3f5152ce3b257b1c8f9116ac444f2271e",
+            "table_rows": [
+              20,
+              10,
+              1,
+              1
+            ]
+          },
+          "label": "recovery, verification and publication preserve exact authoring state",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checkpoint": {
+              "manifest": {
+                "byte_length": 1931,
+                "content": {
+                  "algorithm": "blake3",
+                  "digest": "ac7fa9502a8e8c58e6a0979139948693e4fad5965238b7d50c6daeaa8284a75d"
+                }
+              },
+              "manifest_sha256": "b9616711cc6a4fa2eff0a1fdd39901866bab0aa4151cd9854ac20f7cee856f8c",
+              "movie": {
+                "byte_length": 97359,
+                "content": {
+                  "algorithm": "blake3",
+                  "digest": "cc76ef2ee8f1401489c1618096352c3ceb86bac6fa1b46f0e8bcaa3fe84d192b"
+                }
+              },
+              "movie_sha256": "12a48645584a9b83100b996c69e7fd93c2df29f576499afa0b3b27344fa03a79"
+            },
+            "state": "verified"
+          },
+          "label": "terminal observation survives reopen without changing history",
+          "passed": true
+        }
+      ],
+      "closed_writer_handle_error": {
+        "code": "StorageSessionClosed",
+        "message": "object storage session is closed"
+      },
+      "contract": {
+        "canvas": [
+          320,
+          180
+        ],
+        "color_policy": "sdr_rec709",
+        "frame_count": 108,
+        "frame_rate": {
+          "denominator": 1001,
+          "numerator": 30000
+        },
+        "project_audio_end": 205005,
+        "project_audio_start": 32032,
+        "project_id": "project-picture-qualification",
+        "range": {
+          "end": 128,
+          "start": 20
+        },
+        "raster": [
+          320,
+          180
+        ],
+        "relative_aspect_error": {
+          "denominator": "1",
+          "numerator": "0"
+        },
+        "revision_id": "background",
+        "terminal_pts": 108108,
+        "time_base": {
+          "denominator": 30000,
+          "numerator": 1
+        }
+      },
+      "coverage": {
+        "background": 5,
+        "freeze": 3,
+        "generated": 0,
+        "original": 103,
+        "scope": "indexed committed picture providers; native encode separately admits each sampled provider",
+        "source": 100
+      },
+      "elapsed_seconds": 32.928173334,
+      "encoded_candidates": 1,
+      "encoding_attempt": {
+        "attempt_id": "structural-encode-1",
+        "cancellation_requested": false,
+        "cancellation_token": "structural-encode-cancel-1",
+        "checkpoint_attempt_id": null,
+        "diagnostic": null,
+        "job_id": "durable-structural",
+        "ordinal": 1,
+        "state": "encoding",
+        "transition_sequence": 2,
+        "verification": null
+      },
+      "encoding_progress": [
+        {
+          "completed_audio_samples": 0,
+          "completed_frames": 1,
+          "elapsed_seconds": 0.279395584,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 5120,
+          "completed_frames": 4,
+          "elapsed_seconds": 3.892087,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 11264,
+          "completed_frames": 7,
+          "elapsed_seconds": 6.39890525,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 16384,
+          "completed_frames": 11,
+          "elapsed_seconds": 6.570151125,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 22528,
+          "completed_frames": 14,
+          "elapsed_seconds": 7.99166275,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 27648,
+          "completed_frames": 18,
+          "elapsed_seconds": 9.455611959,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 33792,
+          "completed_frames": 21,
+          "elapsed_seconds": 9.763456292,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 38912,
+          "completed_frames": 25,
+          "elapsed_seconds": 9.929709417,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 45056,
+          "completed_frames": 28,
+          "elapsed_seconds": 11.303302917,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 50176,
+          "completed_frames": 32,
+          "elapsed_seconds": 12.770358917,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 56320,
+          "completed_frames": 35,
+          "elapsed_seconds": 12.896235334,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 61440,
+          "completed_frames": 39,
+          "elapsed_seconds": 14.379057542,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 67584,
+          "completed_frames": 42,
+          "elapsed_seconds": 15.799549542,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 72704,
+          "completed_frames": 46,
+          "elapsed_seconds": 15.968968792,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 78848,
+          "completed_frames": 49,
+          "elapsed_seconds": 17.39289025,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 83968,
+          "completed_frames": 53,
+          "elapsed_seconds": 18.86426025,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 90112,
+          "completed_frames": 56,
+          "elapsed_seconds": 18.990585459,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 95232,
+          "completed_frames": 60,
+          "elapsed_seconds": 20.455533167,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 101376,
+          "completed_frames": 63,
+          "elapsed_seconds": 21.8826905,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 106496,
+          "completed_frames": 67,
+          "elapsed_seconds": 22.048422625,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 112640,
+          "completed_frames": 70,
+          "elapsed_seconds": 23.475907792,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 117760,
+          "completed_frames": 74,
+          "elapsed_seconds": 24.9417775,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 123904,
+          "completed_frames": 77,
+          "elapsed_seconds": 26.369654709,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 129024,
+          "completed_frames": 81,
+          "elapsed_seconds": 26.54269075,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 135168,
+          "completed_frames": 84,
+          "elapsed_seconds": 26.846814167,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 140288,
+          "completed_frames": 88,
+          "elapsed_seconds": 28.209240834,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 146432,
+          "completed_frames": 91,
+          "elapsed_seconds": 28.337100209,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 151552,
+          "completed_frames": 95,
+          "elapsed_seconds": 29.646620334,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 157696,
+          "completed_frames": 98,
+          "elapsed_seconds": 30.863353917,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 162816,
+          "completed_frames": 102,
+          "elapsed_seconds": 31.029645709,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 168960,
+          "completed_frames": 105,
+          "elapsed_seconds": 32.228336125,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        },
+        {
+          "completed_audio_samples": 172973,
+          "completed_frames": 108,
+          "elapsed_seconds": 32.451756042,
+          "total_audio_samples": 172973,
+          "total_frames": 108
+        }
+      ],
+      "fresh_verifications": 1,
+      "intent": {
+        "document_sha256": "af8e5672cee86b4d64827ef4e86b8af5ad9b9ca11d5c8b46e18e0f4d7d5663ff",
+        "job_id": "durable-structural",
+        "policy": {
+          "b_frames": "none",
+          "encoder": "hardware",
+          "schema_version": 1,
+          "selection": "explicit_engineering"
+        },
+        "project_id": "project-picture-qualification",
+        "range": {
+          "end": 128,
+          "start": 20
+        },
+        "revision_id": "background",
+        "schema_version": 1
+      },
+      "interrupted_attempt": {
+        "attempt_id": "structural-encode-1",
+        "cancellation_requested": false,
+        "cancellation_token": "structural-encode-cancel-1",
+        "checkpoint_attempt_id": "structural-encode-1",
+        "diagnostic": {
+          "code": "InterruptedOnOpen",
+          "detail": "Writable reopen interrupted abandoned render work; retry explicitly. Retained checkpoints remain available."
+        },
+        "job_id": "durable-structural",
+        "ordinal": 1,
+        "state": "interrupted",
+        "transition_sequence": 4,
+        "verification": null
+      },
+      "live_edit": {
+        "completed_frames": 1,
+        "edit": "durable-live-edit",
+        "entry_revision": "encoded-live-redo",
+        "redo": "durable-live-redo",
+        "restoration_excludes_revision_identity": true,
+        "restored_revision": "durable-live-restored",
+        "total_frames": 108,
+        "undo": "durable-live-undo"
+      },
+      "manifest": {
+        "contract": {
+          "choice": {
+            "b_frames": "none",
+            "mode": "hardware"
+          },
+          "picture": {
+            "canvas": [
+              320,
+              180
+            ],
+            "color_policy": "sdr_rec709",
+            "frame_count": 108,
+            "frame_rate": {
+              "denominator": 1001,
+              "numerator": 30000
+            },
+            "project_audio_end": 205005,
+            "project_audio_start": 32032,
+            "project_id": "project-picture-qualification",
+            "range": {
+              "end": 128,
+              "start": 20
+            },
+            "raster": [
+              320,
+              180
+            ],
+            "relative_aspect_error": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "revision_id": "background",
+            "terminal_pts": 108108,
+            "time_base": {
+              "denominator": 30000,
+              "numerator": 1
+            }
+          }
+        },
+        "document_sha256": "af8e5672cee86b4d64827ef4e86b8af5ad9b9ca11d5c8b46e18e0f4d7d5663ff",
+        "movie": {
+          "byte_length": 97359,
+          "reference": "output/movie.mp4",
+          "sha256": "12a48645584a9b83100b996c69e7fd93c2df29f576499afa0b3b27344fa03a79"
+        },
+        "report": {
+          "audio_eof": true,
+          "audio_packets": 170,
+          "audio_samples": 172973,
+          "faststart_read_closes": 1,
+          "faststart_read_opens": 1,
+          "info": {
+            "abi_version": 1,
+            "audio_bitrate": 384000,
+            "audio_frame_size": 1024,
+            "audio_initial_padding": 1024,
+            "audio_profile": 1,
+            "audio_time_base_den": 48000,
+            "audio_time_base_num": 1,
+            "audio_trailing_padding": 0,
+            "avcodec_version": 4066151,
+            "avformat_version": 4064103,
+            "avutil_version": 3934311,
+            "maximum_moov_bytes": 257048576,
+            "movie_timescale": 240000,
+            "requested_mode": "hardware",
+            "video_bitrate": 1500000,
+            "video_gop_size": 15,
+            "video_has_b_frames": 0,
+            "video_max_b_frames": 0,
+            "video_profile": 100,
+            "video_time_base_den": 30000,
+            "video_time_base_num": 1
+          },
+          "output_bytes": 97359,
+          "packet_bytes": 92840,
+          "video_duration_from_contract_packets": 108,
+          "video_eof": true,
+          "video_frames": 108,
+          "video_packets": 108
+        }
+      },
+      "name": "structural",
+      "package": "/private/tmp/deadpan-render-jobs-95xpekq5/native-inputs/source.deadpan",
+      "path": "/private/tmp/deadpan-render-jobs-95xpekq5/native-output-2/published-structural.mp4",
+      "publication": {
+        "contains_generated_pictures": false,
+        "movie": "/private/tmp/deadpan-render-jobs-95xpekq5/native-output-2/published-structural.mp4",
+        "movie_bytes": 97359,
+        "movie_sha256": "12a48645584a9b83100b996c69e7fd93c2df29f576499afa0b3b27344fa03a79",
+        "publication_id": "942e97ce-a77a-4e01-b673-9aa7f034adfd",
+        "report": "/private/tmp/deadpan-render-jobs-95xpekq5/native-output-2/deadpan-render-942e97ce-a77a-4e01-b673-9aa7f034adfd.json",
+        "report_bytes": 5751,
+        "report_sha256": "bb08efd803cf370f4e2df8bf52734540625cad9a8d88705fb25c7c8e7db2577f"
+      },
+      "publication_progress": [
+        "capturing_provenance",
+        "copying_destination",
+        "checking_destination",
+        "writing_report",
+        "ready_to_publish"
+      ],
+      "publication_status": "published",
+      "retained_attempt": {
+        "attempt_id": "structural-encode-1",
+        "cancellation_requested": false,
+        "cancellation_token": "structural-encode-cancel-1",
+        "checkpoint_attempt_id": "structural-encode-1",
+        "diagnostic": null,
+        "job_id": "durable-structural",
+        "ordinal": 1,
+        "state": "encoded_retained",
+        "transition_sequence": 3,
+        "verification": null
+      },
+      "stale_transition_error": "Render job metadata is invalid: stale render transition sequence or cancellation token",
+      "status": "passed",
+      "verification": {
+        "audio_edit_media_time": 1024,
+        "audio_packets": 170,
+        "audio_samples": 172973,
+        "contract": {
+          "choice": {
+            "b_frames": "none",
+            "mode": "hardware"
+          },
+          "picture": {
+            "canvas": [
+              320,
+              180
+            ],
+            "color_policy": "sdr_rec709",
+            "frame_count": 108,
+            "frame_rate": {
+              "denominator": 1001,
+              "numerator": 30000
+            },
+            "project_audio_end": 205005,
+            "project_audio_start": 32032,
+            "project_id": "project-picture-qualification",
+            "range": {
+              "end": 128,
+              "start": 20
+            },
+            "raster": [
+              320,
+              180
+            ],
+            "relative_aspect_error": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "revision_id": "background",
+            "terminal_pts": 108108,
+            "time_base": {
+              "denominator": 30000,
+              "numerator": 1
+            }
+          }
+        },
+        "document_sha256": "af8e5672cee86b4d64827ef4e86b8af5ad9b9ca11d5c8b46e18e0f4d7d5663ff",
+        "fresh_gop_frames": 108,
+        "gops": 7,
+        "manual_first_sample": -1024,
+        "manual_physical_samples": 174080,
+        "maximum_b_run": 0,
+        "movie_bytes": 97359,
+        "movie_sha256": "12a48645584a9b83100b996c69e7fd93c2df29f576499afa0b3b27344fa03a79",
+        "movie_timescale": 240000,
+        "ordinary_first_sample": 0,
+        "ordinary_physical_samples": 173056,
+        "policy_version": 1,
+        "runtime_versions": [
+          4066151,
+          4064103,
+          3934311
+        ],
+        "video_edit_media_time": 0,
+        "video_frames": 108,
+        "video_packets": 108
+      },
+      "verification_progress": [
+        {
+          "completed": 99,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 207,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 261,
+          "stage": "packets",
+          "total": 278
+        },
+        {
+          "completed": 8,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 28,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 48,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 68,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 88,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 108,
+          "stage": "pictures",
+          "total": 108
+        },
+        {
+          "completed": 25600,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 56320,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 87040,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 117760,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 148480,
+          "stage": "manual_audio",
+          "total": 172973
+        },
+        {
+          "completed": 1024,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 31744,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 62464,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 93184,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 123904,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 154624,
+          "stage": "ordinary_audio",
+          "total": 172973
+        },
+        {
+          "completed": 172973,
+          "stage": "ordinary_audio",
+          "total": 172973
+        }
+      ],
+      "verified_attempt": {
+        "attempt_id": "structural-verify-2",
+        "cancellation_requested": false,
+        "cancellation_token": "structural-verify-cancel-2",
+        "checkpoint_attempt_id": "structural-encode-1",
+        "diagnostic": null,
+        "job_id": "durable-structural",
+        "ordinal": 2,
+        "state": "verified",
+        "transition_sequence": 3,
+        "verification": {
+          "movie_byte_length": 97359,
+          "movie_sha256": "12a48645584a9b83100b996c69e7fd93c2df29f576499afa0b3b27344fa03a79",
+          "report": {
+            "audio_edit_media_time": 1024,
+            "audio_packets": 170,
+            "audio_samples": 172973,
+            "contract": {
+              "choice": {
+                "b_frames": "none",
+                "mode": "hardware"
+              },
+              "picture": {
+                "canvas": [
+                  320,
+                  180
+                ],
+                "color_policy": "sdr_rec709",
+                "frame_count": 108,
+                "frame_rate": {
+                  "denominator": 1001,
+                  "numerator": 30000
+                },
+                "project_audio_end": 205005,
+                "project_audio_start": 32032,
+                "project_id": "project-picture-qualification",
+                "range": {
+                  "end": 128,
+                  "start": 20
+                },
+                "raster": [
+                  320,
+                  180
+                ],
+                "relative_aspect_error": {
+                  "denominator": "1",
+                  "numerator": "0"
+                },
+                "revision_id": "background",
+                "terminal_pts": 108108,
+                "time_base": {
+                  "denominator": 30000,
+                  "numerator": 1
+                }
+              }
+            },
+            "document_sha256": "af8e5672cee86b4d64827ef4e86b8af5ad9b9ca11d5c8b46e18e0f4d7d5663ff",
+            "fresh_gop_frames": 108,
+            "gops": 7,
+            "manual_first_sample": -1024,
+            "manual_physical_samples": 174080,
+            "maximum_b_run": 0,
+            "movie_bytes": 97359,
+            "movie_sha256": "12a48645584a9b83100b996c69e7fd93c2df29f576499afa0b3b27344fa03a79",
+            "movie_timescale": 240000,
+            "ordinary_first_sample": 0,
+            "ordinary_physical_samples": 173056,
+            "policy_version": 1,
+            "runtime_versions": [
+              4066151,
+              4064103,
+              3934311
+            ],
+            "video_edit_media_time": 0,
+            "video_frames": 108,
+            "video_packets": 108
+          },
+          "schema_version": 1,
+          "validator_id": "deadpan-sdr-finished-file",
+          "validator_version": "0.1.0:policy-1"
+        }
+      }
+    },
+    {
+      "checkpoint": {
+        "encoding_attempt_id": "generated-encode-1",
+        "job_id": "durable-generated",
+        "media": {
+          "manifest": {
+            "byte_length": 1892,
+            "content": {
+              "algorithm": "blake3",
+              "digest": "5f5b2bf8d8aabddd9d8918ef724f6e6bb075656b47a21942508a31cca24f4e88"
+            }
+          },
+          "manifest_sha256": "07e5482991accf5cdc605c6629a40cfc96a1162450562a4c18e3251ffb56ed2f",
+          "movie": {
+            "byte_length": 227109,
+            "content": {
+              "algorithm": "blake3",
+              "digest": "c83b18ff46d13e4691cb6a5d573a731f04d31263efa8a0105ba49229754d2b95"
+            }
+          },
+          "movie_sha256": "d1104ed7265440be7e947e46a31d010d7af8341a93d3e583e6aabb20659b214a"
+        }
+      },
+      "checks": [
+        {
+          "actual": {
+            "range": {
+              "end": 30,
+              "start": 0
+            }
+          },
+          "label": "representative picture coverage",
+          "passed": true
+        },
+        {
+          "actual": {
+            "bytes": 55234,
+            "sha256": "d7efbb44d0e76f02c05d12a935e940739479092c170fcf988546fdd204c30b39",
+            "table_rows": [
+              8,
+              4,
+              1,
+              1
+            ]
+          },
+          "label": "job allocation preserves authored rows and history",
+          "passed": true
+        },
+        {
+          "actual": {
+            "authoring": {
+              "bytes": 55234,
+              "sha256": "d7efbb44d0e76f02c05d12a935e940739479092c170fcf988546fdd204c30b39",
+              "table_rows": [
+                8,
+                4,
+                1,
+                1
+              ]
+            },
+            "captured_revision": "ui-generated-ready",
+            "live_revision": "ui-generated-ready"
+          },
+          "label": "checkpoint preserves historical capture and current authored rows",
+          "passed": true
+        },
+        {
+          "actual": {
+            "state": "encoded_retained"
+          },
+          "label": "read-only reopen does not recover an active attempt",
+          "passed": true
+        },
+        {
+          "actual": {
+            "attempt_id": "generated-encode-1",
+            "cancellation_requested": false,
+            "cancellation_token": "generated-encode-cancel-1",
+            "checkpoint_attempt_id": "generated-encode-1",
+            "diagnostic": {
+              "code": "InterruptedOnOpen",
+              "detail": "Writable reopen interrupted abandoned render work; retry explicitly. Retained checkpoints remain available."
+            },
+            "job_id": "durable-generated",
+            "ordinal": 1,
+            "state": "interrupted",
+            "transition_sequence": 4,
+            "verification": null
+          },
+          "label": "writer reopen interrupts the attempt and preserves its checkpoint",
+          "passed": true
+        },
+        {
+          "actual": {
+            "attempt_count": 2
+          },
+          "label": "the job has exactly one encoding attempt and one verification retry",
+          "passed": true
+        },
+        {
+          "actual": {
+            "encoding_attempt": "generated-encode-1",
+            "movie_sha256": "d1104ed7265440be7e947e46a31d010d7af8341a93d3e583e6aabb20659b214a",
+            "verification_attempt": "generated-verify-2"
+          },
+          "label": "fresh verification uses the retained movie without another encode",
+          "passed": true
+        },
+        {
+          "actual": {
+            "contains_generated_pictures": true
+          },
+          "label": "published movie has the expected Generated coverage",
+          "passed": true
+        },
+        {
+          "actual": {
+            "bytes": 55234,
+            "sha256": "d7efbb44d0e76f02c05d12a935e940739479092c170fcf988546fdd204c30b39",
+            "table_rows": [
+              8,
+              4,
+              1,
+              1
+            ]
+          },
+          "label": "recovery, verification and publication preserve exact authoring state",
+          "passed": true
+        },
+        {
+          "actual": {
+            "checkpoint": {
+              "manifest": {
+                "byte_length": 1892,
+                "content": {
+                  "algorithm": "blake3",
+                  "digest": "5f5b2bf8d8aabddd9d8918ef724f6e6bb075656b47a21942508a31cca24f4e88"
+                }
+              },
+              "manifest_sha256": "07e5482991accf5cdc605c6629a40cfc96a1162450562a4c18e3251ffb56ed2f",
+              "movie": {
+                "byte_length": 227109,
+                "content": {
+                  "algorithm": "blake3",
+                  "digest": "c83b18ff46d13e4691cb6a5d573a731f04d31263efa8a0105ba49229754d2b95"
+                }
+              },
+              "movie_sha256": "d1104ed7265440be7e947e46a31d010d7af8341a93d3e583e6aabb20659b214a"
+            },
+            "state": "verified"
+          },
+          "label": "terminal observation survives reopen without changing history",
+          "passed": true
+        }
+      ],
+      "closed_writer_handle_error": {
+        "code": "StorageSessionClosed",
+        "message": "object storage session is closed"
+      },
+      "contract": {
+        "canvas": [
+          1920,
+          1080
+        ],
+        "color_policy": "sdr_rec709",
+        "frame_count": 30,
+        "frame_rate": {
+          "denominator": 1001,
+          "numerator": 30000
+        },
+        "project_audio_end": 48048,
+        "project_audio_start": 0,
+        "project_id": "project",
+        "range": {
+          "end": 30,
+          "start": 0
+        },
+        "raster": [
+          1920,
+          1080
+        ],
+        "relative_aspect_error": {
+          "denominator": "1",
+          "numerator": "0"
+        },
+        "revision_id": "ui-generated-ready",
+        "terminal_pts": 30030,
+        "time_base": {
+          "denominator": 30000,
+          "numerator": 1
+        }
+      },
+      "coverage": {
+        "background": 0,
+        "freeze": 0,
+        "generated": 30,
+        "original": 0,
+        "scope": "indexed committed picture providers; native encode separately admits each sampled provider",
+        "source": 0
+      },
+      "elapsed_seconds": 44.73751525,
+      "encoded_candidates": 1,
+      "encoding_attempt": {
+        "attempt_id": "generated-encode-1",
+        "cancellation_requested": false,
+        "cancellation_token": "generated-encode-cancel-1",
+        "checkpoint_attempt_id": null,
+        "diagnostic": null,
+        "job_id": "durable-generated",
+        "ordinal": 1,
+        "state": "encoding",
+        "transition_sequence": 2,
+        "verification": null
+      },
+      "encoding_progress": [
+        {
+          "completed_audio_samples": 0,
+          "completed_frames": 1,
+          "elapsed_seconds": 1.598577375,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 2048,
+          "completed_frames": 1,
+          "elapsed_seconds": 1.624753291,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 4096,
+          "completed_frames": 2,
+          "elapsed_seconds": 3.041812375,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 5120,
+          "completed_frames": 4,
+          "elapsed_seconds": 5.892050125,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 7168,
+          "completed_frames": 5,
+          "elapsed_seconds": 7.303705833,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 9216,
+          "completed_frames": 6,
+          "elapsed_seconds": 8.735013333,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 11264,
+          "completed_frames": 7,
+          "elapsed_seconds": 10.147656083,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 13312,
+          "completed_frames": 8,
+          "elapsed_seconds": 11.57130325,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 15360,
+          "completed_frames": 9,
+          "elapsed_seconds": 12.983148416,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 16384,
+          "completed_frames": 11,
+          "elapsed_seconds": 15.817212833,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 18432,
+          "completed_frames": 12,
+          "elapsed_seconds": 17.234250041,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 20480,
+          "completed_frames": 13,
+          "elapsed_seconds": 18.642688583,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 22528,
+          "completed_frames": 14,
+          "elapsed_seconds": 20.0633935,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 24576,
+          "completed_frames": 15,
+          "elapsed_seconds": 21.4870795,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 26624,
+          "completed_frames": 16,
+          "elapsed_seconds": 22.900657875,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 27648,
+          "completed_frames": 18,
+          "elapsed_seconds": 25.750868208,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 29696,
+          "completed_frames": 19,
+          "elapsed_seconds": 27.150478625,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 31744,
+          "completed_frames": 20,
+          "elapsed_seconds": 28.564601625,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 33792,
+          "completed_frames": 21,
+          "elapsed_seconds": 29.980148833,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 35840,
+          "completed_frames": 22,
+          "elapsed_seconds": 31.395470083,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 36864,
+          "completed_frames": 24,
+          "elapsed_seconds": 34.240281125,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 38912,
+          "completed_frames": 25,
+          "elapsed_seconds": 35.655336208,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 40960,
+          "completed_frames": 26,
+          "elapsed_seconds": 37.075531375,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 43008,
+          "completed_frames": 27,
+          "elapsed_seconds": 38.53646125,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 45056,
+          "completed_frames": 28,
+          "elapsed_seconds": 39.94190375,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 47104,
+          "completed_frames": 29,
+          "elapsed_seconds": 41.354748875,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        },
+        {
+          "completed_audio_samples": 48048,
+          "completed_frames": 30,
+          "elapsed_seconds": 42.736093041,
+          "total_audio_samples": 48048,
+          "total_frames": 30
+        }
+      ],
+      "fresh_verifications": 1,
+      "intent": {
+        "document_sha256": "2e7fca9f6df4f0282bf5b0e547ea15b7eaf4d89f46cbd48640b26a49789d94c7",
+        "job_id": "durable-generated",
+        "policy": {
+          "b_frames": "none",
+          "encoder": "hardware",
+          "schema_version": 1,
+          "selection": "explicit_engineering"
+        },
+        "project_id": "project",
+        "range": {
+          "end": 30,
+          "start": 0
+        },
+        "revision_id": "ui-generated-ready",
+        "schema_version": 1
+      },
+      "interrupted_attempt": {
+        "attempt_id": "generated-encode-1",
+        "cancellation_requested": false,
+        "cancellation_token": "generated-encode-cancel-1",
+        "checkpoint_attempt_id": "generated-encode-1",
+        "diagnostic": {
+          "code": "InterruptedOnOpen",
+          "detail": "Writable reopen interrupted abandoned render work; retry explicitly. Retained checkpoints remain available."
+        },
+        "job_id": "durable-generated",
+        "ordinal": 1,
+        "state": "interrupted",
+        "transition_sequence": 4,
+        "verification": null
+      },
+      "manifest": {
+        "contract": {
+          "choice": {
+            "b_frames": "none",
+            "mode": "hardware"
+          },
+          "picture": {
+            "canvas": [
+              1920,
+              1080
+            ],
+            "color_policy": "sdr_rec709",
+            "frame_count": 30,
+            "frame_rate": {
+              "denominator": 1001,
+              "numerator": 30000
+            },
+            "project_audio_end": 48048,
+            "project_audio_start": 0,
+            "project_id": "project",
+            "range": {
+              "end": 30,
+              "start": 0
+            },
+            "raster": [
+              1920,
+              1080
+            ],
+            "relative_aspect_error": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "revision_id": "ui-generated-ready",
+            "terminal_pts": 30030,
+            "time_base": {
+              "denominator": 30000,
+              "numerator": 1
+            }
+          }
+        },
+        "document_sha256": "2e7fca9f6df4f0282bf5b0e547ea15b7eaf4d89f46cbd48640b26a49789d94c7",
+        "movie": {
+          "byte_length": 227109,
+          "reference": "output/movie.mp4",
+          "sha256": "d1104ed7265440be7e947e46a31d010d7af8341a93d3e583e6aabb20659b214a"
+        },
+        "report": {
+          "audio_eof": true,
+          "audio_packets": 48,
+          "audio_samples": 48048,
+          "faststart_read_closes": 1,
+          "faststart_read_opens": 1,
+          "info": {
+            "abi_version": 1,
+            "audio_bitrate": 384000,
+            "audio_frame_size": 1024,
+            "audio_initial_padding": 1024,
+            "audio_profile": 1,
+            "audio_time_base_den": 48000,
+            "audio_time_base_num": 1,
+            "audio_trailing_padding": 0,
+            "avcodec_version": 4066151,
+            "avformat_version": 4064103,
+            "avutil_version": 3934311,
+            "maximum_moov_bytes": 257048576,
+            "movie_timescale": 240000,
+            "requested_mode": "hardware",
+            "video_bitrate": 8000000,
+            "video_gop_size": 15,
+            "video_has_b_frames": 0,
+            "video_max_b_frames": 0,
+            "video_profile": 100,
+            "video_time_base_den": 30000,
+            "video_time_base_num": 1
+          },
+          "output_bytes": 227109,
+          "packet_bytes": 224849,
+          "video_duration_from_contract_packets": 30,
+          "video_eof": true,
+          "video_frames": 30,
+          "video_packets": 30
+        }
+      },
+      "name": "generated",
+      "package": "/private/tmp/deadpan-render-jobs-95xpekq5/native-inputs/generated.deadpan",
+      "path": "/private/tmp/deadpan-render-jobs-95xpekq5/native-output-2/published-generated.mp4",
+      "publication": {
+        "contains_generated_pictures": true,
+        "movie": "/private/tmp/deadpan-render-jobs-95xpekq5/native-output-2/published-generated.mp4",
+        "movie_bytes": 227109,
+        "movie_sha256": "d1104ed7265440be7e947e46a31d010d7af8341a93d3e583e6aabb20659b214a",
+        "publication_id": "d69e7eb6-5485-4d91-a2d5-011ef9df5699",
+        "report": "/private/tmp/deadpan-render-jobs-95xpekq5/native-output-2/deadpan-render-d69e7eb6-5485-4d91-a2d5-011ef9df5699.json",
+        "report_bytes": 6748,
+        "report_sha256": "513837860cfd71b4db6cf13e5057a7f359cd59fb39b1827485ad10fbf9c628a7"
+      },
+      "publication_progress": [
+        "capturing_provenance",
+        "copying_destination",
+        "checking_destination",
+        "writing_report",
+        "ready_to_publish"
+      ],
+      "publication_status": "published",
+      "retained_attempt": {
+        "attempt_id": "generated-encode-1",
+        "cancellation_requested": false,
+        "cancellation_token": "generated-encode-cancel-1",
+        "checkpoint_attempt_id": "generated-encode-1",
+        "diagnostic": null,
+        "job_id": "durable-generated",
+        "ordinal": 1,
+        "state": "encoded_retained",
+        "transition_sequence": 3,
+        "verification": null
+      },
+      "stale_transition_error": "Render job metadata is invalid: stale render transition sequence or cancellation token",
+      "status": "passed",
+      "verification": {
+        "audio_edit_media_time": 1024,
+        "audio_packets": 48,
+        "audio_samples": 48048,
+        "contract": {
+          "choice": {
+            "b_frames": "none",
+            "mode": "hardware"
+          },
+          "picture": {
+            "canvas": [
+              1920,
+              1080
+            ],
+            "color_policy": "sdr_rec709",
+            "frame_count": 30,
+            "frame_rate": {
+              "denominator": 1001,
+              "numerator": 30000
+            },
+            "project_audio_end": 48048,
+            "project_audio_start": 0,
+            "project_id": "project",
+            "range": {
+              "end": 30,
+              "start": 0
+            },
+            "raster": [
+              1920,
+              1080
+            ],
+            "relative_aspect_error": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "revision_id": "ui-generated-ready",
+            "terminal_pts": 30030,
+            "time_base": {
+              "denominator": 30000,
+              "numerator": 1
+            }
+          }
+        },
+        "document_sha256": "2e7fca9f6df4f0282bf5b0e547ea15b7eaf4d89f46cbd48640b26a49789d94c7",
+        "fresh_gop_frames": 30,
+        "gops": 2,
+        "manual_first_sample": -1024,
+        "manual_physical_samples": 49152,
+        "maximum_b_run": 0,
+        "movie_bytes": 227109,
+        "movie_sha256": "d1104ed7265440be7e947e46a31d010d7af8341a93d3e583e6aabb20659b214a",
+        "movie_timescale": 240000,
+        "ordinary_first_sample": 0,
+        "ordinary_physical_samples": 48128,
+        "policy_version": 1,
+        "runtime_versions": [
+          4066151,
+          4064103,
+          3934311
+        ],
+        "video_edit_media_time": 0,
+        "video_frames": 30,
+        "video_packets": 30
+      },
+      "verification_progress": [
+        {
+          "completed": 36,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 66,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 72,
+          "stage": "packets",
+          "total": 78
+        },
+        {
+          "completed": 3,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 8,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 13,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 18,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 23,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 28,
+          "stage": "pictures",
+          "total": 30
+        },
+        {
+          "completed": 5120,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 27648,
+          "stage": "manual_audio",
+          "total": 48048
+        },
+        {
+          "completed": 5120,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 17408,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 39936,
+          "stage": "ordinary_audio",
+          "total": 48048
+        },
+        {
+          "completed": 48048,
+          "stage": "ordinary_audio",
+          "total": 48048
+        }
+      ],
+      "verified_attempt": {
+        "attempt_id": "generated-verify-2",
+        "cancellation_requested": false,
+        "cancellation_token": "generated-verify-cancel-2",
+        "checkpoint_attempt_id": "generated-encode-1",
+        "diagnostic": null,
+        "job_id": "durable-generated",
+        "ordinal": 2,
+        "state": "verified",
+        "transition_sequence": 3,
+        "verification": {
+          "movie_byte_length": 227109,
+          "movie_sha256": "d1104ed7265440be7e947e46a31d010d7af8341a93d3e583e6aabb20659b214a",
+          "report": {
+            "audio_edit_media_time": 1024,
+            "audio_packets": 48,
+            "audio_samples": 48048,
+            "contract": {
+              "choice": {
+                "b_frames": "none",
+                "mode": "hardware"
+              },
+              "picture": {
+                "canvas": [
+                  1920,
+                  1080
+                ],
+                "color_policy": "sdr_rec709",
+                "frame_count": 30,
+                "frame_rate": {
+                  "denominator": 1001,
+                  "numerator": 30000
+                },
+                "project_audio_end": 48048,
+                "project_audio_start": 0,
+                "project_id": "project",
+                "range": {
+                  "end": 30,
+                  "start": 0
+                },
+                "raster": [
+                  1920,
+                  1080
+                ],
+                "relative_aspect_error": {
+                  "denominator": "1",
+                  "numerator": "0"
+                },
+                "revision_id": "ui-generated-ready",
+                "terminal_pts": 30030,
+                "time_base": {
+                  "denominator": 30000,
+                  "numerator": 1
+                }
+              }
+            },
+            "document_sha256": "2e7fca9f6df4f0282bf5b0e547ea15b7eaf4d89f46cbd48640b26a49789d94c7",
+            "fresh_gop_frames": 30,
+            "gops": 2,
+            "manual_first_sample": -1024,
+            "manual_physical_samples": 49152,
+            "maximum_b_run": 0,
+            "movie_bytes": 227109,
+            "movie_sha256": "d1104ed7265440be7e947e46a31d010d7af8341a93d3e583e6aabb20659b214a",
+            "movie_timescale": 240000,
+            "ordinary_first_sample": 0,
+            "ordinary_physical_samples": 48128,
+            "policy_version": 1,
+            "runtime_versions": [
+              4066151,
+              4064103,
+              3934311
+            ],
+            "video_edit_media_time": 0,
+            "video_frames": 30,
+            "video_packets": 30
+          },
+          "schema_version": 1,
+          "validator_id": "deadpan-sdr-finished-file",
+          "validator_version": "0.1.0:policy-1"
+        }
+      }
+    }
+  ],
+  "elapsed_seconds": 77.677551792,
+  "encoded_candidates": 2,
+  "encoded_picture_frames": 138,
+  "fresh_verifications": 2,
+  "limitations": [
+    "explicit engineering hardware/no-B-frame policy",
+    "restart is an orderly writer close, not an injected process crash",
+    "no durable publication journal or publication crash reconciliation",
+    "independent content comparison remains a separate check",
+    "no native Render UI, automatic encoder selection, full audio/effects, HDR or release qualification"
+  ],
+  "published_movies": 2,
+  "schema_version": 1,
+  "scope": "two fresh native encodes, durable movie/manifest checkpoints, writer restart, fresh isolated verification and destination publication",
+  "status": "passed",
+  "worker": "/Users/michael/Code/deadpan/target/debug/deadpan-cli"
+}

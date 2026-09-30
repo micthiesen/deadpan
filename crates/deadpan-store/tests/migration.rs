@@ -40,6 +40,8 @@ mod interior_insert;
 mod moment_splice;
 #[path = "migration/picture_context.rs"]
 mod picture_context;
+#[path = "migration/render_jobs.rs"]
+mod render_jobs;
 #[path = "migration/retime.rs"]
 mod retime;
 #[path = "migration/sequence_insert.rs"]
@@ -52,6 +54,27 @@ mod sound_routes;
 mod sounds;
 #[path = "migration/source_selection.rs"]
 mod source_selection;
+
+/// Synthetic old-grammar fixtures start from a modern empty operational store.
+/// Remove only its empty render tables before relabeling the legacy schema so
+/// tests still reach the intended grammar/replay checks. Authentic SQL fixtures
+/// are never transformed through this helper.
+fn remove_empty_render_tables(connection: &Connection) -> Result {
+    for table in [
+        "render_candidate_checkpoints",
+        "render_job_heads",
+        "render_attempts",
+        "render_jobs",
+    ] {
+        assert_eq!(
+            connection.query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |row| row
+                .get::<_, i64>(0))?,
+            0
+        );
+        connection.execute_batch(&format!("DROP TABLE {table}"))?;
+    }
+    Ok(())
+}
 
 #[test]
 fn schema_twenty_one_retains_exact_lineage_and_does_not_invent_audio_bindings() -> Result {

@@ -79,7 +79,7 @@ MP4 tables, every decoded picture, fresh GOPs and manual/ordinary AAC presentati
 before returning a private verified candidate. The [publication host](RENDER_PUBLICATION.md)
 then checks an exact destination copy and publishes the local report and MP4 under
 exclusive names, with explicit outcomes for failures after the movie rename.
-Durable render jobs/recovery, native Render and public headless render commands
+Durable publication recovery, native Render and public headless render commands
 remain required. Full audio/effects, HDR, automatic platform policy, performance
 and release hardware/OS coverage also remain open. Fixture content and platform
 qualification remain separate from per-file structural/decode admission.

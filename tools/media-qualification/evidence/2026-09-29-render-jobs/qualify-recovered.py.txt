@@ -1,0 +1,72 @@
+"""Freshly decode recovered publications against previously measured inputs."""
+import copy
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import sys
+import traceback
+
+ROOT = Path(__file__).resolve().parent
+REPO = Path('/Users/michael/Code/deadpan')
+sys.path.insert(0, str(REPO / 'tools/media-qualification/compatible'))
+from qualify_project_encode import ProjectEncodeHarness
+
+prior = REPO / 'tools/media-qualification/evidence/2026-09-29-render-publication'
+capture_path = prior / 'metal-publication-report.json.gz'
+decode_path = prior / 'decoded-current-report.json.gz'
+capture = json.loads(gzip.decompress(capture_path.read_bytes()))
+decoded = json.loads(gzip.decompress(decode_path.read_bytes()))
+current_path = ROOT / 'native-jobs-report-2.json'
+current = json.loads(current_path.read_bytes())
+assert current['status'] == 'passed' and len(current['cases']) == 2
+assert {case['name'] for case in current['cases']} == {'structural', 'generated'}
+assert capture['status'] == 'passed'
+assert decoded['result'] == 'passed scoped project encoding'
+assert all(row['passed'] for row in decoded['final_file_admission'])
+admitted = {str(Path(row['path']).resolve()): row['expected'] for row in decoded['final_file_admission'] if 'path' in row}
+work = ROOT / 'decoded-recovered'
+work.mkdir(exist_ok=False)
+harness = ProjectEncodeHarness(work, False, Path('/tmp/deadpan-ui-ffmpeg-build.json'), REPO / 'target/debug/deadpan-cli')
+harness.report['scope'] = 'two freshly encoded, retained, reopened, reverified and published project files; full planes and canonical PCM compared with previously measured identical immutable inputs'
+try:
+    harness.prepare()
+    for path in [capture_path, decode_path, current_path]:
+        artifact = harness.artifact(path)
+        harness.admitted_files[str(path.resolve())] = artifact['sha256']
+    cases = []
+    for new in current['cases']:
+        old = next(case for case in capture['encoded']['cases'] if case['name'] == new['name'])
+        assert new['status'] == 'passed' and all(check['passed'] for check in new['checks'])
+        assert old['contract'] == new['contract'] == new['manifest']['contract']['picture']
+        assert old['manifest']['document_sha256'] == new['intent']['document_sha256'] == new['manifest']['document_sha256']
+        assert old['manifest']['contract']['choice'] == new['manifest']['contract']['choice']
+        case = copy.deepcopy(new)
+        references = {}
+        for key in ['picture_reference', 'audio_reference']:
+            path = Path(old[key]).resolve()
+            with path.open('rb') as file:
+                actual = hashlib.file_digest(file, 'sha256').hexdigest()
+            assert actual == admitted[str(path)], (path, actual)
+            case[key] = str(path)
+            references[key] = {'path': str(path), 'sha256': actual, 'extent': path.stat().st_size}
+        case['reference_binding'] = {'prior_capture': str(capture_path), 'prior_decode': str(decode_path),
+                                     'same_document_hash': True, 'same_complete_contract': True, 'references': references}
+        cases.append(case)
+        try:
+            harness.capture_project(case)
+        except Exception as error:
+            harness.report['cases'][-1]['failure'] = str(error)
+            harness.report['cases'][-1]['traceback'] = traceback.format_exc()
+    (ROOT / 'recovered-reference-binding.json').write_text(json.dumps(cases, indent=2) + '\n')
+    harness.report['result'] = 'passed recovered publications' if len(harness.report['cases']) == 2 and all(case['passed'] for case in harness.report['cases']) else 'failed recovered publications'
+except Exception as error:
+    harness.report['failure'] = str(error)
+    harness.report['traceback'] = traceback.format_exc()
+finally:
+    harness.finish_admission()
+    if harness.process_faults:
+        harness.report['result'] = 'failed: process or sanitizer fault'
+    (work / 'report.json').write_text(json.dumps(harness.report, indent=2) + '\n')
+    print(json.dumps({'result': harness.report['result'], 'cases': [{'name': row['name'], 'passed': row['passed'], 'failure': row.get('failure')} for row in harness.report['cases']]}))
+raise SystemExit(0 if harness.report['result'] == 'passed recovered publications' else 1)

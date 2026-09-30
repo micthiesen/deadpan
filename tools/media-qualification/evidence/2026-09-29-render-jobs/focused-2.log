@@ -1,0 +1,14 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.00s
+     Running tests/encoded_verification.rs (target/debug/deps/encoded_verification-243d20298b1c3667)
+
+running 6 tests
+test jobs::closing_owner_cancels_and_reaps_a_running_encode_without_user_cancellation ... ok
+test jobs::closing_owner_cancels_and_reaps_a_running_verifier_without_user_cancellation ... ok
+test jobs::corrupted_retained_movie_cannot_reuse_saved_manifest_or_verification ... ok
+test jobs::malformed_or_retargeted_retained_manifests_fail_before_verification ... ok
+test jobs::owner_revocation_during_native_verification_cannot_admit_a_candidate ... ok
+test jobs::restart_preserves_checkpoint_and_fresh_attempt_reverifies_exact_bytes ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 1.19s
+

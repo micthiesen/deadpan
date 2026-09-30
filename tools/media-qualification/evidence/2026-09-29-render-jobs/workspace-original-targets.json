@@ -1,0 +1,1157 @@
+[
+  {
+    "target": "Running unittests src/main.rs (target/debug/deps/deadpan_app-2393615671c93d49)",
+    "status": "ok",
+    "passed": 266,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/headless.rs (target/debug/deps/headless-993afbad716ea47c)",
+    "status": "ok",
+    "passed": 2,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running unittests src/lib.rs (target/debug/deps/deadpan_audio-650769edc03772c9)",
+    "status": "ok",
+    "passed": 64,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_context.rs (target/debug/deps/audio_context-5667c1db79d16315)",
+    "status": "ok",
+    "passed": 4,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_definition.rs (target/debug/deps/audio_definition-01e58c9a33cc49d2)",
+    "status": "ok",
+    "passed": 49,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_domain.rs (target/debug/deps/audio_domain-be928cb41bc270b8)",
+    "status": "ok",
+    "passed": 12,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/composite_insert.rs (target/debug/deps/composite_insert-422581ee2079daa9)",
+    "status": "ok",
+    "passed": 14,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/gap_bindings.rs (target/debug/deps/gap_bindings-342be7b5555555e1)",
+    "status": "ok",
+    "passed": 10,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/gap_definition.rs (target/debug/deps/gap_definition-301057538617b742)",
+    "status": "ok",
+    "passed": 6,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/limiter.rs (target/debug/deps/limiter-c5a6d2facb856b88)",
+    "status": "ok",
+    "passed": 9,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/loudness.rs (target/debug/deps/loudness-e15bb58af72b303f)",
+    "status": "ok",
+    "passed": 9,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/reanchors.rs (target/debug/deps/reanchors-44e191f91f17053e)",
+    "status": "ok",
+    "passed": 6,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/reference_policy.rs (target/debug/deps/reference_policy-aab2bb1d8bb55a89)",
+    "status": "ok",
+    "passed": 4,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/resample.rs (target/debug/deps/resample-c5abff6c52c81469)",
+    "status": "ok",
+    "passed": 7,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/sequence.rs (target/debug/deps/sequence-43c3e15c4129c9f2)",
+    "status": "ok",
+    "passed": 12,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/session.rs (target/debug/deps/session-9e7115f7e6878bc7)",
+    "status": "ok",
+    "passed": 8,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/signal_transfer.rs (target/debug/deps/signal_transfer-24db6eadf8125dca)",
+    "status": "ok",
+    "passed": 7,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/sound_events.rs (target/debug/deps/sound_events-de92e75232e19f0f)",
+    "status": "ok",
+    "passed": 5,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/stages.rs (target/debug/deps/stages-ac19ce5a8c9455cb)",
+    "status": "ok",
+    "passed": 71,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/true_peak.rs (target/debug/deps/true_peak-6c759d162c5dd168)",
+    "status": "ok",
+    "passed": 7,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running unittests src/lib.rs (target/debug/deps/deadpan_cli-ec3623b51d6953e6)",
+    "status": "ok",
+    "passed": 106,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running unittests src/main.rs (target/debug/deps/deadpan_cli-58a8f80c9d886ae0)",
+    "status": "ok",
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_context.rs (target/debug/deps/audio_context-3d2ec90bfe0c75a4)",
+    "status": "ok",
+    "passed": 3,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_inspection.rs (target/debug/deps/audio_inspection-dd5944b52636540d)",
+    "status": "ok",
+    "passed": 18,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/boundary_location.rs (target/debug/deps/boundary_location-bfb62c7640148c0b)",
+    "status": "ok",
+    "passed": 5,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/doctor.rs (target/debug/deps/doctor-7e659a178b1754fd)",
+    "status": "ok",
+    "passed": 2,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/encoded_render.rs (target/debug/deps/encoded_render-2b765187f163c85d)",
+    "status": "ok",
+    "passed": 7,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/encoded_verification.rs (target/debug/deps/encoded_verification-b18796b434988796)",
+    "status": "ok",
+    "passed": 15,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/offline_audio.rs (target/debug/deps/offline_audio-ed571022cf1082fb)",
+    "status": "ok",
+    "passed": 4,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/original_commands.rs (target/debug/deps/original_commands-167c81cdaafd7b4f)",
+    "status": "ok",
+    "passed": 2,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/project_commands.rs (target/debug/deps/project_commands-835a719032b277c5)",
+    "status": "FAILED",
+    "passed": 16,
+    "failed": 1,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/render_worker.rs (target/debug/deps/render_worker-88724ad057c57cac)",
+    "status": "ok",
+    "passed": 5,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/source_registration.rs (target/debug/deps/source_registration-562085cf08b83f8d)",
+    "status": "ok",
+    "passed": 8,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running unittests src/lib.rs (target/debug/deps/deadpan_core-2dcf12ea8aa341da)",
+    "status": "ok",
+    "passed": 89,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/allocation_projection.rs (target/debug/deps/allocation_projection-a0e5716cca9f8bf9)",
+    "status": "ok",
+    "passed": 8,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/anchors.rs (target/debug/deps/anchors-1bef0f6e2d04720a)",
+    "status": "ok",
+    "passed": 35,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_binding_capture.rs (target/debug/deps/audio_binding_capture-e7662ae95bb78ad5)",
+    "status": "ok",
+    "passed": 6,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_bindings.rs (target/debug/deps/audio_bindings-e1f8150e2aa240b2)",
+    "status": "ok",
+    "passed": 36,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_context.rs (target/debug/deps/audio_context-c3827a1dacbe14ca)",
+    "status": "ok",
+    "passed": 12,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_edges.rs (target/debug/deps/audio_edges-612e050ce3e2bda0)",
+    "status": "ok",
+    "passed": 5,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_gain.rs (target/debug/deps/audio_gain-ecc6fb7a26b54003)",
+    "status": "ok",
+    "passed": 14,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_lineage.rs (target/debug/deps/audio_lineage-bd768f9565d8151e)",
+    "status": "ok",
+    "passed": 10,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_reference.rs (target/debug/deps/audio_reference-1e73c65a58bbcf9b)",
+    "status": "ok",
+    "passed": 15,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/document.rs (target/debug/deps/document-503c920598dd87ab)",
+    "status": "ok",
+    "passed": 17,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/framing.rs (target/debug/deps/framing-ddc8848927340544)",
+    "status": "ok",
+    "passed": 13,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/gap_overrides.rs (target/debug/deps/gap_overrides-4d8ca4adca377b42)",
+    "status": "ok",
+    "passed": 9,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/gap_projection.rs (target/debug/deps/gap_projection-d241dad51438b0eb)",
+    "status": "ok",
+    "passed": 7,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/generated_holds.rs (target/debug/deps/generated_holds-b9ea8d0c9d3b5ca3)",
+    "status": "ok",
+    "passed": 6,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/hold_audio.rs (target/debug/deps/hold_audio-0c99334134755425)",
+    "status": "ok",
+    "passed": 5,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/insert_time.rs (target/debug/deps/insert_time-131b9ef526bbda1f)",
+    "status": "ok",
+    "passed": 29,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/legacy_audio_lineage.rs (target/debug/deps/legacy_audio_lineage-5456b3ba084e3f90)",
+    "status": "ok",
+    "passed": 2,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/legacy_audio_selection.rs (target/debug/deps/legacy_audio_selection-1770bf24763bceb4)",
+    "status": "ok",
+    "passed": 21,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/legacy_marks.rs (target/debug/deps/legacy_marks-f25e5986c6fa3e18)",
+    "status": "ok",
+    "passed": 5,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/legacy_split.rs (target/debug/deps/legacy_split-d9903d7549a15431)",
+    "status": "ok",
+    "passed": 4,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/mark_fragments.rs (target/debug/deps/mark_fragments-eba131cdadd6f5e1)",
+    "status": "ok",
+    "passed": 9,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/mark_resolution.rs (target/debug/deps/mark_resolution-aa270e7c6483bdd3)",
+    "status": "ok",
+    "passed": 9,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/marks.rs (target/debug/deps/marks-0225a1e5731a663e)",
+    "status": "ok",
+    "passed": 18,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/node_gain.rs (target/debug/deps/node_gain-b0a487b863f31181)",
+    "status": "ok",
+    "passed": 11,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/occurrence_edits.rs (target/debug/deps/occurrence_edits-443e51a8f16bdcd8)",
+    "status": "ok",
+    "passed": 8,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/partitions.rs (target/debug/deps/partitions-1d46d4d6c139b632)",
+    "status": "ok",
+    "passed": 5,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/picture_context.rs (target/debug/deps/picture_context-480b2d32e21a0d0f)",
+    "status": "ok",
+    "passed": 20,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/play_overrides.rs (target/debug/deps/play_overrides-1cc415136f76b8c0)",
+    "status": "ok",
+    "passed": 8,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/presentation_basis.rs (target/debug/deps/presentation_basis-b7e54173f6ed70da)",
+    "status": "ok",
+    "passed": 15,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/repeat_gap_layout.rs (target/debug/deps/repeat_gap_layout-0c24edcdab1375d9)",
+    "status": "ok",
+    "passed": 6,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/retime_edits.rs (target/debug/deps/retime_edits-62401688f73b8613)",
+    "status": "ok",
+    "passed": 6,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/sound_allowances.rs (target/debug/deps/sound_allowances-d651847447b7ea0d)",
+    "status": "ok",
+    "passed": 10,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/sound_events.rs (target/debug/deps/sound_events-cb508a21f90233af)",
+    "status": "ok",
+    "passed": 7,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/sound_routes.rs (target/debug/deps/sound_routes-cd42f229d84afc25)",
+    "status": "ok",
+    "passed": 19,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/sound_routing.rs (target/debug/deps/sound_routing-7031bd22dc2138ee)",
+    "status": "ok",
+    "passed": 9,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/source_import.rs (target/debug/deps/source_import-c531864a56638cff)",
+    "status": "ok",
+    "passed": 7,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/source_view.rs (target/debug/deps/source_view-e0660fa2bd67c9e4)",
+    "status": "ok",
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/split.rs (target/debug/deps/split-61781d9f1baaf089)",
+    "status": "ok",
+    "passed": 18,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running unittests src/lib.rs (target/debug/deps/deadpan_dsp-e20d9a32cd90d551)",
+    "status": "ok",
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/canonical.rs (target/debug/deps/canonical-09f4240a9e3764a6)",
+    "status": "ok",
+    "passed": 11,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/finite_peak.rs (target/debug/deps/finite_peak-979a6959e98b0411)",
+    "status": "ok",
+    "passed": 3,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running unittests src/lib.rs (target/debug/deps/deadpan_encode-d68dce82b4ba628d)",
+    "status": "ok",
+    "passed": 8,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/policy.rs (target/debug/deps/policy-d736d9ba89d05376)",
+    "status": "ok",
+    "passed": 5,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running unittests src/lib.rs (target/debug/deps/deadpan_fileclone-6887af3b803d82c1)",
+    "status": "ok",
+    "passed": 4,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running unittests src/lib.rs (target/debug/deps/deadpan_jobs-8c5e8cb738bd2693)",
+    "status": "ok",
+    "passed": 9,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/artifact.rs (target/debug/deps/artifact-e7cdfb3273c79ea0)",
+    "status": "ok",
+    "passed": 9,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/generation_plan.rs (target/debug/deps/generation_plan-a47965ffdf25d94f)",
+    "status": "ok",
+    "passed": 10,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/lifecycle.rs (target/debug/deps/lifecycle-a2527113838c1e42)",
+    "status": "ok",
+    "passed": 15,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/protocol.rs (target/debug/deps/protocol-65df475a3ed62f2c)",
+    "status": "ok",
+    "passed": 11,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/supervisor.rs (target/debug/deps/supervisor-3628ae54e589865c)",
+    "status": "ok",
+    "passed": 17,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running unittests examples/qualify_model_worker.rs (target/debug/examples/qualify_model_worker-5b2adf81611ceb0f)",
+    "status": "ok",
+    "passed": 3,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running unittests src/lib.rs (target/debug/deps/deadpan_media-5e8acdc419339752)",
+    "status": "ok",
+    "passed": 20,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_session.rs (target/debug/deps/audio_session-f5c659a4e34cc9e2)",
+    "status": "ok",
+    "passed": 6,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/host_boundary.rs (target/debug/deps/host_boundary-d1069244e8b9321b)",
+    "status": "ok",
+    "passed": 9,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/source_import_timing.rs (target/debug/deps/source_import_timing-861a4dff36a3b95d)",
+    "status": "ok",
+    "passed": 21,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/source_qualification.rs (target/debug/deps/source_qualification-421db5460c7fb827)",
+    "status": "ok",
+    "passed": 10,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/source_session.rs (target/debug/deps/source_session-7df736d68c4c2dbf)",
+    "status": "ok",
+    "passed": 8,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running unittests src/main.rs (target/debug/deps/deadpan_media_worker-29a9681251e12d6e)",
+    "status": "ok",
+    "passed": 3,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/bridge_real_media.rs (target/debug/deps/bridge_real_media-1b1c529726d71afa)",
+    "status": "ok",
+    "passed": 3,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/bundle_qualification.rs (target/debug/deps/bundle_qualification-69aa8680e33dbf3a)",
+    "status": "ok",
+    "passed": 5,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/canonicalize_real_media.rs (target/debug/deps/canonicalize_real_media-845e9fe2eb50e38c)",
+    "status": "ok",
+    "passed": 7,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running unittests src/lib.rs (target/debug/deps/deadpan_models-612b66ccfc076c4f)",
+    "status": "ok",
+    "passed": 15,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running unittests src/lib.rs (target/debug/deps/deadpan_native_process-d817522d2b6bad24)",
+    "status": "ok",
+    "passed": 9,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/linux_ownership.rs (target/debug/deps/linux_ownership-616f400d2ee0974c)",
+    "status": "ok",
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running unittests src/lib.rs (target/debug/deps/deadpan_output-25eb398392130426)",
+    "status": "ok",
+    "passed": 12,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/clock.rs (target/debug/deps/clock-dc82177f40f776cd)",
+    "status": "ok",
+    "passed": 10,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/no_alloc.rs (target/debug/deps/no_alloc-a6c1c744f7b19463)",
+    "status": "ok",
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/queue.rs (target/debug/deps/queue-f0d1a729147f7884)",
+    "status": "ok",
+    "passed": 15,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running unittests src/lib.rs (target/debug/deps/deadpan_plan-a06386990af331e9)",
+    "status": "ok",
+    "passed": 26,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_bindings.rs (target/debug/deps/audio_bindings-4a8b28bdf7398416)",
+    "status": "ok",
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_context.rs (target/debug/deps/audio_context-ae965e1cf43719fa)",
+    "status": "ok",
+    "passed": 2,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_definition.rs (target/debug/deps/audio_definition-e8f7b45468606cfa)",
+    "status": "ok",
+    "passed": 28,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_domain.rs (target/debug/deps/audio_domain-dbecb46d17818587)",
+    "status": "ok",
+    "passed": 8,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_fades.rs (target/debug/deps/audio_fades-292bba000ca88367)",
+    "status": "ok",
+    "passed": 7,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_plan.rs (target/debug/deps/audio_plan-f302fc4dabb112e6)",
+    "status": "ok",
+    "passed": 22,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_policy.rs (target/debug/deps/audio_policy-342a2c0a2faffba3)",
+    "status": "ok",
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_reference.rs (target/debug/deps/audio_reference-79ed650376f0456d)",
+    "status": "ok",
+    "passed": 15,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_signal.rs (target/debug/deps/audio_signal-44997b4d205e5da0)",
+    "status": "ok",
+    "passed": 17,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_tape.rs (target/debug/deps/audio_tape-c65e6122bd727dc9)",
+    "status": "ok",
+    "passed": 12,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/gap_bindings.rs (target/debug/deps/gap_bindings-6f14599b4b6e207f)",
+    "status": "ok",
+    "passed": 3,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/gap_branches.rs (target/debug/deps/gap_branches-55e8d83922ebe9c0)",
+    "status": "ok",
+    "passed": 4,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/hold_policy.rs (target/debug/deps/hold_policy-f9b3dee2383443ef)",
+    "status": "ok",
+    "passed": 10,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/occurrence_edits.rs (target/debug/deps/occurrence_edits-6db2b4527fdab725)",
+    "status": "ok",
+    "passed": 4,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/picture_plan.rs (target/debug/deps/picture_plan-fc4c76bb7dd1e4da)",
+    "status": "ok",
+    "passed": 31,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/play_overrides.rs (target/debug/deps/play_overrides-a32ea016b8be08fb)",
+    "status": "ok",
+    "passed": 5,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/root_sound_routes.rs (target/debug/deps/root_sound_routes-2cfe72f500f74c4f)",
+    "status": "ok",
+    "passed": 10,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/routed_voice.rs (target/debug/deps/routed_voice-ef374ea265de780f)",
+    "status": "ok",
+    "passed": 7,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/sound_event_fades.rs (target/debug/deps/sound_event_fades-82d922f64403cedc)",
+    "status": "ok",
+    "passed": 9,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/sound_events.rs (target/debug/deps/sound_events-3426a4003fa05b45)",
+    "status": "ok",
+    "passed": 2,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/sound_route_sampling.rs (target/debug/deps/sound_route_sampling-c2eea4e688e99b09)",
+    "status": "ok",
+    "passed": 14,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/source_voice.rs (target/debug/deps/source_voice-9d841d3f1dc037c9)",
+    "status": "ok",
+    "passed": 4,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/source_voice_policy.rs (target/debug/deps/source_voice_policy-bce42b0835958b62)",
+    "status": "ok",
+    "passed": 6,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running unittests src/lib.rs (target/debug/deps/deadpan_playback-e4a6c13c0209ba22)",
+    "status": "FAILED",
+    "passed": 55,
+    "failed": 1,
+    "ignored": 0
+  },
+  {
+    "target": "Running unittests src/lib.rs (target/debug/deps/deadpan_render-30a02f48618fa1b4)",
+    "status": "ok",
+    "passed": 31,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running unittests src/lib.rs (target/debug/deps/deadpan_source-941ea3114cb89212)",
+    "status": "ok",
+    "passed": 49,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/audio_decode.rs (target/debug/deps/audio_decode-ae4aeb4fc465bb8f)",
+    "status": "ok",
+    "passed": 13,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/export_decode.rs (target/debug/deps/export_decode-ac7659207e46547d)",
+    "status": "ok",
+    "passed": 5,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/persistent_decode.rs (target/debug/deps/persistent_decode-3890e12726b4b4ae)",
+    "status": "ok",
+    "passed": 14,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running unittests src/lib.rs (target/debug/deps/deadpan_store-c57a20d94556e2b7)",
+    "status": "ok",
+    "passed": 44,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/generated_admission.rs (target/debug/deps/generated_admission-bc4afe4d931ab99c)",
+    "status": "ok",
+    "passed": 2,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/generated_media.rs (target/debug/deps/generated_media-9832455b8e2d6b77)",
+    "status": "ok",
+    "passed": 8,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/generated_read_handle.rs (target/debug/deps/generated_read_handle-749ff0d929dddd64)",
+    "status": "ok",
+    "passed": 5,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/generation.rs (target/debug/deps/generation-8811eaa22b3c0657)",
+    "status": "ok",
+    "passed": 11,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/generation_attempts.rs (target/debug/deps/generation_attempts-60c4065e3a96cecc)",
+    "status": "ok",
+    "passed": 8,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/generation_bundles.rs (target/debug/deps/generation_bundles-8dec24ee5e39000f)",
+    "status": "ok",
+    "passed": 15,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/migration.rs (target/debug/deps/migration-8f7c953f697572ac)",
+    "status": "ok",
+    "passed": 122,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/occurrence_edits.rs (target/debug/deps/occurrence_edits-379e2bd49df4d6b8)",
+    "status": "ok",
+    "passed": 3,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/original_media.rs (target/debug/deps/original_media-451f0f796693e152)",
+    "status": "ok",
+    "passed": 6,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/original_preparation.rs (target/debug/deps/original_preparation-c3862a027145cf4b)",
+    "status": "ok",
+    "passed": 9,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/persistence.rs (target/debug/deps/persistence-279507fd54f91da7)",
+    "status": "ok",
+    "passed": 19,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/prepared_source_registration.rs (target/debug/deps/prepared_source_registration-303a1439c39a2cb3)",
+    "status": "ok",
+    "passed": 18,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/presentation_basis.rs (target/debug/deps/presentation_basis-a0ea310056200a3e)",
+    "status": "ok",
+    "passed": 6,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/render_jobs.rs (target/debug/deps/render_jobs-cfc33558d22d73c3)",
+    "status": "FAILED",
+    "passed": 11,
+    "failed": 1,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/single_source.rs (target/debug/deps/single_source-c5a0de2e13742817)",
+    "status": "ok",
+    "passed": 8,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Running tests/source_registration.rs (target/debug/deps/source_registration-006cade22357c9ca)",
+    "status": "ok",
+    "passed": 13,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Doc-tests deadpan_audio",
+    "status": "ok",
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Doc-tests deadpan_cli",
+    "status": "ok",
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Doc-tests deadpan_core",
+    "status": "ok",
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Doc-tests deadpan_dsp",
+    "status": "ok",
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Doc-tests deadpan_encode",
+    "status": "ok",
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Doc-tests deadpan_fileclone",
+    "status": "ok",
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Doc-tests deadpan_jobs",
+    "status": "ok",
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Doc-tests deadpan_media",
+    "status": "ok",
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Doc-tests deadpan_models",
+    "status": "ok",
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Doc-tests deadpan_native_process",
+    "status": "ok",
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Doc-tests deadpan_output",
+    "status": "ok",
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Doc-tests deadpan_plan",
+    "status": "ok",
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Doc-tests deadpan_playback",
+    "status": "ok",
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Doc-tests deadpan_render",
+    "status": "ok",
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Doc-tests deadpan_source",
+    "status": "ok",
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  {
+    "target": "Doc-tests deadpan_store",
+    "status": "ok",
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0
+  }
+]

@@ -40,6 +40,27 @@ def emit(message):
 
 
 request = read_message()
+if sys.argv[1] == "owned-wait":
+    # Exit only after host cancellation, proving revocation reaches supervision.
+    assert request["op"] in ["prepare", "inspect"]
+    if request["op"] == "prepare":
+        picture = request["contract"]["picture"]
+        emit({"event": "progress", "protocol": 1, "identity": request["identity"],
+              "completed_frames": 0, "total_frames": picture["frame_count"],
+              "completed_audio_samples": 0,
+              "total_audio_samples": picture["project_audio_end"] - picture["project_audio_start"]})
+    else:
+        manifest = request["manifest"]
+        emit({"event": "progress", "protocol": 1, "identity": request["identity"],
+              "progress": {"stage": "packets", "completed": 0,
+                           "total": manifest["report"]["video_packets"] + manifest["report"]["audio_packets"]}})
+    cancel = read_message()
+    assert cancel["op"] == "cancel" and cancel["identity"] == request["identity"]
+    assert cancel["cancellation_token"] == request["cancellation_token"]
+    Path(sys.argv[2]).write_text("host cancelled revoked owner\n")
+    emit({"event": "cancelled", "protocol": 1, "identity": request["identity"]})
+    raise SystemExit(0)
+
 if sys.argv[1] == "encode":
     assert sys.argv[4] == "--render-encode-worker"
     assert Path(sys.argv[5]).is_absolute()

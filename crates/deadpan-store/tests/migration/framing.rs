@@ -72,6 +72,7 @@ fn fixture(path: &Path) -> Result<ProjectDocument> {
         "UPDATE revisions SET document=json_set(document,'$.schema_version',17)",
         [],
     )?;
+    remove_empty_render_tables(&db)?;
     db.pragma_update(None, "user_version", 23)?;
     for (_, json) in docs(&db)? {
         legacy_v17::Document::from_json(&json)?;

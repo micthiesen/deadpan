@@ -1,0 +1,47 @@
+import hashlib
+import json
+from pathlib import Path
+import shutil
+import sqlite3
+import subprocess
+
+ROOT = Path(__file__).resolve().parent
+
+def cells(connection):
+    tables = [row[0] for row in connection.execute("SELECT name FROM sqlite_schema WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'render_%' ORDER BY name")]
+    assert all(name.replace('_', '').isalnum() for name in tables)
+    return {table: connection.execute(f'SELECT * FROM {table} ORDER BY rowid').fetchall() for table in tables}
+
+result = []
+for name in ['source', 'generated']:
+    source = ROOT / 'v39-snapshots' / (name + '.deadpan')
+    target = ROOT / 'native-inputs' / (name + '.deadpan')
+    target.mkdir(parents=True, exist_ok=False)
+    for path in source.rglob('*'):
+        if path.name.startswith('project.sqlite') or path.name == '.writer.lock':
+            continue
+        destination = target / path.relative_to(source)
+        if path.is_dir():
+            destination.mkdir(exist_ok=True)
+        else:
+            assert path.is_file() and not path.is_symlink()
+            shutil.copyfile(path, destination)
+            # Archived copyfile snapshots retain bytes, not immutable mode.
+            # Restore the qualified object namespace's read-only file mode.
+            if path.relative_to(source).parts[0] == 'Media' and path.name.startswith('blake3-'):
+                destination.chmod(0o444)
+    with sqlite3.connect((source / 'project.sqlite').as_uri() + '?mode=ro', uri=True) as original:
+        with sqlite3.connect(target / 'project.sqlite') as copy:
+            original.backup(copy)
+            assert copy.execute('PRAGMA user_version').fetchone() == (39,)
+            before = cells(copy)
+    migration = subprocess.run(['deadpan-cli', 'project', 'migrate', str(target)], check=True, capture_output=True, text=True)
+    with sqlite3.connect((target / 'project.sqlite').as_uri() + '?mode=ro', uri=True) as current:
+        assert current.execute('PRAGMA user_version').fetchone() == (40,)
+        assert cells(current) == before
+        assert all(current.execute(f'SELECT COUNT(*) FROM {table}').fetchone() == (0,)
+                   for table in ['render_jobs', 'render_job_heads', 'render_attempts', 'render_candidate_checkpoints'])
+    result.append({'name': name, 'source': str(source), 'package': str(target), 'migration': json.loads(migration.stdout),
+                   'old_rows_unchanged': True, 'copied_media_object_mode': '0444', 'old_rows_sha256': hashlib.sha256(json.dumps(before, sort_keys=True, default=lambda value: {'sqlite_blob_hex': value.hex()}).encode()).hexdigest()})
+(ROOT / 'native-migration.json').write_text(json.dumps(result, indent=2) + '\n')
+print(json.dumps(result))

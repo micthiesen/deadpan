@@ -273,6 +273,7 @@ fn matching_modern_nested_history_cannot_claim_schema31() -> Result {
             "UPDATE revisions SET document=json_set(document,'$.schema_version',25)",
             [],
         )?;
+        remove_empty_render_tables(&database)?;
         database.pragma_update(None, "user_version", 31)?;
         let edit = apply(&initial, &request)?;
         let edit_json = history_json(&database)?[0].1.clone();

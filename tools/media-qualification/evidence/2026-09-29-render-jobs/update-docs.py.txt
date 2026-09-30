@@ -1,0 +1,79 @@
+from pathlib import Path
+
+ROOT = Path('/Users/michael/Code/deadpan')
+
+def replace(path, old, new, count=1):
+    path = ROOT / path
+    text = path.read_text()
+    assert text.count(old) == count, (path, old, text.count(old), count)
+    path.write_text(text.replace(old, new))
+
+for path in ['docs/REQUIREMENTS.md', 'docs/spec/AGENT_HANDOFF.md', 'docs/ARCHITECTURE.md', 'docs/ENCODED_RENDER.md', 'docs/RENDER_PUBLICATION.md']:
+    file = ROOT / path
+    text = file.read_text()
+    text = text.replace('Durable render jobs/recovery', 'Durable publication recovery')
+    text = text.replace('durable render jobs/recovery', 'durable publication recovery')
+    text = text.replace('durable jobs/recovery', 'durable publication recovery')
+    file.write_text(text)
+
+replace('docs/HEADLESS.md', 'Documents use schema 33 in database schema 39.', 'Documents use schema 33 in database schema 40.')
+replace('docs/HEADLESS.md', 'Database schemas 1 through 38 return', 'Database schemas 1 through 39 return')
+replace('docs/HEADLESS.md', 'Snapshots/before-schema-39-*.sqlite', 'Snapshots/before-schema-40-*.sqlite')
+replace('docs/HEADLESS.md', 'schema 39 and core document schema 33. Database-38 replays frozen core 32,', 'schema 40 and core document schema 33. Database 39 validates existing core-33\nhistory without rewriting authored JSON or patches, then adds empty operational\n[render job tables](RENDER_JOBS.md). Earlier schemas retain strict replay.\nDatabase-38 replays frozen core 32,')
+replace('README.md', 'schema-1-through-38 migration to schema 39', 'schema-1-through-39 migration to schema 40')
+replace('docs/ARCHITECTURE.md', 'schemas 1 through 38 directly to schema 39 and core document schema 33.', 'schemas 1 through 39 directly to schema 40 and core document schema 33. Schema 39 validates existing history without rewriting authored JSON or patches and gains empty render tables.')
+replace('docs/ARCHITECTURE.md', 'SQLite schema 39, schema-1-through-38 migration', 'SQLite schema 40, schema-1-through-39 migration')
+replace('AGENTS.md', 'Database schema 39 stores core schema 33', 'Database schema 40 stores core schema 33')
+replace('AGENTS.md', 'Database schema 39 retains content-keyed original records', 'Database schema 40 retains content-keyed original records')
+replace('AGENTS.md', 'Current schema 39 stores core 33.', 'Database 39 stores core 33; migration validates its history without authored JSON or patch rewrites. Current schema 40 adds operational render jobs and also stores core 33.')
+
+replace('docs/REQUIREMENTS.md', 'The library [publication host]', '''The [durable render boundary](RENDER_JOBS.md) captures one historical revision,
+retains complete encoded movie/manifest objects, and records attempts with exact
+transition identities. Writer reopen interrupts unfinished attempts while keeping
+their checkpoints. Explicit verification retries freshly hash retained bytes,
+reconstruct the historical contract and run the isolated finished-file verifier.
+Persisted reports are historical evidence. Database 40 preserves schema-39
+authored history unchanged and adds empty render tables. Durable destination
+publication recovery, native Render and public headless render commands remain
+open. DP-17 remains Open; all requirements and gates remain open or partial.
+
+The library [publication host]''')
+
+replace('docs/spec/AGENT_HANDOFF.md', '## Verified destination publication, 2026-09-29', '''## Durable encoded checkpoints, 2026-09-29
+
+The [render job boundary](../RENDER_JOBS.md) persists immutable render intent,
+fresh attempts and exact transition sequences outside authored history. An I/O
+worker retains complete movie and strict manifest objects in a separate bounded
+`Media/RenderCandidates` namespace. The SQLite writer checkpoints opaque session
+and attempt tokens using cheap freshness checks.
+
+Writer reopen interrupts nonterminal attempts and preserves their checkpoints.
+An explicit new attempt freshly hashes both retained objects, reconstructs the
+captured historical contract and invokes the isolated finished-file verifier.
+Stored reports cannot create a live verified candidate. Closing the owning store
+revokes retained handles; final verifier admission checks session liveness.
+Schema 40 adds operational tables while preserving schema-39 authored JSON and
+patches byte-for-byte; older schemas retain strict replay.
+
+Next implement durable publication intent/reconciliation around the report/movie
+commit, then the complete native Render and public headless workflow. Scheduling,
+automatic platform policy, full mastering/effects, HDR and all release gates
+remain required. See the contract for ownership, limits and API sequencing.
+
+## Verified destination publication, 2026-09-29''')
+
+replace('AGENTS.md', 'Database schema 40 stores core schema 33', '''Durable render jobs capture immutable project/revision/document/range/policy
+intent outside authored undo/redo. Require fresh attempt IDs and cancellation
+tokens, exact transition sequences and one active attempt per project. Retain
+movie and strict manifest bytes under `Media/RenderCandidates`, independently
+of Generated Hold objects. Worker handles contain no SQLite connection. Check
+opaque session/attempt freshness around checkpoint commits; never hash full
+movies on the writer. Reopen interrupts unfinished attempts and preserves
+checkpoints. Explicit retries freshly hash retained objects and reconstruct the
+historical contract before isolated verification. A saved Verified report grants
+no live media or publication authority. Recheck handle liveness after verification.
+Keep full integrity audits separate from bounded routine operations. Durable
+publication reconciliation and the native Render workflow remain open.
+See [render jobs](docs/RENDER_JOBS.md).
+
+Database schema 40 stores core schema 33''')

@@ -109,7 +109,15 @@ fn inspect(
     let mut previous: Option<VerificationProgress> = None;
     while !child.is_finished() {
         let now = Instant::now();
-        if cancelled.load(Ordering::Acquire) && !was_cancelled {
+        if failure.is_none()
+            && let Err(error) = candidate.check_live(cancelled, deadline)
+        {
+            failure = Some(error);
+            if let Err(error) = child.request_cancel(now) {
+                return Err(failure.unwrap_or_else(|| error.into()));
+            }
+        }
+        if cancelled.load(Ordering::Acquire) && !was_cancelled && failure.is_none() {
             was_cancelled = true;
             if let Err(error) = child.request_cancel(now) {
                 return Err(failure.unwrap_or_else(|| error.into()));
@@ -199,6 +207,7 @@ fn inspect(
         .validate(request.limits)
         .map_err(EncodedRenderError::Protocol)?;
     protocol::bind(&report, candidate.manifest()).map_err(EncodedRenderError::Protocol)?;
+    candidate.check_live(cancelled, deadline)?;
     Ok(report)
 }
 

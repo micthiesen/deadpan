@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python3",
+    "/tmp/deadpan-render-jobs-95xpekq5/qualify-recovered.py"
+  ],
+  "started": "2026-09-30T06:21:30.390559+00:00",
+  "base_commit": "097f7358574c4da42cc2e607555978abf9d757a9",
+  "diff_sha256": "bff92196616d68872574367f9890ea858eabd9fd7720c6f079dab94a7b4a8798",
+  "source_manifest_sha256": "694db72c44d8a15f687d2f317a4926e7af413187e1f52d7b78bde5a39667a475",
+  "pid": 66817,
+  "exit_code": 0,
+  "seconds": 6.698276708833873
+}

@@ -1,0 +1,10 @@
+   Compiling deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+   Compiling deadpan-native-process v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-process)
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-schema39-fixture-producer v0.1.0 (/tmp/deadpan-render-jobs-95xpekq5/fixture-producer)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 54.09s
+     Running `target/debug/deadpan-schema39-fixture-producer /Users/michael/Code/deadpan /tmp/deadpan-render-jobs-95xpekq5/v39-fixtures/focused.deadpan`
+Produced genuine schema39 single-Original baseline, decoded receipt, edit, undo and redo state: /tmp/deadpan-render-jobs-95xpekq5/v39-fixtures/focused.deadpan

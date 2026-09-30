@@ -16,6 +16,10 @@ mod migration;
 mod object_storage;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod original_media;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod render_jobs;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod render_media;
 mod schema;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod single_source;
@@ -64,6 +68,10 @@ pub struct ProjectStore {
     original_storage: Arc<object_storage::ObjectStorage>,
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     import_closed: Arc<AtomicBool>,
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    render_storage: Arc<object_storage::ObjectStorage>,
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    render_closed: Arc<AtomicBool>,
     // Explicitly unlocked on drop so a briefly inherited descriptor in a spawned
     // child cannot extend this writer's ownership beyond the store lifetime.
     _writer_lock: Option<File>,
@@ -75,6 +83,8 @@ impl Drop for ProjectStore {
         self.import_closed.store(true, Ordering::Release);
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         self.generated_read_closed.store(true, Ordering::Release);
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        self.render_closed.store(true, Ordering::Release);
         if let Some(lock) = &self._writer_lock {
             // File::drop still closes the handle if explicit unlock fails.
             let _ = lock.unlock();
@@ -118,6 +128,7 @@ impl ProjectStore {
         for directory in [
             "Media/Originals",
             "Media/Generated",
+            "Media/RenderCandidates",
             "Media/UserAssets",
             "Analysis/Manual",
             "Snapshots",
@@ -169,6 +180,12 @@ impl ProjectStore {
             object_storage::StorageNamespace::Originals,
         )
         .map_err(original_media::OriginalMediaError::from)?;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        let render_storage = object_storage::ObjectStorage::open(
+            &package,
+            object_storage::StorageNamespace::RenderCandidates,
+        )
+        .map_err(render_media::RenderMediaError::from)?;
         Ok(Self {
             connection,
             package,
@@ -181,6 +198,10 @@ impl ProjectStore {
             original_storage: Arc::new(original_storage),
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             import_closed: Arc::new(AtomicBool::new(false)),
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            render_storage: Arc::new(render_storage),
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            render_closed: Arc::new(AtomicBool::new(false)),
             _writer_lock: Some(lock),
         })
     }
@@ -224,6 +245,12 @@ impl ProjectStore {
             object_storage::StorageNamespace::Originals,
         )
         .map_err(original_media::OriginalMediaError::from)?;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        let render_storage = object_storage::ObjectStorage::open(
+            &package,
+            object_storage::StorageNamespace::RenderCandidates,
+        )
+        .map_err(render_media::RenderMediaError::from)?;
         let mut store = Self {
             connection,
             package,
@@ -236,11 +263,17 @@ impl ProjectStore {
             original_storage: Arc::new(original_storage),
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             import_closed: Arc::new(AtomicBool::new(false)),
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            render_storage: Arc::new(render_storage),
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            render_closed: Arc::new(AtomicBool::new(false)),
             _writer_lock: lock,
         };
         store.validate()?;
         if mode == AccessMode::ReadWrite {
             generation_attempts::recover_nonterminal(&mut store.connection)?;
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            render_jobs::recover_nonterminal(&mut store.connection)?;
         }
         Ok(store)
     }
@@ -260,6 +293,8 @@ impl ProjectStore {
         validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
         generation::check_stored_sizes(&transaction)?;
         generation_attempts::check_stored_sizes(&transaction)?;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        render_jobs::check_stored_sizes(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         original_media::check_stored_sizes(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -281,6 +316,8 @@ impl ProjectStore {
         validation::validate_history(&transaction)?;
         generation::validate_store(&transaction)?;
         generation_attempts::validate_store(&transaction)?;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        render_jobs::validate_store(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         original_media::validate_store(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]

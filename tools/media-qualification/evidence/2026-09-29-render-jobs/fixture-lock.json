@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "generate-lockfile",
+    "--offline",
+    "--manifest-path",
+    "/tmp/deadpan-render-jobs-95xpekq5/fixture-producer/Cargo.toml"
+  ],
+  "started": "2026-09-30T05:42:27.165532+00:00",
+  "base_commit": "097f7358574c4da42cc2e607555978abf9d757a9",
+  "diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "source_manifest_sha256": "8332c9d07a73d66364e6ff1468399a369355cefedcb7b68de5d91db4231c790d",
+  "pid": 56704,
+  "exit_code": 0,
+  "seconds": 0.10384241677820683
+}

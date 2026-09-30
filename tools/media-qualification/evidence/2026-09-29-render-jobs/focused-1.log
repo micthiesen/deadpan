@@ -1,0 +1,28 @@
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 39.21s
+     Running tests/encoded_verification.rs (target/debug/deps/encoded_verification-243d20298b1c3667)
+
+running 4 tests
+test jobs::corrupted_retained_movie_cannot_reuse_saved_manifest_or_verification ... FAILED
+test jobs::malformed_or_retargeted_retained_manifests_fail_before_verification ... ok
+test jobs::owner_revocation_during_native_verification_cannot_admit_a_candidate ... ok
+test jobs::restart_preserves_checkpoint_and_fresh_attempt_reverifies_exact_bytes ... ok
+
+failures:
+
+---- jobs::corrupted_retained_movie_cannot_reuse_saved_manifest_or_verification stdout ----
+
+thread 'jobs::corrupted_retained_movie_cannot_reuse_saved_manifest_or_verification' (56761745) panicked at crates/deadpan-cli/tests/encoded_verification/jobs.rs:332:66:
+called `Result::unwrap()` on an `Err` value: Os { code: 13, kind: PermissionDenied, message: "Permission denied" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    jobs::corrupted_retained_movie_cannot_reuse_saved_manifest_or_verification
+
+test result: FAILED. 3 passed; 1 failed; 0 ignored; 0 measured; 9 filtered out; finished in 1.14s
+
+error: test failed, to rerun pass `-p deadpan-cli --test encoded_verification`

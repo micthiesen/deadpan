@@ -12,13 +12,14 @@ use std::ffi::CString;
 use std::fs::File;
 use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::os::fd::{AsFd, OwnedFd};
+use std::os::unix::fs::FileExt;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use rustix::fs::{
-    AtFlags, CWD, FileType, Mode, OFlags, RenameFlags, Stat, fchmod, fstat, fsync, openat,
-    renameat_with, statat, unlinkat,
+    AtFlags, CWD, Dir, FileType, Mode, OFlags, RenameFlags, Stat, fchmod, fstat, fsync, mkdirat,
+    openat, renameat_with, statat, unlinkat,
 };
 use sha2::{Digest, Sha256};
 use thiserror::Error;
@@ -33,6 +34,7 @@ const FINAL_MODE: Mode = Mode::RUSR.union(Mode::RGRP).union(Mode::ROTH);
 pub(crate) enum StorageNamespace {
     Generated,
     Originals,
+    RenderCandidates,
 }
 
 impl StorageNamespace {
@@ -40,6 +42,7 @@ impl StorageNamespace {
         match self {
             Self::Generated => "Generated",
             Self::Originals => "Originals",
+            Self::RenderCandidates => "RenderCandidates",
         }
     }
 }
@@ -113,7 +116,7 @@ impl<'a> ObjectControl<'a> {
         self
     }
 
-    fn check(self) -> Result<(), ObjectStorageError> {
+    pub(crate) fn check(self) -> Result<(), ObjectStorageError> {
         if self
             .closed
             .is_some_and(|closed| closed.load(Ordering::Acquire))
@@ -177,6 +180,10 @@ impl VerifiedObject {
 
     pub const fn sha256(&self) -> [u8; 32] {
         self.sha256
+    }
+
+    pub(crate) fn read_at(&self, buffer: &mut [u8], offset: u64) -> io::Result<usize> {
+        self.file.read_at(buffer, offset)
     }
 }
 
@@ -786,6 +793,185 @@ pub(crate) struct ObjectFreshnessGuard {
     limits: ObjectLimits,
 }
 
+/// A package-scoped lock survives replacement of a store session. In particular,
+/// closing a session does not release an old worker's in-progress durability
+/// operation. The fixed lock lives outside the lazily created namespace.
+pub(crate) struct RenderNamespaceWriteGuard<'a> {
+    storage: &'a ObjectStorage,
+    lock: File,
+    lock_state: Stat,
+    directories: MediaDirectories,
+    media_state: Stat,
+    namespace_state: Stat,
+}
+
+const RENDER_LOCK_NAME: &str = ".render-candidates.lock";
+
+impl RenderNamespaceWriteGuard<'_> {
+    /// Count every entry, including orphans and interrupted pending objects.
+    /// Existing requested names reserve no new space; promotion independently
+    /// verifies those bytes before deduplicating. No entries are removed.
+    pub(crate) fn reserve(
+        &self,
+        objects: &[ObjectIdentity<'_>],
+        maximum_bytes: u64,
+        maximum_entries: u32,
+        control: ObjectControl<'_>,
+    ) -> Result<(), ObjectStorageError> {
+        control.check()?;
+        if objects.len() > 2 || maximum_bytes == 0 || maximum_entries == 0 {
+            return Err(ObjectStorageError::InvalidBudget);
+        }
+        self.recheck()?;
+        let before =
+            fstat(&self.directories.generated).map_err(|source| ObjectStorageError::System {
+                operation: "inspect render namespace",
+                source,
+            })?;
+        let mut bytes = 0_u64;
+        let mut entries = 0_u32;
+        let directory = Dir::read_from(&self.directories.generated).map_err(|source| {
+            ObjectStorageError::System {
+                operation: "enumerate render namespace",
+                source,
+            }
+        })?;
+        for entry in directory {
+            control.check()?;
+            let entry = entry.map_err(|source| ObjectStorageError::System {
+                operation: "read render namespace entry",
+                source,
+            })?;
+            let name = entry.file_name();
+            if name.to_bytes() == b"." || name.to_bytes() == b".." {
+                continue;
+            }
+            entries = entries
+                .checked_add(1)
+                .ok_or(ObjectStorageError::NamespaceCapacity)?;
+            if entries > maximum_entries {
+                return Err(ObjectStorageError::NamespaceCapacity);
+            }
+            let state = statat(&self.directories.generated, name, AtFlags::SYMLINK_NOFOLLOW)
+                .map_err(|source| ObjectStorageError::System {
+                    operation: "inspect render namespace entry",
+                    source,
+                })?;
+            self.storage
+                .inner
+                .validate_contained(&state, "render namespace entry")?;
+            if !FileType::from_raw_mode(state.st_mode).is_file()
+                || state.st_nlink != 1
+                || namespace_is_writable_by_others(&state)
+            {
+                return Err(ObjectStorageError::UnsafeStorageComponent(
+                    "render namespace entry".into(),
+                ));
+            }
+            let length =
+                u64::try_from(state.st_size).map_err(|_| ObjectStorageError::NamespaceCapacity)?;
+            bytes = bytes
+                .checked_add(length)
+                .ok_or(ObjectStorageError::NamespaceCapacity)?;
+            if bytes > maximum_bytes {
+                return Err(ObjectStorageError::NamespaceCapacity);
+            }
+        }
+        for (index, identity) in objects.iter().enumerate() {
+            control.check()?;
+            if objects[..index]
+                .iter()
+                .any(|prior| prior.digest == identity.digest)
+            {
+                continue;
+            }
+            let reference = object_reference(*identity)?;
+            let name = object_name(reference.content());
+            match statat(
+                &self.directories.generated,
+                name.as_str(),
+                AtFlags::SYMLINK_NOFOLLOW,
+            ) {
+                Ok(_) => {}
+                Err(rustix::io::Errno::NOENT) => {
+                    bytes = bytes
+                        .checked_add(identity.byte_length)
+                        .ok_or(ObjectStorageError::NamespaceCapacity)?;
+                    entries = entries
+                        .checked_add(1)
+                        .ok_or(ObjectStorageError::NamespaceCapacity)?;
+                }
+                Err(source) => {
+                    return Err(ObjectStorageError::System {
+                        operation: "inspect reserved render object",
+                        source,
+                    });
+                }
+            }
+        }
+        if bytes > maximum_bytes || entries > maximum_entries {
+            return Err(ObjectStorageError::NamespaceCapacity);
+        }
+        let after =
+            fstat(&self.directories.generated).map_err(|source| ObjectStorageError::System {
+                operation: "reinspect render namespace",
+                source,
+            })?;
+        if !same_file_state(&before, &after) {
+            return Err(ObjectStorageError::SourceChanged);
+        }
+        self.recheck()?;
+        control.check()
+    }
+
+    pub(crate) fn recheck(&self) -> Result<(), ObjectStorageError> {
+        let storage = &self.storage.inner;
+        let named = statat(
+            &storage.package,
+            RENDER_LOCK_NAME,
+            AtFlags::SYMLINK_NOFOLLOW,
+        )
+        .map_err(|source| ObjectStorageError::System {
+            operation: "reinspect render namespace lock",
+            source,
+        })?;
+        let held = fstat(&self.lock).map_err(|source| ObjectStorageError::System {
+            operation: "reinspect held render namespace lock",
+            source,
+        })?;
+        if !same_file_state(&named, &self.lock_state) || !same_file_state(&held, &self.lock_state) {
+            return Err(ObjectStorageError::SourceChanged);
+        }
+        let current = storage.open_directories()?;
+        for (descriptor, expected) in [
+            (&current.media, &self.media_state),
+            (&current.generated, &self.namespace_state),
+        ] {
+            let state = fstat(descriptor).map_err(|source| ObjectStorageError::System {
+                operation: "reinspect pinned render directory",
+                source,
+            })?;
+            // Child publication changes directory times and link counts.
+            if state.st_dev != expected.st_dev
+                || state.st_ino != expected.st_ino
+                || state.st_uid != expected.st_uid
+                || state.st_mode != expected.st_mode
+            {
+                return Err(ObjectStorageError::SourceChanged);
+            }
+        }
+        Ok(())
+    }
+}
+
+impl Drop for RenderNamespaceWriteGuard<'_> {
+    fn drop(&mut self) {
+        // An inherited descriptor must not extend this operation's lock lifetime.
+        // Closing this descriptor remains the fallback if unlocking fails.
+        let _ = self.lock.unlock();
+    }
+}
+
 impl ObjectStorage {
     pub(crate) fn open(
         package: &Path,
@@ -794,6 +980,127 @@ impl ObjectStorage {
         Ok(Self {
             inner: GeneratedStorage::open_namespace(package, namespace)?,
         })
+    }
+
+    /// Only the render write worker calls this. Read-only handles never create
+    /// the namespace or the lock. All retained writes hold this guard through
+    /// publication and its final durability checks.
+    pub(crate) fn lock_render_namespace(
+        &self,
+        control: ObjectControl<'_>,
+    ) -> Result<RenderNamespaceWriteGuard<'_>, ObjectStorageError> {
+        control.check()?;
+        if self.inner.namespace != StorageNamespace::RenderCandidates {
+            return Err(ObjectStorageError::InvalidIdentity);
+        }
+        let package = fstat(&self.inner.package).map_err(|source| ObjectStorageError::System {
+            operation: "inspect render package",
+            source,
+        })?;
+        self.inner.validate_contained(&package, "package")?;
+        if !FileType::from_raw_mode(package.st_mode).is_dir()
+            || package.st_uid != rustix::process::geteuid().as_raw()
+            || namespace_is_writable_by_others(&package)
+        {
+            return Err(ObjectStorageError::UnsafeStorageComponent("package".into()));
+        }
+        let lock = File::from(
+            openat(
+                &self.inner.package,
+                RENDER_LOCK_NAME,
+                OFlags::RDWR
+                    | OFlags::CREATE
+                    | OFlags::NOFOLLOW
+                    | OFlags::NONBLOCK
+                    | OFlags::CLOEXEC,
+                Mode::RUSR | Mode::WUSR,
+            )
+            .map_err(|source| ObjectStorageError::System {
+                operation: "open render namespace lock",
+                source,
+            })?,
+        );
+        let lock_state = fstat(&lock).map_err(|source| ObjectStorageError::System {
+            operation: "inspect render namespace lock",
+            source,
+        })?;
+        self.inner
+            .validate_contained(&lock_state, "render namespace lock")?;
+        if !FileType::from_raw_mode(lock_state.st_mode).is_file()
+            || lock_state.st_nlink != 1
+            || lock_state.st_size != 0
+            || namespace_is_writable_by_others(&lock_state)
+        {
+            return Err(ObjectStorageError::UnsafeStorageComponent(
+                "render namespace lock".into(),
+            ));
+        }
+        loop {
+            control.check()?;
+            match lock.try_lock() {
+                Ok(()) => break,
+                Err(std::fs::TryLockError::WouldBlock) => {
+                    std::thread::sleep(Duration::from_millis(5));
+                }
+                Err(std::fs::TryLockError::Error(source)) => {
+                    return Err(ObjectStorageError::Io {
+                        operation: "lock render namespace",
+                        source,
+                    });
+                }
+            }
+        }
+        control.check()?;
+        let named_lock = statat(
+            &self.inner.package,
+            RENDER_LOCK_NAME,
+            AtFlags::SYMLINK_NOFOLLOW,
+        )
+        .map_err(|source| ObjectStorageError::System {
+            operation: "confirm render namespace lock",
+            source,
+        })?;
+        if !same_file_state(&lock_state, &named_lock) {
+            return Err(ObjectStorageError::SourceChanged);
+        }
+        let media = self.inner.open_directory(&self.inner.package, "Media")?;
+        match mkdirat(
+            &media,
+            "RenderCandidates",
+            Mode::RUSR | Mode::WUSR | Mode::XUSR,
+        ) {
+            Ok(()) | Err(rustix::io::Errno::EXIST) => {}
+            Err(source) => {
+                return Err(ObjectStorageError::System {
+                    operation: "create render namespace",
+                    source,
+                });
+            }
+        }
+        let generated = self.inner.open_directory(&media, "RenderCandidates")?;
+        sync_directory(&generated, "sync render namespace")?;
+        sync_directory(&media, "sync render media directory")?;
+        sync_directory(&self.inner.package, "sync render package")?;
+        sync_file(&lock, "sync render namespace lock")?;
+        let media_state = fstat(&media).map_err(|source| ObjectStorageError::System {
+            operation: "inspect render media directory",
+            source,
+        })?;
+        let namespace_state = fstat(&generated).map_err(|source| ObjectStorageError::System {
+            operation: "inspect render namespace",
+            source,
+        })?;
+        let guard = RenderNamespaceWriteGuard {
+            storage: self,
+            lock,
+            lock_state,
+            directories: MediaDirectories { media, generated },
+            media_state,
+            namespace_state,
+        };
+        guard.recheck()?;
+        control.check()?;
+        Ok(guard)
     }
 
     pub(crate) fn promote_file_controlled(
@@ -1442,6 +1749,8 @@ pub enum ObjectStorageError {
     SessionClosed,
     #[error("object storage operation exceeded its deadline")]
     DeadlineExceeded,
+    #[error("render namespace exceeds the configured byte or entry capacity")]
+    NamespaceCapacity,
     #[error("media storage component is missing: {0}")]
     MissingStorageComponent(String),
     #[error("media storage component is unsafe: {0}")]
@@ -1501,6 +1810,7 @@ impl ObjectStorageError {
             Self::Cancelled => "OperationCancelled",
             Self::SessionClosed => "StorageSessionClosed",
             Self::DeadlineExceeded => "DeadlineExceeded",
+            Self::NamespaceCapacity => "RenderMediaNamespaceCapacity",
             Self::MissingStorageComponent(_) => "GeneratedMediaStorageMissing",
             Self::UnsafeStorageComponent(_) | Self::UnsafeObject(_) => "GeneratedMediaPathUnsafe",
             Self::MissingObject(_) => "GeneratedMediaMissing",

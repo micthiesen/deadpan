@@ -1,0 +1,120 @@
+import hashlib
+import json
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent
+REPO = Path('/Users/michael/Code/deadpan')
+DEST = REPO / 'tools/media-qualification/evidence/2026-09-29-render-jobs'
+summary = json.loads((DEST / 'summary.json').read_bytes())
+audit = json.loads((DEST / 'archive-audit.json').read_bytes())
+assert summary['status'] == 'passed_with_scoped_continuation'
+assert summary['workspace']['passed'] == 2284
+assert summary['workspace']['failed'] == summary['workspace']['ignored'] == 0
+
+def replace(path, old, new):
+    p = REPO / path
+    text = p.read_text()
+    assert text.count(old) == 1, (path, old)
+    p.write_text(text.replace(old, new))
+
+replace('docs/qualification/render-jobs-2026-09-29.md',
+'''Final workspace gate results are recorded in the evidence summary.''',
+'''The workspace has 2,284 passing tests and no remaining failed or ignored tests
+across 165 targets, including doctests. The full invocation completed with three
+failures. Passing targets were preserved; complete CLI command, render-store and
+playback targets passed after the narrow corrections described below. The original
+failed invocation is retained and is not reported as green. Final all-target
+workspace Clippy and formatting passed.''')
+replace('docs/qualification/render-jobs-2026-09-29.md',
+'''The final source differs only by naming an existing SQLite row tuple type for
+Clippy, with identical SQL, operations and field types. The retained source
+comparison identifies that exact change; native results were preserved without
+repeating unchanged media work.''',
+f'''Final source inventory is `{summary['final_source_inventory']}`.
+Later changes name an existing SQLite row tuple type for Clippy, update doctor's
+migration capability string and schema assertion, allow intentional corruption of
+a sealed test file, and make a playback test wait for the expected delivered-sample
+update instead of an older Playing update. Production playback, native media and
+render operations are unchanged. The retained exact patch and per-command source
+inventories bind these results without repeating unchanged media work.''')
+replace('docs/qualification/render-jobs-2026-09-29.md',
+'''passing qualification totals.''',
+'''passing qualification totals. The full workspace also exposed a stale doctor
+schema assertion, another corruption fixture blocked by 0444 mode, and the playback
+fixture's stale-update race. Their corrected targets passed in full. The playback
+fix retains its original bounded deadline and exact sample assertions; an independent
+source review found no production clock defect.''')
+measured = '''[Render checkpoint qualification](qualification/render-jobs-2026-09-29.md)
+passes two real restart/reverification cases: 138 pictures, 221,021 authored sample
+frames and 414 complete planes checked by independent final-file readers. Workspace
+coverage totals 2,284 passing tests after three scoped target corrections, with zero
+remaining failures or ignored tests. Strict workspace Clippy and formatting pass.
+The original failed full run, corrected target runs and exact source differences
+are retained. No native UI behavior changed.
+
+'''
+replace('docs/REQUIREMENTS.md', 'The library [publication host](RENDER_PUBLICATION.md) now accepts a private verified\n', measured + 'The library [publication host](RENDER_PUBLICATION.md) now accepts a private verified\n')
+replace('docs/spec/AGENT_HANDOFF.md',
+'''Schema 40 adds operational tables while preserving schema-39 authored JSON and
+patches byte-for-byte; older schemas retain strict replay.
+''',
+'''Schema 40 adds operational tables while preserving schema-39 authored JSON and
+patches byte-for-byte; older schemas retain strict replay.
+
+[Qualification](../qualification/render-jobs-2026-09-29.md) passes two real
+restart/reverification cases and independent readers over 138 pictures, 221,021
+authored sample frames and 414 complete planes. The workspace has 2,284 passing
+tests after correcting and rerunning three failed targets; all other full-run
+results are retained. Strict workspace Clippy and formatting pass. Evidence
+includes authentic schema-39 databases, final schema-40 backups, actual movies,
+readers, source differences and independent reviews. Orderly writer restart was
+qualified; process-death and power-loss injection remain open.
+''')
+(DEST / 'README.md').write_text(f'''# Durable render checkpoint evidence, 2026-09-29
+
+Two real project encodes survived writer reopen and passed fresh isolated
+verification before publication. Independent FFmpeg and AVFoundation readers
+checked the published files: 138 pictures, 221,021 authored sample frames,
+414 planes, 102,643,200 code values and nine complete GOPs.
+
+- [Summary](summary.json): exact commands, source inventories and resolved coverage.
+- [Qualification](../../../../docs/qualification/render-jobs-2026-09-29.md): scope and limits.
+- [Native archive](native-artifacts.tar.gz): schema-39 fixtures, coherent schema-40
+  database backups, retained candidates, final movies/reports and decoded references.
+- [Member inventory](archive-members.json) and [readback audit](archive-audit.json):
+  every archived regular file was read and rehashed.
+- [Review disposition](review-disposition.md) and [playback fixture review](playback-race-review.md).
+- [Exact changes after native execution](source-change-after-native.patch.txt).
+
+The full workspace invocation returned 101 with three failures. Complete corrected
+CLI command, render-store and playback targets passed; preserving the other full-run
+targets yields 2,284 passing tests, zero remaining failures and zero ignored tests.
+Final strict all-target workspace Clippy and formatting passed. Original failures
+and corrected runs remain in their named logs and JSON journals.
+
+Native source inventory: `{summary['native_source_inventory']}`.
+Final source inventory: `{summary['final_source_inventory']}`.
+Later source changes are one tuple alias, doctor schema metadata and test fixes;
+production playback and native render operations are unchanged.
+
+Archive: {audit['members']} files, {audit['uncompressed_bytes']:,} raw bytes,
+{audit['archive_bytes']:,} compressed bytes; SHA-256 `{audit['archive_sha256']}`.
+
+Restart coverage uses orderly writer closure. This does not qualify injected
+process/power loss, durable publication reconciliation, automatic encoder policy,
+native Render or a complete product export. All requirements and gates remain
+open or partial. No new native sanitizer or GUI run was needed for this boundary.
+''')
+files = []
+for path in sorted(DEST.iterdir()):
+    if path.is_file() and path.name != 'file-manifest.json':
+        with path.open('rb') as file:
+            digest = hashlib.file_digest(file, 'sha256').hexdigest()
+        files.append({'path': path.name, 'bytes': path.stat().st_size, 'sha256': digest})
+(DEST / 'file-manifest.json').write_text(json.dumps(files, indent=2) + '\n')
+for row in files:
+    path = DEST / row['path']
+    assert path.stat().st_size == row['bytes']
+    with path.open('rb') as file:
+        assert hashlib.file_digest(file, 'sha256').hexdigest() == row['sha256']
+print(json.dumps({'files_rehashed': len(files), 'tests': summary['workspace']['passed'], 'archive': audit}))
