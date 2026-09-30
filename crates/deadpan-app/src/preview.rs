@@ -513,7 +513,30 @@ impl DeadpanApp {
                 });
             self.workspace = update.workspace;
             self.import = update.import;
+            if old_session != new_session {
+                self.render_session_changed();
+            }
+            let incoming_identity = update
+                .render
+                .as_ref()
+                .and_then(|update| update.workflow.as_ref())
+                .filter(|workflow| {
+                    self.workspace.as_ref().is_some_and(|workspace| {
+                        workspace.session == workflow.context.session
+                            && workspace.document.project_id() == &workflow.context.project
+                    })
+                })
+                .and_then(|workflow| workflow.status.identity.as_ref());
+            let previous_identity = self
+                .render_job
+                .as_ref()
+                .and_then(|update| update.workflow.as_ref())
+                .and_then(|workflow| workflow.status.identity.as_ref());
+            if incoming_identity.is_some() && incoming_identity != previous_identity {
+                self.render.open = true;
+            }
             self.render_job = update.render;
+            self.receive_render_history(update.render_history);
             self.project_error = update.error;
             self.message = update.message;
             if old_session != new_session {
@@ -1694,6 +1717,7 @@ impl DeadpanApp {
                 }
             }
             Ok(navigation::command::Entry::Help) => self.help_open = true,
+            Ok(navigation::command::Entry::Renders) => self.render.history.requested = true,
             Ok(navigation::command::Entry::Monitor(tenths)) => {
                 self.pause_playback();
                 self.monitor_gain = f32::from(tenths) / 1000.0;
@@ -1794,6 +1818,16 @@ impl DeadpanApp {
                             .clicked()
                         {
                             self.action(Action::Render, ui.ctx());
+                        }
+                        if ui
+                            .add_enabled(
+                                self.workspace.is_some() && !self.dialogs.is_open(),
+                                egui::Button::new("Renders"),
+                            )
+                            .on_hover_text("Saved renders and recovery · :renders")
+                            .clicked()
+                        {
+                            self.render.history.requested = true;
                         }
                     });
                     columns[1].with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
@@ -2808,6 +2842,7 @@ impl DeadpanApp {
                         (",i / :insert", "Reuse the full Original after the selected beat in the current group, or append to an empty group. Legacy projects insert their selected source."),
                         ("u / Ctrl R", "Undo / redo. Native ⌘Z / ⌘Shift Z also work."),
                         ("⌘E / :render", "Render the saved full edit with automatic SDR output settings. For an unsaved Camera, Gain or Room tone preview, choose Commit preview and render, Discard preview and render, or Keep editing."),
+                        (":renders", "Browse saved renders and destinations. Save a retained movie again, render its saved edit again, or check its previous destination. Tab moves between controls; Escape returns to editing."),
                     ] { help_binding(ui, key, description); }
                     ui.separator();
                     for (key, description) in [
@@ -2817,7 +2852,7 @@ impl DeadpanApp {
                     ] { help_binding(ui, key, description); }
                     ui.separator();
                     ui.weak("Original browsing never changes it. Your edit commands affect the selected beat in the displayed group and its linked picture and sound. Counts precede operators, such as 3rr; the visible PENDING badge waits without a timer.");
-                    ui.weak("Space auditions the focused catalog sound, Original, or full edit. In the catalog, j/k selects a sound and Shift+Space loops its complete measured audio. Catalog audition keeps the picture and both editor cursors in place. Leaving the catalog or choosing another sound stops it. Elsewhere Shift+Space loops the selected Original moment or edited beat with context. Playback has edge fades and a safety limiter; pause before changing Monitor volume. Range cuts/replacement, named registers, Repeat/Retime descendant navigation and insertion, moving routed sounds, voice effects, the full mix, and AI generation in the app remain unavailable. Render supports the current SDR picture and audio path; unsupported content fails explicitly. Headless commands can use this open project. HDR output, full mastering, and the native recovery browser remain unavailable.");
+                    ui.weak("Space auditions the focused catalog sound, Original, or full edit. In the catalog, j/k selects a sound and Shift+Space loops its complete measured audio. Catalog audition keeps the picture and both editor cursors in place. Leaving the catalog or choosing another sound stops it. Elsewhere Shift+Space loops the selected Original moment or edited beat with context. Playback has edge fades and a safety limiter; pause before changing Monitor volume. Range cuts/replacement, named registers, Repeat/Retime descendant navigation and insertion, moving routed sounds, voice effects, the full mix, and AI generation in the app remain unavailable. Render supports the current SDR picture and audio path; unsupported content fails explicitly. Headless commands can use this open project. Use :renders for saved renders and recovery. HDR output and full mastering remain unavailable.");
             });
     }
 }
@@ -2995,6 +3030,7 @@ impl eframe::App for DeadpanApp {
             if self.render.requested {
                 self.begin_render(&context);
             }
+            self.dispatch_render_history(&context);
             self.schedule_playback_picture();
             self.dispatch_waiting_repeat(&context);
             self.dispatch_gain_proposal(&context);

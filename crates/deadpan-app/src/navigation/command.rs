@@ -10,6 +10,7 @@ pub enum Entry {
     Source,
     Sequence,
     Help,
+    Renders,
     RoomTone,
     HoldSilence,
     Gain(Option<deadpan_core::GainDb>),
@@ -113,16 +114,19 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         "open" => Action::Open,
         "import" => Action::Import,
         "render" => Action::Render,
-        "source" | "sequence" | "help" | "room-tone" | "hold-silence" if argument.is_none() => {
+        "source" | "sequence" | "help" | "renders" | "room-tone" | "hold-silence"
+            if argument.is_none() =>
+        {
             return Ok(match verb.as_str() {
                 "source" => Entry::Source,
                 "sequence" => Entry::Sequence,
+                "renders" => Entry::Renders,
                 "room-tone" => Entry::RoomTone,
                 "hold-silence" => Entry::HoldSilence,
                 _ => Entry::Help,
             });
         }
-        "source" | "sequence" | "help" | "room-tone" | "hold-silence" => {
+        "source" | "sequence" | "help" | "renders" | "room-tone" | "hold-silence" => {
             return Err("This command takes no arguments.".into());
         }
         _ => {
@@ -392,6 +396,7 @@ mod tests {
             ("open", Entry::Action(Action::Open)),
             ("import", Entry::Action(Action::Import)),
             (":render", Entry::Action(Action::Render)),
+            (":renders", Entry::Renders),
             ("source", Entry::Source),
             ("sequence", Entry::Sequence),
             ("help", Entry::Help),
@@ -401,7 +406,12 @@ mod tests {
         ] {
             assert_eq!(parse(input), Ok(expected));
         }
-        for input in ["room-tone auto", "room-tone 12f", "hold-silence all"] {
+        for input in [
+            "room-tone auto",
+            "room-tone 12f",
+            "hold-silence all",
+            "renders current",
+        ] {
             assert!(parse(input).is_err(), "{input}");
         }
     }

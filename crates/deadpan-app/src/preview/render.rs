@@ -9,6 +9,8 @@ use crate::project::{
 };
 use deadpan_cli::encoded_render::workflow::{WorkflowOutcome, WorkflowStage};
 
+mod history;
+
 #[derive(Clone, Debug)]
 pub(super) struct PreviewEdit {
     pub session: u64,
@@ -26,12 +28,16 @@ struct Capture {
 }
 
 impl Capture {
-    fn matches(&self, workspace: Option<&Workspace>) -> bool {
+    fn same_project(&self, workspace: Option<&Workspace>) -> bool {
         workspace.is_some_and(|workspace| {
             workspace.session == self.context.session
                 && workspace.document.project_id() == &self.context.project
-                && workspace.document.revision_id() == &self.revision
         })
+    }
+
+    fn matches(&self, workspace: Option<&Workspace>) -> bool {
+        self.same_project(workspace)
+            && workspace.is_some_and(|workspace| workspace.document.revision_id() == &self.revision)
     }
 }
 
@@ -50,6 +56,7 @@ enum Flow {
         ticket: u64,
         close_preview: bool,
     },
+    RecoveryPicker(history::RecoveryCapture),
 }
 
 #[derive(Default)]
@@ -62,11 +69,12 @@ pub(super) struct State {
     prior_focus: Option<egui::Id>,
     summary: Option<(ProjectRenderContext, RevisionId, String)>,
     cancel_ticket: Option<(ProjectRenderContext, u64)>,
+    pub history: history::History,
 }
 
 impl State {
     pub fn blocking(&self) -> bool {
-        self.flow.is_some()
+        self.flow.is_some() || self.history.open
     }
     #[cfg(feature = "ui-harness")]
     pub(super) fn error(&self) -> Option<&str> {
@@ -88,6 +96,29 @@ impl State {
 }
 
 impl DeadpanApp {
+    pub(super) fn current_render(&self) -> Option<&crate::project::ProjectRenderStatus> {
+        self.render_job
+            .as_ref()?
+            .workflow
+            .as_ref()
+            .filter(|workflow| {
+                self.workspace.as_ref().is_some_and(|workspace| {
+                    workspace.session == workflow.context.session
+                        && workspace.document.project_id() == &workflow.context.project
+                })
+            })
+    }
+
+    pub(super) fn render_session_changed(&mut self) {
+        self.render.open = false;
+        self.render.error = None;
+        self.render.summary = None;
+        self.render.cancel_ticket = None;
+        if matches!(self.render.flow, Some(Flow::Submitted { .. })) {
+            self.render.flow = None;
+        }
+    }
+
     pub(super) fn begin_render(&mut self, context: &egui::Context) {
         self.render.requested = false;
         context.request_repaint();
@@ -100,18 +131,13 @@ impl DeadpanApp {
                 Some("Wait for the current edit to finish, then choose Render again.".into());
             return;
         }
-        if self
-            .render_job
-            .as_ref()
-            .and_then(|update| update.workflow.as_ref())
-            .is_some_and(|workflow| {
-                !workflow.status.cleanup_confirmed
-                    || !matches!(
-                        workflow.status.stage,
-                        WorkflowStage::Idle | WorkflowStage::Finished
-                    )
-            })
-        {
+        if self.current_render().is_some_and(|workflow| {
+            !workflow.status.cleanup_confirmed
+                || !matches!(
+                    workflow.status.stage,
+                    WorkflowStage::Idle | WorkflowStage::Finished
+                )
+        }) {
             return;
         }
         let Some(workspace) = &self.workspace else {
@@ -194,6 +220,23 @@ impl DeadpanApp {
             self.render.flow = None;
             return;
         }
+        let save = self.render_movie_suggestion(&capture);
+        match self.dialogs.save_movie(save, context) {
+            Ok(()) => {
+                self.render.flow = Some(Flow::Picker {
+                    capture,
+                    edit,
+                    discard,
+                })
+            }
+            Err(error) => {
+                self.render.error = Some(error);
+                self.render.flow = None;
+            }
+        }
+    }
+
+    fn render_movie_suggestion(&self, capture: &Capture) -> crate::dialogs::SaveMovie {
         let previous = self
             .render
             .destination
@@ -217,30 +260,20 @@ impl DeadpanApp {
             .to_string_lossy();
         let suffix = uuid::Uuid::new_v4().simple().to_string();
         let name = format!("{stem}-{}.mp4", &suffix[..8]);
-        match self
-            .dialogs
-            .save_movie(crate::dialogs::SaveMovie { directory, name }, context)
-        {
-            Ok(()) => {
-                self.render.flow = Some(Flow::Picker {
-                    capture,
-                    edit,
-                    discard,
-                })
-            }
-            Err(error) => {
-                self.render.error = Some(error);
-                self.render.flow = None;
-            }
-        }
+        crate::dialogs::SaveMovie { directory, name }
     }
 
     pub(super) fn receive_render_dialog(&mut self, path: Option<PathBuf>) {
+        let flow = self.render.flow.take();
+        if let Some(Flow::RecoveryPicker(captured)) = flow {
+            self.receive_recovery_dialog(captured, path);
+            return;
+        }
         let Some(Flow::Picker {
             capture,
             edit,
             discard,
-        }) = self.render.flow.take()
+        }) = flow
         else {
             return;
         };
@@ -323,10 +356,11 @@ impl DeadpanApp {
     }
 
     pub(super) fn reconcile_render(&mut self, context: &egui::Context) {
-        if let Some(error) = self
-            .render_job
-            .as_ref()
-            .and_then(|update| update.service_error.as_ref())
+        if self.current_render().is_some()
+            && let Some(error) = self
+                .render_job
+                .as_ref()
+                .and_then(|update| update.service_error.as_ref())
         {
             self.render.error = Some(format!("{} ({})", error.message, error.code));
         }
@@ -403,15 +437,39 @@ impl DeadpanApp {
     /// Called before preview-specific key routers. Native fields and IME keep
     /// their keys; Render never implicitly submits a focused field.
     pub(super) fn render_keyboard(&mut self, context: &egui::Context) -> bool {
+        self.restore_render_history_focus(context);
         if self.render.blocking() {
             let events = context.input(|input| input.events.clone());
+            let composition_owned = self.ime_composing
+                || events
+                    .iter()
+                    .any(|event| matches!(event, egui::Event::Ime(_)));
             help_scroll::observe_composition(&events, &mut self.ime_composing);
+            if composition_owned || self.ime_composing {
+                // egui buttons activate directly from raw Enter/Space. IME
+                // confirmation must not turn into a recovery or preview action.
+                context.input_mut(|input| {
+                    input.events.retain(|event| {
+                        !matches!(
+                            event,
+                            egui::Event::Key {
+                                key: egui::Key::Enter | egui::Key::Space | egui::Key::Escape,
+                                ..
+                            }
+                        )
+                    })
+                });
+            }
             return true;
         }
         false
     }
 
     pub(super) fn render_windows(&mut self, context: &egui::Context) {
+        if self.render.history.open && self.render.flow.is_none() {
+            self.render_history_window(context);
+            return;
+        }
         if let Some(Flow::Decision { capture, proposal }) = &self.render.flow {
             let capture = capture.clone();
             let proposal = proposal.clone();
@@ -468,7 +526,7 @@ impl DeadpanApp {
             .default_width(430.0).resizable(true).scroll([false, true]).show(context, |ui| {
                 ui.label("Full edit · automatic MP4");
                 if let Some(error) = &self.render.error { ui.colored_label(style::LAVENDER, error); }
-                let Some(workflow) = self.render_job.as_ref().and_then(|update| update.workflow.as_ref()) else {
+                let Some(workflow) = self.current_render() else {
                     ui.weak("Choose Render to save your complete edit as a movie.");
                     return;
                 };

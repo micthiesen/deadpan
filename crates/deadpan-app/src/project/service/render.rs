@@ -36,6 +36,10 @@ impl Service {
     /// True completes the short user command; false retains its admission while
     /// a requested session replacement drains the old writer's render work.
     pub(super) fn dispatch_request(&mut self, request: ProjectRequest) -> bool {
+        if let ProjectRequest::RenderHistory(request) = request {
+            self.render_history_command(request);
+            return true;
+        }
         if let ProjectRequest::Render(request) = request {
             self.render_command(request);
             return true;
@@ -168,6 +172,17 @@ impl Service {
         {
             return Err(workflow_error(WorkflowError::Busy));
         }
+        if let ProjectRenderOperation::Recover(recovery) = &request.operation {
+            let operation = self.prepare_render_recovery(&request.context, recovery)?;
+            return self.admit_render(
+                &ProjectRenderRequest {
+                    ticket: request.ticket,
+                    context: request.context.clone(),
+                    operation,
+                },
+                committed_revision,
+            );
+        }
         let (mut revision, limits) = match &request.operation {
             ProjectRenderOperation::Start { request, limits }
             | ProjectRenderOperation::CommitAndStart {
@@ -204,6 +219,7 @@ impl Service {
                 (revision, limits)
             }
             ProjectRenderOperation::Cancel(_) => unreachable!("cancellation was handled above"),
+            ProjectRenderOperation::Recover(_) => unreachable!("recovery was resolved above"),
         };
         let package = workspace.path.clone();
         if let ProjectRenderOperation::CommitAndStart { edit, .. } = &request.operation
@@ -334,6 +350,7 @@ impl Service {
                 request.identity.clone()
             }
             ProjectRenderOperation::Cancel(_) => unreachable!("cancellation was handled above"),
+            ProjectRenderOperation::Recover(_) => unreachable!("recovery was resolved above"),
         };
         self.render_update
             .get_or_insert_with(Default::default)

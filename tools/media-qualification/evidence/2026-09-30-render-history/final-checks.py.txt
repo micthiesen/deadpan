@@ -1,0 +1,21 @@
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+root = Path('/tmp/deadpan-render-history-20260930')
+runner = 'tools/media-qualification/evidence/2026-09-29-generated-pictures/run-native.py'
+commands = [
+    ('workspace-tests', ['cargo', 'test', '--workspace', '--locked', '--no-fail-fast']),
+    ('workspace-clippy', ['cargo', 'clippy', '--workspace', '--all-targets', '--locked', '--', '-D', 'warnings']),
+    ('ui-clippy', ['cargo', 'clippy', '--locked', '-p', 'deadpan-app', '--features', 'ui-harness', '--all-targets', '--', '-D', 'warnings']),
+    ('format', ['cargo', 'fmt', '--all', '--check']),
+]
+results = []
+for name, command in commands:
+    result = subprocess.run([sys.executable, runner, name, *command], env=dict(os.environ, DEADPAN_CHECK_OUTPUT=str(root)))
+    results.append({'name': name, 'exit_code': result.returncode})
+    (root / 'final-checks.json').write_text(json.dumps(results, indent=2) + '\n')
+    if result.returncode:
+        sys.exit(result.returncode)

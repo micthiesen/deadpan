@@ -15,6 +15,7 @@ mod headless;
 mod moment;
 mod pause;
 mod render;
+mod render_history;
 mod retime;
 mod room_tone;
 mod scope;

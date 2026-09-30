@@ -1,0 +1,21 @@
+Deadpan Render History native UI QA
+Date: 2026-09-30
+App: dev.thiesen.deadpan.render-history-qa
+Project: /tmp/deadpan-render-history-20260930/ui-fourth/projects/render/Documents/Deadpan/cfr-bframes.deadpan
+
+Outcome
+- The editor opened the cfr-bframes project with its 120-frame Original and single full-length Original beat. The picture was visible.
+- `:renders` opened Saved renders from the native command bar. (The CUA key API rejected `pressKey(":")`; typing `:renders` with `typeText` entered the normal command field, then Return invoked it.)
+- Saved renders displayed two saved revisions, both with Edit frames 0 to 120 and Automatic MP4. IDs shown: 19e3281c-7635-42fa-8179-be73bb3667d9 and e485d649-4320-49fa-be1d-78438c9d07b6.
+- Tab visibly focused Saved edits then Destinations; Return entered Destinations. Tab/Return returned to Saved edits. The Saved edits view showed “View render attempts” for each revision. Return opened the first revision's attempts. This showed “Attempt 1 · Movie verified” and “Save movie from attempt 1…”.
+- Tab visibly focused Saved edits, Destinations, and attempt actions. Shift+Tab visibly focused “Save movie from attempt 1…” in reverse order. Keyboard focus was visibly outlined and the view scrolled/repositioned to keep controls in view.
+- Return on “Save movie from attempt 1…” opened the native macOS save sheet. It was at Exports, titled “Render your edit”, with default name `cfr-bframes-c0601a84.mp4`. No name or destination was changed and Save was not pressed.
+- Clicked native Cancel. The save sheet closed and the Saved renders attempt view remained. Escape returned to the editor; picture and controls were visible. `l` advanced Edit boundary 0→1/120; `h` returned it 1→0/120.
+- No authored edits or movie saves were made. Frame cursor movement was navigational only.
+- Quit only the Render History QA app with Cmd+Q. Inventory-only `cua.getState()` omitted dev.thiesen.deadpan.render-history-qa and still listed dev.thiesen.deadpan.cursor-qa running. The Cursor QA app was not operated, moved, resized, or quit.
+
+Evidence / limits
+- Inline native screenshots in the agent thread show Saved edits, Destinations, attempt status/actions, the native Save sheet, and the post-cancel/editor states.
+- The documented native CUA screenshot API emits images inline and provides no local-save option, so no screenshot files were written. The screenshots are not embedded in this text file.
+- During custom in-window Saved renders views, the AX tree continued to expose the editor controls (marked disabled) rather than the overlay controls. Keyboard focus and view contents were therefore verified from native screenshots. The native macOS save sheet was exposed in AX.
+- No IME test was attempted; it was optional and required no system-settings change.

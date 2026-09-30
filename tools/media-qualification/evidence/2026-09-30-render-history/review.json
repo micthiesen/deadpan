@@ -1,0 +1,16 @@
+{
+  "reviewer": "/root/app_identity",
+  "scope": "Native stored-render query, recovery and UI changes; read-only review without Cargo",
+  "findings": [
+    {"issue": "Previous-session retained workflow exposed as current", "resolution": "Filter current_render by project/session and clear session UI state", "evidence": "Reopened saved-render replay"},
+    {"issue": "Raw IME confirmation can activate egui modal buttons", "resolution": "Preserve IME events and suppress composition-owned Enter/Space/Escape before widgets", "evidence": "Preedit+Enter and Commit+Space on a focused recovery button"},
+    {"issue": "Picker cancellation consumes entry focus", "resolution": "Retain entry focus across the suspended browser and restore on the next outer frame after Close", "evidence": "Cancelled picker plus Tab/Escape asserts actual pane focus"},
+    {"issue": "Session cleanup hides a coalesced new-session render", "resolution": "Clean up before comparing the incoming current-session workflow", "evidence": "Real owner close/open/start while UI updates are held, followed by publication"}
+  ],
+  "replay_findings": [
+    {"issue": "Tab reaches an action outside its paint clip", "resolution": "Immediately scroll focused actions into view and bound body height using measured header", "evidence": "Native Tab actual paint checks"},
+    {"issue": "Immediate focus restore is lost to the current modal frame", "resolution": "Restore after cumulative_frame_nr advances", "evidence": "Fourth production replay passes exact focus assertion"}
+  ],
+  "final_followup": "No actionable findings in deferred focus restoration, modal discard handling, command-entry focus, session invalidation and nonmodal current-render status",
+  "remaining_native_observation": "Native AX omitted the custom history overlay while the harness AccessKit tree contained it. Native keyboard and screenshot checks passed. VoiceOver acceptance remains open."
+}

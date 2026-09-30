@@ -30,6 +30,48 @@ of pinned rfd confirms inferred sheet parenting and retained completion, with no
 confirmed deadlock. Explicit parenting through `eframe::Frame` is a possible
 hardening step that still needs a real native reproduction and verification.
 
+## Native saved-render recovery, 2026-09-30
+
+`Renders` and `:renders` browse stored jobs, attempts and destinations through
+session/ticket-bound owner queries. Eight-row pages preserve command receipts.
+Recovery captures the saved job, original encoding checkpoint or exact previous
+destination before any picker. It preserves the current edit and unsaved previews,
+rejects changed sessions and reuses the public coordinator's fresh admission and
+verification. Core schema 33 and database schema 42 are unchanged.
+
+The production Render replay passes 112 checks, including actual checkpoint
+retry, historical re-encoding, destination reconciliation and a CLI-style owner
+start delivered with a reopened session. Raw Enter/Space/Escape cannot turn IME
+confirmation into a modal action. Tab reveals controls immediately; returning
+focus waits until the modal's outer frame ends. Status filters retained receipts
+by the current project/session. See [the contract](../RENDER_JOBS.md#native-saved-render-browser)
+and [qualification](../qualification/render-history-2026-09-30.md).
+
+Native keyboard browsing and the real save sheet/cancellation passed in a
+separate QA app; all 20 database tables stayed unchanged and shutdown released
+the writer lock. The user's existing window/desktop remained untouched. Native
+AX omitted the custom history overlay while listing disabled editor controls,
+despite the harness AccessKit tree containing the actions. Investigate that
+native accessibility gap; do not infer VoiceOver acceptance from the replay.
+Final verification passes 2,578 locked workspace tests, 344 optional UI-feature
+tests, strict workspace/UI Clippy, formatting and native Metal startup/shutdown.
+
+Native relink/checkpoint controls, complete keyboard editing, full mastering,
+HDR and the full media/performance/release matrix remain open. Saved-render
+browsing completes this entrypoint boundary, not DP-17, DP-18 or any delivery gate.
+
+For §9.7, the next bounded slice increment can preview a linked Original moment
+at an ordinary Sequence child boundary through `:splice`, preserving fast `p/P`.
+`preview_prepared_source_moment` already produces a reversible proposed edit;
+retain its exact prepared request without committing until Enter. Show endpoint
+pictures, a provisional destination, local endpoint refinement and Before/Proposed
+audition including both joins. Escape must restore the entry view and history.
+Keep proposed picture/audio on the same document with authority anchored in the
+committed base. Endpoint requests need a separate bounded identity/queue so they
+cannot displace the main picture. Frame-interior insertion, edited-slice move,
+replacement, picture/audio-only policies and Repeat/Retime occurrence targets
+remain required by the full specification and are not covered by this increment.
+
 ## Owner preparation, 2026-09-30
 
 CLI retain/relink/register/checkpoint now use the existing native import worker
@@ -44,15 +86,9 @@ CLI invocations and native catalog/picture/keyboard inspection, with 2,572 passi
 locked workspace tests, 338 optional UI-feature tests, strict lint, formatting
 and native startup/shutdown. Initial failures and scoped corrections remain in the
 evidence. Current schema migration remains an independent read-only no-op.
-Native relink/checkpoint controls, full preparation performance/failure acceptance
-and native persisted Render recovery remain open.
-
-For the next native recovery step, reuse service `ProjectRenderOperation::Retry`
-and `Reconcile`, the CLI `retry_request`/`reconcile_request` builders, and bounded
-store job/attempt/publication queries. Add session/ticket-bound browsing and
-captured historical targets before destination pickers; the backend workflow
-already provides checkpoint retry, re-encoding and destination reconciliation.
-No schema change is needed for that connection.
+Native relink/checkpoint controls and full preparation performance/failure
+acceptance remain open. The saved-render boundary above supplies persisted
+recovery using the existing Retry/Reconcile coordinator and bounded store queries.
 
 The cursor-preservation gap found during this native inspection is fixed by
 `preview::select_source`: reselecting the same registered video retains its
@@ -92,7 +128,7 @@ Registration retains the caller's complete revision and insertion intent.
 Checkpoints use a private consistent SQLite backup and retain the actual captured
 revision. Operational receipts survive refresh/reply failures; a renamed
 checkpoint with failed directory sync retains its receipt and reports the error.
-Native persisted-job recovery remains the next product boundary.
+Native persisted-job recovery is described above.
 Section 20.5, DP-21 and all product gates remain open.
 
 ## Native and public Render, 2026-09-30
@@ -118,8 +154,8 @@ audio in both public exports. The accepted-generated-picture replay requires its
 separate fixture and is explicitly skipped in this ordinary release run.
 
 The open-project boundary above extends these commands to the native owner.
-Prepared owner operations are described above; native persisted-job recovery
-remains required by Section 20.5. Full mastering, HDR, expanded output qualification and the complete
+Prepared owner operations and persisted-job recovery are described above.
+Full mastering, HDR, expanded output qualification and the complete
 product scope remain open.
 
 ## Durable automatic encoding, 2026-09-30

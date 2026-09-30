@@ -1,0 +1,66 @@
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import shutil
+
+source = Path('/tmp/deadpan-render-history-20260930')
+dest = Path('tools/media-qualification/evidence/2026-09-30-render-history')
+dest.mkdir(parents=True, exist_ok=True)
+checks = json.loads((source / 'final-checks.json').read_text())
+assert len(checks) == 4 and all(check['exit_code'] == 0 for check in checks)
+assert not json.loads((source / 'ui-fourth/report.json').read_text())['failed']
+assert json.loads((source / 'native-database-check.json').read_text())['all_tables_unchanged']
+
+def copy(path, relative=None):
+    target = dest / (relative or path.name)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(path, target)
+
+for path in sorted(source.glob('*.json')):
+    if path.name.startswith('source-'):
+        (dest / (path.name + '.gz')).write_bytes(gzip.compress(path.read_bytes(), mtime=0))
+    else:
+        copy(path)
+for path in sorted(source.glob('*.log')):
+    copy(path)
+for path in sorted(source.glob('*.sqlite')):
+    (dest / (path.name + '.gz')).write_bytes(gzip.compress(path.read_bytes(), mtime=0))
+for name in ['ui-first', 'ui-second', 'ui-third', 'ui-fourth']:
+    report = source / name / 'report.json'
+    if report.exists():
+        folder = dest / 'replays' / name
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / 'report.json.gz').write_bytes(gzip.compress(report.read_bytes(), mtime=0))
+for name in ['render-123.png', 'render-126.png', 'render-127.png', 'render-129.png', 'render-131.png']:
+    copy(source / 'ui-fourth' / name, Path('captures') / name)
+for path in sorted((source / 'ui-fourth/render-output').iterdir()):
+    if path.is_file() and path.suffix in ('.json', '.mp4'):
+        copy(path, Path('movies') / path.name)
+for name in ['collect.py', 'final-checks.py', 'verify-native.py']:
+    copy(source / name, name + '.txt')
+native = source / 'native-ui'
+if native.exists():
+    for path in sorted(native.rglob('*')):
+        if path.is_file() and path.suffix in ('.png', '.json', '.txt', '.md'):
+            copy(path, Path('native-ui') / path.relative_to(native))
+
+movies = {
+    path.name: {'bytes': path.stat().st_size, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
+    for path in sorted((dest / 'movies').glob('*.mp4'))
+}
+(dest / 'movies.json').write_text(json.dumps(movies, indent=2) + '\n')
+tests = []
+import re
+for name in ['workspace-tests', 'app-tests-fourth-corrected']:
+    text = (source / (name + '.log')).read_text()
+    summaries = re.findall(r'test result: (\w+)\. (\d+) passed; (\d+) failed; (\d+) ignored;', text)
+    tests.append({'name': name, 'summaries': len(summaries), 'passed': sum(int(x[1]) for x in summaries),
+                  'failed': sum(int(x[2]) for x in summaries), 'ignored': sum(int(x[3]) for x in summaries)})
+(dest / 'test-counts.json').write_text(json.dumps(tests, indent=2) + '\n')
+manifest = {
+    str(path.relative_to(dest)): {'bytes': path.stat().st_size, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
+    for path in sorted(dest.rglob('*')) if path.is_file() and path.name != 'manifest.json'
+}
+(dest / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+print(json.dumps({'files': len(manifest), 'tests': tests, 'movies': movies}, indent=2))

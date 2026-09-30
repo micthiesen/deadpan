@@ -20,6 +20,7 @@ use crate::library::ProjectLibrary;
 
 pub mod gain;
 mod pause;
+pub mod render_history;
 pub mod retime;
 mod scope;
 mod service;
@@ -127,6 +128,9 @@ pub struct ProjectUpdate {
     pub gain: Option<gain::ProposalUpdate>,
     /// Operational render feedback is retained independently of editor feedback.
     pub render: Option<ProjectRenderUpdate>,
+    /// Bounded history replies retain their exact query and session independently
+    /// of authored commits and live render progress.
+    pub render_history: Option<render_history::Update>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -144,6 +148,9 @@ pub struct ProjectRenderLimits {
 }
 
 pub enum ProjectRenderOperation {
+    /// Resolve captured historical identities on the store owner, then use the
+    /// ordinary Retry or Reconcile workflow with fresh operation identities.
+    Recover(render_history::Recovery),
     Start {
         request: deadpan_cli::encoded_render::workflow::StartRender,
         limits: ProjectRenderLimits,
@@ -350,6 +357,7 @@ pub struct MomentPaste {
 
 pub enum ProjectRequest {
     Render(ProjectRenderRequest),
+    RenderHistory(render_history::Request),
     /// Source first: native projects are always allocated in Documents/Deadpan.
     CreateFromSource {
         path: PathBuf,

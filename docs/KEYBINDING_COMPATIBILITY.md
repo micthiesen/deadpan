@@ -71,11 +71,20 @@ keyboard qualification result. The `render` production replay covers the
 shortcut, command entry, preview decisions, stale captures and export flow;
 its current run results are recorded separately.
 
-Automatic Render currently uses the SDR picture and audio path and rejects
-unsupported content. Closed-project headless Render supports retained-checkpoint
-retry, fresh encoding and publication reconciliation. Routing a headless request
-to an already-open native project, a native recovery browser, full mastering and
-HDR output remain open. See [headless Render](HEADLESS.md#automatic-render).
+**`:renders`** and the **Renders** header control open saved render history.
+Native Tab / Shift Tab moves between controls, Enter activates, and Escape
+returns to the editor outside composition. The browser owns ordinary editing
+keys while open. It pages through saved edits, attempts and destinations on the
+project owner thread. Choosing a recovery action captures the historical job,
+encoding attempt or destination before opening any picker. Later edits preserve
+that historical target; changing projects rejects it. Cancelling a picker
+returns to the browser without creating an attempt or committing a preview.
+
+Automatic Render uses the current SDR picture and audio path and rejects
+unsupported content. Native and headless recovery support retained-movie retry,
+fresh encoding of a saved edit and destination reconciliation, including through
+an already-open native owner. Full mastering and HDR output remain open.
+See [headless Render](HEADLESS.md#automatic-render).
 
 ## Automated audit
 

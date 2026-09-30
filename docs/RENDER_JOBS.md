@@ -195,9 +195,42 @@ workflow target and cannot discard the initiating client's retained result.
 Owner loss cannot trigger local fallback or replay. See
 [open-project commands](LIVE_PROJECT.md) for transport and observation limits.
 
-The native UI currently exposes new rendering and live cancellation. Listing and
-recovering persisted jobs in the native UI, full mastering/effects, HDR and
-release qualification remain open.
+The native UI exposes new rendering, live cancellation and the saved-render
+browser below. Full mastering/effects, HDR and release qualification remain open.
+
+## Native saved-render browser
+
+`Renders` in the workspace header and `:renders` open a keyboard-accessible
+browser of the open project's saved renders. Saved edits, their attempts, and
+destinations use separate pages of eight rows. Pages use retained identity or
+attempt-ordinal ordering; they do not claim chronological ordering. Query work
+runs on the existing project owner thread and returns compact summaries without
+verification blobs. Every reply retains its query, nonzero ticket and project
+session, independently of authored commit and render command receipts.
+
+The browser offers three explicit actions:
+
+- **Save movie from attempt N** captures the original encoding attempt before
+  choosing a new destination. The workflow freshly verifies its retained movie.
+- **Render this saved edit again** captures that job's immutable saved revision
+  and runs fresh automatic encoder admission and encoding.
+- **Check previous destination** captures a publication identity and reconciles
+  its recorded path. It does not open a destination picker or retarget the file.
+
+Changing the current edit cannot retarget historical recovery. Changing project
+sessions rejects the captured request, including after a delayed picker or query.
+Picker cancellation returns to browsing without creating an attempt. Recovery
+leaves Camera, Gain and Room tone previews uncommitted. Engineering-policy jobs
+remain inspectable but have no public native recovery controls. The service
+rechecks all availability hints against the authoritative store before starting.
+
+Tab and Shift Tab use native widget focus, Enter activates and Escape closes
+outside active composition. Ordinary editor keys belong to the browser while
+it is open. Pages and their Back navigation are bounded. Close the browser to
+continue editing while a render works. A newly observed workflow, including one
+started through the native owner's CLI endpoint, opens the independent status
+window. An observed movie commit remains visible through later confirmation
+failure.
 
 ## Automatic admission and recovery
 
@@ -245,6 +278,6 @@ an edited Source project and an accepted Generated project.
 
 Destination publication has a separate durable journal and explicit reconciliation
 protocol. It requires a new live verifier result; a stored Verified row alone
-never authorizes adoption of destination bytes. Native recovery controls,
-full mastering/effects, HDR and release qualification
+never authorizes adoption of destination bytes. Full recovery acceptance,
+mastering/effects, HDR and release qualification
 remain required; no DP requirement or delivery gate is completed here.

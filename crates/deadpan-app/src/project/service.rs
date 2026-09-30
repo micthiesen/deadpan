@@ -32,6 +32,7 @@ mod gain;
 mod headless;
 mod moment;
 mod render;
+mod render_history;
 mod room_tone;
 
 struct Pending {
@@ -65,6 +66,7 @@ struct Service {
     library: Option<ProjectLibrary>,
     render: Option<render::NativeRender>,
     render_update: Option<super::ProjectRenderUpdate>,
+    render_history: Option<super::render_history::Update>,
     pending_session_change: Option<render::PendingSessionChange>,
     host: Option<headless::Host>,
     // Kept across session replacement until the shared worker drains its reply.
@@ -100,6 +102,7 @@ pub(super) fn run(
         library,
         render: None,
         render_update: None,
+        render_history: None,
         pending_session_change: None,
         host: None,
         host_preparing: None,
@@ -215,6 +218,7 @@ impl Service {
             room_tone_error: self.room_tone_error.clone(),
             gain: self.gain.clone(),
             render: self.render_update.clone(),
+            render_history: self.render_history.clone(),
         };
         *self
             .shared
@@ -225,6 +229,10 @@ impl Service {
     }
 
     fn command(&mut self, request: ProjectRequest) -> Result<()> {
+        if let ProjectRequest::RenderHistory(request) = request {
+            self.render_history_command(request);
+            return Ok(());
+        }
         if let ProjectRequest::Render(request) = request {
             self.render_command(request);
             return Ok(());
@@ -235,6 +243,9 @@ impl Service {
         self.gain = None;
         match request {
             ProjectRequest::Render(_) => unreachable!("render commands use their own feedback"),
+            ProjectRequest::RenderHistory(_) => {
+                unreachable!("render history queries use their own feedback")
+            }
             ProjectRequest::CreateFromSource { path } => self.create_from_source(path),
             ProjectRequest::InitializeSource {
                 expected_session,

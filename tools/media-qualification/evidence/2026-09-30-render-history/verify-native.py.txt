@@ -1,0 +1,34 @@
+import fcntl
+import hashlib
+import json
+from pathlib import Path
+import sqlite3
+
+root = Path('/tmp/deadpan-render-history-20260930')
+package = root / 'ui-fourth/projects/render/Documents/Deadpan/cfr-bframes.deadpan'
+live = sqlite3.connect((package / 'project.sqlite').as_uri() + '?mode=ro', uri=True)
+after = sqlite3.connect(root / 'native-after.sqlite')
+live.backup(after)
+live.close()
+before = sqlite3.connect((root / 'native-before.sqlite').as_uri() + '?mode=ro', uri=True)
+
+def inventory(connection):
+    result = {}
+    for (table,) in connection.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"):
+        quoted = '"' + table.replace('"', '""') + '"'
+        rows = connection.execute('SELECT * FROM ' + quoted).fetchall()
+        wire = sorted(json.dumps([{'blob_hex': value.hex()} if isinstance(value, bytes) else value for value in row], separators=(',', ':')) for row in rows)
+        result[table] = {'rows': len(rows), 'sha256': hashlib.sha256('\n'.join(wire).encode()).hexdigest()}
+    return result
+
+first, last = inventory(before), inventory(after)
+assert first == last, 'Native browsing or cancellation changed stored tables'
+assert after.execute('PRAGMA quick_check').fetchall() == [('ok',)]
+with (package / '.writer.lock').open('rb') as lock:
+    fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    fcntl.flock(lock, fcntl.LOCK_UN)
+binary = root / 'Deadpan Render History QA.app/Contents/MacOS/deadpan-app'
+report = {'all_tables_unchanged': True, 'tables': first, 'quick_check': 'ok',
+          'writer_lock_released': True, 'native_binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest()}
+(root / 'native-database-check.json').write_text(json.dumps(report, indent=2) + '\n')
+print(json.dumps({'all_tables_unchanged': True, 'table_count': len(first), 'writer_lock_released': True, 'native_binary_sha256': report['native_binary_sha256']}))

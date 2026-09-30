@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/tmp/deadpan-render-history-20260930/Deadpan Render History QA.app/Contents/MacOS/deadpan-app",
+    "--smoke-test"
+  ],
+  "started": "2026-09-30T17:56:38.138685+00:00",
+  "base_commit": "67a7f45a2a8df307f921dcee91b203001b056356",
+  "diff_sha256": "799e5f55379366e049673862920094f0570f282a9d5d7188aef66d6eaa921372",
+  "source_manifest_sha256": "92d7ad2cd912d5ff54a3abe73af9d93686a8ba9dadd4307837f88c9a61ac1b7d",
+  "pid": 51404,
+  "exit_code": 0,
+  "seconds": 0.7798270839266479
+}

@@ -8,6 +8,8 @@ use deadpan_core::{AudioTreatments, ClipGain, GainDb};
 use deadpan_store::{AccessMode, ProjectStore};
 use egui::{Key, Modifiers};
 
+mod history;
+
 const COMMIT: &str = "Commit preview and render";
 const DISCARD: &str = "Discard preview and render";
 const KEEP: &str = "Keep editing  ·  Esc";
@@ -44,7 +46,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     room_tone_decision(d)?;
     preview_gate(d, false, "Closed Room tone")?;
     stale_decision(d)?;
-    actual_export(d, &output.join("preview.mp4"))
+    actual_export(d, &output.join("preview.mp4"))?;
+    history::run(d, &output)
 }
 
 fn picker(d: &mut Driver<'_>, path: Option<PathBuf>) {

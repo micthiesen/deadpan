@@ -1,0 +1,18 @@
+{
+  "coalesced-owner.mp4": {
+    "bytes": 37964,
+    "sha256": "4e265a6f8f34df8b831ac9145cbc2966e9cbe8431d258feefd10598bcb51dd7e"
+  },
+  "preview.mp4": {
+    "bytes": 37730,
+    "sha256": "945a959a2d013dda7e0844f26513ce6da67963fdf9173b38922615da27001933"
+  },
+  "saved-edit-reencoded.mp4": {
+    "bytes": 37730,
+    "sha256": "846328a778ae7e949994388427f44078f0a4945f043eb349332bdb5e1f8313e8"
+  },
+  "saved-movie-retry.mp4": {
+    "bytes": 37730,
+    "sha256": "945a959a2d013dda7e0844f26513ce6da67963fdf9173b38922615da27001933"
+  }
+}

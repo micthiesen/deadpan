@@ -1,0 +1,83 @@
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error[E0603]: struct import `Proposal` is private
+   --> crates/deadpan-app/src/project/tests/render_history.rs:538:26
+    |
+538 |     let proposal = gain::Proposal {
+    |                          ^^^^^^^^ private struct import
+    |
+note: the struct import `Proposal` is defined here...
+   --> crates/deadpan-app/src/project/tests/gain.rs:2:28
+    |
+  2 | use crate::project::gain::{Proposal, Target};
+    |                            ^^^^^^^^
+note: ...and refers to the struct `Proposal` which is defined here
+   --> crates/deadpan-app/src/project/gain.rs:56:1
+    |
+ 56 | pub struct Proposal {
+    | ^^^^^^^^^^^^^^^^^^^ you could import this directly
+help: consider importing this struct instead
+    |
+538 |     let proposal = crate::project::gain::Proposal {
+    |                    ++++++++++++++++
+help: import `Proposal` directly
+    |
+538 |     let proposal = crate::project::gain::Proposal {
+    |                    ++++++++++++++++
+
+error[E0603]: struct import `Target` is private
+   --> crates/deadpan-app/src/project/tests/render_history.rs:539:23
+    |
+539 |         target: gain::Target {
+    |         ------        ^^^^^^ private struct import
+    |         |
+    |         while setting this field
+    |
+note: the struct import `Target` is defined here...
+   --> crates/deadpan-app/src/project/tests/gain.rs:2:38
+    |
+  2 | use crate::project::gain::{Proposal, Target};
+    |                                      ^^^^^^
+note: ...and refers to the struct `Target` which is defined here
+   --> crates/deadpan-app/src/project/gain.rs:10:1
+    |
+ 10 | pub struct Target {
+    | ^^^^^^^^^^^^^^^^^ you could import this directly
+help: consider importing this struct instead
+    |
+539 |         target: crate::project::gain::Target {
+    |                 ++++++++++++++++
+help: import `Target` directly
+    |
+539 |         target: crate::project::gain::Target {
+    |                 ++++++++++++++++
+
+error[E0277]: the trait bound `Array<u8, UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>>: LowerHex` is not satisfied
+   --> crates/deadpan-app/src/project/tests/render_history.rs:155:58
+    |
+155 |     let hash = deadpan_jobs::Sha256::new(format!("{:x}", Sha256::digest(movie))).unwrap();
+    |                                                   ----   ^^^^^^^^^^^^^^^^^^^^^ the trait `LowerHex` is not implemented for `Array<u8, UInt<UInt<UInt<UInt<UInt<..., ...>, ...>, ...>, ...>, ...>>`
+    |                                                   |
+    |                                                   required by this formatting parameter
+    |
+    = help: the following other types implement trait `LowerHex`:
+              &T
+              &mut T
+              AccelerationStructureBuildFlags
+              AccelerationStructureGeometryFlags
+              AccelerationStructureUses
+              AtFlags
+              AttachmentOps
+              Backends
+            and 345 others
+    = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-ee1862e87f36dd24.long-type-480120717231759050.txt'
+    = note: consider using `--verbose` to print the full type name to the console
+
+Some errors have detailed explanations: E0277, E0603.
+For more information about an error, try `rustc --explain E0277`.
+error: could not compile `deadpan-app` (bin "deadpan-app" test) due to 3 previous errors
+warning: build failed, waiting for other jobs to finish...
+warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `deadpan-app` (bin "deadpan-app") generated 1 warning
