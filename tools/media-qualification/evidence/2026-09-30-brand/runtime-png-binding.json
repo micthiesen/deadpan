@@ -1,0 +1,15 @@
+{
+  "png_sha256": "23e869a164f5e56387a508d9c845ecb94b6eee13813f7ed03bcfc4ed56477bed",
+  "checks": [
+    {
+      "binary": "/tmp/deadpan-brand-20260930/Deadpan.app/Contents/MacOS/deadpan-app",
+      "approved_png_present": true,
+      "offset": 76694752
+    },
+    {
+      "binary": "target/debug/deadpan-app",
+      "approved_png_present": true,
+      "offset": 76694752
+    }
+  ]
+}

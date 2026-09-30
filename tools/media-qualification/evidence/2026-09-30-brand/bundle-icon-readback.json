@@ -1,0 +1,15 @@
+{
+  "command": [
+    "swift",
+    "/tmp/deadpan-brand-20260930/read-bundle-icon.swift",
+    "/tmp/deadpan-brand-20260930/Deadpan.app",
+    "/tmp/deadpan-brand-20260930/bundle-icon.png"
+  ],
+  "started": "2026-09-30T17:11:16.376053+00:00",
+  "base_commit": "c8081c4f7712ca47fc8ee7b27b9d77c589f9650b",
+  "diff_sha256": "45c0dfbae484a1aa9a029e719486c8dbbaf1aaa26f85397e85864660f9971a3e",
+  "source_manifest_sha256": "49da618b40a73dca6654ac30d8677d724d83df9523b9669bfb69ea8eb878ac3d",
+  "pid": 25120,
+  "exit_code": 0,
+  "seconds": 0.5160122090019286
+}

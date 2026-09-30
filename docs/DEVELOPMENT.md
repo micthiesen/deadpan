@@ -123,6 +123,21 @@ than passing without images. Host GPU replay remains an agent verification step.
 
 ## Native application smoke test
 
+The [Deadpan identity assets](design/brand/README.md) include the editable macOS
+icon, complete legacy iconset and logo exports. Bare Cargo launches use the
+embedded PNG. A bundle that declares its own icon keeps macOS appearance handling.
+
+To wrap an already-built executable in a native developer app:
+
+```sh
+python3 tools/build-app.py --binary target/debug/deadpan-app --output /tmp/Deadpan.app
+```
+
+Choose a new output path. The script compiles the layered icon into the bundle
+and includes the ICNS fallback. This is a developer wrapper; external FFmpeg
+dependencies, release signing, notarization and distribution qualification remain
+separate work.
+
 On a supported Apple Silicon Mac:
 
 ```sh

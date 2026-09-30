@@ -1,0 +1,106 @@
+{
+  "date": "2026-09-30",
+  "scope": "Brand assets and local developer bundle wrapper; native runtime and full Cargo gates retained by integration owner",
+  "format_counts": {
+    ".icns": 1,
+    ".ico": 1,
+    ".json": 1,
+    ".pdf": 15,
+    ".png": 39,
+    ".svg": 18,
+    ".ttf": 1,
+    ".txt": 1
+  },
+  "manifest_hashes_checked": 83,
+  "png_decode_and_alpha": "39 PNGs decoded; every PNG has genuine transparency except intentionally opaque apple-touch-icon.png",
+  "icns_slots": [
+    {
+      "name": "icon_128x128.png",
+      "width": 128,
+      "height": 128,
+      "roundtrip_pixels_equal": true
+    },
+    {
+      "name": "icon_128x128@2x.png",
+      "width": 256,
+      "height": 256,
+      "roundtrip_pixels_equal": true
+    },
+    {
+      "name": "icon_16x16.png",
+      "width": 16,
+      "height": 16,
+      "roundtrip_pixels_equal": true
+    },
+    {
+      "name": "icon_16x16@2x.png",
+      "width": 32,
+      "height": 32,
+      "roundtrip_pixels_equal": true
+    },
+    {
+      "name": "icon_256x256.png",
+      "width": 256,
+      "height": 256,
+      "roundtrip_pixels_equal": true
+    },
+    {
+      "name": "icon_256x256@2x.png",
+      "width": 512,
+      "height": 512,
+      "roundtrip_pixels_equal": true
+    },
+    {
+      "name": "icon_32x32.png",
+      "width": 32,
+      "height": 32,
+      "roundtrip_pixels_equal": true
+    },
+    {
+      "name": "icon_32x32@2x.png",
+      "width": 64,
+      "height": 64,
+      "roundtrip_pixels_equal": true
+    },
+    {
+      "name": "icon_512x512.png",
+      "width": 512,
+      "height": 512,
+      "roundtrip_pixels_equal": true
+    },
+    {
+      "name": "icon_512x512@2x.png",
+      "width": 1024,
+      "height": 1024,
+      "roundtrip_pixels_equal": true
+    }
+  ],
+  "ico_sizes": [
+    16,
+    24,
+    32,
+    48,
+    64,
+    128,
+    256
+  ],
+  "svg_content": "All SVGs are geometry; no image or text elements",
+  "pdf_content": "15 vector PDFs; pdfimages/pdffonts report no raster images or font dependencies",
+  "icon_composer_renders": [
+    "Default",
+    "Dark",
+    "ClearLight",
+    "ClearDark",
+    "TintedLight",
+    "TintedDark"
+  ],
+  "catalog_inspection": "compiled-assets.json: Aqua, DarkAqua, Tintable IconImageStack entries and separate frame/hold Vector entries",
+  "wrapper_success": "/tmp/deadpan-brand-agent-20260930/Deadpan.app",
+  "wrapper_expected_failures": {
+    "existing_output": "exit 2; existing bundle preserved",
+    "nonexecutable_input": "exit 2; no output bundle"
+  },
+  "runtime_png_sha256": "23e869a164f5e56387a508d9c845ecb94b6eee13813f7ed03bcfc4ed56477bed",
+  "python_syntax": "py_compile passed for build-app.py, native_icons.py, export.py",
+  "whitespace": "git diff --check passed"
+}

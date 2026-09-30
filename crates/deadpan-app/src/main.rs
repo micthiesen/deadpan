@@ -77,7 +77,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([1280.0, 820.0])
             .with_min_inner_size([960.0, 640.0])
-            .with_icon(egui::IconData::default()),
+            .with_icon(application_icon()?),
         renderer: eframe::Renderer::Wgpu,
         ..Default::default()
     };
@@ -119,4 +119,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("Native window smoke test passed; shutdown callback completed.");
     }
     Ok(())
+}
+
+fn application_icon() -> Result<egui::IconData, Box<dyn std::error::Error>> {
+    #[cfg(target_os = "macos")]
+    {
+        use objc2_foundation::{NSBundle, NSString};
+
+        let bundle = NSBundle::mainBundle();
+        if ["CFBundleIconName", "CFBundleIconFile"].iter().any(|key| {
+            bundle
+                .objectForInfoDictionaryKey(&NSString::from_str(key))
+                .is_some()
+        }) {
+            // Let macOS render the bundle's appearance-aware icon. An explicit
+            // bitmap would replace it through NSApplication on every launch.
+            return Ok(egui::IconData::default());
+        }
+    }
+    // Bare Cargo launches have no bundle resources, but still need a Dock icon.
+    Ok(eframe::icon_data::from_png_bytes(include_bytes!(
+        "../../../assets/brand/app-icon-256.png"
+    ))?)
 }

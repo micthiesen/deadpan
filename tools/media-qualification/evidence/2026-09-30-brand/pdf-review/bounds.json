@@ -1,0 +1,212 @@
+[
+  {
+    "name": "lockup-color.png",
+    "size": [
+      700,
+      154
+    ],
+    "nonempty_bounds": [
+      15,
+      21,
+      679,
+      132
+    ],
+    "clear_margin": true
+  },
+  {
+    "name": "lockup-mono-black.png",
+    "size": [
+      700,
+      154
+    ],
+    "nonempty_bounds": [
+      15,
+      21,
+      679,
+      132
+    ],
+    "clear_margin": true
+  },
+  {
+    "name": "lockup-mono-white.png",
+    "size": [
+      700,
+      154
+    ],
+    "nonempty_bounds": [
+      15,
+      21,
+      679,
+      132
+    ],
+    "clear_margin": true
+  },
+  {
+    "name": "lockup-on-dark.png",
+    "size": [
+      700,
+      154
+    ],
+    "nonempty_bounds": [
+      15,
+      21,
+      679,
+      132
+    ],
+    "clear_margin": true
+  },
+  {
+    "name": "lockup-on-light.png",
+    "size": [
+      700,
+      154
+    ],
+    "nonempty_bounds": [
+      15,
+      21,
+      679,
+      132
+    ],
+    "clear_margin": true
+  },
+  {
+    "name": "mark-color.png",
+    "size": [
+      700,
+      438
+    ],
+    "nonempty_bounds": [
+      21,
+      25,
+      679,
+      413
+    ],
+    "clear_margin": true
+  },
+  {
+    "name": "mark-mono-black.png",
+    "size": [
+      700,
+      438
+    ],
+    "nonempty_bounds": [
+      21,
+      25,
+      679,
+      413
+    ],
+    "clear_margin": true
+  },
+  {
+    "name": "mark-mono-white.png",
+    "size": [
+      700,
+      438
+    ],
+    "nonempty_bounds": [
+      21,
+      25,
+      679,
+      413
+    ],
+    "clear_margin": true
+  },
+  {
+    "name": "mark-on-dark.png",
+    "size": [
+      700,
+      438
+    ],
+    "nonempty_bounds": [
+      21,
+      25,
+      679,
+      413
+    ],
+    "clear_margin": true
+  },
+  {
+    "name": "mark-on-light.png",
+    "size": [
+      700,
+      438
+    ],
+    "nonempty_bounds": [
+      21,
+      25,
+      679,
+      413
+    ],
+    "clear_margin": true
+  },
+  {
+    "name": "wordmark-color.png",
+    "size": [
+      701,
+      183
+    ],
+    "nonempty_bounds": [
+      10,
+      8,
+      691,
+      173
+    ],
+    "clear_margin": true
+  },
+  {
+    "name": "wordmark-mono-black.png",
+    "size": [
+      701,
+      183
+    ],
+    "nonempty_bounds": [
+      10,
+      8,
+      691,
+      173
+    ],
+    "clear_margin": true
+  },
+  {
+    "name": "wordmark-mono-white.png",
+    "size": [
+      701,
+      183
+    ],
+    "nonempty_bounds": [
+      10,
+      8,
+      691,
+      173
+    ],
+    "clear_margin": true
+  },
+  {
+    "name": "wordmark-on-dark.png",
+    "size": [
+      701,
+      183
+    ],
+    "nonempty_bounds": [
+      10,
+      8,
+      691,
+      173
+    ],
+    "clear_margin": true
+  },
+  {
+    "name": "wordmark-on-light.png",
+    "size": [
+      701,
+      183
+    ],
+    "nonempty_bounds": [
+      10,
+      8,
+      691,
+      173
+    ],
+    "clear_margin": true
+  }
+]

@@ -10,6 +10,26 @@ migrations when that simplifies implementation. Prefer this permission over
 historical compatibility requirements; it does not require deleting working
 adapters or reduce eventual runtime/recovery requirements.
 
+## Native identity, 2026-09-30
+
+The user requested a complete ImageGen icon/logo set and app integration.
+[Identity assets and reproduction](../design/brand/README.md) retain the generated
+concepts, exact prompts, editable vector layers, six native appearance previews,
+full ICNS/iconset, PNGs, outlined logo SVG/PDF/PNG variants and web icons.
+`tools/build-app.py` wraps an existing executable with a compiled icon catalog
+and macOS 15 metadata. Bare launches use the embedded icon; declared bundle icons
+retain system appearance handling. The wrapper leaves external FFmpeg libraries
+in place, so signing, relocation, installation and release qualification remain
+open.
+
+During the earlier cursor check, native Open remained pending after a desktop
+move; automation could not find a visible sheet or reach other Spaces. The
+single-Original round trip passed before that attempt. All project tables stayed
+unchanged, and the user-requested window position/size was retained. Inspection
+of pinned rfd confirms inferred sheet parenting and retained completion, with no
+confirmed deadlock. Explicit parenting through `eframe::Frame` is a possible
+hardening step that still needs a real native reproduction and verification.
+
 ## Owner preparation, 2026-09-30
 
 CLI retain/relink/register/checkpoint now use the existing native import worker

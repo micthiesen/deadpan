@@ -1,0 +1,20 @@
+{
+  "base_commit": "c8081c4f7712ca47fc8ee7b27b9d77c589f9650b",
+  "tests": {
+    "workspace-tests": {
+      "passed": 2572,
+      "failed": 0,
+      "ignored": 0
+    },
+    "ui-tests": {
+      "passed": 338,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  "manifest_files_verified": 83,
+  "final_source_inventory_entries_unchanged": 1250,
+  "final_bundle_binary_sha256": "cb397c21c02d6e49108126b90ef33c802cd11407a40d006f1ea4da6a3de95a7f",
+  "final_bundle_contains_approved_runtime_png": true,
+  "limits": "Developer bundle only; external FFmpeg libraries remain required. No signing, notarization, clean-machine install, macOS 15 runtime, live Dock, acoustic or full product release claim."
+}

@@ -1,0 +1,30 @@
+{
+  "command": [
+    "python3",
+    "tools/build-app.py",
+    "--binary",
+    "target/debug/deadpan-app",
+    "--output",
+    "/tmp/deadpan-brand-20260930/Deadpan.app"
+  ],
+  "exit_code": 2,
+  "stdout": "",
+  "stderr": "usage: build-app.py [-h] --binary BINARY --output OUTPUT\n                    [--bundle-id BUNDLE_ID]\nbuild-app.py: error: --output already exists: /tmp/deadpan-brand-20260930/Deadpan.app\n",
+  "before": {
+    "Contents/Info.plist": "894abd75fa5455a87dd2e8158e6292ec1265cc4a649db9f8d7d680f6890e3b90",
+    "Contents/MacOS/deadpan-app": "cb397c21c02d6e49108126b90ef33c802cd11407a40d006f1ea4da6a3de95a7f",
+    "Contents/PkgInfo": "82502191c9484b04d685374f9879a0066069c49b8acae7a04b01d38d07e8eca0",
+    "Contents/Resources/Assets.car": "4e2340854338b2587082e6c93e3f713d774d755edaa0d2757a6aa4458cfbe234",
+    "Contents/Resources/Deadpan.icns": "3a9a5eaa06a52e4b6787284c07682377c99f20ac8b6de645e297e4200073e87e",
+    "Contents/Resources/developer-build.json": "65a0bd662e1d727b593d6887705bb89852f0fbb4719b34b9c10f20b03f5dd9ca"
+  },
+  "after": {
+    "Contents/Info.plist": "894abd75fa5455a87dd2e8158e6292ec1265cc4a649db9f8d7d680f6890e3b90",
+    "Contents/MacOS/deadpan-app": "cb397c21c02d6e49108126b90ef33c802cd11407a40d006f1ea4da6a3de95a7f",
+    "Contents/PkgInfo": "82502191c9484b04d685374f9879a0066069c49b8acae7a04b01d38d07e8eca0",
+    "Contents/Resources/Assets.car": "4e2340854338b2587082e6c93e3f713d774d755edaa0d2757a6aa4458cfbe234",
+    "Contents/Resources/Deadpan.icns": "3a9a5eaa06a52e4b6787284c07682377c99f20ac8b6de645e297e4200073e87e",
+    "Contents/Resources/developer-build.json": "65a0bd662e1d727b593d6887705bb89852f0fbb4719b34b9c10f20b03f5dd9ca"
+  },
+  "unchanged": true
+}

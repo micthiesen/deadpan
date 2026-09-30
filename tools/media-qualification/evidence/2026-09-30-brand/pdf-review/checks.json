@@ -1,0 +1,227 @@
+[
+  {
+    "path": "assets/brand/logo/lockup-color.pdf",
+    "info": "Producer:        cairo 1.18.4 (https://cairographics.org)\nCreationDate:    Wed Sep 30 10:12:33 2026 PDT\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       1094.25 x 240 pts\nPage rot:        0\nFile size:       5609 bytes\nOptimized:       no\nPDF version:     1.7\n",
+    "render_command": [
+      "pdftocairo",
+      "-png",
+      "-transp",
+      "-singlefile",
+      "-scale-to",
+      "700",
+      "assets/brand/logo/lockup-color.pdf",
+      "/tmp/deadpan-brand-20260930/pdf-review/lockup-color"
+    ],
+    "exit_code": 0
+  },
+  {
+    "path": "assets/brand/logo/lockup-mono-black.pdf",
+    "info": "Producer:        cairo 1.18.4 (https://cairographics.org)\nCreationDate:    Wed Sep 30 10:12:34 2026 PDT\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       1094.25 x 240 pts\nPage rot:        0\nFile size:       5553 bytes\nOptimized:       no\nPDF version:     1.7\n",
+    "render_command": [
+      "pdftocairo",
+      "-png",
+      "-transp",
+      "-singlefile",
+      "-scale-to",
+      "700",
+      "assets/brand/logo/lockup-mono-black.pdf",
+      "/tmp/deadpan-brand-20260930/pdf-review/lockup-mono-black"
+    ],
+    "exit_code": 0
+  },
+  {
+    "path": "assets/brand/logo/lockup-mono-white.pdf",
+    "info": "Producer:        cairo 1.18.4 (https://cairographics.org)\nCreationDate:    Wed Sep 30 10:12:34 2026 PDT\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       1094.25 x 240 pts\nPage rot:        0\nFile size:       5555 bytes\nOptimized:       no\nPDF version:     1.7\n",
+    "render_command": [
+      "pdftocairo",
+      "-png",
+      "-transp",
+      "-singlefile",
+      "-scale-to",
+      "700",
+      "assets/brand/logo/lockup-mono-white.pdf",
+      "/tmp/deadpan-brand-20260930/pdf-review/lockup-mono-white"
+    ],
+    "exit_code": 0
+  },
+  {
+    "path": "assets/brand/logo/lockup-on-dark.pdf",
+    "info": "Producer:        cairo 1.18.4 (https://cairographics.org)\nCreationDate:    Wed Sep 30 10:12:33 2026 PDT\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       1094.25 x 240 pts\nPage rot:        0\nFile size:       5608 bytes\nOptimized:       no\nPDF version:     1.7\n",
+    "render_command": [
+      "pdftocairo",
+      "-png",
+      "-transp",
+      "-singlefile",
+      "-scale-to",
+      "700",
+      "assets/brand/logo/lockup-on-dark.pdf",
+      "/tmp/deadpan-brand-20260930/pdf-review/lockup-on-dark"
+    ],
+    "exit_code": 0
+  },
+  {
+    "path": "assets/brand/logo/lockup-on-light.pdf",
+    "info": "Producer:        cairo 1.18.4 (https://cairographics.org)\nCreationDate:    Wed Sep 30 10:12:33 2026 PDT\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       1094.25 x 240 pts\nPage rot:        0\nFile size:       5592 bytes\nOptimized:       no\nPDF version:     1.7\n",
+    "render_command": [
+      "pdftocairo",
+      "-png",
+      "-transp",
+      "-singlefile",
+      "-scale-to",
+      "700",
+      "assets/brand/logo/lockup-on-light.pdf",
+      "/tmp/deadpan-brand-20260930/pdf-review/lockup-on-light"
+    ],
+    "exit_code": 0
+  },
+  {
+    "path": "assets/brand/logo/mark-color.pdf",
+    "info": "Producer:        cairo 1.18.4 (https://cairographics.org)\nCreationDate:    Wed Sep 30 10:12:33 2026 PDT\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       768 x 480 pts\nPage rot:        0\nFile size:       1669 bytes\nOptimized:       no\nPDF version:     1.7\n",
+    "render_command": [
+      "pdftocairo",
+      "-png",
+      "-transp",
+      "-singlefile",
+      "-scale-to",
+      "700",
+      "assets/brand/logo/mark-color.pdf",
+      "/tmp/deadpan-brand-20260930/pdf-review/mark-color"
+    ],
+    "exit_code": 0
+  },
+  {
+    "path": "assets/brand/logo/mark-mono-black.pdf",
+    "info": "Producer:        cairo 1.18.4 (https://cairographics.org)\nCreationDate:    Wed Sep 30 10:12:34 2026 PDT\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       768 x 480 pts\nPage rot:        0\nFile size:       1627 bytes\nOptimized:       no\nPDF version:     1.7\n",
+    "render_command": [
+      "pdftocairo",
+      "-png",
+      "-transp",
+      "-singlefile",
+      "-scale-to",
+      "700",
+      "assets/brand/logo/mark-mono-black.pdf",
+      "/tmp/deadpan-brand-20260930/pdf-review/mark-mono-black"
+    ],
+    "exit_code": 0
+  },
+  {
+    "path": "assets/brand/logo/mark-mono-white.pdf",
+    "info": "Producer:        cairo 1.18.4 (https://cairographics.org)\nCreationDate:    Wed Sep 30 10:12:34 2026 PDT\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       768 x 480 pts\nPage rot:        0\nFile size:       1628 bytes\nOptimized:       no\nPDF version:     1.7\n",
+    "render_command": [
+      "pdftocairo",
+      "-png",
+      "-transp",
+      "-singlefile",
+      "-scale-to",
+      "700",
+      "assets/brand/logo/mark-mono-white.pdf",
+      "/tmp/deadpan-brand-20260930/pdf-review/mark-mono-white"
+    ],
+    "exit_code": 0
+  },
+  {
+    "path": "assets/brand/logo/mark-on-dark.pdf",
+    "info": "Producer:        cairo 1.18.4 (https://cairographics.org)\nCreationDate:    Wed Sep 30 10:12:33 2026 PDT\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       768 x 480 pts\nPage rot:        0\nFile size:       1669 bytes\nOptimized:       no\nPDF version:     1.7\n",
+    "render_command": [
+      "pdftocairo",
+      "-png",
+      "-transp",
+      "-singlefile",
+      "-scale-to",
+      "700",
+      "assets/brand/logo/mark-on-dark.pdf",
+      "/tmp/deadpan-brand-20260930/pdf-review/mark-on-dark"
+    ],
+    "exit_code": 0
+  },
+  {
+    "path": "assets/brand/logo/mark-on-light.pdf",
+    "info": "Producer:        cairo 1.18.4 (https://cairographics.org)\nCreationDate:    Wed Sep 30 10:12:33 2026 PDT\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       768 x 480 pts\nPage rot:        0\nFile size:       1665 bytes\nOptimized:       no\nPDF version:     1.7\n",
+    "render_command": [
+      "pdftocairo",
+      "-png",
+      "-transp",
+      "-singlefile",
+      "-scale-to",
+      "700",
+      "assets/brand/logo/mark-on-light.pdf",
+      "/tmp/deadpan-brand-20260930/pdf-review/mark-on-light"
+    ],
+    "exit_code": 0
+  },
+  {
+    "path": "assets/brand/logo/wordmark-color.pdf",
+    "info": "Producer:        cairo 1.18.4 (https://cairographics.org)\nCreationDate:    Wed Sep 30 10:12:33 2026 PDT\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       735.75 x 192 pts\nPage rot:        0\nFile size:       4896 bytes\nOptimized:       no\nPDF version:     1.7\n",
+    "render_command": [
+      "pdftocairo",
+      "-png",
+      "-transp",
+      "-singlefile",
+      "-scale-to",
+      "700",
+      "assets/brand/logo/wordmark-color.pdf",
+      "/tmp/deadpan-brand-20260930/pdf-review/wordmark-color"
+    ],
+    "exit_code": 0
+  },
+  {
+    "path": "assets/brand/logo/wordmark-mono-black.pdf",
+    "info": "Producer:        cairo 1.18.4 (https://cairographics.org)\nCreationDate:    Wed Sep 30 10:12:34 2026 PDT\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       735.75 x 192 pts\nPage rot:        0\nFile size:       4883 bytes\nOptimized:       no\nPDF version:     1.7\n",
+    "render_command": [
+      "pdftocairo",
+      "-png",
+      "-transp",
+      "-singlefile",
+      "-scale-to",
+      "700",
+      "assets/brand/logo/wordmark-mono-black.pdf",
+      "/tmp/deadpan-brand-20260930/pdf-review/wordmark-mono-black"
+    ],
+    "exit_code": 0
+  },
+  {
+    "path": "assets/brand/logo/wordmark-mono-white.pdf",
+    "info": "Producer:        cairo 1.18.4 (https://cairographics.org)\nCreationDate:    Wed Sep 30 10:12:34 2026 PDT\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       735.75 x 192 pts\nPage rot:        0\nFile size:       4884 bytes\nOptimized:       no\nPDF version:     1.7\n",
+    "render_command": [
+      "pdftocairo",
+      "-png",
+      "-transp",
+      "-singlefile",
+      "-scale-to",
+      "700",
+      "assets/brand/logo/wordmark-mono-white.pdf",
+      "/tmp/deadpan-brand-20260930/pdf-review/wordmark-mono-white"
+    ],
+    "exit_code": 0
+  },
+  {
+    "path": "assets/brand/logo/wordmark-on-dark.pdf",
+    "info": "Producer:        cairo 1.18.4 (https://cairographics.org)\nCreationDate:    Wed Sep 30 10:12:33 2026 PDT\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       735.75 x 192 pts\nPage rot:        0\nFile size:       4896 bytes\nOptimized:       no\nPDF version:     1.7\n",
+    "render_command": [
+      "pdftocairo",
+      "-png",
+      "-transp",
+      "-singlefile",
+      "-scale-to",
+      "700",
+      "assets/brand/logo/wordmark-on-dark.pdf",
+      "/tmp/deadpan-brand-20260930/pdf-review/wordmark-on-dark"
+    ],
+    "exit_code": 0
+  },
+  {
+    "path": "assets/brand/logo/wordmark-on-light.pdf",
+    "info": "Producer:        cairo 1.18.4 (https://cairographics.org)\nCreationDate:    Wed Sep 30 10:12:33 2026 PDT\nCustom Metadata: no\nMetadata Stream: no\nTagged:          no\nUserProperties:  no\nSuspects:        no\nForm:            none\nJavaScript:      no\nPages:           1\nEncrypted:       no\nPage size:       735.75 x 192 pts\nPage rot:        0\nFile size:       4896 bytes\nOptimized:       no\nPDF version:     1.7\n",
+    "render_command": [
+      "pdftocairo",
+      "-png",
+      "-transp",
+      "-singlefile",
+      "-scale-to",
+      "700",
+      "assets/brand/logo/wordmark-on-light.pdf",
+      "/tmp/deadpan-brand-20260930/pdf-review/wordmark-on-light"
+    ],
+    "exit_code": 0
+  }
+]

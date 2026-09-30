@@ -2,6 +2,13 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+[Deadpan's identity assets](design/brand/README.md) now include a genuine layered
+macOS icon, complete legacy fallback, logos and web formats. Native bare/bundled
+startup and an AppKit icon readback pass; 15 logo PDFs render without clipping
+and contain vector paths without embedded fonts or images. This is branding and
+developer-bundle groundwork for DP-20. Signed, standalone distribution and the
+full release gates remain open.
+
 [Returning to the same Original](qualification/source-return-2026-09-30.md)
 now preserves its cursor through catalog sound selection and retains the
 displayed picture while refreshing. The production sound replay reproduces the

@@ -30,6 +30,12 @@ spacing, color, selection and keyboard discoverability while preserving normativ
 behavior. Review the coded GUI against the targets; generated labels, sample
 measurements and pictured controls do not authorize invented capabilities.
 
+Use the [Deadpan identity assets](docs/design/brand/README.md) for app branding.
+Keep the editable Icon Composer layers, complete ICNS fallback, generated
+references and exact prompts. Native bundles own their appearance-aware icon;
+the embedded PNG is for bare executable launches. The developer bundle wrapper
+does not establish signing, relocatable dependencies or release qualification.
+
 - Preserve the editor's timing decisions. Use exact typed frame, sample, and source coordinates, half-open ranges, rational frame rates, checked arithmetic, and origin-based sample boundaries. Never accumulate rounded durations. Three plays means three total plays, with gaps only between them; a Hold inserts exactly its authored frames and preserves subsequent original speech.
 - Framing reshapes the Original without changing its timing. Evaluate camera paths in their declared owner clock and compose them from provider to root on the canonical canvas. Preserve intermediate clips, curve ownership and the distinction between source-percent motion and canvas-percent values. A pause retains the cropped view entering its parent; inherited group framing stays live and applies once. Captured geometry belongs to the Hold recipe independently of provider changes and new Camera settings. Temporary Camera state is visibly unsaved; Enter commits once and Escape restores the entry state. Never replace an existing path with a static pose as an incidental consequence of opening Camera.
 - Build composable structures. Source, Sequence, Hold, Repeat, and Retime form the small primitive set; attention, sound, captions, and cutaways attach to it. Gags expand to ordinary editable primitives. Keep repeats structural and occurrence identities stable.

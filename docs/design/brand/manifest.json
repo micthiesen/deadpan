@@ -1,0 +1,550 @@
+{
+  "date": "2026-09-30",
+  "design_tool": "built-in image_gen.imagegen; model identifier not returned",
+  "vector_source": "Optically regularized path reconstruction of generated concept A and selected master",
+  "xcode": "Xcode 26.6\nBuild version 17F113",
+  "rsvg": "rsvg-convert version 2.62.3\n\nlibraries used:\n  cairo 1.18.4\n  pango 1.58.2\n  harfbuzz 14.4.0\n  fontconfig 2.18.3",
+  "files": [
+    {
+      "path": "assets/brand/app-icon-1024.png",
+      "bytes": 281070,
+      "sha256": "22d7d62ed8c966baca6aa3194bee8c9854699250399ed6d7933ba3a0294e756c",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/app-icon-256.png",
+      "bytes": 24455,
+      "sha256": "23e869a164f5e56387a508d9c845ecb94b6eee13813f7ed03bcfc4ed56477bed",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/logo/lockup-color.pdf",
+      "bytes": 5609,
+      "sha256": "ee4efeb2976e23f1193f405cea3dc1ab1e5eec7f21ed92e1cf3d873452b6c81e"
+    },
+    {
+      "path": "assets/brand/logo/lockup-color.png",
+      "bytes": 31289,
+      "sha256": "8427cf0c9190ec0d9665388fc714dae9aa8f9287cdc906d892dd83c5aaec49ec",
+      "width": 1459,
+      "height": 320,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/logo/lockup-color.svg",
+      "bytes": 14318,
+      "sha256": "458e6751aaa909b08915cd81ed96f2c815f8b1cf5e885d577765e5bb805f337a"
+    },
+    {
+      "path": "assets/brand/logo/lockup-mono-black.pdf",
+      "bytes": 5553,
+      "sha256": "1db21f73a72890d990287fa6039ad2cdbbd31e2043a5dd41dd43ab25997f348f"
+    },
+    {
+      "path": "assets/brand/logo/lockup-mono-black.png",
+      "bytes": 21373,
+      "sha256": "0dec88bbcbf346098163882073309f4532db397658f5f7fef377d73ce5ee7f0a",
+      "width": 1459,
+      "height": 320,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/logo/lockup-mono-black.svg",
+      "bytes": 14292,
+      "sha256": "35b8380cbffd8050b3fbd5a8993a36bebe37a67f46f6334a07916f2fea95e6e5"
+    },
+    {
+      "path": "assets/brand/logo/lockup-mono-white.pdf",
+      "bytes": 5555,
+      "sha256": "d7d386b4602e3ad893d0fb195cdee6d17753de6fea3e2a6813325689545e1b43"
+    },
+    {
+      "path": "assets/brand/logo/lockup-mono-white.png",
+      "bytes": 23963,
+      "sha256": "9bfb7ad92419167cb3288205745b74fb7627e62039a2b2081a72b7b4a813a084",
+      "width": 1459,
+      "height": 320,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/logo/lockup-mono-white.svg",
+      "bytes": 14292,
+      "sha256": "5d8d5b9a7db4f153c8b9f7a0a088afc3dbe2f561d5389954ac84d49e4e9e7467"
+    },
+    {
+      "path": "assets/brand/logo/lockup-on-dark.pdf",
+      "bytes": 5608,
+      "sha256": "aef121c8fadf7a772d92dab1f1b7e21ebbfbdd923d744b17f50db5b794fa54d4"
+    },
+    {
+      "path": "assets/brand/logo/lockup-on-dark.png",
+      "bytes": 31301,
+      "sha256": "1c33aef1574a0878f51e7d9af19221e58c600ec652d9ca54bf672b87f21b4deb",
+      "width": 1459,
+      "height": 320,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/logo/lockup-on-dark.svg",
+      "bytes": 14318,
+      "sha256": "555f7b088dda3a77262a6d163c18b32d2da7ddd5b8f1ceec5c675cca3315aede"
+    },
+    {
+      "path": "assets/brand/logo/lockup-on-light.pdf",
+      "bytes": 5592,
+      "sha256": "d9d67974105d0cd00f932aa3002091e04c750822eb94fd217a850427750cd8c9"
+    },
+    {
+      "path": "assets/brand/logo/lockup-on-light.png",
+      "bytes": 31232,
+      "sha256": "87b70faf616c0a47098077ca49cc83f1b1bb8d1695c2e6fac61d806c9f95be0e",
+      "width": 1459,
+      "height": 320,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/logo/lockup-on-light.svg",
+      "bytes": 14318,
+      "sha256": "a24e179ff8d5dbf0233e37bf0e1f250ab43a89cedba9f2b2f9080b1df78e7ceb"
+    },
+    {
+      "path": "assets/brand/logo/mark-color.pdf",
+      "bytes": 1669,
+      "sha256": "154ed12206333631215e07c087e7221c5fa35b923b706ff9ed801de773e1e9ff"
+    },
+    {
+      "path": "assets/brand/logo/mark-color.png",
+      "bytes": 16063,
+      "sha256": "68a37f1cb00af47fc4de0a4a350fca8c3ac1f01401639e2d49f141584ba21eee",
+      "width": 1024,
+      "height": 640,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/logo/mark-color.svg",
+      "bytes": 1031,
+      "sha256": "cd65a3eaf8bccaa4c4ec0355df77cea88bf1aefaa2bc88dc3db8ed62ee6e5bf9"
+    },
+    {
+      "path": "assets/brand/logo/mark-mono-black.pdf",
+      "bytes": 1627,
+      "sha256": "94dbda3a785d69c5cf0cde92747f3f38281ce9f6b4095b6c739872f31678e6a1"
+    },
+    {
+      "path": "assets/brand/logo/mark-mono-black.png",
+      "bytes": 12522,
+      "sha256": "a601021c5d28ea6964ceb1fec58150873700eeda1f0e073c6634cc21c965e817",
+      "width": 1024,
+      "height": 640,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/logo/mark-mono-black.svg",
+      "bytes": 1005,
+      "sha256": "5e9970940c0c19c4df690a6689164575d9e35f44d7159218eced98292ffbc350"
+    },
+    {
+      "path": "assets/brand/logo/mark-mono-white.pdf",
+      "bytes": 1628,
+      "sha256": "a4faa8de01afb7223beaf0ac514a38795ff789c1f2fb6bc074a871947b4fe0df"
+    },
+    {
+      "path": "assets/brand/logo/mark-mono-white.png",
+      "bytes": 13657,
+      "sha256": "e2eab1b57ed8e5ccc480ba4da487727e995b1aa4681f02bff9702a250a4935ac",
+      "width": 1024,
+      "height": 640,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/logo/mark-mono-white.svg",
+      "bytes": 1005,
+      "sha256": "b0b67d63e1dfcf440782107c0395eb85acfdbb644d0dbf24687afa70724382d1"
+    },
+    {
+      "path": "assets/brand/logo/mark-on-dark.pdf",
+      "bytes": 1669,
+      "sha256": "154ed12206333631215e07c087e7221c5fa35b923b706ff9ed801de773e1e9ff"
+    },
+    {
+      "path": "assets/brand/logo/mark-on-dark.png",
+      "bytes": 16063,
+      "sha256": "68a37f1cb00af47fc4de0a4a350fca8c3ac1f01401639e2d49f141584ba21eee",
+      "width": 1024,
+      "height": 640,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/logo/mark-on-dark.svg",
+      "bytes": 1031,
+      "sha256": "cd65a3eaf8bccaa4c4ec0355df77cea88bf1aefaa2bc88dc3db8ed62ee6e5bf9"
+    },
+    {
+      "path": "assets/brand/logo/mark-on-light.pdf",
+      "bytes": 1665,
+      "sha256": "452c4572af153e346bdd35ef42bf8ef442870ded21955dda982011ca2c09ffe2"
+    },
+    {
+      "path": "assets/brand/logo/mark-on-light.png",
+      "bytes": 16324,
+      "sha256": "e81fb5be69a1e231b7dcd4fde4bbe3d486a34fb3010e4e278005efab6fa04eac",
+      "width": 1024,
+      "height": 640,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/logo/mark-on-light.svg",
+      "bytes": 1031,
+      "sha256": "19cba7aebad8dc95d3ea9c67ed6b6c4cf1f53a0f4f0015ab6f377a7a022199b9"
+    },
+    {
+      "path": "assets/brand/logo/wordmark-color.pdf",
+      "bytes": 4896,
+      "sha256": "6e84cf9603556d6eb573f9db460dedb5c743c2807b25b3c907b4e7656739845b"
+    },
+    {
+      "path": "assets/brand/logo/wordmark-color.png",
+      "bytes": 24639,
+      "sha256": "d4e0e79de8368dcc33ff7e92374a5788e560f83117fc0da4ef90e40b250e1ba5",
+      "width": 981,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/logo/wordmark-color.svg",
+      "bytes": 13348,
+      "sha256": "f8e03ecc5403dc02d31bfcf650aff85a235d69afd431a0d3c2a1e823e7cea4b5"
+    },
+    {
+      "path": "assets/brand/logo/wordmark-mono-black.pdf",
+      "bytes": 4883,
+      "sha256": "5fcd3c6614b046a7e176df111b828552241b85bc71b29c15994b6d9bbb803aa0"
+    },
+    {
+      "path": "assets/brand/logo/wordmark-mono-black.png",
+      "bytes": 16829,
+      "sha256": "5f079e605800f25f021523e6bd694e09969de5e4c5f53db9af499d001bddd513",
+      "width": 981,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/logo/wordmark-mono-black.svg",
+      "bytes": 13348,
+      "sha256": "d6ad266999d68d1d31a0be3922c0eb6fb7a29b6c34304de777894c77742e1eb0"
+    },
+    {
+      "path": "assets/brand/logo/wordmark-mono-white.pdf",
+      "bytes": 4884,
+      "sha256": "62f3767b6e8942fb78491f8da155fae77e8fecc683e58b4ec706c4126f89f74f"
+    },
+    {
+      "path": "assets/brand/logo/wordmark-mono-white.png",
+      "bytes": 18594,
+      "sha256": "65dc03e8bd0b3e7a2cd8605b502c7bc80b6bc6240f0f43f0ebaacc6ee7aca8fc",
+      "width": 981,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/logo/wordmark-mono-white.svg",
+      "bytes": 13348,
+      "sha256": "45342df6fba6d8e4d20cef0734df4c6f42b8e874c624d230a9dfb1e586074492"
+    },
+    {
+      "path": "assets/brand/logo/wordmark-on-dark.pdf",
+      "bytes": 4896,
+      "sha256": "042e93411a8b0a78cffbc1d3a0758a3b44733d4889c8bb9017e5aec11c42b015"
+    },
+    {
+      "path": "assets/brand/logo/wordmark-on-dark.png",
+      "bytes": 24736,
+      "sha256": "3be58fae8c642a03513a22e1158907e8cffc167a95832e11632d86e6f2fa1c71",
+      "width": 981,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/logo/wordmark-on-dark.svg",
+      "bytes": 13348,
+      "sha256": "42a6baedcd0c8f20660ca4c2b8043b94705017088455bf67750ddc36ac450ed7"
+    },
+    {
+      "path": "assets/brand/logo/wordmark-on-light.pdf",
+      "bytes": 4896,
+      "sha256": "6e84cf9603556d6eb573f9db460dedb5c743c2807b25b3c907b4e7656739845b"
+    },
+    {
+      "path": "assets/brand/logo/wordmark-on-light.png",
+      "bytes": 24639,
+      "sha256": "d4e0e79de8368dcc33ff7e92374a5788e560f83117fc0da4ef90e40b250e1ba5",
+      "width": 981,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/logo/wordmark-on-light.svg",
+      "bytes": 13348,
+      "sha256": "f8e03ecc5403dc02d31bfcf650aff85a235d69afd431a0d3c2a1e823e7cea4b5"
+    },
+    {
+      "path": "assets/brand/macos/Deadpan.icns",
+      "bytes": 544241,
+      "sha256": "3a9a5eaa06a52e4b6787284c07682377c99f20ac8b6de645e297e4200073e87e"
+    },
+    {
+      "path": "assets/brand/macos/Deadpan.icon/Assets/01-frame.svg",
+      "bytes": 940,
+      "sha256": "01469572fe79db1b6620f65bf64e8a0d46d365b0ea554d1717718a9bd9232f34"
+    },
+    {
+      "path": "assets/brand/macos/Deadpan.icon/Assets/02-hold.svg",
+      "bytes": 269,
+      "sha256": "b7ef1023abcb80eb885e8a4ca978662845bd1caede78784a4b16aac257504eb2"
+    },
+    {
+      "path": "assets/brand/macos/Deadpan.icon/icon.json",
+      "bytes": 1764,
+      "sha256": "105c450e52b29dae9439852ff01bbe3c8bb295e4fae15513ff461ce913e3ff1e"
+    },
+    {
+      "path": "assets/brand/macos/Deadpan.iconset/icon_128x128.png",
+      "bytes": 11695,
+      "sha256": "2888244b4e76eaca0d90e223febef2abef09e01f650e1497e037ca377e393dd3",
+      "width": 128,
+      "height": 128,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/macos/Deadpan.iconset/icon_128x128@2x.png",
+      "bytes": 31385,
+      "sha256": "2916c2c434773d9773b74a4368f25f51a69560618cefe100feee95545f916312",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/macos/Deadpan.iconset/icon_16x16.png",
+      "bytes": 844,
+      "sha256": "472937a5e72e8087e959501a4d57897898fbe6aa645735d63126d389b70329be",
+      "width": 16,
+      "height": 16,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/macos/Deadpan.iconset/icon_16x16@2x.png",
+      "bytes": 2137,
+      "sha256": "21fa2fe0fb06f83f9ddc3d7f3a72c7c72acd6bdfbc1b581992817769b478c786",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/macos/Deadpan.iconset/icon_256x256.png",
+      "bytes": 30241,
+      "sha256": "e0afe913d66ec3d8ed774b13d201ae3c2455d9c11f79e64de7db224cc4efa2c5",
+      "width": 256,
+      "height": 256,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/macos/Deadpan.iconset/icon_256x256@2x.png",
+      "bytes": 89830,
+      "sha256": "14fe1e92f89b24be7be3000fed4a5c3d92faf8a0747a09060a399fd5256b080f",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/macos/Deadpan.iconset/icon_32x32.png",
+      "bytes": 1895,
+      "sha256": "59cb5e4a92b2698117a60a1c93fc73b2cdfdc40fbc41f3d7b2c439f87f878596",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/macos/Deadpan.iconset/icon_32x32@2x.png",
+      "bytes": 4933,
+      "sha256": "7301ca70cf7076cb5c3eef6f1b0eaf72915f829933d774fc95a2860c0b784098",
+      "width": 64,
+      "height": 64,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/macos/Deadpan.iconset/icon_512x512.png",
+      "bytes": 89597,
+      "sha256": "0479600db5d9fa9bf2950d5c89be6826a61df611f24e9a9aa0d919d37f7e82ae",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/macos/Deadpan.iconset/icon_512x512@2x.png",
+      "bytes": 281070,
+      "sha256": "22d7d62ed8c966baca6aa3194bee8c9854699250399ed6d7933ba3a0294e756c",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/macos/appearances/ClearDark.png",
+      "bytes": 444751,
+      "sha256": "f57cca2b7b77d1f2e9b139fe86105a11f812de01f5f8066038151b5d5fed4462",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/macos/appearances/ClearLight.png",
+      "bytes": 424883,
+      "sha256": "0cfe17dfc3d4bc907ed813deb76b716367a8c6576e1de92bdbb879b5a9ef0641",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/macos/appearances/Dark.png",
+      "bytes": 446007,
+      "sha256": "32a1013d98f134fffef8898cd2fc601aacc87b7268c2970cb889746a343d44e3",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/macos/appearances/Default.png",
+      "bytes": 474750,
+      "sha256": "70d1d89d112ae1d3cac0f82c68784654a0b46b7968aaae2859de4bfad9d39b27",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/macos/appearances/TintedDark.png",
+      "bytes": 420062,
+      "sha256": "9c61b61a7aacc9b688d1c481bf933ac9b6d5cee1d29233a55c7147352e48ce7c",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/macos/appearances/TintedLight.png",
+      "bytes": 849873,
+      "sha256": "9a9a83da95ad4c91daaa3565f6f1760ecb71d1b4a436612506d4cfc8620386ca",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/source/Inter-OFL.txt",
+      "bytes": 4377,
+      "sha256": "5b9321a4298cfeb6b34354164a1c3afc3db114569984c502b9b35d988fd58c57"
+    },
+    {
+      "path": "assets/brand/source/Inter-Variable.ttf",
+      "bytes": 876576,
+      "sha256": "29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031"
+    },
+    {
+      "path": "assets/brand/web/apple-touch-icon.png",
+      "bytes": 14234,
+      "sha256": "b0019107f389874b825d363aa62def24932b787738f1228bd6a3a3ee7d3ae1e6",
+      "width": 180,
+      "height": 180,
+      "mode": "RGB"
+    },
+    {
+      "path": "assets/brand/web/favicon.ico",
+      "bytes": 45494,
+      "sha256": "b81cfe4462dba53fe7b5a3f5884b968ecf9f5f06d27050a9f97deeb4b62d9ebf"
+    },
+    {
+      "path": "assets/brand/web/favicon.svg",
+      "bytes": 1089,
+      "sha256": "c57849e55a36a8063391c46f05de0d5f256d8a48235e26e4a0e67d91abc875fb"
+    },
+    {
+      "path": "assets/brand/web/icon-16.png",
+      "bytes": 772,
+      "sha256": "269c60177eb4087ac1cb7a90a0bade1c374ec307407c393b008b44d47e4de272",
+      "width": 16,
+      "height": 16,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/web/icon-192.png",
+      "bytes": 16577,
+      "sha256": "32c046a8e2e1538187eef9d28cbc1db74da4d43a4d2b2aa2b45554507dd7c3b4",
+      "width": 192,
+      "height": 192,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/web/icon-32.png",
+      "bytes": 1827,
+      "sha256": "bd2b32f609aba793c3517f225ab0d9e96ba560f39b9811cbe16d560abddf1e2f",
+      "width": 32,
+      "height": 32,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/web/icon-48.png",
+      "bytes": 2990,
+      "sha256": "7e145d27dab70088150bc8159a0a4fe4f18e75fa5b227d5f3bb7f0b14e3846d1",
+      "width": 48,
+      "height": 48,
+      "mode": "RGBA"
+    },
+    {
+      "path": "assets/brand/web/icon-512.png",
+      "bytes": 90729,
+      "sha256": "fc617500b87d01aa5f6e49e67caaafa04e8199543abf19d6b507f4c04906132c",
+      "width": 512,
+      "height": 512,
+      "mode": "RGBA"
+    },
+    {
+      "path": "docs/design/brand/generated/01-concepts.png",
+      "bytes": 1160473,
+      "sha256": "188311a67fc6e2d827b1f056163b60f9426c32208eb99b47fa5afc19815fabe4",
+      "width": 1942,
+      "height": 809,
+      "mode": "RGB"
+    },
+    {
+      "path": "docs/design/brand/generated/02-icon-master.png",
+      "bytes": 908714,
+      "sha256": "25b111ed6dfa42b24466f2bb9e80a4c86527e54c856fc644d7deb8e4046fecd4",
+      "width": 1254,
+      "height": 1254,
+      "mode": "RGBA"
+    },
+    {
+      "path": "docs/design/brand/generated/03-flat-mark-reference.png",
+      "bytes": 462977,
+      "sha256": "395cbe71f22e26cf65dc187e1d5f63aefb3a8bfc795cdf87458bd1a62988ca42",
+      "width": 1254,
+      "height": 1254,
+      "mode": "RGBA"
+    },
+    {
+      "path": "docs/design/brand/prompts/01-concepts.txt",
+      "bytes": 1967,
+      "sha256": "fe78148ceea91aeb3710a2e2bf18626cd8c09a498bc0474e3c1ff216f312c2cc"
+    },
+    {
+      "path": "docs/design/brand/prompts/02-icon-master.txt",
+      "bytes": 2172,
+      "sha256": "f7cbee8e2eb070a78cf2e82f2211bb0fd2afc7d38a9e696bd12aba4e852a69a3"
+    },
+    {
+      "path": "docs/design/brand/prompts/03-flat-mark.txt",
+      "bytes": 1395,
+      "sha256": "63109820743fc95962f9d1a02a8074e1e667d9ef110dd98c10366ad007a2cd89"
+    }
+  ]
+}
