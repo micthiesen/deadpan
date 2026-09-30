@@ -1,5 +1,5 @@
 //! Real Metal preparation from one committed project while its writer edits.
-//! Usage: qualify_project_picture REPORT.json NEW_WORK_DIRECTORY [ACCEPTED.deadpan]
+//! Usage: qualify_project_picture REPORT.json NEW_WORK_DIRECTORY [ACCEPTED.deadpan [WORKER_EXECUTABLE]]
 //! The optional package must retain the adjacent generated-picture-fixture.json
 //! exported by the Generated picture fixture. Omitting it reports that skip.
 use std::{
@@ -47,6 +47,9 @@ use sha2::{Digest, Sha256};
 #[path = "qualify_project_picture/reference.rs"]
 mod reference;
 
+#[path = "qualify_project_picture/worker.rs"]
+mod worker;
+
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 fn node(value: &str) -> NodeId {
@@ -61,9 +64,9 @@ fn asset() -> AssetId {
 
 fn main() -> Result<()> {
     let arguments: Vec<_> = std::env::args_os().skip(1).collect();
-    if !(2..=3).contains(&arguments.len()) {
+    if !(2..=4).contains(&arguments.len()) {
         return Err(
-            "usage: qualify_project_picture REPORT.json NEW_WORK_DIRECTORY [ACCEPTED.deadpan]"
+            "usage: qualify_project_picture REPORT.json NEW_WORK_DIRECTORY [ACCEPTED.deadpan [WORKER_EXECUTABLE]]"
                 .into(),
         );
     }
@@ -71,12 +74,18 @@ fn main() -> Result<()> {
         .write(true)
         .create_new(true)
         .open(&arguments[0])?;
-    let seconds = if arguments.len() == 3 { 180 } else { 60 };
-    let mut report = json!({"schema_version": 2, "status": "running", "checks": [], "frames": [],
+    let seconds = if arguments.len() == 4 {
+        300
+    } else if arguments.len() == 3 {
+        180
+    } else {
+        60
+    };
+    let mut report = json!({"schema_version": 3, "status": "running", "checks": [], "frames": [],
         "scope": "production fixed-revision output-picture contract through actual Metal and owned SDR I420",
         "deadline": {"cooperative_seconds": seconds, "scope": "whole example, checked around bounded calls",
             "external_timeout_required": true, "native_calls_are_not_preempted": true},
-        "limitations": ["synthetic SDR fixtures", "no encoded export or rendered audio", "no final-render process isolation",
+        "limitations": ["synthetic SDR fixtures", "no encoded export or rendered audio", "no durable render jobs or native Render workflow",
             "no legacy Accepted/Still provider", "no HDR, physical display or performance qualification"]});
     let started = Instant::now();
     // Retain a valid running report even if an outer deadline terminates a
@@ -86,6 +95,7 @@ fn main() -> Result<()> {
     let result = qualify(
         Path::new(&arguments[1]),
         arguments.get(2).map(Path::new),
+        arguments.get(3).map(Path::new),
         &mut report,
         deadline,
     )
@@ -475,6 +485,7 @@ fn render(
 fn qualify(
     directory: &Path,
     generated: Option<&Path>,
+    executable: Option<&Path>,
     report: &mut Value,
     deadline: Instant,
 ) -> Result<()> {
@@ -748,6 +759,12 @@ fn qualify(
     } else {
         report["generated"] = json!({"status": "skipped",
             "reason": "Pass the retained accepted.deadpan fixture as the third argument to exercise Generated output."});
+    }
+    if let Some(executable) = executable {
+        worker::qualify(&gpu, executable, &directory, generated, report)?;
+    } else {
+        report["worker"] = json!({"status": "skipped",
+            "reason": "Pass the freshly built deadpan-cli executable as the fourth argument to exercise process isolation."});
     }
     report["frame_count"] = json!(report["frames"].as_array().ok_or("missing frames")?.len());
     check_deadline(deadline)?;

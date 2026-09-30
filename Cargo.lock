@@ -865,6 +865,7 @@ version = "0.1.0"
 dependencies = [
  "deadpan-audio",
  "deadpan-core",
+ "deadpan-jobs",
  "deadpan-media",
  "deadpan-models",
  "deadpan-plan",
@@ -873,6 +874,7 @@ dependencies = [
  "deadpan-store",
  "pollster",
  "rusqlite",
+ "rustix 1.1.5",
  "serde",
  "serde_json",
  "sha2",

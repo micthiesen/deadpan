@@ -2,6 +2,44 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Isolated committed picture worker, 2026-09-29
+
+The [render worker](../RENDER_WORKER.md) now owns real decode, Metal composition
+and bounded raw I420 output in a separate process. Host and child independently
+bind the complete authored document hash and every exact output-contract field.
+The shared process supervisor retains checked launch, group/reaping ownership,
+bounded pipes and clean-exit admission through separate generation/render
+protocol adapters. A returned range owns a verified private snapshot.
+
+[Qualification](../qualification/render-worker-2026-09-29.md) passes 2,140 locked
+workspace tests, zero failed/ignored, strict workspace/all-target Clippy and
+formatting. Actual Metal passes 118 direct and 128 worker checks, including all
+82 isolated frames, 31 independent complete-plane comparisons, live writer
+edit/undo/redo, cancellation after real progress and a successful new request.
+The macOS raw/fixed pipe-inheritance witness also passes. Source inventory
+`1c9362b0…` binds all final checks and native artifacts.
+
+Independent review fixed diagnostic overwriting, interrupted-copy error mapping
+and interrupted control-drain handling. Retained evidence includes these findings,
+the initial compile failure, terminal command journals, exact worker/example
+binary hashes and every synthetic actual/direct/reference plane. No app UI or
+native interaction changed. No compiler, test or native probe is left running.
+
+Next, add a bounded native H.264/AAC encoder session consumed directly inside
+this child. Do not spool a full uncompressed product movie through the current
+512 MiB qualification range. The existing production media worker only converts
+whole files to FFV1; encoder probes are development evidence. Qualify requested
+B-frames with the approved edit-list policy, exact origin-based PCM endpoints,
+closed GOPs and actual finished files. Pinned FFmpeg fast-start reopens its output
+for reading and allocates from moov size: a descriptor-only sink needs a narrowly
+admitted same-file read callback and bounded sample tables, not unrestricted
+path access. The current audio inspection method also needs a bounded offline
+interface using one caller deadline.
+
+Durable render jobs/recovery, full audio/effects, independent encoded-file
+verification, atomic publication, native Render, HDR and all remaining product
+requirements stay open. No DP requirement or Gate A through G is complete.
+
 ## Committed encoder pictures, 2026-09-29
 
 The [encoder picture host](../EXPORT_PICTURES.md) owns one captured revision,

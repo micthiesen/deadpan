@@ -10,6 +10,8 @@ mod originals;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod picture;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod render_worker;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 mod source_registration;
 
 use std::fs::File;
@@ -271,6 +273,12 @@ struct BoundaryLimits {
 /// Shared process entrypoint for the CLI and `deadpan-app --headless`.
 pub fn entry(arguments: impl IntoIterator<Item = String>) -> ExitCode {
     let arguments: Vec<String> = arguments.into_iter().collect();
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    if let [operation, package] = arguments.as_slice()
+        && operation == render_worker::PRIVATE_WORKER_ARGUMENT
+    {
+        return render_worker::worker::entry(Path::new(package));
+    }
     match run(&arguments) {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {

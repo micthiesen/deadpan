@@ -1,0 +1,90 @@
+{
+  "artifacts": {
+    "deadpan-cli": {
+      "cargo_artifact": {
+        "reason": "compiler-artifact",
+        "package_id": "path+file:///Users/michael/Code/deadpan/crates/deadpan-cli#0.1.0",
+        "manifest_path": "/Users/michael/Code/deadpan/crates/deadpan-cli/Cargo.toml",
+        "target": {
+          "kind": [
+            "bin"
+          ],
+          "crate_types": [
+            "bin"
+          ],
+          "name": "deadpan-cli",
+          "src_path": "/Users/michael/Code/deadpan/crates/deadpan-cli/src/main.rs",
+          "edition": "2024",
+          "doc": true,
+          "doctest": false,
+          "test": true
+        },
+        "profile": {
+          "opt_level": "3",
+          "debuginfo": 0,
+          "debug_assertions": false,
+          "overflow_checks": true,
+          "test": false
+        },
+        "features": [],
+        "filenames": [
+          "/Users/michael/Code/deadpan/target/release/deadpan-cli"
+        ],
+        "executable": "/Users/michael/Code/deadpan/target/release/deadpan-cli",
+        "fresh": false
+      },
+      "path": "/Users/michael/Code/deadpan/target/release/deadpan-cli",
+      "sha256": "59623a74131e36b9080181eeeb1f1dc688f3d781d2b3a61dbea8c221773c3bfa",
+      "sha256_after": "59623a74131e36b9080181eeeb1f1dc688f3d781d2b3a61dbea8c221773c3bfa",
+      "unchanged": true
+    },
+    "qualify_project_picture": {
+      "cargo_artifact": {
+        "reason": "compiler-artifact",
+        "package_id": "path+file:///Users/michael/Code/deadpan/crates/deadpan-cli#0.1.0",
+        "manifest_path": "/Users/michael/Code/deadpan/crates/deadpan-cli/Cargo.toml",
+        "target": {
+          "kind": [
+            "example"
+          ],
+          "crate_types": [
+            "bin"
+          ],
+          "name": "qualify_project_picture",
+          "src_path": "/Users/michael/Code/deadpan/crates/deadpan-cli/examples/qualify_project_picture.rs",
+          "edition": "2024",
+          "doc": false,
+          "doctest": false,
+          "test": false
+        },
+        "profile": {
+          "opt_level": "3",
+          "debuginfo": 0,
+          "debug_assertions": false,
+          "overflow_checks": true,
+          "test": false
+        },
+        "features": [],
+        "filenames": [
+          "/Users/michael/Code/deadpan/target/release/examples/qualify_project_picture"
+        ],
+        "executable": "/Users/michael/Code/deadpan/target/release/examples/qualify_project_picture",
+        "fresh": false
+      },
+      "path": "/Users/michael/Code/deadpan/target/release/examples/qualify_project_picture",
+      "sha256": "aed41ecc2406c2280e607f4b1e7acbd02bfefe8157b8008c3871847cb6a39e11",
+      "sha256_after": "aed41ecc2406c2280e607f4b1e7acbd02bfefe8157b8008c3871847cb6a39e11",
+      "unchanged": true
+    }
+  },
+  "command": [
+    "qualify_project_picture",
+    "/private/tmp/deadpan-render-worker-2o6b7g8z/metal-report.json",
+    "/private/tmp/deadpan-render-worker-2o6b7g8z/metal-frames",
+    "/tmp/deadpan-generated-pictures-smyys035/fixture/accepted.deadpan",
+    "/Users/michael/Code/deadpan/target/release/deadpan-cli"
+  ],
+  "cwd": "/Users/michael/Code/deadpan",
+  "timeout_seconds": 360,
+  "exit_code": 0
+}

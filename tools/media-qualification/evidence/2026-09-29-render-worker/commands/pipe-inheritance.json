@@ -1,0 +1,15 @@
+{
+  "command": [
+    "python3",
+    "tools/process-qualification/check_pipe_inheritance.py",
+    "--output",
+    "/tmp/deadpan-render-worker-2o6b7g8z/pipe-inheritance"
+  ],
+  "started": "2026-09-30T02:09:56.514616+00:00",
+  "base_commit": "9448ac9f4cf36373c4120071e27ae061ab741fcf",
+  "diff_sha256": "6c78b5ee866eafe622d4b4c9d973a90996d52d010088d4d97c9975cacd97190b",
+  "source_manifest_sha256": "1c9362b007ffaa8738374a5605ab53044382640abf2af0d4a56d2dfb1c504e3e",
+  "pid": 10737,
+  "exit_code": 0,
+  "seconds": 0.6076008751988411
+}

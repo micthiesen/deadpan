@@ -78,13 +78,14 @@ GPU work drain. A retry cannot accumulate staging buffers while those callbacks
 remain outstanding.
 
 These are cooperative bounds. They cannot preempt a SQLite call, native decoder,
-driver call or bounded pixel conversion. Final-render integration must supervise
-the producer in its own process with an external deadline and checked teardown.
+driver call or bounded pixel conversion. The [render worker](RENDER_WORKER.md)
+now supervises this producer in its own process with an external deadline and
+checked teardown for bounded raw ranges.
 
 ## Required integration
 
 This is the picture input boundary for an encoder. Product Render still requires
-process-isolated jobs, the complete shared effects/audio graph, qualified
+durable render jobs, the complete shared effects/audio graph, qualified
 VideoToolbox/OS fallback encoding, approved AAC timing metadata, independent
 emitted-file verification, atomic publication and the native workflow. Existing
 legacy Accepted/Still and HDR failures remain explicit until those paths are

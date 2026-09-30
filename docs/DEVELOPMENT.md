@@ -220,6 +220,16 @@ external timeout as well as its cooperative deadline. These are encoder-input
 checks, not an encoded file or complete product Render. See
 [the output contract](EXPORT_PICTURES.md).
 
+To exercise [process isolation](RENDER_WORKER.md), build both the CLI binary and
+this example in the same locked release build. Pass the retained accepted fixture
+as the third argument and that build's absolute `deadpan-cli` executable as the
+fourth. The example records worker output separately and compares every isolated
+frame with the direct producer, including independent odd-canvas and Generated
+references. It also checks live edit/undo/redo and cancellation/recovery. Use an
+outer timeout above its 300-second cooperative deadline. Record the exact Cargo
+artifact paths and hashes; do not infer that an old `target/release` binary came
+from the current build. Omitting the executable records an explicit worker skip.
+
 ## Original storage checks
 
 The [headless original commands](HEADLESS.md#original-media-ownership) retain

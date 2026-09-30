@@ -1,0 +1,70 @@
+{
+  "base_commit": "9448ac9f4cf36373c4120071e27ae061ab741fcf",
+  "commands": {
+    "build-metal": {
+      "exit_code": 0,
+      "source_manifest_sha256": "1c9362b007ffaa8738374a5605ab53044382640abf2af0d4a56d2dfb1c504e3e"
+    },
+    "check-initial": {
+      "exit_code": 101,
+      "source_manifest_sha256": "0b398ee63a9e35cfef475f5cd63c2d0a998af57edc0f60d90c1c0431f4f294c2"
+    },
+    "clippy-workspace": {
+      "exit_code": 0,
+      "source_manifest_sha256": "1c9362b007ffaa8738374a5605ab53044382640abf2af0d4a56d2dfb1c504e3e"
+    },
+    "fmt-apply": {
+      "exit_code": 0,
+      "source_manifest_sha256": "a958e929cdd8b5189aae2d39d3571eb7282cae7748be6e7eb25ce65ac51c147a"
+    },
+    "fmt-final": {
+      "exit_code": 0,
+      "source_manifest_sha256": "1c9362b007ffaa8738374a5605ab53044382640abf2af0d4a56d2dfb1c504e3e"
+    },
+    "metal": {
+      "exit_code": 0,
+      "source_manifest_sha256": "1c9362b007ffaa8738374a5605ab53044382640abf2af0d4a56d2dfb1c504e3e"
+    },
+    "pipe-inheritance": {
+      "exit_code": 0,
+      "source_manifest_sha256": "1c9362b007ffaa8738374a5605ab53044382640abf2af0d4a56d2dfb1c504e3e"
+    },
+    "test-workspace": {
+      "exit_code": 0,
+      "source_manifest_sha256": "1c9362b007ffaa8738374a5605ab53044382640abf2af0d4a56d2dfb1c504e3e"
+    }
+  },
+  "final_source_manifest_sha256": "1c9362b007ffaa8738374a5605ab53044382640abf2af0d4a56d2dfb1c504e3e",
+  "hardware": {
+    "build": "25F84",
+    "cpu": "Apple M5 Max",
+    "macos": "26.5.2",
+    "memory_bytes": 137438953472
+  },
+  "limits": [
+    "Synthetic SDR fixtures",
+    "No encoded media, audio or publication",
+    "No durable render jobs or native Render workflow",
+    "No OS sandbox or hard-timeout latency measurement",
+    "No performance or release acceptance"
+  ],
+  "metal": {
+    "direct_checks": 118,
+    "direct_frames": 52,
+    "direct_reference_comparisons": 31,
+    "worker_checks": 128,
+    "worker_frames": 82,
+    "worker_reference_comparisons": 31
+  },
+  "omitted": [
+    "Synthetic project databases",
+    "Executables and native libraries",
+    "User media and models"
+  ],
+  "tests": {
+    "failed": 0,
+    "ignored": 0,
+    "passed": 2140,
+    "result_records": 157
+  }
+}

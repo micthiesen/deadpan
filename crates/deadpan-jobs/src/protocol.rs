@@ -760,7 +760,11 @@ pub fn write_worker_message(
     write_frame(writer, message)
 }
 
-fn read_frame<T: DeserializeOwned>(reader: &mut impl Read) -> Result<Option<T>, CodecError> {
+/// Read one JSON message with the shared bounded length framing.
+///
+/// This checks framing and deserialization only. Protocol adapters must validate
+/// operation, version, identity, and all other message semantics before use.
+pub fn read_frame<T: DeserializeOwned>(reader: &mut impl Read) -> Result<Option<T>, CodecError> {
     let mut header = [0_u8; 4];
     let header_read = read_up_to(reader, &mut header)?;
     if header_read == 0 {
@@ -806,7 +810,12 @@ fn read_up_to(reader: &mut impl Read, buffer: &mut [u8]) -> Result<usize, CodecE
     Ok(read)
 }
 
-fn write_frame<T: Serialize>(writer: &mut impl Write, message: &T) -> Result<(), CodecError> {
+/// Write one JSON message with the shared bounded length framing.
+///
+/// This bounds serialization but does not validate message semantics. Callers
+/// must validate their own protocol before writing; generation callers should
+/// use `write_host_message` or `write_worker_message`.
+pub fn write_frame<T: Serialize>(writer: &mut impl Write, message: &T) -> Result<(), CodecError> {
     let mut buffer = BoundedBuffer::new(MAX_FRAME_BYTES);
     if let Err(error) = serde_json::to_writer(&mut buffer, message) {
         if buffer.overflowed {

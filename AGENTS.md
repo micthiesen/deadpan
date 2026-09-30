@@ -186,8 +186,13 @@ map to a legal even raster only after composition. Output ordinals and rational
 PTS are separate from absolute project frames and source PTS. Keep both absolute
 project sample boundaries for a selected range. Admit one completed I420 result
 at a time and retain cancelled GPU allocation permits until callbacks drain.
-Run preparation off UI/audio threads; final-render process isolation, complete
-audio/effects, encoding, emitted-file verification and publication remain required.
+Run preparation off UI/audio threads. The [render worker](docs/RENDER_WORKER.md)
+binds a full document hash and reconstructed output contract before child GPU
+work. Admit its bounded raw output only after clean process/group/pipe teardown
+and independent contained hash, geometry and code-range checks. Keep generation
+and render wire messages separate over the shared process supervisor. Durable
+render jobs, complete audio/effects, encoding, emitted-file verification and
+publication remain required.
 
 The [committed project picture boundary](docs/PROJECT_PICTURES.md) captures an
 explicit revision and nonempty half-open range through a read-only store.

@@ -203,6 +203,9 @@ impl ProjectPictureSession {
     pub fn basis(&self) -> &deadpan_core::PresentationBasis {
         self.document.presentation_basis()
     }
+    pub(crate) fn document(&self) -> &ProjectDocument {
+        &self.document
+    }
     pub const fn range(&self) -> FrameRange {
         self.range
     }

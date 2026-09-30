@@ -1,0 +1,106 @@
+{
+  "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+  "sources": {
+    "native/deadpan-process/src/spawn.rs": "5d3ef6a15f626c6568978cf2f8ef824b757f4f44954989cc4f20fb721902f305",
+    "tools/process-qualification/fixtures/delayed_pipe.c": "6523e9ed0ea13724f8d90f9187549c91085bf22e1197b8d351fd38ea25c13650",
+    "tools/process-qualification/fixtures/pipe_inheritance.rs": "1e9cc5fdac34c0dca6d3d8b8689946ef0acd2c7f226d951983b275f28c7b4137",
+    "tools/process-qualification/check_pipe_inheritance.py": "852b3dc6da049ae65afc580ff45958bae9a6346d9ccd92caa0b57874cdf33fd4"
+  },
+  "commands": [
+    {
+      "argv": [
+        "rustc",
+        "--version",
+        "--verbose"
+      ],
+      "returncode": 0,
+      "pid": 10740,
+      "timed_out": false,
+      "stdout": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+      "stderr": "",
+      "command_error": null,
+      "group_cleanup_confirmed": true,
+      "cleanup_errors": []
+    },
+    {
+      "argv": [
+        "clang",
+        "--version"
+      ],
+      "returncode": 0,
+      "pid": 10741,
+      "timed_out": false,
+      "stdout": "Apple clang version 21.0.0 (clang-2100.1.1.101)\nTarget: arm64-apple-darwin25.5.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin\n",
+      "stderr": "",
+      "command_error": null,
+      "group_cleanup_confirmed": true,
+      "cleanup_errors": []
+    },
+    {
+      "argv": [
+        "clang",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-dynamiclib",
+        "/Users/michael/Code/deadpan/tools/process-qualification/fixtures/delayed_pipe.c",
+        "-o",
+        "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-pipe-inheritance-bth_ajhg/delayed_pipe.dylib"
+      ],
+      "returncode": 0,
+      "pid": 10742,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "command_error": null,
+      "group_cleanup_confirmed": true,
+      "cleanup_errors": []
+    },
+    {
+      "argv": [
+        "rustc",
+        "--edition=2024",
+        "/Users/michael/Code/deadpan/tools/process-qualification/fixtures/pipe_inheritance.rs",
+        "-o",
+        "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-pipe-inheritance-bth_ajhg/pipe_inheritance"
+      ],
+      "returncode": 0,
+      "pid": 10751,
+      "timed_out": false,
+      "stdout": "",
+      "stderr": "",
+      "command_error": null,
+      "group_cleanup_confirmed": true,
+      "cleanup_errors": []
+    },
+    {
+      "argv": [
+        "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-pipe-inheritance-bth_ajhg/pipe_inheritance",
+        "raw"
+      ],
+      "returncode": 0,
+      "pid": 10754,
+      "timed_out": false,
+      "stdout": "raw: original reaped; stderr is WouldBlock while unrelated keeper remains alive\nraw: keeper reaped; stderr is EOF\n",
+      "stderr": "",
+      "command_error": null,
+      "group_cleanup_confirmed": true,
+      "cleanup_errors": []
+    },
+    {
+      "argv": [
+        "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/deadpan-pipe-inheritance-bth_ajhg/pipe_inheritance",
+        "serialized"
+      ],
+      "returncode": 0,
+      "pid": 10757,
+      "timed_out": false,
+      "stdout": "serialized: second launch stays pending while the first pipe is held\nserialized: original reaped; stderr is EOF while unrelated keeper remains alive\nserialized: keeper reaped; stderr is EOF\n",
+      "stderr": "",
+      "command_error": null,
+      "group_cleanup_confirmed": true,
+      "cleanup_errors": []
+    }
+  ],
+  "passed": true
+}

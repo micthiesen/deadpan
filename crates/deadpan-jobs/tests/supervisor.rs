@@ -558,3 +558,211 @@ fn workspace_symlinks_relative_executables_and_unbounded_deadlines_are_rejected(
     unbounded.limits.maximum_duration = Duration::ZERO;
     assert!(WorkerProcess::spawn(unbounded, request()).is_err());
 }
+
+// A distinct wire vocabulary proves that transport reuse does not add render
+// operations, identities, or terminal variants to persisted generation messages.
+mod independent_protocol {
+    use super::*;
+    use deadpan_jobs::process::{
+        ProcessEvent as TypedEvent, ResponseKind, SupervisedProcess, SupervisorError,
+        WorkerProtocol,
+    };
+    use serde::{Deserialize, Serialize};
+    use std::io::{Read, Write};
+
+    #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+    #[serde(tag = "action", deny_unknown_fields)]
+    enum Request {
+        Run { render: u64 },
+        Cancel { render: u64 },
+    }
+
+    #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+    #[serde(tag = "event", deny_unknown_fields)]
+    enum Response {
+        Frame { render: u64, ordinal: u64 },
+        Finished { render: u64 },
+        Rejected { render: u64 },
+    }
+
+    struct Protocol(u64);
+
+    impl WorkerProtocol for Protocol {
+        type Request = Request;
+        type Response = Response;
+
+        fn from_request(request: &Request) -> Result<Self, SupervisorError> {
+            match request {
+                Request::Run { render } if *render != 0 => Ok(Self(*render)),
+                _ => Err(SupervisorError::Configuration("invalid render request")),
+            }
+        }
+
+        fn cancellation(&self) -> Request {
+            Request::Cancel { render: self.0 }
+        }
+
+        fn write_request(writer: &mut impl Write, request: &Request) -> Result<(), String> {
+            write_frame(writer, request).map_err(|error| error.to_string())
+        }
+
+        fn read_response(reader: &mut impl Read) -> Result<Option<Response>, String> {
+            read_frame(reader).map_err(|error| error.to_string())
+        }
+
+        fn classify(&self, response: &Response) -> Result<ResponseKind, String> {
+            let (render, kind) = match response {
+                Response::Frame { render, .. } => (render, ResponseKind::Progress),
+                Response::Finished { render } => (render, ResponseKind::Completed),
+                Response::Rejected { render } => (render, ResponseKind::Terminal),
+            };
+            if *render != self.0 {
+                return Err("render identity mismatch".into());
+            }
+            Ok(kind)
+        }
+    }
+
+    fn responses(workspace: &Path, messages: &[Response]) {
+        let mut bytes = Vec::new();
+        for message in messages {
+            write_frame(&mut bytes, message).unwrap();
+        }
+        fs::write(workspace.join("responses.bin"), bytes).unwrap();
+    }
+
+    fn finish(process: &mut SupervisedProcess<Protocol>) -> Vec<TypedEvent<Response>> {
+        let deadline = Instant::now() + Duration::from_secs(5);
+        let mut events = Vec::new();
+        while !process.is_finished() {
+            assert!(Instant::now() < deadline, "typed worker failed to finish");
+            let batch = process.poll(Instant::now()).unwrap();
+            assert!(batch.len() <= 19);
+            if batch.iter().any(|event| {
+                matches!(event,
+                TypedEvent::Message(message) if matches!(**message, Response::Finished { .. }))
+            }) {
+                assert!(
+                    matches!(batch.last(), Some(TypedEvent::Exited { status, cancellation_escalated: false }) if status.success())
+                );
+            }
+            events.extend(batch);
+            thread::sleep(Duration::from_millis(2));
+        }
+        assert!(matches!(events.last(), Some(TypedEvent::Exited { .. })));
+        events
+    }
+
+    #[test]
+    fn different_protocol_retains_fragmented_progress_and_holds_success_until_clean_exit() {
+        let workspace = tempfile::tempdir().unwrap();
+        let mut messages: Vec<_> = (0..40)
+            .map(|ordinal| Response::Frame {
+                render: 27,
+                ordinal,
+            })
+            .collect();
+        messages.push(Response::Finished { render: 27 });
+        responses(workspace.path(), &messages);
+        let mut process = SupervisedProcess::<Protocol>::spawn(
+            spec(workspace.path(), "fragmented"),
+            Request::Run { render: 27 },
+        )
+        .unwrap();
+        let events = finish(&mut process);
+        assert!(
+            !events
+                .iter()
+                .any(|event| matches!(event, TypedEvent::Fault(_)))
+        );
+        let actual: Vec<_> = events
+            .iter()
+            .filter_map(|event| match event {
+                TypedEvent::Message(message) => Some(message.as_ref()),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(actual, messages.iter().collect::<Vec<_>>());
+        let received: Request =
+            serde_json::from_slice(&fs::read(workspace.path().join("received.json")).unwrap())
+                .unwrap();
+        assert_eq!(received, Request::Run { render: 27 });
+    }
+
+    #[test]
+    fn different_protocol_cancel_uses_its_own_identity_and_terminal_variant() {
+        let workspace = tempfile::tempdir().unwrap();
+        responses(workspace.path(), &[Response::Rejected { render: 91 }]);
+        let mut specification = spec(workspace.path(), "cancel");
+        specification.limits.cancellation_grace = Duration::from_secs(2);
+        let mut process =
+            SupervisedProcess::<Protocol>::spawn(specification, Request::Run { render: 91 })
+                .unwrap();
+        assert!(process.request_cancel(Instant::now()).unwrap());
+        assert!(!process.request_cancel(Instant::now()).unwrap());
+        let events = finish(&mut process);
+        assert!(matches!(events.as_slice(),
+            [TypedEvent::Message(message), TypedEvent::Exited { status, cancellation_escalated: false }]
+            if **message == (Response::Rejected { render: 91 }) && status.success()));
+        let cancel: Request =
+            serde_json::from_slice(&fs::read(workspace.path().join("cancellation.json")).unwrap())
+                .unwrap();
+        assert_eq!(cancel, Request::Cancel { render: 91 });
+    }
+
+    #[test]
+    fn different_protocol_checks_identity_terminal_order_and_failed_exit() {
+        for (mode, messages, expected) in [
+            (
+                "messages",
+                vec![Response::Finished { render: 4 }],
+                "identity mismatch",
+            ),
+            (
+                "messages",
+                vec![
+                    Response::Finished { render: 3 },
+                    Response::Frame {
+                        render: 3,
+                        ordinal: 2,
+                    },
+                ],
+                "after its terminal",
+            ),
+            (
+                "exit-failure",
+                vec![Response::Finished { render: 3 }],
+                "unsuccessfully",
+            ),
+        ] {
+            let workspace = tempfile::tempdir().unwrap();
+            responses(workspace.path(), &messages);
+            let mut process = SupervisedProcess::<Protocol>::spawn(
+                spec(workspace.path(), mode),
+                Request::Run { render: 3 },
+            )
+            .unwrap();
+            let events = finish(&mut process);
+            assert!(
+                events.iter().any(
+                    |event| matches!(event, TypedEvent::Fault(reason) if reason.contains(expected))
+                ),
+                "{mode}: {events:?}"
+            );
+            assert!(!events.iter().any(|event| matches!(event,
+                TypedEvent::Message(message) if matches!(**message, Response::Finished { .. }))));
+        }
+    }
+
+    #[test]
+    fn adapter_rejects_invalid_initial_operations_before_launch() {
+        let workspace = tempfile::tempdir().unwrap();
+        for request in [Request::Run { render: 0 }, Request::Cancel { render: 1 }] {
+            assert!(matches!(
+                SupervisedProcess::<Protocol>::spawn(spec(workspace.path(), "messages"), request),
+                Err(SupervisorError::Configuration("invalid render request"))
+            ));
+        }
+        assert!(!workspace.path().join("worker.pid").exists());
+    }
+}

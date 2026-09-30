@@ -23,13 +23,16 @@ deadpan-audio.workspace = true
 deadpan-render.workspace = true
 deadpan-source.workspace = true
 deadpan-models.workspace = true
+deadpan-jobs.workspace = true
+wgpu.workspace = true
+pollster.workspace = true
+sha2.workspace = true
+rustix.workspace = true
+tempfile.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true
 rusqlite.workspace = true
-wgpu.workspace = true
-pollster.workspace = true
-sha2.workspace = true
 
 [lints]
 workspace = true
