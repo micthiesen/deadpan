@@ -1,0 +1,22 @@
+[
+  {
+    "name": "workspace-tests",
+    "exit_code": 0
+  },
+  {
+    "name": "ui-tests",
+    "exit_code": 0
+  },
+  {
+    "name": "workspace-clippy",
+    "exit_code": 0
+  },
+  {
+    "name": "ui-clippy",
+    "exit_code": 0
+  },
+  {
+    "name": "format",
+    "exit_code": 0
+  }
+]

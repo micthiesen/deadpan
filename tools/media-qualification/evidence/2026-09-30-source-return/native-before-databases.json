@@ -1,0 +1,12 @@
+[
+  {
+    "project": "/tmp/deadpan-source-return-20260930/after/projects/sound-playback/Documents/Deadpan/cfr-bframes.deadpan",
+    "tables": 20,
+    "sha256": "798ca3fc3779f00bcc9e07bf5fea5facf45148771e01fb8365c6c3d060b9bdb9"
+  },
+  {
+    "project": "/tmp/deadpan-owner-preparation-20260930/native-preparation.deadpan",
+    "tables": 20,
+    "sha256": "91cbcd89fbc8f895a180c376aa77b2b032697085f0d2a25c7d6355088d1d3e12"
+  }
+]

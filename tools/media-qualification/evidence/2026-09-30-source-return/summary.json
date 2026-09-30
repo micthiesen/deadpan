@@ -1,0 +1,20 @@
+{
+  "workspace-tests": {
+    "exit_code": 0,
+    "passed": 2572,
+    "failed": 0,
+    "ignored": 0
+  },
+  "ui-tests": {
+    "exit_code": 0,
+    "passed": 338,
+    "failed": 0,
+    "ignored": 0
+  },
+  "replay": {
+    "before": "expected failure: Original5 reset to0",
+    "after_sound_checks": 39,
+    "after_shortcut_audit": 1
+  },
+  "source_manifest_sha256": "d3702bc0e4ab81ead329349308573a68aa0dc028943fd59feee20e80852b3cc1"
+}

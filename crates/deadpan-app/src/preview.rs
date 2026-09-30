@@ -1030,15 +1030,18 @@ impl DeadpanApp {
         }
         self.bindings.clear();
         self.stop_playback();
+        let same_source = self.raw_source.is_none() && self.selected_source.as_ref() == Some(&id);
         self.selected_sound = None;
         self.selected_source = Some(id);
         self.selected_event = None;
         self.raw_source = None;
-        self.source_cursor = 0;
+        if !same_source {
+            self.source_cursor = 0;
+        }
         self.view.set(View::Source, &mut self.message);
         self.pane = Pane::Sources;
         self.reveal_source = true;
-        self.request_picture(true);
+        self.request_picture(!same_source);
     }
 
     fn select_sound(&mut self, id: AssetId) {

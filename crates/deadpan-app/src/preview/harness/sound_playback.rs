@@ -30,6 +30,17 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         d.settled()?;
     }
     let sounds = d.app().sound_rows.clone();
+    d.command("sequence")?;
+    d.chord(&[Key::Num2, Key::L])?;
+    d.command("source")?;
+    d.chord(&[Key::Num5, Key::L])?;
+    d.settled()?;
+    d.check(
+        "Sound audition starts with distinct nonzero Original and Edit positions",
+        d.app().source_cursor == 5 && d.app().sequence_cursor == 2,
+        json!({"original":5,"edit":2}),
+        d.snapshot(),
+    )?;
     let baseline = editor_context(d);
     let first_sound_step = d.report.steps.len();
     d.click(&sounds[1].1)?;
@@ -355,18 +366,53 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
 
     d.click("Play sound  ·  Space")?;
+    d.app_mut().feedback.hold_preview = true;
     d.click("Browse  :source")?;
     d.check(
-        "Explicit Original selection stops sound and keeps the immutable Original identity",
+        "Returning to Original stops sound and preserves both retained editing positions",
         d.app().selected_sound.is_none()
             && d.app().transport.is_none()
             && d.app().resume.is_none()
+            && d.app().source_cursor == 5
+            && d.app().sequence_cursor == 2
             && d.app().selected_source.as_ref()
                 == d.app().workspace.as_ref().and_then(|w| original_asset(w)),
-        json!("Original selected; sound stopped"),
+        json!({"original":5,"edit":2,"sound_stopped":true}),
         d.snapshot(),
     )?;
-    d.settled()
+    d.check(
+        "Returning to the same Original keeps its displayed frame while refresh prepares",
+        d.snapshot()["picture"]["displayed"] == baseline["picture"]["displayed"]
+            && d.snapshot()["picture"]["geometry_revision"]
+                == baseline["picture"]["geometry_revision"]
+            && d.app().presentation.loading(),
+        baseline["picture"].clone(),
+        d.snapshot()["picture"].clone(),
+    )?;
+    let held = d.app_mut().feedback.held_reply.take();
+    d.app_mut().feedback.hold_preview = false;
+    d.app_mut().feedback.release_reply = held;
+    d.settled()?;
+    d.check(
+        "The refreshed Original picture matches its retained cursor",
+        d.snapshot()["picture"]["source_frame"] == 5,
+        json!(5),
+        d.snapshot()["picture"].clone(),
+    )?;
+    d.command("sequence")?;
+    d.settled()?;
+    d.click("Browse  :source")?;
+    d.settled()?;
+    d.check(
+        "Browsing Original from Your edit preserves both independent positions",
+        d.app().view == View::Source
+            && d.app().source_cursor == 5
+            && d.app().sequence_cursor == 2
+            && d.snapshot()["picture"]["source_frame"] == 5
+            && d.snapshot()["selected_beat"] == baseline["selected_beat"],
+        json!({"original":5,"edit":2,"selected_beat":baseline["selected_beat"]}),
+        d.snapshot(),
+    )
 }
 
 fn editor_context(d: &Driver<'_>) -> Value {

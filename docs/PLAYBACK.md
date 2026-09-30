@@ -85,7 +85,10 @@ Sound audition does not retarget or cancel the stopped picture, caption or
 geometry. An already pending editor picture request may finish normally; sound
 delivery creates no new picture request. It preserves the Original cursor,
 edit cursor, selected beat and group. It creates no authored beat or history
-transaction. Its qualified `Sound` descriptor is cached by asset, receipt and
+transaction. Returning to the same video through Browse, its card or legacy
+Sources navigation preserves both cursors and keeps the accepted picture while
+refresh prepares. Choosing another video starts its Original cursor at zero.
+Its qualified `Sound` descriptor is cached by asset, receipt and
 project rate; a revision or session change invalidates the captured request.
 The preparation worker compiles a temporary audio-only Source view and uses the
 same source admission, canonical audio and limited device output as other

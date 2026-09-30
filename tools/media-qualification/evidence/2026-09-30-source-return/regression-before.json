@@ -1,0 +1,24 @@
+{
+  "command": [
+    "cargo",
+    "run",
+    "--locked",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "--",
+    "--ui-check",
+    "--scenario",
+    "sound-playback",
+    "--output",
+    "/tmp/deadpan-source-return-20260930/before"
+  ],
+  "started": "2026-09-30T16:49:00.239843+00:00",
+  "base_commit": "d9e18b51b08387975c522c0ece770f7cce513999",
+  "diff_sha256": "274984da385c6a71ef757cd63fe803d0233d2eb10af59aa101d2ade4a88fb76c",
+  "source_manifest_sha256": "99d93ebb2b0bb7136cbb7ba2f3c91af7353ee54d44b039a2fb9bad54fad83d59",
+  "pid": 13917,
+  "exit_code": 1,
+  "seconds": 19.962547750212252
+}

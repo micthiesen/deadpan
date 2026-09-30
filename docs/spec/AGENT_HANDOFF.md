@@ -34,12 +34,15 @@ captured historical targets before destination pickers; the backend workflow
 already provides checkpoint retry, re-encoding and destination reconciliation.
 No schema change is needed for that connection.
 
-Native inspection also found a pre-existing cursor-preservation gap: returning
-from a catalog sound to the same video calls `preview::select_source`, which
-unconditionally resets `source_cursor` to zero. Fix and verify that focused
-round trip before the larger Render recovery UI work. Sound selection itself
-and the Edit cursor remained intact; do not reset a retained Original position
-merely to reselect its existing source.
+The cursor-preservation gap found during this native inspection is fixed by
+`preview::select_source`: reselecting the same registered video retains its
+Original cursor and displayed picture during refresh. A production sound replay
+first failed with Original 5 becoming 0 and Edit 2 retained, then passed after
+the fix. It also checks return from Your edit and held picture refresh. See the
+[focused qualification](../qualification/source-return-2026-09-30.md).
+The separate keyboard `:source` view switch already retains the cursor; it still
+clears the displayed picture during decode when leaving Your edit. That existing
+view-transition behavior was outside this selection fix.
 
 ## Open-project routing, 2026-09-30
 

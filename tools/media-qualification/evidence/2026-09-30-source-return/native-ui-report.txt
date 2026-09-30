@@ -1,0 +1,21 @@
+Native source-return cursor QA
+
+App: /tmp/deadpan-source-return-20260930/Deadpan Cursor QA.app (dev.thiesen.deadpan.cursor-qa)
+
+Single-Original fixture: /tmp/deadpan-source-return-20260930/after/projects/sound-playback/Documents/Deadpan/cfr-bframes.deadpan
+- Loaded `cfr-bframes` with one Original source beat, 120 frames.
+- In Your edit, pressed `l` seven times: Edit boundary 7/120.
+- Selected Original and pressed `l` eleven times: Original boundary 11/120; picture label `Showing source frame 12`.
+- Selected `pcm-stereo-48000.wav`: Catalog audition showed `Ready`, sound cursor 00:00.000 / 00:00.170 and destination Edit 7 f. Did not play audio.
+- Clicked visible `Browse :source` to return to the same Original. It showed Original boundary 11/120, retained picture frame 12, and the same single 120-frame beat. Switching to Your edit confirmed Edit boundary 7/120.
+- Separately invoked `:source` from Your edit by `shift+semicolon`, typing `source`, then Return. It returned to Original boundary 11/120 with picture frame 12. Focus was Viewer. The direct CUA key string `":"` was unsupported (`keyNotFound`); shift+semicolon entered command mode successfully.
+- No authoring edits or playback.
+
+Legacy fixture: /tmp/deadpan-owner-preparation-20260930/native-preparation.deadpan
+- Not completed. Cmd-O produced no AX tree change on the loaded single-Original workspace; rebinding the same app exposed an existing Open sheet. Cmd-Shift-G to the legacy package followed by Return returned to the still-open `cfr-bframes` project, not the legacy project. No legacy cursor or sound navigation was performed. Final AX inspection shows a standard Deadpan window with no Open sheet, project title `cfr-bframes`, Original 11/120, `Showing source frame 12`, one 120-frame beat, and File/Add sound controls disabled.
+
+The user moved the Deadpan window to its own desktop and changed its size. I left its desktop and size unchanged. The QA app remains open on `cfr-bframes`; I did not quit it. No authored changes were made. Sound audition was not started, so no acoustic claim is made.
+
+Bounded cleanup check after the legacy Open-sheet attempt: pressed Escape once; AX tree reported no change and focused image remained source frame 12. Pressed `l` once; final AX state still showed Original boundary 11/120 and `Showing source frame 12` (input did not advance). File and Add sound… controls remained disabled; Render was also disabled. No further UI actions were taken. The app remains on cfr-bframes at the assigned desktop/size, and the interface was not fully recovered. No authored edits.
+
+Pending-picker cleanup inspection: the current AX window showed no Open sheet. I tried Mission Control/space inspection through documented app-bound CUA: `ctrl+Up`, `F3`, and `ctrl+Left` did not expose a Mission Control overview in the app screenshot; `cua.getApp("Dock")` timed out. I paired `ctrl+Right` to return toward the assigned desktop. No system-level desktop inventory/overview was available from the documented CUA results, so I could not establish whether another Space contains a Deadpan Open panel or cancel one. I did not close a panel, move/resize the window, relaunch, or quit. Final app AX state remains the `cfr-bframes` project, Original 11/120, frame 12, 1 beat / 120f, File and Add sound… disabled. The picker-cleanup status is unresolved; do not treat the interface as recovered.

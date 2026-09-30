@@ -2,6 +2,13 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+[Returning to the same Original](qualification/source-return-2026-09-30.md)
+now preserves its cursor through catalog sound selection and retains the
+displayed picture while refreshing. The production sound replay reproduces the
+old reset and passes with distinct Original/Edit positions after the fix.
+This closes the focused issue found in owner-preparation inspection; full sound,
+keyboard, accessibility and UI acceptance remain open.
+
 [Open-project commands](LIVE_PROJECT.md) now route structural edits, history,
 primary geometry and Render through the native writer's authenticated local
 endpoint. Exact owner/revision targeting, independent replies, retained commit

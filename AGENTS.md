@@ -150,6 +150,9 @@ sound delivery never requests a picture. Stop and revoke resume on sound, pane,
 session or revision changes. Previously pending editor picture work may finish
 normally; sound selection must not cancel or strand it. Its measured audio
 endpoint, not the enclosing whole-frame beat, bounds ordinary playback and loops.
+Reselecting the same registered video through Browse, its card or legacy Sources
+navigation retains the Original cursor and displayed picture during refresh.
+Reset the cursor only when selecting a different video or leaving a raw preview.
 Use the shared qualified
 playback service and temporary Source view; never persist an audition beat or
 infer a missing speaker layout. Sound audition does not authorize placement.
