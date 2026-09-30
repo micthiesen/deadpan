@@ -29,8 +29,19 @@ impl PreparedSource {
         expected: &AudioIndexSnapshot,
         cancelled: &AtomicBool,
     ) -> Result<Self, PreparationError> {
+        Self::new_controlled(session, expected, || check_cancel(cancelled))
+    }
+
+    /// Admit a source under the caller's existing cancellation/deadline check.
+    /// The same control runs throughout complete index comparison and streamed
+    /// provenance hashing; this constructor never starts a fresh time budget.
+    pub fn new_controlled(
+        session: AudioSession,
+        expected: &AudioIndexSnapshot,
+        check: impl FnMut() -> Result<(), PreparationError>,
+    ) -> Result<Self, PreparationError> {
         let layout = session.index().stream().channel_layout;
-        Self::with_layout(session, expected, layout, cancelled)
+        Self::with_layout_controlled(session, expected, layout, check)
     }
 
     /// Interpret unspecified source channels using an explicit host choice.
@@ -44,7 +55,16 @@ impl PreparedSource {
         layout: AudioChannelLayout,
         cancelled: &AtomicBool,
     ) -> Result<Self, PreparationError> {
-        verify_index(session.index(), expected, || check_cancel(cancelled))?;
+        Self::with_layout_controlled(session, expected, layout, || check_cancel(cancelled))
+    }
+
+    fn with_layout_controlled(
+        session: AudioSession,
+        expected: &AudioIndexSnapshot,
+        layout: AudioChannelLayout,
+        mut check: impl FnMut() -> Result<(), PreparationError>,
+    ) -> Result<Self, PreparationError> {
+        verify_index(session.index(), expected, &mut check)?;
         let source_layout = session.index().stream().channel_layout;
         if source_layout.channels() != layout.channels()
             || matches!(source_layout, AudioChannelLayout::Native { .. } if source_layout != layout)
@@ -52,8 +72,8 @@ impl PreparedSource {
             return Err(PreparationError::UnsupportedLayout);
         }
         let matrix = StereoMatrix::new(layout)?;
-        let provenance = source_provenance(session.index(), layout, cancelled)?;
-        check_cancel(cancelled)?;
+        let provenance = source_provenance(session.index(), layout, &mut check)?;
+        check()?;
         Ok(Self {
             session,
             matrix,
@@ -131,24 +151,39 @@ impl PreparedSource {
 
 // Stream the complete validated index into the digest without duplicating its
 // potentially large observation array. Derived fields are deterministic from
-// this envelope and were compared above. Cancellation is checked per write.
+// this envelope and were compared above. The caller's control is checked per
+// write, and a failure retains its original type across serde's I/O wrapper.
 fn source_provenance(
     index: &AudioIndexSnapshot,
     layout: AudioChannelLayout,
-    cancelled: &AtomicBool,
+    mut check: impl FnMut() -> Result<(), PreparationError>,
 ) -> Result<[u8; 32], PreparationError> {
-    struct HashWriter<'a>(Sha256, &'a AtomicBool);
-    impl Write for HashWriter<'_> {
+    struct HashWriter<'a, F> {
+        hash: Sha256,
+        check: &'a mut F,
+        failure: Option<PreparationError>,
+    }
+    impl<F: FnMut() -> Result<(), PreparationError>> Write for HashWriter<'_, F> {
         fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
-            check_cancel(self.1).map_err(io::Error::other)?;
-            self.0.update(bytes);
+            if self.failure.is_some() {
+                return Err(io::Error::other("source preparation control failed"));
+            }
+            if let Err(error) = (self.check)() {
+                self.failure = Some(error);
+                return Err(io::Error::other("source preparation control failed"));
+            }
+            self.hash.update(bytes);
             Ok(bytes.len())
         }
         fn flush(&mut self) -> io::Result<()> {
             Ok(())
         }
     }
-    let mut writer = HashWriter(Sha256::new(), cancelled);
+    let mut writer = HashWriter {
+        hash: Sha256::new(),
+        check: &mut check,
+        failure: None,
+    };
     let result = serde_json::to_writer(
         &mut writer,
         &(
@@ -160,9 +195,12 @@ fn source_provenance(
             crate::BOUNDARY_ID,
         ),
     );
-    check_cancel(cancelled)?;
+    if let Some(error) = writer.failure {
+        return Err(error);
+    }
+    (writer.check)()?;
     result.map_err(|error| PreparationError::SourceUnavailable(error.to_string()))?;
-    Ok(writer.0.finalize().into())
+    Ok(writer.hash.finalize().into())
 }
 
 fn verify_index(
@@ -216,9 +254,8 @@ mod tests {
 
     use super::*;
 
-    #[test]
-    fn index_comparison_checks_cancellation_through_raw_and_derived_chunks() {
-        let index = AudioIndexSnapshot::new(
+    fn index_fixture() -> AudioIndexSnapshot {
+        AudioIndexSnapshot::new(
             SourceContentIdentity::new([7; 32], 100).unwrap(),
             AudioStreamDescriptor {
                 stream_index: 0,
@@ -247,7 +284,12 @@ mod tests {
                 })
                 .collect(),
         )
-        .unwrap();
+        .unwrap()
+    }
+
+    #[test]
+    fn index_comparison_checks_cancellation_through_raw_and_derived_chunks() {
+        let index = index_fixture();
         // Entry, three observation chunks, three derived chunks, final check.
         for stop_after in 1..=8 {
             let mut checks = 0;
@@ -265,5 +307,70 @@ mod tests {
             assert_eq!(checks, stop_after);
         }
         verify_index(&index, &index, || Ok(())).unwrap();
+    }
+
+    #[test]
+    fn index_comparison_stops_on_deadline_in_raw_and_derived_chunks() {
+        let index = index_fixture();
+        // Entry precedes the three raw chunks and three derived chunks. Fail
+        // inside both loops, without a clock race or native source preparation.
+        for stop_after in [2, 4, 5, 7] {
+            let mut checks = 0;
+            let result = verify_index(&index, &index, || {
+                checks += 1;
+                if checks == stop_after {
+                    Err(PreparationError::SourceUnavailable(
+                        "offline audio preparation deadline expired".into(),
+                    ))
+                } else {
+                    Ok(())
+                }
+            });
+            assert!(matches!(
+                result,
+                Err(PreparationError::SourceUnavailable(message))
+                    if message == "offline audio preparation deadline expired"
+            ));
+            assert_eq!(checks, stop_after);
+        }
+    }
+
+    #[test]
+    fn provenance_hashing_retains_deadline_errors_and_stops_writing() {
+        let index = index_fixture();
+        let layout = index.stream().channel_layout;
+        let mut total_checks = 0;
+        let expected = source_provenance(&index, layout, || {
+            total_checks += 1;
+            Ok(())
+        })
+        .unwrap();
+        assert!(total_checks > 2049);
+        // Exercise early, interior, and final serialization writes, plus the
+        // terminal check. The failure is one-shot: rechecking after serde's
+        // error must not lose it or produce a completed digest.
+        for stop_after in [1, total_checks / 2, total_checks - 1, total_checks] {
+            let mut checks = 0;
+            let result = source_provenance(&index, layout, || {
+                checks += 1;
+                if checks == stop_after {
+                    Err(PreparationError::SourceUnavailable(
+                        "offline audio preparation deadline expired".into(),
+                    ))
+                } else {
+                    Ok(())
+                }
+            });
+            assert!(matches!(
+                result,
+                Err(PreparationError::SourceUnavailable(message))
+                    if message == "offline audio preparation deadline expired"
+            ));
+            assert_eq!(checks, stop_after);
+        }
+        assert_eq!(
+            source_provenance(&index, layout, || Ok(())).unwrap(),
+            expected
+        );
     }
 }

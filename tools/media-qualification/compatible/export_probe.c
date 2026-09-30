@@ -492,6 +492,53 @@ static void export_audio(const char *path, const char *pcm_path, const char *mod
     close_decoder(&decoder);
 }
 
+/* Each key boundary gets a newly allocated decoder with no decoded history.
+ * The host compares every resulting suffix PTS/hash to a separate linear pass.
+ * Packet key flags alone do not count as independent GOP evidence. */
+static void export_gops(const char *path) {
+    admit_fixture(path);
+    Decoder linear = configured_decoder(path, AVMEDIA_TYPE_VIDEO, decoder_options);
+    int64_t keys[EXPORT_FRAME_LIMIT];
+    unsigned key_count = 0, linear_count = 0;
+    uint32_t budget = EXPORT_PACKET_LIMIT;
+    while (next_frame_bounded(&linear, &budget)) {
+        require(linear_count++ < EXPORT_FRAME_LIMIT, "bounded GOP reference frames");
+        require(linear.frame->pts != AV_NOPTS_VALUE && linear.frame->decode_error_flags == 0 &&
+                !(linear.frame->flags & AV_FRAME_FLAG_CORRUPT), "valid GOP reference frame");
+        if (linear.frame->flags & AV_FRAME_FLAG_KEY) keys[key_count++] = linear.frame->pts;
+        av_frame_unref(linear.frame);
+    }
+    require(key_count > 0, "GOP reference has keys");
+    AVRational time_base = linear.format->streams[linear.stream_index]->time_base;
+    close_decoder(&linear);
+    printf("{\"schema_version\":1,\"kind\":\"fresh_gops\",\"time_base\":[%d,%d],\"boundaries\":[",
+           time_base.num, time_base.den);
+    for (unsigned key = 0; key < key_count; key++) {
+        Decoder fresh = configured_decoder(path, AVMEDIA_TYPE_VIDEO, decoder_options);
+        require(av_cmp_q(time_base, fresh.format->streams[fresh.stream_index]->time_base) == 0,
+                "fresh GOP uses same stream clock");
+        check(av_seek_frame(fresh.format, fresh.stream_index, keys[key], AVSEEK_FLAG_BACKWARD), "seek fresh GOP boundary");
+        printf("%s{\"requested_pts\":%"PRId64",\"frames\":[", key ? "," : "", keys[key]);
+        unsigned count = 0;
+        budget = EXPORT_PACKET_LIMIT;
+        while (next_frame_bounded(&fresh, &budget)) {
+            require(count < EXPORT_FRAME_LIMIT, "bounded fresh GOP suffix");
+            AVFrame *frame = fresh.frame;
+            unsigned char hash[16];
+            frame_hash(frame, hash);
+            printf("%s{\"pts\":", count++ ? "," : ""); timestamp(stdout, frame->pts);
+            printf(",\"duration\":%"PRId64",\"decode_error_flags\":%d,\"flags\":%d,\"md5\":\"",
+                   frame->duration, frame->decode_error_flags, frame->flags);
+            for (int i = 0; i < 16; i++) printf("%02x", hash[i]);
+            fputs("\"}", stdout);
+            av_frame_unref(frame);
+        }
+        printf("],\"frame_count\":%u}", count);
+        close_decoder(&fresh);
+    }
+    printf("],\"boundary_count\":%u}\n", key_count);
+}
+
 static void export_packets(const char *path) {
     admit_fixture(path);
     AVFormatContext *input = NULL;
@@ -675,10 +722,11 @@ int main(int argc, char **argv) {
     else if (argc == 3 && strcmp(argv[1], "video") == 0) export_video(argv[2]);
     else if (argc == 5 && strcmp(argv[1], "audio") == 0) export_audio(argv[2], argv[3], argv[4]);
     else if (argc == 3 && strcmp(argv[1], "packets") == 0) export_packets(argv[2]);
+    else if (argc == 3 && strcmp(argv[1], "gops") == 0) export_gops(argv[2]);
     else if (argc == 7 && strcmp(argv[1], "encode-plane") == 0) encode_plane(argv);
     else if (argc == 4 && strcmp(argv[1], "decode-plane") == 0) decode_plane(argv[2], argv[3]);
     else {
-        fputs("usage: export_probe inventory | encode OUTPUT PACKETS_JSONL hardware-no-b|software-no-b|hardware-b|software-b default|disabled FPS_NUM FPS_DEN FRAMES impulses|edges | video INPUT | audio INPUT PCM ordinary|manual | packets INPUT | encode-plane INPUT_I420 OUTPUT_MP4 PACKETS_JSONL WIDTH HEIGHT | decode-plane INPUT_MP4 OUTPUT_I420\n", stderr);
+        fputs("usage: export_probe inventory | encode OUTPUT PACKETS_JSONL hardware-no-b|software-no-b|hardware-b|software-b default|disabled FPS_NUM FPS_DEN FRAMES impulses|edges | video INPUT | audio INPUT PCM ordinary|manual | packets INPUT | gops INPUT | encode-plane INPUT_I420 OUTPUT_MP4 PACKETS_JSONL WIDTH HEIGHT | decode-plane INPUT_MP4 OUTPUT_I420\n", stderr);
         return 2;
     }
     require(!ferror(stdout) && fflush(stdout) == 0, "write complete observation report");

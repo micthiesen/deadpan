@@ -21,6 +21,7 @@ class InspectionError(ValueError):
 class Limits:
     maximum_depth: int = 16
     maximum_boxes: int = 4096
+    maximum_edit_entries: int = 4096
     maximum_read_bytes: int = 1024 * 1024
     maximum_file_bytes: int = 1024**4
 
@@ -28,6 +29,7 @@ class Limits:
         ceilings = {
             "maximum_depth": 64,
             "maximum_boxes": 65536,
+            "maximum_edit_entries": 65536,
             "maximum_read_bytes": 16 * 1024 * 1024,
             "maximum_file_bytes": (1 << 63) - 1,
         }
@@ -54,6 +56,8 @@ class _Inspector:
         self.boxes: list[dict] = []
         self.edit_containers: list[dict] = []
         self.edit_lists: list[dict] = []
+        self.edit_entry_count = 0
+        self.handlers: list[dict] = []
         self.timescales: list[dict] = []
         self.moov: list[dict] = []
         self.mdat: list[dict] = []
@@ -113,11 +117,37 @@ class _Inspector:
             raise InspectionError(f"truncated elst entry count at byte {position}")
         count = int.from_bytes(self.read(position, 4), "big")
         entry_size = 12 if version == 0 else 20
-        # Python integers do not overflow; compare the exact extent before any
-        # entry reads/allocation. Entries are never copied into the report.
+        # Check extent and aggregate count before reading or allocating entries.
+        # The same cumulative read budget covers headers and edit metadata.
         if count * entry_size != end - position - 4:
             raise InspectionError(f"elst entry extent disagrees with box size at byte {start}")
-        self.edit_lists.append({**record, "version": version, "entry_count": count})
+        if count > self.limits.maximum_edit_entries - self.edit_entry_count:
+            raise InspectionError("aggregate edit-list entry limit exceeded")
+        data = self.read(position + 4, count * entry_size)
+        width = 4 if version == 0 else 8
+        entries = []
+        for offset in range(0, len(data), entry_size):
+            entry = data[offset:offset + entry_size]
+            entries.append({
+                "segment_duration": int.from_bytes(entry[:width], "big"),
+                "media_time": int.from_bytes(entry[width:width * 2], "big", signed=True),
+                # Keep the signed 16.16 fixed-point representation exact.
+                "media_rate_integer": int.from_bytes(entry[-4:-2], "big", signed=True),
+                "media_rate_fraction": int.from_bytes(entry[-2:], "big"),
+            })
+        self.edit_entry_count += count
+        self.edit_lists.append({**record, "version": version, "entry_count": count, "entries": entries})
+
+    def handler(self, record: dict, start: int, end: int) -> None:
+        version, _ = self.full_header(start, end, "hdlr")
+        if version != 0:
+            raise InspectionError(f"unsupported hdlr version {version} at byte {start}")
+        if end - start < 24:
+            raise InspectionError(f"truncated hdlr header at byte {start}")
+        # FullBox, predefined, then the four-byte handler type. Never use track
+        # order to infer whether an edit belongs to audio or video.
+        kind = self.read(start + 8, 4).decode("latin-1")
+        self.handlers.append({**record, "handler_type": kind})
 
     def walk(
         self, start: int, end: int, path: tuple[str, ...] = (),
@@ -172,6 +202,8 @@ class _Inspector:
                 self.edit_list(record, payload, box_end)
             elif raw_type in (b"mvhd", b"mdhd"):
                 self.timing(record, payload, box_end)
+            elif raw_type == b"hdlr":
+                self.handler(record, payload, box_end)
             elif raw_type == b"meta":
                 # Support ISO FullBox meta only, not the ambiguous historical
                 # QuickTime non-FullBox variant. Unsupported input fails closed.
@@ -199,6 +231,8 @@ class _Inspector:
             "has_elst": bool(self.edit_lists),
             "edit_containers": self.edit_containers,
             "edit_lists": self.edit_lists,
+            "edit_entry_count": self.edit_entry_count,
+            "handlers": self.handlers,
             "timescales": self.timescales,
             "fast_start": {
                 "moov_count": len(self.moov),
@@ -216,8 +250,8 @@ def inspect_mp4(path: str | os.PathLike[str], limits: Limits = Limits()) -> dict
     """Return bounded JSON-ready structural observations or raise InspectionError.
 
     Only regular files are admitted. Large mdat and unknown payloads are skipped
-    using seek. Output size is bounded by the box/depth caps; file payloads never
-    enter the report. Fast-start is an ordering observation, not file validation.
+    using seek. Output size is bounded by the box/depth/edit-entry caps; compressed
+    media never enters the report. Fast-start is an ordering observation, not file validation.
     The caller must separately require its needed boxes, tracks and semantics.
     """
     if not isinstance(limits, Limits):

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python3",
+    "/tmp/deadpan-native-encode-i8gk62qm/run-matrix.py",
+    "normal"
+  ],
+  "started": "2026-09-30T02:34:44.815463+00:00",
+  "base_commit": "d73a0b92cc67e7b866ce0062b2a331aa53a29dd8",
+  "diff_sha256": "2c723fb04212aead0c1950d96a52e15708f4851815049802d04b5986c5cd752f",
+  "source_manifest_sha256": "c05b9e4593446983c95688bf1feb88d6a248368b841c21406b7fca8b2583ffd2",
+  "pid": 14976,
+  "exit_code": 1,
+  "seconds": 11.612431542016566
+}

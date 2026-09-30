@@ -205,7 +205,7 @@ def _adapt(report, observation, pcm):
     return spans, track_start, track_duration
 
 
-def _timing_checks(report, spec, pcm, spans, track_start, track_duration, tolerance, valid):
+def _timing_checks(report, spec, pcm, spans, track_start, track_duration, tolerance, valid, search_radius):
     end = track_start + track_duration
     error = end - spec.audio_samples
     report.add("native: exact authored stream endpoint", error == 0,
@@ -213,14 +213,14 @@ def _timing_checks(report, spec, pcm, spans, track_start, track_duration, tolera
     report.add("native: stream endpoint within declared sub-frame tolerance",
                valid and abs(error) <= tolerance and abs(error) < spec.frame_samples,
                {"error_samples": error, "declared_tolerance_samples": tolerance})
-    measured = inspect_pcm_events(spec, pcm, spans, tolerance_samples=tolerance if valid else -1, label="native")
+    measured = inspect_pcm_events(spec, pcm, spans, tolerance_samples=tolerance if valid else -1, label="native", search_radius=search_radius)
     report.checks.extend(measured["checks"])
     report.unqualified.extend(measured["unqualified"])
     report.observations["native"] = {**measured["observations"],
         "stream_start_sample": track_start, "stream_end_sample": end, "stream_end_error_samples": error}
 
 
-def inspect_native_audio(spec, observation, pcm, *, tolerance_samples=799):
+def inspect_native_audio(spec, observation, pcm, *, tolerance_samples=799, event_search_radius=4096):
     """Inspect untouched native PCM; ambiguous trim/timing is explicitly open.
 
     ``passed`` covers applicable checks. ``outcome`` and
@@ -245,7 +245,7 @@ def inspect_native_audio(spec, observation, pcm, *, tolerance_samples=799):
     else:
         tolerance = tolerance_samples if type(tolerance_samples) is int else 0
         report.section("native", lambda: _timing_checks(report, spec, pcm, spans, track_start,
-                                                      track_duration, tolerance, valid))
+                                                      track_duration, tolerance, valid, event_search_radius))
     result = report.result()
     result["scope"] = "AVFoundation returned PCM absolute-event timing through the existing bounded oracle"
     # The shared report's FFmpeg-specific full-case scope does not apply here.

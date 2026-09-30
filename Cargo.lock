@@ -903,6 +903,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "deadpan-encode"
+version = "0.1.0"
+dependencies = [
+ "cc",
+ "rustix 1.1.5",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.20",
+]
+
+[[package]]
 name = "deadpan-fileclone"
 version = "0.1.0"
 dependencies = [

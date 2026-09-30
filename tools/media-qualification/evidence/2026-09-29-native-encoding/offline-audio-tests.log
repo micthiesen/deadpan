@@ -1,0 +1,23 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+error[E0533]: expected value, found struct variant `OriginalOwnership::Linked`
+   --> crates/deadpan-cli/tests/offline_audio.rs:118:35
+    |
+118 |         .retain_original(&linked, OriginalOwnership::Linked, limits, &cancelled)?
+    |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^ not a value
+    |
+help: you might have meant to create a new value of the struct
+    |
+118 |         .retain_original(&linked, OriginalOwnership::Linked { bookmark: /* value */ }, limits, &cancelled)?
+    |                                                             +++++++++++++++++++++++++
+
+For more information about this error, try `rustc --explain E0533`.
+error: could not compile `deadpan-cli` (test "offline_audio") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

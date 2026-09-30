@@ -1,0 +1,106 @@
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import re
+import shutil
+import tarfile
+
+root = Path('/tmp/deadpan-native-encode-i8gk62qm')
+repo = Path.cwd()
+destination = repo / 'tools/media-qualification/evidence/2026-09-29-native-encoding'
+staging = root / 'retained'
+assert not staging.exists() and not destination.exists()
+staging.mkdir()
+def digest(path):
+    with path.open('rb') as file:
+        return hashlib.file_digest(file, 'sha256').hexdigest()
+def write(path, value):
+    path.write_text(json.dumps(value, indent=2, sort_keys=True) + '\n')
+
+gates = ['workspace-clippy', 'workspace-tests', 'final-format-check', 'final-python-oracles',
+         'final-encoder-build', 'sanitized-build', 'final-normal-matrix', 'sanitized-matrix']
+summary = {'base_commit': 'd73a0b92cc67e7b866ce0062b2a331aa53a29dd8',
+           'scope': 'bounded native encoder and immutable offline PCM; product Render remains open',
+           'gates': {}, 'source_admission': {}, 'matrices': {}}
+for name in gates:
+    journal = json.loads((root / (name + '.json')).read_text())
+    assert journal['exit_code'] == 0, name
+    summary['gates'][name] = journal
+    source = json.loads((root / ('source-' + journal['source_manifest_sha256'] + '.json')).read_text())
+    if name.startswith(('workspace-', 'final-format')):
+        selected = {p: h for p, h in source.items() if p.startswith(('crates/', 'native/', '.cargo/'))
+                    or p in ['Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml']}
+    elif name.endswith('build'):
+        selected = {p: h for p, h in source.items() if p.startswith('native/deadpan-encode/')
+                    or p in ['Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml']}
+    else:
+        selected = {p: h for p, h in source.items() if p.startswith('tools/media-qualification/compatible/')}
+    changed = [p for p, h in selected.items() if digest(repo / p) != h]
+    assert not changed, (name, changed)
+    summary['source_admission'][name] = {'checked_files': len(selected), 'changed': changed}
+
+text = (root / 'workspace-tests.log').read_text()
+counts = [tuple(map(int, row)) for row in re.findall(r'test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;', text)]
+assert counts and not any(row[1] or row[2] for row in counts)
+summary['rust_tests'] = {'passed': sum(row[0] for row in counts), 'failed': 0, 'ignored': 0, 'result_records': len(counts)}
+for name in ['normal-final', 'sanitized-final']:
+    report = json.loads((root / name / 'report.json').read_text())
+    assert report['result'] == 'passed scoped paths with hardware B-frame rejection'
+    assert not report['process_faults']
+    encoded = [c for c in report['cases'] if c['passed'] and 'video' in c]
+    errors = []
+    for case in encoded:
+        for decoder in ['ordinary', 'manual']:
+            errors.extend(e['error_samples'] for e in case['ffmpeg_checks']['observations'][decoder]['events'])
+        errors.extend(e['error_samples'] for e in case['avfoundation']['checks']['observations']['native']['events'])
+    assert all(error == 0 for error in errors)
+    summary['matrices'][name] = {
+        'encoded_cases': len(encoded), 'encoded_frames': sum(len(c['video']['frames']) for c in encoded),
+        'fresh_gop_boundaries': sum(c['gops']['boundary_count'] for c in encoded),
+        'fresh_decoded_frames': sum(len(b['frames']) for c in encoded for b in c['gops']['boundaries']),
+        'absolute_audio_events': len(errors), 'maximum_audio_event_error_samples': 0,
+        'deliberate_failures': [c['name'] for c in report['cases'] if c['name'].startswith('fault-') and c['passed']],
+        'capability_rejections': [c['name'] for c in report['cases'] if c.get('expected_capability_rejection')],
+        'production_encoder': report['production_encoder'], 'process_faults': report['process_faults'],
+    }
+    report_bytes = (root / name / 'report.json').read_bytes()
+    (staging / (name + '.json.gz')).write_bytes(gzip.compress(report_bytes, mtime=0))
+
+# All native outputs, complete reader PCM, partial files, and command reports.
+# Decoder binaries are retained too; build trees and unrelated scratch are not.
+archive = staging / 'native-files.tar.gz'
+entries = []
+with tarfile.open(archive, 'w:gz', compresslevel=9) as tar:
+    for directory in ['normal', 'normal-final', 'sanitized-final']:
+        for path in sorted((root / directory).rglob('*')):
+            if path.is_file():
+                name = str(path.relative_to(root))
+                entries.append({'path': name, 'sha256': digest(path), 'bytes': path.stat().st_size})
+                tar.add(path, arcname=name, recursive=False)
+write(staging / 'native-files.json', entries)
+with tarfile.open(archive, 'r:gz') as tar:
+    assert len(tar.getmembers()) == len(entries)
+    for expected in entries:
+        file = tar.extractfile(expected['path'])
+        assert file is not None
+        data = file.read()
+        assert len(data) == expected['bytes'] and hashlib.sha256(data).hexdigest() == expected['sha256']
+summary['archive_audit'] = {'files': len(entries), 'bytes': sum(row['bytes'] for row in entries),
+                            'archive_bytes': archive.stat().st_size, 'archive_sha256': digest(archive), 'passed': True}
+
+for path in root.iterdir():
+    if path.is_file() and path.suffix in ['.json', '.log', '.xml']:
+        shutil.copy2(path, staging / path.name)
+for name in ['run-matrix.py', 'build-sanitized.py', 'pack.py']:
+    shutil.copy2(root / name, staging / (name + '.txt'))
+for name in ['deadpan-encode-c-review.md', 'deadpan-native-encode-qualification-review.md', 'deadpan-offline-audio-review.md']:
+    shutil.copy2(Path('/tmp') / name, staging / name)
+(staging / 'review-disposition.txt').write_text('''Independent source reviews: C/header, Rust ABI/lifetime/poisoning, offline PCM, qualifier predicates. Accepted fixes: coherent explicit generic/private High request; private-mode descriptor test fixtures; fixed deadline inside raw/derived index checks and streamed provenance hashing; qualified native and short marker admission; actual GOP, zero-stream-start and parsed edit-list checks. Separate read-only review found no issue in the deadline fix. No reviewer ran builds, tests or native commands. Parent owned all execution. Full project encoded export remains open.\n''')
+write(staging / 'summary.json', summary)
+manifest = {str(path.relative_to(staging)): {'sha256': digest(path), 'bytes': path.stat().st_size}
+            for path in sorted(staging.rglob('*')) if path.is_file()}
+write(staging / 'manifest.json', manifest)
+shutil.copytree(staging, destination)
+print(json.dumps({'destination': str(destination), 'rust_tests': summary['rust_tests'],
+                  'archive': summary['archive_audit'], 'files': len(manifest)}))

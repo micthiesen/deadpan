@@ -1,0 +1,40 @@
+   Compiling deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+error: the loop variable `plane` is used to index `color`
+  --> native/deadpan-encode/examples/qualify.rs:54:18
+   |
+54 |     for plane in 0..3 {
+   |                  ^^^^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#needless_range_loop
+   = note: `-D clippy::needless-range-loop` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::needless_range_loop)]`
+help: consider using an iterator and enumerate()
+   |
+54 -     for plane in 0..3 {
+54 +     for (plane, <item>) in color.iter().enumerate() {
+   |
+
+error: the loop variable `row` is used to index `DIGITS`
+   --> native/deadpan-encode/examples/qualify.rs:100:20
+    |
+100 |         for row in 0..7 {
+    |                    ^^^^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#needless_range_loop
+help: consider using an iterator and enumerate()
+    |
+100 -         for row in 0..7 {
+100 +         for (row, <item>) in DIGITS.iter().enumerate().take(7) {
+    |
+
+error: manual `!RangeInclusive::contains` implementation
+   --> native/deadpan-encode/examples/qualify.rs:176:8
+    |
+176 |     if samples < 800 || samples > 120 * 48_000 {
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: use: `!(800..=120 * 48_000).contains(&samples)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#manual_range_contains
+    = note: `-D clippy::manual-range-contains` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::manual_range_contains)]`
+
+error: could not compile `deadpan-encode` (example "qualify") due to 3 previous errors

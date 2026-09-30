@@ -26,9 +26,9 @@ def timing(kind: bytes, timescale: int, duration: int, version: int = 0) -> byte
     return box(kind, prefix + bytes(total - len(prefix)))
 
 
-def edit_list(version: int = 0) -> bytes:
-    entry = struct.pack(">IiHH", 25, -1, 1, 0) if version == 0 else struct.pack(">QqHH", 25, -1, 1, 0)
-    return box(b"elst", bytes((version, 0, 0, 0)) + struct.pack(">I", 1) + entry)
+def edit_list(version: int = 0, entries=((25, -1, 1, 0),)) -> bytes:
+    data = b"".join(struct.pack(">IihH" if version == 0 else ">QqhH", *entry) for entry in entries)
+    return box(b"elst", bytes((version, 0, 0, 0)) + struct.pack(">I", len(entries)) + data)
 
 
 class BoxInspectionTests(unittest.TestCase):
@@ -74,6 +74,43 @@ class BoxInspectionTests(unittest.TestCase):
                 self.assertTrue(result["has_elst"])
                 self.assertEqual(result["edit_lists"][0]["path"], ["moov", "trak", "edts", "elst"])
                 self.assertEqual(result["edit_lists"][0]["entry_count"], 1)
+                self.assertEqual(result["edit_lists"][0]["entries"], [{
+                    "segment_duration": 25, "media_time": -1,
+                    "media_rate_integer": 1, "media_rate_fraction": 0,
+                }])
+                self.assertEqual(result["edit_entry_count"], 1)
+
+    def test_edit_entries_retain_signed_clocks_and_exact_fixed_point_rates(self) -> None:
+        for version, duration, media_time in ((0, (1 << 32) - 2, -(1 << 31)),
+                                               (1, (1 << 40) + 123, -(1 << 40) + 17)):
+            with self.subTest(version=version):
+                result = self.inspect(edit_list(version, ((duration, media_time, -2, 32768),
+                                                         (1, 1024, 1, 65535))))
+                self.assertEqual(result["edit_lists"][0]["entries"], [
+                    {"segment_duration": duration, "media_time": media_time,
+                     "media_rate_integer": -2, "media_rate_fraction": 32768},
+                    {"segment_duration": 1, "media_time": 1024,
+                     "media_rate_integer": 1, "media_rate_fraction": 65535},
+                ])
+                self.assertEqual(result["edit_entry_count"], 2)
+
+    def test_edit_entries_share_aggregate_count_and_read_budgets(self) -> None:
+        two = edit_list(entries=((25, 0, 1, 0), (25, 1024, 1, 0)))
+        self.reject(two, "aggregate edit-list entry limit", Limits(maximum_edit_entries=1))
+        self.reject(edit_list() * 2, "aggregate edit-list entry limit", Limits(maximum_edit_entries=1))
+        self.assertEqual(self.inspect(edit_list() * 2, Limits(maximum_edit_entries=2))["edit_entry_count"], 2)
+        self.reject(edit_list(), "read budget", Limits(maximum_read_bytes=27))
+        self.assertEqual(self.inspect(edit_list(), Limits(maximum_read_bytes=28))["bytes_read"], 28)
+
+    def test_handler_type_is_bound_to_its_actual_media_container(self) -> None:
+        content = box(b"moov", box(b"trak", box(b"mdia", box(b"hdlr", bytes(8) + b"soun" + bytes(12)))))
+        result = self.inspect(content)
+        handler = result["handlers"][0]
+        self.assertEqual(handler["handler_type"], "soun")
+        self.assertEqual(handler["path"], ["moov", "trak", "mdia", "hdlr"])
+        self.assertEqual(handler["parent_offset"], result["boxes"][2]["offset"])
+        self.reject(box(b"hdlr", bytes(23)), "truncated hdlr")
+        self.reject(box(b"hdlr", bytes((1, 0, 0, 0)) + bytes(20)), "unsupported hdlr version")
 
     def test_empty_edit_container_is_distinct_from_an_edit_list(self) -> None:
         result = self.inspect(box(b"moov", box(b"trak", box(b"edts"))))
@@ -177,6 +214,7 @@ class BoxInspectionTests(unittest.TestCase):
         result = self.inspect(box(b"elst", bytes(8)))
         self.assertTrue(result["has_elst"])
         self.assertEqual(result["edit_lists"][0]["entry_count"], 0)
+        self.assertEqual(result["edit_lists"][0]["entries"], [])
 
     def test_iso_meta_prefix_is_not_mistaken_for_a_child_header(self) -> None:
         result = self.inspect(box(b"moov", box(b"meta", bytes(4) + box(b"free"))))
@@ -212,6 +250,7 @@ class BoxInspectionTests(unittest.TestCase):
     def test_limits_reject_invalid_or_unbounded_values(self) -> None:
         for values in ({"maximum_depth": 0}, {"maximum_depth": 65},
                        {"maximum_boxes": True}, {"maximum_boxes": 65537},
+                       {"maximum_edit_entries": 0}, {"maximum_edit_entries": 65537},
                        {"maximum_read_bytes": -1}, {"maximum_file_bytes": 1 << 64}):
             with self.subTest(values=values), self.assertRaises(InspectionError):
                 Limits(**values)

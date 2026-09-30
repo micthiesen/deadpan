@@ -1,0 +1,243 @@
+{
+  "archive_audit": {
+    "archive_bytes": 5409614,
+    "archive_sha256": "b72283c15d42f1e742ea55ed16a7359f5fe5e73611805de59a12f510ea5ccea4",
+    "bytes": 97928126,
+    "files": 836,
+    "passed": true
+  },
+  "base_commit": "d73a0b92cc67e7b866ce0062b2a331aa53a29dd8",
+  "gates": {
+    "final-encoder-build": {
+      "base_commit": "d73a0b92cc67e7b866ce0062b2a331aa53a29dd8",
+      "command": [
+        "cargo",
+        "build",
+        "-p",
+        "deadpan-encode",
+        "--example",
+        "qualify",
+        "--locked",
+        "--message-format=json"
+      ],
+      "diff_sha256": "5131640f8b037fd559ff334ed6b98191ae1de2ba27634a4ef978f3b025f41265",
+      "exit_code": 0,
+      "pid": 19267,
+      "seconds": 15.722719666082412,
+      "source_manifest_sha256": "d6f6b2cc8f97c95c2dc6b9d66ef373fd60da9d9026c56bfdc7f4d1c0e8dc0e67",
+      "started": "2026-09-30T02:51:33.489027+00:00"
+    },
+    "final-format-check": {
+      "base_commit": "d73a0b92cc67e7b866ce0062b2a331aa53a29dd8",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "diff_sha256": "5131640f8b037fd559ff334ed6b98191ae1de2ba27634a4ef978f3b025f41265",
+      "exit_code": 0,
+      "pid": 19292,
+      "seconds": 1.1713360827416182,
+      "source_manifest_sha256": "d6f6b2cc8f97c95c2dc6b9d66ef373fd60da9d9026c56bfdc7f4d1c0e8dc0e67",
+      "started": "2026-09-30T02:51:34.655731+00:00"
+    },
+    "final-normal-matrix": {
+      "base_commit": "d73a0b92cc67e7b866ce0062b2a331aa53a29dd8",
+      "command": [
+        "python3",
+        "/tmp/deadpan-native-encode-i8gk62qm/run-matrix.py",
+        "normal-final",
+        "final-encoder-build"
+      ],
+      "diff_sha256": "5131640f8b037fd559ff334ed6b98191ae1de2ba27634a4ef978f3b025f41265",
+      "exit_code": 0,
+      "pid": 19403,
+      "seconds": 15.20058016711846,
+      "source_manifest_sha256": "d6f6b2cc8f97c95c2dc6b9d66ef373fd60da9d9026c56bfdc7f4d1c0e8dc0e67",
+      "started": "2026-09-30T02:52:08.574859+00:00"
+    },
+    "final-python-oracles": {
+      "base_commit": "d73a0b92cc67e7b866ce0062b2a331aa53a29dd8",
+      "command": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools/media-qualification/compatible",
+        "-p",
+        "test_*.py"
+      ],
+      "diff_sha256": "5131640f8b037fd559ff334ed6b98191ae1de2ba27634a4ef978f3b025f41265",
+      "exit_code": 0,
+      "pid": 18790,
+      "seconds": 1.8499870421364903,
+      "source_manifest_sha256": "d6f6b2cc8f97c95c2dc6b9d66ef373fd60da9d9026c56bfdc7f4d1c0e8dc0e67",
+      "started": "2026-09-30T02:49:04.355135+00:00"
+    },
+    "sanitized-build": {
+      "base_commit": "d73a0b92cc67e7b866ce0062b2a331aa53a29dd8",
+      "command": [
+        "python3",
+        "/tmp/deadpan-native-encode-i8gk62qm/build-sanitized.py"
+      ],
+      "diff_sha256": "2c14b864a50c7dcd5d10a57d0221eeede93f21dca3d0721073a7b4a09d20404e",
+      "exit_code": 0,
+      "pid": 17007,
+      "seconds": 2.3438345841132104,
+      "source_manifest_sha256": "609b10ba4885ea7a1a5dba9fb3fdec37df9cac6d76455ba09c66ef56042cf186",
+      "started": "2026-09-30T02:41:41.772982+00:00"
+    },
+    "sanitized-matrix": {
+      "base_commit": "d73a0b92cc67e7b866ce0062b2a331aa53a29dd8",
+      "command": [
+        "python3",
+        "/tmp/deadpan-native-encode-i8gk62qm/run-matrix.py",
+        "sanitized-final",
+        "sanitized-build",
+        "--sanitizers"
+      ],
+      "diff_sha256": "5131640f8b037fd559ff334ed6b98191ae1de2ba27634a4ef978f3b025f41265",
+      "exit_code": 0,
+      "pid": 18859,
+      "seconds": 14.453728042077273,
+      "source_manifest_sha256": "d6f6b2cc8f97c95c2dc6b9d66ef373fd60da9d9026c56bfdc7f4d1c0e8dc0e67",
+      "started": "2026-09-30T02:49:39.016424+00:00"
+    },
+    "workspace-clippy": {
+      "base_commit": "d73a0b92cc67e7b866ce0062b2a331aa53a29dd8",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "diff_sha256": "4346ff8ee36022ff13d5a3a2f31aabf105bb063eeaa57b480636f84ab0b99bd9",
+      "exit_code": 0,
+      "pid": 17593,
+      "seconds": 471.7083753752522,
+      "source_manifest_sha256": "a72f54a998390ecd198b409cffe64acdd86e34c3880724d1e51358e7e1c6afdd",
+      "started": "2026-09-30T02:43:14.258199+00:00"
+    },
+    "workspace-tests": {
+      "base_commit": "d73a0b92cc67e7b866ce0062b2a331aa53a29dd8",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked"
+      ],
+      "diff_sha256": "5131640f8b037fd559ff334ed6b98191ae1de2ba27634a4ef978f3b025f41265",
+      "exit_code": 0,
+      "pid": 19402,
+      "seconds": 497.7327660834417,
+      "source_manifest_sha256": "d6f6b2cc8f97c95c2dc6b9d66ef373fd60da9d9026c56bfdc7f4d1c0e8dc0e67",
+      "started": "2026-09-30T02:52:08.574719+00:00"
+    }
+  },
+  "matrices": {
+    "normal-final": {
+      "absolute_audio_events": 180,
+      "capability_rejections": [
+        "hardware-two-ntsc",
+        "hardware-two-60",
+        "hardware-two-edges"
+      ],
+      "deliberate_failures": [
+        "fault-byte-limit",
+        "fault-cancel",
+        "fault-ordinal",
+        "fault-audio-hole",
+        "fault-nonfinite",
+        "fault-incomplete"
+      ],
+      "encoded_cases": 10,
+      "encoded_frames": 872,
+      "fresh_decoded_frames": 2432,
+      "fresh_gop_boundaries": 40,
+      "maximum_audio_event_error_samples": 0,
+      "process_faults": [],
+      "production_encoder": {
+        "bytes": 1239064,
+        "linked_libraries": "/Users/michael/Code/deadpan/target/debug/examples/qualify:\n\t/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libavformat.62.dylib (compatibility version 62.0.0, current version 62.3.103)\n\t/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libavcodec.62.dylib (compatibility version 62.0.0, current version 62.11.103)\n\t/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libavutil.60.dylib (compatibility version 60.0.0, current version 60.8.103)\n\t/usr/lib/libiconv.2.dylib (compatibility version 7.0.0, current version 7.0.0)\n\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1356.0.0)\n",
+        "path": "/Users/michael/Code/deadpan/target/debug/examples/qualify",
+        "sha256": "315cb844b8090e89beeb9ed7ecf3886d60682e1cde334c605081f9f2d2505914"
+      }
+    },
+    "sanitized-final": {
+      "absolute_audio_events": 180,
+      "capability_rejections": [
+        "hardware-two-ntsc",
+        "hardware-two-60",
+        "hardware-two-edges"
+      ],
+      "deliberate_failures": [
+        "fault-byte-limit",
+        "fault-cancel",
+        "fault-ordinal",
+        "fault-audio-hole",
+        "fault-nonfinite",
+        "fault-incomplete"
+      ],
+      "encoded_cases": 10,
+      "encoded_frames": 872,
+      "fresh_decoded_frames": 2432,
+      "fresh_gop_boundaries": 40,
+      "maximum_audio_event_error_samples": 0,
+      "process_faults": [],
+      "production_encoder": {
+        "bytes": 1452216,
+        "linked_libraries": "/private/tmp/deadpan-native-encode-i8gk62qm/sanitized-target/aarch64-apple-darwin/debug/examples/qualify:\n\t/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libavformat.62.dylib (compatibility version 62.0.0, current version 62.3.103)\n\t/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libavcodec.62.dylib (compatibility version 62.0.0, current version 62.11.103)\n\t/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libavutil.60.dylib (compatibility version 60.0.0, current version 60.8.103)\n\t/usr/lib/libiconv.2.dylib (compatibility version 7.0.0, current version 7.0.0)\n\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1356.0.0)\n\t@rpath/libclang_rt.asan_osx_dynamic.dylib (compatibility version 0.0.0, current version 0.0.0)\n",
+        "path": "/private/tmp/deadpan-native-encode-i8gk62qm/sanitized-target/aarch64-apple-darwin/debug/examples/qualify",
+        "sha256": "63d9f33967187010d2f1ed8185b34be539a8368458a7d6d3923c8606529e1563"
+      }
+    }
+  },
+  "rust_tests": {
+    "failed": 0,
+    "ignored": 0,
+    "passed": 2159,
+    "result_records": 161
+  },
+  "scope": "bounded native encoder and immutable offline PCM; product Render remains open",
+  "source_admission": {
+    "final-encoder-build": {
+      "changed": [],
+      "checked_files": 13
+    },
+    "final-format-check": {
+      "changed": [],
+      "checked_files": 724
+    },
+    "final-normal-matrix": {
+      "changed": [],
+      "checked_files": 23
+    },
+    "final-python-oracles": {
+      "changed": [],
+      "checked_files": 23
+    },
+    "sanitized-build": {
+      "changed": [],
+      "checked_files": 13
+    },
+    "sanitized-matrix": {
+      "changed": [],
+      "checked_files": 23
+    },
+    "workspace-clippy": {
+      "changed": [],
+      "checked_files": 724
+    },
+    "workspace-tests": {
+      "changed": [],
+      "checked_files": 724
+    }
+  }
+}

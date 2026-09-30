@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python3",
+    "/tmp/deadpan-native-encode-i8gk62qm/build-sanitized.py"
+  ],
+  "started": "2026-09-30T02:41:41.772982+00:00",
+  "base_commit": "d73a0b92cc67e7b866ce0062b2a331aa53a29dd8",
+  "diff_sha256": "2c14b864a50c7dcd5d10a57d0221eeede93f21dca3d0721073a7b4a09d20404e",
+  "source_manifest_sha256": "609b10ba4885ea7a1a5dba9fb3fdec37df9cac6d76455ba09c66ef56042cf186",
+  "pid": 17007,
+  "exit_code": 0,
+  "seconds": 2.3438345841132104
+}

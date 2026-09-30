@@ -230,6 +230,21 @@ outer timeout above its 300-second cooperative deadline. Record the exact Cargo
 artifact paths and hashes; do not infer that an old `target/release` binary came
 from the current build. Omitting the executable records an explicit worker skip.
 
+## Native encoding checks
+
+The [native encoding boundary](NATIVE_ENCODING.md) has a separate bounded
+synthetic fixture. Build `cargo build -p deadpan-encode --example qualify --locked
+--message-format=json` and select the executable from that build's Cargo output.
+Then run `tools/media-qualification/compatible/qualify_native_encode.py` with
+`--encoder`, an empty `--work` directory and the qualified FFmpeg `--build-report`.
+The runner independently decodes FFmpeg and AVFoundation audio, reads actual MP4
+boxes and compares fresh-decoder GOP suffixes. Keep rejected hardware B-frame
+attempts and all partial files in the evidence. `--sanitizers` instruments the
+reader probes; the supplied Rust example must separately have its native C
+adapter built with ASan/UBSan. Synthetic encoder evidence does not establish
+project export. Run `cargo test -p deadpan-cli --test offline_audio --locked`
+for immutable canonical PCM, exact nonzero-origin intervals and shared deadlines.
+
 ## Original storage checks
 
 The [headless original commands](HEADLESS.md#original-media-ownership) retain

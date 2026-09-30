@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "-p",
+    "deadpan-encode",
+    "--all-targets",
+    "--offline",
+    "--message-format=json"
+  ],
+  "started": "2026-09-30T02:32:45.441347+00:00",
+  "base_commit": "d73a0b92cc67e7b866ce0062b2a331aa53a29dd8",
+  "diff_sha256": "f983ff13a0bb8eef578d97f90edd008acde8cdb7fe41f26d4772e6f89241a577",
+  "source_manifest_sha256": "5614079c5b5d1913d5a8f3b5f47059ccf73cf7ee51a1482348720a6ff2d4f7cb",
+  "pid": 14140,
+  "exit_code": 101,
+  "seconds": 17.2847354169935
+}

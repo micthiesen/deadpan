@@ -401,7 +401,8 @@ class PcmSpan:
 
 
 def inspect_pcm_events(spec: CaseSpec, pcm: Sequence[float], spans: Sequence[PcmSpan],
-                       *, tolerance_samples: int = 0, label: str = "pcm") -> dict:
+                       *, tolerance_samples: int = 0, label: str = "pcm",
+                       search_radius: int = SEARCH_RADIUS) -> dict:
     """Measure absolute authored events without decoder/container assumptions.
 
     Input is unmodified interleaved stereo PCM and complete ordered spans.
@@ -413,6 +414,7 @@ def inspect_pcm_events(spec: CaseSpec, pcm: Sequence[float], spans: Sequence[Pcm
         raise OracleError("spec must be a CaseSpec")
     if not isinstance(label, str) or not label or len(label) > 64:
         raise OracleError("PCM event label must contain 1..64 characters")
+    _integer(search_radius, "event search radius", 1, SEARCH_RADIUS)
     spans = _records(spans, "PCM spans", MAX_AUDIO_FRAMES)
     count = _finite_pcm(pcm)
     if not spans or count == 0:
@@ -438,20 +440,20 @@ def inspect_pcm_events(spec: CaseSpec, pcm: Sequence[float], spans: Sequence[Pcm
     physical_end = segments[-1][2] + segments[-1][1]
     events = []
     expected = expected_manifest(spec)["impulses"]
-    independent_events = all(right - left > SEARCH_RADIUS * 2
+    independent_events = all(right - left > search_radius * 2
                              for left, right in zip(expected, expected[1:]))
     if not independent_events:
         report.unqualified.append(f"{label} event timing: authored marker diagnostic windows overlap")
     report.add(f"{label}: independent event diagnostic windows", independent_events,
-               {"expected_samples": expected, "search_radius_samples": SEARCH_RADIUS}, diagnostic=True)
+               {"expected_samples": expected, "search_radius_samples": search_radius}, diagnostic=True)
     for channel, name in enumerate(("left", "right")):
         selected = []
         for expected_sample in expected:
             peak = None
             searched = 0
             for offset, samples, start in segments:
-                low = max(0, math.ceil(expected_sample - SEARCH_RADIUS - start))
-                high = min(samples, math.floor(expected_sample + SEARCH_RADIUS - start) + 1)
+                low = max(0, math.ceil(expected_sample - search_radius - start))
+                high = min(samples, math.floor(expected_sample + search_radius - start) + 1)
                 for local in range(low, high):
                     amplitude = pcm[(offset + local) * 2 + channel]
                     searched += 1
@@ -468,7 +470,7 @@ def inspect_pcm_events(spec: CaseSpec, pcm: Sequence[float], spans: Sequence[Pcm
                      "error_samples": _exact(error) if error is not None else None,
                      "error_seconds": str(error / SAMPLE_RATE) if error is not None else None,
                      "peak_amplitude": amplitude, "searched_samples": searched,
-                     "search_radius_samples": SEARCH_RADIUS, "exact": exact, "within_tolerance": within}
+                     "search_radius_samples": search_radius, "exact": exact, "within_tolerance": within}
             events.append(event)
             selected.append(actual)
             report.add(f"{label}: {name} event {expected_sample} exact", exact, event, diagnostic=True)
@@ -486,7 +488,7 @@ def inspect_pcm_events(spec: CaseSpec, pcm: Sequence[float], spans: Sequence[Pcm
             "checks": report.checks, "observations": observations, "unqualified": report.unqualified}
 
 
-def _audio_checks(report, label, spec, audio, pcm, tolerance, tolerance_valid):
+def _audio_checks(report, label, spec, audio, pcm, tolerance, tolerance_valid, search_radius):
     audio = _mapping(audio, label)
     count = _finite_pcm(pcm)
     tb = _ratio(audio["time_base"], "audio time base")
@@ -552,7 +554,7 @@ def _audio_checks(report, label, spec, audio, pcm, tolerance, tolerance_valid):
         return
     measured = inspect_pcm_events(spec, pcm,
         [PcmSpan(offset, samples, start.numerator) for offset, samples, start in segments],
-        tolerance_samples=tolerance if tolerance_valid else -1, label=label)
+        tolerance_samples=tolerance if tolerance_valid else -1, label=label, search_radius=search_radius)
     report.checks.extend(measured["checks"])
     report.unqualified.extend(measured["unqualified"])
     report.observations[label] = {**measured["observations"],
@@ -565,6 +567,7 @@ def inspect_case(
     spec: CaseSpec, source: dict, video: dict, ordinary_audio: dict, manual_audio: dict,
     probe: dict, *, ordinary_pcm: Sequence[float], manual_pcm: Sequence[float],
     tolerance_samples: int = 0, packets: dict | None = None,
+    event_search_radius: int = SEARCH_RADIUS,
 ) -> dict:
     """Collect independent checks; malformed sections fail without hiding others.
 
@@ -588,5 +591,5 @@ def inspect_case(
     if packets is not None:
         report.section("packets", lambda: _packet_checks(report, spec, packets))
     for label, audio, pcm in (("ordinary", ordinary_audio, ordinary_pcm), ("manual", manual_audio, manual_pcm)):
-        report.section(label, lambda label=label, audio=audio, pcm=pcm: _audio_checks(report, label, spec, audio, pcm, tolerance, valid))
+        report.section(label, lambda label=label, audio=audio, pcm=pcm: _audio_checks(report, label, spec, audio, pcm, tolerance, valid, event_search_radius))
     return report.result()

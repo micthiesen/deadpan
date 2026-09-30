@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "-p",
+    "deadpan-cli",
+    "--test",
+    "offline_audio",
+    "--locked"
+  ],
+  "started": "2026-09-30T02:38:09.484812+00:00",
+  "base_commit": "d73a0b92cc67e7b866ce0062b2a331aa53a29dd8",
+  "diff_sha256": "a2c249c83376583a13a67d9404e66267aa8fbf8db2fb404ff2cca2eae1182bfc",
+  "source_manifest_sha256": "b3812e3b05cc154eab7debaa0771a8769cdc8c7efb1dc926dd3e65104e20fd78",
+  "pid": 15845,
+  "exit_code": 101,
+  "seconds": 68.9005814162083
+}

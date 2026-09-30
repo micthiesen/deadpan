@@ -1,0 +1,20 @@
+{
+  "command": [
+    "cargo",
+    "clippy",
+    "-p",
+    "deadpan-encode",
+    "--all-targets",
+    "--locked",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "started": "2026-09-30T02:40:53.447461+00:00",
+  "base_commit": "d73a0b92cc67e7b866ce0062b2a331aa53a29dd8",
+  "diff_sha256": "2c14b864a50c7dcd5d10a57d0221eeede93f21dca3d0721073a7b4a09d20404e",
+  "source_manifest_sha256": "5a56d9484b3e52f615bb71488e94a29aaac3ec60cbd9bd314f52f36dddd3f9de",
+  "pid": 16791,
+  "exit_code": 101,
+  "seconds": 26.42722462490201
+}

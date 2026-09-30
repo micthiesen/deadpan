@@ -54,6 +54,7 @@ Current crates:
 - `native/deadpan-fileclone`: bounded safe descriptor-clone interface around the macOS system call. The store owns copying, checksums, publication and durability.
 - `crates/deadpan-render`: bounded shared SDR picture pipeline, linear Rec.2020 working textures, explicit sRGB display transform, ordered framing/clipping, aspect and rotation. No decoding, document mutation or encoding.
 - `native/deadpan-media-worker`: process-isolated FFmpeg conversion and independent decode verification through bounded descriptor-only AVIO. Only the documented FFI call permits unsafe Rust. Requires the explicitly selected pinned LGPL FFmpeg development prefix.
+- `native/deadpan-encode`: bounded descriptor-only H.264/AAC MP4 encoder over composed I420 and canonical stereo PCM. Exact clocks, explicit hardware/software attempts, one shared deadline and restricted fast-start readback; no project, decoding, verification or publication ownership.
 - `native/deadpan-process`: checked worker/leader teardown and Darwin group-membership adapter; unsafe is denied except for its documented bounded libproc call. Higher layers continue to forbid unsafe.
 - `crates/deadpan-app`: native `egui`/`eframe` project workspace using Metal. One service owns the writable store, one import worker prepares media, and a separate bounded preview worker consumes immutable workspaces. Native dialogs, source registration, explicit insertion, history, current-depth Camera previews and limited Original/edit/sound audition with selection loops are implemented; full editing, mastered playback and export remain open.
 - `crates/deadpan-cli`: versioned headless project/command API, reused by `deadpan-app --headless`.
@@ -191,8 +192,16 @@ binds a full document hash and reconstructed output contract before child GPU
 work. Admit its bounded raw output only after clean process/group/pipe teardown
 and independent contained hash, geometry and code-range checks. Keep generation
 and render wire messages separate over the shared process supervisor. Durable
-render jobs, complete audio/effects, encoding, emitted-file verification and
+render jobs, complete audio/effects, encoder integration, emitted-file verification and
 publication remain required.
+
+The [native encoder](docs/NATIVE_ENCODING.md) consumes consecutive authored
+picture/sample clocks in exact chronological order and poisons every failed
+session. Preserve B(end)-B(start), AAC priming/padding and video reorder metadata.
+Its only secondary open is the same output descriptor for fast-start. Hardware
+and OS software are separate attempts; requested B frames and queried codec
+fields do not prove emitted behavior. Keep hardware B-frame PTS<DTS rejection
+evidence. Independent finished-file admission is required before publication.
 
 The [committed project picture boundary](docs/PROJECT_PICTURES.md) captures an
 explicit revision and nonempty half-open range through a read-only store.

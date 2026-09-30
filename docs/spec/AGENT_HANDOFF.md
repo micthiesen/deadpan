@@ -2,6 +2,36 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Native SDR encoder and offline audio, 2026-09-29
+
+The [native encoding boundary](../NATIVE_ENCODING.md) now writes bounded
+descriptor-only H.264/AAC MP4 from composed I420 and finite canonical stereo PCM.
+It enforces exact chronological inputs, one deadline, explicit encoder attempts,
+poisoned failures, complete codec EOF and restricted same-file fast-start.
+`OfflineAudioSession` captures one historical revision and B(end)-B(start),
+preserves limiter/source context, and shares the deadline through source index
+comparison and provenance hashing. The existing inspection API stays unchanged.
+
+[Qualification](../qualification/native-encoding-2026-09-29.md) retains normal and
+ASan/UBSan files, all three audio readers, exact MP4 edit-list observations and
+fresh-decoder GOP suffixes. Each matrix passes ten usable cases and six deliberate
+failure checks. Hardware B-frame attempts still fail PTS<DTS on the measured
+M5 Max. Hardware without B-frames and explicit OS software attempts are separate
+measured paths; software requested for two B-frames emits one. No fallback occurs
+inside an encoder session.
+
+All 2,159 locked workspace tests pass, with zero failures or ignored tests.
+Strict workspace/all-target Clippy, formatting and 114 Python oracle tests pass.
+The evidence archive retains and verifies all 836 native result files, including
+rejected attempts and partial outputs. No app UI changed in this milestone.
+
+Next, feed committed pictures and canonical PCM directly into this encoder inside
+the supervised child. Add independent isolated finished-file verification,
+durable render jobs/recovery, atomic destination publication and native Render.
+Do not promote a synthetic adapter fixture into product export evidence. Full
+audio/effects, HDR, release hardware/OS coverage and all DP-01 through DP-24 and
+Gates A through G remain open or partial.
+
 ## Isolated committed picture worker, 2026-09-29
 
 The [render worker](../RENDER_WORKER.md) now owns real decode, Metal composition
@@ -25,16 +55,11 @@ the initial compile failure, terminal command journals, exact worker/example
 binary hashes and every synthetic actual/direct/reference plane. No app UI or
 native interaction changed. No compiler, test or native probe is left running.
 
-Next, add a bounded native H.264/AAC encoder session consumed directly inside
-this child. Do not spool a full uncompressed product movie through the current
-512 MiB qualification range. The existing production media worker only converts
-whole files to FFV1; encoder probes are development evidence. Qualify requested
-B-frames with the approved edit-list policy, exact origin-based PCM endpoints,
-closed GOPs and actual finished files. Pinned FFmpeg fast-start reopens its output
-for reading and allocates from moov size: a descriptor-only sink needs a narrowly
-admitted same-file read callback and bounded sample tables, not unrestricted
-path access. The current audio inspection method also needs a bounded offline
-interface using one caller deadline.
+The native encoder and bounded offline audio reader now exist as separate
+boundaries described above. Their connection to this child remains required.
+Do not spool a full uncompressed product movie through the current 512 MiB raw
+qualification range. The existing conversion worker still owns whole-file FFV1
+conversion; it is not the H.264/AAC encoder.
 
 Durable render jobs/recovery, full audio/effects, independent encoded-file
 verification, atomic publication, native Render, HDR and all remaining product

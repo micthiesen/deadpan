@@ -5,7 +5,7 @@ use std::collections::{BTreeMap, VecDeque};
 use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use deadpan_audio::{
     AudioSourceProvider, DefinitionAudioBlock, DomainAudioBlock, EdgeFadedBlock, LimitedAudio,
@@ -23,6 +23,9 @@ use deadpan_plan::{
 };
 use deadpan_store::original_media::{OriginalMediaLimits, OriginalMediaRecord};
 use deadpan_store::{AccessMode, ProjectStore, StoreError};
+
+mod offline;
+pub use offline::{MAX_OFFLINE_AUDIO_FRAMES, OfflineAudioError, OfflineAudioSession};
 
 #[derive(Debug, thiserror::Error)]
 pub enum ProjectAudioError {
@@ -110,6 +113,7 @@ impl ProjectAudioSession {
                 recency: VecDeque::new(),
                 cache_bytes: 0,
                 cache_index_frames: 0,
+                deadline: None,
             },
         }
     }
@@ -331,9 +335,39 @@ struct RegisteredSources {
     recency: VecDeque<AssetId>,
     cache_bytes: u64,
     cache_index_frames: u64,
+    // Offline reads retain the caller's absolute job deadline. Inspection keeps
+    // its existing per-call limits by leaving this absent.
+    deadline: Option<Instant>,
 }
 
 impl RegisteredSources {
+    fn check_control(&self, cancelled: &AtomicBool) -> Result<(), PreparationError> {
+        check_cancel(cancelled)?;
+        if self
+            .deadline
+            .is_some_and(|deadline| Instant::now() >= deadline)
+        {
+            return Err(unavailable("offline audio preparation deadline expired"));
+        }
+        Ok(())
+    }
+
+    fn remaining_timeout(
+        &self,
+        maximum: Duration,
+        cancelled: &AtomicBool,
+    ) -> Result<Duration, PreparationError> {
+        check_cancel(cancelled)?;
+        match self.deadline {
+            Some(deadline) => deadline
+                .checked_duration_since(Instant::now())
+                .filter(|remaining| !remaining.is_zero())
+                .map(|remaining| remaining.min(maximum))
+                .ok_or_else(|| unavailable("offline audio preparation deadline expired")),
+            None => Ok(maximum),
+        }
+    }
+
     /// Called only after qualified original bytes have been snapshotted. Make
     /// room before native PCM allocation. A later decode failure leaves evicted
     /// entries absent, all other entries intact, and no reservation charged to
@@ -423,7 +457,7 @@ impl AudioSourceProvider for RegisteredSources {
         expected: &AssetRecord,
         cancelled: &AtomicBool,
     ) -> Result<&PreparedSource, PreparationError> {
-        check_cancel(cancelled)?;
+        self.check_control(cancelled)?;
         if self.document.assets().get(asset) != Some(expected) {
             return Err(PreparationError::IndexMismatch);
         }
@@ -437,7 +471,7 @@ impl AudioSourceProvider for RegisteredSources {
         asset: &AssetId,
         cancelled: &AtomicBool,
     ) -> Result<&PreparedSource, PreparationError> {
-        check_cancel(cancelled)?;
+        self.check_control(cancelled)?;
         if project != self.document.project_id() || revision != self.document.revision_id() {
             return Err(PreparationError::SourceUnavailable(
                 "audio request differs from the fixed project revision".into(),
@@ -464,7 +498,7 @@ impl AudioSourceProvider for RegisteredSources {
                     "selected source has no qualified audio index".into(),
                 )
             })?;
-            check_cancel(cancelled)?;
+            self.check_control(cancelled)?;
             // Account for all physical samples, including priming and padding,
             // before taking any snapshots or opening a native decoder. Publish
             // the reservation only after complete preparation succeeds.
@@ -481,37 +515,48 @@ impl AudioSourceProvider for RegisteredSources {
                 bytes,
                 index_frames,
             )?;
-            let audio_limits = AudioSessionLimits {
+            let mut audio_limits = AudioSessionLimits {
                 maximum_cache_bytes: bytes,
                 maximum_index_frames: expected.frames().len(),
                 ..AudioSessionLimits::default()
             };
             let original_limits = OriginalMediaLimits::new(
                 audio_limits.decode.max_input_bytes,
-                audio_limits.opening_timeout,
+                self.remaining_timeout(audio_limits.opening_timeout, cancelled)?,
             )
             .map_err(unavailable)?;
-            let mut original = self
-                .store
-                .snapshot_original(receipt.original().content(), original_limits, cancelled)
-                .map_err(unavailable)?;
+            let original = self.store.snapshot_original(
+                receipt.original().content(),
+                original_limits,
+                cancelled,
+            );
+            self.check_control(cancelled)?;
+            let mut original = original.map_err(unavailable)?;
             if original.record().object() != receipt.original()
                 || original.record().sha256() != expected.content().sha256()
                 || original.record().object().byte_length() != expected.content().byte_length()
             {
                 return Err(PreparationError::IndexMismatch);
             }
-            check_cancel(cancelled)?;
+            self.check_control(cancelled)?;
             let reserved = self.make_room(bytes, index_frames)?;
+            // Snapshotting already consumed part of the same job budget. A
+            // fresh native opening limit must use only what remains now.
+            audio_limits.opening_timeout =
+                self.remaining_timeout(audio_limits.opening_timeout, cancelled)?;
             let session = AudioSession::open_verified(
                 &mut original,
                 expected.content(),
                 expected.stream().stream_index,
                 audio_limits,
                 cancelled,
-            )?;
-            let prepared = PreparedSource::new(session, expected, cancelled)?;
-            check_cancel(cancelled)?;
+            );
+            self.check_control(cancelled)?;
+            let session = session?;
+            let prepared = PreparedSource::new_controlled(session, expected, || {
+                self.check_control(cancelled)
+            })?;
+            self.check_control(cancelled)?;
             self.retained.insert(
                 asset.clone(),
                 CachedSource {
@@ -527,7 +572,7 @@ impl AudioSourceProvider for RegisteredSources {
             (self.cache_bytes, self.cache_index_frames) = reserved;
             self.mark_recent(asset);
         }
-        check_cancel(cancelled)?;
+        self.check_control(cancelled)?;
         // The complete index was compared when PreparedSource was constructed.
         // Re-admit the captured contracts on every hit, while continuing to use
         // private PCM if a linked external path has moved or disappeared.
@@ -538,6 +583,7 @@ impl AudioSourceProvider for RegisteredSources {
                 unavailable("source is absent from the fixed project revision")
             })?)?;
         self.mark_recent(asset);
+        self.check_control(cancelled)?;
         self.retained
             .get(asset)
             .map(|entry| &entry.prepared)

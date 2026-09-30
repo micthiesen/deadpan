@@ -1,0 +1,15 @@
+import json
+from pathlib import Path
+import subprocess
+import sys
+root=Path('/tmp/deadpan-native-encode-i8gk62qm')
+name,build=sys.argv[1:3]
+records=[]
+for line in (root/(build+'.log')).read_text().splitlines():
+ try: records.append(json.loads(line))
+ except ValueError: pass
+assert any(x.get('reason')=='build-finished' and x['success'] for x in records)
+binaries=[x['executable'] for x in records if x.get('reason')=='compiler-artifact' and x['target']['name']=='qualify' and x.get('executable')]
+assert len(binaries)==1
+command=['python3','tools/media-qualification/compatible/qualify_native_encode.py','--work',str(root/name),'--build-report','/private/tmp/deadpan-ui-ffmpeg-build.json','--encoder',binaries[0],*sys.argv[3:]]
+sys.exit(subprocess.run(command).returncode)

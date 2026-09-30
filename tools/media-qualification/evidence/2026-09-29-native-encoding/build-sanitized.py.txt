@@ -1,0 +1,16 @@
+import hashlib,json,os,subprocess,sys
+from pathlib import Path
+root=Path('/tmp/deadpan-native-encode-i8gk62qm')
+runtime=Path(subprocess.check_output(['clang','-print-file-name=libclang_rt.asan_osx_dynamic.dylib'],text=True).strip())
+assert runtime.is_absolute() and runtime.is_file()
+env=dict(os.environ)
+env.pop('RUSTFLAGS',None)
+flags=['-C',f'link-arg={runtime}','-C',f'link-arg=-Wl,-rpath,{runtime.parent}']
+env['CARGO_ENCODED_RUSTFLAGS']='\x1f'.join(flags)
+env['CFLAGS']='-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all'
+env['ASAN_OPTIONS']='halt_on_error=1:abort_on_error=1:exitcode=86:detect_leaks=0'
+env['UBSAN_OPTIONS']='halt_on_error=1:abort_on_error=1:exitcode=87:print_stacktrace=1'
+command=['cargo','build','-p','deadpan-encode','--all-targets','--locked','--target','aarch64-apple-darwin','--target-dir',str(root/'sanitized-target'),'--message-format=json']
+report={'command':command,'runtime':str(runtime),'runtime_sha256':hashlib.sha256(runtime.read_bytes()).hexdigest(),'rust_flags':flags,'cflags':env['CFLAGS'],'scope':'C encoder and target C dependencies instrumented; Rust and FFmpeg dylibs not instrumented'}
+(root/'sanitized-build-config.json').write_text(json.dumps(report,indent=2)+'\n')
+sys.exit(subprocess.run(command,env=env).returncode)
