@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "request_id": "94d81d72-97fd-4c3a-8068-67b88b24f4c5",
+  "context": {
+    "project_id": "project-picture-qualification",
+    "revision_id": "90b5e85d-a443-48d2-b851-5b96c84ac9b9"
+  },
+  "operation": {
+    "operation": "retry_checkpoint",
+    "job_id": "615ff043-c6f2-4d26-ad9b-0abd72847680",
+    "encoding_attempt_id": "b80e72bc-f256-4095-9bbc-e072e5403685",
+    "destination": "/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/native-retry.mp4"
+  }
+}

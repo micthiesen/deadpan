@@ -1,0 +1,7 @@
+{
+  "bundle": "/tmp/deadpan-live-project-20260930/Deadpan Live Project QA.app",
+  "executable": "/tmp/deadpan-live-project-20260930/Deadpan Live Project QA.app/Contents/MacOS/deadpan-app",
+  "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba",
+  "sha256": "c02f095bd18514db60eb05c679fd4b3b30b74c0e8a28f92fba8844776efb68b7",
+  "purpose": "Disposable native UI qualification; not release packaging"
+}

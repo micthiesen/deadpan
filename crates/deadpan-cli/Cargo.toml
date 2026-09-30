@@ -15,7 +15,7 @@ deadpan-plan.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
-uuid.workspace = true
+uuid = { workspace = true, features = ["serde"] }
 
 [target.'cfg(any(target_os = "macos", target_os = "linux"))'.dependencies]
 deadpan-media.workspace = true
@@ -29,7 +29,8 @@ deadpan-filesystem.workspace = true
 wgpu.workspace = true
 pollster.workspace = true
 sha2.workspace = true
-rustix = { workspace = true, features = ["system"] }
+rustix = { workspace = true, features = ["system", "net"] }
+deadpan-native-process.workspace = true
 tempfile.workspace = true
 signal-hook.workspace = true
 

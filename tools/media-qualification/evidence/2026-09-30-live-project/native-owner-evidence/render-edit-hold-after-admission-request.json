@@ -1,0 +1,11 @@
+{
+  "protocol": 1,
+  "project_id": "project-picture-qualification",
+  "expected_revision": "45c3e0f8-f634-4d26-8c74-ff3add325dd6",
+  "new_revision": "635df15b-163c-4000-bb42-18fcffc17455",
+  "command": {
+    "command": "set_hold_duration",
+    "node": "freeze",
+    "duration": 33
+  }
+}

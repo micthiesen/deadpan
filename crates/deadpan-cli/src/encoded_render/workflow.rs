@@ -40,7 +40,7 @@ use deadpan_store::{
         RenderWriteHandle,
     },
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use super::{
     EncodedRenderError, EncodedWorkerLimits,

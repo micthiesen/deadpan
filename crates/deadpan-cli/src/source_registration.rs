@@ -48,21 +48,14 @@ pub(super) fn adopt_geometry(
     if envelope.protocol != 1 {
         return Err(CliError::Protocol(envelope.protocol));
     }
-    let mut store = ProjectStore::open(
+    write_json(&crate::live_project::dispatch_short(
         package,
-        if dry_run {
-            AccessMode::ReadOnly
-        } else {
-            AccessMode::ReadWrite
+        None,
+        crate::live_project::ShortOperation::AdoptPrimaryGeometry {
+            adoption: envelope.adoption,
+            dry_run,
         },
-    )?;
-    if dry_run {
-        let edit = store.preview_primary_geometry(&envelope.adoption)?;
-        write_json(&serde_json::json!({"protocol":1,"committed":false,"edit":edit}))
-    } else {
-        let outcome = store.adopt_primary_geometry(&envelope.adoption, None)?;
-        write_json(&serde_json::json!({"protocol":1,"committed":true,"outcome":outcome}))
-    }
+    )?)
 }
 
 pub(super) fn run(package: &Path, request: &Path, dry_run: bool) -> Result<(), CliError> {

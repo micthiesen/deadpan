@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "request_id": "d6e0e96e-7082-437c-8461-c76e57d00b97",
+  "context": {
+    "project_id": "project-picture-qualification",
+    "revision_id": "90b5e85d-a443-48d2-b851-5b96c84ac9b9"
+  },
+  "operation": {
+    "operation": "reconcile",
+    "publication_id": "90050a3b-7bde-488c-a173-1216afcec739"
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-cli",
+    "--test",
+    "live_project",
+    "--test",
+    "project_commands",
+    "--test",
+    "render",
+    "--test",
+    "source_registration",
+    "--no-fail-fast"
+  ],
+  "started": "2026-09-30T15:07:16.758858+00:00",
+  "base_commit": "37abb39f0cf99c2feb19ba7e5e06b1e81f965bf2",
+  "diff_sha256": "4f06b89c0dd48e28fe783b82854d0656f1cd1688224e6486180e168a4a9560c9",
+  "source_manifest_sha256": "db5a00570f02423c90e36560791cc4171e13ccb2532d99e26769ef5e5ce43273",
+  "pid": 75693,
+  "exit_code": 0,
+  "seconds": 61.912426916882396
+}

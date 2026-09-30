@@ -1,0 +1,23 @@
+#!/usr/bin/env python3
+"""Run the remaining UI build checks sequentially, stopping on first failure."""
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+repo = Path('/Users/michael/Code/deadpan')
+work = Path('/tmp/deadpan-live-project-20260930')
+runner = repo / 'tools/media-qualification/evidence/2026-09-29-generated-pictures/run-native.py'
+environment = dict(os.environ, DEADPAN_CHECK_OUTPUT=str(work))
+checks = [
+    ('cli-final', ['cargo', 'test', '--locked', '-p', 'deadpan-cli', '--lib', '--test', 'live_project', '--no-fail-fast']),
+    ('ui-tests', ['cargo', 'test', '--locked', '-p', 'deadpan-app', '--features', 'ui-harness', '--no-fail-fast']),
+    ('ui-clippy', ['cargo', 'clippy', '--locked', '-p', 'deadpan-app', '--all-targets', '--features', 'ui-harness', '--', '-D', 'warnings']),
+    ('ui-build', ['cargo', 'build', '--locked', '-p', 'deadpan-app', '--features', 'ui-harness']),
+]
+for name, command in checks:
+    if (work / (name + '.json')).exists():
+        raise RuntimeError('Refusing to overwrite earlier check: ' + name)
+    code = subprocess.call(['python3', str(runner), name, *command], cwd=repo, env=environment)
+    if code:
+        sys.exit(code)

@@ -1,0 +1,195 @@
+{
+  "schema_version": 1,
+  "result": "failed",
+  "commands": [],
+  "cases": [],
+  "assertions": [],
+  "process_faults": [],
+  "input_admission": [
+    {
+      "path": "/tmp/deadpan-live-project-20260930/qualify-decoded.py",
+      "resolved": "/private/tmp/deadpan-live-project-20260930/qualify-decoded.py",
+      "bytes": 25867,
+      "sha256": "5a83c398ab0457c3a7ad152f929a1d115e87625b5ac3fe8c92f0ac4732e5dfed",
+      "device": 16777233,
+      "inode": 34639179,
+      "mtime_ns": 1790781057717214170,
+      "ctime_ns": 1790781057717214170
+    },
+    {
+      "path": "/tmp/deadpan-durable-automatic-20260930/decoded-automatic-cold/report.json",
+      "resolved": "/private/tmp/deadpan-durable-automatic-20260930/decoded-automatic-cold/report.json",
+      "bytes": 1020146,
+      "sha256": "a50f9c2dfc00faa8cd84679829548f9ede20766f690af65c5c8ecc22eb846490",
+      "device": 16777233,
+      "inode": 34344810,
+      "mtime_ns": 1790771541142678113,
+      "ctime_ns": 1790771541142678113
+    },
+    {
+      "path": "/tmp/deadpan-live-project-20260930/native-owner-evidence/state.json",
+      "resolved": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/state.json",
+      "bytes": 61765,
+      "sha256": "1cb9d04dad289a92eb71d31f81018211b4e5db92b7da25275b587d1b5e651832",
+      "device": 16777233,
+      "inode": 34665917,
+      "mtime_ns": 1790782557823455128,
+      "ctime_ns": 1790782557823520629
+    },
+    {
+      "path": "/tmp/deadpan-durable-automatic-20260930/independent-cold-input.json",
+      "resolved": "/private/tmp/deadpan-durable-automatic-20260930/independent-cold-input.json",
+      "bytes": 4607,
+      "sha256": "c70f7656ce0ace71c3be3f58a2b2dfd016dd499e5fa8d8895ec33bd24829e302",
+      "device": 16777233,
+      "inode": 34344667,
+      "mtime_ns": 1790771508267851445,
+      "ctime_ns": 1790771508267851445
+    },
+    {
+      "path": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-001-initial-context.stdout.json",
+      "resolved": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-001-initial-context.stdout.json",
+      "bytes": 6285,
+      "sha256": "75ad5024639d726734c0d286c8ffb3acca7ef7eb2add945776e6bdc1dc8e3777",
+      "device": 16777233,
+      "inode": 34664157,
+      "mtime_ns": 1790781977924981720,
+      "ctime_ns": 1790781977924981720
+    },
+    {
+      "path": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-001-before-render.stdout.json",
+      "resolved": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-001-before-render.stdout.json",
+      "bytes": 6319,
+      "sha256": "6580361c4e4a6675b9f2fa67c34c19d2250ef388830168a339f45dddb474a7e1",
+      "device": 16777233,
+      "inode": 34665150,
+      "mtime_ns": 1790782416575705973,
+      "ctime_ns": 1790782416575705973
+    }
+  ],
+  "scope": "Native-owner initial render and historical checkpoint retry against retained canonical inputs; prove only revision and one Freeze label differ from the original reference document, then compare all picture planes and authored PCM at observed PTS with no realignment",
+  "fixture_capacity": {
+    "seconds": 5,
+    "samples": 240000,
+    "actual_frames": 128,
+    "actual_samples": 205005,
+    "fidelity_tolerances_changed": false,
+    "format_pts_trim_rules_changed": false
+  },
+  "limits": {
+    "commands": 8,
+    "command_seconds": 120,
+    "shared_seconds": 480,
+    "json_bytes": 33554432,
+    "picture_bytes_per_movie": 11059200,
+    "pcm_bytes_per_reader": 1920000
+  },
+  "prior_report": {
+    "path": "/tmp/deadpan-durable-automatic-20260930/decoded-automatic-cold/report.json",
+    "resolved": "/private/tmp/deadpan-durable-automatic-20260930/decoded-automatic-cold/report.json",
+    "bytes": 1020146,
+    "sha256": "a50f9c2dfc00faa8cd84679829548f9ede20766f690af65c5c8ecc22eb846490",
+    "device": 16777233,
+    "inode": 34344810,
+    "mtime_ns": 1790771541142678113,
+    "ctime_ns": 1790771541142678113
+  },
+  "workflow_report": {
+    "path": "/tmp/deadpan-live-project-20260930/native-owner-evidence/state.json",
+    "resolved": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/state.json",
+    "bytes": 61765,
+    "sha256": "1cb9d04dad289a92eb71d31f81018211b4e5db92b7da25275b587d1b5e651832",
+    "device": 16777233,
+    "inode": 34665917,
+    "mtime_ns": 1790782557823455128,
+    "ctime_ns": 1790782557823520629
+  },
+  "failure": "original CLI dump differs from the exact retained canonical reference document",
+  "traceback": "Traceback (most recent call last):\n  File \"/tmp/deadpan-live-project-20260930/qualify-decoded.py\", line 179, in main\n    require(original_identity['sha256'] == original_document_hash,\n    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n            'original CLI dump differs from the exact retained canonical reference document')\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/deadpan-live-project-20260930/qualify-decoded.py\", line 36, in require\n    raise ValueError(detail)\nValueError: original CLI dump differs from the exact retained canonical reference document\n",
+  "final_file_admission": [
+    {
+      "path": "/tmp/deadpan-live-project-20260930/qualify-decoded.py",
+      "passed": true,
+      "actual": {
+        "path": "/tmp/deadpan-live-project-20260930/qualify-decoded.py",
+        "resolved": "/private/tmp/deadpan-live-project-20260930/qualify-decoded.py",
+        "bytes": 25867,
+        "sha256": "5a83c398ab0457c3a7ad152f929a1d115e87625b5ac3fe8c92f0ac4732e5dfed",
+        "device": 16777233,
+        "inode": 34639179,
+        "mtime_ns": 1790781057717214170,
+        "ctime_ns": 1790781057717214170
+      }
+    },
+    {
+      "path": "/tmp/deadpan-durable-automatic-20260930/decoded-automatic-cold/report.json",
+      "passed": true,
+      "actual": {
+        "path": "/tmp/deadpan-durable-automatic-20260930/decoded-automatic-cold/report.json",
+        "resolved": "/private/tmp/deadpan-durable-automatic-20260930/decoded-automatic-cold/report.json",
+        "bytes": 1020146,
+        "sha256": "a50f9c2dfc00faa8cd84679829548f9ede20766f690af65c5c8ecc22eb846490",
+        "device": 16777233,
+        "inode": 34344810,
+        "mtime_ns": 1790771541142678113,
+        "ctime_ns": 1790771541142678113
+      }
+    },
+    {
+      "path": "/tmp/deadpan-live-project-20260930/native-owner-evidence/state.json",
+      "passed": true,
+      "actual": {
+        "path": "/tmp/deadpan-live-project-20260930/native-owner-evidence/state.json",
+        "resolved": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/state.json",
+        "bytes": 61765,
+        "sha256": "1cb9d04dad289a92eb71d31f81018211b4e5db92b7da25275b587d1b5e651832",
+        "device": 16777233,
+        "inode": 34665917,
+        "mtime_ns": 1790782557823455128,
+        "ctime_ns": 1790782557823520629
+      }
+    },
+    {
+      "path": "/tmp/deadpan-durable-automatic-20260930/independent-cold-input.json",
+      "passed": true,
+      "actual": {
+        "path": "/tmp/deadpan-durable-automatic-20260930/independent-cold-input.json",
+        "resolved": "/private/tmp/deadpan-durable-automatic-20260930/independent-cold-input.json",
+        "bytes": 4607,
+        "sha256": "c70f7656ce0ace71c3be3f58a2b2dfd016dd499e5fa8d8895ec33bd24829e302",
+        "device": 16777233,
+        "inode": 34344667,
+        "mtime_ns": 1790771508267851445,
+        "ctime_ns": 1790771508267851445
+      }
+    },
+    {
+      "path": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-001-initial-context.stdout.json",
+      "passed": true,
+      "actual": {
+        "path": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-001-initial-context.stdout.json",
+        "resolved": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-001-initial-context.stdout.json",
+        "bytes": 6285,
+        "sha256": "75ad5024639d726734c0d286c8ffb3acca7ef7eb2add945776e6bdc1dc8e3777",
+        "device": 16777233,
+        "inode": 34664157,
+        "mtime_ns": 1790781977924981720,
+        "ctime_ns": 1790781977924981720
+      }
+    },
+    {
+      "path": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-001-before-render.stdout.json",
+      "passed": true,
+      "actual": {
+        "path": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-001-before-render.stdout.json",
+        "resolved": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-001-before-render.stdout.json",
+        "bytes": 6319,
+        "sha256": "6580361c4e4a6675b9f2fa67c34c19d2250ef388830168a339f45dddb474a7e1",
+        "device": 16777233,
+        "inode": 34665150,
+        "mtime_ns": 1790782416575705973,
+        "ctime_ns": 1790782416575705973
+      }
+    }
+  ]
+}

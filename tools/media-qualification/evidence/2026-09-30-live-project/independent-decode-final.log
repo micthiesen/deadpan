@@ -1,0 +1,1 @@
+{"result": "passed", "report": "/tmp/deadpan-live-project-20260930/decoded-native-owner-final/report.json", "cases": [{"name": "initial", "result": "passed", "failure": null}, {"name": "retry", "result": "passed", "failure": null}], "failure": null}

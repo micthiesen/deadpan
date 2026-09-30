@@ -10,7 +10,7 @@ use rustix::process::{
 };
 
 mod spawn;
-pub use spawn::spawn;
+pub use spawn::{spawn, try_with_descriptor_creation_guard, with_descriptor_creation_guard};
 
 /// Stop an owned worker group without reaping its leader.
 ///

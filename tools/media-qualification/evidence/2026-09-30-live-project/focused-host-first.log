@@ -1,0 +1,56 @@
+   Compiling rusty-fork v0.3.1
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+   Compiling accesskit v0.24.1
+   Compiling deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+   Compiling deadpan-fileclone v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-fileclone)
+   Compiling deadpan-filesystem v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-filesystem)
+   Compiling deadpan-native-process v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-process)
+   Compiling proptest v1.11.0
+   Compiling accesskit_consumer v0.38.0
+   Compiling egui v0.36.2
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling accesskit_macos v0.26.3
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling egui-wgpu v0.36.2
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling accesskit_winit v0.32.2
+   Compiling egui-winit v0.36.2
+   Compiling eframe v0.36.2
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error[E0614]: type `deadpan_core::ProjectDocument` cannot be dereferenced
+   --> crates/deadpan-app/src/project/tests/headless.rs:140:9
+    |
+140 | /         *ProjectStore::open(&path, AccessMode::ReadOnly)
+141 | |             .unwrap()
+142 | |             .snapshot()
+143 | |             .unwrap(),
+    | |_____________________^ can't be dereferenced
+
+For more information about this error, try `rustc --explain E0614`.
+error: could not compile `deadpan-app` (bin "deadpan-app" test) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error[E0433]: cannot find module or crate `serde_json` in this scope
+  --> crates/deadpan-app/src/project/service/headless.rs:60:28
+   |
+60 |                 let sent = serde_json::to_value(reply)
+   |                            ^^^^^^^^^^ use of unresolved module or unlinked crate `serde_json`
+   |
+   = help: if you wanted to use a crate named `serde_json`, use `cargo add serde_json` to add it to your `Cargo.toml`
+
+error[E0433]: cannot find module or crate `serde_json` in this scope
+  --> crates/deadpan-app/src/project/service/headless.rs:63:45
+   |
+63 |                 if !sent && let Ok(value) = serde_json::to_value(fallback) {
+   |                                             ^^^^^^^^^^ use of unresolved module or unlinked crate `serde_json`
+   |
+   = help: if you wanted to use a crate named `serde_json`, use `cargo add serde_json` to add it to your `Cargo.toml`
+
+For more information about this error, try `rustc --explain E0433`.
+error: could not compile `deadpan-app` (bin "deadpan-app") due to 2 previous errors

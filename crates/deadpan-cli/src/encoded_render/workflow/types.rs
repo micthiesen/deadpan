@@ -56,7 +56,7 @@ pub struct ReconcileRender {
     pub deadline: Instant,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum WorkflowStage {
     Idle,
@@ -75,7 +75,7 @@ pub enum WorkflowStage {
     Unresolved,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum WorkflowOutcome {
     Published,
@@ -86,8 +86,13 @@ pub enum WorkflowOutcome {
     Unresolved,
 }
 
-#[derive(Debug, Clone, Serialize)]
-#[serde(tag = "kind", content = "value", rename_all = "snake_case")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(
+    tag = "kind",
+    content = "value",
+    rename_all = "snake_case",
+    deny_unknown_fields
+)]
 pub enum WorkflowProgress {
     Qualification {
         choice: crate::encoded_render::protocol::EncoderChoice,

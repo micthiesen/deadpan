@@ -1,0 +1,22 @@
+    Checking uuid v1.26.1
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Checking deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+    Checking accesskit v0.24.1
+    Checking deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Checking deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking accesskit_consumer v0.38.0
+    Checking egui v0.36.2
+    Checking accesskit_consumer v0.35.0
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking accesskit_macos v0.26.3
+    Checking kittest v0.4.0
+    Checking egui-wgpu v0.36.2
+    Checking accesskit_winit v0.32.2
+    Checking egui-winit v0.36.2
+    Checking eframe v0.36.2
+    Checking egui_kittest v0.36.2
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2m 01s

@@ -1,0 +1,13 @@
+   Compiling deadpan-native-process v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-process)
+   Compiling deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+error[E0432]: unresolved import `rustix::fs::mkfifoat`
+  --> crates/deadpan-store/tests/host_owner.rs:14:29
+   |
+14 | use rustix::fs::{CWD, Mode, mkfifoat};
+   |                             ^^^^^^^^ no `mkfifoat` in `fs`
+
+For more information about this error, try `rustc --explain E0432`.
+error: could not compile `deadpan-store` (test "host_owner") due to 1 previous error

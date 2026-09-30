@@ -1,0 +1,134 @@
+{
+  "schema_version": 1,
+  "result": "passed admission analysis; no decoder execution",
+  "diagnosis": "The initial failure compared pretty dump file bytes with the compact serde render-document identity. The initial document body and stored revision are unchanged.",
+  "serialization_method": "Remove only bytes 0x09,0x0a,0x0d,0x20 outside JSON strings; preserve every other byte, key order, string escape and numeric spelling. Reparse and require equal JSON values.",
+  "original": {
+    "path": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-001-initial-context.stdout.json",
+    "pretty": {
+      "bytes": 6285,
+      "sha256": "75ad5024639d726734c0d286c8ffb3acca7ef7eb2add945776e6bdc1dc8e3777"
+    },
+    "compact": {
+      "bytes": 3041,
+      "sha256": "564af137ff203f7a10344a9e50db7a4167cee0e1dfbbecf44ed3b39a3c6ef638"
+    }
+  },
+  "captured": {
+    "path": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-001-before-render.stdout.json",
+    "pretty": {
+      "bytes": 6319,
+      "sha256": "6580361c4e4a6675b9f2fa67c34c19d2250ef388830168a339f45dddb474a7e1"
+    },
+    "compact": {
+      "bytes": 3075,
+      "sha256": "aff6df4728a7882084dd4b26e598017d336c6b2b9f29307dd75c3727a2b54c05"
+    }
+  },
+  "original_manifest_document_sha256": "564af137ff203f7a10344a9e50db7a4167cee0e1dfbbecf44ed3b39a3c6ef638",
+  "captured_manifest_document_sha256": "aff6df4728a7882084dd4b26e598017d336c6b2b9f29307dd75c3727a2b54c05",
+  "exact_document_differences": [
+    {
+      "path": "/nodes/freeze/label",
+      "before": "freeze",
+      "after": "IPC native owner confirmed"
+    },
+    {
+      "path": "/revision_id",
+      "before": "workflow-live-restored",
+      "after": "45c3e0f8-f634-4d26-8c74-ff3add325dd6"
+    }
+  ],
+  "ui_apply_undo_differences": [
+    {
+      "path": "/revision_id",
+      "before": "08b4d098-3a06-49d7-b745-07c6196629b1",
+      "after": "45c3e0f8-f634-4d26-8c74-ff3add325dd6"
+    }
+  ],
+  "initial_cli_dump_equals_stored_revision_bytes": true,
+  "restored_ui_document_equals_captured_document": true,
+  "oracle_thresholds_or_timing_rules_changed": false,
+  "serializer_sources": {
+    "crates/deadpan-core/src/document.rs": {
+      "bytes": 49385,
+      "sha256": "08beb01a2140bc1c23fa08dd8fc6a62d83f220187ee4f1b50a19e80d8b94a6a7"
+    },
+    "crates/deadpan-jobs/src/render.rs": {
+      "bytes": 14819,
+      "sha256": "14b3f532f577a6f5b03c6a0ce4196b7c989ee9358a8991144923080c3220d36e"
+    }
+  },
+  "source_rules": {
+    "pretty": "deadpan-core/src/document.rs to_json_with_limit: serde_json::to_writer_pretty plus newline",
+    "compact": "deadpan-jobs/src/render.rs hash_document: serde_json::to_writer"
+  },
+  "files_before": {
+    "/tmp/deadpan-live-project-20260930/native-owner-evidence/state.json": {
+      "bytes": 61765,
+      "sha256": "1cb9d04dad289a92eb71d31f81018211b4e5db92b7da25275b587d1b5e651832"
+    },
+    "/tmp/deadpan-durable-automatic-20260930/independent-cold-input.json": {
+      "bytes": 4607,
+      "sha256": "c70f7656ce0ace71c3be3f58a2b2dfd016dd499e5fa8d8895ec33bd24829e302"
+    },
+    "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-001-initial-context.stdout.json": {
+      "bytes": 6285,
+      "sha256": "75ad5024639d726734c0d286c8ffb3acca7ef7eb2add945776e6bdc1dc8e3777"
+    },
+    "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-001-before-render.stdout.json": {
+      "bytes": 6319,
+      "sha256": "6580361c4e4a6675b9f2fa67c34c19d2250ef388830168a339f45dddb474a7e1"
+    },
+    "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/deadpan-render-90050a3b-7bde-488c-a173-1216afcec739.json": {
+      "bytes": 32633,
+      "sha256": "6a108bf4e29f33c0064250a9dee488a015fefbe26b3c717af04da75809f39ab1"
+    },
+    "/tmp/deadpan-live-project-20260930/native-room-tone-investigation.json": {
+      "bytes": 13908,
+      "sha256": "49680ee448026561313e87cbc84d999efbea98549e8662ca1fe1b4bedb726ba1"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-core/src/document.rs": {
+      "bytes": 49385,
+      "sha256": "08beb01a2140bc1c23fa08dd8fc6a62d83f220187ee4f1b50a19e80d8b94a6a7"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-jobs/src/render.rs": {
+      "bytes": 14819,
+      "sha256": "14b3f532f577a6f5b03c6a0ce4196b7c989ee9358a8991144923080c3220d36e"
+    }
+  },
+  "files_after": {
+    "/tmp/deadpan-live-project-20260930/native-owner-evidence/state.json": {
+      "bytes": 61765,
+      "sha256": "1cb9d04dad289a92eb71d31f81018211b4e5db92b7da25275b587d1b5e651832"
+    },
+    "/tmp/deadpan-durable-automatic-20260930/independent-cold-input.json": {
+      "bytes": 4607,
+      "sha256": "c70f7656ce0ace71c3be3f58a2b2dfd016dd499e5fa8d8895ec33bd24829e302"
+    },
+    "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-001-initial-context.stdout.json": {
+      "bytes": 6285,
+      "sha256": "75ad5024639d726734c0d286c8ffb3acca7ef7eb2add945776e6bdc1dc8e3777"
+    },
+    "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-001-before-render.stdout.json": {
+      "bytes": 6319,
+      "sha256": "6580361c4e4a6675b9f2fa67c34c19d2250ef388830168a339f45dddb474a7e1"
+    },
+    "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/deadpan-render-90050a3b-7bde-488c-a173-1216afcec739.json": {
+      "bytes": 32633,
+      "sha256": "6a108bf4e29f33c0064250a9dee488a015fefbe26b3c717af04da75809f39ab1"
+    },
+    "/tmp/deadpan-live-project-20260930/native-room-tone-investigation.json": {
+      "bytes": 13908,
+      "sha256": "49680ee448026561313e87cbc84d999efbea98549e8662ca1fe1b4bedb726ba1"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-core/src/document.rs": {
+      "bytes": 49385,
+      "sha256": "08beb01a2140bc1c23fa08dd8fc6a62d83f220187ee4f1b50a19e80d8b94a6a7"
+    },
+    "/Users/michael/Code/deadpan/crates/deadpan-jobs/src/render.rs": {
+      "bytes": 14819,
+      "sha256": "14b3f532f577a6f5b03c6a0ce4196b7c989ee9358a8991144923080c3220d36e"
+    }
+  }
+}

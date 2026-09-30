@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-store",
+    "--test",
+    "host_owner"
+  ],
+  "started": "2026-09-30T14:27:23.222700+00:00",
+  "base_commit": "37abb39f0cf99c2feb19ba7e5e06b1e81f965bf2",
+  "diff_sha256": "78ed0a163ed5d5854a089898ee120dc9f610a3dc319f338b68dd9368b62c5752",
+  "source_manifest_sha256": "3a6359f0d9ffecb8e0e42994da855c8a0c2b4095049ebd41d715546799e49562",
+  "pid": 67550,
+  "exit_code": 0,
+  "seconds": 10.504717958159745
+}

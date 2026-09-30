@@ -1,0 +1,11 @@
+{
+  "protocol": 1,
+  "project_id": "project-picture-qualification",
+  "expected_revision": "workflow-live-restored",
+  "new_revision": "ba2d42fd-01ce-4cb4-aa11-0502104ddc8d",
+  "command": {
+    "command": "rename",
+    "node": "freeze",
+    "label": "MUST NOT APPLY"
+  }
+}

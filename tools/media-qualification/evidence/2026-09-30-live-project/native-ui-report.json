@@ -1,0 +1,134 @@
+{
+  "result": "passed",
+  "bundle_id": "dev.thiesen.deadpan.live-project-qa",
+  "project": "/tmp/deadpan-live-project-20260930/native.deadpan",
+  "operator": "browser role via native CUA",
+  "observations": [
+    {
+      "check": "initial_open",
+      "result": "passed",
+      "observed": "Saved; Project opened; synthetic picture visible; 3 beats totaling 128 frames; no open error."
+    },
+    {
+      "check": "remote_edit_visible",
+      "result": "passed",
+      "observed": "Direct Freeze Hold displays IPC native owner confirmed, duration 3 frames; timeline remains 128 frames."
+    },
+    {
+      "check": "camera_draft",
+      "result": "passed",
+      "observed": "Native :sequence, ,f and h opened Camera on the Hold and moved Center X from 50 to 48.6 percent. Draft unsaved remained visible; no commit."
+    },
+    {
+      "check": "gain_draft",
+      "result": "passed",
+      "observed": "Escape cancelled Camera. Native :gain opened a Gain draft on the selected Hold; Set trim proposed 1.5 dB. GAIN DRAFT UNSAVED and This beat unsaved gain remained visible. Apply was not activated."
+    },
+    {
+      "check": "room_tone_draft",
+      "result": "passed",
+      "observed": "Visible Room tone control opened Room tone for pause DRAFT for the 3-frame Hold. In 0 and exclusive Out 4804 at 48 kHz; Apply and Cancel were painted. Remote Render was refused. Escape returned to Saved, Silence and 128 frames."
+    },
+    {
+      "check": "concurrent_edit_visible",
+      "result": "passed",
+      "observed": "During CLI Render, native editor displayed revision 635df15b-163c-4000-bb42-18fcffc17455, Hold 33 frames, total 158 frames. No automatic Render status window appeared."
+    },
+    {
+      "check": "restored_editor_and_recovery_inspection",
+      "result": "passed",
+      "observed": "Recovery finished in 1.97 seconds before native inspection. Cmd-E opened the normal save sheet; Cancel preserved Saved revision 90b5e85d-a443-48d2-b851-5b96c84ac9b9, silent 3-frame Hold and 128-frame timeline."
+    },
+    {
+      "check": "normal_quit",
+      "result": "passed",
+      "observed": "Cmd-Q closed only the QA app. Native inventory no longer listed its bundle. Parent verified writer lock released, .host.json absent and exact current document unchanged."
+    }
+  ],
+  "limitations": [
+    "Native screenshots were displayed to the operator but the available CUA API did not save image files. Deterministic Metal replay captures are retained separately.",
+    "This run does not establish CJK IME, non-US layouts, VoiceOver, physical-display color or release packaging.",
+    "The native accessibility response was truncated at items 0\u2013100 of 147. No documented pagination was available, so native Room tone modal accessibility was not established.",
+    "Live native Render progress was not observed. The CLI retained complete progress/results; the short recovery finished before Cmd-E inspection."
+  ],
+  "native_preview_history": {
+    "before_revision": "08b4d098-3a06-49d7-b745-07c6196629b1",
+    "restored_revision": "45c3e0f8-f634-4d26-8c74-ff3add325dd6",
+    "exact_content_restored": true,
+    "observation": "During Room tone UI exploration the operator repeated command entry and applied a draft, then used Undo. Subsequent visual inspection confirmed the Room tone draft and remote refusal; Escape cancelled it. All actual history is retained."
+  },
+  "preview_refusals": [
+    {
+      "preview": "camera",
+      "command": [
+        "deadpan-app",
+        "--headless",
+        "render",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--output",
+        "/tmp/deadpan-live-project-20260930/native-owner-evidence/movies",
+        "--name",
+        "preview-refusal-camera.mp4"
+      ],
+      "exit_code": 1,
+      "error": {
+        "code": "RenderPreviewDecisionRequired",
+        "current_revision": null,
+        "message": "Commit or discard the temporary preview in the native app before rendering"
+      },
+      "seconds": 0.03394458396360278,
+      "binary_sha256": "c02f095bd18514db60eb05c679fd4b3b30b74c0e8a28f92fba8844776efb68b7",
+      "unchanged_document_and_render_rows": true,
+      "movie_exists": false,
+      "result": "passed"
+    },
+    {
+      "preview": "gain",
+      "command": [
+        "deadpan-app",
+        "--headless",
+        "render",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--output",
+        "/tmp/deadpan-live-project-20260930/native-owner-evidence/movies",
+        "--name",
+        "preview-refusal-gain.mp4"
+      ],
+      "exit_code": 1,
+      "error": {
+        "code": "RenderPreviewDecisionRequired",
+        "current_revision": null,
+        "message": "Commit or discard the temporary preview in the native app before rendering"
+      },
+      "seconds": 0.03384679090231657,
+      "binary_sha256": "c02f095bd18514db60eb05c679fd4b3b30b74c0e8a28f92fba8844776efb68b7",
+      "unchanged_document_and_render_rows": true,
+      "movie_exists": false,
+      "result": "passed"
+    },
+    {
+      "preview": "room-tone",
+      "command": [
+        "deadpan-app",
+        "--headless",
+        "render",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--output",
+        "/tmp/deadpan-live-project-20260930/native-owner-evidence/movies",
+        "--name",
+        "preview-refusal-room-tone.mp4"
+      ],
+      "exit_code": 1,
+      "error": {
+        "code": "RenderPreviewDecisionRequired",
+        "current_revision": null,
+        "message": "Commit or discard the temporary preview in the native app before rendering"
+      },
+      "seconds": 0.03147041704505682,
+      "binary_sha256": "c02f095bd18514db60eb05c679fd4b3b30b74c0e8a28f92fba8844776efb68b7",
+      "unchanged_document_and_render_rows": true,
+      "movie_exists": false,
+      "result": "passed"
+    }
+  ]
+}

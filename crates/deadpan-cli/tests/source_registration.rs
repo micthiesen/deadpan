@@ -407,7 +407,7 @@ fn explicit_geometry_cli_previews_then_changes_only_canvas_and_keeps_version_gua
         "--request-json",
         file.to_str().unwrap(),
     ];
-    assert_eq!(failure(&args)?["error"]["code"], "ProjectAlreadyOpen");
+    assert_eq!(failure(&args)?["error"]["code"], "HostOwnerUnavailable");
     args.push("--dry-run");
     let preview = success(&args)?;
     assert_eq!(preview["committed"], false);

@@ -1,0 +1,2426 @@
+{
+  "check-preview-refusal.py.txt": {
+    "gzip": false,
+    "original": {
+      "bytes": 3024,
+      "sha256": "aab5a4e303c55e2552ff3eeebeacebdce02df7c0ab8725a0de8b96ab77b4e8a8"
+    },
+    "retained": {
+      "bytes": 3024,
+      "sha256": "aab5a4e303c55e2552ff3eeebeacebdce02df7c0ab8725a0de8b96ab77b4e8a8"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/check-preview-refusal.py"
+  },
+  "cli-corrected.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 613,
+      "sha256": "bb85b93479a611c1054e3c967e8cfbf80a7f08c40802bdfe57f705efbe1d4006"
+    },
+    "retained": {
+      "bytes": 613,
+      "sha256": "bb85b93479a611c1054e3c967e8cfbf80a7f08c40802bdfe57f705efbe1d4006"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/cli-corrected.json"
+  },
+  "cli-corrected.log": {
+    "gzip": false,
+    "original": {
+      "bytes": 4482,
+      "sha256": "941c2a044a9bc0586c705ede37d6aa9f2ebb6128886eb99e022b45818303e824"
+    },
+    "retained": {
+      "bytes": 4482,
+      "sha256": "941c2a044a9bc0586c705ede37d6aa9f2ebb6128886eb99e022b45818303e824"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/cli-corrected.log"
+  },
+  "cli-final.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 518,
+      "sha256": "9279471ad1c95396c06165e7ed711ba8f7079f31863ce4a5d28bf30e74b17d5d"
+    },
+    "retained": {
+      "bytes": 518,
+      "sha256": "9279471ad1c95396c06165e7ed711ba8f7079f31863ce4a5d28bf30e74b17d5d"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/cli-final.json"
+  },
+  "cli-final.log": {
+    "gzip": false,
+    "original": {
+      "bytes": 24147,
+      "sha256": "21f08aa41b2808eb1fe3bebcee39a03409a6ef0e14517055ea9793a56361eba2"
+    },
+    "retained": {
+      "bytes": 24147,
+      "sha256": "21f08aa41b2808eb1fe3bebcee39a03409a6ef0e14517055ea9793a56361eba2"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/cli-final.log"
+  },
+  "cli-host-first.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 512,
+      "sha256": "4b451ba3f4320158fe33de881d7dbac432752d8a3390363b0f08ff62d7b0e882"
+    },
+    "retained": {
+      "bytes": 512,
+      "sha256": "4b451ba3f4320158fe33de881d7dbac432752d8a3390363b0f08ff62d7b0e882"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/cli-host-first.json"
+  },
+  "cli-host-first.log": {
+    "gzip": false,
+    "original": {
+      "bytes": 1433,
+      "sha256": "665a4d1c23c8f3da6cf1d2f3e088a2202fb633b3824c3acac0706232d591bdde"
+    },
+    "retained": {
+      "bytes": 1433,
+      "sha256": "665a4d1c23c8f3da6cf1d2f3e088a2202fb633b3824c3acac0706232d591bdde"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/cli-host-first.log"
+  },
+  "collect-evidence.py.txt": {
+    "gzip": false,
+    "original": {
+      "bytes": 18105,
+      "sha256": "e297955c0be35e1780c87f48820176a4fc113ee1cc608c2099016045d8d0eb01"
+    },
+    "retained": {
+      "bytes": 18105,
+      "sha256": "e297955c0be35e1780c87f48820176a4fc113ee1cc608c2099016045d8d0eb01"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/collect-evidence.py"
+  },
+  "collection-plan.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 4374,
+      "sha256": "3590e7cf0c6f58ff30850a161197537bbb664f49681b0744874b90e493b2b191"
+    },
+    "retained": {
+      "bytes": 4374,
+      "sha256": "3590e7cf0c6f58ff30850a161197537bbb664f49681b0744874b90e493b2b191"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/collection-plan.json"
+  },
+  "collector-helper.py.txt": {
+    "gzip": false,
+    "original": {
+      "bytes": 28486,
+      "sha256": "01371cb861fa7a456242ceec8e7305b111f95abd80108b87df6eda0fd4782964"
+    },
+    "retained": {
+      "bytes": 28486,
+      "sha256": "01371cb861fa7a456242ceec8e7305b111f95abd80108b87df6eda0fd4782964"
+    },
+    "source": "/private/tmp/deadpan-public-render-20260930/collect-evidence.py"
+  },
+  "decode-admission-proof.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 5944,
+      "sha256": "68dfd6fa7caacb43b5f08e62d3b25115b61d699cef2cfff7a0013dad64097f62"
+    },
+    "retained": {
+      "bytes": 5944,
+      "sha256": "68dfd6fa7caacb43b5f08e62d3b25115b61d699cef2cfff7a0013dad64097f62"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/decode-admission-proof.json"
+  },
+  "decoded-native-owner-final/command-000.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/command-000.stderr"
+  },
+  "decoded-native-owner-final/command-000.stdout": {
+    "gzip": false,
+    "original": {
+      "bytes": 44485,
+      "sha256": "b411ba9f6b2b7e7be76eb25bd5c2c115cd2c59a6a35e76610652dc62fb45be85"
+    },
+    "retained": {
+      "bytes": 44485,
+      "sha256": "b411ba9f6b2b7e7be76eb25bd5c2c115cd2c59a6a35e76610652dc62fb45be85"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/command-000.stdout"
+  },
+  "decoded-native-owner-final/command-001.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/command-001.stderr"
+  },
+  "decoded-native-owner-final/command-001.stdout": {
+    "gzip": false,
+    "original": {
+      "bytes": 46923,
+      "sha256": "5f292a07b06ffc59d91a8a4cac71218ca6d3506a592b8a5bae13d2ea6b2a3bc6"
+    },
+    "retained": {
+      "bytes": 46923,
+      "sha256": "5f292a07b06ffc59d91a8a4cac71218ca6d3506a592b8a5bae13d2ea6b2a3bc6"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/command-001.stdout"
+  },
+  "decoded-native-owner-final/command-002.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/command-002.stderr"
+  },
+  "decoded-native-owner-final/command-002.stdout": {
+    "gzip": false,
+    "original": {
+      "bytes": 47219,
+      "sha256": "46baec8f4067cf6131ec77bcd298ec412290a8dcd070381e7813ef2b0be8079a"
+    },
+    "retained": {
+      "bytes": 47219,
+      "sha256": "46baec8f4067cf6131ec77bcd298ec412290a8dcd070381e7813ef2b0be8079a"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/command-002.stdout"
+  },
+  "decoded-native-owner-final/command-003.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/command-003.stderr"
+  },
+  "decoded-native-owner-final/command-003.stdout.gz": {
+    "gzip": true,
+    "original": {
+      "bytes": 173233,
+      "sha256": "a11e1f555afa3a40ce2e79477655ce0d958dbb0bee190f237ed99d5da38bf003"
+    },
+    "retained": {
+      "bytes": 6182,
+      "sha256": "9693712e368f9b3a5d19c62b6a44ab1187ffcae82b92dd81a44dca37d2cf43aa"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/command-003.stdout"
+  },
+  "decoded-native-owner-final/command-004.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/command-004.stderr"
+  },
+  "decoded-native-owner-final/command-004.stdout": {
+    "gzip": false,
+    "original": {
+      "bytes": 44485,
+      "sha256": "b411ba9f6b2b7e7be76eb25bd5c2c115cd2c59a6a35e76610652dc62fb45be85"
+    },
+    "retained": {
+      "bytes": 44485,
+      "sha256": "b411ba9f6b2b7e7be76eb25bd5c2c115cd2c59a6a35e76610652dc62fb45be85"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/command-004.stdout"
+  },
+  "decoded-native-owner-final/command-005.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/command-005.stderr"
+  },
+  "decoded-native-owner-final/command-005.stdout": {
+    "gzip": false,
+    "original": {
+      "bytes": 46923,
+      "sha256": "5f292a07b06ffc59d91a8a4cac71218ca6d3506a592b8a5bae13d2ea6b2a3bc6"
+    },
+    "retained": {
+      "bytes": 46923,
+      "sha256": "5f292a07b06ffc59d91a8a4cac71218ca6d3506a592b8a5bae13d2ea6b2a3bc6"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/command-005.stdout"
+  },
+  "decoded-native-owner-final/command-006.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/command-006.stderr"
+  },
+  "decoded-native-owner-final/command-006.stdout": {
+    "gzip": false,
+    "original": {
+      "bytes": 47219,
+      "sha256": "46baec8f4067cf6131ec77bcd298ec412290a8dcd070381e7813ef2b0be8079a"
+    },
+    "retained": {
+      "bytes": 47219,
+      "sha256": "46baec8f4067cf6131ec77bcd298ec412290a8dcd070381e7813ef2b0be8079a"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/command-006.stdout"
+  },
+  "decoded-native-owner-final/command-007.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/command-007.stderr"
+  },
+  "decoded-native-owner-final/command-007.stdout.gz": {
+    "gzip": true,
+    "original": {
+      "bytes": 173231,
+      "sha256": "888c8ca08eb1f161e535d42d412d1006874e897668ec453f57c9d368c13b45f9"
+    },
+    "retained": {
+      "bytes": 6138,
+      "sha256": "a4d747bd1b5aeeaa850349ff02d0492ae62ba70db2c1c4a1deabc208015725fd"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/command-007.stdout"
+  },
+  "decoded-native-owner-final/report.json.gz": {
+    "gzip": true,
+    "original": {
+      "bytes": 504327,
+      "sha256": "8281eb9ad10dc83e7632d6fda951a3dc2ced37ca86be4586221b3b4612e950b5"
+    },
+    "retained": {
+      "bytes": 36291,
+      "sha256": "33f61c23e5ebbdd9a0e43004fc897a36923f21e8991f191859c5864dd3898fd6"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/report.json"
+  },
+  "decoded-native-owner/report.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 8782,
+      "sha256": "38aba676ed07bc53364d70ba9976cbdb1a01cba37c51d862fc7a0b9f0293997f"
+    },
+    "retained": {
+      "bytes": 8782,
+      "sha256": "38aba676ed07bc53364d70ba9976cbdb1a01cba37c51d862fc7a0b9f0293997f"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner/report.json"
+  },
+  "focused-host-first.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 475,
+      "sha256": "42547b4397f899774e267ccb72c2c82d27e865ba7a75e4d830c902094f50782a"
+    },
+    "retained": {
+      "bytes": 475,
+      "sha256": "42547b4397f899774e267ccb72c2c82d27e865ba7a75e4d830c902094f50782a"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/focused-host-first.json"
+  },
+  "focused-host-first.log": {
+    "gzip": false,
+    "original": {
+      "bytes": 3323,
+      "sha256": "832339b55b13da7f59087de0688bfb8463d1f26f6b6a5f417945bd29a045d67b"
+    },
+    "retained": {
+      "bytes": 3323,
+      "sha256": "832339b55b13da7f59087de0688bfb8463d1f26f6b6a5f417945bd29a045d67b"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/focused-host-first.log"
+  },
+  "format-final.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 432,
+      "sha256": "41aba23522f9454b17a84fc683e36047c252987bf5d5520a5f448ebb6c604864"
+    },
+    "retained": {
+      "bytes": 432,
+      "sha256": "41aba23522f9454b17a84fc683e36047c252987bf5d5520a5f448ebb6c604864"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/format-final.json"
+  },
+  "format-final.log": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/format-final.log"
+  },
+  "independent-decode-final.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 455,
+      "sha256": "04d469b82ad06488def1569e59893642dd0e7bd09224922a16a023d2b89d7b9f"
+    },
+    "retained": {
+      "bytes": 455,
+      "sha256": "04d469b82ad06488def1569e59893642dd0e7bd09224922a16a023d2b89d7b9f"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/independent-decode-final.json"
+  },
+  "independent-decode-final.log": {
+    "gzip": false,
+    "original": {
+      "bytes": 250,
+      "sha256": "218084ff2bd7c0d9a4883616734e68175d71f710d70663a33ad8ab528084b3c3"
+    },
+    "retained": {
+      "bytes": 250,
+      "sha256": "218084ff2bd7c0d9a4883616734e68175d71f710d70663a33ad8ab528084b3c3"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/independent-decode-final.log"
+  },
+  "independent-decode.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 457,
+      "sha256": "14196a2529852b7533acd35fdcd285553f6a32453c61c40767b77ad7e5875ef1"
+    },
+    "retained": {
+      "bytes": 457,
+      "sha256": "14196a2529852b7533acd35fdcd285553f6a32453c61c40767b77ad7e5875ef1"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/independent-decode.json"
+  },
+  "independent-decode.log": {
+    "gzip": false,
+    "original": {
+      "bytes": 208,
+      "sha256": "23f4f3eefba54c1305ff54fa0b20a594b01d43da4c9e10fe70c02b6f9850f28d"
+    },
+    "retained": {
+      "bytes": 208,
+      "sha256": "23f4f3eefba54c1305ff54fa0b20a594b01d43da4c9e10fe70c02b6f9850f28d"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/independent-decode.log"
+  },
+  "native-app.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 440,
+      "sha256": "355cff9d01c43b9d48671b9cfdb1070d6506f524bdb53ece214c2444e0f1b285"
+    },
+    "retained": {
+      "bytes": 440,
+      "sha256": "355cff9d01c43b9d48671b9cfdb1070d6506f524bdb53ece214c2444e0f1b285"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-app.json"
+  },
+  "native-cancel.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 475,
+      "sha256": "b4e712ce36bb51f2ad9c472aac7938bca567529f8b65c95e9447f8b10d10d50b"
+    },
+    "retained": {
+      "bytes": 475,
+      "sha256": "b4e712ce36bb51f2ad9c472aac7938bca567529f8b65c95e9447f8b10d10d50b"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-cancel.json"
+  },
+  "native-cancel.log": {
+    "gzip": false,
+    "original": {
+      "bytes": 190,
+      "sha256": "4064024d792e8463719bd7d7de971742e3e7fcff30f7afb6dca8ef83730d213b"
+    },
+    "retained": {
+      "bytes": 190,
+      "sha256": "4064024d792e8463719bd7d7de971742e3e7fcff30f7afb6dca8ef83730d213b"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-cancel.log"
+  },
+  "native-edits.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 474,
+      "sha256": "d57b951c71b83f51358d04aead4f6993d0a406504cb19bb4ce14572f84b4d082"
+    },
+    "retained": {
+      "bytes": 474,
+      "sha256": "d57b951c71b83f51358d04aead4f6993d0a406504cb19bb4ce14572f84b4d082"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-edits.json"
+  },
+  "native-edits.log": {
+    "gzip": false,
+    "original": {
+      "bytes": 189,
+      "sha256": "70bfc839b3994d15cdaf912b7d9d5ab8171e9e8dbaa6c379e93eb525002da131"
+    },
+    "retained": {
+      "bytes": 189,
+      "sha256": "70bfc839b3994d15cdaf912b7d9d5ab8171e9e8dbaa6c379e93eb525002da131"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-edits.log"
+  },
+  "native-owner-evidence/cancel-001-before-cancel.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-001-before-cancel.stderr"
+  },
+  "native-owner-evidence/cancel-001-before-cancel.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 6319,
+      "sha256": "e6babbc2a38f80227101392691e155c26e604c8ea0abc49adc3792c653f8d7e6"
+    },
+    "retained": {
+      "bytes": 6319,
+      "sha256": "e6babbc2a38f80227101392691e155c26e604c8ea0abc49adc3792c653f8d7e6"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-001-before-cancel.stdout.json"
+  },
+  "native-owner-evidence/cancel-002-cancelled-start.jsonl": {
+    "gzip": false,
+    "original": {
+      "bytes": 2467,
+      "sha256": "3b2e4760822177f5a7db79c7fc375c5048539f2714cbd8fba0daa3505eb7d4d3"
+    },
+    "retained": {
+      "bytes": 2467,
+      "sha256": "3b2e4760822177f5a7db79c7fc375c5048539f2714cbd8fba0daa3505eb7d4d3"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-002-cancelled-start.jsonl"
+  },
+  "native-owner-evidence/cancel-002-cancelled-start.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 128,
+      "sha256": "e05aa641afe952dadc7036845e7dec20db880c86e56a702163db2d8e2fb71ec9"
+    },
+    "retained": {
+      "bytes": 128,
+      "sha256": "e05aa641afe952dadc7036845e7dec20db880c86e56a702163db2d8e2fb71ec9"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-002-cancelled-start.stderr"
+  },
+  "native-owner-evidence/cancel-003-stale-cancel.jsonl": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-003-stale-cancel.jsonl"
+  },
+  "native-owner-evidence/cancel-003-stale-cancel.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 154,
+      "sha256": "3b7526dd11250642738d1fabd7cc46635d58c881c013a95f6c110570e42d2dc5"
+    },
+    "retained": {
+      "bytes": 154,
+      "sha256": "3b7526dd11250642738d1fabd7cc46635d58c881c013a95f6c110570e42d2dc5"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-003-stale-cancel.stderr"
+  },
+  "native-owner-evidence/cancel-004-exact-cancel.jsonl": {
+    "gzip": false,
+    "original": {
+      "bytes": 1675,
+      "sha256": "5cd6750fa53e4317bd459a43c841a9d17962d2c56b745c8643fc03922a4a416b"
+    },
+    "retained": {
+      "bytes": 1675,
+      "sha256": "5cd6750fa53e4317bd459a43c841a9d17962d2c56b745c8643fc03922a4a416b"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-004-exact-cancel.jsonl"
+  },
+  "native-owner-evidence/cancel-004-exact-cancel.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 128,
+      "sha256": "e05aa641afe952dadc7036845e7dec20db880c86e56a702163db2d8e2fb71ec9"
+    },
+    "retained": {
+      "bytes": 128,
+      "sha256": "e05aa641afe952dadc7036845e7dec20db880c86e56a702163db2d8e2fb71ec9"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-004-exact-cancel.stderr"
+  },
+  "native-owner-evidence/cancel-005-after-cancel.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-005-after-cancel.stderr"
+  },
+  "native-owner-evidence/cancel-005-after-cancel.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 6319,
+      "sha256": "e6babbc2a38f80227101392691e155c26e604c8ea0abc49adc3792c653f8d7e6"
+    },
+    "retained": {
+      "bytes": 6319,
+      "sha256": "e6babbc2a38f80227101392691e155c26e604c8ea0abc49adc3792c653f8d7e6"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-005-after-cancel.stdout.json"
+  },
+  "native-owner-evidence/cancel-exact-cancel-request.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 465,
+      "sha256": "4213d95dd60a447ad724ec1889121850ed1fbb8e84e72c800b7f3e99a4bb39f9"
+    },
+    "retained": {
+      "bytes": 465,
+      "sha256": "4213d95dd60a447ad724ec1889121850ed1fbb8e84e72c800b7f3e99a4bb39f9"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-exact-cancel-request.json"
+  },
+  "native-owner-evidence/cancel-stale-cancel-request.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 465,
+      "sha256": "4ce2d5f3d086f861737b9c65933921def4650d4fad7351cdff298447f0e55f45"
+    },
+    "retained": {
+      "bytes": 465,
+      "sha256": "4ce2d5f3d086f861737b9c65933921def4650d4fad7351cdff298447f0e55f45"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-stale-cancel-request.json"
+  },
+  "native-owner-evidence/commands.jsonl": {
+    "gzip": false,
+    "original": {
+      "bytes": 41284,
+      "sha256": "b2b93feba3da07b64082bc44f2d16917d74f41ddf27f8f5e986fe795edd3f0b9"
+    },
+    "retained": {
+      "bytes": 41284,
+      "sha256": "b2b93feba3da07b64082bc44f2d16917d74f41ddf27f8f5e986fe795edd3f0b9"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/commands.jsonl"
+  },
+  "native-owner-evidence/edits-001-initial-context.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-001-initial-context.stderr"
+  },
+  "native-owner-evidence/edits-001-initial-context.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 6285,
+      "sha256": "75ad5024639d726734c0d286c8ffb3acca7ef7eb2add945776e6bdc1dc8e3777"
+    },
+    "retained": {
+      "bytes": 6285,
+      "sha256": "75ad5024639d726734c0d286c8ffb3acca7ef7eb2add945776e6bdc1dc8e3777"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-001-initial-context.stdout.json"
+  },
+  "native-owner-evidence/edits-002-initial-validation.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-002-initial-validation.stderr"
+  },
+  "native-owner-evidence/edits-002-initial-validation.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 633,
+      "sha256": "b4d06f7b37e4de529a8f6d94ecbf2781d8e66fe0df848c74d834094772260ee5"
+    },
+    "retained": {
+      "bytes": 633,
+      "sha256": "b4d06f7b37e4de529a8f6d94ecbf2781d8e66fe0df848c74d834094772260ee5"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-002-initial-validation.stdout.json"
+  },
+  "native-owner-evidence/edits-003-rename.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-003-rename.stderr"
+  },
+  "native-owner-evidence/edits-003-rename.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 7275,
+      "sha256": "b62d9e4ea7f3d953d8cc6a45375afab831be2de17069c7406a63387d4da5346c"
+    },
+    "retained": {
+      "bytes": 7275,
+      "sha256": "b62d9e4ea7f3d953d8cc6a45375afab831be2de17069c7406a63387d4da5346c"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-003-rename.stdout.json"
+  },
+  "native-owner-evidence/edits-004-renamed-context.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-004-renamed-context.stderr"
+  },
+  "native-owner-evidence/edits-004-renamed-context.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 6319,
+      "sha256": "452d9c0868726506c3d4b7da3b56ca9e7058f391e87884c8fb635a45d0f71cce"
+    },
+    "retained": {
+      "bytes": 6319,
+      "sha256": "452d9c0868726506c3d4b7da3b56ca9e7058f391e87884c8fb635a45d0f71cce"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-004-renamed-context.stdout.json"
+  },
+  "native-owner-evidence/edits-005-stale-rename.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 267,
+      "sha256": "dc8b1a9f53c2ad893f909b88d1a01c026fc715a3b2900c4662c2c91fb2f76ccc"
+    },
+    "retained": {
+      "bytes": 267,
+      "sha256": "dc8b1a9f53c2ad893f909b88d1a01c026fc715a3b2900c4662c2c91fb2f76ccc"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-005-stale-rename.stderr"
+  },
+  "native-owner-evidence/edits-005-stale-rename.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-005-stale-rename.stdout.json"
+  },
+  "native-owner-evidence/edits-006-after-stale.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-006-after-stale.stderr"
+  },
+  "native-owner-evidence/edits-006-after-stale.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 6319,
+      "sha256": "452d9c0868726506c3d4b7da3b56ca9e7058f391e87884c8fb635a45d0f71cce"
+    },
+    "retained": {
+      "bytes": 6319,
+      "sha256": "452d9c0868726506c3d4b7da3b56ca9e7058f391e87884c8fb635a45d0f71cce"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-006-after-stale.stdout.json"
+  },
+  "native-owner-evidence/edits-007-stale-render.jsonl": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-007-stale-render.jsonl"
+  },
+  "native-owner-evidence/edits-007-stale-render.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 172,
+      "sha256": "488b53e6958c04f17867b4bb5738464ce648c0dac77558edd5d56977827ef5c7"
+    },
+    "retained": {
+      "bytes": 172,
+      "sha256": "488b53e6958c04f17867b4bb5738464ce648c0dac77558edd5d56977827ef5c7"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-007-stale-render.stderr"
+  },
+  "native-owner-evidence/edits-008-after-stale-render.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-008-after-stale-render.stderr"
+  },
+  "native-owner-evidence/edits-008-after-stale-render.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 6319,
+      "sha256": "452d9c0868726506c3d4b7da3b56ca9e7058f391e87884c8fb635a45d0f71cce"
+    },
+    "retained": {
+      "bytes": 6319,
+      "sha256": "452d9c0868726506c3d4b7da3b56ca9e7058f391e87884c8fb635a45d0f71cce"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-008-after-stale-render.stdout.json"
+  },
+  "native-owner-evidence/edits-009-undo-rename.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-009-undo-rename.stderr"
+  },
+  "native-owner-evidence/edits-009-undo-rename.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 7308,
+      "sha256": "4a9c634d02b44e8396fb6772d87923284882e9de8948efb53732719f35e0ce70"
+    },
+    "retained": {
+      "bytes": 7308,
+      "sha256": "4a9c634d02b44e8396fb6772d87923284882e9de8948efb53732719f35e0ce70"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-009-undo-rename.stdout.json"
+  },
+  "native-owner-evidence/edits-010-undo-rename-dump.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-010-undo-rename-dump.stderr"
+  },
+  "native-owner-evidence/edits-010-undo-rename-dump.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 6299,
+      "sha256": "079621b2fc4cdee5bc9fa9c8c5e4f9dece6743d987f9da085591cfa62c791e7d"
+    },
+    "retained": {
+      "bytes": 6299,
+      "sha256": "079621b2fc4cdee5bc9fa9c8c5e4f9dece6743d987f9da085591cfa62c791e7d"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-010-undo-rename-dump.stdout.json"
+  },
+  "native-owner-evidence/edits-011-redo-rename.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-011-redo-rename.stderr"
+  },
+  "native-owner-evidence/edits-011-redo-rename.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 7308,
+      "sha256": "36dcf6a2e46d026022fd87c24a1a98aa216cc543a06fb3c6899e5b0fddca6c7c"
+    },
+    "retained": {
+      "bytes": 7308,
+      "sha256": "36dcf6a2e46d026022fd87c24a1a98aa216cc543a06fb3c6899e5b0fddca6c7c"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-011-redo-rename.stdout.json"
+  },
+  "native-owner-evidence/edits-012-redo-rename-dump.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-012-redo-rename-dump.stderr"
+  },
+  "native-owner-evidence/edits-012-redo-rename-dump.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 6319,
+      "sha256": "926e88edfb2b8ef780d37ae5162c5b857d2b285021ad4c6e9b672c196651358d"
+    },
+    "retained": {
+      "bytes": 6319,
+      "sha256": "926e88edfb2b8ef780d37ae5162c5b857d2b285021ad4c6e9b672c196651358d"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-012-redo-rename-dump.stdout.json"
+  },
+  "native-owner-evidence/edits-013-alias-rename.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-013-alias-rename.stderr"
+  },
+  "native-owner-evidence/edits-013-alias-rename.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 7341,
+      "sha256": "66a08b8c6e3cda3dafde67c89e2cf1525a7f8bc05c7487b77cf6ebde8085c567"
+    },
+    "retained": {
+      "bytes": 7341,
+      "sha256": "66a08b8c6e3cda3dafde67c89e2cf1525a7f8bc05c7487b77cf6ebde8085c567"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-013-alias-rename.stdout.json"
+  },
+  "native-owner-evidence/edits-014-alias-context.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-014-alias-context.stderr"
+  },
+  "native-owner-evidence/edits-014-alias-context.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 6318,
+      "sha256": "b64145a84f5c228e50750090dca350b6557f299a649fd5a8e7b1370bfcd1b79f"
+    },
+    "retained": {
+      "bytes": 6318,
+      "sha256": "b64145a84f5c228e50750090dca350b6557f299a649fd5a8e7b1370bfcd1b79f"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-014-alias-context.stdout.json"
+  },
+  "native-owner-evidence/edits-015-alias-undo.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-015-alias-undo.stderr"
+  },
+  "native-owner-evidence/edits-015-alias-undo.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 7346,
+      "sha256": "a9eaeb71bbb0828bbb18e740585f7da3528b52e4a57d75f0c46671d956a0c162"
+    },
+    "retained": {
+      "bytes": 7346,
+      "sha256": "a9eaeb71bbb0828bbb18e740585f7da3528b52e4a57d75f0c46671d956a0c162"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-015-alias-undo.stdout.json"
+  },
+  "native-owner-evidence/edits-016-alias-undo-dump.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-016-alias-undo-dump.stderr"
+  },
+  "native-owner-evidence/edits-016-alias-undo-dump.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 6319,
+      "sha256": "18081d9aba8b0fcb21e45790c01be6b7c1a9f9e3bff6d07301cf66013b9f5355"
+    },
+    "retained": {
+      "bytes": 6319,
+      "sha256": "18081d9aba8b0fcb21e45790c01be6b7c1a9f9e3bff6d07301cf66013b9f5355"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-016-alias-undo-dump.stdout.json"
+  },
+  "native-owner-evidence/edits-alias-rename-request.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 298,
+      "sha256": "fb1598d8a7d3ca4accecbaea7ce5242b700e04e14248b91ca1aca6fa82e69fc2"
+    },
+    "retained": {
+      "bytes": 298,
+      "sha256": "fb1598d8a7d3ca4accecbaea7ce5242b700e04e14248b91ca1aca6fa82e69fc2"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-alias-rename-request.json"
+  },
+  "native-owner-evidence/edits-rename-request.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 285,
+      "sha256": "a37f3d0e47cdf965eb6bf14fd28b056124e4863cd3c5829071d27b5c074b9998"
+    },
+    "retained": {
+      "bytes": 285,
+      "sha256": "a37f3d0e47cdf965eb6bf14fd28b056124e4863cd3c5829071d27b5c074b9998"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-rename-request.json"
+  },
+  "native-owner-evidence/edits-stale-rename-request.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 273,
+      "sha256": "ac7a12a66488c06b2575eca4a23144c94457197dbb1ac6e1099d5db5c6ad1e19"
+    },
+    "retained": {
+      "bytes": 273,
+      "sha256": "ac7a12a66488c06b2575eca4a23144c94457197dbb1ac6e1099d5db5c6ad1e19"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-stale-rename-request.json"
+  },
+  "native-owner-evidence/edits-stale-render-request.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 351,
+      "sha256": "2a1601ff9bbf67e5a9bb0c40994f8f1046fd701176e7e28d99b792480ce187a8"
+    },
+    "retained": {
+      "bytes": 351,
+      "sha256": "2a1601ff9bbf67e5a9bb0c40994f8f1046fd701176e7e28d99b792480ce187a8"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-stale-render-request.json"
+  },
+  "native-owner-evidence/initial-authoring.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 6285,
+      "sha256": "75ad5024639d726734c0d286c8ffb3acca7ef7eb2add945776e6bdc1dc8e3777"
+    },
+    "retained": {
+      "bytes": 6285,
+      "sha256": "75ad5024639d726734c0d286c8ffb3acca7ef7eb2add945776e6bdc1dc8e3777"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/initial-authoring.json"
+  },
+  "native-owner-evidence/movies/deadpan-render-49e4908a-6a5d-4582-8c7b-ea673a8133fc.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 32631,
+      "sha256": "7f6a6e49094e64e774a4414c1f8bef8c9d228aaee7e4645b1ed542f265a4c19a"
+    },
+    "retained": {
+      "bytes": 32631,
+      "sha256": "7f6a6e49094e64e774a4414c1f8bef8c9d228aaee7e4645b1ed542f265a4c19a"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/deadpan-render-49e4908a-6a5d-4582-8c7b-ea673a8133fc.json"
+  },
+  "native-owner-evidence/movies/deadpan-render-90050a3b-7bde-488c-a173-1216afcec739.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 32633,
+      "sha256": "6a108bf4e29f33c0064250a9dee488a015fefbe26b3c717af04da75809f39ab1"
+    },
+    "retained": {
+      "bytes": 32633,
+      "sha256": "6a108bf4e29f33c0064250a9dee488a015fefbe26b3c717af04da75809f39ab1"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/deadpan-render-90050a3b-7bde-488c-a173-1216afcec739.json"
+  },
+  "native-owner-evidence/recovery-001-before-recovery.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/recovery-001-before-recovery.stderr"
+  },
+  "native-owner-evidence/recovery-001-before-recovery.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 6319,
+      "sha256": "e6babbc2a38f80227101392691e155c26e604c8ea0abc49adc3792c653f8d7e6"
+    },
+    "retained": {
+      "bytes": 6319,
+      "sha256": "e6babbc2a38f80227101392691e155c26e604c8ea0abc49adc3792c653f8d7e6"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/recovery-001-before-recovery.stdout.json"
+  },
+  "native-owner-evidence/recovery-002-historical-retry.jsonl": {
+    "gzip": false,
+    "original": {
+      "bytes": 5460,
+      "sha256": "f39d49bad18b041609953467700568a150bfe8b60a8b364b03b9c30ce03ee151"
+    },
+    "retained": {
+      "bytes": 5460,
+      "sha256": "f39d49bad18b041609953467700568a150bfe8b60a8b364b03b9c30ce03ee151"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/recovery-002-historical-retry.jsonl"
+  },
+  "native-owner-evidence/recovery-002-historical-retry.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/recovery-002-historical-retry.stderr"
+  },
+  "native-owner-evidence/recovery-003-historical-reconcile.jsonl": {
+    "gzip": false,
+    "original": {
+      "bytes": 3213,
+      "sha256": "3100b12736d9cf2629bffc2fa59d2223d9f2925aa2d3fc7a7fd0d0750eb90166"
+    },
+    "retained": {
+      "bytes": 3213,
+      "sha256": "3100b12736d9cf2629bffc2fa59d2223d9f2925aa2d3fc7a7fd0d0750eb90166"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/recovery-003-historical-reconcile.jsonl"
+  },
+  "native-owner-evidence/recovery-003-historical-reconcile.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/recovery-003-historical-reconcile.stderr"
+  },
+  "native-owner-evidence/recovery-004-after-recovery.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/recovery-004-after-recovery.stderr"
+  },
+  "native-owner-evidence/recovery-004-after-recovery.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 6319,
+      "sha256": "e6babbc2a38f80227101392691e155c26e604c8ea0abc49adc3792c653f8d7e6"
+    },
+    "retained": {
+      "bytes": 6319,
+      "sha256": "e6babbc2a38f80227101392691e155c26e604c8ea0abc49adc3792c653f8d7e6"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/recovery-004-after-recovery.stdout.json"
+  },
+  "native-owner-evidence/recovery-historical-reconcile-request.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 324,
+      "sha256": "17fd9b789e775bef2d767bf34278048117ae57e71f1789c4fba60410e236f398"
+    },
+    "retained": {
+      "bytes": 324,
+      "sha256": "17fd9b789e775bef2d767bf34278048117ae57e71f1789c4fba60410e236f398"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/recovery-historical-reconcile-request.json"
+  },
+  "native-owner-evidence/recovery-historical-retry-request.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 493,
+      "sha256": "159fbb1fcc50a73ab6f9a725f46c842c3908a539d87a8084951f48fc9e8db911"
+    },
+    "retained": {
+      "bytes": 493,
+      "sha256": "159fbb1fcc50a73ab6f9a725f46c842c3908a539d87a8084951f48fc9e8db911"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/recovery-historical-retry-request.json"
+  },
+  "native-owner-evidence/render-001-before-render.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-001-before-render.stderr"
+  },
+  "native-owner-evidence/render-001-before-render.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 6319,
+      "sha256": "6580361c4e4a6675b9f2fa67c34c19d2250ef388830168a339f45dddb474a7e1"
+    },
+    "retained": {
+      "bytes": 6319,
+      "sha256": "6580361c4e4a6675b9f2fa67c34c19d2250ef388830168a339f45dddb474a7e1"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-001-before-render.stdout.json"
+  },
+  "native-owner-evidence/render-002-before-render-validation.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-002-before-render-validation.stderr"
+  },
+  "native-owner-evidence/render-002-before-render-validation.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 647,
+      "sha256": "aa1f1dba60c9484ccc98dc5deb21aeec6a9780f57ed93307e744c6001a0eac7a"
+    },
+    "retained": {
+      "bytes": 647,
+      "sha256": "aa1f1dba60c9484ccc98dc5deb21aeec6a9780f57ed93307e744c6001a0eac7a"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-002-before-render-validation.stdout.json"
+  },
+  "native-owner-evidence/render-003-immutable-render.jsonl.gz": {
+    "gzip": true,
+    "original": {
+      "bytes": 169951,
+      "sha256": "37b570b1345462885b504977901829804325819e2f2ebd7b8f2a6e828f89a897"
+    },
+    "retained": {
+      "bytes": 2174,
+      "sha256": "26bd6e64bdd25dd0f9cdaa7461b4f34dd920561faa9b8bbe56f543f2aeb4725d"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-003-immutable-render.jsonl"
+  },
+  "native-owner-evidence/render-003-immutable-render.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-003-immutable-render.stderr"
+  },
+  "native-owner-evidence/render-004-edit-hold-after-admission.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-004-edit-hold-after-admission.stderr"
+  },
+  "native-owner-evidence/render-004-edit-hold-after-admission.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 7355,
+      "sha256": "0d6aa69e244a41603e757e72166cac7c56c8db6f2677154aed2ee59861b3b23b"
+    },
+    "retained": {
+      "bytes": 7355,
+      "sha256": "0d6aa69e244a41603e757e72166cac7c56c8db6f2677154aed2ee59861b3b23b"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-004-edit-hold-after-admission.stdout.json"
+  },
+  "native-owner-evidence/render-005-attempt-after-committed-edit.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-005-attempt-after-committed-edit.stderr"
+  },
+  "native-owner-evidence/render-005-attempt-after-committed-edit.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 932,
+      "sha256": "0c8c0339206bef838b54f827c8778c8049312708acc7fd5ec0b65dcddca72c71"
+    },
+    "retained": {
+      "bytes": 932,
+      "sha256": "0c8c0339206bef838b54f827c8778c8049312708acc7fd5ec0b65dcddca72c71"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-005-attempt-after-committed-edit.stdout.json"
+  },
+  "native-owner-evidence/render-006-changed-after-admission.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-006-changed-after-admission.stderr"
+  },
+  "native-owner-evidence/render-006-changed-after-admission.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 6320,
+      "sha256": "c79f1629ca927a7e8dc3b7ab1b00a2eba49cdce5b8ea7c8ef98b80db26b63d7c"
+    },
+    "retained": {
+      "bytes": 6320,
+      "sha256": "c79f1629ca927a7e8dc3b7ab1b00a2eba49cdce5b8ea7c8ef98b80db26b63d7c"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-006-changed-after-admission.stdout.json"
+  },
+  "native-owner-evidence/render-007-changed-validation.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-007-changed-validation.stderr"
+  },
+  "native-owner-evidence/render-007-changed-validation.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 647,
+      "sha256": "c73824c4717a5f6487020b82503ee7bf0719bddee28b86246b7e19ab3b06f00c"
+    },
+    "retained": {
+      "bytes": 647,
+      "sha256": "c73824c4717a5f6487020b82503ee7bf0719bddee28b86246b7e19ab3b06f00c"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-007-changed-validation.stdout.json"
+  },
+  "native-owner-evidence/render-008-after-render.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-008-after-render.stderr"
+  },
+  "native-owner-evidence/render-008-after-render.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 6320,
+      "sha256": "c79f1629ca927a7e8dc3b7ab1b00a2eba49cdce5b8ea7c8ef98b80db26b63d7c"
+    },
+    "retained": {
+      "bytes": 6320,
+      "sha256": "c79f1629ca927a7e8dc3b7ab1b00a2eba49cdce5b8ea7c8ef98b80db26b63d7c"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-008-after-render.stdout.json"
+  },
+  "native-owner-evidence/render-009-undo-concurrent-hold.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-009-undo-concurrent-hold.stderr"
+  },
+  "native-owner-evidence/render-009-undo-concurrent-hold.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 7361,
+      "sha256": "d94fb7692efe5cbfd5e47b9dade8de9af59750c731887194594942e4c5bee0ed"
+    },
+    "retained": {
+      "bytes": 7361,
+      "sha256": "d94fb7692efe5cbfd5e47b9dade8de9af59750c731887194594942e4c5bee0ed"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-009-undo-concurrent-hold.stdout.json"
+  },
+  "native-owner-evidence/render-010-undo-concurrent-hold-dump.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-010-undo-concurrent-hold-dump.stderr"
+  },
+  "native-owner-evidence/render-010-undo-concurrent-hold-dump.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 6319,
+      "sha256": "e6babbc2a38f80227101392691e155c26e604c8ea0abc49adc3792c653f8d7e6"
+    },
+    "retained": {
+      "bytes": 6319,
+      "sha256": "e6babbc2a38f80227101392691e155c26e604c8ea0abc49adc3792c653f8d7e6"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-010-undo-concurrent-hold-dump.stdout.json"
+  },
+  "native-owner-evidence/render-011-restored-validation.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-011-restored-validation.stderr"
+  },
+  "native-owner-evidence/render-011-restored-validation.stdout.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 647,
+      "sha256": "1a2c25dea7c14b6f8c50ef222fd1c431cf1d2924ac2e0e193758d02a42873a4c"
+    },
+    "retained": {
+      "bytes": 647,
+      "sha256": "1a2c25dea7c14b6f8c50ef222fd1c431cf1d2924ac2e0e193758d02a42873a4c"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-011-restored-validation.stdout.json"
+  },
+  "native-owner-evidence/render-edit-hold-after-admission-request.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 287,
+      "sha256": "e2e2a8240988a3d73e6a105897d81219fd368fa49153a9cdcec8a7d227666967"
+    },
+    "retained": {
+      "bytes": 287,
+      "sha256": "e2e2a8240988a3d73e6a105897d81219fd368fa49153a9cdcec8a7d227666967"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-edit-hold-after-admission-request.json"
+  },
+  "native-owner-evidence/state.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 61765,
+      "sha256": "1cb9d04dad289a92eb71d31f81018211b4e5db92b7da25275b587d1b5e651832"
+    },
+    "retained": {
+      "bytes": 61765,
+      "sha256": "1cb9d04dad289a92eb71d31f81018211b4e5db92b7da25275b587d1b5e651832"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/state.json"
+  },
+  "native-recovery.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 476,
+      "sha256": "c62036f204153c0514f795fc16951ca72f162023bb1c308c428b8f13c73b48e2"
+    },
+    "retained": {
+      "bytes": 476,
+      "sha256": "c62036f204153c0514f795fc16951ca72f162023bb1c308c428b8f13c73b48e2"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-recovery.json"
+  },
+  "native-recovery.log": {
+    "gzip": false,
+    "original": {
+      "bytes": 192,
+      "sha256": "e459248bfb594ddbcf16dbc0688cbab23351d1adc96ecf361087f1290ef99da9"
+    },
+    "retained": {
+      "bytes": 192,
+      "sha256": "e459248bfb594ddbcf16dbc0688cbab23351d1adc96ecf361087f1290ef99da9"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-recovery.log"
+  },
+  "native-render.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 474,
+      "sha256": "0b105af695d2b09518d7f1cccf003afa92e5257d0cf4e64dc3d38bf907ca5b8a"
+    },
+    "retained": {
+      "bytes": 474,
+      "sha256": "0b105af695d2b09518d7f1cccf003afa92e5257d0cf4e64dc3d38bf907ca5b8a"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-render.json"
+  },
+  "native-render.log": {
+    "gzip": false,
+    "original": {
+      "bytes": 190,
+      "sha256": "f910cd6381296dced64bb9f3487bf48a89ed4f37ba89ce359801a27c5e8f66a4"
+    },
+    "retained": {
+      "bytes": 190,
+      "sha256": "f910cd6381296dced64bb9f3487bf48a89ed4f37ba89ce359801a27c5e8f66a4"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-render.log"
+  },
+  "native-room-tone-investigation.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 13908,
+      "sha256": "49680ee448026561313e87cbc84d999efbea98549e8662ca1fe1b4bedb726ba1"
+    },
+    "retained": {
+      "bytes": 13908,
+      "sha256": "49680ee448026561313e87cbc84d999efbea98549e8662ca1fe1b4bedb726ba1"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-room-tone-investigation.json"
+  },
+  "native-smoke.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 419,
+      "sha256": "acc429d2be9d95f1338e49f88c4c68f47d00a4441597495ae9cbef1cf0c6f65b"
+    },
+    "retained": {
+      "bytes": 419,
+      "sha256": "acc429d2be9d95f1338e49f88c4c68f47d00a4441597495ae9cbef1cf0c6f65b"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-smoke.json"
+  },
+  "native-smoke.log": {
+    "gzip": false,
+    "original": {
+      "bytes": 107,
+      "sha256": "dcb59a6786711becc1486ab8f73791c4847754bc40ee4e4268a0a8d87bb85873"
+    },
+    "retained": {
+      "bytes": 107,
+      "sha256": "dcb59a6786711becc1486ab8f73791c4847754bc40ee4e4268a0a8d87bb85873"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-smoke.log"
+  },
+  "native-ui-report.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 5824,
+      "sha256": "e1f367c1c24d8aa4f505c7ebb40b74eee1f72d6f758a1dfa2028d1254817a903"
+    },
+    "retained": {
+      "bytes": 5824,
+      "sha256": "e1f367c1c24d8aa4f505c7ebb40b74eee1f72d6f758a1dfa2028d1254817a903"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/native-ui-report.json"
+  },
+  "performance-summary.json.gz": {
+    "gzip": true,
+    "original": {
+      "bytes": 137394,
+      "sha256": "711995634f497eaffa722e193e98ad1644748e1b4d3ad0ff25a802b9e2e2c4a4"
+    },
+    "retained": {
+      "bytes": 11908,
+      "sha256": "20bfd4285f63bd90184787f085f364fc9847c2f77de12ce5f05a8ac11fa02ae7"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/performance-summary.json"
+  },
+  "prepare-native-app.py.txt": {
+    "gzip": false,
+    "original": {
+      "bytes": 1586,
+      "sha256": "43a1567d84f0a4cbaefcab973771c811b882251b45c939655cf0eec17e25bc9a"
+    },
+    "retained": {
+      "bytes": 1586,
+      "sha256": "43a1567d84f0a4cbaefcab973771c811b882251b45c939655cf0eec17e25bc9a"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/prepare-native-app.py"
+  },
+  "preview-refusal-camera.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 705,
+      "sha256": "94f8b3877cfcd4dbde16e0affdca03f06fab483b98fbdf60b8208b8f62cf620e"
+    },
+    "retained": {
+      "bytes": 705,
+      "sha256": "94f8b3877cfcd4dbde16e0affdca03f06fab483b98fbdf60b8208b8f62cf620e"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/preview-refusal-camera.json"
+  },
+  "preview-refusal-camera.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 181,
+      "sha256": "972b59a5d25b4715fb05f27c3e4f92fccf4001aa29f1777a52b8c2ad767b5069"
+    },
+    "retained": {
+      "bytes": 181,
+      "sha256": "972b59a5d25b4715fb05f27c3e4f92fccf4001aa29f1777a52b8c2ad767b5069"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/preview-refusal-camera.stderr"
+  },
+  "preview-refusal-camera.stdout": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/preview-refusal-camera.stdout"
+  },
+  "preview-refusal-gain.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 701,
+      "sha256": "cdda231ed62fcc12226adbb9c32f158bea474a4476ddab8620133da7a257e93b"
+    },
+    "retained": {
+      "bytes": 701,
+      "sha256": "cdda231ed62fcc12226adbb9c32f158bea474a4476ddab8620133da7a257e93b"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/preview-refusal-gain.json"
+  },
+  "preview-refusal-gain.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 181,
+      "sha256": "972b59a5d25b4715fb05f27c3e4f92fccf4001aa29f1777a52b8c2ad767b5069"
+    },
+    "retained": {
+      "bytes": 181,
+      "sha256": "972b59a5d25b4715fb05f27c3e4f92fccf4001aa29f1777a52b8c2ad767b5069"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/preview-refusal-gain.stderr"
+  },
+  "preview-refusal-gain.stdout": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/preview-refusal-gain.stdout"
+  },
+  "preview-refusal-room-tone.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 711,
+      "sha256": "72fa1726e2c59aea4fcd3f38b2742095770acbed475820a8bae755c6ae8f7550"
+    },
+    "retained": {
+      "bytes": 711,
+      "sha256": "72fa1726e2c59aea4fcd3f38b2742095770acbed475820a8bae755c6ae8f7550"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/preview-refusal-room-tone.json"
+  },
+  "preview-refusal-room-tone.stderr": {
+    "gzip": false,
+    "original": {
+      "bytes": 181,
+      "sha256": "972b59a5d25b4715fb05f27c3e4f92fccf4001aa29f1777a52b8c2ad767b5069"
+    },
+    "retained": {
+      "bytes": 181,
+      "sha256": "972b59a5d25b4715fb05f27c3e4f92fccf4001aa29f1777a52b8c2ad767b5069"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/preview-refusal-room-tone.stderr"
+  },
+  "preview-refusal-room-tone.stdout": {
+    "gzip": false,
+    "original": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "retained": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/preview-refusal-room-tone.stdout"
+  },
+  "qualify-decoded.py.txt": {
+    "gzip": false,
+    "original": {
+      "bytes": 28496,
+      "sha256": "07109e1094b64c1a0d3a685b03bbf04aece0d43eb3556d2aef98b9c6a90fb5df"
+    },
+    "retained": {
+      "bytes": 28496,
+      "sha256": "07109e1094b64c1a0d3a685b03bbf04aece0d43eb3556d2aef98b9c6a90fb5df"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/qualify-decoded.py"
+  },
+  "qualify-native-owner.py.txt": {
+    "gzip": false,
+    "original": {
+      "bytes": 31487,
+      "sha256": "e737de1fb0530dc6ac1e236392b078e3da47f7a74dcdb4df8732362a7e59936e"
+    },
+    "retained": {
+      "bytes": 31487,
+      "sha256": "e737de1fb0530dc6ac1e236392b078e3da47f7a74dcdb4df8732362a7e59936e"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/qualify-native-owner.py"
+  },
+  "reference-provenance/decoded-automatic-cold/report.json.gz": {
+    "gzip": true,
+    "original": {
+      "bytes": 1020146,
+      "sha256": "a50f9c2dfc00faa8cd84679829548f9ede20766f690af65c5c8ecc22eb846490"
+    },
+    "retained": {
+      "bytes": 55270,
+      "sha256": "f2635c479e5b6b9e0880a35665d8c850a29e145d7ded7d42788b7f2acc7ccfa3"
+    },
+    "source": "/private/tmp/deadpan-durable-automatic-20260930/decoded-automatic-cold/report.json"
+  },
+  "reference-provenance/five-second-oracles/avfoundation_probe.m.txt": {
+    "gzip": false,
+    "original": {
+      "bytes": 25397,
+      "sha256": "80a4d85dd714e3274007ecea1ee905d19d4a6c3deadd29c23453f1bf4629e384"
+    },
+    "retained": {
+      "bytes": 25397,
+      "sha256": "80a4d85dd714e3274007ecea1ee905d19d4a6c3deadd29c23453f1bf4629e384"
+    },
+    "source": "/private/tmp/deadpan-durable-automatic-20260930/five-second-oracles/avfoundation_probe.m"
+  },
+  "reference-provenance/five-second-oracles/edits.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 2018,
+      "sha256": "d48faba40cf2d089b822a502d91b5780721256ec0d9c54d7cd001c7f852d1a20"
+    },
+    "retained": {
+      "bytes": 2018,
+      "sha256": "d48faba40cf2d089b822a502d91b5780721256ec0d9c54d7cd001c7f852d1a20"
+    },
+    "source": "/private/tmp/deadpan-durable-automatic-20260930/five-second-oracles/edits.json"
+  },
+  "reference-provenance/five-second-oracles/native_audio_oracle.py.txt": {
+    "gzip": false,
+    "original": {
+      "bytes": 14930,
+      "sha256": "c14eae399e1a17a303b79edd325f68c38a6aa504f113246e9df3314e2b87b7f7"
+    },
+    "retained": {
+      "bytes": 14930,
+      "sha256": "c14eae399e1a17a303b79edd325f68c38a6aa504f113246e9df3314e2b87b7f7"
+    },
+    "source": "/private/tmp/deadpan-durable-automatic-20260930/five-second-oracles/native_audio_oracle.py"
+  },
+  "reference-provenance/five-second-oracles/project_encode_oracle.py.txt": {
+    "gzip": false,
+    "original": {
+      "bytes": 7196,
+      "sha256": "e41005f4dcca3327b41e1a1067ee203bc7d34f378c79b9ff0c0e5dbed8db48b1"
+    },
+    "retained": {
+      "bytes": 7196,
+      "sha256": "e41005f4dcca3327b41e1a1067ee203bc7d34f378c79b9ff0c0e5dbed8db48b1"
+    },
+    "source": "/private/tmp/deadpan-durable-automatic-20260930/five-second-oracles/project_encode_oracle.py"
+  },
+  "reference-provenance/independent-cold-input.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 4607,
+      "sha256": "c70f7656ce0ace71c3be3f58a2b2dfd016dd499e5fa8d8895ec33bd24829e302"
+    },
+    "retained": {
+      "bytes": 4607,
+      "sha256": "c70f7656ce0ace71c3be3f58a2b2dfd016dd499e5fa8d8895ec33bd24829e302"
+    },
+    "source": "/private/tmp/deadpan-durable-automatic-20260930/independent-cold-input.json"
+  },
+  "reference-provenance/native-fixed/report.json.gz": {
+    "gzip": true,
+    "original": {
+      "bytes": 278999,
+      "sha256": "16ee6b22c68c323c7d2f274a5e3d1b0dc2d6b5368182f52d7ccf595a1c93c655"
+    },
+    "retained": {
+      "bytes": 28769,
+      "sha256": "8873aa8fff8fcf947fc0df75402401f9c9c0b5a231e8b03a0e4bbf19ae0ce2b2"
+    },
+    "source": "/private/tmp/deadpan-durable-automatic-20260930/native-fixed/report.json"
+  },
+  "replays/ui-performance/render-output/deadpan-render-b7e74c0a-450a-49cd-9cbd-5903ef2f6f3a.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 32672,
+      "sha256": "b018749b4a345e534c2c0f64962670a934d0f65eb9c1c89636647e7db1dd83c0"
+    },
+    "retained": {
+      "bytes": 32672,
+      "sha256": "b018749b4a345e534c2c0f64962670a934d0f65eb9c1c89636647e7db1dd83c0"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-performance/render-output/deadpan-render-b7e74c0a-450a-49cd-9cbd-5903ef2f6f3a.json"
+  },
+  "replays/ui-performance/report.json.gz": {
+    "gzip": true,
+    "original": {
+      "bytes": 61185258,
+      "sha256": "2dbbda7f3d53d06d2a73c4e61ef9c8caaa622eadf40ddcf22039111efb3ceb5e"
+    },
+    "retained": {
+      "bytes": 1196671,
+      "sha256": "f4b3cbf33ff450467b3158e3d560e5f57d1531527e8e47e9840586ac09441f82"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-performance/report.json"
+  },
+  "replays/ui-render-final/render-output/deadpan-render-c2bf963b-e381-4df2-97ab-2fcf88c9c21f.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 32689,
+      "sha256": "9a14e85a0730c818896b168c9107cccda8f3c3cc01c494eaae90809cc9ad3774"
+    },
+    "retained": {
+      "bytes": 32689,
+      "sha256": "9a14e85a0730c818896b168c9107cccda8f3c3cc01c494eaae90809cc9ad3774"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-render-final/render-output/deadpan-render-c2bf963b-e381-4df2-97ab-2fcf88c9c21f.json"
+  },
+  "replays/ui-render-final/report.json.gz": {
+    "gzip": true,
+    "original": {
+      "bytes": 13702813,
+      "sha256": "f76160eacc5701e41a0943982216b71c416c5d9d7a7f4af75caab0b4512c3b5a"
+    },
+    "retained": {
+      "bytes": 649490,
+      "sha256": "638f618dc1e7ec285354aafdb9d873c57a076c9898de7fb599f39fbcb5ee29c6"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-render-final/report.json"
+  },
+  "run-ui-checks.py.txt": {
+    "gzip": false,
+    "original": {
+      "bytes": 1195,
+      "sha256": "480cc89503c19abe56ca7e88b937a1fa96b4e7f2c7c28aafa39a9e83e0f84f2b"
+    },
+    "retained": {
+      "bytes": 1195,
+      "sha256": "480cc89503c19abe56ca7e88b937a1fa96b4e7f2c7c28aafa39a9e83e0f84f2b"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/run-ui-checks.py"
+  },
+  "screenshots/01-render-030.png": {
+    "gzip": false,
+    "original": {
+      "bytes": 479263,
+      "sha256": "7d8a0f9b77244b88b1139aa7900026f1bd3726336f33bf707f6242071909fca4"
+    },
+    "retained": {
+      "bytes": 479263,
+      "sha256": "7d8a0f9b77244b88b1139aa7900026f1bd3726336f33bf707f6242071909fca4"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-render-final/render-030.png"
+  },
+  "screenshots/02-render-031.png": {
+    "gzip": false,
+    "original": {
+      "bytes": 701509,
+      "sha256": "edd955ae0b73d192d7f469b98e318aa6aa7a3d34957f5ffb594ec51d1d74040a"
+    },
+    "retained": {
+      "bytes": 701509,
+      "sha256": "edd955ae0b73d192d7f469b98e318aa6aa7a3d34957f5ffb594ec51d1d74040a"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-render-final/render-031.png"
+  },
+  "screenshots/03-render-062.png": {
+    "gzip": false,
+    "original": {
+      "bytes": 461738,
+      "sha256": "65f9f64013834bbee15193ec6f4e4f252ec54261940a21c321eec060ac179d95"
+    },
+    "retained": {
+      "bytes": 461738,
+      "sha256": "65f9f64013834bbee15193ec6f4e4f252ec54261940a21c321eec060ac179d95"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-render-final/render-062.png"
+  },
+  "screenshots/04-render-063.png": {
+    "gzip": false,
+    "original": {
+      "bytes": 713700,
+      "sha256": "04cfdf42b121c98b046a22d3918698a555aa6336b5f7777673c17fc5d8e3477b"
+    },
+    "retained": {
+      "bytes": 713700,
+      "sha256": "04cfdf42b121c98b046a22d3918698a555aa6336b5f7777673c17fc5d8e3477b"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-render-final/render-063.png"
+  },
+  "screenshots/05-render-104.png": {
+    "gzip": false,
+    "original": {
+      "bytes": 501798,
+      "sha256": "3d083097f2d23de4970352148f6f116a909d33e68220137dd7125925aa3c6f16"
+    },
+    "retained": {
+      "bytes": 501798,
+      "sha256": "3d083097f2d23de4970352148f6f116a909d33e68220137dd7125925aa3c6f16"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-render-final/render-104.png"
+  },
+  "screenshots/06-render-105.png": {
+    "gzip": false,
+    "original": {
+      "bytes": 791211,
+      "sha256": "00ef23d4bfbeef8330a0c60626003ea84bedf934be40d0f2ecbedb201427088a"
+    },
+    "retained": {
+      "bytes": 791211,
+      "sha256": "00ef23d4bfbeef8330a0c60626003ea84bedf934be40d0f2ecbedb201427088a"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-render-final/render-105.png"
+  },
+  "screenshots/07-render-123.png": {
+    "gzip": false,
+    "original": {
+      "bytes": 234635,
+      "sha256": "210e71d812d86fc521c62f6e9420ff0bac74f0d28b9acc01b71943fa428a3a41"
+    },
+    "retained": {
+      "bytes": 234635,
+      "sha256": "210e71d812d86fc521c62f6e9420ff0bac74f0d28b9acc01b71943fa428a3a41"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-render-final/render-123.png"
+  },
+  "screenshots/08-render-124.png": {
+    "gzip": false,
+    "original": {
+      "bytes": 314268,
+      "sha256": "31769ec0f685ba661bea586ee285bdaafb58d1e20710c6fa05a9e31ba6996ee5"
+    },
+    "retained": {
+      "bytes": 314268,
+      "sha256": "31769ec0f685ba661bea586ee285bdaafb58d1e20710c6fa05a9e31ba6996ee5"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-render-final/render-124.png"
+  },
+  "source-2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba.json.gz": {
+    "gzip": true,
+    "original": {
+      "bytes": 158478,
+      "sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "retained": {
+      "bytes": 57640,
+      "sha256": "e98adc6451e9885e3837d3eca825cdc428ed5b3606d3595ff95b84f615d76c95"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/source-2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba.json"
+  },
+  "source-297c61a600c532208d953b1fdfdf5f92a6e2f9008edc4336cdab9a955b068903.json.gz": {
+    "gzip": true,
+    "original": {
+      "bytes": 157655,
+      "sha256": "297c61a600c532208d953b1fdfdf5f92a6e2f9008edc4336cdab9a955b068903"
+    },
+    "retained": {
+      "bytes": 57334,
+      "sha256": "d70cefb9164e5ff79d45da23add066d4d4f5db4e013c7274481ac459643dfc61"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/source-297c61a600c532208d953b1fdfdf5f92a6e2f9008edc4336cdab9a955b068903.json"
+  },
+  "source-3a6359f0d9ffecb8e0e42994da855c8a0c2b4095049ebd41d715546799e49562.json.gz": {
+    "gzip": true,
+    "original": {
+      "bytes": 157765,
+      "sha256": "3a6359f0d9ffecb8e0e42994da855c8a0c2b4095049ebd41d715546799e49562"
+    },
+    "retained": {
+      "bytes": 57379,
+      "sha256": "da6edc98e3ae9b6a1c440864c9326d68df815630ac4a644b9e2c23044b0d3088"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/source-3a6359f0d9ffecb8e0e42994da855c8a0c2b4095049ebd41d715546799e49562.json"
+  },
+  "source-6677eb269cb96b02bc4b12eb1178a05075ca151dcb1e73122ecd6976d0a1806e.json.gz": {
+    "gzip": true,
+    "original": {
+      "bytes": 158478,
+      "sha256": "6677eb269cb96b02bc4b12eb1178a05075ca151dcb1e73122ecd6976d0a1806e"
+    },
+    "retained": {
+      "bytes": 57641,
+      "sha256": "fe07d3a04a88a57dca5d931586d29d07dc68a6d772fbcb47ad3a13fb9665fb12"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/source-6677eb269cb96b02bc4b12eb1178a05075ca151dcb1e73122ecd6976d0a1806e.json"
+  },
+  "source-73790537bb382253a221508831a61040ab17889321d55264ff430bb10280c2d1.json.gz": {
+    "gzip": true,
+    "original": {
+      "bytes": 158120,
+      "sha256": "73790537bb382253a221508831a61040ab17889321d55264ff430bb10280c2d1"
+    },
+    "retained": {
+      "bytes": 57508,
+      "sha256": "10154994b60e78a3ebd0a52e74966d7547425c6d79ba88563ea51294cd9af3a4"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/source-73790537bb382253a221508831a61040ab17889321d55264ff430bb10280c2d1.json"
+  },
+  "source-8554840dd1c58e0f7ef09e4e924400370b79a932e1c9d324abeea84d07468d9b.json.gz": {
+    "gzip": true,
+    "original": {
+      "bytes": 158478,
+      "sha256": "8554840dd1c58e0f7ef09e4e924400370b79a932e1c9d324abeea84d07468d9b"
+    },
+    "retained": {
+      "bytes": 57632,
+      "sha256": "cfc230356ec596e59c09930c5d7fa5d90f159e506678a4c674e4853138707a20"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/source-8554840dd1c58e0f7ef09e4e924400370b79a932e1c9d324abeea84d07468d9b.json"
+  },
+  "source-db5a00570f02423c90e36560791cc4171e13ccb2532d99e26769ef5e5ce43273.json.gz": {
+    "gzip": true,
+    "original": {
+      "bytes": 158478,
+      "sha256": "db5a00570f02423c90e36560791cc4171e13ccb2532d99e26769ef5e5ce43273"
+    },
+    "retained": {
+      "bytes": 57636,
+      "sha256": "d8da5bf9f64ba8a46e8fcafce1de77f8611b65611cedc361d2caa6413bea8a3d"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/source-db5a00570f02423c90e36560791cc4171e13ccb2532d99e26769ef5e5ce43273.json"
+  },
+  "source-dfc82653b481898fe621f881dc582a5a1ebe3fe3dcc54a6c90d65d62531cb018.json.gz": {
+    "gzip": true,
+    "original": {
+      "bytes": 158478,
+      "sha256": "dfc82653b481898fe621f881dc582a5a1ebe3fe3dcc54a6c90d65d62531cb018"
+    },
+    "retained": {
+      "bytes": 57653,
+      "sha256": "0f21ed7601dd542f24ac2a445453a81296a25ab4a0ad47d3f5cd44e16973d3e5"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/source-dfc82653b481898fe621f881dc582a5a1ebe3fe3dcc54a6c90d65d62531cb018.json"
+  },
+  "store-owner-first.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 486,
+      "sha256": "c867fc25e443255e8398625083b3edd26931b48f9dd26ca67f1f7727072d6a70"
+    },
+    "retained": {
+      "bytes": 486,
+      "sha256": "c867fc25e443255e8398625083b3edd26931b48f9dd26ca67f1f7727072d6a70"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/store-owner-first.json"
+  },
+  "store-owner-first.log": {
+    "gzip": false,
+    "original": {
+      "bytes": 811,
+      "sha256": "9a9b3a5d41befac6c66f96cfb83d3203494c70b14c18a1b72bd0550de03a2402"
+    },
+    "retained": {
+      "bytes": 811,
+      "sha256": "9a9b3a5d41befac6c66f96cfb83d3203494c70b14c18a1b72bd0550de03a2402"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/store-owner-first.log"
+  },
+  "store-owner-second.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 484,
+      "sha256": "657f146754d4b7cb87887791a0bd7e3065f5d5d3515edca85c0ce62292272a0a"
+    },
+    "retained": {
+      "bytes": 484,
+      "sha256": "657f146754d4b7cb87887791a0bd7e3065f5d5d3515edca85c0ce62292272a0a"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/store-owner-second.json"
+  },
+  "store-owner-second.log": {
+    "gzip": false,
+    "original": {
+      "bytes": 1191,
+      "sha256": "8e0be34e09fb33aff8711e43c2a496ddef998248d7b195c115630edb70384e84"
+    },
+    "retained": {
+      "bytes": 1191,
+      "sha256": "8e0be34e09fb33aff8711e43c2a496ddef998248d7b195c115630edb70384e84"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/store-owner-second.log"
+  },
+  "ui-build.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 487,
+      "sha256": "f4319c0e496af9a20648d24e516ad38571138f6b08a7144c298dc9d7a74b6440"
+    },
+    "retained": {
+      "bytes": 487,
+      "sha256": "f4319c0e496af9a20648d24e516ad38571138f6b08a7144c298dc9d7a74b6440"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-build.json"
+  },
+  "ui-build.log": {
+    "gzip": false,
+    "original": {
+      "bytes": 367,
+      "sha256": "813a492104f4817026840ac7ab0b881fa00f3d20ab861ae221113f406e147e21"
+    },
+    "retained": {
+      "bytes": 367,
+      "sha256": "813a492104f4817026840ac7ab0b881fa00f3d20ab861ae221113f406e147e21"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-build.log"
+  },
+  "ui-clippy.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 545,
+      "sha256": "a5e4a3683e2f811b87436cc443439ba00e7163d5bce3055c55a1b890f5002f28"
+    },
+    "retained": {
+      "bytes": 545,
+      "sha256": "a5e4a3683e2f811b87436cc443439ba00e7163d5bce3055c55a1b890f5002f28"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-clippy.json"
+  },
+  "ui-clippy.log": {
+    "gzip": false,
+    "original": {
+      "bytes": 1228,
+      "sha256": "2d67e3f0f5c70f93aa000518058fdbac884d2edae9bc21ed46b41b74aef532f0"
+    },
+    "retained": {
+      "bytes": 1228,
+      "sha256": "2d67e3f0f5c70f93aa000518058fdbac884d2edae9bc21ed46b41b74aef532f0"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-clippy.log"
+  },
+  "ui-performance.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 619,
+      "sha256": "5f2545370cdf19e94c4d3e2b386194b80870e4e55089c8d596df6c17d7529efe"
+    },
+    "retained": {
+      "bytes": 619,
+      "sha256": "5f2545370cdf19e94c4d3e2b386194b80870e4e55089c8d596df6c17d7529efe"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-performance.json"
+  },
+  "ui-performance.log": {
+    "gzip": false,
+    "original": {
+      "bytes": 394,
+      "sha256": "e853f2a60801666f27ed0c121b70dc625633e1611f9eed72961af22243da00bb"
+    },
+    "retained": {
+      "bytes": 394,
+      "sha256": "e853f2a60801666f27ed0c121b70dc625633e1611f9eed72961af22243da00bb"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-performance.log"
+  },
+  "ui-release-build.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 504,
+      "sha256": "a127e4d60525f30f152cae27e7df413e3714ca9c6879ba631534fbe564383eae"
+    },
+    "retained": {
+      "bytes": 504,
+      "sha256": "a127e4d60525f30f152cae27e7df413e3714ca9c6879ba631534fbe564383eae"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-release-build.json"
+  },
+  "ui-release-build.log": {
+    "gzip": false,
+    "original": {
+      "bytes": 1371,
+      "sha256": "33cea482e330499f3df64e0b951b8d1a1c501b39c3433e8a37d7e9a41594154b"
+    },
+    "retained": {
+      "bytes": 1371,
+      "sha256": "33cea482e330499f3df64e0b951b8d1a1c501b39c3433e8a37d7e9a41594154b"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-release-build.log"
+  },
+  "ui-render-final.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 643,
+      "sha256": "bf9226056b907a1b1467f50acf8f7109c58adfa89b070fa5a1e9193198865d7a"
+    },
+    "retained": {
+      "bytes": 643,
+      "sha256": "bf9226056b907a1b1467f50acf8f7109c58adfa89b070fa5a1e9193198865d7a"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-render-final.json"
+  },
+  "ui-render-final.log": {
+    "gzip": false,
+    "original": {
+      "bytes": 89,
+      "sha256": "d19469f2e0bbb3026a50f87f987e72a2b4e463066a69ce1945437e3cd0dd5070"
+    },
+    "retained": {
+      "bytes": 89,
+      "sha256": "d19469f2e0bbb3026a50f87f987e72a2b4e463066a69ce1945437e3cd0dd5070"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-render-final.log"
+  },
+  "ui-tests.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 508,
+      "sha256": "093508d76dd3223ce04fecee0d400592a48d2d1d9d67db50c688f1d28f0d0574"
+    },
+    "retained": {
+      "bytes": 508,
+      "sha256": "093508d76dd3223ce04fecee0d400592a48d2d1d9d67db50c688f1d28f0d0574"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-tests.json"
+  },
+  "ui-tests.log": {
+    "gzip": false,
+    "original": {
+      "bytes": 35172,
+      "sha256": "975887d804ed73c8f037a4ea59af816fa817dac87ac08189bfc4e4288f46f7d9"
+    },
+    "retained": {
+      "bytes": 35172,
+      "sha256": "975887d804ed73c8f037a4ea59af816fa817dac87ac08189bfc4e4288f46f7d9"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/ui-tests.log"
+  },
+  "visual-review.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 1381,
+      "sha256": "1e804f3f7e3415aeba93d195976d6ce3d2f12f39ec4c83a585092a741ad0464d"
+    },
+    "retained": {
+      "bytes": 1381,
+      "sha256": "1e804f3f7e3415aeba93d195976d6ce3d2f12f39ec4c83a585092a741ad0464d"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/visual-review.json"
+  },
+  "workspace-clippy-final.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 501,
+      "sha256": "43b9f772f03cd876cfad9ea7f09a3d9ea98d82a70a4f4be4b7a04ac14fbea609"
+    },
+    "retained": {
+      "bytes": 501,
+      "sha256": "43b9f772f03cd876cfad9ea7f09a3d9ea98d82a70a4f4be4b7a04ac14fbea609"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/workspace-clippy-final.json"
+  },
+  "workspace-clippy-final.log": {
+    "gzip": false,
+    "original": {
+      "bytes": 1601,
+      "sha256": "ecae54b15b275714d925e70018332ff3aad345c9a57341251f8c5c2c5b09ae0e"
+    },
+    "retained": {
+      "bytes": 1601,
+      "sha256": "ecae54b15b275714d925e70018332ff3aad345c9a57341251f8c5c2c5b09ae0e"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/workspace-clippy-final.log"
+  },
+  "workspace-clippy-verified.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 499,
+      "sha256": "8b2cf709a3873dba30758f4dadfa237e57eca7e428dfbb984a3dcde0de99bc69"
+    },
+    "retained": {
+      "bytes": 499,
+      "sha256": "8b2cf709a3873dba30758f4dadfa237e57eca7e428dfbb984a3dcde0de99bc69"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/workspace-clippy-verified.json"
+  },
+  "workspace-clippy-verified.log": {
+    "gzip": false,
+    "original": {
+      "bytes": 660,
+      "sha256": "4a3c47a242c74182b5f6488e02ba2ee3f970c195db9e4e7da7b3dbd6850393f8"
+    },
+    "retained": {
+      "bytes": 660,
+      "sha256": "4a3c47a242c74182b5f6488e02ba2ee3f970c195db9e4e7da7b3dbd6850393f8"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/workspace-clippy-verified.log"
+  },
+  "workspace-clippy.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 501,
+      "sha256": "8a2dc9301e9b01f2a260b14ac21046cdbaedb07d24ade4ead991268c4054c370"
+    },
+    "retained": {
+      "bytes": 501,
+      "sha256": "8a2dc9301e9b01f2a260b14ac21046cdbaedb07d24ade4ead991268c4054c370"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/workspace-clippy.json"
+  },
+  "workspace-clippy.log": {
+    "gzip": false,
+    "original": {
+      "bytes": 3950,
+      "sha256": "9e4a3b33e2f96c990e6d03052d12ca10c61415663fbae06d29635ec168b28b12"
+    },
+    "retained": {
+      "bytes": 3950,
+      "sha256": "9e4a3b33e2f96c990e6d03052d12ca10c61415663fbae06d29635ec168b28b12"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/workspace-clippy.log"
+  },
+  "workspace-tests.json": {
+    "gzip": false,
+    "original": {
+      "bytes": 463,
+      "sha256": "8fdb60c4c18d6abfc4331b30423d3696ca351b8b4d543b266e660c83fe65c07f"
+    },
+    "retained": {
+      "bytes": 463,
+      "sha256": "8fdb60c4c18d6abfc4331b30423d3696ca351b8b4d543b266e660c83fe65c07f"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/workspace-tests.json"
+  },
+  "workspace-tests.log.gz": {
+    "gzip": true,
+    "original": {
+      "bytes": 260428,
+      "sha256": "89a64ca51090defc923dea15abba837f68f4d1dca9473ce09fbcd96d44c8e3dc"
+    },
+    "retained": {
+      "bytes": 64718,
+      "sha256": "8009447d55c866774343a108947edeca07d4256106c4df987fc257c53a8e6b99"
+    },
+    "source": "/private/tmp/deadpan-live-project-20260930/workspace-tests.log"
+  }
+}

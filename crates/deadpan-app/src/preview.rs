@@ -3004,6 +3004,12 @@ impl eframe::App for DeadpanApp {
                 context.request_repaint();
             }
         }
+        self.service.set_preview_active(
+            self.camera.is_some()
+                || self.camera_pending.is_some()
+                || self.gain.is_some()
+                || self.room_tone.is_some(),
+        );
     }
     fn on_exit(&mut self) {
         self.playback.shutdown();

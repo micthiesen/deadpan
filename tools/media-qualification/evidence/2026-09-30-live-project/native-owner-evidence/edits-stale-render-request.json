@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "request_id": "6d1aad69-9dc8-45f3-ae4a-c64d5845ddb9",
+  "context": {
+    "project_id": "project-picture-qualification",
+    "revision_id": "workflow-live-restored"
+  },
+  "operation": {
+    "operation": "start",
+    "destination": "/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/must-not-publish.mp4"
+  }
+}

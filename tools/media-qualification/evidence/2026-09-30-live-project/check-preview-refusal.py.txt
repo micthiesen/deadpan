@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+"""Check one visibly active native draft without accepting or cancelling it."""
+import argparse
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import shutil
+import sqlite3
+import subprocess
+import time
+
+work = Path('/tmp/deadpan-live-project-20260930')
+package = work / 'native.deadpan'
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('preview', choices=['camera', 'gain', 'room-tone'])
+args = parser.parse_args()
+stem = 'preview-refusal-' + args.preview
+report_path = work / (stem + '.json')
+assert not report_path.exists(), 'Refusing to overwrite an observation'
+destination = work / 'native-owner-evidence/movies' / (stem + '.mp4')
+assert not destination.exists()
+
+def observation():
+    with sqlite3.connect((package / 'project.sqlite').resolve().as_uri() + '?mode=ro', uri=True) as db:
+        db.execute('BEGIN')
+        document = db.execute('SELECT document FROM revisions JOIN state ON revisions.id=state.head_revision WHERE state.singleton=1').fetchone()[0]
+        tables = ['render_jobs', 'render_attempts', 'render_publications', 'render_encoding_decisions']
+        operational = {name: db.execute('SELECT * FROM ' + name + ' ORDER BY 1').fetchall() for name in tables}
+        return {'document': document, 'operational': operational}
+
+descriptor = os.open(package / '.writer.lock', os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+try:
+    try:
+        fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        pass
+    else:
+        fcntl.flock(descriptor, fcntl.LOCK_UN)
+        raise RuntimeError('Native writer is not held')
+finally:
+    os.close(descriptor)
+
+binary = Path(shutil.which('deadpan-app')).resolve()
+with binary.open('rb') as stream:
+    identity = hashlib.file_digest(stream, 'sha256').hexdigest()
+assert identity == json.loads((work / 'native-app.json').read_text())['sha256']
+before = observation()
+command = ['deadpan-app', '--headless', 'render', str(package), '--output', str(destination.parent), '--name', destination.name]
+started = time.monotonic()
+result = subprocess.run(command, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=30)
+(work / (stem + '.stdout')).write_text(result.stdout)
+(work / (stem + '.stderr')).write_text(result.stderr)
+after = observation()
+error = json.loads(result.stderr)['error']
+report = {'preview': args.preview, 'command': command, 'exit_code': result.returncode,
+          'error': error, 'seconds': time.monotonic() - started, 'binary_sha256': identity,
+          'unchanged_document_and_render_rows': before == after, 'movie_exists': destination.exists()}
+passed = result.returncode == 1 and not result.stdout.strip() and error['code'] == 'RenderPreviewDecisionRequired' and before == after and not destination.exists()
+report['result'] = 'passed' if passed else 'failed'
+report_path.write_text(json.dumps(report, indent=2) + '\n')
+print(json.dumps(report))
+assert passed, 'Preview refusal failed; inspect retained evidence'

@@ -1,0 +1,257 @@
+"""Pure AVFoundation observations and absolute PCM event timing.
+
+Native reader status, formats and attachments remain separate from the public
+timing-only PCM helper. No filesystem, codec or process access occurs here.
+"""
+
+from collections.abc import Sequence
+from fractions import Fraction
+import math
+
+from encoder_oracle import (
+    CaseSpec, OracleError, PcmSpan, SAMPLE_RATE, U32_MAX, inspect_pcm_events,
+    _Checks, _finite_pcm, _integer, _mapping, _records,
+)
+
+
+MAX_SAMPLES = 240000
+MAX_BUFFERS = 8192
+MAX_TIMING = 8192
+MAX_ATTACHMENTS = 262144
+MAX_SELECTED_ATTACHMENTS = 8192
+LPCM = int.from_bytes(b"lpcm", "big")
+# SDK CoreAudioBaseTypes.h: Float bit0 and Packed bit3; no BE/NI flags.
+FLOAT_PACKED = 9
+
+
+class UnqualifiedTiming(OracleError):
+    """Recorded native semantics have not been admitted for PCM event analysis."""
+
+
+def exact_time(value, label="CMTime") -> Fraction:
+    value = _mapping(value, label)
+    numerator = _integer(value["value"], f"{label} value")
+    scale = _integer(value["timescale"], f"{label} timescale", -(1 << 31), (1 << 31) - 1)
+    flags = _integer(value["flags"], f"{label} flags", 0, U32_MAX)
+    epoch = _integer(value["epoch"], f"{label} epoch")
+    # CMTime.h: valid=1, rounded=2, infinity/indefinite=4/8/16.
+    # Reject unknown bits as well; never assert exactness after conversion.
+    if flags != 1 or scale <= 0 or epoch != 0:
+        raise UnqualifiedTiming(f"{label} must be numeric, unrounded, epoch zero")
+    return Fraction(numerator, scale)
+
+
+def _samples(value, label):
+    result = exact_time(value, label) * SAMPLE_RATE
+    if result.denominator != 1:
+        raise UnqualifiedTiming(f"{label} is off the exact 48000 Hz sample grid: {result}")
+    return _integer(result.numerator, label)
+
+
+def _preflight(observation):
+    observation = _mapping(observation, "native observation")
+    if _integer(observation.get("schema_version"), "schema version", 1, 1) != 1 or observation.get("kind") != "avfoundation_audio":
+        raise OracleError("expected native audio observation schema 1")
+    if observation.get("status") != "completed":
+        raise OracleError("native observer did not complete")
+    hashes = [observation.get(key) for key in ("input_sha256", "final_input_sha256")]
+    if any(not isinstance(value, str) or len(value) != 64
+           or any(letter not in "0123456789abcdef" for letter in value) for value in hashes):
+        raise OracleError("native input hash observations are missing or malformed")
+    if hashes[0] != hashes[1]:
+        raise OracleError("native input identity changed during observation")
+    for name in ("stored", "pcm"):
+        aggregate_timing, aggregate_attachments, aggregate_selected = 0, 0, 0
+        part = _mapping(observation[name], name)
+        if part.get("status") != "completed" or part.get("reader_status") != 2:
+            raise OracleError(f"{name} reader did not reach AVAssetReaderStatusCompleted")
+        buffers = _records(part["buffers"], f"{name} buffers", MAX_BUFFERS)
+        if _integer(part["buffer_count"], "buffer count", 0, MAX_BUFFERS) != len(buffers):
+            raise OracleError(f"{name} buffer count does not match observations")
+        for index, value in enumerate(buffers):
+            value = _mapping(value, f"{name} buffer")
+            if _integer(value["index"], "buffer index", 0, MAX_BUFFERS) != index:
+                raise OracleError(f"{name} buffer indices are not contiguous")
+            aggregate_timing += len(_records(value["timing"], "sample timing", MAX_TIMING))
+            aggregate_attachments += _integer(value["sample_attachment_count"], "sample attachments", 0, MAX_ATTACHMENTS)
+            selected = _records(value["sample_attachments"], "selected sample attachments", MAX_SELECTED_ATTACHMENTS)
+            aggregate_selected += len(selected)
+            if len(selected) > value["sample_attachment_count"]:
+                raise OracleError("selected attachments exceed native attachment count")
+            if aggregate_timing > MAX_TIMING or aggregate_attachments > MAX_ATTACHMENTS or aggregate_selected > MAX_SELECTED_ATTACHMENTS:
+                raise OracleError("aggregate native observation limits exceeded")
+    track = _mapping(observation["track"], "native audio track")
+    _records(track["segments"], "track segments", 256)
+    _records(track["source_formats"], "source ASBDs", 16)
+    return observation
+
+
+def _pcm_asbd(value):
+    value = _mapping(value, "PCM ASBD")
+    rate = value["sample_rate"]
+    if type(rate) not in (int, float) or rate != SAMPLE_RATE:
+        raise OracleError("PCM ASBD must declare exactly 48000 Hz")
+    expected = {"format_id": LPCM, "format_flags": FLOAT_PACKED, "bytes_per_packet": 8,
+                "frames_per_packet": 1, "bytes_per_frame": 8, "channels_per_frame": 2,
+                "bits_per_channel": 32}
+    for key, target in expected.items():
+        if _integer(value[key], f"ASBD {key}", 0, U32_MAX) != target:
+            raise OracleError(f"PCM ASBD {key} does not describe packed little-endian float32 stereo")
+
+
+def _attachments(buffer):
+    attachments = _mapping(buffer["attachments"], "buffer attachments")
+    for key in ("trim_start", "trim_end"):
+        value = attachments[key]
+        if value is not None and exact_time(value, key) != 0:
+            raise UnqualifiedTiming(f"nonzero decoded {key} is retained without applying a second trim")
+    speed = attachments["speed"]
+    if speed is not None:
+        if type(speed) not in (int, float) or (type(speed) is float and not math.isfinite(speed)):
+            raise OracleError("speed attachment must be a finite number or null")
+        if speed != 1:
+            raise UnqualifiedTiming("decoded speed attachment requires separate interpretation")
+    for key in ("reverse", "empty_media", "reset_decoder", "drain_after_decoding"):
+        value = attachments[key]
+        if value is not None and type(value) is not bool:
+            raise OracleError(f"{key} attachment must be boolean or null")
+        if value is True and key in ("reverse", "empty_media"):
+            raise UnqualifiedTiming(f"decoded {key} attachment requires separate interpretation")
+    count = _integer(buffer["num_samples"], "PCM buffer samples", 0, MAX_SAMPLES)
+    for value in buffer["sample_attachments"]:
+        value = _mapping(value, "sample attachment")
+        _integer(value["sample_index"], "sample attachment index", 0, count - 1)
+        if type(value["do_not_display"]) is not bool:
+            raise OracleError("DoNotDisplay observation must be boolean")
+        if value["do_not_display"]:
+            raise UnqualifiedTiming("decoded DoNotDisplay samples are retained without suppression")
+
+
+def _adapt(report, observation, pcm):
+    observation = _preflight(observation)
+    report.add("native: both readers reached completed status", True,
+               {name: observation[name]["reader_status"] for name in ("stored", "pcm")})
+    if observation.get("provides_precise_duration_and_timing") is not True:
+        raise UnqualifiedTiming("asset does not report precise duration and timing")
+    asset_duration = exact_time(observation["asset_duration"], "asset duration")
+    if not 0 < asset_duration <= 5:
+        raise OracleError("native scratch experiment asset duration must be positive and at most five seconds")
+    part = observation["pcm"]
+    if part.get("pcm_format") != "f32le_interleaved_stereo_48000":
+        raise OracleError("unexpected raw PCM file interpretation")
+    if not isinstance(pcm, Sequence) or len(pcm) > MAX_SAMPLES * 2:
+        raise OracleError("native PCM exceeds the five-second scratch stereo bound")
+    count = _finite_pcm(pcm)
+    if _integer(part["total_samples"], "native samples", 0, MAX_SAMPLES) != count:
+        raise OracleError("native declared sample count disagrees with raw PCM")
+    if _integer(part["pcm_bytes"], "native PCM bytes", 0, MAX_SAMPLES * 8) != count * 8:
+        raise OracleError("native byte count disagrees with raw PCM")
+    track_range = _mapping(observation["track"]["time_range"], "track range")
+    track_start = _samples(track_range["start"], "track start")
+    track_duration = _samples(track_range["duration"], "track duration")
+    if track_duration <= 0:
+        raise OracleError("native audio track must have positive duration")
+    spans, summaries = [], []
+    report.observations["native_buffer_timing"] = summaries
+    for value in part["buffers"]:
+        offset = _integer(value["sample_offset"], "PCM buffer offset", 0, MAX_SAMPLES)
+        samples = _integer(value["num_samples"], "PCM buffer samples", 0, MAX_SAMPLES)
+        byte_count = _integer(value["byte_count"], "PCM buffer bytes", 0, MAX_SAMPLES * 8)
+        if byte_count != samples * 8 or offset + samples > count:
+            raise OracleError("native PCM buffer bytes/range disagree with raw PCM")
+        if value.get("data_ready") is not True:
+            raise OracleError("native PCM buffer is not ready")
+        if samples:
+            _pcm_asbd(value["asbd"])
+        pts = _samples(value["pts"], "PCM PTS")
+        output_pts = _samples(value["output_pts"], "PCM output PTS")
+        duration = _samples(value["duration"], "PCM duration")
+        output_duration = _samples(value["output_duration"], "PCM output duration")
+        summaries.append({"index": value["index"], "sample_offset": offset, "num_samples": samples,
+                          "pts_samples": pts, "output_pts_samples": output_pts,
+                          "duration_samples": duration, "output_duration_samples": output_duration})
+        _attachments(value)
+        if pts != output_pts or duration != output_duration:
+            raise UnqualifiedTiming("raw and output PCM timing differ; no origin shift or second trim applied")
+        if duration != samples:
+            raise UnqualifiedTiming("native PCM duration does not match its exact returned frame count")
+        timing = value["timing"]
+        if samples == 0:
+            if timing:
+                raise UnqualifiedTiming("zero-sample marker has unexpected sample timing")
+            # A marker owns no PCM and must not break the cumulative byte clock.
+            expected_offset = spans[-1].sample_offset + spans[-1].sample_count if spans else 0
+            if offset != expected_offset:
+                raise OracleError("zero-sample marker offset disagrees with raw PCM")
+            continue
+        if len(timing) not in (1, samples):
+            raise UnqualifiedTiming("PCM timing array cannot describe every returned sample")
+        for index, entry in enumerate(timing):
+            entry = _mapping(entry, "PCM sample timing")
+            if _samples(entry["pts"], "sample timing PTS") != pts + index:
+                raise UnqualifiedTiming("PCM sample timing does not match raw absolute PTS")
+            if _samples(entry["duration"], "sample timing duration") != 1:
+                raise UnqualifiedTiming("PCM timing duration must describe one 48000 Hz sample")
+        spans.append(PcmSpan(offset, samples, pts))
+    if not spans:
+        raise OracleError("native reader returned no PCM frames")
+    report.observations["native_mapping"] = {
+        "sample_clock": "absolute CMSampleBuffer PTS * 48000, required integral",
+        "native_buffers": len(part["buffers"]), "pcm_spans": len(spans),
+        "asset_duration_seconds": str(asset_duration),
+        "decode_error_reporting": "AVAssetReader completed status; no FFmpeg per-frame flags available",
+        "trim_applied": False, "segment_offset_applied": False, "event_alignment_applied": False,
+    }
+    return spans, track_start, track_duration
+
+
+def _timing_checks(report, spec, pcm, spans, track_start, track_duration, tolerance, valid, search_radius):
+    end = track_start + track_duration
+    error = end - spec.audio_samples
+    report.add("native: exact authored stream endpoint", error == 0,
+               {"error_samples": error}, diagnostic=True)
+    report.add("native: stream endpoint within declared sub-frame tolerance",
+               valid and abs(error) <= tolerance and abs(error) < spec.frame_samples,
+               {"error_samples": error, "declared_tolerance_samples": tolerance})
+    measured = inspect_pcm_events(spec, pcm, spans, tolerance_samples=tolerance if valid else -1, label="native", search_radius=search_radius)
+    report.checks.extend(measured["checks"])
+    report.unqualified.extend(measured["unqualified"])
+    report.observations["native"] = {**measured["observations"],
+        "stream_start_sample": track_start, "stream_end_sample": end, "stream_end_error_samples": error}
+
+
+def inspect_native_audio(spec, observation, pcm, *, tolerance_samples=799, event_search_radius=4096):
+    """Inspect untouched native PCM; ambiguous trim/timing is explicitly open.
+
+    ``passed`` covers applicable checks. ``outcome`` and
+    ``event_timing_qualified`` must also be retained: an unqualified clock is
+    neither a codec failure nor a passing absolute-timing measurement.
+    """
+    if not isinstance(spec, CaseSpec):
+        raise OracleError("spec must be a CaseSpec")
+    report = _Checks()
+    report.observations["raw_native_observation"] = observation
+    report.observations["native"] = {"event_timing_qualified": False}
+    valid = type(tolerance_samples) is int and 0 <= tolerance_samples < spec.frame_samples
+    report.add("native: declared encoded tolerance strictly below one frame", valid,
+               {"declared_samples": tolerance_samples, "one_frame_samples": str(spec.frame_samples)})
+    try:
+        spans, track_start, track_duration = _adapt(report, observation, pcm)
+    except UnqualifiedTiming as error:
+        report.add("native: unambiguous returned PCM timing", False, str(error), diagnostic=True)
+        report.unqualified.append(str(error))
+    except (OracleError, KeyError) as error:
+        report.add("native: valid bounded observations", False, str(error))
+    else:
+        tolerance = tolerance_samples if type(tolerance_samples) is int else 0
+        report.section("native", lambda: _timing_checks(report, spec, pcm, spans, track_start,
+                                                      track_duration, tolerance, valid, event_search_radius))
+    result = report.result()
+    result["scope"] = "AVFoundation returned PCM absolute-event timing through the existing bounded oracle"
+    # The shared report's FFmpeg-specific full-case scope does not apply here.
+    result["unqualified"] = ["physical playback/listening", "coded padding outside the default asset range",
+                             "video/color/closed GOP observations", "edge-content survival"] + report.unqualified
+    qualified = result["passed"] and result["observations"]["native"].get("event_timing_qualified", False)
+    result["event_timing_qualified"] = qualified
+    result["outcome"] = "failed" if not result["passed"] else "passed" if qualified else "unqualified"
+    return result

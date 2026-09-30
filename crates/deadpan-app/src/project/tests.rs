@@ -11,6 +11,7 @@ use deadpan_store::{AccessMode, ProjectStore};
 use super::*;
 
 mod gain;
+mod headless;
 mod moment;
 mod pause;
 mod render;
@@ -643,10 +644,12 @@ fn shutdown_finishes_an_admitted_command_before_releasing_the_store() {
     let path = scratch.path().join("admitted.deadpan");
     let shared = Arc::new(Shared {
         busy: AtomicBool::new(false),
+        preview_active: AtomicBool::new(false),
         stopping: AtomicBool::new(false),
         shutdown_complete: AtomicBool::new(false),
         render_poll_paused: AtomicBool::new(false),
         render_commit_refresh_failure: AtomicBool::new(false),
+        host_refresh_failure: AtomicBool::new(false),
         update: Mutex::new(None),
         wake: Arc::new(|| {}),
     });
@@ -915,10 +918,12 @@ impl Harness {
     fn with_library(library: Option<ProjectLibrary>) -> Self {
         let shared = Arc::new(Shared {
             busy: AtomicBool::new(false),
+            preview_active: AtomicBool::new(false),
             stopping: AtomicBool::new(false),
             shutdown_complete: AtomicBool::new(false),
             render_poll_paused: AtomicBool::new(false),
             render_commit_refresh_failure: AtomicBool::new(false),
+            host_refresh_failure: AtomicBool::new(false),
             update: Mutex::new(None),
             wake: Arc::new(|| {}),
         });

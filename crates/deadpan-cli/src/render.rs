@@ -326,7 +326,7 @@ impl PublicRenderError {
         if matches!(error, StoreError::AlreadyOpen) {
             return Self::new(
                 "ProjectLocked",
-                "Another process owns this project. Close it before headless rendering; local host routing is not implemented yet.",
+                "Another process owns this project; use its authenticated endpoint when available.",
             );
         }
         let mut value = Self::new(error.code(), &error);

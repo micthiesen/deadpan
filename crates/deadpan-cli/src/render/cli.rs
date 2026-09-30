@@ -19,6 +19,8 @@ const OUTPUT_WAIT: Duration = Duration::from_secs(1);
 const PROGRESS_INTERVAL: Duration = Duration::from_millis(250);
 const POLL_INTERVAL: Duration = Duration::from_millis(10);
 
+mod live;
+
 #[derive(Debug)]
 enum Invocation {
     Start {
@@ -160,7 +162,7 @@ fn parse(arguments: &[&str]) -> Result<(PathBuf, Invocation), PublicRenderError>
             }
             _ => {
                 return Err(PublicRenderError::invalid(
-                    "Use render cancel PROJECT --json REQUEST; remote cancellation requires the future host transport",
+                    "Use render cancel PROJECT --json REQUEST with the exact live workflow target",
                 ));
             }
         }
@@ -230,13 +232,13 @@ fn read_json(path: &Path) -> Result<RenderRequest, PublicRenderError> {
     RenderRequest::from_json(&bytes)
 }
 
-fn open_writer(package: &Path) -> Result<ProjectStore, PublicRenderError> {
+fn open_writer(package: &Path) -> Result<ProjectStore, StoreError> {
     match ProjectStore::open(package, AccessMode::ReadWrite) {
         Err(StoreError::MigrationRequired(_)) => {
-            ProjectStore::migrate(package).map_err(PublicRenderError::store)?;
-            ProjectStore::open(package, AccessMode::ReadWrite).map_err(PublicRenderError::store)
+            ProjectStore::migrate(package)?;
+            ProjectStore::open(package, AccessMode::ReadWrite)
         }
-        result => result.map_err(PublicRenderError::store),
+        result => result,
     }
 }
 
@@ -276,18 +278,39 @@ pub(crate) fn run(arguments: &[&str]) -> Result<(), PublicRenderError> {
         }
         _ => None,
     };
+    let signals = Signals::register()?;
+    let mut error_output = JsonOutput::stderr().ok();
+    run_request(
+        package,
+        invocation,
+        parsed,
+        &signals.cancelled,
+        &mut output,
+        &mut error_output,
+    )
+}
+
+fn run_request(
+    package: PathBuf,
+    invocation: Invocation,
+    parsed: Option<RenderRequest>,
+    cancelled: &AtomicBool,
+    output: &mut JsonOutput,
+    error_output: &mut Option<JsonOutput>,
+) -> Result<(), PublicRenderError> {
     if parsed
         .as_ref()
         .is_some_and(|request| matches!(request.operation, RenderOperation::Cancel { .. }))
     {
-        let request = parsed.as_ref().expect("cancel request checked");
-        let store =
-            ProjectStore::open(&package, AccessMode::ReadOnly).map_err(PublicRenderError::store)?;
-        check_context(&store, &request.context, false)?;
-        return Err(PublicRenderError::new(
-            "RenderOwnerUnavailable",
-            "Send SIGINT/SIGTERM to the running headless render. Cross-process cancellation requires local host routing, which is not implemented yet.",
-        ));
+        // A remote cancellation must never open a writer and trigger recovery.
+        return live::run(
+            &package,
+            invocation,
+            parsed,
+            cancelled,
+            output,
+            error_output,
+        );
     }
     if !cfg!(target_os = "macos") {
         return Err(PublicRenderError::new(
@@ -295,68 +318,23 @@ pub(crate) fn run(arguments: &[&str]) -> Result<(), PublicRenderError> {
             "Automatic rendering requires the qualified macOS runtime and recoverable APFS publication path",
         ));
     }
-    let signals = Signals::register()?;
-    let mut store = open_writer(&package)?;
+    let mut store = match open_writer(&package) {
+        Ok(store) => store,
+        Err(StoreError::AlreadyOpen) => {
+            return live::run(
+                &package,
+                invocation,
+                parsed,
+                cancelled,
+                output,
+                error_output,
+            );
+        }
+        Err(error) => return Err(PublicRenderError::store(error)),
+    };
     let document = store.snapshot().map_err(PublicRenderError::store)?;
     let context = RenderContext::from_document(&document);
-    let request = if let Some(request) = parsed {
-        request
-    } else {
-        let (context, operation) = match invocation {
-            Invocation::Start {
-                directory,
-                name,
-                expected,
-            } => {
-                let mut context = context;
-                if let Some(expected) = expected {
-                    context.revision_id = expected;
-                }
-                (
-                    context,
-                    RenderOperation::Start {
-                        destination: destination(&directory, name.as_deref())?,
-                    },
-                )
-            }
-            Invocation::Retry {
-                job,
-                checkpoint,
-                directory,
-                name,
-            } => {
-                let destination = destination(&directory, name.as_deref())?;
-                (
-                    context,
-                    match checkpoint {
-                        Some(encoding_attempt_id) => RenderOperation::RetryCheckpoint {
-                            job_id: job,
-                            encoding_attempt_id,
-                            destination,
-                        },
-                        None => RenderOperation::Reencode {
-                            job_id: job,
-                            destination,
-                        },
-                    },
-                )
-            }
-            Invocation::Reconcile(publication_id) => {
-                (context, RenderOperation::Reconcile { publication_id })
-            }
-            _ => {
-                return Err(PublicRenderError::invalid(
-                    "invalid closed-project render invocation",
-                ));
-            }
-        };
-        RenderRequest {
-            schema_version: SCHEMA_VERSION,
-            request_id: fresh_job()?,
-            context,
-            operation,
-        }
-    };
+    let request = invocation_request(invocation, parsed, context)?;
     check_context(
         &store,
         &request.context,
@@ -365,7 +343,7 @@ pub(crate) fn run(arguments: &[&str]) -> Result<(), PublicRenderError> {
     if matches!(request.operation, RenderOperation::Start { .. }) {
         output_summary(&document)?;
     }
-    if signals.cancelled.load(Ordering::Acquire) {
+    if cancelled.load(Ordering::Acquire) {
         return Err(PublicRenderError::new(
             "Cancelled",
             "Cancelled before render admission",
@@ -431,16 +409,66 @@ pub(crate) fn run(arguments: &[&str]) -> Result<(), PublicRenderError> {
             })
             .err();
     }
-    let mut error_output = JsonOutput::stderr().ok();
     pump(
         &mut workflow,
         &mut store,
         (&request.context, &request.request_id),
-        &signals.cancelled,
-        &mut output,
-        &mut error_output,
+        cancelled,
+        output,
+        error_output,
         failure,
     )
+}
+
+fn invocation_request(
+    invocation: Invocation,
+    parsed: Option<RenderRequest>,
+    mut context: RenderContext,
+) -> Result<RenderRequest, PublicRenderError> {
+    if let Some(request) = parsed {
+        return Ok(request);
+    }
+    let operation = match invocation {
+        Invocation::Start {
+            directory,
+            name,
+            expected,
+        } => {
+            if let Some(expected) = expected {
+                context.revision_id = expected;
+            }
+            RenderOperation::Start {
+                destination: destination(&directory, name.as_deref())?,
+            }
+        }
+        Invocation::Retry {
+            job,
+            checkpoint,
+            directory,
+            name,
+        } => {
+            let destination = destination(&directory, name.as_deref())?;
+            match checkpoint {
+                Some(encoding_attempt_id) => RenderOperation::RetryCheckpoint {
+                    job_id: job,
+                    encoding_attempt_id,
+                    destination,
+                },
+                None => RenderOperation::Reencode {
+                    job_id: job,
+                    destination,
+                },
+            }
+        }
+        Invocation::Reconcile(publication_id) => RenderOperation::Reconcile { publication_id },
+        _ => return Err(PublicRenderError::invalid("invalid render invocation")),
+    };
+    Ok(RenderRequest {
+        schema_version: SCHEMA_VERSION,
+        request_id: fresh_job()?,
+        context,
+        operation,
+    })
 }
 
 fn pump(
@@ -517,6 +545,10 @@ fn pump(
     if let Some(failure) = failure {
         return Err(failure);
     }
+    finish_result(&status)
+}
+
+fn finish_result(status: &RenderStatus) -> Result<(), PublicRenderError> {
     match status.outcome {
         Some(WorkflowOutcome::Published) => Ok(()),
         Some(WorkflowOutcome::Cancelled) => Err(PublicRenderError::new(

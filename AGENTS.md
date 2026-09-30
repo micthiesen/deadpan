@@ -303,7 +303,17 @@ is alive. Separate render status from editor command feedback. Native Render
 captures preview decisions after field input and uses the exact durable commit
 receipt. Closed-project headless Render owns its writer through cleanup; bounded
 output failures and signals request cancellation without bypassing drain. Native
-persisted-job recovery and authenticated open-project routing remain open.
+persisted-job recovery remains open.
+
+Open-project commands use the [authenticated writer endpoint](docs/LIVE_PROJECT.md).
+Bind discovery to the actual package and held writer; revoke it before unlocking.
+Never log its secret, rediscover after admission, or replay after an unknown
+delivery outcome. Preserve durable receipts across UI refresh and bounded reply
+failures. Replies cannot consume or overwrite unread native commit continuations.
+Remote Render refuses temporary previews and retains its exact target through
+edits and cancellation; a separate canceller cannot release its observer's result.
+Original retention, relinking, registration and checkpoints still need routing
+through bounded preparation and exact owner/session completion.
 
 Database schema 42 stores core schema 33 and retains operational generation requests,
 plus an optional validated single-Original workflow profile. Use the dedicated

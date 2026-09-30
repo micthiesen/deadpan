@@ -1,0 +1,11 @@
+{
+  "protocol": 1,
+  "project_id": "project-picture-qualification",
+  "expected_revision": "ab2c271a-ff27-414f-a21c-0863954e758e",
+  "new_revision": "b0fa54fd-14d0-49c7-8c44-79363f2b0fc8",
+  "command": {
+    "command": "rename",
+    "node": "freeze",
+    "label": "IPC alias owner confirmed"
+  }
+}

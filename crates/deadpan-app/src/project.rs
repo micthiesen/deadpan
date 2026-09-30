@@ -158,18 +158,10 @@ pub enum ProjectRenderOperation {
         request: deadpan_cli::encoded_render::workflow::StartRender,
         limits: ProjectRenderLimits,
     },
-    #[cfg_attr(
-        not(test),
-        expect(dead_code, reason = "checkpoint recovery UI remains open")
-    )]
     Retry {
         request: deadpan_cli::encoded_render::workflow::RetryRender,
         limits: ProjectRenderLimits,
     },
-    #[cfg_attr(
-        not(test),
-        expect(dead_code, reason = "publication recovery UI remains open")
-    )]
     Reconcile {
         request: deadpan_cli::encoded_render::workflow::ReconcileRender,
         limits: ProjectRenderLimits,
@@ -429,12 +421,15 @@ pub enum ProjectRequest {
 
 struct Shared {
     busy: AtomicBool,
+    preview_active: AtomicBool,
     stopping: AtomicBool,
     shutdown_complete: AtomicBool,
     #[cfg(test)]
     render_poll_paused: AtomicBool,
     #[cfg(test)]
     render_commit_refresh_failure: AtomicBool,
+    #[cfg(test)]
+    host_refresh_failure: AtomicBool,
     update: Mutex<Option<ProjectUpdate>>,
     wake: Arc<dyn Fn() + Send + Sync>,
 }
@@ -455,12 +450,15 @@ impl ProjectService {
     ) -> io::Result<Self> {
         let shared = Arc::new(Shared {
             busy: AtomicBool::new(false),
+            preview_active: AtomicBool::new(false),
             stopping: AtomicBool::new(false),
             shutdown_complete: AtomicBool::new(false),
             #[cfg(test)]
             render_poll_paused: AtomicBool::new(false),
             #[cfg(test)]
             render_commit_refresh_failure: AtomicBool::new(false),
+            #[cfg(test)]
+            host_refresh_failure: AtomicBool::new(false),
             update: Mutex::new(None),
             wake,
         });
@@ -501,6 +499,17 @@ impl ProjectService {
 
     pub fn is_busy(&self) -> bool {
         self.shared.busy.load(Ordering::Acquire)
+    }
+
+    /// Publish before opening any temporary editor, and clear only after the
+    /// UI confirms that all temporary editors have closed.
+    pub fn set_preview_active(&self, active: bool) {
+        self.shared.preview_active.store(active, Ordering::Release);
+    }
+
+    #[cfg(feature = "ui-harness")]
+    pub fn preview_active_for_check(&self) -> bool {
+        self.shared.preview_active.load(Ordering::Acquire)
     }
 
     /// Reject new commands and start a nonblocking drain of owned work.

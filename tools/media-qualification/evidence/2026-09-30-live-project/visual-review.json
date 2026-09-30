@@ -1,0 +1,25 @@
+{
+  "result": "passed within scope",
+  "images": [
+    "ui-render-final/render-030.png",
+    "ui-render-final/render-031.png",
+    "ui-render-final/render-062.png",
+    "ui-render-final/render-063.png",
+    "ui-render-final/render-104.png",
+    "ui-render-final/render-105.png",
+    "ui-render-final/render-123.png",
+    "ui-render-final/render-124.png"
+  ],
+  "reviewer": "parent via view_image, original PNG files",
+  "observations": [
+    "Decision title, explanatory text and all three choices are legible at both sizes.",
+    "Camera framing and Gain unsaved state remain visible behind the decision. Room tone decision keeps the selected Hold and destination context visible.",
+    "Export result preserves captured revision and complete wrapped movie/report paths after editor Undo.",
+    "Lavender selection, yellow cursor, separate Original/Edit clocks and footer key-label pairs follow the workspace hierarchy."
+  ],
+  "limits": [
+    "Minimum-size secondary inspector controls require scrolling; this review does not claim every inspector control is simultaneously visible.",
+    "Screenshots establish offscreen paint, not physical display color, native accessibility or IME behavior.",
+    "Gain and Room tone retain the Saved top-bar label for the committed document while separate draft/decision UI is open; do not infer that their temporary edits are saved."
+  ]
+}

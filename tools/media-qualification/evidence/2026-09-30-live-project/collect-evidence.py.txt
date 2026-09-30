@@ -1,0 +1,304 @@
+#!/usr/bin/env python3
+"""Collect this completed experiment once; no compiler, app, GUI or decoder runs.
+
+Edit collection-plan.json after qualification, especially screenshots and native
+report paths. Preserve the original failed workspace journal. A passing scoped
+CLI rerun is recorded only as that scope. This creates the repository evidence
+directory exclusively; partial output is preserved on failure.
+"""
+
+import argparse
+import hashlib
+import importlib.util
+import json
+import os
+from pathlib import Path
+import re
+import sys
+import tempfile
+
+sys.dont_write_bytecode = True
+REPO = Path('/Users/michael/Code/deadpan').resolve()
+WORK = Path('/tmp/deadpan-live-project-20260930').resolve()
+PRIOR = Path('/tmp/deadpan-durable-automatic-20260930').resolve()
+BASE = Path('/tmp/deadpan-public-render-20260930/collect-evidence.py')
+BASE_SHA256 = '01371cb861fa7a456242ceec8e7305b111f95abd80108b87df6eda0fd4782964'
+TARGET = REPO / 'tools/media-qualification/evidence/2026-09-30-live-project'
+TEXT = {'.json', '.jsonl', '.ndjson', '.log', '.md', '.txt', '.stderr', '.stdout', '.diff', '.py', '.sh', '.zsh'}
+MEDIA = {'.mp4', '.i420', '.f32'}
+
+
+def require(condition, message):
+    if not condition:
+        raise RuntimeError(message)
+
+
+def forbidden(path):
+    return any(part == '.host.json' or part.startswith('.host-')
+               or part.endswith(('.lock', '-wal', '-shm', '-journal', '.sock', '.socket', '.app'))
+               or part in ('runtime', '.runtime', 'DeadpanHost', '__pycache__')
+               or part.startswith('.deadpan-host') for part in Path(path).parts)
+
+
+def load_helpers():
+    # Reuse only the already reviewed bounded copy/hash/backup/archive helpers.
+    # Loading definitions does not call the old main or perform native work.
+    require(not BASE.is_symlink() and BASE.stat().st_size < 128 * 1024, 'Unexpected helper source')
+    require(hashlib.sha256(BASE.read_bytes()).hexdigest() == BASE_SHA256, 'Collector helper source changed')
+    specification = importlib.util.spec_from_file_location('prior_evidence_collector', BASE)
+    module = importlib.util.module_from_spec(specification)
+    specification.loader.exec_module(module)
+    module.WORK, module.PRIOR, module.TARGET = WORK, PRIOR, TARGET
+    return module
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('--plan', type=Path, default=WORK / 'collection-plan.json')
+    arguments = parser.parse_args()
+    base = load_helpers()
+    require(not TARGET.exists(), 'Evidence target already exists; preserve it: ' + str(TARGET))
+
+    def work_path(name):
+        require(not forbidden(name), 'Secret/runtime input is prohibited: ' + str(name))
+        return base.contained(WORK / base.relative_name(name), WORK)
+
+    def safe_files(root):
+        require(root.is_dir() and not root.is_symlink(), 'Unsafe or missing evidence tree: ' + str(root))
+        result = []
+        for directory, directories, names in os.walk(root, followlinks=False):
+            directories[:] = sorted(name for name in directories if not forbidden(Path(directory) / name))
+            for name in directories:
+                require(not (Path(directory) / name).is_symlink(), 'Evidence directory symlink is prohibited')
+            for name in sorted(names):
+                path = Path(directory) / name
+                if forbidden(path):
+                    continue
+                result.append(base.contained(path, root))
+                require(len(result) <= base.MAX_FILES, 'Evidence tree exceeds file count bound')
+        return sorted(result)
+
+    plan_path = base.contained(arguments.plan, WORK)
+    require(not forbidden(plan_path), 'Prohibited collection plan')
+    plan = base.read_json(plan_path)
+    require(plan['schema_version'] == 1, 'Unsupported collection plan')
+    journals = {}
+    root_files = sorted(path for path in WORK.iterdir() if path.is_file() and not forbidden(path))
+    for path in root_files:
+        if path.suffix == '.json' and not path.name.startswith('source-'):
+            row = base.read_json(base.contained(path, WORK))
+            if isinstance(row, dict) and isinstance(row.get('command'), list):
+                journals[path.stem] = row
+    for name in plan['required_passing_journals']:
+        require(name in journals and type(journals[name].get('exit_code')) is int
+                and journals[name]['exit_code'] == 0, 'Required final journal is absent or not passing: ' + name)
+        work_path(name + '.log')
+    for name in plan['preserved_failed_journals']:
+        require(name in journals and type(journals[name].get('exit_code')) is int
+                and journals[name]['exit_code'] != 0, 'Original failed journal must remain failed: ' + name)
+        work_path(name + '.log')
+    final_name = plan['final_source_journal']
+    require(final_name == 'format-final' and final_name in plan['required_passing_journals'],
+            'Final format/source journal is required')
+    final = base.source_inventory(journals[final_name])
+    for name, expected in final.items():
+        require(base.identity(base.contained(REPO / name, REPO))['sha256'] == expected,
+                'Current source differs from final inventory: ' + name)
+    source_coverage = base.source_coverage(journals, final)
+    source_coverage['all_journal_deltas'] = {}
+    for name, row in journals.items():
+        if 'source_manifest_sha256' not in row:
+            continue
+        observed = base.source_inventory(row)
+        source_coverage['all_journal_deltas'][name] = {
+            'exit_code': row.get('exit_code'), 'command': row['command'],
+            'source_manifest_sha256': row['source_manifest_sha256'],
+            'different_paths': [{'path': path, 'checked_sha256': observed.get(path),
+                                 'final_sha256': final.get(path)}
+                                for path in sorted(observed.keys() | final.keys())
+                                if observed.get(path) != final.get(path)],
+        }
+
+    def counts(name):
+        path = work_path(name + '.log')
+        file, _before = base.regular(path)
+        with file:
+            text = file.read(base.MAX_FILE + 1).decode('utf-8')
+        rows = re.findall(r'test result: (ok|FAILED)\. (\d+) passed; (\d+) failed; (\d+) ignored;', text)
+        return {'command': journals[name]['command'], 'exit_code': journals[name].get('exit_code'),
+                'result_groups': len(rows), 'passed': sum(int(row[1]) for row in rows),
+                'failed': sum(int(row[2]) for row in rows), 'ignored': sum(int(row[3]) for row in rows)}
+
+    corrections = []
+    for correction in plan['scope_corrections']:
+        failed, passing = correction['failed'], correction['passing']
+        require(failed in plan['preserved_failed_journals'] and passing in plan['required_passing_journals'],
+                'Scope correction must identify retained failed and passing journals')
+        corrections.append({**correction, 'failed_observation': counts(failed),
+                            'corrected_observation': counts(passing),
+                            'claim': 'The later command qualifies only its recorded scope; the original full run remains failed.'})
+    workflow = base.read_json(work_path('native-owner-evidence/state.json'))
+    require(all(workflow['phases'].get(name, {}).get('status') == 'passed'
+                for name in ('setup', 'edits', 'render', 'cancel', 'recovery')), 'Native-owner phases did not all pass')
+    require(workflow['concurrent_edit']['native_attempt_state_after_commit']
+            in ('queued', 'encoding', 'encoded_retained', 'verifying'), 'Concurrent edit lacks native attempt evidence')
+    decoded = base.read_json(work_path(plan['decode_report']))
+    require(decoded['result'] == 'passed' and not decoded['process_faults']
+            and all(row['passed'] for row in decoded['final_file_admission']), 'Independent decoding admission failed')
+    require(len(decoded['cases']) == 2 and all(row['result'] == 'passed' for row in decoded['cases']),
+            'Independent decoding must include initial and retry movies')
+    native = base.read_json(work_path(plan['native_report']))
+    require(native.get('result') in ('passed', 'passed within listed scope'), 'Native visual report did not pass')
+    replay_summaries = []
+    for name in plan['replay_reports']:
+        replay = base.read_json(work_path(name))
+        checks = [check for row in replay['scenarios'] for check in row['checks']]
+        require(replay['failed'] is False and checks and all(row['passed'] for row in checks),
+                'Replay/performance report has failed checks: ' + name)
+        replay_summaries.append({'path': name, 'checks': len(checks), 'scenarios': [
+            {'name': row['name'], 'skipped': row.get('skipped'), 'findings': row.get('findings')}
+            for row in replay['scenarios']]})
+    require(plan['screenshots'], 'Select final verified captures in collection-plan.json before collecting')
+    selected = []
+    for row in plan['screenshots']:
+        require(row.get('caption') and row.get('verified_state'), 'Screenshot needs caption and verified state')
+        path = work_path(row['path'])
+        require(path.suffix == '.png', 'Only selected PNG captures are admitted')
+        selected.append((path, row))
+
+    observed = {}
+
+    def observe(path, identity):
+        path = Path(path).resolve()
+        expected = {key: identity[key] for key in ('bytes', 'sha256')}
+        require(path not in observed or observed[path] == expected, 'Conflicting recorded identity: ' + str(path))
+        observed[path] = expected
+
+    for row in decoded['final_file_admission']:
+        if 'path' in row:
+            observe(row['path'], row['actual'])
+    for key in ('initial_render', 'retry', 'reconciled'):
+        status = workflow[key]
+        require(status['outcome'] == 'published' and status['cleanup_confirmed'], 'Workflow publication is not complete')
+        for kind in ('movie', 'report'):
+            receipt = status['receipt']
+            observe(receipt[kind], {'bytes': receipt[kind + '_bytes'], 'sha256': receipt[kind + '_sha256']})
+
+    class Collector(base.Collector):
+        def retain(self, source, name, **kwargs):
+            require(not forbidden(source) and not forbidden(name), 'Prohibited retained input')
+            return super().retain(source, name, **kwargs)
+
+        def artifact(self, source, name, expected=None):
+            require(not forbidden(source) and not forbidden(name), 'Prohibited archive input')
+            return super().artifact(source, name, expected)
+
+        def package(self, package, name):
+            require((package / 'project.sqlite').is_file(), 'Missing project database')
+            for path in safe_files(package):
+                member = name + '/' + path.relative_to(package).as_posix()
+                if path.suffix == '.sqlite':
+                    self.backup(path, member)
+                else:
+                    self.artifact(path, member, observed.get(path))
+
+    TARGET.mkdir(parents=True, exist_ok=False)
+    staging = Path(tempfile.mkdtemp(prefix='collector-sqlite-', dir=WORK))
+    collector = Collector(staging)
+    try:
+        for path in root_files:
+            source = base.contained(path, WORK)
+            if source.suffix in TEXT:
+                name = source.name + ('.txt' if source.suffix in ('.py', '.sh', '.zsh') else '')
+                collector.retain(source, name, force_gzip=source.name.startswith('source-'), expected=observed.get(source))
+            elif source.suffix == '.sqlite':
+                collector.backup(source, 'snapshots/' + source.name)
+        collector.retain(BASE.resolve(), 'collector-helper.py.txt', expected={'bytes': BASE.stat().st_size, 'sha256': BASE_SHA256})
+        collector.package(work_path('native.deadpan'), 'projects/native.deadpan')
+        for name in ('native-owner-evidence', 'decoded-native-owner', 'decoded-native-owner-final'):
+            root = work_path(name)
+            for source in safe_files(root):
+                relative = source.relative_to(WORK).as_posix()
+                if source.suffix == '.sqlite':
+                    collector.backup(source, relative)
+                elif source.suffix in MEDIA:
+                    collector.artifact(source, relative, observed.get(source))
+                elif source.suffix in TEXT:
+                    collector.retain(source, relative, expected=observed.get(source))
+        # Retain logs and reports from final replay/performance roots, plus their
+        # emitted movies. Do not archive every replay project or every PNG.
+        for name in plan['replay_reports']:
+            root = work_path(name).parent
+            for source in safe_files(root):
+                if any(part.endswith('.deadpan') or part == 'projects' for part in source.relative_to(root).parts):
+                    continue
+                relative = 'replays/' + source.relative_to(WORK).as_posix()
+                if source.suffix in TEXT:
+                    collector.retain(source, relative)
+                elif source.suffix in MEDIA:
+                    collector.artifact(source, relative)
+        references = {}
+        for key in ('pictures', 'audio'):
+            row = decoded['canonical_references'][key]
+            source = base.contained(row['path'], PRIOR / 'native-fixed')
+            member = 'canonical-references/' + source.name
+            collector.artifact(source, member, {key: row[key] for key in ('bytes', 'sha256')})
+            references[key] = {'member': member, 'original': row}
+        prior_inputs = [PRIOR / 'decoded-automatic-cold/report.json', PRIOR / 'independent-cold-input.json',
+                        PRIOR / 'native-fixed/report.json']
+        prior_inputs += [PRIOR / 'five-second-oracles' / name for name in
+                         ('native_audio_oracle.py', 'project_encode_oracle.py', 'avfoundation_probe.m', 'edits.json')]
+        for source in prior_inputs:
+            source = base.contained(source, PRIOR)
+            require(source in observed, 'Prior reference provenance lacks decode admission: ' + str(source))
+            name = 'reference-provenance/' + source.relative_to(PRIOR).as_posix()
+            collector.retain(source, name + ('.txt' if source.suffix in ('.py', '.m') else ''), expected=observed[source])
+        screenshot_rows = []
+        for ordinal, (source, row) in enumerate(selected, 1):
+            name = f'screenshots/{ordinal:02d}-' + source.name
+            collector.retain(source, name)
+            screenshot_rows.append({**row, 'retained': name, **base.identity(source)})
+        base.write_json(TARGET / 'screenshots.json', screenshot_rows)
+        collector.finish_archive()
+        base.write_json(TARGET / 'source-coverage.json', source_coverage)
+        base.write_json(TARGET / 'retained-files.json', collector.copied)
+        base.write_json(TARGET / 'summary.json', {
+            'schema_version': 1, 'required_passing_checks': plan['required_passing_journals'],
+            'journal_outcomes': {name: row.get('exit_code', 'unfinished') for name, row in journals.items()},
+            'scope_corrections': corrections, 'replay_and_performance': replay_summaries,
+            'native_owner': {'phases': workflow['phases'], 'commands': len(workflow['checks']),
+                             'concurrent_edit': workflow['concurrent_edit'], 'binary': workflow['binary']},
+            'native_visual': native, 'independent_decode': {
+                'result': decoded['result'], 'cases': [row['name'] for row in decoded['cases']],
+                'complete_planes': sum(len(row['planes']) for row in decoded['cases']),
+                'canonical_references': references, 'reference_reuse_proof': decoded['reference_reuse_proof'],
+                'scope': decoded['scope']},
+            'source_coverage': 'source-coverage.json', 'archive_inventory': 'native-files.json',
+            'excluded': ['host discovery and secrets', 'host runtime, sockets and locks', 'WAL/SHM/journal copies',
+                         'direct live SQLite main-file copies', 'compiled binaries/libraries', 'unselected PNGs',
+                         'per-patch repository trees and intermediate UI project packages'],
+            'workflow_script_scope_notes': workflow['limitations'],
+            'workflow_script_scope_note': 'These frozen script notes preceded the separate native UI and independent decoder checks retained above.',
+            'limitations': native['limitations'] + [
+                'No new endpoint crash or power-loss qualification, discovery publication fault injection, or exhaustive fragmented-body release matrix.',
+                'The private same-UID capability does not establish a boundary against hostile code running as the same user.',
+                'Retain, relink, registration and checkpoint CLI commands still require a closed project; native persisted-job recovery remains open.',
+                'Full mastering, HDR, representative media/runtime coverage and release qualification remain open.',
+            ],
+            'manifest_note': 'Refresh manifest.json after adding parent-owned README or other qualification prose.',
+        })
+        for name, expected in final.items():
+            require(base.identity(base.contained(REPO / name, REPO))['sha256'] == expected,
+                    'Source changed during collection: ' + name)
+        base.write_json(TARGET / 'manifest.json', {
+            path.relative_to(TARGET).as_posix(): base.identity(path) for path in safe_files(TARGET)})
+        print(json.dumps({'target': str(TARGET), 'files': len(collector.copied),
+                          'archive_members': len(collector.archive), 'screenshots': len(selected),
+                          'preserved_failed_journals': plan['preserved_failed_journals']}))
+    except Exception as error:
+        base.write_json(TARGET / 'collection-failed.json', {'error': repr(error), 'staging_preserved': str(staging)})
+        raise
+
+
+if __name__ == '__main__':
+    main()

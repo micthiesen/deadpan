@@ -1,0 +1,19 @@
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.61s
+     Running tests/host_owner.rs (target/debug/deps/host_owner-69d7fa4845374701)
+
+running 11 tests
+test read_only_store_cannot_obtain_or_use_writer_capabilities ... ok
+test shared_writable_or_symlinked_package_is_not_discovery_authority ... ok
+test replaced_lock_cannot_let_old_cleanup_erase_a_successor_registration ... ok
+test legacy_readable_lock_is_hardened_only_after_it_is_acquired ... ok
+test explicit_registration_is_private_bounded_and_removed_before_unlock ... ok
+test next_owner_can_replace_a_private_record_left_by_an_interrupted_host ... ok
+test moved_package_fails_closed_even_before_lazy_owner_activation ... ok
+test capabilities_identify_one_store_and_are_revoked_before_reopen ... ok
+test replaced_or_modified_registration_revokes_dispatch_and_survives_old_cleanup ... ok
+test unsafe_lock_entries_fail_without_following_or_waiting_on_them ... ok
+test unsafe_discovery_entries_are_rejected_without_modifying_them ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.85s
+

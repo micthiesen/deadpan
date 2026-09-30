@@ -808,9 +808,10 @@ The pinned selection policy is `AutomaticSdrV1`. See
 [automatic admission](AUTOMATIC_ENCODER_ADMISSION.md),
 [encoded output](ENCODED_RENDER.md), and [publication](RENDER_PUBLICATION.md).
 
-This entrypoint currently owns a closed project's writer for the operation.
-If the native app or another process already owns it, Render returns
-`ProjectLocked`. Routing to an open application's service remains unimplemented.
+For a closed project, this entrypoint owns the writer for the operation. When
+the native app already owns it, Render uses its authenticated local endpoint and
+observes that owner's exact workflow. A writer without an endpoint remains
+unavailable. See [open-project routing](LIVE_PROJECT.md) for ownership and limits.
 Opening an older writable package uses the backed-up migration below before
 admission. `--expected` rejects a changed current revision. Rendering never
 implicitly commits temporary Camera, gain, or room-tone previews in another app.
@@ -897,11 +898,11 @@ destination or adopt a same-byte replacement. Each operation allocates fresh
 attempt identities. Public recovery rejects historical engineering-policy jobs;
 their existing engineering APIs and evidence remain available.
 
-Cross-process `render cancel PROJECT --json REQUEST.json` has no transport yet
-and returns `RenderOwnerUnavailable`. Cancel a running headless invocation with
-SIGINT or SIGTERM. The shared adapter's live-owner cancellation API requires the
-exact job, attempt and cancellation token, so stale requests cannot cancel a
-later workflow.
+`render cancel PROJECT --json REQUEST.json` routes to the native owner and
+requires a `cancel` operation with the exact job, attempt and cancellation token.
+It never opens a writer or performs recovery. A running closed-project headless
+invocation is cancelled through SIGINT or SIGTERM; it does not advertise a native
+service endpoint. Stale requests cannot cancel a later workflow.
 
 ## History and checkpoints
 
@@ -933,8 +934,12 @@ at a time plus numeric redo IDs; its work grows with retained history. It is an
 integrity check, not an authenticity signature or a repair operation.
 
 Only one writable `ProjectStore` may own a package. Read-only dumps, validation,
-and dry runs can coexist. A second writer gets `ProjectAlreadyOpen`; routing a
-CLI request to an already-open GUI through a host socket is still outstanding.
+and dry runs can coexist. Structural commands, history and primary-geometry
+adoption route to the native writer through its authenticated endpoint. They
+retain explicit project and revision targeting and do not use GUI focus.
+Original retention, relinking, source registration and checkpoints still require
+a closed writer. The remaining routing work is tracked in
+[the open-project contract](LIVE_PROJECT.md).
 
 A checkpoint is a consistent SQLite backup including committed WAL data, stored
 under `Snapshots/`. It is not a portable project copy: the media directories are

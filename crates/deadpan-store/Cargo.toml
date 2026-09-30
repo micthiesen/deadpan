@@ -27,5 +27,8 @@ uuid.workspace = true
 [target.'cfg(target_os = "macos")'.dependencies]
 deadpan-fileclone.workspace = true
 
+[dev-dependencies]
+deadpan-native-process.workspace = true
+
 [lints]
 workspace = true

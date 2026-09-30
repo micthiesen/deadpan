@@ -19,6 +19,8 @@ pub enum StoreError {
     AlreadyOpen,
     #[error("This project was opened read-only")]
     ReadOnly,
+    #[error("Project host ownership is unavailable: {0}")]
+    HostOwner(&'static str),
     #[error("Unsupported database schema {0}; the project has not been rewritten")]
     UnsupportedSchema(u32),
     #[error(
@@ -115,6 +117,7 @@ impl StoreError {
             Self::PackageAlreadyExists(_) => "PackageAlreadyExists",
             Self::AlreadyOpen => "ProjectAlreadyOpen",
             Self::ReadOnly => "ProjectReadOnly",
+            Self::HostOwner(_) => "HostOwnerUnavailable",
             Self::UnsupportedSchema(_) => "SchemaUnsupported",
             Self::MigrationRequired(_) => "MigrationRequired",
             Self::MigrationBusy => "ProjectBusy",

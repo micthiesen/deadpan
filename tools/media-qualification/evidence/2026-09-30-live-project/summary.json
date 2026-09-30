@@ -1,0 +1,799 @@
+{
+  "archive_inventory": "native-files.json",
+  "excluded": [
+    "host discovery and secrets",
+    "host runtime, sockets and locks",
+    "WAL/SHM/journal copies",
+    "direct live SQLite main-file copies",
+    "compiled binaries/libraries",
+    "unselected PNGs",
+    "per-patch repository trees and intermediate UI project packages"
+  ],
+  "independent_decode": {
+    "canonical_references": {
+      "audio": {
+        "member": "canonical-references/automatic.reference.f32",
+        "original": {
+          "bytes": 1640040,
+          "ctime_ns": 1790771416266215266,
+          "device": 16777233,
+          "inode": 34344291,
+          "mtime_ns": 1790771416266215266,
+          "path": "/private/tmp/deadpan-durable-automatic-20260930/native-fixed/automatic.reference.f32",
+          "resolved": "/private/tmp/deadpan-durable-automatic-20260930/native-fixed/automatic.reference.f32",
+          "sha256": "038c5a2946e1a2443919375f72e20e491a58d90c945a93e902e4f81d155092e2"
+        }
+      },
+      "pictures": {
+        "member": "canonical-references/automatic.reference.i420",
+        "original": {
+          "bytes": 11059200,
+          "ctime_ns": 1790771384943790262,
+          "device": 16777233,
+          "inode": 34344290,
+          "mtime_ns": 1790771384943790262,
+          "path": "/private/tmp/deadpan-durable-automatic-20260930/native-fixed/automatic.reference.i420",
+          "resolved": "/private/tmp/deadpan-durable-automatic-20260930/native-fixed/automatic.reference.i420",
+          "sha256": "6b113ad6eb41afb546576fe1fcf1a4063b04545b4bd736a56edabbdc0aad284b"
+        }
+      }
+    },
+    "cases": [
+      "initial",
+      "retry"
+    ],
+    "complete_planes": 768,
+    "reference_reuse_proof": {
+      "all_other_document_fields_identical": true,
+      "allowed_differences": [
+        "revision_id",
+        "nodes.freeze.label"
+      ],
+      "captured_compact_serialization": {
+        "bytes": 3075,
+        "method": "Remove only ASCII JSON whitespace outside quoted strings; preserve key order and all other bytes",
+        "sha256": "aff6df4728a7882084dd4b26e598017d336c6b2b9f29307dd75c3727a2b54c05"
+      },
+      "captured_contract": {
+        "canvas": [
+          320,
+          180
+        ],
+        "color_policy": "sdr_rec709",
+        "frame_count": 128,
+        "frame_rate": {
+          "denominator": 1001,
+          "numerator": 30000
+        },
+        "project_audio_end": 205005,
+        "project_audio_start": 0,
+        "project_id": "project-picture-qualification",
+        "range": {
+          "end": 128,
+          "start": 0
+        },
+        "raster": [
+          320,
+          180
+        ],
+        "relative_aspect_error": {
+          "denominator": "1",
+          "numerator": "0"
+        },
+        "revision_id": "45c3e0f8-f634-4d26-8c74-ff3add325dd6",
+        "terminal_pts": 128128,
+        "time_base": {
+          "denominator": 30000,
+          "numerator": 1
+        }
+      },
+      "captured_document": {
+        "bytes": 6319,
+        "ctime_ns": 1790782416575705973,
+        "device": 16777233,
+        "inode": 34665150,
+        "mtime_ns": 1790782416575705973,
+        "path": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-001-before-render.stdout.json",
+        "resolved": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/render-001-before-render.stdout.json",
+        "sha256": "6580361c4e4a6675b9f2fa67c34c19d2250ef388830168a339f45dddb474a7e1"
+      },
+      "captured_document_sha256": "aff6df4728a7882084dd4b26e598017d336c6b2b9f29307dd75c3727a2b54c05",
+      "original_compact_serialization": {
+        "bytes": 3041,
+        "method": "Remove only ASCII JSON whitespace outside quoted strings; preserve key order and all other bytes",
+        "sha256": "564af137ff203f7a10344a9e50db7a4167cee0e1dfbbecf44ed3b39a3c6ef638"
+      },
+      "original_contract": {
+        "canvas": [
+          320,
+          180
+        ],
+        "color_policy": "sdr_rec709",
+        "frame_count": 128,
+        "frame_rate": {
+          "denominator": 1001,
+          "numerator": 30000
+        },
+        "project_audio_end": 205005,
+        "project_audio_start": 0,
+        "project_id": "project-picture-qualification",
+        "range": {
+          "end": 128,
+          "start": 0
+        },
+        "raster": [
+          320,
+          180
+        ],
+        "relative_aspect_error": {
+          "denominator": "1",
+          "numerator": "0"
+        },
+        "revision_id": "workflow-live-restored",
+        "terminal_pts": 128128,
+        "time_base": {
+          "denominator": 30000,
+          "numerator": 1
+        }
+      },
+      "original_document": {
+        "bytes": 6285,
+        "ctime_ns": 1790781977924981720,
+        "device": 16777233,
+        "inode": 34664157,
+        "mtime_ns": 1790781977924981720,
+        "path": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-001-initial-context.stdout.json",
+        "resolved": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-001-initial-context.stdout.json",
+        "sha256": "75ad5024639d726734c0d286c8ffb3acca7ef7eb2add945776e6bdc1dc8e3777"
+      },
+      "original_document_sha256": "564af137ff203f7a10344a9e50db7a4167cee0e1dfbbecf44ed3b39a3c6ef638",
+      "preview_history": {
+        "investigation": {
+          "bytes": 13908,
+          "ctime_ns": 1790782282243988465,
+          "device": 16777233,
+          "inode": 34664924,
+          "mtime_ns": 1790782282243988465,
+          "path": "/tmp/deadpan-live-project-20260930/native-room-tone-investigation.json",
+          "resolved": "/private/tmp/deadpan-live-project-20260930/native-room-tone-investigation.json",
+          "sha256": "49680ee448026561313e87cbc84d999efbea98549e8662ca1fe1b4bedb726ba1"
+        },
+        "only_difference_after_undo": "revision_id",
+        "restored_document_equals_captured_document": true
+      }
+    },
+    "result": "passed",
+    "scope": "Native-owner initial render and historical checkpoint retry against retained canonical inputs; prove only revision and one Freeze label differ from the original reference document, then compare all picture planes and authored PCM at observed PTS with no realignment"
+  },
+  "journal_outcomes": {
+    "cli-corrected": 0,
+    "cli-final": 0,
+    "cli-host-first": 101,
+    "focused-host-first": 101,
+    "format-final": 0,
+    "independent-decode": 1,
+    "independent-decode-final": 0,
+    "native-cancel": 0,
+    "native-edits": 0,
+    "native-recovery": 0,
+    "native-render": 0,
+    "native-smoke": 0,
+    "preview-refusal-camera": 1,
+    "preview-refusal-gain": 1,
+    "preview-refusal-room-tone": 1,
+    "store-owner-first": 101,
+    "store-owner-second": 0,
+    "ui-build": 0,
+    "ui-clippy": 0,
+    "ui-performance": 0,
+    "ui-release-build": 0,
+    "ui-render-final": 0,
+    "ui-tests": 0,
+    "workspace-clippy": 101,
+    "workspace-clippy-final": 101,
+    "workspace-clippy-verified": 0,
+    "workspace-tests": 101
+  },
+  "limitations": [
+    "Native screenshots were displayed to the operator but the available CUA API did not save image files. Deterministic Metal replay captures are retained separately.",
+    "This run does not establish CJK IME, non-US layouts, VoiceOver, physical-display color or release packaging.",
+    "The native accessibility response was truncated at items 0\u2013100 of 147. No documented pagination was available, so native Room tone modal accessibility was not established.",
+    "Live native Render progress was not observed. The CLI retained complete progress/results; the short recovery finished before Cmd-E inspection.",
+    "No new endpoint crash or power-loss qualification, discovery publication fault injection, or exhaustive fragmented-body release matrix.",
+    "The private same-UID capability does not establish a boundary against hostile code running as the same user.",
+    "Retain, relink, registration and checkpoint CLI commands still require a closed project; native persisted-job recovery remains open.",
+    "Full mastering, HDR, representative media/runtime coverage and release qualification remain open."
+  ],
+  "manifest_note": "Refresh manifest.json after adding parent-owned README or other qualification prose.",
+  "native_owner": {
+    "binary": {
+      "bytes": 240531312,
+      "device": 16777233,
+      "inode": 34663711,
+      "invoked_as": "deadpan-app",
+      "mtime_ns": 1790781779679573395,
+      "resolved_path": "/private/tmp/deadpan-live-project-20260930/Deadpan Live Project QA.app/Contents/MacOS/deadpan-app",
+      "sha256": "c02f095bd18514db60eb05c679fd4b3b30b74c0e8a28f92fba8844776efb68b7"
+    },
+    "commands": 36,
+    "concurrent_edit": {
+      "finished_monotonic": 2673912.595677666,
+      "native_attempt_state_after_commit": "queued",
+      "render_cli_still_running": true,
+      "revision": "635df15b-163c-4000-bb42-18fcffc17455",
+      "started_monotonic": 2673912.161948458
+    },
+    "phases": {
+      "cancel": {
+        "finished_unix": 1790782511.130541,
+        "started_unix": 1790782510.5669591,
+        "status": "passed"
+      },
+      "edits": {
+        "finished_unix": 1790781979.4881349,
+        "started_unix": 1790781977.8651872,
+        "status": "passed"
+      },
+      "recovery": {
+        "finished_unix": 1790782557.8232021,
+        "started_unix": 1790782555.977173,
+        "status": "passed"
+      },
+      "render": {
+        "finished_unix": 1790782471.961251,
+        "started_unix": 1790782416.507382,
+        "status": "passed"
+      },
+      "setup": {
+        "finished_unix": 1790780481.0965528,
+        "status": "passed"
+      }
+    }
+  },
+  "native_visual": {
+    "bundle_id": "dev.thiesen.deadpan.live-project-qa",
+    "limitations": [
+      "Native screenshots were displayed to the operator but the available CUA API did not save image files. Deterministic Metal replay captures are retained separately.",
+      "This run does not establish CJK IME, non-US layouts, VoiceOver, physical-display color or release packaging.",
+      "The native accessibility response was truncated at items 0\u2013100 of 147. No documented pagination was available, so native Room tone modal accessibility was not established.",
+      "Live native Render progress was not observed. The CLI retained complete progress/results; the short recovery finished before Cmd-E inspection."
+    ],
+    "native_preview_history": {
+      "before_revision": "08b4d098-3a06-49d7-b745-07c6196629b1",
+      "exact_content_restored": true,
+      "observation": "During Room tone UI exploration the operator repeated command entry and applied a draft, then used Undo. Subsequent visual inspection confirmed the Room tone draft and remote refusal; Escape cancelled it. All actual history is retained.",
+      "restored_revision": "45c3e0f8-f634-4d26-8c74-ff3add325dd6"
+    },
+    "observations": [
+      {
+        "check": "initial_open",
+        "observed": "Saved; Project opened; synthetic picture visible; 3 beats totaling 128 frames; no open error.",
+        "result": "passed"
+      },
+      {
+        "check": "remote_edit_visible",
+        "observed": "Direct Freeze Hold displays IPC native owner confirmed, duration 3 frames; timeline remains 128 frames.",
+        "result": "passed"
+      },
+      {
+        "check": "camera_draft",
+        "observed": "Native :sequence, ,f and h opened Camera on the Hold and moved Center X from 50 to 48.6 percent. Draft unsaved remained visible; no commit.",
+        "result": "passed"
+      },
+      {
+        "check": "gain_draft",
+        "observed": "Escape cancelled Camera. Native :gain opened a Gain draft on the selected Hold; Set trim proposed 1.5 dB. GAIN DRAFT UNSAVED and This beat unsaved gain remained visible. Apply was not activated.",
+        "result": "passed"
+      },
+      {
+        "check": "room_tone_draft",
+        "observed": "Visible Room tone control opened Room tone for pause DRAFT for the 3-frame Hold. In 0 and exclusive Out 4804 at 48 kHz; Apply and Cancel were painted. Remote Render was refused. Escape returned to Saved, Silence and 128 frames.",
+        "result": "passed"
+      },
+      {
+        "check": "concurrent_edit_visible",
+        "observed": "During CLI Render, native editor displayed revision 635df15b-163c-4000-bb42-18fcffc17455, Hold 33 frames, total 158 frames. No automatic Render status window appeared.",
+        "result": "passed"
+      },
+      {
+        "check": "restored_editor_and_recovery_inspection",
+        "observed": "Recovery finished in 1.97 seconds before native inspection. Cmd-E opened the normal save sheet; Cancel preserved Saved revision 90b5e85d-a443-48d2-b851-5b96c84ac9b9, silent 3-frame Hold and 128-frame timeline.",
+        "result": "passed"
+      },
+      {
+        "check": "normal_quit",
+        "observed": "Cmd-Q closed only the QA app. Native inventory no longer listed its bundle. Parent verified writer lock released, .host.json absent and exact current document unchanged.",
+        "result": "passed"
+      }
+    ],
+    "operator": "browser role via native CUA",
+    "preview_refusals": [
+      {
+        "binary_sha256": "c02f095bd18514db60eb05c679fd4b3b30b74c0e8a28f92fba8844776efb68b7",
+        "command": [
+          "deadpan-app",
+          "--headless",
+          "render",
+          "/tmp/deadpan-live-project-20260930/native.deadpan",
+          "--output",
+          "/tmp/deadpan-live-project-20260930/native-owner-evidence/movies",
+          "--name",
+          "preview-refusal-camera.mp4"
+        ],
+        "error": {
+          "code": "RenderPreviewDecisionRequired",
+          "current_revision": null,
+          "message": "Commit or discard the temporary preview in the native app before rendering"
+        },
+        "exit_code": 1,
+        "movie_exists": false,
+        "preview": "camera",
+        "result": "passed",
+        "seconds": 0.03394458396360278,
+        "unchanged_document_and_render_rows": true
+      },
+      {
+        "binary_sha256": "c02f095bd18514db60eb05c679fd4b3b30b74c0e8a28f92fba8844776efb68b7",
+        "command": [
+          "deadpan-app",
+          "--headless",
+          "render",
+          "/tmp/deadpan-live-project-20260930/native.deadpan",
+          "--output",
+          "/tmp/deadpan-live-project-20260930/native-owner-evidence/movies",
+          "--name",
+          "preview-refusal-gain.mp4"
+        ],
+        "error": {
+          "code": "RenderPreviewDecisionRequired",
+          "current_revision": null,
+          "message": "Commit or discard the temporary preview in the native app before rendering"
+        },
+        "exit_code": 1,
+        "movie_exists": false,
+        "preview": "gain",
+        "result": "passed",
+        "seconds": 0.03384679090231657,
+        "unchanged_document_and_render_rows": true
+      },
+      {
+        "binary_sha256": "c02f095bd18514db60eb05c679fd4b3b30b74c0e8a28f92fba8844776efb68b7",
+        "command": [
+          "deadpan-app",
+          "--headless",
+          "render",
+          "/tmp/deadpan-live-project-20260930/native.deadpan",
+          "--output",
+          "/tmp/deadpan-live-project-20260930/native-owner-evidence/movies",
+          "--name",
+          "preview-refusal-room-tone.mp4"
+        ],
+        "error": {
+          "code": "RenderPreviewDecisionRequired",
+          "current_revision": null,
+          "message": "Commit or discard the temporary preview in the native app before rendering"
+        },
+        "exit_code": 1,
+        "movie_exists": false,
+        "preview": "room-tone",
+        "result": "passed",
+        "seconds": 0.03147041704505682,
+        "unchanged_document_and_render_rows": true
+      }
+    ],
+    "project": "/tmp/deadpan-live-project-20260930/native.deadpan",
+    "result": "passed"
+  },
+  "replay_and_performance": [
+    {
+      "checks": 80,
+      "path": "ui-render-final/report.json",
+      "scenarios": [
+        {
+          "findings": [],
+          "name": "kestrel-shortcuts",
+          "skipped": []
+        },
+        {
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "name": "render",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ]
+    },
+    {
+      "checks": 2426,
+      "path": "ui-performance/report.json",
+      "scenarios": [
+        {
+          "findings": [],
+          "name": "kestrel-shortcuts",
+          "skipped": []
+        },
+        {
+          "findings": [],
+          "name": "workspace",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "findings": [],
+          "name": "editing",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "findings": [],
+          "name": "camera",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "findings": [],
+          "name": "menus",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "findings": [],
+          "name": "delayed-preview",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "findings": [],
+          "name": "rapid-input",
+          "skipped": [
+            "Repeat boundary checks delay delivery of real SQLite updates; the writer and production event router remain live. Physical key delivery is not exercised.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "findings": [],
+          "name": "playback-feedback",
+          "skipped": [
+            "Playback service updates are explicitly simulated. This scenario qualifies UI feedback and picture routing, not PCM preparation, device timing or listening.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "findings": [],
+          "name": "large-project",
+          "skipped": [
+            "Large-project fixture: 10,000 root Background/Silence Holds in a real SQLite package. No source media, decoding, PCM or large asset inventory is stressed.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "findings": [],
+          "name": "edit-latency",
+          "skipped": [
+            "Edit timings measure the real committed revision through offscreen GPU completion. Physical display presentation and acoustic Hold silence are outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "findings": [],
+          "name": "nested-pause",
+          "skipped": [
+            "This replay enters Sequence groups. Repeat and Retime entry, occurrence isolation, and their pause insertion remain outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "findings": [],
+          "name": "original-moment",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "findings": [],
+          "name": "original-playback",
+          "skipped": [
+            "Playback service updates are explicitly injected. This scenario exercises Original controls, clock admission, looping and picture routing, not PCM preparation, device timing or listening.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "findings": [],
+          "name": "sound-playback",
+          "skipped": [
+            "Sound registration and widgets use production services. Delivery reports are deterministic fakes, not real PCM playback, device timing, or listening evidence.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "findings": [],
+          "name": "sound-placement",
+          "skipped": [
+            "Sound placement uses real source qualification and durable project commands. This scenario does not start audio output or establish PCM, device timing, or listening evidence.",
+            "Preparing/Playing at 960 pixels uses the real transport controls with simulated delivery reports only. It does not start a device or prepare PCM.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "findings": [],
+          "name": "room-tone",
+          "skipped": [
+            "Source and committed Sequence audition use injected typed delivery updates, with real descriptor preparation and project writes. This replay does not prepare PCM, open an output device, establish acoustic quality or certify speech absence.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "findings": [],
+          "name": "gain",
+          "skipped": [
+            "Gain uses real qualified source evidence, writer previews, durable commands and canonical PCM for measured waveforms. Comparison audio delivery and labelled waveform failure replies are injected; this replay does not open an audio device or establish acoustic quality. Canonical Before/Draft mix and scheduling qualification belong to playback tests.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "findings": [],
+          "name": "retime",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "findings": [],
+          "name": "render",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "findings": [],
+          "name": "generated-picture",
+          "skipped": [
+            "Requires explicit --scenario generated-picture --project and the real bundle qualification fixture; ordinary replay does not fabricate accepted evidence."
+          ]
+        }
+      ]
+    }
+  ],
+  "required_passing_checks": [
+    "cli-corrected",
+    "cli-final",
+    "workspace-clippy-verified",
+    "ui-tests",
+    "ui-clippy",
+    "ui-build",
+    "ui-render-final",
+    "ui-release-build",
+    "ui-performance",
+    "native-smoke",
+    "format-final",
+    "independent-decode-final"
+  ],
+  "schema_version": 1,
+  "scope_corrections": [
+    {
+      "claim": "The later command qualifies only its recorded scope; the original full run remains failed.",
+      "corrected_observation": {
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "-p",
+          "deadpan-cli",
+          "--test",
+          "live_project",
+          "--test",
+          "project_commands",
+          "--test",
+          "render",
+          "--test",
+          "source_registration",
+          "--no-fail-fast"
+        ],
+        "exit_code": 0,
+        "failed": 0,
+        "ignored": 0,
+        "passed": 39,
+        "result_groups": 4
+      },
+      "failed": "workspace-tests",
+      "failed_observation": {
+        "command": [
+          "cargo",
+          "test",
+          "--workspace",
+          "--locked",
+          "--no-fail-fast"
+        ],
+        "exit_code": 101,
+        "failed": 4,
+        "ignored": 0,
+        "passed": 2518,
+        "result_groups": 174
+      },
+      "passing": "cli-corrected",
+      "scope": "Original full workspace run: 2518 passed, 4 failed. The corrected Deadpan CLI live_project, project_commands, render and source_registration targets passed 39 tests. This is a scoped correction, not a full workspace rerun; the recorded command and source inventory define coverage."
+    },
+    {
+      "claim": "The later command qualifies only its recorded scope; the original full run remains failed.",
+      "corrected_observation": {
+        "command": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0,
+        "result_groups": 0
+      },
+      "failed": "workspace-clippy",
+      "failed_observation": {
+        "command": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 101,
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0,
+        "result_groups": 0
+      },
+      "passing": "workspace-clippy-verified",
+      "scope": "Strict workspace lint rerun after simplifying the redundant connect guard and boxing ShortOperation::Edit CommandRequest without changing its serialized representation; the recorded command and source inventory define coverage."
+    },
+    {
+      "claim": "The later command qualifies only its recorded scope; the original full run remains failed.",
+      "corrected_observation": {
+        "command": [
+          "cargo",
+          "test",
+          "--locked",
+          "-p",
+          "deadpan-cli",
+          "--lib",
+          "--test",
+          "live_project",
+          "--no-fail-fast"
+        ],
+        "exit_code": 0,
+        "failed": 0,
+        "ignored": 0,
+        "passed": 216,
+        "result_groups": 2
+      },
+      "failed": "workspace-tests",
+      "failed_observation": {
+        "command": [
+          "cargo",
+          "test",
+          "--workspace",
+          "--locked",
+          "--no-fail-fast"
+        ],
+        "exit_code": 101,
+        "failed": 4,
+        "ignored": 0,
+        "passed": 2518,
+        "result_groups": 174
+      },
+      "passing": "cli-final",
+      "scope": "After the lint corrections, cargo test --locked -p deadpan-cli --lib --test live_project qualifies the CLI library and live_project integration target. The earlier cli-corrected journal retains the passing project_commands, render and source_registration target observations at their recorded source versions. This is not a full workspace rerun."
+    },
+    {
+      "claim": "The later command qualifies only its recorded scope; the original full run remains failed.",
+      "corrected_observation": {
+        "command": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0,
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0,
+        "result_groups": 0
+      },
+      "failed": "workspace-clippy-final",
+      "failed_observation": {
+        "command": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 101,
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0,
+        "result_groups": 0
+      },
+      "passing": "workspace-clippy-verified",
+      "scope": "The second lint run reached native app code and rejected checking is_some then expect on the receipt. Replaced it with if let while preserving the committed revision; full lint rerun recorded separately."
+    },
+    {
+      "claim": "The later command qualifies only its recorded scope; the original full run remains failed.",
+      "corrected_observation": {
+        "command": [
+          "python3",
+          "/tmp/deadpan-live-project-20260930/qualify-decoded.py"
+        ],
+        "exit_code": 0,
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0,
+        "result_groups": 0
+      },
+      "failed": "independent-decode",
+      "failed_observation": {
+        "command": [
+          "python3",
+          "/tmp/deadpan-live-project-20260930/qualify-decoded.py"
+        ],
+        "exit_code": 1,
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0,
+        "result_groups": 0
+      },
+      "passing": "independent-decode-final",
+      "scope": "The first decoder admission compared a pretty CLI dump hash with the compact render document hash and failed before any readers ran. The correction removes only JSON whitespace outside strings, matches original and captured compact identities, and retains exact document comparison; picture, audio, timing and trim thresholds are unchanged."
+    }
+  ],
+  "source_coverage": "source-coverage.json",
+  "workflow_script_scope_note": "These frozen script notes preceded the separate native UI and independent decoder checks retained above.",
+  "workflow_script_scope_notes": [
+    "Native app launch and visible confirmation belong to parent/browser.",
+    "Preview refusal is a separate browser phase.",
+    "No additional independent decoder, crash, or power-loss qualification."
+  ]
+}

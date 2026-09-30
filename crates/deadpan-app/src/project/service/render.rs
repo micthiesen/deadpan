@@ -12,9 +12,9 @@ use crate::project::{
 };
 
 pub(super) struct NativeRender {
-    workflow: RenderWorkflow,
-    context: ProjectRenderContext,
-    revision: RevisionId,
+    pub(super) workflow: RenderWorkflow,
+    pub(super) context: ProjectRenderContext,
+    pub(super) revision: RevisionId,
 }
 
 pub(super) struct PreparedOpen {
@@ -114,7 +114,7 @@ impl Service {
         self.capture_render_status();
     }
 
-    fn admit_render(
+    pub(super) fn admit_render(
         &mut self,
         request: &ProjectRenderRequest,
         committed_revision: &mut Option<RevisionId>,
@@ -364,7 +364,7 @@ impl Service {
         }
     }
 
-    fn capture_render_status(&mut self) {
+    pub(super) fn capture_render_status(&mut self) {
         let Some(render) = &self.render else {
             return;
         };
@@ -377,6 +377,7 @@ impl Service {
                 status: Arc::new(render.workflow.status().clone()),
             });
         }
+        self.retain_host_render_status();
     }
 
     fn render_service_error(&mut self, error: ProjectRenderError) -> bool {
@@ -455,6 +456,7 @@ impl Service {
         let outcome = match pending {
             PendingSessionChange::Close => {
                 self.cancel();
+                self.host = None;
                 self.store = None;
                 self.workspace = None;
                 self.cached = None;
@@ -464,16 +466,14 @@ impl Service {
             }
             PendingSessionChange::Shutdown => {
                 self.cancel();
+                self.host = None;
                 self.store = None;
                 self.cached = None;
                 // Retain the admitted command's immutable completion in the
                 // final mailbox; the loop releases its workspace after publish.
                 Ok(())
             }
-            PendingSessionChange::Open(prepared) => {
-                self.install_open(*prepared);
-                Ok(())
-            }
+            PendingSessionChange::Open(prepared) => self.install_open(*prepared),
             PendingSessionChange::CreateFromSource(path) => self.create_from_source(path),
             #[cfg(test)]
             PendingSessionChange::Create(path) => self.open(path, true),

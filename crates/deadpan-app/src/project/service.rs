@@ -29,6 +29,7 @@ use super::{
 type Result<T> = std::result::Result<T, String>;
 
 mod gain;
+mod headless;
 mod moment;
 mod render;
 mod room_tone;
@@ -65,6 +66,7 @@ struct Service {
     render: Option<render::NativeRender>,
     render_update: Option<super::ProjectRenderUpdate>,
     pending_session_change: Option<render::PendingSessionChange>,
+    host: Option<headless::Host>,
     #[cfg(test)]
     render_preview_refresh_failure: bool,
 }
@@ -97,6 +99,7 @@ pub(super) fn run(
         render: None,
         render_update: None,
         pending_session_change: None,
+        host: None,
         #[cfg(test)]
         render_preview_refresh_failure: false,
     };
@@ -114,6 +117,7 @@ pub(super) fn run(
         if changed {
             service.publish();
         }
+        service.pump_host();
         if service.shared.stopping.load(Ordering::Acquire)
             && !service.shared.busy.load(Ordering::Acquire)
             && service.pending_session_change.is_none()
@@ -170,6 +174,7 @@ pub(super) fn run(
     }
     service.cancel();
     // Revoke handles and release the lock before waiting for cooperative decoding.
+    service.host = None;
     service.store = None;
     service.workspace = None;
     service.cached = None;
@@ -250,6 +255,7 @@ impl Service {
             ProjectRequest::Open(path) => self.open(path, false),
             ProjectRequest::Close => {
                 self.cancel();
+                self.host = None;
                 self.store = None;
                 self.workspace = None;
                 self.cached = None;
@@ -499,13 +505,15 @@ impl Service {
             None => ProjectLibrary::documents()?,
         };
         let document = new_document()?;
-        let (package, store) = library.create(&path, &document)?;
+        let (package, mut store) = library.create(&path, &document)?;
         let next = self
             .session
             .checked_add(1)
             .ok_or("Project session identities exhausted")?;
         let workspace = snapshot(&store, next, package.canonicalize().map_err(display)?, None)?;
+        let host = headless::Host::bind(&mut store)?;
         self.cancel();
+        self.host = Some(host);
         self.store = Some(store);
         self.workspace = Some(Arc::new(workspace));
         self.session = next;
@@ -828,7 +836,7 @@ impl Service {
 
     fn open(&mut self, path: PathBuf, create: bool) -> Result<()> {
         if let Some(prepared) = self.prepare_open(path, create)? {
-            self.install_open(prepared);
+            self.install_open(prepared)?;
         } else {
             self.message = Some("Project is already open".into());
         }
@@ -881,14 +889,19 @@ impl Service {
         }))
     }
 
-    fn install_open(&mut self, prepared: render::PreparedOpen) {
+    fn install_open(&mut self, mut prepared: render::PreparedOpen) -> Result<()> {
+        // A pending Open is unadvertised until installation. Bind before
+        // replacing the old session so a failed endpoint keeps that session.
+        let host = headless::Host::bind(&mut prepared.store)?;
         self.cancel();
+        self.host = Some(host);
         self.store = Some(prepared.store);
         self.session = prepared.workspace.session;
         self.workspace = Some(Arc::new(prepared.workspace));
         self.cached = None;
         self.import = None;
         self.message = Some(prepared.message);
+        Ok(())
     }
 
     fn refresh(&mut self) -> Result<()> {

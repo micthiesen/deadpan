@@ -347,6 +347,7 @@ impl DeadpanApp {
         let controls = controls::Controls::new(&edit, frames);
         let mut waveform = waveform::Display::default();
         waveform.request(&self.playback, &base, &target.node);
+        self.service.set_preview_active(true);
         self.gain = Some(Draft {
             target,
             base,
@@ -750,6 +751,7 @@ impl DeadpanApp {
                 draft.error = Some(error);
             }
         }
+        self.service.set_preview_active(true);
         self.gain = Some(draft);
         if let Some(action) = action {
             self.gain_action(action, ui.ctx());

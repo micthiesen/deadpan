@@ -1,0 +1,43 @@
+#!/usr/bin/env python3
+"""Stage one qualified binary for native UI and headless owner checks."""
+import hashlib
+import json
+from pathlib import Path
+import plistlib
+import shutil
+
+work = Path('/tmp/deadpan-live-project-20260930')
+repo = Path('/Users/michael/Code/deadpan')
+journal = json.loads((work / 'ui-build.json').read_text())
+assert journal['exit_code'] == 0
+source = repo / 'target/debug/deadpan-app'
+bundle = work / 'Deadpan Live Project QA.app'
+executable = bundle / 'Contents/MacOS/deadpan-app'
+assert not bundle.exists(), 'Refusing to replace an existing QA app'
+executable.parent.mkdir(parents=True)
+shutil.copy2(source, executable)
+metadata = {
+    'CFBundleExecutable': 'deadpan-app',
+    'CFBundleIdentifier': 'dev.thiesen.deadpan.live-project-qa',
+    'CFBundleName': 'Deadpan Live Project QA',
+    'CFBundleDisplayName': 'Deadpan Live Project QA',
+    'CFBundlePackageType': 'APPL',
+    'CFBundleVersion': '1',
+    'NSHighResolutionCapable': True,
+}
+with (bundle / 'Contents/Info.plist').open('xb') as output:
+    plistlib.dump(metadata, output)
+def identity(path):
+    with path.open('rb') as stream:
+        return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+assert identity(source) == identity(executable)
+report = {
+    'bundle': str(bundle),
+    'executable': str(executable),
+    'source_manifest_sha256': journal['source_manifest_sha256'],
+    'sha256': identity(executable),
+    'purpose': 'Disposable native UI qualification; not release packaging',
+}
+(work / 'native-app.json').write_text(json.dumps(report, indent=2) + '\n')
+print(json.dumps(report))

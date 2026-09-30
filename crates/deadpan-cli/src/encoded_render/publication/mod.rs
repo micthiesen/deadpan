@@ -11,7 +11,7 @@ use std::{
 };
 
 use deadpan_jobs::Sha256;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256 as Hasher};
 
 use super::{EncodedRenderError, check_control, verification::VerifiedCandidate};
@@ -27,7 +27,7 @@ const BUFFER_BYTES: usize = 64 * 1024;
 // byte inspection has a separate cooperative deadline and fixed byte extents.
 const POST_COMMIT_READBACK_BUDGET: Duration = Duration::from_secs(10 * 60);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum PublicationStage {
     CapturingProvenance,
@@ -57,7 +57,8 @@ impl PublicationDiagnostic {
 
 /// Names created during an attempt. They may have changed externally; callers
 /// must revalidate identities before any later recovery or cleanup operation.
-#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct RetainedPublicationArtifacts {
     pub partial_movie: Option<PathBuf>,
     pub partial_report: Option<PathBuf>,
@@ -95,7 +96,8 @@ impl std::error::Error for PublicationFailure {
 
 /// A serialized receipt records observations. It cannot recreate a verified
 /// candidate or authorize overwriting/recovering either named file.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct PublicationReceipt {
     pub publication_id: String,
     pub movie: PathBuf,

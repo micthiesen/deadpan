@@ -1,0 +1,1988 @@
+{
+  "schema_version": 1,
+  "source": "/tmp/deadpan-durable-automatic-20260930/source-fixed.deadpan",
+  "package": "/tmp/deadpan-live-project-20260930/native.deadpan",
+  "checks": [
+    {
+      "name": "initial-context",
+      "phase": "edits",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "dump",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-001-initial-context.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-001-initial-context.stderr",
+      "started_monotonic": 2673473.179946875,
+      "expected_exit": 0,
+      "writer_held_before": false,
+      "result": "passed",
+      "pid": 78547,
+      "exit_code": 0,
+      "seconds": 0.11191408289596438,
+      "stages": []
+    },
+    {
+      "name": "initial-validation",
+      "phase": "edits",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "validate",
+        "/tmp/deadpan-live-project-20260930/native.deadpan"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-002-initial-validation.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-002-initial-validation.stderr",
+      "started_monotonic": 2673473.292450083,
+      "expected_exit": 0,
+      "writer_held_before": false,
+      "result": "passed",
+      "pid": 78548,
+      "exit_code": 0,
+      "seconds": 0.11201508296653628,
+      "stages": []
+    },
+    {
+      "name": "rename",
+      "phase": "edits",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "command",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--json",
+        "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-rename-request.json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-003-rename.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-003-rename.stderr",
+      "started_monotonic": 2673473.405089958,
+      "expected_exit": 0,
+      "writer_held_before": true,
+      "result": "passed",
+      "pid": 78549,
+      "exit_code": 0,
+      "seconds": 0.05639308271929622,
+      "stages": []
+    },
+    {
+      "name": "renamed-context",
+      "phase": "edits",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "dump",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-004-renamed-context.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-004-renamed-context.stderr",
+      "started_monotonic": 2673473.461976875,
+      "expected_exit": 0,
+      "writer_held_before": false,
+      "result": "passed",
+      "pid": 78550,
+      "exit_code": 0,
+      "seconds": 0.11196441575884819,
+      "stages": []
+    },
+    {
+      "name": "stale-rename",
+      "phase": "edits",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "command",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--json",
+        "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-stale-rename-request.json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-005-stale-rename.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-005-stale-rename.stderr",
+      "started_monotonic": 2673473.574868708,
+      "expected_exit": 1,
+      "writer_held_before": true,
+      "result": "passed",
+      "pid": 78551,
+      "exit_code": 1,
+      "seconds": 0.05676800012588501,
+      "stages": []
+    },
+    {
+      "name": "after-stale",
+      "phase": "edits",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "dump",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-006-after-stale.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-006-after-stale.stderr",
+      "started_monotonic": 2673473.632271208,
+      "expected_exit": 0,
+      "writer_held_before": false,
+      "result": "passed",
+      "pid": 78552,
+      "exit_code": 0,
+      "seconds": 0.1118999170139432,
+      "stages": []
+    },
+    {
+      "name": "stale-render",
+      "phase": "edits",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "render",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--json",
+        "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-stale-render-request.json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-007-stale-render.jsonl",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-007-stale-render.stderr",
+      "started_monotonic": 2673473.744943375,
+      "expected_exit": 1,
+      "writer_held_before": true,
+      "result": "passed",
+      "pid": 78553,
+      "exit_code": 1,
+      "seconds": 0.10857933340594172,
+      "stages": []
+    },
+    {
+      "name": "after-stale-render",
+      "phase": "edits",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "dump",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-008-after-stale-render.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-008-after-stale-render.stderr",
+      "started_monotonic": 2673473.85420625,
+      "expected_exit": 0,
+      "writer_held_before": false,
+      "result": "passed",
+      "pid": 78554,
+      "exit_code": 0,
+      "seconds": 0.11219504103064537,
+      "stages": []
+    },
+    {
+      "name": "undo-rename",
+      "phase": "edits",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "undo",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--expected",
+        "df9b9d1f-8efb-49ec-a46d-7bc6cbd8f6c6"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-009-undo-rename.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-009-undo-rename.stderr",
+      "started_monotonic": 2673473.96698325,
+      "expected_exit": 0,
+      "writer_held_before": true,
+      "result": "passed",
+      "pid": 78555,
+      "exit_code": 0,
+      "seconds": 0.11073804134503007,
+      "stages": []
+    },
+    {
+      "name": "undo-rename-dump",
+      "phase": "edits",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "dump",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-010-undo-rename-dump.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-010-undo-rename-dump.stderr",
+      "started_monotonic": 2673474.078633666,
+      "expected_exit": 0,
+      "writer_held_before": false,
+      "result": "passed",
+      "pid": 78556,
+      "exit_code": 0,
+      "seconds": 0.11249133385717869,
+      "stages": []
+    },
+    {
+      "name": "redo-rename",
+      "phase": "edits",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "redo",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--expected",
+        "15d70455-9eb4-486f-b683-8411f58b9024"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-011-redo-rename.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-011-redo-rename.stderr",
+      "started_monotonic": 2673474.191787791,
+      "expected_exit": 0,
+      "writer_held_before": true,
+      "result": "passed",
+      "pid": 78560,
+      "exit_code": 0,
+      "seconds": 0.10576849989593029,
+      "stages": []
+    },
+    {
+      "name": "redo-rename-dump",
+      "phase": "edits",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "dump",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-012-redo-rename-dump.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-012-redo-rename-dump.stderr",
+      "started_monotonic": 2673474.29827775,
+      "expected_exit": 0,
+      "writer_held_before": false,
+      "result": "passed",
+      "pid": 78561,
+      "exit_code": 0,
+      "seconds": 0.11167629063129425,
+      "stages": []
+    },
+    {
+      "name": "alias-rename",
+      "phase": "edits",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "command",
+        "/tmp/deadpan-live-project-20260930/native-alias.deadpan",
+        "--json",
+        "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-alias-rename-request.json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-013-alias-rename.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-013-alias-rename.stderr",
+      "started_monotonic": 2673474.410901833,
+      "expected_exit": 0,
+      "writer_held_before": true,
+      "result": "passed",
+      "pid": 78562,
+      "exit_code": 0,
+      "seconds": 0.05678320815786719,
+      "stages": []
+    },
+    {
+      "name": "alias-context",
+      "phase": "edits",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "dump",
+        "/tmp/deadpan-live-project-20260930/native-alias.deadpan",
+        "--json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-014-alias-context.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-014-alias-context.stderr",
+      "started_monotonic": 2673474.468450916,
+      "expected_exit": 0,
+      "writer_held_before": false,
+      "result": "passed",
+      "pid": 78563,
+      "exit_code": 0,
+      "seconds": 0.11238574981689453,
+      "stages": []
+    },
+    {
+      "name": "alias-undo",
+      "phase": "edits",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "undo",
+        "/tmp/deadpan-live-project-20260930/native-alias.deadpan",
+        "--expected",
+        "b0fa54fd-14d0-49c7-8c44-79363f2b0fc8"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-015-alias-undo.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-015-alias-undo.stderr",
+      "started_monotonic": 2673474.581669291,
+      "expected_exit": 0,
+      "writer_held_before": true,
+      "result": "passed",
+      "pid": 78564,
+      "exit_code": 0,
+      "seconds": 0.10417633410543203,
+      "stages": []
+    },
+    {
+      "name": "alias-undo-dump",
+      "phase": "edits",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "dump",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-016-alias-undo-dump.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/edits-016-alias-undo-dump.stderr",
+      "started_monotonic": 2673474.686775541,
+      "expected_exit": 0,
+      "writer_held_before": false,
+      "result": "passed",
+      "pid": 78565,
+      "exit_code": 0,
+      "seconds": 0.11236891709268093,
+      "stages": []
+    },
+    {
+      "name": "before-render",
+      "phase": "render",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "dump",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-001-before-render.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-001-before-render.stderr",
+      "started_monotonic": 2673911.82422375,
+      "expected_exit": 0,
+      "writer_held_before": false,
+      "result": "passed",
+      "pid": 79449,
+      "exit_code": 0,
+      "seconds": 0.11232195841148496,
+      "stages": []
+    },
+    {
+      "name": "before-render-validation",
+      "phase": "render",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "validate",
+        "/tmp/deadpan-live-project-20260930/native.deadpan"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-002-before-render-validation.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-002-before-render-validation.stderr",
+      "started_monotonic": 2673911.937200041,
+      "expected_exit": 0,
+      "writer_held_before": false,
+      "result": "passed",
+      "pid": 79450,
+      "exit_code": 0,
+      "seconds": 0.16673404211178422,
+      "stages": []
+    },
+    {
+      "name": "edit-hold-after-admission",
+      "phase": "render",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "command",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--json",
+        "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-edit-hold-after-admission-request.json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-004-edit-hold-after-admission.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-004-edit-hold-after-admission.stderr",
+      "started_monotonic": 2673912.162204583,
+      "expected_exit": 0,
+      "writer_held_before": true,
+      "result": "passed",
+      "pid": 79452,
+      "exit_code": 0,
+      "seconds": 0.05405433289706707,
+      "stages": []
+    },
+    {
+      "name": "attempt-after-committed-edit",
+      "phase": "render",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "render",
+        "status",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--job",
+        "615ff043-c6f2-4d26-ad9b-0abd72847680"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-005-attempt-after-committed-edit.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-005-attempt-after-committed-edit.stderr",
+      "started_monotonic": 2673912.216946208,
+      "expected_exit": 0,
+      "writer_held_before": false,
+      "result": "passed",
+      "pid": 79453,
+      "exit_code": 0,
+      "seconds": 0.10707825003191829,
+      "stages": []
+    },
+    {
+      "name": "changed-after-admission",
+      "phase": "render",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "dump",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-006-changed-after-admission.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-006-changed-after-admission.stderr",
+      "started_monotonic": 2673912.324912291,
+      "expected_exit": 0,
+      "writer_held_before": false,
+      "result": "passed",
+      "pid": 79454,
+      "exit_code": 0,
+      "seconds": 0.1069876248948276,
+      "stages": []
+    },
+    {
+      "name": "changed-validation",
+      "phase": "render",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "validate",
+        "/tmp/deadpan-live-project-20260930/native.deadpan"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-007-changed-validation.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-007-changed-validation.stderr",
+      "started_monotonic": 2673912.432780291,
+      "expected_exit": 0,
+      "writer_held_before": false,
+      "result": "passed",
+      "pid": 79455,
+      "exit_code": 0,
+      "seconds": 0.1623433749191463,
+      "stages": []
+    },
+    {
+      "name": "immutable-render",
+      "phase": "render",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "render",
+        "/tmp/deadpan-live-project-20260930/native-alias.deadpan",
+        "--output",
+        "/tmp/deadpan-live-project-20260930/native-owner-evidence/movies",
+        "--name",
+        "native-initial.mp4",
+        "--expected",
+        "45c3e0f8-f634-4d26-8c74-ff3add325dd6"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-003-immutable-render.jsonl",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-003-immutable-render.stderr",
+      "started_monotonic": 2673912.104606291,
+      "expected_exit": 0,
+      "writer_held_before": true,
+      "result": "passed",
+      "pid": 79451,
+      "exit_code": 0,
+      "seconds": 54.611177375074476,
+      "stages": [
+        "capturing",
+        "qualifying",
+        "encoding",
+        "verifying",
+        "preparing_publication",
+        "finished"
+      ]
+    },
+    {
+      "name": "after-render",
+      "phase": "render",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "dump",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-008-after-render.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-008-after-render.stderr",
+      "started_monotonic": 2673966.718521,
+      "expected_exit": 0,
+      "writer_held_before": false,
+      "result": "passed",
+      "pid": 79577,
+      "exit_code": 0,
+      "seconds": 0.11492179101333022,
+      "stages": []
+    },
+    {
+      "name": "undo-concurrent-hold",
+      "phase": "render",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "undo",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--expected",
+        "635df15b-163c-4000-bb42-18fcffc17455"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-009-undo-concurrent-hold.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-009-undo-concurrent-hold.stderr",
+      "started_monotonic": 2673966.834193291,
+      "expected_exit": 0,
+      "writer_held_before": true,
+      "result": "passed",
+      "pid": 79578,
+      "exit_code": 0,
+      "seconds": 0.10772449988871813,
+      "stages": []
+    },
+    {
+      "name": "undo-concurrent-hold-dump",
+      "phase": "render",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "dump",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-010-undo-concurrent-hold-dump.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-010-undo-concurrent-hold-dump.stderr",
+      "started_monotonic": 2673966.943013583,
+      "expected_exit": 0,
+      "writer_held_before": false,
+      "result": "passed",
+      "pid": 79579,
+      "exit_code": 0,
+      "seconds": 0.11257941694930196,
+      "stages": []
+    },
+    {
+      "name": "restored-validation",
+      "phase": "render",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "validate",
+        "/tmp/deadpan-live-project-20260930/native.deadpan"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-011-restored-validation.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/render-011-restored-validation.stderr",
+      "started_monotonic": 2673967.056367291,
+      "expected_exit": 0,
+      "writer_held_before": false,
+      "result": "passed",
+      "pid": 79580,
+      "exit_code": 0,
+      "seconds": 0.16676483396440744,
+      "stages": []
+    },
+    {
+      "name": "before-cancel",
+      "phase": "cancel",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "dump",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-001-before-cancel.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-001-before-cancel.stderr",
+      "started_monotonic": 2674005.829823,
+      "expected_exit": 0,
+      "writer_held_before": false,
+      "result": "passed",
+      "pid": 79688,
+      "exit_code": 0,
+      "seconds": 0.11188733298331499,
+      "stages": []
+    },
+    {
+      "name": "stale-cancel",
+      "phase": "cancel",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "render",
+        "cancel",
+        "/tmp/deadpan-live-project-20260930/native-alias.deadpan",
+        "--json",
+        "/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-stale-cancel-request.json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-003-stale-cancel.jsonl",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-003-stale-cancel.stderr",
+      "started_monotonic": 2674006.0494775,
+      "expected_exit": 1,
+      "writer_held_before": true,
+      "result": "passed",
+      "pid": 79690,
+      "exit_code": 1,
+      "seconds": 0.057358500082045794,
+      "stages": []
+    },
+    {
+      "name": "exact-cancel",
+      "phase": "cancel",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "render",
+        "cancel",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--json",
+        "/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-exact-cancel-request.json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-004-exact-cancel.jsonl",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-004-exact-cancel.stderr",
+      "started_monotonic": 2674006.108327041,
+      "expected_exit": 1,
+      "writer_held_before": true,
+      "result": "passed",
+      "pid": 79691,
+      "exit_code": 1,
+      "seconds": 0.16626354213804007,
+      "stages": [
+        "cancelling",
+        "finished"
+      ]
+    },
+    {
+      "name": "cancelled-start",
+      "phase": "cancel",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "render",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--output",
+        "/tmp/deadpan-live-project-20260930/native-owner-evidence/movies",
+        "--name",
+        "native-cancelled.mp4"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-002-cancelled-start.jsonl",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-002-cancelled-start.stderr",
+      "started_monotonic": 2674005.942486958,
+      "expected_exit": 1,
+      "writer_held_before": true,
+      "result": "passed",
+      "pid": 79689,
+      "exit_code": 1,
+      "seconds": 0.334222249686718,
+      "stages": [
+        "capturing",
+        "cancelling",
+        "finished"
+      ]
+    },
+    {
+      "name": "after-cancel",
+      "phase": "cancel",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "dump",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-005-after-cancel.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/cancel-005-after-cancel.stderr",
+      "started_monotonic": 2674006.278373708,
+      "expected_exit": 0,
+      "writer_held_before": false,
+      "result": "passed",
+      "pid": 79692,
+      "exit_code": 0,
+      "seconds": 0.11376470793038607,
+      "stages": []
+    },
+    {
+      "name": "before-recovery",
+      "phase": "recovery",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "dump",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/recovery-001-before-recovery.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/recovery-001-before-recovery.stderr",
+      "started_monotonic": 2674051.239619333,
+      "expected_exit": 0,
+      "writer_held_before": false,
+      "result": "passed",
+      "pid": 79744,
+      "exit_code": 0,
+      "seconds": 0.11188112525269389,
+      "stages": []
+    },
+    {
+      "name": "historical-retry",
+      "phase": "recovery",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "render",
+        "/tmp/deadpan-live-project-20260930/native-alias.deadpan",
+        "--json",
+        "/tmp/deadpan-live-project-20260930/native-owner-evidence/recovery-historical-retry-request.json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/recovery-002-historical-retry.jsonl",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/recovery-002-historical-retry.stderr",
+      "started_monotonic": 2674051.352452875,
+      "expected_exit": 0,
+      "writer_held_before": true,
+      "result": "passed",
+      "pid": 79745,
+      "exit_code": 0,
+      "seconds": 0.815208749845624,
+      "stages": [
+        "verifying",
+        "preparing_publication",
+        "committing_report",
+        "finished"
+      ]
+    },
+    {
+      "name": "historical-reconcile",
+      "phase": "recovery",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "render",
+        "/tmp/deadpan-live-project-20260930/native-alias.deadpan",
+        "--json",
+        "/tmp/deadpan-live-project-20260930/native-owner-evidence/recovery-historical-reconcile-request.json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/recovery-003-historical-reconcile.jsonl",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/recovery-003-historical-reconcile.stderr",
+      "started_monotonic": 2674052.170340791,
+      "expected_exit": 0,
+      "writer_held_before": true,
+      "result": "passed",
+      "pid": 79747,
+      "exit_code": 0,
+      "seconds": 0.6971747921779752,
+      "stages": [
+        "verifying",
+        "finished"
+      ]
+    },
+    {
+      "name": "after-recovery",
+      "phase": "recovery",
+      "argv": [
+        "deadpan-app",
+        "--headless",
+        "project",
+        "dump",
+        "/tmp/deadpan-live-project-20260930/native.deadpan",
+        "--json"
+      ],
+      "stdout": "/tmp/deadpan-live-project-20260930/native-owner-evidence/recovery-004-after-recovery.stdout.json",
+      "stderr": "/tmp/deadpan-live-project-20260930/native-owner-evidence/recovery-004-after-recovery.stderr",
+      "started_monotonic": 2674052.87054025,
+      "expected_exit": 0,
+      "writer_held_before": false,
+      "result": "passed",
+      "pid": 79749,
+      "exit_code": 0,
+      "seconds": 0.16830129083245993,
+      "stages": []
+    }
+  ],
+  "phases": {
+    "setup": {
+      "status": "passed",
+      "finished_unix": 1790780481.0965528
+    },
+    "edits": {
+      "status": "passed",
+      "started_unix": 1790781977.8651872,
+      "finished_unix": 1790781979.4881349
+    },
+    "render": {
+      "status": "passed",
+      "started_unix": 1790782416.507382,
+      "finished_unix": 1790782471.961251
+    },
+    "cancel": {
+      "status": "passed",
+      "started_unix": 1790782510.5669591,
+      "finished_unix": 1790782511.130541
+    },
+    "recovery": {
+      "status": "passed",
+      "started_unix": 1790782555.977173,
+      "finished_unix": 1790782557.8232021
+    }
+  },
+  "limitations": [
+    "Native app launch and visible confirmation belong to parent/browser.",
+    "Preview refusal is a separate browser phase.",
+    "No additional independent decoder, crash, or power-loss qualification."
+  ],
+  "initial_document": {
+    "schema_version": 33,
+    "project_id": "project-picture-qualification",
+    "revision_id": "workflow-live-restored",
+    "presentation_basis": {
+      "width": 320,
+      "height": 180,
+      "frame_rate": {
+        "numerator": 30000,
+        "denominator": 1001
+      },
+      "color_policy": "sdr_rec709"
+    },
+    "basis_state": {
+      "rate_origin": "primary_source",
+      "geometry_origin": "primary_source",
+      "primary": {
+        "asset": "original",
+        "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+      }
+    },
+    "root": "root",
+    "nodes": {
+      "background": {
+        "label": "background",
+        "kind": {
+          "type": "hold",
+          "recipe": {
+            "duration": 3,
+            "video": {
+              "type": "background"
+            },
+            "audio": {
+              "type": "silence"
+            }
+          }
+        }
+      },
+      "fast": {
+        "label": "Retime",
+        "kind": {
+          "type": "retime",
+          "child": "source",
+          "duration": 60,
+          "mapping": {
+            "start": 0,
+            "end": 120
+          },
+          "pitch": "follow_speed"
+        }
+      },
+      "freeze": {
+        "label": "freeze",
+        "kind": {
+          "type": "hold",
+          "recipe": {
+            "picture_context": {
+              "canvases": [
+                {
+                  "width": 320,
+                  "height": 180,
+                  "fit": "fit",
+                  "layers": [
+                    {
+                      "center_x": {
+                        "numerator": "3",
+                        "denominator": "5"
+                      },
+                      "center_y": {
+                        "numerator": "2",
+                        "denominator": "5"
+                      },
+                      "scale": {
+                        "numerator": "7",
+                        "denominator": "5"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "duration": 3,
+            "video": {
+              "type": "freeze",
+              "asset": "original",
+              "timestamp": {
+                "ticks": 41041,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            },
+            "audio": {
+              "type": "silence"
+            }
+          }
+        }
+      },
+      "repeat": {
+        "label": "Repeat",
+        "kind": {
+          "type": "repeat",
+          "child": "fast",
+          "iterations": {
+            "runs": [
+              {
+                "allocation": "repeat",
+                "first": 0,
+                "count": 2
+              }
+            ]
+          },
+          "gap": {
+            "duration": 2,
+            "video": {
+              "type": "background"
+            },
+            "audio": {
+              "type": "silence"
+            }
+          }
+        }
+      },
+      "root": {
+        "label": "Sequence",
+        "kind": {
+          "type": "sequence",
+          "children": [
+            "repeat",
+            "freeze",
+            "background"
+          ]
+        }
+      },
+      "source": {
+        "label": "Full Original",
+        "kind": {
+          "type": "source",
+          "source": {
+            "duration": 120,
+            "video": {
+              "type": "stream",
+              "asset": "original",
+              "span": {
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 30000
+                  }
+                },
+                "end": {
+                  "ticks": 120120,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 30000
+                  }
+                }
+              }
+            },
+            "video_mapping": {
+              "type": "placement",
+              "start": {
+                "numerator": "0",
+                "denominator": "1"
+              },
+              "frames": {
+                "numerator": "120",
+                "denominator": "1"
+              },
+              "endpoints": "hold_adjacent"
+            },
+            "audio": {
+              "asset": "original",
+              "span": {
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                },
+                "end": {
+                  "ticks": 192192,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                }
+              }
+            },
+            "audio_mapping": {
+              "type": "placement",
+              "start": {
+                "numerator": "0",
+                "denominator": "1"
+              },
+              "frames": {
+                "numerator": "120",
+                "denominator": "1"
+              }
+            },
+            "link": "linked",
+            "audio_offset": 0
+          }
+        },
+        "framing": {
+          "value": {
+            "type": "static",
+            "pose": {
+              "center_x": {
+                "numerator": "1",
+                "denominator": "4"
+              },
+              "center_y": {
+                "numerator": "3",
+                "denominator": "4"
+              },
+              "scale": {
+                "numerator": "5",
+                "denominator": "4"
+              }
+            }
+          }
+        }
+      }
+    },
+    "assets": {
+      "original": {
+        "label": "Synthetic original",
+        "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+        "video": {
+          "start": {
+            "ticks": 0,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 30000
+            }
+          },
+          "end": {
+            "ticks": 120120,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 30000
+            }
+          }
+        },
+        "audio": {
+          "start": {
+            "ticks": 0,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 48000
+            }
+          },
+          "end": {
+            "ticks": 192192,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 48000
+            }
+          }
+        },
+        "still_image": false,
+        "frame_count": 120,
+        "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+      }
+    },
+    "marks": {},
+    "overrides": {}
+  },
+  "hold": "freeze",
+  "hold_duration": 3,
+  "copy_method": "Media/files copied; database and baseline use SQLite backup API; host records and locks excluded",
+  "initial_database_sha256": "d872d7e102e3b76104ef58906eb2ce96b3dde20cb73d2f105a84da480a58713f",
+  "binary": {
+    "invoked_as": "deadpan-app",
+    "resolved_path": "/private/tmp/deadpan-live-project-20260930/Deadpan Live Project QA.app/Contents/MacOS/deadpan-app",
+    "sha256": "c02f095bd18514db60eb05c679fd4b3b30b74c0e8a28f92fba8844776efb68b7",
+    "bytes": 240531312,
+    "device": 16777233,
+    "inode": 34663711,
+    "mtime_ns": 1790781779679573395
+  },
+  "frame_count": 128,
+  "current_document": {
+    "schema_version": 33,
+    "project_id": "project-picture-qualification",
+    "revision_id": "90b5e85d-a443-48d2-b851-5b96c84ac9b9",
+    "presentation_basis": {
+      "width": 320,
+      "height": 180,
+      "frame_rate": {
+        "numerator": 30000,
+        "denominator": 1001
+      },
+      "color_policy": "sdr_rec709"
+    },
+    "basis_state": {
+      "rate_origin": "primary_source",
+      "geometry_origin": "primary_source",
+      "primary": {
+        "asset": "original",
+        "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+      }
+    },
+    "root": "root",
+    "nodes": {
+      "background": {
+        "label": "background",
+        "kind": {
+          "type": "hold",
+          "recipe": {
+            "duration": 3,
+            "video": {
+              "type": "background"
+            },
+            "audio": {
+              "type": "silence"
+            }
+          }
+        }
+      },
+      "fast": {
+        "label": "Retime",
+        "kind": {
+          "type": "retime",
+          "child": "source",
+          "duration": 60,
+          "mapping": {
+            "start": 0,
+            "end": 120
+          },
+          "pitch": "follow_speed"
+        }
+      },
+      "freeze": {
+        "label": "IPC native owner confirmed",
+        "kind": {
+          "type": "hold",
+          "recipe": {
+            "picture_context": {
+              "canvases": [
+                {
+                  "width": 320,
+                  "height": 180,
+                  "fit": "fit",
+                  "layers": [
+                    {
+                      "center_x": {
+                        "numerator": "3",
+                        "denominator": "5"
+                      },
+                      "center_y": {
+                        "numerator": "2",
+                        "denominator": "5"
+                      },
+                      "scale": {
+                        "numerator": "7",
+                        "denominator": "5"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "duration": 3,
+            "video": {
+              "type": "freeze",
+              "asset": "original",
+              "timestamp": {
+                "ticks": 41041,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            },
+            "audio": {
+              "type": "silence"
+            }
+          }
+        }
+      },
+      "repeat": {
+        "label": "Repeat",
+        "kind": {
+          "type": "repeat",
+          "child": "fast",
+          "iterations": {
+            "runs": [
+              {
+                "allocation": "repeat",
+                "first": 0,
+                "count": 2
+              }
+            ]
+          },
+          "gap": {
+            "duration": 2,
+            "video": {
+              "type": "background"
+            },
+            "audio": {
+              "type": "silence"
+            }
+          }
+        }
+      },
+      "root": {
+        "label": "Sequence",
+        "kind": {
+          "type": "sequence",
+          "children": [
+            "repeat",
+            "freeze",
+            "background"
+          ]
+        }
+      },
+      "source": {
+        "label": "Full Original",
+        "kind": {
+          "type": "source",
+          "source": {
+            "duration": 120,
+            "video": {
+              "type": "stream",
+              "asset": "original",
+              "span": {
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 30000
+                  }
+                },
+                "end": {
+                  "ticks": 120120,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 30000
+                  }
+                }
+              }
+            },
+            "video_mapping": {
+              "type": "placement",
+              "start": {
+                "numerator": "0",
+                "denominator": "1"
+              },
+              "frames": {
+                "numerator": "120",
+                "denominator": "1"
+              },
+              "endpoints": "hold_adjacent"
+            },
+            "audio": {
+              "asset": "original",
+              "span": {
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                },
+                "end": {
+                  "ticks": 192192,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                }
+              }
+            },
+            "audio_mapping": {
+              "type": "placement",
+              "start": {
+                "numerator": "0",
+                "denominator": "1"
+              },
+              "frames": {
+                "numerator": "120",
+                "denominator": "1"
+              }
+            },
+            "link": "linked",
+            "audio_offset": 0
+          }
+        },
+        "framing": {
+          "value": {
+            "type": "static",
+            "pose": {
+              "center_x": {
+                "numerator": "1",
+                "denominator": "4"
+              },
+              "center_y": {
+                "numerator": "3",
+                "denominator": "4"
+              },
+              "scale": {
+                "numerator": "5",
+                "denominator": "4"
+              }
+            }
+          }
+        }
+      }
+    },
+    "assets": {
+      "original": {
+        "label": "Synthetic original",
+        "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+        "video": {
+          "start": {
+            "ticks": 0,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 30000
+            }
+          },
+          "end": {
+            "ticks": 120120,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 30000
+            }
+          }
+        },
+        "audio": {
+          "start": {
+            "ticks": 0,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 48000
+            }
+          },
+          "end": {
+            "ticks": 192192,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 48000
+            }
+          }
+        },
+        "still_image": false,
+        "frame_count": 120,
+        "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+      }
+    },
+    "marks": {},
+    "overrides": {}
+  },
+  "ui_confirmation": {
+    "node": "freeze",
+    "label": "IPC native owner confirmed",
+    "duration_frames": 3,
+    "instruction": "Parent/browser should confirm this direct Freeze Hold label in the native workspace."
+  },
+  "native_preview_history": {
+    "before_revision": "08b4d098-3a06-49d7-b745-07c6196629b1",
+    "restored_revision": "45c3e0f8-f634-4d26-8c74-ff3add325dd6",
+    "exact_content_restored": true,
+    "observation": "During Room tone UI exploration the operator repeated command entry and applied a draft, then used Undo. Subsequent visual inspection confirmed the Room tone draft and remote refusal; Escape cancelled it. All actual history is retained."
+  },
+  "admitted_before_edit": {
+    "context": {
+      "project_id": "project-picture-qualification",
+      "revision_id": "45c3e0f8-f634-4d26-8c74-ff3add325dd6"
+    },
+    "target": {
+      "job_id": "615ff043-c6f2-4d26-ad9b-0abd72847680",
+      "attempt_id": "b80e72bc-f256-4095-9bbc-e072e5403685",
+      "cancellation_token": "345742b7-9b1d-4182-bef5-e9a33954856f"
+    },
+    "stage": "capturing",
+    "captured_revision": "45c3e0f8-f634-4d26-8c74-ff3add325dd6",
+    "attempt_state": null,
+    "checkpoint_attempt_id": null,
+    "publication_id": null,
+    "progress": null,
+    "cancellation_requested": false,
+    "outcome": null,
+    "diagnostic": null,
+    "journal_diagnostic": null,
+    "retained": {
+      "partial_movie": null,
+      "partial_report": null,
+      "published_report": null
+    },
+    "receipt": null,
+    "observed_movie_commit": false,
+    "cleanup_confirmed": false
+  },
+  "attempt_after_committed_edit": {
+    "context": {
+      "project_id": "project-picture-qualification",
+      "revision_id": "635df15b-163c-4000-bb42-18fcffc17455"
+    },
+    "event": "stored_status",
+    "live_progress": false,
+    "page": {
+      "collection": "attempts",
+      "intent": {
+        "document_sha256": "aff6df4728a7882084dd4b26e598017d336c6b2b9f29307dd75c3727a2b54c05",
+        "job_id": "615ff043-c6f2-4d26-ad9b-0abd72847680",
+        "policy": {
+          "algorithm": "automatic_sdr_v1",
+          "schema_version": 1,
+          "selection": "automatic"
+        },
+        "project_id": "project-picture-qualification",
+        "range": {
+          "end": 128,
+          "start": 0
+        },
+        "revision_id": "45c3e0f8-f634-4d26-8c74-ff3add325dd6",
+        "schema_version": 2
+      },
+      "items": [
+        {
+          "cancellation_requested": false,
+          "checkpoint_attempt_id": null,
+          "diagnostic": null,
+          "ordinal": 1,
+          "state": "queued",
+          "target": {
+            "attempt_id": "b80e72bc-f256-4095-9bbc-e072e5403685",
+            "cancellation_token": "345742b7-9b1d-4182-bef5-e9a33954856f",
+            "job_id": "615ff043-c6f2-4d26-ad9b-0abd72847680"
+          },
+          "verification_recorded": false
+        }
+      ],
+      "next_after_attempt": null
+    },
+    "schema_version": 1
+  },
+  "concurrent_edit": {
+    "started_monotonic": 2673912.161948458,
+    "finished_monotonic": 2673912.595677666,
+    "revision": "635df15b-163c-4000-bb42-18fcffc17455",
+    "native_attempt_state_after_commit": "queued",
+    "render_cli_still_running": true
+  },
+  "initial_render": {
+    "context": {
+      "project_id": "project-picture-qualification",
+      "revision_id": "45c3e0f8-f634-4d26-8c74-ff3add325dd6"
+    },
+    "target": {
+      "job_id": "615ff043-c6f2-4d26-ad9b-0abd72847680",
+      "attempt_id": "b80e72bc-f256-4095-9bbc-e072e5403685",
+      "cancellation_token": "345742b7-9b1d-4182-bef5-e9a33954856f"
+    },
+    "stage": "finished",
+    "captured_revision": "45c3e0f8-f634-4d26-8c74-ff3add325dd6",
+    "attempt_state": "verified",
+    "checkpoint_attempt_id": "b80e72bc-f256-4095-9bbc-e072e5403685",
+    "publication_id": "90050a3b-7bde-488c-a173-1216afcec739",
+    "progress": null,
+    "cancellation_requested": false,
+    "outcome": "published",
+    "diagnostic": null,
+    "journal_diagnostic": null,
+    "retained": {
+      "partial_movie": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/.deadpan-90050a3b-7bde-488c-a173-1216afcec739.movie.partial",
+      "partial_report": null,
+      "published_report": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/deadpan-render-90050a3b-7bde-488c-a173-1216afcec739.json"
+    },
+    "receipt": {
+      "publication_id": "90050a3b-7bde-488c-a173-1216afcec739",
+      "movie": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/native-initial.mp4",
+      "report": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/deadpan-render-90050a3b-7bde-488c-a173-1216afcec739.json",
+      "movie_sha256": "d91af1cef5b01d5f15a4d5bf84e535c2017771fc83d21d71b7fcf0dcb0ceceb8",
+      "movie_bytes": 32553,
+      "report_sha256": "6a108bf4e29f33c0064250a9dee488a015fefbe26b3c717af04da75809f39ab1",
+      "report_bytes": 32633,
+      "contains_generated_pictures": false
+    },
+    "observed_movie_commit": true,
+    "cleanup_confirmed": true
+  },
+  "initial_movie": {
+    "movie": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/native-initial.mp4",
+    "report": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/deadpan-render-90050a3b-7bde-488c-a173-1216afcec739.json",
+    "sha256": "d91af1cef5b01d5f15a4d5bf84e535c2017771fc83d21d71b7fcf0dcb0ceceb8",
+    "revision": "45c3e0f8-f634-4d26-8c74-ff3add325dd6",
+    "video_frames": 128,
+    "audio_samples": 205005,
+    "evidence": "production full emitted-file verification; no additional independent decoder run"
+  },
+  "render_document": {
+    "schema_version": 33,
+    "project_id": "project-picture-qualification",
+    "revision_id": "45c3e0f8-f634-4d26-8c74-ff3add325dd6",
+    "presentation_basis": {
+      "width": 320,
+      "height": 180,
+      "frame_rate": {
+        "numerator": 30000,
+        "denominator": 1001
+      },
+      "color_policy": "sdr_rec709"
+    },
+    "basis_state": {
+      "rate_origin": "primary_source",
+      "geometry_origin": "primary_source",
+      "primary": {
+        "asset": "original",
+        "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+      }
+    },
+    "root": "root",
+    "nodes": {
+      "background": {
+        "label": "background",
+        "kind": {
+          "type": "hold",
+          "recipe": {
+            "duration": 3,
+            "video": {
+              "type": "background"
+            },
+            "audio": {
+              "type": "silence"
+            }
+          }
+        }
+      },
+      "fast": {
+        "label": "Retime",
+        "kind": {
+          "type": "retime",
+          "child": "source",
+          "duration": 60,
+          "mapping": {
+            "start": 0,
+            "end": 120
+          },
+          "pitch": "follow_speed"
+        }
+      },
+      "freeze": {
+        "label": "IPC native owner confirmed",
+        "kind": {
+          "type": "hold",
+          "recipe": {
+            "picture_context": {
+              "canvases": [
+                {
+                  "width": 320,
+                  "height": 180,
+                  "fit": "fit",
+                  "layers": [
+                    {
+                      "center_x": {
+                        "numerator": "3",
+                        "denominator": "5"
+                      },
+                      "center_y": {
+                        "numerator": "2",
+                        "denominator": "5"
+                      },
+                      "scale": {
+                        "numerator": "7",
+                        "denominator": "5"
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            "duration": 3,
+            "video": {
+              "type": "freeze",
+              "asset": "original",
+              "timestamp": {
+                "ticks": 41041,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            },
+            "audio": {
+              "type": "silence"
+            }
+          }
+        }
+      },
+      "repeat": {
+        "label": "Repeat",
+        "kind": {
+          "type": "repeat",
+          "child": "fast",
+          "iterations": {
+            "runs": [
+              {
+                "allocation": "repeat",
+                "first": 0,
+                "count": 2
+              }
+            ]
+          },
+          "gap": {
+            "duration": 2,
+            "video": {
+              "type": "background"
+            },
+            "audio": {
+              "type": "silence"
+            }
+          }
+        }
+      },
+      "root": {
+        "label": "Sequence",
+        "kind": {
+          "type": "sequence",
+          "children": [
+            "repeat",
+            "freeze",
+            "background"
+          ]
+        }
+      },
+      "source": {
+        "label": "Full Original",
+        "kind": {
+          "type": "source",
+          "source": {
+            "duration": 120,
+            "video": {
+              "type": "stream",
+              "asset": "original",
+              "span": {
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 30000
+                  }
+                },
+                "end": {
+                  "ticks": 120120,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 30000
+                  }
+                }
+              }
+            },
+            "video_mapping": {
+              "type": "placement",
+              "start": {
+                "numerator": "0",
+                "denominator": "1"
+              },
+              "frames": {
+                "numerator": "120",
+                "denominator": "1"
+              },
+              "endpoints": "hold_adjacent"
+            },
+            "audio": {
+              "asset": "original",
+              "span": {
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                },
+                "end": {
+                  "ticks": 192192,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                }
+              }
+            },
+            "audio_mapping": {
+              "type": "placement",
+              "start": {
+                "numerator": "0",
+                "denominator": "1"
+              },
+              "frames": {
+                "numerator": "120",
+                "denominator": "1"
+              }
+            },
+            "link": "linked",
+            "audio_offset": 0
+          }
+        },
+        "framing": {
+          "value": {
+            "type": "static",
+            "pose": {
+              "center_x": {
+                "numerator": "1",
+                "denominator": "4"
+              },
+              "center_y": {
+                "numerator": "3",
+                "denominator": "4"
+              },
+              "scale": {
+                "numerator": "5",
+                "denominator": "4"
+              }
+            }
+          }
+        }
+      }
+    },
+    "assets": {
+      "original": {
+        "label": "Synthetic original",
+        "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+        "video": {
+          "start": {
+            "ticks": 0,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 30000
+            }
+          },
+          "end": {
+            "ticks": 120120,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 30000
+            }
+          }
+        },
+        "audio": {
+          "start": {
+            "ticks": 0,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 48000
+            }
+          },
+          "end": {
+            "ticks": 192192,
+            "time_base": {
+              "numerator": 1,
+              "denominator": 48000
+            }
+          }
+        },
+        "still_image": false,
+        "frame_count": 120,
+        "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+      }
+    },
+    "marks": {},
+    "overrides": {}
+  },
+  "cancelled_render": {
+    "context": {
+      "project_id": "project-picture-qualification",
+      "revision_id": "90b5e85d-a443-48d2-b851-5b96c84ac9b9"
+    },
+    "target": {
+      "job_id": "3460e66f-18fc-4cba-b7b7-2fa2f2aa0fbd",
+      "attempt_id": "ffcbe302-a284-4bde-b05e-c0c4ad0f8423",
+      "cancellation_token": "86815b65-f9c5-47aa-ada9-835cc2cc224c"
+    },
+    "stage": "finished",
+    "captured_revision": "90b5e85d-a443-48d2-b851-5b96c84ac9b9",
+    "attempt_state": "cancelled",
+    "checkpoint_attempt_id": null,
+    "publication_id": null,
+    "progress": null,
+    "cancellation_requested": true,
+    "outcome": "cancelled",
+    "diagnostic": {
+      "code": "render_stage_failed",
+      "detail": "Picture preparation was cancelled."
+    },
+    "journal_diagnostic": null,
+    "retained": {
+      "partial_movie": null,
+      "partial_report": null,
+      "published_report": null
+    },
+    "receipt": null,
+    "observed_movie_commit": false,
+    "cleanup_confirmed": true
+  },
+  "separate_canceller": {
+    "context": {
+      "project_id": "project-picture-qualification",
+      "revision_id": "90b5e85d-a443-48d2-b851-5b96c84ac9b9"
+    },
+    "target": {
+      "job_id": "3460e66f-18fc-4cba-b7b7-2fa2f2aa0fbd",
+      "attempt_id": "ffcbe302-a284-4bde-b05e-c0c4ad0f8423",
+      "cancellation_token": "86815b65-f9c5-47aa-ada9-835cc2cc224c"
+    },
+    "stage": "finished",
+    "captured_revision": "90b5e85d-a443-48d2-b851-5b96c84ac9b9",
+    "attempt_state": "cancelled",
+    "checkpoint_attempt_id": null,
+    "publication_id": null,
+    "progress": null,
+    "cancellation_requested": true,
+    "outcome": "cancelled",
+    "diagnostic": {
+      "code": "render_stage_failed",
+      "detail": "Picture preparation was cancelled."
+    },
+    "journal_diagnostic": null,
+    "retained": {
+      "partial_movie": null,
+      "partial_report": null,
+      "published_report": null
+    },
+    "receipt": null,
+    "observed_movie_commit": false,
+    "cleanup_confirmed": true
+  },
+  "retry": {
+    "context": {
+      "project_id": "project-picture-qualification",
+      "revision_id": "45c3e0f8-f634-4d26-8c74-ff3add325dd6"
+    },
+    "target": {
+      "job_id": "615ff043-c6f2-4d26-ad9b-0abd72847680",
+      "attempt_id": "867414e4-ec5e-4064-a59f-a3ae18820066",
+      "cancellation_token": "ad324505-db39-4637-9afb-d5877913871e"
+    },
+    "stage": "finished",
+    "captured_revision": "45c3e0f8-f634-4d26-8c74-ff3add325dd6",
+    "attempt_state": "verified",
+    "checkpoint_attempt_id": "b80e72bc-f256-4095-9bbc-e072e5403685",
+    "publication_id": "49e4908a-6a5d-4582-8c7b-ea673a8133fc",
+    "progress": null,
+    "cancellation_requested": false,
+    "outcome": "published",
+    "diagnostic": null,
+    "journal_diagnostic": null,
+    "retained": {
+      "partial_movie": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/.deadpan-49e4908a-6a5d-4582-8c7b-ea673a8133fc.movie.partial",
+      "partial_report": null,
+      "published_report": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/deadpan-render-49e4908a-6a5d-4582-8c7b-ea673a8133fc.json"
+    },
+    "receipt": {
+      "publication_id": "49e4908a-6a5d-4582-8c7b-ea673a8133fc",
+      "movie": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/native-retry.mp4",
+      "report": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/deadpan-render-49e4908a-6a5d-4582-8c7b-ea673a8133fc.json",
+      "movie_sha256": "d91af1cef5b01d5f15a4d5bf84e535c2017771fc83d21d71b7fcf0dcb0ceceb8",
+      "movie_bytes": 32553,
+      "report_sha256": "7f6a6e49094e64e774a4414c1f8bef8c9d228aaee7e4645b1ed542f265a4c19a",
+      "report_bytes": 32631,
+      "contains_generated_pictures": false
+    },
+    "observed_movie_commit": true,
+    "cleanup_confirmed": true
+  },
+  "retry_movie": {
+    "movie": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/native-retry.mp4",
+    "report": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/deadpan-render-49e4908a-6a5d-4582-8c7b-ea673a8133fc.json",
+    "sha256": "d91af1cef5b01d5f15a4d5bf84e535c2017771fc83d21d71b7fcf0dcb0ceceb8",
+    "revision": "45c3e0f8-f634-4d26-8c74-ff3add325dd6",
+    "video_frames": 128,
+    "audio_samples": 205005,
+    "evidence": "production full emitted-file verification; no additional independent decoder run"
+  },
+  "reconciled": {
+    "context": {
+      "project_id": "project-picture-qualification",
+      "revision_id": "45c3e0f8-f634-4d26-8c74-ff3add325dd6"
+    },
+    "target": {
+      "job_id": "615ff043-c6f2-4d26-ad9b-0abd72847680",
+      "attempt_id": "5b1aeeb5-55d7-4f87-853a-3d9cfc306b0f",
+      "cancellation_token": "356590e9-5e89-4aef-9d57-6ce06a516ecd"
+    },
+    "stage": "finished",
+    "captured_revision": "45c3e0f8-f634-4d26-8c74-ff3add325dd6",
+    "attempt_state": "verified",
+    "checkpoint_attempt_id": "b80e72bc-f256-4095-9bbc-e072e5403685",
+    "publication_id": "90050a3b-7bde-488c-a173-1216afcec739",
+    "progress": null,
+    "cancellation_requested": false,
+    "outcome": "published",
+    "diagnostic": null,
+    "journal_diagnostic": null,
+    "retained": {
+      "partial_movie": null,
+      "partial_report": null,
+      "published_report": null
+    },
+    "receipt": {
+      "publication_id": "90050a3b-7bde-488c-a173-1216afcec739",
+      "movie": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/native-initial.mp4",
+      "report": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/deadpan-render-90050a3b-7bde-488c-a173-1216afcec739.json",
+      "movie_sha256": "d91af1cef5b01d5f15a4d5bf84e535c2017771fc83d21d71b7fcf0dcb0ceceb8",
+      "movie_bytes": 32553,
+      "report_sha256": "6a108bf4e29f33c0064250a9dee488a015fefbe26b3c717af04da75809f39ab1",
+      "report_bytes": 32633,
+      "contains_generated_pictures": false
+    },
+    "observed_movie_commit": true,
+    "cleanup_confirmed": true
+  },
+  "reconciled_movie": {
+    "movie": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/native-initial.mp4",
+    "report": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/deadpan-render-90050a3b-7bde-488c-a173-1216afcec739.json",
+    "sha256": "d91af1cef5b01d5f15a4d5bf84e535c2017771fc83d21d71b7fcf0dcb0ceceb8",
+    "revision": "45c3e0f8-f634-4d26-8c74-ff3add325dd6",
+    "video_frames": 128,
+    "audio_samples": 205005,
+    "evidence": "production full emitted-file verification; no additional independent decoder run"
+  }
+}

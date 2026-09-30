@@ -713,7 +713,7 @@ fn writer_lock_is_enforced_between_processes_but_readers_and_dry_run_work() -> R
     assert!(!output.status.success());
     assert_eq!(
         serde_json::from_slice::<Value>(&output.stderr)?["error"]["code"],
-        "ProjectAlreadyOpen"
+        "HostOwnerUnavailable"
     );
     assert_eq!(writer.snapshot()?, document);
     Ok(())

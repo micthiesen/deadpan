@@ -359,6 +359,7 @@ impl DeadpanApp {
             self.error = Some("Select a beat in the current group to frame.".into());
             return;
         };
+        self.service.set_preview_active(true);
         self.camera_pending = Some(CameraPending {
             action,
             session: workspace.session,
@@ -416,6 +417,7 @@ impl DeadpanApp {
         self.error = None;
         self.message = None;
         if action == FramingAction::EnterCamera {
+            self.service.set_preview_active(true);
             self.camera = Some(session);
             self.pane = Pane::Viewer;
             context.memory_mut(|memory| memory.request_focus(pane_id(Pane::Viewer)));
@@ -602,6 +604,7 @@ impl DeadpanApp {
                     Ok(framing) => {
                         if self.submit_framing(&camera, framing) {
                             camera.committing = true;
+                            self.service.set_preview_active(true);
                             self.camera = Some(camera);
                         } else {
                             let _ = self.presentation.set_framing_pose(
@@ -896,6 +899,7 @@ impl DeadpanApp {
                 None
             }
         });
+        self.service.set_preview_active(true);
         self.camera = Some(camera);
         if let Some(effect) = effect {
             self.camera_effect(effect, ui.ctx());

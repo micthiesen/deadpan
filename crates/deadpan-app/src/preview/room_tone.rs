@@ -235,6 +235,7 @@ impl DeadpanApp {
         self.cancel_camera();
         self.help_open = false;
         self.bindings.clear();
+        self.service.set_preview_active(true);
         self.room_tone = Some(Draft {
             target,
             prepared: None,
@@ -491,6 +492,7 @@ impl DeadpanApp {
             draft.cursor = 0;
             self.stop_playback();
         }
+        self.service.set_preview_active(true);
         self.room_tone = Some(draft);
         if let Some(action) = action {
             self.room_tone_action(action, context);

@@ -5,8 +5,9 @@ per-encoding decisions and operational attempt history. Core document schema
 remains 33. These library APIs support
 retaining a completed encode and retrying verification after restart. A shared
 workflow coordinator connects these stages to the native project service.
-Native controls and closed-project headless commands use this coordinator;
-open-project routing, native recovery and scheduling remain open.
+Native controls and headless commands use this coordinator. Commands for an
+open native project route through its [authenticated owner](LIVE_PROJECT.md).
+Native persisted-job recovery and scheduling remain open.
 The [publication journal](RENDER_PUBLICATION.md#durable-publication-journal)
 uses these checkpoints for explicit destination reconciliation.
 
@@ -187,9 +188,16 @@ output backpressure request cancellation; the owner continues draining worker
 replies. Terminal/recovery events make a bounded stderr fallback attempt if
 stdout fails. Neither output failure nor unconfirmed cleanup authorizes release.
 
+When the native app owns the writer, the CLI captures that owner's authenticated
+endpoint and observes the exact admitted workflow. Remote admission refuses an
+unresolved temporary preview. A separate cancel command must name the full
+workflow target and cannot discard the initiating client's retained result.
+Owner loss cannot trigger local fallback or replay. See
+[open-project commands](LIVE_PROJECT.md) for transport and observation limits.
+
 The native UI currently exposes new rendering and live cancellation. Listing and
-recovering persisted jobs in the native UI, authenticated routing into an open
-application, full mastering/effects, HDR and release qualification remain open.
+recovering persisted jobs in the native UI, full mastering/effects, HDR and
+release qualification remain open.
 
 ## Automatic admission and recovery
 
@@ -238,5 +246,5 @@ an edited Source project and an accepted Generated project.
 Destination publication has a separate durable journal and explicit reconciliation
 protocol. It requires a new live verifier result; a stored Verified row alone
 never authorizes adoption of destination bytes. Native recovery controls,
-open-project host routing, full mastering/effects, HDR and release qualification
+full mastering/effects, HDR and release qualification
 remain required; no DP requirement or delivery gate is completed here.

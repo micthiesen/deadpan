@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "required_passing_journals": [
+    "cli-corrected",
+    "cli-final",
+    "workspace-clippy-verified",
+    "ui-tests",
+    "ui-clippy",
+    "ui-build",
+    "ui-render-final",
+    "ui-release-build",
+    "ui-performance",
+    "native-smoke",
+    "format-final",
+    "independent-decode-final"
+  ],
+  "preserved_failed_journals": [
+    "workspace-tests",
+    "workspace-clippy",
+    "workspace-clippy-final",
+    "independent-decode"
+  ],
+  "scope_corrections": [
+    {
+      "failed": "workspace-tests",
+      "passing": "cli-corrected",
+      "scope": "Original full workspace run: 2518 passed, 4 failed. The corrected Deadpan CLI live_project, project_commands, render and source_registration targets passed 39 tests. This is a scoped correction, not a full workspace rerun; the recorded command and source inventory define coverage."
+    },
+    {
+      "failed": "workspace-clippy",
+      "passing": "workspace-clippy-verified",
+      "scope": "Strict workspace lint rerun after simplifying the redundant connect guard and boxing ShortOperation::Edit CommandRequest without changing its serialized representation; the recorded command and source inventory define coverage."
+    },
+    {
+      "failed": "workspace-tests",
+      "passing": "cli-final",
+      "scope": "After the lint corrections, cargo test --locked -p deadpan-cli --lib --test live_project qualifies the CLI library and live_project integration target. The earlier cli-corrected journal retains the passing project_commands, render and source_registration target observations at their recorded source versions. This is not a full workspace rerun."
+    },
+    {
+      "failed": "workspace-clippy-final",
+      "passing": "workspace-clippy-verified",
+      "scope": "The second lint run reached native app code and rejected checking is_some then expect on the receipt. Replaced it with if let while preserving the committed revision; full lint rerun recorded separately."
+    },
+    {
+      "failed": "independent-decode",
+      "passing": "independent-decode-final",
+      "scope": "The first decoder admission compared a pretty CLI dump hash with the compact render document hash and failed before any readers ran. The correction removes only JSON whitespace outside strings, matches original and captured compact identities, and retains exact document comparison; picture, audio, timing and trim thresholds are unchanged."
+    }
+  ],
+  "final_source_journal": "format-final",
+  "decode_report": "decoded-native-owner-final/report.json",
+  "native_report": "native-ui-report.json",
+  "replay_reports": [
+    "ui-render-final/report.json",
+    "ui-performance/report.json"
+  ],
+  "screenshots": [
+    {
+      "path": "ui-render-final/render-030.png",
+      "caption": "Camera at 960x640",
+      "verified_state": "Visible commit, discard and keep-editing choices for the pending preview."
+    },
+    {
+      "path": "ui-render-final/render-031.png",
+      "caption": "Camera at 1280x820",
+      "verified_state": "Visible commit, discard and keep-editing choices for the pending preview."
+    },
+    {
+      "path": "ui-render-final/render-062.png",
+      "caption": "Gain at 960x640",
+      "verified_state": "Visible commit, discard and keep-editing choices for the pending preview."
+    },
+    {
+      "path": "ui-render-final/render-063.png",
+      "caption": "Gain at 1280x820",
+      "verified_state": "Visible commit, discard and keep-editing choices for the pending preview."
+    },
+    {
+      "path": "ui-render-final/render-104.png",
+      "caption": "Room tone at 960x640",
+      "verified_state": "Visible commit, discard and keep-editing choices for the pending preview."
+    },
+    {
+      "path": "ui-render-final/render-105.png",
+      "caption": "Room tone at 1280x820",
+      "verified_state": "Visible commit, discard and keep-editing choices for the pending preview."
+    },
+    {
+      "path": "ui-render-final/render-123.png",
+      "caption": "Export result at 960x640",
+      "verified_state": "Verified historical movie revision and wrapped final movie/report paths remain readable after editor Undo."
+    },
+    {
+      "path": "ui-render-final/render-124.png",
+      "caption": "Export result at 1280x820",
+      "verified_state": "Verified historical movie revision and wrapped final movie/report paths remain readable after editor Undo."
+    }
+  ]
+}

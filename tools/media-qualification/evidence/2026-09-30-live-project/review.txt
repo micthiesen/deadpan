@@ -1,0 +1,27 @@
+Open-project command delivery review, 2026-09-30
+
+Independent code reviews covered store ownership/discovery, bounded transport,
+semantic routing, native service admission and exact Render observation. Surviving
+findings were fixed before the completed verification scopes: reply JSON allocation
+accounting and compact durable receipts; unread native completion protection;
+canonical package aliases; nonblocking accept under spawn-guard contention; and
+separate-canceller retention of the original observer's terminal result.
+
+The full workspace invocation exposed strict unit-variant JSON parsing and three
+obsolete bare-writer error expectations. Scoped corrections pass; the original
+full failure is retained. Subsequent lint fixes preserve the wire shape and durable
+revision behavior. No clean full-workspace rerun is claimed.
+
+The parent inspected all eight selected actual Metal PNGs at 960x640 and 1280x820.
+Decision controls, selected context, captured result revisions and wrapped output
+paths are readable. visual-review.json records secondary-inspector scrolling and
+the distinction between committed Saved state and temporary draft UI.
+
+A final independent read-only documentation/evidence audit found no material
+errors. Counts, failure scopes, same-UID trust, native progress limitations and
+remaining qualification gaps match the retained reports.
+
+The collector reopened and rehashed all 32 archive members. A separate metadata
+audit found no host-secret fields or runtime/lock/socket/SQLite-sidecar members.
+One empty captured stdout file is expected from a refused command. SQLite copies
+use the backup API. The final manifest also includes this review and README.

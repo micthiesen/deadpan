@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "request_id": "7fa6d4ef-d561-4dcc-b1b0-9a42a16eeb4f",
+  "context": {
+    "project_id": "project-picture-qualification",
+    "revision_id": "90b5e85d-a443-48d2-b851-5b96c84ac9b9"
+  },
+  "operation": {
+    "operation": "cancel",
+    "target": {
+      "job_id": "3460e66f-18fc-4cba-b7b7-2fa2f2aa0fbd",
+      "attempt_id": "ffcbe302-a284-4bde-b05e-c0c4ad0f8423",
+      "cancellation_token": "86815b65-f9c5-47aa-ada9-835cc2cc224c"
+    }
+  }
+}

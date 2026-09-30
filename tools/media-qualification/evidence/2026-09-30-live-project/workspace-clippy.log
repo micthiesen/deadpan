@@ -1,0 +1,82 @@
+    Checking rustix v1.1.5
+    Checking uuid v1.26.1
+    Checking accesskit v0.24.1
+    Checking tempfile v3.27.0
+    Checking deadpan-native-process v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-process)
+    Checking deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+    Checking rusty-fork v0.3.1
+    Checking deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+    Checking deadpan-fileclone v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-fileclone)
+    Checking deadpan-filesystem v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-filesystem)
+    Checking accesskit_consumer v0.38.0
+    Checking egui v0.36.2
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Checking proptest v1.11.0
+    Checking accesskit_macos v0.26.3
+    Checking deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Checking deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+    Checking egui-wgpu v0.36.2
+    Checking deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking accesskit_winit v0.32.2
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking egui-winit v0.36.2
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+error: redundant guard
+   --> crates/deadpan-cli/src/host/client.rs:160:20
+    |
+160 |                   if matches!(
+    |  ____________________^
+161 | |                     error,
+162 | |                     rustix::io::Errno::INPROGRESS
+163 | |                         | rustix::io::Errno::AGAIN
+164 | |                         | rustix::io::Errno::INTR
+165 | |                 ) => {}
+    | |_________________^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#redundant_guards
+    = note: `-D clippy::redundant-guards` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::redundant_guards)]`
+help: try
+    |
+159 ~             Err(rustix::io::Errno::INPROGRESS
+160 +                         | rustix::io::Errno::AGAIN
+161 ~                         | rustix::io::Errno::INTR) => {}
+    |
+
+error: large size difference between variants
+  --> crates/deadpan-cli/src/live_project.rs:55:1
+   |
+55 | /   pub enum ShortOperation {
+56 | | /     Edit {
+57 | | |         request: CommandRequest,
+58 | | |         dry_run: bool,
+59 | | |     },
+   | | |_____- the largest variant contains at least 561 bytes
+60 | | /     History {
+61 | | |         direction: HistoryDirection,
+62 | | |         expected_revision: RevisionId,
+63 | | |         new_revision: RevisionId,
+64 | | |         dry_run: bool,
+65 | | |     },
+   | | |_____- the second-largest variant contains at least 50 bytes
+...  |
+71 | |       Migrate,
+72 | |   }
+   | |___^ the entire enum is at least 576 bytes
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#large_enum_variant
+   = note: `-D clippy::large-enum-variant` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::large_enum_variant)]`
+help: consider boxing the large fields or introducing indirection in some other way to reduce the total size of the enum
+   |
+57 -         request: CommandRequest,
+57 +         request: Box<CommandRequest>,
+   |
+
+error: could not compile `deadpan-cli` (lib) due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deadpan-cli` (lib test) due to 2 previous errors

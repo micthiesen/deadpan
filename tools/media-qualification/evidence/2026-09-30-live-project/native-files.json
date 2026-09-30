@@ -1,0 +1,239 @@
+{
+  "all_members_reopened_and_rehashed": true,
+  "archive": {
+    "bytes": 1211621,
+    "sha256": "08b48087640c81a89bd0a83362896ddf0e366c5c9830c80b115d5d6ea530c999"
+  },
+  "database_backups": [
+    {
+      "member": "projects/native.deadpan/Snapshots/before-schema-40-c4hhQ7.sqlite",
+      "method": "SQLite online backup API from read-only connection",
+      "source": "/private/tmp/deadpan-live-project-20260930/native.deadpan/Snapshots/before-schema-40-c4hhQ7.sqlite",
+      "user_version": 39
+    },
+    {
+      "member": "projects/native.deadpan/Snapshots/before-schema-41-Mjn8Pc.sqlite",
+      "method": "SQLite online backup API from read-only connection",
+      "source": "/private/tmp/deadpan-live-project-20260930/native.deadpan/Snapshots/before-schema-41-Mjn8Pc.sqlite",
+      "user_version": 40
+    },
+    {
+      "member": "projects/native.deadpan/Snapshots/before-schema-42-JjOHnf.sqlite",
+      "method": "SQLite online backup API from read-only connection",
+      "source": "/private/tmp/deadpan-live-project-20260930/native.deadpan/Snapshots/before-schema-42-JjOHnf.sqlite",
+      "user_version": 41
+    },
+    {
+      "member": "projects/native.deadpan/project.sqlite",
+      "method": "SQLite online backup API from read-only connection",
+      "source": "/private/tmp/deadpan-live-project-20260930/native.deadpan/project.sqlite",
+      "user_version": 42
+    },
+    {
+      "member": "native-owner-evidence/final.sqlite",
+      "method": "SQLite online backup API from read-only connection",
+      "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/final.sqlite",
+      "user_version": 42
+    },
+    {
+      "member": "native-owner-evidence/initial.sqlite",
+      "method": "SQLite online backup API from read-only connection",
+      "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/initial.sqlite",
+      "user_version": 42
+    }
+  ],
+  "members": {
+    "canonical-references/automatic.reference.f32": {
+      "bytes": 1640040,
+      "matched_recorded_observation": true,
+      "sha256": "038c5a2946e1a2443919375f72e20e491a58d90c945a93e902e4f81d155092e2",
+      "source": "/private/tmp/deadpan-durable-automatic-20260930/native-fixed/automatic.reference.f32"
+    },
+    "canonical-references/automatic.reference.i420": {
+      "bytes": 11059200,
+      "matched_recorded_observation": true,
+      "sha256": "6b113ad6eb41afb546576fe1fcf1a4063b04545b4bd736a56edabbdc0aad284b",
+      "source": "/private/tmp/deadpan-durable-automatic-20260930/native-fixed/automatic.reference.i420"
+    },
+    "decoded-native-owner-final/initial.avfoundation.f32": {
+      "bytes": 1640040,
+      "matched_recorded_observation": true,
+      "sha256": "c3e47b31e4322ae9f26e56ad10c97e8d145e69046cb9171ec701d8a0bffa71c9",
+      "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/initial.avfoundation.f32"
+    },
+    "decoded-native-owner-final/initial.i420": {
+      "bytes": 11059200,
+      "matched_recorded_observation": true,
+      "sha256": "f7a5d9a05d21e781fce8964cb72a18694d2c7d8c906705eadc1d6ee64510ae79",
+      "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/initial.i420"
+    },
+    "decoded-native-owner-final/initial.manual.f32": {
+      "bytes": 1654784,
+      "matched_recorded_observation": true,
+      "sha256": "6d68249cb03a8a3edeb567829b5c4361f1675305d629a4e0df20f0c6d596c014",
+      "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/initial.manual.f32"
+    },
+    "decoded-native-owner-final/initial.ordinary.f32": {
+      "bytes": 1646592,
+      "matched_recorded_observation": true,
+      "sha256": "b2740b90c2c0a77c0e0b07eebad922814b9aed6926c47eaec193354c6653d885",
+      "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/initial.ordinary.f32"
+    },
+    "decoded-native-owner-final/retry.avfoundation.f32": {
+      "bytes": 1640040,
+      "matched_recorded_observation": true,
+      "sha256": "c3e47b31e4322ae9f26e56ad10c97e8d145e69046cb9171ec701d8a0bffa71c9",
+      "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/retry.avfoundation.f32"
+    },
+    "decoded-native-owner-final/retry.i420": {
+      "bytes": 11059200,
+      "matched_recorded_observation": true,
+      "sha256": "f7a5d9a05d21e781fce8964cb72a18694d2c7d8c906705eadc1d6ee64510ae79",
+      "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/retry.i420"
+    },
+    "decoded-native-owner-final/retry.manual.f32": {
+      "bytes": 1654784,
+      "matched_recorded_observation": true,
+      "sha256": "6d68249cb03a8a3edeb567829b5c4361f1675305d629a4e0df20f0c6d596c014",
+      "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/retry.manual.f32"
+    },
+    "decoded-native-owner-final/retry.ordinary.f32": {
+      "bytes": 1646592,
+      "matched_recorded_observation": true,
+      "sha256": "b2740b90c2c0a77c0e0b07eebad922814b9aed6926c47eaec193354c6653d885",
+      "source": "/private/tmp/deadpan-live-project-20260930/decoded-native-owner-final/retry.ordinary.f32"
+    },
+    "native-owner-evidence/final.sqlite": {
+      "bytes": 815104,
+      "matched_recorded_observation": false,
+      "sha256": "70d0c6c554a8974d2deb559aabd40413d5aba98175df8f0b7b4e5b16804d6b0c",
+      "source": "/private/tmp/deadpan-live-project-20260930/collector-sqlite-lb4v0ff9/native-owner-evidence/final.sqlite"
+    },
+    "native-owner-evidence/initial.sqlite": {
+      "bytes": 688128,
+      "matched_recorded_observation": false,
+      "sha256": "d872d7e102e3b76104ef58906eb2ce96b3dde20cb73d2f105a84da480a58713f",
+      "source": "/private/tmp/deadpan-live-project-20260930/collector-sqlite-lb4v0ff9/native-owner-evidence/initial.sqlite"
+    },
+    "native-owner-evidence/movies/native-initial.mp4": {
+      "bytes": 32553,
+      "matched_recorded_observation": true,
+      "sha256": "d91af1cef5b01d5f15a4d5bf84e535c2017771fc83d21d71b7fcf0dcb0ceceb8",
+      "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/native-initial.mp4"
+    },
+    "native-owner-evidence/movies/native-retry.mp4": {
+      "bytes": 32553,
+      "matched_recorded_observation": true,
+      "sha256": "d91af1cef5b01d5f15a4d5bf84e535c2017771fc83d21d71b7fcf0dcb0ceceb8",
+      "source": "/private/tmp/deadpan-live-project-20260930/native-owner-evidence/movies/native-retry.mp4"
+    },
+    "projects/native.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1": {
+      "bytes": 39157,
+      "matched_recorded_observation": false,
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "source": "/private/tmp/deadpan-live-project-20260930/native.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1"
+    },
+    "projects/native.deadpan/Media/RenderCandidates/blake3-017115dd419422a493afd1197d65bd17e616c20bc868b160943e4e0f96a3dfe1": {
+      "bytes": 1961,
+      "matched_recorded_observation": false,
+      "sha256": "fc079e2785091cabb8eefef65d0571afe1baad8d7b052281e7c3c07dead73406",
+      "source": "/private/tmp/deadpan-live-project-20260930/native.deadpan/Media/RenderCandidates/blake3-017115dd419422a493afd1197d65bd17e616c20bc868b160943e4e0f96a3dfe1"
+    },
+    "projects/native.deadpan/Media/RenderCandidates/blake3-0e8208dca1587c28fab6c25064788f3a86e85c6d796ddff8fbc724f42b03c78d": {
+      "bytes": 26866,
+      "matched_recorded_observation": false,
+      "sha256": "1f176785ed0c9fefe12980f8ee4ac3ff75ae675b8d45d9da19674c29cebfae81",
+      "source": "/private/tmp/deadpan-live-project-20260930/native.deadpan/Media/RenderCandidates/blake3-0e8208dca1587c28fab6c25064788f3a86e85c6d796ddff8fbc724f42b03c78d"
+    },
+    "projects/native.deadpan/Media/RenderCandidates/blake3-43c829dfa7185d112b3829376829819011161803201f7523ba191a1930e112cc": {
+      "bytes": 14966,
+      "matched_recorded_observation": false,
+      "sha256": "9acba3d2ff8cfcc00258b30937e86f32c7533692dbca1e3024a25b217bce5c3d",
+      "source": "/private/tmp/deadpan-live-project-20260930/native.deadpan/Media/RenderCandidates/blake3-43c829dfa7185d112b3829376829819011161803201f7523ba191a1930e112cc"
+    },
+    "projects/native.deadpan/Media/RenderCandidates/blake3-7621f986a5021296d5afdaa9c76d67571f873397ef1e501fd48a5f0bf78cadb0": {
+      "bytes": 14824,
+      "matched_recorded_observation": false,
+      "sha256": "a44f857acd9da1ebe86c85d55ba64043b285ffe81df74e85deb32bb3725fde12",
+      "source": "/private/tmp/deadpan-live-project-20260930/native.deadpan/Media/RenderCandidates/blake3-7621f986a5021296d5afdaa9c76d67571f873397ef1e501fd48a5f0bf78cadb0"
+    },
+    "projects/native.deadpan/Media/RenderCandidates/blake3-8792985148689acf55a3ad48ac68f4f9d57dd4efdf51738373aaf9df229804f8": {
+      "bytes": 32553,
+      "matched_recorded_observation": false,
+      "sha256": "07a7e5b8674253eeb804c9b15e137a9d53875934ee89c774fe410c82586fe4ae",
+      "source": "/private/tmp/deadpan-live-project-20260930/native.deadpan/Media/RenderCandidates/blake3-8792985148689acf55a3ad48ac68f4f9d57dd4efdf51738373aaf9df229804f8"
+    },
+    "projects/native.deadpan/Media/RenderCandidates/blake3-914796131ed64e31d71bc5782a74826d8f11aee70da82cb129a417e013f82c58": {
+      "bytes": 14834,
+      "matched_recorded_observation": false,
+      "sha256": "647a91e1c90fc7b66f31a10f3538c914c7d1397bfabf05e75107dcb3b9bddcca",
+      "source": "/private/tmp/deadpan-live-project-20260930/native.deadpan/Media/RenderCandidates/blake3-914796131ed64e31d71bc5782a74826d8f11aee70da82cb129a417e013f82c58"
+    },
+    "projects/native.deadpan/Media/RenderCandidates/blake3-a27f8d972c05b4749b1cf90762ea5d9cf3c4c7ad0645438eaa92ac36c3ec6811": {
+      "bytes": 32553,
+      "matched_recorded_observation": false,
+      "sha256": "d91af1cef5b01d5f15a4d5bf84e535c2017771fc83d21d71b7fcf0dcb0ceceb8",
+      "source": "/private/tmp/deadpan-live-project-20260930/native.deadpan/Media/RenderCandidates/blake3-a27f8d972c05b4749b1cf90762ea5d9cf3c4c7ad0645438eaa92ac36c3ec6811"
+    },
+    "projects/native.deadpan/Media/RenderCandidates/blake3-ac7fa9502a8e8c58e6a0979139948693e4fad5965238b7d50c6daeaa8284a75d": {
+      "bytes": 1931,
+      "matched_recorded_observation": false,
+      "sha256": "b9616711cc6a4fa2eff0a1fdd39901866bab0aa4151cd9854ac20f7cee856f8c",
+      "source": "/private/tmp/deadpan-live-project-20260930/native.deadpan/Media/RenderCandidates/blake3-ac7fa9502a8e8c58e6a0979139948693e4fad5965238b7d50c6daeaa8284a75d"
+    },
+    "projects/native.deadpan/Media/RenderCandidates/blake3-ae0725f7d7f54015536d6d8ea3412ed036126a3c1a8e44076a723008fec67dac": {
+      "bytes": 32553,
+      "matched_recorded_observation": false,
+      "sha256": "9c1d0c7a27a6db4aa7b3a0c9c3a3920db2dd22a1759f811e7d56674b6e9340e1",
+      "source": "/private/tmp/deadpan-live-project-20260930/native.deadpan/Media/RenderCandidates/blake3-ae0725f7d7f54015536d6d8ea3412ed036126a3c1a8e44076a723008fec67dac"
+    },
+    "projects/native.deadpan/Media/RenderCandidates/blake3-cc76ef2ee8f1401489c1618096352c3ceb86bac6fa1b46f0e8bcaa3fe84d192b": {
+      "bytes": 97359,
+      "matched_recorded_observation": false,
+      "sha256": "12a48645584a9b83100b996c69e7fd93c2df29f576499afa0b3b27344fa03a79",
+      "source": "/private/tmp/deadpan-live-project-20260930/native.deadpan/Media/RenderCandidates/blake3-cc76ef2ee8f1401489c1618096352c3ceb86bac6fa1b46f0e8bcaa3fe84d192b"
+    },
+    "projects/native.deadpan/Snapshots/before-schema-40-c4hhQ7.sqlite": {
+      "bytes": 319488,
+      "matched_recorded_observation": false,
+      "sha256": "e9c3bea8081ab721647f3f061d458b8600a00aaa2cab9bb63b5ecf067c11b6e7",
+      "source": "/private/tmp/deadpan-live-project-20260930/collector-sqlite-lb4v0ff9/projects/native.deadpan/Snapshots/before-schema-40-c4hhQ7.sqlite"
+    },
+    "projects/native.deadpan/Snapshots/before-schema-41-Mjn8Pc.sqlite": {
+      "bytes": 405504,
+      "matched_recorded_observation": false,
+      "sha256": "38793e05fd2d52cf41cf56b19b5c10a628350d4bdd60c71a13b62da61b1757ad",
+      "source": "/private/tmp/deadpan-live-project-20260930/collector-sqlite-lb4v0ff9/projects/native.deadpan/Snapshots/before-schema-41-Mjn8Pc.sqlite"
+    },
+    "projects/native.deadpan/Snapshots/before-schema-42-JjOHnf.sqlite": {
+      "bytes": 630784,
+      "matched_recorded_observation": false,
+      "sha256": "4d1d4ccb20e499132ac5160e52a162c5bfeb199d1748a91332fb8699b16dd30a",
+      "source": "/private/tmp/deadpan-live-project-20260930/collector-sqlite-lb4v0ff9/projects/native.deadpan/Snapshots/before-schema-42-JjOHnf.sqlite"
+    },
+    "projects/native.deadpan/manifest.json": {
+      "bytes": 75,
+      "matched_recorded_observation": false,
+      "sha256": "5cfe2f6ccebbf23559605472f162d3eb591831eaba2b13e049efc5a7980ba6ff",
+      "source": "/private/tmp/deadpan-live-project-20260930/native.deadpan/manifest.json"
+    },
+    "projects/native.deadpan/project.sqlite": {
+      "bytes": 815104,
+      "matched_recorded_observation": false,
+      "sha256": "70d0c6c554a8974d2deb559aabd40413d5aba98175df8f0b7b4e5b16804d6b0c",
+      "source": "/private/tmp/deadpan-live-project-20260930/collector-sqlite-lb4v0ff9/projects/native.deadpan/project.sqlite"
+    },
+    "replays/ui-performance/render-output/preview.mp4": {
+      "bytes": 37730,
+      "matched_recorded_observation": false,
+      "sha256": "9a71138fede1683b9aebd92a9a92712a235ff2e1ef20d58462a728daec3d3333",
+      "source": "/private/tmp/deadpan-live-project-20260930/ui-performance/render-output/preview.mp4"
+    },
+    "replays/ui-render-final/render-output/preview.mp4": {
+      "bytes": 37730,
+      "matched_recorded_observation": false,
+      "sha256": "7da97990e4509d0685e6c5b187963bc6ac947d36fa329304d1b5cd1712609ae7",
+      "source": "/private/tmp/deadpan-live-project-20260930/ui-render-final/render-output/preview.mp4"
+    }
+  }
+}

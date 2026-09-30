@@ -1,0 +1,634 @@
+#!/usr/bin/env python3
+"""Qualify real headless requests while the native app owns a disposable project.
+
+Run setup before opening native.deadpan in the app. Then run edits, render,
+cancel, recovery, and summary in order. The parent/browser opens the project,
+checks the visible renamed Hold, and tests preview refusal separately.
+
+This script never launches a GUI, quits the app, reads .host.json, retries a
+mutation, or repairs a failed phase. A failed/running phase requires inspection
+of retained evidence before a new fixture is prepared by the operator.
+"""
+
+import argparse
+import copy
+import errno
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import shutil
+import signal
+import sqlite3
+import stat
+import subprocess
+import sys
+import time
+import uuid
+
+
+ROOT = Path('/tmp/deadpan-live-project-20260930')
+SOURCE = Path('/tmp/deadpan-durable-automatic-20260930/source-fixed.deadpan')
+PACKAGE = ROOT / 'native.deadpan'
+ALIAS = ROOT / 'native-alias.deadpan'
+EVIDENCE = ROOT / 'native-owner-evidence'
+OUTPUT = EVIDENCE / 'movies'
+STATE_PATH = EVIDENCE / 'state.json'
+LABEL = 'IPC native owner confirmed'
+PHASES = ('setup', 'edits', 'render', 'cancel', 'recovery', 'summary')
+ACTIVE = []
+STATE = None
+PHASE = None
+TIMEOUT = 300
+COUNTER = 0
+MAX_STDOUT = 32 * 1024 * 1024
+MAX_STDERR = 8 * 1024 * 1024
+
+
+def check(condition, message):
+    if not condition:
+        raise RuntimeError(message)
+
+
+def save_json(path, value):
+    temporary = path.with_name(path.name + '.pending')
+    temporary.write_text(json.dumps(value, indent=2) + '\n')
+    temporary.replace(path)
+
+
+def save_state():
+    save_json(STATE_PATH, STATE)
+
+
+def digest(path):
+    value = hashlib.sha256()
+    with Path(path).open('rb') as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b''):
+            value.update(block)
+    return value.hexdigest()
+
+
+def backup(source, destination):
+    check(not destination.exists(), 'Backup destination already exists: ' + str(destination))
+    with sqlite3.connect(source.resolve().as_uri() + '?mode=ro', uri=True, timeout=5) as original:
+        with sqlite3.connect(destination, timeout=5) as target:
+            started = time.monotonic()
+
+            def progress(_status, _remaining, _total):
+                check(time.monotonic() - started < 30, 'SQLite backup exceeded 30 seconds')
+
+            original.backup(target, pages=128, progress=progress, sleep=0.05)
+
+
+def read_snapshot(database):
+    with sqlite3.connect(database.resolve().as_uri() + '?mode=ro', uri=True, timeout=5) as connection:
+        schema = connection.execute('PRAGMA user_version').fetchone()[0]
+        row = connection.execute(
+            'SELECT document FROM revisions JOIN state ON revisions.id=state.head_revision '
+            'WHERE state.singleton=1').fetchone()
+        check(row is not None, 'Snapshot has no current revision')
+        return schema, json.loads(row[0])
+
+
+def content(document):
+    result = copy.deepcopy(document)
+    result.pop('revision_id')
+    return result
+
+
+def context(document):
+    return {key: document[key] for key in ('project_id', 'revision_id')}
+
+
+def locate_hold(document):
+    nodes = document['nodes']
+    root = nodes[document['root']]['kind']
+    check(root['type'] == 'sequence', 'Fixture root must be an ordinary Sequence')
+    candidates = [node for node in root['children']
+                  if nodes[node]['kind']['type'] == 'hold'
+                  and nodes[node]['kind']['recipe']['video']['type'] == 'freeze']
+    check(len(candidates) == 1, 'Fixture must have exactly one direct Freeze Hold')
+    node = candidates[0]
+    recipe = nodes[node]['kind']['recipe']
+    check(recipe['audio']['type'] == 'silence', 'Selected Hold must be silent')
+    check(isinstance(recipe['duration'], int) and recipe['duration'] > 0,
+          'Selected Hold must have a positive whole-frame duration')
+    return node, recipe['duration']
+
+
+def writer_is_held():
+    # Observe the existing kernel lock without creating, changing, or reading it.
+    # This prevents a closed-app run from accidentally qualifying local dispatch.
+    descriptor = os.open(PACKAGE / '.writer.lock', os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    try:
+        check(stat.S_ISREG(os.fstat(descriptor).st_mode), 'Writer lock is not a regular file')
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as error:
+            if error.errno in (errno.EAGAIN, errno.EWOULDBLOCK):
+                return
+            raise
+        else:
+            fcntl.flock(descriptor, fcntl.LOCK_UN)
+            raise RuntimeError('Native writer is not held; open native.deadpan in the app first')
+    finally:
+        os.close(descriptor)
+
+
+def binary_identity():
+    resolved = shutil.which('deadpan-app')
+    check(resolved is not None, 'deadpan-app is absent from PATH supplied by the parent')
+    path = Path(resolved).resolve()
+    metadata = path.stat()
+    return {'invoked_as': 'deadpan-app', 'resolved_path': str(path),
+            'sha256': digest(path), 'bytes': metadata.st_size,
+            'device': metadata.st_dev, 'inode': metadata.st_ino,
+            'mtime_ns': metadata.st_mtime_ns}
+
+
+def append_record(record):
+    with (EVIDENCE / 'commands.jsonl').open('a') as stream:
+        stream.write(json.dumps(record) + '\n')
+
+
+class Command:
+    def __init__(self, name, arguments, render=False, mutation=False, expected=0):
+        global COUNTER
+        if mutation:
+            writer_is_held()
+        COUNTER += 1
+        stem = f'{PHASE}-{COUNTER:03d}-{name}'
+        self.stdout = EVIDENCE / (stem + ('.jsonl' if render else '.stdout.json'))
+        self.stderr = EVIDENCE / (stem + '.stderr')
+        self.command = ['deadpan-app', '--headless', *map(str, arguments)]
+        self.started = time.monotonic()
+        self.expected = expected
+        self.render = render
+        self.mutation = mutation
+        self.events = []
+        self.offset = 0
+        self.pending = b''
+        self.record = {'name': name, 'phase': PHASE, 'argv': self.command,
+                       'stdout': str(self.stdout), 'stderr': str(self.stderr),
+                       'started_monotonic': self.started, 'expected_exit': expected,
+                       'writer_held_before': mutation, 'result': 'running'}
+        with self.stdout.open('xb') as output, self.stderr.open('xb') as error:
+            self.child = subprocess.Popen(self.command, stdin=subprocess.DEVNULL,
+                                          stdout=output, stderr=error)
+        self.record['pid'] = self.child.pid
+        ACTIVE.append(self)
+        append_record(self.record)
+
+    def check_limits(self):
+        bound = TIMEOUT if self.render else 30
+        check(time.monotonic() - self.started < bound,
+              f'Command {self.record["name"]} exceeded {bound}s; outcome may be unknown')
+        check(self.stdout.stat().st_size <= MAX_STDOUT, 'CLI stdout exceeded its evidence bound')
+        check(self.stderr.stat().st_size <= MAX_STDERR, 'CLI stderr exceeded its evidence bound')
+
+    def read_events(self, final=False):
+        with self.stdout.open('rb') as stream:
+            stream.seek(self.offset)
+            block = stream.read(MAX_STDOUT + 1)
+            self.offset += len(block)
+        self.pending += block
+        check(len(self.pending) <= MAX_STDOUT, 'Render event exceeded its bound')
+        lines = self.pending.split(b'\n')
+        self.pending = lines.pop()
+        if final and self.pending:
+            lines.append(self.pending)
+            self.pending = b''
+        values = []
+        for line in lines:
+            if line.strip():
+                event = json.loads(line)
+                check(isinstance(event, dict), 'Render event must be an object')
+                self.events.append(event)
+                values.append(event)
+        return values
+
+    def finish(self):
+        code = self.child.wait(timeout=2)
+        if self.render:
+            self.read_events(final=True)
+        self.record.update({'exit_code': code, 'seconds': time.monotonic() - self.started,
+                            'stages': list(dict.fromkeys(event['status']['stage']
+                                                       for event in self.events if 'status' in event)),
+                            'result': 'passed' if code == self.expected else 'failed'})
+        append_record(self.record)
+        ACTIVE.remove(self)
+        STATE['checks'].append(self.record)
+        save_state()
+        check(code == self.expected, f'Unexpected exit {code}: see {self.stderr}')
+        if self.mutation:
+            writer_is_held()
+        return self.events if self.render else self.stdout.read_text()
+
+
+def check_active():
+    for command in ACTIVE:
+        command.check_limits()
+
+
+def run(name, arguments, mutation=False, expected=0):
+    command = Command(name, arguments, mutation=mutation, expected=expected)
+    while command.child.poll() is None:
+        check_active()
+        time.sleep(0.05)
+    check_active()
+    output = command.finish()
+    return command, json.loads(output) if output.strip() else None
+
+
+def run_render(name, arguments, expected=0, admitted=None):
+    command = Command(name, arguments, render=True, mutation=True, expected=expected)
+    admitted_seen = False
+    while True:
+        check_active()
+        for event in command.read_events():
+            if event.get('event') == 'admitted':
+                check(not admitted_seen, 'Duplicate Render admission')
+                admitted_seen = True
+                if admitted:
+                    check(command.child.poll() is None, 'Render finished before concurrent action')
+                    admitted(command, event['status'])
+        if command.child.poll() is not None:
+            # Drain the final regular-file bytes without blocking a pipe.
+            for event in command.read_events(final=True):
+                if event.get('event') == 'admitted':
+                    check(not admitted_seen, 'Duplicate Render admission')
+                    admitted_seen = True
+                    check(admitted is None, 'Render finished before concurrent action')
+            break
+        time.sleep(0.05)
+    command.finish()
+    return command
+
+
+def error_code(command):
+    values = []
+    for path in (command.stdout, command.stderr):
+        text = path.read_text()
+        try:
+            values.append(json.loads(text))
+        except (ValueError, TypeError):
+            for line in text.splitlines():
+                try:
+                    values.append(json.loads(line))
+                except ValueError:
+                    pass
+    errors = [value['error'] for value in values
+              if isinstance(value, dict) and isinstance(value.get('error'), dict)]
+    check(errors, 'Expected structured error: ' + str(command.stderr))
+    return errors[-1]['code']
+
+
+def dumped(name, path=PACKAGE):
+    return run(name, ['project', 'dump', path, '--json'])[1]
+
+
+def checked_summary(name):
+    return run(name, ['project', 'validate', PACKAGE])[1]
+
+
+def write_request(name, value):
+    path = EVIDENCE / (PHASE + '-' + name + '-request.json')
+    check(not path.exists(), 'Request already exists; refusing mutation replay')
+    save_json(path, value)
+    return path
+
+
+def edit(name, document, command, path=PACKAGE, expected=0):
+    revision = str(uuid.uuid4())
+    request = {'protocol': 1, 'project_id': document['project_id'],
+               'expected_revision': document['revision_id'], 'new_revision': revision,
+               'command': command}
+    result, output = run(name, ['command', path, '--json', write_request(name, request)],
+                         mutation=True, expected=expected)
+    if expected == 0:
+        check(output['committed'] is True, 'Command did not report a committed edit')
+        check(output['outcome']['revision_id'] == revision, 'Command receipt changed its revision')
+    return result
+
+
+def history(name, direction, document, expected_document, path=PACKAGE):
+    _command, receipt = run(name, ['project', direction, path, '--expected', document['revision_id']],
+                            mutation=True)
+    check(receipt['committed'] is True, 'History did not report a commit')
+    updated = dumped(name + '-dump')
+    check(updated['revision_id'] == receipt['outcome']['revision_id'], 'History receipt mismatch')
+    check(updated['revision_id'] != document['revision_id'], 'History reused its input revision')
+    check(content(updated) == content(expected_document), 'History failed exact content restoration')
+    return updated
+
+
+def render_request(name, document_context, operation):
+    return write_request(name, {'schema_version': 1, 'request_id': str(uuid.uuid4()),
+                               'context': document_context, 'operation': operation})
+
+
+def finished(command, outcome='published'):
+    check(command.events and command.events[-1].get('event') == 'finished',
+          'No terminal Finished event: ' + str(command.stdout))
+    status = command.events[-1]['status']
+    check(status['cleanup_confirmed'] and status['outcome'] == outcome,
+          'Unexpected terminal outcome or unconfirmed cleanup')
+    check(status['target'] is not None, 'Finished has no exact target')
+    return status
+
+
+def verify_publication(status, document, frame_count):
+    check(status['captured_revision'] == document['revision_id'], 'Captured revision changed')
+    check(status['context'] == context(document), 'Render context changed')
+    check(status['observed_movie_commit'], 'Publication did not observe its movie commit')
+    receipt = status['receipt']
+    movie, report_path = Path(receipt['movie']).resolve(), Path(receipt['report']).resolve()
+    check(movie.is_relative_to(OUTPUT.resolve()) and report_path.is_relative_to(OUTPUT.resolve()),
+          'Publication escaped the qualification output directory')
+    check(digest(movie) == receipt['movie_sha256'], 'Published movie hash mismatch')
+    check(digest(report_path) == receipt['report_sha256'], 'Published report hash mismatch')
+    report = json.loads(report_path.read_text())
+    provenance = report['provenance']
+    check(provenance['project_id'] == document['project_id'], 'Provenance project changed')
+    check(provenance['revision_id'] == document['revision_id'], 'Provenance revision changed')
+    check(provenance['range'] == {'start': 0, 'end': frame_count}, 'Captured duration changed')
+    intent = provenance['render_intent']
+    check(intent['job_id'] == status['target']['job_id'], 'Publication job mismatch')
+    check(intent['revision_id'] == document['revision_id'], 'Intent revision changed')
+    check(intent['range'] == provenance['range'], 'Intent range changed')
+    verification = provenance['verification']
+    picture = verification['contract']['picture']
+    check(verification['policy_version'] == 1, 'Unexpected final verifier policy')
+    check(picture['revision_id'] == document['revision_id'], 'Verified revision changed')
+    check(picture['frame_count'] == frame_count and verification['video_frames'] == frame_count,
+          'Final emitted-file verification changed the original frame count')
+    check(verification['audio_samples'] == picture['project_audio_end'] - picture['project_audio_start'],
+          'Verified audio does not match exact captured sample boundaries')
+    check(verification['movie_sha256'] == receipt['movie_sha256'], 'Verifier movie hash mismatch')
+    return {'movie': str(movie), 'report': str(report_path), 'sha256': digest(movie),
+            'revision': document['revision_id'], 'video_frames': verification['video_frames'],
+            'audio_samples': verification['audio_samples'],
+            'evidence': 'production full emitted-file verification; no additional independent decoder run'}
+
+
+def phase_setup():
+    global STATE
+    check(not PACKAGE.exists() and not ALIAS.exists() and not EVIDENCE.exists(),
+          'Fixture/evidence already exists; inspect it instead of replaying setup')
+    EVIDENCE.mkdir()
+    STATE = {'schema_version': 1, 'source': str(SOURCE), 'package': str(PACKAGE),
+             'checks': [], 'phases': {'setup': {'status': 'running'}},
+             'limitations': ['Native app launch and visible confirmation belong to parent/browser.',
+                             'Preview refusal is a separate browser phase.',
+                             'No additional independent decoder, crash, or power-loss qualification.']}
+    save_state()
+
+    def ignored(directory, names):
+        excluded = []
+        for name in names:
+            if name == '.host.json' or name.startswith('.host-') or name.endswith('.lock'):
+                excluded.append(name)
+            elif Path(directory) == SOURCE and name.startswith('project.sqlite'):
+                excluded.append(name)
+            else:
+                entry = Path(directory) / name
+                check(not entry.is_symlink(), 'Source copy contains a symlink: ' + str(entry))
+        return excluded
+
+    shutil.copytree(SOURCE, PACKAGE, ignore=ignored)
+    backup(SOURCE / 'project.sqlite', PACKAGE / 'project.sqlite')
+    backup(PACKAGE / 'project.sqlite', EVIDENCE / 'initial.sqlite')
+    schema, document = read_snapshot(EVIDENCE / 'initial.sqlite')
+    check(schema == 42 and document['schema_version'] == 33, 'Unexpected fixture schemas')
+    hold, duration = locate_hold(document)
+    check(document['project_id'] == 'project-picture-qualification', 'Unexpected fixture project')
+    check(duration == 3, 'Known qualification fixture Freeze Hold must be 3 frames')
+    OUTPUT.mkdir()
+    ALIAS.symlink_to(PACKAGE, target_is_directory=True)
+    save_json(EVIDENCE / 'initial-authoring.json', document)
+    STATE.update({'initial_document': document, 'hold': hold, 'hold_duration': duration,
+                  'copy_method': 'Media/files copied; database and baseline use SQLite backup API; host records and locks excluded',
+                  'initial_database_sha256': digest(EVIDENCE / 'initial.sqlite')})
+
+
+def phase_edits():
+    initial = dumped('initial-context')
+    check(initial == STATE['initial_document'], 'Native open or another actor changed the initial document')
+    check(checked_summary('initial-validation')['duration_frames'] == 128,
+          'Known qualification fixture must span 128 frames')
+    STATE['frame_count'] = 128
+    hold = STATE['hold']
+    edit('rename', initial, {'command': 'rename', 'node': hold, 'label': LABEL})
+    renamed = dumped('renamed-context')
+    expected = copy.deepcopy(initial)
+    expected['nodes'][hold]['label'] = LABEL
+    check(content(renamed) == content(expected), 'Rename changed other authored state')
+    stale = edit('stale-rename', initial, {'command': 'rename', 'node': hold, 'label': 'MUST NOT APPLY'}, expected=1)
+    check(error_code(stale) == 'RevisionConflict', 'Stale command did not report RevisionConflict')
+    check(dumped('after-stale') == renamed, 'Stale command mutated the document')
+    stale_render = render_request('stale-render', context(initial),
+                                  {'operation': 'start', 'destination': str(OUTPUT / 'must-not-publish.mp4')})
+    rejected = run_render('stale-render', ['render', PACKAGE, '--json', stale_render], expected=1)
+    check(error_code(rejected) == 'RenderRevisionChanged', 'Stale Render revision was not rejected')
+    check(not rejected.events, 'Stale Render was admitted')
+    check(not (OUTPUT / 'must-not-publish.mp4').exists(), 'Stale Render published a movie')
+    check(dumped('after-stale-render') == renamed, 'Stale Render changed the document')
+    undone = history('undo-rename', 'undo', renamed, initial)
+    redone = history('redo-rename', 'redo', undone, renamed)
+    check(len({initial['revision_id'], renamed['revision_id'], undone['revision_id'], redone['revision_id']}) == 4,
+          'History reused a revision identity')
+    edit('alias-rename', redone, {'command': 'rename', 'node': hold, 'label': 'IPC alias owner confirmed'}, path=ALIAS)
+    aliased = dumped('alias-context', ALIAS)
+    expected = copy.deepcopy(redone)
+    expected['nodes'][hold]['label'] = 'IPC alias owner confirmed'
+    check(content(aliased) == content(expected), 'Alias command changed unrelated content')
+    restored = history('alias-undo', 'undo', aliased, redone, path=ALIAS)
+    STATE['current_document'] = restored
+    STATE['ui_confirmation'] = {'node': hold, 'label': LABEL, 'duration_frames': STATE['hold_duration'],
+                                'instruction': 'Parent/browser should confirm this direct Freeze Hold label in the native workspace.'}
+
+
+def phase_render():
+    before = dumped('before-render')
+    check(before == STATE['current_document'], 'Document changed between phases')
+    frame_count = checked_summary('before-render-validation')['duration_frames']
+    changed = None
+
+    def admitted(command, status):
+        nonlocal changed
+        check(status['context'] == context(before), 'Admission captured another revision')
+        STATE['admitted_before_edit'] = status
+        save_state()
+        started = time.monotonic()
+        edit('edit-hold-after-admission', before,
+             {'command': 'set_hold_duration', 'node': STATE['hold'], 'duration': STATE['hold_duration'] + 30})
+        _observer, stored = run('attempt-after-committed-edit',
+                                ['render', 'status', PACKAGE, '--job', status['target']['job_id']])
+        check(stored['event'] == 'stored_status' and stored['live_progress'] is False
+              and stored['page']['collection'] == 'attempts', 'Unexpected durable attempt observation')
+        intent = stored['page']['intent']
+        check(intent['job_id'] == status['target']['job_id']
+              and intent['revision_id'] == before['revision_id'], 'Durable render intent changed')
+        attempts = [row for row in stored['page']['items'] if row['target'] == status['target']]
+        check(len(attempts) == 1, 'Exact admitted attempt was absent after the committed edit')
+        check(attempts[0]['state'] in ('queued', 'encoding', 'encoded_retained', 'verifying'),
+              'Exact native render attempt was no longer active after the committed edit')
+        check(not attempts[0]['cancellation_requested'], 'Concurrent render was already cancelled')
+        STATE['attempt_after_committed_edit'] = stored
+        save_state()
+        changed = dumped('changed-after-admission')
+        expected = copy.deepcopy(before)
+        expected['nodes'][STATE['hold']]['kind']['recipe']['duration'] += 30
+        check(content(changed) == content(expected), 'Concurrent Hold edit changed unrelated authored state')
+        check(checked_summary('changed-validation')['duration_frames'] == frame_count + 30,
+              'Concurrent Hold edit did not add exactly 30 frames')
+        STATE['concurrent_edit'] = {'started_monotonic': started, 'finished_monotonic': time.monotonic(),
+                                    'revision': changed['revision_id'],
+                                    'native_attempt_state_after_commit': attempts[0]['state'],
+                                    'render_cli_still_running': command.child.poll() is None}
+        save_state()
+
+    rendered = run_render('immutable-render', ['render', ALIAS, '--output', OUTPUT,
+                                              '--name', 'native-initial.mp4', '--expected', before['revision_id']],
+                          admitted=admitted)
+    check(changed is not None, 'No admitted render triggered the concurrent edit')
+    result = finished(rendered)
+    STATE['initial_render'] = result
+    STATE['initial_movie'] = verify_publication(result, before, frame_count)
+    STATE['render_document'] = before
+    check(dumped('after-render') == changed, 'Render mutated or replaced the later authored edit')
+    restored = history('undo-concurrent-hold', 'undo', changed, before)
+    check(checked_summary('restored-validation')['duration_frames'] == frame_count, 'Undo changed original duration')
+    STATE['current_document'] = restored
+    STATE['frame_count'] = frame_count
+
+
+def phase_cancel():
+    before = dumped('before-cancel')
+    check(before == STATE['current_document'], 'Document changed between phases')
+    cancellation = None
+
+    def admitted(_command, status):
+        nonlocal cancellation
+        stale_target = copy.deepcopy(status['target'])
+        stale_target['cancellation_token'] = str(uuid.uuid4())
+        stale = render_request('stale-cancel', status['context'], {'operation': 'cancel', 'target': stale_target})
+        rejected = run_render('stale-cancel', ['render', 'cancel', ALIAS, '--json', stale], expected=1)
+        check(error_code(rejected) == 'RenderIdentityChanged', 'Wrong exact cancellation token was not rejected')
+        check(not rejected.events, 'Rejected stale cancel emitted an admission or terminal status')
+        exact = render_request('exact-cancel', status['context'], {'operation': 'cancel', 'target': status['target']})
+        cancelled = run_render('exact-cancel', ['render', 'cancel', PACKAGE, '--json', exact], expected=1)
+        cancellation = finished(cancelled, 'cancelled')
+        check(cancellation['target'] == status['target'], 'Canceller observed another target')
+        check(cancellation['cancellation_requested'], 'Exact cancellation was not retained')
+
+    original = run_render('cancelled-start', ['render', PACKAGE, '--output', OUTPUT, '--name', 'native-cancelled.mp4'],
+                          expected=1, admitted=admitted)
+    result = finished(original, 'cancelled')
+    check(cancellation is not None and result['target'] == cancellation['target'],
+          'Initiating observer lost or changed the cancelled terminal result')
+    check(not (OUTPUT / 'native-cancelled.mp4').exists(), 'Cancelled run published a movie')
+    check(dumped('after-cancel') == before, 'Cancellation mutated the document')
+    STATE['cancelled_render'] = result
+    STATE['separate_canceller'] = cancellation
+
+
+def phase_recovery():
+    before = dumped('before-recovery')
+    check(before == STATE['current_document'], 'Document changed between phases')
+    original = STATE['initial_render']
+    check(before['revision_id'] != original['captured_revision'], 'Recovery must use a later current revision')
+    checkpoint = original['checkpoint_attempt_id'] or original['target']['attempt_id']
+    request = render_request('historical-retry', context(before),
+                             {'operation': 'retry_checkpoint', 'job_id': original['target']['job_id'],
+                              'encoding_attempt_id': checkpoint, 'destination': str(OUTPUT / 'native-retry.mp4')})
+    retry_command = run_render('historical-retry', ['render', ALIAS, '--json', request])
+    retry = finished(retry_command)
+    retry_movie = verify_publication(retry, STATE['render_document'], STATE['frame_count'])
+    check(retry_movie['sha256'] == STATE['initial_movie']['sha256'], 'Checkpoint retry changed movie bytes')
+    check(not {'qualifying', 'encoding'} & set(retry_command.record['stages']), 'Checkpoint retry reencoded')
+    request = render_request('historical-reconcile', context(before),
+                             {'operation': 'reconcile', 'publication_id': original['publication_id']})
+    reconcile_command = run_render('historical-reconcile', ['render', ALIAS, '--json', request])
+    reconciled = finished(reconcile_command)
+    reconciled_movie = verify_publication(reconciled, STATE['render_document'], STATE['frame_count'])
+    check(reconciled_movie['sha256'] == STATE['initial_movie']['sha256'], 'Reconciliation changed movie bytes')
+    check(not {'qualifying', 'encoding'} & set(reconcile_command.record['stages']), 'Reconciliation reencoded')
+    check(dumped('after-recovery') == before, 'Retry or reconciliation mutated authored state')
+    STATE.update({'retry': retry, 'retry_movie': retry_movie, 'reconciled': reconciled,
+                  'reconciled_movie': reconciled_movie})
+    backup(PACKAGE / 'project.sqlite', EVIDENCE / 'final.sqlite')
+
+
+def stop_owned_commands():
+    # Signals go only to CLI children, whose Render handler targets its admitted
+    # workflow. Killing a CLI does not prove native cleanup; retain that fact.
+    for command in list(ACTIVE):
+        record = {'name': command.record['name'], 'pid': command.child.pid,
+                  'result': 'qualification_aborted', 'native_outcome': 'unknown; inspect retained events'}
+        for sent, grace in ((signal.SIGINT, 15), (signal.SIGTERM, 3), (signal.SIGKILL, 2)):
+            if command.child.poll() is not None:
+                break
+            command.child.send_signal(sent)
+            record['last_signal'] = sent.name
+            try:
+                command.child.wait(timeout=grace)
+            except subprocess.TimeoutExpired:
+                pass
+        record['exit_code'] = command.child.poll()
+        append_record(record)
+        ACTIVE.remove(command)
+
+
+def main():
+    global STATE, PHASE, TIMEOUT
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('phase', choices=PHASES)
+    parser.add_argument('--timeout', type=int, default=300,
+                        help='Per Render CLI bound in seconds, 30..900 (default: 300); ordinary commands have 30s')
+    arguments = parser.parse_args()
+    PHASE, TIMEOUT = arguments.phase, arguments.timeout
+    check(30 <= TIMEOUT <= 900, 'Timeout must be between 30 and 900 seconds')
+    if PHASE != 'setup':
+        STATE = json.loads(STATE_PATH.read_text())
+    if PHASE == 'summary':
+        print(json.dumps({'phases': STATE['phases'], 'checks': len(STATE['checks']),
+                          'package': str(PACKAGE), 'evidence': str(EVIDENCE),
+                          'ui_confirmation': STATE.get('ui_confirmation'),
+                          'limitations': STATE['limitations']}, indent=2))
+        return
+    if PHASE != 'setup':
+        index = PHASES.index(PHASE)
+        check(all(STATE['phases'].get(prior, {}).get('status') == 'passed' for prior in PHASES[:index]),
+              'Run all preceding phases successfully first')
+        check(PHASE not in STATE['phases'], 'Phase already attempted; refusing blind mutation replay')
+        writer_is_held()
+        identity = binary_identity()
+        previous = STATE.get('binary')
+        check(previous is None or previous == identity, 'CLI binary changed between qualification phases')
+        STATE['binary'] = identity
+        STATE['phases'][PHASE] = {'status': 'running', 'started_unix': time.time()}
+        save_state()
+    try:
+        globals()['phase_' + PHASE]()
+        STATE['phases'][PHASE].update({'status': 'passed', 'finished_unix': time.time()})
+        save_state()
+        print(json.dumps({'phase': PHASE, 'result': 'passed', 'package': str(PACKAGE),
+                          'evidence': str(EVIDENCE), 'checks': len(STATE['checks'])}))
+    except BaseException as error:
+        stop_owned_commands()
+        if STATE is not None:
+            STATE['phases'].setdefault(PHASE, {}).update({'status': 'failed', 'error': repr(error),
+                                                         'finished_unix': time.time()})
+            save_state()
+        raise
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except Exception as error:
+        print(json.dumps({'phase': PHASE, 'result': 'failed', 'error': str(error),
+                          'evidence': str(EVIDENCE), 'replayed': False}), file=sys.stderr)
+        sys.exit(1)

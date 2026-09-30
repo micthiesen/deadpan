@@ -195,7 +195,7 @@ fn public_render_rejects_an_open_writer_without_creating_an_attempt() -> Result 
     let package = root.path().join("locked.deadpan");
     let store = ProjectStore::create(&package, &document()?)?;
     let result = cli(&["render", path(&package), "--output", path(root.path())])?;
-    assert_eq!(error(&result)?["error"]["code"], "ProjectLocked");
+    assert_eq!(error(&result)?["error"]["code"], "RenderOwnerUnavailable");
     assert!(store.render_jobs(None, 1)?.is_empty());
     Ok(())
 }

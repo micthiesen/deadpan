@@ -2,6 +2,33 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Open-project routing, 2026-09-30
+
+The native writer now advertises a private authenticated local endpoint for
+structural edits, undo/redo, primary geometry and the public Render workflow.
+Discovery binds the actual package and writable open; close/reopen revokes the
+old owner. A request cannot silently fall back, retarget or replay after delivery.
+Replies retain durable edit receipts separately from native UI updates. Remote
+Render refuses unresolved Camera, Gain and Room tone drafts, retains its exact
+workflow through later edits, and shares native cancellation and teardown.
+See [the contract](../LIVE_PROJECT.md) for bounds and supported operations.
+
+[Qualification](../qualification/live-project-2026-09-30.md) retains 36 CLI
+invocations against the real native owner, three actual preview refusals,
+concurrent editing during Render, exact cancellation and historical recovery.
+Initial and retry movies pass all 768 independently decoded planes and complete
+authored audio. The original workspace run and scoped corrections cover 2,523
+distinct passing tests; 330 optional UI-feature tests, strict Clippy, formatting,
+native startup/shutdown, 79 visual Render checks and 2,426 release checks pass.
+No native status window appeared for CLI-started work; the short recovery finished
+before native progress could be inspected. Preserve this visibility limitation
+alongside the retained CLI progress/results and endpoint crash-test gaps.
+
+Original retention, relinking, registration and checkpoints still require a
+closed writer through the CLI. Route their preparation and exact completion
+through the service next, then implement native persisted-job recovery.
+Section 20.5, DP-21 and all product gates remain open.
+
 ## Native and public Render, 2026-09-30
 
 Native Render (`Cmd-E`, `:render`, or the visible control) and the public
@@ -24,10 +51,10 @@ checks. Independent readers pass all 768 picture planes and complete authored
 audio in both public exports. The accepted-generated-picture replay requires its
 separate fixture and is explicitly skipped in this ordinary release run.
 
-Next implement authenticated host routing for an already open native project and
-native persisted-job recovery. Do not treat `ProjectLocked` or the documented
-`RenderOwnerUnavailable` response as implementing Section 20.5. Full mastering,
-HDR, expanded output qualification and the complete product scope remain open.
+The open-project boundary above extends these commands to the native owner.
+Heavy writer operations and native persisted-job recovery remain required by
+Section 20.5. Full mastering, HDR, expanded output qualification and the complete
+product scope remain open.
 
 ## Durable automatic encoding, 2026-09-30
 

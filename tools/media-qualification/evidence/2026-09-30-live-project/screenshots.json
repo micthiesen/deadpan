@@ -1,0 +1,66 @@
+[
+  {
+    "bytes": 479263,
+    "caption": "Camera at 960x640",
+    "path": "ui-render-final/render-030.png",
+    "retained": "screenshots/01-render-030.png",
+    "sha256": "7d8a0f9b77244b88b1139aa7900026f1bd3726336f33bf707f6242071909fca4",
+    "verified_state": "Visible commit, discard and keep-editing choices for the pending preview."
+  },
+  {
+    "bytes": 701509,
+    "caption": "Camera at 1280x820",
+    "path": "ui-render-final/render-031.png",
+    "retained": "screenshots/02-render-031.png",
+    "sha256": "edd955ae0b73d192d7f469b98e318aa6aa7a3d34957f5ffb594ec51d1d74040a",
+    "verified_state": "Visible commit, discard and keep-editing choices for the pending preview."
+  },
+  {
+    "bytes": 461738,
+    "caption": "Gain at 960x640",
+    "path": "ui-render-final/render-062.png",
+    "retained": "screenshots/03-render-062.png",
+    "sha256": "65f9f64013834bbee15193ec6f4e4f252ec54261940a21c321eec060ac179d95",
+    "verified_state": "Visible commit, discard and keep-editing choices for the pending preview."
+  },
+  {
+    "bytes": 713700,
+    "caption": "Gain at 1280x820",
+    "path": "ui-render-final/render-063.png",
+    "retained": "screenshots/04-render-063.png",
+    "sha256": "04cfdf42b121c98b046a22d3918698a555aa6336b5f7777673c17fc5d8e3477b",
+    "verified_state": "Visible commit, discard and keep-editing choices for the pending preview."
+  },
+  {
+    "bytes": 501798,
+    "caption": "Room tone at 960x640",
+    "path": "ui-render-final/render-104.png",
+    "retained": "screenshots/05-render-104.png",
+    "sha256": "3d083097f2d23de4970352148f6f116a909d33e68220137dd7125925aa3c6f16",
+    "verified_state": "Visible commit, discard and keep-editing choices for the pending preview."
+  },
+  {
+    "bytes": 791211,
+    "caption": "Room tone at 1280x820",
+    "path": "ui-render-final/render-105.png",
+    "retained": "screenshots/06-render-105.png",
+    "sha256": "00ef23d4bfbeef8330a0c60626003ea84bedf934be40d0f2ecbedb201427088a",
+    "verified_state": "Visible commit, discard and keep-editing choices for the pending preview."
+  },
+  {
+    "bytes": 234635,
+    "caption": "Export result at 960x640",
+    "path": "ui-render-final/render-123.png",
+    "retained": "screenshots/07-render-123.png",
+    "sha256": "210e71d812d86fc521c62f6e9420ff0bac74f0d28b9acc01b71943fa428a3a41",
+    "verified_state": "Verified historical movie revision and wrapped final movie/report paths remain readable after editor Undo."
+  },
+  {
+    "bytes": 314268,
+    "caption": "Export result at 1280x820",
+    "path": "ui-render-final/render-124.png",
+    "retained": "screenshots/08-render-124.png",
+    "sha256": "31769ec0f685ba661bea586ee285bdaafb58d1e20710c6fa05a9e31ba6996ee5",
+    "verified_state": "Verified historical movie revision and wrapped final movie/report paths remain readable after editor Undo."
+  }
+]

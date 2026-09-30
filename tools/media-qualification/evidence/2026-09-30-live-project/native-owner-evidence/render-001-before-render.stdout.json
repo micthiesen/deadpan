@@ -1,0 +1,272 @@
+{
+  "schema_version": 33,
+  "project_id": "project-picture-qualification",
+  "revision_id": "45c3e0f8-f634-4d26-8c74-ff3add325dd6",
+  "presentation_basis": {
+    "width": 320,
+    "height": 180,
+    "frame_rate": {
+      "numerator": 30000,
+      "denominator": 1001
+    },
+    "color_policy": "sdr_rec709"
+  },
+  "basis_state": {
+    "rate_origin": "primary_source",
+    "geometry_origin": "primary_source",
+    "primary": {
+      "asset": "original",
+      "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+    }
+  },
+  "root": "root",
+  "nodes": {
+    "background": {
+      "label": "background",
+      "kind": {
+        "type": "hold",
+        "recipe": {
+          "duration": 3,
+          "video": {
+            "type": "background"
+          },
+          "audio": {
+            "type": "silence"
+          }
+        }
+      }
+    },
+    "fast": {
+      "label": "Retime",
+      "kind": {
+        "type": "retime",
+        "child": "source",
+        "duration": 60,
+        "mapping": {
+          "start": 0,
+          "end": 120
+        },
+        "pitch": "follow_speed"
+      }
+    },
+    "freeze": {
+      "label": "IPC native owner confirmed",
+      "kind": {
+        "type": "hold",
+        "recipe": {
+          "picture_context": {
+            "canvases": [
+              {
+                "width": 320,
+                "height": 180,
+                "fit": "fit",
+                "layers": [
+                  {
+                    "center_x": {
+                      "numerator": "3",
+                      "denominator": "5"
+                    },
+                    "center_y": {
+                      "numerator": "2",
+                      "denominator": "5"
+                    },
+                    "scale": {
+                      "numerator": "7",
+                      "denominator": "5"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "duration": 3,
+          "video": {
+            "type": "freeze",
+            "asset": "original",
+            "timestamp": {
+              "ticks": 41041,
+              "time_base": {
+                "numerator": 1,
+                "denominator": 30000
+              }
+            }
+          },
+          "audio": {
+            "type": "silence"
+          }
+        }
+      }
+    },
+    "repeat": {
+      "label": "Repeat",
+      "kind": {
+        "type": "repeat",
+        "child": "fast",
+        "iterations": {
+          "runs": [
+            {
+              "allocation": "repeat",
+              "first": 0,
+              "count": 2
+            }
+          ]
+        },
+        "gap": {
+          "duration": 2,
+          "video": {
+            "type": "background"
+          },
+          "audio": {
+            "type": "silence"
+          }
+        }
+      }
+    },
+    "root": {
+      "label": "Sequence",
+      "kind": {
+        "type": "sequence",
+        "children": [
+          "repeat",
+          "freeze",
+          "background"
+        ]
+      }
+    },
+    "source": {
+      "label": "Full Original",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 120,
+          "video": {
+            "type": "stream",
+            "asset": "original",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              },
+              "end": {
+                "ticks": 120120,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": {
+            "asset": "original",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "link": "linked",
+          "audio_offset": 0
+        }
+      },
+      "framing": {
+        "value": {
+          "type": "static",
+          "pose": {
+            "center_x": {
+              "numerator": "1",
+              "denominator": "4"
+            },
+            "center_y": {
+              "numerator": "3",
+              "denominator": "4"
+            },
+            "scale": {
+              "numerator": "5",
+              "denominator": "4"
+            }
+          }
+        }
+      }
+    }
+  },
+  "assets": {
+    "original": {
+      "label": "Synthetic original",
+      "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "video": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        },
+        "end": {
+          "ticks": 120120,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        }
+      },
+      "audio": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        },
+        "end": {
+          "ticks": 192192,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        }
+      },
+      "still_image": false,
+      "frame_count": 120,
+      "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+    }
+  },
+  "marks": {},
+  "overrides": {}
+}

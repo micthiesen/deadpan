@@ -11,6 +11,8 @@ pub mod generation;
 pub mod generation_acceptance;
 pub mod generation_attempts;
 mod history;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod host_owner;
 mod migration;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod object_storage;
@@ -84,6 +86,10 @@ pub struct ProjectStore {
     publication_epochs: std::collections::BTreeMap<String, Arc<std::sync::atomic::AtomicU64>>,
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     publication_barrier_failed: bool,
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    writer_package: Option<host_owner::PackageAnchor>,
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    writer_owner: Option<host_owner::OwnerState>,
     // Explicitly unlocked on drop so a briefly inherited descriptor in a spawned
     // child cannot extend this writer's ownership beyond the store lifetime.
     _writer_lock: Option<File>,
@@ -97,6 +103,14 @@ impl Drop for ProjectStore {
         self.generated_read_closed.store(true, Ordering::Release);
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         self.render_closed.store(true, Ordering::Release);
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        if let Some(owner) = &mut self.writer_owner {
+            owner.close(
+                self.writer_package.as_ref(),
+                &self.package,
+                self._writer_lock.as_ref(),
+            );
+        }
         if let Some(lock) = &self._writer_lock {
             // File::drop still closes the handle if explicit unlock fails.
             let _ = lock.unlock();
@@ -137,6 +151,8 @@ impl ProjectStore {
         })?;
         let package = fs::canonicalize(path)?;
         let lock = acquire_lock(&package)?;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        let writer_package = Some(host_owner::PackageAnchor::open(&package, &lock)?);
         for directory in [
             "Media/Originals",
             "Media/Generated",
@@ -226,6 +242,10 @@ impl ProjectStore {
             publication_epochs: std::collections::BTreeMap::new(),
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             publication_barrier_failed: false,
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            writer_package,
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            writer_owner: None,
             _writer_lock: Some(lock),
         })
     }
@@ -245,6 +265,11 @@ impl ProjectStore {
         } else {
             None
         };
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        let writer_package = lock
+            .as_ref()
+            .map(|lock| host_owner::PackageAnchor::open(&package, lock))
+            .transpose()?;
         let flags = if mode == AccessMode::ReadWrite {
             OpenFlags::SQLITE_OPEN_READ_WRITE
                 | OpenFlags::SQLITE_OPEN_NO_MUTEX
@@ -307,6 +332,10 @@ impl ProjectStore {
             publication_epochs: std::collections::BTreeMap::new(),
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             publication_barrier_failed: false,
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            writer_package,
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            writer_owner: None,
             _writer_lock: lock,
         };
         store.validate()?;
@@ -491,6 +520,12 @@ fn read_flags() -> OpenFlags {
         | OpenFlags::SQLITE_OPEN_NOFOLLOW
 }
 
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+fn acquire_lock(package: &Path) -> Result<File, StoreError> {
+    host_owner::acquire_lock(package)
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux")))]
 fn acquire_lock(package: &Path) -> Result<File, StoreError> {
     let path = package.join(".writer.lock");
     if path.symlink_metadata().is_ok() {

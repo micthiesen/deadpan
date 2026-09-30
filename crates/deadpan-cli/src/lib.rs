@@ -8,6 +8,10 @@ pub mod encoded_render;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod export_picture;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod host;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod live_project;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 mod originals;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod picture;
@@ -78,6 +82,9 @@ Placement inspection evaluates the selected revision's recipe on an explicit sig
 pub enum CliError {
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[error(transparent)]
+    LiveProject(#[from] live_project::LiveError),
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[error(transparent)]
     Render(#[from] render::PublicRenderError),
     #[error("{0}")]
     Usage(String),
@@ -114,6 +121,8 @@ pub enum CliError {
 impl CliError {
     fn code(&self) -> &str {
         match self {
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::LiveProject(error) => &error.code,
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::Render(error) => &error.code,
             Self::Usage(_) | Self::Timing(_) | Self::Json(_) => "InvalidInput",
@@ -239,6 +248,8 @@ impl CliError {
     fn current_revision(&self) -> Option<&str> {
         match self {
             #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::LiveProject(error) => error.current_revision.as_ref().map(RevisionId::as_str),
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::Render(error) => error.current_revision.as_ref().map(RevisionId::as_str),
             Self::Store(StoreError::RevisionConflict { current, .. }) => Some(current),
             Self::Store(StoreError::Edit(error)) => {
@@ -251,6 +262,13 @@ impl CliError {
     fn recovery_backup(&self) -> Option<&Path> {
         match self {
             Self::Store(StoreError::MigrationFailed { backup, .. }) => Some(backup),
+            _ => None,
+        }
+    }
+    fn committed_revision(&self) -> Option<&str> {
+        match self {
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::LiveProject(error) => error.committed_revision.as_ref().map(RevisionId::as_str),
             _ => None,
         }
     }
@@ -327,9 +345,12 @@ pub fn entry(arguments: impl IntoIterator<Item = String>) -> ExitCode {
             ExitCode::FAILURE
         }
         Err(error) => {
-            let report = serde_json::json!({ "schema_version": 1, "error": {
+            let mut report = serde_json::json!({ "schema_version": 1, "error": {
                 "code": error.code(), "message": error.to_string(), "current_revision": error.current_revision(), "recovery_backup": error.recovery_backup()
             }});
+            if let Some(revision) = error.committed_revision() {
+                report["error"]["committed_revision"] = serde_json::Value::String(revision.into());
+            }
             let _ = writeln!(io::stderr().lock(), "{report}");
             ExitCode::FAILURE
         }
@@ -725,23 +746,44 @@ fn new_revision() -> Result<RevisionId, deadpan_core::DocumentError> {
 }
 
 fn history(package: &Path, action: &str, expected: &str, preview: bool) -> Result<(), CliError> {
-    let mut store = ProjectStore::open(
-        package,
-        if preview {
-            AccessMode::ReadOnly
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    {
+        let direction = if action == "undo" {
+            live_project::HistoryDirection::Undo
         } else {
-            AccessMode::ReadWrite
-        },
-    )?;
-    let expected = RevisionId::new(expected)?;
-    let next = new_revision()?;
-    let outcome = match (action, preview) {
-        ("undo", true) => store.preview_undo(&expected, next)?,
-        ("undo", false) => store.undo(&expected, next)?,
-        (_, true) => store.preview_redo(&expected, next)?,
-        (_, false) => store.redo(&expected, next)?,
-    };
-    write_json(&serde_json::json!({ "protocol": 1, "committed": !preview, "outcome": outcome }))
+            live_project::HistoryDirection::Redo
+        };
+        write_json(&live_project::dispatch_short(
+            package,
+            None,
+            live_project::ShortOperation::History {
+                direction,
+                expected_revision: RevisionId::new(expected)?,
+                new_revision: new_revision()?,
+                dry_run: preview,
+            },
+        )?)
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+    {
+        let mut store = ProjectStore::open(
+            package,
+            if preview {
+                AccessMode::ReadOnly
+            } else {
+                AccessMode::ReadWrite
+            },
+        )?;
+        let expected = RevisionId::new(expected)?;
+        let next = new_revision()?;
+        let outcome = match (action, preview) {
+            ("undo", true) => store.preview_undo(&expected, next)?,
+            ("undo", false) => store.undo(&expected, next)?,
+            (_, true) => store.preview_redo(&expected, next)?,
+            (_, false) => store.redo(&expected, next)?,
+        };
+        write_json(&serde_json::json!({ "protocol": 1, "committed": !preview, "outcome": outcome }))
+    }
 }
 
 fn pair(value: &str, separator: char) -> Result<(u32, u32), CliError> {
@@ -821,22 +863,36 @@ fn command(package: &Path, request: &Path, dry_run: bool) -> Result<(), CliError
         new_revision: envelope.new_revision.map_or_else(new_revision, Ok)?,
         command: envelope.command,
     };
-    let mut store = ProjectStore::open(
-        package,
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    {
+        write_json(&live_project::dispatch_short(
+            package,
+            Some(request.project_id.clone()),
+            live_project::ShortOperation::Edit {
+                request: Box::new(request),
+                dry_run: preview,
+            },
+        )?)
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+    {
+        let mut store = ProjectStore::open(
+            package,
+            if preview {
+                AccessMode::ReadOnly
+            } else {
+                AccessMode::ReadWrite
+            },
+        )?;
         if preview {
-            AccessMode::ReadOnly
+            write_json(
+                &serde_json::json!({ "protocol": 1, "committed": false, "edit": store.preview(&request)? }),
+            )
         } else {
-            AccessMode::ReadWrite
-        },
-    )?;
-    if preview {
-        write_json(
-            &serde_json::json!({ "protocol": 1, "committed": false, "edit": store.preview(&request)? }),
-        )
-    } else {
-        write_json(
-            &serde_json::json!({ "protocol": 1, "committed": true, "outcome": store.commit(&request)? }),
-        )
+            write_json(
+                &serde_json::json!({ "protocol": 1, "committed": true, "outcome": store.commit(&request)? }),
+            )
+        }
     }
 }
 

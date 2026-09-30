@@ -10,7 +10,7 @@ publish.workspace = true
 
 [features]
 # Developer-only whole-workspace replay. The shipped app does not include the runner.
-ui-harness = ["dep:deadpan-native-process", "dep:deadpan-jobs", "dep:egui_kittest", "dep:image", "dep:serde", "dep:serde_json", "dep:tempfile"]
+ui-harness = ["dep:deadpan-native-process", "dep:deadpan-jobs", "dep:egui_kittest", "dep:image", "dep:serde", "dep:tempfile"]
 
 [dependencies]
 eframe.workspace = true
@@ -32,7 +32,7 @@ uuid.workspace = true
 egui_kittest = { version = "=0.36.2", default-features = false, features = ["eframe", "wgpu"], optional = true }
 image = { version = "=0.25.10", default-features = false, features = ["png"], optional = true }
 serde = { workspace = true, optional = true }
-serde_json = { workspace = true, optional = true }
+serde_json.workspace = true
 tempfile = { workspace = true, optional = true }
 
 [target.'cfg(target_os = "macos")'.dependencies]
@@ -43,7 +43,6 @@ objc2-foundation = { version = "=0.3.2", default-features = false, features = ["
 [dev-dependencies]
 deadpan-jobs.workspace = true
 rusqlite.workspace = true
-serde_json.workspace = true
 tempfile.workspace = true
 
 [lints]

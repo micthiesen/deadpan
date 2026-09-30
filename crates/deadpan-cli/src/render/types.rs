@@ -94,7 +94,8 @@ impl RenderRequest {
     }
 }
 
-#[derive(Debug, Clone, Serialize, thiserror::Error)]
+#[derive(Debug, Clone, Serialize, Deserialize, thiserror::Error)]
+#[serde(deny_unknown_fields)]
 #[error("{code}: {message}")]
 pub struct PublicRenderError {
     pub code: String,
@@ -114,7 +115,8 @@ pub struct RenderOutputSummary {
 
 /// Compact live status. A stored verification report or decision never appears
 /// as a live capability, and an admitted candidate is never labeled published.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct RenderStatus {
     pub context: RenderContext,
     pub target: Option<WorkflowTarget>,

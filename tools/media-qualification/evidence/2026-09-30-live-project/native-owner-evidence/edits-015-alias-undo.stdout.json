@@ -1,0 +1,230 @@
+{
+  "committed": true,
+  "outcome": {
+    "edit": {
+      "changed_ids": [
+        "freeze"
+      ],
+      "description": "Undo Rename beat",
+      "duration_delta": 0,
+      "forward": {
+        "assets": {},
+        "from_revision": "b0fa54fd-14d0-49c7-8c44-79363f2b0fc8",
+        "marks": {},
+        "nodes": {
+          "freeze": {
+            "after": {
+              "kind": {
+                "recipe": {
+                  "audio": {
+                    "type": "silence"
+                  },
+                  "duration": 3,
+                  "picture_context": {
+                    "canvases": [
+                      {
+                        "fit": "fit",
+                        "height": 180,
+                        "layers": [
+                          {
+                            "center_x": {
+                              "denominator": "5",
+                              "numerator": "3"
+                            },
+                            "center_y": {
+                              "denominator": "5",
+                              "numerator": "2"
+                            },
+                            "scale": {
+                              "denominator": "5",
+                              "numerator": "7"
+                            }
+                          }
+                        ],
+                        "width": 320
+                      }
+                    ]
+                  },
+                  "video": {
+                    "asset": "original",
+                    "timestamp": {
+                      "ticks": 41041,
+                      "time_base": {
+                        "denominator": 30000,
+                        "numerator": 1
+                      }
+                    },
+                    "type": "freeze"
+                  }
+                },
+                "type": "hold"
+              },
+              "label": "IPC native owner confirmed"
+            },
+            "before": {
+              "kind": {
+                "recipe": {
+                  "audio": {
+                    "type": "silence"
+                  },
+                  "duration": 3,
+                  "picture_context": {
+                    "canvases": [
+                      {
+                        "fit": "fit",
+                        "height": 180,
+                        "layers": [
+                          {
+                            "center_x": {
+                              "denominator": "5",
+                              "numerator": "3"
+                            },
+                            "center_y": {
+                              "denominator": "5",
+                              "numerator": "2"
+                            },
+                            "scale": {
+                              "denominator": "5",
+                              "numerator": "7"
+                            }
+                          }
+                        ],
+                        "width": 320
+                      }
+                    ]
+                  },
+                  "video": {
+                    "asset": "original",
+                    "timestamp": {
+                      "ticks": 41041,
+                      "time_base": {
+                        "denominator": 30000,
+                        "numerator": 1
+                      }
+                    },
+                    "type": "freeze"
+                  }
+                },
+                "type": "hold"
+              },
+              "label": "IPC alias owner confirmed"
+            }
+          }
+        },
+        "overrides": {},
+        "project_id": "project-picture-qualification",
+        "to_revision": "08b4d098-3a06-49d7-b745-07c6196629b1"
+      },
+      "inverse": {
+        "assets": {},
+        "from_revision": "08b4d098-3a06-49d7-b745-07c6196629b1",
+        "marks": {},
+        "nodes": {
+          "freeze": {
+            "after": {
+              "kind": {
+                "recipe": {
+                  "audio": {
+                    "type": "silence"
+                  },
+                  "duration": 3,
+                  "picture_context": {
+                    "canvases": [
+                      {
+                        "fit": "fit",
+                        "height": 180,
+                        "layers": [
+                          {
+                            "center_x": {
+                              "denominator": "5",
+                              "numerator": "3"
+                            },
+                            "center_y": {
+                              "denominator": "5",
+                              "numerator": "2"
+                            },
+                            "scale": {
+                              "denominator": "5",
+                              "numerator": "7"
+                            }
+                          }
+                        ],
+                        "width": 320
+                      }
+                    ]
+                  },
+                  "video": {
+                    "asset": "original",
+                    "timestamp": {
+                      "ticks": 41041,
+                      "time_base": {
+                        "denominator": 30000,
+                        "numerator": 1
+                      }
+                    },
+                    "type": "freeze"
+                  }
+                },
+                "type": "hold"
+              },
+              "label": "IPC alias owner confirmed"
+            },
+            "before": {
+              "kind": {
+                "recipe": {
+                  "audio": {
+                    "type": "silence"
+                  },
+                  "duration": 3,
+                  "picture_context": {
+                    "canvases": [
+                      {
+                        "fit": "fit",
+                        "height": 180,
+                        "layers": [
+                          {
+                            "center_x": {
+                              "denominator": "5",
+                              "numerator": "3"
+                            },
+                            "center_y": {
+                              "denominator": "5",
+                              "numerator": "2"
+                            },
+                            "scale": {
+                              "denominator": "5",
+                              "numerator": "7"
+                            }
+                          }
+                        ],
+                        "width": 320
+                      }
+                    ]
+                  },
+                  "video": {
+                    "asset": "original",
+                    "timestamp": {
+                      "ticks": 41041,
+                      "time_base": {
+                        "denominator": 30000,
+                        "numerator": 1
+                      }
+                    },
+                    "type": "freeze"
+                  }
+                },
+                "type": "hold"
+              },
+              "label": "IPC native owner confirmed"
+            }
+          }
+        },
+        "overrides": {},
+        "project_id": "project-picture-qualification",
+        "to_revision": "b0fa54fd-14d0-49c7-8c44-79363f2b0fc8"
+      }
+    },
+    "revision_id": "08b4d098-3a06-49d7-b745-07c6196629b1"
+  },
+  "protocol": 1
+}

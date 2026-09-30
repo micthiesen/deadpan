@@ -1,0 +1,24 @@
+{
+  "preview": "gain",
+  "command": [
+    "deadpan-app",
+    "--headless",
+    "render",
+    "/tmp/deadpan-live-project-20260930/native.deadpan",
+    "--output",
+    "/tmp/deadpan-live-project-20260930/native-owner-evidence/movies",
+    "--name",
+    "preview-refusal-gain.mp4"
+  ],
+  "exit_code": 1,
+  "error": {
+    "code": "RenderPreviewDecisionRequired",
+    "current_revision": null,
+    "message": "Commit or discard the temporary preview in the native app before rendering"
+  },
+  "seconds": 0.03384679090231657,
+  "binary_sha256": "c02f095bd18514db60eb05c679fd4b3b30b74c0e8a28f92fba8844776efb68b7",
+  "unchanged_document_and_render_rows": true,
+  "movie_exists": false,
+  "result": "passed"
+}

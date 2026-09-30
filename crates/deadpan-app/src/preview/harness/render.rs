@@ -38,8 +38,11 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         close_status(d)?;
     }
     camera_decision(d)?;
+    preview_gate(d, false, "Closed Camera")?;
     gain_decision(d)?;
+    preview_gate(d, false, "Closed Gain")?;
     room_tone_decision(d)?;
+    preview_gate(d, false, "Closed Room tone")?;
     stale_decision(d)?;
     actual_export(d, &output.join("preview.mp4"))
 }
@@ -77,7 +80,8 @@ fn open_camera(d: &mut Driver<'_>) -> Result<(), String> {
         app.camera.is_some()
     })?;
     d.key(Key::Plus)?;
-    d.settled()
+    d.settled()?;
+    preview_gate(d, true, "Camera")
 }
 
 fn camera_decision(d: &mut Driver<'_>) -> Result<(), String> {
@@ -197,7 +201,8 @@ fn prepare_gain(d: &mut Driver<'_>, value: &str) -> Result<(), String> {
                 .as_ref()
                 .is_some_and(|draft| draft.prepared_snapshot().is_some())
     })?;
-    d.click("Gain draft keyboard focus")
+    d.click("Gain draft keyboard focus")?;
+    preview_gate(d, true, "Gain")
 }
 
 fn gain_decision(d: &mut Driver<'_>) -> Result<(), String> {
@@ -263,6 +268,7 @@ fn room_tone_decision(d: &mut Driver<'_>) -> Result<(), String> {
                 .as_ref()
                 .is_some_and(|draft| draft.prepared.is_some())
     })?;
+    preview_gate(d, true, "Room tone")?;
     render_key(d)?;
     decision_layout(d, "Room tone")?;
     d.click(KEEP)?;
@@ -558,4 +564,14 @@ fn jobs(d: &Driver<'_>) -> Result<Vec<deadpan_jobs::render::RenderIntent>, Strin
 
 fn render_snapshot(d: &Driver<'_>) -> Value {
     json!({"revision":d.revision(),"blocking":d.app().render.blocking(),"error":d.app().render.error(),"status":format!("{:?}", d.app().render_job)})
+}
+
+fn preview_gate(d: &mut Driver<'_>, expected: bool, label: &str) -> Result<(), String> {
+    let actual = d.app().service.preview_active_for_check();
+    d.check(
+        &format!("{label} publishes its temporary-preview state to remote Render admission"),
+        actual == expected,
+        json!({"preview_active":expected}),
+        json!({"preview_active":actual}),
+    )
 }

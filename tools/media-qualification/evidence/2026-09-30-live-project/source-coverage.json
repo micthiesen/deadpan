@@ -1,0 +1,2030 @@
+{
+  "all_journal_deltas": {
+    "cli-corrected": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "--test",
+        "live_project",
+        "--test",
+        "project_commands",
+        "--test",
+        "render",
+        "--test",
+        "source_registration",
+        "--no-fail-fast"
+      ],
+      "different_paths": [
+        {
+          "checked_sha256": "3f8236ddbbefdbc80a0a3a010cc1e84b77e55e67cb6dd16d3c8555177f5c6853",
+          "final_sha256": "dcfbde50b7929e391de13ebfd6c4afffbbd5bbdc4a0a14bb754753dcaf60c9e2",
+          "path": "crates/deadpan-app/src/project/service/headless.rs"
+        },
+        {
+          "checked_sha256": "9d6fc95ba02ece6e72e88b0e08f3f947019f76e0de431f97d28416e8a3647297",
+          "final_sha256": "1980ef2aeeec69f7376307834ce2904cda236050b2995d61799093939436b210",
+          "path": "crates/deadpan-app/src/project/tests/headless.rs"
+        },
+        {
+          "checked_sha256": "7bb3219780e195f236cc5f156cb5160eaaeb856ad07d15ccef8a8a266d9da73a",
+          "final_sha256": "1becfa887f2def0c3f4db67882029b595bd567b6c6796284e0cf555946b2d149",
+          "path": "crates/deadpan-cli/src/host/client.rs"
+        },
+        {
+          "checked_sha256": "43ae3af4e6093c0e7c9702bdc9f9d716fe8c005d3f5358e041f41558937b4e61",
+          "final_sha256": "7ded64940e923c473f8f474603664ddd495dec5bff1215ca3a84302ae4cae91a",
+          "path": "crates/deadpan-cli/src/lib.rs"
+        },
+        {
+          "checked_sha256": "087ec95fbb891180e1b8a6505f9fee2e6d91abbb837740e5014a0ed3e948f7d5",
+          "final_sha256": "7b56d91cf565b0e2852792714cf911f638545b0c0b8b67c39ba487a67e74148d",
+          "path": "crates/deadpan-cli/src/live_project.rs"
+        },
+        {
+          "checked_sha256": "d80ff989fdc285a4e6f5946f015fbf4430009a15a80d9ab89098c4444eaedccf",
+          "final_sha256": "2b6794666406a500fffc8034ac73f0f481906b4320b87a41e9ef8f107db6b349",
+          "path": "crates/deadpan-cli/tests/live_project.rs"
+        }
+      ],
+      "exit_code": 0,
+      "source_manifest_sha256": "db5a00570f02423c90e36560791cc4171e13ccb2532d99e26769ef5e5ce43273"
+    },
+    "cli-final": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "--lib",
+        "--test",
+        "live_project",
+        "--no-fail-fast"
+      ],
+      "different_paths": [],
+      "exit_code": 0,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "cli-host-first": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-cli",
+        "--lib",
+        "host::",
+        "--test",
+        "live_project"
+      ],
+      "different_paths": [
+        {
+          "checked_sha256": "733cdc434567c8dd51e4ffdf055fd98ad47e96a90ff4cef23981dcadd3bada38",
+          "final_sha256": "6c927bc4ec2da3248f0f72af2e2f04b43458dd622d9f4fb7f6d17a70c138df7a",
+          "path": "crates/deadpan-app/Cargo.toml"
+        },
+        {
+          "checked_sha256": "e0c38d3754bfc3d3a956a9063b20662d2923bbd4a0d144365b27401ea1b40140",
+          "final_sha256": "9effef785edfe587ce8f5e70470739a401784d9158d2ea95bc6612900a32af7c",
+          "path": "crates/deadpan-app/src/preview.rs"
+        },
+        {
+          "checked_sha256": "730026a625b24db989e3543ff16e91c254f794fd4bf55b757d2bb461d2d1c661",
+          "final_sha256": "3cef60660adb247587f1fc3bd14e973a16b0b8bcb50296eda985a6a1a886e729",
+          "path": "crates/deadpan-app/src/preview/harness/render.rs"
+        },
+        {
+          "checked_sha256": "2bb18afae9843ec6547f6e9110cbf7eeee06220b05523107a073d7d00f3acaf6",
+          "final_sha256": "0e77af5cdd722f6af29101d85a339779a6809bd1b2f0f394af24ec5fc7eaf80e",
+          "path": "crates/deadpan-app/src/project.rs"
+        },
+        {
+          "checked_sha256": "2cd7f77dd6e675c60608f6fce84fedf0b8b5761fae7fc3627a586955d2d2c243",
+          "final_sha256": "dcfbde50b7929e391de13ebfd6c4afffbbd5bbdc4a0a14bb754753dcaf60c9e2",
+          "path": "crates/deadpan-app/src/project/service/headless.rs"
+        },
+        {
+          "checked_sha256": "64ef844cc33b47f036190c787b4fb53fbbb493b01e07303cd5911848358d0cc0",
+          "final_sha256": "3c2bd6152bcbe0acb8f2a36dad114d00e9d561ee56b45b67d1c825964c16b042",
+          "path": "crates/deadpan-app/src/project/tests.rs"
+        },
+        {
+          "checked_sha256": null,
+          "final_sha256": "1980ef2aeeec69f7376307834ce2904cda236050b2995d61799093939436b210",
+          "path": "crates/deadpan-app/src/project/tests/headless.rs"
+        },
+        {
+          "checked_sha256": "146359c65d1adf4ee1e2b9d8bf85743e9a767e1ad0aacb1b484b3b5ad4813c51",
+          "final_sha256": "01218fd5f5088b12fe15ba3576a73097f320bc16b20822ce5a7b47b524c97e0d",
+          "path": "crates/deadpan-cli/src/encoded_render/workflow/types.rs"
+        },
+        {
+          "checked_sha256": "a6010840dfdea767a5e8a35ccf727a2f7663bc0ad1c6f7bf70c87a6fac88ca04",
+          "final_sha256": "1c1a50fe6b504e5740b33d33acc487be209f1e0583f746ca5782e71331b3927d",
+          "path": "crates/deadpan-cli/src/host.rs"
+        },
+        {
+          "checked_sha256": "21c925728ca70fd52b0caa11c88692b4d5c374da555e9a7332700cac2206790a",
+          "final_sha256": "1becfa887f2def0c3f4db67882029b595bd567b6c6796284e0cf555946b2d149",
+          "path": "crates/deadpan-cli/src/host/client.rs"
+        },
+        {
+          "checked_sha256": "eb59cf2c844a7bc5d6b53956c02726077cdb458b21749260e123aa226a6a223f",
+          "final_sha256": "f533fa39be5fc548bb93a5a4883f1e8dd945dbdc98dd7efb5f636574f01a0a7c",
+          "path": "crates/deadpan-cli/src/host/namespace.rs"
+        },
+        {
+          "checked_sha256": "65789f0e3a3c991e2bed8f1e991de0e9e97e9d00c411024867232bf51ed1790a",
+          "final_sha256": "c71b5dcd2ae58db14d2c9f22dde8d10a73935a06ea2129280ed3a0f270e2b50a",
+          "path": "crates/deadpan-cli/src/host/server.rs"
+        },
+        {
+          "checked_sha256": "0edbb5915e36a32e3b6b74ac235e8295f9186d9a8caaa2c30b2e0b75d2b6d9a8",
+          "final_sha256": "656529dd2adacbf10c92ffdb005659c075818695a42fc19d39aad1b201bf899c",
+          "path": "crates/deadpan-cli/src/host/server_tests.rs"
+        },
+        {
+          "checked_sha256": "483526f2c652f23a1a316d09a6b1da1772a4d6107eed04ad4276ebff7de27970",
+          "final_sha256": "93811355761798691b4b38746e17ecea3ad988f7351b081ddcbfc8b48e19c9b9",
+          "path": "crates/deadpan-cli/src/host/tests.rs"
+        },
+        {
+          "checked_sha256": "fb35a6697593a77231b64a472147a742b84c2a552379a8f189ba0c1448df475e",
+          "final_sha256": "6c5e52581dff88e15a30587ffa3c341e24fd7ffd8a34310fb7597bf16dfd48cb",
+          "path": "crates/deadpan-cli/src/host/wire.rs"
+        },
+        {
+          "checked_sha256": "4d0a479d8cc4eef33f97d3ee118e377c288bdd73e886d16922ad83a9a73eada5",
+          "final_sha256": "7ded64940e923c473f8f474603664ddd495dec5bff1215ca3a84302ae4cae91a",
+          "path": "crates/deadpan-cli/src/lib.rs"
+        },
+        {
+          "checked_sha256": "9b5dca38368857e20303b1bfdeef4d87f6d713289d88bdbb63995eb819350187",
+          "final_sha256": "7b56d91cf565b0e2852792714cf911f638545b0c0b8b67c39ba487a67e74148d",
+          "path": "crates/deadpan-cli/src/live_project.rs"
+        },
+        {
+          "checked_sha256": "f5426c7c100ed4c3ba8df2b523f6c5ea6c3ccef0223d18b9f0f921052a1ac16d",
+          "final_sha256": "ccd3a2c32f329b32b4ecc647f980c44b05a1251bd5a4d4d6f2e56ea5a315b114",
+          "path": "crates/deadpan-cli/src/render.rs"
+        },
+        {
+          "checked_sha256": "c79b5c6d930aa22d7cd6a8a478de0f072e5326e5c50386430a78b2b1cf4a92b9",
+          "final_sha256": "7c76320788a9df2eaa49b8ae76bdc15d94c54fc33d2889b8af185e337fa5d89d",
+          "path": "crates/deadpan-cli/src/render/cli.rs"
+        },
+        {
+          "checked_sha256": null,
+          "final_sha256": "84691f2bf769ec1819274f457910cdd430d3253ff8007d2be1d1e10fc29bbec9",
+          "path": "crates/deadpan-cli/src/render/cli/live.rs"
+        },
+        {
+          "checked_sha256": null,
+          "final_sha256": "3edf85426cdfc4464b99b64b6f8da03ec77c6f87ea525b2a8520e19a993ac1ef",
+          "path": "crates/deadpan-cli/src/render/cli/live/tests.rs"
+        },
+        {
+          "checked_sha256": "d652f4f7f42f4e3facb4b34abdfe187457ea5dcf4201958bdc6f655d40be475e",
+          "final_sha256": "f180221cbc24f1552ea1fd1ded8d7b7f4e8dada33ab284bf51549902194e76e0",
+          "path": "crates/deadpan-cli/src/source_registration.rs"
+        },
+        {
+          "checked_sha256": "b68cea3a4e980a70c452ebad825bb5a98778b79bb05fc7b1c392ce43d355f7cb",
+          "final_sha256": "2b6794666406a500fffc8034ac73f0f481906b4320b87a41e9ef8f107db6b349",
+          "path": "crates/deadpan-cli/tests/live_project.rs"
+        },
+        {
+          "checked_sha256": "41a41b31ab38fb7022c9537b4c2ea7f1c212e9ebe30b9b8852f5e00a8252bb4f",
+          "final_sha256": "91fcdc7285f55ca4bb73f83dedd16fb94c0fb475d557ea9aa3eb7242bdfcc602",
+          "path": "crates/deadpan-cli/tests/project_commands.rs"
+        },
+        {
+          "checked_sha256": "c32b3ffa24dad6156981377aab6d084ba54936ac893830f6a5fa33f26b6cd766",
+          "final_sha256": "497159a85b0b749ad6b81a274508800bd3413f8fb9c32143116e1da7c6212aa0",
+          "path": "crates/deadpan-cli/tests/render.rs"
+        },
+        {
+          "checked_sha256": "bcb87a5bc39db0ba7419c974ad76776b60401ede3add720c2bf4c1c8ee610e72",
+          "final_sha256": "8a35b2ca2e817198cfdbdf304aa08a3e46624d02f18f964b13f5aca3b1547ce1",
+          "path": "crates/deadpan-cli/tests/source_registration.rs"
+        },
+        {
+          "checked_sha256": "879f26f9ce8b6c60b41c0b1f665d350e7a3c6dbfa3417dc4a2c8da4144ce4e86",
+          "final_sha256": "faa46eeeb22f3f6cb3e1ca25fd61572c9e61da9b94fe3b164f692b0a6668d0bd",
+          "path": "native/deadpan-process/src/lib.rs"
+        },
+        {
+          "checked_sha256": "ef0a798dd652e514e323cfd66b34cd6a628b4090ea49566ccf9f8adc8055d09c",
+          "final_sha256": "85bc1980138fe252faa4d9e23b6ca74c52358b1631ea7d629a6dcb9837c295cd",
+          "path": "native/deadpan-process/src/spawn.rs"
+        }
+      ],
+      "exit_code": 101,
+      "source_manifest_sha256": "73790537bb382253a221508831a61040ab17889321d55264ff430bb10280c2d1"
+    },
+    "focused-host-first": {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "--no-fail-fast",
+        "host"
+      ],
+      "different_paths": [
+        {
+          "checked_sha256": "733cdc434567c8dd51e4ffdf055fd98ad47e96a90ff4cef23981dcadd3bada38",
+          "final_sha256": "6c927bc4ec2da3248f0f72af2e2f04b43458dd622d9f4fb7f6d17a70c138df7a",
+          "path": "crates/deadpan-app/Cargo.toml"
+        },
+        {
+          "checked_sha256": "730026a625b24db989e3543ff16e91c254f794fd4bf55b757d2bb461d2d1c661",
+          "final_sha256": "3cef60660adb247587f1fc3bd14e973a16b0b8bcb50296eda985a6a1a886e729",
+          "path": "crates/deadpan-app/src/preview/harness/render.rs"
+        },
+        {
+          "checked_sha256": "b0ff65a001249e33328aea1997757dd4e238fe36411495b5fb387fca11703ec1",
+          "final_sha256": "0e77af5cdd722f6af29101d85a339779a6809bd1b2f0f394af24ec5fc7eaf80e",
+          "path": "crates/deadpan-app/src/project.rs"
+        },
+        {
+          "checked_sha256": "63829fe0b412610c8a9edce8f8c5666abb3d86fcbb072620215291903e96538c",
+          "final_sha256": "dcfbde50b7929e391de13ebfd6c4afffbbd5bbdc4a0a14bb754753dcaf60c9e2",
+          "path": "crates/deadpan-app/src/project/service/headless.rs"
+        },
+        {
+          "checked_sha256": "475a128e1cb4a33647cecb2a7072e7a984ea36081de4515c553a153d9faa6d5a",
+          "final_sha256": "1980ef2aeeec69f7376307834ce2904cda236050b2995d61799093939436b210",
+          "path": "crates/deadpan-app/src/project/tests/headless.rs"
+        },
+        {
+          "checked_sha256": "f5d3c13cf7c9b9dbb1f32a1b94cdeaabeed31d80302b425c9f0244d98b5679d4",
+          "final_sha256": "1becfa887f2def0c3f4db67882029b595bd567b6c6796284e0cf555946b2d149",
+          "path": "crates/deadpan-cli/src/host/client.rs"
+        },
+        {
+          "checked_sha256": "005787b557ddda2a0ef39d9898714d4916279e08b5ecda21bc9a7f89a76682c6",
+          "final_sha256": "93811355761798691b4b38746e17ecea3ad988f7351b081ddcbfc8b48e19c9b9",
+          "path": "crates/deadpan-cli/src/host/tests.rs"
+        },
+        {
+          "checked_sha256": "73d32d91e830d0195280d9b1428f5632659fb7af8de5a305feb3b45366eed4c4",
+          "final_sha256": "6c5e52581dff88e15a30587ffa3c341e24fd7ffd8a34310fb7597bf16dfd48cb",
+          "path": "crates/deadpan-cli/src/host/wire.rs"
+        },
+        {
+          "checked_sha256": "43ae3af4e6093c0e7c9702bdc9f9d716fe8c005d3f5358e041f41558937b4e61",
+          "final_sha256": "7ded64940e923c473f8f474603664ddd495dec5bff1215ca3a84302ae4cae91a",
+          "path": "crates/deadpan-cli/src/lib.rs"
+        },
+        {
+          "checked_sha256": "0deed805eb108b6aff0d81646d4342c9a2aed828f9762eae944e915bf97da773",
+          "final_sha256": "7b56d91cf565b0e2852792714cf911f638545b0c0b8b67c39ba487a67e74148d",
+          "path": "crates/deadpan-cli/src/live_project.rs"
+        },
+        {
+          "checked_sha256": "377ccbc792b08217472e9b9d12255c19cde6866881430c561d1806aaf0bfacdb",
+          "final_sha256": "84691f2bf769ec1819274f457910cdd430d3253ff8007d2be1d1e10fc29bbec9",
+          "path": "crates/deadpan-cli/src/render/cli/live.rs"
+        },
+        {
+          "checked_sha256": "5739f4385fc57a7cd8fca42707bd283cb695013fc8265e8b8bb31bdc588d51eb",
+          "final_sha256": "3edf85426cdfc4464b99b64b6f8da03ec77c6f87ea525b2a8520e19a993ac1ef",
+          "path": "crates/deadpan-cli/src/render/cli/live/tests.rs"
+        },
+        {
+          "checked_sha256": "b68cea3a4e980a70c452ebad825bb5a98778b79bb05fc7b1c392ce43d355f7cb",
+          "final_sha256": "2b6794666406a500fffc8034ac73f0f481906b4320b87a41e9ef8f107db6b349",
+          "path": "crates/deadpan-cli/tests/live_project.rs"
+        },
+        {
+          "checked_sha256": "41a41b31ab38fb7022c9537b4c2ea7f1c212e9ebe30b9b8852f5e00a8252bb4f",
+          "final_sha256": "91fcdc7285f55ca4bb73f83dedd16fb94c0fb475d557ea9aa3eb7242bdfcc602",
+          "path": "crates/deadpan-cli/tests/project_commands.rs"
+        },
+        {
+          "checked_sha256": "c32b3ffa24dad6156981377aab6d084ba54936ac893830f6a5fa33f26b6cd766",
+          "final_sha256": "497159a85b0b749ad6b81a274508800bd3413f8fb9c32143116e1da7c6212aa0",
+          "path": "crates/deadpan-cli/tests/render.rs"
+        },
+        {
+          "checked_sha256": "bcb87a5bc39db0ba7419c974ad76776b60401ede3add720c2bf4c1c8ee610e72",
+          "final_sha256": "8a35b2ca2e817198cfdbdf304aa08a3e46624d02f18f964b13f5aca3b1547ce1",
+          "path": "crates/deadpan-cli/tests/source_registration.rs"
+        },
+        {
+          "checked_sha256": "879f26f9ce8b6c60b41c0b1f665d350e7a3c6dbfa3417dc4a2c8da4144ce4e86",
+          "final_sha256": "faa46eeeb22f3f6cb3e1ca25fd61572c9e61da9b94fe3b164f692b0a6668d0bd",
+          "path": "native/deadpan-process/src/lib.rs"
+        },
+        {
+          "checked_sha256": "ef0a798dd652e514e323cfd66b34cd6a628b4090ea49566ccf9f8adc8055d09c",
+          "final_sha256": "85bc1980138fe252faa4d9e23b6ca74c52358b1631ea7d629a6dcb9837c295cd",
+          "path": "native/deadpan-process/src/spawn.rs"
+        }
+      ],
+      "exit_code": 101,
+      "source_manifest_sha256": "dfc82653b481898fe621f881dc582a5a1ebe3fe3dcc54a6c90d65d62531cb018"
+    },
+    "format-final": {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--check"
+      ],
+      "different_paths": [],
+      "exit_code": 0,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "independent-decode": {
+      "command": [
+        "python3",
+        "/tmp/deadpan-live-project-20260930/qualify-decoded.py"
+      ],
+      "different_paths": [],
+      "exit_code": 1,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "independent-decode-final": {
+      "command": [
+        "python3",
+        "/tmp/deadpan-live-project-20260930/qualify-decoded.py"
+      ],
+      "different_paths": [],
+      "exit_code": 0,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "native-cancel": {
+      "command": [
+        "python3",
+        "/tmp/deadpan-live-project-20260930/qualify-native-owner.py",
+        "cancel"
+      ],
+      "different_paths": [],
+      "exit_code": 0,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "native-edits": {
+      "command": [
+        "python3",
+        "/tmp/deadpan-live-project-20260930/qualify-native-owner.py",
+        "edits"
+      ],
+      "different_paths": [],
+      "exit_code": 0,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "native-recovery": {
+      "command": [
+        "python3",
+        "/tmp/deadpan-live-project-20260930/qualify-native-owner.py",
+        "recovery"
+      ],
+      "different_paths": [],
+      "exit_code": 0,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "native-render": {
+      "command": [
+        "python3",
+        "/tmp/deadpan-live-project-20260930/qualify-native-owner.py",
+        "render"
+      ],
+      "different_paths": [],
+      "exit_code": 0,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "native-smoke": {
+      "command": [
+        "deadpan-app",
+        "--smoke-test"
+      ],
+      "different_paths": [],
+      "exit_code": 0,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "store-owner-first": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-store",
+        "--test",
+        "host_owner"
+      ],
+      "different_paths": [
+        {
+          "checked_sha256": "8043e4fe65ef3e9a3f1e64d85e6f151cde89c08c40d152c7ddc9783a5bd22f06",
+          "final_sha256": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+          "path": "Cargo.lock"
+        },
+        {
+          "checked_sha256": "733cdc434567c8dd51e4ffdf055fd98ad47e96a90ff4cef23981dcadd3bada38",
+          "final_sha256": "6c927bc4ec2da3248f0f72af2e2f04b43458dd622d9f4fb7f6d17a70c138df7a",
+          "path": "crates/deadpan-app/Cargo.toml"
+        },
+        {
+          "checked_sha256": "61051976fd68f115f5e87d84da844c9cc5190e3e7d528fa60f36b49ea46bb9a7",
+          "final_sha256": "9effef785edfe587ce8f5e70470739a401784d9158d2ea95bc6612900a32af7c",
+          "path": "crates/deadpan-app/src/preview.rs"
+        },
+        {
+          "checked_sha256": "ccc2879167f026c738866662ab46e2872074a403a387eaca3faeabae95f2938e",
+          "final_sha256": "6857c5967c09085d2bc7ec15a21a570d20185d9a1a3653b8c016f6cefacce122",
+          "path": "crates/deadpan-app/src/preview/camera.rs"
+        },
+        {
+          "checked_sha256": "c560ddfba0e4efc6969d95f3b0a2cc62c7d6f09beda5796bdcd5e559fac83971",
+          "final_sha256": "3fd9b528bd70db34c0899e6b8fd5c0ff3343093ede13154b54e7bad1c2894060",
+          "path": "crates/deadpan-app/src/preview/gain.rs"
+        },
+        {
+          "checked_sha256": "730026a625b24db989e3543ff16e91c254f794fd4bf55b757d2bb461d2d1c661",
+          "final_sha256": "3cef60660adb247587f1fc3bd14e973a16b0b8bcb50296eda985a6a1a886e729",
+          "path": "crates/deadpan-app/src/preview/harness/render.rs"
+        },
+        {
+          "checked_sha256": "3992c48151af2654a0fae432fffb0e96816c6119a3489588158313730b2de05b",
+          "final_sha256": "d98d651790c4a95feafeb16caefb5c5a678509ebedf0f760867021d3e87a0b30",
+          "path": "crates/deadpan-app/src/preview/room_tone.rs"
+        },
+        {
+          "checked_sha256": "b831d15d92105087aac1e21d6ab95a044ebbc432166d66175c54572c9a2ba7e2",
+          "final_sha256": "0e77af5cdd722f6af29101d85a339779a6809bd1b2f0f394af24ec5fc7eaf80e",
+          "path": "crates/deadpan-app/src/project.rs"
+        },
+        {
+          "checked_sha256": "45b052472b89ffef63081a375a2aeb47061a9dc4f5533ba218499b3b28a50312",
+          "final_sha256": "1ab585771f3945aaa44b261b3669165e9e215aa60671b8fc6e43bdd2c5e02c9e",
+          "path": "crates/deadpan-app/src/project/service.rs"
+        },
+        {
+          "checked_sha256": null,
+          "final_sha256": "dcfbde50b7929e391de13ebfd6c4afffbbd5bbdc4a0a14bb754753dcaf60c9e2",
+          "path": "crates/deadpan-app/src/project/service/headless.rs"
+        },
+        {
+          "checked_sha256": "5d9420be23f01da7f99d0ec5c43141dad5e5ace937afcbd6e1a2b6e017106075",
+          "final_sha256": "5630951499cf8649bc469c111d1b186f7bd5e31a45dc1156e4bc8177945d1af8",
+          "path": "crates/deadpan-app/src/project/service/render.rs"
+        },
+        {
+          "checked_sha256": "e94ace2b2a1f26964c2aa2f4a9bbaf4ba30af40fd160f44b11321d3795fb6b0e",
+          "final_sha256": "3c2bd6152bcbe0acb8f2a36dad114d00e9d561ee56b45b67d1c825964c16b042",
+          "path": "crates/deadpan-app/src/project/tests.rs"
+        },
+        {
+          "checked_sha256": null,
+          "final_sha256": "1980ef2aeeec69f7376307834ce2904cda236050b2995d61799093939436b210",
+          "path": "crates/deadpan-app/src/project/tests/headless.rs"
+        },
+        {
+          "checked_sha256": "c02931a0e069a9f5c57af5d4fed6c53cbdf2e24618ee5ce6d6907ed5ff19877f",
+          "final_sha256": "3614c42d724fba20b4acdc9d928e403875b87898350754de47acf658ec6d3c44",
+          "path": "crates/deadpan-cli/Cargo.toml"
+        },
+        {
+          "checked_sha256": "146359c65d1adf4ee1e2b9d8bf85743e9a767e1ad0aacb1b484b3b5ad4813c51",
+          "final_sha256": "01218fd5f5088b12fe15ba3576a73097f320bc16b20822ce5a7b47b524c97e0d",
+          "path": "crates/deadpan-cli/src/encoded_render/workflow/types.rs"
+        },
+        {
+          "checked_sha256": "a6010840dfdea767a5e8a35ccf727a2f7663bc0ad1c6f7bf70c87a6fac88ca04",
+          "final_sha256": "1c1a50fe6b504e5740b33d33acc487be209f1e0583f746ca5782e71331b3927d",
+          "path": "crates/deadpan-cli/src/host.rs"
+        },
+        {
+          "checked_sha256": "21c925728ca70fd52b0caa11c88692b4d5c374da555e9a7332700cac2206790a",
+          "final_sha256": "1becfa887f2def0c3f4db67882029b595bd567b6c6796284e0cf555946b2d149",
+          "path": "crates/deadpan-cli/src/host/client.rs"
+        },
+        {
+          "checked_sha256": "eb59cf2c844a7bc5d6b53956c02726077cdb458b21749260e123aa226a6a223f",
+          "final_sha256": "f533fa39be5fc548bb93a5a4883f1e8dd945dbdc98dd7efb5f636574f01a0a7c",
+          "path": "crates/deadpan-cli/src/host/namespace.rs"
+        },
+        {
+          "checked_sha256": "6419c6d786066eaa4cfaab597ba3ebf122562aed3cb16ef77e73081c19ae8090",
+          "final_sha256": "c71b5dcd2ae58db14d2c9f22dde8d10a73935a06ea2129280ed3a0f270e2b50a",
+          "path": "crates/deadpan-cli/src/host/server.rs"
+        },
+        {
+          "checked_sha256": null,
+          "final_sha256": "656529dd2adacbf10c92ffdb005659c075818695a42fc19d39aad1b201bf899c",
+          "path": "crates/deadpan-cli/src/host/server_tests.rs"
+        },
+        {
+          "checked_sha256": null,
+          "final_sha256": "93811355761798691b4b38746e17ecea3ad988f7351b081ddcbfc8b48e19c9b9",
+          "path": "crates/deadpan-cli/src/host/tests.rs"
+        },
+        {
+          "checked_sha256": "fb35a6697593a77231b64a472147a742b84c2a552379a8f189ba0c1448df475e",
+          "final_sha256": "6c5e52581dff88e15a30587ffa3c341e24fd7ffd8a34310fb7597bf16dfd48cb",
+          "path": "crates/deadpan-cli/src/host/wire.rs"
+        },
+        {
+          "checked_sha256": "4d0a479d8cc4eef33f97d3ee118e377c288bdd73e886d16922ad83a9a73eada5",
+          "final_sha256": "7ded64940e923c473f8f474603664ddd495dec5bff1215ca3a84302ae4cae91a",
+          "path": "crates/deadpan-cli/src/lib.rs"
+        },
+        {
+          "checked_sha256": "51c98fd3185030112b0cfa38a0e347c8365dccd09ecd299cbabdba908edf7106",
+          "final_sha256": "7b56d91cf565b0e2852792714cf911f638545b0c0b8b67c39ba487a67e74148d",
+          "path": "crates/deadpan-cli/src/live_project.rs"
+        },
+        {
+          "checked_sha256": "f5426c7c100ed4c3ba8df2b523f6c5ea6c3ccef0223d18b9f0f921052a1ac16d",
+          "final_sha256": "ccd3a2c32f329b32b4ecc647f980c44b05a1251bd5a4d4d6f2e56ea5a315b114",
+          "path": "crates/deadpan-cli/src/render.rs"
+        },
+        {
+          "checked_sha256": "740a13248564813af9af63eb58bcc8af7b9d69e16791509703823e80e9aecae1",
+          "final_sha256": "7c76320788a9df2eaa49b8ae76bdc15d94c54fc33d2889b8af185e337fa5d89d",
+          "path": "crates/deadpan-cli/src/render/cli.rs"
+        },
+        {
+          "checked_sha256": null,
+          "final_sha256": "84691f2bf769ec1819274f457910cdd430d3253ff8007d2be1d1e10fc29bbec9",
+          "path": "crates/deadpan-cli/src/render/cli/live.rs"
+        },
+        {
+          "checked_sha256": null,
+          "final_sha256": "3edf85426cdfc4464b99b64b6f8da03ec77c6f87ea525b2a8520e19a993ac1ef",
+          "path": "crates/deadpan-cli/src/render/cli/live/tests.rs"
+        },
+        {
+          "checked_sha256": "d652f4f7f42f4e3facb4b34abdfe187457ea5dcf4201958bdc6f655d40be475e",
+          "final_sha256": "f180221cbc24f1552ea1fd1ded8d7b7f4e8dada33ab284bf51549902194e76e0",
+          "path": "crates/deadpan-cli/src/source_registration.rs"
+        },
+        {
+          "checked_sha256": null,
+          "final_sha256": "2b6794666406a500fffc8034ac73f0f481906b4320b87a41e9ef8f107db6b349",
+          "path": "crates/deadpan-cli/tests/live_project.rs"
+        },
+        {
+          "checked_sha256": "41a41b31ab38fb7022c9537b4c2ea7f1c212e9ebe30b9b8852f5e00a8252bb4f",
+          "final_sha256": "91fcdc7285f55ca4bb73f83dedd16fb94c0fb475d557ea9aa3eb7242bdfcc602",
+          "path": "crates/deadpan-cli/tests/project_commands.rs"
+        },
+        {
+          "checked_sha256": "c32b3ffa24dad6156981377aab6d084ba54936ac893830f6a5fa33f26b6cd766",
+          "final_sha256": "497159a85b0b749ad6b81a274508800bd3413f8fb9c32143116e1da7c6212aa0",
+          "path": "crates/deadpan-cli/tests/render.rs"
+        },
+        {
+          "checked_sha256": "bcb87a5bc39db0ba7419c974ad76776b60401ede3add720c2bf4c1c8ee610e72",
+          "final_sha256": "8a35b2ca2e817198cfdbdf304aa08a3e46624d02f18f964b13f5aca3b1547ce1",
+          "path": "crates/deadpan-cli/tests/source_registration.rs"
+        },
+        {
+          "checked_sha256": "e4f9be3c33a58167759541b53422e3863cfb38e838d1a0da4a481029af0e11fc",
+          "final_sha256": "cdfb1a47a037fa8ad14ebf6baa063b752088944fcae9948107b3ee82d5953216",
+          "path": "crates/deadpan-store/Cargo.toml"
+        },
+        {
+          "checked_sha256": "8bddba05ead1ce36a054f6f229e86ff874319c5c949c2e4b29dc1a08bc44ec61",
+          "final_sha256": "6910262a47d7d51b1b2079178a5e3ac5d1bb8c1be4a8faff74119adc9db1af42",
+          "path": "crates/deadpan-store/tests/host_owner.rs"
+        },
+        {
+          "checked_sha256": "879f26f9ce8b6c60b41c0b1f665d350e7a3c6dbfa3417dc4a2c8da4144ce4e86",
+          "final_sha256": "faa46eeeb22f3f6cb3e1ca25fd61572c9e61da9b94fe3b164f692b0a6668d0bd",
+          "path": "native/deadpan-process/src/lib.rs"
+        },
+        {
+          "checked_sha256": "ef0a798dd652e514e323cfd66b34cd6a628b4090ea49566ccf9f8adc8055d09c",
+          "final_sha256": "85bc1980138fe252faa4d9e23b6ca74c52358b1631ea7d629a6dcb9837c295cd",
+          "path": "native/deadpan-process/src/spawn.rs"
+        }
+      ],
+      "exit_code": 101,
+      "source_manifest_sha256": "297c61a600c532208d953b1fdfdf5f92a6e2f9008edc4336cdab9a955b068903"
+    },
+    "store-owner-second": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-store",
+        "--test",
+        "host_owner"
+      ],
+      "different_paths": [
+        {
+          "checked_sha256": "733cdc434567c8dd51e4ffdf055fd98ad47e96a90ff4cef23981dcadd3bada38",
+          "final_sha256": "6c927bc4ec2da3248f0f72af2e2f04b43458dd622d9f4fb7f6d17a70c138df7a",
+          "path": "crates/deadpan-app/Cargo.toml"
+        },
+        {
+          "checked_sha256": "61051976fd68f115f5e87d84da844c9cc5190e3e7d528fa60f36b49ea46bb9a7",
+          "final_sha256": "9effef785edfe587ce8f5e70470739a401784d9158d2ea95bc6612900a32af7c",
+          "path": "crates/deadpan-app/src/preview.rs"
+        },
+        {
+          "checked_sha256": "ccc2879167f026c738866662ab46e2872074a403a387eaca3faeabae95f2938e",
+          "final_sha256": "6857c5967c09085d2bc7ec15a21a570d20185d9a1a3653b8c016f6cefacce122",
+          "path": "crates/deadpan-app/src/preview/camera.rs"
+        },
+        {
+          "checked_sha256": "c560ddfba0e4efc6969d95f3b0a2cc62c7d6f09beda5796bdcd5e559fac83971",
+          "final_sha256": "3fd9b528bd70db34c0899e6b8fd5c0ff3343093ede13154b54e7bad1c2894060",
+          "path": "crates/deadpan-app/src/preview/gain.rs"
+        },
+        {
+          "checked_sha256": "730026a625b24db989e3543ff16e91c254f794fd4bf55b757d2bb461d2d1c661",
+          "final_sha256": "3cef60660adb247587f1fc3bd14e973a16b0b8bcb50296eda985a6a1a886e729",
+          "path": "crates/deadpan-app/src/preview/harness/render.rs"
+        },
+        {
+          "checked_sha256": "3992c48151af2654a0fae432fffb0e96816c6119a3489588158313730b2de05b",
+          "final_sha256": "d98d651790c4a95feafeb16caefb5c5a678509ebedf0f760867021d3e87a0b30",
+          "path": "crates/deadpan-app/src/preview/room_tone.rs"
+        },
+        {
+          "checked_sha256": "b831d15d92105087aac1e21d6ab95a044ebbc432166d66175c54572c9a2ba7e2",
+          "final_sha256": "0e77af5cdd722f6af29101d85a339779a6809bd1b2f0f394af24ec5fc7eaf80e",
+          "path": "crates/deadpan-app/src/project.rs"
+        },
+        {
+          "checked_sha256": "45b052472b89ffef63081a375a2aeb47061a9dc4f5533ba218499b3b28a50312",
+          "final_sha256": "1ab585771f3945aaa44b261b3669165e9e215aa60671b8fc6e43bdd2c5e02c9e",
+          "path": "crates/deadpan-app/src/project/service.rs"
+        },
+        {
+          "checked_sha256": null,
+          "final_sha256": "dcfbde50b7929e391de13ebfd6c4afffbbd5bbdc4a0a14bb754753dcaf60c9e2",
+          "path": "crates/deadpan-app/src/project/service/headless.rs"
+        },
+        {
+          "checked_sha256": "5d9420be23f01da7f99d0ec5c43141dad5e5ace937afcbd6e1a2b6e017106075",
+          "final_sha256": "5630951499cf8649bc469c111d1b186f7bd5e31a45dc1156e4bc8177945d1af8",
+          "path": "crates/deadpan-app/src/project/service/render.rs"
+        },
+        {
+          "checked_sha256": "e94ace2b2a1f26964c2aa2f4a9bbaf4ba30af40fd160f44b11321d3795fb6b0e",
+          "final_sha256": "3c2bd6152bcbe0acb8f2a36dad114d00e9d561ee56b45b67d1c825964c16b042",
+          "path": "crates/deadpan-app/src/project/tests.rs"
+        },
+        {
+          "checked_sha256": null,
+          "final_sha256": "1980ef2aeeec69f7376307834ce2904cda236050b2995d61799093939436b210",
+          "path": "crates/deadpan-app/src/project/tests/headless.rs"
+        },
+        {
+          "checked_sha256": "c02931a0e069a9f5c57af5d4fed6c53cbdf2e24618ee5ce6d6907ed5ff19877f",
+          "final_sha256": "3614c42d724fba20b4acdc9d928e403875b87898350754de47acf658ec6d3c44",
+          "path": "crates/deadpan-cli/Cargo.toml"
+        },
+        {
+          "checked_sha256": "146359c65d1adf4ee1e2b9d8bf85743e9a767e1ad0aacb1b484b3b5ad4813c51",
+          "final_sha256": "01218fd5f5088b12fe15ba3576a73097f320bc16b20822ce5a7b47b524c97e0d",
+          "path": "crates/deadpan-cli/src/encoded_render/workflow/types.rs"
+        },
+        {
+          "checked_sha256": "a6010840dfdea767a5e8a35ccf727a2f7663bc0ad1c6f7bf70c87a6fac88ca04",
+          "final_sha256": "1c1a50fe6b504e5740b33d33acc487be209f1e0583f746ca5782e71331b3927d",
+          "path": "crates/deadpan-cli/src/host.rs"
+        },
+        {
+          "checked_sha256": "21c925728ca70fd52b0caa11c88692b4d5c374da555e9a7332700cac2206790a",
+          "final_sha256": "1becfa887f2def0c3f4db67882029b595bd567b6c6796284e0cf555946b2d149",
+          "path": "crates/deadpan-cli/src/host/client.rs"
+        },
+        {
+          "checked_sha256": "eb59cf2c844a7bc5d6b53956c02726077cdb458b21749260e123aa226a6a223f",
+          "final_sha256": "f533fa39be5fc548bb93a5a4883f1e8dd945dbdc98dd7efb5f636574f01a0a7c",
+          "path": "crates/deadpan-cli/src/host/namespace.rs"
+        },
+        {
+          "checked_sha256": "6419c6d786066eaa4cfaab597ba3ebf122562aed3cb16ef77e73081c19ae8090",
+          "final_sha256": "c71b5dcd2ae58db14d2c9f22dde8d10a73935a06ea2129280ed3a0f270e2b50a",
+          "path": "crates/deadpan-cli/src/host/server.rs"
+        },
+        {
+          "checked_sha256": null,
+          "final_sha256": "656529dd2adacbf10c92ffdb005659c075818695a42fc19d39aad1b201bf899c",
+          "path": "crates/deadpan-cli/src/host/server_tests.rs"
+        },
+        {
+          "checked_sha256": "a9215b9f7af79829a41af691186f74f4df3ea73ca86710055e7ba733532de9f7",
+          "final_sha256": "93811355761798691b4b38746e17ecea3ad988f7351b081ddcbfc8b48e19c9b9",
+          "path": "crates/deadpan-cli/src/host/tests.rs"
+        },
+        {
+          "checked_sha256": "fb35a6697593a77231b64a472147a742b84c2a552379a8f189ba0c1448df475e",
+          "final_sha256": "6c5e52581dff88e15a30587ffa3c341e24fd7ffd8a34310fb7597bf16dfd48cb",
+          "path": "crates/deadpan-cli/src/host/wire.rs"
+        },
+        {
+          "checked_sha256": "4d0a479d8cc4eef33f97d3ee118e377c288bdd73e886d16922ad83a9a73eada5",
+          "final_sha256": "7ded64940e923c473f8f474603664ddd495dec5bff1215ca3a84302ae4cae91a",
+          "path": "crates/deadpan-cli/src/lib.rs"
+        },
+        {
+          "checked_sha256": "1b8a7cc13b3bf80e836f7181a9fb69e45ecdf822285d3ec1e8aae7e8114bab6c",
+          "final_sha256": "7b56d91cf565b0e2852792714cf911f638545b0c0b8b67c39ba487a67e74148d",
+          "path": "crates/deadpan-cli/src/live_project.rs"
+        },
+        {
+          "checked_sha256": "f5426c7c100ed4c3ba8df2b523f6c5ea6c3ccef0223d18b9f0f921052a1ac16d",
+          "final_sha256": "ccd3a2c32f329b32b4ecc647f980c44b05a1251bd5a4d4d6f2e56ea5a315b114",
+          "path": "crates/deadpan-cli/src/render.rs"
+        },
+        {
+          "checked_sha256": "740a13248564813af9af63eb58bcc8af7b9d69e16791509703823e80e9aecae1",
+          "final_sha256": "7c76320788a9df2eaa49b8ae76bdc15d94c54fc33d2889b8af185e337fa5d89d",
+          "path": "crates/deadpan-cli/src/render/cli.rs"
+        },
+        {
+          "checked_sha256": null,
+          "final_sha256": "84691f2bf769ec1819274f457910cdd430d3253ff8007d2be1d1e10fc29bbec9",
+          "path": "crates/deadpan-cli/src/render/cli/live.rs"
+        },
+        {
+          "checked_sha256": null,
+          "final_sha256": "3edf85426cdfc4464b99b64b6f8da03ec77c6f87ea525b2a8520e19a993ac1ef",
+          "path": "crates/deadpan-cli/src/render/cli/live/tests.rs"
+        },
+        {
+          "checked_sha256": "d652f4f7f42f4e3facb4b34abdfe187457ea5dcf4201958bdc6f655d40be475e",
+          "final_sha256": "f180221cbc24f1552ea1fd1ded8d7b7f4e8dada33ab284bf51549902194e76e0",
+          "path": "crates/deadpan-cli/src/source_registration.rs"
+        },
+        {
+          "checked_sha256": null,
+          "final_sha256": "2b6794666406a500fffc8034ac73f0f481906b4320b87a41e9ef8f107db6b349",
+          "path": "crates/deadpan-cli/tests/live_project.rs"
+        },
+        {
+          "checked_sha256": "41a41b31ab38fb7022c9537b4c2ea7f1c212e9ebe30b9b8852f5e00a8252bb4f",
+          "final_sha256": "91fcdc7285f55ca4bb73f83dedd16fb94c0fb475d557ea9aa3eb7242bdfcc602",
+          "path": "crates/deadpan-cli/tests/project_commands.rs"
+        },
+        {
+          "checked_sha256": "c32b3ffa24dad6156981377aab6d084ba54936ac893830f6a5fa33f26b6cd766",
+          "final_sha256": "497159a85b0b749ad6b81a274508800bd3413f8fb9c32143116e1da7c6212aa0",
+          "path": "crates/deadpan-cli/tests/render.rs"
+        },
+        {
+          "checked_sha256": "bcb87a5bc39db0ba7419c974ad76776b60401ede3add720c2bf4c1c8ee610e72",
+          "final_sha256": "8a35b2ca2e817198cfdbdf304aa08a3e46624d02f18f964b13f5aca3b1547ce1",
+          "path": "crates/deadpan-cli/tests/source_registration.rs"
+        },
+        {
+          "checked_sha256": "879f26f9ce8b6c60b41c0b1f665d350e7a3c6dbfa3417dc4a2c8da4144ce4e86",
+          "final_sha256": "faa46eeeb22f3f6cb3e1ca25fd61572c9e61da9b94fe3b164f692b0a6668d0bd",
+          "path": "native/deadpan-process/src/lib.rs"
+        },
+        {
+          "checked_sha256": "ef0a798dd652e514e323cfd66b34cd6a628b4090ea49566ccf9f8adc8055d09c",
+          "final_sha256": "85bc1980138fe252faa4d9e23b6ca74c52358b1631ea7d629a6dcb9837c295cd",
+          "path": "native/deadpan-process/src/spawn.rs"
+        }
+      ],
+      "exit_code": 0,
+      "source_manifest_sha256": "3a6359f0d9ffecb8e0e42994da855c8a0c2b4095049ebd41d715546799e49562"
+    },
+    "ui-build": {
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness"
+      ],
+      "different_paths": [],
+      "exit_code": 0,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "ui-clippy": {
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "-p",
+        "deadpan-app",
+        "--all-targets",
+        "--features",
+        "ui-harness",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "different_paths": [],
+      "exit_code": 0,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "ui-performance": {
+      "command": [
+        "deadpan-app",
+        "--ui-check",
+        "--mode",
+        "performance",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+        "--output",
+        "/tmp/deadpan-live-project-20260930/ui-performance"
+      ],
+      "different_paths": [],
+      "exit_code": 0,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "ui-release-build": {
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--locked",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness"
+      ],
+      "different_paths": [],
+      "exit_code": 0,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "ui-render-final": {
+      "command": [
+        "deadpan-app",
+        "--ui-check",
+        "--scenario",
+        "render",
+        "--retain-projects",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+        "--output",
+        "/tmp/deadpan-live-project-20260930/ui-render-final"
+      ],
+      "different_paths": [],
+      "exit_code": 0,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "ui-tests": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--no-fail-fast"
+      ],
+      "different_paths": [],
+      "exit_code": 0,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "workspace-clippy": {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "different_paths": [
+        {
+          "checked_sha256": "3f8236ddbbefdbc80a0a3a010cc1e84b77e55e67cb6dd16d3c8555177f5c6853",
+          "final_sha256": "dcfbde50b7929e391de13ebfd6c4afffbbd5bbdc4a0a14bb754753dcaf60c9e2",
+          "path": "crates/deadpan-app/src/project/service/headless.rs"
+        },
+        {
+          "checked_sha256": "9d6fc95ba02ece6e72e88b0e08f3f947019f76e0de431f97d28416e8a3647297",
+          "final_sha256": "1980ef2aeeec69f7376307834ce2904cda236050b2995d61799093939436b210",
+          "path": "crates/deadpan-app/src/project/tests/headless.rs"
+        },
+        {
+          "checked_sha256": "7bb3219780e195f236cc5f156cb5160eaaeb856ad07d15ccef8a8a266d9da73a",
+          "final_sha256": "1becfa887f2def0c3f4db67882029b595bd567b6c6796284e0cf555946b2d149",
+          "path": "crates/deadpan-cli/src/host/client.rs"
+        },
+        {
+          "checked_sha256": "43ae3af4e6093c0e7c9702bdc9f9d716fe8c005d3f5358e041f41558937b4e61",
+          "final_sha256": "7ded64940e923c473f8f474603664ddd495dec5bff1215ca3a84302ae4cae91a",
+          "path": "crates/deadpan-cli/src/lib.rs"
+        },
+        {
+          "checked_sha256": "087ec95fbb891180e1b8a6505f9fee2e6d91abbb837740e5014a0ed3e948f7d5",
+          "final_sha256": "7b56d91cf565b0e2852792714cf911f638545b0c0b8b67c39ba487a67e74148d",
+          "path": "crates/deadpan-cli/src/live_project.rs"
+        },
+        {
+          "checked_sha256": "d80ff989fdc285a4e6f5946f015fbf4430009a15a80d9ab89098c4444eaedccf",
+          "final_sha256": "2b6794666406a500fffc8034ac73f0f481906b4320b87a41e9ef8f107db6b349",
+          "path": "crates/deadpan-cli/tests/live_project.rs"
+        }
+      ],
+      "exit_code": 101,
+      "source_manifest_sha256": "db5a00570f02423c90e36560791cc4171e13ccb2532d99e26769ef5e5ce43273"
+    },
+    "workspace-clippy-final": {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "different_paths": [
+        {
+          "checked_sha256": "3f8236ddbbefdbc80a0a3a010cc1e84b77e55e67cb6dd16d3c8555177f5c6853",
+          "final_sha256": "dcfbde50b7929e391de13ebfd6c4afffbbd5bbdc4a0a14bb754753dcaf60c9e2",
+          "path": "crates/deadpan-app/src/project/service/headless.rs"
+        }
+      ],
+      "exit_code": 101,
+      "source_manifest_sha256": "6677eb269cb96b02bc4b12eb1178a05075ca151dcb1e73122ecd6976d0a1806e"
+    },
+    "workspace-clippy-verified": {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "different_paths": [],
+      "exit_code": 0,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "workspace-tests": {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "--no-fail-fast"
+      ],
+      "different_paths": [
+        {
+          "checked_sha256": "3f8236ddbbefdbc80a0a3a010cc1e84b77e55e67cb6dd16d3c8555177f5c6853",
+          "final_sha256": "dcfbde50b7929e391de13ebfd6c4afffbbd5bbdc4a0a14bb754753dcaf60c9e2",
+          "path": "crates/deadpan-app/src/project/service/headless.rs"
+        },
+        {
+          "checked_sha256": "9d6fc95ba02ece6e72e88b0e08f3f947019f76e0de431f97d28416e8a3647297",
+          "final_sha256": "1980ef2aeeec69f7376307834ce2904cda236050b2995d61799093939436b210",
+          "path": "crates/deadpan-app/src/project/tests/headless.rs"
+        },
+        {
+          "checked_sha256": "7bb3219780e195f236cc5f156cb5160eaaeb856ad07d15ccef8a8a266d9da73a",
+          "final_sha256": "1becfa887f2def0c3f4db67882029b595bd567b6c6796284e0cf555946b2d149",
+          "path": "crates/deadpan-cli/src/host/client.rs"
+        },
+        {
+          "checked_sha256": "43ae3af4e6093c0e7c9702bdc9f9d716fe8c005d3f5358e041f41558937b4e61",
+          "final_sha256": "7ded64940e923c473f8f474603664ddd495dec5bff1215ca3a84302ae4cae91a",
+          "path": "crates/deadpan-cli/src/lib.rs"
+        },
+        {
+          "checked_sha256": "0deed805eb108b6aff0d81646d4342c9a2aed828f9762eae944e915bf97da773",
+          "final_sha256": "7b56d91cf565b0e2852792714cf911f638545b0c0b8b67c39ba487a67e74148d",
+          "path": "crates/deadpan-cli/src/live_project.rs"
+        },
+        {
+          "checked_sha256": "b68cea3a4e980a70c452ebad825bb5a98778b79bb05fc7b1c392ce43d355f7cb",
+          "final_sha256": "2b6794666406a500fffc8034ac73f0f481906b4320b87a41e9ef8f107db6b349",
+          "path": "crates/deadpan-cli/tests/live_project.rs"
+        },
+        {
+          "checked_sha256": "41a41b31ab38fb7022c9537b4c2ea7f1c212e9ebe30b9b8852f5e00a8252bb4f",
+          "final_sha256": "91fcdc7285f55ca4bb73f83dedd16fb94c0fb475d557ea9aa3eb7242bdfcc602",
+          "path": "crates/deadpan-cli/tests/project_commands.rs"
+        },
+        {
+          "checked_sha256": "c32b3ffa24dad6156981377aab6d084ba54936ac893830f6a5fa33f26b6cd766",
+          "final_sha256": "497159a85b0b749ad6b81a274508800bd3413f8fb9c32143116e1da7c6212aa0",
+          "path": "crates/deadpan-cli/tests/render.rs"
+        },
+        {
+          "checked_sha256": "bcb87a5bc39db0ba7419c974ad76776b60401ede3add720c2bf4c1c8ee610e72",
+          "final_sha256": "8a35b2ca2e817198cfdbdf304aa08a3e46624d02f18f964b13f5aca3b1547ce1",
+          "path": "crates/deadpan-cli/tests/source_registration.rs"
+        }
+      ],
+      "exit_code": 101,
+      "source_manifest_sha256": "8554840dd1c58e0f7ef09e4e924400370b79a932e1c9d324abeea84d07468d9b"
+    }
+  },
+  "changed_path_coverage": {
+    "crates/deadpan-app/Cargo.toml": {
+      "final_sha256": "6c927bc4ec2da3248f0f72af2e2f04b43458dd622d9f4fb7f6d17a70c138df7a",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-app/src/preview.rs": {
+      "final_sha256": "9effef785edfe587ce8f5e70470739a401784d9158d2ea95bc6612900a32af7c",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-app/src/preview/camera.rs": {
+      "final_sha256": "6857c5967c09085d2bc7ec15a21a570d20185d9a1a3653b8c016f6cefacce122",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-app/src/preview/gain.rs": {
+      "final_sha256": "3fd9b528bd70db34c0899e6b8fd5c0ff3343093ede13154b54e7bad1c2894060",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-app/src/preview/harness/render.rs": {
+      "final_sha256": "3cef60660adb247587f1fc3bd14e973a16b0b8bcb50296eda985a6a1a886e729",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-app/src/preview/room_tone.rs": {
+      "final_sha256": "d98d651790c4a95feafeb16caefb5c5a678509ebedf0f760867021d3e87a0b30",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-app/src/project.rs": {
+      "final_sha256": "0e77af5cdd722f6af29101d85a339779a6809bd1b2f0f394af24ec5fc7eaf80e",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-app/src/project/service.rs": {
+      "final_sha256": "1ab585771f3945aaa44b261b3669165e9e215aa60671b8fc6e43bdd2c5e02c9e",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-app/src/project/service/headless.rs": {
+      "final_sha256": "dcfbde50b7929e391de13ebfd6c4afffbbd5bbdc4a0a14bb754753dcaf60c9e2",
+      "passing_checks_with_final_bytes": [
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-app/src/project/service/render.rs": {
+      "final_sha256": "5630951499cf8649bc469c111d1b186f7bd5e31a45dc1156e4bc8177945d1af8",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-app/src/project/tests.rs": {
+      "final_sha256": "3c2bd6152bcbe0acb8f2a36dad114d00e9d561ee56b45b67d1c825964c16b042",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-app/src/project/tests/headless.rs": {
+      "final_sha256": "1980ef2aeeec69f7376307834ce2904cda236050b2995d61799093939436b210",
+      "passing_checks_with_final_bytes": [
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-cli/Cargo.toml": {
+      "final_sha256": "3614c42d724fba20b4acdc9d928e403875b87898350754de47acf658ec6d3c44",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-cli/src/encoded_render/workflow/types.rs": {
+      "final_sha256": "01218fd5f5088b12fe15ba3576a73097f320bc16b20822ce5a7b47b524c97e0d",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-cli/src/host.rs": {
+      "final_sha256": "1c1a50fe6b504e5740b33d33acc487be209f1e0583f746ca5782e71331b3927d",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-cli/src/host/client.rs": {
+      "final_sha256": "1becfa887f2def0c3f4db67882029b595bd567b6c6796284e0cf555946b2d149",
+      "passing_checks_with_final_bytes": [
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-cli/src/host/namespace.rs": {
+      "final_sha256": "f533fa39be5fc548bb93a5a4883f1e8dd945dbdc98dd7efb5f636574f01a0a7c",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-cli/src/host/server.rs": {
+      "final_sha256": "c71b5dcd2ae58db14d2c9f22dde8d10a73935a06ea2129280ed3a0f270e2b50a",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-cli/src/host/server_tests.rs": {
+      "final_sha256": "656529dd2adacbf10c92ffdb005659c075818695a42fc19d39aad1b201bf899c",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-cli/src/host/tests.rs": {
+      "final_sha256": "93811355761798691b4b38746e17ecea3ad988f7351b081ddcbfc8b48e19c9b9",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-cli/src/host/wire.rs": {
+      "final_sha256": "6c5e52581dff88e15a30587ffa3c341e24fd7ffd8a34310fb7597bf16dfd48cb",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-cli/src/lib.rs": {
+      "final_sha256": "7ded64940e923c473f8f474603664ddd495dec5bff1215ca3a84302ae4cae91a",
+      "passing_checks_with_final_bytes": [
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-cli/src/live_project.rs": {
+      "final_sha256": "7b56d91cf565b0e2852792714cf911f638545b0c0b8b67c39ba487a67e74148d",
+      "passing_checks_with_final_bytes": [
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-cli/src/render.rs": {
+      "final_sha256": "ccd3a2c32f329b32b4ecc647f980c44b05a1251bd5a4d4d6f2e56ea5a315b114",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-cli/src/render/cli.rs": {
+      "final_sha256": "7c76320788a9df2eaa49b8ae76bdc15d94c54fc33d2889b8af185e337fa5d89d",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-cli/src/render/cli/live.rs": {
+      "final_sha256": "84691f2bf769ec1819274f457910cdd430d3253ff8007d2be1d1e10fc29bbec9",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-cli/src/render/cli/live/tests.rs": {
+      "final_sha256": "3edf85426cdfc4464b99b64b6f8da03ec77c6f87ea525b2a8520e19a993ac1ef",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-cli/src/source_registration.rs": {
+      "final_sha256": "f180221cbc24f1552ea1fd1ded8d7b7f4e8dada33ab284bf51549902194e76e0",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-cli/tests/live_project.rs": {
+      "final_sha256": "2b6794666406a500fffc8034ac73f0f481906b4320b87a41e9ef8f107db6b349",
+      "passing_checks_with_final_bytes": [
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-cli/tests/project_commands.rs": {
+      "final_sha256": "91fcdc7285f55ca4bb73f83dedd16fb94c0fb475d557ea9aa3eb7242bdfcc602",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-cli/tests/render.rs": {
+      "final_sha256": "497159a85b0b749ad6b81a274508800bd3413f8fb9c32143116e1da7c6212aa0",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "crates/deadpan-cli/tests/source_registration.rs": {
+      "final_sha256": "8a35b2ca2e817198cfdbdf304aa08a3e46624d02f18f964b13f5aca3b1547ce1",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "native/deadpan-process/src/lib.rs": {
+      "final_sha256": "faa46eeeb22f3f6cb3e1ca25fd61572c9e61da9b94fe3b164f692b0a6668d0bd",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    },
+    "native/deadpan-process/src/spawn.rs": {
+      "final_sha256": "85bc1980138fe252faa4d9e23b6ca74c52358b1631ea7d629a6dcb9837c295cd",
+      "passing_checks_with_final_bytes": [
+        "cli-corrected",
+        "cli-final",
+        "format-final",
+        "independent-decode-final",
+        "native-cancel",
+        "native-edits",
+        "native-recovery",
+        "native-render",
+        "native-smoke",
+        "ui-build",
+        "ui-clippy",
+        "ui-performance",
+        "ui-release-build",
+        "ui-render-final",
+        "ui-tests",
+        "workspace-clippy-verified"
+      ]
+    }
+  },
+  "final_inventory": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba",
+  "interpretation": "Exact textual identities and deltas only. Earlier native observations retain their own inputs; no claim of behavioral equivalence for later source changes.",
+  "per_check": {
+    "cli-corrected": {
+      "different_paths": [
+        {
+          "checked_sha256": "3f8236ddbbefdbc80a0a3a010cc1e84b77e55e67cb6dd16d3c8555177f5c6853",
+          "final_sha256": "dcfbde50b7929e391de13ebfd6c4afffbbd5bbdc4a0a14bb754753dcaf60c9e2",
+          "path": "crates/deadpan-app/src/project/service/headless.rs"
+        },
+        {
+          "checked_sha256": "9d6fc95ba02ece6e72e88b0e08f3f947019f76e0de431f97d28416e8a3647297",
+          "final_sha256": "1980ef2aeeec69f7376307834ce2904cda236050b2995d61799093939436b210",
+          "path": "crates/deadpan-app/src/project/tests/headless.rs"
+        },
+        {
+          "checked_sha256": "7bb3219780e195f236cc5f156cb5160eaaeb856ad07d15ccef8a8a266d9da73a",
+          "final_sha256": "1becfa887f2def0c3f4db67882029b595bd567b6c6796284e0cf555946b2d149",
+          "path": "crates/deadpan-cli/src/host/client.rs"
+        },
+        {
+          "checked_sha256": "43ae3af4e6093c0e7c9702bdc9f9d716fe8c005d3f5358e041f41558937b4e61",
+          "final_sha256": "7ded64940e923c473f8f474603664ddd495dec5bff1215ca3a84302ae4cae91a",
+          "path": "crates/deadpan-cli/src/lib.rs"
+        },
+        {
+          "checked_sha256": "087ec95fbb891180e1b8a6505f9fee2e6d91abbb837740e5014a0ed3e948f7d5",
+          "final_sha256": "7b56d91cf565b0e2852792714cf911f638545b0c0b8b67c39ba487a67e74148d",
+          "path": "crates/deadpan-cli/src/live_project.rs"
+        },
+        {
+          "checked_sha256": "d80ff989fdc285a4e6f5946f015fbf4430009a15a80d9ab89098c4444eaedccf",
+          "final_sha256": "2b6794666406a500fffc8034ac73f0f481906b4320b87a41e9ef8f107db6b349",
+          "path": "crates/deadpan-cli/tests/live_project.rs"
+        }
+      ],
+      "matches_final_inventory": false,
+      "source_manifest_sha256": "db5a00570f02423c90e36560791cc4171e13ccb2532d99e26769ef5e5ce43273"
+    },
+    "cli-final": {
+      "different_paths": [],
+      "matches_final_inventory": true,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "format-final": {
+      "different_paths": [],
+      "matches_final_inventory": true,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "independent-decode-final": {
+      "different_paths": [],
+      "matches_final_inventory": true,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "native-cancel": {
+      "different_paths": [],
+      "matches_final_inventory": true,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "native-edits": {
+      "different_paths": [],
+      "matches_final_inventory": true,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "native-recovery": {
+      "different_paths": [],
+      "matches_final_inventory": true,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "native-render": {
+      "different_paths": [],
+      "matches_final_inventory": true,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "native-smoke": {
+      "different_paths": [],
+      "matches_final_inventory": true,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "store-owner-second": {
+      "different_paths": [
+        {
+          "checked_sha256": "733cdc434567c8dd51e4ffdf055fd98ad47e96a90ff4cef23981dcadd3bada38",
+          "final_sha256": "6c927bc4ec2da3248f0f72af2e2f04b43458dd622d9f4fb7f6d17a70c138df7a",
+          "path": "crates/deadpan-app/Cargo.toml"
+        },
+        {
+          "checked_sha256": "61051976fd68f115f5e87d84da844c9cc5190e3e7d528fa60f36b49ea46bb9a7",
+          "final_sha256": "9effef785edfe587ce8f5e70470739a401784d9158d2ea95bc6612900a32af7c",
+          "path": "crates/deadpan-app/src/preview.rs"
+        },
+        {
+          "checked_sha256": "ccc2879167f026c738866662ab46e2872074a403a387eaca3faeabae95f2938e",
+          "final_sha256": "6857c5967c09085d2bc7ec15a21a570d20185d9a1a3653b8c016f6cefacce122",
+          "path": "crates/deadpan-app/src/preview/camera.rs"
+        },
+        {
+          "checked_sha256": "c560ddfba0e4efc6969d95f3b0a2cc62c7d6f09beda5796bdcd5e559fac83971",
+          "final_sha256": "3fd9b528bd70db34c0899e6b8fd5c0ff3343093ede13154b54e7bad1c2894060",
+          "path": "crates/deadpan-app/src/preview/gain.rs"
+        },
+        {
+          "checked_sha256": "730026a625b24db989e3543ff16e91c254f794fd4bf55b757d2bb461d2d1c661",
+          "final_sha256": "3cef60660adb247587f1fc3bd14e973a16b0b8bcb50296eda985a6a1a886e729",
+          "path": "crates/deadpan-app/src/preview/harness/render.rs"
+        },
+        {
+          "checked_sha256": "3992c48151af2654a0fae432fffb0e96816c6119a3489588158313730b2de05b",
+          "final_sha256": "d98d651790c4a95feafeb16caefb5c5a678509ebedf0f760867021d3e87a0b30",
+          "path": "crates/deadpan-app/src/preview/room_tone.rs"
+        },
+        {
+          "checked_sha256": "b831d15d92105087aac1e21d6ab95a044ebbc432166d66175c54572c9a2ba7e2",
+          "final_sha256": "0e77af5cdd722f6af29101d85a339779a6809bd1b2f0f394af24ec5fc7eaf80e",
+          "path": "crates/deadpan-app/src/project.rs"
+        },
+        {
+          "checked_sha256": "45b052472b89ffef63081a375a2aeb47061a9dc4f5533ba218499b3b28a50312",
+          "final_sha256": "1ab585771f3945aaa44b261b3669165e9e215aa60671b8fc6e43bdd2c5e02c9e",
+          "path": "crates/deadpan-app/src/project/service.rs"
+        },
+        {
+          "checked_sha256": null,
+          "final_sha256": "dcfbde50b7929e391de13ebfd6c4afffbbd5bbdc4a0a14bb754753dcaf60c9e2",
+          "path": "crates/deadpan-app/src/project/service/headless.rs"
+        },
+        {
+          "checked_sha256": "5d9420be23f01da7f99d0ec5c43141dad5e5ace937afcbd6e1a2b6e017106075",
+          "final_sha256": "5630951499cf8649bc469c111d1b186f7bd5e31a45dc1156e4bc8177945d1af8",
+          "path": "crates/deadpan-app/src/project/service/render.rs"
+        },
+        {
+          "checked_sha256": "e94ace2b2a1f26964c2aa2f4a9bbaf4ba30af40fd160f44b11321d3795fb6b0e",
+          "final_sha256": "3c2bd6152bcbe0acb8f2a36dad114d00e9d561ee56b45b67d1c825964c16b042",
+          "path": "crates/deadpan-app/src/project/tests.rs"
+        },
+        {
+          "checked_sha256": null,
+          "final_sha256": "1980ef2aeeec69f7376307834ce2904cda236050b2995d61799093939436b210",
+          "path": "crates/deadpan-app/src/project/tests/headless.rs"
+        },
+        {
+          "checked_sha256": "c02931a0e069a9f5c57af5d4fed6c53cbdf2e24618ee5ce6d6907ed5ff19877f",
+          "final_sha256": "3614c42d724fba20b4acdc9d928e403875b87898350754de47acf658ec6d3c44",
+          "path": "crates/deadpan-cli/Cargo.toml"
+        },
+        {
+          "checked_sha256": "146359c65d1adf4ee1e2b9d8bf85743e9a767e1ad0aacb1b484b3b5ad4813c51",
+          "final_sha256": "01218fd5f5088b12fe15ba3576a73097f320bc16b20822ce5a7b47b524c97e0d",
+          "path": "crates/deadpan-cli/src/encoded_render/workflow/types.rs"
+        },
+        {
+          "checked_sha256": "a6010840dfdea767a5e8a35ccf727a2f7663bc0ad1c6f7bf70c87a6fac88ca04",
+          "final_sha256": "1c1a50fe6b504e5740b33d33acc487be209f1e0583f746ca5782e71331b3927d",
+          "path": "crates/deadpan-cli/src/host.rs"
+        },
+        {
+          "checked_sha256": "21c925728ca70fd52b0caa11c88692b4d5c374da555e9a7332700cac2206790a",
+          "final_sha256": "1becfa887f2def0c3f4db67882029b595bd567b6c6796284e0cf555946b2d149",
+          "path": "crates/deadpan-cli/src/host/client.rs"
+        },
+        {
+          "checked_sha256": "eb59cf2c844a7bc5d6b53956c02726077cdb458b21749260e123aa226a6a223f",
+          "final_sha256": "f533fa39be5fc548bb93a5a4883f1e8dd945dbdc98dd7efb5f636574f01a0a7c",
+          "path": "crates/deadpan-cli/src/host/namespace.rs"
+        },
+        {
+          "checked_sha256": "6419c6d786066eaa4cfaab597ba3ebf122562aed3cb16ef77e73081c19ae8090",
+          "final_sha256": "c71b5dcd2ae58db14d2c9f22dde8d10a73935a06ea2129280ed3a0f270e2b50a",
+          "path": "crates/deadpan-cli/src/host/server.rs"
+        },
+        {
+          "checked_sha256": null,
+          "final_sha256": "656529dd2adacbf10c92ffdb005659c075818695a42fc19d39aad1b201bf899c",
+          "path": "crates/deadpan-cli/src/host/server_tests.rs"
+        },
+        {
+          "checked_sha256": "a9215b9f7af79829a41af691186f74f4df3ea73ca86710055e7ba733532de9f7",
+          "final_sha256": "93811355761798691b4b38746e17ecea3ad988f7351b081ddcbfc8b48e19c9b9",
+          "path": "crates/deadpan-cli/src/host/tests.rs"
+        },
+        {
+          "checked_sha256": "fb35a6697593a77231b64a472147a742b84c2a552379a8f189ba0c1448df475e",
+          "final_sha256": "6c5e52581dff88e15a30587ffa3c341e24fd7ffd8a34310fb7597bf16dfd48cb",
+          "path": "crates/deadpan-cli/src/host/wire.rs"
+        },
+        {
+          "checked_sha256": "4d0a479d8cc4eef33f97d3ee118e377c288bdd73e886d16922ad83a9a73eada5",
+          "final_sha256": "7ded64940e923c473f8f474603664ddd495dec5bff1215ca3a84302ae4cae91a",
+          "path": "crates/deadpan-cli/src/lib.rs"
+        },
+        {
+          "checked_sha256": "1b8a7cc13b3bf80e836f7181a9fb69e45ecdf822285d3ec1e8aae7e8114bab6c",
+          "final_sha256": "7b56d91cf565b0e2852792714cf911f638545b0c0b8b67c39ba487a67e74148d",
+          "path": "crates/deadpan-cli/src/live_project.rs"
+        },
+        {
+          "checked_sha256": "f5426c7c100ed4c3ba8df2b523f6c5ea6c3ccef0223d18b9f0f921052a1ac16d",
+          "final_sha256": "ccd3a2c32f329b32b4ecc647f980c44b05a1251bd5a4d4d6f2e56ea5a315b114",
+          "path": "crates/deadpan-cli/src/render.rs"
+        },
+        {
+          "checked_sha256": "740a13248564813af9af63eb58bcc8af7b9d69e16791509703823e80e9aecae1",
+          "final_sha256": "7c76320788a9df2eaa49b8ae76bdc15d94c54fc33d2889b8af185e337fa5d89d",
+          "path": "crates/deadpan-cli/src/render/cli.rs"
+        },
+        {
+          "checked_sha256": null,
+          "final_sha256": "84691f2bf769ec1819274f457910cdd430d3253ff8007d2be1d1e10fc29bbec9",
+          "path": "crates/deadpan-cli/src/render/cli/live.rs"
+        },
+        {
+          "checked_sha256": null,
+          "final_sha256": "3edf85426cdfc4464b99b64b6f8da03ec77c6f87ea525b2a8520e19a993ac1ef",
+          "path": "crates/deadpan-cli/src/render/cli/live/tests.rs"
+        },
+        {
+          "checked_sha256": "d652f4f7f42f4e3facb4b34abdfe187457ea5dcf4201958bdc6f655d40be475e",
+          "final_sha256": "f180221cbc24f1552ea1fd1ded8d7b7f4e8dada33ab284bf51549902194e76e0",
+          "path": "crates/deadpan-cli/src/source_registration.rs"
+        },
+        {
+          "checked_sha256": null,
+          "final_sha256": "2b6794666406a500fffc8034ac73f0f481906b4320b87a41e9ef8f107db6b349",
+          "path": "crates/deadpan-cli/tests/live_project.rs"
+        },
+        {
+          "checked_sha256": "41a41b31ab38fb7022c9537b4c2ea7f1c212e9ebe30b9b8852f5e00a8252bb4f",
+          "final_sha256": "91fcdc7285f55ca4bb73f83dedd16fb94c0fb475d557ea9aa3eb7242bdfcc602",
+          "path": "crates/deadpan-cli/tests/project_commands.rs"
+        },
+        {
+          "checked_sha256": "c32b3ffa24dad6156981377aab6d084ba54936ac893830f6a5fa33f26b6cd766",
+          "final_sha256": "497159a85b0b749ad6b81a274508800bd3413f8fb9c32143116e1da7c6212aa0",
+          "path": "crates/deadpan-cli/tests/render.rs"
+        },
+        {
+          "checked_sha256": "bcb87a5bc39db0ba7419c974ad76776b60401ede3add720c2bf4c1c8ee610e72",
+          "final_sha256": "8a35b2ca2e817198cfdbdf304aa08a3e46624d02f18f964b13f5aca3b1547ce1",
+          "path": "crates/deadpan-cli/tests/source_registration.rs"
+        },
+        {
+          "checked_sha256": "879f26f9ce8b6c60b41c0b1f665d350e7a3c6dbfa3417dc4a2c8da4144ce4e86",
+          "final_sha256": "faa46eeeb22f3f6cb3e1ca25fd61572c9e61da9b94fe3b164f692b0a6668d0bd",
+          "path": "native/deadpan-process/src/lib.rs"
+        },
+        {
+          "checked_sha256": "ef0a798dd652e514e323cfd66b34cd6a628b4090ea49566ccf9f8adc8055d09c",
+          "final_sha256": "85bc1980138fe252faa4d9e23b6ca74c52358b1631ea7d629a6dcb9837c295cd",
+          "path": "native/deadpan-process/src/spawn.rs"
+        }
+      ],
+      "matches_final_inventory": false,
+      "source_manifest_sha256": "3a6359f0d9ffecb8e0e42994da855c8a0c2b4095049ebd41d715546799e49562"
+    },
+    "ui-build": {
+      "different_paths": [],
+      "matches_final_inventory": true,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "ui-clippy": {
+      "different_paths": [],
+      "matches_final_inventory": true,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "ui-performance": {
+      "different_paths": [],
+      "matches_final_inventory": true,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "ui-release-build": {
+      "different_paths": [],
+      "matches_final_inventory": true,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "ui-render-final": {
+      "different_paths": [],
+      "matches_final_inventory": true,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "ui-tests": {
+      "different_paths": [],
+      "matches_final_inventory": true,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    },
+    "workspace-clippy-verified": {
+      "different_paths": [],
+      "matches_final_inventory": true,
+      "source_manifest_sha256": "2607b02b21a06fdef281192cfbb0e7669b64d37d4c3fb7bec6be7cec8bd428ba"
+    }
+  }
+}
