@@ -110,6 +110,7 @@ pub struct DeadpanApp {
     target: Option<RegisteredTarget>,
     workspace: Option<Arc<Workspace>>,
     import: Option<ImportStatus>,
+    render_job: Option<crate::project::ProjectRenderUpdate>,
     selected_source: Option<AssetId>,
     selected_sound: Option<AssetId>,
     selected_event: Option<deadpan_core::SoundId>,
@@ -214,6 +215,7 @@ impl DeadpanApp {
             target: None,
             workspace: None,
             import: None,
+            render_job: None,
             selected_source: None,
             selected_sound: None,
             selected_event: None,
@@ -508,6 +510,7 @@ impl DeadpanApp {
                 });
             self.workspace = update.workspace;
             self.import = update.import;
+            self.render_job = update.render;
             self.project_error = update.error;
             self.message = update.message;
             if old_session != new_session {
@@ -2805,10 +2808,32 @@ impl eframe::App for DeadpanApp {
         if self.close_pending {
             self.stop_playback();
             self.cancel_gain_waveform();
-            if self.service.is_busy() {
+            self.service.shutdown();
+            if !self.service.is_shutdown_complete() {
                 context.send_viewport_cmd(egui::ViewportCommand::CancelClose);
                 context.request_repaint_after(Duration::from_millis(16));
-                self.message = Some("Finishing the project command before closing…".into());
+                self.message = Some(
+                    self.render_job
+                        .as_ref()
+                        .and_then(|render| render.workflow.as_ref())
+                        .filter(|workflow| {
+                            workflow.status.stage
+                                == deadpan_cli::encoded_render::workflow::WorkflowStage::Unresolved
+                        })
+                        .and_then(|workflow| {
+                            workflow
+                                .status
+                                .diagnostic
+                                .as_ref()
+                                .or(workflow.status.journal_diagnostic.as_ref())
+                        })
+                        .map_or_else(
+                            || "Finishing project work before closing…".into(),
+                            |diagnostic| {
+                                format!("Render shutdown requires recovery: {}", diagnostic.detail)
+                            },
+                        ),
+                );
                 ui.disable();
             } else {
                 context.send_viewport_cmd(egui::ViewportCommand::Close);

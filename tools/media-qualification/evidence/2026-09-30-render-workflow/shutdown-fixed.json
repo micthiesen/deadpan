@@ -1,0 +1,19 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--workspace",
+    "--locked",
+    "project::tests::render::shutdown_finishes_admitted_edit_and_pumps_render_before_releasing_writer",
+    "--no-fail-fast",
+    "--",
+    "--exact"
+  ],
+  "started": "2026-09-30T08:32:37.475683+00:00",
+  "base_commit": "f6f0259dfe25213c4c0e33ef88c9274f24915749",
+  "diff_sha256": "f8e21afa2ccd9fdffc61cfd90ed8b8b97037c61b1ee6372ca5caea9111242a43",
+  "source_manifest_sha256": "fd099921ac67cc84b2e2e9a897a50135b9d9b9ee9859b9e26595d2403f42e403",
+  "pid": 94762,
+  "exit_code": 0,
+  "seconds": 11.666675709187984
+}

@@ -11,6 +11,14 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+The [render workflow increment](qualification/render-workflow-2026-09-30.md)
+changes native service ownership and shutdown notification. Its normal workspace
+and optional app checks pass, including 309 app/harness tests; native Metal
+startup and shutdown pass. Release replay passes all 2,348 checks with no findings
+or failed timing samples. Warm navigation, Repeat and Hold picture completion
+p95 values are 1.489, 5.712 and 5.816 ms. Public Render controls remain open;
+this adds no new visual baseline or concurrent-render UI performance claim.
+
 The [Generated picture qualification](qualification/generated-pictures-2026-09-29.md)
 adds a separate replay of a real accepted, relocated canonical bundle. It also
 catches footer text covered by later panes despite valid paint clips. Inactive

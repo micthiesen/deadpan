@@ -1,9 +1,10 @@
 //! One private worker attempt, with bounded pipes and process-group cleanup.
 //!
 //! Call `poll` regularly from the host's job service to enforce deadlines. It
-//! performs no pipe reads/writes or blocking thread joins. Dropping a live
-//! supervisor kills and reaps its group; perform that shutdown on the job
-//! service, never on the audio callback. This is not an operating-system sandbox.
+//! performs no pipe reads/writes or blocking thread joins. Explicitly finish
+//! owned work before recording a terminal operation. Drop attempts cleanup but
+//! cannot report its success. Shutdown belongs on the job service, never the
+//! audio callback. This is not an operating-system sandbox.
 
 use std::collections::{BTreeMap, VecDeque};
 use std::ffi::OsString;
@@ -97,7 +98,109 @@ pub enum SupervisorError {
     ObserveExit(#[source] io::Error),
     #[error("stop worker process group: {0}")]
     SignalGroup(#[source] io::Error),
+    #[error("{primary}; worker cleanup remains unconfirmed: {cleanup}")]
+    CleanupUnconfirmed {
+        #[source]
+        primary: Box<SupervisorError>,
+        cleanup: CleanupFailure,
+    },
 }
+
+impl SupervisorError {
+    /// For a failed `spawn`, whether no child started or explicit cleanup passed.
+    /// A raw `poll` error still requires `finish_owned_work` before this question
+    /// can be answered for the owning operation.
+    pub fn cleanup_confirmed(&self) -> bool {
+        !matches!(self, Self::CleanupUnconfirmed { .. })
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GroupCleanupScope {
+    /// Darwin confirmed an exited, owned leader and no other group members.
+    MembershipConfirmed,
+    /// Linux confirmed a group signal and leader exit, not descendant exit.
+    SignalAndLeaderOnly,
+}
+
+/// Live cleanup evidence. Only the owning supervisor can construct it.
+#[derive(Debug)]
+pub struct StoppedProcess {
+    group_scope: GroupCleanupScope,
+    status: ExitStatus,
+    pump_panicked: bool,
+}
+
+impl StoppedProcess {
+    pub fn group_scope(&self) -> GroupCleanupScope {
+        self.group_scope
+    }
+
+    pub fn status(&self) -> ExitStatus {
+        self.status
+    }
+
+    /// A panicked pump has stopped, but cannot qualify successful media work.
+    pub fn pump_panicked(&self) -> bool {
+        self.pump_panicked
+    }
+
+    /// Require the membership evidence needed by durable render completion.
+    pub fn require_membership(self) -> Result<Self, CleanupFailure> {
+        if self.group_scope == GroupCleanupScope::MembershipConfirmed {
+            Ok(self)
+        } else {
+            Err(CleanupFailure {
+                issues: vec![CleanupIssue {
+                    stage: CleanupStage::Group,
+                    diagnostic: "this platform confirmed only a group signal and leader exit"
+                        .into(),
+                }],
+            })
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CleanupStage {
+    Group,
+    LeaderFallback,
+    Reap,
+    Pipes,
+}
+
+#[derive(Debug, Clone)]
+pub struct CleanupIssue {
+    pub stage: CleanupStage,
+    pub diagnostic: String,
+}
+
+/// Structured failure to establish stopped work. A successful leader fallback
+/// never erases a failed group observation.
+#[derive(Debug, Clone)]
+pub struct CleanupFailure {
+    issues: Vec<CleanupIssue>,
+}
+
+impl CleanupFailure {
+    pub fn issues(&self) -> &[CleanupIssue] {
+        &self.issues
+    }
+}
+
+impl std::fmt::Display for CleanupFailure {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (index, issue) in self.issues.iter().enumerate() {
+            if index > 0 {
+                formatter.write_str("; ")?;
+            }
+            write!(formatter, "{:?}: {}", issue.stage, issue.diagnostic)?;
+        }
+        Ok(())
+    }
+}
+
+impl std::error::Error for CleanupFailure {}
 
 #[derive(Debug)]
 pub enum ProcessEvent<R> {
@@ -221,10 +324,21 @@ pub struct SupervisedProcess<P: WorkerProtocol> {
     exited_at: Option<Instant>,
     exit_delivered: bool,
     cancellation_escalated: bool,
+    cleanup_failure: Option<CleanupFailure>,
+    pump_panicked: bool,
 }
 
 impl<P: WorkerProtocol> SupervisedProcess<P> {
     pub fn spawn(spec: ProcessSpec, request: P::Request) -> Result<Self, SupervisorError> {
+        Self::spawn_with_controls(spec, request, |_, _| Ok(()), &mut NativeCleanup)
+    }
+
+    fn spawn_with_controls(
+        spec: ProcessSpec,
+        request: P::Request,
+        mut check_setup: impl FnMut(SetupStage, &Child) -> io::Result<()>,
+        cleanup_operations: &mut impl CleanupOperations,
+    ) -> Result<Self, SupervisorError> {
         spec.limits.validate()?;
         P::write_request(&mut io::sink(), &request).map_err(SupervisorError::Request)?;
         let protocol = P::from_request(&request)?;
@@ -279,87 +393,111 @@ impl<P: WorkerProtocol> SupervisedProcess<P> {
             exited_at: None,
             exit_delivered: false,
             cancellation_escalated: false,
+            cleanup_failure: None,
+            pump_panicked: false,
         };
-        let stdin = process
-            .child
-            .stdin
-            .take()
-            .ok_or_else(|| io::Error::other("missing worker stdin"))?;
-        let stdout = process
-            .child
-            .stdout
-            .take()
-            .ok_or_else(|| io::Error::other("missing worker stdout"))?;
-        let stderr = process
-            .child
-            .stderr
-            .take()
-            .ok_or_else(|| io::Error::other("missing worker stderr"))?;
-        let mut stdin = CancellablePipe::new(stdin, Arc::clone(&process.stop_io))?;
-        let mut stdout = CancellablePipe::new(stdout, Arc::clone(&process.stop_io))?;
-        let mut stderr = CancellablePipe::new(stderr, Arc::clone(&process.stop_io))?;
-        let writer_events = event_tx.clone();
-        process.readers.push(
-            thread::Builder::new()
-                .name("deadpan-worker-input".into())
-                .spawn(move || {
-                    for message in control_rx {
-                        if let Err(error) = P::write_request(&mut stdin, &message) {
-                            let _ = writer_events.send(PipeEvent::WriteError(error));
-                            break;
-                        }
-                    }
-                })?,
-        );
-        let reader_events = event_tx.clone();
-        process.readers.push(
-            thread::Builder::new()
-                .name("deadpan-worker-output".into())
-                .spawn(move || {
-                    loop {
-                        let event = match P::read_response(&mut stdout) {
-                            Ok(Some(message)) => PipeEvent::Message(Box::new(message)),
-                            Ok(None) => break,
-                            Err(error) => {
-                                let _ = reader_events.send(PipeEvent::ReadError(error));
-                                break;
-                            }
-                        };
-                        if reader_events.send(event).is_err() {
-                            break;
-                        }
-                    }
-                })?,
-        );
-        let logs = Arc::clone(&process.logs);
-        process.readers.push(
-            thread::Builder::new()
-                .name("deadpan-worker-stderr".into())
-                .spawn(move || {
-                    let mut buffer = [0; 4096];
-                    loop {
-                        match stderr.read(&mut buffer) {
-                            Ok(0) => break,
-                            Ok(count) => logs
-                                .lock()
-                                .unwrap_or_else(|error| error.into_inner())
-                                .append(&buffer[..count]),
-                            Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
-                            Err(error) => {
-                                let _ =
-                                    event_tx.send(PipeEvent::ReadError(format!("stderr: {error}")));
+        let setup = (|| -> Result<(), SupervisorError> {
+            check_setup(SetupStage::Pipes, &process.child)?;
+            let stdin = process
+                .child
+                .stdin
+                .take()
+                .ok_or_else(|| io::Error::other("missing worker stdin"))?;
+            let stdout = process
+                .child
+                .stdout
+                .take()
+                .ok_or_else(|| io::Error::other("missing worker stdout"))?;
+            let stderr = process
+                .child
+                .stderr
+                .take()
+                .ok_or_else(|| io::Error::other("missing worker stderr"))?;
+            let mut stdin = CancellablePipe::new(stdin, Arc::clone(&process.stop_io))?;
+            let mut stdout = CancellablePipe::new(stdout, Arc::clone(&process.stop_io))?;
+            let mut stderr = CancellablePipe::new(stderr, Arc::clone(&process.stop_io))?;
+            let writer_events = event_tx.clone();
+            check_setup(SetupStage::InputPump, &process.child)?;
+            process.readers.push(
+                thread::Builder::new()
+                    .name("deadpan-worker-input".into())
+                    .spawn(move || {
+                        for message in control_rx {
+                            if let Err(error) = P::write_request(&mut stdin, &message) {
+                                let _ = writer_events.send(PipeEvent::WriteError(error));
                                 break;
                             }
                         }
-                    }
-                })?,
-        );
-        process
-            .control
-            .as_ref()
-            .ok_or_else(|| io::Error::other("missing worker control"))?
-            .try_send(request)
-            .map_err(|error| io::Error::other(error.to_string()))?;
+                    })?,
+            );
+            let reader_events = event_tx.clone();
+            check_setup(SetupStage::OutputPump, &process.child)?;
+            process.readers.push(
+                thread::Builder::new()
+                    .name("deadpan-worker-output".into())
+                    .spawn(move || {
+                        loop {
+                            let event = match P::read_response(&mut stdout) {
+                                Ok(Some(message)) => PipeEvent::Message(Box::new(message)),
+                                Ok(None) => break,
+                                Err(error) => {
+                                    let _ = reader_events.send(PipeEvent::ReadError(error));
+                                    break;
+                                }
+                            };
+                            if reader_events.send(event).is_err() {
+                                break;
+                            }
+                        }
+                    })?,
+            );
+            let logs = Arc::clone(&process.logs);
+            check_setup(SetupStage::ErrorPump, &process.child)?;
+            process.readers.push(
+                thread::Builder::new()
+                    .name("deadpan-worker-stderr".into())
+                    .spawn(move || {
+                        let mut buffer = [0; 4096];
+                        loop {
+                            match stderr.read(&mut buffer) {
+                                Ok(0) => break,
+                                Ok(count) => logs
+                                    .lock()
+                                    .unwrap_or_else(|error| error.into_inner())
+                                    .append(&buffer[..count]),
+                                Err(error) if error.kind() == io::ErrorKind::Interrupted => {
+                                    continue;
+                                }
+                                Err(error) => {
+                                    let _ = event_tx
+                                        .send(PipeEvent::ReadError(format!("stderr: {error}")));
+                                    break;
+                                }
+                            }
+                        }
+                    })?,
+            );
+            check_setup(SetupStage::InitialRequest, &process.child)?;
+            process
+                .control
+                .as_ref()
+                .ok_or_else(|| io::Error::other("missing worker control"))?
+                .try_send(request)
+                .map_err(|error| io::Error::other(error.to_string()))?;
+            Ok(())
+        })();
+        if let Err(primary) = setup {
+            return match process
+                .finish_with(Instant::now() + Duration::from_secs(2), cleanup_operations)
+                .and_then(StoppedProcess::require_membership)
+            {
+                Ok(_) => Err(primary),
+                Err(cleanup) => Err(SupervisorError::CleanupUnconfirmed {
+                    primary: Box::new(primary),
+                    cleanup,
+                }),
+            };
+        }
         Ok(process)
     }
 
@@ -396,6 +534,117 @@ impl<P: WorkerProtocol> SupervisedProcess<P> {
 
     pub fn is_finished(&self) -> bool {
         self.exit_delivered
+    }
+
+    /// Stop and join all owned work and return live cleanup evidence. This may
+    /// block until the supplied real monotonic cleanup deadline; call it only
+    /// on a worker. The render deadline may already have expired. A failed group
+    /// observation remains unresolved even if the checked leader fallback exits.
+    pub fn finish_owned_work(
+        &mut self,
+        deadline: Instant,
+    ) -> Result<StoppedProcess, CleanupFailure> {
+        self.finish_with(deadline, &mut NativeCleanup)
+    }
+
+    fn finish_with(
+        &mut self,
+        deadline: Instant,
+        operations: &mut impl CleanupOperations,
+    ) -> Result<StoppedProcess, CleanupFailure> {
+        self.stop_io.store(true, Ordering::Release);
+        self.completed = None;
+        self.control = None;
+        // Drop the receiver before joining pumps blocked on bounded sends.
+        self.events = None;
+        self.child.stdin = None;
+        self.child.stdout = None;
+        self.child.stderr = None;
+        let mut issues = self
+            .cleanup_failure
+            .take()
+            .map_or_else(Vec::new, |failure| failure.issues);
+        if self.reap_attempted && self.exit.is_none() {
+            push_cleanup_issue(
+                &mut issues,
+                CleanupStage::Reap,
+                "worker wait failed; reaping ownership is unavailable",
+            );
+        } else if !self.reap_attempted {
+            if !self.group_stopped {
+                let group_deadline = deadline.min(Instant::now() + Duration::from_millis(250));
+                match operations.stop_group(&self.child, group_deadline) {
+                    Ok(()) => self.group_stopped = true,
+                    Err(error) => {
+                        push_cleanup_issue(&mut issues, CleanupStage::Group, error.to_string());
+                    }
+                }
+            }
+            let can_reap = self.group_stopped
+                || match operations.stop_leader(&self.child, deadline) {
+                    Ok(()) => true,
+                    Err(error) => {
+                        push_cleanup_issue(
+                            &mut issues,
+                            CleanupStage::LeaderFallback,
+                            error.to_string(),
+                        );
+                        false
+                    }
+                };
+            if can_reap {
+                self.reap_attempted = true;
+                match operations.reap(&mut self.child) {
+                    Ok(status) => self.exit = Some(status),
+                    Err(error) => {
+                        push_cleanup_issue(&mut issues, CleanupStage::Reap, error.to_string());
+                    }
+                }
+            }
+        }
+        while !self.readers.iter().all(JoinHandle::is_finished) && Instant::now() < deadline {
+            thread::park_timeout(Duration::from_millis(2));
+        }
+        let mut unfinished = Vec::new();
+        for reader in self.readers.drain(..) {
+            if reader.is_finished() {
+                self.pump_panicked |= reader.join().is_err();
+            } else {
+                unfinished.push(reader);
+            }
+        }
+        self.readers = unfinished;
+        if !self.readers.is_empty() {
+            push_cleanup_issue(
+                &mut issues,
+                CleanupStage::Pipes,
+                "worker I/O pumps did not stop before the cleanup deadline",
+            );
+        }
+        if !issues.is_empty() {
+            let failure = CleanupFailure { issues };
+            self.cleanup_failure = Some(failure.clone());
+            return Err(failure);
+        }
+        if let Some(status) = self
+            .exit
+            .filter(|_| self.group_stopped && self.readers.is_empty())
+        {
+            Ok(StoppedProcess {
+                group_scope: native_group_scope(),
+                status,
+                pump_panicked: self.pump_panicked,
+            })
+        } else {
+            let failure = CleanupFailure {
+                issues: vec![CleanupIssue {
+                    stage: CleanupStage::Reap,
+                    diagnostic: "worker cleanup lacks a confirmed exit".into(),
+                }],
+            };
+            self.cleanup_failure = Some(failure.clone());
+            Err(failure)
+        }
     }
 
     /// A bounded batch of events. The host must also apply its job lifecycle and
@@ -593,22 +842,9 @@ impl<P: WorkerProtocol> SupervisedProcess<P> {
                     "invalid worker group identity",
                 ));
             }
-            #[cfg(target_os = "macos")]
-            deadpan_native_process::terminate_owned_group(
-                &self.child,
-                Instant::now() + Duration::from_millis(250),
-            )
-            .map_err(SupervisorError::SignalGroup)?;
-            #[cfg(target_os = "linux")]
-            {
-                deadpan_native_process::signal_owned_group(&self.child)
-                    .map_err(SupervisorError::SignalGroup)?;
-                deadpan_native_process::terminate_owned_leader(
-                    &self.child,
-                    Instant::now() + Duration::from_millis(250),
-                )
+            NativeCleanup
+                .stop_group(&self.child, Instant::now() + Duration::from_millis(250))
                 .map_err(SupervisorError::SignalGroup)?;
-            }
             self.group_stopped = true;
             self.control = None;
         }
@@ -618,26 +854,82 @@ impl<P: WorkerProtocol> SupervisedProcess<P> {
 
 impl<P: WorkerProtocol> Drop for SupervisedProcess<P> {
     fn drop(&mut self) {
-        self.stop_io.store(true, Ordering::Release);
-        let can_reap = !self.reap_attempted && self.stop_group().is_ok();
-        // A membership-query failure still permits a separately ownership-
-        // checked attempt to stop the leader, but never a retry after wait.
-        let can_reap = can_reap
-            || (!self.reap_attempted
-                && deadpan_native_process::terminate_owned_leader(
-                    &self.child,
-                    Instant::now() + Duration::from_millis(250),
-                )
-                .is_ok());
-        self.control = None;
-        // Release backpressure before joining any pipe reader.
-        self.events = None;
-        if can_reap {
-            let _ = reap_child_once(&mut self.child, &mut self.reap_attempted);
+        // Fallback only: no caller can infer evidence from this discarded result.
+        let _ = self.finish_owned_work(Instant::now() + Duration::from_millis(500));
+        // A pump that ignored cancellable I/O can outlive this owner. Dropping
+        // its JoinHandle detaches it; it does not stop or join the thread. Keep
+        // the explicit Pipes failure returned by finalization truthful rather
+        // than blocking its delivery forever. Pumps own their pipe/protocol
+        // values and shared buffers, never a project writer or borrowed state.
+        // No stopped receipt was issued, so the host must retain its unresolved
+        // operation and execution slot even if a detached pump later exits.
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SetupStage {
+    Pipes,
+    InputPump,
+    OutputPump,
+    ErrorPump,
+    InitialRequest,
+}
+
+trait CleanupOperations {
+    fn stop_group(&mut self, child: &Child, deadline: Instant) -> io::Result<()>;
+    fn stop_leader(&mut self, child: &Child, deadline: Instant) -> io::Result<()>;
+    fn reap(&mut self, child: &mut Child) -> io::Result<ExitStatus>;
+}
+
+struct NativeCleanup;
+
+impl CleanupOperations for NativeCleanup {
+    fn stop_group(&mut self, child: &Child, deadline: Instant) -> io::Result<()> {
+        if Pid::from_child(child) == Pid::INIT {
+            return Err(io::Error::other("invalid worker group identity"));
         }
-        for reader in self.readers.drain(..) {
-            let _ = reader.join();
+        #[cfg(target_os = "macos")]
+        {
+            deadpan_native_process::terminate_owned_group(child, deadline)
         }
+        #[cfg(target_os = "linux")]
+        {
+            deadpan_native_process::signal_owned_group(child)?;
+            deadpan_native_process::terminate_owned_leader(child, deadline)
+        }
+    }
+
+    fn stop_leader(&mut self, child: &Child, deadline: Instant) -> io::Result<()> {
+        deadpan_native_process::terminate_owned_leader(child, deadline)
+    }
+
+    fn reap(&mut self, child: &mut Child) -> io::Result<ExitStatus> {
+        child.wait()
+    }
+}
+
+fn native_group_scope() -> GroupCleanupScope {
+    #[cfg(target_os = "macos")]
+    {
+        GroupCleanupScope::MembershipConfirmed
+    }
+    #[cfg(target_os = "linux")]
+    {
+        GroupCleanupScope::SignalAndLeaderOnly
+    }
+}
+
+fn push_cleanup_issue(
+    issues: &mut Vec<CleanupIssue>,
+    stage: CleanupStage,
+    diagnostic: impl Into<String>,
+) {
+    // Retrying cleanup cannot erase earlier uncertainty or grow its report.
+    if !issues.iter().any(|issue| issue.stage == stage) {
+        issues.push(CleanupIssue {
+            stage,
+            diagnostic: diagnostic.into(),
+        });
     }
 }
 
@@ -652,6 +944,276 @@ fn reap_child_once(child: &mut Child, attempted: &mut bool) -> io::Result<ExitSt
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    struct QuietProtocol;
+
+    impl WorkerProtocol for QuietProtocol {
+        type Request = ();
+        type Response = ();
+
+        fn from_request(_: &()) -> Result<Self, SupervisorError> {
+            Ok(Self)
+        }
+
+        fn cancellation(&self) {}
+
+        fn write_request(_: &mut impl Write, _: &()) -> Result<(), String> {
+            Ok(())
+        }
+
+        fn read_response(reader: &mut impl Read) -> Result<Option<()>, String> {
+            let mut byte = [0];
+            let count = reader.read(&mut byte).map_err(|error| error.to_string())?;
+            Ok((count != 0).then_some(()))
+        }
+
+        fn classify(&self, _: &()) -> Result<ResponseKind, String> {
+            Ok(ResponseKind::Progress)
+        }
+    }
+
+    fn quiet_spec(workspace: &std::path::Path) -> ProcessSpec {
+        ProcessSpec {
+            executable: "/bin/sleep".into(),
+            arguments: vec!["60".into()],
+            environment: BTreeMap::new(),
+            workspace: workspace.into(),
+            limits: ProcessLimits {
+                maximum_duration: Duration::from_secs(60),
+                cancellation_grace: Duration::from_millis(50),
+                exit_grace: Duration::from_millis(50),
+            },
+        }
+    }
+
+    #[derive(Default)]
+    struct FaultCleanup {
+        fail_group: bool,
+        fail_wait: bool,
+        calls: Vec<&'static str>,
+    }
+
+    impl CleanupOperations for FaultCleanup {
+        fn stop_group(&mut self, child: &Child, deadline: Instant) -> io::Result<()> {
+            self.calls.push("group");
+            if self.fail_group {
+                Err(io::Error::other("injected membership query failure"))
+            } else {
+                NativeCleanup.stop_group(child, deadline)
+            }
+        }
+
+        fn stop_leader(&mut self, child: &Child, deadline: Instant) -> io::Result<()> {
+            self.calls.push("leader");
+            NativeCleanup.stop_leader(child, deadline)
+        }
+
+        fn reap(&mut self, child: &mut Child) -> io::Result<ExitStatus> {
+            self.calls.push("wait");
+            let status = NativeCleanup.reap(child)?;
+            if self.fail_wait {
+                // Simulate an ambiguous wait result after actual reaping. Any
+                // subsequent PID operation would violate ownership.
+                Err(io::Error::other("injected wait observation failure"))
+            } else {
+                Ok(status)
+            }
+        }
+    }
+
+    #[test]
+    fn explicit_cleanup_reaps_and_joins_before_issuing_receipt() {
+        let workspace = tempfile::tempdir().unwrap();
+        let mut process =
+            SupervisedProcess::<QuietProtocol>::spawn(quiet_spec(workspace.path()), ()).unwrap();
+        let stopped = process
+            .finish_owned_work(Instant::now() + Duration::from_secs(2))
+            .unwrap();
+        assert_eq!(stopped.group_scope(), native_group_scope());
+        assert!(!stopped.status().success());
+        assert!(!stopped.pump_panicked());
+        assert!(process.reap_attempted);
+        assert!(process.readers.is_empty());
+        assert!(process.control.is_none() && process.events.is_none());
+        assert!(process.finish_owned_work(Instant::now()).is_ok());
+    }
+
+    #[test]
+    fn failed_membership_remains_unconfirmed_after_successful_leader_fallback() {
+        let workspace = tempfile::tempdir().unwrap();
+        let mut process =
+            SupervisedProcess::<QuietProtocol>::spawn(quiet_spec(workspace.path()), ()).unwrap();
+        let mut operations = FaultCleanup {
+            fail_group: true,
+            ..Default::default()
+        };
+        let failure = process
+            .finish_with(Instant::now() + Duration::from_secs(2), &mut operations)
+            .unwrap_err();
+        assert_eq!(failure.issues()[0].stage, CleanupStage::Group);
+        assert_eq!(operations.calls, ["group", "leader", "wait"]);
+        assert!(process.exit.is_some());
+        assert!(process.readers.is_empty());
+        assert!(
+            process
+                .finish_with(Instant::now(), &mut operations)
+                .is_err()
+        );
+        assert_eq!(operations.calls, ["group", "leader", "wait"]);
+    }
+
+    #[test]
+    fn failed_explicit_wait_never_retries_pid_operations() {
+        let workspace = tempfile::tempdir().unwrap();
+        let mut process =
+            SupervisedProcess::<QuietProtocol>::spawn(quiet_spec(workspace.path()), ()).unwrap();
+        let mut operations = FaultCleanup {
+            fail_wait: true,
+            ..Default::default()
+        };
+        let failure = process
+            .finish_with(Instant::now() + Duration::from_secs(2), &mut operations)
+            .unwrap_err();
+        assert_eq!(failure.issues()[0].stage, CleanupStage::Reap);
+        assert_eq!(operations.calls, ["group", "wait"]);
+        assert!(process.reap_attempted && process.exit.is_none());
+        assert!(
+            process
+                .finish_with(Instant::now(), &mut operations)
+                .is_err()
+        );
+        assert_eq!(operations.calls, ["group", "wait"]);
+    }
+
+    #[test]
+    fn setup_failures_report_cleanup_for_every_partial_initialization() {
+        for selected in [
+            SetupStage::Pipes,
+            SetupStage::InputPump,
+            SetupStage::OutputPump,
+            SetupStage::ErrorPump,
+            SetupStage::InitialRequest,
+        ] {
+            let workspace = tempfile::tempdir().unwrap();
+            let mut pid = None;
+            let result = SupervisedProcess::<QuietProtocol>::spawn_with_controls(
+                quiet_spec(workspace.path()),
+                (),
+                |stage, child| {
+                    pid = Some(Pid::from_child(child));
+                    if stage == selected {
+                        Err(io::Error::other("injected setup failure"))
+                    } else {
+                        Ok(())
+                    }
+                },
+                &mut NativeCleanup,
+            );
+            let error = match result {
+                Err(error) => error,
+                Ok(_) => panic!("setup did not fail"),
+            };
+            assert_eq!(error.cleanup_confirmed(), cfg!(target_os = "macos"));
+            assert!(error.to_string().contains("injected setup failure"));
+            assert_eq!(
+                waitid(
+                    WaitId::Pid(pid.unwrap()),
+                    WaitIdOptions::EXITED | WaitIdOptions::NOHANG | WaitIdOptions::NOWAIT
+                )
+                .unwrap_err(),
+                rustix::io::Errno::CHILD
+            );
+        }
+    }
+
+    #[test]
+    fn setup_failure_keeps_primary_and_unconfirmed_group_cleanup() {
+        let workspace = tempfile::tempdir().unwrap();
+        let mut operations = FaultCleanup {
+            fail_group: true,
+            ..Default::default()
+        };
+        let result = SupervisedProcess::<QuietProtocol>::spawn_with_controls(
+            quiet_spec(workspace.path()),
+            (),
+            |_, _| Err(io::Error::other("injected initial setup failure")),
+            &mut operations,
+        );
+        let error = match result {
+            Err(error) => error,
+            Ok(_) => panic!("setup did not fail"),
+        };
+        assert!(!error.cleanup_confirmed());
+        let SupervisorError::CleanupUnconfirmed { primary, cleanup } = error else {
+            panic!("setup discarded cleanup evidence")
+        };
+        assert!(
+            primary
+                .to_string()
+                .contains("injected initial setup failure")
+        );
+        assert_eq!(cleanup.issues()[0].stage, CleanupStage::Group);
+        assert_eq!(operations.calls, ["group", "leader", "wait"]);
+    }
+
+    #[test]
+    fn joined_pump_panic_is_distinct_from_successful_pump_completion() {
+        let workspace = tempfile::tempdir().unwrap();
+        let mut process =
+            SupervisedProcess::<QuietProtocol>::spawn(quiet_spec(workspace.path()), ()).unwrap();
+        process
+            .readers
+            .push(thread::spawn(|| panic!("injected I/O pump panic")));
+        let stopped = process
+            .finish_owned_work(Instant::now() + Duration::from_secs(2))
+            .unwrap();
+        assert!(stopped.pump_panicked());
+        assert!(process.readers.is_empty());
+    }
+
+    #[test]
+    fn unresolved_held_pump_does_not_block_failure_delivery_during_drop() {
+        let workspace = tempfile::tempdir().unwrap();
+        let mut process =
+            SupervisedProcess::<QuietProtocol>::spawn(quiet_spec(workspace.path()), ()).unwrap();
+        process
+            .finish_owned_work(Instant::now() + Duration::from_secs(2))
+            .unwrap();
+        let (release, held) = mpsc::channel();
+        let (exited, stopped) = mpsc::channel();
+        process.readers.push(thread::spawn(move || {
+            let _ = held.recv();
+            let _ = exited.send(());
+        }));
+        let failure = process.finish_owned_work(Instant::now()).unwrap_err();
+        assert!(
+            failure
+                .issues()
+                .iter()
+                .any(|issue| issue.stage == CleanupStage::Pipes)
+        );
+        let (returned, result) = mpsc::channel();
+        let dropping = thread::spawn(move || {
+            drop(process);
+            let _ = returned.send(());
+        });
+        // Always release the held thread before asserting, so the regression
+        // fails without leaving either fixture thread blocked on old code.
+        let delivered = result.recv_timeout(Duration::from_secs(2));
+        release.send(()).unwrap();
+        stopped.recv_timeout(Duration::from_secs(2)).unwrap();
+        dropping.join().unwrap();
+        assert!(
+            delivered.is_ok(),
+            "Drop blocked delivery of unresolved cleanup"
+        );
+        assert!(
+            failure
+                .issues()
+                .iter()
+                .any(|issue| issue.stage == CleanupStage::Pipes)
+        );
+    }
 
     #[test]
     fn failed_reap_prevents_a_second_pid_wait() {

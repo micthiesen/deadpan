@@ -4,6 +4,14 @@
 
 ## Present implementation
 
+The [shared render coordinator](RENDER_JOBS.md#shared-workflow-and-native-ownership)
+connects immutable capture, encoding, verification, publication, checkpoint retry
+and reconciliation to the native project service. One bounded stage worker owns
+media and destination locks; the existing service owns journal transactions and
+retains the writer through cancellation and release. Explicit subprocess teardown
+evidence gates terminal failures. Public Render controls and automatic output
+policy remain open.
+
 | Crate | Present responsibility | Boundary |
 | --- | --- | --- |
 | `deadpan-core` | Exact time, validated flat beat tree, immutable asset metadata, structural commands, JSON, and reversible patches. | Pure Rust domain logic, independent of the application and external systems. |

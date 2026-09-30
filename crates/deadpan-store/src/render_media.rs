@@ -215,6 +215,24 @@ pub struct RenderWriteHandle {
     reader: RenderReadHandle,
 }
 
+/// One admitted host workflow across preflight, encoding and publication.
+/// Dropping an unreleased lease keeps this writer session fenced. Destruction
+/// alone cannot establish that owned workers stopped. Reopening creates a new
+/// session but does not prove that any previously unknown process has exited.
+#[must_use = "retain the lease until all workflow work has stopped"]
+pub struct RenderWorkflowLease {
+    claimed: Arc<AtomicBool>,
+}
+
+impl RenderWorkflowLease {
+    /// Release only after the host has observed all owned workflow work stop.
+    /// Journal failures may still require recovery; this is execution admission,
+    /// not a declaration that publication succeeded or that recovery is complete.
+    pub fn release(self) {
+        self.claimed.store(false, Ordering::Release);
+    }
+}
+
 /// Unforgeable within the public API: only complete durable publication and
 /// independent hash verification can construct this exact-session token.
 pub struct PreparedRenderRetention {
@@ -466,6 +484,37 @@ impl RenderWriteHandle {
 }
 
 impl ProjectStore {
+    /// Admit one workflow, including preparation before any durable attempt and
+    /// publication after a Verified attempt. Lower-level journal APIs retain
+    /// their separate exact-stage authority checks.
+    pub fn acquire_render_workflow(&self) -> Result<RenderWorkflowLease, StoreError> {
+        self.require_writer()?;
+        self.render_workflow_claimed
+            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+            .map_err(|_| {
+                StoreError::RenderJob(
+                    "project already has a render workflow or unresolved execution cleanup".into(),
+                )
+            })?;
+        Ok(RenderWorkflowLease {
+            claimed: Arc::clone(&self.render_workflow_claimed),
+        })
+    }
+
+    /// Bind an operational render workflow to this exact writable open. Equal
+    /// package paths or project IDs cannot carry authority across writer reopen.
+    /// This check performs no media reads or filesystem work.
+    pub fn check_render_owner(&self, owner: &RenderReadHandle) -> Result<(), StoreError> {
+        self.require_writer()?;
+        if !Arc::ptr_eq(&self.render_storage, &owner.storage)
+            || !Arc::ptr_eq(&self.render_closed, &owner.closed)
+        {
+            return Err(RenderMediaError::WrongSession.into());
+        }
+        owner.check_live(&AtomicBool::new(false))?;
+        Ok(())
+    }
+
     pub fn render_read_handle(&self) -> RenderReadHandle {
         RenderReadHandle {
             storage: Arc::clone(&self.render_storage),

@@ -30,6 +30,7 @@ type Result<T> = std::result::Result<T, String>;
 
 mod gain;
 mod moment;
+mod render;
 mod room_tone;
 
 struct Pending {
@@ -61,6 +62,9 @@ struct Service {
     serial: u64,
     jobs: SyncSender<Job>,
     library: Option<ProjectLibrary>,
+    render: Option<render::NativeRender>,
+    render_update: Option<super::ProjectRenderUpdate>,
+    pending_session_change: Option<render::PendingSessionChange>,
 }
 
 pub(super) fn run(
@@ -88,23 +92,48 @@ pub(super) fn run(
         serial: 0,
         jobs,
         library,
+        render: None,
+        render_update: None,
+        pending_session_change: None,
     };
-    while !service.shared.stopping.load(Ordering::Acquire)
-        || service.shared.busy.load(Ordering::Acquire)
-    {
-        match requests.recv_timeout(Duration::from_millis(10)) {
+    let mut requests_connected = true;
+    loop {
+        let shutdown_changed = if service.shared.stopping.load(Ordering::Acquire)
+            && (!service.shared.busy.load(Ordering::Acquire)
+                || service.pending_session_change.is_some())
+        {
+            service.begin_render_shutdown()
+        } else {
+            false
+        };
+        let changed = shutdown_changed | service.pump_render() | service.finish_session_change();
+        if changed {
+            service.publish();
+        }
+        if service.shared.stopping.load(Ordering::Acquire)
+            && !service.shared.busy.load(Ordering::Acquire)
+            && service.pending_session_change.is_none()
+            && service.render.is_none()
+        {
+            break;
+        }
+        let request = if requests_connected {
+            requests.recv_timeout(Duration::from_millis(10))
+        } else {
+            std::thread::park_timeout(Duration::from_millis(10));
+            Err(RecvTimeoutError::Timeout)
+        };
+        match request {
             Ok(request) => {
-                match service.command(request) {
-                    Ok(()) => service.error = None,
-                    Err(error) => {
-                        service.error = Some(error);
-                        service.message = None;
-                    }
+                if service.dispatch_request(request) {
+                    service.shared.busy.store(false, Ordering::Release);
                 }
-                service.shared.busy.store(false, Ordering::Release);
                 service.publish();
             }
-            Err(RecvTimeoutError::Disconnected) => break,
+            Err(RecvTimeoutError::Disconnected) => {
+                requests_connected = false;
+                service.shared.stopping.store(true, Ordering::Release);
+            }
             Err(RecvTimeoutError::Timeout) => {}
         }
         if service.shared.stopping.load(Ordering::Acquire) {
@@ -141,9 +170,12 @@ pub(super) fn run(
     service.workspace = None;
     service.cached = None;
     service.shared.busy.store(false, Ordering::Release);
+    let shared = service.shared.clone();
     drop(service);
     drop(results);
     let _ = worker.join();
+    shared.shutdown_complete.store(true, Ordering::Release);
+    (shared.wake)();
 }
 
 impl Service {
@@ -166,6 +198,7 @@ impl Service {
                 .cloned(),
             room_tone_error: self.room_tone_error.clone(),
             gain: self.gain.clone(),
+            render: self.render_update.clone(),
         };
         *self
             .shared
@@ -176,11 +209,16 @@ impl Service {
     }
 
     fn command(&mut self, request: ProjectRequest) -> Result<()> {
+        if let ProjectRequest::Render(request) = request {
+            self.render_command(request);
+            return Ok(());
+        }
         self.committed = None;
         self.room_tone = None;
         self.room_tone_error = None;
         self.gain = None;
         match request {
+            ProjectRequest::Render(_) => unreachable!("render commands use their own feedback"),
             ProjectRequest::CreateFromSource { path } => self.create_from_source(path),
             ProjectRequest::InitializeSource {
                 expected_session,
@@ -778,12 +816,20 @@ impl Service {
     }
 
     fn open(&mut self, path: PathBuf, create: bool) -> Result<()> {
+        if let Some(prepared) = self.prepare_open(path, create)? {
+            self.install_open(prepared);
+        } else {
+            self.message = Some("Project is already open".into());
+        }
+        Ok(())
+    }
+
+    fn prepare_open(&self, path: PathBuf, create: bool) -> Result<Option<render::PreparedOpen>> {
         if !create
             && let Some(current) = &self.workspace
             && path.canonicalize().ok().as_ref() == Some(&current.path)
         {
-            self.message = Some("Project is already open".into());
-            return Ok(());
+            return Ok(None);
         }
         // Keep the previous session and its work alive until the candidate is valid.
         // Native writable Open owns this backed-up migration. Read-only/headless
@@ -807,13 +853,7 @@ impl Service {
             .checked_add(1)
             .ok_or("Project session identities exhausted")?;
         let workspace = snapshot(&store, next, path.canonicalize().map_err(display)?, None)?;
-        self.cancel();
-        self.store = Some(store);
-        self.workspace = Some(Arc::new(workspace));
-        self.session = next;
-        self.cached = None;
-        self.import = None;
-        self.message = Some(match migration {
+        let message = match migration {
             Some(migration) if migration.backup.is_some() => format!(
                 "Project opened. Upgraded schema {} to {}; original database backup: {}",
                 migration.from_schema,
@@ -822,8 +862,22 @@ impl Service {
             ),
             _ if create => "Project created".into(),
             _ => "Project opened".into(),
-        });
-        Ok(())
+        };
+        Ok(Some(render::PreparedOpen {
+            store,
+            workspace,
+            message,
+        }))
+    }
+
+    fn install_open(&mut self, prepared: render::PreparedOpen) {
+        self.cancel();
+        self.store = Some(prepared.store);
+        self.session = prepared.workspace.session;
+        self.workspace = Some(Arc::new(prepared.workspace));
+        self.cached = None;
+        self.import = None;
+        self.message = Some(prepared.message);
     }
 
     fn refresh(&mut self) -> Result<()> {

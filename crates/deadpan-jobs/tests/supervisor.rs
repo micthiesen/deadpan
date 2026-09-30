@@ -185,6 +185,12 @@ fn finish(process: &mut WorkerProcess) -> Vec<ProcessEvent> {
         thread::sleep(Duration::from_millis(2));
     }
     assert!(matches!(events.last(), Some(ProcessEvent::Exited { .. })));
+    let stopped = process
+        .finish_owned_work(Instant::now() + Duration::from_secs(2))
+        .unwrap();
+    assert!(!stopped.pump_panicked());
+    #[cfg(target_os = "macos")]
+    stopped.require_membership().unwrap();
     events
 }
 

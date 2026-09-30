@@ -821,6 +821,7 @@ dependencies = [
  "deadpan-audio",
  "deadpan-cli",
  "deadpan-core",
+ "deadpan-jobs",
  "deadpan-media",
  "deadpan-native-process",
  "deadpan-output",

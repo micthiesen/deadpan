@@ -2,9 +2,10 @@
 
 Database schema 41 stores an immutable engineering render intent and operational
 attempt history. Core document schema remains 33. These library APIs support
-retaining a completed encode and retrying verification after restart. Native
-Render, public headless render commands, automatic encoder selection and scheduling
-remain separate work. The [publication journal](RENDER_PUBLICATION.md#durable-publication-journal)
+retaining a completed encode and retrying verification after restart. A shared
+workflow coordinator connects these stages to the native project service.
+Public Render controls, headless render commands, automatic encoder selection
+and scheduling remain separate work. The [publication journal](RENDER_PUBLICATION.md#durable-publication-journal)
 uses these checkpoints for explicit destination reconciliation.
 
 ## Captured intent and attempts
@@ -100,6 +101,55 @@ changed movie, stale document, revoked session, cancelled attempt or verifier
 failure cannot supply a new live verified candidate. Retained objects remain
 available for an explicit retry. A stored report is never an input to the
 recovery verifier.
+
+## Shared workflow and native ownership
+
+`deadpan_cli::encoded_render::workflow::RenderWorkflow` owns one bounded stage
+worker, one command slot, one reliable completion slot and coalesced progress.
+The project service owns the SQLite connection. Its nonblocking `poll` admits
+at most one completion and advances the corresponding journal transactions.
+Capture, media preparation, encoding, hashing, verification, destination copies
+and release of heavy values run on the stage worker. Intent admission still
+validates the bounded complete authored document on the writer; this is not a
+constant-time operation.
+
+Start captures an exact current revision and immutable operation identities.
+Later edits do not retarget the render. Retry can reuse a retained checkpoint
+but always creates a new verification attempt. Reconciliation retains its
+recovered destination locks until the final journal transaction. Optional
+progress belongs to the exact workflow identity and active stage; it cannot
+substitute for a reliable completion.
+
+A session-bound lease prevents overlapping workflows from preflight through
+publication and final release, including across coordinator instances. Equal
+project IDs cannot transfer writer authority between separate writable opens.
+Dropping an unreleased lease fences that writer session. Reopening initializes
+new admission state and interrupts persisted attempts; it does not prove an
+unknown old process has stopped.
+
+Cancellation persists the request and revokes publication permits before
+signaling worker work. A failed journal write still requests a stop and retains
+an unresolved status. A racing movie commit remains observed even if the final
+database write fails. `can_release_writer` requires returned stage cleanup and
+release of worker-owned candidates and locks. Journal recovery can remain
+necessary after execution cleanup completes. A worker panic, lost channel or
+unconfirmed process cleanup cannot supply that release evidence.
+
+Encoder and verifier hosts explicitly finish owned subprocess work on every
+post-spawn return, including partial setup failures. The stopped receipt records
+group membership scope, leader reaping and joined I/O pumps. A failed group
+check stays unresolved after a successful leader fallback. A joined pump panic
+is a terminal failure, never successful media. Darwin's membership evidence is
+required for these hosts; Linux's signal-and-leader observation is insufficient.
+Destructors provide fallback cleanup and cannot authorize a terminal attempt.
+
+The native `ProjectService` routes typed Start, Retry, Reconcile and Cancel
+requests through this coordinator. It retains render status independently of
+editor command feedback and continues accepting ordinary edits. Close, switch
+and shutdown keep the old writer until worker release; unresolved cleanup
+retains the session and exposes its diagnostic. The runtime is the current
+native executable's private `--headless` worker dispatch. No public Render
+control or automatic output policy is implied by this engineering entrypoint.
 
 ## Migration and remaining work
 

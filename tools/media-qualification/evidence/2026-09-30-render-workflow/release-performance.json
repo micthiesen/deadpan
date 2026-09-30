@@ -1,0 +1,27 @@
+{
+  "command": [
+    "cargo",
+    "run",
+    "-p",
+    "deadpan-app",
+    "--release",
+    "--features",
+    "ui-harness",
+    "--locked",
+    "--",
+    "--ui-check",
+    "--mode",
+    "performance",
+    "--output",
+    "/private/tmp/deadpan-render-workflow-EtO3Qu1W/ui-performance",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "started": "2026-09-30T08:45:55.374712+00:00",
+  "base_commit": "f6f0259dfe25213c4c0e33ef88c9274f24915749",
+  "diff_sha256": "e92c868a8cd034665dff083c98e682fd61ea7b3b6c4babf918344f3fdecbd1ce",
+  "source_manifest_sha256": "fd099921ac67cc84b2e2e9a897a50135b9d9b9ee9859b9e26595d2403f42e403",
+  "pid": 97361,
+  "exit_code": 0,
+  "seconds": 127.30707079079002
+}

@@ -264,7 +264,13 @@ Never adopt a replacement merely because its bytes match. Keep recovered file
 locks through the terminal journal write; missing or changed reports leave a
 verified final movie PublishedUnconfirmed. Process-crash tests do not establish
 physical power-loss behavior. See [publication](docs/RENDER_PUBLICATION.md).
-The native Render and public headless workflow remain open.
+Use the shared render coordinator for native service requests. Keep one workflow
+lease through preflight, verification, publication and worker release. Persist
+cancellation before signaling; preserve a racing movie commit through journal
+failure. Unknown process cleanup cannot become Failed/Cancelled or release the
+writer. Close/switch/shutdown must pump reliable completions while the old writer
+is alive. Separate render status from editor command feedback. Public Render
+controls, automatic policy and public headless rendering remain open.
 
 Database schema 41 stores core schema 33 and retains operational generation requests,
 plus an optional validated single-Original workflow profile. Use the dedicated

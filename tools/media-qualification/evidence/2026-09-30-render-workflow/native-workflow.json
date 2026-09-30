@@ -1,0 +1,17 @@
+{
+  "command": [
+    "target/debug/examples/qualify_render_workflow",
+    "/tmp/deadpan-render-workflow-EtO3Qu1W/native-inputs/source.deadpan",
+    "/tmp/deadpan-render-workflow-EtO3Qu1W/native-inputs/generated.deadpan",
+    "target/debug/deadpan-cli",
+    "/tmp/deadpan-render-workflow-EtO3Qu1W/native-report.json",
+    "/tmp/deadpan-render-workflow-EtO3Qu1W/native-output"
+  ],
+  "started": "2026-09-30T08:29:22.670054+00:00",
+  "base_commit": "f6f0259dfe25213c4c0e33ef88c9274f24915749",
+  "diff_sha256": "e0695a5aa005fa18e888553d699584fd5764aa5a0b487fcb15d7b22eb4b0909f",
+  "source_manifest_sha256": "8ed56fb94be64dc4904c784c5eabf67a1311f26502c446d7abedced5ecb08136",
+  "pid": 94218,
+  "exit_code": 0,
+  "seconds": 157.98290458275005
+}

@@ -1,0 +1,16 @@
+[
+  {
+    "source": "/tmp/deadpan-publication-recovery-ams9kpds/native-inputs/source.deadpan",
+    "target": "/tmp/deadpan-render-workflow-EtO3Qu1W/native-inputs/source.deadpan",
+    "schema": 41,
+    "database_sha256": "8507851248a5843d324ea2b5d669c00acb539e24d782273af2a621bebbf2203c",
+    "method": "immutable objects copied; live database copied through SQLite backup API"
+  },
+  {
+    "source": "/tmp/deadpan-publication-recovery-ams9kpds/native-inputs/generated.deadpan",
+    "target": "/tmp/deadpan-render-workflow-EtO3Qu1W/native-inputs/generated.deadpan",
+    "schema": 41,
+    "database_sha256": "d28651e79152aa5a03fd601a9910058b2932c8e41c4222e1b4bf29ab199bdc68",
+    "method": "immutable objects copied; live database copied through SQLite backup API"
+  }
+]

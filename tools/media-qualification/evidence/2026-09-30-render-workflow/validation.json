@@ -1,0 +1,387 @@
+{
+  "status": "passed scoped render workflow",
+  "base_commit": "f6f0259dfe25213c4c0e33ef88c9274f24915749",
+  "runs": [
+    {
+      "name": "focused-workflow",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "workflow",
+        "--no-fail-fast"
+      ],
+      "started": "2026-09-30T08:16:32.722785+00:00",
+      "base_commit": "f6f0259dfe25213c4c0e33ef88c9274f24915749",
+      "diff_sha256": "ea7c4668bb35d79dd9ddeffb7828f60e3fce29ce06810aa0ade38523c50a103a",
+      "source_manifest_sha256": "bece264fb4d29a9b18f618093378f9d4a468903db3d7f61a22805e7fc32cf013",
+      "pid": 90417,
+      "exit_code": 101,
+      "seconds": 96.31775191705674
+    },
+    {
+      "name": "focused-render",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "render",
+        "--no-fail-fast"
+      ],
+      "started": "2026-09-30T08:23:25.947016+00:00",
+      "base_commit": "f6f0259dfe25213c4c0e33ef88c9274f24915749",
+      "diff_sha256": "96d9a70f7e472d505d7ea3bfb196673473c754b741d00e0589a64a7e409e6a4d",
+      "source_manifest_sha256": "5b3970b5658e6daf5b39bf773fe5c8e94898800f6656e28b04e9b013c129b8f1",
+      "pid": 92428,
+      "exit_code": 101,
+      "seconds": 176.0218009171076
+    },
+    {
+      "name": "build-examples",
+      "command": [
+        "cargo",
+        "build",
+        "--workspace",
+        "--examples",
+        "--locked"
+      ],
+      "started": "2026-09-30T08:27:27.990122+00:00",
+      "base_commit": "f6f0259dfe25213c4c0e33ef88c9274f24915749",
+      "diff_sha256": "6ac047e3316297cb87a1a0ffcd45c5c0151c564fcba6185f02869280af0906cd",
+      "source_manifest_sha256": "5b3970b5658e6daf5b39bf773fe5c8e94898800f6656e28b04e9b013c129b8f1",
+      "pid": 93699,
+      "exit_code": 0,
+      "seconds": 30.9362180409953
+    },
+    {
+      "name": "shutdown-diagnostic",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "shutdown_finishes_admitted_edit_and_pumps_render_before_releasing_writer",
+        "--no-fail-fast",
+        "--",
+        "--exact",
+        "project::tests::render::shutdown_finishes_admitted_edit_and_pumps_render_before_releasing_writer"
+      ],
+      "started": "2026-09-30T08:28:20.365355+00:00",
+      "base_commit": "f6f0259dfe25213c4c0e33ef88c9274f24915749",
+      "diff_sha256": "e0695a5aa005fa18e888553d699584fd5764aa5a0b487fcb15d7b22eb4b0909f",
+      "source_manifest_sha256": "8ed56fb94be64dc4904c784c5eabf67a1311f26502c446d7abedced5ecb08136",
+      "pid": 93871,
+      "exit_code": 101,
+      "seconds": 32.04700420796871
+    },
+    {
+      "name": "native-workflow",
+      "command": [
+        "target/debug/examples/qualify_render_workflow",
+        "/tmp/deadpan-render-workflow-EtO3Qu1W/native-inputs/source.deadpan",
+        "/tmp/deadpan-render-workflow-EtO3Qu1W/native-inputs/generated.deadpan",
+        "target/debug/deadpan-cli",
+        "/tmp/deadpan-render-workflow-EtO3Qu1W/native-report.json",
+        "/tmp/deadpan-render-workflow-EtO3Qu1W/native-output"
+      ],
+      "started": "2026-09-30T08:29:22.670054+00:00",
+      "base_commit": "f6f0259dfe25213c4c0e33ef88c9274f24915749",
+      "diff_sha256": "e0695a5aa005fa18e888553d699584fd5764aa5a0b487fcb15d7b22eb4b0909f",
+      "source_manifest_sha256": "8ed56fb94be64dc4904c784c5eabf67a1311f26502c446d7abedced5ecb08136",
+      "pid": 94218,
+      "exit_code": 0,
+      "seconds": 157.98290458275005
+    },
+    {
+      "name": "independent-decode",
+      "command": [
+        "python3",
+        "/tmp/deadpan-render-workflow-EtO3Qu1W/qualify-decoded.py"
+      ],
+      "started": "2026-09-30T08:32:12.649051+00:00",
+      "base_commit": "f6f0259dfe25213c4c0e33ef88c9274f24915749",
+      "diff_sha256": "f8e21afa2ccd9fdffc61cfd90ed8b8b97037c61b1ee6372ca5caea9111242a43",
+      "source_manifest_sha256": "fd099921ac67cc84b2e2e9a897a50135b9d9b9ee9859b9e26595d2403f42e403",
+      "pid": 94606,
+      "exit_code": 0,
+      "seconds": 6.828412625007331
+    },
+    {
+      "name": "shutdown-fixed",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "project::tests::render::shutdown_finishes_admitted_edit_and_pumps_render_before_releasing_writer",
+        "--no-fail-fast",
+        "--",
+        "--exact"
+      ],
+      "started": "2026-09-30T08:32:37.475683+00:00",
+      "base_commit": "f6f0259dfe25213c4c0e33ef88c9274f24915749",
+      "diff_sha256": "f8e21afa2ccd9fdffc61cfd90ed8b8b97037c61b1ee6372ca5caea9111242a43",
+      "source_manifest_sha256": "fd099921ac67cc84b2e2e9a897a50135b9d9b9ee9859b9e26595d2403f42e403",
+      "pid": 94762,
+      "exit_code": 0,
+      "seconds": 11.666675709187984
+    },
+    {
+      "name": "workspace-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-09-30T08:33:02.484494+00:00",
+      "base_commit": "f6f0259dfe25213c4c0e33ef88c9274f24915749",
+      "diff_sha256": "f8e21afa2ccd9fdffc61cfd90ed8b8b97037c61b1ee6372ca5caea9111242a43",
+      "source_manifest_sha256": "fd099921ac67cc84b2e2e9a897a50135b9d9b9ee9859b9e26595d2403f42e403",
+      "pid": 94990,
+      "exit_code": 0,
+      "seconds": 164.93066108319908
+    },
+    {
+      "name": "workspace-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "--no-fail-fast"
+      ],
+      "started": "2026-09-30T08:34:59.040090+00:00",
+      "base_commit": "f6f0259dfe25213c4c0e33ef88c9274f24915749",
+      "diff_sha256": "f8e21afa2ccd9fdffc61cfd90ed8b8b97037c61b1ee6372ca5caea9111242a43",
+      "source_manifest_sha256": "fd099921ac67cc84b2e2e9a897a50135b9d9b9ee9859b9e26595d2403f42e403",
+      "pid": 95242,
+      "exit_code": -2,
+      "seconds": 21.768357082735747
+    },
+    {
+      "name": "workspace-tests-final",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "--no-fail-fast"
+      ],
+      "started": "2026-09-30T08:36:31.750756+00:00",
+      "base_commit": "f6f0259dfe25213c4c0e33ef88c9274f24915749",
+      "diff_sha256": "f8e21afa2ccd9fdffc61cfd90ed8b8b97037c61b1ee6372ca5caea9111242a43",
+      "source_manifest_sha256": "fd099921ac67cc84b2e2e9a897a50135b9d9b9ee9859b9e26595d2403f42e403",
+      "pid": 95452,
+      "exit_code": 0,
+      "seconds": 409.6671905843541
+    },
+    {
+      "name": "format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "started": "2026-09-30T08:43:37.367066+00:00",
+      "base_commit": "f6f0259dfe25213c4c0e33ef88c9274f24915749",
+      "diff_sha256": "f8e21afa2ccd9fdffc61cfd90ed8b8b97037c61b1ee6372ca5caea9111242a43",
+      "source_manifest_sha256": "fd099921ac67cc84b2e2e9a897a50135b9d9b9ee9859b9e26595d2403f42e403",
+      "pid": 97058,
+      "exit_code": 0,
+      "seconds": 1.2071186671964824
+    },
+    {
+      "name": "app-feature-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-09-30T08:43:38.771885+00:00",
+      "base_commit": "f6f0259dfe25213c4c0e33ef88c9274f24915749",
+      "diff_sha256": "f8e21afa2ccd9fdffc61cfd90ed8b8b97037c61b1ee6372ca5caea9111242a43",
+      "source_manifest_sha256": "fd099921ac67cc84b2e2e9a897a50135b9d9b9ee9859b9e26595d2403f42e403",
+      "pid": 97082,
+      "exit_code": 0,
+      "seconds": 70.7028345419094
+    },
+    {
+      "name": "app-feature-tests",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked"
+      ],
+      "started": "2026-09-30T08:44:49.601626+00:00",
+      "base_commit": "f6f0259dfe25213c4c0e33ef88c9274f24915749",
+      "diff_sha256": "e92c868a8cd034665dff083c98e682fd61ea7b3b6c4babf918344f3fdecbd1ce",
+      "source_manifest_sha256": "fd099921ac67cc84b2e2e9a897a50135b9d9b9ee9859b9e26595d2403f42e403",
+      "pid": 97204,
+      "exit_code": 0,
+      "seconds": 64.91016091685742
+    },
+    {
+      "name": "native-smoke",
+      "command": [
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-app",
+        "--locked",
+        "--",
+        "--smoke-test"
+      ],
+      "started": "2026-09-30T08:45:54.709495+00:00",
+      "base_commit": "f6f0259dfe25213c4c0e33ef88c9274f24915749",
+      "diff_sha256": "e92c868a8cd034665dff083c98e682fd61ea7b3b6c4babf918344f3fdecbd1ce",
+      "source_manifest_sha256": "fd099921ac67cc84b2e2e9a897a50135b9d9b9ee9859b9e26595d2403f42e403",
+      "pid": 97356,
+      "exit_code": 0,
+      "seconds": 0.4729415411129594
+    },
+    {
+      "name": "release-performance",
+      "command": [
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-app",
+        "--release",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "--ui-check",
+        "--mode",
+        "performance",
+        "--output",
+        "/private/tmp/deadpan-render-workflow-EtO3Qu1W/ui-performance",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "started": "2026-09-30T08:45:55.374712+00:00",
+      "base_commit": "f6f0259dfe25213c4c0e33ef88c9274f24915749",
+      "diff_sha256": "e92c868a8cd034665dff083c98e682fd61ea7b3b6c4babf918344f3fdecbd1ce",
+      "source_manifest_sha256": "fd099921ac67cc84b2e2e9a897a50135b9d9b9ee9859b9e26595d2403f42e403",
+      "pid": 97361,
+      "exit_code": 0,
+      "seconds": 127.30707079079002
+    }
+  ],
+  "workspace_tests": {
+    "result_groups": 167,
+    "passed": 2347,
+    "failed": 0,
+    "ignored": 0
+  },
+  "native_backend_binding": {
+    "backend_unchanged_since_native_build": true,
+    "native_build_source": "5b3970b5658e6daf5b39bf773fe5c8e94898800f6656e28b04e9b013c129b8f1",
+    "final_source": "fd099921ac67cc84b2e2e9a897a50135b9d9b9ee9859b9e26595d2403f42e403",
+    "app_changes": [
+      "crates/deadpan-app/src/project.rs",
+      "crates/deadpan-app/src/project/service.rs",
+      "crates/deadpan-app/src/project/service/render.rs",
+      "crates/deadpan-app/src/project/tests.rs",
+      "crates/deadpan-app/src/project/tests/render.rs"
+    ]
+  },
+  "notes": [
+    "workspace-tests was cancelled while waiting for build lock and ran no tests",
+    "initial compile collision and shutdown notification failure retained with corrected runs",
+    "native media qualification uses coordinator directly; native service ownership uses actor tests",
+    "no public Render, automatic policy, complete mastering/effects, HDR or release claim"
+  ],
+  "performance": {
+    "failed": false,
+    "checks": 2348,
+    "findings": 0,
+    "timing_failures": 0,
+    "selected_timings": [
+      {
+        "name": "warm_navigation_input_to_picture_complete_ms",
+        "summary": {
+          "completed": {
+            "max_ms": 1.6010410000000002,
+            "n": 120,
+            "p50_ms": 1.1658330000000001,
+            "p95_ms": 1.489333,
+            "p99_ms": 1.55075
+          },
+          "failed": 0,
+          "samples": 120,
+          "timed_out": 0
+        }
+      },
+      {
+        "name": "large_project_navigation_cpu_ms",
+        "summary": {
+          "completed": {
+            "max_ms": 0.54025,
+            "n": 160,
+            "p50_ms": 0.334916,
+            "p95_ms": 0.345709,
+            "p99_ms": 0.479459
+          },
+          "failed": 0,
+          "samples": 160,
+          "timed_out": 0
+        }
+      },
+      {
+        "name": "cached_repeat_input_to_picture_complete_ms",
+        "summary": {
+          "completed": {
+            "max_ms": 5.755583,
+            "n": 40,
+            "p50_ms": 5.274208,
+            "p95_ms": 5.712458,
+            "p99_ms": 5.755583
+          },
+          "failed": 0,
+          "samples": 40,
+          "timed_out": 0
+        }
+      },
+      {
+        "name": "hold_fallback_input_to_picture_complete_ms",
+        "summary": {
+          "completed": {
+            "max_ms": 8.338750000000001,
+            "n": 40,
+            "p50_ms": 5.3205420000000005,
+            "p95_ms": 5.815917000000001,
+            "p99_ms": 8.338750000000001
+          },
+          "failed": 0,
+          "samples": 40,
+          "timed_out": 0
+        }
+      }
+    ],
+    "unexecuted_fixture_scenarios": [
+      "generated-picture"
+    ]
+  }
+}

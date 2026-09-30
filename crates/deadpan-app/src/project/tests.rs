@@ -13,6 +13,7 @@ use super::*;
 mod gain;
 mod moment;
 mod pause;
+mod render;
 mod retime;
 mod room_tone;
 mod scope;
@@ -643,6 +644,8 @@ fn shutdown_finishes_an_admitted_command_before_releasing_the_store() {
     let shared = Arc::new(Shared {
         busy: AtomicBool::new(false),
         stopping: AtomicBool::new(false),
+        shutdown_complete: AtomicBool::new(false),
+        render_poll_paused: AtomicBool::new(false),
         update: Mutex::new(None),
         wake: Arc::new(|| {}),
     });
@@ -817,11 +820,22 @@ fn wait(service: &ProjectService, predicate: impl Fn(&ProjectUpdate) -> bool) ->
             if predicate(&update) {
                 return update;
             }
-            last = Some((update.error, update.import, update.message));
+            last = Some(format!(
+                "error={:?}, import={:?}, message={:?}, session={:?}, committed={:?}, render={:?}",
+                update.error,
+                update.import,
+                update.message,
+                update.workspace.as_ref().map(|workspace| workspace.session),
+                update.committed,
+                update.render,
+            ));
         }
         assert!(
             Instant::now() < deadline,
-            "project update timed out: {last:?}"
+            "project update timed out: busy={}, stopping={}, shutdown_complete={}, last={last:?}",
+            service.is_busy(),
+            service.shared.stopping.load(Ordering::Acquire),
+            service.is_shutdown_complete(),
         );
         std::thread::sleep(Duration::from_millis(2));
     }
@@ -901,6 +915,8 @@ impl Harness {
         let shared = Arc::new(Shared {
             busy: AtomicBool::new(false),
             stopping: AtomicBool::new(false),
+            shutdown_complete: AtomicBool::new(false),
+            render_poll_paused: AtomicBool::new(false),
             update: Mutex::new(None),
             wake: Arc::new(|| {}),
         });

@@ -27,3 +27,69 @@ fn artifact_admission_can_retain_the_native_maximum_without_the_raw_picture_spoo
         deadpan_encode::MAX_OUTPUT_BYTES
     );
 }
+
+#[cfg(target_os = "macos")]
+mod finalization {
+    use super::*;
+    use deadpan_jobs::process::{ResponseKind, SupervisorError};
+
+    struct PanicReader;
+
+    impl WorkerProtocol for PanicReader {
+        type Request = ();
+        type Response = ();
+
+        fn from_request(_: &()) -> Result<Self, SupervisorError> {
+            Ok(Self)
+        }
+        fn cancellation(&self) {}
+        fn write_request(_: &mut impl Write, _: &()) -> Result<(), String> {
+            Ok(())
+        }
+        fn read_response(_: &mut impl Read) -> Result<Option<()>, String> {
+            panic!("injected protocol reader panic")
+        }
+        fn classify(&self, _: &()) -> Result<ResponseKind, String> {
+            Ok(ResponseKind::Progress)
+        }
+    }
+
+    fn process(workspace: &std::path::Path) -> SupervisedProcess<PanicReader> {
+        SupervisedProcess::spawn(
+            ProcessSpec {
+                executable: "/bin/sleep".into(),
+                arguments: vec!["60".into()],
+                environment: Default::default(),
+                workspace: workspace.into(),
+                limits: ProcessLimits {
+                    maximum_duration: Duration::from_secs(60),
+                    cancellation_grace: Duration::from_millis(50),
+                    exit_grace: Duration::from_millis(50),
+                },
+            },
+            (),
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn joined_pump_panic_cannot_promote_a_successful_stage() {
+        let workspace = tempfile::tempdir().unwrap();
+        let mut child = process(workspace.path());
+        let error = finish_owned_result(&mut child, Ok(())).unwrap_err();
+        assert!(error.cleanup_confirmed());
+        assert!(
+            matches!(error, EncodedRenderError::Worker(message) if message.contains("pump panicked"))
+        );
+    }
+
+    #[test]
+    fn confirmed_cleanup_preserves_the_primary_error() {
+        let workspace = tempfile::tempdir().unwrap();
+        let mut child = process(workspace.path());
+        let error = finish_owned_result::<(), _>(&mut child, Err(EncodedRenderError::Deadline))
+            .unwrap_err();
+        assert!(error.cleanup_confirmed());
+        assert!(matches!(error, EncodedRenderError::Deadline));
+    }
+}

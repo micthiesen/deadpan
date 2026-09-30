@@ -13,6 +13,7 @@ pub mod protocol;
 pub mod publication;
 pub mod verification;
 pub(crate) mod worker;
+pub mod workflow;
 
 pub use host::{EncodedCandidate, EncodedProgress, EncodedWorkerLimits, encode};
 
@@ -51,6 +52,25 @@ pub enum EncodedRenderError {
     Io(#[from] io::Error),
     #[error(transparent)]
     Json(#[from] serde_json::Error),
+    #[error("{primary}; render worker cleanup remains unconfirmed: {cleanup}")]
+    CleanupUnconfirmed {
+        #[source]
+        primary: Box<EncodedRenderError>,
+        cleanup: deadpan_jobs::process::CleanupFailure,
+    },
+}
+
+impl EncodedRenderError {
+    /// Whether a host stage established no child or explicit owned-group,
+    /// leader and pipe teardown. Only such failures may become durable Failed
+    /// or Cancelled attempts. Unconfirmed cleanup must remain Cancelling.
+    pub fn cleanup_confirmed(&self) -> bool {
+        match self {
+            Self::CleanupUnconfirmed { .. } => false,
+            Self::Supervisor(error) => error.cleanup_confirmed(),
+            _ => true,
+        }
+    }
 }
 
 impl From<deadpan_store::render_media::RenderMediaError> for EncodedRenderError {

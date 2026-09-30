@@ -9,6 +9,21 @@ with the keyboard. Insert, replace and move require exact reversible semantics,
 visible occurrence scope and stale-revision rejection. Existing Original moment
 copy/paste is partial groundwork; the complete preview workflow remains open.
 
+The [shared render workflow](RENDER_JOBS.md#shared-workflow-and-native-ownership)
+connects capture, encoding, retained checkpoints, fresh verification, publication
+and reconciliation to the native project service. Close/switch/shutdown retain
+the writer until worker release, and explicit subprocess cleanup evidence gates
+terminal failure. Render progress and editor feedback have separate retained
+state. This engineering entrypoint leaves public Render controls, automatic
+output policy, full mastering/effects and HDR open; DP-17 and DP-18 remain open.
+
+[Workflow qualification](qualification/render-workflow-2026-09-30.md) passes
+21 real media assertions over two complete encodes, one cancelled encode, six
+fresh verifications, checkpoint retries and destination reconciliation. Independent
+readers pass 138 pictures, 221,021 authored sample frames and 414 complete planes.
+All 2,347 locked workspace tests and strict all-target Clippy pass. Native service
+tests cover editing and shutdown ownership; public Render interaction remains open.
+
 The [publication journal](RENDER_PUBLICATION.md#durable-publication-journal)
 records exact destination stages and authorizes renames only after checked
 SQLite/database/WAL durability barriers. Explicit restart reconciliation requires

@@ -6,7 +6,9 @@ use deadpan_encode::EncodeLimits;
 use deadpan_jobs::artifact::{
     ArtifactError, ArtifactLimits, ArtifactWorkspace, HashedArtifactSnapshot, SnapshotInterruption,
 };
-use deadpan_jobs::process::{ProcessEvent, ProcessLimits, ProcessSpec, SupervisedProcess};
+use deadpan_jobs::process::{
+    ProcessEvent, ProcessLimits, ProcessSpec, SupervisedProcess, WorkerProtocol,
+};
 use deadpan_jobs::{Sha256, WorkspaceRef};
 use deadpan_store::render_media::PreparedRenderSnapshot;
 
@@ -318,163 +320,188 @@ pub(super) fn encode_guarded(
         },
         wire_request,
     )?;
-    let mut completion = None;
-    let mut failure = None;
-    let mut was_cancelled = false;
-    let mut last_progress = (0, 0);
-    while !process.is_finished() {
-        let now = Instant::now();
-        if failure.is_none()
-            && let Err(error) = check_owner()
-        {
-            failure = Some(error);
-            if let Err(error) = process.request_cancel(now) {
-                return Err(failure.unwrap_or_else(|| error.into()));
+    let result = (|| {
+        let mut completion = None;
+        let mut failure = None;
+        let mut was_cancelled = false;
+        let mut last_progress = (0, 0);
+        while !process.is_finished() {
+            let now = Instant::now();
+            if failure.is_none()
+                && let Err(error) = check_owner()
+            {
+                failure = Some(error);
+                if let Err(error) = process.request_cancel(now) {
+                    return Err(failure.unwrap_or_else(|| error.into()));
+                }
             }
-        }
-        if cancelled.load(Ordering::Acquire) && !was_cancelled && failure.is_none() {
-            was_cancelled = true;
-            if let Err(error) = process.request_cancel(now) {
-                return Err(failure.unwrap_or_else(|| error.into()));
+            if cancelled.load(Ordering::Acquire) && !was_cancelled && failure.is_none() {
+                was_cancelled = true;
+                if let Err(error) = process.request_cancel(now) {
+                    return Err(failure.unwrap_or_else(|| error.into()));
+                }
             }
-        }
-        if now >= deadline {
-            if let Err(error) = process.request_cancel(now) {
-                return Err(failure.unwrap_or_else(|| error.into()));
+            if now >= deadline {
+                if let Err(error) = process.request_cancel(now) {
+                    return Err(failure.unwrap_or_else(|| error.into()));
+                }
+                return Err(failure.unwrap_or(if was_cancelled {
+                    EncodedRenderError::Cancelled
+                } else {
+                    EncodedRenderError::Deadline
+                }));
             }
-            return Err(failure.unwrap_or(if was_cancelled {
-                EncodedRenderError::Cancelled
-            } else {
-                EncodedRenderError::Deadline
-            }));
-        }
-        let events = match process.poll(now) {
-            Ok(events) => events,
-            Err(error) => return Err(failure.unwrap_or_else(|| error.into())),
-        };
-        let mut latest_progress = None;
-        for event in events {
-            match event {
-                ProcessEvent::Message(message) => match *message {
-                    EncodedWorkerMessage::Progress {
-                        completed_frames,
-                        total_frames,
-                        completed_audio_samples,
-                        total_audio_samples,
-                        ..
-                    } => {
-                        if completed_frames < last_progress.0
-                            || completed_audio_samples < last_progress.1
-                        {
-                            failure.get_or_insert_with(|| {
-                                EncodedRenderError::Protocol(
-                                    "encoded progress moved backward".into(),
-                                )
-                            });
-                            if let Err(error) = process.request_cancel(now) {
-                                return Err(failure.unwrap_or_else(|| error.into()));
-                            }
-                        }
-                        last_progress = (completed_frames, completed_audio_samples);
-                        latest_progress = Some(EncodedProgress {
+            let events = match process.poll(now) {
+                Ok(events) => events,
+                Err(error) => return Err(failure.unwrap_or_else(|| error.into())),
+            };
+            let mut latest_progress = None;
+            for event in events {
+                match event {
+                    ProcessEvent::Message(message) => match *message {
+                        EncodedWorkerMessage::Progress {
                             completed_frames,
                             total_frames,
                             completed_audio_samples,
                             total_audio_samples,
-                        });
+                            ..
+                        } => {
+                            if completed_frames < last_progress.0
+                                || completed_audio_samples < last_progress.1
+                            {
+                                failure.get_or_insert_with(|| {
+                                    EncodedRenderError::Protocol(
+                                        "encoded progress moved backward".into(),
+                                    )
+                                });
+                                if let Err(error) = process.request_cancel(now) {
+                                    return Err(failure.unwrap_or_else(|| error.into()));
+                                }
+                            }
+                            last_progress = (completed_frames, completed_audio_samples);
+                            latest_progress = Some(EncodedProgress {
+                                completed_frames,
+                                total_frames,
+                                completed_audio_samples,
+                                total_audio_samples,
+                            });
+                        }
+                        EncodedWorkerMessage::Completed { manifest, .. } => {
+                            completion = Some(*manifest)
+                        }
+                        EncodedWorkerMessage::Failed { diagnostic, .. } => {
+                            failure.get_or_insert_with(|| {
+                                EncodedRenderError::Worker(diagnostic.as_str().to_owned())
+                            });
+                        }
+                        EncodedWorkerMessage::Cancelled { .. } => was_cancelled = true,
+                    },
+                    ProcessEvent::Fault(reason) => {
+                        failure.get_or_insert(EncodedRenderError::Worker(reason));
                     }
-                    EncodedWorkerMessage::Completed { manifest, .. } => {
-                        completion = Some(*manifest)
-                    }
-                    EncodedWorkerMessage::Failed { diagnostic, .. } => {
-                        failure.get_or_insert_with(|| {
-                            EncodedRenderError::Worker(diagnostic.as_str().to_owned())
-                        });
-                    }
-                    EncodedWorkerMessage::Cancelled { .. } => was_cancelled = true,
-                },
-                ProcessEvent::Fault(reason) => {
-                    failure.get_or_insert(EncodedRenderError::Worker(reason));
-                }
-                ProcessEvent::Exited {
-                    status,
-                    cancellation_escalated,
-                } => {
-                    if (!status.success() || cancellation_escalated)
-                        && !was_cancelled
-                        && failure.is_none()
-                    {
-                        failure = Some(EncodedRenderError::Worker(format!(
-                            "encoded worker exited {status}"
-                        )));
+                    ProcessEvent::Exited {
+                        status,
+                        cancellation_escalated,
+                    } => {
+                        if (!status.success() || cancellation_escalated)
+                            && !was_cancelled
+                            && failure.is_none()
+                        {
+                            failure = Some(EncodedRenderError::Worker(format!(
+                                "encoded worker exited {status}"
+                            )));
+                        }
                     }
                 }
             }
+            if !was_cancelled
+                && failure.is_none()
+                && let Some(update) = latest_progress
+            {
+                progress(update);
+            }
+            if !process.is_finished() {
+                std::thread::park_timeout(Duration::from_millis(2));
+            }
         }
-        if !was_cancelled
-            && failure.is_none()
-            && let Some(update) = latest_progress
-        {
-            progress(update);
+        if let Some(error) = failure {
+            return Err(error);
         }
-        if !process.is_finished() {
-            std::thread::park_timeout(Duration::from_millis(2));
+        if was_cancelled {
+            return Err(EncodedRenderError::Cancelled);
         }
+        check_control(cancelled, deadline)?;
+        check_owner()?;
+        let manifest = completion.ok_or_else(|| {
+            EncodedRenderError::Protocol("no clean completed encoded manifest".into())
+        })?;
+        // Keep admission explicit even though the protocol adapter also binds the
+        // response before the supervisor releases completion after clean teardown.
+        if manifest.contract != evidence || manifest.document_sha256 != document_sha256 {
+            return Err(EncodedRenderError::Protocol(
+                "completed output changed the captured contract".into(),
+            ));
+        }
+        manifest
+            .validate_for(limits.encode)
+            .map_err(EncodedRenderError::Protocol)?;
+        let mut owner_failure = None;
+        let snapshot = pinned
+            .snapshot_with_control(
+                &output_scope,
+                &manifest.movie,
+                ArtifactLimits::new(limits.encode.maximum_output_bytes)?,
+                || {
+                    if let Err(error) = check_owner() {
+                        owner_failure = Some(error);
+                        return Err(SnapshotInterruption::Cancelled);
+                    }
+                    if cancelled.load(Ordering::Acquire) {
+                        return Err(SnapshotInterruption::Cancelled);
+                    }
+                    if Instant::now() >= deadline {
+                        return Err(SnapshotInterruption::Deadline);
+                    }
+                    Ok(())
+                },
+            )
+            .map_err(artifact_failure);
+        if let Some(error) = owner_failure {
+            return Err(error);
+        }
+        let snapshot = snapshot?;
+        check_control(cancelled, deadline)?;
+        check_owner()?;
+        Ok(EncodedCandidate {
+            contract,
+            document_sha256,
+            manifest,
+            snapshot: CandidateBytes::Worker(snapshot),
+        })
+    })();
+    finish_owned_result(&mut process, result)
+}
+
+/// Centralize every post-spawn return so no error relies on Drop as evidence.
+pub(super) fn finish_owned_result<T, P: WorkerProtocol>(
+    process: &mut SupervisedProcess<P>,
+    result: Result<T, EncodedRenderError>,
+) -> Result<T, EncodedRenderError> {
+    let cleanup = process
+        .finish_owned_work(Instant::now() + Duration::from_secs(2))
+        .and_then(|stopped| stopped.require_membership());
+    match cleanup {
+        Ok(stopped) if stopped.pump_panicked() => Err(result.err().unwrap_or_else(|| {
+            EncodedRenderError::Worker("worker I/O pump panicked before finalization".into())
+        })),
+        Ok(_) => result,
+        Err(cleanup) => Err(EncodedRenderError::CleanupUnconfirmed {
+            primary: Box::new(result.err().unwrap_or_else(|| {
+                EncodedRenderError::Worker("worker completed without confirmed teardown".into())
+            })),
+            cleanup,
+        }),
     }
-    if let Some(error) = failure {
-        return Err(error);
-    }
-    if was_cancelled {
-        return Err(EncodedRenderError::Cancelled);
-    }
-    check_control(cancelled, deadline)?;
-    check_owner()?;
-    let manifest = completion.ok_or_else(|| {
-        EncodedRenderError::Protocol("no clean completed encoded manifest".into())
-    })?;
-    // Keep admission explicit even though the protocol adapter also binds the
-    // response before the supervisor releases completion after clean teardown.
-    if manifest.contract != evidence || manifest.document_sha256 != document_sha256 {
-        return Err(EncodedRenderError::Protocol(
-            "completed output changed the captured contract".into(),
-        ));
-    }
-    manifest
-        .validate_for(limits.encode)
-        .map_err(EncodedRenderError::Protocol)?;
-    let mut owner_failure = None;
-    let snapshot = pinned
-        .snapshot_with_control(
-            &output_scope,
-            &manifest.movie,
-            ArtifactLimits::new(limits.encode.maximum_output_bytes)?,
-            || {
-                if let Err(error) = check_owner() {
-                    owner_failure = Some(error);
-                    return Err(SnapshotInterruption::Cancelled);
-                }
-                if cancelled.load(Ordering::Acquire) {
-                    return Err(SnapshotInterruption::Cancelled);
-                }
-                if Instant::now() >= deadline {
-                    return Err(SnapshotInterruption::Deadline);
-                }
-                Ok(())
-            },
-        )
-        .map_err(artifact_failure);
-    if let Some(error) = owner_failure {
-        return Err(error);
-    }
-    let snapshot = snapshot?;
-    check_control(cancelled, deadline)?;
-    check_owner()?;
-    Ok(EncodedCandidate {
-        contract,
-        document_sha256,
-        manifest,
-        snapshot: CandidateBytes::Worker(snapshot),
-    })
 }
 
 fn artifact_failure(error: ArtifactError) -> EncodedRenderError {

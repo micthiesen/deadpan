@@ -39,13 +39,21 @@ Kills occur between completed host calls; physical power loss is not qualified.
 Native Render, public headless
 rendering, automatic policy, scheduling, full audio/effects and HDR remain open.
 
-Next add a shared `encoded_render` workflow coordinator for start, cancellation,
-checkpoint retry and publication reconciliation. Keep heavy stages on a bounded
-worker and writer transactions on the owning project service. Before recording
-terminal failure, establish checked worker teardown on error paths; destructor
-cleanup cannot return that evidence. Native close/switch must drain postcommit
-results before dropping the writer. Public Render also needs real automatic policy
-admission; current encoder choices and provenance remain explicitly engineering-only.
+The shared `encoded_render::workflow` coordinator now connects start,
+cancellation, checkpoint retry and publication reconciliation. Heavy stages use
+one bounded worker; the native project service owns journal transactions and
+retains its writer through close/switch/shutdown. Explicit process cleanup
+evidence gates terminal failure, and render feedback remains separate from
+editor feedback. Public Render still needs real automatic policy admission and
+product controls; current encoder choices remain explicitly engineering-only.
+
+[Workflow qualification](../qualification/render-workflow-2026-09-30.md) passes
+two complete encodes, a real encode cancellation, six fresh verifications,
+reopened checkpoint retries and reconciliation. Edits and undo/redo run during
+encoding without retargeting its captured revision. Independent readers pass
+138 pictures, 221,021 authored sample frames and 414 complete planes. The final
+workspace passes 2,347 tests and strict all-target Clippy. A reproduced native
+shutdown notification failure is corrected and its regression passes.
 
 ## Durable encoded checkpoints, 2026-09-29
 

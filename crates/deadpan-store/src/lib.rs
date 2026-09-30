@@ -77,6 +77,8 @@ pub struct ProjectStore {
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     render_closed: Arc<AtomicBool>,
     #[cfg(any(target_os = "macos", target_os = "linux"))]
+    render_workflow_claimed: Arc<AtomicBool>,
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
     publication_durability: Option<publication_durability::PublicationDurability>,
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     publication_epochs: std::collections::BTreeMap<String, Arc<std::sync::atomic::AtomicU64>>,
@@ -217,6 +219,8 @@ impl ProjectStore {
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             render_closed: Arc::new(AtomicBool::new(false)),
             #[cfg(any(target_os = "macos", target_os = "linux"))]
+            render_workflow_claimed: Arc::new(AtomicBool::new(false)),
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
             publication_durability,
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             publication_epochs: std::collections::BTreeMap::new(),
@@ -295,6 +299,8 @@ impl ProjectStore {
             render_storage: Arc::new(render_storage),
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             render_closed: Arc::new(AtomicBool::new(false)),
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            render_workflow_claimed: Arc::new(AtomicBool::new(false)),
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             publication_durability,
             #[cfg(any(target_os = "macos", target_os = "linux"))]

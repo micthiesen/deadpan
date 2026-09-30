@@ -126,12 +126,16 @@ pub(super) fn same_content(before: &ProjectDocument, after: &ProjectDocument) ->
     Ok(before == after)
 }
 
-pub(super) fn mutate(store: &mut ProjectStore, update: EncodedProgress) -> Result<Value> {
+pub(super) fn mutate(
+    store: &mut ProjectStore,
+    update: EncodedProgress,
+    prefix: &str,
+) -> Result<Value> {
     let original = store.snapshot()?;
-    let edit = RevisionId::new("durable-live-edit")?;
-    let undo = RevisionId::new("durable-live-undo")?;
-    let redo = RevisionId::new("durable-live-redo")?;
-    let restored = RevisionId::new("durable-live-restored")?;
+    let edit = RevisionId::new(format!("{prefix}-live-edit"))?;
+    let undo = RevisionId::new(format!("{prefix}-live-undo"))?;
+    let redo = RevisionId::new(format!("{prefix}-live-redo"))?;
+    let restored = RevisionId::new(format!("{prefix}-live-restored"))?;
     store.commit(&CommandRequest {
         project_id: original.project_id().clone(),
         expected_revision: original.revision_id().clone(),

@@ -220,7 +220,7 @@ fn run_case(
                 && update.completed_frames > 0
                 && update.completed_frames < update.total_frames
             {
-                let result = mutate(&mut store, update);
+                let result = mutate(&mut store, update, "durable");
                 if result.is_err() {
                     cancelled.store(true, Ordering::Release);
                 }

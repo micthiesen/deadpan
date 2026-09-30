@@ -12,6 +12,57 @@ use std::{
 };
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
+#[test]
+fn render_workflow_owner_requires_the_same_writable_open() -> Result {
+    let temporary = tempfile::tempdir()?;
+    let path = temporary.path().join("owner.deadpan");
+    let store = ProjectStore::create(&path, &document()?)?;
+    let owner = store.render_read_handle();
+    store.check_render_owner(&owner.clone())?;
+
+    let read_only = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+    assert!(read_only.check_render_owner(&owner).is_err());
+    assert!(
+        read_only
+            .check_render_owner(&read_only.render_read_handle())
+            .is_err()
+    );
+    assert!(
+        store
+            .check_render_owner(&read_only.render_read_handle())
+            .is_err()
+    );
+    let other = ProjectStore::create(&temporary.path().join("same-project.deadpan"), &document()?)?;
+    assert!(other.check_render_owner(&owner).is_err());
+
+    drop(store);
+    let reopened = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    assert!(reopened.check_render_owner(&owner).is_err());
+    reopened.check_render_owner(&reopened.render_read_handle())?;
+    Ok(())
+}
+
+#[test]
+fn render_workflow_admission_survives_unconfirmed_lease_destruction() -> Result {
+    let temporary = tempfile::tempdir()?;
+    let path = temporary.path().join("admission.deadpan");
+    let store = ProjectStore::create(&path, &document()?)?;
+    let read_only = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+    assert!(read_only.acquire_render_workflow().is_err());
+
+    let lease = store.acquire_render_workflow()?;
+    assert!(store.acquire_render_workflow().is_err());
+    lease.release();
+    let lease = store.acquire_render_workflow()?;
+    drop(lease);
+    assert!(store.acquire_render_workflow().is_err());
+
+    drop(store);
+    let reopened = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    reopened.acquire_render_workflow()?.release();
+    Ok(())
+}
+
 fn document() -> Result<ProjectDocument> {
     let document = ProjectDocument::new(
         ProjectId::new("project")?,

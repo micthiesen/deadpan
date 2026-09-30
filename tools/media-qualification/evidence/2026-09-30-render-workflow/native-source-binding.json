@@ -1,0 +1,12 @@
+{
+  "backend_unchanged_since_native_build": true,
+  "native_build_source": "5b3970b5658e6daf5b39bf773fe5c8e94898800f6656e28b04e9b013c129b8f1",
+  "final_source": "fd099921ac67cc84b2e2e9a897a50135b9d9b9ee9859b9e26595d2403f42e403",
+  "app_changes": [
+    "crates/deadpan-app/src/project.rs",
+    "crates/deadpan-app/src/project/service.rs",
+    "crates/deadpan-app/src/project/service/render.rs",
+    "crates/deadpan-app/src/project/tests.rs",
+    "crates/deadpan-app/src/project/tests/render.rs"
+  ]
+}

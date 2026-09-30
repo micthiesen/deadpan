@@ -8,7 +8,8 @@ use std::sync::{Arc, Mutex, mpsc};
 
 use deadpan_core::{
     AssetId, AudioEdgePolicy, AudioSample, FrameDuration, HoldAudio, NodeId, ProjectDocument,
-    ProjectFrame, RevisionId, SoundId, SourceAudio, SourceFrameIndex, SourceQualificationId,
+    ProjectFrame, ProjectId, RevisionId, SoundId, SourceAudio, SourceFrameIndex,
+    SourceQualificationId,
 };
 use deadpan_plan::RenderPlan;
 use deadpan_store::original_media::{OriginalImportHandle, OriginalMediaRecord, OriginalOwnership};
@@ -124,6 +125,113 @@ pub struct ProjectUpdate {
     pub room_tone_error: Option<RoomToneFailure>,
     /// Both success and failure retain the exact uncommitted proposal identity.
     pub gain: Option<gain::ProposalUpdate>,
+    /// Operational render feedback is retained independently of editor feedback.
+    pub render: Option<ProjectRenderUpdate>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectRenderContext {
+    pub session: u64,
+    pub project: ProjectId,
+}
+
+/// Internal host configuration. These are not user-facing codec controls.
+#[derive(Clone, Debug)]
+pub struct ProjectRenderLimits {
+    pub encode: deadpan_cli::encoded_render::EncodedWorkerLimits,
+    pub verification: deadpan_cli::encoded_render::verification::VerificationLimits,
+    pub media: deadpan_store::render_media::RenderMediaLimits,
+}
+
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "engineering service API awaits automatic Render policy"
+    )
+)]
+pub enum ProjectRenderOperation {
+    Start {
+        request: deadpan_cli::encoded_render::workflow::StartRender,
+        limits: ProjectRenderLimits,
+    },
+    Retry {
+        request: deadpan_cli::encoded_render::workflow::RetryRender,
+        limits: ProjectRenderLimits,
+    },
+    Reconcile {
+        request: deadpan_cli::encoded_render::workflow::ReconcileRender,
+        limits: ProjectRenderLimits,
+    },
+    Cancel(deadpan_cli::encoded_render::workflow::WorkflowIdentity),
+}
+
+pub struct ProjectRenderRequest {
+    pub ticket: u64,
+    pub context: ProjectRenderContext,
+    pub operation: ProjectRenderOperation,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectRenderError {
+    pub code: &'static str,
+    pub message: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct ProjectRenderCommandOutcome {
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "Render command feedback awaits automatic Render policy"
+        )
+    )]
+    pub ticket: u64,
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "Render command feedback awaits automatic Render policy"
+        )
+    )]
+    pub context: ProjectRenderContext,
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "Render command feedback awaits automatic Render policy"
+        )
+    )]
+    pub result: Result<deadpan_cli::encoded_render::workflow::WorkflowIdentity, ProjectRenderError>,
+}
+
+#[derive(Clone, Debug)]
+pub struct ProjectRenderStatus {
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "Render status identity awaits automatic Render policy"
+        )
+    )]
+    pub context: ProjectRenderContext,
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "Render status identity awaits automatic Render policy"
+        )
+    )]
+    pub revision: RevisionId,
+    pub status: Arc<deadpan_cli::encoded_render::workflow::WorkflowStatus>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct ProjectRenderUpdate {
+    pub command: Option<ProjectRenderCommandOutcome>,
+    pub workflow: Option<ProjectRenderStatus>,
+    pub service_error: Option<ProjectRenderError>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -270,6 +378,14 @@ pub struct MomentPaste {
 }
 
 pub enum ProjectRequest {
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "engineering service API awaits automatic Render policy"
+        )
+    )]
+    Render(ProjectRenderRequest),
     /// Source first: native projects are always allocated in Documents/Deadpan.
     CreateFromSource {
         path: PathBuf,
@@ -342,6 +458,9 @@ pub enum ProjectRequest {
 struct Shared {
     busy: AtomicBool,
     stopping: AtomicBool,
+    shutdown_complete: AtomicBool,
+    #[cfg(test)]
+    render_poll_paused: AtomicBool,
     update: Mutex<Option<ProjectUpdate>>,
     wake: Arc<dyn Fn() + Send + Sync>,
 }
@@ -363,6 +482,9 @@ impl ProjectService {
         let shared = Arc::new(Shared {
             busy: AtomicBool::new(false),
             stopping: AtomicBool::new(false),
+            shutdown_complete: AtomicBool::new(false),
+            #[cfg(test)]
+            render_poll_paused: AtomicBool::new(false),
             update: Mutex::new(None),
             wake,
         });
@@ -405,10 +527,14 @@ impl ProjectService {
         self.shared.busy.load(Ordering::Acquire)
     }
 
-    /// Reject new commands, finish the admitted command and cancel preparation.
-    /// Never waits on filesystem or decoder work; the UI waits for busy before exit.
+    /// Reject new commands and start a nonblocking drain of owned work.
     pub fn shutdown(&self) {
         self.shared.stopping.store(true, Ordering::Release);
+    }
+
+    /// The writer and workers have been released after checked render draining.
+    pub fn is_shutdown_complete(&self) -> bool {
+        self.shared.shutdown_complete.load(Ordering::Acquire)
     }
 }
 
