@@ -1,0 +1,122 @@
+{
+  "README.md": {
+    "bytes": 3691,
+    "sha256": "1c99b76d862fafafb28e2e4fa8ce379622ebf62d51baeb02d451486d38fcc2e8"
+  },
+  "commands/build-metal.json": {
+    "bytes": 545,
+    "sha256": "c62106c315a217d48144568d2b347010060edf25d66c11d072162b5537fb3e12"
+  },
+  "commands/build-metal.log.gz": {
+    "bytes": 9213,
+    "sha256": "3204d7700351ba09f6b05a113361c3193dda9ef833a2294005017714d2efc37c"
+  },
+  "commands/clippy-final.json": {
+    "bytes": 498,
+    "sha256": "aeb5feead00d54d98a363dad885a6a6bd709bf6aa7c400605741cde9e90d236e"
+  },
+  "commands/clippy-final.log.gz": {
+    "bytes": 145,
+    "sha256": "1d810acc77067bb0213b279ce2546cb38d6a9efb1698054f0a480e5fe7ce5bfa"
+  },
+  "commands/clippy.json": {
+    "bytes": 500,
+    "sha256": "b11f6cb77d2616edb2a1cd7b16569556ad86385e01475bd7ccd69cf78808bd89"
+  },
+  "commands/clippy.log.gz": {
+    "bytes": 848,
+    "sha256": "bbb76c12ddd38a6492ef2b048b125c94657bbda5bce31a152fb2e66e7468471b"
+  },
+  "commands/fmt-apply.json": {
+    "bytes": 416,
+    "sha256": "60af316c0b85ebb5ffc321c5989fcb214e5ff55f156776564c33b810a91eb559"
+  },
+  "commands/fmt-apply.log.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "commands/fmt-check.json": {
+    "bytes": 442,
+    "sha256": "15ad1e76e22b3786d14dc671aae2259d22b8d4e22d107a3f9133e794a0ee67d7"
+  },
+  "commands/fmt-check.log.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "commands/fmt-final.json": {
+    "bytes": 442,
+    "sha256": "5b7e20e3a046fb11f2951919d5bb4f7f45727f682f55cceb434d32f68e43b1d9"
+  },
+  "commands/fmt-final.log.gz": {
+    "bytes": 20,
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+  },
+  "commands/metal.json": {
+    "bytes": 484,
+    "sha256": "1e9e0040541817fac29cb316b334dc7f8071bfe37a80eae0086a031c8ba05de6"
+  },
+  "commands/metal.log.gz": {
+    "bytes": 72,
+    "sha256": "205a21f686f3f99d12c565b27975a7ca326dbf97a1cf07dd23a5ab81ba6451e7"
+  },
+  "commands/test-workspace.json": {
+    "bytes": 461,
+    "sha256": "9a475f306aaf2c5a7df2facf21d63a0dab10ba8f9c7d0de36b27f85dec6d00b4"
+  },
+  "commands/test-workspace.log.gz": {
+    "bytes": 53767,
+    "sha256": "22000c7a2c4effa0a9324f5f4e367426e5bf9b8c65bfa9c37780097311606c96"
+  },
+  "fixture-reference.json": {
+    "bytes": 298,
+    "sha256": "73aaa3d28c2c316fccebc2ddd7bdb61800fb0c5862cd5650eb7452ea4d1a5adc"
+  },
+  "frames.json": {
+    "bytes": 11298,
+    "sha256": "493c389c9bced0efdbe9281281d400b75b8c3fabcb592e2f9ba3e334969d42a9"
+  },
+  "frames.tar.gz": {
+    "bytes": 2535976,
+    "sha256": "cb7b41a51ee9d390dbefa72999f3255ceab4ae19e8cbd282d7e1dfc27a0977a5"
+  },
+  "host.json": {
+    "bytes": 326,
+    "sha256": "1a15b4d8a981afb77611e8fbde191e1ede75428fea9f9a84d6ba7ee5fbd98ff3"
+  },
+  "metal-artifact.json": {
+    "bytes": 1621,
+    "sha256": "f699234c8c2b61199e63ed9f90fbf2043987c27fa8f74dd35d7e09528117c0a0"
+  },
+  "metal-report.json.gz": {
+    "bytes": 10923,
+    "sha256": "3b6b259beaeb59292ebd84975c5b86ba4d1d75ac77984cabcdca3c7b4f100931"
+  },
+  "review.md": {
+    "bytes": 3505,
+    "sha256": "aad68e719caab392fdbb7569a0cdf3538d00d23d4bb4c48f32ab41168677fe3b"
+  },
+  "run-metal.py": {
+    "bytes": 1825,
+    "sha256": "652360858f7bfd362fd04a3797f7315537cacacc591fe7155fcbae3bcc11259c"
+  },
+  "sources/source-35eb3f41dfe9891e9b48359b02d8dfeb49cbc5b54b797c3228967f9884368f5c.json.gz": {
+    "bytes": 49573,
+    "sha256": "9434080023fd43c017f7c1b676677dd4dd3d8a7aad6fece349a99606afa118d8"
+  },
+  "sources/source-66cc8615665f9cb3a47656aeb9cefb1c4724eb116b155535af44128121d69949.json.gz": {
+    "bytes": 49571,
+    "sha256": "8db698bdbbc597875051131bc0774f75fbee8d4f0123fa5bf1cd51c2aeb43be7"
+  },
+  "sources/source-fb88715391463ab2fa3cfd84783ac30d44274a0ad38176f7ae787580cfab6b68.json.gz": {
+    "bytes": 49581,
+    "sha256": "f7c8bbc5bfbac67eefb712fd5948e1976560549c3af949d201a2a1df3ecb3ef4"
+  },
+  "summary.json": {
+    "bytes": 1970,
+    "sha256": "4b1d647a48375412cb986b0503fb994b7d7e95e91ca9c97fb60c007fb031a09d"
+  },
+  "verify.py": {
+    "bytes": 5365,
+    "sha256": "ad6aa1c11515bf25adc958394ed6cd8ecea1127f73eb9f99c50e37008c145c92"
+  }
+}

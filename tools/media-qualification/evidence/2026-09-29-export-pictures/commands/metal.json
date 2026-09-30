@@ -1,0 +1,15 @@
+{
+  "command": [
+    "python3",
+    "/tmp/deadpan-export-pictures-5l39qejf/run-metal.py",
+    "metal",
+    "build-metal"
+  ],
+  "started": "2026-09-30T01:20:23.767796+00:00",
+  "base_commit": "d97268fe056dd8fafd8a03cdf7fbfa38ee79ba65",
+  "diff_sha256": "43d05c1eb44b3bba831d196ea9e687299d8123d642384dae330be9638463159f",
+  "source_manifest_sha256": "66cc8615665f9cb3a47656aeb9cefb1c4724eb116b155535af44128121d69949",
+  "pid": 96957,
+  "exit_code": 0,
+  "seconds": 4.195882875006646
+}

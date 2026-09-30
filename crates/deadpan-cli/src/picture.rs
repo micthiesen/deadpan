@@ -197,6 +197,12 @@ impl ProjectPictureSession {
     pub fn revision(&self) -> &RevisionId {
         self.document.revision_id()
     }
+    pub fn project_id(&self) -> &ProjectId {
+        self.document.project_id()
+    }
+    pub fn basis(&self) -> &deadpan_core::PresentationBasis {
+        self.document.presentation_basis()
+    }
     pub const fn range(&self) -> FrameRange {
         self.range
     }

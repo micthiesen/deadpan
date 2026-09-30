@@ -180,6 +180,15 @@ keeps its single-flight permit until both mapping and submitted GPU work drain.
 Run conversion/readback off the UI and preserve the immutable frame identity.
 Library pixels and synthetic encoder fixtures do not qualify product export.
 
+The [encoder picture host](docs/EXPORT_PICTURES.md) derives its output contract
+from one committed picture session. Preserve the authored canvas for all framing;
+map to a legal even raster only after composition. Output ordinals and rational
+PTS are separate from absolute project frames and source PTS. Keep both absolute
+project sample boundaries for a selected range. Admit one completed I420 result
+at a time and retain cancelled GPU allocation permits until callbacks drain.
+Run preparation off UI/audio threads; final-render process isolation, complete
+audio/effects, encoding, emitted-file verification and publication remain required.
+
 The [committed project picture boundary](docs/PROJECT_PICTURES.md) captures an
 explicit revision and nonempty half-open range through a read-only store.
 Admit Original Source/Freeze frames against that revision's receipt, original

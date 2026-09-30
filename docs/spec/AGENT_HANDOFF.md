@@ -2,6 +2,40 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Committed encoder pictures, 2026-09-29
+
+The [encoder picture host](../EXPORT_PICTURES.md) owns one captured revision,
+range, exact output clock, legal even raster and completed I420 frame. Framing
+still uses the unchanged authored canvas. Source PTS and absolute project frames
+remain separate from relative output timestamps; both absolute audio boundaries
+are retained. It reuses the actual Original/Generated reader and shared Metal
+composition/readback, with cancellation/deadline checks and bounded ownership.
+
+[Qualification](../qualification/export-pictures-2026-09-29.md) passes 118 actual
+Metal checks with 52 retained frames. All 30 Generated frames and one odd-canvas
+Original match independent complete-plane references within one code value;
+93,396,906 codes were compared. Exact nonzero-range clocks, held-result rejection,
+captured framing and live writer edit/undo/redo/close are covered. Three independent
+reviews found no actionable defect. No app UI or native interaction changed.
+
+The full locked workspace passes 2,106 tests, zero failed/ignored. Strict
+workspace/all-target Clippy and final formatting pass. One initial harness
+SHA-256 formatting compile failure and its correction remain in the evidence.
+Corrected checks and Metal use the same source inventory `66cc8615…`; only docs
+and archived evidence changed afterward. No compiler, test or native probe is
+left running. Keep these results unless a later code change affects them.
+
+Next, isolate the real producer in a supervised final-render process. The current
+generation supervisor has reusable pipe/deadline/teardown mechanics but its wire
+messages and lifecycle are Hold-specific. Keep render messages separate. A private
+CLI worker can own read-only store, media, GPU and output preparation without a
+new crate or backward dependency. Use the existing checked spawn/group teardown,
+one shared monotonic deadline, bounded output, and clean-exit admission. Complete
+the shared audio/effects graphs, qualified encoding and approved AAC timing
+metadata, emitted-file checks, atomic publication and native Render afterward.
+This boundary produces no encoded file or export control. All DP requirements
+and Gates A through G remain in scope and incomplete.
+
 ## Accepted Generated Hold pictures, 2026-09-29
 
 The [shared picture reader](../PROJECT_PICTURES.md) now admits schema-3 Generated
@@ -32,17 +66,11 @@ is 141 points. Room-tone scroll checks reveal the complete fact/action group.
 Failed captures and checks remain in the evidence. The generic Generated
 fixture's minimum picture remains small; full editor visual acceptance is open.
 
-Keep the already passing backend gate. Only app layout and harness sources
-changed afterward, with scoped tests and release replay covering them. The
-retained command runner records terminal status and source inventories. Inspect
-live PIDs and journals after interruptions before starting another Cargo process;
-quiet compilation does not justify a restart.
-
-Next, connect the captured committed-picture boundary to exact output timestamps
-and legal encoder geometry, preserving the committed presentation basis and all
-captured framing. Then add final-render process isolation and integrate the full
-shared audio/picture graphs, approved AAC timing metadata, emitted-file checks
-and atomic publication. App model management, real candidate audition/acceptance,
+Only app layout and harness sources changed after that milestone's backend
+gate, with scoped tests and release replay covering them. Command journals bind
+terminal status and source inventories. Inspect live PIDs and journals after
+interruptions before starting another Cargo process; quiet compilation does not
+justify a restart. App model management, real candidate audition/acceptance,
 analysis, remaining editing/effects, recovery and signed distribution remain
 required. No DP requirement or gate is complete.
 

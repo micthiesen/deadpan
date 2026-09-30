@@ -1,0 +1,19 @@
+{
+  "command": [
+    "cargo",
+    "clippy",
+    "--workspace",
+    "--all-targets",
+    "--locked",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "started": "2026-09-30T01:16:22.380529+00:00",
+  "base_commit": "d97268fe056dd8fafd8a03cdf7fbfa38ee79ba65",
+  "diff_sha256": "ac9149918adfa63d09d89d00de86b4d60080430ed356257bf88f4b0cc68c65e0",
+  "source_manifest_sha256": "66cc8615665f9cb3a47656aeb9cefb1c4724eb116b155535af44128121d69949",
+  "pid": 96410,
+  "exit_code": 0,
+  "seconds": 7.972749957814813
+}

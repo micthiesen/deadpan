@@ -36,8 +36,9 @@ substituted while retaining the left-sited metadata.
 
 The resulting I420 storage is tight, with the complete Y plane followed by Cb
 and Cr. Plane/stride getters and the policy make the encoder adapter's required
-interpretation explicit. The host supplies rational project-frame timestamps
-separately; source PTS is not an edited output clock.
+interpretation explicit. The [committed picture host](EXPORT_PICTURES.md)
+supplies rational output timestamps separately; source PTS is not an edited
+output clock.
 
 ## Work and lifetime bounds
 

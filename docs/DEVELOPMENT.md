@@ -202,6 +202,24 @@ for C-adapter ASan/UBSan with source-session integration tests. These harnesses
 complement [native visual and keyboard evidence](qualification/source-preview-2026-09-21.md);
 they do not establish playback, physical display calibration or preview/export equivalence.
 
+The committed encoder-picture host has an actual Metal probe:
+
+```sh
+cargo run --release -p deadpan-cli --example qualify_project_picture --locked -- \
+  /tmp/new-export-pictures.json /tmp/new-export-pictures
+```
+
+It checks immutable revisions, exact output timestamps, nonzero ranges, Original
+frames, captured Holds, Repeat gaps, Background, odd-canvas output and one retained
+I420 result. Add a third argument pointing to the retained `accepted.deadpan`
+fixture to check all 30 Generated frames against independent complete-plane
+references; omitting it records a skip. The package needs its adjacent
+`generated-picture-fixture.json`, produced by the bundle integration test's
+`DEADPAN_GENERATED_PICTURE_FIXTURE_ROOT` option. Give native qualification an
+external timeout as well as its cooperative deadline. These are encoder-input
+checks, not an encoded file or complete product Render. See
+[the output contract](EXPORT_PICTURES.md).
+
 ## Original storage checks
 
 The [headless original commands](HEADLESS.md#original-media-ownership) retain

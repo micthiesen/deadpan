@@ -30,10 +30,10 @@ It is never a fallback for failed media. Foreign targets and an outstanding
 picture submission are rejected through the usual renderer admission rules.
 
 The session preserves legitimate odd committed canvas dimensions. The
-[SDR encoder pixel boundary](SDR_ENCODER_PIXELS.md) requires even output
-dimensions; automatic codec geometry and its aspect-preserving normalization
-remain a separate output policy. This preparation API does not silently change
-the document or normalize its raster.
+[encoder picture host](EXPORT_PICTURES.md) owns legal output geometry and exact
+output timestamps, then uses the [SDR pixel boundary](SDR_ENCODER_PIXELS.md).
+It keeps this unchanged authored canvas for framing before the final raster
+mapping. This preparation API does not change the document or normalize its raster.
 
 ## Original admission and ownership
 

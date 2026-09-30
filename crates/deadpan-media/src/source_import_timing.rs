@@ -687,8 +687,8 @@ fn derive_geometry(
     if info.rotation_quarter_turns % 2 == 1 {
         std::mem::swap(&mut display_width, &mut display_height);
     }
-    let width = nearest_even(display_width)?;
-    let height = nearest_even(display_height)?;
+    let width = nearest_even_dimension(display_width)?;
+    let height = nearest_even_dimension(display_height)?;
     let exact_aspect = display_width.checked_div(display_height)?;
     let rounded_aspect = ExactRatio::new(i128::from(width), i128::from(height))?;
     let relative_aspect_error = rounded_aspect
@@ -710,7 +710,7 @@ fn derive_geometry(
 /// Closest even dimension, choosing down on a tie. This introduces no target
 /// resolution enlargement; any SAR expansion corrects the original geometry.
 /// Each axis may differ by at most one pixel from its exact display extent.
-fn nearest_even(value: ExactRatio) -> Result<u32, ImportTimingError> {
+pub fn nearest_even_dimension(value: ExactRatio) -> Result<u32, ImportTimingError> {
     if value.compare_integer(1).is_lt() || value.compare_integer(65536).is_gt() {
         return Err(ImportTimingError::UnsupportedGeometry);
     }

@@ -1,0 +1,47 @@
+{
+  "cargo_artifact": {
+    "reason": "compiler-artifact",
+    "package_id": "path+file:///Users/michael/Code/deadpan/crates/deadpan-cli#0.1.0",
+    "manifest_path": "/Users/michael/Code/deadpan/crates/deadpan-cli/Cargo.toml",
+    "target": {
+      "kind": [
+        "example"
+      ],
+      "crate_types": [
+        "bin"
+      ],
+      "name": "qualify_project_picture",
+      "src_path": "/Users/michael/Code/deadpan/crates/deadpan-cli/examples/qualify_project_picture.rs",
+      "edition": "2024",
+      "doc": false,
+      "doctest": false,
+      "test": false
+    },
+    "profile": {
+      "opt_level": "3",
+      "debuginfo": 0,
+      "debug_assertions": false,
+      "overflow_checks": true,
+      "test": false
+    },
+    "features": [],
+    "filenames": [
+      "/Users/michael/Code/deadpan/target/release/examples/qualify_project_picture"
+    ],
+    "executable": "/Users/michael/Code/deadpan/target/release/examples/qualify_project_picture",
+    "fresh": false
+  },
+  "sha256": "eea8e7492e02054b475a75c85dffac2f0ce44c18dbb181c3d449dcbd6db6b46a",
+  "command": [
+    "qualify_project_picture",
+    "/private/tmp/deadpan-export-pictures-5l39qejf/metal-report.json",
+    "/private/tmp/deadpan-export-pictures-5l39qejf/metal-frames",
+    "/tmp/deadpan-generated-pictures-smyys035/fixture/accepted.deadpan"
+  ],
+  "cwd": "/Users/michael/Code/deadpan",
+  "timeout_seconds": 240,
+  "resolved_executable": "/Users/michael/Code/deadpan/target/release/examples/qualify_project_picture",
+  "exit_code": 0,
+  "sha256_after": "eea8e7492e02054b475a75c85dffac2f0ce44c18dbb181c3d449dcbd6db6b46a",
+  "binary_unchanged": true
+}

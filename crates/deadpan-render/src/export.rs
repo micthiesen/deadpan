@@ -228,6 +228,13 @@ pub(crate) fn working_layout(width: u32, height: u32, stride: u32) -> Result<u64
     Ok(length)
 }
 
+/// Check the shared raster, pixel, address-space and padded readback byte bounds
+/// before allocating a render target. Device-specific limits are checked by
+/// the renderer when creating the target and beginning its readback.
+pub fn validate_working_readback_dimensions(width: u32, height: u32) -> Result<(), RenderError> {
+    readback_layout(width, height).map(|_| ())
+}
+
 pub(crate) fn readback_layout(width: u32, height: u32) -> Result<(u32, u64), RenderError> {
     validate_dimensions(width, height)?;
     let alignment = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;

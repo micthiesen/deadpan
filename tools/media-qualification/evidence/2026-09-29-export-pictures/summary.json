@@ -1,0 +1,64 @@
+{
+  "base_commit": "d97268fe056dd8fafd8a03cdf7fbfa38ee79ba65",
+  "commands": {
+    "build-metal": {
+      "exit_code": 0,
+      "source_manifest_sha256": "66cc8615665f9cb3a47656aeb9cefb1c4724eb116b155535af44128121d69949"
+    },
+    "clippy": {
+      "exit_code": 101,
+      "source_manifest_sha256": "35eb3f41dfe9891e9b48359b02d8dfeb49cbc5b54b797c3228967f9884368f5c"
+    },
+    "clippy-final": {
+      "exit_code": 0,
+      "source_manifest_sha256": "66cc8615665f9cb3a47656aeb9cefb1c4724eb116b155535af44128121d69949"
+    },
+    "fmt-apply": {
+      "exit_code": 0,
+      "source_manifest_sha256": "fb88715391463ab2fa3cfd84783ac30d44274a0ad38176f7ae787580cfab6b68"
+    },
+    "fmt-check": {
+      "exit_code": 0,
+      "source_manifest_sha256": "35eb3f41dfe9891e9b48359b02d8dfeb49cbc5b54b797c3228967f9884368f5c"
+    },
+    "fmt-final": {
+      "exit_code": 0,
+      "source_manifest_sha256": "66cc8615665f9cb3a47656aeb9cefb1c4724eb116b155535af44128121d69949"
+    },
+    "metal": {
+      "exit_code": 0,
+      "source_manifest_sha256": "66cc8615665f9cb3a47656aeb9cefb1c4724eb116b155535af44128121d69949"
+    },
+    "test-workspace": {
+      "exit_code": 0,
+      "source_manifest_sha256": "66cc8615665f9cb3a47656aeb9cefb1c4724eb116b155535af44128121d69949"
+    }
+  },
+  "final_source_manifest_sha256": "66cc8615665f9cb3a47656aeb9cefb1c4724eb116b155535af44128121d69949",
+  "limits": [
+    "No encoder or emitted MP4",
+    "No rendered audio",
+    "No final-render process isolation",
+    "No UI or native OS behavior change",
+    "No performance or release acceptance"
+  ],
+  "metal": {
+    "checks": 118,
+    "codes_beyond_one": 0,
+    "codes_compared": 93396906,
+    "frames": 52,
+    "maximum_absolute_error": 1,
+    "reference_comparisons": 31
+  },
+  "omitted": [
+    "synthetic project databases",
+    "executable and native libraries",
+    "user media and models"
+  ],
+  "tests": {
+    "failed": 0,
+    "ignored": 0,
+    "passed": 2106,
+    "result_records": 156
+  }
+}

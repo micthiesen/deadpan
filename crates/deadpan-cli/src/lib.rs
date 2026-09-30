@@ -4,6 +4,8 @@
 pub mod audio;
 mod doctor;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod export_picture;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 mod originals;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod picture;
