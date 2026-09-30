@@ -1,0 +1,17 @@
+   Compiling deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 16.90s
+     Running tests/probe.rs (target/debug/deps/probe-4584f0de5b460c75)
+
+running 9 tests
+test encoder_choices_do_not_change_the_fixture_or_its_clocks ... ok
+test clocks_preserve_fractional_rates_and_round_from_the_origin ... ok
+test invalid_geometry_rates_and_long_probes_fail_before_allocation ... ok
+test version_one_has_fixed_ordinal_colors_and_visible_motion ... ok
+test invalid_requests_leave_caller_buffers_unchanged ... ok
+test stereo_events_have_fixed_independent_coordinates_and_amplitudes ... ok
+test tight_planes_cover_odd_chroma_dimensions_and_minimal_rasters ... ok
+test audio_block_boundaries_preserve_each_marker_once_and_no_other_samples ... ok
+test every_ordinal_is_distinct_and_reproducible_in_one_reused_frame ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+

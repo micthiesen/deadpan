@@ -1,0 +1,38 @@
+{
+  "hd-ntsc.avfoundation.f32": {
+    "bytes": 589392,
+    "sha256": "782b0742ca9365ceb2aa83fbf4a6e35c3fb51533f5b72c6065e856ec8fdfb4b1"
+  },
+  "hd-ntsc.probe.mp4": {
+    "bytes": 59975,
+    "sha256": "3074474f3e8fb6474780ea3193a091c869e9e9b4ecb0c192e1baa6a6b6bf779a"
+  },
+  "low-rate.avfoundation.f32": {
+    "bytes": 672000,
+    "sha256": "e85dcf46fd2155fbbf943ad81b2c209b7cd8c4e2daf7eb1affba9a071ddd4256"
+  },
+  "low-rate.probe.mp4": {
+    "bytes": 9864,
+    "sha256": "29bcf73bc838f84d5591a48214e92507d0b8bb1bf9dfe3a68903d68c86ffabb3"
+  },
+  "ntsc-final.avfoundation.f32": {
+    "bytes": 589392,
+    "sha256": "782b0742ca9365ceb2aa83fbf4a6e35c3fb51533f5b72c6065e856ec8fdfb4b1"
+  },
+  "ntsc-final.probe.mp4": {
+    "bytes": 18742,
+    "sha256": "291af635a74b64a582c8be4d613fd12c7f189ca77fed7d9216c4a9d2347320a2"
+  },
+  "ntsc.probe.mp4": {
+    "bytes": 18742,
+    "sha256": "aea4a9869ab52a039c2b5cd0df829cbdd580feb1c29694b981c6a6aa10d50d6d"
+  },
+  "sixty.avfoundation.f32": {
+    "bytes": 582400,
+    "sha256": "014cab48a37b61913815b7032b33ac92952895e25075dd09d3ededd4a1af7532"
+  },
+  "sixty.probe.mp4": {
+    "bytes": 32370,
+    "sha256": "51f635494cd529ebca561a4f2fcdd1ce9bb3712092fd1a027e1f3c9546d19ff4"
+  }
+}

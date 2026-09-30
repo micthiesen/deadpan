@@ -18,6 +18,10 @@ pub(crate) mod worker;
 
 pub use host::verify;
 
+/// Shared complete file inspection for the isolated deterministic admission
+/// probe. This returns observations and cannot create a publishable candidate.
+pub(crate) use inspect::inspect as inspect_file;
+
 pub const PRIVATE_WORKER_ARGUMENT: &str = "--render-verify-worker";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

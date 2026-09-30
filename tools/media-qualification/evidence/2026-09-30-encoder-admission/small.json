@@ -1,0 +1,62 @@
+{
+  "cleanup_confirmed": true,
+  "error": "encoded render worker failed: render_output_failed: source decode resource_limit: source dimensions exceed configured bounds",
+  "rejected": [
+    {
+      "failure": {
+        "diagnostic": "native encoder video_timestamp_order: H264 packet PTS (1) precedes DTS (2)",
+        "kind": {
+          "kind": "video_timestamp_order",
+          "stage": "encoder"
+        }
+      },
+      "identity": {
+        "attempt_id": "d46b819a-87ef-4bd2-b9a1-8dc33fbe205f",
+        "request_id": "native-admission-qualification"
+      },
+      "spec": {
+        "choice": {
+          "b_frames": "target_two",
+          "mode": "hardware"
+        },
+        "frame_rate": [
+          30,
+          1
+        ],
+        "raster": [
+          64,
+          64
+        ]
+      }
+    },
+    {
+      "failure": {
+        "diagnostic": "source decode resource_limit: source dimensions exceed configured bounds",
+        "kind": {
+          "stage": "output"
+        }
+      },
+      "identity": {
+        "attempt_id": "a15a555c-5a3e-47c1-b0de-dbba5a61dab8",
+        "request_id": "native-admission-qualification"
+      },
+      "spec": {
+        "choice": {
+          "b_frames": "none",
+          "mode": "hardware"
+        },
+        "frame_rate": [
+          30,
+          1
+        ],
+        "raster": [
+          64,
+          64
+        ]
+      }
+    }
+  ],
+  "schema_version": 1,
+  "seconds": 1.3326135,
+  "status": "failed"
+}

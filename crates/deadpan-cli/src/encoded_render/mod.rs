@@ -7,6 +7,7 @@ use std::io;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
 
+pub mod admission;
 mod host;
 pub mod jobs;
 pub mod protocol;

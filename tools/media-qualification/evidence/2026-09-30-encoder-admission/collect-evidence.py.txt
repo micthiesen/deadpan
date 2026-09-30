@@ -1,0 +1,127 @@
+import hashlib
+import json
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import tarfile
+
+root = Path('/Users/michael/Code/deadpan')
+work = Path('/tmp/deadpan-encoder-admission-20260930')
+target = root / 'tools/media-qualification/evidence/2026-09-30-encoder-admission'
+cases = ['ntsc-final', 'sixty', 'hd-ntsc', 'low-rate']
+checks = ['format-check-final', 'regression-cancellation', 'workspace-clippy-final',
+          'workspace-tests-final', 'native-build-final', 'avfoundation-build',
+          'native-smoke']
+checks += ['native-' + name for name in cases]
+checks += ['avfoundation-' + name for name in cases]
+journals = {name: json.loads((work / (name + '.json')).read_text()) for name in checks}
+assert all(row['exit_code'] == 0 for row in journals.values()), journals
+source_ids = {row['source_manifest_sha256'] for row in journals.values()}
+assert len(source_ids) == 1, source_ids
+source_id = next(iter(source_ids))
+source_inventory = json.loads((work / ('source-' + source_id + '.json')).read_text())
+for name, digest in source_inventory.items():
+    assert hashlib.sha256((root / name).read_bytes()).hexdigest() == digest, name
+
+rows = re.findall(r'test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;',
+                  (work / 'workspace-tests-final.log').read_text())
+assert rows and not any(int(f) or int(i) for _, f, i in rows)
+counts = {'passed': sum(int(p) for p, _, _ in rows), 'failed': 0, 'ignored': 0,
+          'result_groups': len(rows)}
+(work / 'workspace-test-counts.json').write_text(json.dumps(counts, indent=2) + '\n')
+native = json.loads((work / 'native-cases-summary.json').read_text())
+assert len(native['cases']) == len(cases)
+assert all(case['status'] == 'passed' for case in native['cases']), native
+
+files = {}
+for path in sorted(work.iterdir()):
+    if path.suffix not in ('.mp4', '.f32'):
+        continue
+    data = path.read_bytes()
+    files[path.name] = {'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
+assert len(files) == 9, files
+for name in ['ntsc', *cases]:
+    report = json.loads((work / (name + '.json')).read_text())
+    entry = files[name + '.probe.mp4']
+    assert entry == {key: report['retained_probe'][key] for key in ('bytes', 'sha256')}
+    assert entry['sha256'] == report['decision']['selected']['verification']['movie_sha256']
+archive = work / 'native-files.tar.gz'
+with tarfile.open(archive, 'w:gz') as stream:
+    for name in files:
+        stream.add(work / name, arcname=name)
+with tarfile.open(archive, 'r:gz') as stream:
+    assert sorted(stream.getnames()) == sorted(files)
+    for member in stream.getmembers():
+        assert member.isfile() and member.name in files
+        data = stream.extractfile(member).read()
+        assert files[member.name] == {'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
+(work / 'native-files.json').write_text(json.dumps(files, indent=2) + '\n')
+
+target.mkdir(parents=True, exist_ok=False)
+for path in sorted(work.iterdir()):
+    if path.is_file() and (path.suffix in ('.json', '.log', '.md') or path.name == 'native-files.tar.gz'):
+        shutil.copy2(path, target / path.name)
+for path in sorted(work.glob('*.py')):
+    shutil.copy2(path, target / (path.name + '.txt'))
+summary = {
+    'checks': checks, 'workspace': counts, 'qualified_source_inventory': source_id,
+    'native': native, 'archive_files': len(files),
+    'final_frames': sum(case['frames'] for case in native['cases']),
+    'final_samples': sum(case['samples'] for case in native['cases']),
+    'avfoundation_exact_events': sum(len(case['avfoundation_events']) for case in native['cases']),
+    'initial_failures': ['admission-tests: unsupported SHA-256 LowerHex formatting',
+                         'workspace-clippy-interrupted: deliberately stopped for cancellation correction',
+                         'native harness: moov allocation includes a fixed 1MiB overhead; corrected evidence assertion',
+                         '14x16, 16x16 and 64x64 native probes: explicit decoder geometry rejection, no fallback from Output failure'],
+    'initial_native': 'ntsc.json predates the final 1024-packet cap; retained as earlier evidence only',
+    'unrun': ['sanitizers', 'physical listening', 'optional UI replay', 'painted interaction', 'GUI performance'],
+    'remaining': ['loaded-library runtime identity and runtime-bound project consumer',
+                  'durable automatic job/attempt policy', 'public native/headless Render',
+                  'small-raster geometry diagnosis', 'complete mastering/effects', 'HDR', 'release hardware/OS matrix'],
+}
+(target / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
+readme = f'''# Automatic encoder admission evidence
+
+See the [qualification report](../../../../docs/qualification/encoder-admission-2026-09-30.md)
+for scope, final results, corrected failures and remaining work.
+
+- [Summary](summary.json): checks, counts and unrun checks.
+- [Independent review](review.md): source findings and verified corrections.
+- [Native files](native-files.tar.gz) and [inventory](native-files.json): all five
+  successful synthetic probe movies and the four final AVFoundation PCM decodes. Every
+  member was rehashed after archiving.
+- [Native cases](native-cases-summary.json): final choices, picture counts,
+  measured pixel errors and independently decoded exact audio-event positions.
+- [Manifest](manifest.json): byte lengths and SHA-256 for every other file here.
+
+The qualified product source inventory is `{source_id}`. Per-command JSON
+journals retain arguments, base commit, diff hash, source inventory, duration and
+exit status. The canonical runner pins `DEADPAN_FFMPEG_PREFIX` to
+`/tmp/deadpan-ui-ffmpeg/prefix`. Saved scripts use this run's scratch paths;
+replace those paths when reproducing on another machine.
+
+The final workspace run passed {counts['passed']:,} tests in {counts['result_groups']}
+result groups, with zero failed or ignored tests. The final native matrix passed
+{summary['final_frames']} frames and {summary['avfoundation_exact_events']} independently
+decoded exact stereo event positions. All final cases used the 1024-packet cap.
+The initial `ntsc.json` run predates that cap and is retained separately.
+
+The initial compile failure and deliberately interrupted Clippy log remain here.
+The 14x16, 16x16 and 64x64 probes failed at the decoder geometry guard with
+confirmed cleanup. Their reports remain here; no failed movie was admitted.
+See [geometry review](geometry-review.md). These rasters remain unqualified.
+No helper binaries are committed. The reports retain their hashes; the host
+record includes development library hashes as reproduction evidence, not a
+product runtime fingerprint. These results do not establish durable automatic
+Render, public controls or full-product acceptance.
+'''
+(target / 'README.md').write_text(readme)
+manifest = {p.name: {'bytes': p.stat().st_size, 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()}
+            for p in sorted(target.iterdir()) if p.is_file()}
+(target / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+for name, entry in manifest.items():
+    data = (target / name).read_bytes()
+    assert len(data) == entry['bytes'] and hashlib.sha256(data).hexdigest() == entry['sha256']
+print(json.dumps({'workspace': counts, 'source': source_id, 'files': len(manifest),
+                  'frames': summary['final_frames'], 'events': summary['avfoundation_exact_events']}))

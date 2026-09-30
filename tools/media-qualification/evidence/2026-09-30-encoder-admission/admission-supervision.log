@@ -1,0 +1,11 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 20.87s
+     Running tests/encoder_admission.rs (target/debug/deps/encoder_admission-4e0e7f35c17e795f)
+
+running 3 tests
+test cancel_while_probe_is_live_stops_and_confirms_teardown ... ok
+test real_supervision_keeps_each_probe_identity_and_only_allowed_selection_steps ... ok
+test capacity_prose_and_faults_after_failure_never_start_a_second_probe ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.80s
+

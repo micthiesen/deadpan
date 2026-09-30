@@ -515,7 +515,7 @@ fn supervision_fault(primary: Option<EncodedRenderError>, fault: String) -> Enco
     invalidate_report(primary, EncodedRenderError::Worker(fault))
 }
 
-fn invalidate_report(
+pub(super) fn invalidate_report(
     primary: Option<EncodedRenderError>,
     fault: EncodedRenderError,
 ) -> EncodedRenderError {

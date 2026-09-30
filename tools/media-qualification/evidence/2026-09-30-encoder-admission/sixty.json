@@ -1,0 +1,303 @@
+{
+  "decision": {
+    "identity": {
+      "attempt_id": "fresh-runtime",
+      "request_id": "native-admission-qualification"
+    },
+    "policy_version": 1,
+    "rejected": [
+      {
+        "failure": {
+          "diagnostic": "native encoder video_timestamp_order: H264 packet PTS (1) precedes DTS (2)",
+          "kind": {
+            "kind": "video_timestamp_order",
+            "stage": "encoder"
+          }
+        },
+        "identity": {
+          "attempt_id": "0083101f-98b9-4c96-977d-e2a37bd38f27",
+          "request_id": "native-admission-qualification"
+        },
+        "spec": {
+          "choice": {
+            "b_frames": "target_two",
+            "mode": "hardware"
+          },
+          "frame_rate": [
+            60,
+            1
+          ],
+          "raster": [
+            640,
+            360
+          ]
+        }
+      }
+    ],
+    "runtime": {
+      "helper_bytes": 171834432,
+      "helper_sha256": "1cdbe0ddd00b5d58fb72c24f0fdbe8328f5b129c4d458a675347ac91ed587a49",
+      "kernel_build": "Darwin Kernel Version 25.5.0: Tue Jun  9 22:28:34 PDT 2026; root:xnu-12377.121.10~1/RELEASE_ARM64_T6050",
+      "kernel_release": "25.5.0",
+      "machine": "arm64",
+      "system": "Darwin"
+    },
+    "selected": {
+      "content": {
+        "absolute_plane_error": [
+          550305,
+          50348,
+          39238
+        ],
+        "audio_samples": 72800,
+        "markers": [
+          {
+            "expected_samples": [
+              100,
+              137
+            ],
+            "observed_peaks": [
+              0.3615236282348633,
+              -0.26885682344436646
+            ],
+            "observed_samples": [
+              100,
+              137
+            ]
+          },
+          {
+            "expected_samples": [
+              36400,
+              36437
+            ],
+            "observed_peaks": [
+              0.6252118945121765,
+              -0.7487390041351318
+            ],
+            "observed_samples": [
+              36400,
+              36437
+            ]
+          },
+          {
+            "expected_samples": [
+              72600,
+              72637
+            ],
+            "observed_peaks": [
+              0.6872113943099976,
+              -0.562402606010437
+            ],
+            "observed_samples": [
+              72600,
+              72637
+            ]
+          }
+        ],
+        "maximum_plane_error": [
+          8,
+          11,
+          15
+        ],
+        "plane_samples": [
+          20966400,
+          5241600,
+          5241600
+        ],
+        "schema_version": 1,
+        "squared_plane_error": [
+          590637,
+          64000,
+          47066
+        ],
+        "unexpected_audio_peak": 0.047221384942531586,
+        "video_frames": 91,
+        "worst_frame_mean_absolute_error_milli": [
+          281,
+          197,
+          140
+        ],
+        "worst_frame_mean_squared_error_milli": [
+          343,
+          315,
+          215
+        ]
+      },
+      "manifest": {
+        "contract": {
+          "choice": {
+            "b_frames": "none",
+            "mode": "hardware"
+          },
+          "picture": {
+            "canvas": [
+              640,
+              360
+            ],
+            "color_policy": "sdr_rec709",
+            "frame_count": 91,
+            "frame_rate": {
+              "denominator": 1,
+              "numerator": 60
+            },
+            "project_audio_end": 72800,
+            "project_audio_start": 0,
+            "project_id": "encoder-admission-probe-v1",
+            "range": {
+              "end": 91,
+              "start": 0
+            },
+            "raster": [
+              640,
+              360
+            ],
+            "relative_aspect_error": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "revision_id": "deterministic-probe-v1",
+            "terminal_pts": 91,
+            "time_base": {
+              "denominator": 60,
+              "numerator": 1
+            }
+          }
+        },
+        "document_sha256": "64d88d108d4ed4aa57cf8f5683544e1d401763ccb51357b5d45f7dc5cf286162",
+        "movie": {
+          "byte_length": 32370,
+          "reference": "output/movie.mp4",
+          "sha256": "51f635494cd529ebca561a4f2fcdd1ce9bb3712092fd1a027e1f3c9546d19ff4"
+        },
+        "report": {
+          "audio_eof": true,
+          "audio_packets": 73,
+          "audio_samples": 72800,
+          "faststart_read_closes": 1,
+          "faststart_read_opens": 1,
+          "info": {
+            "abi_version": 1,
+            "audio_bitrate": 384000,
+            "audio_frame_size": 1024,
+            "audio_initial_padding": 1024,
+            "audio_profile": 1,
+            "audio_time_base_den": 48000,
+            "audio_time_base_num": 1,
+            "audio_trailing_padding": 0,
+            "avcodec_version": 4066151,
+            "avformat_version": 4064103,
+            "avutil_version": 3934311,
+            "maximum_moov_bytes": 1179648,
+            "movie_timescale": 48000,
+            "requested_mode": "hardware",
+            "video_bitrate": 2000000,
+            "video_gop_size": 30,
+            "video_has_b_frames": 0,
+            "video_max_b_frames": 0,
+            "video_profile": 100,
+            "video_time_base_den": 60,
+            "video_time_base_num": 1
+          },
+          "output_bytes": 32370,
+          "packet_bytes": 29279,
+          "video_duration_from_contract_packets": 91,
+          "video_eof": true,
+          "video_frames": 91,
+          "video_packets": 91
+        }
+      },
+      "schema_version": 1,
+      "spec": {
+        "choice": {
+          "b_frames": "none",
+          "mode": "hardware"
+        },
+        "frame_rate": [
+          60,
+          1
+        ],
+        "raster": [
+          640,
+          360
+        ]
+      },
+      "verification": {
+        "audio_edit_media_time": 1024,
+        "audio_packets": 73,
+        "audio_samples": 72800,
+        "contract": {
+          "choice": {
+            "b_frames": "none",
+            "mode": "hardware"
+          },
+          "picture": {
+            "canvas": [
+              640,
+              360
+            ],
+            "color_policy": "sdr_rec709",
+            "frame_count": 91,
+            "frame_rate": {
+              "denominator": 1,
+              "numerator": 60
+            },
+            "project_audio_end": 72800,
+            "project_audio_start": 0,
+            "project_id": "encoder-admission-probe-v1",
+            "range": {
+              "end": 91,
+              "start": 0
+            },
+            "raster": [
+              640,
+              360
+            ],
+            "relative_aspect_error": {
+              "denominator": "1",
+              "numerator": "0"
+            },
+            "revision_id": "deterministic-probe-v1",
+            "terminal_pts": 91,
+            "time_base": {
+              "denominator": 60,
+              "numerator": 1
+            }
+          }
+        },
+        "document_sha256": "64d88d108d4ed4aa57cf8f5683544e1d401763ccb51357b5d45f7dc5cf286162",
+        "fresh_gop_frames": 91,
+        "gops": 4,
+        "manual_first_sample": -1024,
+        "manual_physical_samples": 74752,
+        "maximum_b_run": 0,
+        "movie_bytes": 32370,
+        "movie_sha256": "51f635494cd529ebca561a4f2fcdd1ce9bb3712092fd1a027e1f3c9546d19ff4",
+        "movie_timescale": 48000,
+        "ordinary_first_sample": 0,
+        "ordinary_physical_samples": 73728,
+        "policy_version": 1,
+        "runtime_versions": [
+          4066151,
+          4064103,
+          3934311
+        ],
+        "video_edit_media_time": 0,
+        "video_frames": 91,
+        "video_packets": 91
+      }
+    },
+    "selected_identity": {
+      "attempt_id": "eb61aef6-35cb-489e-a746-4bf40f57b722",
+      "request_id": "native-admission-qualification"
+    }
+  },
+  "retained_probe": {
+    "bytes": 32370,
+    "path": "/private/tmp/deadpan-encoder-admission-20260930/sixty.probe.mp4",
+    "sha256": "51f635494cd529ebca561a4f2fcdd1ce9bb3712092fd1a027e1f3c9546d19ff4"
+  },
+  "schema_version": 1,
+  "scope": "fresh automatic encoder admission only; no durable job policy, project export or public UI",
+  "seconds": 4.046909,
+  "status": "passed"
+}

@@ -1,0 +1,339 @@
+{
+  "checks": [
+    "format-check-final",
+    "regression-cancellation",
+    "workspace-clippy-final",
+    "workspace-tests-final",
+    "native-build-final",
+    "avfoundation-build",
+    "native-smoke",
+    "native-ntsc-final",
+    "native-sixty",
+    "native-hd-ntsc",
+    "native-low-rate",
+    "avfoundation-ntsc-final",
+    "avfoundation-sixty",
+    "avfoundation-hd-ntsc",
+    "avfoundation-low-rate"
+  ],
+  "workspace": {
+    "passed": 2384,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 170
+  },
+  "qualified_source_inventory": "f8b70d4ff7a0673e537a4f1f8ea8f9781333749cdbbca02aed195638d64baa9b",
+  "native": {
+    "cases": [
+      {
+        "name": "ntsc-final",
+        "status": "passed",
+        "raster": [
+          320,
+          180
+        ],
+        "rate": [
+          30000,
+          1001
+        ],
+        "frames": 46,
+        "samples": 73674,
+        "gops": 3,
+        "rejected": 1,
+        "maximum_plane_error": [
+          4,
+          7,
+          5
+        ],
+        "avfoundation_events": [
+          {
+            "channel": 0,
+            "expected": 100,
+            "observed": 100,
+            "peak": 0.38277295231819153
+          },
+          {
+            "channel": 1,
+            "expected": 137,
+            "observed": 137,
+            "peak": -0.26990994811058044
+          },
+          {
+            "channel": 0,
+            "expected": 36837,
+            "observed": 36837,
+            "peak": 0.6244204640388489
+          },
+          {
+            "channel": 1,
+            "expected": 36874,
+            "observed": 36874,
+            "peak": -0.7496187090873718
+          },
+          {
+            "channel": 0,
+            "expected": 73474,
+            "observed": 73474,
+            "peak": 0.6650983691215515
+          },
+          {
+            "channel": 1,
+            "expected": 73511,
+            "observed": 73511,
+            "peak": -0.5494546890258789
+          }
+        ]
+      },
+      {
+        "name": "sixty",
+        "status": "passed",
+        "raster": [
+          640,
+          360
+        ],
+        "rate": [
+          60,
+          1
+        ],
+        "frames": 91,
+        "samples": 72800,
+        "gops": 4,
+        "rejected": 1,
+        "maximum_plane_error": [
+          8,
+          11,
+          15
+        ],
+        "avfoundation_events": [
+          {
+            "channel": 0,
+            "expected": 100,
+            "observed": 100,
+            "peak": 0.38277295231819153
+          },
+          {
+            "channel": 1,
+            "expected": 137,
+            "observed": 137,
+            "peak": -0.26990994811058044
+          },
+          {
+            "channel": 0,
+            "expected": 36400,
+            "observed": 36400,
+            "peak": 0.6252118945121765
+          },
+          {
+            "channel": 1,
+            "expected": 36437,
+            "observed": 36437,
+            "peak": -0.7487390041351318
+          },
+          {
+            "channel": 0,
+            "expected": 72600,
+            "observed": 72600,
+            "peak": 0.6872113943099976
+          },
+          {
+            "channel": 1,
+            "expected": 72637,
+            "observed": 72637,
+            "peak": -0.562402606010437
+          }
+        ]
+      },
+      {
+        "name": "hd-ntsc",
+        "status": "passed",
+        "raster": [
+          1920,
+          1080
+        ],
+        "rate": [
+          30000,
+          1001
+        ],
+        "frames": 46,
+        "samples": 73674,
+        "gops": 3,
+        "rejected": 1,
+        "maximum_plane_error": [
+          9,
+          9,
+          13
+        ],
+        "avfoundation_events": [
+          {
+            "channel": 0,
+            "expected": 100,
+            "observed": 100,
+            "peak": 0.38277295231819153
+          },
+          {
+            "channel": 1,
+            "expected": 137,
+            "observed": 137,
+            "peak": -0.26990994811058044
+          },
+          {
+            "channel": 0,
+            "expected": 36837,
+            "observed": 36837,
+            "peak": 0.6244204640388489
+          },
+          {
+            "channel": 1,
+            "expected": 36874,
+            "observed": 36874,
+            "peak": -0.7496187090873718
+          },
+          {
+            "channel": 0,
+            "expected": 73474,
+            "observed": 73474,
+            "peak": 0.6650983691215515
+          },
+          {
+            "channel": 1,
+            "expected": 73511,
+            "observed": 73511,
+            "peak": -0.5494546890258789
+          }
+        ]
+      },
+      {
+        "name": "low-rate",
+        "status": "passed",
+        "raster": [
+          640,
+          360
+        ],
+        "rate": [
+          4,
+          1
+        ],
+        "frames": 7,
+        "samples": 84000,
+        "gops": 4,
+        "rejected": 0,
+        "maximum_plane_error": [
+          8,
+          7,
+          7
+        ],
+        "avfoundation_events": [
+          {
+            "channel": 0,
+            "expected": 100,
+            "observed": 100,
+            "peak": 0.38277295231819153
+          },
+          {
+            "channel": 1,
+            "expected": 137,
+            "observed": 137,
+            "peak": -0.26990994811058044
+          },
+          {
+            "channel": 0,
+            "expected": 42000,
+            "observed": 42000,
+            "peak": 0.6245273351669312
+          },
+          {
+            "channel": 1,
+            "expected": 42037,
+            "observed": 42037,
+            "peak": -0.7496328949928284
+          },
+          {
+            "channel": 0,
+            "expected": 83800,
+            "observed": 83800,
+            "peak": 0.6868120431900024
+          },
+          {
+            "channel": 1,
+            "expected": 83837,
+            "observed": 83837,
+            "peak": -0.5611600875854492
+          }
+        ]
+      }
+    ],
+    "reader_sha256": "b6eb6dc511150bd65aec8a78053f564bff550d893b179ab5fe58bf2f040a029c",
+    "initial_harness_failure": "Expected moov allocation below 1MiB; actual checked formula is 1024*128+1048576 = 1179648 bytes.",
+    "rejected_boundaries": [
+      {
+        "raster": [
+          14,
+          16
+        ],
+        "rate": [
+          30,
+          1
+        ],
+        "status": "explicitly_rejected",
+        "report": "minimum.json",
+        "attempts": 2,
+        "cleanup_confirmed": true
+      },
+      {
+        "raster": [
+          16,
+          16
+        ],
+        "rate": [
+          30,
+          1
+        ],
+        "status": "explicitly_rejected",
+        "report": "aligned-minimum.json",
+        "attempts": 2,
+        "cleanup_confirmed": true
+      },
+      {
+        "raster": [
+          64,
+          64
+        ],
+        "rate": [
+          30,
+          1
+        ],
+        "status": "explicitly_rejected",
+        "report": "small.json",
+        "attempts": 2,
+        "cleanup_confirmed": true
+      }
+    ]
+  },
+  "archive_files": 9,
+  "final_frames": 190,
+  "final_samples": 304148,
+  "avfoundation_exact_events": 24,
+  "initial_failures": [
+    "admission-tests: unsupported SHA-256 LowerHex formatting",
+    "workspace-clippy-interrupted: deliberately stopped for cancellation correction",
+    "native harness: moov allocation includes a fixed 1MiB overhead; corrected evidence assertion",
+    "14x16, 16x16 and 64x64 native probes: explicit decoder geometry rejection, no fallback from Output failure"
+  ],
+  "initial_native": "ntsc.json predates the final 1024-packet cap; retained as earlier evidence only",
+  "unrun": [
+    "sanitizers",
+    "physical listening",
+    "optional UI replay",
+    "painted interaction",
+    "GUI performance"
+  ],
+  "remaining": [
+    "loaded-library runtime identity and runtime-bound project consumer",
+    "durable automatic job/attempt policy",
+    "public native/headless Render",
+    "small-raster geometry diagnosis",
+    "complete mastering/effects",
+    "HDR",
+    "release hardware/OS matrix"
+  ]
+}

@@ -41,7 +41,7 @@ impl Context<'_> {
     }
 }
 
-pub(super) fn inspect(
+pub(crate) fn inspect(
     file: &File,
     manifest: &EncodedManifest,
     limits: VerificationLimits,

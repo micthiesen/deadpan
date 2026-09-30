@@ -1,0 +1,18 @@
+{
+  "command": [
+    "target/debug/examples/qualify_encoder_admission",
+    "target/debug/deadpan-cli",
+    "16",
+    "16",
+    "30",
+    "1",
+    "/tmp/deadpan-encoder-admission-20260930/aligned-minimum.json"
+  ],
+  "started": "2026-09-30T10:23:01.795793+00:00",
+  "base_commit": "7df7f2bd76f2c2e438a6b07120b8ad073cc1050a",
+  "diff_sha256": "64dd02a1162afe64ae065a2a86b449d3510b9cd0867774f6d28a1a2208cf91bc",
+  "source_manifest_sha256": "f8b70d4ff7a0673e537a4f1f8ea8f9781333749cdbbca02aed195638d64baa9b",
+  "pid": 17144,
+  "exit_code": 1,
+  "seconds": 1.3404670837335289
+}

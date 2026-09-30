@@ -429,7 +429,7 @@ impl PlanarInput {
     }
 }
 
-fn hash_movie(
+pub(crate) fn hash_movie(
     file: &mut File,
     expected: u64,
     maximum: u64,

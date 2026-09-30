@@ -2,6 +2,17 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+[Automatic encoder probes](AUTOMATIC_ENCODER_ADMISSION.md) now select a path
+through fresh supervised deterministic encodes, complete file verification and
+expected picture/audio checks. Ordered typed rejections remain in the decision;
+non-capability and cleanup failures stop selection. Durable job/attempt policy,
+runtime-bound project encoding and public Render remain required for DP-17/DP-18.
+[Qualification](qualification/encoder-admission-2026-09-30.md) records 2,384 passing
+workspace tests, strict Clippy, formatting and native startup/shutdown. Four real
+cases passed 190 pictures and 24 exact AVFoundation event positions. The 14x16,
+16x16 and 64x64 probes explicitly failed decoder geometry admission and remain
+unqualified; their failures and confirmed cleanup are retained.
+
 [Typed encoder failures](qualification/encoded-failures-2026-09-30.md) preserve
 exact native failure kinds through supervision and invalidate them after later
 protocol, timeout or cleanup faults. Real media reproduces the hardware B-frame

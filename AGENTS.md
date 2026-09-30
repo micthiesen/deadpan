@@ -213,6 +213,14 @@ and OS software are separate attempts; requested B frames and queried codec
 fields do not prove emitted behavior. Keep hardware B-frame PTS<DTS rejection
 evidence. Independent finished-file admission is required before publication.
 
+The [automatic encoder probe](docs/AUTOMATIC_ENCODER_ADMISSION.md) is separate
+from project output. Require fresh bounded deterministic input at the actual
+raster/rate, full emitted-file and expected-content checks, and explicit clean
+teardown before selecting a path. Only exact admitted native kinds can permit
+the next probe; later faults invalidate those claims. Preserve ordered rejected
+attempts and exact sample observations. Serialized probe reports cannot restore
+a live admission or replace a durable encoding decision and final-file verification.
+
 The [committed project picture boundary](docs/PROJECT_PICTURES.md) captures an
 explicit revision and nonempty half-open range through a read-only store.
 Admit Original Source/Freeze frames against that revision's receipt, original

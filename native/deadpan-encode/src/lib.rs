@@ -15,6 +15,7 @@ use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};
 
 mod policy;
+pub mod probe;
 mod progress;
 pub use policy::*;
 pub use progress::NextInput;

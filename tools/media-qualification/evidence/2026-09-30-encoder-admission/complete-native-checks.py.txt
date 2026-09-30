@@ -1,0 +1,86 @@
+import array
+from fractions import Fraction
+import json
+import math
+import os
+from pathlib import Path
+import shutil
+import subprocess
+
+root = Path('/Users/michael/Code/deadpan')
+work = Path('/tmp/deadpan-encoder-admission-20260930')
+os.environ['DEADPAN_CHECK_OUTPUT'] = str(work)
+runner = root / 'tools/media-qualification/evidence/2026-09-29-generated-pictures/run-native.py'
+reader = work / 'avfoundation_probe'
+old = work / 'native-cases-summary.json'
+if not (work / 'native-cases-summary-initial.json').exists():
+    shutil.copy2(old, work / 'native-cases-summary-initial.json')
+summary = {'cases': [], 'reader_sha256': json.loads(old.read_text())['reader_sha256'],
+           'initial_harness_failure': 'Expected moov allocation below 1MiB; actual checked formula is 1024*128+1048576 = 1179648 bytes.'}
+negative = json.loads((work / 'minimum.json').read_text())
+assert negative['status'] == 'failed' and negative['cleanup_confirmed'] is True
+assert len(negative['rejected']) == 2
+assert negative['rejected'][-1]['failure']['kind'] == {'stage': 'output'}
+assert 'source dimensions exceed configured bounds' in negative['error']
+summary['rejected_boundaries'] = []
+for name, raster in [('minimum', [14, 16]), ('aligned-minimum', [16, 16]), ('small', [64, 64])]:
+    rejected = json.loads((work / (name + '.json')).read_text())
+    assert rejected['status'] == 'failed' and rejected['cleanup_confirmed'] is True
+    assert len(rejected['rejected']) == 2
+    assert rejected['rejected'][-1]['failure']['kind'] == {'stage': 'output'}
+    assert 'source dimensions exceed configured bounds' in rejected['error']
+    summary['rejected_boundaries'].append({'raster': raster, 'rate': [30, 1],
+                                          'status': 'explicitly_rejected', 'report': name + '.json',
+                                          'attempts': 2, 'cleanup_confirmed': True})
+for name in ['ntsc-final', 'sixty', 'hd-ntsc', 'low-rate']:
+    report = json.loads((work / (name + '.json')).read_text())
+    assert report['status'] == 'passed'
+    selected = report['decision']['selected']
+    native = selected['manifest']['report']
+    assert native['info']['maximum_moov_bytes'] == 1024 * 128 + 1048576
+    assert selected['spec']['choice'] == {'mode': 'hardware', 'b_frames': 'none'}
+    assert len(report['decision']['rejected']) == (0 if name == 'low-rate' else 1)
+    movie = work / (name + '.probe.mp4')
+    pcm = work / (name + '.avfoundation.f32')
+    journal = work / ('avfoundation-' + name + '.json')
+    if not journal.exists():
+        result = subprocess.run(['python3', str(runner), 'avfoundation-' + name,
+                                 str(reader), str(movie), str(pcm)], cwd=root,
+                                stdout=subprocess.DEVNULL)
+        assert result.returncode == 0, name
+    assert json.loads(journal.read_text())['exit_code'] == 0
+    observed = json.loads((work / ('avfoundation-' + name + '.log')).read_text())
+    assert observed['status'] == 'completed'
+    assert observed['input_sha256'] == observed['final_input_sha256'] == report['retained_probe']['sha256']
+    audio = observed['pcm']
+    samples = selected['content']['audio_samples']
+    assert audio['total_samples'] == samples
+    assert audio['pcm_bytes'] == samples * 8 == pcm.stat().st_size
+    cursor = 0
+    for buffer in audio['buffers']:
+        pts = buffer['pts']
+        assert Fraction(pts['value'], pts['timescale']) * 48000 == cursor
+        assert buffer['sample_offset'] == cursor
+        cursor += buffer['num_samples']
+    assert cursor == samples
+    decoded = array.array('f')
+    decoded.frombytes(pcm.read_bytes())
+    assert all(math.isfinite(sample) for sample in decoded)
+    events = []
+    for marker in selected['content']['markers']:
+        for channel, expected in enumerate(marker['expected_samples']):
+            sign = 1 if channel == 0 else -1
+            candidates = range(max(0, expected - 64), min(samples, expected + 65))
+            actual = max(candidates, key=lambda index: sign * decoded[index * 2 + channel])
+            peak = decoded[actual * 2 + channel]
+            assert actual == expected and sign * peak >= .15, (name, channel, expected, actual, peak)
+            events.append({'channel': channel, 'expected': expected, 'observed': actual, 'peak': peak})
+    summary['cases'].append({'name': name, 'status': 'passed',
+                             'raster': selected['spec']['raster'], 'rate': selected['spec']['frame_rate'],
+                             'frames': native['video_frames'], 'samples': samples,
+                             'gops': selected['verification']['gops'],
+                             'rejected': len(report['decision']['rejected']),
+                             'maximum_plane_error': selected['content']['maximum_plane_error'],
+                             'avfoundation_events': events})
+    old.write_text(json.dumps(summary, indent=2) + '\n')
+print(json.dumps({'passed': len(summary['cases']), 'explicit_boundary_rejection': True}))

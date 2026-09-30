@@ -1,0 +1,18 @@
+import os
+from pathlib import Path
+import subprocess
+
+root = Path('/Users/michael/Code/deadpan')
+os.environ['DEADPAN_CHECK_OUTPUT'] = '/tmp/deadpan-encoder-admission-20260930'
+runner = root / 'tools/media-qualification/evidence/2026-09-29-generated-pictures/run-native.py'
+commands = [
+    ('format-check-final', ['cargo', 'fmt', '--all', '--', '--check']),
+    ('regression-cancellation', ['cargo', 'test', '-p', 'deadpan-cli', '--test', 'encoder_admission', '--locked', 'capacity_prose']),
+    ('workspace-clippy-final', ['cargo', 'clippy', '--workspace', '--all-targets', '--locked', '--', '-D', 'warnings']),
+    ('workspace-tests-final', ['cargo', 'test', '--workspace', '--locked', '--no-fail-fast']),
+    ('native-build-final', ['cargo', 'build', '-p', 'deadpan-cli', '--bins', '--example', 'qualify_encoder_admission', '--locked']),
+]
+for name, command in commands:
+    result = subprocess.run(['python3', str(runner), name, *command], cwd=root)
+    if result.returncode:
+        raise SystemExit(result.returncode)

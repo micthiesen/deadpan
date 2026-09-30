@@ -1,0 +1,58 @@
+{
+  "cpu_and_memory": [
+    "Apple M5 Max",
+    "137438953472"
+  ],
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+  "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6",
+  "helper": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deadpan-cli",
+    "bytes": 171834432,
+    "sha256": "1cdbe0ddd00b5d58fb72c24f0fdbe8328f5b129c4d458a675347ac91ed587a49"
+  },
+  "helper_linkage": "target/debug/deadpan-cli:\n\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1356.0.0)\n\t/System/Library/Frameworks/QuartzCore.framework/Versions/A/QuartzCore (compatibility version 1.2.0, current version 1195.14.4)\n\t/System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics (compatibility version 64.0.0, current version 1965.5.1)\n\t/System/Library/Frameworks/Metal.framework/Versions/A/Metal (compatibility version 1.0.0, current version 373.2.0)\n\t/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation (compatibility version 300.0.0, current version 5026.5.4)\n\t/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation (compatibility version 150.0.0, current version 5026.5.4)\n\t/usr/lib/libobjc.A.dylib (compatibility version 1.0.0, current version 228.0.0)\n\t/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libavformat.62.dylib (compatibility version 62.0.0, current version 62.3.103)\n\t/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libavcodec.62.dylib (compatibility version 62.0.0, current version 62.11.103)\n\t/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libavutil.60.dylib (compatibility version 60.0.0, current version 60.8.103)\n\t/usr/lib/libiconv.2.dylib (compatibility version 7.0.0, current version 7.0.0)\n\t/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libswscale.9.dylib (compatibility version 9.0.0, current version 9.1.103)\n\t/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 2100.43.0)",
+  "reader": {
+    "path": "/tmp/deadpan-encoder-admission-20260930/avfoundation_probe",
+    "bytes": 79968,
+    "sha256": "b6eb6dc511150bd65aec8a78053f564bff550d893b179ab5fe58bf2f040a029c"
+  },
+  "development_prefix": "/tmp/deadpan-ui-ffmpeg/prefix",
+  "development_libraries": [
+    {
+      "path": "/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libavcodec.62.11.103.dylib",
+      "bytes": 12808632,
+      "sha256": "58aac15dab11ce599ae595eb8e5bf54ed68327d9929451650fa3b4bcf6307f1f"
+    },
+    {
+      "path": "/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libavdevice.62.1.103.dylib",
+      "bytes": 42616,
+      "sha256": "7b59be114d6dfd4a16184e688c9974337b2b3bac2188d96330c7d9aab6151184"
+    },
+    {
+      "path": "/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libavfilter.11.4.103.dylib",
+      "bytes": 3881752,
+      "sha256": "be1fde7995745f1e6b98fc657a101e340b584f1a0fd072cff72149ca44d6b4c5"
+    },
+    {
+      "path": "/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libavformat.62.3.103.dylib",
+      "bytes": 2244152,
+      "sha256": "1e95ffdb6a28931038273c3c30a1807b1254613efb806e429caddf703fa5972d"
+    },
+    {
+      "path": "/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libavutil.60.8.103.dylib",
+      "bytes": 725688,
+      "sha256": "a5245d17b143832d7b57351d0bb97d0e31d65ae6a53bea195627b64e9b44edb8"
+    },
+    {
+      "path": "/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libswresample.6.1.103.dylib",
+      "bytes": 103528,
+      "sha256": "ba3b62c128fbe9f50ef74a40b624efc1c1239e8bc4ddb822d56637bd2e9c10ce"
+    },
+    {
+      "path": "/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libswscale.9.1.103.dylib",
+      "bytes": 949464,
+      "sha256": "02a571c85bbd5df607f7aea1021d93764b4d53cb1c1432d03ed7d840cb15d104"
+    }
+  ],
+  "scope": "Reproduction evidence. Available development libraries are hashed; the product does not yet retain loaded-library byte identities."
+}

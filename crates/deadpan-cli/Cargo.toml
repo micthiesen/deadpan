@@ -29,7 +29,7 @@ deadpan-filesystem.workspace = true
 wgpu.workspace = true
 pollster.workspace = true
 sha2.workspace = true
-rustix.workspace = true
+rustix = { workspace = true, features = ["system"] }
 tempfile.workspace = true
 
 [dev-dependencies]

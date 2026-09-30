@@ -1,0 +1,37 @@
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+
+root = Path('/Users/michael/Code/deadpan')
+work = Path('/tmp/deadpan-encoder-admission-20260930')
+prefix = Path('/tmp/deadpan-ui-ffmpeg/prefix')
+
+def run(args):
+    return subprocess.check_output(args, cwd=root, text=True).strip()
+
+def describe(path):
+    digest = hashlib.sha256()
+    with path.open('rb') as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b''):
+            digest.update(block)
+    return {'path': str(path), 'bytes': path.stat().st_size, 'sha256': digest.hexdigest()}
+
+libraries = {path.resolve() for path in (prefix / 'lib').glob('*.dylib')}
+helper = describe(root / 'target/debug/deadpan-cli')
+report = {
+    'cpu_and_memory': run(['sysctl', '-n', 'machdep.cpu.brand_string', 'hw.memsize']).splitlines(),
+    'os': run(['sw_vers']), 'rust': run(['rustc', '-Vv']),
+    'helper': helper,
+    'helper_linkage': run(['otool', '-L', 'target/debug/deadpan-cli']),
+    'reader': describe(work / 'avfoundation_probe'),
+    'development_prefix': str(prefix),
+    'development_libraries': [describe(path) for path in sorted(libraries)],
+    'scope': 'Reproduction evidence. Available development libraries are hashed; the product does not yet retain loaded-library byte identities.',
+}
+for name in ['ntsc-final', 'sixty', 'hd-ntsc', 'low-rate']:
+    decision = json.loads((work / (name + '.json')).read_text())['decision']
+    assert decision['runtime']['helper_sha256'] == helper['sha256']
+    assert decision['runtime']['helper_bytes'] == helper['bytes']
+(work / 'host.json').write_text(json.dumps(report, indent=2) + '\n')
+print(json.dumps({'helper_sha256': helper['sha256'], 'development_libraries': len(libraries)}))

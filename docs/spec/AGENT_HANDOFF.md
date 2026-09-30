@@ -2,6 +2,38 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Automatic encoder probe, 2026-09-30
+
+The [admission boundary](../AUTOMATIC_ENCODER_ADMISSION.md) generates deterministic
+moving I420 and independent stereo markers at the requested raster/rate. Fresh
+supervised probes advance only after specific admitted native failures. The
+selected file passes complete structural/decode verification plus per-frame
+pixel and exact event checks. Ordered rejected attempts and owned probe bytes
+remain available; serialized reports cannot create a project output capability.
+
+[Final evidence](../qualification/encoder-admission-2026-09-30.md): 2,384 workspace
+tests, strict Clippy, formatting and native startup/shutdown pass. Four native
+cases cover 190 frames and 24 independently decoded exact audio events. The
+14x16, 16x16 and 64x64 probes explicitly fail the geometry guard. Existing bounds
+already include macroblock padding; capture rejected dimensions/limits or SPS
+before deciding whether those failures justify a decoder change.
+
+Keep legacy final-file verification policy 1 unchanged. An absent-B verification
+failure still stops this selector; safe typed absence requires finishing every
+other check. Legitimate all-I/P project output needs a separately versioned rule.
+Current evidence identifies helper bytes, kernel and native version observations,
+but loaded-library fingerprints and a runtime-bound project consumer remain open.
+
+Next implement database 42 with strict legacy intent adapters, a versioned
+automatic algorithm policy per job and an immutable encoder decision per new
+encoding attempt. Keep old attempt and publication cells unchanged. Qualify while
+Queued, then commit the decision and Encoding transition atomically. Checkpoint
+verification/reconciliation must load its original encoding decision. Freeze
+resolved bitrate/GOP/timescale policy so later defaults cannot reinterpret old
+bytes. Migration must freeze nested publication intents too, and create
+publication tables only when the source database predates schema 41. After that,
+connect native Render and public headless access to the shared owner workflow.
+
 ## Typed encoder failures, 2026-09-30
 
 [Encode protocol 2](../ENCODED_RENDER.md) preserves the failed boundary and exact
