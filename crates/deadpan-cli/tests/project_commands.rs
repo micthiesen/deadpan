@@ -36,7 +36,7 @@ fn success(arguments: &[&str]) -> Result<Value> {
 fn doctor_reports_hold_audio_document_and_migration_schemas() -> Result {
     let report = success(&["doctor"])?;
     assert_eq!(report["document_schema"], 33);
-    assert_eq!(report["database_schema"], 41);
+    assert_eq!(report["database_schema"], 42);
     let partial = report["partial"].as_array().unwrap();
     for capability in [
         "schema-1-through-40-migration",

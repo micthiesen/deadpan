@@ -2,6 +2,34 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Durable automatic encoding, 2026-09-30
+
+Database 42 adds a strict automatic job policy and immutable decisions owned by
+the original encoding attempt. Qualification runs while Queued; the writer
+commits the exact decision and Encoding transition together before the worker
+can consume its live admission. Store closure revokes probe and encode work.
+Fresh encoding retries qualify again. Checkpoint retry and reconciliation retain
+the original decision, controls and runtime while freshly verifying the movie.
+Automatic manifests and publication provenance use schema 2; engineering schema
+1 keeps its frozen shape. See [the contract](../RENDER_JOBS.md#automatic-admission-and-recovery).
+
+Migration preserves legacy cells, rejects automatic vocabulary in old job and
+nested publication intents, and creates the new decision table without masking
+name collisions. Full audits reuse validated job heads and compact revision
+summaries; targeted reads still check their own allocation head.
+
+[Qualification](../qualification/automatic-render-jobs-2026-09-30.md) passes two
+fresh native-app encodes, four verifications, reopen/retry and reconciliation.
+Independent readers pass 768 picture planes and complete authored audio in both
+files; every old cell in 19 tables survives. Final coverage is 2,439 workspace
+tests plus 310 optional UI-harness app tests. Strict Clippy, formatting and native
+smoke pass. The original full-run migration-expectation failure and a native
+example's f32 JSON-comparison failure remain retained, with scoped corrections.
+
+Next expose automatic Render through native controls and the public headless
+API. Capture preview commit/discard decisions and the owning project session.
+Keep full mastering/effects, HDR, scheduling and release qualification open.
+
 ## Encoder runtime binding, 2026-09-30
 
 The [automatic consumer](../AUTOMATIC_ENCODER_ADMISSION.md#consuming-a-fresh-admission)
@@ -24,12 +52,8 @@ correction; strict Clippy, formatting and native smoke pass. Tiny probes report
 192x96 coded geometry above their 256/256/4096-pixel budgets. Their admission
 bounds remain unchanged.
 
-Next implement the database-42 automatic policy/decision boundary described
-below. Keep pure durable DTOs separate from live native observations, bind the
-decision to the original encoding attempt, and freshly qualify every encoding
-retry. Retained checkpoint verification/reconciliation preserves its original
-decision. Then connect native/public headless Render. An in-memory candidate and
-serialized runtime observations alone do not implement that workflow.
+The durable automatic boundary above completes this increment's next storage
+step. Native/public headless Render remains the next product entrypoint.
 
 ## Automatic encoder probe, 2026-09-30
 
@@ -54,15 +78,8 @@ That milestone identified helper bytes, kernel and native version observations.
 The runtime-binding increment above adds loaded-library evidence and a fresh
 project consumer.
 
-Next implement database 42 with strict legacy intent adapters, a versioned
-automatic algorithm policy per job and an immutable encoder decision per new
-encoding attempt. Keep old attempt and publication cells unchanged. Qualify while
-Queued, then commit the decision and Encoding transition atomically. Checkpoint
-verification/reconciliation must load its original encoding decision. Freeze
-resolved bitrate/GOP/timescale policy so later defaults cannot reinterpret old
-bytes. Migration must freeze nested publication intents too, and create
-publication tables only when the source database predates schema 41. After that,
-connect native Render and public headless access to the shared owner workflow.
+The durable automatic boundary above now retains the policy and each fresh
+encoding decision. Native Render and public headless access remain open.
 
 ## Typed encoder failures, 2026-09-30
 

@@ -1,0 +1,108 @@
+{
+  "status": "passed",
+  "method": "read-only SQLite backup; exact tuple/multiplicity comparison",
+  "before_schema": 41,
+  "after_schema": 42,
+  "tables": {
+    "generation_attempt_heads": {
+      "before": 0,
+      "after": 0,
+      "all_original_cells_preserved": true
+    },
+    "generation_attempts": {
+      "before": 0,
+      "after": 0,
+      "all_original_cells_preserved": true
+    },
+    "generation_bundle_receipts": {
+      "before": 0,
+      "after": 0,
+      "all_original_cells_preserved": true
+    },
+    "generation_candidate_receipts": {
+      "before": 0,
+      "after": 0,
+      "all_original_cells_preserved": true
+    },
+    "generation_requests": {
+      "before": 0,
+      "after": 0,
+      "all_original_cells_preserved": true
+    },
+    "history": {
+      "before": 11,
+      "after": 11,
+      "all_original_cells_preserved": true
+    },
+    "hold_request_clocks": {
+      "before": 0,
+      "after": 0,
+      "all_original_cells_preserved": true
+    },
+    "original_media": {
+      "before": 1,
+      "after": 1,
+      "all_original_cells_preserved": true
+    },
+    "redo": {
+      "before": 1,
+      "after": 1,
+      "all_original_cells_preserved": true
+    },
+    "render_attempts": {
+      "before": 26,
+      "after": 30,
+      "all_original_cells_preserved": true
+    },
+    "render_candidate_checkpoints": {
+      "before": 2,
+      "after": 4,
+      "all_original_cells_preserved": true
+    },
+    "render_job_heads": {
+      "before": 3,
+      "after": 4,
+      "all_original_cells_preserved": true
+    },
+    "render_jobs": {
+      "before": 3,
+      "after": 4,
+      "all_original_cells_preserved": true
+    },
+    "render_publication_operations": {
+      "before": 23,
+      "after": 27,
+      "all_original_cells_preserved": true
+    },
+    "render_publications": {
+      "before": 12,
+      "after": 15,
+      "all_original_cells_preserved": true
+    },
+    "revisions": {
+      "before": 24,
+      "after": 24,
+      "all_original_cells_preserved": true
+    },
+    "single_source": {
+      "before": 0,
+      "after": 0,
+      "all_original_cells_preserved": true
+    },
+    "source_qualifications": {
+      "before": 1,
+      "after": 1,
+      "all_original_cells_preserved": true
+    },
+    "state": {
+      "before": 1,
+      "after": 1,
+      "all_original_cells_preserved": true
+    }
+  },
+  "decision_owners": [
+    "automatic-cold-retry",
+    "automatic-first"
+  ],
+  "after_database_sha256": "d872d7e102e3b76104ef58906eb2ce96b3dde20cb73d2f105a84da480a58713f"
+}

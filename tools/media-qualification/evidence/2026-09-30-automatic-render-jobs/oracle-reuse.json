@@ -1,0 +1,19 @@
+{
+  "all_sources_identical_to_prior_qualification": true,
+  "files": {
+    "README.md": "0c35390c09c6df21060d9e2f1491c389a4068f652e894b63051bf2a4cc5c7418",
+    "avfoundation_probe.m": "80a4d85dd714e3274007ecea1ee905d19d4a6c3deadd29c23453f1bf4629e384",
+    "diffs/avfoundation_probe.m.diff": "24c29a47864342b78da4fb36202d80e702d3192d9b4673c055a36dae1e75c73d",
+    "diffs/native_audio_oracle.py.diff": "6e9a099678a4bcb596ef20bf7a56d52268c394dcff751f102620a5fc291deeda",
+    "diffs/project_encode_oracle.py.diff": "10f378d449e0328920d33f6f524850446498fb714be69397d850762824b88529",
+    "edits.json": "d48faba40cf2d089b822a502d91b5780721256ec0d9c54d7cd001c7f852d1a20",
+    "manifest.json": "b0fb7f42b3477539722fed143f38bd55b6a7d1ffa87264e63a1d77f1036f38f9",
+    "native_audio_oracle.py": "c14eae399e1a17a303b79edd325f68c38a6aa504f113246e9df3314e2b87b7f7",
+    "originals/avfoundation_probe.m": "8188bc8b3d927b6bc1b4a63ee0f175e9a4dbf9a112af91a283087aa011d76613",
+    "originals/native_audio_oracle.py": "457cd169ff3907b177834588ff28812b711394c17ef2298404a6e693fe658b01",
+    "originals/project_encode_oracle.py": "cba2f70ec9130b8a14c462c81fa94f8c26043f3ccf8050a692aa1be293809448",
+    "prepare.py": "b7307313af5cc3331a384ab44469b35e990d1f38638f972099c47f26d5cfbdc8",
+    "project_encode_oracle.py": "e41005f4dcca3327b41e1a1067ee203bc7d34f378c79b9ff0c0e5dbed8db48b1",
+    "test_five_second_extension.py": "989f4d8868df00812b142e7a6b19bebee2ad08c2ec9c0e58a3d086163ea587cf"
+  }
+}

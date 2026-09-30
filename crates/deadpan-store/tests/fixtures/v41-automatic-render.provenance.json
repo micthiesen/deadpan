@@ -1,0 +1,16 @@
+{
+  "source": "/private/tmp/deadpan-runtime-binding-20260930/retained-package/project.sqlite",
+  "source_schema": 41,
+  "prior_implementation_revision": "4594f5b",
+  "method": "read-only SQLite backup followed by complete iterdump; no rewritten cells",
+  "counts": {
+    "render_jobs": 3,
+    "render_attempts": 26,
+    "render_job_heads": 3,
+    "render_candidate_checkpoints": 2,
+    "render_publications": 12,
+    "render_publication_operations": 23
+  },
+  "snapshot_sha256": "4d1d4ccb20e499132ac5160e52a162c5bfeb199d1748a91332fb8699b16dd30a",
+  "fixture_sha256": "70e65fc5faac0679d06fb41d319283e4801cf09ed7a25dac2570f00c8d5f39d8"
+}

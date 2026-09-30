@@ -1,0 +1,8 @@
+{
+  "after_entries": 57,
+  "before_entries": 56,
+  "only_difference": "render_encoding_decisions table name; no rows",
+  "all_old_entries_identical_in_order": true,
+  "log": "workspace-tests.log",
+  "log_sha256": "7744934ccc4ed528b708e870178479ed47934287de88dbbb662cf3d9f7d32950"
+}

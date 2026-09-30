@@ -1,0 +1,154 @@
+"""Collect only completed checks and rehash every retained native artifact."""
+import hashlib
+import json
+from pathlib import Path
+import re
+import shutil
+import sqlite3
+import tarfile
+
+repo = Path('/Users/michael/Code/deadpan')
+work = Path('/tmp/deadpan-durable-automatic-20260930')
+target = repo / 'tools/media-qualification/evidence/2026-09-30-automatic-render-jobs'
+checks = ['format-qualified', 'workspace-clippy-qualified', 'migration-fixed', 'ui-clippy',
+          'ui-tests', 'native-smoke', 'native-automatic-fixed', 'independent-prepare',
+          'independent-decode', 'independent-cold-decode', 'database-check', 'runtime-files']
+journals = {name: json.loads((work / (name + '.json')).read_text()) for name in checks}
+assert all(row['exit_code'] == 0 for row in journals.values())
+source_id = journals['native-automatic-fixed']['source_manifest_sha256']
+inventory = json.loads((work / ('source-' + source_id + '.json')).read_text())
+for name, digest in inventory.items():
+    assert hashlib.sha256((repo / name).read_bytes()).hexdigest() == digest, name
+full = json.loads((work / 'workspace-tests.json').read_text())
+assert full['exit_code'] == 101
+original = json.loads((work / ('source-' + full['source_manifest_sha256'] + '.json')).read_text())
+assert original.keys() == inventory.keys()
+changed = [name for name in inventory if inventory[name] != original[name]]
+assert changed == ['crates/deadpan-cli/examples/qualify_automatic_render.rs',
+                   'crates/deadpan-store/tests/migration/publication.rs'], changed
+for row in journals.values():
+    checked = json.loads((work / ('source-' + row['source_manifest_sha256'] + '.json')).read_text())
+    assert checked.keys() == inventory.keys()
+    assert all(checked[name] == inventory[name] for name in inventory
+               if name != 'crates/deadpan-cli/examples/qualify_automatic_render.rs')
+
+def results(path):
+    rows = re.findall(r'test result: (ok|FAILED)\. (\d+) passed; (\d+) failed; (\d+) ignored;', path.read_text())
+    assert rows
+    return {'passed': sum(int(row[1]) for row in rows),
+            'failed': sum(int(row[2]) for row in rows),
+            'ignored': sum(int(row[3]) for row in rows), 'result_groups': len(rows)}
+
+counts = results(work / 'workspace-tests.log')
+assert counts['failed'] == 1 and counts['ignored'] == 0
+assert 'error: 1 target failed:\n    `-p deadpan-store --test migration`' in (work / 'workspace-tests.log').read_text()
+assert 'test publication::authentic_schema40_publication_upgrade_preserves_every_previous_cell ... ok' in (work / 'migration-fixed.log').read_text()
+regression = results(work / 'migration-fixed.log')
+assert regression['failed'] == regression['ignored'] == 0
+counts.update(passed=counts['passed'] + 1, failed=0, full_run_exit=101,
+              corrected_test='publication::authentic_schema40_publication_upgrade_preserves_every_previous_cell',
+              changed_sources=changed, preserved_workspace_source=full['source_manifest_sha256'])
+ui = results(work / 'ui-tests.log')
+assert ui['failed'] == ui['ignored'] == 0 and ui['passed'] > 0
+native = json.loads((work / 'native-fixed/report.json').read_text())
+decoded = json.loads((work / 'decoded-automatic/report.json').read_text())
+decoded_cold = json.loads((work / 'decoded-automatic-cold/report.json').read_text())
+assert native['status'] == 'passed' and native['authoring_preserved']
+assert decoded['result'] == 'passed'
+assert decoded_cold['result'] == 'passed'
+receipts = json.loads((work / 'published-byte-identities.json').read_text())
+assert receipts['initial']['sha256'] == receipts['retry']['sha256'] == receipts['reconcile']['sha256']
+assert len({row['sha256'] for row in receipts.values()}) == 2
+database = json.loads((work / 'database-preservation.json').read_text())
+assert database['status'] == 'passed' and len(database['tables']) == 19
+
+# Copy immutable media; obtain a consistent database through SQLite backup.
+package = work / 'source-fixed.deadpan'
+retained = work / 'retained-package'
+def ignore(directory, names):
+    return [name for name in names if Path(directory) == package and (name.startswith('project.sqlite') or name == '.writer.lock')]
+shutil.copytree(package, retained, ignore=ignore)
+with sqlite3.connect(f'file:{package / "project.sqlite"}?mode=ro', uri=True) as src:
+    with sqlite3.connect(retained / 'project.sqlite') as dst:
+        src.backup(dst)
+        assert dst.execute('PRAGMA integrity_check').fetchall() == [('ok',)]
+
+paths = [work / 'before.sqlite', work / 'after.sqlite', work / 'failed-after.sqlite']
+paths += [p for p in sorted(retained.rglob('*')) if p.is_file() and p.name not in ('project.sqlite-wal', 'project.sqlite-shm')]
+for folder in [work / 'native', work / 'native-fixed', work / 'decoded-automatic', work / 'decoded-automatic-cold']:
+    paths += [p for p in sorted(folder.rglob('*')) if p.is_file() and p.suffix in ('.mp4', '.i420', '.f32', '.json', '.log')]
+files = {str(p.relative_to(work)): {'bytes': p.stat().st_size, 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()} for p in paths}
+archive = work / 'native-files.tar.gz'
+with tarfile.open(archive, 'w:gz') as output:
+    for path in paths:
+        output.add(path, arcname=str(path.relative_to(work)), recursive=False)
+with tarfile.open(archive, 'r:gz') as saved:
+    assert sorted(saved.getnames()) == sorted(files)
+    for member in saved.getmembers():
+        assert member.isfile()
+        data = saved.extractfile(member).read()
+        assert files[member.name] == {'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
+(work / 'native-files.json').write_text(json.dumps({'files': files, 'archive_sha256': hashlib.sha256(archive.read_bytes()).hexdigest(), 'archive_bytes': archive.stat().st_size, 'all_members_rehashed': True, 'database_snapshot_method': 'SQLite backup API'}, indent=2) + '\n')
+
+target.mkdir(parents=True, exist_ok=False)
+for path in sorted(work.iterdir()):
+    if path.is_file() and (path.suffix in ('.json', '.log', '.md', '.txt') or path.name == 'native-files.tar.gz'):
+        shutil.copy2(path, target / path.name)
+    elif path.is_file() and path.suffix == '.py':
+        shutil.copy2(path, target / (path.name + '.txt'))
+for path in sorted((work / 'five-second-oracles').rglob('*')):
+    if path.is_file() and path.suffix in ('.py', '.m', '.json', '.diff', '.md'):
+        destination = target / path.relative_to(work)
+        if path.suffix in ('.py', '.m'):
+            destination = destination.with_name(destination.name + '.txt')
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(path, destination)
+shutil.copy2(work / 'native-fixed/report.json', target / 'automatic-workflow.json')
+shutil.copy2(work / 'native/report.json', target / 'automatic-workflow-failed.json')
+shutil.copy2(work / 'decoded-automatic/report.json', target / 'independent-full-file.json')
+shutil.copy2(work / 'decoded-automatic-cold/report.json', target / 'independent-cold-file.json')
+summary = {'checks': checks, 'workspace': counts, 'ui_harness': ui,
+           'qualified_source_inventory': source_id,
+           'native': {'fresh_encodes': 2, 'fresh_verifications': 4, 'distinct_movie_hashes': 2,
+                      'frames_per_movie': 128, 'complete_independent_picture_planes': 768,
+                      'authored_audio_samples_per_reader_per_movie': 205005, 'audio_readers': ['FFmpeg ordinary', 'FFmpeg manual', 'AVFoundation'],
+                      'runtime_images': 5, 'old_database_tables_preserved': 19},
+           'unrun': ['sanitizers', 'physical listening', 'painted UI and interactive accessibility', 'GUI performance'],
+           'remaining': ['native/public headless Render', 'small-raster coded/display allocation policy', 'complete mastering/effects', 'HDR', 'release qualification']}
+(target / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
+(target / 'README.md').write_text(f'''# Durable automatic render evidence
+
+See the [qualification report](../../../../docs/qualification/automatic-render-jobs-2026-09-30.md).
+
+- [Summary](summary.json) and [review](review.md): exact coverage and remaining work.
+- [Automatic workflow](automatic-workflow.json): fresh encode, reopened checkpoint retry,
+  reconciliation and cold retry through the native app helper.
+- [Initial independent readers](independent-full-file.json) and
+  [cold retry readers](independent-cold-file.json): every picture plane and complete
+  authored audio in both files at fixed PTS, without alignment or gain changes.
+- [Publication identities](published-byte-identities.json): retry/reconciliation
+  retain the initial movie bytes. The separately encoded cold file is also decoded.
+- [Database preservation](database-preservation.json): every previous cell in 19 tables
+  survives; two fresh encoding attempts own their respective immutable decisions.
+- [Runtime files](host.json): independent post-encode match to all five observed images.
+- [Native archive](native-files.tar.gz) and [inventory](native-files.json): exact movies,
+  reports, canonical references, decoded bytes and consistent synthetic SQLite backups.
+  Every archive member was rehashed. No helper or library binary is committed.
+
+Source inventory: `{source_id}`. Per-command journals retain commands, revisions,
+source hashes, exits and elapsed times. The full workspace run exited 101 on one
+outdated migration expectation; the focused correction passes. Final distinct
+coverage is {counts['passed']:,} tests in {counts['result_groups']} groups, plus
+{ui['passed']} app tests under the optional UI-harness feature. Failures and their
+diagnoses remain retained. Passing unrelated suites were not repeated.
+
+Scripts retain the original scratch paths. Remove `.txt` from saved script names
+in scratch before reproduction. The canonical runner pins the FFmpeg prefix.
+The five-second independent reader adapters are reused unchanged from the prior
+runtime qualification; their original snapshots, edits and hashes remain included.
+These results do not establish public Render or full-product acceptance.
+[Manifest](manifest.json) hashes every other file here.
+''')
+manifest = {str(p.relative_to(target)): {'bytes': p.stat().st_size, 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()} for p in sorted(target.rglob('*')) if p.is_file()}
+(target / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+print(json.dumps({'workspace': counts, 'ui': ui, 'source': source_id, 'evidence_files': len(manifest), 'archive_bytes': archive.stat().st_size}))

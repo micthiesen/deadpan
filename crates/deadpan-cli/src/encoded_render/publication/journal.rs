@@ -6,6 +6,7 @@ use std::ffi::OsStr;
 
 use deadpan_jobs::render::{
     RenderDiagnostic,
+    admission::RenderEncodingDecision,
     publication::{
         PreparedPublicationEvidence, PublicationIdentity, PublicationOperationKind,
         PublicationOutcome as StoredOutcome, PublicationPhase, PublicationReconciliation,
@@ -16,7 +17,9 @@ use deadpan_store::publication::PublicationPermit;
 use serde::Deserialize;
 
 use super::*;
-use crate::encoded_render::{jobs::encoder_choice, protocol::EncodedRenderContract};
+use crate::encoded_render::{
+    admission::durable, jobs::encoder_choice, protocol::EncodedRenderContract,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -53,7 +56,13 @@ pub fn prepare(
             PublicationOperationKind::Publish,
             PublicationPhase::Intent,
         )?;
-        validate_candidate(&candidate, permit.record(), cancelled, deadline)?;
+        validate_candidate(
+            &candidate,
+            permit.record(),
+            permit.encoding_decision(),
+            cancelled,
+            deadline,
+        )?;
         let intent = &permit.record().intent;
         let live = || {
             permit_live(permit)?;
@@ -110,7 +119,13 @@ pub fn prepare(
         evidence
             .validate()
             .map_err(|error| invalid(error.to_string()))?;
-        validate_candidate(&candidate, permit.record(), cancelled, deadline)?;
+        validate_candidate(
+            &candidate,
+            permit.record(),
+            permit.encoding_decision(),
+            cancelled,
+            deadline,
+        )?;
         permit_live(permit)?;
         Ok((files, evidence))
     })();
@@ -223,7 +238,13 @@ impl PreparedPublication {
                 "stage permit differs from the prepared publication",
             ));
         }
-        validate_candidate(&self.candidate, record, cancelled, deadline)
+        validate_candidate(
+            &self.candidate,
+            record,
+            permit.encoding_decision(),
+            cancelled,
+            deadline,
+        )
     }
 }
 
@@ -288,7 +309,13 @@ pub fn reconcile(
 ) -> Result<RecoveryInspection, PublicationDiagnostic> {
     let record = permit.record();
     validate_permit(permit, PublicationOperationKind::Reconcile, record.phase)?;
-    validate_candidate(candidate, record, cancelled, deadline)?;
+    validate_candidate(
+        candidate,
+        record,
+        permit.encoding_decision(),
+        cancelled,
+        deadline,
+    )?;
     if record.phase != PublicationPhase::MovieCommitting {
         if record.observed_movie_commit {
             return Err(invalid("movie commit predates its authorization"));
@@ -454,6 +481,7 @@ pub fn reconcile(
 fn validate_candidate(
     candidate: &VerifiedCandidate,
     record: &StoredPublication,
+    decision: Option<&RenderEncodingDecision>,
     cancelled: &AtomicBool,
     deadline: Instant,
 ) -> Result<(), PublicationDiagnostic> {
@@ -464,6 +492,38 @@ fn validate_candidate(
     let identity = candidate.verification_identity();
     let contract = candidate.candidate().contract();
     let report = candidate.report();
+    let choice = if let Some(policy) = record.render_intent.policy.engineering() {
+        if decision.is_some()
+            || candidate.candidate().encoding_decision().is_some()
+            || candidate.candidate().encoding_binding().is_some()
+        {
+            return Err(invalid(
+                "engineering publication cannot acquire automatic encoding evidence",
+            ));
+        }
+        encoder_choice(policy)
+    } else {
+        let decision = decision
+            .ok_or_else(|| invalid("automatic publication lacks its original encoding decision"))?;
+        if candidate.candidate().encoding_decision() != Some(decision) {
+            return Err(invalid(
+                "publication candidate differs from the exact stored encoding decision",
+            ));
+        }
+        let binding = durable::binding_for_decision(
+            &record.render_intent,
+            &record.encoding_attempt_id,
+            contract,
+            decision,
+        )
+        .map_err(encoded_error)?;
+        if candidate.candidate().encoding_binding() != Some(&binding) {
+            return Err(invalid(
+                "publication candidate runtime differs from its encoding decision",
+            ));
+        }
+        binding.choice
+    };
     if identity.request_id != record.intent.job_id
         || identity.attempt_id != record.operation.verified_attempt_id
         || contract.project_id() != &record.render_intent.project_id
@@ -474,11 +534,7 @@ fn validate_candidate(
         || report.movie_sha256 != record.movie_sha256
         || report.movie_bytes != record.movie_bytes
         || candidate.candidate().byte_length() != record.movie_bytes
-        || report.contract
-            != EncodedRenderContract::from_contract(
-                contract,
-                encoder_choice(&record.render_intent.policy),
-            )
+        || report.contract != EncodedRenderContract::from_contract(contract, choice)
     {
         return Err(invalid(
             "live verification differs from the exact recorded attempt, intent or movie",

@@ -1,0 +1,167 @@
+{
+  "status": "passed",
+  "cleanup_confirmed": true,
+  "captured_contract": {
+    "canvas": [
+      320,
+      180
+    ],
+    "color_policy": "sdr_rec709",
+    "frame_count": 128,
+    "frame_rate": {
+      "denominator": 1001,
+      "numerator": 30000
+    },
+    "project_audio_end": 205005,
+    "project_audio_start": 0,
+    "project_id": "project-picture-qualification",
+    "range": {
+      "end": 128,
+      "start": 0
+    },
+    "raster": [
+      320,
+      180
+    ],
+    "relative_aspect_error": {
+      "denominator": "1",
+      "numerator": "0"
+    },
+    "revision_id": "workflow-live-restored",
+    "terminal_pts": 128128,
+    "time_base": {
+      "denominator": 30000,
+      "numerator": 1
+    }
+  },
+  "direct_inputs": {
+    "audio_reference": "/private/tmp/deadpan-durable-automatic-20260930/native-fixed/automatic.reference.f32",
+    "contract": {
+      "canvas": [
+        320,
+        180
+      ],
+      "color_policy": "sdr_rec709",
+      "frame_count": 128,
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "project_audio_end": 205005,
+      "project_audio_start": 0,
+      "project_id": "project-picture-qualification",
+      "range": {
+        "end": 128,
+        "start": 0
+      },
+      "raster": [
+        320,
+        180
+      ],
+      "relative_aspect_error": {
+        "denominator": "1",
+        "numerator": "0"
+      },
+      "revision_id": "workflow-live-restored",
+      "terminal_pts": 128128,
+      "time_base": {
+        "denominator": 30000,
+        "numerator": 1
+      }
+    },
+    "gpu": {
+      "backend": "Metal",
+      "name": "Apple M5 Max"
+    },
+    "picture_reference": "/private/tmp/deadpan-durable-automatic-20260930/native-fixed/automatic.reference.i420",
+    "scope": "fresh direct shared-pipeline picture and canonical limited PCM inputs; independent encoded readers run separately"
+  },
+  "manifest": {
+    "contract": {
+      "choice": {
+        "b_frames": "none",
+        "mode": "hardware"
+      },
+      "picture": {
+        "canvas": [
+          320,
+          180
+        ],
+        "color_policy": "sdr_rec709",
+        "frame_count": 128,
+        "frame_rate": {
+          "denominator": 1001,
+          "numerator": 30000
+        },
+        "project_audio_end": 205005,
+        "project_audio_start": 0,
+        "project_id": "project-picture-qualification",
+        "range": {
+          "end": 128,
+          "start": 0
+        },
+        "raster": [
+          320,
+          180
+        ],
+        "relative_aspect_error": {
+          "denominator": "1",
+          "numerator": "0"
+        },
+        "revision_id": "workflow-live-restored",
+        "terminal_pts": 128128,
+        "time_base": {
+          "denominator": 30000,
+          "numerator": 1
+        }
+      }
+    },
+    "document_sha256": "564af137ff203f7a10344a9e50db7a4167cee0e1dfbbecf44ed3b39a3c6ef638",
+    "movie": {
+      "byte_length": 32553,
+      "reference": "output/movie.mp4",
+      "sha256": "9c1d0c7a27a6db4aa7b3a0c9c3a3920db2dd22a1759f811e7d56674b6e9340e1"
+    },
+    "report": {
+      "audio_eof": true,
+      "audio_packets": 202,
+      "audio_samples": 205005,
+      "faststart_read_closes": 1,
+      "faststart_read_opens": 1,
+      "info": {
+        "abi_version": 1,
+        "audio_bitrate": 384000,
+        "audio_frame_size": 1024,
+        "audio_initial_padding": 1024,
+        "audio_profile": 1,
+        "audio_time_base_den": 48000,
+        "audio_time_base_num": 1,
+        "audio_trailing_padding": 0,
+        "avcodec_version": 4066151,
+        "avformat_version": 4064103,
+        "avutil_version": 3934311,
+        "maximum_moov_bytes": 257048576,
+        "movie_timescale": 240000,
+        "requested_mode": "hardware",
+        "video_bitrate": 1500000,
+        "video_gop_size": 15,
+        "video_has_b_frames": 0,
+        "video_max_b_frames": 0,
+        "video_profile": 100,
+        "video_time_base_den": 30000,
+        "video_time_base_num": 1
+      },
+      "output_bytes": 32553,
+      "packet_bytes": 27458,
+      "video_duration_from_contract_packets": 128,
+      "video_eof": true,
+      "video_frames": 128,
+      "video_packets": 128
+    }
+  },
+  "retained_verified": {
+    "path": "/private/tmp/deadpan-durable-automatic-20260930/native-fixed/automatic-first.mp4"
+  },
+  "durable_source_report": "/tmp/deadpan-durable-automatic-20260930/native-fixed/report.json",
+  "durable_source_sha256": "16ee6b22c68c323c7d2f274a5e3d1b0dc2d6b5368182f52d7ccf595a1c93c655"
+}

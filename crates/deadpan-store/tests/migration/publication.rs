@@ -16,7 +16,7 @@ fn fixture(root: &Path) -> Result<PathBuf> {
     Ok(package)
 }
 fn old_cells(db: &Connection) -> Result<Vec<String>> {
-    let tables=db.prepare("SELECT name FROM sqlite_schema WHERE type='table' AND name NOT LIKE 'render_publication%' AND name NOT LIKE 'sqlite_%' ORDER BY name")?.query_map([],|row|row.get::<_,String>(0))?.collect::<std::result::Result<Vec<_>,_>>()?;
+    let tables=db.prepare("SELECT name FROM sqlite_schema WHERE type='table' AND name NOT LIKE 'render_publication%' AND name!='render_encoding_decisions' AND name NOT LIKE 'sqlite_%' ORDER BY name")?.query_map([],|row|row.get::<_,String>(0))?.collect::<std::result::Result<Vec<_>,_>>()?;
     let mut cells = Vec::new();
     for table in tables {
         assert!(
@@ -62,7 +62,11 @@ fn authentic_schema40_publication_upgrade_preserves_every_previous_cell() -> Res
         backup.pragma_query_value(None, "user_version", |r| r.get::<_, u32>(0))?,
         40
     );
-    for table in ["render_publications", "render_publication_operations"] {
+    for table in [
+        "render_publications",
+        "render_publication_operations",
+        "render_encoding_decisions",
+    ] {
         assert_eq!(
             db.query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |r| r
                 .get::<_, i64>(0))?,

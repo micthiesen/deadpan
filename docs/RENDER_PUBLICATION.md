@@ -134,9 +134,12 @@ explicit validation audit the complete operation history.
 
 The report binds the movie and report names to a unique publication identity,
 destination readback hash, complete encoded manifest, verification observations,
-captured project/revision/range and document SHA-256. The current encoder choice
-is explicitly identified as an engineering selection; automatic platform policy
-is not inferred from a successful attempt.
+captured project/revision/range and document SHA-256. Engineering output keeps
+the original report grammar and explicit selection label. Automatic provenance
+version 2 adds the exact immutable render intent and original encoding decision,
+including rejected probes and the encoding runtime. A later verifier runtime
+does not replace those encoder observations. A bound in-memory encode without
+durable decision provenance cannot be published as engineering output.
 
 The sibling report is named `deadpan-render-<publication_id>.json`. It records
 evidence prepared for publication, since it is committed before the movie.
@@ -162,7 +165,7 @@ artifacts, 65,536 generated intervals and a 16 MiB report. Exceeding a bound fai
 without truncation. Original media is not reopened: the completed movie and
 historical receipts supply the relevant byte identities.
 
-This boundary does not implement native Render, public headless render commands,
-automatic hardware policy, complete mastering/effects, HDR or release qualification.
+This boundary does not implement native Render controls, public headless render
+commands, complete mastering/effects, HDR or release qualification.
 The generated-picture receipt flag is available for a future nonblocking upload
 disclosure reminder; it does not set any upload-service metadata.

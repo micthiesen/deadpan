@@ -1,18 +1,21 @@
 # Durable render attempts
 
-Database schema 41 stores an immutable engineering render intent and operational
-attempt history. Core document schema remains 33. These library APIs support
+Database schema 42 stores immutable engineering or automatic render intents,
+per-encoding decisions and operational attempt history. Core document schema
+remains 33. These library APIs support
 retaining a completed encode and retrying verification after restart. A shared
 workflow coordinator connects these stages to the native project service.
-Public Render controls, headless render commands, automatic encoder selection
-and scheduling remain separate work. The [publication journal](RENDER_PUBLICATION.md#durable-publication-journal)
+Public Render controls, headless render commands and scheduling remain separate
+work. The [publication journal](RENDER_PUBLICATION.md#durable-publication-journal)
 uses these checkpoints for explicit destination reconciliation.
 
 ## Captured intent and attempts
 
 `deadpan_jobs::render::RenderIntent` binds a job ID, project, historical revision,
-canonical document SHA-256, nonempty half-open range and versioned explicit
-hardware/software and B-frame policy. The canonical hash is the bounded compact
+canonical document SHA-256, nonempty half-open range and versioned policy.
+Intent version 1 retains the original explicit engineering choice. Version 2
+selects `AutomaticSdrV1`; the user supplies no encoder or B-frame choice.
+The canonical hash is the bounded compact
 `serde_json::to_writer(ProjectDocument)` representation shared by store, picture,
 audio and encoding hosts. Edits, undo and redo do not retarget that intent.
 
@@ -83,8 +86,11 @@ when ownership is revoked, and waits for the owned process to finish teardown.
 `deadpan_cli::encoded_render::jobs` separates worker work from store transitions:
 
 1. `capture_intent` opens the specified historical revision and captures its
-   geometry, clocks, document hash and explicit policy. Commit that intent.
-2. Commit `Encoding`, then call `encode_and_retain` with its exact identity.
+   geometry, clocks, document hash and policy. Commit that intent.
+2. An automatic attempt qualifies while `Queued`, then atomically records its
+   decision and enters `Encoding`. The stage worker consumes the retained live
+   admission only after that transaction succeeds. An engineering attempt
+   commits `Encoding`, then calls `encode_and_retain` with its exact identity.
    The existing isolated encoder supplies the movie. Commit the returned opaque
    retention token with `retain_render_checkpoint`.
 3. Commit `Verifying`, then call `verify_checkpoint`. It freshly hashes the
@@ -148,16 +154,49 @@ requests through this coordinator. It retains render status independently of
 editor command feedback and continues accepting ordinary edits. Close, switch
 and shutdown keep the old writer until worker release; unresolved cleanup
 retains the session and exposes its diagnostic. The runtime is the current
-native executable's private `--headless` worker dispatch. No public Render
-control or automatic output policy is implied by this engineering entrypoint.
+native executable's direct private worker dispatch. The same executable still
+accepts ordinary public `--headless` commands. Public Render controls remain open.
+
+## Automatic admission and recovery
+
+`render_encoding_decisions` holds one immutable observation per original
+encoding attempt. `begin_render_encoding` inserts a selected decision and
+advances the exact queued attempt in one transaction. Automatic attempts cannot
+enter `Encoding` through the engineering transition. A cleanly stopped failed
+qualification can retain its rejected or aborted observation with the terminal
+transition. Unconfirmed process cleanup keeps the execution slot fenced.
+
+The pure decision is bounded to 64 KiB and four probes. It retains the committed
+output contract, frozen algorithm, exact resolved controls, ordered typed
+failures, loaded-runtime facts, and the selected probe's full encoder,
+verification and content observations. Synthetic probe movie hashes identify
+historical measurements; the workflow does not retain those probe bytes as
+durable media. They cannot authorize later execution. The project movie and
+manifest remain independently retained and freshly hashed on every retry.
+
+Retained manifest version 1 keeps its frozen engineering grammar. Version 2
+embeds the exact original decision and encoding binding. Store, manifest,
+historical output, resolved controls and original encoding owner must agree
+before verification. The verifier may run on a different current runtime while
+publication provenance preserves the original encoder's observations.
+
+A checkpoint retry or destination reconciliation never selects an encoder.
+It resolves the decision through `checkpoint.encoding_attempt_id` and runs
+fresh file verification. A cold retry allocates a new attempt and qualifies
+again. Neither serialized decisions nor stored verification results recreate
+the live capabilities required for encoding or publication.
 
 ## Migration and remaining work
 
 Schemas 39 and 40 already contain core 33. Their migration validates existing history
 without replaying or rewriting authored JSON or patches, then adds empty render
 tables where absent. Schema 40 keeps every existing render job, attempt and
-checkpoint cell and gains empty publication tables. Earlier schemas retain their
-strict replay adapters and gain both operational boundaries. Migration keeps a
+checkpoint cell and gains empty publication tables. Schema 41 preserves its
+publication and operation cells too. Every source schema gains an empty decision
+table; migration never invents automatic qualification. Frozen version-1 adapters
+reject automatic vocabulary in old job intents and nested publication intents,
+and a preexisting decision table is a collision even when empty.
+Earlier schemas retain their strict replay adapters. Migration keeps a
 consistent pre-upgrade SQLite backup. Authentic
 schema-39 fixtures cover a qualified single-Original baseline with pending redo,
 an edited Source project and an accepted Generated project.

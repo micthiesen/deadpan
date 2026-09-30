@@ -67,9 +67,12 @@ impl RenderWorkflow {
         {
             return Err(WorkflowError::StaleRevision);
         }
-        if request.policy.schema_version != 1 {
+        if match &request.policy {
+            RenderPolicy::Engineering(value) => value.schema_version != 1,
+            RenderPolicy::Automatic(value) => value.schema_version != 1,
+        } {
             return Err(WorkflowError::Configuration(
-                "unsupported engineering policy version".into(),
+                "unsupported render policy version".into(),
             ));
         }
         validate_destination(&request.identity, &request.publication)?;
@@ -188,7 +191,10 @@ impl RenderWorkflow {
                 .is_some_and(|active| active.identity == identity && active.pending)
             && matches!(
                 (&value, self.status.stage),
-                (WorkflowProgress::Encoding { .. }, WorkflowStage::Encoding)
+                (
+                    WorkflowProgress::Qualification { .. },
+                    WorkflowStage::Qualifying
+                ) | (WorkflowProgress::Encoding { .. }, WorkflowStage::Encoding)
                     | (WorkflowProgress::Verification(_), WorkflowStage::Verifying)
                     | (
                         WorkflowProgress::Publication(_),
@@ -355,6 +361,17 @@ impl RenderWorkflow {
             .is_some_and(|attempt| attempt.checkpoint_attempt_id.is_some())
         {
             self.verify(store)
+        } else if self
+            .status
+            .intent
+            .as_ref()
+            .is_some_and(|intent| intent.policy.is_automatic())
+        {
+            self.status.stage = WorkflowStage::Qualifying;
+            self.send(Work::Qualify(
+                self.stage_request()?,
+                store.render_write_handle()?,
+            ))
         } else {
             self.transition(store, RenderAttemptTransition::Encoding)?;
             self.status.stage = WorkflowStage::Encoding;
@@ -463,6 +480,9 @@ impl RenderWorkflow {
                 StageReply::Failed {
                     cleanup_confirmed: false,
                     ..
+                } | StageReply::AdmissionFailed {
+                    cleanup_confirmed: false,
+                    ..
                 }
             ) {
                 self.status.cleanup_confirmed = false;
@@ -475,6 +495,9 @@ impl RenderWorkflow {
         self.status.cleanup_confirmed = !matches!(
             reply.stage,
             StageReply::Failed {
+                cleanup_confirmed: false,
+                ..
+            } | StageReply::AdmissionFailed {
                 cleanup_confirmed: false,
                 ..
             }
@@ -521,6 +544,42 @@ impl RenderWorkflow {
                 self.status.retained = retained;
                 return self.failed(store, diagnostic, cleanup_confirmed);
             }
+            StageReply::AdmissionFailed {
+                diagnostic,
+                cleanup_confirmed,
+                decision,
+            } => {
+                if !cleanup_confirmed || decision.is_none() {
+                    return self.failed(store, diagnostic, cleanup_confirmed);
+                }
+                let decision = decision.as_deref().ok_or(WorkflowError::Identity)?;
+                // A native rejection may race a persisted cancellation. Keep the
+                // terminal state consistent with the captured typed observation.
+                let cancelled = decision.cancelled();
+                let attempt = self
+                    .status
+                    .attempt
+                    .as_ref()
+                    .ok_or(WorkflowError::Identity)?;
+                let transition = if cancelled {
+                    RenderAttemptTransition::FinishCancelled
+                } else {
+                    RenderAttemptTransition::Failed(diagnostic.clone())
+                };
+                self.status.attempt = Some(store.finish_render_admission(
+                    &attempt.identity(),
+                    decision,
+                    transition,
+                )?);
+                self.status.diagnostic = Some(diagnostic);
+                self.status.cleanup_confirmed = true;
+                self.status.outcome = Some(if cancelled {
+                    WorkflowOutcome::Cancelled
+                } else {
+                    WorkflowOutcome::Failed
+                });
+                return self.release();
+            }
             _ => {}
         }
         if self.status.cancellation_requested {
@@ -532,6 +591,20 @@ impl RenderWorkflow {
                 let intent = store.create_render_job(intent, &active.cancelled, active.deadline)?;
                 self.status.intent = Some(intent);
                 self.begin_attempt(store, None)
+            }
+            StageReply::Qualified(decision) => {
+                let identity = self
+                    .status
+                    .attempt
+                    .as_ref()
+                    .ok_or(WorkflowError::Identity)?
+                    .identity();
+                self.status.attempt = Some(store.begin_render_encoding(&identity, &decision)?);
+                self.status.stage = WorkflowStage::Encoding;
+                self.send(Work::Encode(
+                    self.stage_request()?,
+                    store.render_write_handle()?,
+                ))
             }
             StageReply::Retained(prepared) => {
                 let active = self.active.as_ref().ok_or(WorkflowError::Identity)?;
@@ -591,6 +664,7 @@ impl RenderWorkflow {
             StageReply::Published(_)
             | StageReply::Reconciled { .. }
             | StageReply::Failed { .. }
+            | StageReply::AdmissionFailed { .. }
             | StageReply::Released => Err(WorkflowError::Configuration(
                 "unexpected stage completion".into(),
             )),

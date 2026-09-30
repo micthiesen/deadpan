@@ -29,11 +29,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         #[cfg(not(feature = "ui-harness"))]
         return Err("UI replay requires the developer build: cargo run -p deadpan-app --features ui-harness -- --ui-check --help".into());
     }
-    if arguments
+    let headless = arguments
         .first()
-        .is_some_and(|argument| argument == "--headless")
-    {
-        let result = deadpan_cli::entry(arguments.into_iter().skip(1));
+        .is_some_and(|argument| argument == "--headless");
+    let private_worker = match arguments.as_slice() {
+        [operation, _] => {
+            operation == deadpan_cli::render_worker::PRIVATE_WORKER_ARGUMENT
+                || operation == deadpan_cli::encoded_render::PRIVATE_WORKER_ARGUMENT
+        }
+        [operation] => {
+            operation == deadpan_cli::encoded_render::verification::PRIVATE_WORKER_ARGUMENT
+                || operation == deadpan_cli::encoded_render::admission::PRIVATE_WORKER_ARGUMENT
+        }
+        _ => false,
+    };
+    if headless || private_worker {
+        let result = deadpan_cli::entry(arguments.into_iter().skip(usize::from(headless)));
         if result == std::process::ExitCode::SUCCESS {
             return Ok(());
         }

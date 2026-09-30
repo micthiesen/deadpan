@@ -1,0 +1,22 @@
+{
+  "command": [
+    "cargo",
+    "run",
+    "-p",
+    "deadpan-cli",
+    "--locked",
+    "--example",
+    "qualify_automatic_render",
+    "--",
+    "/tmp/deadpan-durable-automatic-20260930/source.deadpan",
+    "/Users/michael/Code/deadpan/target/debug/deadpan-app",
+    "/tmp/deadpan-durable-automatic-20260930/native"
+  ],
+  "started": "2026-09-30T12:24:15.901425+00:00",
+  "base_commit": "4594f5b043f5fccd84da9c4c8f8f88f47dceee8e",
+  "diff_sha256": "e948b2c86d2b07ee58937175a1636109f7c7a8af5746a44ff596398935ce7659",
+  "source_manifest_sha256": "789175e46a6ddc21caa2430beaea7111a1cf51e07d23f44e2cf430b66e7129f9",
+  "pid": 43765,
+  "exit_code": 1,
+  "seconds": 95.98102712491527
+}

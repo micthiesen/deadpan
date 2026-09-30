@@ -1,0 +1,54 @@
+"""Retain a consistent post-workflow snapshot and compare every old cell."""
+from collections import Counter
+import hashlib
+import json
+from pathlib import Path
+import sqlite3
+
+root = Path('/tmp/deadpan-durable-automatic-20260930')
+before = sqlite3.connect(f'file:{root}/before.sqlite?mode=ro', uri=True)
+source = sqlite3.connect(f'file:{root}/source-fixed.deadpan/project.sqlite?mode=ro', uri=True)
+target = root / 'after.sqlite'
+assert not target.exists()
+after = sqlite3.connect(target)
+source.backup(after)
+source.close()
+assert before.execute('PRAGMA user_version').fetchone()[0] == 41
+assert after.execute('PRAGMA user_version').fetchone()[0] == 42
+
+def tables(connection):
+    return dict(connection.execute("SELECT name,sql FROM sqlite_master WHERE type='table' ORDER BY name"))
+
+old_tables, new_tables = tables(before), tables(after)
+assert new_tables.keys() - old_tables.keys() == {'render_encoding_decisions'}
+operational = {'render_jobs', 'render_job_heads', 'render_attempts',
+               'render_candidate_checkpoints', 'render_publications',
+               'render_publication_operations'}
+counts = {}
+for name, sql in old_tables.items():
+    assert sql == new_tables[name], (name, 'old table schema changed')
+    quoted = '"' + name.replace('"', '""') + '"'
+    old = Counter(before.execute(f'SELECT * FROM {quoted}'))
+    new = Counter(after.execute(f'SELECT * FROM {quoted}'))
+    assert not (old - new), (name, 'historical cells changed or disappeared')
+    if name not in operational:
+        assert old == new, (name, 'authored state changed')
+    counts[name] = {'before': sum(old.values()), 'after': sum(new.values()),
+                    'all_original_cells_preserved': True}
+
+decisions = list(after.execute('SELECT job_id,attempt_id,body FROM render_encoding_decisions ORDER BY attempt_id'))
+assert {row[1] for row in decisions} == {'automatic-first', 'automatic-cold-retry'}
+for job, attempt, body in decisions:
+    value = json.loads(body)
+    assert job == value['job_id'] == 'automatic-qualification'
+    assert attempt == value['encoding_attempt_id']
+    assert value['outcome']['outcome'] == 'selected'
+    assert len(body.encode()) <= 64 * 1024
+after.close()
+before.close()
+result = {'status': 'passed', 'method': 'read-only SQLite backup; exact tuple/multiplicity comparison',
+          'before_schema': 41, 'after_schema': 42, 'tables': counts,
+          'decision_owners': [row[1] for row in decisions],
+          'after_database_sha256': hashlib.sha256(target.read_bytes()).hexdigest()}
+(root / 'database-preservation.json').write_text(json.dumps(result, indent=2) + '\n')
+print(json.dumps(result, indent=2))

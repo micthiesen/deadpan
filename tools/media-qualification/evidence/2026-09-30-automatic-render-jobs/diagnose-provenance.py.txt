@@ -1,0 +1,47 @@
+"""Prove the failed harness comparison differs only in exact f32 JSON spelling."""
+import json
+from pathlib import Path
+import sqlite3
+import struct
+
+root = Path('/tmp/deadpan-durable-automatic-20260930')
+report = json.loads((root / 'native/report.json').read_bytes())
+published = json.loads(Path(report['initial']['receipt']['report']).read_bytes())
+source = sqlite3.connect(f'file:{root}/source.deadpan/project.sqlite?mode=ro', uri=True)
+stored = json.loads(source.execute("SELECT body FROM render_encoding_decisions WHERE attempt_id='automatic-first'").fetchone()[0])
+intent = json.loads(source.execute("SELECT intent FROM render_jobs WHERE job_id='automatic-qualification'").fetchone()[0])
+assert stored == published['provenance']['encoding_decision']
+assert intent == published['provenance']['render_intent']
+assert published['provenance']['schema_version'] == 2
+target = root / 'failed-after.sqlite'
+assert not target.exists()
+with sqlite3.connect(target) as destination:
+    source.backup(destination)
+source.close()
+
+def differences(left, right, path=''):
+    assert type(left) is type(right), path
+    if isinstance(left, dict):
+        assert left.keys() == right.keys(), path
+        return [v for key in left for v in differences(left[key], right[key], path + '/' + key)]
+    if isinstance(left, list):
+        assert len(left) == len(right), path
+        return [v for i, (a, b) in enumerate(zip(left, right)) for v in differences(a, b, path + '/' + str(i))]
+    return [(path, left, right)] if left != right else []
+
+rows = differences(report['decision'], stored)
+assert len(rows) == 7
+result = []
+for path, value_number, wire_number in rows:
+    assert '/content/' in path
+    assert '/observed_peaks/' in path or path.endswith('/unexpected_audio_peak')
+    bits = struct.pack('<f', value_number)
+    assert bits == struct.pack('<f', wire_number)
+    result.append({'path': path, 'value_number': value_number,
+                   'wire_number': wire_number, 'identical_f32_bits': bits.hex()})
+proof = {'stored_and_published_decisions_identical': True,
+         'stored_and_published_intents_identical': True,
+         'only_harness_value_representation_differs': result,
+         'change': 'Deserialize into the closed typed DTO and compare exact fields; no tolerance.'}
+(root / 'provenance-diagnosis.json').write_text(json.dumps(proof, indent=2) + '\n')
+print(json.dumps({'wire_matches_store': True, 'identical_f32_differences': len(rows)}))

@@ -147,7 +147,8 @@ fn run_case(
                 selection: RenderSelection::ExplicitEngineering,
                 encoder: RenderEncoder::Hardware,
                 b_frames: RenderBFrames::None,
-            },
+            }
+            .into(),
         },
         &cancelled,
         deadline,

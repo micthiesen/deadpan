@@ -22,6 +22,8 @@ type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 mod audio_gap_bindings;
 #[path = "migration/audio_reanchors.rs"]
 mod audio_reanchors;
+#[path = "migration/automatic_render.rs"]
+mod automatic_render;
 #[path = "migration/composite_insert.rs"]
 mod composite_insert;
 #[path = "migration/framing.rs"]
@@ -65,6 +67,7 @@ fn remove_empty_render_tables(connection: &Connection) -> Result {
     for table in [
         "render_publication_operations",
         "render_publications",
+        "render_encoding_decisions",
         "render_candidate_checkpoints",
         "render_job_heads",
         "render_attempts",

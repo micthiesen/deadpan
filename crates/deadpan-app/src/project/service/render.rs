@@ -395,7 +395,7 @@ fn native_config(
         package,
         runtime: RenderWorkerRuntime {
             executable,
-            arguments: vec!["--headless".into()],
+            arguments: Vec::new(),
             environment: BTreeMap::new(),
         },
         encode_limits: limits.encode,

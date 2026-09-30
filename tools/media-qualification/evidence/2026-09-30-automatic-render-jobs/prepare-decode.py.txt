@@ -1,0 +1,46 @@
+"""Bind the existing complete-file oracle to a fresh durable publication."""
+import hashlib
+import json
+from pathlib import Path
+import shutil
+
+root = Path('/tmp/deadpan-durable-automatic-20260930')
+prior = Path('/tmp/deadpan-runtime-binding-20260930')
+report_path = root / 'native-fixed' / 'report.json'
+report = json.loads(report_path.read_bytes())
+assert report['status'] == 'passed'
+for stage in ('initial', 'retry', 'reconcile', 'cold'):
+    assert report[stage]['outcome'] == 'published' and report[stage]['cleanup_confirmed']
+initial = report['initial_report']['provenance']['encoded_manifest']
+manifest = initial
+bound = {
+    'status': 'passed', 'cleanup_confirmed': report['initial']['cleanup_confirmed'],
+    'captured_contract': report['direct_inputs']['contract'],
+    'direct_inputs': report['direct_inputs'], 'manifest': manifest,
+    'retained_verified': {'path': report['initial']['receipt']['movie']},
+    'durable_source_report': str(report_path),
+    'durable_source_sha256': hashlib.sha256(report_path.read_bytes()).hexdigest(),
+}
+(root / 'independent-input.json').write_text(json.dumps(bound, indent=2) + '\n')
+shutil.copytree(prior / 'five-second-oracles', root / 'five-second-oracles')
+source = (prior / 'qualify-decoded.py').read_text()
+for old, new in [
+    ("work = Path('/tmp/deadpan-runtime-binding-20260930')", "work = Path('/tmp/deadpan-durable-automatic-20260930')"),
+    ("source = work / 'bound-project-final.json'", "source = work / 'independent-input.json'"),
+    ("decoded = work / 'decoded-bound-final'", "decoded = work / 'decoded-automatic'"),
+    ('project_start=0, width=320, height=180, requested_b_frames=0)',
+     "project_start=0, width=320, height=180, requested_b_frames=(0 if bound['manifest']['contract']['choice']['b_frames'] == 'none' else 2))"),
+]:
+    assert source.count(old) == 1, old
+    source = source.replace(old, new)
+(root / 'qualify-decoded.py').write_text(source)
+receipts = {}
+for stage in ('initial', 'retry', 'reconcile', 'cold'):
+    receipt = report[stage]['receipt']
+    data = Path(receipt['movie']).read_bytes()
+    assert len(data) == receipt['movie_bytes'] < 512 * 1024 * 1024
+    digest = hashlib.sha256(data).hexdigest()
+    assert digest == receipt['movie_sha256']
+    receipts[stage] = {'sha256': digest, 'bytes': len(data), 'path': receipt['movie']}
+(root / 'published-byte-identities.json').write_text(json.dumps(receipts, indent=2) + '\n')
+print(json.dumps({'independent_input': str(root / 'independent-input.json'), 'publication_bytes': receipts}, indent=2))

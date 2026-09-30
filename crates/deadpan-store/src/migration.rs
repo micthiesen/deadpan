@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        if !matches!(version, 1..=40) {
+        if !matches!(version, 1..=41) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -161,11 +161,22 @@ fn migrate_candidate(
         crate::render_jobs::create_tables(&transaction)?;
     }
     #[cfg(any(target_os = "macos", target_os = "linux"))]
-    crate::publication::create_tables(&transaction)?;
+    if source_version < 41 {
+        crate::publication::create_tables(&transaction)?;
+    }
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    crate::render_jobs::create_decision_table(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::render_jobs::check_stored_sizes(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::publication::check_stored_sizes(&transaction)?;
+    // Every source schema predates automatic intent and decision vocabulary.
+    // Check the frozen engineering grammar before the current parsers can see
+    // either a top-level job or an intent nested in a publication journal.
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    crate::render_jobs::validate_legacy_intents(&transaction)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    crate::publication::validate_legacy_intents(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::source_registration::check_stored_sizes(&transaction)?;
     validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
@@ -253,7 +264,7 @@ fn migrate_candidate(
     // Schemas before 15 gain an explicit basis; schema 15 retains its policy.
     // Pre-16 audio edges gain Automatic without changing allocated time;
     // schemas 16 and 17 retain their authored edge choices.
-    // Schema 39 already stores current core schema 33. Operational schema 40
+    // Schema 39 already stores current core schema 33. Operational schemas 40/41
     // validates its chronology without rewriting document/request/patch JSON.
     if source_version >= 39 {
         validation::validate_history(&transaction)?;

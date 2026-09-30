@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "scope": "Scratch-only five-second reference experiment. Production and repository oracle capacities remain unchanged.",
+  "maximum_seconds": 5,
+  "maximum_pcm_samples": 240000,
+  "fidelity_tolerances_changed": false,
+  "format_pts_trim_rules_changed": false,
+  "pcm_alignment_applied": false,
+  "files": [
+    {
+      "repository_source": "tools/media-qualification/compatible/native_audio_oracle.py",
+      "source_sha256": "457cd169ff3907b177834588ff28812b711394c17ef2298404a6e693fe658b01",
+      "snapshot": "originals/native_audio_oracle.py",
+      "modified": "native_audio_oracle.py",
+      "modified_sha256": "c14eae399e1a17a303b79edd325f68c38a6aa504f113246e9df3314e2b87b7f7",
+      "diff": "diffs/native_audio_oracle.py.diff",
+      "diff_sha256": "6e9a099678a4bcb596ef20bf7a56d52268c394dcff751f102620a5fc291deeda",
+      "unique_edits": 4
+    },
+    {
+      "repository_source": "tools/media-qualification/compatible/project_encode_oracle.py",
+      "source_sha256": "cba2f70ec9130b8a14c462c81fa94f8c26043f3ccf8050a692aa1be293809448",
+      "snapshot": "originals/project_encode_oracle.py",
+      "modified": "project_encode_oracle.py",
+      "modified_sha256": "e41005f4dcca3327b41e1a1067ee203bc7d34f378c79b9ff0c0e5dbed8db48b1",
+      "diff": "diffs/project_encode_oracle.py.diff",
+      "diff_sha256": "10f378d449e0328920d33f6f524850446498fb714be69397d850762824b88529",
+      "unique_edits": 2
+    },
+    {
+      "repository_source": "tools/media-qualification/compatible/avfoundation_probe.m",
+      "source_sha256": "8188bc8b3d927b6bc1b4a63ee0f175e9a4dbf9a112af91a283087aa011d76613",
+      "snapshot": "originals/avfoundation_probe.m",
+      "modified": "avfoundation_probe.m",
+      "modified_sha256": "80a4d85dd714e3274007ecea1ee905d19d4a6c3deadd29c23453f1bf4629e384",
+      "diff": "diffs/avfoundation_probe.m.diff",
+      "diff_sha256": "24c29a47864342b78da4fb36202d80e702d3192d9b4673c055a36dae1e75c73d",
+      "unique_edits": 3
+    }
+  ]
+}

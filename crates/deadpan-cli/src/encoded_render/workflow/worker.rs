@@ -9,6 +9,7 @@ pub(super) struct Command {
 
 pub(super) enum Work {
     Capture(CaptureRenderIntent),
+    Qualify(RenderStageRequest, RenderWriteHandle),
     Encode(RenderStageRequest, RenderWriteHandle),
     Verify(RenderStageRequest, StoredRenderCheckpoint, RenderReadHandle),
     Prepare(PublicationPermit),
@@ -21,6 +22,7 @@ pub(super) enum Work {
 #[derive(Clone, Copy)]
 pub(super) enum ExpectedReply {
     Captured,
+    Qualified,
     Retained,
     Verified,
     Prepared,
@@ -34,6 +36,7 @@ impl Work {
     pub fn expected_reply(&self) -> ExpectedReply {
         match self {
             Self::Capture(_) => ExpectedReply::Captured,
+            Self::Qualify(..) => ExpectedReply::Qualified,
             Self::Encode(..) => ExpectedReply::Retained,
             Self::Verify(..) => ExpectedReply::Verified,
             Self::Prepare(_) => ExpectedReply::Prepared,
@@ -51,6 +54,8 @@ impl ExpectedReply {
             (self, reply),
             (_, StageReply::Failed { .. })
                 | (Self::Captured, StageReply::Captured(_))
+                | (Self::Qualified, StageReply::Qualified(_))
+                | (Self::Qualified, StageReply::AdmissionFailed { .. })
                 | (Self::Retained, StageReply::Retained(_))
                 | (Self::Verified, StageReply::Verified(_))
                 | (Self::Prepared, StageReply::Prepared(..))
@@ -69,6 +74,12 @@ pub(super) struct Reply {
 
 pub(super) enum StageReply {
     Captured(RenderIntent),
+    Qualified(Box<RenderEncodingDecision>),
+    AdmissionFailed {
+        diagnostic: RenderDiagnostic,
+        cleanup_confirmed: bool,
+        decision: Option<Box<RenderEncodingDecision>>,
+    },
     Retained(Arc<PreparedRenderRetention>),
     Verified(RenderVerificationObservation),
     Prepared(PreparedPublicationEvidence, RetainedPublicationArtifacts),
@@ -91,6 +102,7 @@ pub(super) struct Worker {
     config: WorkflowConfig,
     progress: Arc<Mutex<Option<(WorkflowIdentity, WorkflowProgress)>>>,
     retained: Option<Arc<PreparedRenderRetention>>,
+    qualification: Option<jobs::PreparedEncoding>,
     candidate: Option<VerifiedCandidate>,
     publication: Option<PreparedPublication>,
     inspection: Option<RecoveryInspection>,
@@ -107,6 +119,7 @@ impl Worker {
             config,
             progress,
             retained: None,
+            qualification: None,
             candidate: None,
             publication: None,
             inspection: None,
@@ -135,12 +148,58 @@ impl Worker {
                 Ok(intent) => StageReply::Captured(intent),
                 Err(error) => failure(error),
             },
-            Work::Encode(request, writer) => {
+            Work::Qualify(request, writer) => {
+                if self.qualification.is_some() {
+                    return missing("consumed prior qualification");
+                }
                 let progress = self.progress.clone();
-                match jobs::encode_and_retain(
+                match jobs::qualify_for_attempt(
                     &self.config.runtime,
                     &request,
                     &writer,
+                    &cancelled,
+                    deadline,
+                    |choice, completed_frames, total_frames| {
+                        report_progress(
+                            &progress,
+                            &identity,
+                            WorkflowProgress::Qualification {
+                                choice,
+                                completed_frames,
+                                total_frames,
+                            },
+                        )
+                    },
+                ) {
+                    Ok(prepared) => {
+                        let decision = Box::new(prepared.decision().clone());
+                        self.qualification = Some(prepared);
+                        StageReply::Qualified(decision)
+                    }
+                    Err(failed) => {
+                        let StageReply::Failed {
+                            diagnostic,
+                            cleanup_confirmed,
+                            ..
+                        } = failure(failed.error)
+                        else {
+                            unreachable!("encoded failure always has failure reply")
+                        };
+                        StageReply::AdmissionFailed {
+                            diagnostic,
+                            cleanup_confirmed,
+                            decision: failed.decision,
+                        }
+                    }
+                }
+            }
+            Work::Encode(request, writer) => {
+                let progress = self.progress.clone();
+                match jobs::encode_with_admission_and_retain(
+                    &self.config.runtime,
+                    &request,
+                    &writer,
+                    self.qualification.take(),
                     (self.config.encode_limits, self.config.media_limits),
                     &cancelled,
                     deadline,
@@ -274,6 +333,7 @@ impl Worker {
                 self.publication = None;
                 self.candidate = None;
                 self.retained = None;
+                self.qualification = None;
                 StageReply::Released
             }
         }

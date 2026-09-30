@@ -1,0 +1,28 @@
+--- originals/native_audio_oracle.py
++++ native_audio_oracle.py
+@@ -14,7 +14,7 @@
+ )
+ 
+ 
+-MAX_SAMPLES = 192000
++MAX_SAMPLES = 240000
+ MAX_BUFFERS = 8192
+ MAX_TIMING = 8192
+ MAX_ATTACHMENTS = 262144
+@@ -134,13 +134,13 @@
+     if observation.get("provides_precise_duration_and_timing") is not True:
+         raise UnqualifiedTiming("asset does not report precise duration and timing")
+     asset_duration = exact_time(observation["asset_duration"], "asset duration")
+-    if not 0 < asset_duration <= 4:
+-        raise OracleError("native experiment asset duration must be positive and at most four seconds")
++    if not 0 < asset_duration <= 5:
++        raise OracleError("native scratch experiment asset duration must be positive and at most five seconds")
+     part = observation["pcm"]
+     if part.get("pcm_format") != "f32le_interleaved_stereo_48000":
+         raise OracleError("unexpected raw PCM file interpretation")
+     if not isinstance(pcm, Sequence) or len(pcm) > MAX_SAMPLES * 2:
+-        raise OracleError("native PCM exceeds the four-second stereo bound")
++        raise OracleError("native PCM exceeds the five-second scratch stereo bound")
+     count = _finite_pcm(pcm)
+     if _integer(part["total_samples"], "native samples", 0, MAX_SAMPLES) != count:
+         raise OracleError("native declared sample count disagrees with raw PCM")

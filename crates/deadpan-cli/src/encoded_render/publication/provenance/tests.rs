@@ -433,3 +433,90 @@ fn bounded_serialization_preserves_control_failures_and_stable_codes() {
         "provenance_failed"
     );
 }
+
+#[test]
+fn report_versions_preserve_legacy_bytes_and_exact_automatic_decision() {
+    use deadpan_jobs::render::{RenderAutomaticPolicy, RenderAutomaticSelection};
+    // Exercise report serialization only. Retained observations do not become
+    // a VerifiedCandidate or permission to write a destination.
+    let decision = RenderEncodingDecision::from_json(include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../deadpan-jobs/src/render/admission/tests/measured-decision-v1.json"
+    )))
+    .unwrap();
+    let selected = decision.selected().unwrap();
+    let encoded_manifest: EncodedManifest =
+        serde_json::from_value(serde_json::to_value(&selected.manifest).unwrap()).unwrap();
+    let verification: VerificationReport =
+        serde_json::from_value(serde_json::to_value(&selected.verification).unwrap()).unwrap();
+    let mut report = PublicationProvenance {
+        schema_version: 1,
+        document: DocumentProvenance {
+            project_id: decision.output.project_id.clone(),
+            revision_id: decision.output.revision_id.clone(),
+            document_sha256: decision.document_sha256.clone(),
+            range: decision.output.range,
+            catalog_scope: "committed_catalog_superset",
+            catalog: Vec::new(),
+            generated_dependency_scope: "emitted_picture_intervals",
+            generated_artifacts: Vec::new(),
+            generated_intervals: Vec::new(),
+        },
+        encoder_selection: "explicit_engineering_choice",
+        render_intent: None,
+        encoding_decision: None,
+        encoded_manifest,
+        verification,
+    };
+    #[derive(Serialize)]
+    struct FrozenLegacy<'a> {
+        schema_version: u32,
+        #[serde(flatten)]
+        document: &'a DocumentProvenance,
+        encoder_selection: &'static str,
+        encoded_manifest: &'a EncodedManifest,
+        verification: &'a VerificationReport,
+    }
+    let old = FrozenLegacy {
+        schema_version: 1,
+        document: &report.document,
+        encoder_selection: "explicit_engineering_choice",
+        encoded_manifest: &report.encoded_manifest,
+        verification: &report.verification,
+    };
+    assert_eq!(
+        serde_json::to_vec(&report).unwrap(),
+        serde_json::to_vec(&old).unwrap()
+    );
+    let legacy = serde_json::to_value(&report).unwrap();
+    assert!(legacy.get("render_intent").is_none());
+    assert!(legacy.get("encoding_decision").is_none());
+    report.schema_version = 2;
+    report.encoder_selection = "automatic_sdr_v1";
+    report.render_intent = Some(RenderIntent {
+        schema_version: 2,
+        job_id: decision.job_id.clone(),
+        project_id: decision.output.project_id.clone(),
+        revision_id: decision.output.revision_id.clone(),
+        document_sha256: decision.document_sha256.clone(),
+        range: decision.output.range,
+        policy: RenderAutomaticPolicy {
+            schema_version: 1,
+            selection: RenderAutomaticSelection::Automatic,
+            algorithm: decision.algorithm,
+        }
+        .into(),
+    });
+    report.encoding_decision = Some(decision.clone());
+    let automatic = serde_json::to_value(&report).unwrap();
+    assert_eq!(automatic["schema_version"], 2);
+    assert_eq!(automatic["encoder_selection"], "automatic_sdr_v1");
+    assert_eq!(
+        automatic["encoding_decision"],
+        serde_json::to_value(&decision).unwrap()
+    );
+    assert_eq!(
+        automatic["render_intent"],
+        serde_json::to_value(report.render_intent.as_ref().unwrap()).unwrap()
+    );
+}

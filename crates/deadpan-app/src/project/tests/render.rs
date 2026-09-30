@@ -70,7 +70,8 @@ fn start(
                     selection: RenderSelection::ExplicitEngineering,
                     encoder: RenderEncoder::Hardware,
                     b_frames: RenderBFrames::None,
-                },
+                }
+                .into(),
                 publication: publication(destination, suffix),
                 deadline: Instant::now() + TIMEOUT,
             },

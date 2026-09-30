@@ -19,7 +19,10 @@ use deadpan_core::{
     AssetId, AssetRecord, FrameRange, GeneratedArtifact, ProjectDocument, ProjectFrame, ProjectId,
     RevisionId, SourceQualificationId,
 };
-use deadpan_jobs::Sha256;
+use deadpan_jobs::{
+    Sha256,
+    render::{RenderIntent, admission::RenderEncodingDecision},
+};
 use deadpan_plan::{Picture, RenderPlan};
 use deadpan_store::{AccessMode, ProjectStore, original_media::OriginalObjectRef};
 use serde::Serialize;
@@ -77,6 +80,10 @@ pub struct PublicationProvenance {
     #[serde(flatten)]
     document: DocumentProvenance,
     encoder_selection: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    render_intent: Option<RenderIntent>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    encoding_decision: Option<RenderEncodingDecision>,
     encoded_manifest: EncodedManifest,
     verification: VerificationReport,
 }
@@ -145,12 +152,45 @@ pub fn capture(
         cancelled,
         deadline,
     )?;
+    let (render_intent, encoding_decision) =
+        match (encoded.encoding_decision(), encoded.encoding_binding()) {
+            (None, None) => (None, None),
+            (Some(decision), Some(binding)) => {
+                let intent = store.render_job(&decision.job_id)?;
+                let stored = store
+                    .render_encoding_decision(&decision.job_id, &decision.encoding_attempt_id)?;
+                if stored.as_ref() != Some(decision) {
+                    return Err(ProvenanceError::Binding("original encoding decision"));
+                }
+                let expected = crate::encoded_render::admission::durable::binding_for_decision(
+                    &intent,
+                    &decision.encoding_attempt_id,
+                    encoded.contract(),
+                    decision,
+                )
+                .map_err(|_| ProvenanceError::Binding("automatic output controls and runtime"))?;
+                if binding != &expected {
+                    return Err(ProvenanceError::Binding("recorded encoding runtime"));
+                }
+                (Some(intent), Some(decision.clone()))
+            }
+            _ => {
+                return Err(ProvenanceError::Binding(
+                    "incomplete durable automatic provenance",
+                ));
+            }
+        };
+    let automatic = encoding_decision.is_some();
     let result = PublicationProvenance {
-        schema_version: 1,
+        schema_version: if automatic { 2 } else { 1 },
         document,
-        // EncoderChoice currently comes from an explicit engineering request.
-        // Its successful use does not qualify automatic platform selection.
-        encoder_selection: "explicit_engineering_choice",
+        encoder_selection: if automatic {
+            "automatic_sdr_v1"
+        } else {
+            "explicit_engineering_choice"
+        },
+        render_intent,
+        encoding_decision,
         encoded_manifest: encoded.manifest().clone(),
         verification: candidate.report().clone(),
     };

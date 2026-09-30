@@ -1,6 +1,7 @@
 //! Durable render declarations. Stored outcomes are historical evidence, never
 //! a decoded-media capability or permission to publish a movie.
 
+pub mod admission;
 pub mod publication;
 
 use crate::{AttemptId, CancellationToken, RequestId, Sha256};
@@ -69,21 +70,90 @@ pub struct RenderEngineeringPolicy {
     pub b_frames: RenderBFrames,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RenderAutomaticAlgorithm {
+    AutomaticSdrV1,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RenderAutomaticSelection {
+    Automatic,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct RenderIntent {
+pub struct RenderAutomaticPolicy {
     #[serde(deserialize_with = "version")]
+    pub schema_version: u32,
+    pub selection: RenderAutomaticSelection,
+    pub algorithm: RenderAutomaticAlgorithm,
+}
+
+/// Untagged serialization preserves the original engineering policy bytes.
+/// Each alternative has a closed grammar; intent versions select exactly one.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum RenderPolicy {
+    Engineering(RenderEngineeringPolicy),
+    Automatic(RenderAutomaticPolicy),
+}
+
+impl From<RenderEngineeringPolicy> for RenderPolicy {
+    fn from(value: RenderEngineeringPolicy) -> Self {
+        Self::Engineering(value)
+    }
+}
+
+impl From<RenderAutomaticPolicy> for RenderPolicy {
+    fn from(value: RenderAutomaticPolicy) -> Self {
+        Self::Automatic(value)
+    }
+}
+
+impl RenderPolicy {
+    pub const fn engineering(&self) -> Option<&RenderEngineeringPolicy> {
+        match self {
+            Self::Engineering(value) => Some(value),
+            Self::Automatic(_) => None,
+        }
+    }
+
+    pub const fn automatic(&self) -> Option<&RenderAutomaticPolicy> {
+        match self {
+            Self::Automatic(value) => Some(value),
+            Self::Engineering(_) => None,
+        }
+    }
+
+    pub const fn is_automatic(&self) -> bool {
+        matches!(self, Self::Automatic(_))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "RenderIntentWire")]
+pub struct RenderIntent {
     pub schema_version: u32,
     pub job_id: RequestId,
     pub project_id: ProjectId,
     pub revision_id: RevisionId,
     pub document_sha256: Sha256,
     pub range: FrameRange,
-    pub policy: RenderEngineeringPolicy,
+    pub policy: RenderPolicy,
 }
 impl RenderIntent {
     pub fn validate(&self) -> Result<(), RenderError> {
-        if self.schema_version != 1 || self.policy.schema_version != 1 {
+        let version_matches = match &self.policy {
+            RenderPolicy::Engineering(policy) => {
+                self.schema_version == 1 && policy.schema_version == 1
+            }
+            RenderPolicy::Automatic(policy) => {
+                self.schema_version == 2 && policy.schema_version == 1
+            }
+        };
+        if !version_matches {
             return Err(RenderError::Invalid("unsupported intent/policy version"));
         }
         if self.range.start().0 < 0 || self.range.start() == self.range.end() {
@@ -91,6 +161,79 @@ impl RenderIntent {
         }
         Ok(())
     }
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RenderIntentWire {
+    schema_version: u32,
+    job_id: RequestId,
+    project_id: ProjectId,
+    revision_id: RevisionId,
+    document_sha256: Sha256,
+    range: FrameRange,
+    policy: RenderPolicy,
+}
+
+impl TryFrom<RenderIntentWire> for RenderIntent {
+    type Error = RenderError;
+
+    fn try_from(value: RenderIntentWire) -> Result<Self, Self::Error> {
+        let result = Self {
+            schema_version: value.schema_version,
+            job_id: value.job_id,
+            project_id: value.project_id,
+            revision_id: value.revision_id,
+            document_sha256: value.document_sha256,
+            range: value.range,
+            policy: value.policy,
+        };
+        result.validate()?;
+        Ok(result)
+    }
+}
+
+/// Frozen grammar for database <=41 and retained manifest version 1. This
+/// parser cannot acquire future policy variants through the current sum type.
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RenderIntentV1 {
+    #[serde(deserialize_with = "version")]
+    schema_version: u32,
+    job_id: RequestId,
+    project_id: ProjectId,
+    revision_id: RevisionId,
+    document_sha256: Sha256,
+    range: FrameRange,
+    policy: RenderEngineeringPolicy,
+}
+
+impl RenderIntentV1 {
+    fn into_current(self) -> Result<RenderIntent, RenderError> {
+        let result = RenderIntent {
+            schema_version: self.schema_version,
+            job_id: self.job_id,
+            project_id: self.project_id,
+            revision_id: self.revision_id,
+            document_sha256: self.document_sha256,
+            range: self.range,
+            policy: RenderPolicy::Engineering(self.policy),
+        };
+        result.validate()?;
+        Ok(result)
+    }
+}
+
+pub fn deserialize_render_intent_v1<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<RenderIntent, D::Error> {
+    RenderIntentV1::deserialize(deserializer)?
+        .into_current()
+        .map_err(serde::de::Error::custom)
+}
+
+pub fn parse_render_intent_v1(bytes: &[u8]) -> Result<RenderIntent, RenderError> {
+    serde_json::from_slice::<RenderIntentV1>(bytes)?.into_current()
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

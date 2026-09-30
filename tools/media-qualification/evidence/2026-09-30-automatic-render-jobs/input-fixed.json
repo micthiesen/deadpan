@@ -1,0 +1,7 @@
+{
+  "source": "/tmp/deadpan-runtime-binding-20260930/source.deadpan",
+  "target": "/tmp/deadpan-durable-automatic-20260930/source-fixed.deadpan",
+  "schema": 41,
+  "database_sha256": "4d1d4ccb20e499132ac5160e52a162c5bfeb199d1748a91332fb8699b16dd30a",
+  "method": "Immutable media copied; both database snapshots use SQLite backup API."
+}

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--workspace",
+    "--locked",
+    "automatic_retry_without_checkpoint_starts_fresh_qualification"
+  ],
+  "started": "2026-09-30T12:07:57.876029+00:00",
+  "base_commit": "4594f5b043f5fccd84da9c4c8f8f88f47dceee8e",
+  "diff_sha256": "c6e74fdab2092c9a85e9480427a31b0c7bd40ea6868f8ebed4f54c31662111d4",
+  "source_manifest_sha256": "7d8992be61e03fd3a2037d58ef060327725653579bf16899487e27ea47f09342",
+  "pid": 39744,
+  "exit_code": 101,
+  "seconds": 0.3416360830888152
+}

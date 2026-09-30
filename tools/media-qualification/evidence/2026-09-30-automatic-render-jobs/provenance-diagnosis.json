@@ -1,0 +1,49 @@
+{
+  "stored_and_published_decisions_identical": true,
+  "stored_and_published_intents_identical": true,
+  "only_harness_value_representation_differs": [
+    {
+      "path": "/probes/1/result/report/content/markers/0/observed_peaks/0",
+      "value_number": 0.3615236282348633,
+      "wire_number": 0.36152363,
+      "identical_f32_bits": "a019b93e"
+    },
+    {
+      "path": "/probes/1/result/report/content/markers/0/observed_peaks/1",
+      "value_number": -0.26885682344436646,
+      "wire_number": -0.26885682,
+      "identical_f32_bits": "9aa789be"
+    },
+    {
+      "path": "/probes/1/result/report/content/markers/1/observed_peaks/0",
+      "value_number": 0.6244205236434937,
+      "wire_number": 0.6244205,
+      "identical_f32_bits": "06da1f3f"
+    },
+    {
+      "path": "/probes/1/result/report/content/markers/1/observed_peaks/1",
+      "value_number": -0.7496187090873718,
+      "wire_number": -0.7496187,
+      "identical_f32_bits": "03e73fbf"
+    },
+    {
+      "path": "/probes/1/result/report/content/markers/2/observed_peaks/0",
+      "value_number": 0.6651233434677124,
+      "wire_number": 0.66512334,
+      "identical_f32_bits": "86452a3f"
+    },
+    {
+      "path": "/probes/1/result/report/content/markers/2/observed_peaks/1",
+      "value_number": -0.5494645237922668,
+      "wire_number": -0.5494645,
+      "identical_f32_bits": "b5a90cbf"
+    },
+    {
+      "path": "/probes/1/result/report/content/unexpected_audio_peak",
+      "value_number": 0.047221384942531586,
+      "wire_number": 0.047221385,
+      "identical_f32_bits": "366b413d"
+    }
+  ],
+  "change": "Deserialize into the closed typed DTO and compare exact fields; no tolerance."
+}

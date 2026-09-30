@@ -63,7 +63,14 @@ pub(crate) fn read_revision(
     connection: &Connection,
     id: &str,
 ) -> Result<RevisionRecord, StoreError> {
+    #[cfg(test)]
+    REVISION_READS.with(|count| count.set(count.get() + 1));
     read_revision_bounded(connection, id, crate::schema::MAX_DOCUMENT_BYTES)
+}
+
+#[cfg(test)]
+thread_local! {
+    pub(crate) static REVISION_READS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
 }
 
 fn read_revision_bounded(

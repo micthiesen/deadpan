@@ -1,0 +1,3 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 9.27s
+     Running `target/debug/examples/qualify_automatic_render /tmp/deadpan-durable-automatic-20260930/source-fixed.deadpan /Users/michael/Code/deadpan/target/debug/deadpan-app /tmp/deadpan-durable-automatic-20260930/native-fixed`

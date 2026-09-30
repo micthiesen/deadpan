@@ -239,7 +239,7 @@ fn run_case(
         revision: before.revision_id().clone(),
         range: Some(range),
         identity: first.clone(),
-        policy: policy(),
+        policy: policy().into(),
         publication: destination.clone(),
         deadline,
     };
@@ -350,7 +350,7 @@ fn run_case(
                 revision: cancel_revision,
                 range: Some(range),
                 identity: cancel_id.clone(),
-                policy: policy(),
+                policy: policy().into(),
                 publication: cancel_destination.clone(),
                 deadline,
             },

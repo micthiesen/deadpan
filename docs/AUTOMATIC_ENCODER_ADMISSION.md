@@ -136,13 +136,17 @@ result must complete all other file and content checks before it can authorize
 a different path. Legitimate all-I/P project content also needs explicitly
 versioned verification semantics, without weakening legacy checkpoint admission.
 
-Durable decision storage planned for database schema 42 remains open. It must
-pin automatic algorithm policy per job and the resolved encoder, runtime and
-probe evidence per encoding attempt. Cold encoding retries must qualify again;
-checkpoint verification and publication reconciliation must retain the original
-decision. Native and public headless Render still need this durable shared
-workflow. Full mastering/effects, HDR, quality policy and the supported
-hardware/OS release matrix remain open.
+The [durable workflow](RENDER_JOBS.md#automatic-admission-and-recovery) stores
+automatic policy per job and the resolved encoder, runtime and probe evidence
+per original encoding attempt in database schema 42. Qualification remains
+worker work while Queued. The writer atomically records the decision with the
+Encoding transition before the worker consumes its live capability. Both stages
+poll session ownership and drain owned processes when that ownership is revoked.
+Cold encoding retries qualify again; checkpoint verification and publication
+reconciliation retain the original decision. Native and public headless Render
+controls still need to expose this shared workflow. Full mastering/effects, HDR,
+quality policy and the supported hardware/OS release matrix remain open.
 
-See [probe qualification](qualification/encoder-admission-2026-09-30.md) and
-[runtime-bound project qualification](qualification/encoder-runtime-2026-09-30.md).
+See [probe qualification](qualification/encoder-admission-2026-09-30.md),
+[runtime-bound project qualification](qualification/encoder-runtime-2026-09-30.md)
+and [durable workflow qualification](qualification/automatic-render-jobs-2026-09-30.md).

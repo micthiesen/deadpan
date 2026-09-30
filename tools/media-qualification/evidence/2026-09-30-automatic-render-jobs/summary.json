@@ -1,0 +1,64 @@
+{
+  "checks": [
+    "format-qualified",
+    "workspace-clippy-qualified",
+    "migration-fixed",
+    "ui-clippy",
+    "ui-tests",
+    "native-smoke",
+    "native-automatic-fixed",
+    "independent-prepare",
+    "independent-decode",
+    "independent-cold-decode",
+    "database-check",
+    "runtime-files"
+  ],
+  "workspace": {
+    "passed": 2439,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 171,
+    "full_run_exit": 101,
+    "corrected_test": "publication::authentic_schema40_publication_upgrade_preserves_every_previous_cell",
+    "changed_sources": [
+      "crates/deadpan-cli/examples/qualify_automatic_render.rs",
+      "crates/deadpan-store/tests/migration/publication.rs"
+    ],
+    "preserved_workspace_source": "10881f046d1f6c39a4b578427397c0e0f72d03cec3192edfbe191870fc3f0fe1"
+  },
+  "ui_harness": {
+    "passed": 310,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 2
+  },
+  "qualified_source_inventory": "b08c28b724091e2925872b0c55d35c478bf566e9f4ca2e858471265aa84de7fb",
+  "native": {
+    "fresh_encodes": 2,
+    "fresh_verifications": 4,
+    "distinct_movie_hashes": 2,
+    "frames_per_movie": 128,
+    "complete_independent_picture_planes": 768,
+    "authored_audio_samples_per_reader_per_movie": 205005,
+    "audio_readers": [
+      "FFmpeg ordinary",
+      "FFmpeg manual",
+      "AVFoundation"
+    ],
+    "runtime_images": 5,
+    "old_database_tables_preserved": 19
+  },
+  "unrun": [
+    "sanitizers",
+    "physical listening",
+    "painted UI and interactive accessibility",
+    "GUI performance"
+  ],
+  "remaining": [
+    "native/public headless Render",
+    "small-raster coded/display allocation policy",
+    "complete mastering/effects",
+    "HDR",
+    "release qualification"
+  ]
+}

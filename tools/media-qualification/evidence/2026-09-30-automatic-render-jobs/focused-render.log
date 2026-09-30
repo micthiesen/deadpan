@@ -1,0 +1,14 @@
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+error[E0609]: no field `schema_version` on type `deadpan_jobs::render::RenderPolicy`
+   --> crates/deadpan-store/tests/render_jobs.rs:321:31
+    |
+321 |             3 => value.policy.schema_version = 2,
+    |                               ^^^^^^^^^^^^^^ unknown field
+
+For more information about this error, try `rustc --explain E0609`.
+error: could not compile `deadpan-store` (test "render_jobs") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

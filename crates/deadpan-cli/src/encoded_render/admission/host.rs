@@ -99,7 +99,32 @@ impl QualifiedEncoder {
         deadline: Instant,
         progress: impl FnMut(crate::encoded_render::EncodedProgress),
     ) -> Result<AutomaticEncodedCandidate, EncodedRenderError> {
+        self.encode_guarded(
+            runtime,
+            request,
+            limits,
+            cancelled,
+            deadline,
+            progress,
+            || Ok(()),
+        )
+    }
+
+    /// A durable job also owns a revocable store session. Keep that authority
+    /// live while consuming the admission and supervising the encoding child.
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn encode_guarded(
+        self,
+        runtime: &RenderWorkerRuntime,
+        request: crate::render_worker::RenderPictureRequest,
+        limits: crate::encoded_render::EncodedWorkerLimits,
+        cancelled: &AtomicBool,
+        deadline: Instant,
+        progress: impl FnMut(crate::encoded_render::EncodedProgress),
+        check_owner: impl Fn() -> Result<(), EncodedRenderError>,
+    ) -> Result<AutomaticEncodedCandidate, EncodedRenderError> {
         check_control(cancelled, deadline)?;
+        check_owner()?;
         if request.identity != self.decision.identity
             || request.cancellation_token != self.cancellation_token
             || !runtime.arguments.is_empty()
@@ -109,7 +134,7 @@ impl QualifiedEncoder {
                 "fresh encoder admission belongs to another attempt or runtime configuration",
             ));
         }
-        if runtime_identity(runtime, cancelled, deadline)? != self.decision.runtime {
+        if runtime_identity(runtime, cancelled, deadline, &check_owner)? != self.decision.runtime {
             return Err(EncodedRenderError::Protocol(
                 "encoder helper changed after its probe".into(),
             ));
@@ -128,14 +153,15 @@ impl QualifiedEncoder {
             cancelled,
             deadline,
             progress,
-            || Ok(()),
+            &check_owner,
         )?;
-        if runtime_identity(runtime, cancelled, deadline)? != self.decision.runtime {
+        if runtime_identity(runtime, cancelled, deadline, &check_owner)? != self.decision.runtime {
             return Err(EncodedRenderError::Protocol(
                 "encoder helper changed during project encoding".into(),
             ));
         }
         check_control(cancelled, deadline)?;
+        check_owner()?;
         Ok(AutomaticEncodedCandidate {
             candidate,
             decision: self.decision,
@@ -182,11 +208,33 @@ pub fn qualify(
     limits: AdmissionLimits,
     cancelled: &AtomicBool,
     deadline: Instant,
+    progress: impl FnMut(EncoderChoice, u64, u64),
+) -> Result<QualifiedEncoder, AdmissionFailure> {
+    qualify_guarded(
+        runtime,
+        request,
+        limits,
+        cancelled,
+        deadline,
+        progress,
+        || Ok(()),
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn qualify_guarded(
+    runtime: &RenderWorkerRuntime,
+    request: AdmissionRequest,
+    limits: AdmissionLimits,
+    cancelled: &AtomicBool,
+    deadline: Instant,
     mut progress: impl FnMut(EncoderChoice, u64, u64),
+    check_owner: impl Fn() -> Result<(), EncodedRenderError>,
 ) -> Result<QualifiedEncoder, AdmissionFailure> {
     let mut rejected = Vec::new();
     let result = (|| {
         check_control(cancelled, deadline)?;
+        check_owner()?;
         if !runtime.arguments.is_empty() || !runtime.environment.is_empty() {
             return Err(EncodedRenderError::Configuration(
                 "automatic admission requires the direct host-selected helper without argument or environment overrides",
@@ -202,7 +250,7 @@ pub fn qualify(
             ));
         }
         let deadline = deadline.min(Instant::now() + limits.process.maximum_duration);
-        let runtime_before = runtime_identity(runtime, cancelled, deadline)?;
+        let runtime_before = runtime_identity(runtime, cancelled, deadline, &check_owner)?;
         let mut loaded_runtime = None;
         let initial = ProbeSpec {
             raster: request.raster,
@@ -228,6 +276,7 @@ pub fn qualify(
         };
         for _ in 0..4 {
             check_control(cancelled, deadline)?;
+            check_owner()?;
             let spec = ProbeSpec {
                 raster: request.raster,
                 frame_rate: request.frame_rate,
@@ -250,6 +299,7 @@ pub fn qualify(
                 cancelled,
                 deadline,
                 |done, total| progress(choice, done, total),
+                &check_owner,
             );
             match attempted {
                 Ok((report, movie)) => {
@@ -258,13 +308,15 @@ pub fn qualify(
                         &runtime_before,
                         loaded_runtime.as_ref(),
                     )?;
-                    let runtime_after = runtime_identity(runtime, cancelled, deadline)?;
+                    let runtime_after =
+                        runtime_identity(runtime, cancelled, deadline, &check_owner)?;
                     if runtime_after != runtime_before {
                         return Err(EncodedRenderError::Protocol(
                             "encoder runtime changed during admission".into(),
                         ));
                     }
                     check_control(cancelled, deadline)?;
+                    check_owner()?;
                     return Ok(QualifiedEncoder {
                         decision: EncoderDecision {
                             policy_version: POLICY_VERSION,
@@ -380,7 +432,9 @@ fn runtime_identity(
     runtime: &RenderWorkerRuntime,
     cancelled: &AtomicBool,
     deadline: Instant,
+    check_owner: impl Fn() -> Result<(), EncodedRenderError>,
 ) -> Result<AdmissionRuntime, EncodedRenderError> {
+    check_owner()?;
     use rustix::fs::{Mode, OFlags, open};
     if !runtime.executable.is_absolute() {
         return Err(EncodedRenderError::Configuration(
@@ -406,6 +460,7 @@ fn runtime_identity(
     let mut read_total = 0_u64;
     loop {
         check_control(cancelled, deadline)?;
+        check_owner()?;
         let read = file.read(&mut bytes)?;
         if read == 0 {
             break;
@@ -464,8 +519,10 @@ fn probe(
     cancelled: &AtomicBool,
     deadline: Instant,
     mut progress: impl FnMut(u64, u64),
+    check_owner: impl Fn() -> Result<(), EncodedRenderError>,
 ) -> Result<(ProbeReport, HashedArtifactSnapshot), EncodedRenderError> {
     check_control(cancelled, deadline)?;
+    check_owner()?;
     let workspace = tempfile::Builder::new()
         .prefix("deadpan-probe-")
         .tempdir()?;
@@ -506,6 +563,14 @@ fn probe(
         let mut last_progress = 0;
         while !process.is_finished() {
             let now = Instant::now();
+            if failure.is_none()
+                && let Err(error) = check_owner()
+            {
+                failure = Some(error);
+                if let Err(error) = process.request_cancel(now) {
+                    return Err(invalidate_report(failure, error.into()));
+                }
+            }
             if cancelled.load(Ordering::Acquire) && !was_cancelled {
                 was_cancelled = true;
                 if let Err(error) = process.request_cancel(now) {
@@ -597,6 +662,7 @@ fn probe(
             return Err(EncodedRenderError::Cancelled);
         }
         check_control(cancelled, deadline)?;
+        check_owner()?;
         let report = report
             .ok_or_else(|| EncodedRenderError::Protocol("probe did not complete cleanly".into()))?;
         report
@@ -607,11 +673,16 @@ fn probe(
                 "probe changed its captured specification".into(),
             ));
         }
+        let mut owner_failure = None;
         let snapshot = pinned.snapshot_with_control(
             &scope,
             &report.manifest.movie,
             ArtifactLimits::new(limits.encode.maximum_output_bytes)?,
             || {
+                if let Err(error) = check_owner() {
+                    owner_failure = Some(error);
+                    return Err(SnapshotInterruption::Cancelled);
+                }
                 if cancelled.load(Ordering::Acquire) {
                     return Err(SnapshotInterruption::Cancelled);
                 }
@@ -621,7 +692,11 @@ fn probe(
                 Ok(())
             },
         );
+        if let Some(error) = owner_failure {
+            return Err(error);
+        }
         check_control(cancelled, deadline)?;
+        check_owner()?;
         Ok((report, snapshot?))
     })();
     finish_owned_result(&mut process, result)

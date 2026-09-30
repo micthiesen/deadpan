@@ -1,0 +1,25 @@
+{
+  "independent_input": "/tmp/deadpan-durable-automatic-20260930/independent-input.json",
+  "publication_bytes": {
+    "initial": {
+      "sha256": "9c1d0c7a27a6db4aa7b3a0c9c3a3920db2dd22a1759f811e7d56674b6e9340e1",
+      "bytes": 32553,
+      "path": "/private/tmp/deadpan-durable-automatic-20260930/native-fixed/automatic-first.mp4"
+    },
+    "retry": {
+      "sha256": "9c1d0c7a27a6db4aa7b3a0c9c3a3920db2dd22a1759f811e7d56674b6e9340e1",
+      "bytes": 32553,
+      "path": "/private/tmp/deadpan-durable-automatic-20260930/native-fixed/automatic-checkpoint-retry.mp4"
+    },
+    "reconcile": {
+      "sha256": "9c1d0c7a27a6db4aa7b3a0c9c3a3920db2dd22a1759f811e7d56674b6e9340e1",
+      "bytes": 32553,
+      "path": "/private/tmp/deadpan-durable-automatic-20260930/native-fixed/automatic-first.mp4"
+    },
+    "cold": {
+      "sha256": "07a7e5b8674253eeb804c9b15e137a9d53875934ee89c774fe410c82586fe4ae",
+      "bytes": 32553,
+      "path": "/private/tmp/deadpan-durable-automatic-20260930/native-fixed/automatic-cold-retry.mp4"
+    }
+  }
+}

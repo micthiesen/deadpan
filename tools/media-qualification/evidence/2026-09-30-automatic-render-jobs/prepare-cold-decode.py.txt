@@ -1,0 +1,23 @@
+"""Compare the separately encoded cold retry against the same committed references."""
+import hashlib
+import json
+from pathlib import Path
+
+root = Path('/tmp/deadpan-durable-automatic-20260930')
+native = json.loads((root / 'native-fixed/report.json').read_bytes())
+original = json.loads((root / 'independent-input.json').read_bytes())
+assert native['status'] == 'passed' and native['authoring_preserved']
+assert native['cold']['cleanup_confirmed']
+original['manifest'] = native['cold_report']['provenance']['encoded_manifest']
+original['retained_verified']['path'] = native['cold']['receipt']['movie']
+assert original['captured_contract'] == native['cold_decision']['output']
+original['scope'] = 'Cold encoding retry; same immutable committed picture/audio references, fresh file and fresh qualification'
+(root / 'independent-cold-input.json').write_text(json.dumps(original, indent=2) + '\n')
+source = (root / 'qualify-decoded.py').read_text()
+for old,new in [("source = work / 'independent-input.json'", "source = work / 'independent-cold-input.json'"),
+                ("decoded = work / 'decoded-automatic'", "decoded = work / 'decoded-automatic-cold'")]:
+    assert source.count(old) == 1, old
+    source = source.replace(old,new)
+(root / 'qualify-decoded-cold.py').write_text(source)
+print(json.dumps({'source_sha256': hashlib.sha256(source.encode()).hexdigest(),
+                  'movie_sha256': native['cold']['receipt']['movie_sha256']}))

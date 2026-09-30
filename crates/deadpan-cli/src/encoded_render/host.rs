@@ -9,7 +9,7 @@ use deadpan_jobs::artifact::{
 use deadpan_jobs::process::{
     ProcessEvent, ProcessLimits, ProcessSpec, SupervisedProcess, WorkerProtocol,
 };
-use deadpan_jobs::{Sha256, WorkspaceRef};
+use deadpan_jobs::{Sha256, WorkspaceRef, render::admission::RenderEncodingDecision};
 use deadpan_store::render_media::PreparedRenderSnapshot;
 
 use crate::export_picture::ExportPictureContract;
@@ -58,6 +58,7 @@ pub struct EncodedCandidate {
     document_sha256: Sha256,
     manifest: EncodedManifest,
     binding: Option<EncodingBinding>,
+    decision: Option<RenderEncodingDecision>,
     snapshot: CandidateBytes,
 }
 
@@ -81,6 +82,22 @@ impl EncodedCandidate {
 
     pub fn encoding_binding(&self) -> Option<&EncodingBinding> {
         self.binding.as_ref()
+    }
+
+    pub fn encoding_decision(&self) -> Option<&RenderEncodingDecision> {
+        self.decision.as_ref()
+    }
+
+    /// Attach only after the job adapter has checked the exact persisted
+    /// decision and manifest. Historical observations grant no live admission.
+    pub(super) fn with_encoding_provenance(
+        mut self,
+        binding: EncodingBinding,
+        decision: RenderEncodingDecision,
+    ) -> Self {
+        self.binding = Some(binding);
+        self.decision = Some(decision);
+        self
     }
 
     pub fn byte_length(&self) -> u64 {
@@ -131,6 +148,7 @@ impl EncodedCandidate {
             document_sha256,
             manifest,
             binding: None,
+            decision: None,
             snapshot: CandidateBytes::Retained(Box::new(snapshot)),
         };
         candidate.check_live(cancelled, deadline)?;
@@ -550,6 +568,7 @@ fn encode_with_binding_guarded(
             document_sha256,
             manifest,
             binding,
+            decision: None,
             snapshot: CandidateBytes::Worker(snapshot),
         })
     })();

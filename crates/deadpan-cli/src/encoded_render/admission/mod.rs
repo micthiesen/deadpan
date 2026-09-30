@@ -3,11 +3,13 @@
 //! live result, and this boundary does not change a durable render intent.
 
 mod content;
+pub(crate) mod durable;
 mod host;
 pub mod protocol;
 pub(crate) mod worker;
 
 pub use content::{ProbeContentReport, ProbeMarkerObservation};
+pub(crate) use host::qualify_guarded;
 pub use host::{
     AdmissionFailure, AdmissionRequest, AutomaticEncodedCandidate, QualifiedEncoder, qualify,
 };

@@ -1,0 +1,115 @@
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+error[E0277]: the trait bound `usize: FromSql` is not satisfied
+   --> crates/deadpan-store/src/render_jobs/audit_tests.rs:43:80
+    |
+ 43 |         connection.query_row("SELECT COUNT(*) FROM render_jobs", [], |row| row.get(0))?;
+    |                                                                                ^^^ the trait `FromSql` is not implemented for `usize`
+    |
+    = help: the following other types implement trait `FromSql`:
+              f32
+              f64
+              i16
+              i32
+              i64
+              i8
+              isize
+              u16
+            and 2 others
+note: required by a bound in `rusqlite::Row::<'_>::get`
+   --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusqlite-0.40.2/src/row.rs:285:32
+    |
+285 |     pub fn get<I: RowIndex, T: FromSql>(&self, idx: I) -> Result<T> {
+    |                                ^^^^^^^ required by this bound in `Row::<'_>::get`
+
+error[E0277]: the trait bound `usize: FromSql` is not satisfied
+   --> crates/deadpan-store/src/render_jobs/audit_tests.rs:47:19
+    |
+ 47 |         |row| row.get(0),
+    |                   ^^^ the trait `FromSql` is not implemented for `usize`
+    |
+    = help: the following other types implement trait `FromSql`:
+              f32
+              f64
+              i16
+              i32
+              i64
+              i8
+              isize
+              u16
+            and 2 others
+note: required by a bound in `rusqlite::Row::<'_>::get`
+   --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusqlite-0.40.2/src/row.rs:285:32
+    |
+285 |     pub fn get<I: RowIndex, T: FromSql>(&self, idx: I) -> Result<T> {
+    |                                ^^^^^^^ required by this bound in `Row::<'_>::get`
+
+error[E0277]: the trait bound `usize: FromSql` is not satisfied
+   --> crates/deadpan-store/src/render_jobs/audit_tests.rs:50:84
+    |
+ 50 |         connection.query_row("SELECT COUNT(*) FROM render_attempts", [], |row| row.get(0))?;
+    |                                                                                    ^^^ the trait `FromSql` is not implemented for `usize`
+    |
+    = help: the following other types implement trait `FromSql`:
+              f32
+              f64
+              i16
+              i32
+              i64
+              i8
+              isize
+              u16
+            and 2 others
+note: required by a bound in `rusqlite::Row::<'_>::get`
+   --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusqlite-0.40.2/src/row.rs:285:32
+    |
+285 |     pub fn get<I: RowIndex, T: FromSql>(&self, idx: I) -> Result<T> {
+    |                                ^^^^^^^ required by this bound in `Row::<'_>::get`
+
+error[E0277]: the trait bound `usize: FromSql` is not satisfied
+   --> crates/deadpan-store/src/render_jobs/audit_tests.rs:51:164
+    |
+ 51 | ...mpt_id')!=attempt_id", [], |row| row.get(0))?;
+    |                                         ^^^ the trait `FromSql` is not implemented for `usize`
+    |
+    = help: the following other types implement trait `FromSql`:
+              f32
+              f64
+              i16
+              i32
+              i64
+              i8
+              isize
+              u16
+            and 2 others
+note: required by a bound in `rusqlite::Row::<'_>::get`
+   --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/rusqlite-0.40.2/src/row.rs:285:32
+    |
+285 |     pub fn get<I: RowIndex, T: FromSql>(&self, idx: I) -> Result<T> {
+    |                                ^^^^^^^ required by this bound in `Row::<'_>::get`
+
+error[E0277]: the trait bound `u64: ToSql` is not satisfied
+   --> crates/deadpan-store/src/render_jobs/audit_tests.rs:187:174
+    |
+187 | ...", params![name, attempt.attempt_id.as_str(), ordinal, attempt.cancellation_token.as_str(), serde_json::to_string(&attempt)?])?;
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `ToSql` is not implemented for `u64`
+    |
+    = help: the following other types implement trait `ToSql`:
+              f32
+              f64
+              i16
+              i32
+              i64
+              i8
+              isize
+              u16
+            and 2 others
+    = note: required for the cast from `&u64` to `&dyn ToSql`
+    = note: this error originates in the macro `params` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `deadpan-store` (lib test) due to 5 previous errors
+warning: build failed, waiting for other jobs to finish...

@@ -1,0 +1,23 @@
+"""Reduce the preserved migration assertion to its exact differing entries."""
+import ast
+import hashlib
+import json
+from pathlib import Path
+import sys
+
+root = Path('/tmp/deadpan-durable-automatic-20260930')
+log = root / (sys.argv[1] if len(sys.argv) > 1 else 'workspace-tests.log')
+lines = log.read_text().splitlines()
+left = [line.removeprefix('  left: ') for line in lines if line.startswith('  left: ')]
+right = [line.removeprefix(' right: ') for line in lines if line.startswith(' right: ')]
+assert len(left) == len(right) == 1
+after, before = ast.literal_eval(left[0]), ast.literal_eval(right[0])
+assert after.count('render_encoding_decisions') == 1
+assert 'render_encoding_decisions' not in before
+assert [v for v in after if v != 'render_encoding_decisions'] == before
+report = {'after_entries': len(after), 'before_entries': len(before),
+          'only_difference': 'render_encoding_decisions table name; no rows',
+          'all_old_entries_identical_in_order': True,
+          'log': log.name, 'log_sha256': hashlib.sha256(log.read_bytes()).hexdigest()}
+(root / (log.stem + '-diagnosis.json')).write_text(json.dumps(report, indent=2) + '\n')
+print(json.dumps(report))

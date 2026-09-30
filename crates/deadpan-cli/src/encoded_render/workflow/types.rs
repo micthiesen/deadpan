@@ -32,7 +32,7 @@ pub struct StartRender {
     pub revision: RevisionId,
     pub range: Option<FrameRange>,
     pub identity: WorkflowIdentity,
-    pub policy: RenderEngineeringPolicy,
+    pub policy: RenderPolicy,
     pub publication: PublicationRequest,
     pub deadline: Instant,
 }
@@ -61,6 +61,7 @@ pub struct ReconcileRender {
 pub enum WorkflowStage {
     Idle,
     Capturing,
+    Qualifying,
     Encoding,
     Verifying,
     PreparingPublication,
@@ -88,6 +89,11 @@ pub enum WorkflowOutcome {
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "kind", content = "value", rename_all = "snake_case")]
 pub enum WorkflowProgress {
+    Qualification {
+        choice: crate::encoded_render::protocol::EncoderChoice,
+        completed_frames: u64,
+        total_frames: u64,
+    },
     Encoding {
         completed_frames: u64,
         total_frames: u64,

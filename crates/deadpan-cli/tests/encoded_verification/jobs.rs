@@ -41,7 +41,8 @@ pub(super) fn begin(fixture: &Fixture) -> (ProjectStore, RenderStageRequest) {
                     BFramePolicy::None => RenderBFrames::None,
                     BFramePolicy::TargetTwo => RenderBFrames::TargetTwo,
                 },
-            },
+            }
+            .into(),
         },
         &NOT_CANCELLED,
         deadline(),

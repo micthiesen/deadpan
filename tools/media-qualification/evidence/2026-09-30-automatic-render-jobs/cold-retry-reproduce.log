@@ -1,0 +1,138 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.15s
+     Running unittests src/main.rs (target/debug/deps/deadpan_app-a42e1c28bdbfe8ae)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 271 filtered out; finished in 0.00s
+
+     Running tests/headless.rs (target/debug/deps/headless-1598c0174fa4f4e0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_audio-6869f5dc8829ea9e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 64 filtered out; finished in 0.00s
+
+     Running tests/audio_context.rs (target/debug/deps/audio_context-53fafc9884c88930)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/audio_definition.rs (target/debug/deps/audio_definition-ea7e788d439049a2)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 49 filtered out; finished in 0.00s
+
+     Running tests/audio_domain.rs (target/debug/deps/audio_domain-c7671b9d3962cdc8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.00s
+
+     Running tests/composite_insert.rs (target/debug/deps/composite_insert-5c901fe88c0895d3)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.00s
+
+     Running tests/gap_bindings.rs (target/debug/deps/gap_bindings-e7f1dfb379882897)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s
+
+     Running tests/gap_definition.rs (target/debug/deps/gap_definition-b7e663ef1478a86c)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/limiter.rs (target/debug/deps/limiter-3a4deea0f491790e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/loudness.rs (target/debug/deps/loudness-7d495f971ef179f3)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/reanchors.rs (target/debug/deps/reanchors-19eb60818e7be832)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/reference_policy.rs (target/debug/deps/reference_policy-a4de2c2c79e19b41)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
+     Running tests/resample.rs (target/debug/deps/resample-508df851c962ee29)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/sequence.rs (target/debug/deps/sequence-b4d18ec35c1db3a2)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.00s
+
+     Running tests/session.rs (target/debug/deps/session-2d45b83b07aedfac)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/signal_transfer.rs (target/debug/deps/signal_transfer-464947ebd74097a8)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/sound_events.rs (target/debug/deps/sound_events-ce2ff1e9452bf798)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/stages.rs (target/debug/deps/stages-3b9edaacac26308e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 71 filtered out; finished in 0.00s
+
+     Running tests/true_peak.rs (target/debug/deps/true_peak-66516b5b8fb33a81)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_cli-be7772b177b73e2a)
+
+running 1 test
+test encoded_render::workflow::owner::tests::automatic_retry_without_checkpoint_starts_fresh_qualification ... FAILED
+
+failures:
+
+---- encoded_render::workflow::owner::tests::automatic_retry_without_checkpoint_starts_fresh_qualification stdout ----
+Error: Unresolved("stage worker stopped")
+
+
+failures:
+    encoded_render::workflow::owner::tests::automatic_retry_without_checkpoint_starts_fresh_qualification
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 168 filtered out; finished in 0.06s
+
+error: test failed, to rerun pass `-p deadpan-cli --lib`

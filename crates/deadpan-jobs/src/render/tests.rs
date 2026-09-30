@@ -24,12 +24,12 @@ fn intent() -> RenderIntent {
         revision_id: RevisionId::new("initial").unwrap(),
         document_sha256: Sha256::new("a".repeat(64)).unwrap(),
         range: FrameRange::new(ProjectFrame(0), ProjectFrame(1)).unwrap(),
-        policy: RenderEngineeringPolicy {
+        policy: RenderPolicy::Engineering(RenderEngineeringPolicy {
             schema_version: 1,
             selection: RenderSelection::ExplicitEngineering,
             encoder: RenderEncoder::Software,
             b_frames: RenderBFrames::None,
-        },
+        }),
     }
 }
 #[test]
@@ -79,6 +79,92 @@ fn strict_intent_rejects_new_policy_and_foreign_fields() {
     let mut invalid = intent();
     invalid.range = FrameRange::new(ProjectFrame(-1), ProjectFrame(1)).unwrap();
     assert!(invalid.validate().is_err());
+}
+
+#[test]
+fn engineering_wire_is_unchanged_and_frozen_parser_never_admits_automatic() {
+    let original = intent();
+    let bytes = serde_json::to_vec(&original).unwrap();
+    let value = serde_json::to_value(&original).unwrap();
+    assert_eq!(
+        value["policy"],
+        serde_json::json!({
+            "schema_version": 1,
+            "selection": "explicit_engineering",
+            "encoder": "software",
+            "b_frames": "none"
+        })
+    );
+    assert_eq!(parse_render_intent_v1(&bytes).unwrap(), original);
+    assert_eq!(
+        serde_json::to_vec(&parse_render_intent_v1(&bytes).unwrap()).unwrap(),
+        bytes
+    );
+
+    let mut automatic = original;
+    automatic.schema_version = 2;
+    automatic.policy = RenderPolicy::Automatic(RenderAutomaticPolicy {
+        schema_version: 1,
+        selection: RenderAutomaticSelection::Automatic,
+        algorithm: RenderAutomaticAlgorithm::AutomaticSdrV1,
+    });
+    automatic.validate().unwrap();
+    let bytes = serde_json::to_vec(&automatic).unwrap();
+    assert_eq!(
+        serde_json::from_slice::<RenderIntent>(&bytes).unwrap(),
+        automatic
+    );
+    assert!(parse_render_intent_v1(&bytes).is_err());
+    assert!(automatic.policy.engineering().is_none());
+    assert!(automatic.policy.is_automatic());
+}
+
+#[test]
+fn automatic_grammar_rejects_mixed_versions_loose_controls_and_null_fields() {
+    let mut value = serde_json::to_value(intent()).unwrap();
+    value["schema_version"] = 2.into();
+    value["policy"] = serde_json::json!({
+        "schema_version": 1,
+        "selection": "automatic",
+        "algorithm": "automatic_sdr_v1"
+    });
+    serde_json::from_value::<RenderIntent>(value.clone()).unwrap();
+    for (pointer, replacement) in [
+        ("/schema_version", serde_json::json!(1)),
+        ("/schema_version", serde_json::json!(3)),
+        ("/policy/schema_version", serde_json::json!(2)),
+        (
+            "/policy/selection",
+            serde_json::json!("explicit_engineering"),
+        ),
+        ("/policy/algorithm", serde_json::json!("automatic_sdr_v2")),
+        ("/policy/algorithm", serde_json::Value::Null),
+    ] {
+        let mut changed = value.clone();
+        *changed.pointer_mut(pointer).unwrap() = replacement;
+        assert!(
+            serde_json::from_value::<RenderIntent>(changed).is_err(),
+            "{pointer}"
+        );
+    }
+    for field in ["encoder", "b_frames", "decision", "runtime", "bitrate"] {
+        let mut changed = value.clone();
+        changed["policy"][field] = serde_json::Value::Null;
+        assert!(
+            serde_json::from_value::<RenderIntent>(changed).is_err(),
+            "{field}"
+        );
+    }
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct LegacyEnvelope {
+        #[serde(deserialize_with = "deserialize_render_intent_v1")]
+        intent: RenderIntent,
+    }
+    assert!(serde_json::from_value::<LegacyEnvelope>(serde_json::json!({"intent":value})).is_err());
+    let legacy: LegacyEnvelope =
+        serde_json::from_value(serde_json::json!({"intent":intent()})).unwrap();
+    assert_eq!(legacy.intent, intent());
 }
 #[test]
 fn lifecycle_requires_checkpoint_and_confirmed_teardown() {

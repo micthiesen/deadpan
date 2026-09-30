@@ -64,15 +64,21 @@ fn render_workflow_admission_survives_unconfirmed_lease_destruction() -> Result 
 }
 
 fn document() -> Result<ProjectDocument> {
-    let document = ProjectDocument::new(
-        ProjectId::new("project")?,
-        RevisionId::new("initial")?,
+    document_with_basis(
         PresentationBasis {
             width: 640,
             height: 360,
             frame_rate: FrameRate::new(30, 1)?,
             color_policy: ColorPolicy::SdrRec709,
         },
+        12,
+    )
+}
+fn document_with_basis(basis: PresentationBasis, duration: i64) -> Result<ProjectDocument> {
+    let document = ProjectDocument::new(
+        ProjectId::new("project")?,
+        RevisionId::new("initial")?,
+        basis,
         NodeId::new("root")?,
     )?;
     let edit = deadpan_core::apply(
@@ -92,7 +98,7 @@ fn document() -> Result<ProjectDocument> {
                             "pause",
                             HoldRecipe {
                                 picture_context: None,
-                                duration: FrameDuration::new(12)?,
+                                duration: FrameDuration::new(duration)?,
                                 video: HoldVideo::Background,
                                 audio: HoldAudio::Silence,
                             },
@@ -115,12 +121,12 @@ fn intent(store: &ProjectStore, name: &str) -> Result<RenderIntent> {
         revision_id: document.revision_id().clone(),
         document_sha256: document_sha256(&document, &AtomicBool::new(false), deadline())?,
         range: FrameRange::new(ProjectFrame(0), ProjectFrame(12))?,
-        policy: RenderEngineeringPolicy {
+        policy: RenderPolicy::Engineering(RenderEngineeringPolicy {
             schema_version: 1,
             selection: RenderSelection::ExplicitEngineering,
             encoder: RenderEncoder::Software,
             b_frames: RenderBFrames::None,
-        },
+        }),
     })
 }
 fn deadline() -> Instant {
@@ -312,7 +318,12 @@ fn invalid_immutable_binding_and_paging_are_rejected() -> Result {
             0 => value.project_id = ProjectId::new("foreign")?,
             1 => value.document_sha256 = deadpan_jobs::Sha256::new("0".repeat(64))?,
             2 => value.range = FrameRange::new(ProjectFrame(0), ProjectFrame(13))?,
-            3 => value.policy.schema_version = 2,
+            3 => {
+                let RenderPolicy::Engineering(policy) = &mut value.policy else {
+                    unreachable!("fixture uses engineering policy");
+                };
+                policy.schema_version = 2;
+            }
             _ => value.revision_id = RevisionId::new("missing")?,
         }
         assert!(
@@ -758,5 +769,7 @@ fn targeted_json_bounds_reject_before_deserializing_the_row() -> Result {
     Ok(())
 }
 
+#[path = "render_jobs/admission.rs"]
+mod admission;
 #[path = "render_jobs/publication.rs"]
 mod publication;

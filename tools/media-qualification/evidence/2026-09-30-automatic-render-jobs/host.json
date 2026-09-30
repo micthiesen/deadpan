@@ -1,0 +1,47 @@
+{
+  "cpu_and_memory": [
+    "Apple M5 Max",
+    "137438953472"
+  ],
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+  "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6",
+  "helper_linkage": "target/debug/deadpan-app:\n\t/System/Library/Frameworks/AppKit.framework/Versions/C/AppKit (compatibility version 45.0.0, current version 2685.60.104)\n\t/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libavformat.62.dylib (compatibility version 62.0.0, current version 62.3.103)\n\t/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libavcodec.62.dylib (compatibility version 62.0.0, current version 62.11.103)\n\t/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libavutil.60.dylib (compatibility version 60.0.0, current version 60.8.103)\n\t/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 2100.43.0)\n\t/System/Library/Frameworks/AudioToolbox.framework/Versions/A/AudioToolbox (compatibility version 1.0.0, current version 1000.0.0)\n\t/System/Library/Frameworks/CoreAudio.framework/Versions/A/CoreAudio (compatibility version 1.0.0, current version 1.0.0)\n\t/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libswscale.9.dylib (compatibility version 9.0.0, current version 9.1.103)\n\t/System/Library/Frameworks/ApplicationServices.framework/Versions/A/ApplicationServices (compatibility version 1.0.0, current version 66.0.0)\n\t/System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics (compatibility version 64.0.0, current version 1965.5.1)\n\t/System/Library/Frameworks/CoreVideo.framework/Versions/A/CoreVideo (compatibility version 1.2.0, current version 734.4.0)\n\t/System/Library/Frameworks/Carbon.framework/Versions/A/Carbon (compatibility version 2.0.0, current version 170.0.0)\n\t/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation (compatibility version 150.0.0, current version 5026.5.4)\n\t/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation (compatibility version 300.0.0, current version 5026.5.4)\n\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1356.0.0)\n\t/usr/lib/libobjc.A.dylib (compatibility version 1.0.0, current version 228.0.0)\n\t/System/Library/Frameworks/QuartzCore.framework/Versions/A/QuartzCore (compatibility version 1.2.0, current version 1195.14.4)\n\t/System/Library/Frameworks/Metal.framework/Versions/A/Metal (compatibility version 1.0.0, current version 373.2.0)\n\t/usr/lib/libiconv.2.dylib (compatibility version 7.0.0, current version 7.0.0)\n\t/System/Library/Frameworks/ColorSync.framework/Versions/A/ColorSync (compatibility version 1.0.0, current version 3813.5.1)\n\t/System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices (compatibility version 1.0.0, current version 1226.0.0)",
+  "checked_runtime_files": {
+    "helper": {
+      "path": "/Users/michael/Code/deadpan/target/debug/deadpan-app",
+      "bytes": 229374224,
+      "device": 16777233,
+      "inode": 34339930,
+      "sha256": "fc61e7d42d3aad15e59f6e9f662d9b7c458c203d315c368886914aeec57c999b"
+    },
+    "avcodec": {
+      "path": "/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libavcodec.62.11.103.dylib",
+      "bytes": 12808632,
+      "device": 16777233,
+      "inode": 28353644,
+      "sha256": "58aac15dab11ce599ae595eb8e5bf54ed68327d9929451650fa3b4bcf6307f1f"
+    },
+    "avformat": {
+      "path": "/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libavformat.62.3.103.dylib",
+      "bytes": 2244152,
+      "device": 16777233,
+      "inode": 28353639,
+      "sha256": "1e95ffdb6a28931038273c3c30a1807b1254613efb806e429caddf703fa5972d"
+    },
+    "avutil": {
+      "path": "/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libavutil.60.8.103.dylib",
+      "bytes": 725688,
+      "device": 16777233,
+      "inode": 28353657,
+      "sha256": "a5245d17b143832d7b57351d0bb97d0e31d65ae6a53bea195627b64e9b44edb8"
+    },
+    "swscale": {
+      "path": "/private/tmp/deadpan-ui-ffmpeg/prefix/lib/libswscale.9.1.103.dylib",
+      "bytes": 949464,
+      "device": 16777233,
+      "inode": 28353653,
+      "sha256": "02a571c85bbd5df607f7aea1021d93764b4d53cb1c1432d03ed7d840cb15d104"
+    }
+  },
+  "scope": "post-encode independent on-disk match to exact runtime observations; actual mapped-object checks occurred inside each worker; trusted installed code, no memory/framework/driver attestation"
+}

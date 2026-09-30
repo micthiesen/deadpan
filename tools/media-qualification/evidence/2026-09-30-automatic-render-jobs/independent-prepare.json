@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python3",
+    "/tmp/deadpan-durable-automatic-20260930/prepare-decode.py"
+  ],
+  "started": "2026-09-30T12:31:10.459669+00:00",
+  "base_commit": "4594f5b043f5fccd84da9c4c8f8f88f47dceee8e",
+  "diff_sha256": "e948b2c86d2b07ee58937175a1636109f7c7a8af5746a44ff596398935ce7659",
+  "source_manifest_sha256": "b08c28b724091e2925872b0c55d35c478bf566e9f4ca2e858471265aa84de7fb",
+  "pid": 44870,
+  "exit_code": 0,
+  "seconds": 0.02721124980598688
+}

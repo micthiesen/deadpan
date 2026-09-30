@@ -1,0 +1,98 @@
+"""Compare every bound-project picture plane and audio sample at fixed PTS."""
+import json
+import hashlib
+import sys
+import traceback
+from pathlib import Path
+
+repo = Path('/Users/michael/Code/deadpan')
+work = Path('/tmp/deadpan-durable-automatic-20260930')
+sys.path.insert(0, str(repo / 'tools/media-qualification/compatible'))
+adapters = work / 'five-second-oracles'
+sys.path.insert(0, str(adapters))
+from encoder_oracle import _Checks
+from native_audio_oracle import _adapt
+from project_encode_oracle import compare_pcm, compare_plane, ffmpeg_spans, inspect_video
+from qualify_encoder import read_pcm
+from qualify_native_encode import NativeEncodeHarness, RangeCaseSpec
+from qualify_project_encode import admit_file
+
+source = work / 'independent-input.json'
+bound = json.loads(source.read_text())
+assert bound['status'] == 'passed' and bound['cleanup_confirmed']
+contract = bound['captured_contract']
+assert bound['direct_inputs']['contract'] == contract
+assert contract['frame_count'] == 128 and contract['raster'] == [320, 180]
+assert contract['project_audio_start'] == 0 and contract['project_audio_end'] == 205005
+spec = RangeCaseSpec(frame_count=128, fps_num=30000, fps_den=1001,
+                     project_start=0, width=320, height=180, requested_b_frames=(0 if bound['manifest']['contract']['choice']['b_frames'] == 'none' else 2))
+movie = Path(bound['retained_verified']['path'])
+pictures = Path(bound['direct_inputs']['picture_reference'])
+audio = Path(bound['direct_inputs']['audio_reference'])
+admit_file(movie, 512 * 1024 * 1024, bound['manifest']['movie']['byte_length'])
+admit_file(pictures, 128 * 320 * 180 * 3 // 2, 128 * 320 * 180 * 3 // 2)
+admit_file(audio, 205005 * 8, 205005 * 8)
+decoded = work / 'decoded-automatic'
+decoded.mkdir()
+harness = NativeEncodeHarness(decoded, False, Path('/tmp/deadpan-ui-ffmpeg-build.json'), repo / 'target/debug/deadpan-cli')
+harness.report['scope'] = 'complete bound committed file, independently decoded FFmpeg pictures and ordinary/manual FFmpeg plus AVFoundation audio, compared at authored PTS against fresh canonical references; no PCM realignment'
+harness.report['fixture_capacity'] = {'seconds': 5, 'samples': 240000, 'actual_samples': 205005, 'scope': 'scratch-only extent extension from the original four-second experiment; all timing, format, attachment, image and audio fidelity checks remain unchanged', 'edits': json.loads((adapters / 'edits.json').read_text())}
+try:
+    harness.prepare()
+    # The original harness records its four-second reader. Build and explicitly
+    # select the separately retained five-second reader for this complete file.
+    extended_reader = decoded / 'avfoundation_probe_5s'
+    harness.run(['xcrun', '--sdk', 'macosx', 'clang', '-std=c11', '-O2', '-g', '-fobjc-arc', '-Wall', '-Wextra', '-Werror', '-arch', 'arm64', '-mmacosx-version-min=15.0', adapters / 'avfoundation_probe.m', '-o', extended_reader, '-framework', 'Foundation', '-framework', 'AVFoundation', '-framework', 'CoreMedia', '-framework', 'AudioToolbox'])
+    harness.native_audio = extended_reader
+    harness.report['extended_avfoundation_reader'] = harness.artifact(extended_reader)
+    harness.admitted_files[str(extended_reader)] = harness.artifact(extended_reader)['sha256']
+    for path in [adapters / name for name in ('native_audio_oracle.py', 'project_encode_oracle.py', 'avfoundation_probe.m', 'edits.json')]:
+        harness.admitted_files[str(path.resolve())] = hashlib.sha256(path.read_bytes()).hexdigest()
+    for path in [source, movie, pictures, audio]:
+        harness.admitted_files[str(path.resolve())] = harness.artifact(path)['sha256']
+    assert harness.artifact(movie)['sha256'] == bound['manifest']['movie']['sha256']
+    picture_output = decoded / 'bound.i420'
+    video = json.loads(harness.run([harness.binary, 'project-video', movie, picture_output]).stdout)
+    video_check = inspect_video(spec, video)
+    assert picture_output.stat().st_size == pictures.stat().st_size
+    planes = []
+    with picture_output.open('rb') as actual, pictures.open('rb') as reference:
+        for ordinal in range(128):
+            for plane, count in [('Y', 320 * 180), ('Cb', 320 * 180 // 4), ('Cr', 320 * 180 // 4)]:
+                planes.append({'ordinal': ordinal, 'plane': plane, **compare_plane(actual.read(count), reference.read(count))})
+        assert not actual.read(1) and not reference.read(1)
+    expected = read_pcm(audio)
+    assert len(expected) == 205005 * 2
+    comparisons = {}
+    observations = {}
+    for mode in ['ordinary', 'manual', 'avfoundation']:
+        target = decoded / (mode + '.f32')
+        command = [harness.native_audio, movie, target] if mode == 'avfoundation' else [harness.binary, 'audio', movie, target, mode]
+        observation = json.loads(harness.run(command).stdout)
+        pcm = read_pcm(target)
+        if mode == 'avfoundation':
+            checks = _Checks()
+            spans, start, duration = _adapt(checks, observation, pcm)
+            assert checks.result()['passed'] and start == 0 and duration == 205005
+            assert observation['input_sha256'] == observation['final_input_sha256'] == bound['manifest']['movie']['sha256']
+        else:
+            assert observation['stream_start_pts'] == 0
+            spans = ffmpeg_spans(observation, pcm)
+        comparisons[mode] = compare_pcm(pcm, spans, expected)
+        comparisons[mode]['artifact'] = harness.artifact(target)
+        observations[mode] = observation
+    harness.report['case'] = {'video': video, 'video_checks': video_check, 'planes': planes, 'pcm_comparisons': comparisons, 'audio': observations}
+    assert video_check['passed'] and all(row['passed'] for row in planes)
+    assert all(row['passed'] for row in comparisons.values())
+    harness.report['result'] = 'passed'
+except Exception as error:
+    harness.report['result'] = 'failed'
+    harness.report['failure'] = str(error)
+    harness.report['traceback'] = traceback.format_exc()
+finally:
+    harness.finish_admission()
+    if harness.process_faults:
+        harness.report['result'] = 'failed: process or sanitizer fault'
+    (decoded / 'report.json').write_text(json.dumps(harness.report, indent=2) + '\n')
+    print(json.dumps({'result': harness.report['result'], 'failure': harness.report.get('failure'), 'frames': 128, 'complete_planes': 384, 'audio_samples_per_reader': 205005}))
+raise SystemExit(0 if harness.report['result'] == 'passed' else 1)

@@ -41,12 +41,20 @@ fn number(value: u64) -> Result<i64, StoreError> {
 /// this capability. Any committed transition invalidates the previous epoch.
 pub struct PublicationPermit {
     record: StoredPublication,
+    encoding_decision: Option<deadpan_jobs::render::admission::RenderEncodingDecision>,
     closed: Arc<AtomicBool>,
     epoch: Arc<AtomicU64>,
 }
 impl PublicationPermit {
     pub fn record(&self) -> &StoredPublication {
         &self.record
+    }
+    /// Original encoder provenance captured with this exact publication stage.
+    /// This observation does not restore a live automatic encoding capability.
+    pub fn encoding_decision(
+        &self,
+    ) -> Option<&deadpan_jobs::render::admission::RenderEncodingDecision> {
+        self.encoding_decision.as_ref()
     }
     pub fn identity(&self) -> PublicationIdentity {
         self.record.identity()
@@ -483,8 +491,18 @@ impl ProjectStore {
             }
             return Err(error);
         }
+        let encoding_decision = match self
+            .render_encoding_decision(&record.intent.job_id, &record.encoding_attempt_id)
+        {
+            Ok(decision) => decision,
+            Err(error) => {
+                epoch.store(0, Ordering::Release);
+                return Err(error);
+            }
+        };
         Ok(PublicationPermit {
             record,
+            encoding_decision,
             closed: self.render_closed.clone(),
             epoch,
         })
@@ -736,6 +754,25 @@ pub(crate) fn check_stored_sizes(connection: &Connection) -> Result<(), StoreErr
         if bad {
             return Err(invalid("stored publication metadata exceeds bound"));
         }
+    }
+    Ok(())
+}
+
+/// Schema-41 publication records embed an engineering-only RenderIntent. The
+/// outer publication grammar is validated separately by the current parser;
+/// this bounded preflight prevents its nested intent from gaining new grammar.
+pub(crate) fn validate_legacy_intents(connection: &Connection) -> Result<(), StoreError> {
+    #[derive(serde::Deserialize)]
+    struct LegacyIntent {
+        #[serde(deserialize_with = "deadpan_jobs::render::deserialize_render_intent_v1")]
+        render_intent: deadpan_jobs::render::RenderIntent,
+    }
+    let mut statement = connection.prepare("SELECT body FROM render_publications")?;
+    let mut rows = statement.query([])?;
+    while let Some(row) = rows.next()? {
+        let json: String = row.get(0)?;
+        let legacy: LegacyIntent = serde_json::from_str(&json)?;
+        legacy.render_intent.validate().map_err(pure)?;
     }
     Ok(())
 }

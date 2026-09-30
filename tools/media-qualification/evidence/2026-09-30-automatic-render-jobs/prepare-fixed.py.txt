@@ -1,0 +1,24 @@
+import hashlib
+import json
+from pathlib import Path
+import shutil
+import sqlite3
+
+root = Path('/tmp/deadpan-durable-automatic-20260930')
+source = Path('/tmp/deadpan-runtime-binding-20260930/source.deadpan')
+target = root / 'source-fixed.deadpan'
+def ignore(directory, names):
+    if Path(directory) == source:
+        return [name for name in names if name.startswith('project.sqlite') or name == '.writer.lock']
+    return []
+shutil.copytree(source, target, ignore=ignore)
+with sqlite3.connect(source.as_uri() + '/project.sqlite?mode=ro', uri=True) as original:
+    assert original.execute('PRAGMA user_version').fetchone()[0] == 41
+    with sqlite3.connect(target / 'project.sqlite') as destination:
+        original.backup(destination)
+    assert hashlib.sha256((root / 'before.sqlite').read_bytes()).hexdigest() == '4d1d4ccb20e499132ac5160e52a162c5bfeb199d1748a91332fb8699b16dd30a'
+report = {'source': str(source), 'target': str(target), 'schema': 41,
+          'database_sha256': hashlib.sha256((root / 'before.sqlite').read_bytes()).hexdigest(),
+          'method': 'Immutable media copied; both database snapshots use SQLite backup API.'}
+(root / 'input-fixed.json').write_text(json.dumps(report, indent=2) + '\n')
+print(json.dumps(report, indent=2))

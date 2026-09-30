@@ -2,7 +2,12 @@ use super::*;
 use deadpan_core::*;
 use deadpan_jobs::{
     Sha256,
-    render::{RenderBFrames, RenderEncoder, RenderSelection, document_sha256},
+    render::{
+        RenderAutomaticAlgorithm, RenderAutomaticPolicy, RenderAutomaticSelection, RenderBFrames,
+        RenderEncoder, RenderEngineeringPolicy, RenderSelection,
+        admission::{RenderAdmissionFailure, RenderAdmissionFailureKind, RenderDecisionOutcome},
+        document_sha256,
+    },
 };
 use deadpan_store::AccessMode;
 use std::{collections::BTreeMap, time::Duration};
@@ -10,15 +15,28 @@ use std::{collections::BTreeMap, time::Duration};
 type Result<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 fn document() -> Result<ProjectDocument> {
+    document_with_basis(PresentationBasis {
+        width: 64,
+        height: 48,
+        frame_rate: FrameRate::new(30, 1)?,
+        color_policy: ColorPolicy::SdrRec709,
+    })
+}
+
+fn automatic_document() -> Result<ProjectDocument> {
+    document_with_basis(PresentationBasis {
+        width: 320,
+        height: 180,
+        frame_rate: FrameRate::new(30_000, 1001)?,
+        color_policy: ColorPolicy::SdrRec709,
+    })
+}
+
+fn document_with_basis(basis: PresentationBasis) -> Result<ProjectDocument> {
     let empty = ProjectDocument::new(
         ProjectId::new("workflow-project")?,
         RevisionId::new("empty")?,
-        PresentationBasis {
-            width: 64,
-            height: 48,
-            frame_rate: FrameRate::new(30, 1)?,
-            color_policy: ColorPolicy::SdrRec709,
-        },
+        basis,
         NodeId::new("root")?,
     )?;
     let transaction = apply(
@@ -103,7 +121,7 @@ fn start(name: &str) -> Result<StartRender> {
         revision: RevisionId::new("baseline")?,
         range: None,
         identity: identity(name)?,
-        policy: policy(),
+        policy: policy().into(),
         publication: publication(name)?,
         deadline: deadline(),
     })
@@ -195,16 +213,47 @@ fn reopening_writer_never_rebinds_old_coordinator() -> Result {
     Ok(())
 }
 
-// The following controller tests supply explicit transport failure replies.
-// They never construct a successful media capability or run a mock encoder.
+// Controller tests supply observations at the private stage boundary. Selected
+// observations are copied from retained measurements, never live capabilities.
+// These tests never encode, verify or publish a movie.
 struct Controlled {
+    // Keep the real worker idle and live so public admission can check it.
+    // Dropped before the workflow so the worker can exit with this fixture.
+    _idle_commands: Option<SyncSender<worker::Command>>,
     workflow: RenderWorkflow,
     commands: Receiver<worker::Command>,
 }
 fn controlled(store: &mut ProjectStore, package: PathBuf, name: &str) -> Result<Controlled> {
+    controlled_policy(store, package, name, policy().into())
+}
+
+fn controlled_automatic(
+    store: &mut ProjectStore,
+    package: PathBuf,
+    name: &str,
+) -> Result<Controlled> {
+    controlled_policy(
+        store,
+        package,
+        name,
+        RenderAutomaticPolicy {
+            schema_version: 1,
+            selection: RenderAutomaticSelection::Automatic,
+            algorithm: RenderAutomaticAlgorithm::AutomaticSdrV1,
+        }
+        .into(),
+    )
+}
+
+fn controlled_policy(
+    store: &mut ProjectStore,
+    package: PathBuf,
+    name: &str,
+    policy: RenderPolicy,
+) -> Result<Controlled> {
     let mut workflow = RenderWorkflow::new(store, config(package)?)?;
     let (commands, receiver) = mpsc::sync_channel(1);
-    workflow.commands = Some(commands); // idle real worker exits without work
+    let idle_commands = workflow.commands.replace(commands);
     let id = identity(name)?;
     workflow.begin(
         store,
@@ -214,34 +263,25 @@ fn controlled(store: &mut ProjectStore, package: PathBuf, name: &str) -> Result<
     )?;
     let doc = store.snapshot()?;
     let intent = RenderIntent {
-        schema_version: 1,
+        schema_version: if policy.is_automatic() { 2 } else { 1 },
         job_id: id.job_id.clone(),
         project_id: doc.project_id().clone(),
         revision_id: doc.revision_id().clone(),
         document_sha256: document_sha256(&doc, &AtomicBool::new(false), deadline())?,
         range: FrameRange::new(ProjectFrame(0), ProjectFrame(12))?,
-        policy: policy(),
+        policy,
     };
     store.create_render_job(intent.clone(), &AtomicBool::new(false), deadline())?;
     workflow.status.intent = Some(intent);
-    workflow.status.attempt = Some(store.begin_render_attempt(BeginRenderAttempt {
-        job_id: id.job_id,
-        attempt_id: id.attempt_id,
-        cancellation_token: id.cancellation_token,
-        checkpoint_attempt_id: None,
-    })?);
-    workflow.transition(store, RenderAttemptTransition::Encoding)?;
-    workflow
-        .active
-        .as_mut()
-        .ok_or("missing active run")?
-        .pending = true;
-    workflow
-        .active
-        .as_mut()
-        .ok_or("missing active run")?
-        .expected_reply = Some(ExpectedReply::Retained);
+    workflow.begin_attempt(store, None)?;
+    let initial = receiver.try_recv()?;
+    match initial.kind {
+        Work::Qualify(request, _) => assert_eq!(request.attempt.state, RenderAttemptState::Queued),
+        Work::Encode(request, _) => assert_eq!(request.attempt.state, RenderAttemptState::Encoding),
+        _ => return Err("unexpected initial stage".into()),
+    }
     Ok(Controlled {
+        _idle_commands: idle_commands,
         workflow,
         commands: receiver,
     })
@@ -256,6 +296,320 @@ fn reply(controlled: &Controlled, stage: StageReply) -> Result<Reply> {
             .ok_or("missing identity")?,
         stage,
     })
+}
+
+fn selected_decision(control: &Controlled) -> Result<RenderEncodingDecision> {
+    let mut decision = RenderEncodingDecision::from_json(include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../deadpan-jobs/src/render/admission/tests/measured-decision-v1.json"
+    )))?;
+    let intent = control
+        .workflow
+        .status
+        .intent
+        .as_ref()
+        .ok_or("missing intent")?;
+    let attempt = control
+        .workflow
+        .status
+        .attempt
+        .as_ref()
+        .ok_or("missing attempt")?;
+    let pictures = crate::picture::ProjectPictureSession::open_revision(
+        &control.workflow.config.package,
+        &intent.revision_id,
+        Some(intent.range),
+        &AtomicBool::new(false),
+    )?;
+    let contract = crate::export_picture::ExportPictureContract::capture(&pictures)?;
+    decision.job_id = intent.job_id.clone();
+    decision.encoding_attempt_id = attempt.attempt_id.clone();
+    decision.document_sha256 = intent.document_sha256.clone();
+    decision.output = serde_json::from_value(serde_json::to_value(contract)?)?;
+    for probe in &mut decision.probes {
+        probe.identity.request_id = intent.job_id.clone();
+    }
+    decision.validate_for(intent, &attempt.attempt_id)?;
+    Ok(decision)
+}
+
+fn failed_decision(
+    control: &Controlled,
+    kind: RenderAdmissionFailureKind,
+) -> Result<RenderEncodingDecision> {
+    let mut decision = selected_decision(control)?;
+    decision.probes.clear();
+    decision.runtime = None;
+    decision.outcome = RenderDecisionOutcome::Aborted {
+        failure: RenderAdmissionFailure {
+            kind,
+            diagnostic: deadpan_jobs::Diagnostic::new("qualification stopped before encoding")?,
+        },
+    };
+    decision.validate()?;
+    Ok(decision)
+}
+
+#[test]
+fn automatic_decision_commits_before_encoding_command() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = scratch.path().join("automatic.deadpan");
+    let mut store = ProjectStore::create(&package, &automatic_document()?)?;
+    let mut control = controlled_automatic(&mut store, package, "automatic-order")?;
+    let id = identity("automatic-order")?;
+    assert_eq!(control.workflow.status.stage, WorkflowStage::Qualifying);
+    assert_eq!(
+        store.render_attempt(&id.job_id, &id.attempt_id)?.state,
+        RenderAttemptState::Queued
+    );
+    assert!(
+        store
+            .render_encoding_decision(&id.job_id, &id.attempt_id)?
+            .is_none()
+    );
+    let decision = selected_decision(&control)?;
+    let selected = reply(&control, StageReply::Qualified(Box::new(decision.clone())))?;
+    control.workflow.receive(&mut store, selected)?;
+    let Work::Encode(request, _) = control.commands.try_recv()?.kind else {
+        return Err("selection did not enqueue encoding".into());
+    };
+    let stored = store.render_attempt(&id.job_id, &id.attempt_id)?;
+    assert_eq!(request.attempt, stored);
+    assert_eq!(stored.state, RenderAttemptState::Encoding);
+    assert_eq!(stored.transition_sequence, 2);
+    assert_eq!(
+        store.render_encoding_decision(&id.job_id, &id.attempt_id)?,
+        Some(decision)
+    );
+    Ok(())
+}
+
+#[test]
+fn automatic_decision_write_failure_never_enqueues_encoding() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = scratch.path().join("automatic.deadpan");
+    let mut store = ProjectStore::create(&package, &automatic_document()?)?;
+    let mut control = controlled_automatic(&mut store, package.clone(), "decision-write")?;
+    let decision = selected_decision(&control)?;
+    let database = rusqlite::Connection::open(package.join("project.sqlite"))?;
+    database.execute_batch("CREATE TRIGGER fail_decision BEFORE INSERT ON render_encoding_decisions BEGIN SELECT RAISE(ABORT, 'injected decision failure'); END;")?;
+    let selected = reply(&control, StageReply::Qualified(Box::new(decision)))?;
+    assert!(control.workflow.receive(&mut store, selected).is_err());
+    let id = identity("decision-write")?;
+    assert_eq!(
+        store.render_attempt(&id.job_id, &id.attempt_id)?.state,
+        RenderAttemptState::Cancelling
+    );
+    assert!(
+        store
+            .render_encoding_decision(&id.job_id, &id.attempt_id)?
+            .is_none()
+    );
+    assert!(matches!(control.commands.try_recv()?.kind, Work::Release));
+    assert!(matches!(
+        control.commands.try_recv(),
+        Err(TryRecvError::Empty)
+    ));
+    let released = reply(&control, StageReply::Released)?;
+    assert!(control.workflow.receive(&mut store, released).is_err());
+    assert!(control.workflow.can_release_writer());
+    assert_eq!(
+        control.workflow.status.outcome,
+        Some(WorkflowOutcome::Unresolved)
+    );
+    Ok(())
+}
+
+#[test]
+fn stale_selected_observation_cannot_authorize_current_attempt() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = scratch.path().join("automatic.deadpan");
+    let mut store = ProjectStore::create(&package, &automatic_document()?)?;
+    let mut control = controlled_automatic(&mut store, package, "stale-selection")?;
+    let mut decision = selected_decision(&control)?;
+    decision.encoding_attempt_id = AttemptId::new("earlier-encoding-owner")?;
+    decision.validate()?;
+    let selected = reply(&control, StageReply::Qualified(Box::new(decision)))?;
+    assert!(control.workflow.receive(&mut store, selected).is_err());
+    let id = identity("stale-selection")?;
+    assert_eq!(
+        store.render_attempt(&id.job_id, &id.attempt_id)?.state,
+        RenderAttemptState::Cancelling
+    );
+    assert!(
+        store
+            .render_encoding_decision(&id.job_id, &id.attempt_id)?
+            .is_none()
+    );
+    assert!(matches!(control.commands.try_recv()?.kind, Work::Release));
+    assert!(matches!(
+        control.commands.try_recv(),
+        Err(TryRecvError::Empty)
+    ));
+    Ok(())
+}
+
+#[test]
+fn cancelled_selection_releases_unused_admission_without_encoding() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = scratch.path().join("automatic.deadpan");
+    let mut store = ProjectStore::create(&package, &automatic_document()?)?;
+    let mut control = controlled_automatic(&mut store, package, "cancel-selected")?;
+    let decision = selected_decision(&control)?;
+    let id = identity("cancel-selected")?;
+    control.workflow.cancel(&mut store, &id)?;
+    let selected = reply(&control, StageReply::Qualified(Box::new(decision)))?;
+    control.workflow.receive(&mut store, selected)?;
+    assert_eq!(
+        store.render_attempt(&id.job_id, &id.attempt_id)?.state,
+        RenderAttemptState::Cancelled
+    );
+    assert!(
+        store
+            .render_encoding_decision(&id.job_id, &id.attempt_id)?
+            .is_none()
+    );
+    assert!(matches!(control.commands.try_recv()?.kind, Work::Release));
+    let released = reply(&control, StageReply::Released)?;
+    control.workflow.receive(&mut store, released)?;
+    assert!(control.workflow.can_release_writer());
+    Ok(())
+}
+
+#[test]
+fn captured_admission_failure_stays_consistent_when_cancellation_races() -> Result {
+    for kind in [
+        RenderAdmissionFailureKind::WorkerFault,
+        RenderAdmissionFailureKind::Cancelled,
+    ] {
+        let scratch = tempfile::tempdir()?;
+        let package = scratch.path().join("automatic.deadpan");
+        let mut store = ProjectStore::create(&package, &automatic_document()?)?;
+        let mut control = controlled_automatic(&mut store, package, "cancel-failure")?;
+        let decision = failed_decision(&control, kind)?;
+        let cancelled = decision.cancelled();
+        let id = identity("cancel-failure")?;
+        control.workflow.cancel(&mut store, &id)?;
+        let failed = reply(
+            &control,
+            StageReply::AdmissionFailed {
+                diagnostic: diagnostic("probe_stopped", "captured terminal probe observation"),
+                cleanup_confirmed: true,
+                decision: Some(Box::new(decision.clone())),
+            },
+        )?;
+        control.workflow.receive(&mut store, failed)?;
+        assert_eq!(
+            store.render_attempt(&id.job_id, &id.attempt_id)?.state,
+            if cancelled {
+                RenderAttemptState::Cancelled
+            } else {
+                RenderAttemptState::Failed
+            }
+        );
+        assert_eq!(
+            store.render_encoding_decision(&id.job_id, &id.attempt_id)?,
+            Some(decision)
+        );
+        assert!(matches!(control.commands.try_recv()?.kind, Work::Release));
+        let released = reply(&control, StageReply::Released)?;
+        control.workflow.receive(&mut store, released)?;
+        assert!(control.workflow.can_release_writer());
+    }
+    Ok(())
+}
+
+#[test]
+fn unresolved_admission_cleanup_preserves_owner_fence() -> Result {
+    for previously_blocked in [false, true] {
+        let scratch = tempfile::tempdir()?;
+        let package = scratch.path().join("automatic.deadpan");
+        let mut store = ProjectStore::create(&package, &automatic_document()?)?;
+        let mut control = controlled_automatic(&mut store, package, "probe-cleanup")?;
+        if previously_blocked {
+            control.workflow.journal_fault(
+                &mut store,
+                &WorkflowError::Configuration("injected owner failure".into()),
+            );
+        }
+        let failed = reply(
+            &control,
+            StageReply::AdmissionFailed {
+                diagnostic: diagnostic(
+                    "cleanup_unconfirmed",
+                    "probe process group has not stopped",
+                ),
+                cleanup_confirmed: false,
+                decision: None,
+            },
+        )?;
+        assert!(control.workflow.receive(&mut store, failed).is_err());
+        let id = identity("probe-cleanup")?;
+        assert_eq!(
+            store.render_attempt(&id.job_id, &id.attempt_id)?.state,
+            RenderAttemptState::Cancelling
+        );
+        assert!(
+            store
+                .render_encoding_decision(&id.job_id, &id.attempt_id)?
+                .is_none()
+        );
+        assert!(!control.workflow.can_release_writer());
+        assert!(!control.workflow.status.cleanup_confirmed);
+        assert!(store.acquire_render_workflow().is_err());
+        assert!(matches!(
+            control.commands.try_recv(),
+            Err(TryRecvError::Empty)
+        ));
+    }
+    Ok(())
+}
+
+#[test]
+fn automatic_retry_without_checkpoint_starts_fresh_qualification() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = scratch.path().join("automatic.deadpan");
+    let mut store = ProjectStore::create(&package, &automatic_document()?)?;
+    let mut control = controlled_automatic(&mut store, package, "cold-retry")?;
+    let original = failed_decision(&control, RenderAdmissionFailureKind::Io)?;
+    let failed = reply(
+        &control,
+        StageReply::AdmissionFailed {
+            diagnostic: diagnostic("io", "probe I/O failed"),
+            cleanup_confirmed: true,
+            decision: Some(Box::new(original.clone())),
+        },
+    )?;
+    control.workflow.receive(&mut store, failed)?;
+    assert!(matches!(control.commands.try_recv()?.kind, Work::Release));
+    let released = reply(&control, StageReply::Released)?;
+    control.workflow.receive(&mut store, released)?;
+    let mut id = identity("cold-retry-2")?;
+    id.job_id = original.job_id.clone();
+    control.workflow.retry(
+        &mut store,
+        RetryRender {
+            identity: id.clone(),
+            checkpoint_attempt_id: None,
+            publication: publication("cold-retry-2")?,
+            deadline: deadline(),
+        },
+    )?;
+    let Work::Qualify(request, _) = control.commands.try_recv()?.kind else {
+        return Err("cold retry reused historical admission".into());
+    };
+    assert_eq!(request.attempt.attempt_id, id.attempt_id);
+    assert_eq!(request.attempt.state, RenderAttemptState::Queued);
+    assert!(
+        store
+            .render_encoding_decision(&id.job_id, &id.attempt_id)?
+            .is_none()
+    );
+    assert_eq!(
+        store.render_encoding_decision(&original.job_id, &original.encoding_attempt_id)?,
+        Some(original)
+    );
+    Ok(())
 }
 
 #[test]
@@ -511,6 +865,7 @@ fn disconnected_release_channel_does_not_erase_commit_knowledge() -> Result {
     let Controlled {
         mut workflow,
         commands,
+        ..
     } = control;
     drop(commands);
     workflow

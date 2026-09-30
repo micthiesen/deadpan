@@ -1,6 +1,13 @@
 //! Operational render intent and attempt evidence, independent of authored
 //! history and generation relevance. No stored state grants publication trust.
 
+#[path = "render_jobs/admission.rs"]
+mod admission;
+pub(crate) use admission::create_decision_table;
+#[cfg(test)]
+#[path = "render_jobs/audit_tests.rs"]
+mod audit_tests;
+
 use crate::{
     ProjectStore, StoreError,
     render_media::{PreparedRenderRetention, RenderCandidateMedia},
@@ -314,7 +321,17 @@ impl ProjectStore {
         validate_runtime(&transaction)?;
         let mut attempt = bound_attempt(&transaction, identity)?;
         let next = match transition {
-            RenderAttemptTransition::Encoding => RenderAttemptState::Encoding,
+            RenderAttemptTransition::Encoding => {
+                if read_job(&transaction, &identity.job_id)?
+                    .policy
+                    .is_automatic()
+                {
+                    return Err(invalid(
+                        "automatic encoding requires an atomic admission decision",
+                    ));
+                }
+                RenderAttemptState::Encoding
+            }
             RenderAttemptTransition::Verifying => RenderAttemptState::Verifying,
             RenderAttemptTransition::RequestCancellation => RenderAttemptState::Cancelling,
             RenderAttemptTransition::FinishCancelled => RenderAttemptState::Cancelled,
@@ -460,6 +477,18 @@ pub(crate) fn read_job(
     Ok(intent)
 }
 
+/// All pre-42 jobs use the frozen engineering grammar. Run after SQL byte
+/// bounds and before current parsers during migration; never rewrite the JSON.
+pub(crate) fn validate_legacy_intents(connection: &Connection) -> Result<(), StoreError> {
+    let mut statement = connection.prepare("SELECT intent FROM render_jobs")?;
+    let mut rows = statement.query([])?;
+    while let Some(row) = rows.next()? {
+        let json: String = row.get(0)?;
+        render::parse_render_intent_v1(json.as_bytes()).map_err(pure)?;
+    }
+    Ok(())
+}
+
 fn required_text(value: Option<String>) -> Result<String, StoreError> {
     value.ok_or_else(|| invalid("targeted render metadata is oversized or has wrong type"))
 }
@@ -467,6 +496,8 @@ fn required_text(value: Option<String>) -> Result<String, StoreError> {
 /// Only the selected job's scalar allocation history is needed by ordinary
 /// operations. No attempt bodies or historical reports are inspected here.
 fn validate_job_head(connection: &Connection, job: &RequestId) -> Result<(), StoreError> {
+    #[cfg(test)]
+    audit_tests::HEAD_READS.with(|count| count.set(count.get() + 1));
     let invalid_head: bool = connection.query_row(
         "SELECT
           (SELECT COUNT(*) FROM render_job_heads WHERE job_id=?1)>1 OR
@@ -532,6 +563,16 @@ pub(crate) fn read_checkpoint(
     job: &RequestId,
     id: &AttemptId,
 ) -> Result<StoredRenderCheckpoint, StoreError> {
+    let intent = read_job(connection, job)?;
+    read_checkpoint_for_intent(connection, &intent, id)
+}
+
+fn read_checkpoint_for_intent(
+    connection: &Connection,
+    intent: &RenderIntent,
+    id: &AttemptId,
+) -> Result<StoredRenderCheckpoint, StoreError> {
+    let job = &intent.job_id;
     let owner = read_attempt_body(connection, job, id)?;
     if owner.checkpoint_attempt_id.as_ref() != Some(id)
         || matches!(
@@ -541,7 +582,7 @@ pub(crate) fn read_checkpoint(
     {
         return Err(invalid("render checkpoint has no encoding owner"));
     }
-    validate_attempt(connection, &owner)?;
+    validate_attempt_for_intent(connection, &owner, intent)?;
     read_checkpoint_media(connection, job, id)
 }
 
@@ -583,7 +624,22 @@ fn validate_attempt(
     connection: &Connection,
     attempt: &StoredRenderAttempt,
 ) -> Result<(), StoreError> {
+    let intent = read_job(connection, &attempt.job_id)?;
+    validate_attempt_for_intent(connection, attempt, &intent)
+}
+
+/// The full audit reuses a job whose row and allocation head it already
+/// validated. Targeted reads obtain that same evidence through read_job first.
+fn validate_attempt_for_intent(
+    connection: &Connection,
+    attempt: &StoredRenderAttempt,
+    intent: &RenderIntent,
+) -> Result<(), StoreError> {
     use RenderAttemptState::*;
+    if attempt.job_id != intent.job_id {
+        return Err(invalid("render attempt belongs to a different job"));
+    }
+    admission::validate_attempt_decision(connection, attempt, intent)?;
     if !attempt.state.is_terminal() && attempt.transition_sequence == MAX_RENDER_COUNTER {
         return Err(invalid(
             "active render attempt has exhausted its recovery sequence",
@@ -608,7 +664,7 @@ fn validate_attempt(
             if id == &attempt.attempt_id {
                 read_checkpoint_media(connection, &attempt.job_id, id)
             } else {
-                read_checkpoint(connection, &attempt.job_id, id)
+                read_checkpoint_for_intent(connection, intent, id)
             }
         })
         .transpose()?;
@@ -694,6 +750,11 @@ pub(crate) fn check_stored_sizes(connection: &Connection) -> Result<(), StoreErr
             "media",
             MAX_CHECKPOINT_BYTES,
         ),
+        (
+            "render_encoding_decisions",
+            "body",
+            admission::MAX_DECISION_BYTES,
+        ),
     ] {
         let bad:bool=connection.query_row(&format!("SELECT EXISTS(SELECT 1 FROM {table} WHERE typeof({column})!='text' OR length(CAST({column} AS BLOB)) NOT BETWEEN 1 AND ?1)"),[bound],|row|row.get(0))?;
         if bad {
@@ -711,6 +772,7 @@ pub(crate) fn check_stored_sizes(connection: &Connection) -> Result<(), StoreErr
             "render_candidate_checkpoints",
             &["job_id", "attempt_id"][..],
         ),
+        ("render_encoding_decisions", &["job_id", "attempt_id"][..]),
     ] {
         for column in columns {
             let bad:bool=connection.query_row(&format!("SELECT EXISTS(SELECT 1 FROM {table} WHERE typeof({column})!='text' OR length(CAST({column} AS BLOB)) NOT BETWEEN 1 AND 128)"),[],|row|row.get(0))?;
@@ -732,6 +794,7 @@ fn check_table_capacities(connection: &Connection) -> Result<(), StoreError> {
         ("render_job_heads", MAX_RENDER_JOBS),
         ("render_attempts", MAX_RENDER_ATTEMPTS),
         ("render_candidate_checkpoints", MAX_RENDER_ATTEMPTS),
+        ("render_encoding_decisions", MAX_RENDER_ATTEMPTS),
     ] {
         let count: i64 =
             connection.query_row(&format!("SELECT COUNT(*) FROM {table}"), [], |row| {
@@ -774,7 +837,9 @@ fn validate_runtime(connection: &Connection) -> Result<(), StoreError> {
     Ok(())
 }
 
-fn validate_metadata(connection: &Connection) -> Result<(), StoreError> {
+fn validate_metadata(
+    connection: &Connection,
+) -> Result<BTreeMap<RequestId, RenderIntent>, StoreError> {
     check_stored_sizes(connection)?;
     validate_runtime(connection)?;
     for query in [
@@ -784,6 +849,8 @@ fn validate_metadata(connection: &Connection) -> Result<(), StoreError> {
         "SELECT EXISTS(SELECT 1 FROM render_attempts GROUP BY job_id,ordinal HAVING COUNT(*)!=1)",
         "SELECT EXISTS(SELECT 1 FROM render_job_heads GROUP BY job_id HAVING COUNT(*)!=1)",
         "SELECT EXISTS(SELECT 1 FROM render_candidate_checkpoints GROUP BY attempt_id HAVING COUNT(*)!=1)",
+        "SELECT EXISTS(SELECT 1 FROM render_encoding_decisions GROUP BY attempt_id HAVING COUNT(*)!=1)",
+        "SELECT EXISTS(SELECT 1 FROM render_encoding_decisions d WHERE NOT EXISTS(SELECT 1 FROM render_attempts a WHERE a.job_id=d.job_id AND a.attempt_id=d.attempt_id))",
         "SELECT EXISTS(SELECT 1 FROM render_jobs j WHERE NOT EXISTS(SELECT 1 FROM revisions r WHERE r.id=j.revision_id))",
         "SELECT EXISTS(SELECT 1 FROM render_attempts a WHERE NOT EXISTS(SELECT 1 FROM render_jobs j WHERE j.job_id=a.job_id))",
         "SELECT EXISTS(SELECT 1 FROM render_attempts a WHERE NOT EXISTS(SELECT 1 FROM render_job_heads h WHERE h.job_id=a.job_id))",
@@ -796,62 +863,69 @@ fn validate_metadata(connection: &Connection) -> Result<(), StoreError> {
             ));
         }
     }
+    let mut intents = BTreeMap::new();
     let mut jobs = connection.prepare("SELECT job_id FROM render_jobs")?;
     let mut rows = jobs.query([])?;
     while let Some(row) = rows.next()? {
         let id: String = row.get(0)?;
-        read_job(
-            connection,
-            &RequestId::new(id).map_err(|e| invalid(e.to_string()))?,
-        )?;
+        let id = RequestId::new(id).map_err(|e| invalid(e.to_string()))?;
+        intents.insert(id.clone(), read_job(connection, &id)?);
     }
     let mut attempts = connection.prepare("SELECT job_id,attempt_id FROM render_attempts")?;
     let mut rows = attempts.query([])?;
     while let Some(row) = rows.next()? {
         let job: String = row.get(0)?;
         let id: String = row.get(1)?;
-        read_attempt(
+        let job = RequestId::new(job).map_err(|e| invalid(e.to_string()))?;
+        let intent = intents
+            .get(&job)
+            .ok_or_else(|| invalid("render attempt job is missing"))?;
+        let attempt = read_attempt_body(
             connection,
-            &RequestId::new(job).map_err(|e| invalid(e.to_string()))?,
+            &job,
             &AttemptId::new(id).map_err(|e| invalid(e.to_string()))?,
         )?;
+        validate_attempt_for_intent(connection, &attempt, intent)?;
     }
-    Ok(())
+    Ok(intents)
+}
+
+/// Compact immutable revision facts; never retain the full historical documents.
+struct AuditRevision {
+    project_id: deadpan_core::ProjectId,
+    duration_frames: i64,
+    document_sha256: deadpan_jobs::Sha256,
+    basis: deadpan_core::PresentationBasis,
 }
 
 pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> {
-    validate_metadata(connection)?;
+    let intents = validate_metadata(connection)?;
     let mut documents = BTreeMap::new();
-    let mut statement = connection.prepare("SELECT job_id FROM render_jobs")?;
-    let mut rows = statement.query([])?;
-    while let Some(row) = rows.next()? {
-        let id: String = row.get(0)?;
-        let intent = read_job(
-            connection,
-            &RequestId::new(id).map_err(|e| invalid(e.to_string()))?,
-        )?;
+    for intent in intents.values() {
         let binding = match documents.entry(intent.revision_id.clone()) {
             std::collections::btree_map::Entry::Occupied(entry) => entry.into_mut(),
             std::collections::btree_map::Entry::Vacant(entry) => {
                 let document =
                     validation::read_revision(connection, intent.revision_id.as_str())?.document;
-                entry.insert((
-                    document.project_id().clone(),
-                    document.duration()?.frames(),
-                    render::document_sha256_for_validation(&document).map_err(pure)?,
-                ))
+                entry.insert(AuditRevision {
+                    project_id: document.project_id().clone(),
+                    duration_frames: document.duration()?.frames(),
+                    document_sha256: render::document_sha256_for_validation(&document)
+                        .map_err(pure)?,
+                    basis: document.presentation_basis().clone(),
+                })
             }
         };
-        if intent.project_id != binding.0
-            || intent.range.end().0 > binding.1
-            || intent.document_sha256 != binding.2
+        if intent.project_id != binding.project_id
+            || intent.range.end().0 > binding.duration_frames
+            || intent.document_sha256 != binding.document_sha256
         {
             return Err(invalid(
                 "render intent does not match its immutable document",
             ));
         }
     }
-    Ok(())
+    admission::validate_all_outputs(connection, &intents, &documents)
 }
 
 pub(crate) fn recover_nonterminal(connection: &mut Connection) -> Result<(), StoreError> {

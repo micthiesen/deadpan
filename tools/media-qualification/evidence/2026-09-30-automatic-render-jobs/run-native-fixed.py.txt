@@ -1,0 +1,25 @@
+"""Serial owner for app-feature checks and real automatic publication evidence."""
+import json
+import os
+from pathlib import Path
+import subprocess
+
+root = Path('/tmp/deadpan-durable-automatic-20260930')
+repo = Path('/Users/michael/Code/deadpan')
+runner = 'tools/media-qualification/evidence/2026-09-29-generated-pictures/run-native.py'
+commands = [
+    ('format-qualified', ['cargo', 'fmt', '--all', '--', '--check']),
+    ('workspace-clippy-qualified', ['cargo', 'clippy', '--workspace', '--all-targets', '--locked', '--', '-D', 'warnings']),
+    ('native-automatic-fixed', ['cargo', 'run', '-p', 'deadpan-cli', '--locked', '--example', 'qualify_automatic_render', '--', str(root / 'source-fixed.deadpan'), str(repo / 'target/debug/deadpan-app'), str(root / 'native-fixed')]),
+    ('independent-prepare', ['python3', str(root / 'prepare-decode.py')]),
+    ('independent-decode', ['python3', str(root / 'qualify-decoded.py')]),
+    ('database-check', ['python3', str(root / 'compare-database.py')]),
+    ('runtime-files', ['python3', str(root / 'record-host.py')]),
+]
+environment = dict(os.environ, DEADPAN_CHECK_OUTPUT=str(root))
+for name, command in commands:
+    (root / 'native-gates-progress.json').write_text(json.dumps({'current': name, 'command': command}) + '\n')
+    result = subprocess.run(['python3', runner, name, *command], cwd=repo, env=environment)
+    if result.returncode:
+        raise SystemExit(result.returncode)
+(root / 'native-gates-progress.json').write_text(json.dumps({'status': 'passed'}) + '\n')

@@ -19,8 +19,9 @@ use deadpan_core::{FrameRange, ProjectId, RevisionId};
 use deadpan_jobs::{
     AttemptId, CancellationToken, RequestId,
     render::{
-        RenderAttemptState, RenderDiagnostic, RenderEngineeringPolicy, RenderIntent,
+        RenderAttemptState, RenderDiagnostic, RenderIntent, RenderPolicy,
         RenderVerificationObservation,
+        admission::RenderEncodingDecision,
         publication::{
             PreparedPublicationEvidence, PublicationCompletion, PublicationIntent,
             PublicationOperationKind, PublicationPhase, PublicationReconciliation,
