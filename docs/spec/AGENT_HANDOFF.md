@@ -236,6 +236,38 @@ occurrence interiors remain required. DP-06 is partial for the session register;
 all DP requirements and release gates remain incomplete. The user's separately
 positioned Cursor QA window must stay untouched.
 
+## Atomic linked moves, 2026-09-30
+
+`MoveRange` now addresses a current source range and destination in one pre-edit
+revision. It supports ordinary Sequence scopes, joint endpoint splitting,
+cross-parent moves and whole composite units, retaining their authored/play/mark
+identities. Exact no-ops need no nodes or clocks. Partial temporal occurrences
+remain unsupported. See the [contract](../ATOMIC_MOVES.md).
+
+Capture original audio lattices before cuts and use one unchanged-time placement
+layout for moved and displaced owners. Preserve complete provider support and
+compute final allocation from absolute boundaries. Root sound recipes/routes
+stay in their unchanged root clock; live Hold gates and grants follow issuers.
+Independent review corrected the original cut-plus-gap root-sound design before
+implementation and found no further actionable defect in the final code.
+
+Focused checks pass 101 core, three picture-plan, nine decoded-audio, four store
+and one CLI test. Retained initial failures concern invalid test setup and two
+module-order formatting corrections. All 2,792 locked workspace tests pass with
+none failed or ignored, in 1,399.00 seconds. Formatting and strict all-target
+workspace Clippy with the UI harness pass on Rust 1.97.1. All final checks share
+source manifest `6609d6d091868ae4b71a87a039419bf61209ed4de868f28faf5754e27975e484`;
+the collector rechecked all 1,338 inputs.
+[Qualification](../qualification/atomic-move-2026-09-30.md) records exact evidence
+and limits. Core 34/database 43 are unchanged.
+
+Next: add native Copy/Move operation choice, strictly current source authority,
+visible removal and insertion joins, bounded site audition/comparison and
+receipt-bound moved range selection. Do not wrap moved units to satisfy the
+existing copy result's single-node metadata. Historical copy stays valid after
+edits/Undo; move must reject it. Preserve the reserved user app/Space.
+All requirements and delivery gates remain incomplete.
+
 ## Native identity, 2026-09-30
 
 The user requested a complete ImageGen icon/logo set and app integration.

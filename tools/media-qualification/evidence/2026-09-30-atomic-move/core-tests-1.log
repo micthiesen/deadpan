@@ -1,0 +1,15 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+error[E0624]: method `parent_of` is private
+   --> crates/deadpan-core/tests/sound_routing.rs:175:29
+    |
+175 |         let parent = before.parent_of(&node("a")).unwrap();
+    |                             ^^^^^^^^^ private method
+    |
+   ::: crates/deadpan-core/src/document.rs:691:5
+    |
+691 |     pub(crate) fn parent_of(&self, id: &NodeId) -> Option<NodeId> {
+    |     ------------------------------------------------------------- private method defined here
+
+For more information about this error, try `rustc --explain E0624`.
+error: could not compile `deadpan-core` (test "sound_routing") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

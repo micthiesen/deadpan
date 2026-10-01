@@ -1,0 +1,19 @@
+{
+  "command": [
+    "rustup",
+    "run",
+    "1.97.1",
+    "cargo",
+    "test",
+    "--workspace",
+    "--locked",
+    "--no-fail-fast"
+  ],
+  "started": "2026-10-01T04:41:25.954983+00:00",
+  "base_commit": "a079a46f77306f9c07376f765e1e637835436741",
+  "diff_sha256": "51b5ebcdf50f438307b22e41fcc82b58fbd043a0ee528d1ea4e79aa7766ffc05",
+  "source_manifest_sha256": "6609d6d091868ae4b71a87a039419bf61209ed4de868f28faf5754e27975e484",
+  "pid": 98072,
+  "exit_code": 0,
+  "seconds": 1398.999144792091
+}

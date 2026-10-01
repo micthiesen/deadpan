@@ -104,7 +104,7 @@ fn count(start: i64, end: i64) -> usize {
 // Keep that complete endpoint for reconstruction, including the final point.
 // A transferred RootRoundEven operand additionally needs its retained discrete
 // root support, checked separately in the complete-owner terminal fixture below.
-fn bounded_source(
+pub(super) fn bounded_source(
     provider: &Provider,
     host_frames: i64,
     phase: ExactRatio,
@@ -174,7 +174,7 @@ fn source_slice(selected: Range<i64>) -> CapturedEditSlice {
     capture(&source, "root", selected)
 }
 
-fn prior_edits() -> ProjectDocument {
+pub(super) fn prior_edits() -> ProjectDocument {
     let original = document(
         ntsc(),
         &["lead", "voice", "tail"],

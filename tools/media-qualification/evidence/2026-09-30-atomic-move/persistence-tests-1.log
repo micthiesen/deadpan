@@ -1,0 +1,27 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 05s
+     Running tests/edited_slice.rs (target/debug/deps/edited_slice-426720f06e652619)
+
+running 2 tests
+test move_range::stale_source_stale_destination_and_bad_split_pool_cannot_write_history ... ok
+test move_range::move_dry_run_atomic_failure_commit_and_fresh_history_survive_reopen ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.90s
+
+     Running tests/generation_bundles.rs (target/debug/deps/generation_bundles-cd411edc867bb87f)
+
+running 1 test
+test move_range::moved_accepted_generated_hold_keeps_artifact_and_never_revives_old_request ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 17 filtered out; finished in 0.25s
+
+     Running tests/source_registration.rs (target/debug/deps/source_registration-0f20b6398ed14eb7)
+
+running 1 test
+test sounds::move_range::moves_preserve_qualified_root_sound_recipes_routes_and_hold_grants ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.73s
+

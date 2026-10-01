@@ -5,6 +5,9 @@ use deadpan_core::{
     SourceAudio, SourceAudioMapping, SourceSpan, SourceTimestamp, SplitIdentities,
 };
 
+#[path = "sounds/move_range.rs"]
+mod move_range;
+
 fn sound(document: &ProjectDocument) -> Result<SoundEvent> {
     let full = document.assets()[&id("camera")].audio.unwrap();
     let span = SourceSpan::new(

@@ -142,6 +142,10 @@ temporal commands and unsupported frozen audio captures still fail explicitly.
 Renaming, framing, audio mapping,
 edge choices and other clock-preserving edits retain their normal transactions.
 This root subset is not full sound editing or a completed audio master.
+`MoveRange` supports linked relocation between ordinary Sequence scopes while
+preserving the root owner clock. Root sound recipes and existing routes remain
+unchanged; final live Hold gates and retained allowances still apply. It adds
+no ripple journal. See [atomic moves](ATOMIC_MOVES.md).
 See the [qualification record](qualification/root-sounds-2026-09-27.md) for
 review findings, real-PCM comparisons, resource limits and verification evidence.
 

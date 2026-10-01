@@ -5,6 +5,8 @@ use std::collections::BTreeMap;
 use deadpan_core::*;
 use deadpan_plan::{Picture, PictureSample, RenderPlan};
 
+#[path = "edited_slice/move_range.rs"]
+mod move_range;
 #[path = "edited_slice/placement.rs"]
 mod placement;
 

@@ -153,6 +153,59 @@ fn insert(doc: &ProjectDocument, at: i64, name: &str) -> Command {
     }
 }
 
+#[test]
+fn linked_move_preserves_the_root_sound_clock_routes_and_allowance_ownership() {
+    let original = fixture();
+    let (original, _) = edit(
+        &original,
+        Command::SetSoundAllowance {
+            sound: sound(),
+            issuer: SoundHoldIssuer::Node {
+                instance: InstancePath {
+                    node: node("a"),
+                    repeats: vec![],
+                },
+            },
+            allowed: true,
+        },
+    );
+    let (routed, _) = edit(&original, insert(&original, 30, "pause"));
+    assert!(!routed.sound_routes().is_empty());
+    for before in [&original, &routed] {
+        let parent = node("group");
+        let NodeKind::Sequence { children } = &before.nodes()[&parent].kind else {
+            panic!("ordinary Sequence")
+        };
+        let destination = MoveRangeDestination::Seam {
+            parent: parent.clone(),
+            index: children.len(),
+        };
+        let selected = FrameRange::new(ProjectFrame(0), ProjectFrame(10)).unwrap();
+        let plan = before.range_move(&parent, selected, &destination).unwrap();
+        assert_eq!(plan.required_ids, 0);
+        let (after, transaction) = edit(
+            before,
+            Command::MoveRange {
+                source_revision: before.revision_id().clone(),
+                source_parent: parent,
+                range: selected,
+                destination,
+                identities: SplitIdentities { nodes: vec![] },
+                timing: AudioTimingId {
+                    allocation: request(before, Command::DeleteSound { id: sound() }).new_revision,
+                    ordinal: 0,
+                },
+            },
+        );
+        assert_eq!(transaction.duration_delta, 0);
+        assert_eq!(after.sounds(), before.sounds());
+        assert_eq!(after.sound_routes(), before.sound_routes());
+        assert_eq!(after.sound_allowances(), before.sound_allowances());
+        assert_eq!(after.nodes()[&node("a")], before.nodes()[&node("a")]);
+        assert_eq!(after.sounds()[&sound()].owner, node("root"));
+    }
+}
+
 fn replace_source(
     doc: &ProjectDocument,
     parent: &str,

@@ -3,6 +3,8 @@
 //! bus. This does not qualify mastering, acoustic quality or device delivery.
 use super::*;
 
+#[path = "edited_slice/move_range.rs"]
+mod move_range;
 #[path = "edited_slice/placement.rs"]
 mod placement;
 

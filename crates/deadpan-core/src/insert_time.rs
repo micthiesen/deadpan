@@ -293,7 +293,10 @@ fn validate_split_budget(
     Ok(())
 }
 
-fn split_node_count(document: &ProjectDocument, target: &NodeId) -> Result<usize, EditError> {
+pub(crate) fn split_node_count(
+    document: &ProjectDocument,
+    target: &NodeId,
+) -> Result<usize, EditError> {
     let node = &document.nodes()[target];
     let context = match &node.kind {
         NodeKind::Retime {
@@ -570,7 +573,7 @@ fn physical_context<'a>(
     }
 }
 
-fn validate_identities(
+pub(crate) fn validate_identities(
     document: &ProjectDocument,
     id: Option<&NodeId>,
     identities: &SplitIdentities,

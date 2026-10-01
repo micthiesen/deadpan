@@ -66,8 +66,8 @@ or change undo history. It checks the same reducer, serialized size limits, and
 never-reused revision rule as commit. A stale expected
 revision fails with `RevisionConflict` and the current revision, without writing.
 
-Supported commands are `insert`, `insert_time`, `split`, `delete`, `delete_ripple`, `delete_range`, `move`, `group`,
-`ungroup`, `splice_source`, `splice_source_at`, `replace_source`, `wrap_repeat`, `set_repeat`, `wrap_retime`, `set_retime`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`, `set_hold_picture_context`, `set_source_audio_mapping`, `set_source_video_mapping`,
+Supported commands are `insert`, `insert_time`, `split`, `delete`, `delete_ripple`, `delete_range`, `move`, `move_range`, `group`,
+`ungroup`, `splice_source`, `splice_source_at`, `replace_source`, `splice_slice`, `splice_slice_at`, `replace_slice`, `wrap_repeat`, `set_repeat`, `wrap_retime`, `set_retime`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`, `set_hold_picture_context`, `set_source_audio_mapping`, `set_source_video_mapping`,
 `rename`, `set_audio_edge`, `set_audio_treatments`, `set_hold_audio`, `set_framing`, `set_sound`, `replace_sound`, `delete_sound`, `set_sound_allowance`, `add_asset`, `set_canvas`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, `set_gap_override`, `clear_gap_override`, `isolate_gap`, and `edit_occurrence`. Their exact typed parameters are defined in
 [`Command`](../crates/deadpan-core/src/command.rs). `set_repeat` changes an existing
 Repeat; `wrap_repeat` deliberately adds nesting. A three-play repeat includes
@@ -91,6 +91,17 @@ surviving suffix uses two consecutive ordinals for the original and split suffix
 clocks; operations needing only one clock use the supplied ordinal. The same
 command supports dry-run, commit and durable Undo/Redo.
 See [selected ranges](AUDIO_REANCHORS.md#selected-ranges).
+
+`move_range` takes the current `source_revision`, `source_parent`, a nonempty
+global `range`, `destination`, fresh Split `identities`, and `timing` allocated
+under the new revision. A destination has `type: "seam"`, `parent` and original
+child `index`, or `type: "interior"`, `parent`, direct-child `target` and strict
+local frame offset `at`. Both addresses use the same pre-edit revision. The
+read-only `ProjectDocument::range_move` query reports the joint Split budget,
+exact final interval, removal join and timing slots. A copied historical range
+cannot authorize removing current content after edits or Undo. Root-owned sound
+recipes/routes remain in their unchanged root clock. The older whole-node
+`move` retains its index-after-removal meaning. See [atomic moves](ATOMIC_MOVES.md).
 
 `wrap_retime` takes `node`, a fresh `id`, a positive frame `duration`, and
 `pitch` (`preserve` or `follow_speed`). `set_retime` takes `node`, `duration`

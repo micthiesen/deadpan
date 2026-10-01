@@ -114,11 +114,22 @@ range are removed. Repeat/Retime ancestry and partial composite endpoints still
 require occurrence editing. One inverse restores the complete authored state.
 The operation adds no persisted document fields or schema version.
 
+## Atomic range moves
+
+`MoveRange` jointly splits source and destination endpoints, then captures the
+moved and displaced physical owners on one unchanged-time layout. Each affected
+owner receives one reanchor before the final child order is installed. Old entry
+phase and complete provider support remain intact; final sample allocation uses
+the new absolute boundaries. Whole units preserve their identities, while live
+source/destination Sequence treatments follow final ownership. Root-owned sounds
+retain their unchanged clock and routes. See [atomic moves](ATOMIC_MOVES.md).
+
 ## Remaining work
 
 Current steps represent Source, Hold, Repeat-gap and opaque Preserve output resumes.
-Complete movement/raw-recipe lifecycle, role-only deletion, temporal
-occurrence deletion and the full Visual/register workflow remain open.
+Movement through temporal occurrences, the remaining raw-recipe lifecycle,
+role-only deletion, temporal occurrence deletion and the full Visual/register
+workflow remain open.
 Native paste and partial-range deletion must not use separate Split/Edit commits.
 
 ### Gap ownership design record

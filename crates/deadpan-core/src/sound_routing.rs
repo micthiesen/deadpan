@@ -451,6 +451,23 @@ impl RootSoundEditCapture {
         if document.sounds.is_empty() {
             return Ok(None);
         }
+        if let Command::MoveRange {
+            source_parent,
+            range,
+            destination,
+            ..
+        } = command
+        {
+            document.range_move(source_parent, *range, destination)?;
+            // Internal relocation leaves the root owner's clock unchanged.
+            // Detach only for soundless structural captures, then restore exact
+            // recipes/routes; current Hold gates follow their final issuers.
+            return Ok(Some(Self {
+                sounds: document.sounds.clone(),
+                routes: document.sound_routes.clone(),
+                output_frames: document.duration()?.frames(),
+            }));
+        }
         let operation = match command {
             Command::InsertTime { at, hold, .. } => RootSoundOperation::Insert {
                 at: *at,

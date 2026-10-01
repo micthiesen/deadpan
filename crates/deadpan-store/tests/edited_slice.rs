@@ -6,6 +6,8 @@ use std::{collections::BTreeMap, error::Error, path::Path};
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
+#[path = "edited_slice/move_range.rs"]
+mod move_range;
 #[path = "edited_slice/placement.rs"]
 mod placement;
 #[path = "edited_slice/preview.rs"]

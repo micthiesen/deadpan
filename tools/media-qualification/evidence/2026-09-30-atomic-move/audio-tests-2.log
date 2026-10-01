@@ -1,0 +1,17 @@
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.67s
+     Running tests/composite_insert.rs (target/debug/deps/composite_insert-83f2643f39d161d3)
+
+running 9 tests
+test edited_slice::move_range::moved_voice_keeps_its_gain_clock_and_uses_live_destination_gain_once ... ok
+test edited_slice::move_range::root_sound_stays_at_frames_one_to_three_when_a_moves_to_the_end ... ok
+test edited_slice::move_range::prior_pause_delete_bindings_survive_another_move_without_restarting_the_source ... ok
+test edited_slice::move_range::whole_owner_move_allocates_the_new_terminal_sample_but_reports_exhausted_old_support ... ok
+test edited_slice::move_range::three_cuts_in_one_source_move_left_and_right_with_a_real_extra_continuing_sample ... ok
+test edited_slice::move_range::root_sound_recipe_stays_fixed_while_live_hold_gates_and_grants_follow_the_hold ... ok
+test edited_slice::move_range::cross_parent_moves_preserve_every_source_sample_entry_in_both_directions ... ok
+test edited_slice::move_range::full_repeat_families_and_preserve_contexts_move_without_changing_their_prepared_pcm ... ok
+test edited_slice::move_range::existing_root_sound_routes_and_sample_labels_are_unchanged_by_left_and_right_moves ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 47 filtered out; finished in 2.62s
+

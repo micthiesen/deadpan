@@ -1,0 +1,12 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 36.75s
+     Running tests/edited_slice.rs (target/debug/deps/edited_slice-a58d29f26e190bf1)
+
+running 3 tests
+test move_range::three_cuts_in_one_source_preserve_every_ordinal_and_owner_clock_in_both_directions ... ok
+test move_range::moved_marks_keep_identity_bias_and_child_host_while_departed_parent_marks_become_unresolved ... ok
+test move_range::cross_parent_moves_keep_owned_repeat_preserve_and_hold_contexts_but_ancestors_stay_live ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.09s
+

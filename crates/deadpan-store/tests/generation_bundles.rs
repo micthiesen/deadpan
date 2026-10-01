@@ -39,6 +39,8 @@ type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
 #[path = "generation_bundles/edited_slice.rs"]
 mod edited_slice;
+#[path = "generation_bundles/move_range.rs"]
+mod move_range;
 
 const NATIVE_BYTES: &[u8] = b"canonical native fixture";
 const SAMPLED_BYTES: &[u8] = b"canonical sampled fixture";

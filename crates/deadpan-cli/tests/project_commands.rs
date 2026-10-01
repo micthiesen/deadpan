@@ -19,6 +19,8 @@ mod delete;
 mod delete_range;
 #[path = "project_commands/edited_slice.rs"]
 mod edited_slice;
+#[path = "project_commands/move_range.rs"]
+mod move_range;
 #[path = "project_commands/nested_pause.rs"]
 mod nested_pause;
 

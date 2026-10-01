@@ -177,9 +177,9 @@ cursor, and a coalesced copy completion cannot replace reopening guidance.
 
 ## Remaining product work
 
-Atomic move remains required. It must preserve destination clocks before endpoint
-splits and before removing any selected children, and reject placement inside
-its own removed interval.
+The [atomic MoveRange command](ATOMIC_MOVES.md) relocates current contents between
+ordinary Sequence scopes, preserving whole-unit identities. Its native Move
+control, explicit removal/insertion join comparison and audition remain required.
 Named register persistence, role-only placement, cut-to-register behavior,
 motion/text-object operators and nested occurrence interiors remain required.
 These workflows remain open beyond the capture and placement commands described

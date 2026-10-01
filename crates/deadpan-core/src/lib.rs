@@ -69,6 +69,7 @@ pub mod legacy_v7;
 pub mod legacy_v8;
 pub mod legacy_v9;
 mod marks;
+mod move_range;
 mod occurrence;
 mod occurrence_edit;
 mod picture_context;
@@ -102,6 +103,7 @@ pub use insert_time::{
     InsertTimeSplit, InsertTimeTarget, SequenceRangeEdit, SourceReplacement, SourceSpliceInterior,
 };
 pub use marks::*;
+pub use move_range::{MoveRangeDestination, SequenceRangeMove};
 pub use occurrence::*;
 pub use occurrence_edit::{OccurrenceEdit, OccurrenceIdentities};
 pub use picture_context::*;

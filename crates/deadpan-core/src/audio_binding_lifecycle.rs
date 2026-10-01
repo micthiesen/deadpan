@@ -28,6 +28,31 @@ pub fn capture_unbound_audio_bindings(
     capture(document, timing, false).map(|(bindings, _)| bindings)
 }
 
+/// The recipe inventory used by `Capture::walk`, without allocating a clock.
+/// Includes dormant Repeat gaps and Preserve-input recipes, just as capture does.
+pub(crate) fn has_unbound_recipes(document: &ProjectDocument) -> bool {
+    document.nodes().iter().any(|(id, node)| match &node.kind {
+        NodeKind::Source { .. } | NodeKind::Hold { .. } => {
+            !document.audio_bindings().bindings().contains_key(id)
+        }
+        NodeKind::Retime {
+            duration,
+            mapping,
+            pitch,
+            ..
+        } => {
+            *pitch == PitchPolicy::Preserve
+                && mapping.duration() != *duration
+                && !document.audio_bindings().bindings().contains_key(id)
+        }
+        NodeKind::Repeat { gap, .. } => {
+            gap.as_ref().is_some_and(|gap| gap.duration.frames() > 0)
+                && !document.audio_bindings().gap_bindings().contains_key(id)
+        }
+        NodeKind::Sequence { .. } => false,
+    })
+}
+
 /// Insertion also needs the current clock for composed resume terms when all
 /// physical recipes already have an older lattice.
 pub(crate) fn capture_for_insertion(

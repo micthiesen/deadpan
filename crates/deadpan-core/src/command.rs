@@ -161,6 +161,15 @@ pub enum Command {
         identities: crate::SplitIdentities,
         timing: crate::AudioTimingId,
     },
+    /// Move current linked content. Both addresses use the pre-edit revision.
+    MoveRange {
+        source_revision: RevisionId,
+        source_parent: NodeId,
+        range: crate::FrameRange,
+        destination: crate::MoveRangeDestination,
+        identities: crate::SplitIdentities,
+        timing: crate::AudioTimingId,
+    },
     /// Destination index is measured after removal from the old parent.
     Move {
         node: NodeId,
@@ -640,6 +649,7 @@ pub fn apply(
         | Command::ReplaceSlice { .. } => {
             crate::edit_slice::apply(input, &request.command, context)?
         }
+        Command::MoveRange { .. } => crate::move_range::apply(input, &request.command, context)?,
         Command::SpliceSourceAt {
             parent,
             target,
@@ -979,6 +989,7 @@ pub(crate) fn reduce(
         | Command::ReplaceSource { .. }
         | Command::DeleteRipple { .. }
         | Command::DeleteRange { .. }
+        | Command::MoveRange { .. }
         | Command::SpliceSourceAt { .. } => {
             return Err(EditError::new(
                 EditErrorCode::InvalidCommand,
@@ -1993,6 +2004,7 @@ fn description(command: &Command) -> &'static str {
         Command::Delete { .. } => "Delete beat",
         Command::DeleteRipple { .. } => "Ripple-delete beat",
         Command::DeleteRange { .. } => "Delete selected range",
+        Command::MoveRange { .. } => "Move selected range",
         Command::Move { .. } => "Move beat",
         Command::Group { .. } => "Group beats",
         Command::Ungroup { .. } => "Ungroup beats",

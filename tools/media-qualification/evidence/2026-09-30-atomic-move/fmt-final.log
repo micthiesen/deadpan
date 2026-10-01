@@ -1,0 +1,26 @@
+Diff in /Users/michael/Code/deadpan/crates/deadpan-cli/tests/project_commands.rs:19:
+ mod delete_range;
+ #[path = "project_commands/edited_slice.rs"]
+ mod edited_slice;
+[31m-#[path = "project_commands/nested_pause.rs"]
+(B[m[31m-mod nested_pause;
+(B[m #[path = "project_commands/move_range.rs"]
+ mod move_range;
+[32m+#[path = "project_commands/nested_pause.rs"]
+(B[m[32m+mod nested_pause;
+(B[m 
+ fn cli(arguments: &[&str]) -> Result<Output> {
+     Ok(ProcessCommand::new(env!("CARGO_BIN_EXE_deadpan-cli"))
+Diff in /Users/michael/Code/deadpan/crates/deadpan-store/tests/edited_slice.rs:6:
+ 
+ type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
+ 
+[31m-#[path = "edited_slice/placement.rs"]
+(B[m[31m-mod placement;
+(B[m #[path = "edited_slice/move_range.rs"]
+ mod move_range;
+[32m+#[path = "edited_slice/placement.rs"]
+(B[m[32m+mod placement;
+(B[m #[path = "edited_slice/preview.rs"]
+ mod preview;
+ 

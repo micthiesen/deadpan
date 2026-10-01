@@ -314,8 +314,19 @@ opaque admission, complete catalog validation once per immutable view and live
 session checks on warm reuse. Preserve strict Original proposal validation and
 ordinary committed warm private PCM behavior. A saved receipt without refreshed
 workspace cannot consume the old visible selection or lose its reopening warning.
-Atomic move, persistent/named registers and cut-to-register remain open. See
+Native move, persistent/named registers and cut-to-register remain open. See
 [edited slices](docs/EDITED_SLICES.md).
+
+Core/headless `MoveRange` names the same current source/destination revision and
+jointly plans ordinary Sequence endpoint cuts. Keep whole-unit identities and
+empty boundary slots; use one unchanged-time placement layout for moved and
+displaced owners, each reanchored once. Never capture from an intermediate
+delete-only document. Internal moves preserve the root clock, so root sound
+recipes/routes stay unchanged while live Hold gates and remapped grants follow
+their issuers. Exact no-ops allocate no nodes/clocks. Native Move still requires
+explicit operation choice, both join previews and receipt-bound range selection;
+a historical copy cannot authorize current source removal. See
+[atomic moves](docs/ATOMIC_MOVES.md).
 
 Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 34 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings, audio edge policies, transparent Retime partitions, owned timing bindings and direct sound replacement maps, and binds qualified assets to immutable source receipts. Database schemas 1 through 38 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
 

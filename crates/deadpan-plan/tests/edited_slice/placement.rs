@@ -78,7 +78,7 @@ fn replace(
     )
 }
 
-fn is_partition(document: &ProjectDocument, node: &NodeId) -> bool {
+pub(super) fn is_partition(document: &ProjectDocument, node: &NodeId) -> bool {
     matches!(
         document.nodes()[node].kind,
         NodeKind::Retime {
@@ -144,7 +144,7 @@ fn assert_survivors(
     }
 }
 
-fn assert_live_scope(
+pub(super) fn assert_live_scope(
     sample: &PictureSample,
     document: &ProjectDocument,
     name: &str,
@@ -197,7 +197,7 @@ fn preserve(child: &str) -> BeatNode {
     }
 }
 
-fn fixture() -> ProjectDocument {
+pub(super) fn fixture() -> ProjectDocument {
     let before = document(
         &["lead", "scope", "donor", "tail"],
         vec![
