@@ -1,0 +1,7 @@
+{
+  "audio_picture_patch_sha256": "8aa0fe3199d059ffbd16d328662ed1ec27e3740592bcf743a58b3f88d0618abb",
+  "base_commit": "0304852f7485d730e117d89f649b9ce0421b4945",
+  "core_patch_sha256": "063b3c7678459a53529c086457b2136db581c34fda104274e6f731c07e9fb088",
+  "host_test_patch_sha256": "7257fb4c610212fd5091e4a00f87f9a0012d7657d17f06afb89c025af93346ab",
+  "scope": "Patch identities reviewed before integration. Root integrated store/CLI/schema wiring and formatting. Final source inventories, not staged patches, identify executed code."
+}

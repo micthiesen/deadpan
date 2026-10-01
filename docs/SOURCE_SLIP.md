@@ -3,8 +3,8 @@
 `SlipSource { parent, node, delta_frames }` changes which Original material a
 beat uses while keeping its output position and duration. Positive deltas select
 later material. Core schema 39/database 48 introduced this command and the exact
-[editorial window](SOURCE_EDIT_WINDOWS.md) it requires. The current core 40 /
-database 49 increment also records the changed audio joins described below;
+[editorial window](SOURCE_EDIT_WINDOWS.md) it requires. The core 40/database 49
+increment added the changed audio joins described below;
 [Trim qualification](qualification/source-trim-2026-10-01.md) covers that correction.
 
 ## Scope

@@ -49,6 +49,28 @@ Full Trim, waveform/audition,
 In/Out/Roll, ripple/overwrite and broader target admission remain open. No
 requirement or gate is complete.
 
+## Adjacent Source Roll backend, 2026-10-01
+
+The shared backend command adds `RollSources` for literally adjacent admitted
+Source/Partition children in an ordinary Sequence. It intersects both exact edge
+intervals once, preserves pair and project duration, captures unbound audio clocks
+from the unchanged tree and adds no ripple reanchor. Preserve root sounds/routes
+exactly and mark only the changed seam. See [the contract](../SOURCE_ROLL.md).
+
+The reviewed staged core and independent picture/PCM tests are integrated with
+store receipt validation, cold/live headless dry runs and persistence tests.
+Core schema 41/database 50 refuse the prior unused development package format.
+The workspace passed 3,275 unit/integration tests and both documentation tests
+with one stale doctor schema assertion. Its test-only correction passed with
+the same feature graph; the original failed run and exact source difference
+remain recorded. Strict all-target workspace lint and final formatting pass. See
+[qualification](../qualification/source-roll-2026-10-01.md), based on the pushed
+ripple Trim checkpoint `0304852`. No native GUI was opened; the final process scan
+found no Deadpan executable. Native Trim,
+overwrite and combined draft timing/sound semantics remain required.
+Do not implement one Enter as several saved commands. No requirement or gate
+is complete.
+
 ## Ripple Source edge Trim backend, 2026-10-01
 
 The shared command adds atomic `TrimSource` In/Out with explicit ripple

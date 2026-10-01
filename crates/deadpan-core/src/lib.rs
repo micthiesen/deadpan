@@ -87,6 +87,7 @@ mod source_edit;
 mod source_edit_window;
 mod source_index;
 mod source_mapping;
+mod source_roll;
 mod source_slip;
 mod source_trim;
 mod split;
@@ -125,6 +126,9 @@ pub use sound_route::*;
 pub use sound_routing::*;
 pub use source_edit_window::SourceEditWindow;
 pub use source_index::*;
+pub use source_roll::{
+    SourceRollLimit, SourceRollResolution, SourceRollSide, SourceRollSideResolution,
+};
 pub use source_slip::{SourceSlipClamp, SourceSlipResolution};
 pub use source_trim::{
     SourceTrimClamp, SourceTrimEdge, SourceTrimLimit, SourceTrimMode, SourceTrimResolution,

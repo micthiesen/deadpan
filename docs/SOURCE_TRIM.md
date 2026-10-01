@@ -3,7 +3,8 @@
 The shared command supports qualified Source In/Out ripple trimming.
 [Qualification](qualification/source-trim-2026-10-01.md) covers exact geometry,
 indexed pictures, decoded PCM and store/headless admission. Full
-[Trim mode](spec/DEADPAN_SPEC.md#77-trim-mode), overwrite and Roll remain required.
+[Trim mode](spec/DEADPAN_SPEC.md#77-trim-mode) and overwrite remain required.
+[Adjacent Roll](SOURCE_ROLL.md) has a separate shared command.
 
 `TrimSource` moves either the In or Out edge by signed whole project frames.
 Positive moves the edge later in Original material. In `mode: ripple`, moving
@@ -107,9 +108,9 @@ and a nullable `edit`. Zero previews still check revision, timing allocation,
 wrapper absence and media admission. Commit re-resolves the original request and
 uses normal atomic revision/history storage. Preview data grants no bypass.
 
-Core schema 40 and database 49 identify this command grammar. Unused development
-databases 39 through 48 are refused without migration under the session's format
-policy; the retained adapters for older frozen grammars cannot author Trim.
+Core schema 40 and database 49 introduced this command grammar. The current
+development-format policy is recorded in [the headless contract](HEADLESS.md#schema-migration).
+The retained adapters for older frozen grammars cannot author Trim.
 Frozen audio context schema 6 retains the same editorial intent without using
 it to constrain raw sampling. Older context grammars reject the new field,
 including an explicitly empty value.

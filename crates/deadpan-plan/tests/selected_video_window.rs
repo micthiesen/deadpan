@@ -682,3 +682,6 @@ mod slip;
 
 #[path = "selected_video_window/trim.rs"]
 mod trim;
+
+#[path = "selected_video_window/roll.rs"]
+mod roll;

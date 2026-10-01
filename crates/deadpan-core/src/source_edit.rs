@@ -1,5 +1,6 @@
 //! Shared admission for exact linked edits on ordinary Source allocations.
 
+pub(crate) mod edge;
 mod editorial;
 pub(crate) use editorial::mark_edges;
 

@@ -680,3 +680,6 @@ fn slip_fades_a_previously_continuous_split_seam_without_changing_raw_clocks() {
         "Slip inverse restores continuous Split seam",
     );
 }
+
+#[path = "trim/roll.rs"]
+mod roll;

@@ -1,0 +1,25 @@
+{
+  "command": [
+    "rustup",
+    "run",
+    "1.97.1",
+    "cargo",
+    "test",
+    "--workspace",
+    "--locked",
+    "--no-fail-fast",
+    "--features",
+    "deadpan-app/ui-harness",
+    "reverse_roll_grows_the_right_physical_prefix_without_shifting_its_retained_body"
+  ],
+  "started": "2026-10-01T18:13:37.546406+00:00",
+  "base_commit": "0304852f7485d730e117d89f649b9ce0421b4945",
+  "diff_sha256": "bb6b9ad3a2ded1c962454de12c7fb1f1c32a182c056ef23b190402d26f1b3d09",
+  "source_manifest_sha256": "22f7a05f72e5a579869abd9c0ec79cf01c374e846d331b4f0f5eb6f2ef367dfb",
+  "pid": 14030,
+  "exit_code": 0,
+  "seconds": 13.856646707747132,
+  "source_manifest_after_sha256": "22f7a05f72e5a579869abd9c0ec79cf01c374e846d331b4f0f5eb6f2ef367dfb",
+  "source_unchanged": true,
+  "gate_exit_code": 0
+}

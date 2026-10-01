@@ -1,0 +1,8 @@
+{
+  "changed_paths": [
+    "crates/deadpan-cli/tests/project_commands.rs"
+  ],
+  "corrected_manifest": "c0d07d19964a564ff4cd5df9ab634fb9d171a0497e73de594bf792544b662b06",
+  "scope": "Only the test expectation for current core schema changed from 40 to 41. Production sources are unchanged. Full run: 3275 pass, 1 fail, 2 doc pass. Corrected same-feature test: 1 pass. Lint and final formatting use the corrected manifest.",
+  "workspace_manifest": "22f7a05f72e5a579869abd9c0ec79cf01c374e846d331b4f0f5eb6f2ef367dfb"
+}

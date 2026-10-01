@@ -1,0 +1,11 @@
+--- crates/deadpan-cli/tests/project_commands.rs (full run)
++++ crates/deadpan-cli/tests/project_commands.rs (corrected)
+@@ -43,7 +43,7 @@
+ #[test]
+ fn doctor_reports_hold_audio_document_and_migration_schemas() -> Result {
+     let report = success(&["doctor"])?;
+-    assert_eq!(report["document_schema"], 40);
++    assert_eq!(report["document_schema"], 41);
+     assert_eq!(report["database_schema"], 50);
+     let partial = report["partial"].as_array().unwrap();
+     for capability in [

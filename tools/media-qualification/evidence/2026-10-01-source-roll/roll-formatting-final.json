@@ -1,0 +1,22 @@
+{
+  "command": [
+    "rustup",
+    "run",
+    "1.97.1",
+    "cargo",
+    "fmt",
+    "--all",
+    "--",
+    "--check"
+  ],
+  "started": "2026-10-01T18:46:46.597694+00:00",
+  "base_commit": "0304852f7485d730e117d89f649b9ce0421b4945",
+  "diff_sha256": "90b25af503c4e7d41866d043bfc858345a039a40103d14dd655b5002ca41fda5",
+  "source_manifest_sha256": "c0d07d19964a564ff4cd5df9ab634fb9d171a0497e73de594bf792544b662b06",
+  "pid": 22835,
+  "exit_code": 0,
+  "seconds": 1.6907170410268009,
+  "source_manifest_after_sha256": "c0d07d19964a564ff4cd5df9ab634fb9d171a0497e73de594bf792544b662b06",
+  "source_unchanged": true,
+  "gate_exit_code": 0
+}

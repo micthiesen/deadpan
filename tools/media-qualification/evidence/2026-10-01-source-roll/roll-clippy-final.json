@@ -1,0 +1,27 @@
+{
+  "command": [
+    "rustup",
+    "run",
+    "1.97.1",
+    "cargo",
+    "clippy",
+    "--workspace",
+    "--all-targets",
+    "--locked",
+    "--features",
+    "deadpan-app/ui-harness",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "started": "2026-10-01T18:31:58.891727+00:00",
+  "base_commit": "0304852f7485d730e117d89f649b9ce0421b4945",
+  "diff_sha256": "4acc5c1020578c8985a859bdbc5002a2755169bb75eb8e3a6d71d19677bab7b4",
+  "source_manifest_sha256": "c0d07d19964a564ff4cd5df9ab634fb9d171a0497e73de594bf792544b662b06",
+  "pid": 18723,
+  "exit_code": 0,
+  "seconds": 876.5838425830007,
+  "source_manifest_after_sha256": "c0d07d19964a564ff4cd5df9ab634fb9d171a0497e73de594bf792544b662b06",
+  "source_unchanged": true,
+  "gate_exit_code": 0
+}

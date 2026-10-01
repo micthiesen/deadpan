@@ -661,10 +661,14 @@ fn prepare_current_command_with_admission(
     source_registration::validate_source_slip(connection, &current, &next, request)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     source_registration::validate_source_trim(connection, &current, &next, request)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    source_registration::validate_source_roll(connection, &current, &next, request)?;
     #[cfg(not(any(target_os = "macos", target_os = "linux")))]
     if matches!(
         &request.command,
-        deadpan_core::Command::SlipSource { .. } | deadpan_core::Command::TrimSource { .. }
+        deadpan_core::Command::SlipSource { .. }
+            | deadpan_core::Command::TrimSource { .. }
+            | deadpan_core::Command::RollSources { .. }
     ) {
         return Err(StoreError::SourceAdmissionUnavailable);
     }

@@ -37,6 +37,10 @@ pub(crate) use slip::validate_source_slip;
 mod trim;
 pub use trim::SourceTrimPreview;
 pub(crate) use trim::validate_source_trim;
+#[path = "source_registration/roll.rs"]
+mod roll;
+pub use roll::SourceRollPreview;
+pub(crate) use roll::validate_source_roll;
 
 const MAX_QUALIFICATIONS: i64 = 100_000;
 const MAX_ORIGINAL_REF_BYTES: usize = 256;

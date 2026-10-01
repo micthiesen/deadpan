@@ -154,6 +154,18 @@ closed. See [qualification](qualification/native-slip-2026-10-01.md). Full Trim,
 waveforms/audition, unsupported target scopes and physical-input/accessibility
 acceptance remain open. No requirement or gate changes status.
 
+[Adjacent Source Roll](SOURCE_ROLL.md) adds a backend subset for DP-02/DP-05.
+It resolves one shared movement against both exact
+Source limits, preserves combined duration, captures audio clocks once, retains
+the independent sound bus and marks only the changed seam. Core 41/database 50,
+store admission and cold/live headless dispatch are integrated.
+[Qualification](qualification/source-roll-2026-10-01.md) records independent
+picture, decoded-PCM and persistence checks. The full workspace passed 3,275
+tests and both documentation tests with one stale doctor assertion; only that
+test changed and its rerun passed. Strict all-target lint and formatting pass.
+No native Roll surface is claimed.
+Full Trim requirements remain open; no requirement or gate changes status.
+
 [Ripple Source edge trimming](SOURCE_TRIM.md) adds a verified backend subset
 for DP-02/DP-05. The atomic command moves one In/Out edge with exact handle
 clamping, retained physical owners, old-clock audio captures and one root sound

@@ -451,15 +451,30 @@ impl RootSoundEditCapture {
         if document.sounds.is_empty() {
             return Ok(None);
         }
-        if let Command::MoveRange {
-            source_parent,
-            range,
-            destination,
-            ..
-        } = command
-        {
-            document.range_move(source_parent, *range, destination)?;
-            // Internal relocation leaves the root owner's clock unchanged.
+        let fixed_duration = match command {
+            Command::MoveRange {
+                source_parent,
+                range,
+                destination,
+                ..
+            } => {
+                document.range_move(source_parent, *range, destination)?;
+                true
+            }
+            Command::RollSources {
+                parent,
+                left,
+                right,
+                delta_frames,
+                ..
+            } => {
+                document.source_roll(parent, left, right, *delta_frames)?;
+                true
+            }
+            _ => false,
+        };
+        if fixed_duration {
+            // Fixed-duration edits leave the root owner's clock unchanged.
             // Detach only for soundless structural captures, then restore exact
             // recipes/routes; current Hold gates follow their final issuers.
             return Ok(Some(Self {

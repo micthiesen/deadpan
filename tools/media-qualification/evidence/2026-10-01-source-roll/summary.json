@@ -1,0 +1,293 @@
+{
+  "roll-clippy-final": {
+    "base_commit": "0304852f7485d730e117d89f649b9ce0421b4945",
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--locked",
+      "--features",
+      "deadpan-app/ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "diff_sha256": "4acc5c1020578c8985a859bdbc5002a2755169bb75eb8e3a6d71d19677bab7b4",
+    "exit_code": 0,
+    "gate_exit_code": 0,
+    "pid": 18723,
+    "seconds": 876.5838425830007,
+    "source_manifest_after_sha256": "c0d07d19964a564ff4cd5df9ab634fb9d171a0497e73de594bf792544b662b06",
+    "source_manifest_sha256": "c0d07d19964a564ff4cd5df9ab634fb9d171a0497e73de594bf792544b662b06",
+    "source_unchanged": true,
+    "started": "2026-10-01T18:31:58.891727+00:00",
+    "tests": {
+      "documentation": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0
+      },
+      "unit_integration": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0
+      }
+    }
+  },
+  "roll-doctor-corrected": {
+    "base_commit": "0304852f7485d730e117d89f649b9ce0421b4945",
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--workspace",
+      "--locked",
+      "--no-fail-fast",
+      "--features",
+      "deadpan-app/ui-harness",
+      "doctor_reports_hold_audio_document_and_migration_schemas"
+    ],
+    "diff_sha256": "4acc5c1020578c8985a859bdbc5002a2755169bb75eb8e3a6d71d19677bab7b4",
+    "exit_code": 0,
+    "gate_exit_code": 0,
+    "pid": 18315,
+    "seconds": 14.00601112516597,
+    "source_manifest_after_sha256": "c0d07d19964a564ff4cd5df9ab634fb9d171a0497e73de594bf792544b662b06",
+    "source_manifest_sha256": "c0d07d19964a564ff4cd5df9ab634fb9d171a0497e73de594bf792544b662b06",
+    "source_unchanged": true,
+    "started": "2026-10-01T18:31:23.214964+00:00",
+    "tests": {
+      "documentation": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0
+      },
+      "unit_integration": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 1
+      }
+    }
+  },
+  "roll-first": {
+    "base_commit": "0304852f7485d730e117d89f649b9ce0421b4945",
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--workspace",
+      "--locked",
+      "--no-fail-fast",
+      "--features",
+      "deadpan-app/ui-harness",
+      "roll"
+    ],
+    "diff_sha256": "fe4c49a5ed852c21c2efce74c71089040ca0b0a7870106e5badfc1ff798ffe34",
+    "exit_code": 101,
+    "gate_exit_code": 101,
+    "pid": 9955,
+    "seconds": 773.5111160408705,
+    "source_manifest_after_sha256": "72854120c76876e12dc560babf4c94a370bfb5d0c8299d9ae1abe98716c11fc7",
+    "source_manifest_sha256": "72854120c76876e12dc560babf4c94a370bfb5d0c8299d9ae1abe98716c11fc7",
+    "source_unchanged": true,
+    "started": "2026-10-01T17:56:26.929122+00:00",
+    "tests": {
+      "documentation": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0
+      },
+      "unit_integration": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0
+      }
+    }
+  },
+  "roll-formatting-final": {
+    "base_commit": "0304852f7485d730e117d89f649b9ce0421b4945",
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "diff_sha256": "90b25af503c4e7d41866d043bfc858345a039a40103d14dd655b5002ca41fda5",
+    "exit_code": 0,
+    "gate_exit_code": 0,
+    "pid": 22835,
+    "seconds": 1.6907170410268009,
+    "source_manifest_after_sha256": "c0d07d19964a564ff4cd5df9ab634fb9d171a0497e73de594bf792544b662b06",
+    "source_manifest_sha256": "c0d07d19964a564ff4cd5df9ab634fb9d171a0497e73de594bf792544b662b06",
+    "source_unchanged": true,
+    "started": "2026-10-01T18:46:46.597694+00:00",
+    "tests": {
+      "documentation": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0
+      },
+      "unit_integration": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0
+      }
+    }
+  },
+  "roll-formatting-first": {
+    "base_commit": "0304852f7485d730e117d89f649b9ce0421b4945",
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "diff_sha256": "bb6b9ad3a2ded1c962454de12c7fb1f1c32a182c056ef23b190402d26f1b3d09",
+    "exit_code": 0,
+    "gate_exit_code": 0,
+    "pid": 14443,
+    "seconds": 1.6044750837609172,
+    "source_manifest_after_sha256": "22f7a05f72e5a579869abd9c0ec79cf01c374e846d331b4f0f5eb6f2ef367dfb",
+    "source_manifest_sha256": "22f7a05f72e5a579869abd9c0ec79cf01c374e846d331b4f0f5eb6f2ef367dfb",
+    "source_unchanged": true,
+    "started": "2026-10-01T18:14:36.801695+00:00",
+    "tests": {
+      "documentation": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0
+      },
+      "unit_integration": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0
+      }
+    }
+  },
+  "roll-halo-corrected": {
+    "base_commit": "0304852f7485d730e117d89f649b9ce0421b4945",
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--workspace",
+      "--locked",
+      "--no-fail-fast",
+      "--features",
+      "deadpan-app/ui-harness",
+      "reverse_roll_grows_the_right_physical_prefix_without_shifting_its_retained_body"
+    ],
+    "diff_sha256": "bb6b9ad3a2ded1c962454de12c7fb1f1c32a182c056ef23b190402d26f1b3d09",
+    "exit_code": 0,
+    "gate_exit_code": 0,
+    "pid": 14030,
+    "seconds": 13.856646707747132,
+    "source_manifest_after_sha256": "22f7a05f72e5a579869abd9c0ec79cf01c374e846d331b4f0f5eb6f2ef367dfb",
+    "source_manifest_sha256": "22f7a05f72e5a579869abd9c0ec79cf01c374e846d331b4f0f5eb6f2ef367dfb",
+    "source_unchanged": true,
+    "started": "2026-10-01T18:13:37.546406+00:00",
+    "tests": {
+      "documentation": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0
+      },
+      "unit_integration": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 1
+      }
+    }
+  },
+  "roll-second": {
+    "base_commit": "0304852f7485d730e117d89f649b9ce0421b4945",
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--workspace",
+      "--locked",
+      "--no-fail-fast",
+      "--features",
+      "deadpan-app/ui-harness",
+      "roll"
+    ],
+    "diff_sha256": "bb6b9ad3a2ded1c962454de12c7fb1f1c32a182c056ef23b190402d26f1b3d09",
+    "exit_code": 101,
+    "gate_exit_code": 101,
+    "pid": 12870,
+    "seconds": 125.81369358301163,
+    "source_manifest_after_sha256": "abaa58c8f939c6aa85b19435315069d4e64cc882a6799a4a2c5c6940db273c41",
+    "source_manifest_sha256": "abaa58c8f939c6aa85b19435315069d4e64cc882a6799a4a2c5c6940db273c41",
+    "source_unchanged": true,
+    "started": "2026-10-01T18:09:38.566227+00:00",
+    "tests": {
+      "documentation": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0
+      },
+      "unit_integration": {
+        "failed": 1,
+        "ignored": 0,
+        "passed": 57
+      }
+    }
+  },
+  "roll-workspace-final": {
+    "base_commit": "0304852f7485d730e117d89f649b9ce0421b4945",
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--workspace",
+      "--locked",
+      "--no-fail-fast",
+      "--features",
+      "deadpan-app/ui-harness"
+    ],
+    "diff_sha256": "bb6b9ad3a2ded1c962454de12c7fb1f1c32a182c056ef23b190402d26f1b3d09",
+    "exit_code": 101,
+    "gate_exit_code": 101,
+    "pid": 14453,
+    "seconds": 748.8377078343183,
+    "source_manifest_after_sha256": "22f7a05f72e5a579869abd9c0ec79cf01c374e846d331b4f0f5eb6f2ef367dfb",
+    "source_manifest_sha256": "22f7a05f72e5a579869abd9c0ec79cf01c374e846d331b4f0f5eb6f2ef367dfb",
+    "source_unchanged": true,
+    "started": "2026-10-01T18:14:38.664356+00:00",
+    "tests": {
+      "documentation": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 2
+      },
+      "unit_integration": {
+        "failed": 1,
+        "ignored": 0,
+        "passed": 3275
+      }
+    }
+  }
+}

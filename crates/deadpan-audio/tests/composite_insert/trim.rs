@@ -333,3 +333,6 @@ fn in_extension_reanchors_repeat_gap_preserve_and_outer_suffix_owners_once() {
         "composite inverse PCM",
     );
 }
+
+#[path = "trim/roll.rs"]
+mod roll;

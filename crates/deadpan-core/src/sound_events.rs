@@ -130,6 +130,7 @@ pub(crate) fn validate_command(
             command,
             Command::InsertTime { .. }
                 | Command::TrimSource { .. }
+                | Command::RollSources { .. }
                 | Command::SpliceSource { .. }
                 | Command::SpliceSlice { .. }
                 | Command::SpliceSliceAt { .. }
@@ -209,6 +210,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         },
         Command::InsertTime { .. }
         | Command::TrimSource { .. }
+        | Command::RollSources { .. }
         | Command::SpliceSource { .. }
         | Command::SpliceSlice { .. }
         | Command::SpliceSliceAt { .. }

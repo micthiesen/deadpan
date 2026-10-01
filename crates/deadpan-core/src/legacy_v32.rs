@@ -1194,6 +1194,7 @@ pub fn validate_request_context(
     if matches!(
         command,
         Command::TrimSource { .. }
+            | Command::RollSources { .. }
             | Command::SlipSource { .. }
             | Command::SpliceSlice { .. }
             | Command::SpliceSliceAt { .. }
@@ -1296,6 +1297,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::InsertTime { .. }
         | Command::SpliceSource { .. }
         | Command::TrimSource { .. }
+        | Command::RollSources { .. }
         | Command::SlipSource { .. }
         | Command::SpliceSlice { .. }
         | Command::SpliceSliceAt { .. }

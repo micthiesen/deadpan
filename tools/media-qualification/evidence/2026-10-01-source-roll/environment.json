@@ -1,0 +1,24 @@
+{
+  "cleanup": "Final process scan found no executable whose basename starts with Deadpan (case-insensitive).",
+  "ffmpeg_prefix": "/tmp/deadpan-ui-ffmpeg/prefix",
+  "fixtures_sha256": {
+    "native/deadpan-source/tests/audio-fixtures/pcm-mono-44100.wav": "b95b3debd2c83cf2590fddfaa98276c23c3b383b720fd96ac52c2c00c668318b",
+    "native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee",
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+    "native/deadpan-source/tests/fixtures/offset-bframes.mp4": "1504e8c41c2e8e33cf588bbe46e7c79f9fb507437533f5d6cd6f280b6bfdb120"
+  },
+  "hardware": "hw.memsize: 137438953472\nmachdep.cpu.brand_string: Apple M5 Max\n",
+  "native_gui_opened": false,
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n",
+  "process_scan": {
+    "command": [
+      "ps",
+      "-Ao",
+      "pid=,ppid=,comm="
+    ],
+    "executable_basename_prefix_case_insensitive": "deadpan",
+    "matches": []
+  },
+  "recorded_utc": "2026-10-01T18:46:54.174134+00:00",
+  "toolchain": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6\n"
+}
