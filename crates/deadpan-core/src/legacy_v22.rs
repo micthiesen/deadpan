@@ -6,11 +6,11 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
 use crate::SourceAudioMapping as AudioMapping;
-use crate::SourceNode as LegacySourceNode;
-use crate::SourceVideoMapping as VideoMapping;
 use crate::document::unique_map;
 use crate::legacy_audio_binding_v22::{LegacyAudioBindingState, project_change};
 use crate::legacy_mark_v13::{LegacyMark, project_mark_changes, project_marks, upgrade_marks};
+use crate::legacy_video_mapping_v34::LegacySourceNode;
+use crate::legacy_video_mapping_v34::VideoMapping;
 use crate::*;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -74,7 +74,9 @@ impl LegacyBeatNode {
             label: self.label,
             audio_edges: self.audio_edges,
             kind: match self.kind {
-                LegacyNodeKind::Source { source } => NodeKind::Source { source },
+                LegacyNodeKind::Source { source } => NodeKind::Source {
+                    source: source.upgrade(),
+                },
                 LegacyNodeKind::Sequence { children } => NodeKind::Sequence { children },
                 LegacyNodeKind::Hold { recipe } => NodeKind::Hold { recipe },
                 LegacyNodeKind::Repeat {
@@ -116,7 +118,7 @@ impl LegacyBeatNode {
             audio_edges: node.audio_edges,
             kind: match &node.kind {
                 NodeKind::Source { source } => LegacyNodeKind::Source {
-                    source: source.clone(),
+                    source: LegacySourceNode::project(source)?,
                 },
                 NodeKind::Sequence { children } => LegacyNodeKind::Sequence {
                     children: children.clone(),
@@ -446,9 +448,9 @@ impl OldOccurrenceEdit {
                 end,
                 destination,
             },
-            Self::SetSourceVideoMapping { mapping } => {
-                OccurrenceEdit::SetSourceVideoMapping { mapping }
-            }
+            Self::SetSourceVideoMapping { mapping } => OccurrenceEdit::SetSourceVideoMapping {
+                mapping: mapping.upgrade(),
+            },
             Self::SetSourceAudioMapping { mapping, offset } => {
                 OccurrenceEdit::SetSourceAudioMapping { mapping, offset }
             }
@@ -644,7 +646,7 @@ impl OldSourceInsertion {
             index: self.index,
             node: self.node,
             label: self.label,
-            source: self.source,
+            source: self.source.upgrade(),
         }
     }
 }
@@ -744,9 +746,10 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
             end,
             destination,
         },
-        OldCommand::SetSourceVideoMapping { node, mapping } => {
-            Command::SetSourceVideoMapping { node, mapping }
-        }
+        OldCommand::SetSourceVideoMapping { node, mapping } => Command::SetSourceVideoMapping {
+            node,
+            mapping: mapping.upgrade(),
+        },
         OldCommand::SetSourceAudioMapping {
             node,
             mapping,

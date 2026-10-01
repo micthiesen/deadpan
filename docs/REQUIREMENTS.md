@@ -141,6 +141,22 @@ rendered checks plus the expanded Kestrel audit, 3,589 full release checks, and
 native keyboard/reopen verification with consistent SQLite backups. No release
 gate is completed by these results.
 
+[Exact picture context](qualification/selected-video-context-2026-10-01.md)
+retains the complete measured video span in new Original slices while keeping
+their visible endpoints separate and exact. Rounded tails hold the last selected
+picture; inverse source anchors reject hidden context. Audio placement and beat
+duration remain unchanged. Core 35/database 44 reject unused development
+databases 39 through 43 under the approved format policy, with old supported
+grammars kept closed. This is a Trim prerequisite for DP-02/DP-05/DP-20;
+native In/Out/Slip/Roll, ripple/overwrite and the complete visual Trim workflow
+remain required.
+Verification covers 2,956 distinct workspace unit/integration tests and both
+documentation tests across the broad run and corrected storage run. All 270 plan
+tests pass again after a private storage-layout adjustment; final strict
+workspace lint and formatting pass. The evidence retains the failed attempts
+and their corrections. No native app was opened, and no requirement or gate
+changes status.
+
 [Visual slice placement](spec/DEADPAN_SPEC.md#97-visual-slice-placement) is an
 explicit DP-05/DP-20 requirement: select and refine a time range, see its source
 endpoints and destination, audition both proposed joins, then commit or cancel

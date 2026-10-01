@@ -141,6 +141,8 @@ enum CompiledKind {
         start: ExactRatio,
         duration: ExactRatio,
         endpoints: EndpointPolicy,
+        // Exact selected source ticks; the stream span owns their common clock.
+        selection: Option<(ExactRatio, ExactRatio)>,
         audio: Option<CompiledSourceAudio>,
     },
     Sequence {
@@ -312,6 +314,15 @@ impl RenderPlan {
                         start: source.video_mapping.start_frames(),
                         duration: source.video_mapping.duration_frames(source.duration)?,
                         endpoints: source.video_mapping.endpoints(),
+                        selection: match &source.video {
+                            SourceVideo::Stream { span, .. } => {
+                                let selected = source
+                                    .video_mapping
+                                    .selection_in_source(*span, source.duration)?;
+                                Some((selected.start().ticks, selected.end().ticks))
+                            }
+                            SourceVideo::Still { .. } | SourceVideo::Blank => None,
+                        },
                         audio: source
                             .audio
                             .as_ref()
@@ -581,15 +592,30 @@ impl RenderPlan {
                     start,
                     duration,
                     endpoints,
+                    selection,
                     ..
                 } => {
                     let picture = match video {
                         SourceVideo::Stream { asset, span } => {
                             let scale = ExactRatio::integer(span.end().ticks - span.start().ticks)
                                 .checked_div(*duration)?;
+                            let (selected_start, selected_end) = selection.ok_or(
+                                PlanError::InvalidPlan("source picture has no selected interval"),
+                            )?;
+                            let time_base = span.start().time_base;
                             Picture::Source {
                                 asset: asset.clone(),
                                 span: *span,
+                                selection: deadpan_core::ExactSourceSpan::new(
+                                    SourcePoint {
+                                        ticks: selected_start,
+                                        time_base,
+                                    },
+                                    SourcePoint {
+                                        ticks: selected_end,
+                                        time_base,
+                                    },
+                                )?,
                                 endpoints: *endpoints,
                                 point: SourcePoint {
                                     ticks: ExactRatio::integer(span.start().ticks).checked_add(

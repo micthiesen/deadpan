@@ -132,7 +132,7 @@ fn split(document: &ProjectDocument, target: &str, at: i64, prefix: &str) -> Pro
 #[test]
 fn treatment_is_authored_intent_with_guarded_reversible_node_patches() {
     let before = fixture();
-    assert_eq!(before.schema_version(), 34);
+    assert_eq!(before.schema_version(), 35);
     assert!(
         serde_json::to_value(&before).unwrap()["nodes"]["hold"]
             .get("audio_treatments")

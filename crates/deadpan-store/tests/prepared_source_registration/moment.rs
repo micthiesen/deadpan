@@ -53,6 +53,35 @@ fn paste_uses_exact_measured_selection_and_one_durable_undo_entry() -> Result {
         (before_counts.0 + 1, before_counts.1 + 1, before_counts.2)
     );
     assert_eq!(expected.assets(), before.assets());
+    let NodeKind::Source { source } = &expected.nodes()[&input.node].kind else {
+        panic!("paste must retain an editable Source");
+    };
+    let deadpan_core::SourceVideo::Stream { span: context, .. } = source.video else {
+        panic!("paste must retain Original video");
+    };
+    assert_eq!(Some(context), expected.assets()[&input.asset].video);
+    assert!(matches!(
+        source.video_mapping,
+        deadpan_core::SourceVideoMapping::SelectedPlacement { .. }
+    ));
+    let selection = source
+        .video_mapping
+        .selection_in_source(context, source.duration)?;
+    let index = prepared
+        .receipt()
+        .snapshot()
+        .video()
+        .unwrap()
+        .index()
+        .index();
+    assert_eq!(
+        selection.start().ticks,
+        deadpan_core::ExactRatio::integer(index.interval(deadpan_core::SourceFrameId(1))?.0)
+    );
+    assert_eq!(
+        selection.end().ticks,
+        deadpan_core::ExactRatio::integer(index.interval(deadpan_core::SourceFrameId(2))?.1)
+    );
     let timing = derive_source_moment(
         prepared.receipt().snapshot().video().unwrap().index(),
         prepared.receipt().snapshot().audio(),

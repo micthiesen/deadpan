@@ -1,7 +1,8 @@
 use deadpan_core::{
-    AssetId, CapturedFraming, EndpointPolicy, ExactRatio, FrameDuration, FramingPose,
-    GeneratedArtifact, IndexedSourceFrame, InstancePath, IterationId, ProjectFrame, ProjectId,
-    RevisionId, SourceFrameId, SourceFrameIndex, SourcePoint, SourceSpan, SourceTimeBase,
+    AssetId, CapturedFraming, EndpointPolicy, ExactRatio, ExactSourceSpan, FrameDuration,
+    FramingPose, GeneratedArtifact, IndexedSourceFrame, InstancePath, IterationId, ProjectFrame,
+    ProjectId, RevisionId, SourceFrameId, SourceFrameIndex, SourcePoint, SourceSpan,
+    SourceTimeBase,
 };
 use serde::{Serialize, Serializer};
 use std::sync::Arc;
@@ -26,7 +27,11 @@ pub enum Picture {
     Source {
         asset: AssetId,
         point: SourcePoint,
+        /// Full affine source context retained independently of its selection.
         span: SourceSpan,
+        /// Exact selected picture interval. Endpoint holding never exposes
+        /// otherwise available pictures outside this half-open window.
+        selection: ExactSourceSpan,
         endpoints: EndpointPolicy,
     },
     Still {
@@ -92,9 +97,26 @@ impl Picture {
             Self::Source {
                 point,
                 span,
+                selection,
                 endpoints,
                 ..
-            } => Ok(index.select_in_span(*point, *span, *endpoints)?),
+            } => {
+                // A smaller visible window cannot admit an incomplete index
+                // for the retained affine context. It must also belong to that
+                // context, even when a caller constructs a Picture directly.
+                index.select_in_span(selection.start(), *span, EndpointPolicy::Reject)?;
+                if selection
+                    .end()
+                    .ticks
+                    .compare_integer(span.end().ticks)
+                    .is_gt()
+                {
+                    return Err(PlanError::InvalidPlan(
+                        "picture selection exceeds its source context",
+                    ));
+                }
+                Ok(index.select_in_exact_span(*point, *selection, *endpoints)?)
+            }
             Self::Freeze { point, .. } => Ok(index.select(*point, EndpointPolicy::Reject)?),
             Self::Accepted { frame, .. } => usize::try_from(frame.0)
                 .ok()

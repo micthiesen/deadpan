@@ -152,6 +152,42 @@ impl ExactRatio {
             }
         })
     }
+
+    /// Compare signed ratios without constructing a potentially overflowing
+    /// cross product. Euclidean continued fractions require bounded work in
+    /// the integer widths, independent of the magnitudes of either ratio.
+    pub fn compare(self, other: Self) -> std::cmp::Ordering {
+        use std::cmp::Ordering;
+
+        let order = self.floor().cmp(&other.floor());
+        if order != Ordering::Equal {
+            return order;
+        }
+        let mut left = (
+            self.numerator.rem_euclid(self.denominator) as u128,
+            self.denominator as u128,
+        );
+        let mut right = (
+            other.numerator.rem_euclid(other.denominator) as u128,
+            other.denominator as u128,
+        );
+        let mut reverse = false;
+        loop {
+            let order = (left.0 / left.1).cmp(&(right.0 / right.1));
+            if order != Ordering::Equal {
+                return if reverse { order.reverse() } else { order };
+            }
+            let left_remainder = left.0 % left.1;
+            let right_remainder = right.0 % right.1;
+            if left_remainder == 0 || right_remainder == 0 {
+                let order = left_remainder.cmp(&right_remainder);
+                return if reverse { order.reverse() } else { order };
+            }
+            left = (left.1, left_remainder);
+            right = (right.1, right_remainder);
+            reverse = !reverse;
+        }
+    }
 }
 
 fn gcd(mut a: u128, mut b: u128) -> u128 {
@@ -164,6 +200,56 @@ fn gcd(mut a: u128, mut b: u128) -> u128 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
+
+    #[test]
+    fn ratio_comparison_keeps_extreme_signed_values_and_adjacent_fractions_exact() {
+        let cases = [
+            (
+                ExactRatio::new(i128::MIN, 1).unwrap(),
+                ExactRatio::new(i128::MAX, 1).unwrap(),
+            ),
+            (
+                ExactRatio::new(i128::MAX - 2, i128::MAX - 1).unwrap(),
+                ExactRatio::new(i128::MAX - 1, i128::MAX).unwrap(),
+            ),
+            (
+                ExactRatio::new(-(i128::MAX - 1), i128::MAX).unwrap(),
+                ExactRatio::new(-(i128::MAX - 2), i128::MAX - 1).unwrap(),
+            ),
+            (ExactRatio::new(-1, i128::MAX).unwrap(), ExactRatio::ZERO),
+            (ExactRatio::ZERO, ExactRatio::new(1, i128::MAX).unwrap()),
+        ];
+        for (left, right) in cases {
+            assert!(left.compare(right).is_lt());
+            assert!(right.compare(left).is_gt());
+            assert!(left.compare(left).is_eq());
+        }
+        assert!(
+            ExactRatio::new(34, 55)
+                .unwrap()
+                .compare(ExactRatio::new(55, 89).unwrap())
+                .is_gt(),
+            "successive continued fractions reverse ordering at each step"
+        );
+    }
+
+    proptest! {
+        #[test]
+        fn ratio_comparison_matches_independent_widened_cross_products(
+            left_n in any::<i64>(),
+            left_d in 1_i64..=i64::MAX,
+            right_n in any::<i64>(),
+            right_d in 1_i64..=i64::MAX,
+        ) {
+            let left = ExactRatio::new(i128::from(left_n), i128::from(left_d)).unwrap();
+            let right = ExactRatio::new(i128::from(right_n), i128::from(right_d)).unwrap();
+            let expected = (i128::from(left_n) * i128::from(right_d))
+                .cmp(&(i128::from(right_n) * i128::from(left_d)));
+            prop_assert_eq!(left.compare(right), expected);
+            prop_assert_eq!(right.compare(left), expected.reverse());
+        }
+    }
 
     #[test]
     fn exact_mapping_and_negative_boundaries_do_not_round_intermediate_frames() {

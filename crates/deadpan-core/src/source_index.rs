@@ -2,7 +2,9 @@
 
 use serde::{Deserialize, Serialize};
 
-use crate::{AssetId, DocumentError, DocumentErrorCode, ExactRatio, SourceSpan, SourceTimeBase};
+use crate::{
+    AssetId, DocumentError, DocumentErrorCode, ExactRatio, SourceSpan, SourceTimeBase, TimeError,
+};
 
 pub const MAX_SOURCE_INDEX_FRAMES: usize = 10_000_000;
 
@@ -37,6 +39,75 @@ pub enum TerminalProvenance {
 pub struct SourcePoint {
     pub ticks: ExactRatio,
     pub time_base: SourceTimeBase,
+}
+
+/// A positive half-open selection in one original timestamp clock. Fractional
+/// boundaries are retained exactly; no project-frame or source-tick rounding
+/// occurs when a source mapping exposes a smaller part of its full context.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "ExactSourceSpanWire", into = "ExactSourceSpanWire")]
+pub struct ExactSourceSpan {
+    start: SourcePoint,
+    end: SourcePoint,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ExactSourceSpanWire {
+    start: SourcePoint,
+    end: SourcePoint,
+}
+
+impl TryFrom<ExactSourceSpanWire> for ExactSourceSpan {
+    type Error = TimeError;
+
+    fn try_from(value: ExactSourceSpanWire) -> Result<Self, Self::Error> {
+        Self::new(value.start, value.end)
+    }
+}
+
+impl From<ExactSourceSpan> for ExactSourceSpanWire {
+    fn from(value: ExactSourceSpan) -> Self {
+        Self {
+            start: value.start,
+            end: value.end,
+        }
+    }
+}
+
+impl ExactSourceSpan {
+    pub fn new(start: SourcePoint, end: SourcePoint) -> Result<Self, TimeError> {
+        if start.time_base != end.time_base {
+            return Err(TimeError::InvalidSourceTimeBase);
+        }
+        if !start.ticks.compare(end.ticks).is_lt() {
+            return Err(TimeError::InvalidRatio);
+        }
+        Ok(Self { start, end })
+    }
+
+    pub fn start(self) -> SourcePoint {
+        self.start
+    }
+
+    pub fn end(self) -> SourcePoint {
+        self.end
+    }
+}
+
+impl From<SourceSpan> for ExactSourceSpan {
+    fn from(value: SourceSpan) -> Self {
+        Self {
+            start: SourcePoint {
+                ticks: ExactRatio::integer(value.start().ticks),
+                time_base: value.start().time_base,
+            },
+            end: SourcePoint {
+                ticks: ExactRatio::integer(value.end().ticks),
+                time_base: value.end().time_base,
+            },
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -169,16 +240,34 @@ impl SourceFrameIndex {
         span: SourceSpan,
         endpoints: EndpointPolicy,
     ) -> Result<&IndexedSourceFrame, DocumentError> {
+        self.select_in_exact_span(point, span.into(), endpoints)
+    }
+
+    /// Fractional selection endpoints retain the same half-open lookup policy
+    /// as integral Source spans. Holding never permits uncovered selections or
+    /// chooses a frame outside the intervals intersecting the selection.
+    pub fn select_in_exact_span(
+        &self,
+        point: SourcePoint,
+        span: ExactSourceSpan,
+        endpoints: EndpointPolicy,
+    ) -> Result<&IndexedSourceFrame, DocumentError> {
         if point.time_base != self.time_base || span.start().time_base != self.time_base {
             return Err(invalid("source lookup uses a different timestamp clock"));
         }
-        if span.start().ticks < self.frames[0].pts || span.end().ticks > self.terminal_end {
+        if span
+            .start()
+            .ticks
+            .compare_integer(self.frames[0].pts)
+            .is_lt()
+            || span.end().ticks.compare_integer(self.terminal_end).is_gt()
+        {
             return Err(invalid(
                 "selected span is outside the measured source presentation interval",
             ));
         }
-        let before = point.ticks.compare_integer(span.start().ticks).is_lt();
-        let after = !point.ticks.compare_integer(span.end().ticks).is_lt();
+        let before = point.ticks.compare(span.start().ticks).is_lt();
+        let after = !point.ticks.compare(span.end().ticks).is_lt();
         if before || after {
             if endpoints == EndpointPolicy::Reject {
                 return Err(invalid(
@@ -188,16 +277,10 @@ impl SourceFrameIndex {
             if after {
                 let right = self
                     .frames
-                    .partition_point(|frame| frame.pts < span.end().ticks);
+                    .partition_point(|frame| span.end().ticks.compare_integer(frame.pts).is_gt());
                 return Ok(&self.frames[right - 1]);
             }
-            return self.select(
-                SourcePoint {
-                    ticks: ExactRatio::integer(span.start().ticks),
-                    time_base: self.time_base,
-                },
-                EndpointPolicy::Reject,
-            );
+            return self.select(span.start(), EndpointPolicy::Reject);
         }
         self.select(point, EndpointPolicy::Reject)
     }
@@ -403,6 +486,154 @@ mod tests {
                     .select_in_span(wrong_clock, span(-2002, 5005, index.time_base()), endpoints)
                     .is_err()
             );
+        }
+    }
+
+    #[test]
+    fn fractional_selection_preserves_half_open_vfr_endpoint_holds() {
+        let index = fixture();
+        let point = |numerator, denominator| SourcePoint {
+            ticks: ExactRatio::new(numerator, denominator).unwrap(),
+            time_base: index.time_base(),
+        };
+        let selected = ExactSourceSpan::new(point(-3001, 2), point(2001, 2)).unwrap();
+        for (query, expected) in [
+            (selected.start(), 0),
+            (point(-1001, 1), 1),
+            (point(1000, 1), 1),
+        ] {
+            assert_eq!(
+                index
+                    .select_in_exact_span(query, selected, EndpointPolicy::Reject)
+                    .unwrap()
+                    .identity,
+                SourceFrameId(expected)
+            );
+        }
+        for (query, expected) in [
+            (point(i128::MIN, 1), 0),
+            (point(-1501, 1), 0),
+            (selected.end(), 1),
+            (point(1001, 1), 1),
+            (point(i128::MAX, 1), 1),
+        ] {
+            assert!(
+                index
+                    .select_in_exact_span(query, selected, EndpointPolicy::Reject)
+                    .is_err()
+            );
+            assert_eq!(
+                index
+                    .select_in_exact_span(query, selected, EndpointPolicy::HoldAdjacent)
+                    .unwrap()
+                    .identity,
+                SourceFrameId(expected)
+            );
+        }
+        // A sub-tick window still selects its intersecting presentation interval.
+        // Ending exactly at a PTS excludes the frame starting at that PTS.
+        for (start, end, expected) in [
+            (point(1, 7), point(2, 7), 1),
+            (point(2001, 2), point(1001, 1), 1),
+            (point(1001, 1), point(2003, 2), 2),
+            (point(10009, 2), point(5005, 1), 3),
+        ] {
+            let span = ExactSourceSpan::new(start, end).unwrap();
+            for query in [point(i128::MIN, 1), start, end, point(i128::MAX, 1)] {
+                assert_eq!(
+                    index
+                        .select_in_exact_span(query, span, EndpointPolicy::HoldAdjacent)
+                        .unwrap()
+                        .identity,
+                    SourceFrameId(expected)
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn exact_spans_require_valid_clocks_extent_and_measured_coverage() {
+        let index = fixture();
+        let point = |numerator, denominator| SourcePoint {
+            ticks: ExactRatio::new(numerator, denominator).unwrap(),
+            time_base: index.time_base(),
+        };
+        let valid = ExactSourceSpan::new(point(-1, 2), point(1, 2)).unwrap();
+        let wrong_clock = SourcePoint {
+            time_base: SourceTimeBase::new(1, 1000).unwrap(),
+            ..valid.start()
+        };
+        for (start, end) in [
+            (valid.end(), valid.start()),
+            (valid.start(), valid.start()),
+            (wrong_clock, valid.end()),
+        ] {
+            assert!(ExactSourceSpan::new(start, end).is_err());
+        }
+        // Ordering remains valid even when subtracting the endpoints overflows.
+        assert!(ExactSourceSpan::new(point(i128::MIN, 1), point(i128::MAX, 1)).is_ok());
+        for endpoints in [EndpointPolicy::Reject, EndpointPolicy::HoldAdjacent] {
+            for span in [
+                ExactSourceSpan::new(point(-4005, 2), point(0, 1)).unwrap(),
+                ExactSourceSpan::new(point(0, 1), point(10011, 2)).unwrap(),
+            ] {
+                assert!(
+                    index
+                        .select_in_exact_span(point(0, 1), span, endpoints)
+                        .is_err()
+                );
+            }
+            assert!(
+                index
+                    .select_in_exact_span(wrong_clock, valid, endpoints)
+                    .is_err()
+            );
+            let span = ExactSourceSpan::new(
+                wrong_clock,
+                SourcePoint {
+                    ticks: ExactRatio::ONE,
+                    ..wrong_clock
+                },
+            )
+            .unwrap();
+            assert!(
+                index
+                    .select_in_exact_span(point(0, 1), span, endpoints)
+                    .is_err()
+            );
+        }
+
+        let wire = serde_json::to_value(valid).unwrap();
+        assert_eq!(
+            serde_json::from_value::<ExactSourceSpan>(wire.clone()).unwrap(),
+            valid
+        );
+        for field in ["start", "end"] {
+            for null in [false, true] {
+                let mut forged = wire.clone();
+                if null {
+                    forged[field] = serde_json::Value::Null;
+                } else {
+                    forged.as_object_mut().unwrap().remove(field);
+                }
+                assert!(serde_json::from_value::<ExactSourceSpan>(forged).is_err());
+            }
+        }
+        let mut empty = wire.clone();
+        empty["end"] = empty["start"].clone();
+        assert!(serde_json::from_value::<ExactSourceSpan>(empty).is_err());
+        let mut mixed = wire.clone();
+        mixed["end"]["time_base"] = serde_json::to_value(wrong_clock.time_base).unwrap();
+        assert!(serde_json::from_value::<ExactSourceSpan>(mixed).is_err());
+        for nested in [false, true] {
+            let mut forged = wire.clone();
+            let object = if nested {
+                forged["start"].as_object_mut().unwrap()
+            } else {
+                forged.as_object_mut().unwrap()
+            };
+            object.insert("unexpected".into(), serde_json::Value::Null);
+            assert!(serde_json::from_value::<ExactSourceSpan>(forged).is_err());
         }
     }
 

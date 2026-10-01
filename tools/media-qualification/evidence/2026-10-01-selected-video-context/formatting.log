@@ -1,0 +1,16 @@
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/src/lib.rs:36:
+ mod legacy_mark_v13;
+ mod legacy_sound_routes;
+ mod legacy_source_mapping;
+[31m-mod legacy_video_mapping_v34;
+(B[m pub mod legacy_v1;
+ pub mod legacy_v10;
+ pub mod legacy_v11;
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/src/lib.rs:69:
+ pub mod legacy_v7;
+ pub mod legacy_v8;
+ pub mod legacy_v9;
+[32m+mod legacy_video_mapping_v34;
+(B[m mod marks;
+ mod move_range;
+ mod occurrence;

@@ -6,11 +6,24 @@ next frame's PTS or the measured final-frame endpoint. Ordinal count is not an
 elapsed duration for variable-frame-rate media.
 
 `derive_source_moment` derives candidate intent from the same measured indexes
-used for full-source import. It retains the selected picture's exact source
-span and natural playback rate. The enclosing beat rounds the exact elapsed
+used for full-source import. It retains the selected picture's exact interval
+and natural playback rate. The enclosing beat rounds the exact elapsed
 duration upward once at the current project rate. Picture holds its selected
 endpoint during any rounding slack. The helper grants no media admission,
 registration or edit authority.
+
+## Picture selection and handles
+
+New moments retain the entire measured `SourceVideo.span` and its natural affine
+mapping. `SourceVideoMapping::SelectedPlacement` records the visible exact
+interval separately. The full span provides source context for later edits;
+endpoint holding still selects only frames intersecting the selected window.
+Fractional source ticks remain exact, and source-anchor queries reject hidden
+context outside the selected boundaries. See [picture timing](SOURCE_VIDEO_MAPPING.md).
+
+Core schema 35/database 44 store this representation. Development databases
+39 through 43 are refused without migration or writes. Retaining handles does
+not yet implement the Trim, Slip or Roll workflow.
 
 ## Audio selection and phase
 
@@ -129,7 +142,7 @@ absolute cursor and group.
 
 ## Persistence and remaining workflow
 
-Core schema 20/database schema 26 introduce selected placements. Database 25
+Core schema 20/database schema 26 introduce selected audio placements. Database 25
 replays through frozen core 19, including captured Hold framing. Older snapshot,
 subtree, command, occurrence and patch vocabularies cannot acquire the new mapping.
 Migration preserves the complete history and pre-migration backup.

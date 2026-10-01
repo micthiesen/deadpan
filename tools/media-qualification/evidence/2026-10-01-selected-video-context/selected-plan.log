@@ -1,0 +1,14 @@
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 23.04s
+     Running tests/selected_video_window.rs (target/debug/deps/selected_video_window-19db60250f69201a)
+
+running 6 tests
+test inverse_source_anchors_admit_exact_fractional_endpoints_and_reject_hidden_context ... ok
+test inverse_source_window_composes_enclosing_retime_and_explicit_repeat_identity ... ok
+test reject_policy_never_uses_available_context_beyond_the_selected_end ... ok
+test exact_selected_ticks_hold_only_intersecting_vfr_intervals_on_both_sides ... ok
+test full_context_promotion_preserves_vfr_picture_and_rounded_tail_at_signed_origins ... ok
+test nested_retimes_and_repeat_plays_preserve_selection_without_rounding_source_points ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

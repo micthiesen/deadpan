@@ -1,6 +1,8 @@
 use super::*;
 
-use deadpan_core::{ExactFrameRange, LinkRelation, SourceAudioMapping, SourcePoint, TimeError};
+use deadpan_core::{
+    ExactFrameRange, LinkRelation, SourceAudioMapping, SourcePoint, SourceVideo, TimeError,
+};
 use deadpan_media::source_import_timing::{SourceMomentTiming, derive_source_moment};
 
 fn moment(
@@ -87,7 +89,12 @@ fn fractional_audio_selection_keeps_full_samples_phase_and_exact_cut_before_pict
     assert_eq!(node.video_mapping.endpoints(), EndpointPolicy::HoldAdjacent);
     assert_eq!(
         node.video_mapping.duration_frames(node.duration).unwrap(),
-        ratio(3, 100)
+        ratio(9, 100)
+    );
+    assert_eq!(node.video_mapping.start_frames(), ratio(-3, 100));
+    assert_eq!(
+        node.video_mapping.selection_frames(node.duration).unwrap(),
+        ExactFrameRange::new(ExactRatio::ZERO, ratio(3, 100)).unwrap()
     );
     assert_eq!(
         node.audio_mapping.duration_frames(node.duration).unwrap(),
@@ -355,15 +362,43 @@ fn decoded_cfr_offset_and_vfr_moments_retain_real_pts_and_endpoint_picture_ident
                 }
             }
             let span = selected.video.span;
+            let node = selected.source_node(AssetId::new("source").unwrap());
+            let SourceVideo::Stream { span: context, .. } = node.video else {
+                panic!("selected video lost its source context");
+            };
+            let exact = node
+                .video_mapping
+                .selection_in_source(context, node.duration)
+                .unwrap();
+            assert_eq!(
+                exact.start().ticks,
+                ExactRatio::integer(span.start().ticks),
+                "{name}"
+            );
+            assert_eq!(
+                exact.end().ticks,
+                ExactRatio::integer(span.end().ticks),
+                "{name}"
+            );
+            assert_eq!(
+                context.start().ticks,
+                video.index().index().frames()[0].pts,
+                "{name}"
+            );
+            assert_eq!(
+                context.end().ticks,
+                video.index().index().terminal_end(),
+                "{name}"
+            );
             let endpoint = video
                 .index()
                 .index()
-                .select_in_span(
+                .select_in_exact_span(
                     SourcePoint {
                         ticks: ExactRatio::integer(span.end().ticks),
                         time_base: span.end().time_base,
                     },
-                    span,
+                    exact,
                     EndpointPolicy::HoldAdjacent,
                 )
                 .unwrap();

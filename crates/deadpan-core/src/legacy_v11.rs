@@ -5,11 +5,11 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
-use crate::SourceVideoMapping as VideoMapping;
 use crate::document::unique_map;
 use crate::legacy_audio_mapping_v19::AudioMapping;
 use crate::legacy_mark::{LegacyMark, project_mark_changes, project_marks, upgrade_marks};
 use crate::legacy_v8::{LegacyNodeKind, LegacySourceNode};
+use crate::legacy_video_mapping_v34::VideoMapping;
 use crate::*;
 
 /// Core 11 added authored audio edges to the frozen core-8 node vocabulary.
@@ -308,9 +308,9 @@ impl OldOccurrenceEdit {
                 end,
                 destination,
             },
-            Self::SetSourceVideoMapping { mapping } => {
-                OccurrenceEdit::SetSourceVideoMapping { mapping }
-            }
+            Self::SetSourceVideoMapping { mapping } => OccurrenceEdit::SetSourceVideoMapping {
+                mapping: mapping.upgrade(),
+            },
             Self::SetSourceAudioMapping { mapping, offset } => {
                 OccurrenceEdit::SetSourceAudioMapping {
                     mapping: mapping.upgrade(),
@@ -563,9 +563,10 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
             end,
             destination,
         },
-        OldCommand::SetSourceVideoMapping { node, mapping } => {
-            Command::SetSourceVideoMapping { node, mapping }
-        }
+        OldCommand::SetSourceVideoMapping { node, mapping } => Command::SetSourceVideoMapping {
+            node,
+            mapping: mapping.upgrade(),
+        },
         OldCommand::SetSourceAudioMapping {
             node,
             mapping,

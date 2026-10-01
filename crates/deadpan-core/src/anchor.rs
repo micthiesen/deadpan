@@ -780,27 +780,19 @@ impl<'a> AnchorIndex<'a> {
         let position = source_fraction(timestamp, selected)?
             .checked_mul(duration)?
             .checked_add(offset)?;
-        if stream == SourceStream::Audio {
-            let selection = source.audio_mapping.selection_frames_with_offset(
+        let selection = match stream {
+            SourceStream::Video => source.video_mapping.selection_frames(source.duration)?,
+            SourceStream::Audio => source.audio_mapping.selection_frames_with_offset(
                 source.duration,
                 source.audio_offset,
                 self.document.presentation_basis().frame_rate,
-            )?;
-            if position
-                .checked_sub(selection.start)?
-                .compare_integer(0)
-                .is_lt()
-                || selection
-                    .end
-                    .checked_sub(position)?
-                    .compare_integer(0)
-                    .is_lt()
-            {
-                return Err(AnchorError::new(
-                    AnchorErrorCode::OutsideMapping,
-                    "audio source boundary is outside the selected moment",
-                ));
-            }
+            )?,
+        };
+        if position.compare(selection.start).is_lt() || position.compare(selection.end).is_gt() {
+            return Err(AnchorError::new(
+                AnchorErrorCode::OutsideMapping,
+                "source boundary is outside the selected moment",
+            ));
         }
         Ok(position)
     }

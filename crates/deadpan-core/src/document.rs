@@ -9,7 +9,7 @@ use crate::{
     TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 34;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 35;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -327,6 +327,10 @@ impl RetimePurpose {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+#[expect(
+    clippy::large_enum_variant,
+    reason = "Keep exact Source recipes inline instead of adding an allocation per video beat"
+)]
 pub enum NodeKind {
     Source {
         source: SourceNode,
@@ -853,7 +857,9 @@ impl ProjectDocument {
                     match &source.video {
                         SourceVideo::Stream { asset, span } => {
                             self.validate_video_span(asset, *span)?;
-                            source.video_mapping.duration_frames(source.duration)?;
+                            source
+                                .video_mapping
+                                .selection_in_source(*span, source.duration)?;
                         }
                         SourceVideo::Still { asset } => {
                             if !self.asset(asset)?.still_image {

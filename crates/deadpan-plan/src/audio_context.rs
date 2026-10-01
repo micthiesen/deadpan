@@ -60,6 +60,7 @@ impl RenderPlan {
                             start: ExactRatio::ZERO,
                             duration: ExactRatio::integer(node.duration.frames()),
                             endpoints: EndpointPolicy::HoldAdjacent,
+                            selection: None,
                             audio,
                         },
                         NodeType::Source,

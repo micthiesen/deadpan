@@ -1,0 +1,43 @@
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Checking deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+    Checking deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+error: large size difference between variants
+   --> crates/deadpan-plan/src/plan.rs:138:1
+    |
+138 | /   enum CompiledKind {
+139 | | /     Source {
+140 | | |         video: SourceVideo,
+141 | | |         start: ExactRatio,
+142 | | |         duration: ExactRatio,
+...   | |
+145 | | |         audio: Option<CompiledSourceAudio>,
+146 | | |     },
+    | | |_____- the largest variant contains at least 425 bytes
+...   |
+155 | | /     Repeat {
+156 | | |         default_child: usize,
+157 | | |         layout: RepeatLayout,
+158 | | |         gap: Option<CompiledHold>,
+...   | |
+161 | | |         gap_duration: FrameDuration,
+162 | | |     },
+    | | |_____- the second-largest variant contains at least 208 bytes
+...   |
+169 | |       },
+170 | |   }
+    | |___^ the entire enum is at least 432 bytes
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#large_enum_variant
+    = note: `-D clippy::large-enum-variant` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::large_enum_variant)]`
+help: consider boxing the large fields or introducing indirection in some other way to reduce the total size of the enum
+    |
+145 -         audio: Option<CompiledSourceAudio>,
+145 +         audio: Box<Option<CompiledSourceAudio>>,
+    |
+
+error: could not compile `deadpan-plan` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

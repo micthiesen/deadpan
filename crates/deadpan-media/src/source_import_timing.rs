@@ -138,7 +138,14 @@ pub struct SourceMomentTiming {
     pub ordinals: Range<u64>,
     pub origin_seconds: ExactRatio,
     pub project_rate: FrameRate,
+    /// Selected picture span, retained for the Original range and its duration.
     pub video: StreamPlacement,
+    /// Complete measured picture context with the same affine clock. Keeping
+    /// this separate from selection makes source handles available without
+    /// changing cadence or exposing adjacent pictures in rounded end slack.
+    pub video_context: StreamPlacement,
+    /// Visible half-open window in the full picture context's local clock.
+    pub video_selection: ExactFrameRange,
     /// None means no selected audio stream or no measured overlap. It never
     /// changes the immutable asset's stream inventory.
     pub audio: Option<SelectedAudioPlacement>,
@@ -154,11 +161,12 @@ impl SourceMomentTiming {
             duration: self.duration,
             video: SourceVideo::Stream {
                 asset: asset.clone(),
-                span: self.video.span,
+                span: self.video_context.span,
             },
-            video_mapping: SourceVideoMapping::Placement {
-                start: self.video.start_frames,
-                frames: self.video.duration_frames,
+            video_mapping: SourceVideoMapping::SelectedPlacement {
+                start: self.video_context.start_frames,
+                frames: self.video_context.duration_frames,
+                selection: self.video_selection,
                 endpoints: EndpointPolicy::HoldAdjacent,
             },
             audio: self.audio.map(|audio| SourceAudio {
@@ -197,7 +205,7 @@ pub fn derive_source_moment(
     if ordinals.start >= ordinals.end || ordinals.end > frame_count {
         return Err(ImportTimingError::InvalidMomentRange);
     }
-    let (_, measured_audio) = measured_spans(Some(video), audio)?;
+    let (measured_video, measured_audio) = measured_spans(Some(video), audio)?;
     let start = index.interval(SourceFrameId(ordinals.start))?.0;
     let end = index.interval(SourceFrameId(ordinals.end - 1))?.1;
     let selected = SourceSpan::new(
@@ -212,9 +220,22 @@ pub fn derive_source_moment(
     )?;
     let origin_seconds = seconds(selected.start())?;
     let video = stream_placement(selected, origin_seconds, project_rate)?;
+    let video_context = stream_placement(
+        measured_video.ok_or(ImportTimingError::NoStreams)?,
+        origin_seconds,
+        project_rate,
+    )?;
     let duration = FrameDuration::new(
         i64::try_from(video.duration_frames.ceil()?).map_err(|_| TimeError::Overflow)?,
     )?;
+    let video_selection = ExactFrameRange::new(ExactRatio::ZERO, video.duration_frames)?;
+    SourceVideoMapping::SelectedPlacement {
+        start: video_context.start_frames,
+        frames: video_context.duration_frames,
+        selection: video_selection,
+        endpoints: EndpointPolicy::HoldAdjacent,
+    }
+    .selection_in_source(video_context.span, duration)?;
     let audio = measured_audio
         .map(
             |span| -> Result<Option<SelectedAudioPlacement>, ImportTimingError> {
@@ -265,6 +286,8 @@ pub fn derive_source_moment(
         origin_seconds,
         project_rate,
         video,
+        video_context,
+        video_selection,
         audio,
         duration,
     })

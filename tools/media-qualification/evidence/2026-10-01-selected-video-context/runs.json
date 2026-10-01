@@ -1,0 +1,532 @@
+{
+  "core-plan-initial": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-core",
+      "-p",
+      "deadpan-plan"
+    ],
+    "started": "2026-10-01T09:36:52.582920+00:00",
+    "base_commit": "dbd89f1897f7fd92427849e56bb1ef2b1f59a273",
+    "diff_sha256": "1798c1a5a200abcc1b6bef0f32497b302df63efff8b631334cf38a4781cdebaf",
+    "source_manifest_sha256": "1bc7cdfa38e3b6b461369481e4226628f00bf36a729cfb47f0d70a17b6fe6ffc",
+    "pid": 76509,
+    "exit_code": 101,
+    "seconds": 103.85467904200777,
+    "tests": {
+      "targets": 0
+    },
+    "unit_and_integration": {
+      "targets": 0
+    },
+    "doc_tests": {
+      "targets": 0
+    }
+  },
+  "formatting-compact": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "fmt",
+      "--all",
+      "--check"
+    ],
+    "started": "2026-10-01T10:26:41.483159+00:00",
+    "base_commit": "dbd89f1897f7fd92427849e56bb1ef2b1f59a273",
+    "diff_sha256": "f8bd993e32ac149e498c7db90d1e35afe58f975b8468d7955b45107c95ffa2e6",
+    "source_manifest_sha256": "d081b1e12c0e847c85a050e4b52af9e36e4734624b78ae9fbb9a8af2223ae4e6",
+    "pid": 86579,
+    "exit_code": 0,
+    "seconds": 1.9846424995921552,
+    "tests": {
+      "targets": 0
+    },
+    "unit_and_integration": {
+      "targets": 0
+    },
+    "doc_tests": {
+      "targets": 0
+    },
+    "source_delta_from_broad_start": [
+      "crates/deadpan-core/src/document.rs",
+      "crates/deadpan-core/src/lib.rs",
+      "crates/deadpan-plan/src/plan.rs",
+      "crates/deadpan-store/tests/edited_slice/child_capture/range_compat.rs"
+    ]
+  },
+  "formatting-complete": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "fmt",
+      "--all",
+      "--check"
+    ],
+    "started": "2026-10-01T10:14:21.380680+00:00",
+    "base_commit": "dbd89f1897f7fd92427849e56bb1ef2b1f59a273",
+    "diff_sha256": "710d0de65ac2b4513350ee625b95505393a307d3db637f9528c1fc34da208734",
+    "source_manifest_sha256": "f794bd369e66e18f13f3570a09929cc3c7e51e77fe5e8632cb027c684e8e7354",
+    "pid": 84170,
+    "exit_code": 0,
+    "seconds": 1.5825934996828437,
+    "tests": {
+      "targets": 0
+    },
+    "unit_and_integration": {
+      "targets": 0
+    },
+    "doc_tests": {
+      "targets": 0
+    },
+    "source_delta_from_broad_start": [
+      "crates/deadpan-core/src/lib.rs",
+      "crates/deadpan-store/tests/edited_slice/child_capture/range_compat.rs"
+    ]
+  },
+  "formatting-final": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "fmt",
+      "--all",
+      "--check"
+    ],
+    "started": "2026-10-01T09:45:51.481853+00:00",
+    "base_commit": "dbd89f1897f7fd92427849e56bb1ef2b1f59a273",
+    "diff_sha256": "d5373e6ff8bef56df33561d6a27b4db67618c39e6a08b8d22c3ef916a0109991",
+    "source_manifest_sha256": "1fc7f033ef29c03d5d4ea1ada37573bdd626b16d25601a324f4429528d853f40",
+    "pid": 79352,
+    "exit_code": 0,
+    "seconds": 1.8336036670953035,
+    "tests": {
+      "targets": 0
+    },
+    "unit_and_integration": {
+      "targets": 0
+    },
+    "doc_tests": {
+      "targets": 0
+    },
+    "source_delta_from_broad_start": [
+      "crates/deadpan-core/src/lib.rs"
+    ]
+  },
+  "formatting-reviewed": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "fmt",
+      "--all",
+      "--check"
+    ],
+    "started": "2026-10-01T10:22:49.897432+00:00",
+    "base_commit": "dbd89f1897f7fd92427849e56bb1ef2b1f59a273",
+    "diff_sha256": "89aef2714eefe1a812d3cbc1ae861e92a6dc957519b98faae00cc2db138d58c7",
+    "source_manifest_sha256": "9647349e790eafec9c2ca929971b82d13ba4532ee6f2e9d2a852e8a8ab6f6d00",
+    "pid": 85996,
+    "exit_code": 0,
+    "seconds": 1.6050257496535778,
+    "tests": {
+      "targets": 0
+    },
+    "unit_and_integration": {
+      "targets": 0
+    },
+    "doc_tests": {
+      "targets": 0
+    },
+    "source_delta_from_broad_start": [
+      "crates/deadpan-core/src/document.rs",
+      "crates/deadpan-core/src/lib.rs",
+      "crates/deadpan-store/tests/edited_slice/child_capture/range_compat.rs"
+    ]
+  },
+  "formatting": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "fmt",
+      "--all",
+      "--check"
+    ],
+    "started": "2026-10-01T09:44:59.546111+00:00",
+    "base_commit": "dbd89f1897f7fd92427849e56bb1ef2b1f59a273",
+    "diff_sha256": "a02c20e17adffcc5fed016bc249573f8d2eb4227999b97cd1fa14e3c3501c0fb",
+    "source_manifest_sha256": "46f37ba08f700b88acef80e2670d169d52fb89f0a52df192a2a04d7bfd7e1e5f",
+    "pid": 79120,
+    "exit_code": 1,
+    "seconds": 1.899931250140071,
+    "tests": {
+      "targets": 0
+    },
+    "unit_and_integration": {
+      "targets": 0
+    },
+    "doc_tests": {
+      "targets": 0
+    }
+  },
+  "plan-tests-compact": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-plan"
+    ],
+    "started": "2026-10-01T10:25:57.382593+00:00",
+    "base_commit": "dbd89f1897f7fd92427849e56bb1ef2b1f59a273",
+    "diff_sha256": "f8bd993e32ac149e498c7db90d1e35afe58f975b8468d7955b45107c95ffa2e6",
+    "source_manifest_sha256": "d081b1e12c0e847c85a050e4b52af9e36e4734624b78ae9fbb9a8af2223ae4e6",
+    "pid": 86487,
+    "exit_code": 0,
+    "seconds": 145.36328679090366,
+    "tests": {
+      "targets": 27,
+      "passed": 270,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "unit_and_integration": {
+      "targets": 26,
+      "passed": 270,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "doc_tests": {
+      "targets": 1,
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "source_delta_from_broad_start": [
+      "crates/deadpan-core/src/document.rs",
+      "crates/deadpan-core/src/lib.rs",
+      "crates/deadpan-plan/src/plan.rs",
+      "crates/deadpan-store/tests/edited_slice/child_capture/range_compat.rs"
+    ]
+  },
+  "selected-plan": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-plan",
+      "--test",
+      "selected_video_window"
+    ],
+    "started": "2026-10-01T09:38:56.046548+00:00",
+    "base_commit": "dbd89f1897f7fd92427849e56bb1ef2b1f59a273",
+    "diff_sha256": "c96ec9c00343f2ac0b7bba99f746b7855fc4692953818de302ec5364a15e0325",
+    "source_manifest_sha256": "c8041df45c6bfc39eba1da89eaa4780d1fef88f34786ee5556d9c2cbd0b4a3bd",
+    "pid": 77180,
+    "exit_code": 0,
+    "seconds": 23.071302957832813,
+    "tests": {
+      "targets": 1,
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "unit_and_integration": {
+      "targets": 1,
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "doc_tests": {
+      "targets": 0
+    }
+  },
+  "storage-tests": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-store"
+    ],
+    "started": "2026-10-01T10:11:02.378968+00:00",
+    "base_commit": "dbd89f1897f7fd92427849e56bb1ef2b1f59a273",
+    "diff_sha256": "9b08f6cb63c1e8d7fd7c663f3bf7f4d084ef0cedf508d2b37ee09dcb38e66eab",
+    "source_manifest_sha256": "f794bd369e66e18f13f3570a09929cc3c7e51e77fe5e8632cb027c684e8e7354",
+    "pid": 83191,
+    "exit_code": 0,
+    "seconds": 241.22400116594508,
+    "tests": {
+      "targets": 24,
+      "passed": 405,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "unit_and_integration": {
+      "targets": 23,
+      "passed": 404,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "doc_tests": {
+      "targets": 1,
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "source_delta_from_broad_start": [
+      "crates/deadpan-core/src/lib.rs",
+      "crates/deadpan-store/tests/edited_slice/child_capture/range_compat.rs"
+    ]
+  },
+  "strict-clippy-compact": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "deadpan-app/ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started": "2026-10-01T10:28:43.106012+00:00",
+    "base_commit": "dbd89f1897f7fd92427849e56bb1ef2b1f59a273",
+    "diff_sha256": "f8bd993e32ac149e498c7db90d1e35afe58f975b8468d7955b45107c95ffa2e6",
+    "source_manifest_sha256": "d081b1e12c0e847c85a050e4b52af9e36e4734624b78ae9fbb9a8af2223ae4e6",
+    "pid": 86905,
+    "exit_code": 0,
+    "seconds": 561.1070455829613,
+    "tests": {
+      "targets": 0
+    },
+    "unit_and_integration": {
+      "targets": 0
+    },
+    "doc_tests": {
+      "targets": 0
+    },
+    "source_delta_from_broad_start": [
+      "crates/deadpan-core/src/document.rs",
+      "crates/deadpan-core/src/lib.rs",
+      "crates/deadpan-plan/src/plan.rs",
+      "crates/deadpan-store/tests/edited_slice/child_capture/range_compat.rs"
+    ]
+  },
+  "strict-clippy-reviewed": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "deadpan-app/ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started": "2026-10-01T10:22:32.606364+00:00",
+    "base_commit": "dbd89f1897f7fd92427849e56bb1ef2b1f59a273",
+    "diff_sha256": "89aef2714eefe1a812d3cbc1ae861e92a6dc957519b98faae00cc2db138d58c7",
+    "source_manifest_sha256": "9647349e790eafec9c2ca929971b82d13ba4532ee6f2e9d2a852e8a8ab6f6d00",
+    "pid": 85957,
+    "exit_code": 101,
+    "seconds": 152.23041820898652,
+    "tests": {
+      "targets": 0
+    },
+    "unit_and_integration": {
+      "targets": 0
+    },
+    "doc_tests": {
+      "targets": 0
+    },
+    "source_delta_from_broad_start": [
+      "crates/deadpan-core/src/document.rs",
+      "crates/deadpan-core/src/lib.rs",
+      "crates/deadpan-store/tests/edited_slice/child_capture/range_compat.rs"
+    ]
+  },
+  "strict-clippy": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "deadpan-app/ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started": "2026-10-01T10:20:21.147942+00:00",
+    "base_commit": "dbd89f1897f7fd92427849e56bb1ef2b1f59a273",
+    "diff_sha256": "3d2aa697c0899c05a17ef7fe6d9eed5e1b8414d2cb29bbaa417dc612ee952864",
+    "source_manifest_sha256": "f794bd369e66e18f13f3570a09929cc3c7e51e77fe5e8632cb027c684e8e7354",
+    "pid": 85371,
+    "exit_code": 101,
+    "seconds": 28.606326083187014,
+    "tests": {
+      "targets": 0
+    },
+    "unit_and_integration": {
+      "targets": 0
+    },
+    "doc_tests": {
+      "targets": 0
+    },
+    "source_delta_from_broad_start": [
+      "crates/deadpan-core/src/lib.rs",
+      "crates/deadpan-store/tests/edited_slice/child_capture/range_compat.rs"
+    ]
+  },
+  "workspace-doc-tests": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "--workspace",
+      "--doc",
+      "--features",
+      "deadpan-app/ui-harness"
+    ],
+    "started": "2026-10-01T10:15:14.969181+00:00",
+    "base_commit": "dbd89f1897f7fd92427849e56bb1ef2b1f59a273",
+    "diff_sha256": "710d0de65ac2b4513350ee625b95505393a307d3db637f9528c1fc34da208734",
+    "source_manifest_sha256": "f794bd369e66e18f13f3570a09929cc3c7e51e77fe5e8632cb027c684e8e7354",
+    "pid": 84509,
+    "exit_code": 0,
+    "seconds": 293.9769209166989,
+    "tests": {
+      "targets": 17,
+      "passed": 2,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "unit_and_integration": {
+      "targets": 0
+    },
+    "doc_tests": {
+      "targets": 17,
+      "passed": 2,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "source_delta_from_broad_start": [
+      "crates/deadpan-core/src/lib.rs",
+      "crates/deadpan-store/tests/edited_slice/child_capture/range_compat.rs"
+    ]
+  },
+  "workspace-ui-tests": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "--workspace",
+      "--features",
+      "deadpan-app/ui-harness"
+    ],
+    "started": "2026-10-01T09:44:12.919976+00:00",
+    "base_commit": "dbd89f1897f7fd92427849e56bb1ef2b1f59a273",
+    "diff_sha256": "a02c20e17adffcc5fed016bc249573f8d2eb4227999b97cd1fa14e3c3501c0fb",
+    "source_manifest_sha256": "46f37ba08f700b88acef80e2670d169d52fb89f0a52df192a2a04d7bfd7e1e5f",
+    "pid": 78765,
+    "exit_code": 101,
+    "seconds": 1187.4597422918305,
+    "tests": {
+      "targets": 149,
+      "passed": 2626,
+      "failed": 1,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "unit_and_integration": {
+      "targets": 149,
+      "passed": 2626,
+      "failed": 1,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "doc_tests": {
+      "targets": 0
+    }
+  },
+  "verified_nonstore_prefix": {
+    "targets": 145,
+    "passed": 2552,
+    "failed": 0,
+    "ignored": 0,
+    "measured": 0,
+    "filtered": 0
+  },
+  "distinct_workspace_tests": {
+    "targets": 168,
+    "passed": 2956,
+    "failed": 0,
+    "ignored": 0
+  }
+}

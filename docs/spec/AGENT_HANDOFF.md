@@ -19,6 +19,39 @@ test instances after testing instead of leaving them idle. The previously
 running `dev.thiesen.deadpan.cursor-qa` instance has been quit, and the native
 app inventory confirmed no Deadpan app remained running.
 
+## Exact picture selection context, 2026-10-01
+
+New Original moments retain the complete measured video span and affine mapping
+with a separate exact `SelectedPlacement` window. The shared picture plan holds
+only the selected first/last intersecting PTS interval, including rounded end
+slack. Source anchors reject hidden context and retain exact selected endpoints.
+Audio placement and beat duration are unchanged. See
+[source picture timing](../SOURCE_VIDEO_MAPPING.md) and
+[qualification](../qualification/selected-video-context-2026-10-01.md).
+
+Current core schema 35 and database 44 reject unused development databases
+39 through 43 without writes or migration. Existing frozen adapters for 1 through
+38 remain. Create fresh native QA packages.
+
+This is a Trim prerequisite. Native `,v`, in/out/slip/roll commands, ripple versus
+overwrite, clamped handles, outgoing/incoming pictures and candidate waveform
+remain open. Reuse the splice/gain captured draft, proposed snapshot and worker
+identity patterns. Do not resize a Source to trim it: that changes FitBeat rate
+and normalized framing. Partition crops preserve owner domains, but extension
+beyond those domains still needs explicit semantics. Linked edits must retain
+exact A/V alignment and the captured audio lattice through one atomic commit.
+Extending before a Source's local zero needs an exact translation between live
+and retained audio clocks. Moments with no audio overlap currently omit audio;
+future handle extension needs retained dormant linked context so it can preserve
+that intent without inferring it from the asset receipt.
+
+Qualification covers 2,956 distinct workspace unit/integration tests plus both
+documentation tests. All 270 plan tests pass after removing duplicate clock
+storage from the private compiled selection. Strict workspace/all-target Clippy
+and formatting pass. The archived range fixture remains unchanged and now proves
+rejection of its unsupported package while retaining command-shape checks. No
+native app was opened; Trim and full product acceptance remain pending.
+
 ## Native marks and jump history, 2026-10-01
 
 `m` + letter, `'` + letter and the Marks list use persisted core marks. Original

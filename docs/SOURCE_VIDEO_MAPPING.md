@@ -8,6 +8,12 @@ Core schema 8 adds `placement`, which also specifies an exact project-frame
 start. [Import timing](SOURCE_IMPORT_TIMING.md) explains independent stream
 placement and full-source enclosure.
 
+Core schema 35 adds `selected_placement`: a full-span affine mapping plus an
+exact half-open selection in local project frames. The full span retains source
+handles; the selection defines visible pictures and endpoint holding. Newly
+copied Original moments use this representation. Their duration, picture cadence,
+audio placement and selected endpoint frames remain the same.
+
 `SourceVideoMapping::natural_rate(span, frame_rate, endpoints)` derives the exact
 extent from original timestamp units and the rational project rate. The host
 chooses the integer beat duration separately. Rounding the beat must never
@@ -26,7 +32,7 @@ audio offset, node duration and original-coordinate marks remain unchanged.
 
 ## Selected endpoints
 
-`duration` and `placement` require one of two explicit policies:
+`duration`, `placement` and `selected_placement` require one of two explicit policies:
 
 - `reject`: an out-of-selection picture request fails.
 - `hold_adjacent`: it holds the first or last original presentation interval
@@ -38,16 +44,22 @@ selected frame there; it never chooses a later frame from the full original.
 A trim inside a frame interval includes that intersecting frame. A trim ending
 exactly at the next frame's PTS excludes that next frame.
 
-`Picture::Source` retains the selected span and policy. Call
+`Picture::Source` retains the full affine span, exact selected source span and policy. Call
 `Picture::select_source_frame(index)` to enforce them against the measured index.
-The asset and clocks must match, and the index must cover the entire selected
-span. Holding cannot conceal a missing index endpoint or missing source media.
+The asset and clocks must match, and the index must cover the entire retained
+context. Holding cannot conceal a missing index endpoint or missing source media.
 Freeze requests reject points outside the measured index. Accepted generated
 frames retain their exact original ordinal lookup.
 
 Endpoint holding affects picture selection only. Source-coordinate boundaries
 still map to their exact position; an inverse query outside the beat fails.
 The policy does not clamp or rebind marks into a held tail.
+
+`ExactSourceSpan` preserves fractional original ticks. Selection endpoints are
+projected through the unchanged full-span mapping, without rounding to a source
+tick or fitting the selected interval to the beat. Inverse source anchors accept
+both exact selected boundaries and reject hidden context outside them. Repeat
+and Retime compose these coordinates as usual.
 
 ## Editing and persistence
 
@@ -80,7 +92,12 @@ timing. Schema-11 audio and schema-12 picture mappings remain intact. Fields,
 variants and commands absent from each historical vocabulary are rejected inside
 old snapshots, commands and patches, even when a field is null.
 Migration retains revision identities, undo/redo, abandoned branches and
-operational original-media and generation records.
+operational original-media and generation records. Current database schema 44
+stores core schema 35. Unused development schemas 39 through 43 are rejected
+without migration, backup or writes under the session's authorized format break.
+
+Retaining source context is a prerequisite for Trim. It does not implement
+in/out trimming, slip, roll, handle clamping or the native Trim preview.
 
 This provides authored timing and frame selection. It does not establish source
 qualification, native editorial playback or export. The measured import helper supplies common-origin and enclosure

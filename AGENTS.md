@@ -355,7 +355,7 @@ and workspace delivery order. Keep the first child's identity separate from the
 complete result interval. See
 [atomic moves](docs/ATOMIC_MOVES.md).
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 34 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings, audio edge policies, transparent Retime partitions, owned timing bindings and direct sound replacement maps, and binds qualified assets to immutable source receipts. Database schemas 1 through 38 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 35 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings with exact picture selections, audio edge policies, transparent Retime partitions, owned timing bindings and direct sound replacement maps, and binds qualified assets to immutable source receipts. Database schemas 1 through 38 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
 
 Durable render jobs capture immutable project/revision/document/range/policy
 intent outside authored undo/redo. Require fresh attempt IDs and cancellation
@@ -418,14 +418,14 @@ receipts are independent of authored revisions and survive compact replies,
 workspace refresh failure and final stdout failure. Terminal cancellation needs
 worker completion; a lost observer does not prove cancellation.
 
-Database schema 43 stores core schema 34 and retains operational generation requests,
+Database schema 44 stores core schema 35 and retains operational generation requests,
 plus an optional validated single-Original workflow profile. Use the dedicated
 `create_single_source` / `initialize_prepared_source` path to bind the full measured
 Original, basis and protected baseline atomically. Undo never crosses that baseline;
 deleting all current beats does not unlock a replacement video. Generic migrations
 gain no profile. Native Open uses backed-up migration before replacing its current
 session. Under the user's development-format permission, databases 39 through
-42 are rejected without mutation or migration; existing frozen adapters for
+43 are rejected without mutation or migration; existing frozen adapters for
 databases 1 through 38 remain. See [the single-Original contract](docs/SINGLE_ORIGINAL.md).
 
 The database also retains operational generation
@@ -504,7 +504,7 @@ Ready bundles alone do not authorize an edit. See [acceptance](docs/GENERATION_A
 See [generated Hold semantics](docs/GENERATED_HOLDS.md).
 
 Original byte ownership is operational and separate from stream readiness.
-Database schema 43 retains content-keyed original records with monotonic location
+Database schema 44 retains content-keyed original records with monotonic location
 versions introduced in schema 10; earlier schemas gain an empty inventory. Use the
 shared descriptor-relative object engine for `Media/Originals` and
 `Media/Generated`. Managed originals try APFS clone, then verified copy; retain

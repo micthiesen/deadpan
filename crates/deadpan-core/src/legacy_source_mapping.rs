@@ -98,7 +98,32 @@ impl VideoMapping {
             SourceVideoMapping::Duration { frames, endpoints } => {
                 Some(Self::Duration { frames, endpoints })
             }
-            SourceVideoMapping::Placement { .. } => None,
+            SourceVideoMapping::Placement { .. } | SourceVideoMapping::SelectedPlacement { .. } => {
+                None
+            }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ExactFrameRange;
+
+    #[test]
+    fn pre_placement_video_grammar_rejects_selected_picture_windows() {
+        let mapping = SourceVideoMapping::SelectedPlacement {
+            start: ExactRatio::ZERO,
+            frames: ExactRatio::integer(2),
+            selection: ExactFrameRange {
+                start: ExactRatio::ZERO,
+                end: ExactRatio::ONE,
+            },
+            endpoints: EndpointPolicy::HoldAdjacent,
+        };
+        assert!(VideoMapping::project(mapping).is_none());
+        assert!(
+            serde_json::from_value::<VideoMapping>(serde_json::to_value(mapping).unwrap()).is_err()
+        );
     }
 }

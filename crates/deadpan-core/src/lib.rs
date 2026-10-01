@@ -68,6 +68,7 @@ pub mod legacy_v6;
 pub mod legacy_v7;
 pub mod legacy_v8;
 pub mod legacy_v9;
+mod legacy_video_mapping_v34;
 mod marks;
 mod move_range;
 mod occurrence;

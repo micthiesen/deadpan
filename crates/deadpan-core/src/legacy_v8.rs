@@ -5,11 +5,11 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
-use crate::SourceVideoMapping as VideoMapping;
 use crate::document::unique_map;
 use crate::legacy_asset::{Asset, project_assets, project_changes, upgrade_assets};
 use crate::legacy_audio_mapping_v19::AudioMapping;
 use crate::legacy_mark::{LegacyMark, project_mark_changes, project_marks, upgrade_marks};
+use crate::legacy_video_mapping_v34::VideoMapping;
 use crate::*;
 
 /// Schema-8 source wire preserves independent exact placements.
@@ -34,7 +34,7 @@ impl LegacySourceNode {
             link: self.link,
             audio_offset: self.audio_offset,
             audio_mapping: self.audio_mapping.upgrade(),
-            video_mapping: self.video_mapping,
+            video_mapping: self.video_mapping.upgrade(),
         }
     }
 
@@ -46,7 +46,7 @@ impl LegacySourceNode {
             link: source.link,
             audio_offset: source.audio_offset,
             audio_mapping: AudioMapping::project(source.audio_mapping)?,
-            video_mapping: source.video_mapping,
+            video_mapping: VideoMapping::project(source.video_mapping)?,
         })
     }
 }
@@ -427,9 +427,9 @@ impl OldOccurrenceEdit {
                 end,
                 destination,
             },
-            Self::SetSourceVideoMapping { mapping } => {
-                OccurrenceEdit::SetSourceVideoMapping { mapping }
-            }
+            Self::SetSourceVideoMapping { mapping } => OccurrenceEdit::SetSourceVideoMapping {
+                mapping: mapping.upgrade(),
+            },
             Self::SetSourceAudioMapping { mapping, offset } => {
                 OccurrenceEdit::SetSourceAudioMapping {
                     mapping: mapping.upgrade(),
@@ -640,9 +640,10 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
             end,
             destination,
         },
-        OldCommand::SetSourceVideoMapping { node, mapping } => {
-            Command::SetSourceVideoMapping { node, mapping }
-        }
+        OldCommand::SetSourceVideoMapping { node, mapping } => Command::SetSourceVideoMapping {
+            node,
+            mapping: mapping.upgrade(),
+        },
         OldCommand::SetSourceAudioMapping {
             node,
             mapping,

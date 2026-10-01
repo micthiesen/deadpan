@@ -1,9 +1,32 @@
-//! Literal range-only transactions generated before Child capture existed.
+//! Literal range command shapes survive the deliberate development-format break.
 use super::*;
+use deadpan_store::StoreError;
 use serde_json::Value;
 
 fn text<'a>(value: &'a Value, key: &str) -> &'a str {
     value[key].as_str().unwrap()
+}
+
+fn literal() -> Result<Value> {
+    let literal: Value =
+        serde_json::from_str(include_str!("../../fixtures/edited_slice/range-v1.json"))?;
+    assert_eq!(
+        literal["base_commit"],
+        "2ea675646abc24e8410616af74b4193ed4af51da"
+    );
+    assert_eq!(literal["document_schema"], 34);
+    assert_eq!(literal["database_schema"], 43);
+    Ok(literal)
+}
+
+// TEST ONLY: this permits command-shape assertions on current documents by
+// changing exactly their schema header. It is not a project-format migration,
+// and neither production readers nor the literal historical rows use it.
+fn current_test_document(old_json: &str) -> Result<ProjectDocument> {
+    let mut value: Value = serde_json::from_str(old_json)?;
+    assert_eq!(value["schema_version"], 34);
+    value["schema_version"] = serde_json::to_value(DOCUMENT_SCHEMA_VERSION)?;
+    Ok(ProjectDocument::from_json(&value.to_string())?)
 }
 
 // Restore literal old rows into a fresh package shell. No request is applied to
@@ -36,21 +59,15 @@ fn restore_rows(path: &Path, original: &ProjectDocument, tables: &Value) -> Resu
             transaction.execute(sql, [row.as_str().unwrap()])?;
         }
     }
+    transaction.pragma_update(None, "user_version", 43)?;
     transaction.commit()?;
     Ok(())
 }
 
 #[test]
-fn literal_pre_selector_range_envelopes_transactions_and_history_remain_unchanged() -> Result {
-    let literal: Value =
-        serde_json::from_str(include_str!("../../fixtures/edited_slice/range-v1.json"))?;
-    assert_eq!(
-        literal["base_commit"],
-        "2ea675646abc24e8410616af74b4193ed4af51da"
-    );
-    assert_eq!(literal["document_schema"], 34);
-    assert_eq!(literal["database_schema"], 43);
-    let original = ProjectDocument::from_json(text(&literal, "original"))?;
+fn literal_range_command_shapes_match_on_test_only_current_header_documents() -> Result {
+    let literal = literal()?;
+    let original = current_test_document(text(&literal, "original"))?;
     let slice = CapturedEditSlice::from_json(text(&literal, "capture"))?;
     assert_eq!(
         slice.selection(),
@@ -66,10 +83,18 @@ fn literal_pre_selector_range_envelopes_transactions_and_history_remain_unchange
     let removal_edit: EditTransaction =
         serde_json::from_str(text(&literal, "removal_transaction"))?;
     assert_eq!(apply(&original, &removal)?, removal_edit);
+    assert_eq!(
+        serde_json::to_string(&removal)?,
+        text(&literal, "removal_request")
+    );
+    assert_eq!(
+        serde_json::to_string(&removal_edit)?,
+        text(&literal, "removal_transaction")
+    );
     assert_eq!(literal["cases"].as_array().unwrap().len(), 3);
     for case in literal["cases"].as_array().unwrap() {
-        let before = ProjectDocument::from_json(text(case, "before"))?;
-        let after = ProjectDocument::from_json(text(case, "after"))?;
+        let before = current_test_document(text(case, "before"))?;
+        let after = current_test_document(text(case, "after"))?;
         let command: CommandRequest = serde_json::from_str(text(case, "request"))?;
         let expected: EditTransaction = serde_json::from_str(text(case, "transaction"))?;
         assert_eq!(removal_edit.forward.apply(&original)?, before);
@@ -97,12 +122,23 @@ fn literal_pre_selector_range_envelopes_transactions_and_history_remain_unchange
             case["kind"]
         );
         assert_eq!(serde_json::to_string(&actual)?, text(case, "transaction"));
-        assert_eq!(
-            actual.forward.apply(&before)?.to_json()?,
-            text(case, "after")
-        );
+        assert_eq!(actual.forward.apply(&before)?, after);
         assert_eq!(actual.inverse.apply(&after)?, before);
+    }
+    Ok(())
+}
 
+#[test]
+fn literal_core_34_and_database_43_are_rejected_without_rewriting_authored_rows() -> Result {
+    let literal = literal()?;
+    assert_eq!(
+        ProjectDocument::from_json(text(&literal, "original"))
+            .unwrap_err()
+            .code,
+        DocumentErrorCode::UnsupportedSchema
+    );
+    let original = current_test_document(text(&literal, "original"))?;
+    for case in literal["cases"].as_array().unwrap() {
         let scratch = tempfile::tempdir()?;
         let path = scratch.path().join("old-history.deadpan");
         restore_rows(&path, &original, &case["tables"])?;
@@ -115,43 +151,33 @@ fn literal_pre_selector_range_envelopes_transactions_and_history_remain_unchange
             .collect();
         assert_eq!(saved, old_rows);
         let all_cells = authored(&path)?;
-        let reader = ProjectStore::open(&path, AccessMode::ReadOnly)?;
-        reader.validate()?;
-        assert_eq!(reader.snapshot()?, after);
-        assert_eq!(reader.snapshot_at(slice.revision_id())?, original);
+        let snapshots = std::fs::read_dir(path.join("Snapshots"))?
+            .map(|entry| entry.map(|entry| entry.file_name()))
+            .collect::<std::io::Result<std::collections::BTreeSet<_>>>()?;
+        for mode in [AccessMode::ReadOnly, AccessMode::ReadWrite] {
+            assert!(matches!(
+                ProjectStore::open(&path, mode),
+                Err(StoreError::UnsupportedSchema(43))
+            ));
+            assert_eq!(authored(&path)?, all_cells);
+        }
+        assert!(matches!(
+            ProjectStore::migrate(&path),
+            Err(StoreError::UnsupportedSchema(43))
+        ));
         assert_eq!(authored(&path)?, all_cells);
-        drop(reader);
-        let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
-        store.validate()?;
         assert_eq!(
-            authored(&path)?,
-            all_cells,
-            "opening current schema cannot rewrite old history"
+            std::fs::read_dir(path.join("Snapshots"))?
+                .map(|entry| entry.map(|entry| entry.file_name()))
+                .collect::<std::io::Result<std::collections::BTreeSet<_>>>()?,
+            snapshots,
+            "rejection must not create a migration backup"
         );
-        store.undo(after.revision_id(), revision("compat-undo-placement"))?;
-        assert_authored(&store.snapshot()?, &before)?;
-        store.undo(
-            &revision("compat-undo-placement"),
-            revision("compat-undo-removal"),
-        )?;
-        assert_authored(&store.snapshot()?, &original)?;
-        store.validate()?;
-        assert_eq!(history_rows(&path)?, saved);
-        drop(store);
-        let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
-        store.redo(
-            &revision("compat-undo-removal"),
-            revision("compat-redo-removal"),
-        )?;
-        assert_authored(&store.snapshot()?, &before)?;
-        store.redo(
-            &revision("compat-redo-removal"),
-            revision("compat-redo-placement"),
-        )?;
-        assert_authored(&store.snapshot()?, &after)?;
-        store.validate()?;
-        assert_eq!(history_rows(&path)?, saved);
         let database = Connection::open(path.join("project.sqlite"))?;
+        assert_eq!(
+            database.pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?,
+            43
+        );
         for row in case["tables"]["revisions"].as_array().unwrap() {
             let row: Value = serde_json::from_str(row.as_str().unwrap())?;
             let current: String = database.query_row(

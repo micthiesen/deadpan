@@ -1,6 +1,6 @@
 //! Shared exact placement arithmetic for independently mapped source streams.
 
-use crate::{ExactRatio, FrameRate, SourceSpan, TimeError};
+use crate::{ExactFrameRange, ExactRatio, FrameRate, SourceSpan, TimeError};
 
 pub(crate) fn natural_duration(span: SourceSpan, rate: FrameRate) -> Result<ExactRatio, TimeError> {
     let clock = span.start().time_base;
@@ -34,6 +34,21 @@ pub(crate) fn validate_placement(start: ExactRatio, frames: ExactRatio) -> Resul
         {
             return Err(TimeError::Overflow);
         }
+    }
+    Ok(())
+}
+
+pub(crate) fn validate_selection(
+    start: ExactRatio,
+    frames: ExactRatio,
+    selection: ExactFrameRange,
+) -> Result<(), TimeError> {
+    validate_placement(start, frames)?;
+    validate_duration(selection.end.checked_sub(selection.start)?)?;
+    if selection.start.compare(start).is_lt()
+        || selection.end.compare(start.checked_add(frames)?).is_gt()
+    {
+        return Err(TimeError::InvalidRatio);
     }
     Ok(())
 }

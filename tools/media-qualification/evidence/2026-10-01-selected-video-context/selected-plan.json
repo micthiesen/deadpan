@@ -1,0 +1,21 @@
+{
+  "command": [
+    "rustup",
+    "run",
+    "1.97.1",
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-plan",
+    "--test",
+    "selected_video_window"
+  ],
+  "started": "2026-10-01T09:38:56.046548+00:00",
+  "base_commit": "dbd89f1897f7fd92427849e56bb1ef2b1f59a273",
+  "diff_sha256": "c96ec9c00343f2ac0b7bba99f746b7855fc4692953818de302ec5364a15e0325",
+  "source_manifest_sha256": "c8041df45c6bfc39eba1da89eaa4780d1fef88f34786ee5556d9c2cbd0b4a3bd",
+  "pid": 77180,
+  "exit_code": 0,
+  "seconds": 23.071302957832813
+}
