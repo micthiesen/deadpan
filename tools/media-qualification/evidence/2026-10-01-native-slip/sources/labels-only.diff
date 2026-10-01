@@ -1,0 +1,13 @@
+--- unit/crates/deadpan-app/src/preview/slip.rs
++++ final/crates/deadpan-app/src/preview/slip.rs
+@@ -679,8 +679,8 @@
+                 if ui.add_enabled(editable, egui::Button::new("Last picture · o")).clicked() { actions.push(SlipKey::Last); }
+             });
+             ui.horizontal_wrapped(|ui| {
+-                if ui.add_enabled(editable, egui::Button::new("Previous picture · ←")).clicked() { actions.push(SlipKey::Inspect(-1)); }
+-                if ui.add_enabled(editable, egui::Button::new("Next picture · →")).clicked() { actions.push(SlipKey::Inspect(1)); }
++                if ui.add_enabled(editable, egui::Button::new("Previous picture · Left")).clicked() { actions.push(SlipKey::Inspect(-1)); }
++                if ui.add_enabled(editable, egui::Button::new("Next picture · Right")).clicked() { actions.push(SlipKey::Inspect(1)); }
+                 if ui.add_enabled(draft.can_apply() && !self.service.is_busy(), egui::Button::new("Apply Slip · Enter").fill(style::SELECTED)).on_disabled_hover_text("Apply requires a nonzero current proposal displayed at this inspection frame. Choose Proposed and wait for its picture.").clicked() { actions.push(SlipKey::Apply); }
+                 if ui.add_enabled(!draft.applying, egui::Button::new("Cancel · Esc")).clicked() { actions.push(SlipKey::Cancel); }
+             });

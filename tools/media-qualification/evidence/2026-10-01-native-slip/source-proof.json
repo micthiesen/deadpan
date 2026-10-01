@@ -1,0 +1,24 @@
+{
+  "backend_and_build_changes": [],
+  "backend_checkpoint": "8c282ac8a3147e784b212852540b5e44e28382b1",
+  "backend_manifest": "1fc905d263ff3f486524d866d696a22aab0fc63e401b7ed55f26426fa3bee87b",
+  "final_manifest": "44ed42b615d9adebf9da17a5bc7419d688ec2df0c9fe9ca73ed9917ef7ddff36",
+  "source_files_rechecked": 1424,
+  "unit_manifest": "9d93fbf93dc03951747ea1b2c300f06af54f5cfb470f60bca987259f78bf78b4",
+  "unit_to_final": {
+    "allowed_label_replacements": [
+      [
+        "Previous picture \u00b7 Left",
+        "Previous picture \u00b7 \u2190"
+      ],
+      [
+        "Next picture \u00b7 Right",
+        "Next picture \u00b7 \u2192"
+      ]
+    ],
+    "changed_files": [
+      "crates/deadpan-app/src/preview/slip.rs"
+    ],
+    "reconstructed_unit_sha256": "551ecb471aad04c14f49ecda7df8b439750d69297818986a14648317d1431ab2"
+  }
+}

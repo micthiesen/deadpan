@@ -10,6 +10,7 @@ pub mod gain;
 mod mark_tests;
 pub mod retime;
 pub mod room_tone;
+pub mod slip;
 mod sound;
 pub mod splice;
 pub use sound::SoundAction;

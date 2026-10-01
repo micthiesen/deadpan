@@ -19,6 +19,36 @@ test instances after testing instead of leaving them idle. The previously
 running `dev.thiesen.deadpan.cursor-qa` instance has been quit, and the native
 app inventory confirmed no Deadpan app remained running.
 
+## Native Source Slip, 2026-10-01
+
+The native integration connects `:slip +5f` to the shared qualified command
+through a captured-target service, stopped Before/Proposed picture preview and
+one saved transaction. Capture absence as well as valid session/revision/group/
+child context. Separate the temporary inspection frame from both editor cursors.
+Apply requires the current Proposed identity and frame to be GPU-submitted at
+the current raster; preparation or decode alone is insufficient. Cancel and draft
+changes revoke pending picture admission before a replacement is scheduled.
+
+Keep the exact service-owned request and an independent saved receipt. A saved
+edit survives refresh failure; historical receipts cannot reselect or replay
+warnings after navigation/Undo. Zero movement has no proposed snapshot, Apply or
+history. See [Source Slip](../SOURCE_SLIP.md#native-stopped-picture-preview) and
+[keyboard routing](../KEYBINDING_COMPATIBILITY.md#source-slip-preview).
+
+Service, UI and harness reviews found no outstanding actionable findings.
+All 464 feature-enabled app tests and 3 headless tests pass; the default suite
+passes 428 and the same 3. Formatting and strict workspace/all-target Clippy pass.
+The final visual replay passes 67 Slip checks and 17,360 Kestrel routing cases
+with a matching live registry. The full release replay passes 3,655 checks.
+Native keyboard, cancel, one Apply, Undo/Redo and reopen were verified against
+consistent SQLite backups. Both test instances exited 0; no Deadpan process or
+writer lock remains. Source identities, the two-label glyph correction and
+remaining physical-input limits are in the
+[qualification record](../qualification/native-slip-2026-10-01.md).
+Full Trim, waveform/audition,
+In/Out/Roll, ripple/overwrite and broader target admission remain open. No
+requirement or gate is complete.
+
 ## Exact Source windows and atomic Slip, 2026-10-01
 
 Current core schema 39/database 48 retain an exact `SourceNode.edit_window`
@@ -33,8 +63,8 @@ All 3,114 workspace unit/integration tests, both compile-fail documentation
 tests, formatting and strict workspace/all-target Clippy with `ui-harness` pass.
 Independent window, command and PCM reviews found no outstanding issues.
 Original fixture/oracle/import failures remain with their corrected runs.
-See [qualification](../qualification/source-slip-2026-10-01.md). No native app has
-been opened. Native controls, full Trim/Roll, physical growth, nested/treated
+See [qualification](../qualification/source-slip-2026-10-01.md). No native app was
+opened for that backend checkpoint. Full Trim/Roll, physical growth, nested/treated
 targets and audio-only picture lead/tail remain open. No requirement/gate changes
 status. Unused databases 39 through 47 are refused without migration.
 

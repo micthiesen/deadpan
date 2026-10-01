@@ -1,0 +1,396 @@
+{
+  "all_attempts": {
+    "checks/app-default-tests": {
+      "kind": "check",
+      "passed": true,
+      "started": 1790865823.091649
+    },
+    "checks/app-ui-tests": {
+      "kind": "check",
+      "passed": true,
+      "started": 1790865745.152158
+    },
+    "checks/bundle-native": {
+      "kind": "check",
+      "passed": true,
+      "started": 1790866283.238544
+    },
+    "checks/debug-build-final": {
+      "kind": "check",
+      "passed": true,
+      "started": 1790865904.050712
+    },
+    "checks/focused-slip": {
+      "kind": "check",
+      "passed": true,
+      "started": 1790865599.138363
+    },
+    "checks/formatting": {
+      "kind": "check",
+      "passed": true,
+      "started": 1790865745.152158
+    },
+    "checks/formatting-final": {
+      "kind": "check",
+      "passed": true,
+      "started": 1790865983.620695
+    },
+    "checks/native-run-first": {
+      "kind": "check",
+      "passed": true,
+      "started": 1790866300.252748
+    },
+    "checks/native-run-reopened": {
+      "kind": "check",
+      "passed": true,
+      "started": 1790866457.153498
+    },
+    "checks/performance-final": {
+      "kind": "check",
+      "passed": true,
+      "started": 1790866244.507925
+    },
+    "checks/release-build-final": {
+      "kind": "check",
+      "passed": true,
+      "started": 1790865983.620788
+    },
+    "checks/strict-clippy": {
+      "kind": "check",
+      "passed": true,
+      "started": 1790865935.98415
+    },
+    "checks/visual-slip-final": {
+      "kind": "check",
+      "passed": true,
+      "started": 1790865935.98414
+    },
+    "checks/visual-slip-first": {
+      "kind": "check",
+      "passed": true,
+      "started": 1790865789.013672
+    },
+    "replays/performance-final": {
+      "kind": "replay",
+      "passed": true,
+      "started": 1790866244.642
+    },
+    "replays/visual-final": {
+      "kind": "replay",
+      "passed": true,
+      "started": 1790865936.241
+    },
+    "replays/visual-first": {
+      "kind": "replay",
+      "passed": true,
+      "started": 1790865789.147
+    }
+  },
+  "backend_checkpoint": "8c282ac8a3147e784b212852540b5e44e28382b1",
+  "failure_resolutions": {},
+  "final_performance_metadata": {
+    "binary_sha256": "c1d93f04b775841e092ead66b6a520918f52de5f9fb1e1ce66d9cae87f399eb6",
+    "build_profile": "release",
+    "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+    "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+    "fixture": "cfr-bframes.mp4",
+    "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+    "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+    "git_revision": "8c282ac8a3147e784b212852540b5e44e28382b1",
+    "git_status": "M AGENTS.md\n M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/command.rs\n M crates/deadpan-app/src/navigation/shortcut_audit.rs\n M crates/deadpan-app/src/presentation.rs\n M crates/deadpan-app/src/presentation/tests.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/harness.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/playback.rs\n M crates/deadpan-app/src/preview/render.rs\n M crates/deadpan-app/src/project.rs\n M crates/deadpan-app/src/project/service.rs\n M crates/deadpan-app/src/project/tests.rs\n M crates/deadpan-app/src/ui_harness.rs\n M docs/HEADLESS.md\n M docs/KEYBINDING_COMPATIBILITY.md\n M docs/REQUIREMENTS.md\n M docs/SOURCE_SLIP.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/navigation/slip.rs\n?? crates/deadpan-app/src/preview/harness/slip.rs\n?? crates/deadpan-app/src/preview/slip.rs\n?? crates/deadpan-app/src/preview/slip/\n?? crates/deadpan-app/src/project/service/slip.rs\n?? crates/deadpan-app/src/project/slip.rs\n?? crates/deadpan-app/src/project/tests/slip.rs\n?? docs/qualification/native-slip-2026-10-01.md\n?? tools/media-qualification/evidence/2026-10-01-native-slip/",
+    "gpu_readback_in_timing_run": false,
+    "hardware": "Apple M5 Max",
+    "os": "26.5.2",
+    "physical_display_measured": false,
+    "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+    "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+    "replay_hz": 60,
+    "replay_wall_ms": 20008.700624999998,
+    "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+    "started_unix_ms": 1790866244642,
+    "tracked_diff_sha256_at_run": "f2bbd2cd908c3a5ec7d6c3e976811769677e48b56851cb8ec901569649ef168e",
+    "viewport_points": [
+      1280,
+      820
+    ],
+    "wait_strategy": "egui_repaint_callback_v1"
+  },
+  "final_visual_metadata": {
+    "binary_sha256": "95597224932021c02384d7944cb7031f57c1de1a624d406737b31a073d39f7a4",
+    "build_profile": "debug",
+    "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+    "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+    "fixture": "cfr-bframes.mp4",
+    "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+    "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+    "git_revision": "8c282ac8a3147e784b212852540b5e44e28382b1",
+    "git_status": "M AGENTS.md\n M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/command.rs\n M crates/deadpan-app/src/navigation/shortcut_audit.rs\n M crates/deadpan-app/src/presentation.rs\n M crates/deadpan-app/src/presentation/tests.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/harness.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/playback.rs\n M crates/deadpan-app/src/preview/render.rs\n M crates/deadpan-app/src/project.rs\n M crates/deadpan-app/src/project/service.rs\n M crates/deadpan-app/src/project/tests.rs\n M crates/deadpan-app/src/ui_harness.rs\n M docs/KEYBINDING_COMPATIBILITY.md\n M docs/REQUIREMENTS.md\n M docs/SOURCE_SLIP.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/navigation/slip.rs\n?? crates/deadpan-app/src/preview/harness/slip.rs\n?? crates/deadpan-app/src/preview/slip.rs\n?? crates/deadpan-app/src/preview/slip/\n?? crates/deadpan-app/src/project/service/slip.rs\n?? crates/deadpan-app/src/project/slip.rs\n?? crates/deadpan-app/src/project/tests/slip.rs\n?? docs/qualification/native-slip-2026-10-01.md\n?? tools/media-qualification/evidence/2026-10-01-native-slip/",
+    "gpu_readback_in_timing_run": false,
+    "hardware": "Apple M5 Max",
+    "os": "26.5.2",
+    "physical_display_measured": false,
+    "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+    "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+    "replay_hz": 60,
+    "replay_wall_ms": 14505.101832999999,
+    "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+    "started_unix_ms": 1790865936241,
+    "tracked_diff_sha256_at_run": "7bf0b945436d1da1db88508c365f6235bb1c92fb796fd768638172ab6a3f02d5",
+    "viewport_points": [
+      1280,
+      820
+    ],
+    "wait_strategy": "egui_repaint_callback_v1"
+  },
+  "native_cleanup": {
+    "deadpan_app_processes": [],
+    "inventory_observation": "cua.listApps filtered for Deadpan returned [] after the second quit.",
+    "native_app_inventory": [],
+    "native_exit_codes": [
+      0,
+      0
+    ],
+    "process_check": {
+      "command": [
+        "pgrep",
+        "-fl",
+        "deadpan-app|Deadpan.app"
+      ],
+      "exit_code": 1,
+      "stderr": "",
+      "stdout": ""
+    },
+    "recorded_utc": "2026-10-01T14:56:22.449955+00:00",
+    "writer_lock_released": true
+  },
+  "native_verification": {
+    "counts": {
+      "before": {
+        "history": 8,
+        "label": "before",
+        "revision": "2913bc3b-8d27-4dc2-ad0c-4a6a6dbfd625",
+        "revisions": 13,
+        "tables": [
+          "generation_attempt_heads",
+          "generation_attempts",
+          "generation_bundle_receipts",
+          "generation_candidate_receipts",
+          "generation_requests",
+          "history",
+          "hold_request_clocks",
+          "original_media",
+          "redo",
+          "render_attempts",
+          "render_candidate_checkpoints",
+          "render_encoding_decisions",
+          "render_job_heads",
+          "render_jobs",
+          "render_publication_operations",
+          "render_publications",
+          "revisions",
+          "single_source",
+          "source_qualifications",
+          "state"
+        ]
+      },
+      "cancelled": {
+        "history": 8,
+        "label": "cancelled",
+        "revision": "2913bc3b-8d27-4dc2-ad0c-4a6a6dbfd625",
+        "revisions": 13,
+        "tables": [
+          "generation_attempt_heads",
+          "generation_attempts",
+          "generation_bundle_receipts",
+          "generation_candidate_receipts",
+          "generation_requests",
+          "history",
+          "hold_request_clocks",
+          "original_media",
+          "redo",
+          "render_attempts",
+          "render_candidate_checkpoints",
+          "render_encoding_decisions",
+          "render_job_heads",
+          "render_jobs",
+          "render_publication_operations",
+          "render_publications",
+          "revisions",
+          "single_source",
+          "source_qualifications",
+          "state"
+        ]
+      },
+      "committed": {
+        "history": 9,
+        "label": "committed",
+        "revision": "65f33d4d-1aa9-4e23-a4b9-9b9518aba3b4",
+        "revisions": 14,
+        "tables": [
+          "generation_attempt_heads",
+          "generation_attempts",
+          "generation_bundle_receipts",
+          "generation_candidate_receipts",
+          "generation_requests",
+          "history",
+          "hold_request_clocks",
+          "original_media",
+          "redo",
+          "render_attempts",
+          "render_candidate_checkpoints",
+          "render_encoding_decisions",
+          "render_job_heads",
+          "render_jobs",
+          "render_publication_operations",
+          "render_publications",
+          "revisions",
+          "single_source",
+          "source_qualifications",
+          "state"
+        ]
+      },
+      "redone": {
+        "history": 9,
+        "label": "redone",
+        "revision": "8b2b72fa-5626-4206-b483-42e387e0ea0d",
+        "revisions": 16,
+        "tables": [
+          "generation_attempt_heads",
+          "generation_attempts",
+          "generation_bundle_receipts",
+          "generation_candidate_receipts",
+          "generation_requests",
+          "history",
+          "hold_request_clocks",
+          "original_media",
+          "redo",
+          "render_attempts",
+          "render_candidate_checkpoints",
+          "render_encoding_decisions",
+          "render_job_heads",
+          "render_jobs",
+          "render_publication_operations",
+          "render_publications",
+          "revisions",
+          "single_source",
+          "source_qualifications",
+          "state"
+        ]
+      },
+      "reopened": {
+        "history": 9,
+        "label": "reopened",
+        "revision": "8b2b72fa-5626-4206-b483-42e387e0ea0d",
+        "revisions": 16,
+        "tables": [
+          "generation_attempt_heads",
+          "generation_attempts",
+          "generation_bundle_receipts",
+          "generation_candidate_receipts",
+          "generation_requests",
+          "history",
+          "hold_request_clocks",
+          "original_media",
+          "redo",
+          "render_attempts",
+          "render_candidate_checkpoints",
+          "render_encoding_decisions",
+          "render_job_heads",
+          "render_jobs",
+          "render_publication_operations",
+          "render_publications",
+          "revisions",
+          "single_source",
+          "source_qualifications",
+          "state"
+        ]
+      },
+      "undone": {
+        "history": 9,
+        "label": "undone",
+        "revision": "f46b4441-ec0a-4c2d-8e07-206ca8933ef2",
+        "revisions": 15,
+        "tables": [
+          "generation_attempt_heads",
+          "generation_attempts",
+          "generation_bundle_receipts",
+          "generation_candidate_receipts",
+          "generation_requests",
+          "history",
+          "hold_request_clocks",
+          "original_media",
+          "redo",
+          "render_attempts",
+          "render_candidate_checkpoints",
+          "render_encoding_decisions",
+          "render_job_heads",
+          "render_jobs",
+          "render_publication_operations",
+          "render_publications",
+          "revisions",
+          "single_source",
+          "source_qualifications",
+          "state"
+        ]
+      }
+    },
+    "delta_frames": 2,
+    "exact_document_checks": [
+      "Only linked mapping starts move from -10 to -12 and changed PCM lineage is invalidated.",
+      "All durations, spans, windows, Source/root camera paths, marks, overrides and sample bindings remain exact.",
+      "One Undo restores the complete prior authored content; one Redo restores the saved candidate.",
+      "Every authored history action has a fresh revision; reopen changes no table."
+    ],
+    "group": "slip-replay-group",
+    "passed": true,
+    "physical_source": "415292a4-6177-49db-8efc-614ed1a3ac87",
+    "unchanged_tables_after_cancel": 20,
+    "unchanged_tables_after_reopen": 20,
+    "unrelated_tables_preserved": [
+      "generation_attempt_heads",
+      "generation_attempts",
+      "generation_bundle_receipts",
+      "generation_candidate_receipts",
+      "generation_requests",
+      "hold_request_clocks",
+      "original_media",
+      "render_attempts",
+      "render_candidate_checkpoints",
+      "render_encoding_decisions",
+      "render_job_heads",
+      "render_jobs",
+      "render_publication_operations",
+      "render_publications",
+      "single_source",
+      "source_qualifications"
+    ],
+    "wrapper": "72bd94ad-ebeb-4f82-86a0-c35a23e17593"
+  },
+  "source_proof": {
+    "backend_and_build_changes": [],
+    "backend_checkpoint": "8c282ac8a3147e784b212852540b5e44e28382b1",
+    "backend_manifest": "1fc905d263ff3f486524d866d696a22aab0fc63e401b7ed55f26426fa3bee87b",
+    "final_manifest": "44ed42b615d9adebf9da17a5bc7419d688ec2df0c9fe9ca73ed9917ef7ddff36",
+    "source_files_rechecked": 1424,
+    "unit_manifest": "9d93fbf93dc03951747ea1b2c300f06af54f5cfb470f60bca987259f78bf78b4",
+    "unit_to_final": {
+      "allowed_label_replacements": [
+        [
+          "Previous picture \u00b7 Left",
+          "Previous picture \u00b7 \u2190"
+        ],
+        [
+          "Next picture \u00b7 Right",
+          "Next picture \u00b7 \u2192"
+        ]
+      ],
+      "changed_files": [
+        "crates/deadpan-app/src/preview/slip.rs"
+      ],
+      "reconstructed_unit_sha256": "551ecb471aad04c14f49ecda7df8b439750d69297818986a14648317d1431ab2"
+    }
+  },
+  "test_counts_note": "Counts are derived per run from logs; overlapping focused/default/UI runs are not summed as distinct tests."
+}

@@ -121,6 +121,11 @@ impl DeadpanApp {
 
     pub(super) fn begin_render(&mut self, context: &egui::Context) {
         self.render.requested = false;
+        if self.slip.is_some() {
+            self.error =
+                Some("Finish or cancel Slip preview before rendering the saved edit.".into());
+            return;
+        }
         context.request_repaint();
         if self.render.flow.is_some() || self.dialogs.is_open() {
             return;

@@ -192,6 +192,20 @@ fn audit_reservation(
                     format!("Gain text={text} background={background} ime={ime} repeat={repeat}"),
                     gain.map(|action| format!("gain={action:?}")),
                 );
+                let slip = super::slip::route_key(
+                    reservation.key,
+                    reservation.modifiers,
+                    text,
+                    background,
+                    ime,
+                    repeat,
+                );
+                record(
+                    report,
+                    reservation,
+                    format!("Slip text={text} background={background} ime={ime} repeat={repeat}"),
+                    slip.map(|action| format!("slip={action:?}")),
+                );
                 let splice = super::splice::route_key(
                     reservation.key,
                     reservation.modifiers,
@@ -395,7 +409,7 @@ mod tests {
     fn shipped_routers_never_claim_a_kestrel_global_chord_or_prefix() {
         let report = audit().unwrap();
         assert_eq!(report.reserved_bindings, 62);
-        assert_eq!(report.routing_cases, 62 * 264);
+        assert_eq!(report.routing_cases, 62 * 280);
         assert!(report.passed(), "{report:#?}");
     }
 

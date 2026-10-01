@@ -1,0 +1,28 @@
+{
+  "label": "committed",
+  "revisions": 14,
+  "history": 9,
+  "revision": "65f33d4d-1aa9-4e23-a4b9-9b9518aba3b4",
+  "tables": [
+    "generation_attempt_heads",
+    "generation_attempts",
+    "generation_bundle_receipts",
+    "generation_candidate_receipts",
+    "generation_requests",
+    "history",
+    "hold_request_clocks",
+    "original_media",
+    "redo",
+    "render_attempts",
+    "render_candidate_checkpoints",
+    "render_encoding_decisions",
+    "render_job_heads",
+    "render_jobs",
+    "render_publication_operations",
+    "render_publications",
+    "revisions",
+    "single_source",
+    "source_qualifications",
+    "state"
+  ]
+}

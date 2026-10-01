@@ -26,6 +26,7 @@ pub mod retime;
 mod scope;
 mod service;
 pub mod slice;
+pub mod slip;
 pub mod sound;
 pub mod splice;
 #[cfg(test)]
@@ -133,6 +134,11 @@ pub struct ProjectUpdate {
     pub splice: Option<splice::ProposalUpdate>,
     /// Exact placement commit acknowledgements survive proposal and query traffic.
     pub splice_commit: Option<splice::SpliceCommitUpdate>,
+    /// Qualified Slip proposals retain exact target and draft/change identity.
+    pub slip: Option<slip::ProposalUpdate>,
+    pub slip_commit: Option<slip::CommitUpdate>,
+    /// Last saved Slip in this session, independent of later failed requests.
+    pub saved_slip: Option<slip::CommitReceipt>,
     /// History-neutral edited copies retain their source identity across replies.
     pub captured_slice: Option<slice::CaptureUpdate>,
     pub cut_slice: Option<slice::CutUpdate>,
@@ -434,6 +440,9 @@ pub enum ProjectRequest {
     PrepareSplice(splice::Proposal),
     CommitSplice(splice::ProposalId),
     AbandonSplice(splice::ProposalId),
+    PrepareSlip(slip::Proposal),
+    CommitSlip(slip::ProposalId),
+    AbandonSlip(slip::ProposalId),
     /// Resolve source samples and prepare an audition descriptor off the UI.
     /// This does not select a Hold, author a policy, or create history.
     PrepareRoomTone {
@@ -476,6 +485,8 @@ struct Shared {
     host_refresh_failure: AtomicBool,
     #[cfg(test)]
     splice_commit_refresh_failure: AtomicBool,
+    #[cfg(test)]
+    slip_commit_refresh_failure: AtomicBool,
     update: Mutex<Option<ProjectUpdate>>,
     wake: Arc<dyn Fn() + Send + Sync>,
 }
@@ -507,6 +518,8 @@ impl ProjectService {
             host_refresh_failure: AtomicBool::new(false),
             #[cfg(test)]
             splice_commit_refresh_failure: AtomicBool::new(false),
+            #[cfg(test)]
+            slip_commit_refresh_failure: AtomicBool::new(false),
             update: Mutex::new(None),
             wake,
         });

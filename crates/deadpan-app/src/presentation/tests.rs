@@ -691,3 +691,369 @@ fn refined_copied_identity_rejects_old_success_and_failure_and_accepts_explicit_
         None
     );
 }
+
+#[test]
+fn proposed_apply_gate_requires_exact_current_submitted_picture_and_recovers_after_failure() {
+    let project = ProjectId::new("slip-project").unwrap();
+    let revision = RevisionId::new("candidate").unwrap();
+    let content = |change| deadpan_playback::ContentIdentity::Proposed {
+        base_revision: RevisionId::new("base").unwrap(),
+        draft: 8,
+        change,
+    };
+    let requested = |change| RequestedPicture {
+        ticket: ticket(9, change),
+        location: Location::Proposed {
+            session: 7,
+            project: project.clone(),
+            revision: revision.clone(),
+            content: content(change),
+            view: ProjectView::Sequence {
+                frame: ProjectFrame(12),
+            },
+        },
+    };
+    let ready = |state: &Presentation, change| {
+        state.stable_proposed_ticket(7, &project, &revision, &content(change), ProjectFrame(12))
+    };
+    let mut state = Presentation {
+        requested: Some(requested(1)),
+        ..Default::default()
+    };
+    accept(&mut state, ticket(9, 1), picture(4));
+    assert!(ready(&state, 1).is_none(), "decode is not display");
+    state.presented();
+    assert_eq!(ready(&state, 1), Some(ticket(9, 1)));
+    assert!(
+        state
+            .stable_sequence_ticket(7, &revision, ProjectFrame(12))
+            .is_none()
+    );
+    assert!(
+        state
+            .stable_proposed_ticket(
+                7,
+                &ProjectId::new("other").unwrap(),
+                &revision,
+                &content(1),
+                ProjectFrame(12)
+            )
+            .is_none()
+    );
+    assert!(
+        state
+            .stable_proposed_ticket(8, &project, &revision, &content(1), ProjectFrame(12))
+            .is_none()
+    );
+    assert!(
+        state
+            .stable_proposed_ticket(7, &project, &revision, &content(1), ProjectFrame(13))
+            .is_none()
+    );
+    assert!(ready(&state, 2).is_none());
+    state.render_failed("resize failed".into());
+    assert!(ready(&state, 1).is_none());
+    assert_eq!(state.displayed_source_frame(), Some(SourceFrameId(4)));
+    state.requested = Some(requested(2));
+    accept(&mut state, ticket(9, 2), picture(5));
+    assert!(ready(&state, 2).is_none());
+    state.presented();
+    assert_eq!(ready(&state, 2), Some(ticket(9, 2)));
+    state.invalidate_pending();
+    assert!(
+        ready(&state, 2).is_none(),
+        "cancel revokes Apply but retains displayed image"
+    );
+    assert_eq!(state.displayed_source_frame(), Some(SourceFrameId(5)));
+}
+
+#[test]
+fn stopped_slip_decode_failure_retains_display_and_geometry_without_reviving_apply() {
+    let project = ProjectId::new("slip-project").unwrap();
+    let revision = RevisionId::new("slip-candidate").unwrap();
+    let content = |change| deadpan_playback::ContentIdentity::Proposed {
+        base_revision: RevisionId::new("base").unwrap(),
+        draft: 8,
+        change,
+    };
+    let request = |change, frame| RequestedPicture {
+        ticket: ticket(9, change),
+        location: Location::Proposed {
+            session: 7,
+            project: project.clone(),
+            revision: revision.clone(),
+            content: content(change),
+            view: ProjectView::Sequence {
+                frame: ProjectFrame(frame),
+            },
+        },
+    };
+    let ready = |state: &Presentation, change, frame| {
+        state.stable_proposed_ticket(
+            7,
+            &project,
+            &revision,
+            &content(change),
+            ProjectFrame(frame),
+        )
+    };
+    let mut state = Presentation {
+        requested: Some(request(1, 12)),
+        ..Default::default()
+    };
+    let mut first = picture(4);
+    first.canvas = Some((101, 61));
+    accept(&mut state, ticket(9, 1), first);
+    state.decoded.as_mut().unwrap().geometry_revision = 3;
+    state.presented();
+    assert_eq!(ready(&state, 1, 12), Some(ticket(9, 1)));
+    let old_label = state.displayed_label();
+    state.requested = Some(request(2, 13));
+    state.loading = true;
+    let failed = state.receive_retaining_display(Reply {
+        #[cfg(feature = "ui-harness")]
+        timing: None,
+        ticket: ticket(9, 2),
+        picture: Err("current Slip decode failed".into()),
+    });
+    assert!(matches!(failed, Some(Err(error)) if error == "current Slip decode failed"));
+    assert_eq!(state.requested.as_ref(), Some(&request(2, 13)));
+    assert_eq!(state.error(), Some("current Slip decode failed"));
+    assert!(!state.loading());
+    assert!(state.picture().is_none());
+    assert!(!state.needs_render());
+    assert!(state.has_displayed());
+    assert_eq!(state.displayed_label(), old_label);
+    assert_eq!(state.displayed_source_frame(), Some(SourceFrameId(4)));
+    assert_eq!(state.canvas(), Some((101, 61)));
+    assert_eq!(state.displayed.as_ref().unwrap().geometry_revision, 3);
+    assert!(ready(&state, 1, 12).is_none());
+    assert!(ready(&state, 2, 13).is_none());
+    for picture in [Ok(picture(90)), Err("stale Slip failure".into())] {
+        assert!(
+            state
+                .receive_retaining_display(Reply {
+                    #[cfg(feature = "ui-harness")]
+                    timing: None,
+                    ticket: ticket(9, 1),
+                    picture,
+                })
+                .is_none()
+        );
+    }
+    assert_eq!(state.error(), Some("current Slip decode failed"));
+    assert_eq!(state.displayed_label(), old_label);
+    state.requested = Some(request(3, 13));
+    let mut next = picture(5);
+    next.canvas = Some((121, 71));
+    assert!(
+        state
+            .receive_retaining_display(Reply {
+                #[cfg(feature = "ui-harness")]
+                timing: None,
+                ticket: ticket(9, 3),
+                picture: Ok(next),
+            })
+            .unwrap()
+            .is_ok()
+    );
+    assert_eq!(state.error(), None);
+    assert!(state.needs_render());
+    assert_eq!(state.displayed_label(), old_label);
+    assert_eq!(state.displayed.as_ref().unwrap().canvas, Some((101, 61)));
+    assert!(ready(&state, 3, 13).is_none());
+    state.presented();
+    assert_eq!(ready(&state, 3, 13), Some(ticket(9, 3)));
+    assert_eq!(state.canvas(), Some((121, 71)));
+    assert_eq!(state.displayed_source_frame(), Some(SourceFrameId(5)));
+    assert_eq!(
+        state.displayed_label().as_deref(),
+        Some("Showing proposed edit frame 14")
+    );
+}
+
+#[test]
+fn slip_lifecycle_rejects_old_replies_before_replacement_dispatch() {
+    let project = ProjectId::new("slip-project").unwrap();
+    let revision = RevisionId::new("slip-candidate").unwrap();
+    let content = deadpan_playback::ContentIdentity::Proposed {
+        base_revision: RevisionId::new("base").unwrap(),
+        draft: 8,
+        change: 2,
+    };
+    let mut state = Presentation::default();
+    let displayed = ticket(9, 1);
+    state.request(displayed, &Work::Frame(SourceFrameId(4)));
+    let mut previous = picture(4);
+    previous.canvas = Some((101, 61));
+    accept(&mut state, displayed, previous);
+    state.decoded.as_mut().unwrap().geometry_revision = 3;
+    state.presented();
+    let old_label = state.displayed_label();
+    let ordinary = ticket(9, 2);
+    state.requested = Some(RequestedPicture {
+        ticket: ordinary,
+        location: Location::Project {
+            session: 7,
+            project: project.clone(),
+            revision: RevisionId::new("base").unwrap(),
+            view: ProjectView::Sequence {
+                frame: ProjectFrame(19),
+            },
+            empty_sequence: false,
+        },
+    });
+    state.loading = true;
+    // Opening Slip discards the current layout before its first proposal can
+    // dispatch. Revoke the previous ordinary request before the next receive.
+    state.invalidate_pending();
+    for picture in [Ok(picture(80)), Err("pre-Slip decode failure".into())] {
+        assert!(
+            state
+                .receive_retaining_display(Reply {
+                    #[cfg(feature = "ui-harness")]
+                    timing: None,
+                    ticket: ordinary,
+                    picture,
+                })
+                .is_none()
+        );
+        assert!(state.requested.is_none());
+        assert!(state.picture().is_none());
+        assert!(!state.loading());
+        assert!(!state.needs_render());
+        assert!(state.error().is_none());
+        assert_eq!(state.displayed_label(), old_label);
+        assert_eq!(state.displayed_source_frame(), Some(SourceFrameId(4)));
+        assert_eq!(state.canvas(), Some((101, 61)));
+        assert_eq!(state.displayed.as_ref().unwrap().geometry_revision, 3);
+        assert!(
+            state
+                .stable_proposed_ticket(7, &project, &revision, &content, ProjectFrame(13))
+                .is_none()
+        );
+    }
+
+    let pending = ticket(9, 3);
+    state.requested = Some(RequestedPicture {
+        ticket: pending,
+        location: Location::Proposed {
+            session: 7,
+            project: project.clone(),
+            revision: revision.clone(),
+            content: content.clone(),
+            view: ProjectView::Sequence {
+                frame: ProjectFrame(13),
+            },
+        },
+    });
+    state.loading = true;
+
+    // Cancel, saved commit, and a stale workspace all revoke the proposal
+    // before the final layout pass dispatches its replacement. A reply already
+    // ready at this boundary must not become the next decoded/displayed image.
+    state.invalidate_pending();
+    for keep_slip_open in [false, true] {
+        for result in [Ok(picture(90)), Err("retired Slip failure".into())] {
+            let reply = Reply {
+                #[cfg(feature = "ui-harness")]
+                timing: None,
+                ticket: pending,
+                picture: result,
+            };
+            let accepted = if keep_slip_open {
+                state.receive_retaining_display(reply)
+            } else {
+                state.receive(reply)
+            };
+            assert!(accepted.is_none());
+            assert!(state.requested.is_none());
+            assert!(state.picture().is_none());
+            assert!(!state.loading());
+            assert!(!state.needs_render());
+            assert!(state.error().is_none());
+            assert_eq!(state.displayed_label(), old_label);
+            assert_eq!(state.displayed_source_frame(), Some(SourceFrameId(4)));
+            assert_eq!(state.canvas(), Some((101, 61)));
+            assert_eq!(state.displayed.as_ref().unwrap().geometry_revision, 3);
+            assert!(
+                state
+                    .stable_proposed_ticket(7, &project, &revision, &content, ProjectFrame(13),)
+                    .is_none()
+            );
+        }
+    }
+
+    // An amount edit (including invalid text), Before toggle, or inspection
+    // move can retire a reply that has decoded but has not reached the GPU.
+    // The same immediate invalidation must prevent the layout retry from
+    // promoting that retired candidate while the next request is deferred.
+    let decoded = ticket(9, 4);
+    state.requested = Some(RequestedPicture {
+        ticket: decoded,
+        location: Location::Proposed {
+            session: 7,
+            project: project.clone(),
+            revision: revision.clone(),
+            content: content.clone(),
+            view: ProjectView::Sequence {
+                frame: ProjectFrame(13),
+            },
+        },
+    });
+    accept(&mut state, decoded, picture(91));
+    assert!(state.needs_render());
+    assert_eq!(state.picture().unwrap().id, SourceFrameId(91));
+    assert_eq!(state.displayed_source_frame(), Some(SourceFrameId(4)));
+    state.invalidate_pending();
+    for picture in [Ok(picture(92)), Err("retired intent failure".into())] {
+        assert!(
+            state
+                .receive_retaining_display(Reply {
+                    #[cfg(feature = "ui-harness")]
+                    timing: None,
+                    ticket: decoded,
+                    picture,
+                })
+                .is_none()
+        );
+        assert!(state.picture().is_none());
+        assert!(!state.needs_render());
+        assert!(state.error().is_none());
+        assert_eq!(state.displayed_label(), old_label);
+        assert_eq!(state.displayed_source_frame(), Some(SourceFrameId(4)));
+        assert_eq!(state.canvas(), Some((101, 61)));
+        assert_eq!(state.displayed.as_ref().unwrap().geometry_revision, 3);
+        assert!(
+            state
+                .stable_proposed_ticket(7, &project, &revision, &content, ProjectFrame(13))
+                .is_none()
+        );
+    }
+
+    let current = ticket(9, 5);
+    state.requested = Some(RequestedPicture {
+        ticket: current,
+        location: Location::Project {
+            session: 7,
+            project,
+            revision: RevisionId::new("new-head").unwrap(),
+            view: ProjectView::Sequence {
+                frame: ProjectFrame(19),
+            },
+            empty_sequence: false,
+        },
+    });
+    accept(&mut state, current, picture(5));
+    assert_eq!(state.displayed_label(), old_label);
+    state.presented();
+    assert_eq!(state.displayed_source_frame(), Some(SourceFrameId(5)));
+    assert_eq!(
+        state.displayed_label().as_deref(),
+        Some("Showing sequence frame 20")
+    );
+    assert_eq!(
+        state.stable_sequence_ticket(7, &RevisionId::new("new-head").unwrap(), ProjectFrame(19),),
+        Some(current)
+    );
+}

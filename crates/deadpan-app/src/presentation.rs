@@ -207,6 +207,24 @@ impl Presentation {
 
     /// None means stale: no presentation state or caller metadata may change.
     pub fn receive(&mut self, reply: Reply) -> Option<Result<Option<SourceSummary>, String>> {
+        self.receive_with_display_retention(reply, false)
+    }
+
+    /// Slip owns a stopped comparison and can keep its accepted picture when
+    /// decoding the replacement fails. The current request and error remain
+    /// visible; a retained display never satisfies the new proposal's gate.
+    pub fn receive_retaining_display(
+        &mut self,
+        reply: Reply,
+    ) -> Option<Result<Option<SourceSummary>, String>> {
+        self.receive_with_display_retention(reply, true)
+    }
+
+    fn receive_with_display_retention(
+        &mut self,
+        reply: Reply,
+        retain_display: bool,
+    ) -> Option<Result<Option<SourceSummary>, String>> {
         let request = self.requested.as_ref()?;
         if request.ticket != reply.ticket {
             return None;
@@ -227,7 +245,9 @@ impl Presentation {
             Err(error) => {
                 self.error = Some(error.clone());
                 self.decoded = None;
-                self.displayed = None;
+                if !retain_display {
+                    self.displayed = None;
+                }
                 Err(error)
             }
         })
@@ -268,6 +288,50 @@ impl Presentation {
                 ..
             } if *current_session == session
                 && current_revision == revision
+                && *current_frame == frame =>
+            {
+                Some(decoded.request.ticket)
+            }
+            _ => None,
+        }
+    }
+
+    /// A proposed edit is usable only after its current decode was submitted.
+    /// The caller also checks the current raster, which belongs to the renderer.
+    /// This does not grant committed Camera eligibility.
+    pub fn stable_proposed_ticket(
+        &self,
+        session: u64,
+        project: &ProjectId,
+        revision: &RevisionId,
+        content: &deadpan_playback::ContentIdentity,
+        frame: deadpan_core::ProjectFrame,
+    ) -> Option<Ticket> {
+        if self.loading || self.render_failed || self.needs_render() {
+            return None;
+        }
+        let decoded = self.decoded.as_ref()?;
+        let displayed = self.displayed.as_ref()?;
+        if self.requested.as_ref() != Some(&decoded.request)
+            || displayed.request != decoded.request
+            || decoded.picture.frame.is_none()
+        {
+            return None;
+        }
+        match &decoded.request.location {
+            Location::Proposed {
+                session: current_session,
+                project: current_project,
+                revision: current_revision,
+                content: current_content,
+                view:
+                    ProjectView::Sequence {
+                        frame: current_frame,
+                    },
+            } if *current_session == session
+                && current_project == project
+                && current_revision == revision
+                && current_content == content
                 && *current_frame == frame =>
             {
                 Some(decoded.request.ticket)

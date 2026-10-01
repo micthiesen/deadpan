@@ -56,7 +56,39 @@ field and buttons use native Tab and activation. Composition and held activation
 cannot save, remove, close or jump. `:mark a`, `:jump a`, `:unmark a`, `:marks`,
 `:jump-back` and `:jump-forward` share the production router. See
 [mark navigation](MARK_NAVIGATION.md) for capture, expiration and clock rules.
-The expanded reservation matrix has 16,368 cases over the same 62 Kestrel globals.
+The marks qualification passed 16,368 cases over the same 62 Kestrel globals.
+
+## Source Slip preview
+
+**`:slip +5f`** opens a stopped-picture draft for the selected eligible Source or
+neutral Partition in Your edit. Its captured target includes missing/ineligible
+entry context; later selection cannot supply one. Clear any Visual Edit selection
+first, including an empty range. The amount is one signed or unsigned whole-frame
+integer with an ASCII `f` suffix.
+
+On the preview heading/background, `h/l` changes material by one project frame
+and Shift changes ten. Left/Right inspects one delivered picture, Shift ten;
+`i/o` inspects first/last and `b` compares Before/Proposed at the same Edit frame.
+Enter applies once only after the exact current Proposed picture is submitted
+at the current viewer size; Escape cancels. Before, zero movement, pending
+pictures and failures cannot apply. The actual Edit/Original cursors and selected
+beat stay fixed during inspection. A nudge away from a clamp starts at its applied
+handle, and batched movement keys retain every step.
+
+Tab and Shift+Tab use native control traversal. Amount text, focused buttons and
+IME retain their input; Enter in the amount field does not apply. Composition
+owns Enter/Escape. Held movement may repeat, while Apply, Cancel, `b` and `i/o`
+do not. Command, Control and Option variants remain reserved. The modal excludes
+ordinary editing, transport and Render. It adds no modified global shortcut and
+no `,v` binding. Full Trim's Tab mode cycling and waveform remain pending.
+
+The production `slip` replay passes the exact picture gate, clamps,
+comparison, batched input, text/IME focus, late replies, cancel, one commit and
+Undo/Redo. All 17,360 reservation cases over the same 62 globals pass, with no
+conflicts or live Kestrel registry drift. Rendered and native evidence is retained
+in [native Slip qualification](qualification/native-slip-2026-10-01.md).
+See [Source Slip](SOURCE_SLIP.md#native-stopped-picture-preview) for the full
+capture, picture and saved-receipt contract.
 
 ## Place slice
 
@@ -176,10 +208,12 @@ cargo test --locked -p deadpan-app navigation::
 
 [The audit](../crates/deadpan-app/src/navigation/shortcut_audit.rs) sends each of
 the 62 exact global Kestrel bindings through the actual `Bindings::key`, Camera,
-text-action, inspector, room-tone, Gain and Place slice routers, including
-`Bindings::key_with_selection` for empty and nonempty Edit selections. The current
-source expects 192 routing cases per reservation, or 11,904 total, including
-pending prefixes, counts and overflow, text/IME and repeat/focus combinations.
+text-action, inspector, room-tone, Gain, Marks, Place slice and Slip routers,
+including `Bindings::key_with_selection` for empty and nonempty Edit selections.
+The Slip integration passes 280 routing cases per reservation, or 17,360 total,
+including pending prefixes, counts and overflow, text/IME and repeat/focus
+combinations. Its execution and matching live-source digest are retained in the
+[native Slip record](qualification/native-slip-2026-10-01.md).
 The earlier corrected workspace, room-tone, gain and retime runs each passed all 5,456
 cases with no conflicts or live-source drift; all 298 app/harness tests also
 pass. The [native-gain qualification](qualification/native-gain-2026-09-28.md) retains

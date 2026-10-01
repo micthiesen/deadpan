@@ -141,6 +141,19 @@ rendered checks plus the expanded Kestrel audit, 3,589 full release checks, and
 native keyboard/reopen verification with consistent SQLite backups. No release
 gate is completed by these results.
 
+[Native Source Slip](SOURCE_SLIP.md#native-stopped-picture-preview) adds a
+verified subset of DP-02/DP-05/DP-20. The `:slip`
+workflow captures the selected beat and revision, reports exact clamps/no-op,
+compares real stopped Before/Proposed pictures, and gates one Apply on the
+current submitted picture. It preserves both cursors and retains a saved receipt
+if workspace refresh fails. The app passes 464 feature-enabled tests plus 3
+headless tests, and 428 default-feature tests plus the same 3 headless tests.
+The focused replay passes 67 Slip checks; the full release replay passes 3,655
+checks. Native cancel, apply, Undo/Redo and reopen pass, with both test instances
+closed. See [qualification](qualification/native-slip-2026-10-01.md). Full Trim,
+waveforms/audition, unsupported target scopes and physical-input/accessibility
+acceptance remain open. No requirement or gate changes status.
+
 [Exact Source windows](SOURCE_EDIT_WINDOWS.md) retain selected time before
 whole-frame enclosure. [Atomic Source Slip](SOURCE_SLIP.md) shifts both linked
 maps in one transaction under ordinary Sequences, preserving duration, effects,

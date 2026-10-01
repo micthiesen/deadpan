@@ -381,6 +381,21 @@ and root sounds. Store preview and commit recheck the revision and stored receip
 an applied-zero preview creates no history. Audio-only picture lead/tail, nested
 or treated targets and native Trim controls remain explicit unsupported scope.
 
+Native `:slip +5f` uses a captured selected picture beat under the admitted
+Source/Partition scope. Capture command-entry absence, session, revision, group,
+child and both editor cursors; later replies cannot retarget it. Keep temporary
+picture inspection separate from the real cursors. Require the exact current
+Proposed picture to be decoded and GPU-submitted at the current inspection frame
+and raster before Apply; preparation alone is insufficient. Refinement, compare,
+cancel, save and stale context revoke pending presentation immediately while
+retaining the prior accepted image. Zero movement has no snapshot or history.
+Consume one retained command and preserve a separate saved receipt before
+refresh; report a saved refresh failure without repeating the edit. Historical
+receipts cannot replay selection or warnings after navigation/Undo, and clear
+on session replacement. See [native Slip](docs/SOURCE_SLIP.md#native-stopped-picture-preview)
+and its [qualification](docs/qualification/native-slip-2026-10-01.md).
+The stopped-picture preview does not implement full Trim or audio audition.
+
 Durable render jobs capture immutable project/revision/document/range/policy
 intent outside authored undo/redo. Require fresh attempt IDs and cancellation
 tokens, exact transition sequences and one active attempt per project. Retain

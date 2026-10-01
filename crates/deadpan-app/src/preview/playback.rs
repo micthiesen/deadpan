@@ -124,6 +124,7 @@ impl DeadpanApp {
         if self.room_tone.is_none()
             && self.gain.is_none()
             && self.splice.is_none()
+            && self.slip.is_none()
             && !self.sound_focused()
             && self.view == View::Sequence
             && !looping
@@ -135,6 +136,10 @@ impl DeadpanApp {
     }
 
     pub(super) fn toggle_playback(&mut self) {
+        if self.slip.is_some() {
+            self.error = Some("Finish or cancel Slip preview before playback.".into());
+            return;
+        }
         if !self.sound_focused() {
             self.cancel_camera();
         }
@@ -149,6 +154,10 @@ impl DeadpanApp {
     }
 
     pub(super) fn audition_selection(&mut self) {
+        if self.slip.is_some() {
+            self.error = Some("Finish or cancel Slip preview before audition.".into());
+            return;
+        }
         if !self.sound_focused() {
             self.cancel_camera();
         }
@@ -494,7 +503,7 @@ impl DeadpanApp {
             self.monitor_control = None;
             return;
         }
-        if self.gain.is_some() {
+        if self.gain.is_some() || self.slip.is_some() {
             self.monitor_control = None;
             return;
         }

@@ -12,6 +12,7 @@ pub enum Entry {
     Help,
     Renders,
     Splice,
+    Slip(i64),
     RoomTone,
     HoldSilence,
     Gain(Option<deadpan_core::GainDb>),
@@ -38,6 +39,17 @@ pub fn parse(input: &str) -> Result<Entry, String> {
     if verb == "retime" || verb == "wrap-retime" {
         return super::retime::parse(words, verb == "wrap-retime")
             .map(|input| Entry::Action(Action::Edit(BeatEdit::Retime(input))));
+    }
+    if verb == "slip" {
+        let amount = words
+            .next()
+            .ok_or("Use :slip +5f or :slip -3f with one signed whole project-frame amount.")?;
+        if words.next().is_some() {
+            return Err(
+                "Use :slip +5f or :slip -3f with one signed whole project-frame amount.".into(),
+            );
+        }
+        return super::slip::parse_frames(amount).map(Entry::Slip);
     }
     let argument = words.next();
     if words.next().is_some() {
@@ -207,6 +219,23 @@ fn monitor(argument: Option<&str>) -> Result<u16, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn slip_command_requires_one_exact_frame_amount() {
+        assert_eq!(parse(":slip +5f"), Ok(Entry::Slip(5)));
+        assert_eq!(parse("slip -3f"), Ok(Entry::Slip(-3)));
+        assert_eq!(parse("slip 0f"), Ok(Entry::Slip(0)));
+        for input in [
+            "slip",
+            "slip 2",
+            "slip 1.5f",
+            "slip 3s",
+            "slip +2f extra",
+            "slip 9223372036854775808f",
+        ] {
+            assert!(parse(input).is_err(), "{input}");
+        }
+    }
 
     #[test]
     fn gain_commands_distinguish_draft_absolute_trim_and_true_mute() {

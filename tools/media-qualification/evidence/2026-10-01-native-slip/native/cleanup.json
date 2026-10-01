@@ -1,0 +1,21 @@
+{
+  "recorded_utc": "2026-10-01T14:56:22.449955+00:00",
+  "writer_lock_released": true,
+  "deadpan_app_processes": [],
+  "native_exit_codes": [
+    0,
+    0
+  ],
+  "process_check": {
+    "command": [
+      "pgrep",
+      "-fl",
+      "deadpan-app|Deadpan.app"
+    ],
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": ""
+  },
+  "native_app_inventory": [],
+  "inventory_observation": "cua.listApps filtered for Deadpan returned [] after the second quit."
+}

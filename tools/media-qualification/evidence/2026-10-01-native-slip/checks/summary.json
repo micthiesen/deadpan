@@ -1,0 +1,580 @@
+{
+  "app-default-tests": {
+    "base_commit": "8c282ac8a3147e784b212852540b5e44e28382b1",
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-app"
+    ],
+    "diff_sha256": "799c30053046e88f1061cfe5eeefa27321c0046549e5862f76641fe7771f1eb4",
+    "exit_code": 0,
+    "pid": 52146,
+    "seconds": 49.99795104190707,
+    "source_manifest_sha256": "9d93fbf93dc03951747ea1b2c300f06af54f5cfb470f60bca987259f78bf78b4",
+    "started": "2026-10-01T14:43:43.091649+00:00",
+    "test_suites": [
+      {
+        "executable": "Running unittests src/main.rs (target/debug/deps/deadpan_app-5030a04931060b33)",
+        "failed": 0,
+        "filtered_out": 0,
+        "group": "unit_integration",
+        "ignored": 0,
+        "measured": 0,
+        "passed": 428,
+        "status": "ok"
+      },
+      {
+        "executable": "Running tests/headless.rs (target/debug/deps/headless-fa1aade82dde792b)",
+        "failed": 0,
+        "filtered_out": 0,
+        "group": "unit_integration",
+        "ignored": 0,
+        "measured": 0,
+        "passed": 3,
+        "status": "ok"
+      }
+    ],
+    "tests": {
+      "documentation": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      },
+      "unit_integration": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 431
+      }
+    }
+  },
+  "app-ui-tests": {
+    "base_commit": "8c282ac8a3147e784b212852540b5e44e28382b1",
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness"
+    ],
+    "diff_sha256": "799c30053046e88f1061cfe5eeefa27321c0046549e5862f76641fe7771f1eb4",
+    "exit_code": 0,
+    "pid": 51761,
+    "seconds": 30.178550875280052,
+    "source_manifest_sha256": "9d93fbf93dc03951747ea1b2c300f06af54f5cfb470f60bca987259f78bf78b4",
+    "started": "2026-10-01T14:42:25.152158+00:00",
+    "test_suites": [
+      {
+        "executable": "Running unittests src/main.rs (target/debug/deps/deadpan_app-ee1862e87f36dd24)",
+        "failed": 0,
+        "filtered_out": 0,
+        "group": "unit_integration",
+        "ignored": 0,
+        "measured": 0,
+        "passed": 464,
+        "status": "ok"
+      },
+      {
+        "executable": "Running tests/headless.rs (target/debug/deps/headless-e178f18b4f10557f)",
+        "failed": 0,
+        "filtered_out": 0,
+        "group": "unit_integration",
+        "ignored": 0,
+        "measured": 0,
+        "passed": 3,
+        "status": "ok"
+      }
+    ],
+    "tests": {
+      "documentation": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      },
+      "unit_integration": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 467
+      }
+    }
+  },
+  "bundle-native": {
+    "base_commit": "8c282ac8a3147e784b212852540b5e44e28382b1",
+    "command": [
+      "python3",
+      "tools/build-app.py",
+      "--binary",
+      "target/release/deadpan-app",
+      "--output",
+      "/tmp/deadpan-native-slip-20261001/native/Deadpan.app",
+      "--bundle-id",
+      "dev.thiesen.deadpan.cursor-qa"
+    ],
+    "diff_sha256": "fee49161c72a04db07cce30d4a4b913e6b4a65a063ab2dafde57f1366261e2f9",
+    "exit_code": 0,
+    "pid": 53972,
+    "seconds": 1.724880542140454,
+    "source_manifest_sha256": "44ed42b615d9adebf9da17a5bc7419d688ec2df0c9fe9ca73ed9917ef7ddff36",
+    "started": "2026-10-01T14:51:23.238544+00:00",
+    "test_suites": [],
+    "tests": {
+      "documentation": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      },
+      "unit_integration": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      }
+    }
+  },
+  "debug-build-final": {
+    "base_commit": "8c282ac8a3147e784b212852540b5e44e28382b1",
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "build",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness"
+    ],
+    "diff_sha256": "799c30053046e88f1061cfe5eeefa27321c0046549e5862f76641fe7771f1eb4",
+    "exit_code": 0,
+    "pid": 52472,
+    "seconds": 13.26554899988696,
+    "source_manifest_sha256": "44ed42b615d9adebf9da17a5bc7419d688ec2df0c9fe9ca73ed9917ef7ddff36",
+    "started": "2026-10-01T14:45:04.050712+00:00",
+    "test_suites": [],
+    "tests": {
+      "documentation": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      },
+      "unit_integration": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      }
+    }
+  },
+  "focused-slip": {
+    "base_commit": "8c282ac8a3147e784b212852540b5e44e28382b1",
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "slip"
+    ],
+    "diff_sha256": "d3870c5ba5ac4682b609ee252833bbd29c55533fe53c63c53ab5d37e369ba005",
+    "exit_code": 0,
+    "pid": 51022,
+    "seconds": 118.90978883299977,
+    "source_manifest_sha256": "9d93fbf93dc03951747ea1b2c300f06af54f5cfb470f60bca987259f78bf78b4",
+    "started": "2026-10-01T14:39:59.138363+00:00",
+    "test_suites": [
+      {
+        "executable": "Running unittests src/main.rs (target/debug/deps/deadpan_app-ee1862e87f36dd24)",
+        "failed": 0,
+        "filtered_out": 447,
+        "group": "unit_integration",
+        "ignored": 0,
+        "measured": 0,
+        "passed": 17,
+        "status": "ok"
+      },
+      {
+        "executable": "Running tests/headless.rs (target/debug/deps/headless-e178f18b4f10557f)",
+        "failed": 0,
+        "filtered_out": 3,
+        "group": "unit_integration",
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0,
+        "status": "ok"
+      }
+    ],
+    "tests": {
+      "documentation": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      },
+      "unit_integration": {
+        "failed": 0,
+        "filtered_out": 450,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 17
+      }
+    }
+  },
+  "formatting": {
+    "base_commit": "8c282ac8a3147e784b212852540b5e44e28382b1",
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "diff_sha256": "799c30053046e88f1061cfe5eeefa27321c0046549e5862f76641fe7771f1eb4",
+    "exit_code": 0,
+    "pid": 51762,
+    "seconds": 1.8663660832680762,
+    "source_manifest_sha256": "9d93fbf93dc03951747ea1b2c300f06af54f5cfb470f60bca987259f78bf78b4",
+    "started": "2026-10-01T14:42:25.152158+00:00",
+    "test_suites": [],
+    "tests": {
+      "documentation": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      },
+      "unit_integration": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      }
+    }
+  },
+  "formatting-final": {
+    "base_commit": "8c282ac8a3147e784b212852540b5e44e28382b1",
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "diff_sha256": "799c30053046e88f1061cfe5eeefa27321c0046549e5862f76641fe7771f1eb4",
+    "exit_code": 0,
+    "pid": 52760,
+    "seconds": 1.6662340830080211,
+    "source_manifest_sha256": "44ed42b615d9adebf9da17a5bc7419d688ec2df0c9fe9ca73ed9917ef7ddff36",
+    "started": "2026-10-01T14:46:23.620695+00:00",
+    "test_suites": [],
+    "tests": {
+      "documentation": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      },
+      "unit_integration": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      }
+    }
+  },
+  "native-run-first": {
+    "base_commit": "8c282ac8a3147e784b212852540b5e44e28382b1",
+    "command": [
+      "/tmp/deadpan-native-slip-20261001/native/Deadpan.app/Contents/MacOS/deadpan-app",
+      "--project",
+      "/tmp/deadpan-native-slip-20261001/native/Slip QA.deadpan"
+    ],
+    "diff_sha256": "fee49161c72a04db07cce30d4a4b913e6b4a65a063ab2dafde57f1366261e2f9",
+    "exit_code": 0,
+    "pid": 54044,
+    "seconds": 130.74409225024283,
+    "source_manifest_sha256": "44ed42b615d9adebf9da17a5bc7419d688ec2df0c9fe9ca73ed9917ef7ddff36",
+    "started": "2026-10-01T14:51:40.252748+00:00",
+    "test_suites": [],
+    "tests": {
+      "documentation": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      },
+      "unit_integration": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      }
+    }
+  },
+  "native-run-reopened": {
+    "base_commit": "8c282ac8a3147e784b212852540b5e44e28382b1",
+    "command": [
+      "/tmp/deadpan-native-slip-20261001/native/Deadpan.app/Contents/MacOS/deadpan-app",
+      "--project",
+      "/tmp/deadpan-native-slip-20261001/native/Slip QA.deadpan"
+    ],
+    "diff_sha256": "fee49161c72a04db07cce30d4a4b913e6b4a65a063ab2dafde57f1366261e2f9",
+    "exit_code": 0,
+    "pid": 54339,
+    "seconds": 24.633635124657303,
+    "source_manifest_sha256": "44ed42b615d9adebf9da17a5bc7419d688ec2df0c9fe9ca73ed9917ef7ddff36",
+    "started": "2026-10-01T14:54:17.153498+00:00",
+    "test_suites": [],
+    "tests": {
+      "documentation": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      },
+      "unit_integration": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      }
+    }
+  },
+  "performance-final": {
+    "base_commit": "8c282ac8a3147e784b212852540b5e44e28382b1",
+    "command": [
+      "target/release/deadpan-app",
+      "--ui-check",
+      "--output",
+      "/tmp/deadpan-native-slip-20261001/performance-final",
+      "--mode",
+      "performance",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+    ],
+    "diff_sha256": "fee49161c72a04db07cce30d4a4b913e6b4a65a063ab2dafde57f1366261e2f9",
+    "exit_code": 0,
+    "pid": 53796,
+    "seconds": 20.588886582758278,
+    "source_manifest_sha256": "44ed42b615d9adebf9da17a5bc7419d688ec2df0c9fe9ca73ed9917ef7ddff36",
+    "started": "2026-10-01T14:50:44.507925+00:00",
+    "test_suites": [],
+    "tests": {
+      "documentation": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      },
+      "unit_integration": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      }
+    }
+  },
+  "release-build-final": {
+    "base_commit": "8c282ac8a3147e784b212852540b5e44e28382b1",
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "build",
+      "--release",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness"
+    ],
+    "diff_sha256": "799c30053046e88f1061cfe5eeefa27321c0046549e5862f76641fe7771f1eb4",
+    "exit_code": 0,
+    "pid": 52761,
+    "seconds": 244.32653058320284,
+    "source_manifest_sha256": "44ed42b615d9adebf9da17a5bc7419d688ec2df0c9fe9ca73ed9917ef7ddff36",
+    "started": "2026-10-01T14:46:23.620788+00:00",
+    "test_suites": [],
+    "tests": {
+      "documentation": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      },
+      "unit_integration": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      }
+    }
+  },
+  "strict-clippy": {
+    "base_commit": "8c282ac8a3147e784b212852540b5e44e28382b1",
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "deadpan-app/ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "diff_sha256": "799c30053046e88f1061cfe5eeefa27321c0046549e5862f76641fe7771f1eb4",
+    "exit_code": 0,
+    "pid": 52573,
+    "seconds": 19.368189374916255,
+    "source_manifest_sha256": "44ed42b615d9adebf9da17a5bc7419d688ec2df0c9fe9ca73ed9917ef7ddff36",
+    "started": "2026-10-01T14:45:35.984150+00:00",
+    "test_suites": [],
+    "tests": {
+      "documentation": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      },
+      "unit_integration": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      }
+    }
+  },
+  "visual-slip-final": {
+    "base_commit": "8c282ac8a3147e784b212852540b5e44e28382b1",
+    "command": [
+      "target/debug/deadpan-app",
+      "--ui-check",
+      "--output",
+      "/tmp/deadpan-native-slip-20261001/visual-final",
+      "--mode",
+      "visual",
+      "--scenario",
+      "slip",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--retain-projects"
+    ],
+    "diff_sha256": "799c30053046e88f1061cfe5eeefa27321c0046549e5862f76641fe7771f1eb4",
+    "exit_code": 0,
+    "pid": 52574,
+    "seconds": 15.437995207961649,
+    "source_manifest_sha256": "44ed42b615d9adebf9da17a5bc7419d688ec2df0c9fe9ca73ed9917ef7ddff36",
+    "started": "2026-10-01T14:45:35.984140+00:00",
+    "test_suites": [],
+    "tests": {
+      "documentation": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      },
+      "unit_integration": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      }
+    }
+  },
+  "visual-slip-first": {
+    "base_commit": "8c282ac8a3147e784b212852540b5e44e28382b1",
+    "command": [
+      "target/debug/deadpan-app",
+      "--ui-check",
+      "--output",
+      "/tmp/deadpan-native-slip-20261001/visual-first",
+      "--mode",
+      "visual",
+      "--scenario",
+      "slip",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--retain-projects"
+    ],
+    "diff_sha256": "799c30053046e88f1061cfe5eeefa27321c0046549e5862f76641fe7771f1eb4",
+    "exit_code": 0,
+    "pid": 51952,
+    "seconds": 14.76211916608736,
+    "source_manifest_sha256": "9d93fbf93dc03951747ea1b2c300f06af54f5cfb470f60bca987259f78bf78b4",
+    "started": "2026-10-01T14:43:09.013672+00:00",
+    "test_suites": [],
+    "tests": {
+      "documentation": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      },
+      "unit_integration": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      }
+    }
+  }
+}

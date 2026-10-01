@@ -24,6 +24,7 @@ mod retime;
 mod room_tone;
 mod scale;
 mod scenarios;
+mod slip;
 mod sound_placement;
 mod sound_playback;
 mod splice;
@@ -575,6 +576,7 @@ impl Driver<'_> {
             })),
         })));
         snapshot["splice"] = splice::state(self);
+        snapshot["slip"] = slip::state(self);
         snapshot
     }
 

@@ -40,6 +40,7 @@ mod repeats;
 mod room_tone;
 mod scope;
 mod selection;
+mod slip;
 mod sound_events;
 mod splice;
 mod style;
@@ -129,6 +130,10 @@ pub struct DeadpanApp {
     room_tone: Option<room_tone::Draft>,
     gain_command_target: Option<Result<crate::project::gain::Target, String>>,
     gain: Option<gain::Draft>,
+    slip_command_target: Option<Result<slip::Capture, String>>,
+    slip: Option<slip::Draft>,
+    slip_abandon: Option<crate::project::slip::ProposalId>,
+    slip_picture_pending: bool,
     splice: Option<splice::Draft>,
     splice_abandon: Option<crate::project::splice::ProposalId>,
     sound_cursor: u64,
@@ -244,6 +249,10 @@ impl DeadpanApp {
             room_tone: None,
             gain_command_target: None,
             gain: None,
+            slip_command_target: None,
+            slip: None,
+            slip_abandon: None,
+            slip_picture_pending: false,
             splice: None,
             splice_abandon: None,
             sound_cursor: 0,
@@ -435,7 +444,14 @@ impl DeadpanApp {
         if clear {
             self.preview_source = serial;
         }
-        let work = if self.splice.is_some() {
+        let work = if self.slip.is_some() {
+            let Some(work) = self.slip_picture_work() else {
+                self.worker.cancel();
+                self.presentation.invalidate_pending();
+                return;
+            };
+            work
+        } else if self.splice.is_some() {
             let Some(work) = self.splice_picture_work(picture) else {
                 // A refined copied source may still be awaiting admission.
                 // Keep the displayed picture, but reject the preceding draft's
@@ -534,6 +550,7 @@ impl DeadpanApp {
             {
                 update.committed = Some(receipt.committed.clone());
             }
+            self.finish_slip_update(&mut update);
             self.finish_gain_commit(&update);
             self.receive_room_tone(update.room_tone, update.room_tone_error);
             self.receive_gain(update.gain);
@@ -576,6 +593,7 @@ impl DeadpanApp {
                 });
             self.workspace = update.workspace;
             self.receive_splice(update.splice, update.splice_commit);
+            self.receive_slip(update.slip);
             self.import = update.import;
             if old_session != new_session {
                 self.render_session_changed();
@@ -758,7 +776,12 @@ impl DeadpanApp {
                 self.reconcile_beat_selection();
             }
             if old_revision != new_revision || old_session != new_session || completed {
-                self.request_picture(!preserve_picture);
+                if self.slip.is_some() || self.slip_picture_pending {
+                    // Slip's final layout pass owns its next stopped picture.
+                    self.slip_picture_pending = true;
+                } else {
+                    self.request_picture(!preserve_picture);
+                }
             }
             if repeat_completion {
                 if let Some(target) = self.repeat_target() {
@@ -773,15 +796,24 @@ impl DeadpanApp {
             self.receive_copied(update.captured_slice, unrefreshed_commit);
             self.receive_cut(update.cut_slice);
             self.receive_marks(update.marks, context);
+            // A service publication can replace the captured head before a
+            // stopped decode is polled below. Revoke that proposal now, not
+            // after receive returns or when final layout requests its successor.
+            self.reconcile_slip(context);
         }
         #[cfg(feature = "ui-harness")]
         let reply = self.feedback.take_reply(&self.worker);
         #[cfg(not(feature = "ui-harness"))]
         let reply = self.worker.take_reply();
+        let retain_slip_display = self.slip.is_some();
         let result = reply.and_then(|reply| {
             #[cfg(feature = "ui-harness")]
             let (ticket, timing) = (reply.ticket, reply.timing);
-            let result = self.presentation.receive(reply);
+            let result = if retain_slip_display {
+                self.presentation.receive_retaining_display(reply)
+            } else {
+                self.presentation.receive(reply)
+            };
             #[cfg(feature = "ui-harness")]
             self.feedback
                 .picture_received(ticket, result.as_ref().map(Result::is_ok), timing);
@@ -795,7 +827,9 @@ impl DeadpanApp {
                     }
                 }
                 Err(_) => {
-                    self.forget_target();
+                    if !retain_slip_display {
+                        self.forget_target();
+                    }
                 }
             }
         }
@@ -1131,6 +1165,7 @@ impl DeadpanApp {
         self.placement_command_target = Some(self.capture_placement_target());
         self.delete_command_target = Some(self.capture_delete_target());
         self.gain_command_target = Some(self.capture_gain_target());
+        self.slip_command_target = Some(self.capture_slip_target());
         self.hold_command_target = Some(self.capture_hold_command());
         self.sound_command_target = self.capture_sound_command(&command);
         self.cancel_repeats("command entry was opened");
@@ -1277,6 +1312,10 @@ impl DeadpanApp {
     }
 
     fn action(&mut self, action: Action, context: &egui::Context) {
+        if self.slip.is_some() {
+            self.error = Some("Finish or cancel Slip preview before other editor commands.".into());
+            return;
+        }
         if !matches!(
             action,
             Action::SetMark(_) | Action::JumpMark(_) | Action::DeleteMark(_)
@@ -1585,6 +1624,10 @@ impl DeadpanApp {
         if self.render_keyboard(context) {
             return None;
         }
+        if self.slip.is_some() {
+            self.slip_keyboard(context);
+            return None;
+        }
         if self.splice.is_some() {
             self.splice_keyboard(context);
             return None;
@@ -1790,6 +1833,7 @@ impl DeadpanApp {
         let hold_target = self.hold_command_target.take();
         let sound_target = self.sound_command_target.take();
         let gain_target = self.gain_command_target.take();
+        let slip_target = self.slip_command_target.take();
         let placement_target = self.placement_command_target.take();
         let delete_target = self.delete_command_target.take();
         let mark_target = self.marks.command.take();
@@ -1858,6 +1902,9 @@ impl DeadpanApp {
                 self.gain_command(gain_target, value, context)
             }
             Ok(navigation::command::Entry::GainMute) => self.gain_mute(gain_target),
+            Ok(navigation::command::Entry::Slip(amount)) => {
+                self.open_slip(slip_target, amount, context)
+            }
             Ok(navigation::command::Entry::RoomTone) => self.open_room_tone(hold_target, context),
             Ok(navigation::command::Entry::HoldSilence) => self.silence_hold(hold_target),
             Ok(navigation::command::Entry::Action(Action::PasteMoment { before })) => {
@@ -2070,7 +2117,7 @@ impl DeadpanApp {
                             if self.service.is_busy() || self.repeat_queue.active() {
                                 ui.spinner();
                                 ui.weak("Working");
-                            } else if self.camera.is_some() {
+                            } else if self.camera.is_some() || self.slip.is_some() {
                                 ui.colored_label(style::LAVENDER, "Draft preview");
                             } else if self.workspace.is_some() {
                                 ui.colored_label(style::SAVED, "Saved")
@@ -3069,6 +3116,7 @@ impl DeadpanApp {
                         (":hold-duration 11f", "Set a selected Hold to exactly 11 project frames."),
                         ("v / :select · y / :yank", "Start or finish a half-open time selection in Original or Your edit. h/l, counted motions and gg/G extend it; Edit j/k also extends to beat boundaries. A finished range stays fixed. y copies either range; without an Edit selection it copies the whole selected beat, including an empty group. Edit copies retain their captured revision through later edits and Undo. In Your edit, d cuts a selected range and p/P replaces it. Empty groups paste at explicit Sequence slots without adding time. Esc clears selection. Source and Edit ranges stay independent. Changing the Edit revision or group discards its selection."),
                         ("p / P · :paste / :paste-before", "In Your edit, a selected nonempty Edit range is replaced by the copied Original or Edit slice in one undoable transaction. Without an Edit range, p/P pastes after/before the selected beat in the displayed group. An empty group accepts a paste at its start. Command entry captures the exact range, including its absence; stale destinations fail."),
+                        (":slip +5f", "Preview linked media movement inside the selected Source beat while keeping its duration, Edit cursor and Original cursor. Clear Visual selection first. h/l adjusts project frames; Shift gives ten. i/o inspects first/last delivered pictures; arrows inspect inside the beat. b compares Before/Proposed. Enter applies once after the current Proposed picture displays; Escape cancels. Stopped pictures only."),
                         (":splice", "Preview a copied Original or Edit slice at the Edit cursor. Insert is the default. m toggles Move for a fresh Edit copy: one undoable edit relocates the linked slice and selects its full result. A copy from an older revision can still be inserted; yank again to move. With a captured Edit range, r toggles Replace selection and always uses Copy. Returning to Insert or Move restores the retained insertion destination. i/o refines source endpoints without changing the register; d selects destination and j/k chooses seams. In Move, s inspects removal and f insertion; h/l inspects nearby frames. b compares Before/Proposed at that join, Space auditions, and Shift+Space loops its local context. Enter commits once; Escape restores entry selection and cursors. Source/Hold/fragment endpoints and whole intervening beats work in ordinary Sequence scopes. Enter a group before opening placement to target it."),
                         (",i / :insert", "Reuse the full Original after the selected beat in the current group, or append to an empty group. Legacy projects insert their selected source."),
                         ("u / Ctrl R", "Undo / redo. Native ⌘Z / ⌘Shift Z also work."),
@@ -3107,6 +3155,7 @@ impl eframe::App for DeadpanApp {
             self.reconcile_room_tone(&context);
             self.reconcile_gain(&context);
             self.reconcile_splice(&context);
+            self.reconcile_slip(&context);
             self.reconcile_render(&context);
             self.receive_gain_waveform();
         }
@@ -3189,7 +3238,9 @@ impl eframe::App for DeadpanApp {
             ui.disable();
             ui.set_opacity(1.0);
         }
-        ui.add_enabled_ui(self.splice.is_none(), |ui| self.header(ui));
+        ui.add_enabled_ui(self.splice.is_none() && self.slip.is_none(), |ui| {
+            self.header(ui)
+        });
         // A pointer activation can change views while the panes are painted.
         // Use one placement decision for Sounds throughout this pass.
         let compact_empty_sounds = self.compact_empty_sounds(&context);
@@ -3198,8 +3249,11 @@ impl eframe::App for DeadpanApp {
             self.camera.is_some(),
             self.gain.is_some(),
             self.splice.is_some(),
+            self.slip.is_some(),
         );
-        if self.splice.is_some() {
+        if self.slip.is_some() {
+            self.slip_workspace(ui);
+        } else if self.splice.is_some() {
             self.splice_workspace(ui);
         } else {
             self.footer(ui);
@@ -3258,6 +3312,7 @@ impl eframe::App for DeadpanApp {
                 self.camera.is_some(),
                 self.gain.is_some(),
                 self.splice.is_some(),
+                self.slip.is_some(),
             )
         {
             context.request_discard("workspace footer mode changed after input");
@@ -3274,6 +3329,7 @@ impl eframe::App for DeadpanApp {
             self.dispatch_waiting_repeat(&context);
             self.dispatch_gain_proposal(&context);
             self.dispatch_splice(&context);
+            self.dispatch_slip(&context);
         }
         if first_pass && let Some(frames) = self.smoke_frames.as_mut() {
             *frames += 1;
@@ -3288,7 +3344,8 @@ impl eframe::App for DeadpanApp {
                 || self.camera_pending.is_some()
                 || self.gain.is_some()
                 || self.room_tone.is_some()
-                || self.splice.is_some(),
+                || self.splice.is_some()
+                || self.slip.is_some(),
         );
     }
     fn on_exit(&mut self) {
@@ -3297,6 +3354,7 @@ impl eframe::App for DeadpanApp {
         self.worker.shutdown();
         self.endpoint_worker.shutdown();
         self.splice = None;
+        self.slip = None;
         self.forget_target();
         self.exited.set(true);
     }
@@ -3308,6 +3366,7 @@ impl Drop for DeadpanApp {
         self.worker.shutdown();
         self.endpoint_worker.shutdown();
         self.splice = None;
+        self.slip = None;
         self.forget_target();
     }
 }
