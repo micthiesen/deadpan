@@ -1,5 +1,5 @@
 use super::*;
-use crate::project::splice::{Destination, Prepared, Proposal, ProposalId, Source};
+use crate::project::splice::{Destination, Operation, Prepared, Proposal, ProposalId, Source};
 
 #[path = "splice_equivalence.rs"]
 mod equivalence;
@@ -29,6 +29,7 @@ fn proposal(workspace: &Workspace, draft: u64, change: u64) -> Proposal {
         .find(|source| source.video_index.is_some())
         .unwrap();
     Proposal {
+        operation: Operation::Copy,
         id: ProposalId {
             session: workspace.session,
             project: workspace.document.project_id().clone(),

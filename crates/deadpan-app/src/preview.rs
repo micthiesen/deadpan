@@ -617,14 +617,28 @@ impl DeadpanApp {
                     self.selected_beat = None;
                 }
             }
-            if old_revision != new_revision || old_session != new_session {
+            let commit_matches_visible = update.committed.as_ref().is_some_and(|commit| {
+                self.workspace.as_ref().is_some_and(|workspace| {
+                    selection::commit_matches_visible(
+                        commit,
+                        workspace.session,
+                        workspace.document.project_id(),
+                        workspace.document.revision_id(),
+                    )
+                })
+            });
+            let mut restored_scope = false;
+            if let Some(commit) = update.committed.as_ref()
+                && commit_matches_visible
+                && self.last_committed.as_ref() != Some(&commit.revision)
+                && commit.sound.is_none()
+                && self.sequence_scope != commit.scope
+            {
+                self.sequence_scope = commit.scope.clone();
+                restored_scope = true;
+            }
+            if old_revision != new_revision || old_session != new_session || restored_scope {
                 self.bindings.clear();
-                if let Some(commit) = update.committed.as_ref()
-                    && self.last_committed.as_ref() != Some(&commit.revision)
-                    && commit.sound.is_none()
-                {
-                    self.sequence_scope = commit.scope.clone();
-                }
                 self.rebuild_rows();
             }
             let mut completion = selection::completion(
@@ -635,12 +649,7 @@ impl DeadpanApp {
             // A durable receipt can outlive a failed workspace refresh. Keep
             // the visible cursor/selection bound to the snapshot we actually
             // have; the saved warning explains that reopening is required.
-            let unrefreshed_commit = old_revision == new_revision
-                && update.committed.as_ref().is_some_and(|commit| {
-                    self.workspace.as_ref().is_none_or(|workspace| {
-                        workspace.document.revision_id() != &commit.revision
-                    })
-                });
+            let unrefreshed_commit = update.committed.is_some() && !commit_matches_visible;
             if completion == selection::Completion::Edit && unrefreshed_commit {
                 completion = selection::Completion::None;
             }
@@ -653,10 +662,12 @@ impl DeadpanApp {
                     .is_some_and(|commit| commit.preserve_cursor);
             self.view
                 .set(self.view.after_completion(&completion), &mut self.message);
+            let mut committed_range = None;
             if let Some(commit) = update.committed.filter(|_| committed_selection) {
                 #[cfg(feature = "ui-harness")]
                 self.feedback.record("command_committed");
                 self.last_committed = Some(commit.revision);
+                committed_range = commit.range_selection;
                 self.bindings.clear();
                 if let Some(sound) = commit.sound {
                     self.selected_event = sound.selected;
@@ -702,6 +713,9 @@ impl DeadpanApp {
             self.source_cursor = self.source_cursor.min(self.source_length());
             self.reconcile_moment();
             self.reconcile_edit_range();
+            if let Some(range) = committed_range {
+                self.select_committed_range(&range);
+            }
             self.reconcile_events();
             if self.view == View::Sequence && !committed_selection {
                 self.reconcile_beat_selection();
@@ -2971,7 +2985,7 @@ impl DeadpanApp {
                         (":hold-duration 11f", "Set a selected Hold to exactly 11 project frames."),
                         ("v / :select · y / :yank", "Start or finish a half-open time selection in Original or Your edit. h/l, counted motions and gg/G extend it; Edit j/k also extends to beat boundaries. A finished range stays fixed. y copies either range. Edit copies retain their captured revision through later edits and Undo. In Your edit, d cuts a selected range and p/P replaces it. Esc clears selection. Source and Edit ranges stay independent. Changing the Edit revision or group discards its selection."),
                         ("p / P · :paste / :paste-before", "In Your edit, a selected nonempty Edit range is replaced by the copied Original or Edit slice in one undoable transaction. Without an Edit range, p/P pastes after/before the selected beat in the displayed group. An empty group accepts a paste at its start. Command entry captures the exact range, including its absence; stale destinations fail."),
-                        (":splice", "Preview a copied Original or Edit slice at the Edit cursor. Insert is the default. With a captured Edit range, r explicitly toggles Replace selection; the removed interval stays fixed and r restores the retained Insert destination. i/o refines the copied source endpoints without changing the register; f then h/l inspects either join. Insert d selects destination and j/k chooses seams. b compares corresponding Before/Proposed context, Space auditions, Shift+Space loops joins, Enter commits once and Escape restores entry selection and cursors. Source/Hold/fragment endpoints and whole intervening beats work in ordinary Sequence scopes. Enter a group to place inside it."),
+                        (":splice", "Preview a copied Original or Edit slice at the Edit cursor. Insert is the default. m toggles Move for a fresh Edit copy: one undoable edit relocates the linked slice and selects its full result. A copy from an older revision can still be inserted; yank again to move. With a captured Edit range, r toggles Replace selection and always uses Copy. Returning to Insert or Move restores the retained insertion destination. i/o refines source endpoints without changing the register; d selects destination and j/k chooses seams. In Move, s inspects removal and f insertion; h/l inspects nearby frames. b compares Before/Proposed at that join, Space auditions, and Shift+Space loops its local context. Enter commits once; Escape restores entry selection and cursors. Source/Hold/fragment endpoints and whole intervening beats work in ordinary Sequence scopes. Enter a group before opening placement to target it."),
                         (",i / :insert", "Reuse the full Original after the selected beat in the current group, or append to an empty group. Legacy projects insert their selected source."),
                         ("u / Ctrl R", "Undo / redo. Native ⌘Z / ⌘Shift Z also work."),
                         ("⌘E / :render", "Render the saved full edit with automatic SDR output settings. For an unsaved Camera, Gain or Room tone preview, choose Commit preview and render, Discard preview and render, or Keep editing."),
@@ -2985,7 +2999,7 @@ impl DeadpanApp {
                     ] { help_binding(ui, key, description); }
                     ui.separator();
                     ui.weak("Original browsing never changes it. Your edit commands affect the selected beat in the displayed group and its linked picture and sound. Counts precede operators, such as 3rr; the visible PENDING badge waits without a timer.");
-                    ui.weak("Space auditions the focused catalog sound, Original, or full edit. In the catalog, j/k selects a sound and Shift+Space loops its complete measured audio. Catalog audition keeps the picture and both editor cursors in place. Leaving the catalog or choosing another sound stops it. Elsewhere Shift+Space loops the selected Original moment, Edit range or edited beat with context. Playback has edge fades and a safety limiter; pause before changing Monitor volume. Picture-only or sound-only range cuts, edited-slice copy/move, named registers, Repeat/Retime descendant navigation and insertion, moving routed sounds, voice effects, the full mix, and AI generation in the app remain unavailable. Render supports the current SDR picture and audio path; unsupported content fails explicitly. Headless commands can use this open project. Use :renders for saved renders and recovery. HDR output and full mastering remain unavailable.");
+                    ui.weak("Space auditions the focused catalog sound, Original, or full edit. In the catalog, j/k selects a sound and Shift+Space loops its complete measured audio. Catalog audition keeps the picture and both editor cursors in place. Leaving the catalog or choosing another sound stops it. Elsewhere Shift+Space loops the selected Original moment, Edit range or edited beat with context. Playback has edge fades and a safety limiter; pause before changing Monitor volume. Picture-only or sound-only range cuts and placement, named registers, Repeat/Retime descendant navigation and insertion, moving routed sounds, voice effects, the full mix, and AI generation in the app remain unavailable. Render supports the current SDR picture and audio path; unsupported content fails explicitly. Headless commands can use this open project. Use :renders for saved renders and recovery. HDR output and full mastering remain unavailable.");
             });
     }
 }

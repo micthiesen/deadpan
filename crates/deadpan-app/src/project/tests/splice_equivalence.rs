@@ -8,6 +8,9 @@ use deadpan_core::{AssetRecord, SourceFrameId};
 use deadpan_media::audio_session::{AudioSession, AudioSessionLimits};
 use deadpan_store::original_media::OriginalMediaLimits;
 
+#[path = "splice_equivalence/move_range.rs"]
+mod move_range;
+
 /// The playback source cache is private to its crate. This one-source test
 /// adapter admits the service's complete receipt and real original bytes, then
 /// hands its canonical PCM to the same LimitedAudio implementation as playback.
@@ -35,10 +38,27 @@ impl ProposedOriginal {
             record.content_hash,
             entry.receipt.original().content().to_string()
         );
-        assert!(Arc::ptr_eq(
-            &entry.receipt,
-            &prepared.base.sources[asset].receipt
-        ));
+        match &prepared.media {
+            crate::project::splice::PreparedMedia::Original => {
+                snapshot.validate_original_proposal().unwrap();
+                assert!(Arc::ptr_eq(
+                    &entry.receipt,
+                    &prepared.base.sources[asset].receipt
+                ));
+            }
+            crate::project::splice::PreparedMedia::Edited(media) => {
+                snapshot.validate_edit_slice_view(media.admitted()).unwrap();
+                media.admitted().check_live(cancelled).unwrap();
+                assert!(Arc::ptr_eq(
+                    &entry.receipt,
+                    &media.admitted().sources()[asset].receipt
+                ));
+                assert_eq!(
+                    entry.receipt.id(),
+                    prepared.base.sources[asset].receipt.id()
+                );
+            }
+        }
         assert_eq!(entry.original, prepared.base.sources[asset].original);
         assert_eq!(entry.original.object(), entry.receipt.original());
         let expected = entry

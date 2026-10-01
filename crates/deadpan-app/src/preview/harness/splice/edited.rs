@@ -242,7 +242,7 @@ fn delayed_workspace_receipt(d: &mut Driver<'_>, copied: &Arc<Captured>) -> Resu
     undo(d, &saved)
 }
 
-fn capture_request(copied: &Captured) -> CaptureRequest {
+pub(super) fn capture_request(copied: &Captured) -> CaptureRequest {
     CaptureRequest {
         id: copied.id().clone(),
         scope: copied.scope().clone(),
@@ -531,7 +531,11 @@ fn layout(d: &mut Driver<'_>, copied: &Arc<Captured>) -> Result<(), String> {
     Ok(())
 }
 
-fn wait_edited_endpoints(d: &mut Driver<'_>, first: u64, out: u64) -> Result<(), String> {
+pub(super) fn wait_edited_endpoints(
+    d: &mut Driver<'_>,
+    first: u64,
+    out: u64,
+) -> Result<(), String> {
     let first = format!("First included copied Edit picture, frame {}", first + 1);
     let last = format!("Last included copied Edit picture, frame {out}");
     let deadline = Instant::now() + Duration::from_secs(15);
@@ -549,7 +553,7 @@ fn wait_edited_endpoints(d: &mut Driver<'_>, first: u64, out: u64) -> Result<(),
     Ok(())
 }
 
-fn accepted(d: &Driver<'_>) -> Result<Arc<Captured>, String> {
+pub(super) fn accepted(d: &Driver<'_>) -> Result<Arc<Captured>, String> {
     match d.app().copied.content() {
         Some(Content::Edited(copied)) => Ok(copied.clone()),
         _ => Err("Production yank did not retain an edited copy".into()),
@@ -567,21 +571,21 @@ fn same_register(d: &mut Driver<'_>, copied: &Arc<Captured>) -> Result<(), Strin
     )
 }
 
-fn goto(d: &mut Driver<'_>, frame: u64) -> Result<(), String> {
+pub(super) fn goto(d: &mut Driver<'_>, frame: u64) -> Result<(), String> {
     d.key(Key::Escape)?;
     d.chord(&[Key::G, Key::G])?;
     motion(d, frame, true)?;
     d.settled()
 }
 
-fn select(d: &mut Driver<'_>, start: u64, out: u64) -> Result<(), String> {
+pub(super) fn select(d: &mut Driver<'_>, start: u64, out: u64) -> Result<(), String> {
     goto(d, start)?;
     d.key(Key::V)?;
     motion(d, out - start, true)?;
     d.settled()
 }
 
-fn motion(d: &mut Driver<'_>, frames: u64, forward: bool) -> Result<(), String> {
+pub(super) fn motion(d: &mut Driver<'_>, frames: u64, forward: bool) -> Result<(), String> {
     if frames == 0 {
         return Ok(());
     }
@@ -603,11 +607,11 @@ fn motion(d: &mut Driver<'_>, frames: u64, forward: bool) -> Result<(), String> 
     d.key(if forward { Key::L } else { Key::H })
 }
 
-fn range(start: i64, out: i64) -> Result<FrameRange, String> {
+pub(super) fn range(start: i64, out: i64) -> Result<FrameRange, String> {
     FrameRange::new(ProjectFrame(start), ProjectFrame(out)).map_err(|error| error.to_string())
 }
 
-fn cancel(d: &mut Driver<'_>) -> Result<(), String> {
+pub(super) fn cancel(d: &mut Driver<'_>) -> Result<(), String> {
     d.key(Key::Escape)?;
     d.wait_for("Cancel edited placement without saving", |app| {
         app.splice.is_none() && app.splice_abandon.is_none() && !app.service.is_busy()
@@ -615,7 +619,7 @@ fn cancel(d: &mut Driver<'_>) -> Result<(), String> {
     d.settled()
 }
 
-fn undo(d: &mut Driver<'_>, saved: &ProjectDocument) -> Result<(), String> {
+pub(super) fn undo(d: &mut Driver<'_>, saved: &ProjectDocument) -> Result<(), String> {
     let revision = d.revision();
     d.key(Key::U)?;
     d.changed(&revision)?;

@@ -11,6 +11,18 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+The [native Move increment](qualification/native-move-2026-09-30.md) adds explicit
+Copy/Move selection, local removal/insertion views and exact final range selection
+to `place-slice`. Its final visual run passes 752 checks plus the 11,904-case
+Kestrel audit. Inspected minimum/default captures preserve endpoints, a 177-point
+minimum Move picture and both 44-point timelines. A real five-point Copy timeline
+overflow and a missing arrow glyph were corrected during image review.
+Final full release replay passes 3,314 checks; warm navigation, cached Repeat
+and Hold picture completion p95 is 1.504/5.525/5.604 ms. Separate native keys and
+SQLite backups verify cancellation, both comparisons, one Move commit, Undo and
+historical Move rejection. Qualification retains two unexplained decoder stderr
+messages, all failures and the distinction between injected delivery and real PCM.
+
 The [native/public Render increment](qualification/public-render-2026-09-30.md)
 adds the visible Render action and exact preview decisions. Its dedicated replay
 uses real encoding, verification and publication; only the destination picker is

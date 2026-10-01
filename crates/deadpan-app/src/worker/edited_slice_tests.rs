@@ -550,3 +550,190 @@ fn full_receipt_contracts_are_checked_once_per_view_not_per_warm_picture() {
         );
     }
 }
+
+#[test]
+fn admitted_move_uses_existing_edited_picture_path_and_keeps_seals_and_revocation() {
+    use deadpan_core::{MoveRangeDestination, SplitIdentities};
+
+    let mut fixture = Fixture::source("cfr-bframes.mp4");
+    let base = fixture.workspace(71);
+    let destination = MoveRangeDestination::Interior {
+        parent: node("root"),
+        target: node("source"),
+        at: FrameDuration::new(60).unwrap(),
+    };
+    let query = base
+        .document
+        .range_move(&node("root"), range(20, 30), &destination)
+        .unwrap();
+    assert_eq!(query.required_ids, 7);
+    let command = CommandRequest {
+        project_id: base.document.project_id().clone(),
+        expected_revision: base.document.revision_id().clone(),
+        new_revision: revision("move-picture"),
+        command: Command::MoveRange {
+            source_revision: base.document.revision_id().clone(),
+            source_parent: node("root"),
+            range: range(20, 30),
+            destination,
+            identities: SplitIdentities {
+                nodes: (0..query.required_ids)
+                    .map(|index| node(&format!("move-cut-{index}")))
+                    .collect(),
+            },
+            timing: AudioTimingId {
+                allocation: revision("move-picture"),
+                ordinal: 0,
+            },
+        },
+    };
+    let media = test_media_view(
+        base.session,
+        fixture.store.preview_edit_slice(&command).unwrap(),
+    )
+    .unwrap();
+    let snapshot = Arc::new(
+        Snapshot::proposed_edit_slice(&base.playback_snapshot(), media.admitted().clone(), 12, 1)
+            .unwrap(),
+    );
+    assert_eq!(snapshot.validate_edit_slice_view(media.admitted()), Ok(()));
+    assert!(snapshot.validate_original_proposal().is_err());
+    let make = |base: Arc<Workspace>, snapshot: Arc<Snapshot>, media: Arc<MediaView>, frame| {
+        work(
+            Work::EditedProposed {
+                base,
+                snapshot,
+                media,
+                frame: ProjectFrame(frame),
+            },
+            1,
+        )
+    };
+    let mut decoder = None;
+    let mut plan = None;
+    // Explicit ordinals at the removal and both insertion edges, in cold then
+    // shuffled warm order. This is the ordinary edited path, with no Move decoder.
+    for (frame, ordinal) in [(59, 29), (20, 30), (50, 20), (19, 19), (60, 60), (49, 59)] {
+        let actual = perform(
+            &make(base.clone(), snapshot.clone(), media.clone(), frame),
+            &mut decoder,
+            &mut plan,
+        )
+        .unwrap();
+        assert_eq!(actual.id, SourceFrameId(ordinal));
+        assert_eq!(
+            actual.frame.as_ref().unwrap().metadata().pts.ticks,
+            ordinal as i64 * 1001
+        );
+        let original =
+            perform(&request(&base, source(ordinal), 2), &mut decoder, &mut plan).unwrap();
+        assert_eq!(
+            actual.frame.as_ref().unwrap().metadata(),
+            original.frame.as_ref().unwrap().metadata()
+        );
+        assert_eq!(
+            actual.frame.as_ref().unwrap().bytes(),
+            original.frame.as_ref().unwrap().bytes()
+        );
+    }
+    assert!(
+        perform(
+            &work(
+                Work::Proposed {
+                    base: base.clone(),
+                    snapshot: snapshot.clone(),
+                    view: sequence(50)
+                },
+                3
+            ),
+            &mut decoder,
+            &mut plan
+        )
+        .is_err()
+    );
+    let alternative = test_media_view(
+        base.session,
+        fixture.store.preview_edit_slice(&command).unwrap(),
+    )
+    .unwrap();
+    assert!(
+        perform(
+            &make(base.clone(), snapshot.clone(), alternative, 50),
+            &mut decoder,
+            &mut plan
+        )
+        .is_err()
+    );
+    let mut changed =
+        Snapshot::proposed_edit_slice(&base.playback_snapshot(), media.admitted().clone(), 12, 1)
+            .unwrap();
+    changed.document = Arc::new((*changed.document).clone());
+    assert!(
+        perform(
+            &make(base.clone(), Arc::new(changed), media.clone(), 50),
+            &mut decoder,
+            &mut plan
+        )
+        .is_err()
+    );
+    let cancelled = make(base.clone(), snapshot.clone(), media.clone(), 50);
+    cancelled.cancelled.store(true, Ordering::Release);
+    assert!(perform(&cancelled, &mut decoder, &mut plan).is_err());
+
+    edit(
+        &mut fixture,
+        "later-edit",
+        Command::Rename {
+            node: node("source"),
+            label: "Later source".into(),
+        },
+    );
+    let current = fixture.workspace(71);
+    let mut historical = command.clone();
+    historical.expected_revision = current.document.revision_id().clone();
+    historical.new_revision = revision("historical-move-refused");
+    assert!(
+        fixture.store.preview_edit_slice(&historical).is_err(),
+        "new expected revision must not authorize old Move source"
+    );
+    assert!(
+        perform(
+            &make(current, snapshot.clone(), media.clone(), 50),
+            &mut decoder,
+            &mut plan
+        )
+        .is_err()
+    );
+    assert!(
+        perform(
+            &make(base.clone(), snapshot.clone(), media.clone(), 50),
+            &mut decoder,
+            &mut plan
+        )
+        .is_ok()
+    );
+    let path = base.path.clone();
+    drop(fixture.store);
+    assert!(
+        perform(
+            &make(base.clone(), snapshot.clone(), media.clone(), 50),
+            &mut decoder,
+            &mut plan
+        )
+        .is_err()
+    );
+    assert!(
+        perform(
+            &make(base.clone(), snapshot.clone(), media.clone(), 50),
+            &mut None,
+            &mut None
+        )
+        .is_err()
+    );
+    // Closing revokes temporary views; the existing committed private decoder
+    // contract still permits warm inspection of the already-admitted Original.
+    assert!(perform(&request(&base, source(20), 4), &mut decoder, &mut plan).is_ok());
+    let reopened = ProjectStore::open(&path, deadpan_store::AccessMode::ReadWrite).unwrap();
+    assert!(perform(&make(base, snapshot, media, 50), &mut decoder, &mut plan).is_err());
+    reopened.validate().unwrap();
+}

@@ -1,0 +1,57 @@
+import fcntl
+import hashlib
+import json
+from pathlib import Path
+import sqlite3
+import subprocess
+
+root = Path('/tmp/deadpan-native-move-20260930/native-qa')
+labels = ['before', 'copied', 'cancelled', 'committed', 'undone', 'historical-rejected']
+snapshots = {}
+for label in labels:
+    path = root / (label + '.sqlite')
+    with sqlite3.connect(path) as db:
+        names = [r[0] for r in db.execute("select name from sqlite_master where type='table' order by name")]
+        tables = {name: sorted(db.execute('select * from "' + name.replace('"', '""') + '"').fetchall(), key=repr) for name in names}
+        head = db.execute('select head_revision from state').fetchone()[0]
+        document = json.loads(db.execute('select document from revisions where id=?', (head,)).fetchone()[0])
+    snapshots[label] = {'tables': tables, 'document': document, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
+baseline = snapshots['before']['tables']
+for label in ['copied', 'cancelled']:
+    assert snapshots[label]['tables'] == baseline, label
+assert snapshots['historical-rejected']['tables'] == snapshots['undone']['tables']
+assert len(snapshots['committed']['tables']['revisions']) == len(baseline['revisions']) + 1
+assert len(snapshots['undone']['tables']['revisions']) == len(baseline['revisions']) + 2
+assert len(snapshots['committed']['tables']['history']) == len(baseline['history']) + 1
+unchanged = [name for name in baseline if name not in ['history', 'redo', 'revisions', 'state']]
+for label in labels:
+    for name in unchanged:
+        assert snapshots[label]['tables'][name] == baseline[name], (label, name)
+before = dict(snapshots['before']['document'])
+undone = dict(snapshots['undone']['document'])
+assert before.pop('revision_id') != undone.pop('revision_id')
+assert before == undone
+executable = str(root / 'DeadpanNativeMoveQA.app/Contents/MacOS/deadpan-app')
+running = [line for line in subprocess.check_output(['ps', '-axo', 'pid=,comm='], text=True).splitlines()
+           if line.strip().split(None, 1)[-1] in (executable, '/private' + executable)]
+assert not running
+lock = root / 'Move slices.deadpan/.writer.lock'
+if lock.exists():
+    with lock.open('rb') as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        fcntl.flock(handle, fcntl.LOCK_UN)
+result = {
+    'copy_and_cancel_identical_tables': len(baseline),
+    'historical_rejection_and_copy_preview_identical_tables': len(baseline),
+    'move_adds_one_revision_and_one_history_entry': True,
+    'undo_restores_every_authored_field_except_fresh_revision': True,
+    'unrelated_tables_identical_throughout': unchanged,
+    'temporary_app_exited': True, 'writer_lock_released': True,
+    'snapshots': {label: {'database_sha256': data['sha256'],
+                         'head': data['document']['revision_id'],
+                         'counts': {name: len(rows) for name, rows in data['tables'].items()},
+                         'table_sha256': {name: hashlib.sha256(repr(rows).encode()).hexdigest() for name, rows in data['tables'].items()}}
+                  for label, data in snapshots.items()},
+}
+(root / 'verification.json').write_text(json.dumps(result, indent=2) + '\n')
+print(json.dumps({key: value for key, value in result.items() if key != 'snapshots'}, indent=2))

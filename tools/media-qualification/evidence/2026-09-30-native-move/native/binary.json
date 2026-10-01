@@ -1,0 +1,7 @@
+{
+  "bundle": "dev.thiesen.deadpan.native-move-qa-20260930",
+  "path": "/tmp/deadpan-native-move-20260930/native-qa/DeadpanNativeMoveQA.app/Contents/MacOS/deadpan-app",
+  "binary_sha256": "63dc53b1009dfb29e315a5eaefeccdf80610234b20934aa5b840503f2427cbf7",
+  "source_manifest_sha256": "f982a84aa492b73ee9b2b4994f72eab498735735f458d52d40ac129f42acbfac",
+  "matches_final_performance": true
+}

@@ -1,0 +1,14 @@
+import hashlib
+import json
+from pathlib import Path
+import shutil
+
+root = Path('/tmp/deadpan-native-move-20260930/native-qa')
+source = Path('/tmp/deadpan-native-move-20260930/visual-third/projects/place-slice/Documents/Deadpan/cfr-bframes.deadpan')
+root.mkdir(exist_ok=True)
+shutil.copytree(source, root / 'Move slices.deadpan')
+(root / 'fixture.json').write_text(json.dumps({
+    'source': str(source),
+    'source_database_sha256': hashlib.sha256((source / 'project.sqlite').read_bytes()).hexdigest(),
+    'purpose': 'Closed retained replay package copied for isolated native keyboard checks',
+}, indent=2) + '\n')

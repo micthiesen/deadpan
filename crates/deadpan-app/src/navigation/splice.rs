@@ -10,6 +10,8 @@ pub enum SpliceKey {
     Loop,
     Compare,
     Replace,
+    Move,
+    Removal,
     In,
     Out,
     Destination,
@@ -53,6 +55,8 @@ pub fn route_key(
         Key::Space => SpliceKey::Play,
         Key::B => SpliceKey::Compare,
         Key::R => SpliceKey::Replace,
+        Key::M => SpliceKey::Move,
+        Key::S => SpliceKey::Removal,
         Key::I => SpliceKey::In,
         Key::O => SpliceKey::Out,
         Key::D => SpliceKey::Destination,
@@ -87,6 +91,8 @@ mod tests {
             Key::D,
             Key::B,
             Key::R,
+            Key::M,
+            Key::S,
             Key::H,
             Key::L,
         ] {
@@ -127,6 +133,16 @@ mod tests {
             route_key(Key::R, Modifiers::NONE, false, true, false, false),
             Some(SpliceKey::Replace)
         );
+        for (key, action) in [(Key::M, SpliceKey::Move), (Key::S, SpliceKey::Removal)] {
+            assert_eq!(
+                route_key(key, Modifiers::NONE, false, true, false, false),
+                Some(action)
+            );
+            assert_eq!(
+                route_key(key, Modifiers::NONE, false, true, false, true),
+                None
+            );
+        }
         assert_eq!(
             route_key(Key::Escape, Modifiers::NONE, false, false, false, false),
             Some(SpliceKey::Cancel)

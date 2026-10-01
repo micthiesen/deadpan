@@ -37,6 +37,8 @@ pub(super) struct Feedback {
     pub footer_bottom: Option<(f32, f32)>,
     pub footer_command_open: bool,
     pub hold_project_updates: bool,
+    /// One explicitly released real service update for delivery-order witnesses.
+    pub release_project_update: Option<crate::project::ProjectUpdate>,
     pub hold_preview: bool,
     pub held_reply: Option<crate::worker::Reply>,
     pub release_reply: Option<crate::worker::Reply>,
@@ -48,10 +50,12 @@ pub(super) struct Feedback {
 
 impl Feedback {
     pub fn take_project_update(
-        &self,
+        &mut self,
         service: &ProjectService,
     ) -> Option<crate::project::ProjectUpdate> {
-        if self.hold_project_updates {
+        if let Some(update) = self.release_project_update.take() {
+            Some(update)
+        } else if self.hold_project_updates {
             None
         } else {
             service.take_update()

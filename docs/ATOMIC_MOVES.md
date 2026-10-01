@@ -1,9 +1,10 @@
 # Atomic linked range moves
 
-The core/headless command is implemented and verified. The native Move control
-remains open. Section 9.7 of the specification still requires its visible
-removal/insertion preview and complete keyboard flow. See
-[qualification](qualification/atomic-move-2026-09-30.md) for evidence and limits.
+The core/headless command is implemented and verified. The native `:splice`
+draft uses `m` to select Move, with `s/f` inspecting removal/insertion sites.
+Its interaction and receipt contract is in [visual placement](SLICE_PLACEMENT.md).
+See [core qualification](qualification/atomic-move-2026-09-30.md) and
+[native qualification](qualification/native-move-2026-09-30.md) for evidence and limits.
 
 `Command::MoveRange` relocates current authored content in one reversible edit.
 It preserves the identities of whole moved units and does not import a copied
@@ -111,7 +112,5 @@ Accepted generated media stays accepted without reviving its generation request.
 
 ## Remaining work
 
-Native Move selection, source-removal and destination-insertion comparison,
-audition, stale draft handling and final result selection remain required.
 Repeat/Retime occurrence interiors, role-only operations, cut-to-register,
 persistent/named registers and the full editing language also remain open.

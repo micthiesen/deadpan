@@ -161,11 +161,12 @@ impl Service {
         // import or invite an implicit second edit.
         self.committed = Some(CommittedEdit {
             revision,
-            selected_node: Some(request.node().clone()),
+            selected_node: request.node().cloned(),
             preserve_cursor: false,
             cursor: Some(cursor),
             scope,
             sound: None,
+            range_selection: None,
         });
         #[cfg(test)]
         {

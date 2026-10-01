@@ -64,6 +64,27 @@ impl Selection {
 }
 
 impl DeadpanApp {
+    pub(super) fn select_committed_range(
+        &mut self,
+        range: &crate::project::CommittedRangeSelection,
+    ) {
+        let Some(identity) = self.edit_range_identity() else {
+            return;
+        };
+        if identity.session != range.session
+            || identity.project != range.project
+            || identity.parent != range.parent
+            || self.last_committed.as_ref() != Some(&identity.revision)
+            || range.range.start().0 < self.scope_start as i64
+            || range.range.end().0 > self.scope_end as i64
+        {
+            return;
+        }
+        self.edit_range.reconcile(Some(identity));
+        self.edit_range.bounds = Some((range.range.start().0 as u64, range.range.end().0 as u64));
+        self.edit_range.active = false;
+    }
+
     fn edit_range_identity(&self) -> Option<Identity> {
         let workspace = self.workspace.as_ref()?;
         let scope = self.sequence_scope.resolve(workspace).ok()?;

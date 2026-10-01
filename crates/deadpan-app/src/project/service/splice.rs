@@ -4,8 +4,8 @@ use deadpan_core::{EditTransaction, FrameRange, ProjectFrame};
 
 use super::*;
 use crate::project::splice::{
-    Prepared as PreparedSplice, PreparedMedia, Proposal, ProposalId, ProposalUpdate, Source,
-    SpliceCommitUpdate,
+    Operation, Prepared as PreparedSplice, PreparedMedia, Proposal, ProposalId, ProposalUpdate,
+    Source, SpliceCommitUpdate,
 };
 
 mod request;
@@ -97,14 +97,26 @@ impl Service {
             Source::Edited { copied, range } => Some(self.prepare_copied_view(copied, *range)?),
             Source::Original { .. } => None,
         };
+        if proposal.operation == Operation::Move && edited.is_none() {
+            return Err("Original always copies; Move requires a current edited selection".into());
+        }
         let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
         let view = proposal.scope.resolve(workspace)?;
         if view.owner != &proposal.parent {
             return Err("Slice destination is outside the captured Sequence scope".into());
         }
         if let Some(slice) = edited {
-            let (request, cursor) =
-                Request::edited(workspace, &proposal.parent, &proposal.destination, &slice)?;
+            let (request, cursor) = match proposal.operation {
+                Operation::Copy => {
+                    Request::edited(workspace, &proposal.parent, &proposal.destination, &slice)?
+                }
+                Operation::Move => Request::move_edited(
+                    workspace,
+                    &proposal.parent,
+                    &proposal.destination,
+                    &slice,
+                )?,
+            };
             let draft = Draft {
                 proposal,
                 request,
@@ -296,31 +308,49 @@ impl Service {
     ) -> Result<Arc<PreparedSplice>> {
         let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
         let plan = Arc::new(RenderPlan::compile(&snapshot.document).map_err(display)?);
-        let duration = plan
-            .node_duration(draft.request.node())
-            .ok_or("Slice preview did not produce its inserted root")?;
-        if draft
-            .request
-            .inserted_duration()
-            .is_some_and(|expected| expected != duration)
-        {
-            return Err("Slice preview changed the captured duration".into());
-        }
+        let duration = match draft.request.inserted_duration() {
+            Some(duration) => duration,
+            None => plan
+                .node_duration(
+                    draft
+                        .request
+                        .node()
+                        .ok_or("Slice request has no inserted root")?,
+                )
+                .ok_or("Slice preview did not produce its inserted root")?,
+        };
         let end = draft
             .cursor
             .0
             .checked_add(duration.frames())
             .ok_or("Slice range overflow")?;
         let range = FrameRange::new(draft.cursor, ProjectFrame(end)).map_err(display)?;
-        Ok(Arc::new(PreparedSplice {
+        let node = crate::project::splice::result_forest_first(
+            &snapshot.document,
+            &plan,
+            &draft.proposal.parent,
+            range,
+        )?;
+        if draft
+            .request
+            .node()
+            .is_some_and(|expected| expected != &node)
+        {
+            return Err("Slice preview changed its inserted root".into());
+        }
+        let prepared = PreparedSplice {
             base: workspace.clone(),
             snapshot,
             media,
             plan,
-            node: draft.request.node().clone(),
+            node,
+            parent: draft.proposal.parent.clone(),
             range,
             removed: draft.request.removed(),
-        }))
+            movement: draft.request.movement().cloned(),
+        };
+        prepared.validate_result()?;
+        Ok(Arc::new(prepared))
     }
 
     pub(super) fn splice_result(&mut self, active: Pending, reply: Reply) {
@@ -421,6 +451,17 @@ impl Service {
             .take()
             .ok_or("Slice proposal is no longer available")?;
         let source = draft.source.take();
+        let prepared = draft
+            .prepared
+            .take()
+            .ok_or("Slice preview is still preparing")?;
+        prepared.validate_result()?;
+        let range_selection = prepared.movement.as_ref().map(|_| CommittedRangeSelection {
+            session: id.session,
+            project: id.project.clone(),
+            parent: prepared.parent.clone(),
+            range: prepared.range,
+        });
         let store = self.writer()?;
         let cancelled = AtomicBool::new(false);
         let outcome = draft.request.commit(store, source.as_ref(), &cancelled);
@@ -428,11 +469,12 @@ impl Service {
         let commit = outcome.map_err(display)?;
         Ok(CommittedEdit {
             revision: commit.revision_id,
-            selected_node: Some(draft.request.node().clone()),
+            selected_node: Some(prepared.node.clone()),
             preserve_cursor: false,
             cursor: Some(draft.cursor),
             scope: draft.proposal.scope,
             sound: None,
+            range_selection,
         })
     }
 

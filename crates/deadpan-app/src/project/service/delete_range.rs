@@ -43,6 +43,7 @@ impl Service {
             cursor: Some(range.start()),
             scope: scope.clone(),
             sound: None,
+            range_selection: None,
         });
         #[cfg(test)]
         {

@@ -1,0 +1,947 @@
+{
+  "schema_version": 34,
+  "project_id": "798a252a-c87f-4f91-8401-7f87c679c1c6",
+  "revision_id": "7537a07e-f612-4ee1-ae72-267dd8cb8eb9",
+  "presentation_basis": {
+    "width": 320,
+    "height": 180,
+    "frame_rate": {
+      "numerator": 30000,
+      "denominator": 1001
+    },
+    "color_policy": "sdr_rec709"
+  },
+  "basis_state": {
+    "rate_origin": "primary_source",
+    "geometry_origin": "primary_source",
+    "primary": {
+      "asset": "cda86bb4-fe2d-4c49-a05d-76d6eaf5faec",
+      "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+    }
+  },
+  "root": "82f3559e-0ab5-4d79-bb86-4afc44aeda5e",
+  "nodes": {
+    "1197bd0d-64d8-44a4-8ed6-12139c4ebd9b": {
+      "label": "cfr-bframes.mp4",
+      "kind": {
+        "type": "retime",
+        "child": "4cfff149-7121-4c7b-ac5d-58a1e1ed2635",
+        "duration": 60,
+        "mapping": {
+          "start": 60,
+          "end": 120
+        },
+        "pitch": "preserve",
+        "purpose": "partition"
+      }
+    },
+    "1cb7e714-b735-4e0f-a305-7f70c965f931": {
+      "label": "cfr-bframes.mp4",
+      "kind": {
+        "type": "retime",
+        "child": "33fdd173-2ac7-4d5a-8c97-40dea019ebbc",
+        "duration": 30,
+        "mapping": {
+          "start": 30,
+          "end": 60
+        },
+        "pitch": "preserve",
+        "purpose": "partition"
+      }
+    },
+    "33fdd173-2ac7-4d5a-8c97-40dea019ebbc": {
+      "label": "cfr-bframes.mp4",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 120,
+          "video": {
+            "type": "stream",
+            "asset": "cda86bb4-fe2d-4c49-a05d-76d6eaf5faec",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              },
+              "end": {
+                "ticks": 120120,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": {
+            "asset": "cda86bb4-fe2d-4c49-a05d-76d6eaf5faec",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "link": "linked",
+          "audio_offset": 0
+        }
+      }
+    },
+    "398f9f2f-3f04-4d9c-8700-2947886b6d5c": {
+      "label": "cfr-bframes.mp4",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 120,
+          "video": {
+            "type": "stream",
+            "asset": "cda86bb4-fe2d-4c49-a05d-76d6eaf5faec",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              },
+              "end": {
+                "ticks": 120120,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": {
+            "asset": "cda86bb4-fe2d-4c49-a05d-76d6eaf5faec",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "link": "linked",
+          "audio_offset": 0
+        }
+      }
+    },
+    "4cfff149-7121-4c7b-ac5d-58a1e1ed2635": {
+      "label": "cfr-bframes.mp4",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 120,
+          "video": {
+            "type": "stream",
+            "asset": "cda86bb4-fe2d-4c49-a05d-76d6eaf5faec",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              },
+              "end": {
+                "ticks": 120120,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": {
+            "asset": "cda86bb4-fe2d-4c49-a05d-76d6eaf5faec",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "link": "linked",
+          "audio_offset": 0
+        }
+      }
+    },
+    "82f3559e-0ab5-4d79-bb86-4afc44aeda5e": {
+      "label": "Sequence",
+      "kind": {
+        "type": "sequence",
+        "children": [
+          "slice-input-leading-empty",
+          "92d158e3-95bc-4d2e-aa3b-b2de48138151",
+          "1cb7e714-b735-4e0f-a305-7f70c965f931",
+          "d0da0a12-5c56-40c6-922d-107592010245",
+          "1197bd0d-64d8-44a4-8ed6-12139c4ebd9b",
+          "slice-input-trailing-empty"
+        ]
+      }
+    },
+    "92d158e3-95bc-4d2e-aa3b-b2de48138151": {
+      "label": "cfr-bframes.mp4",
+      "kind": {
+        "type": "retime",
+        "child": "398f9f2f-3f04-4d9c-8700-2947886b6d5c",
+        "duration": 20,
+        "mapping": {
+          "start": 0,
+          "end": 20
+        },
+        "pitch": "preserve",
+        "purpose": "partition"
+      }
+    },
+    "c2a95474-3e77-40aa-a669-3433dc6dfa72": {
+      "label": "cfr-bframes.mp4",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 120,
+          "video": {
+            "type": "stream",
+            "asset": "cda86bb4-fe2d-4c49-a05d-76d6eaf5faec",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              },
+              "end": {
+                "ticks": 120120,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": {
+            "asset": "cda86bb4-fe2d-4c49-a05d-76d6eaf5faec",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "link": "linked",
+          "audio_offset": 0
+        }
+      }
+    },
+    "d0da0a12-5c56-40c6-922d-107592010245": {
+      "label": "cfr-bframes.mp4",
+      "kind": {
+        "type": "retime",
+        "child": "c2a95474-3e77-40aa-a669-3433dc6dfa72",
+        "duration": 10,
+        "mapping": {
+          "start": 20,
+          "end": 30
+        },
+        "pitch": "preserve",
+        "purpose": "partition"
+      }
+    },
+    "slice-input-leading-empty": {
+      "label": "slice-input-leading-empty",
+      "kind": {
+        "type": "sequence",
+        "children": []
+      }
+    },
+    "slice-input-trailing-empty": {
+      "label": "slice-input-trailing-empty",
+      "kind": {
+        "type": "sequence",
+        "children": []
+      }
+    }
+  },
+  "assets": {
+    "cda86bb4-fe2d-4c49-a05d-76d6eaf5faec": {
+      "label": "cfr-bframes.mp4",
+      "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "video": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        },
+        "end": {
+          "ticks": 120120,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        }
+      },
+      "audio": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        },
+        "end": {
+          "ticks": 192192,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        }
+      },
+      "still_image": false,
+      "frame_count": 120,
+      "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+    }
+  },
+  "marks": {},
+  "overrides": {},
+  "audio_lineage": {
+    "33fdd173-2ac7-4d5a-8c97-40dea019ebbc": {
+      "allocation": "7537a07e-f612-4ee1-ae72-267dd8cb8eb9",
+      "origin": "398f9f2f-3f04-4d9c-8700-2947886b6d5c"
+    },
+    "398f9f2f-3f04-4d9c-8700-2947886b6d5c": {
+      "allocation": "7537a07e-f612-4ee1-ae72-267dd8cb8eb9",
+      "origin": "398f9f2f-3f04-4d9c-8700-2947886b6d5c"
+    },
+    "4cfff149-7121-4c7b-ac5d-58a1e1ed2635": {
+      "allocation": "7537a07e-f612-4ee1-ae72-267dd8cb8eb9",
+      "origin": "398f9f2f-3f04-4d9c-8700-2947886b6d5c"
+    },
+    "c2a95474-3e77-40aa-a669-3433dc6dfa72": {
+      "allocation": "7537a07e-f612-4ee1-ae72-267dd8cb8eb9",
+      "origin": "398f9f2f-3f04-4d9c-8700-2947886b6d5c"
+    }
+  },
+  "audio_bindings": {
+    "timings": [
+      {
+        "id": {
+          "allocation": "7537a07e-f612-4ee1-ae72-267dd8cb8eb9",
+          "ordinal": 0
+        },
+        "layout": {
+          "root": "82f3559e-0ab5-4d79-bb86-4afc44aeda5e",
+          "rate": {
+            "numerator": 30000,
+            "denominator": 1001
+          },
+          "nodes": {
+            "398f9f2f-3f04-4d9c-8700-2947886b6d5c": {
+              "duration": 120,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "source",
+                "placement": {
+                  "start": {
+                    "numerator": "0",
+                    "denominator": "1"
+                  },
+                  "end": {
+                    "numerator": "120",
+                    "denominator": "1"
+                  }
+                }
+              }
+            },
+            "82f3559e-0ab5-4d79-bb86-4afc44aeda5e": {
+              "duration": 120,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "sequence",
+                "children": [
+                  "slice-input-leading-empty",
+                  "398f9f2f-3f04-4d9c-8700-2947886b6d5c",
+                  "slice-input-trailing-empty"
+                ]
+              }
+            },
+            "slice-input-leading-empty": {
+              "duration": 0,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "sequence",
+                "children": []
+              }
+            },
+            "slice-input-trailing-empty": {
+              "duration": 0,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "sequence",
+                "children": []
+              }
+            }
+          },
+          "overrides": {}
+        }
+      },
+      {
+        "id": {
+          "allocation": "7537a07e-f612-4ee1-ae72-267dd8cb8eb9",
+          "ordinal": 1
+        },
+        "layout": {
+          "root": "82f3559e-0ab5-4d79-bb86-4afc44aeda5e",
+          "rate": {
+            "numerator": 30000,
+            "denominator": 1001
+          },
+          "nodes": {
+            "1197bd0d-64d8-44a4-8ed6-12139c4ebd9b": {
+              "duration": 60,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "retime",
+                "child": "4cfff149-7121-4c7b-ac5d-58a1e1ed2635",
+                "mapping": {
+                  "start": 60,
+                  "end": 120
+                },
+                "pitch": "preserve",
+                "purpose": "partition"
+              }
+            },
+            "1cb7e714-b735-4e0f-a305-7f70c965f931": {
+              "duration": 30,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "retime",
+                "child": "33fdd173-2ac7-4d5a-8c97-40dea019ebbc",
+                "mapping": {
+                  "start": 30,
+                  "end": 60
+                },
+                "pitch": "preserve",
+                "purpose": "partition"
+              }
+            },
+            "33fdd173-2ac7-4d5a-8c97-40dea019ebbc": {
+              "duration": 120,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "source",
+                "placement": {
+                  "start": {
+                    "numerator": "0",
+                    "denominator": "1"
+                  },
+                  "end": {
+                    "numerator": "120",
+                    "denominator": "1"
+                  }
+                }
+              }
+            },
+            "398f9f2f-3f04-4d9c-8700-2947886b6d5c": {
+              "duration": 120,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "source",
+                "placement": {
+                  "start": {
+                    "numerator": "0",
+                    "denominator": "1"
+                  },
+                  "end": {
+                    "numerator": "120",
+                    "denominator": "1"
+                  }
+                }
+              }
+            },
+            "4cfff149-7121-4c7b-ac5d-58a1e1ed2635": {
+              "duration": 120,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "source",
+                "placement": {
+                  "start": {
+                    "numerator": "0",
+                    "denominator": "1"
+                  },
+                  "end": {
+                    "numerator": "120",
+                    "denominator": "1"
+                  }
+                }
+              }
+            },
+            "82f3559e-0ab5-4d79-bb86-4afc44aeda5e": {
+              "duration": 120,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "sequence",
+                "children": [
+                  "slice-input-leading-empty",
+                  "92d158e3-95bc-4d2e-aa3b-b2de48138151",
+                  "d0da0a12-5c56-40c6-922d-107592010245",
+                  "1cb7e714-b735-4e0f-a305-7f70c965f931",
+                  "1197bd0d-64d8-44a4-8ed6-12139c4ebd9b",
+                  "slice-input-trailing-empty"
+                ]
+              }
+            },
+            "92d158e3-95bc-4d2e-aa3b-b2de48138151": {
+              "duration": 20,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "retime",
+                "child": "398f9f2f-3f04-4d9c-8700-2947886b6d5c",
+                "mapping": {
+                  "start": 0,
+                  "end": 20
+                },
+                "pitch": "preserve",
+                "purpose": "partition"
+              }
+            },
+            "c2a95474-3e77-40aa-a669-3433dc6dfa72": {
+              "duration": 120,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "source",
+                "placement": {
+                  "start": {
+                    "numerator": "0",
+                    "denominator": "1"
+                  },
+                  "end": {
+                    "numerator": "120",
+                    "denominator": "1"
+                  }
+                }
+              }
+            },
+            "d0da0a12-5c56-40c6-922d-107592010245": {
+              "duration": 10,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "retime",
+                "child": "c2a95474-3e77-40aa-a669-3433dc6dfa72",
+                "mapping": {
+                  "start": 20,
+                  "end": 30
+                },
+                "pitch": "preserve",
+                "purpose": "partition"
+              }
+            },
+            "slice-input-leading-empty": {
+              "duration": 0,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "sequence",
+                "children": []
+              }
+            },
+            "slice-input-trailing-empty": {
+              "duration": 0,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "sequence",
+                "children": []
+              }
+            }
+          },
+          "overrides": {},
+          "audio_lineage": {
+            "33fdd173-2ac7-4d5a-8c97-40dea019ebbc": {
+              "allocation": "7537a07e-f612-4ee1-ae72-267dd8cb8eb9",
+              "origin": "398f9f2f-3f04-4d9c-8700-2947886b6d5c"
+            },
+            "398f9f2f-3f04-4d9c-8700-2947886b6d5c": {
+              "allocation": "7537a07e-f612-4ee1-ae72-267dd8cb8eb9",
+              "origin": "398f9f2f-3f04-4d9c-8700-2947886b6d5c"
+            },
+            "4cfff149-7121-4c7b-ac5d-58a1e1ed2635": {
+              "allocation": "7537a07e-f612-4ee1-ae72-267dd8cb8eb9",
+              "origin": "398f9f2f-3f04-4d9c-8700-2947886b6d5c"
+            },
+            "c2a95474-3e77-40aa-a669-3433dc6dfa72": {
+              "allocation": "7537a07e-f612-4ee1-ae72-267dd8cb8eb9",
+              "origin": "398f9f2f-3f04-4d9c-8700-2947886b6d5c"
+            }
+          }
+        }
+      }
+    ],
+    "bindings": {
+      "33fdd173-2ac7-4d5a-8c97-40dea019ebbc": {
+        "lattice": {
+          "reference": {
+            "timing": {
+              "allocation": "7537a07e-f612-4ee1-ae72-267dd8cb8eb9",
+              "ordinal": 0
+            },
+            "root": {
+              "type": "project_root_round_even"
+            },
+            "physical": "398f9f2f-3f04-4d9c-8700-2947886b6d5c"
+          },
+          "arguments": [],
+          "births": []
+        },
+        "resume": null,
+        "reanchors": [
+          {
+            "placement": {
+              "reference": {
+                "timing": {
+                  "allocation": "7537a07e-f612-4ee1-ae72-267dd8cb8eb9",
+                  "ordinal": 1
+                },
+                "root": {
+                  "type": "project_root_round_even"
+                },
+                "physical": "33fdd173-2ac7-4d5a-8c97-40dea019ebbc"
+              },
+              "arguments": [],
+              "births": []
+            },
+            "window": {
+              "start": {
+                "numerator": "30",
+                "denominator": "1"
+              },
+              "end": {
+                "numerator": "60",
+                "denominator": "1"
+              }
+            }
+          }
+        ]
+      },
+      "398f9f2f-3f04-4d9c-8700-2947886b6d5c": {
+        "lattice": {
+          "reference": {
+            "timing": {
+              "allocation": "7537a07e-f612-4ee1-ae72-267dd8cb8eb9",
+              "ordinal": 0
+            },
+            "root": {
+              "type": "project_root_round_even"
+            },
+            "physical": "398f9f2f-3f04-4d9c-8700-2947886b6d5c"
+          },
+          "arguments": [],
+          "births": []
+        },
+        "resume": null
+      },
+      "4cfff149-7121-4c7b-ac5d-58a1e1ed2635": {
+        "lattice": {
+          "reference": {
+            "timing": {
+              "allocation": "7537a07e-f612-4ee1-ae72-267dd8cb8eb9",
+              "ordinal": 0
+            },
+            "root": {
+              "type": "project_root_round_even"
+            },
+            "physical": "398f9f2f-3f04-4d9c-8700-2947886b6d5c"
+          },
+          "arguments": [],
+          "births": []
+        },
+        "resume": null
+      },
+      "c2a95474-3e77-40aa-a669-3433dc6dfa72": {
+        "lattice": {
+          "reference": {
+            "timing": {
+              "allocation": "7537a07e-f612-4ee1-ae72-267dd8cb8eb9",
+              "ordinal": 0
+            },
+            "root": {
+              "type": "project_root_round_even"
+            },
+            "physical": "398f9f2f-3f04-4d9c-8700-2947886b6d5c"
+          },
+          "arguments": [],
+          "births": []
+        },
+        "resume": null,
+        "reanchors": [
+          {
+            "placement": {
+              "reference": {
+                "timing": {
+                  "allocation": "7537a07e-f612-4ee1-ae72-267dd8cb8eb9",
+                  "ordinal": 1
+                },
+                "root": {
+                  "type": "project_root_round_even"
+                },
+                "physical": "c2a95474-3e77-40aa-a669-3433dc6dfa72"
+              },
+              "arguments": [],
+              "births": []
+            },
+            "window": {
+              "start": {
+                "numerator": "20",
+                "denominator": "1"
+              },
+              "end": {
+                "numerator": "30",
+                "denominator": "1"
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

@@ -51,6 +51,17 @@ chooses a Sequence slot. `b` compares Before/Proposed, Space auditions or pauses
 and Shift+Space loops both joins. Enter commits once; Escape cancels. The draft
 keeps the copied range and saved editor cursors intact until commit.
 
+For a fresh edited copy, `m` selects Move or returns to Copy. `s` inspects its
+removal site and `f` its insertion site; Shift+Space loops only the selected
+site's bounded context. Site inspection does not change the prepared command.
+`r` leaves Move and always uses Copy for replacement. The insertion destination
+is retained independently through operation switches. Plain `m/s` follow the
+same native focus, repeat and IME ownership rules as the other draft keys.
+The [native Move qualification](qualification/native-move-2026-09-30.md) retains
+the passing 11,904-case routing audit, replayed held-key/focus/composition cases
+and separate native keyboard check. Local Kestrel source SHA-256 is
+`368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2`.
+
 In Your edit, `v` starts a temporal range and a second `v` finishes it; Escape
 clears it. `y` copies a nonempty range from either Original or Your edit. An Edit
 copy retains its source revision through later edits and Undo. The range stays

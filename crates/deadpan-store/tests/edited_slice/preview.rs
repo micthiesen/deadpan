@@ -2,6 +2,111 @@ use super::*;
 use deadpan_store::slice_preview::SliceViewIdentities;
 use std::sync::atomic::AtomicBool;
 
+#[test]
+fn move_preview_seals_only_a_current_validated_command_and_leaves_history_unchanged() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let path = scratch.path().join("move-view.deadpan");
+    let baseline = document()?;
+    let mut store = ProjectStore::create(&path, &baseline)?;
+    let selected = FrameRange::new(ProjectFrame(2), ProjectFrame(17))?;
+    let command = request(
+        &baseline,
+        "move-view",
+        Command::MoveRange {
+            source_revision: baseline.revision_id().clone(),
+            source_parent: node("root"),
+            range: selected,
+            destination: MoveRangeDestination::Seam {
+                parent: node("root"),
+                index: 3,
+            },
+            identities: SplitIdentities { nodes: vec![] },
+            timing: timing("move-view"),
+        },
+    );
+    let cells = authored(&path)?;
+    let admitted = store.preview_edit_slice(&command)?;
+    assert_eq!(admitted.capture_revision(), baseline.revision_id());
+    assert_eq!(
+        admitted.placement_base().map(AsRef::as_ref),
+        Some(&baseline)
+    );
+    assert_eq!(
+        **admitted.document(),
+        store.preview(&command)?.forward.apply(&baseline)?
+    );
+    assert_eq!(admitted.document().duration()?, baseline.duration()?);
+    assert_eq!(
+        admitted.document().nodes(),
+        store.preview(&command)?.forward.apply(&baseline)?.nodes()
+    );
+    assert_eq!(authored(&path)?, cells);
+    for kind in 0..4 {
+        let mut forged = command.clone();
+        let Command::MoveRange {
+            source_revision,
+            destination,
+            identities,
+            ..
+        } = &mut forged.command
+        else {
+            unreachable!()
+        };
+        let expected = match kind {
+            0 => {
+                *source_revision = revision("stale-source");
+                "RevisionConflict"
+            }
+            1 => {
+                forged.expected_revision = revision("stale-destination");
+                "RevisionConflict"
+            }
+            2 => {
+                identities.nodes.push(node("root"));
+                "IdentityConflict"
+            }
+            _ => {
+                *destination = MoveRangeDestination::Interior {
+                    parent: node("group"),
+                    target: node("voice"),
+                    at: FrameDuration::new(3)?,
+                };
+                "InvalidCommand"
+            }
+        };
+        assert_eq!(
+            store.preview_edit_slice(&forged).err().unwrap().code(),
+            expected
+        );
+        assert_eq!(authored(&path)?, cells);
+    }
+    let reader = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+    assert_eq!(
+        reader.preview_edit_slice(&command).err().unwrap().code(),
+        "ProjectReadOnly"
+    );
+    drop(reader);
+    store.commit(&command)?;
+    assert_eq!(store.snapshot()?, **admitted.document());
+    let committed = store.snapshot()?;
+    store.undo(committed.revision_id(), revision("undo-view"))?;
+    let restored = store.snapshot()?;
+    assert_authored(&restored, &baseline)?;
+    let mut stale = command;
+    stale.expected_revision = restored.revision_id().clone();
+    stale.new_revision = revision("after-undo");
+    if let Command::MoveRange { timing, .. } = &mut stale.command {
+        timing.allocation = stale.new_revision.clone();
+    }
+    assert_eq!(
+        store.preview_edit_slice(&stale).err().unwrap().code(),
+        "RevisionConflict"
+    );
+    drop(store);
+    assert!(admitted.check_live(&AtomicBool::new(false)).is_err());
+    Ok(())
+}
+
 fn view_ids(
     document: &ProjectDocument,
     slice: &CapturedEditSlice,

@@ -1,0 +1,18 @@
+import json
+from pathlib import Path
+import sqlite3
+import sys
+
+root = Path('/tmp/deadpan-native-move-20260930/native-qa')
+label = sys.argv[1]
+destination = root / (label + '.sqlite')
+assert not destination.exists(), destination
+with sqlite3.connect(f'file:{root}/Move slices.deadpan/project.sqlite?mode=ro', uri=True) as db:
+    with sqlite3.connect(destination) as out:
+        db.backup(out)
+    head = db.execute('select head_revision from state').fetchone()[0]
+    document = json.loads(db.execute('select document from revisions where id=?', (head,)).fetchone()[0])
+    (root / (label + '-document.json')).write_text(json.dumps(document, indent=2) + '\n')
+    print(json.dumps({'label': label, 'head': head,
+                      'revisions': db.execute('select count(*) from revisions').fetchone()[0],
+                      'document_keys': list(document)}, indent=2))

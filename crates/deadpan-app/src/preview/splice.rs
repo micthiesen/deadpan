@@ -6,14 +6,17 @@ use deadpan_playback::{Snapshot, Window};
 use super::*;
 use crate::navigation::splice::SpliceKey;
 use crate::project::splice::{
-    Destination, Prepared, PreparedMedia, Proposal, ProposalId, ProposalUpdate, Source,
+    Destination, Operation, Prepared, PreparedMedia, Proposal, ProposalId, ProposalUpdate, Source,
     SpliceCommitUpdate,
 };
 use crate::transport::Domain;
 use crate::worker::{EndpointIdentity, EndpointInput, EndpointReply, EndpointSourceId};
 
+mod comparison;
 mod controls;
 mod pictures;
+
+use comparison::{Comparison, Site, map_comparison};
 
 const FOCUS: &str = "place-slice-focus";
 
@@ -42,6 +45,8 @@ pub(super) struct Draft {
     destination: u64,
     replacement: Option<FrameRange>,
     replacing: bool,
+    site: Site,
+    comparison_note: Option<String>,
     pub(super) cursor: u64,
     focus: Focus,
     before: bool,
@@ -87,6 +92,17 @@ impl Draft {
     pub(in crate::preview) fn invalidated_for_check(&self) -> bool {
         self.invalidated
     }
+    #[cfg(feature = "ui-harness")]
+    pub(in crate::preview) fn error_for_check(&self) -> Option<&str> {
+        self.error.as_deref()
+    }
+    #[cfg(feature = "ui-harness")]
+    pub(in crate::preview) fn site_for_check(&self) -> &'static str {
+        match self.site {
+            Site::Removal => "removal",
+            Site::Insertion => "insertion",
+        }
+    }
 
     fn snapshot(&self) -> Option<Arc<Snapshot>> {
         if self.invalidated {
@@ -113,48 +129,79 @@ impl Draft {
         }
     }
 
-    fn comparison_ranges(&self) -> Option<((i64, i64), (i64, i64))> {
+    fn comparison(&self) -> Option<Comparison> {
         let prepared = self.prepared.as_ref()?;
-        let proposed = (prepared.range.start().0, prepared.range.end().0);
-        let saved = prepared.removed.map_or((proposed.0, proposed.0), |range| {
-            (range.start().0, range.end().0)
-        });
-        Some((saved, proposed))
+        Some(Comparison::new(
+            (prepared.range.start().0, prepared.range.end().0),
+            prepared
+                .removed
+                .map(|range| (range.start().0, range.end().0)),
+            prepared.movement.as_ref(),
+            self.site,
+            self.base.plan.duration().frames(),
+            prepared.plan.duration().frames(),
+        ))
     }
 
-    fn compare(&mut self) -> Result<(), String> {
-        let (saved, proposed) = self
-            .comparison_ranges()
+    fn inspect_site(&mut self, site: Site) {
+        self.site = site;
+        self.focus = Focus::Picture;
+        self.position = None;
+        self.comparison_note = None;
+        self.cursor = self.comparison().map_or(self.destination, |comparison| {
+            comparison.affected.side(self.before).0 as u64
+        });
+    }
+
+    fn compare(&mut self, context: playback::AuditionContext) -> Result<(), String> {
+        let comparison = self
+            .comparison()
             .ok_or("Wait for the current slice proposal.")?;
-        let (from, to) = if self.before {
-            (saved, proposed)
+        let rate = self.base.document.presentation_basis().frame_rate;
+        let (windows, _) = comparison.windows(rate, context.lead.0, context.follow.0)?;
+        let samples = comparison.affected.samples(rate)?;
+        let (from, to) = (
+            comparison.affected.side(self.before),
+            comparison.affected.side(!self.before),
+        );
+        let current_sample = self.position.map_or_else(
+            || {
+                rate.audio_boundary(ProjectFrame(self.cursor as i64))
+                    .map(|at| at.0)
+                    .map_err(|e| e.to_string())
+            },
+            |at| Ok(at.0),
+        )?;
+        let current_window = windows.side(self.before);
+        let target_window = windows.side(!self.before);
+        let outside = current_sample < current_window.0 || current_sample > current_window.1;
+        let mapped = if outside {
+            to.0
         } else {
-            (proposed, saved)
+            map_comparison(self.cursor as i64, from, to)?
         };
-        self.cursor = u64::try_from(map_comparison(self.cursor as i64, from, to)?)
-            .map_err(|_| "Negative comparison frame")?;
-        if let Some(position) = self.position {
-            // Map absolute origin-based sample boundaries. The difference of
-            // rounded durations can disagree at NTSC rates.
-            let rate = self.base.document.presentation_basis().frame_rate;
-            let samples = |range: (i64, i64)| -> Result<_, String> {
-                Ok((
-                    rate.audio_boundary(ProjectFrame(range.0))
-                        .map_err(|error| error.to_string())?
-                        .0,
-                    rate.audio_boundary(ProjectFrame(range.1))
-                        .map_err(|error| error.to_string())?
-                        .0,
-                ))
+        self.cursor = u64::try_from(mapped).map_err(|_| "Negative comparison frame")?;
+        self.position = if let Some(position) = self.position {
+            let mapped = if outside {
+                samples.side(!self.before).0
+            } else {
+                map_comparison(
+                    position.0,
+                    samples.side(self.before),
+                    samples.side(!self.before),
+                )?
             };
-            self.position = Some(AudioSample(map_comparison(
-                position.0,
-                samples(from)?,
-                samples(to)?,
-            )?));
-        }
+            Some(AudioSample(mapped.clamp(target_window.0, target_window.1)))
+        } else {
+            None
+        };
+        self.comparison_note = outside.then(|| {
+            "Outside this join's context; comparison returned to its counterpart join.".into()
+        });
         self.before = !self.before;
-        self.cursor = self.cursor.min(self.frames().saturating_sub(1));
+        // A terminal join is a valid cursor boundary. Picture requests clamp
+        // separately to the final frame, without changing this boundary.
+        self.cursor = self.cursor.min(self.frames());
         Ok(())
     }
 
@@ -216,6 +263,7 @@ impl Draft {
         self.prepared = None;
         self.error = None;
         self.position = None;
+        self.comparison_note = None;
         self.dirty = true;
         self.proposal.destination = if self.replacing {
             Destination::Replace {
@@ -226,31 +274,6 @@ impl Draft {
         };
         Ok(())
     }
-}
-
-/// Shared prefixes keep their coordinate; suffixes retain their offset from
-/// the appropriate join. Removed interiors clamp to the surviving interval.
-fn map_comparison(value: i64, from: (i64, i64), to: (i64, i64)) -> Result<i64, String> {
-    if from.0 != to.0 || from.0 > from.1 || to.0 > to.1 {
-        return Err("Comparison intervals do not share a valid Edit boundary".into());
-    }
-    if value <= from.0 {
-        return Ok(value);
-    }
-    if value >= from.1 {
-        return value
-            .checked_sub(from.1)
-            .and_then(|offset| to.1.checked_add(offset))
-            .ok_or_else(|| "Comparison coordinate overflow".into());
-    }
-    let offset = value
-        .checked_sub(from.0)
-        .ok_or("Comparison offset overflow")?;
-    let retained =
-        to.1.checked_sub(to.0)
-            .ok_or("Comparison duration overflow")?;
-    to.0.checked_add(offset.min(retained.saturating_sub(1).max(0)))
-        .ok_or_else(|| "Comparison coordinate overflow".into())
 }
 
 fn placement_at(
@@ -382,6 +405,7 @@ impl DeadpanApp {
                 change: 1,
             },
             source,
+            operation: Operation::Copy,
             scope: target.scope,
             parent,
             destination,
@@ -407,6 +431,8 @@ impl DeadpanApp {
             destination: target.cursor,
             replacement: target.range,
             replacing: false,
+            site: Site::Insertion,
+            comparison_note: None,
             cursor: target.cursor,
             focus: Focus::Destination,
             before: false,
@@ -450,15 +476,8 @@ impl DeadpanApp {
                 .is_some_and(|draft| draft.applying && draft.proposal.id == commit.id)
         {
             match commit.result {
-                Ok(saved) => {
+                Ok(_) => {
                     self.stop_playback();
-                    if self.workspace.as_ref().is_some_and(|workspace| {
-                        workspace.session == commit.id.session
-                            && workspace.document.project_id() == &commit.id.project
-                            && workspace.document.revision_id() == &saved.revision
-                    }) {
-                        self.edit_range.clear();
-                    }
                     self.splice = None;
                     self.endpoint_worker.clear();
                     self.bindings.clear();
@@ -513,6 +532,7 @@ impl DeadpanApp {
                     }
                 }
                 let result = update.result.and_then(|prepared| {
+                    prepared.validate_result()?;
                     prepared
                         .snapshot
                         .validate_proposed_base(prepared.base.session, &prepared.base.document)
@@ -544,13 +564,9 @@ impl DeadpanApp {
                     if prepared.base.session != update.id.session
                         || prepared.base.document.project_id() != &update.id.project
                         || prepared.base.document.revision_id() != &update.id.base_revision
-                        || prepared
-                            .plan
-                            .node_duration(&prepared.node)
-                            .is_none_or(|duration| {
-                                duration.frames()
-                                    != prepared.range.end().0 - prepared.range.start().0
-                            })
+                        || prepared.parent != draft.proposal.parent
+                        || prepared.movement.is_some()
+                            != (draft.proposal.operation == Operation::Move)
                         || prepared.removed
                             != match draft.proposal.destination {
                                 Destination::Replace { range } => Some(range),
@@ -569,6 +585,11 @@ impl DeadpanApp {
                         draft.base_audio = Arc::new(prepared.base.playback_snapshot());
                         draft.prepared = Some(prepared);
                         draft.error = None;
+                        if draft.proposal.operation == Operation::Move
+                            && draft.focus == Focus::Picture
+                        {
+                            draft.inspect_site(draft.site);
+                        }
                     }
                     Err(error) => {
                         draft.prepared = None;
@@ -818,6 +839,24 @@ impl DeadpanApp {
         let mut changed = false;
         let mut endpoints = false;
         match action {
+            SpliceKey::Move => {
+                if !draft.edited_source() {
+                    draft.error = Some(
+                        "Original stays immutable. Copy a range from Your edit to move it.".into(),
+                    );
+                    return;
+                }
+                draft.proposal.operation = if draft.proposal.operation == Operation::Move {
+                    Operation::Copy
+                } else {
+                    Operation::Move
+                };
+                draft.replacing = false;
+                draft.site = Site::Insertion;
+                draft.focus = Focus::Picture;
+                draft.cursor = draft.destination;
+                changed = true;
+            }
             SpliceKey::Replace => {
                 if draft.replacement.is_none() {
                     draft.error = Some(
@@ -826,6 +865,8 @@ impl DeadpanApp {
                     );
                     return;
                 }
+                draft.proposal.operation = Operation::Copy;
+                draft.site = Site::Insertion;
                 draft.replacing = !draft.replacing;
                 draft.focus = if draft.replacing {
                     Focus::Picture
@@ -851,10 +892,22 @@ impl DeadpanApp {
                     return;
                 }
                 draft.focus = Focus::Destination;
+                draft.site = Site::Insertion;
                 draft.cursor = draft.destination;
             }
             SpliceKey::Picture => {
-                draft.focus = Focus::Picture;
+                if draft.proposal.operation == Operation::Move {
+                    draft.inspect_site(Site::Insertion);
+                } else {
+                    draft.focus = Focus::Picture;
+                }
+            }
+            SpliceKey::Removal => {
+                if draft.proposal.operation != Operation::Move {
+                    draft.error = Some("Choose Move with m to inspect the removal join.".into());
+                    return;
+                }
+                draft.inspect_site(Site::Removal);
             }
             SpliceKey::Step(forward) => {
                 let advance = |value: u64, min: u64, max: u64| {
@@ -901,8 +954,9 @@ impl DeadpanApp {
                         changed = true;
                     }
                     Focus::Picture => {
-                        draft.cursor = advance(draft.cursor, 0, draft.frames().saturating_sub(1));
+                        draft.cursor = advance(draft.cursor, 0, draft.frames());
                         draft.position = None;
+                        draft.comparison_note = None;
                     }
                 }
             }
@@ -938,6 +992,7 @@ impl DeadpanApp {
                 draft.slot = Some(slot);
                 draft.cursor = draft.destination;
                 draft.focus = Focus::Destination;
+                draft.site = Site::Insertion;
                 changed = true;
             }
             _ => {}
@@ -967,7 +1022,7 @@ impl DeadpanApp {
             draft.position = Some(heard);
         }
         if action == SpliceKey::Compare
-            && let Err(error) = draft.compare()
+            && let Err(error) = draft.compare(context)
         {
             draft.error = Some(error);
             return;
@@ -980,33 +1035,22 @@ impl DeadpanApp {
             let snapshot = draft
                 .snapshot()
                 .ok_or("Wait for the current slice proposal.")?;
-            let prepared = draft
-                .prepared
-                .as_ref()
+            let comparison = draft
+                .comparison()
                 .ok_or("Wait for the current slice proposal.")?;
             let domain = Domain::Sequence {
                 rate: snapshot.document.presentation_basis().frame_rate,
                 frames: i64::try_from(draft.frames())
                     .map_err(|_| "Slice preview duration overflow")?,
             };
-            let end = domain.end()?;
-            let interval = if draft.before {
-                prepared.removed.map_or(
-                    (prepared.range.start().0, prepared.range.start().0),
-                    |range| (range.start().0, range.end().0),
-                )
-            } else {
-                (prepared.range.start().0, prepared.range.end().0)
-            };
-            let start = domain
-                .sample_at_boundary(interval.0 as u64)?
-                .0
-                .saturating_sub(context.lead.0)
-                .max(0);
-            let interval_end = domain.sample_at_boundary(interval.1 as u64)?;
-            let finish = interval_end.0.saturating_add(context.follow.0).min(end.0);
+            let (windows, _) = comparison.windows(
+                snapshot.document.presentation_basis().frame_rate,
+                context.lead.0,
+                context.follow.0,
+            )?;
+            let (start, finish) = windows.side(draft.before);
             let looping = draft.looping;
-            let window = Window::new(AudioSample(start.min(end.0)), AudioSample(finish), looping)
+            let window = Window::new(AudioSample(start), AudioSample(finish), looping)
                 .map_err(|error| error.to_string())?;
             let at = if action == SpliceKey::Loop {
                 window.start()

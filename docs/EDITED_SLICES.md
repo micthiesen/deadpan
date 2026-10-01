@@ -4,9 +4,9 @@
 range from Your edit. `Command::SpliceSlice` inserts it at an ordinary Sequence
 seam, `SpliceSliceAt` inserts inside a named direct child, and `ReplaceSlice`
 replaces a nonempty range in that Sequence. Each is one reversible transaction.
-These core and headless boundaries support
-the native placement workflow specified in Section 9.7; they do not establish
-that its native controls, move or occurrence editing are complete.
+The native [placement workflow](SLICE_PLACEMENT.md) uses these boundaries for
+linked Copy/Replace and the separate [MoveRange command](ATOMIC_MOVES.md) for
+current-source removal. Section 9.7 remains partial.
 
 ## Ownership and capture
 
@@ -178,8 +178,10 @@ cursor, and a coalesced copy completion cannot replace reopening guidance.
 ## Remaining product work
 
 The [atomic MoveRange command](ATOMIC_MOVES.md) relocates current contents between
-ordinary Sequence scopes, preserving whole-unit identities. Its native Move
-control, explicit removal/insertion join comparison and audition remain required.
+ordinary Sequence scopes, preserving whole-unit identities. Native `:splice`
+provides explicit Move selection and local removal/insertion picture comparison
+and audition. Historical copies remain copyable but cannot authorize removal
+from a newer revision. See [native qualification](qualification/native-move-2026-09-30.md).
 Named register persistence, role-only placement, cut-to-register behavior,
 motion/text-object operators and nested occurrence interiors remain required.
 These workflows remain open beyond the capture and placement commands described

@@ -77,10 +77,10 @@ impl ProjectStore {
         request: &CommandRequest,
     ) -> Result<AdmittedSliceView, StoreError> {
         self.require_writer()?;
-        let slice = command_slice(&request.command)?;
+        let capture_revision = placement_source_revision(&request.command)?;
         let transaction = self.connection.unchecked_transaction()?;
         let plan = crate::prepare_command(&transaction, request)?;
-        self.admit_slice_view(plan.next, Some(plan.current), slice.revision_id().clone())
+        self.admit_slice_view(plan.next, Some(plan.current), capture_revision.clone())
     }
 
     /// Materialize only the copied ownership contribution in an empty neutral
@@ -183,11 +183,17 @@ impl ProjectStore {
     }
 }
 
-fn command_slice(command: &Command) -> Result<&CapturedEditSlice, StoreError> {
+fn placement_source_revision(command: &Command) -> Result<&RevisionId, StoreError> {
     match command {
         Command::SpliceSlice { slice, .. }
         | Command::SpliceSliceAt { slice, .. }
-        | Command::ReplaceSlice { slice, .. } => Ok(slice),
+        | Command::ReplaceSlice { slice, .. } => Ok(slice.revision_id()),
+        // prepare_command validates this current source revision, both scopes,
+        // the complete identity pool and ordinary media authority. Unlike a
+        // copied slice this branch grants no historical media exception.
+        Command::MoveRange {
+            source_revision, ..
+        } => Ok(source_revision),
         _ => Err(invalid("edited preview requires an edited-slice placement")),
     }
 }

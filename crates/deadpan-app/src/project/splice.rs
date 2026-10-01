@@ -4,7 +4,8 @@ use std::ops::Range;
 use std::sync::Arc;
 
 use deadpan_core::{
-    AssetId, FrameDuration, FrameRange, NodeId, ProjectId, RevisionId, SourceQualificationId,
+    AssetId, FrameDuration, FrameRange, NodeId, NodeKind, ProjectDocument, ProjectFrame, ProjectId,
+    RevisionId, SourceQualificationId,
 };
 use deadpan_plan::RenderPlan;
 
@@ -23,10 +24,26 @@ pub struct ProposalId {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Proposal {
     pub id: ProposalId,
+    pub operation: Operation,
     pub source: Source,
     pub scope: SequenceScope,
     pub parent: NodeId,
     pub destination: Destination,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Operation {
+    #[default]
+    Copy,
+    Move,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Movement {
+    pub source_parent: NodeId,
+    pub source_before: FrameRange,
+    pub destination_before: ProjectFrame,
+    pub removal_after: ProjectFrame,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -115,10 +132,75 @@ pub struct Prepared {
     pub media: PreparedMedia,
     pub plan: Arc<RenderPlan>,
     pub node: NodeId,
+    /// Parent and first child of the exact final contiguous result forest.
+    pub parent: NodeId,
     /// Exact proposed Edit interval occupied by the linked insertion.
     pub range: FrameRange,
     /// The exact interval removed from the committed base, if replacing.
     pub removed: Option<FrameRange>,
+    pub movement: Option<Movement>,
+}
+
+impl Prepared {
+    /// A move can retain several roots. Validate their entire final interval,
+    /// without requiring a synthetic group or treating the first root as all of it.
+    pub fn validate_result(&self) -> Result<(), String> {
+        let first = result_forest_first(
+            &self.snapshot.document,
+            &self.plan,
+            &self.parent,
+            self.range,
+        )?;
+        if first != self.node
+            || (self.movement.is_some() && self.removed.is_some())
+            || (self.movement.is_none()
+                && self.plan.node_duration(&self.node) != Some(self.range.duration()))
+        {
+            return Err("Slice result differs from its retained forest".into());
+        }
+        Ok(())
+    }
+}
+
+pub(super) fn result_forest_first(
+    document: &ProjectDocument,
+    plan: &RenderPlan,
+    parent: &NodeId,
+    range: FrameRange,
+) -> Result<NodeId, String> {
+    let Some(NodeKind::Sequence { children }) = document.nodes().get(parent).map(|node| &node.kind)
+    else {
+        return Err("Slice result parent is not an ordinary Sequence".into());
+    };
+    let mut at = document
+        .source_splice_boundary(parent, 0)
+        .map_err(|error| error.to_string())?
+        .0;
+    let mut first = None;
+    let mut end = range.start().0;
+    for child in children {
+        let duration = plan
+            .node_duration(child)
+            .ok_or("Slice result child is missing from its plan")?;
+        let next = at
+            .checked_add(duration.frames())
+            .ok_or("Slice result range overflow")?;
+        if next > range.start().0 && at < range.end().0 {
+            if at < range.start().0 || next > range.end().0 || at != end {
+                return Err("Slice result is not a contiguous complete child range".into());
+            }
+            first.get_or_insert_with(|| child.clone());
+            end = next;
+        }
+        at = next;
+        if at >= range.end().0 {
+            break;
+        }
+    }
+    if end != range.end().0 || range.start() >= range.end() {
+        return Err("Slice result does not span its retained range".into());
+    }
+    first.ok_or_else(|| "Slice result has no first child".into())
 }
 
 #[derive(Clone)]

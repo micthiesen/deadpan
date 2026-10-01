@@ -8,6 +8,7 @@ use egui::{Key, Modifiers};
 
 mod edited;
 mod input;
+mod move_range;
 mod replacement;
 
 const APPLY: &str = "Place slice · Enter";
@@ -15,7 +16,7 @@ const CANCEL: &str = "Cancel · Esc";
 const HEADING: &str = "Place slice keyboard controls";
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
-    d.report.skipped.push("Place slice covers linked Original and edited-slice copying, insertion and replacement in ordinary Sequence scopes. Atomic move, separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.".into());
+    d.report.skipped.push("Place slice covers linked Original and edited-slice copying, insertion, replacement and atomic Move in ordinary Sequence scopes. Separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.".into());
     d.report.skipped.push("The replay uses genuine source qualification, endpoint decoding, SDR GPU pictures, proposed documents and durable commands. Audio delivery and a concurrent service Undo are explicitly injected. It does not open an audio device or establish acoustic quality.".into());
     let full_original = document(d)?.nodes().clone();
     let baseline = d.revision();
@@ -220,6 +221,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     input::run(d)?;
     replacement::run(d)?;
     edited::run(d)?;
+    move_range::run(d)?;
     Ok(())
 }
 
@@ -1144,6 +1146,7 @@ pub(super) fn state(d: &Driver<'_>) -> Value {
         let proposal = draft.proposal_for_check();
         json!({"session":proposal.id.session,"project":proposal.id.project,"base_revision":proposal.id.base_revision,
             "draft":proposal.id.draft,"change":proposal.id.change,"ordinals":proposal.source.boundaries().ok(),"parent":proposal.parent,
+            "operation":format!("{:?}",proposal.operation),"site":draft.site_for_check(),"error":draft.error_for_check(),
             "destination":format!("{:?}",proposal.destination),"ready":draft.ready_for_check(),"before":draft.before_for_check(),"invalidated":draft.invalidated_for_check(),
             "cursor":draft.cursor,"position":draft.position.map(|sample| sample.0),
             "prepared":draft.prepared_for_check().map(|prepared| json!({"revision":prepared.snapshot.document.revision_id(),

@@ -5,7 +5,7 @@ use std::sync::atomic::AtomicBool;
 
 use deadpan_core::{
     AudioTimingId, CapturedEditSlice, Command, CommandRequest, EditTransaction, FrameDuration,
-    FrameRange, ProjectFrame, SplitIdentities,
+    FrameRange, MoveRangeDestination, ProjectFrame, SplitIdentities,
 };
 use deadpan_store::source_registration::{
     SourceMomentInsertionRequest, SourceMomentInteriorInsertionRequest,
@@ -15,7 +15,7 @@ use deadpan_store::{CommitOutcome, ProjectStore, StoreError};
 
 use super::super::{AssetId, NodeId, PreparedSourceRegistration, Result, display, node, revision};
 use crate::project::Workspace;
-use crate::project::splice::Destination;
+use crate::project::splice::{Destination, Movement};
 
 pub(in crate::project::service) enum Request {
     Slot(SourceMomentInsertionRequest),
@@ -27,9 +27,82 @@ pub(in crate::project::service) enum Request {
         duration: FrameDuration,
         removed: Option<FrameRange>,
     },
+    Move {
+        request: Box<CommandRequest>,
+        inserted: FrameRange,
+        movement: Movement,
+    },
 }
 
 impl Request {
+    pub(super) fn move_edited(
+        workspace: &Workspace,
+        parent: &NodeId,
+        destination: &Destination,
+        slice: &CapturedEditSlice,
+    ) -> Result<(Self, ProjectFrame)> {
+        if slice.revision_id() != workspace.document.revision_id() {
+            return Err(
+                "Copied Edit is from an older revision; select and copy again to move".into(),
+            );
+        }
+        let destination = match destination {
+            Destination::Slot(index) => MoveRangeDestination::Seam {
+                parent: parent.clone(),
+                index: *index,
+            },
+            Destination::Interior { target, at } => MoveRangeDestination::Interior {
+                parent: parent.clone(),
+                target: target.clone(),
+                at: *at,
+            },
+            Destination::Replace { .. } => {
+                return Err(
+                    "Move cannot replace a selection; choose an insertion destination".into(),
+                );
+            }
+        };
+        let plan = workspace
+            .document
+            .range_move(slice.parent(), slice.range(), &destination)
+            .map_err(display)?;
+        if plan.is_noop {
+            return Err("Already at this position; no change".into());
+        }
+        let new_revision = revision();
+        let command = Command::MoveRange {
+            source_revision: slice.revision_id().clone(),
+            source_parent: slice.parent().clone(),
+            range: slice.range(),
+            destination,
+            identities: SplitIdentities {
+                nodes: (0..plan.required_ids).map(|_| node()).collect(),
+            },
+            timing: AudioTimingId {
+                allocation: new_revision.clone(),
+                ordinal: 0,
+            },
+        };
+        Ok((
+            Self::Move {
+                request: Box::new(CommandRequest {
+                    project_id: workspace.document.project_id().clone(),
+                    expected_revision: workspace.document.revision_id().clone(),
+                    new_revision,
+                    command,
+                }),
+                inserted: plan.inserted,
+                movement: Movement {
+                    source_parent: slice.parent().clone(),
+                    source_before: slice.range(),
+                    destination_before: plan.destination_before,
+                    removal_after: plan.removal_join,
+                },
+            },
+            plan.inserted.start(),
+        ))
+    }
+
     pub(in crate::project::service) fn edited(
         workspace: &Workspace,
         parent: &NodeId,
@@ -208,12 +281,13 @@ impl Request {
         Ok((request, cursor))
     }
 
-    pub(in crate::project::service) fn node(&self) -> &NodeId {
+    pub(in crate::project::service) fn node(&self) -> Option<&NodeId> {
         match self {
-            Self::Slot(request) => &request.node,
-            Self::Interior(request) => &request.node,
-            Self::Replace(request) => &request.node,
-            Self::Edited { node, .. } => node,
+            Self::Slot(request) => Some(&request.node),
+            Self::Interior(request) => Some(&request.node),
+            Self::Replace(request) => Some(&request.node),
+            Self::Edited { node, .. } => Some(node),
+            Self::Move { .. } => None,
         }
     }
 
@@ -222,13 +296,13 @@ impl Request {
             Self::Slot(request) => Some(&request.asset),
             Self::Interior(request) => Some(&request.asset),
             Self::Replace(request) => Some(&request.asset),
-            Self::Edited { .. } => None,
+            Self::Edited { .. } | Self::Move { .. } => None,
         }
     }
 
     pub(super) fn edited_command(&self) -> Option<&CommandRequest> {
         match self {
-            Self::Edited { request, .. } => Some(request),
+            Self::Edited { request, .. } | Self::Move { request, .. } => Some(request),
             _ => None,
         }
     }
@@ -236,6 +310,7 @@ impl Request {
     pub(super) fn inserted_duration(&self) -> Option<FrameDuration> {
         match self {
             Self::Edited { duration, .. } => Some(*duration),
+            Self::Move { inserted, .. } => Some(inserted.duration()),
             _ => None,
         }
     }
@@ -243,8 +318,15 @@ impl Request {
     pub(super) fn removed(&self) -> Option<FrameRange> {
         match self {
             Self::Replace(request) => Some(request.range),
-            Self::Slot(_) | Self::Interior(_) => None,
+            Self::Slot(_) | Self::Interior(_) | Self::Move { .. } => None,
             Self::Edited { removed, .. } => *removed,
+        }
+    }
+
+    pub(super) fn movement(&self) -> Option<&Movement> {
+        match self {
+            Self::Move { movement, .. } => Some(movement),
+            _ => None,
         }
     }
 
@@ -262,7 +344,7 @@ impl Request {
             Self::Replace(request) => {
                 store.preview_prepared_source_replacement(request, source, cancelled)
             }
-            Self::Edited { request, .. } => store.preview(request),
+            Self::Edited { request, .. } | Self::Move { request, .. } => store.preview(request),
         }
     }
 
@@ -291,7 +373,7 @@ impl Request {
                 None,
                 cancelled,
             ),
-            Self::Edited { request, .. } => store.commit(request),
+            Self::Edited { request, .. } | Self::Move { request, .. } => store.commit(request),
         }
     }
 }

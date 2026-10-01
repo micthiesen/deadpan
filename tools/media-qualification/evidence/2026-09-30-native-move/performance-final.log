@@ -1,0 +1,26 @@
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `release` profile [optimized] target(s) in 1m 41s
+     Running `target/release/deadpan-app --ui-check --mode performance --output /tmp/deadpan-native-move-20260930/performance-final --kestrel-source /Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift`
+workspace: PASS
+editing: PASS
+camera: PASS
+menus: PASS
+delayed-preview: PASS
+rapid-input: PASS
+playback-feedback: PASS
+large-project: PASS
+edit-latency: PASS
+nested-pause: PASS
+original-moment: PASS
+[h264 @ 0x7b5349180] decode_slice_header error
+place-slice: PASS
+delete-range: PASS
+original-playback: PASS
+sound-playback: PASS
+sound-placement: PASS
+[aac @ 0x7b534b480] get_buffer() failed
+room-tone: PASS
+gain: PASS
+retime: PASS
+render: PASS
+UI feedback: /tmp/deadpan-native-move-20260930/performance-final/report.html

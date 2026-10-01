@@ -6,6 +6,13 @@ Your edit. To replace time, select an Edit range with `v`, motion and `v`,
 open `:splice`, then choose **Replace selection · r**. Fast `p/P` replaces a
 selected Edit range immediately; without one it inserts at a Sequence slot.
 
+For a copy freshly captured from Your edit, **Move slice · m** relocates the
+linked range in one transaction. The source and destination must still refer
+to that same committed revision. An older register remains valid for Copy;
+after another edit or Undo, yank again before moving. Original is immutable
+and only supports Copy. Move and Replace are mutually exclusive. Toggling
+either operation retains the separately captured insertion destination.
+
 The current implementation accepts child seams and strict interiors of direct
 Source, ordinary Hold and supported transparent-fragment children in ordinary
 Sequence groups. The captured group remains the insertion owner. Enter a child
@@ -24,13 +31,15 @@ survive in order; strictly interior ones are removed.
 | --- | --- |
 | `i`, `o` | Select included In or exclusive Out for local refinement. |
 | `r` | Switch between Insert and Replace selection when a captured range exists. |
+| `m` | Switch between Copy and Move for an edited slice; leave Replace. |
 | `d` | Select the insertion boundary; replacement keeps its removal range fixed. |
 | `h/l`, Left/Right | Adjust the selected control by a frame; counts work. |
-| `j/k` | In Insert, next/previous Sequence slot, including distinct zero-length slots. |
-| `f` | Inspect the destination picture without changing placement. |
+| `j/k` | In Insert or Move, next/previous Sequence slot, including distinct zero-length slots. |
+| `f` | Inspect the destination picture; in Move, select the insertion join. |
+| `s` | In Move, select the source removal join. |
 | `b` | Compare Before and Proposed in the captured destination context. |
 | Space | Play/pause; resume at the retained heard sample. |
-| Shift+Space | Loop the inserted interval with context around both joins. |
+| Shift+Space | Loop insertion/replacement with context; in Move, loop the selected site. |
 | Enter | Commit the exact prepared proposal once. |
 | Escape | Cancel and restore the entry cursors and pane. |
 | Tab / Shift+Tab | Traverse native controls; Enter activates the focused button. |
@@ -44,6 +53,33 @@ state remain visible. Replace shows the removed and proposed intervals at the
 same scale, both exact frame counts and the signed change in duration.
 Pending or unavailable pictures cannot acquire successful display labels.
 Text composition and reserved macOS/Kestrel chords retain input ownership.
+
+Move shows two local timelines with separate saved/proposed intervals, the
+source and destination groups, and unchanged total duration. Switching `s/f`
+changes inspection only; it does not rebuild the proposal. A destination
+strictly inside the source range fails. An exact no-op explains that there is
+no change and cannot commit, while its source endpoints remain inspectable.
+
+## Comparing move joins
+
+For source `[a,b)` and retained destination `d`, removal compares the saved
+source range with the proposed closed join. Insertion compares the saved
+destination seam with the proposed inserted range. Before/Proposed translates
+prefix and suffix offsets relative to the selected site. Interior time clamps
+to its counterpart; an exact empty seam maps to the counterpart start.
+
+Use complete absolute frame-to-sample boundaries for audio. This is a local
+time comparison, not a promise that every sound has moved: root-owned sound
+events keep their global clocks. Loop lead/follow is bounded by the project
+and the other move site. The UI labels context shortened at that other site.
+Comparison outside the paired context visibly returns to the counterpart join.
+Playing and paused states are retained. A terminal cursor stays at the exact
+boundary; the displayed picture is the final included frame.
+
+A move across group ownership at `d=a` or `d=b` can change framing or sound
+without changing frame order. Both sides then compare identical global frames
+and samples and say **Move between groups; timing unchanged**. The timelines
+show the same interval on both sides.
 
 ## Authority and lifetime
 
@@ -70,6 +106,16 @@ Only the matching ready identity can commit. The service uses the retained
 request, so the saved document is exactly the previewed document. A successful
 receipt survives a later workspace-refresh failure, and retransmitting that
 success cannot insert a second slice. Undo restores the preceding structure.
+
+Move retains one `MoveRange` request and admits its proposed media through the
+current-revision store validation path. It reuses the edited picture/audio view;
+historical copying does not grant authority to move. The result may contain
+several complete roots and receives no artificial enclosing group. Both service
+and UI validate the complete contiguous result interval. Its commit receipt
+carries that exact range and destination parent, session and project. The UI
+installs the finished selection once, only with the matching visible revision
+and reconciled scope. A failed refresh preserves the old visible selection and
+the saved-edit reopening guidance. See [atomic moves](ATOMIC_MOVES.md).
 
 Interior placement uses one `SpliceSourceAt` command. The service allocates all
 Split identities once; commit reuses those identities and the exact local
@@ -107,6 +153,6 @@ suffix using exact absolute frame-to-sample boundaries.
 ## Remaining specification work
 
 This is partial [§9.7](spec/DEADPAN_SPEC.md#97-visual-slice-placement).
-Moving edited slices, picture-only and audio-only policies,
+Picture-only and audio-only policies, cut-to-register, named registers,
 and Repeat/Retime occurrence destinations
 remain required. These controls do not establish completion of DP-05 or DP-20.

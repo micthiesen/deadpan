@@ -261,12 +261,43 @@ the collector rechecked all 1,338 inputs.
 [Qualification](../qualification/atomic-move-2026-09-30.md) records exact evidence
 and limits. Core 34/database 43 are unchanged.
 
-Next: add native Copy/Move operation choice, strictly current source authority,
-visible removal and insertion joins, bounded site audition/comparison and
-receipt-bound moved range selection. Do not wrap moved units to satisfy the
-existing copy result's single-node metadata. Historical copy stays valid after
-edits/Undo; move must reject it. Preserve the reserved user app/Space.
+The native increment below adds the operation choice and join inspection.
 All requirements and delivery gates remain incomplete.
+
+## Native linked Move, 2026-09-30
+
+Native `:splice` now exposes Copy/Move with `m`, removal/insertion sites with
+`s/f`, and saved/proposed comparison with `b`. Source refinement stays local to
+the draft. Move leaves Replace and restores the independent insertion target;
+Replace always uses Copy. Current source authority is checked through ordinary
+command preparation. Historical copying remains valid after edits and Undo but
+cannot authorize removal. No-ops allocate nothing and disable Apply while
+retaining usable source endpoints.
+
+Move previews and commits the same contiguous forest without a synthetic group.
+Keep its first child's identity separate from its complete interval. Selection
+requires the matching session, project, revision and destination parent; scope
+restoration must work whether receipt or workspace arrives first. Duplicate and
+old-session completion cannot retarget later navigation. Site comparison uses
+exact absolute frame/sample pairs and context capped by the other site. Boundary
+reparenting retains global coordinates and labels unchanged timing. A stopped
+terminal sample stays at the exact end boundary; only picture lookup clamps to
+the last frame.
+
+The [qualification](../qualification/native-move-2026-09-30.md) records media,
+interaction, final gate evidence and remaining limits. The compact layout measures
+viewer/footer text before paint and preserves both 44-point timeline rows.
+Final verification passes 2,807 workspace tests, 414 app/harness tests, formatting
+and strict workspace/all-target Clippy. The final app run covers a last help-only
+sentence correction; the evidence collector verifies that exact delta from the
+workspace/replay build. Visual replay passes 752 placement checks plus Kestrel;
+release replay passes 3,314 checks. Native keys and consistent SQLite backups
+verify both join comparisons, cancel, one Move commit, complete authored Undo
+and historical Move rejection. The separate app exited and released its lock.
+Core 34/database 43 are unchanged. Named/persistent registers, cut-to-register,
+role-only placement, motion/text-object operators and temporal occurrence
+interiors remain open. Preserve the reserved user app/Space. No requirement or
+delivery gate is complete.
 
 ## Native identity, 2026-09-30
 

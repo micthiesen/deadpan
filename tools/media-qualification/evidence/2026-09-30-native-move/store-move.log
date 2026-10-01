@@ -1,0 +1,142 @@
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 49s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_store-3e9e9d195f16720b)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 56 filtered out; finished in 0.00s
+
+     Running tests/delete_range.rs (target/debug/deps/delete_range-51d986af71b4c536)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/delete_ripple.rs (target/debug/deps/delete_ripple-669f0acdd0ad0004)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s
+
+     Running tests/edited_slice.rs (target/debug/deps/edited_slice-426720f06e652619)
+
+running 1 test
+test preview::move_preview_seals_only_a_current_validated_command_and_leaves_history_unchanged ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.12s
+
+     Running tests/generated_admission.rs (target/debug/deps/generated_admission-0301a9e9a293bafe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s
+
+     Running tests/generated_media.rs (target/debug/deps/generated_media-1f0250ee59c06b82)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/generated_read_handle.rs (target/debug/deps/generated_read_handle-63ca26ae5501b225)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+     Running tests/generation.rs (target/debug/deps/generation-49cf1dda3829f186)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.00s
+
+     Running tests/generation_attempts.rs (target/debug/deps/generation_attempts-5fbb264574f5e2f4)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/generation_bundles.rs (target/debug/deps/generation_bundles-cd411edc867bb87f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 18 filtered out; finished in 0.00s
+
+     Running tests/host_owner.rs (target/debug/deps/host_owner-69d7fa4845374701)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.00s
+
+     Running tests/migration.rs (target/debug/deps/migration-07825eca01bad203)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 131 filtered out; finished in 0.00s
+
+     Running tests/occurrence_edits.rs (target/debug/deps/occurrence_edits-703dece05810fbcb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
+     Running tests/original_media.rs (target/debug/deps/original_media-ade3cb56d4825d6f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/original_preparation.rs (target/debug/deps/original_preparation-e5de79faf15f3f90)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.00s
+
+     Running tests/persistence.rs (target/debug/deps/persistence-11e29c84cb7804a0)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 19 filtered out; finished in 0.00s
+
+     Running tests/prepared_checkpoint.rs (target/debug/deps/prepared_checkpoint-bb6743d4f559fe34)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 10 filtered out; finished in 0.00s
+
+     Running tests/prepared_relink.rs (target/debug/deps/prepared_relink-87174e81da925d5f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+
+     Running tests/prepared_source_registration.rs (target/debug/deps/prepared_source_registration-eec01583c48349ce)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 22 filtered out; finished in 0.00s
+
+     Running tests/presentation_basis.rs (target/debug/deps/presentation_basis-5543aaf5a31ec39e)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.00s
+
+     Running tests/render_jobs.rs (target/debug/deps/render_jobs-f63ee7597b620a92)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 28 filtered out; finished in 0.00s
+
+     Running tests/single_source.rs (target/debug/deps/single_source-225c862bc3190fdb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.00s
+
+     Running tests/source_registration.rs (target/debug/deps/source_registration-0f20b6398ed14eb7)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 16 filtered out; finished in 0.00s
+

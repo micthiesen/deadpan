@@ -115,6 +115,7 @@ fn completion(
     selected_node: Option<NodeId>,
 ) -> CommittedEdit {
     CommittedEdit {
+        range_selection: None,
         revision: document.revision_id().clone(),
         selected_node,
         preserve_cursor: false,

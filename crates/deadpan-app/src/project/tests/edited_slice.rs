@@ -2,8 +2,11 @@
 
 use super::*;
 use crate::project::slice::{CaptureRequest, Captured, CopyId, Paste};
-use crate::project::splice::{Destination, PreparedMedia, Proposal, ProposalId, Source};
+use crate::project::splice::{Destination, Operation, PreparedMedia, Proposal, ProposalId, Source};
 use deadpan_core::{CapturedEditSlice, FrameRange};
+
+#[path = "edited_slice/move_range.rs"]
+mod move_range;
 
 fn range(start: i64, end: i64) -> FrameRange {
     FrameRange::new(ProjectFrame(start), ProjectFrame(end)).unwrap()
@@ -48,6 +51,7 @@ fn proposal(
     destination: Destination,
 ) -> Proposal {
     Proposal {
+        operation: Operation::Copy,
         id: ProposalId {
             session: workspace.session,
             project: workspace.document.project_id().clone(),

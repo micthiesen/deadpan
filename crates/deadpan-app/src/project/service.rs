@@ -21,9 +21,9 @@ use crate::library::ProjectLibrary;
 
 use super::worker::{Job, Prepared, Reply, Streams, Work};
 use super::{
-    CommittedEdit, ImportMedia, ImportStage, ImportStatus, PreparedRoomTone, ProjectEdit,
-    ProjectRequest, ProjectSoundEdit, ProjectUpdate, RegisteredSource, RoomToneFailure,
-    SequenceScope, Shared, SoundCommit, Workspace,
+    CommittedEdit, CommittedRangeSelection, ImportMedia, ImportStage, ImportStatus,
+    PreparedRoomTone, ProjectEdit, ProjectRequest, ProjectSoundEdit, ProjectUpdate,
+    RegisteredSource, RoomToneFailure, SequenceScope, Shared, SoundCommit, Workspace,
 };
 
 type Result<T> = std::result::Result<T, String>;
@@ -555,6 +555,7 @@ impl Service {
             cursor: None,
             scope: SequenceScope::default(),
             sound: Some(SoundCommit { selected }),
+            range_selection: None,
         });
         self.message = Some(message.into());
         Ok(())
@@ -669,6 +670,7 @@ impl Service {
                 cursor: Some(at),
                 scope,
                 sound: None,
+                range_selection: None,
             });
             self.refresh()?;
             self.message = Some(format!(
@@ -895,6 +897,7 @@ impl Service {
             cursor: preserve_cursor.then_some(cursor),
             scope: scope.clone(),
             sound: None,
+            range_selection: None,
         });
         self.refresh()?;
         // Resolve the right fragment from the committed structure, never from
@@ -1179,6 +1182,7 @@ impl Service {
                                     cursor: None,
                                     scope: scope.clone(),
                                     sound: None,
+                                    range_selection: None,
                                 })
                         });
                         if self.active.is_none() {
@@ -1324,6 +1328,7 @@ impl Service {
                 cursor: None,
                 scope: active.scope.clone(),
                 sound: None,
+                range_selection: None,
             });
             if let Some(status) = &mut self.import {
                 status.stage = ImportStage::Complete;
@@ -1387,6 +1392,7 @@ impl Service {
                 cursor: None,
                 scope: active.scope.clone(),
                 sound: None,
+                range_selection: None,
             });
         }
         if let Some(status) = &mut self.import {

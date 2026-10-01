@@ -1,0 +1,27 @@
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error[E0507]: cannot move out of `label`, a captured variable in an `Fn` closure
+   --> crates/deadpan-app/src/preview/splice/controls.rs:429:86
+    |
+373 |     let label = format!(
+    |         ----- captured outer variable
+...
+429 |     response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Label, true, label));
+    |                          -- captured by this `Fn` closure                            ^^^^^ move occurs because `label` has type `std::string::String`, which does not implement the `Copy` trait
+    |
+help: `Fn` and `FnMut` closures require captured values to be able to be consumed multiple times, but `FnOnce` closures may consume them only once
+   --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/egui-0.36.2/src/response.rs:869:47
+    |
+869 |     pub fn widget_info(&self, make_info: impl Fn() -> crate::WidgetInfo) {
+    |                                               ^^^^^^^^^^^^^^^^^^^^^^^^^
+help: consider cloning the value if the performance cost is acceptable
+    |
+429 |     response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Label, true, label.clone()));
+    |                                                                                           ++++++++
+
+For more information about this error, try `rustc --explain E0507`.
+error: could not compile `deadpan-app` (bin "deadpan-app") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deadpan-app` (bin "deadpan-app" test) due to 1 previous error

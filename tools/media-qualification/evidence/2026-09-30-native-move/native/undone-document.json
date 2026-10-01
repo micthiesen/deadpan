@@ -1,0 +1,166 @@
+{
+  "schema_version": 34,
+  "project_id": "798a252a-c87f-4f91-8401-7f87c679c1c6",
+  "revision_id": "9db98337-a59e-4cda-80ee-bbcf87d23d83",
+  "presentation_basis": {
+    "width": 320,
+    "height": 180,
+    "frame_rate": {
+      "numerator": 30000,
+      "denominator": 1001
+    },
+    "color_policy": "sdr_rec709"
+  },
+  "basis_state": {
+    "rate_origin": "primary_source",
+    "geometry_origin": "primary_source",
+    "primary": {
+      "asset": "cda86bb4-fe2d-4c49-a05d-76d6eaf5faec",
+      "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+    }
+  },
+  "root": "82f3559e-0ab5-4d79-bb86-4afc44aeda5e",
+  "nodes": {
+    "398f9f2f-3f04-4d9c-8700-2947886b6d5c": {
+      "label": "cfr-bframes.mp4",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 120,
+          "video": {
+            "type": "stream",
+            "asset": "cda86bb4-fe2d-4c49-a05d-76d6eaf5faec",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              },
+              "end": {
+                "ticks": 120120,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": {
+            "asset": "cda86bb4-fe2d-4c49-a05d-76d6eaf5faec",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "link": "linked",
+          "audio_offset": 0
+        }
+      }
+    },
+    "82f3559e-0ab5-4d79-bb86-4afc44aeda5e": {
+      "label": "Sequence",
+      "kind": {
+        "type": "sequence",
+        "children": [
+          "slice-input-leading-empty",
+          "398f9f2f-3f04-4d9c-8700-2947886b6d5c",
+          "slice-input-trailing-empty"
+        ]
+      }
+    },
+    "slice-input-leading-empty": {
+      "label": "slice-input-leading-empty",
+      "kind": {
+        "type": "sequence",
+        "children": []
+      }
+    },
+    "slice-input-trailing-empty": {
+      "label": "slice-input-trailing-empty",
+      "kind": {
+        "type": "sequence",
+        "children": []
+      }
+    }
+  },
+  "assets": {
+    "cda86bb4-fe2d-4c49-a05d-76d6eaf5faec": {
+      "label": "cfr-bframes.mp4",
+      "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "video": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        },
+        "end": {
+          "ticks": 120120,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        }
+      },
+      "audio": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        },
+        "end": {
+          "ticks": 192192,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        }
+      },
+      "still_image": false,
+      "frame_count": 120,
+      "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+    }
+  },
+  "marks": {},
+  "overrides": {}
+}

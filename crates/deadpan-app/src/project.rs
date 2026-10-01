@@ -7,8 +7,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, mpsc};
 
 use deadpan_core::{
-    AssetId, AudioEdgePolicy, AudioSample, FrameDuration, HoldAudio, NodeId, ProjectDocument,
-    ProjectFrame, ProjectId, RevisionId, SoundId, SourceAudio, SourceFrameIndex,
+    AssetId, AudioEdgePolicy, AudioSample, FrameDuration, FrameRange, HoldAudio, NodeId,
+    ProjectDocument, ProjectFrame, ProjectId, RevisionId, SoundId, SourceAudio, SourceFrameIndex,
     SourceQualificationId,
 };
 use deadpan_plan::RenderPlan;
@@ -265,6 +265,16 @@ pub struct CommittedEdit {
     pub scope: SequenceScope,
     /// Sound commits preserve the editor's picture, beat and navigation context.
     pub sound: Option<SoundCommit>,
+    /// Exact result selection retained until its matching workspace is visible.
+    pub range_selection: Option<CommittedRangeSelection>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CommittedRangeSelection {
+    pub session: u64,
+    pub project: ProjectId,
+    pub parent: NodeId,
+    pub range: FrameRange,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

@@ -2,6 +2,19 @@
 
 use super::BeatRow;
 
+pub(super) fn commit_matches_visible(
+    commit: &crate::project::CommittedEdit,
+    session: u64,
+    project: &deadpan_core::ProjectId,
+    revision: &deadpan_core::RevisionId,
+) -> bool {
+    &commit.revision == revision
+        && commit
+            .range_selection
+            .as_ref()
+            .is_none_or(|range| range.session == session && &range.project == project)
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub(super) enum Completion {
     Edit,
@@ -138,6 +151,49 @@ pub(super) fn cursor_marker(rows: &[BeatRow], cursor: u64) -> Option<(usize, f32
 mod tests {
     use super::*;
     use deadpan_core::NodeId;
+
+    #[test]
+    fn range_receipt_requires_its_exact_visible_session_project_and_revision_once() {
+        use crate::project::{CommittedEdit, CommittedRangeSelection, SequenceScope};
+        use deadpan_core::{FrameRange, ProjectFrame, ProjectId, RevisionId};
+        let project = ProjectId::new("project").unwrap();
+        let revision = RevisionId::new("saved").unwrap();
+        let commit = CommittedEdit {
+            revision: revision.clone(),
+            selected_node: Some(NodeId::new("first-moved-child").unwrap()),
+            preserve_cursor: false,
+            cursor: Some(ProjectFrame(20)),
+            scope: SequenceScope::default(),
+            sound: None,
+            range_selection: Some(CommittedRangeSelection {
+                session: 7,
+                project: project.clone(),
+                parent: NodeId::new("root").unwrap(),
+                range: FrameRange::new(ProjectFrame(20), ProjectFrame(50)).unwrap(),
+            }),
+        };
+        assert!(commit_matches_visible(&commit, 7, &project, &revision));
+        assert!(!commit_matches_visible(&commit, 8, &project, &revision));
+        assert!(!commit_matches_visible(
+            &commit,
+            7,
+            &ProjectId::new("other").unwrap(),
+            &revision
+        ));
+        for other in ["unrefreshed", "newer"] {
+            assert!(!commit_matches_visible(
+                &commit,
+                7,
+                &project,
+                &RevisionId::new(other).unwrap()
+            ));
+        }
+        assert_eq!(completion(Some(&revision), None, false), Completion::Edit);
+        assert_eq!(
+            completion(Some(&revision), Some(&revision), false),
+            Completion::None
+        );
+    }
 
     #[test]
     fn returning_from_a_group_preserves_a_heard_cursor_outside_its_parent() {
