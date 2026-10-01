@@ -124,7 +124,79 @@ impl FramingPose {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Framing {
+    #[serde(default, skip_serializing_if = "FramingClock::is_owner_output")]
+    pub clock: FramingClock,
     pub value: FramingValue,
+}
+
+/// The normalization domain of an authored camera path. A retained domain holds
+/// its endpoint poses when the physical owner grows beyond that original path.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+pub enum FramingClock {
+    #[default]
+    OwnerOutput,
+    RetainedOutput {
+        /// `authored_local = current_owner_local + offset`.
+        offset: ExactRatio,
+        duration: ExactRatio,
+    },
+}
+
+impl FramingClock {
+    fn is_owner_output(&self) -> bool {
+        matches!(self, Self::OwnerOutput)
+    }
+
+    fn validate(self) -> Result<(), FramingError> {
+        if let Self::RetainedOutput { duration, .. } = self
+            && !duration.compare_integer(0).is_gt()
+        {
+            return Err(FramingError::TimeRange);
+        }
+        Ok(())
+    }
+
+    fn resolve(
+        self,
+        local: ExactRatio,
+        owner_duration: ExactRatio,
+    ) -> Result<(ExactRatio, ExactRatio), FramingError> {
+        match self {
+            Self::OwnerOutput => Ok((local, owner_duration)),
+            Self::RetainedOutput { offset, duration } => {
+                let local = local.checked_add(offset)?;
+                let local = if local.compare_integer(0).is_lt() {
+                    ExactRatio::ZERO
+                } else if local.compare(duration).is_gt() {
+                    duration
+                } else {
+                    local
+                };
+                Ok((local, duration))
+            }
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for FramingClock {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+        enum Wire {
+            OwnerOutput {},
+            RetainedOutput {
+                offset: ExactRatio,
+                duration: ExactRatio,
+            },
+        }
+        let clock = match Wire::deserialize(deserializer)? {
+            Wire::OwnerOutput {} => Self::OwnerOutput,
+            Wire::RetainedOutput { offset, duration } => Self::RetainedOutput { offset, duration },
+        };
+        clock.validate().map_err(de::Error::custom)?;
+        Ok(clock)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -165,6 +237,7 @@ pub enum FramingCurve {
 impl Framing {
     pub fn static_pose(pose: FramingPose) -> Result<Self, FramingError> {
         let framing = Self {
+            clock: FramingClock::OwnerOutput,
             value: FramingValue::Static { pose },
         };
         framing.validate()?;
@@ -177,6 +250,7 @@ impl Framing {
         curve: FramingCurve,
     ) -> Result<Self, FramingError> {
         let framing = Self {
+            clock: FramingClock::OwnerOutput,
             value: FramingValue::Envelope {
                 envelope: FramingEnvelope {
                     initial: from,
@@ -192,7 +266,36 @@ impl Framing {
         Ok(framing)
     }
 
+    /// Retain an existing path while a physical owner gains context. The old
+    /// body moves from `x` to `x + prefix`; no pose or normalized key changes.
+    /// A zero prefix freezes the previous duration for tail-only growth.
+    pub fn prepend_owner_frames(
+        &self,
+        prefix: FrameDuration,
+        previous_duration: FrameDuration,
+    ) -> Result<Self, FramingError> {
+        self.validate()?;
+        if previous_duration == FrameDuration::ZERO {
+            return Err(FramingError::TimeRange);
+        }
+        let (offset, duration) = match self.clock {
+            FramingClock::OwnerOutput => (
+                ExactRatio::ZERO,
+                ExactRatio::integer(previous_duration.frames()),
+            ),
+            FramingClock::RetainedOutput { offset, duration } => (offset, duration),
+        };
+        let mut framing = self.clone();
+        framing.clock = FramingClock::RetainedOutput {
+            offset: offset.checked_sub(ExactRatio::integer(prefix.frames()))?,
+            duration,
+        };
+        framing.validate()?;
+        Ok(framing)
+    }
+
     pub fn validate(&self) -> Result<(), FramingError> {
+        self.clock.validate()?;
         match &self.value {
             FramingValue::Static { pose } => pose.validate(),
             FramingValue::Envelope { envelope } => {
@@ -242,8 +345,8 @@ impl Framing {
         }
     }
 
-    /// Evaluate owner-output progress. Coordinates at both exact endpoints are
-    /// accepted for inspection; picture traversal samples the half-open interior.
+    /// Evaluate in the recipe clock. Both current owner endpoints are accepted
+    /// for inspection; picture traversal samples the half-open interior.
     pub fn evaluate(
         &self,
         local: ExactRatio,
@@ -267,6 +370,7 @@ impl Framing {
         {
             return Err(FramingError::TimeRange);
         }
+        let (local, duration) = self.clock.resolve(local, duration)?;
         let FramingValue::Envelope { envelope } = &self.value else {
             let FramingValue::Static { pose } = self.value else {
                 unreachable!()

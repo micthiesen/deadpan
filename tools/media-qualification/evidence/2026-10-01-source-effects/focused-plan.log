@@ -1,0 +1,41 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 50.95s
+     Running tests/picture_plan.rs (target/debug/deps/picture_plan-b8b28ad5cb73aef5)
+
+running 32 tests
+test exact_video_mapping_composes_nested_retimes_before_pts_selection ... ok
+test exact_retime_boundary_selects_the_right_sequence_child ... ok
+test accepted_frames_floor_only_after_composed_retimes_and_validate_index ... ok
+test fractional_source_centers_and_vfr_selection_preserve_original_pts ... ok
+test accepted_repeat_gap_maps_exact_fractional_positions_without_a_trailing_gap ... ok
+test freeze_picture_identity_stays_fixed_while_its_framing_clock_advances ... ok
+test empty_sequences_are_skipped_and_invalid_seeks_are_rejected ... ok
+test maximum_play_count_and_last_frame_seek_do_not_expand_occurrences ... ok
+test framing_retains_every_owner_clock_and_repeat_scope_in_composition_order ... ok
+test hold_picture_context_is_provider_independent_shared_and_serializable ... ok
+test exact_repeat_child_gap_and_next_play_boundaries_are_half_open ... ok
+test compiled_revision_is_immutable_and_inverse_restores_deterministic_inspection ... ok
+test repeat_gap_retains_shared_picture_context ... ok
+test single_play_ignores_unrepresentable_unused_period ... ok
+test nested_retimes_repeat_paths_and_gap_coordinates_stay_exact ... ok
+test natural_video_duration_preserves_vfr_selection_after_beat_rounding ... ok
+test source_index_checks_asset_clock_and_measured_coverage ... ok
+test unrepresentable_nested_exact_arithmetic_is_an_error_not_rounded_output ... ok
+test still_blank_freeze_and_background_are_distinct_picture_requests ... ok
+test retained_partitions_preserve_exact_vfr_picture_mapping_through_fractional_retime ... ok
+test generated_hold_resize_reuses_materialized_frames_and_preserves_following_source ... ok
+test rounded_video_tail_uses_the_authored_policy_and_selected_span ... ok
+test generated_repeat_gaps_and_sparse_play_override_keep_distinct_artifacts ... ok
+test actual_split_and_refinement_keep_every_vfr_picture_and_exact_source_coordinate ... ok
+test placed_picture_holds_only_selected_endpoints_and_preserves_negative_starts ... ok
+test source_framing_envelope_survives_actual_split_without_reset_or_duplication ... ok
+test spliced_moment_keeps_exact_pts_endpoint_hold_and_live_group_framing ... ok
+test moved_and_inserted_iteration_runs_use_binary_selection_and_stable_gap_identity ... ok
+test retained_framing::source_context_growth_retains_poses_pts_and_live_ancestor_clocks_through_split ... ok
+test interior_pause_before_repeat_keeps_exact_vfr_picture_and_gap_occurrences ... ok
+test compact_repeat_matches_explicit_reference ... ok
+test prefix_index_matches_explicit_sequence_reference ... ok
+
+test result: ok. 32 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+

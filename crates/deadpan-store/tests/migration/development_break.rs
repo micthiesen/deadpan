@@ -1,4 +1,4 @@
-//! Unused core-33 through 36 development formats are rejected without a migration.
+//! Unused core-33 through 37 development formats are rejected without a migration.
 
 use super::*;
 
@@ -75,8 +75,8 @@ pub(super) fn assert_refused(package: &Path, version: u32) -> Result {
 }
 
 #[test]
-fn schemas39_through45_fail_before_reading_document_or_acquiring_writer() -> Result {
-    for version in 39..=45 {
+fn schemas39_through46_fail_before_reading_document_or_acquiring_writer() -> Result {
+    for version in 39..=46 {
         let scratch = tempfile::tempdir()?;
         let package = scratch.path().join("unsupported.deadpan");
         fs::create_dir(&package)?;
@@ -99,10 +99,10 @@ fn schemas39_through45_fail_before_reading_document_or_acquiring_writer() -> Res
 }
 
 #[test]
-fn current_schema46_migration_is_read_only_and_needs_no_backup_or_writer() -> Result {
+fn current_schema47_migration_is_read_only_and_needs_no_backup_or_writer() -> Result {
     use deadpan_core::{ColorPolicy, FrameRate, PresentationBasis, ProjectId};
 
-    assert_eq!(DATABASE_SCHEMA_VERSION, 46);
+    assert_eq!(DATABASE_SCHEMA_VERSION, 47);
     let scratch = tempfile::tempdir()?;
     let package = scratch.path().join("current.deadpan");
     let document = ProjectDocument::new(
@@ -120,7 +120,7 @@ fn current_schema46_migration_is_read_only_and_needs_no_backup_or_writer() -> Re
     let database = Connection::open(package.join("project.sqlite"))?;
     let before = cells(&database)?;
     let outcome = ProjectStore::migrate(&package)?;
-    assert_eq!((outcome.from_schema, outcome.to_schema), (46, 46));
+    assert_eq!((outcome.from_schema, outcome.to_schema), (47, 47));
     assert!(outcome.backup.is_none());
     assert_eq!(cells(&database)?, before);
     assert_eq!(fs::read_dir(package.join("Snapshots"))?.count(), 0);

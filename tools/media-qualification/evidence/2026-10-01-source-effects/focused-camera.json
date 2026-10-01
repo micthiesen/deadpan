@@ -1,0 +1,22 @@
+{
+  "command": [
+    "rustup",
+    "run",
+    "1.97.1",
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "camera_adjustment_keeps_retained_domain_until_explicit_reset"
+  ],
+  "started": "2026-10-01T12:33:46.168635+00:00",
+  "base_commit": "3df3724d91811457c2ac1772688308047453f50a",
+  "diff_sha256": "e55bd9a948cade40b32ba3953ce936944eaae1a24a341fc33f8b74fc4c6f999b",
+  "source_manifest_sha256": "fb43d12fb6353e69e3f6fb2a1cdae2d02c8124e570a3f9c13514c191267a5051",
+  "pid": 17962,
+  "exit_code": 0,
+  "seconds": 116.46932883281261
+}

@@ -34,6 +34,7 @@ mod legacy_audio_binding_v35;
 mod legacy_audio_binding_v36;
 mod legacy_audio_mapping_v19;
 mod legacy_audio_mapping_v35;
+mod legacy_framing_v37;
 mod legacy_hold_v18;
 mod legacy_mark;
 mod legacy_mark_v13;

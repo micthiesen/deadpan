@@ -1,0 +1,19 @@
+{
+  "recorded_utc": "2026-10-01T13:18:17.590233+00:00",
+  "hardware": "hw.memsize: 137438953472\nmachdep.cpu.brand_string: Apple M5 Max\n",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n",
+  "fixture": "native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav",
+  "fixture_sha256": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee",
+  "native_app_opened": false,
+  "native_app_process_check": {
+    "command": [
+      "pgrep",
+      "-fl",
+      "deadpan-app|Deadpan.app"
+    ],
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": ""
+  },
+  "review": "Independent read-only review; see review.md and integration-review.md."
+}

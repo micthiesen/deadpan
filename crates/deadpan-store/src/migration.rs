@@ -45,7 +45,7 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        // Schemas 39..=45 have no frozen core-33 through 36 adapter. Reject the unused
+        // Schemas 39..=46 have no frozen core-33 through 37 adapter. Reject the unused
         // development format before acquiring a writer or creating a backup.
         if !matches!(version, 1..=38) {
             return Err(StoreError::UnsupportedSchema(version));

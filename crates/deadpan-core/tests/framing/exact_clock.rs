@@ -30,6 +30,7 @@ fn derived_owner_extents_keep_all_curve_shapes_and_exact_segment_boundaries() {
     }
 
     let framing = Framing {
+        clock: FramingClock::OwnerOutput,
         value: FramingValue::Envelope {
             envelope: FramingEnvelope {
                 initial: pose(1),
@@ -126,6 +127,7 @@ fn exact_clock_matches_independent_unbounded_fraction_oracles() {
             });
         }
         let framing = Framing {
+            clock: FramingClock::OwnerOutput,
             value: FramingValue::Envelope {
                 envelope: FramingEnvelope {
                     initial: pose(1),

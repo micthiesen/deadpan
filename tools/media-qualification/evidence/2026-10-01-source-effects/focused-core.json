@@ -1,0 +1,25 @@
+{
+  "command": [
+    "rustup",
+    "run",
+    "1.97.1",
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-core",
+    "--test",
+    "framing",
+    "--test",
+    "legacy_framing_clock",
+    "--test",
+    "audio_gain_prefix"
+  ],
+  "started": "2026-10-01T12:28:25.613447+00:00",
+  "base_commit": "3df3724d91811457c2ac1772688308047453f50a",
+  "diff_sha256": "aca79ef966a3ac1c5160fad3c6648ab25a65e09ab6d264f9dee93e61a52d27b5",
+  "source_manifest_sha256": "cddcdaba51e918bc88de992d1c1aa6464842ce978b29744990d18ae02797b174",
+  "pid": 16578,
+  "exit_code": 0,
+  "seconds": 53.46966387471184
+}

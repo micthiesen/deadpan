@@ -1,0 +1,56 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 53.35s
+     Running tests/audio_gain_prefix.rs (target/debug/deps/audio_gain_prefix-d6419399501875be)
+
+running 3 tests
+test new_prefix_factor_uses_current_keys_without_retranslating_existing_factors ... ok
+test unrepresentable_shift_rejects_without_mutating_any_existing_factor ... ok
+test physical_prefix_translates_every_key_and_preserves_independent_gain_oracles ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/framing.rs (target/debug/deps/framing-7be31a2821345327)
+
+running 18 tests
+test exact_clock::exact_clock_rejects_invalid_extents_and_positions_for_static_and_moving_framing ... ok
+test retained_clock::retained_clock_keeps_fractional_domain_and_step_boundaries_exact ... ok
+test step_boundary_and_quantization_do_not_move_segment_selection ... ok
+test retained_clock::retained_clock_composes_prefixes_and_freezes_tail_growth ... ok
+test wide_local_time_and_small_segment_denominators_do_not_overflow ... ok
+test all_curves_use_explicit_frame_edge_progress_and_exact_endpoints ... ok
+test interpolation_matches_independent_fraction_oracles_at_extreme_coordinates ... ok
+test retained_clock::retained_clock_admission_and_arithmetic_fail_without_mutation ... ok
+test setters_are_atomic_reversible_and_duration_changes_reflow_the_host ... ok
+test retained_clock::retained_framing_round_trips_atomic_commands_and_exact_inverse_patches ... ok
+test occurrence_copy_is_independent_and_framed_ungroup_is_refused ... ok
+test split_retains_framed_partition_as_a_complete_owned_effect_scope ... ok
+test explicit_pause_can_split_a_retained_framed_partition_without_losing_its_clock ... ok
+test exact_clock::exact_clock_matches_independent_unbounded_fraction_oracles ... ok
+test hostile_envelopes_layers_and_legacy_wire_are_rejected ... ok
+test typed_subtree_aggregate_framing_is_rejected_before_installation ... ok
+test retained_clock::retained_paths_hold_endpoints_without_retiming_any_curve ... ok
+test exact_clock::derived_owner_extents_keep_all_curve_shapes_and_exact_segment_boundaries ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests/legacy_framing_clock.rs (target/debug/deps/legacy_framing_clock-65a52e768aa0d657)
+
+running 15 tests
+test closed_v23 ... ok
+test closed_v30 ... ok
+test closed_v19 ... ok
+test closed_v24 ... ok
+test closed_v25 ... ok
+test closed_v21 ... ok
+test closed_v27 ... ok
+test closed_v18 ... ok
+test closed_v26 ... ok
+test closed_v29 ... ok
+test closed_v31 ... ok
+test closed_v28 ... ok
+test closed_v32 ... ok
+test closed_v20 ... ok
+test closed_v22 ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+

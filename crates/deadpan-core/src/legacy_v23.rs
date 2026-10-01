@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use crate::document::unique_map;
 use crate::legacy_audio_binding_v35::{LegacyAudioBindingState, project_change};
 use crate::legacy_audio_mapping_v35::AudioMapping;
+use crate::legacy_framing_v37::LegacyFraming;
 use crate::legacy_mark_v13::{LegacyMark, project_mark_changes, project_marks, upgrade_marks};
 use crate::legacy_video_mapping_v34::LegacySourceNode;
 use crate::legacy_video_mapping_v34::VideoMapping;
@@ -60,7 +61,7 @@ enum LegacyNodeKind {
 #[serde(deny_unknown_fields)]
 struct LegacyBeatNode {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    framing: Option<Framing>,
+    framing: Option<LegacyFraming>,
     label: String,
     kind: LegacyNodeKind,
     #[serde(default, skip_serializing_if = "AudioEdgePolicies::is_automatic")]
@@ -71,7 +72,7 @@ impl LegacyBeatNode {
     fn upgrade(self) -> BeatNode {
         BeatNode {
             audio_treatments: Default::default(),
-            framing: self.framing,
+            framing: self.framing.map(LegacyFraming::upgrade),
             label: self.label,
             audio_edges: self.audio_edges,
             kind: match self.kind {
@@ -114,7 +115,11 @@ impl LegacyBeatNode {
             return None;
         }
         Some(Self {
-            framing: node.framing.clone(),
+            framing: node
+                .framing
+                .as_ref()
+                .map(LegacyFraming::project)
+                .transpose()?,
             label: node.label.clone(),
             audio_edges: node.audio_edges,
             kind: match &node.kind {
@@ -398,7 +403,7 @@ enum OldOccurrenceEdit {
         label: String,
     },
     SetFraming {
-        framing: Option<Framing>,
+        framing: Option<LegacyFraming>,
     },
     SetAudioEdge {
         edge: AudioBoundaryKind,
@@ -490,7 +495,9 @@ impl OldOccurrenceEdit {
             }
             Self::RevertGeneratedHold {} => OccurrenceEdit::RevertGeneratedHold,
             Self::Rename { label } => OccurrenceEdit::Rename { label },
-            Self::SetFraming { framing } => OccurrenceEdit::SetFraming { framing },
+            Self::SetFraming { framing } => OccurrenceEdit::SetFraming {
+                framing: framing.map(LegacyFraming::upgrade),
+            },
             Self::SetAudioEdge { edge, policy } => OccurrenceEdit::SetAudioEdge { edge, policy },
             Self::SetPlayOverride { iteration, subtree } => OccurrenceEdit::SetPlayOverride {
                 iteration,
@@ -617,7 +624,7 @@ enum OldCommand {
     },
     SetFraming {
         node: NodeId,
-        framing: Option<Framing>,
+        framing: Option<LegacyFraming>,
     },
     SetAudioEdge {
         node: NodeId,
@@ -832,7 +839,10 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
         },
         OldCommand::RevertGeneratedHold { node } => Command::RevertGeneratedHold { node },
         OldCommand::Rename { node, label } => Command::Rename { node, label },
-        OldCommand::SetFraming { node, framing } => Command::SetFraming { node, framing },
+        OldCommand::SetFraming { node, framing } => Command::SetFraming {
+            node,
+            framing: framing.map(LegacyFraming::upgrade),
+        },
         OldCommand::SetAudioEdge { node, edge, policy } => {
             Command::SetAudioEdge { node, edge, policy }
         }

@@ -141,15 +141,24 @@ rendered checks plus the expanded Kestrel audit, 3,589 full release checks, and
 native keyboard/reopen verification with consistent SQLite backups. No release
 gate is completed by these results.
 
+[Source effect clocks](SOURCE_EFFECT_CLOCKS.md) preserve existing camera paths,
+gain envelopes and mute ranges when a physical Source grows earlier or later.
+Core 38/database 47 retain explicit framing domains; gain translation uses the
+existing owner coordinates. All 3,046 workspace unit/integration tests, both
+documentation tests, formatting and strict workspace/all-target Clippy pass,
+including lint with `ui-harness`. Exact linked
+editorial windows, atomic Trim commands and native boundary previews remain open. No
+requirement or gate changes status.
+
 [Retained Source origins](SOURCE_ORIGINS.md) add an exact translation between
 current physical coordinates and captured audio clocks. Pure binding rebases
 preserve sample grids, frozen layouts and chronological phase composition.
 Decoded-PCM regressions pass for physical prefixes, fractional NTSC phase,
 independent sample offsets and inverse restoration. Core 37/database 46 persist
 the translation. All 3,019 workspace unit/integration tests, both documentation
-tests, formatting and strict all-target Clippy pass. Framing/treatment clocks,
-atomic Trim authoring and native controls remain open; no requirement or gate
-changes status.
+tests, formatting and strict all-target Clippy pass. The later effect-clock work
+above adds framing/treatment preservation. Atomic Trim authoring and native
+controls remain open; no requirement or gate changes status.
 
 [Dormant linked audio](qualification/dormant-linked-audio-2026-10-01.md) retains
 the Original's audio context in silent slices. Empty support emits silence without

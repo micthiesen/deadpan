@@ -197,6 +197,7 @@ fn adjusted_framing(
         *pose = changed.quantized().map_err(|error| error.to_string())?;
         Ok(())
     };
+    // Keep the original normalization clock while changing every path pose.
     let mut framing = entry.expect("nonempty entry checked").clone();
     match &mut framing.value {
         FramingValue::Static { pose } => transform(pose)?,
@@ -1245,6 +1246,61 @@ mod tests {
             FramingValue::Static {
                 pose: pose(55, 150)
             }
+        );
+    }
+
+    #[test]
+    fn camera_adjustment_keeps_retained_domain_until_explicit_reset() {
+        let original = Framing::creep(
+            pose(50, 100),
+            pose(60, 150),
+            FramingCurve::Cubic {
+                control1: pose(50, 125),
+                control2: pose(55, 135),
+            },
+        )
+        .unwrap()
+        .prepend_owner_frames(
+            deadpan_core::FrameDuration::new(3).unwrap(),
+            deadpan_core::FrameDuration::new(10).unwrap(),
+        )
+        .unwrap();
+        let changed = adjusted_framing(Some(&original), pose(50, 100), pose(60, 200), false)
+            .unwrap()
+            .unwrap();
+        assert_eq!(changed.clock, original.clock);
+        assert_eq!(
+            adjusted_framing(Some(&original), pose(50, 100), pose(50, 100), false).unwrap(),
+            Some(original.clone())
+        );
+        let extent = deadpan_core::FrameDuration::new(15).unwrap();
+        assert_eq!(
+            changed.evaluate(ExactRatio::ZERO, extent).unwrap(),
+            pose(60, 200).quantized().unwrap()
+        );
+        assert_eq!(
+            changed.evaluate(ExactRatio::integer(15), extent).unwrap(),
+            pose(70, 300).quantized().unwrap()
+        );
+        let reset = adjusted_framing(Some(&original), pose(50, 100), pose(55, 150), true)
+            .unwrap()
+            .unwrap();
+        assert_eq!(reset.clock, deadpan_core::FramingClock::OwnerOutput);
+        assert_eq!(
+            reset.value,
+            FramingValue::Static {
+                pose: pose(55, 150)
+            }
+        );
+        assert_eq!(
+            adjusted_framing(
+                Some(&original),
+                pose(50, 100),
+                FramingPose::identity(),
+                true
+            )
+            .unwrap(),
+            None
         );
     }
 

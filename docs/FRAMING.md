@@ -17,11 +17,14 @@ with explicit pose controls. There are no hidden animation names or tracking
 links. Core validates centers in `[-16,17]`, scale in `[1/64,64]`, aggregate record
 limits, and at most 16 authored framing operations on a structural path.
 
-An envelope uses its owner's complete output duration. A picture sample evaluates
+An `OwnerOutput` envelope uses its owner's complete output duration. A picture sample evaluates
 the exact owner-local frame-center coordinate before descending through the
 structure. A curve inside Repeat resets per play; one on Repeat spans plays and
 gaps. Retime framing sees its output clock; child framing sees mapped input time.
 Changing the owner's duration intentionally stretches its whole-host envelope.
+Core 38 also supports an explicit retained duration and local offset for physical
+Source growth. That clock holds endpoint poses in new handles and preserves the
+existing path; see [Source effect clocks](SOURCE_EFFECT_CLOCKS.md).
 An 11-frame creep stores endpoints at boundaries 0 and 11; its first and last
 picture samples are at 0.5 and 10.5, not at those endpoints.
 

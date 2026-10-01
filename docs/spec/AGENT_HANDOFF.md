@@ -19,9 +19,28 @@ test instances after testing instead of leaving them idle. The previously
 running `dev.thiesen.deadpan.cursor-qa` instance has been quit, and the native
 app inventory confirmed no Deadpan app remained running.
 
+## Source effect clocks, 2026-10-01
+
+Core schema 38/database 47 add an explicit retained framing duration/offset.
+Physical prefix or tail growth holds camera endpoint poses in new handles while
+preserving the original path. Audio-treatment prefix translation moves every
+gain/mute key once, retaining values and the existing voice clock. Crops keep
+complete owners behind Partitions. Camera adjustments retain the declared
+clock; explicit reset creates a new static owner-clock pose. See
+[the contract](../SOURCE_EFFECT_CLOCKS.md).
+
+All 3,046 workspace unit/integration tests, both compile-fail documentation
+tests, formatting and strict workspace/all-target Clippy pass. The focused Camera
+test and lint also include `ui-harness`. No native app was opened, and the final
+process check found none running. Atomic Trim authoring,
+exact linked editorial windows, handle clamping,
+mark/sound transforms and native controls remain open. No requirement or gate
+changes status. Unused databases 39 through 46 reject without migration; existing
+frozen adapters for 1 through 38 retain closed historical framing vocabulary.
+
 ## Retained Source origins, 2026-10-01
 
-Core schema 37/database 46 retain exact translations from current physical-local
+Introduced in core schema 37/database 46, exact translations map current physical-local
 coordinates to captured audio clocks. `OwnedAudioBinding::rebase_local` updates
 every placement, resume boundary and phase endpoint atomically in a returned
 value. Frozen layouts and enclosing reanchor windows remain unchanged. Reanchor
@@ -34,9 +53,10 @@ exact inverse restoration. All 3,019 workspace unit/integration tests, both
 compile-fail documentation tests, formatting and strict all-target Clippy pass. Retained
 commands and failed fixture setup are in
 [the evidence](../../tools/media-qualification/evidence/2026-10-01-source-origins/README.md).
-No native app was opened. This adds no public Trim operation. Framing and
-audio-treatment owner clocks and native boundary controls remain required.
-Unused development databases 39 through 45 reject without migration or writes.
+No native app was opened. This adds no public Trim operation. The subsequent
+effect-clock work above preserves framing and audio treatments; atomic authoring
+and native boundary controls remain required. At this checkpoint, unused
+development databases 39 through 45 reject without migration or writes.
 
 ## Dormant linked audio, 2026-10-01
 

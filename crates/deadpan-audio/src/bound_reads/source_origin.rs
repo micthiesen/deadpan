@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "source_origin/gain.rs"]
+mod gain;
+
 fn partition(child: &str, start: i64, end: i64) -> BeatNode {
     BeatNode {
         framing: None,

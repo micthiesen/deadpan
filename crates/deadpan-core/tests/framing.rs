@@ -9,6 +9,9 @@ use serde_json::json;
 #[path = "framing/exact_clock.rs"]
 mod exact_clock;
 
+#[path = "framing/retained_clock.rs"]
+mod retained_clock;
+
 fn ratio(n: i128, d: i128) -> ExactRatio {
     ExactRatio::new(n, d).unwrap()
 }
@@ -135,6 +138,7 @@ fn all_curves_use_explicit_frame_edge_progress_and_exact_endpoints() {
 #[test]
 fn step_boundary_and_quantization_do_not_move_segment_selection() {
     let framing = Framing {
+        clock: FramingClock::OwnerOutput,
         value: FramingValue::Envelope {
             envelope: FramingEnvelope {
                 initial: pose(1),
@@ -202,6 +206,7 @@ fn wide_local_time_and_small_segment_denominators_do_not_overflow() {
         );
     }
     let framing = Framing {
+        clock: FramingClock::OwnerOutput,
         value: FramingValue::Envelope {
             envelope: FramingEnvelope {
                 initial: pose(1),
@@ -272,6 +277,7 @@ fn interpolation_matches_independent_fraction_oracles_at_extreme_coordinates() {
             });
         }
         let framing = Framing {
+            clock: FramingClock::OwnerOutput,
             value: FramingValue::Envelope {
                 envelope: FramingEnvelope {
                     initial: pose(1),
@@ -334,6 +340,7 @@ fn setters_are_atomic_reversible_and_duration_changes_reflow_the_host() {
     stale.expected_revision = initial.revision_id().clone();
     assert!(apply(&framed, &stale).is_err());
     let invalid = Framing {
+        clock: FramingClock::OwnerOutput,
         value: FramingValue::Static {
             pose: FramingPose {
                 scale: ExactRatio::ZERO,
@@ -664,6 +671,7 @@ fn hostile_envelopes_layers_and_legacy_wire_are_rejected() {
 fn typed_subtree_aggregate_framing_is_rejected_before_installation() {
     let doc = document();
     let envelope = Framing {
+        clock: FramingClock::OwnerOutput,
         value: FramingValue::Envelope {
             envelope: FramingEnvelope {
                 initial: pose(1),

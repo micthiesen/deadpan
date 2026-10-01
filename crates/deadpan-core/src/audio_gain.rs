@@ -426,6 +426,39 @@ impl AudioTreatments {
     pub fn record_count(&self) -> usize {
         self.clip_gain.as_ref().map_or(0, ClipGain::record_count)
     }
+    /// Preserve existing effects when a physical owner gains a nonnegative
+    /// whole-frame prefix: old material and every authored key move together.
+    /// New effects can then use the current owner coordinates directly.
+    ///
+    /// Cropping retains the complete owner behind a Partition and does not call
+    /// this helper. Tail growth also leaves these absolute keys unchanged.
+    /// This pure transform changes no sampling clock, gain value, or wire type;
+    /// callers must atomically update media placement and retained bindings.
+    pub fn with_owner_prefix(&self, prefix: crate::FrameDuration) -> Result<Self, GainError> {
+        self.validate()?;
+        let mut result = self.clone();
+        let shift = ExactRatio::integer(prefix.frames());
+        if let Some(gain) = &mut result.clip_gain {
+            for envelope in &mut gain.envelopes {
+                envelope.range = GainRange::new(
+                    envelope.range.start.checked_add(shift)?,
+                    envelope.range.end.checked_add(shift)?,
+                )?;
+                for segment in &mut envelope.segments {
+                    segment.end = segment.end.checked_add(shift)?;
+                }
+            }
+            for range in &mut gain.mute_ranges {
+                *range = GainRange::new(
+                    range.start.checked_add(shift)?,
+                    range.end.checked_add(shift)?,
+                )?;
+            }
+        }
+        result.validate()?;
+        Ok(result)
+    }
+
     pub fn evaluate(&self, local: ExactRatio) -> Result<EvaluatedGain, GainError> {
         self.clip_gain
             .as_ref()

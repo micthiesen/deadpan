@@ -1,7 +1,7 @@
 # Retained audio clocks across local-origin changes
 
-Core schema 37/database 46 retain an exact translation between a physical
-owner's current local coordinates and each captured audio clock. This is a
+Introduced in core schema 37/database 46, an exact translation maps a physical
+owner's current local coordinates into each captured audio clock. This is a
 prerequisite for extending a Source before its previous local zero. It adds no
 Trim command or native mode.
 
@@ -62,7 +62,7 @@ including nested phase/reanchor templates. Projection into a historical form
 requires zero offsets. Existing dormant-support and older gap/reanchor guards
 still apply.
 
-Database schemas 39 through 45 are unused development formats and are refused
+Database schemas 39 through 46 are unused development formats and are refused
 without writable acquisition, migration or backup creation. Existing adapters
 for schemas 1 through 38 remain. `FrozenAudioContext` stays at schema 5 because
 it cannot carry owned binding state.
@@ -78,6 +78,6 @@ The storage regression preserves nonzero offsets and exact frozen layouts
 through create/reopen, serialized history and fresh-revision Undo/Redo.
 See [qualification](qualification/source-origins-2026-10-01.md).
 
-Framing and audio-treatment owner clocks still need explicit preservation before
-a public Source-prefix or Trim command can use this operation. Re-expressing
-audio sampling alone does not preserve an existing camera path or gain envelope.
+[Source effect clocks](SOURCE_EFFECT_CLOCKS.md) add the separate framing and
+audio-treatment preservation required for physical growth. A public Trim command
+must compose these operations with exact source windows and structural edits.
