@@ -2,6 +2,8 @@ use eframe::egui::{Key, Modifiers};
 
 pub mod camera;
 pub mod command;
+#[cfg(test)]
+mod delete_range_tests;
 pub mod duration;
 pub mod gain;
 pub mod retime;
@@ -85,6 +87,7 @@ pub enum Action {
     EnterGroup,
     LeaveGroup,
     VisualMoment,
+    DeleteSelection,
     CopyMoment,
     PasteMoment { before: bool },
     Step { forward: bool, count: u32 },
@@ -102,6 +105,15 @@ pub enum Action {
     Sound(SoundAction),
     GainStep(i32),
     Invalid(&'static str),
+}
+
+/// Empty Visual selections remain explicit targets, including after v finishes.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum EditSelection {
+    #[default]
+    None,
+    Empty,
+    Range,
 }
 
 /// Framing actions owned by the selected edited beat.
@@ -216,6 +228,17 @@ impl Bindings {
     }
 
     pub fn key(&mut self, key: Key, modifiers: Modifiers, text: bool, ime: bool) -> Option<Action> {
+        self.key_with_selection(key, modifiers, text, ime, EditSelection::None)
+    }
+
+    pub fn key_with_selection(
+        &mut self,
+        key: Key,
+        modifiers: Modifiers,
+        text: bool,
+        ime: bool,
+        selection: EditSelection,
+    ) -> Option<Action> {
         if ime {
             self.clear();
             return None;
@@ -374,7 +397,7 @@ impl Bindings {
         if let Some(operator) = self.operator {
             let action = if key != operator {
                 Action::Invalid(
-                    "Only rr (repeat selected beat) and dd (delete selected beat) are available. Range and text-object operators are not ready.",
+                    "Use rr to repeat a beat, dd to delete a beat, or select time with v and cut it with d. Motion and text-object operators are not ready.",
                 )
             } else if self.count == Some(0) {
                 Action::Invalid("An edit count must be positive; no edit was made.")
@@ -384,6 +407,15 @@ impl Bindings {
                 Action::Invalid("dd deletes one selected beat. Counted deletion is not available.")
             } else {
                 Action::Edit(BeatEdit::Delete)
+            };
+            self.clear();
+            return Some(action);
+        }
+        if !self.g && key == Key::D && selection != EditSelection::None {
+            let action = if self.count.is_some() {
+                Action::Invalid("Delete the selected range once with d, without a count.")
+            } else {
+                Action::DeleteSelection
             };
             self.clear();
             return Some(action);

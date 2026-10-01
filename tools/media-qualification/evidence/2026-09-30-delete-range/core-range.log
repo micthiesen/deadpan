@@ -1,0 +1,87 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 16.65s
+     Running tests/insert_time.rs (target/debug/deps/insert_time-c54e507fd278fef7)
+
+running 58 tests
+test delete::deletion_rejects_root_missing_target_and_wrong_allocation_atomically ... ok
+test duration_overflow_and_nonfallback_provider_are_rejected_before_capture ... ok
+test delete_range::invalid_selection_identities_and_timing_fail_without_mutation ... ok
+test first_pause_locks_an_automatic_empty_project_before_final_validation ... ok
+test delete_range::full_range_preserves_endpoint_empty_groups_and_retires_internal_empty_groups ... ok
+test delete::zero_and_terminal_deletion_do_not_capture_unmoved_sampling ... ok
+test delete::deletion_moves_content_marks_but_keeps_sequence_marks_and_loss_policy ... ok
+test delete_range::complete_composites_are_admitted_but_partial_or_clocked_ancestry_is_rejected ... ok
+test billion_play_seam_insertion_keeps_one_step_per_owned_recipe ... ok
+test existing_split_seam_reanchors_without_manufacturing_another_split ... ok
+test delete::nested_delete_keeps_every_surviving_suffix_clock_and_one_inverse ... ok
+test composite_seam_moves_root_marks_once_and_retains_occurrence_and_source_clocks ... ok
+test delete_range::deleted_marks_follow_loss_policy_and_surviving_marks_keep_their_content ... ok
+test nested_sequence::nested_insertion_failures_do_not_publish_intermediate_copies_or_clocks ... ok
+test nested_sequence::preflight_finds_live_sequence_owner_and_exact_split_identity_count ... ok
+test delete::deletion_retains_previous_lattice_and_appends_one_resume ... ok
+test insertion_after_compact_steps_appends_after_them_and_round_trips_atomically ... ok
+test interior::interior_identity_and_timing_exhaustion_leave_the_input_unchanged ... ok
+test delete::whole_composites_can_be_deleted_but_their_clocked_children_cannot ... ok
+test fully_bound_input_keeps_a_phase_only_clock_until_terms_exist_and_prunes_unused_end_clock ... ok
+test source_replace::replacement_admission_and_identity_failures_are_atomic ... ok
+test delete_range::nested_range_keeps_outer_nodes_and_reanchors_every_surviving_suffix_once ... ok
+test interior::interior_cut_before_billion_play_suffix_stays_compact_and_reversible ... ok
+test source_replace::replacement_rejects_repeat_and_retime_ancestors_without_descending ... ok
+test source_replace::replacement_keeps_pinned_marks_valid_against_final_extent ... ok
+test nested_sequence::nested_seam_keeps_empty_children_and_boundary_marks_in_their_own_clocks ... ok
+test ordinary_hold_interior_and_its_partition_can_be_inserted_into_again ... ok
+test source_replace::whole_replacement_preserves_endpoint_empty_groups_and_removes_interior_groups ... ok
+test source_splice::empty_project_splice_locks_time_and_has_no_placeholder_or_retained_clock ... ok
+test repeated_interior_insertion_composes_current_phase_on_one_immutable_lattice ... ok
+test every_shifted_fragment_gets_its_own_old_entry_and_existing_lattice_survives ... ok
+test source_splice::source_splice_rejects_duration_overflow_before_capturing_clocks ... ok
+test source_replace::nested_replacement_removes_whole_composites_and_reanchors_outer_suffix_once ... ok
+test source_splice::malformed_splice_is_atomic_for_typed_and_closed_json_callers ... ok
+test interior::source_and_hold_interiors_keep_pre_split_lattices_and_distinct_current_placements ... ok
+test source_splice_interior::interior_splice_never_descends_a_repeat_or_authored_retime ... ok
+test delete_range::later_deletion_refines_treated_fragments_without_recapturing_framing_or_lattice ... FAILED
+test source_splice::nested_source_splice_transports_marks_and_each_later_owner_once ... ok
+test source_splice::repeat_or_retime_ancestry_never_silently_changes_scope ... ok
+test sequence_interiors_and_root_composite_seams_preserve_their_owners ... ok
+test source_replace::same_child_replacement_splits_twice_and_undoes_once ... ok
+test split_and_insertion_compose_mark_bias_and_keep_sequence_pins ... ok
+test source_splice_interior::interior_splice_rejects_bad_targets_identity_pools_and_stale_requests_atomically ... ok
+test interior::interior_split_and_pause_shift_each_mark_once_without_losing_fragment_identity ... ok
+test zero_bounds_stale_revision_and_identity_errors_leave_input_unchanged ... ok
+test source_replace::replacement_retains_source_framing_and_treated_fragment_clock_ownership ... ok
+test source_splice_interior::interior_splice_preserves_live_framing_and_transports_boundary_and_local_marks_once ... ok
+test start_interior_end_and_empty_project_insert_one_reversible_pause ... ok
+test source_replace::second_replacement_refines_existing_fragments_with_exact_identity_budget ... ok
+test source_splice_interior::interior_source_and_hold_splices_keep_explicit_group_and_both_pre_split_clocks ... ok
+test nested_sequence::nested_pause_keeps_group_ownership_and_reanchors_every_ancestor_suffix_once ... ok
+test source_splice_interior::transparent_source_and_hold_fragments_refine_without_recapturing_their_lattice ... ok
+test aggregate_identity_and_composed_phase_limits_fail_before_a_transaction ... ok
+test source_splice::explicit_slot_retains_nested_edges_and_zero_duration_child_order ... ok
+test delete_range::every_single_source_range_keeps_exact_fragments_and_one_inverse ... ok
+test source_splice_interior::interior_splice_reserves_the_inserted_source_in_addition_to_split_nodes ... ok
+test source_replace::replacement_checks_combined_temporary_node_budget_before_any_split ... ok
+test delete_range::deletion_reserves_only_its_endpoint_nodes_at_the_temporary_limit ... FAILED
+
+failures:
+
+---- delete_range::later_deletion_refines_treated_fragments_without_recapturing_framing_or_lattice stdout ----
+
+thread 'delete_range::later_deletion_refines_treated_fragments_without_recapturing_framing_or_lattice' (58893719) panicked at crates/deadpan-core/tests/insert_time/delete_range.rs:380:5:
+assertion `left == right` failed
+  left: 4
+ right: 2
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- delete_range::deletion_reserves_only_its_endpoint_nodes_at_the_temporary_limit stdout ----
+
+thread 'delete_range::deletion_reserves_only_its_endpoint_nodes_at_the_temporary_limit' (58893715) panicked at crates/deadpan-core/tests/insert_time.rs:129:49:
+called `Result::unwrap()` on an `Err` value: EditError { code: LimitExceeded, message: "audio binding work exhausted", current_revision: None }
+
+
+failures:
+    delete_range::deletion_reserves_only_its_endpoint_nodes_at_the_temporary_limit
+    delete_range::later_deletion_refines_treated_fragments_without_recapturing_framing_or_lattice
+
+test result: FAILED. 56 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.32s
+
+error: test failed, to rerun pass `-p deadpan-core --test insert_time`

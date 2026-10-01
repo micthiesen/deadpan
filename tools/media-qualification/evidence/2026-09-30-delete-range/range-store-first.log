@@ -1,0 +1,11 @@
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 31.80s
+     Running tests/delete_range.rs (target/debug/deps/delete_range-51d986af71b4c536)
+
+running 2 tests
+test invalid_range_split_ids_and_timing_fail_without_partial_history ... ok
+test range_delete_previews_once_and_replays_mixed_history_after_reopen ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+

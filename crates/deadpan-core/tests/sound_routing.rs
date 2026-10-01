@@ -360,6 +360,77 @@ fn retained_delete_routes_the_root_bus_once_and_prunes_its_removed_issuer() {
 }
 
 #[test]
+fn range_deletion_transforms_the_root_bus_once_and_splits_hold_allowances() {
+    let original = fixture();
+    let (before, _) = edit(
+        &original,
+        Command::SetSoundAllowance {
+            sound: sound(),
+            issuer: SoundHoldIssuer::Node {
+                instance: InstancePath {
+                    node: node("a"),
+                    repeats: vec![],
+                },
+            },
+            allowed: true,
+        },
+    );
+    let target = FrameRange::new(ProjectFrame(2), ProjectFrame(5)).unwrap();
+    let (after, transaction) = edit(
+        &before,
+        Command::DeleteRange {
+            parent: node("group"),
+            range: target,
+            identities: SplitIdentities {
+                nodes: (0..5).map(|i| node(&format!("range-{i}"))).collect(),
+            },
+            timing: AudioTimingId {
+                allocation: request(&before, Command::DeleteSound { id: sound() }).new_revision,
+                ordinal: 0,
+            },
+        },
+    );
+    assert_eq!(transaction.duration_delta, -3);
+    assert_eq!(after.sounds(), before.sounds());
+    let route = &after.sound_routes()[&sound()];
+    assert_eq!(route.edits.len(), 1);
+    assert_eq!(
+        route.edits[0].operation,
+        RootSoundOperation::Delete { range: target }
+    );
+    assert_eq!(
+        route
+            .compile()
+            .unwrap()
+            .query(range(2, 3), Default::default())
+            .unwrap()
+            .slices[0]
+            .recipe,
+        Some(range(5, 6))
+    );
+    // The old permission follows both retained physical fragments. The deleted
+    // middle must not leave a dangling issuer or remove the surviving grant.
+    assert_eq!(after.sound_allowances()[&sound()].len(), 2);
+    let total = after.duration().unwrap().frames();
+    let (empty, _) = edit(
+        &after,
+        Command::DeleteRange {
+            parent: node("root"),
+            range: FrameRange::new(ProjectFrame(0), ProjectFrame(total)).unwrap(),
+            identities: SplitIdentities::default(),
+            timing: AudioTimingId {
+                allocation: request(&after, Command::DeleteSound { id: sound() }).new_revision,
+                ordinal: 0,
+            },
+        },
+    );
+    assert!(empty.sounds().is_empty());
+    assert!(empty.sound_routes().is_empty());
+    assert!(empty.sound_allowances().is_empty());
+    assert!(empty.audio_bindings().is_empty());
+}
+
+#[test]
 fn delete_onset_keeps_recipe_suffix_and_whole_deletion_removes_bus() {
     let original = fixture();
     let (doc, transaction) = edit(&original, Command::Delete { node: node("a") });

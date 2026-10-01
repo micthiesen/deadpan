@@ -1,0 +1,16 @@
+Independent exact NTSC arithmetic, 30000/1001 fps, 48000 Hz mix
+primary prefix: old frames(0, 1) samples(0, 1602); new frames(0, 1) samples(0, 1602); both1602 samples
+primary suffix: old frames(3, 7) samples(4805, 11211); new frames(1, 5) samples(1602, 8008); both6406 samples
+nested suffix: old frames(4, 8) samples(6406, 12813); new frames(2, 6) samples(3203, 9610); both6407 samples
+nested outer: old frames(8, 13) samples(12813, 20821); new frames(6, 11) samples(9610, 17618); both8008 samples
+prior-pause suffix: old frames(5, 9) samples(8008, 14414); new frames(3, 7) samples(4805, 11211); both6406 samples
+Repeat composite: old frames(7, 22) samples(11211, 35235); new frames(5, 20) samples(8008, 32032); both24024 samples
+Preserve suffix: old frames(7, 19) samples(11211, 30430); new frames(5, 17) samples(8008, 27227); both19219 samples
+Source step 44100/48000=147/160
+Primary suffix independent source entry=144467/32
+Nested suffix local phase=24022/5
+Prior-pause suffix retained local phase=24027/5
+Preserve output entry=-1/5
+Preserve input source end=149647/25
+Genuine PCM fixture: channels=1, Hz=44100, sample_bytes=2, frames=44117
+Fixture SHA256=b95b3debd2c83cf2590fddfaa98276c23c3b383b720fd96ac52c2c00c668318b

@@ -1,0 +1,54 @@
+from pathlib import Path
+import hashlib
+import json
+import mmap
+import re
+
+root = Path('/tmp/deadpan-delete-range-20260930')
+records = []
+runs = ['core-reviewed', 'workspace', 'app-third', 'app-ui']
+pinned = root / 'app-ui-pinned.json'
+if pinned.exists() and json.loads(pinned.read_text()).get('exit_code') == 0:
+    runs.append('app-ui-pinned')
+for run in runs:
+    text = (root / (run + '.log')).read_text()
+    paths = sorted({
+        match.group(1)
+        for line in text.splitlines() if 'Running ' in line
+        for match in [re.search(r'\((target/debug/[^)]+)\)', line)]
+        if match
+    })
+    assert paths, run
+    for name in paths:
+        path = Path(name)
+        with path.open('rb') as file, mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ) as data:
+            records.append({
+                'run': run,
+                'path': name,
+                'binary_sha256': hashlib.sha256(data).hexdigest(),
+                'embedded_rustc_commits': sorted({
+                    value.decode() for value in re.findall(rb'/rustc/([0-9a-f]{40})/', data)
+                }),
+            })
+path = root / 'Deadpan Range QA.app/Contents/MacOS/deadpan-app'
+with path.open('rb') as file, mmap.mmap(file.fileno(), 0, access=mmap.ACCESS_READ) as data:
+    records.append({
+        'run': 'native-qa-and-replay',
+        'path': str(path),
+        'binary_sha256': hashlib.sha256(data).hexdigest(),
+        'embedded_rustc_commits': sorted({
+            value.decode() for value in re.findall(rb'/rustc/([0-9a-f]{40})/', data)
+        }),
+    })
+expected = {
+    'core-reviewed': '8bab26f4f68e0e26f0bb7960be334d5b520ea452',
+    'workspace': '8bab26f4f68e0e26f0bb7960be334d5b520ea452',
+    'app-third': '8bab26f4f68e0e26f0bb7960be334d5b520ea452',
+    'app-ui': '88d9e12ae178fab0fb5cc050a94da85685d449ea',
+    'app-ui-pinned': '8bab26f4f68e0e26f0bb7960be334d5b520ea452',
+    'native-qa-and-replay': '8bab26f4f68e0e26f0bb7960be334d5b520ea452',
+}
+for record in records:
+    assert record['embedded_rustc_commits'] == [expected[record['run']]], record
+(root / 'compiler-provenance.json').write_text(json.dumps(records, indent=2) + '\n')
+print(json.dumps({run: sum(record['run'] == run for record in records) for run in expected}, indent=2))

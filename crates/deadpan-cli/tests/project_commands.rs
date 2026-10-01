@@ -15,6 +15,8 @@ type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
 #[path = "project_commands/delete.rs"]
 mod delete;
+#[path = "project_commands/delete_range.rs"]
+mod delete_range;
 #[path = "project_commands/nested_pause.rs"]
 mod nested_pause;
 

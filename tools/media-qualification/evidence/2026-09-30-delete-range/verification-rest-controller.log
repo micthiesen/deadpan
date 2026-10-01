@@ -1,0 +1,74 @@
+{"command": ["cargo", "test", "--locked", "-p", "deadpan-app", "--features", "ui-harness"], "started": "2026-09-30T23:34:11.373448+00:00", "base_commit": "67736d4d806b24f38bee384fd5de74c6ce5cabf2", "diff_sha256": "65b974317c918601c9339bd5723dcb68246381c2ce5d64b57b93e7db5545bce5", "source_manifest_sha256": "66108b6f2b03fe21a0011fa43a30d94a07841ab3587cc61ac0a83621c8b336d4", "pid": 37764, "exit_code": 0, "seconds": 1186.1857625}
+test worker::project_tests::freeze_background_and_empty_sequence_follow_the_plan ... ok
+test worker::project_tests::frozen_context_reaches_sequence_preview_without_leaking_into_original_view ... ok
+test worker::tests::nonregular_input_is_rejected_before_hashing ... ok
+test worker::tests::opening_another_source_invalidates_even_completed_old_reply ... ok
+test worker::tests::rapid_navigation_keeps_only_latest_work_and_cancels_inflight_decode ... ok
+test worker::tests::shutdown_cancels_active_and_pending_and_prevents_publication ... ok
+test worker::endpoints::tests::vfr_endpoints_use_exact_in_and_last_included_ordinals_and_canonical_pixels ... ok
+test worker::project_tests::proposed_tests::proposed_picture_rejects_public_field_tampering_and_equal_but_foreign_base ... ok
+test project::tests::splice::replacement::replacement_proposals_share_exact_commits_for_short_equal_long_and_full_ranges ... ok
+test worker::endpoints::tests::endpoint_queue_never_replaces_the_main_picture_and_rejects_invalid_contexts ... ok
+test project::tests::splice::replacement::replacement_rejects_wrong_scope_stale_revision_and_failed_cursor_write ... ok
+test worker::tests::actual_preview_worker_opens_then_coalesces_source_frame_requests ... ok
+test worker::project_tests::proposed_tests::proposed_picture_uses_exact_slice_joins_without_stored_revision_and_retains_decoder ... ok
+test worker::project_tests::proposed_tests::proposed_decode_and_presentation_reject_stale_changes_and_name_the_proposed_edit ... ok
+test worker::project_tests::sequence_samples_exact_mapping_and_endpoint_policy_after_a_revision_change ... ok
+test worker::project_tests::worker_timing_precedes_notification_and_preserves_decoder_across_revisions ... ok
+test project::tests::splice::interior::nested_source_and_hold_interiors_preview_unsaved_and_commit_one_exact_undo ... ok
+test project::tests::splice::interior::interior_invalid_targets_and_changed_revision_cannot_retarget_or_publish_split ... ok
+test worker::project_tests::registered_source_and_sequence_decode_the_same_original_frame ... ok
+test worker::project_tests::revision_receipt_index_and_session_identity_are_checked ... ok
+test project::tests::splice::equivalence::service_proposal_and_commit_match_decoded_pictures_and_canonical_pcm_at_both_joins ... ok
+test project::tests::splice::equivalence::interior_proposal_and_commit_match_both_joins_and_preserve_original_suffix_pcm ... ok
+test project::tests::splice::equivalence::replacement_proposal_matches_saved_picture_pcm_and_retained_suffix_at_both_joins ... ok
+
+test result: ok. 377 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 39.65s
+
+     Running tests/headless.rs (target/debug/deps/headless-f5c0347c65909505)
+
+running 3 tests
+test headless_errors_keep_the_same_structured_protocol ... ok
+test native_binary_runs_headless_without_initializing_a_window ... ok
+test native_binary_dispatches_private_render_workers_without_a_window_or_argument_wrapper ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+
+{"command": ["cargo", "clippy", "--locked", "--workspace", "--all-targets", "--features", "deadpan-app/ui-harness", "--", "-D", "warnings"], "started": "2026-09-30T23:53:58.299781+00:00", "base_commit": "67736d4d806b24f38bee384fd5de74c6ce5cabf2", "diff_sha256": "07064aa007c52047fdf749bbdcc0d3bdeb6342b02a4b1d1b5408872fe37a9cba", "source_manifest_sha256": "66108b6f2b03fe21a0011fa43a30d94a07841ab3587cc61ac0a83621c8b336d4", "pid": 45457, "exit_code": 101, "seconds": 1165.017589667}
+    Checking proptest v1.11.0
+    Checking harfrust v0.12.0
+    Checking ecolor v0.36.2
+    Checking skrifa v0.44.0
+    Checking unicode-general-category v1.1.0
+    Checking tracing v0.1.44
+    Checking zune-jpeg v0.5.15
+    Checking raw-window-metal v1.1.0
+    Checking objc2-app-kit v0.2.2
+    Checking wgpu-naga-bridge v30.0.1
+error: using `chunks_exact_mut` with a constant chunk size
+   --> crates/deadpan-media/src/audio_session.rs:218:63
+    |
+218 |                 for (value, bytes) in chunk.iter().zip(buffer.chunks_exact_mut(4)) {
+    |                                                               ^^^^^^^^^^^^^^^^^^^
+    |
+help: consider using `as_chunks_mut::<4>()` instead
+   --> crates/deadpan-media/src/audio_session.rs:218:63
+    |
+218 |                 for (value, bytes) in chunk.iter().zip(buffer.chunks_exact_mut(4)) {
+    |                                                               ^^^^^^^^^^^^^^^^^^^
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#chunks_exact_to_as_chunks
+    = note: `-D clippy::chunks-exact-to-as-chunks` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::chunks_exact_to_as_chunks)]`
+
+error: using `chunks_exact` with a constant chunk size
+   --> crates/deadpan-media/src/audio_session.rs:318:42
+    |
+318 |                         buffer[..length].chunks_exact(4).map(|bytes| {
+    |                                          ^^^^^^^^^^^^^^^ help: consider using `as_chunks` instead: `as_chunks::<4>().0.iter()`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#chunks_exact_to_as_chunks
+
+error: could not compile `deadpan-media` (lib) due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...
+

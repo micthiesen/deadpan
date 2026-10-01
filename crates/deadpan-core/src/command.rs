@@ -127,6 +127,13 @@ pub enum Command {
         node: NodeId,
         timing: crate::AudioTimingId,
     },
+    /// Remove a nonempty, global half-open range from an ordinary Sequence.
+    DeleteRange {
+        parent: NodeId,
+        range: crate::FrameRange,
+        identities: crate::SplitIdentities,
+        timing: crate::AudioTimingId,
+    },
     /// Destination index is measured after removal from the old parent.
     Move {
         node: NodeId,
@@ -662,6 +669,12 @@ pub fn apply(
         Command::DeleteRipple { node, timing } => {
             crate::insert_time::delete(input, node, timing, &request.new_revision)?
         }
+        Command::DeleteRange {
+            parent,
+            range,
+            identities,
+            timing,
+        } => crate::insert_time::delete_range(input, parent, *range, identities, timing, context)?,
         Command::Split {
             node,
             at,
@@ -930,6 +943,7 @@ pub(crate) fn reduce(
         | Command::SpliceSource { .. }
         | Command::ReplaceSource { .. }
         | Command::DeleteRipple { .. }
+        | Command::DeleteRange { .. }
         | Command::SpliceSourceAt { .. } => {
             return Err(EditError::new(
                 EditErrorCode::InvalidCommand,
@@ -1940,6 +1954,7 @@ fn description(command: &Command) -> &'static str {
         Command::Insert { .. } => "Insert beats",
         Command::Delete { .. } => "Delete beat",
         Command::DeleteRipple { .. } => "Ripple-delete beat",
+        Command::DeleteRange { .. } => "Delete selected range",
         Command::Move { .. } => "Move beat",
         Command::Group { .. } => "Group beats",
         Command::Ungroup { .. } => "Ungroup beats",

@@ -1,0 +1,24 @@
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `deadpan-app` (bin "deadpan-app") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 14.53s
+     Running unittests src/main.rs (target/debug/deps/deadpan_app-ee1862e87f36dd24)
+
+running 5 tests
+test navigation::delete_range_tests::visual_delete_preserves_native_guards_and_rejects_counts ... ok
+test navigation::delete_range_tests::whole_beat_prefix_remains_distinct_from_visual_delete ... ok
+test project::tests::delete_range::native_range_delete_reports_saved_when_refresh_fails_then_reopen_undo_restores ... ok
+test project::tests::delete_range::native_range_delete_captures_nested_owner_and_returns_exact_join_once ... ok
+test project::tests::delete_range::native_range_delete_terminal_and_full_original_keep_the_protected_baseline ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 372 filtered out; finished in 0.44s
+
+     Running tests/headless.rs (target/debug/deps/headless-e178f18b4f10557f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+

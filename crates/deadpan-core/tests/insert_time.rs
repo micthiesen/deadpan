@@ -5,6 +5,8 @@ use serde_json::json;
 
 #[path = "insert_time/delete.rs"]
 mod delete;
+#[path = "insert_time/delete_range.rs"]
+mod delete_range;
 #[path = "insert_time/interior.rs"]
 mod interior;
 #[path = "insert_time/nested_sequence.rs"]

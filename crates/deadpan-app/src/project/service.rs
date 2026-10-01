@@ -28,6 +28,7 @@ use super::{
 
 type Result<T> = std::result::Result<T, String>;
 
+mod delete_range;
 mod gain;
 mod headless;
 mod moment;
@@ -630,6 +631,9 @@ impl Service {
         if cursor.0 < 0 || cursor.0 > workspace.plan.duration().frames() {
             return Err("Edit cursor is outside the project".into());
         }
+        if let ProjectEdit::DeleteRange { parent, range } = edit {
+            return self.delete_range(expected_revision, scope, parent, range);
+        }
         if let ProjectEdit::InsertTime { at, duration } = edit {
             if duration == deadpan_core::FrameDuration::ZERO {
                 self.message = Some("Pause resolves to 0 frames; no edit was made.".into());
@@ -659,7 +663,9 @@ impl Service {
             return Ok(());
         }
         let target = match &edit {
-            ProjectEdit::InsertTime { .. } => unreachable!("pause handled above"),
+            ProjectEdit::InsertTime { .. } | ProjectEdit::DeleteRange { .. } => {
+                unreachable!("range operation handled above")
+            }
             ProjectEdit::Split { node, .. }
             | ProjectEdit::Repeat { node, .. }
             | ProjectEdit::WrapRepeat { node, .. }
@@ -703,7 +709,9 @@ impl Service {
                 selected,
                 "Framing updated and saved",
             ),
-            ProjectEdit::InsertTime { .. } => unreachable!("pause handled above"),
+            ProjectEdit::InsertTime { .. } | ProjectEdit::DeleteRange { .. } => {
+                unreachable!("range operation handled above")
+            }
             ProjectEdit::Split { node: target, at } => {
                 let mut pending = vec![target.clone()];
                 let mut count = 3_usize;

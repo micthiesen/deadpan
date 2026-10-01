@@ -124,6 +124,31 @@ fn audit_reservation(
                 (action.is_some() || !pending.is_empty())
                     .then(|| format!("action={action:?}, pending={pending:?}")),
             );
+            for selection in [super::EditSelection::Empty, super::EditSelection::Range] {
+                let mut bindings = Bindings::default();
+                for key in *prefix {
+                    bindings.key_with_selection(*key, Modifiers::NONE, false, false, selection);
+                }
+                let context = format!(
+                    "Edit selection={selection:?} prefix={:?} text={text} ime={ime}",
+                    bindings.pending()
+                );
+                let action = bindings.key_with_selection(
+                    reservation.key,
+                    reservation.modifiers,
+                    text,
+                    ime,
+                    selection,
+                );
+                let pending = bindings.pending();
+                record(
+                    report,
+                    reservation,
+                    context,
+                    (action.is_some() || !pending.is_empty())
+                        .then(|| format!("action={action:?}, pending={pending:?}")),
+                );
+            }
         }
         for repeat in [false, true] {
             for background in [false, true] {
@@ -360,7 +385,7 @@ mod tests {
     fn shipped_routers_never_claim_a_kestrel_global_chord_or_prefix() {
         let report = audit().unwrap();
         assert_eq!(report.reserved_bindings, 62);
-        assert_eq!(report.routing_cases, 62 * 104);
+        assert_eq!(report.routing_cases, 62 * 192);
         assert!(report.passed(), "{report:#?}");
     }
 

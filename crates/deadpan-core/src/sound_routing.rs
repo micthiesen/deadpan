@@ -507,6 +507,10 @@ impl RootSoundEditCapture {
                     .map_err(DocumentError::from)?,
                 }
             }
+            Command::DeleteRange { parent, range, .. } => {
+                document.range_deletion(parent, *range)?;
+                RootSoundOperation::Delete { range: *range }
+            }
             Command::ReplaceSource {
                 parent,
                 range,

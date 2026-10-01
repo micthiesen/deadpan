@@ -1,0 +1,51 @@
+Atomic range deletion witness results, 2026-09-30
+
+All three focused targets passed on the first run. Pinned FFmpeg prefix: /tmp/deadpan-ui-ffmpeg/prefix.
+
+range-pcm-first: 5 passed; exit0; 55.968 seconds
+Command: cargo test -p deadpan-audio --test composite_insert --locked delete_range:: -- --nocapture
+Base commit: 67736d4d806b24f38bee384fd5de74c6ce5cabf2
+Source manifest: source-d0ed8f41791a6df8c2a8bdb4a1c9c2d61a93b478496c9366f01a38356dd8dc9f.json
+Log: range-pcm-first.log
+
+range-store-first: 2 passed; exit0; 32.105 seconds
+Command: cargo test -p deadpan-store --test delete_range --locked -- --nocapture
+Base commit: 67736d4d806b24f38bee384fd5de74c6ce5cabf2
+Source manifest: source-7be7b887aff27c937eee132211f5c5a36cd50f2a2fc3e94a64d7ada8737bf091.json
+Log: range-store-first.log
+
+range-cli-first: 1 passed; exit0; 83.221 seconds
+Command: cargo test -p deadpan-cli --test project_commands --locked delete_range:: -- --nocapture
+Base commit: 67736d4d806b24f38bee384fd5de74c6ce5cabf2
+Source manifest: source-7be7b887aff27c937eee132211f5c5a36cd50f2a2fc3e94a64d7ada8737bf091.json
+Log: range-cli-first.log
+
+Files whose hashes changed between PCM and store manifests:
+crates/deadpan-app/src/preview.rs
+crates/deadpan-app/src/project/service.rs
+crates/deadpan-core/tests/insert_time/delete_range.rs
+Store and CLI used identical source manifests.
+
+PCM oracle:
+Seven-frame 44.1 kHz Source at NTSC30000/1001. Delete frames[1,3). Retain all prefix samples[0,1602), move all suffix samples[4805,11211) to[1602,8008). Both retained intervals compare exactly, including endpoints. Source entry is independently constructed at mix position4805 using ratio147/160 and original source offset100.
+Other genuine PCM cases: nested Source and RoomTone endpoints plus outer sibling; an earlier InsertTime clock; full two-play Repeat with five-frame RoomTone gap; NTSC Preserve with full6407-point source preparation,19220-point canonical1/3-speed history and independent -1/5 output entry.
+Every relocated interval is read cold at its final256 samples, then in reverse irregular chunks over all samples, then at the entry again. Each edit checks exact inverse via existing helper. All oracles require finite nonzero PCM. Independent frame arithmetic and source fixture SHA256 are in arithmetic.txt.
+
+Persistence and CLI:
+Read-only preview with a held writer leaves every revisions/history/state/redo row unchanged. Commit matches preview exactly. A range cut is one recorded command and one new revision. Reopen, Undo, Redo and historical Delete mixed with DeleteRange validate. Stale requests before/after Undo leave rows unchanged. Missing/colliding split IDs and second timing-ordinal overflow fail before durable mutation. CLI persists the exact captured split identities and timing allocation.
+
+Limits:
+These are raw canonical PCM and synthetic structural-store fixtures. No audio device, export encoder, publication, or acoustic claim. PCM cases use ordinary Sequence ancestry and whole Repeat/Preserve suffixes. Interior Repeat/Retime endpoint rejection, sound-event bus transforms, sparse overrides, UI/IME and native capture are covered by other owners or remain outside this test scope. Invalid-request tests do not inject SQLite disk/commit faults. No source format/schema changes are made here. No Cargo work remained running when ownership returned to parent.
+
+Owned test sources:
+5ac359811ae550249f959771a9ce3916381843dce8537db4d8f6404c4e223d4d  crates/deadpan-audio/tests/composite_insert.rs
+2186feec1e27dc4ed38dda0cdfd18f76c902972fbb6448480b3faa3bf8bf656f  crates/deadpan-audio/tests/composite_insert/delete_range.rs
+8e04b929eec335e8b6f0d06f7e4ccde184f36914a3191dc0c41010215b3143b0  crates/deadpan-store/tests/delete_range.rs
+e5622efb1130622f325ffd8efe618e8335443687c8bb7fc49419cdaa63779ba1  crates/deadpan-cli/tests/project_commands.rs
+69fd3494759ea51f31467413cc6dbf12db351dbfe16d92f2370d63eeba22588e  crates/deadpan-cli/tests/project_commands/delete_range.rs
+
+Reviewed no-split branch follow-up:
+Parent changed aligned range deletion to skip endpoint capture when required_ids==0. One added PCM test independently checks aligned leading-child deletion (old[1602,9610) to new[0,8008), entry2/5), exactly one supplied ordinal0 timing, and terminal deletion with all8008 nonzero prefix samples retained and bindings remaining empty.
+All six PCM tests passed; exit0; range-pcm-reviewed.json/.log. No store/CLI rerun here; parent owns final integrated verification.
+Source manifest: source-fa691a65b5ec23c3017c516cfa8acf5dde9e36bb27bc1c428f43deb6be476938.json
+Reviewed audio test SHA256: 1313fb8ee22a63b6fa1dca0125a8768908e1f270ac8e290b63a4035f2155bad4

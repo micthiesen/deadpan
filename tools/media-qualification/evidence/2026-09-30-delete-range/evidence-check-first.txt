@@ -1,0 +1,20 @@
+The first check-evidence.py run exited 1 at line 63:
+
+    assert not selected['skipped']
+    AssertionError
+
+The replay field is a list of declared coverage exclusions, not skipped
+assertions. The range replay declares native picker/physical display/VoiceOver/
+OS IME/audio device omissions; the slice replay also declares its remaining
+operation scope and injected delivery. These were already in the qualification
+limits. The corrected verifier requires those exact lists and still requires
+all 98/400 scenario assertions and 11,904 routing cases to pass.
+
+The collector also now nests replay summaries under replays: the earlier suffix
+name still collided with the before-replay command result. Original command
+metadata and complete replay reports were retained in both versions.
+
+The first collection rerun redirected stdout to collection-output.json.
+That empty output file matched the input metadata glob and triggered a JSON
+decode error. The scratch output was renamed and the successful rerun writes
+to collection-output.log; malformed input metadata is still rejected.

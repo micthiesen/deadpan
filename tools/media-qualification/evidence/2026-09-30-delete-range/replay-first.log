@@ -1,0 +1,3 @@
+delete-range: FAIL
+UI feedback: /tmp/deadpan-delete-range-20260930/after-first/report.html
+Error: "UI feedback checks failed; inspect report.json and report.html"

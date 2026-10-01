@@ -1,0 +1,12 @@
+Native picture follow-up
+
+Target: /tmp/deadpan-delete-range-20260930/Deadpan Range QA.app (dev.thiesen.deadpan.range-qa)
+Package: /tmp/deadpan-delete-range-20260930/after-sixth/projects/delete-range/Documents/Deadpan/cfr-bframes.deadpan
+
+- Reopened package in Your edit/root, then used Ctrl-R once. UI reported “Redo saved”, 115 f, boundary 0/115.
+- Navigated gg5l. UI reported Edit boundary 5/115 and “Showing sequence frame 6”. The native screenshot visibly showed slate digits 010.
+- Pressed h once. UI reported boundary 4/115 and “Showing sequence frame 5”. Screenshot visibly showed slate digits 004.
+- Pressed l once. UI reported boundary 5/115 and “Showing sequence frame 6”. Screenshot visibly showed slate digits 010 again.
+- Pressed u once. UI reported “Undo saved”, total 120 f, boundary 5/120.
+- Screenshots were visually inspected in-session but the CUA API did not expose a save path, so no image files were retained.
+- Quit the isolated Range QA app. A subsequent cua.getApp for dev.thiesen.deadpan.range-qa returned “Invalid app”. The global app inventory can briefly retain stale running status; no other app was selected.

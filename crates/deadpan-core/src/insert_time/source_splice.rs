@@ -163,7 +163,7 @@ pub(crate) fn apply_interior(
         ));
     }
     let resolved = document.source_splice_interior(parent, target, at)?;
-    super::validate_identities(document, insertion.id, insertion.identities)?;
+    super::validate_identities(document, Some(insertion.id), insertion.identities)?;
     super::validate_split_budget(document, Some(target), insertion.identities)?;
     let placement_timing =
         AudioTimingId {

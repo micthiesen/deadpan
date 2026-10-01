@@ -1,0 +1,15 @@
+import os
+import subprocess
+import sys
+
+environment = dict(os.environ, DEADPAN_CHECK_OUTPUT='/tmp/deadpan-delete-range-20260930')
+runner = 'tools/media-qualification/evidence/2026-09-29-generated-pictures/run-native.py'
+checks = [
+    ('workspace', ['cargo', 'test', '--locked', '--workspace']),
+    ('app-ui', ['cargo', 'test', '--locked', '-p', 'deadpan-app', '--features', 'ui-harness']),
+    ('clippy', ['cargo', 'clippy', '--locked', '--workspace', '--all-targets', '--features', 'deadpan-app/ui-harness', '--', '-D', 'warnings']),
+]
+for name, command in checks:
+    status = subprocess.run(['python3', runner, name, *command], env=environment).returncode
+    if status:
+        sys.exit(status)

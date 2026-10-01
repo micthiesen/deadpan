@@ -1,0 +1,1378 @@
+[
+  {
+    "run": "core-reviewed",
+    "path": "target/debug/deps/insert_time-c54e507fd278fef7",
+    "binary_sha256": "704111517d9ca1e3497e30c42d2dc18b5f3d3812adb78026766702cf1ab24518",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "core-reviewed",
+    "path": "target/debug/deps/node_gain-646c5e20cefc7a39",
+    "binary_sha256": "44ce3d843e3383f63d3083b96f2ad2c4dad81bb44c4025bb256d7d98f4b43cb0",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "core-reviewed",
+    "path": "target/debug/deps/sound_routing-477310b2d537a94e",
+    "binary_sha256": "3d8d8f8ba115dd713e74665593447ff0adc115c59e3b3c60d45ba23ae976df26",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/allocation_projection-483c87e8b7a2dd01",
+    "binary_sha256": "6f42b9efff8f8f3645d2d6b67185ff95b76325bacc3e4aeb7436ae193ef50af1",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/anchors-4e11af37e476ae63",
+    "binary_sha256": "67612481424c07a89ef67bfc3a9efb200f127918764a9c97b180bb195e37d06c",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/artifact-9bd35bac33bdf7f3",
+    "binary_sha256": "e1821623730c2bc55c69fd8ae2dae5912e1fc7f2444185f10ea9e50c2a82718c",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_binding_capture-c19ddff4e47f048a",
+    "binary_sha256": "28a3999c43eafc085cff77e936d954987857699453755c56e0ea87adcb656045",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_bindings-978fb4ebe6534e2f",
+    "binary_sha256": "8beb36583ab8c310d9e14253d8869d6123debb862e4e030063e78b49fe44ca88",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_bindings-b79bba8fad8570ed",
+    "binary_sha256": "586f0a5490b4e627e7a6e62d20f27cea31b765a386b2132c77b43a596d43e0fb",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_context-293f104e2499b9d3",
+    "binary_sha256": "179833dcd7ea35efffa70845d1155c71a6dcc97211b93d189a908a8ab93b7f34",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_context-710d0672cd928a68",
+    "binary_sha256": "4ba424bdbeddc49d2b5b9cf0fbfa4d6a10226d53b945d848c69fb7a591345088",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_context-e3fef053f90c41cf",
+    "binary_sha256": "4b854ea5001bd378cc90027702491a3a3f7b3b98feb2a74bff9d49cdd596a50c",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_context-e6f8517cd2c037e1",
+    "binary_sha256": "30ebb50b17f0bf0aa4f24a98ec8b8cf7de7a35539310b1df3ddee6f6874bee42",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_decode-c3bf0da4bba117b8",
+    "binary_sha256": "c778c1db8b347032f16f441fb17efacff1283a94b977e6f85ef875179d8f8a9e",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_definition-0934497a00f8f329",
+    "binary_sha256": "1701d8068554a4c5035231621ac37b4ff227f79d833311f06b76a7a9bf1e17da",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_definition-8356a5712340d576",
+    "binary_sha256": "6525d3635e3b67d18d7395276c860f26c999ac6bc591d7fc5dfc48710e75cbfb",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_domain-3ffe49e2bf5c48fa",
+    "binary_sha256": "6a37095280f4d2c8c2b223d5b344b38507ef07ac10d7468b9a109869d8b1a817",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_domain-fbf0bfa45c1b283e",
+    "binary_sha256": "e30f870be1599052b1fe2daba84a5050bbcdf787d375c6d5f25e01127d1644aa",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_edges-84e1b8e748bc2080",
+    "binary_sha256": "e2d553d6b00f72d03f8127b94da0aa100ac7557c7bb38786a0093ac41f96d77e",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_fades-a1cc3a95e021b235",
+    "binary_sha256": "d956bcb45aa6881ba87791858021fb98b717cb55a2f3374b8d294ea30278ff43",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_gain-a0a59f2dd5ad5227",
+    "binary_sha256": "49bbca8002cee8e2e623d3991b60c8cb3a5c28c8ab7993104b39f1498b7fe9a0",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_inspection-5b3a3108a0843d81",
+    "binary_sha256": "bbbf15846e4ef26d010926720636cdfa633d834e2abc46a21b3753e8846050f8",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_lineage-fa2e7b6a3fe1bd39",
+    "binary_sha256": "9f0df595ac678da81d005e27a2835780d96123f0fb7879bc7edc1f6120199a63",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_plan-eb8a83171738563d",
+    "binary_sha256": "f7651e7df29dfe8a6b7ce46fc20452e0d6399fbf1b74effbf7c276984caa4ea4",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_policy-52390a87f5588360",
+    "binary_sha256": "4f2a8e817a8faddd155023c3856ae4a1945d444f54e5b1c238c09130beddb2a1",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_reference-da5aeda7c9286f32",
+    "binary_sha256": "b3128e7cde0c6b86ef6582e3dfc66819a784d3254fceabb551ec3c73505f2d24",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_reference-fe823d7c05211b93",
+    "binary_sha256": "d26d80a8ca26c7e1738adc22fae1d6210188f85481c41fbe4f5145a15331cfc2",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_session-0947a75fdac771a8",
+    "binary_sha256": "1bb04feb8476f1368347d0a47cb5f86edd4f6966d012de09376109ba9d3049c1",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_signal-a4c7ea60d78c9d05",
+    "binary_sha256": "7ad2dfde888edaa0921e6259017cde5f70f41f61f44e8e8aaeb795b37affbd0e",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/audio_tape-d46a7753a01703f4",
+    "binary_sha256": "e233ede78483a78d0c99ebe95675287bb7f18a71c924a26d750b259d0a390a5e",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/boundary_location-56f43efca84c69a8",
+    "binary_sha256": "b1bdf352a70e93f20ab92aecd8468ecac0a9611931e70a0136e909db7892a68c",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/bridge_real_media-507c04dd41d4ee74",
+    "binary_sha256": "0d65c7a6e40d1ecf102eb0ab0ed5fd89f4fdde6bd467fd353aa082c2741fb80b",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/bundle_qualification-c0d93addf23bf8a7",
+    "binary_sha256": "90741be3b311c15488202b9b53ab3d062a38cb58a536114f4a433899538d1cb8",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/canonical-09f4240a9e3764a6",
+    "binary_sha256": "4b42d7f7476faaaab20bd20f83c38341cb569ce37470ea06510b6877caa36665",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/canonicalize_real_media-9ec123f5edc683ca",
+    "binary_sha256": "ce2fdebdf5a7ad150a2df80ecafbdbd4b0c32f1423d0a2baeaa33971ff1eb046",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/clock-dc82177f40f776cd",
+    "binary_sha256": "aaf88b9d266a017736621755253b04a56294e9c818ad126d71ea47cd04e8b87e",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/composite_insert-a91f3e5e8dd16e07",
+    "binary_sha256": "b18c232a094371496fd3e8a804367fb949fa1ecb3448266f3e6692cb34b9e9bb",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/deadpan_app-5030a04931060b33",
+    "binary_sha256": "4ea58f23ecf0a3963cd4a41b2e6c191ca7214949f817cad294bea9fada7bd6be",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/deadpan_audio-983a9cdd361d65ea",
+    "binary_sha256": "c4ea4c08e4648c4a9b73b9cf048d5bac5b000cb37e988e6e4aa72766320f1b72",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/deadpan_cli-6ac9c680af8383d3",
+    "binary_sha256": "d16ddb80e651cae368180b18b5d093444fc2aa9a9c6e232615dc8e15e37ac8e1",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/deadpan_cli-e0ae8a6d0370c738",
+    "binary_sha256": "7e22cc8827595adc012d7b4aa997e93cab330f84b5c100fd5c53c7241a731d60",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/deadpan_core-aa7fd76b547833aa",
+    "binary_sha256": "be145ec7423e259d286160fa44c20a4cc26e801117f465c9a484301631e6c549",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/deadpan_dsp-e20d9a32cd90d551",
+    "binary_sha256": "b5d27fb2ae683b2c9218761bb1f82aa645643fea60ff676225b2fea576e974f7",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/deadpan_encode-8013b5158931ea9f",
+    "binary_sha256": "3148a1681275d19acc2ea34afcda7c551e2c451c64e0eea6d9aab4c0438d22a1",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/deadpan_fileclone-cbe80657c57ec17d",
+    "binary_sha256": "0224281a1998826d94f8a93c557138edfed3608e2bfb4cb879f35f7f088bc37b",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/deadpan_filesystem-74d0d7e7bcda6171",
+    "binary_sha256": "8b59a4536a41a042e9e079eefa3eeddf80a8e872af96c010a2a76903c17ecb8b",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/deadpan_jobs-ab760b6836ec23d6",
+    "binary_sha256": "ad0e482b386bfbb184ccaf281a878d90ea54aae11dff00f40209ab70f4d8fe8c",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/deadpan_media-d404416629d7e778",
+    "binary_sha256": "42c31b7635c630811f2ebc5c653011044d0982433594452b5c8575602c30865e",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/deadpan_media_worker-731a7476d605a4b2",
+    "binary_sha256": "d604ebfbac6933b724e8fc7b0306fea4e9c81b5cb23147cb844a235474c087d2",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/deadpan_models-13a89247029796a3",
+    "binary_sha256": "bada6f9c2beb19ece6abaa983db5ff317bbeb91473e2abfe57e11197ae34892e",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/deadpan_native_process-376291721d0237d5",
+    "binary_sha256": "724796f524306d8a22a77a36abc9af52112e68db9d622aeb5c1270e9800271d6",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/deadpan_output-25eb398392130426",
+    "binary_sha256": "18a8058d10dc825463fb1a14f42f2099cc0e45923f2ddfe891dafc7c921ff4d6",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/deadpan_plan-d631e87f9aa11b89",
+    "binary_sha256": "2446688c90cfbc933415dd92391187ea247a5c12d308b26fb109db8c3be06858",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/deadpan_playback-fe3eb4d68dd4becb",
+    "binary_sha256": "e552ec002ebfe010ffaddfe3f5bde09a933fc69de8548609ba03c4641e899dd5",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/deadpan_render-30a02f48618fa1b4",
+    "binary_sha256": "6d8f47c0b02d5de2ca195360fd53fba597321fdebd8be272cbb21cbd71bb24b7",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/deadpan_source-30feff13994babe2",
+    "binary_sha256": "8f5220f867d9ba8ff3206d843bad1912baa5d9be3a5745780b607ebf20780973",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/deadpan_store-245a288ba90bdfb0",
+    "binary_sha256": "34e46f3aad360e45ad8b221f5374552f39dd42e07394659d1e074d34a8cc6277",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/delete_range-079323091296ec2f",
+    "binary_sha256": "0426186be3fdd8a2740d7bcd33b89a7b8edb1564da63dfbf15ba0e06bd7618cc",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/delete_ripple-9577fc5991914d8f",
+    "binary_sha256": "0f3118abf93dabb07b523bce346b887265cf78d541a45c4f94db030764d56254",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/doctor-69d20ae12ceaac44",
+    "binary_sha256": "45bf95798110d2284459fc763e5f4368d432af153d25c5d94337eaa947f3dfa1",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/document-310d4df8642fbd4c",
+    "binary_sha256": "ae37a3755ea3f07fdc70d5d74059794038e063dbcc13767cf1863b4d30d73b6a",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/encoded_render-809edb0917dc81cc",
+    "binary_sha256": "dc1200a5aba8ab4d9de098cfdec1a9a3dca03a54b0a47a2ff302ea7be827e29d",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/encoded_verification-2dad3309b557fb1b",
+    "binary_sha256": "26e041f6842dafc6d4a3fef6682aaa38a0cc38f8a226d7fcdb225fccaf971d98",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/encoder_admission-627f6564fe9a738a",
+    "binary_sha256": "62d5918c19bd818bbdce6a782bfb1f17eb97dbcf63bf6a44d96e1fb55f6bd18e",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/export_decode-b8351ce147bc3998",
+    "binary_sha256": "8a555854bd37a3bae96afd280e9ee116e00f1483bd3f115bd0b027bebcba3d1d",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/failures-bdb80b24afc27bb1",
+    "binary_sha256": "3e58e655ffb5b3abe0941fbfab54e3bbe1c72e5f947bc13348c63cb37791b622",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/finite_peak-979a6959e98b0411",
+    "binary_sha256": "78d3cc9cffbacd357415a06d45a243126501ca2f3cf12e246faddd24417b63ed",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/framing-05948c064439d65f",
+    "binary_sha256": "079ade8349650e41e4b5a6295c9aca23c34d8a96f803e959a03942e1d9c54680",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/gap_bindings-34d0edb33678aaa5",
+    "binary_sha256": "11a57a695c438698d0c2fc3c66505b1350000dc22ee106acd607b59c833c44a1",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/gap_bindings-497cbce6167335d9",
+    "binary_sha256": "25ed11056a57f73c4517a54ebbf45ce13a9d270df276b5846cc0f2d41b904285",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/gap_branches-e1b0349639ba4f10",
+    "binary_sha256": "c03d1e8eae09b89492f26f5d0039f57c8f53c4a2e98ca197f2d550c337625647",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/gap_definition-7f8c9b9011934e79",
+    "binary_sha256": "1a9928adc477da7ba8bcfbeede9ca6f6f54a214ef0033bf88a79259301d74664",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/gap_overrides-78e404f4fb3bb2d1",
+    "binary_sha256": "f38122992060cc7144fde5bc28ff445e8faac39e0f47583567ae66922137341c",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/gap_projection-b9b150735375c061",
+    "binary_sha256": "13209bdda9a2b5be9448a6c4143ad9a92078ff268ef17a880fee4836a9c9a95f",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/generated_admission-e6676785af20ee66",
+    "binary_sha256": "960feb35b53796e80369d6aab7a23600bd8426d43f3a3afe58ee1f9e40825a44",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/generated_holds-fb6004318dde1d09",
+    "binary_sha256": "f659895f13accd0632c53772eb77263e585e02613cbf10c7dd9c9045fa7f1fdf",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/generated_media-d85b3b03c65a0660",
+    "binary_sha256": "4591dc93ee3a524be9164c1cc47b5cdd1f232f73374eab35b3e785a300805593",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/generated_read_handle-2fb47f38875ceafa",
+    "binary_sha256": "75fb8565c4275a2520e3b8d7d16bfe9ea5cbab3a51ebed42ae8265e4aa6ed7c1",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/generation-8d41096658210c91",
+    "binary_sha256": "ce24b6c5b79d5d2bb7a8c161f51cca3283057e81bdfe439a08bbd992f1d85114",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/generation_attempts-ca350e6e2e5d8f9d",
+    "binary_sha256": "d394d283d847f7e2bfb55b52fe39bcd20048a07b52215b32e8daf664f6cd7409",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/generation_bundles-c652c5abdedde455",
+    "binary_sha256": "aa14394206ca291efccdf05670a10aaefc67a687201e927964a8d3d04bbaeb03",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/generation_plan-be0782e6862312b4",
+    "binary_sha256": "6b27f790cd78fe689b5c099bc763d5e6331db044fb6bd05edd88f54891ce7895",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/headless-fa1aade82dde792b",
+    "binary_sha256": "cb0fd9c5b8239cf3b4b097bfcc6e4e063f5b5a316dd1da53cdd2ff9121edd43e",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/hold_audio-56daf467a44c44a3",
+    "binary_sha256": "5b51da8517ba00d453db8032b5ee33a95eb0fac7a421769a26aa02ad95a6cda3",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/hold_policy-d16f2e7118e9dba1",
+    "binary_sha256": "0b1bd6c5e00a9f5389366df77443284347ee1b2c907566dab77a636202722295",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/host_boundary-b7218553e3ba954a",
+    "binary_sha256": "3a93b029e7a49ee48da59bd69bcee8254621c85dc9e16591384ea4367e3f37e0",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/host_owner-5e4707b7d9fdb5aa",
+    "binary_sha256": "1709a1eae8a0113994d1c2a5a9dafbe8b5088b930b404493988cd01502d645f3",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/insert_time-ba31fecf02ec838a",
+    "binary_sha256": "bf9e8866746951a35bddd9eb0cafdcb29f9a1676a7f68c45d781369c7b0fc357",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/legacy_audio_lineage-122ac4c1d1ef4cf4",
+    "binary_sha256": "d279827692154cd2cdc20e18d95f10c5b49996a652087f9cde735d65395cc058",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/legacy_audio_selection-80244a2a5c437d09",
+    "binary_sha256": "abb62aac6bd4fc293af34ffd019e92d319b3ddb0eeebd7b8938cb4364caf4957",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/legacy_marks-da2476b8717ef7b4",
+    "binary_sha256": "0329de4972f947f65a2cd00d1445234f8774f559994e884dfc7b8a9a65f46637",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/legacy_split-4556a77111931342",
+    "binary_sha256": "64ed2b4cd7e60f051b7653f658868d8f69f5992d5a6af8b4cb7f3b373514fe40",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/lifecycle-a8097269e662b613",
+    "binary_sha256": "671b7ca7697531aab972c6b15308cec0d599cade7603e3cdb62d79daf027c8d9",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/limiter-5581e5cd81d0a624",
+    "binary_sha256": "096301fc6d64d2178b908373cd0e04443b49b07c7b8053d0ac11e0093b4ba43b",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/linux_ownership-05222d4bb01eb70d",
+    "binary_sha256": "223e40342478facecc3019a4d8f5de5702a071a1a2f4f058a0ee4be5dfe7604e",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/live_preparation-873081e328c3c9d2",
+    "binary_sha256": "8e2cffd23672cb585547e7e89acce668c86c9ff8dcea577b2da740a545cf9ee4",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/live_project-6b6f7f2b4c433b47",
+    "binary_sha256": "abd1f9dd9b671ceaf392cddcaee66ec6efe1f6b3d333079b23b0f73fc669cc07",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/loudness-859984053c046b56",
+    "binary_sha256": "f859431329279066ea16e10ccf707d9e8bf87838a4693d111af18452e1233243",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/mark_fragments-8dec330aaac3de55",
+    "binary_sha256": "438242e854dcc17d03204ecb3e4ca254d0dbff714ac17c5c615db5f5f28d2cde",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/mark_resolution-77ed3fac30147ceb",
+    "binary_sha256": "00ef68e70fcd226cd0e44016352c11db78e7a4a67e90130829edc357514b338e",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/marks-5b3300a3d6b56b8e",
+    "binary_sha256": "cc572892da685c9fa6240a97c916cf6c3c6e9c549d6205d1d2d14e0ee4f56774",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/migration-a408df0cf28e96fe",
+    "binary_sha256": "c614a4aa07a35533ae3eaedee7129ad8f95dfc07eafc93c23fe22f1dad57d0b9",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/no_alloc-a6c1c744f7b19463",
+    "binary_sha256": "7693cbeaa87740d0280efc1d16b8395e557d69f408ee78499557a9de7029d06d",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/node_gain-fe2114e8d0100f5e",
+    "binary_sha256": "e00ebc351253ac0fe36689802068e027c3db01f7387efb9eb95d624aa86a5a05",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/occurrence_edits-2effc207c87239ae",
+    "binary_sha256": "422c68e15323388423f4cb97f6b041d8f70c6a3573bf46f25fe754d4c2ab65ac",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/occurrence_edits-341f4510c5d29bb6",
+    "binary_sha256": "1238cf8547827b369c18f9ace9a4b68dc45464fb18d2cba328d6492e9c35cb44",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/occurrence_edits-6b8515720e3cae2d",
+    "binary_sha256": "4b4c5925a7f274b99ee859596143e886f5427608afbb95afaf6f37e887298036",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/offline_audio-04ed552fd974b2e0",
+    "binary_sha256": "ef1d7e7f33c693bf4a97b316357cd8a952706c2fc7dc296e3d8ef985a933d80c",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/original_commands-7acdf9595e9d1bc5",
+    "binary_sha256": "4501a8a6ed8d90d6cf81a4ade2cdae50873066ac7b5dbf8a27af34826986e471",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/original_media-82c0c65029d5088a",
+    "binary_sha256": "7ffac0102acf27b6ee795eb0c750916bf51b8f8223db968a9ee87033a0429511",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/original_preparation-de471dc581a37bbb",
+    "binary_sha256": "e8abeb9526fcd5b3db39db18c86aed30ce6a31b180040dbb7ba0ff4287c55767",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/partitions-0501b97439dc162c",
+    "binary_sha256": "ea9cc53cccc2d53b98e2faa0e224d760d383306537dbef454ce2faa5f8e740b2",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/persistence-7a8a36c477ddd105",
+    "binary_sha256": "0dce3eeae601a7198c1bfd4c01ff6fb8ec10a61efda201e7ea72bf79adeb4158",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/persistent_decode-a9d64cf1cbcb6515",
+    "binary_sha256": "ddfb7c3433b295d25d72b51ee4d13dfdf58d9ec25f1d6a35a81b4328630be650",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/picture_context-dda0d83f3cf0206c",
+    "binary_sha256": "0776c2b436ce2f935e49e516c8dc67b4623c387901f06836063e50cc9fb8f9e6",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/picture_plan-f72e7af79f57a040",
+    "binary_sha256": "75ffb252a82021e534c8e43815cb8ff25d3a5992d7c97c9b62a5bdeffde4a13d",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/play_overrides-67c568cfe08de7e9",
+    "binary_sha256": "ae94b5cb6507492e86d1b6da73ef6843640acc0689b6c35b1b3f332bc0ea7208",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/play_overrides-ab6fdfdf56897ce8",
+    "binary_sha256": "a15eafcb0cbed756aba4f62986abe2e0595f4eeb33f6c45dcbc4a09475142117",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/policy-88052a5c940a1fb6",
+    "binary_sha256": "8068cda2b47c941a950e36761d63d5833a15b93695c2893cd98dcba65d667019",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/prepared_checkpoint-0cefe3bb41a460d5",
+    "binary_sha256": "3b171d5013d54cef0b8c4aeb99467d80914a10f61c97972e007c86675d521961",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/prepared_relink-bb49e4483bc4049e",
+    "binary_sha256": "29fc9ae9042305e4ea59975a030b88d5abedc866950ea858c5202169aa907309",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/prepared_source_registration-6a498942bb46bca5",
+    "binary_sha256": "1f3e215dba073da621b61a73c3c3ed88718965791a2303db4a52ca73cac2c81f",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/presentation_basis-8d74b8d15164f1cc",
+    "binary_sha256": "ec0517e94491196340dadddadf837ed66a218d7565830c7b420dbd812c1168f1",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/presentation_basis-947d5ffc0aa11e8e",
+    "binary_sha256": "60270da1e8531b0eb90d5133cf11c6f51a3b78c622b5d383f0381eb60938ba74",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/probe-73458c4ab28b1237",
+    "binary_sha256": "2cbbfc29b29e3bbd7db0f7b066a9f6903a15a9e4242542afe36d4caab3bbffdd",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/project_commands-f0caef0c6d7abc23",
+    "binary_sha256": "bc086681e701ba2cdbd0a8b2a89b84bed3398535f7fe625291726a3cf27ce049",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/protocol-49592a8943f151eb",
+    "binary_sha256": "a4ccece9e32878e4b7676098a51434467200ea9354c89dff573c293fb4954665",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/queue-f0d1a729147f7884",
+    "binary_sha256": "db3b11bcc15493586b96ee2dbc0ca6d3e5661dbe5c9048f7c7f7f4e657050f6b",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/reanchors-02c8af7475269800",
+    "binary_sha256": "33af8002e4ffbc1245741b38e31ff933754c2069bece4ad601cfef166b76b9b8",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/reference_policy-5d69cfaef6776773",
+    "binary_sha256": "cd5ecd2232e36efbeca18ce12a8950cc5919a9f3b4578c2258aebc86f2335de4",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/render-fd98cb8333a6eb89",
+    "binary_sha256": "f7d7b4d56d79c2ff109064fc84108ffa4d7e0eb3453caab89b03f241784d3388",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/render_jobs-7bbffd9cc1fc28b4",
+    "binary_sha256": "a9478b78ee0cc528d706ce263324dd3e95c7b623d9b362ba4ccca38537bed3d7",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/render_worker-5632c9a44725ab33",
+    "binary_sha256": "cf670854ab883d73e680e8d0c0fcf8ebbcf9959075c6c96f54e46aa29145ee22",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/repeat_gap_layout-d2b5e8e69113325d",
+    "binary_sha256": "e3a524eceb1371fa734d0171ce56145b44f572dddde001aa10891adb13f07c27",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/resample-8e1a8375c41c0cdf",
+    "binary_sha256": "e9466a319b236e31bacd669f7c9fecf848f87828d32e632fa182eeab4b71699c",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/retime_edits-6fc2069f45e4d528",
+    "binary_sha256": "508bbf8d4d1109d0c750ebf09a95b89cf28540fd6ff1fd4e1a32c86557fbc903",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/root_sound_routes-9402f160691f2039",
+    "binary_sha256": "6ad52ba8ee753efd80380811f28b310887e1e2ac313081609489944e8dbda24f",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/routed_voice-02beaf1ce575e334",
+    "binary_sha256": "cf5a78490cc055145868c0ddd02a16cf532f8122a7b014ef38c08ee74c0d23c7",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/runtime-8535cf3b11d8ed87",
+    "binary_sha256": "9184ebd587e2bf910004b2906cd8fe5ffa5e3abcc4265a1a5110790d19288972",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/sequence-d467620bf2cd1bdd",
+    "binary_sha256": "6ed0ec22fb9ae397a812af58163021d8178e26a7a29b2f6856388a3e026549ef",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/session-7313b27f2af7db5b",
+    "binary_sha256": "6128c7b5db2e1e81e638d23aebf5b85e3b83896151fbc827c09aeba1f2c72f8d",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/signal_transfer-699026ddb3fbb3af",
+    "binary_sha256": "8d5d4552998b8ba2ccae99347c81452becaee02d82ba20748af0a8a4f75b6d66",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/single_source-ea54136e19ee1d6e",
+    "binary_sha256": "286cf0a2d64ddefc43f20d1cd8c57bc5661235334f85729cc2d1e3582fbb7e4b",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/sound_allowances-e4f5a331f906a6c1",
+    "binary_sha256": "bd0bdf888575157c0da4be8c3b597304809c469a4746f86f5bbec021d591da4f",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/sound_event_fades-12494f35c6ad4c3c",
+    "binary_sha256": "64cc099bfea367bd9f37a6d1797f13b0dd7d248a6ab5a27db84d225a91df024f",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/sound_events-4b5eca93786f380a",
+    "binary_sha256": "3d71d9a9b281400d72f091873cc520d0a4fb790bf4d974960e16cb8aede08b00",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/sound_events-b642a2d78c45820a",
+    "binary_sha256": "d5d521c1e44f887b25bfe54c0c724cd5b8826c337ff3134ae458a28995205694",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/sound_events-dfc366e721a62b06",
+    "binary_sha256": "81fa818ffb354057013ba638d6ffef3903c5ee64bdb0390faf74818a016a5c31",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/sound_route_sampling-d40af4fb0b50d8dd",
+    "binary_sha256": "0fac66b772bdbff6818af21be634c8c29f9868de0f36fe1e5b02b73c28123d6c",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/sound_routes-d2f450de5d96abe4",
+    "binary_sha256": "3e03a58f8d11bd8bb566cc73fba3ad69ebe175cd642af4e8657ead7926820374",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/sound_routing-a4a32c2f69d012c3",
+    "binary_sha256": "bdbd6a042f6fdc55a8e7ffb8098307c5d593a85b99b0b782428fd7ff46a0c9e0",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/source_import-c8711c2ce677d6f2",
+    "binary_sha256": "d982b01c6e1e5843aa1f01e062cb1fbd81a00b88c0e8dc483823dba8c9f95c78",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/source_import_timing-92438dc59c0444a9",
+    "binary_sha256": "6cb6747b8b6e3332f3b208c67a3cea5959889f27674caacb18fe73118dca58ad",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/source_qualification-eae6fd58ad6471c4",
+    "binary_sha256": "12d978975ca3daf668652965e99e3ed33c5764e5d9731b73c7873f8e1688eccb",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/source_registration-6a67e050b33fb660",
+    "binary_sha256": "deeb17746d5541ef3c2f80590a1f516f8094b9e06e5fa49c2ff05a93c2005e88",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/source_registration-ed720399f4f93000",
+    "binary_sha256": "c26a3e385f9e8da09d40c2e5642ba4581fca0b846ede260de6e66b04c1c15ddc",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/source_session-f89e3997d8702103",
+    "binary_sha256": "a6db458e842cc2a592fdbec038506a158b0cdaac76582f866696d22c82cd704b",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/source_view-4765f58ddadfee01",
+    "binary_sha256": "de23b5ac4549cd84a3264dfb3887ef9e6be658878248a84d6122f239d8474381",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/source_voice-583345e1a34eaad0",
+    "binary_sha256": "98e5d975673149a8a4668e6056fbe6098b8c1947a0cff844eed752500fc6f1cb",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/source_voice_policy-535cb0d666bf5289",
+    "binary_sha256": "76af007ff2460126434614d6e00bf95126fef3751240a73a1ec0f59840923bcc",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/split-5c26fc0b515953f6",
+    "binary_sha256": "ad979cd96a110b706adaa3bf2794d7a5db110aeb7c47383fc4f1804209ea88ce",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/stages-f63d70468d365a0c",
+    "binary_sha256": "a61f00985157cc7f2f12479020610650a8f4558b6a9834e5239bfe090240ccd9",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/supervisor-5bf5612cddca9bec",
+    "binary_sha256": "98762c561cf8aa127671a7dd1fd9a47f8b9944a7a1c944ca12b15470812d0e17",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/deps/true_peak-0a0d894c601f7d11",
+    "binary_sha256": "f083a2c10077e2c858be79076170cbbd639176e0bf468a3b40a60d676c32651d",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "workspace",
+    "path": "target/debug/examples/qualify_model_worker-2d00e007c3b3b098",
+    "binary_sha256": "2761ceecee4039b54bd686fc9e9b438085b522cc186169f93bfae7080d1c5ac0",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "app-third",
+    "path": "target/debug/deps/deadpan_app-ee1862e87f36dd24",
+    "binary_sha256": "307f3f9323c3f310717600bfce4758ccaaf4545b66aaa74c44f7d333af22d7ef",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "app-third",
+    "path": "target/debug/deps/headless-e178f18b4f10557f",
+    "binary_sha256": "4c130bbf42991d2c5785741d61725a3c54d8e36c63551082eb83fdc0f75168f4",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "app-ui",
+    "path": "target/debug/deps/deadpan_app-87d91180cb7fa5d1",
+    "binary_sha256": "6a7a5cc4843164ed6bbb789a8ef95b903efc21c532da41a86553b0f2504ffbe9",
+    "embedded_rustc_commits": [
+      "88d9e12ae178fab0fb5cc050a94da85685d449ea"
+    ]
+  },
+  {
+    "run": "app-ui",
+    "path": "target/debug/deps/headless-f5c0347c65909505",
+    "binary_sha256": "f680ea1ddffd92b1d6ead983dd32672c39bdc8ae34f7c5ed3e5e66b4fd68de93",
+    "embedded_rustc_commits": [
+      "88d9e12ae178fab0fb5cc050a94da85685d449ea"
+    ]
+  },
+  {
+    "run": "app-ui-pinned",
+    "path": "target/debug/deps/deadpan_app-ee1862e87f36dd24",
+    "binary_sha256": "307f3f9323c3f310717600bfce4758ccaaf4545b66aaa74c44f7d333af22d7ef",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "app-ui-pinned",
+    "path": "target/debug/deps/headless-e178f18b4f10557f",
+    "binary_sha256": "4c130bbf42991d2c5785741d61725a3c54d8e36c63551082eb83fdc0f75168f4",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  },
+  {
+    "run": "native-qa-and-replay",
+    "path": "/tmp/deadpan-delete-range-20260930/Deadpan Range QA.app/Contents/MacOS/deadpan-app",
+    "binary_sha256": "d2c7c9c226709175a2091ec67c924fcc90e4280a6e00724f489f534c16dc2fb9",
+    "embedded_rustc_commits": [
+      "8bab26f4f68e0e26f0bb7960be334d5b520ea452"
+    ]
+  }
+]

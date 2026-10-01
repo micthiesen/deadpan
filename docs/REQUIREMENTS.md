@@ -178,8 +178,27 @@ complete decoded suffix. Core 34/database 43 stay unchanged, with old and new
 commands replayable in the same history. The locked workspace passes 2,661
 tests and the UI-feature app passes 375, with none failed or ignored.
 Formatting and strict all-target workspace Clippy with the UI harness feature
-pass. Range/role-only deletion and temporal occurrence deletion remain required;
-no DP requirement or gate changes status.
+pass. Visual range deletion is recorded below; role-only and temporal occurrence
+deletion remain required. No DP requirement or gate changes status.
+
+[Visual range deletion](qualification/delete-range-2026-09-30.md) adds one atomic
+linked cut through ordinary Sequence scopes. Active and finished half-open
+selections use `d`; empty selections cannot fall back to whole-beat deletion.
+`:delete` captures its exact range or beat on entry, including absence. Endpoint
+splits retain original clocks, downstream content retains its old sample entry,
+and root sounds transform once. Six decoded-PCM tests cover NTSC Source/RoomTone,
+earlier clocks, whole Repeat gaps, Preserve output and aligned cuts; persistence
+and CLI tests retain exact one-command history and stale rejection after Undo.
+The production range replay passes 98 checks, the slice regression passes 400,
+and each passes all 11,904 Kestrel routing cases. Core 34/database 43 are unchanged.
+Separate native QA verifies empty rejection, one cut, the exact rendered join
+pictures and Undo. Consistent SQLite backups confirm one edit/Undo plus a
+separate Redo/Undo picture check, full authored restoration and released locks.
+The locked workspace passes 2,685 tests and the UI-feature app passes 380, with
+none failed or ignored. Formatting and strict all-target workspace Clippy with
+the UI harness feature pass on Rust 1.97.1.
+Role-only deletion, temporal occurrence interiors, motion/text-object operators,
+edited-content registers and copy/move remain open.
 
 The [shared render workflow](RENDER_JOBS.md#shared-workflow-and-native-ownership)
 connects capture, encoding, retained checkpoints, fresh verification, publication

@@ -333,6 +333,11 @@ pub enum ProjectEdit {
     Delete {
         node: NodeId,
     },
+    /// Linked half-open project time inside the captured ordinary Sequence.
+    DeleteRange {
+        parent: NodeId,
+        range: deadpan_core::FrameRange,
+    },
     HoldDuration {
         node: NodeId,
         duration: FrameDuration,

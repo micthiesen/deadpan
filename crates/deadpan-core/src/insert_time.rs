@@ -13,11 +13,15 @@ use crate::{
 
 mod composite;
 mod delete;
+mod delete_range;
+mod sequence_range;
 mod source_replace;
 mod source_splice;
 mod target;
 pub(crate) use delete::apply as delete;
-pub use source_replace::SourceReplacement;
+pub(crate) use delete_range::apply as delete_range;
+pub use sequence_range::SequenceRangeEdit;
+pub type SourceReplacement = SequenceRangeEdit;
 pub(crate) use source_replace::apply as replace_source;
 pub use source_splice::SourceSpliceInterior;
 pub(crate) use source_splice::{
@@ -66,7 +70,7 @@ pub(crate) fn apply(
     total
         .checked_add(hold.duration.frames())
         .ok_or_else(overflow)?;
-    validate_identities(document, id, identities)?;
+    validate_identities(document, Some(id), identities)?;
     let NodeKind::Sequence { children } = &document.nodes()[document.root()].kind else {
         return Err(invalid("pause insertion requires a project-root Sequence"));
     };
@@ -551,7 +555,7 @@ fn physical<'a>(
 
 fn validate_identities(
     document: &ProjectDocument,
-    id: &NodeId,
+    id: Option<&NodeId>,
     identities: &SplitIdentities,
 ) -> Result<(), EditError> {
     if identities.nodes.len() > MAX_DOCUMENT_NODES {
@@ -559,8 +563,8 @@ fn validate_identities(
             "pause Split identity pool exceeds the document node limit",
         ));
     }
-    let mut distinct = BTreeSet::from([id]);
-    if document.nodes().contains_key(id)
+    let mut distinct = BTreeSet::from_iter(id);
+    if id.is_some_and(|id| document.nodes().contains_key(id))
         || identities
             .nodes
             .iter()

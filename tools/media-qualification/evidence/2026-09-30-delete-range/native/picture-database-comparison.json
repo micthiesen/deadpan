@@ -1,0 +1,41 @@
+{
+  "authored_document_restored_except_revision": true,
+  "new_commands": 0,
+  "revisions": [
+    [
+      "34af2547-8e75-45a8-a411-374ec98c3daa",
+      "21b50f0e-6793-4a28-9423-2b04d22d35db",
+      "redo"
+    ],
+    [
+      "91bba6c2-afc8-42e2-b766-332c4497ba62",
+      "34af2547-8e75-45a8-a411-374ec98c3daa",
+      "undo"
+    ]
+  ],
+  "changed_tables": [
+    "revisions",
+    "state"
+  ],
+  "unchanged_tables": [
+    "generation_attempt_heads",
+    "generation_attempts",
+    "generation_bundle_receipts",
+    "generation_candidate_receipts",
+    "generation_requests",
+    "history",
+    "hold_request_clocks",
+    "original_media",
+    "redo",
+    "render_attempts",
+    "render_candidate_checkpoints",
+    "render_encoding_decisions",
+    "render_job_heads",
+    "render_jobs",
+    "render_publication_operations",
+    "render_publications",
+    "single_source",
+    "source_qualifications"
+  ],
+  "writer_lock_released": true
+}

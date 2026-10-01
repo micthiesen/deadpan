@@ -127,6 +127,15 @@ fn every_frozen_document_patch_and_command_rejects_new_vocabulary() {
             ordinal: 0,
         },
     });
+    new_commands.push(Command::DeleteRange {
+        parent: id("root"),
+        range: FrameRange::new(ProjectFrame(0), ProjectFrame(1)).unwrap(),
+        identities: SplitIdentities::default(),
+        timing: AudioTimingId {
+            allocation: RevisionId::new("initialx").unwrap(),
+            ordinal: 0,
+        },
+    });
     macro_rules! check {
         ($version:literal, $adapter:ident) => {{
             let wire = old_document($version, &before);
@@ -233,20 +242,31 @@ fn frozen_sound_context_guards_reject_interior_splices_without_sounds() {
     ] {
         assert_eq!(error.unwrap_err().code, EditErrorCode::InvalidCommand);
     }
-    request.command = Command::DeleteRipple {
-        node: id("hold"),
-        timing: AudioTimingId {
-            allocation: request.new_revision.clone(),
-            ordinal: 0,
-        },
+    let timing = AudioTimingId {
+        allocation: request.new_revision.clone(),
+        ordinal: 0,
     };
-    for error in [
-        legacy_v29::validate_request_context(&before, &request),
-        legacy_v30::validate_request_context(&before, &request),
-        legacy_v31::validate_request_context(&before, &request),
-        legacy_v32::validate_request_context(&before, &request),
+    for command in [
+        Command::DeleteRipple {
+            node: id("hold"),
+            timing: timing.clone(),
+        },
+        Command::DeleteRange {
+            parent: id("root"),
+            range: FrameRange::new(ProjectFrame(0), ProjectFrame(1)).unwrap(),
+            identities: SplitIdentities::default(),
+            timing,
+        },
     ] {
-        assert_eq!(error.unwrap_err().code, EditErrorCode::InvalidCommand);
+        request.command = command;
+        for error in [
+            legacy_v29::validate_request_context(&before, &request),
+            legacy_v30::validate_request_context(&before, &request),
+            legacy_v31::validate_request_context(&before, &request),
+            legacy_v32::validate_request_context(&before, &request),
+        ] {
+            assert_eq!(error.unwrap_err().code, EditErrorCode::InvalidCommand);
+        }
     }
 }
 

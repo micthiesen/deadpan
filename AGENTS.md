@@ -15,7 +15,7 @@ this permission.
 
 Read [the full specification](docs/spec/DEADPAN_SPEC.md) and [agent handoff](docs/spec/AGENT_HANDOFF.md) before feature work. The Markdown specification is normative; summaries here do not reduce its scope. [Requirements](docs/REQUIREMENTS.md) tracks DP-01 through DP-24 and Gates A through G. Keep code, tests, evidence, and remaining work current there.
 
-The current foundation includes validated beat documents, reversible structural commands, persistent marks with edit transforms, sparse per-play overrides and automatic nested occurrence isolation, stable repeat identities, exact indexed picture plans and boundary queries, SQLite project/history storage with schema migration, and a shared headless command entrypoint. The native UI creates one-Original projects in system Documents/Deadpan with an automatically initialized full-source baseline, opens legacy projects without changing their profile, registers audio into a separate sound catalog, reuses the whole Original, selects/copies half-open Original moments with v/y, selects independent Edit ranges, previews linked insertion/replacement with :splice, and atomically pastes or replaces with p/P in explicit ordinary Sequence scopes, navigates ordinary Sequence groups with Enter/Backspace, splits their direct children at the cursor, wraps/updates Repeats, deletes selected beats, changes existing Hold durations, atomically inserts silent freezes into Source/Hold beats and their fragments under ordinary Sequence groups or at Sequence seams before composite suffixes, navigates durable undo/redo, and inspects exact Source/Sequence frames through a persistent decoder and shared SDR GPU pipeline. It is not yet a usable video editor or release candidate. All product requirements remain open or partial. A button, mock worker, downloaded model, ignored test, or proposed target does not prove implementation.
+The current foundation includes validated beat documents, reversible structural commands, persistent marks with edit transforms, sparse per-play overrides and automatic nested occurrence isolation, stable repeat identities, exact indexed picture plans and boundary queries, SQLite project/history storage with schema migration, and a shared headless command entrypoint. The native UI creates one-Original projects in system Documents/Deadpan with an automatically initialized full-source baseline, opens legacy projects without changing their profile, registers audio into a separate sound catalog, reuses the whole Original, selects/copies half-open Original moments with v/y, selects independent Edit ranges, previews linked insertion/replacement with :splice, and atomically pastes or replaces with p/P in explicit ordinary Sequence scopes, navigates ordinary Sequence groups with Enter/Backspace, splits their direct children at the cursor, wraps/updates Repeats, deletes selected beats or linked Visual ranges in one undoable transaction, changes existing Hold durations, atomically inserts silent freezes into Source/Hold beats and their fragments under ordinary Sequence groups or at Sequence seams before composite suffixes, navigates durable undo/redo, and inspects exact Source/Sequence frames through a persistent decoder and shared SDR GPU pipeline. It is not yet a usable video editor or release candidate. All product requirements remain open or partial. A button, mock worker, downloaded model, ignored test, or proposed target does not prove implementation.
 
 ## Design philosophy
 
@@ -275,12 +275,22 @@ encoder geometry normalization, complete muxing or verified publication.
 
 Every persisted edit, undo, and redo gets a never-reused revision ID. Core inverse patches can restore exact fixture identity; the store rebases them onto fresh revisions to prevent stale commands becoming valid after undo. Store writes use one transaction for the revision, history, and cursor. Keep `.writer.lock` held for the writable store lifetime; read-only inspection and dry runs may coexist. Take live database snapshots through SQLite's backup API, never copy only an open main database file.
 
-Current native and CLI deletion uses `DeleteRipple { node, timing }` through
+Current native and CLI whole-beat deletion uses `DeleteRipple { node, timing }` through
 ordinary Sequence ancestors. Capture downstream sample entries before removing
 the child; retain previous lattices/resumes and transform the root sound bus once.
 Zero-duration and terminal deletion need no new clock. Keep historical core
 `Delete` unchanged for saved-history replay; normalize the public CLI verb only
 at command ingress. See [ripple deletion](docs/AUDIO_REANCHORS.md#ripple-deletion).
+
+Visual `d` and captured `:delete` ranges use one
+`DeleteRange { parent, range, identities, timing }`. Keep empty selections
+distinct from absent selections, and capture command-entry absence as well as
+valid targets. Share ordinary Sequence endpoint splitting with replacement;
+capture original clocks before any Split and suffix entries before removal.
+Allocate only the clocks actually needed, transform root sounds once and return
+the exact join. A saved edit survives preview-refresh failure with its receipt
+and explicit reopen guidance; stale views cannot consume its cursor/selection.
+See [selected ranges](docs/AUDIO_REANCHORS.md#selected-ranges).
 
 Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 34 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings, audio edge policies, transparent Retime partitions, owned timing bindings and direct sound replacement maps, and binds qualified assets to immutable source receipts. Database schemas 1 through 38 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
 

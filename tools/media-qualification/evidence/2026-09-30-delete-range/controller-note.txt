@@ -1,0 +1,26 @@
+Verification controller observation
+
+The original exec session 71813 and functions cell 3025 were unavailable after the
+conversation refresh. Read-only process inspection confirmed original verify.py
+PID 28015, evidence runner 28020 and Cargo 28024 remained live; no work was restarted.
+Workspace test metadata subsequently recorded exit 0 and 2,685 passed, 0 failed, 0 ignored.
+The original controller then disappeared without starting app-ui or clippy.
+Its terminal status/output were unavailable, so the cause is not established.
+Only the two remaining checks were started through verify-rest.py, with controller
+stdout/stderr retained in verification-rest-controller.log. The passed workspace
+run was not repeated or overwritten.
+
+The resumed runner resolved Homebrew Rust 1.98.0: app-ui passed 380 tests;
+clippy ended 101 after 1165.018s on two new constant-chunk lints in unchanged
+media/audio_session.rs. All 162 workspace binaries and the native/replay binary
+carry the Rust1.97.1 standard-library compiler hash; both resumed app-ui binaries
+carry 1.98.0. compiler-provenance.json records the executable hashes and compiler
+paths. verify-pinned.py explicitly uses rustup run 1.97.1 for Clippy, formatting
+and UI-feature tests. Its initial missing quote failed before launching a check;
+that log is retained, then the corrected script was syntax-checked and started.
+The source manifest remains 66108b6f2b03fe21a0011fa43a30d94a07841ab3587cc61ac0a83621c8b336d4.
+
+Explicit pinned checks completed: Clippy exit 0 in 580.664s; formatting exit 0
+in 1.446s; UI tests exit 0 in 27.613s, 380 passed, none failed or ignored. Both
+final UI binaries carry the pinned compiler identity. The workspace run remains
+2,685 passed on the same source manifest; no workspace rerun was needed.

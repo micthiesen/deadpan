@@ -60,29 +60,96 @@ Core 34/database 43 remain unchanged. Historical core `Delete` replays its old
 patches; normalize the public CLI verb at ingress only. Current stores can hold
 both commands in one validated history. Native tests retain the captured group,
 successor selection, protected Original baseline and exact Undo; store tests
-reopen mixed histories and reject stale revisions after Undo. Range/role-only
-and Repeat/Retime occurrence deletion remain required.
+reopen mixed histories and reject stale revisions after Undo. Role-only and
+Repeat/Retime occurrence deletion remain required; ordinary Visual ranges are
+implemented below.
 
 The locked workspace passes 2,661 tests and the UI-feature app passes 375, with
 none failed or ignored, including eight decoded-PCM deletion cases and the
 native, CLI and mixed-history tests. Formatting and strict all-target workspace
 Clippy with the UI harness feature pass.
 
-The next Visual-delete regression is `gg 20l v 10l d` on a 120-frame Original:
-expect one removal of `[20,30)`, cursor 20, two endpoint fragments, duration 110
-and new frame 20 equal to old frame 30. Currently `d` only arms the `dd` operator,
-and `dd` deletes the selected whole beat. Empty Visual selection must remain
-distinct from absent selection so it cannot fall back to whole-beat deletion.
-`:delete` also needs an independent command-entry target, including absence;
-it currently resolves the selected beat at Enter. Extend the production router,
-native text/IME guards and Kestrel audit together.
+## Visual range deletion, 2026-09-30
 
-Use an atomic `DeleteRange { parent, range, identities, timing }` with shared
-replacement endpoint splitting, but no extra Source allocation. Capture clocks
-before Split and suffix entries on the split, undeleted tree; transform sounds
-once. A concrete PCM witness is seven NTSC frames of 44.1 kHz Source with `[1,3)`
-removed: retain old prefix `[0,1602)` and old suffix `[4805,11211)` at new
-`[1602,8008)`. This range command and its tests are proposed, not implemented.
+`gg 20l v 10l d` now removes `[20,30)` from the 120-frame fixture in one command:
+duration 110, cursor 20 and two retained fragments. The displayed join resolves
+to old frame 30. Active and finished ranges work in both directions; an empty
+selection cannot delete a beat. `:delete` independently captures the exact range
+or beat at command entry, including absence, and rejects stale targets.
+
+`DeleteRange { parent, range, identities, timing }` shares replacement endpoint
+splitting without allocating an extra Source. Original clocks are captured
+before any Split, suffix entries before removal, and root sounds transform once.
+Aligned terminal/full deletion captures no unused clocks; allocate a second
+ordinal only when splits and a surviving suffix both need it. The seven-frame
+NTSC/44.1 kHz witness retains old prefix `[0,1602)` and old suffix `[4805,11211)`
+at new `[1602,8008)`, including cold reverse reads. Six PCM cases include nested
+RoomTone, earlier bindings, Repeat gaps, full Preserve history and aligned cuts.
+
+The range replay passes 98 checks and the slice regression passes 400, each with
+11,904 Kestrel routing cases. Saved edits retain their durable receipt on refresh
+failure and explicitly require reopening; stale workspace delivery cannot move
+the cursor or selection. Independent review checked this recovery and preserved
+coalesced registration behavior. See [qualification](../qualification/delete-range-2026-09-30.md).
+
+Separate native QA verifies empty rejection, one `[5,10)` cut, the exact join
+slates `004`/`010` and Undo. The first SQLite comparison records one edit and
+one Undo; a second records only the picture-check Redo/Undo cycle. Both restore
+every authored field except the fresh revision and release the writer lock.
+Native screenshots were inspected but could not be saved through CUA; retained
+images come from the GPU replay. The user's Cursor QA window stayed untouched.
+
+The locked workspace passes 2,685 tests and the UI-feature app passes 380, with
+none failed or ignored. Formatting and strict all-target workspace Clippy with
+the UI harness feature pass on Rust 1.97.1. The resumed runner had selected
+Homebrew 1.98, whose new media-code lints failed; the corrected checks use
+`rustup run 1.97.1 cargo ...`. Compiler identities in all 162 workspace binaries
+and the native/replay binary confirm the original passing runs used 1.97.1.
+
+Core 34/database 43 remain unchanged. Role-only deletion, motion/text-object
+operators, edited-content registers/copy/move and Repeat/Retime occurrence
+interiors remain required. A range cut currently does not populate an editable
+register, so this does not complete the full delete/register contract.
+
+The next slice boundary is capture and insertion of editable Your edit content.
+`Subtree` contains only nodes/overrides and cannot carry marks, audio lineage,
+bindings or frozen timing records by itself. Reuse `sequence_range` admission
+and endpoint splitting, `occurrence_edit` traversal, mark ownership rules and
+destination `prepare_suffix`; give every paste fresh authored identities while
+sharing immutable media. Retain the captured revision, complete processing
+contexts, declared owner clocks and historical timing aliases. A neutral unity
+Partition can crop a complete owner context without changing its duration or
+curve origin. `CapturedFraming` is static Hold state, not a general slice context.
+Define and teach the owned copy scope before deciding which ancestors to carry:
+the spec distinguishes group contents (`ig`) from the owned group (`ag`), and
+does not explicitly require copying every unselected ancestor or the project root.
+Do not treat transparent Split/isolation cloning as a complete copy operation.
+Root sound events remain separate from subtree-owned attachments.
+
+First prove copying with existing timing types: retain complete selected owner
+contexts behind neutral Partition windows, then injectively rename the pasted
+nodes, per-Repeat play identities and cloned historical timing aliases together.
+Keep complete birth Run support, preserve compact play order, remap lineage
+allocation/origin pairs without collisions and rebuild frozen indexes. Generic
+`prepare_subtree` resets Repeat identities by position and is insufficient here.
+Do not add runtime clock translation fields before testing this narrower route.
+Mark validation permits hidden Bound intent behind a Partition. Partial copies
+therefore need exact, bias-aware filtering of each mark fragment; whole owned
+units retain hidden intent. Preserve unresolved states and absolute Sequence
+pins deliberately, and reject ambiguous Source occurrences instead of dropping
+their marks. A bounded capture helper can reuse existing projection and binding
+APIs without treating ordinary isolation as a selection filter.
+
+Decisive next tests: capture changes no history; later source edits cannot alter
+the captured content; repeated pastes have distinct identities; copied picture
+and PCM match the capture at NTSC rates; existing destination samples remain
+exact; one Undo restores all authored state. Include copy-of-paste, reordered
+Repeats with prior bindings and distinct Repeats sharing raw play IDs. Compare
+the selected owned contribution, with separate group-contents/owned-group tests;
+unselected ancestors are not silently copied. Start with the current ordinary
+Sequence admission boundary while retaining partial composites, occurrences,
+role-only placement and atomic move as required follow-up scope. This paragraph
+records a read-only design investigation, not implemented register behavior.
 
 ## Native identity, 2026-09-30
 

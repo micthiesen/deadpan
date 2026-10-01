@@ -1,0 +1,24 @@
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error[E0599]: no method named `get_by_label` found for struct `Harness<'a, State>` in the current scope
+   --> crates/deadpan-app/src/preview/harness/delete_range/input.rs:111:15
+    |
+111 |     d.harness.get_by_label("Keys  ?").focus();
+    |               ^^^^^^^^^^^^
+    |
+   ::: /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/kittest-0.4.0/src/query.rs:166:9
+    |
+166 |         get_by_label,
+    |         ------------ the method is available for `Harness<'static, ReplayApp>` here
+    |
+    = help: items from traits can only be used if the trait is in scope
+help: trait `Queryable` which provides `get_by_label` is implemented but not in scope; perhaps you want to import it
+    |
+  1 + use egui_kittest::kittest::Queryable;
+    |
+help: there is a method `get_all_by_label` with a similar name
+    |
+111 |     d.harness.get_all_by_label("Keys  ?").focus();
+    |                   ++++
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `deadpan-app` (bin "deadpan-app") due to 1 previous error

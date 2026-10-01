@@ -1,0 +1,38 @@
+import fcntl
+import json
+from pathlib import Path
+import sqlite3
+import sys
+
+package, evidence = map(Path, sys.argv[1:])
+before = json.loads((evidence/'before.json').read_text())
+after = json.loads((evidence/'after.json').read_text())
+old = json.loads((evidence/'before-document.json').read_text())
+new = json.loads((evidence/'after-document.json').read_text())
+old_revision, new_revision = old.pop('revision_id'), new.pop('revision_id')
+unchanged = [table for table in before if before[table] == after[table]]
+changed = [table for table in before if before[table] != after[table]]
+assert old == new, 'Undo must restore every authored field except its fresh revision'
+assert old_revision != new_revision
+assert set(changed) == {'revisions','history','state','redo'}, changed
+assert after['revisions']['rows'] == before['revisions']['rows'] + 2
+assert after['history']['rows'] == before['history']['rows'] + 1
+prior = sqlite3.connect(evidence/'before.sqlite')
+actual = sqlite3.connect(evidence/'after.sqlite')
+old_ids = {row[0] for row in prior.execute('SELECT id FROM revisions')}
+revisions = [row for row in actual.execute('SELECT id,parent_id,kind FROM revisions') if row[0] not in old_ids]
+assert sorted(row[2] for row in revisions) == ['edit','undo']
+edit = next(row for row in revisions if row[2] == 'edit')
+undo = next(row for row in revisions if row[2] == 'undo')
+assert edit[1] == old_revision and undo[1] == edit[0] and undo[0] == new_revision
+request = json.loads(actual.execute('SELECT request FROM history WHERE revision_id=?',(edit[0],)).fetchone()[0])
+assert request['command']['command'] == 'delete_range', request
+assert request['command']['range'] == {'start':5,'end':10}, request
+assert request['command']['parent'] == old['root']
+assert request['command']['timing']['allocation'] == edit[0]
+with (package/'.writer.lock').open('r+b') as handle:
+    fcntl.flock(handle, fcntl.LOCK_EX|fcntl.LOCK_NB)
+    fcntl.flock(handle, fcntl.LOCK_UN)
+report = {'authored_document_restored_except_revision':True,'old_revision':old_revision,'new_revision':new_revision,'revisions':revisions,'new_command':request['command'],'changed_tables':changed,'unchanged_tables':unchanged,'writer_lock_released':True}
+(evidence/'database-comparison.json').write_text(json.dumps(report,indent=2)+'\n')
+print(json.dumps(report,indent=2))

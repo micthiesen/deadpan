@@ -90,6 +90,30 @@ impl DeadpanApp {
         self.edit_range.range()
     }
 
+    pub(super) fn edit_selection(&self) -> navigation::EditSelection {
+        if self.edit_range.identity != self.edit_range_identity()
+            || self.edit_range.bounds.is_none()
+        {
+            navigation::EditSelection::None
+        } else if self.edit_range.range().is_some() {
+            navigation::EditSelection::Range
+        } else {
+            navigation::EditSelection::Empty
+        }
+    }
+
+    pub(super) fn routed_edit_selection(&self) -> navigation::EditSelection {
+        if self.view == View::Sequence
+            && !self.sound_focused()
+            && self.pane != Pane::Sounds
+            && !self.event_focused()
+        {
+            self.edit_selection()
+        } else {
+            navigation::EditSelection::None
+        }
+    }
+
     pub(super) fn visual_edit_range(&mut self) {
         self.bindings.clear();
         self.reconcile_edit_range();
@@ -106,9 +130,9 @@ impl DeadpanApp {
         self.error = None;
         self.message = Some(
             if self.edit_range.active {
-                "h/l and j/k extend the Edit range; v finishes; Esc clears."
+                "h/l and j/k extend the Edit range; d cuts it; v finishes; Esc clears."
             } else if self.selected_edit_range().is_some() {
-                "Edit range retained. :splice previews Replace selection; p/P replaces now."
+                "Edit range retained. d cuts it; :splice previews replacement; p/P replaces now."
             } else {
                 "Empty Edit range. Press v and move to select time."
             }
@@ -117,6 +141,9 @@ impl DeadpanApp {
     }
 
     pub(super) fn edit_range_label(&self) -> Option<String> {
+        if self.edit_selection() == navigation::EditSelection::Empty {
+            return Some("Edit range empty · move to select time · Esc clears".into());
+        }
         self.selected_edit_range().map(|range| {
             format!(
                 "Edit [{}..{}) · {} f · {}",
@@ -124,9 +151,9 @@ impl DeadpanApp {
                 range.end().0,
                 range.end().0 - range.start().0,
                 if self.edit_range.active {
-                    "extending · v finishes"
+                    "extending · d cuts · v finishes"
                 } else {
-                    "selected · Esc clears"
+                    "selected · d cuts · Esc clears"
                 },
             )
         })

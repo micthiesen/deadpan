@@ -1,0 +1,74 @@
+from pathlib import Path
+import gzip
+import hashlib
+import json
+import re
+
+source = Path('/tmp/deadpan-delete-range-20260930')
+target = Path('tools/media-qualification/evidence/2026-09-30-delete-range')
+target.mkdir(parents=True, exist_ok=True)
+
+def keep(path, name):
+    data = path.read_bytes()
+    if name.endswith('.gz'):
+        data = gzip.compress(data, mtime=0)
+    output = target / name
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_bytes(data)
+
+summary = {}
+for meta in sorted(source.glob('*.json')):
+    data = json.loads(meta.read_text())
+    if not isinstance(data, dict) or 'command' not in data or 'source_manifest_sha256' not in data:
+        continue
+    assert 'exit_code' in data, f'Unfinished run: {meta}'
+    keep(meta, meta.name)
+    log = meta.with_suffix('.log')
+    keep(log, log.name + ('.gz' if log.stat().st_size > 32768 else ''))
+    digest = data['source_manifest_sha256']
+    manifest = source / ('source-' + digest + '.json')
+    keep(manifest, manifest.name + '.gz')
+    rows = re.findall(r'test result: (\w+)\. (\d+) passed; (\d+) failed; (\d+) ignored', log.read_text())
+    summary[meta.stem] = {
+        'exit_code': data['exit_code'],
+        'passed': sum(int(row[1]) for row in rows),
+        'failed': sum(int(row[2]) for row in rows),
+        'ignored': sum(int(row[3]) for row in rows),
+    }
+
+replays = ['before', 'after-first', 'after-second', 'after-third', 'after-fourth', 'after-fifth', 'after-sixth', 'place-slice-final']
+for name in replays:
+    directory = source / name
+    report = directory / 'report.json'
+    if not report.exists():
+        continue
+    keep(report, name + '-report.json.gz')
+    value = json.loads(report.read_text())
+    summary.setdefault('replays', {})[name] = {
+        'failed': value['failed'],
+        'scenarios': {s['name']: {'checks': len(s['checks']), 'failed': s['failed'], 'skipped': s['skipped']} for s in value['scenarios']},
+    }
+
+for number in [18, 23, 25, 101, 117, 121]:
+    name = f'delete-range-{number:03}.png'
+    keep(source / 'after-sixth' / name, name)
+for name in ['witness-report.txt', 'arithmetic.txt', 'review.json', 'controller-note.txt', 'verification-rest-controller.log', 'verification-pinned-controller-first.log', 'verification-pinned-controller.log', 'compiler-provenance.json', 'pinned-toolchain.json', 'evidence-check-first.txt']:
+    keep(source / name, name)
+for name in ['audio-delete-range.rs', 'audio-delete-range-reviewed.rs', 'store-delete-range.rs', 'cli-delete-range.rs', 'verify.py', 'verify-rest.py', 'verify-pinned.py', 'compiler-audit.py', 'collect.py', 'check-evidence.py']:
+    keep(source / name, name + '.txt')
+for path in sorted((source / 'native').iterdir()):
+    if path.is_file():
+        name = 'native/' + path.name
+        if path.suffix == '.py':
+            name += '.txt'
+        elif path.stat().st_size > 32768:
+            name += '.gz'
+        keep(path, name)
+
+(target / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n')
+manifest = {
+    str(path.relative_to(target)): {'bytes': path.stat().st_size, 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
+    for path in sorted(target.rglob('*')) if path.is_file() and path != target / 'manifest.json'
+}
+(target / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+print(json.dumps({'files': len(manifest), 'bytes': sum(v['bytes'] for v in manifest.values()), 'summary': summary}, indent=2))

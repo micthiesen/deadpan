@@ -1,0 +1,21 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "delete_range",
+    "--",
+    "--nocapture"
+  ],
+  "started": "2026-09-30T22:56:18.546144+00:00",
+  "base_commit": "67736d4d806b24f38bee384fd5de74c6ce5cabf2",
+  "diff_sha256": "fe4053a477b58e7ca15f8b88891fcff224b85916eec9476f928d3e309ba8b22a",
+  "source_manifest_sha256": "117676627c98871d203e39102848fcf9730d6a31a37df85853f1cb300da61f27",
+  "pid": 23762,
+  "exit_code": 101,
+  "seconds": 76.10704525001347
+}

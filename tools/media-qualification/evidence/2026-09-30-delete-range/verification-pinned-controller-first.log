@@ -1,0 +1,4 @@
+  File "/tmp/deadpan-delete-range-20260930/verify-pinned.py", line 11
+    for name, args in [('rustc', ['rustc', '--version', '--verbose]),
+                                                        ^
+SyntaxError: unterminated string literal (detected at line 11)

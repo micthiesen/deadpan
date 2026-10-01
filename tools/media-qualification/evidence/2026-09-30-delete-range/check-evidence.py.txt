@@ -1,0 +1,86 @@
+from pathlib import Path
+import gzip
+import hashlib
+import json
+import subprocess
+
+root = Path('/Users/michael/Code/deadpan')
+scratch = Path('/tmp/deadpan-delete-range-20260930')
+digest = '66108b6f2b03fe21a0011fa43a30d94a07841ab3587cc61ac0a83621c8b336d4'
+expected_wire = (scratch / f'source-{digest}.json').read_bytes()
+assert hashlib.sha256(expected_wire).hexdigest() == digest
+expected = json.loads(expected_wire)
+paths = subprocess.check_output([
+    'git', '-c', 'core.fsmonitor=false', 'ls-files',
+    '--cached', '--others', '--exclude-standard', '-z',
+], cwd=root).decode().split('\0')
+actual = {
+    name: hashlib.sha256((root / name).read_bytes()).hexdigest()
+    for name in sorted(set(paths))
+    if name and (root / name).is_file()
+    and (Path(name).suffix in ('.rs', '.toml', '.lock', '.cpp', '.h', '.hpp', '.c', '.m', '.py')
+         or name.startswith(('.cargo/', 'crates/', 'native/')))
+}
+assert actual == expected, {
+    'added': sorted(actual.keys() - expected.keys()),
+    'removed': sorted(expected.keys() - actual.keys()),
+    'changed': sorted(name for name in expected.keys() & actual.keys()
+                      if expected[name] != actual[name]),
+}
+evidence = root / 'tools/media-qualification/evidence/2026-09-30-delete-range'
+manifest = json.loads((evidence / 'manifest.json').read_text())
+names = {str(path.relative_to(evidence)) for path in evidence.rglob('*')
+         if path.is_file() and path != evidence / 'manifest.json'}
+assert names == manifest.keys()
+for name, value in manifest.items():
+    data = (evidence / name).read_bytes()
+    assert len(data) == value['bytes'], name
+    assert hashlib.sha256(data).hexdigest() == value['sha256'], name
+summary = json.loads((evidence / 'summary.json').read_text())
+final_checks = ['fmt-pinned', 'workspace', 'app-ui-pinned', 'clippy-pinned']
+for name in final_checks:
+    result = summary[name]
+    assert result['exit_code'] == 0 and result['failed'] == result['ignored'] == 0, (name, result)
+    report = json.loads((evidence / f'{name}.json').read_text())
+    assert report['source_manifest_sha256'] == digest, name
+assert summary['workspace']['passed'] == 2685
+assert summary['app-ui-pinned']['passed'] == 380
+for name in ['fmt-pinned', 'app-ui-pinned', 'clippy-pinned']:
+    report = json.loads((evidence / f'{name}.json').read_text())
+    assert report['command'][:4] == ['rustup', 'run', '1.97.1', 'cargo'], name
+provenance = json.loads((evidence / 'compiler-provenance.json').read_text())
+workspace_binaries = [entry for entry in provenance if entry['run'] == 'workspace']
+assert len(workspace_binaries) == 162
+assert all(entry['embedded_rustc_commits'] == ['8bab26f4f68e0e26f0bb7960be334d5b520ea452'] for entry in workspace_binaries)
+pinned_ui_binaries = [entry for entry in provenance if entry['run'] == 'app-ui-pinned']
+assert len(pinned_ui_binaries) == 2
+assert all(entry['embedded_rustc_commits'] == ['8bab26f4f68e0e26f0bb7960be334d5b520ea452'] for entry in pinned_ui_binaries)
+assert summary['clippy']['exit_code'] == 101
+for name, scenario, checks in [('after-sixth', 'delete-range', 98), ('place-slice-final', 'place-slice', 400)]:
+    report = json.loads(gzip.decompress((evidence / f'{name}-report.json.gz').read_bytes()))
+    assert not report['failed']
+    selected = next(s for s in report['scenarios'] if s['name'] == scenario)
+    # This report field is a list of declared coverage exclusions, not skipped
+    # assertions. Require exactly the reviewed limits and every scenario check.
+    expected_limits = [
+        'OS picker behavior: only its selected path is scripted',
+        'Physical display presentation, VoiceOver, OS IME delivery and audio device output',
+    ]
+    if scenario == 'place-slice':
+        expected_limits = [
+            'Place slice covers linked Original insertions and explicit replacement in ordinary Sequence scopes. Edited-slice move/copy, separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.',
+            'The replay uses genuine source qualification, endpoint decoding, SDR GPU pictures, proposed documents and durable commands. Audio delivery and a concurrent service Undo are explicitly injected. It does not open an audio device or establish acoustic quality.',
+        ] + expected_limits
+    assert selected['skipped'] == expected_limits
+    assert len(selected['checks']) == checks and all(c['passed'] for c in selected['checks'])
+    audit = next(s for s in report['scenarios'] if s['name'] == 'kestrel-shortcuts')['checks'][0]
+    assert audit['passed'] and audit['actual']['routing_cases'] == 11904
+    assert audit['actual']['source_sha256'] == audit['actual']['live_source_sha256']
+    assert report['metadata']['binary_sha256'] == 'd2c7c9c226709175a2091ec67c924fcc90e4280a6e00724f489f534c16dc2fb9'
+for name in ['before', 'after-first', 'after-second', 'after-third', 'after-fourth', 'after-fifth']:
+    assert summary['replays'][name]['failed'], name
+for name in ['database-comparison.json', 'picture-database-comparison.json']:
+    native = json.loads((evidence / 'native' / name).read_text())
+    assert native['authored_document_restored_except_revision'] and native['writer_lock_released']
+print(json.dumps({'sources': len(actual), 'source_manifest_sha256': digest,
+                  'evidence_files': len(manifest), 'final_checks': {n: summary[n] for n in final_checks}}, indent=2))

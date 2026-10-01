@@ -1,0 +1,17 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 44.85s
+     Running tests/composite_insert.rs (target/debug/deps/composite_insert-83f2643f39d161d3)
+
+running 6 tests
+test delete_range::interior_range_delete_preserves_every_ntsc_prefix_and_suffix_sample ... ok
+test delete_range::range_delete_retains_clocks_from_an_earlier_pause_insertion ... ok
+test delete_range::aligned_range_delete_retains_suffix_and_terminal_prefix_without_extra_capture ... ok
+test delete_range::range_delete_preserves_ntsc_preserve_suffix_full_history ... ok
+test delete_range::range_delete_preserves_every_repeated_play_and_roomtone_gap_sample ... ok
+test delete_range::nested_range_delete_preserves_roomtone_source_and_outer_siblings ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 26 filtered out; finished in 2.06s
+

@@ -1,0 +1,21 @@
+{
+  "bundle_path": "/tmp/deadpan-delete-range-20260930/Deadpan Range QA.app",
+  "binary_sha256": "d2c7c9c226709175a2091ec67c924fcc90e4280a6e00724f489f534c16dc2fb9",
+  "info_plist": {
+    "CFBundleDevelopmentRegion": "en",
+    "CFBundleDisplayName": "Deadpan",
+    "CFBundleExecutable": "deadpan-app",
+    "CFBundleIconFile": "Deadpan.icns",
+    "CFBundleIconName": "Deadpan",
+    "CFBundleIdentifier": "dev.thiesen.deadpan.range-qa",
+    "CFBundleInfoDictionaryVersion": "6.0",
+    "CFBundleName": "Deadpan",
+    "CFBundlePackageType": "APPL",
+    "CFBundleShortVersionString": "0.1.0",
+    "CFBundleVersion": "0.1.0",
+    "LSApplicationCategoryType": "public.app-category.video",
+    "LSMinimumSystemVersion": "15.0",
+    "NSHighResolutionCapable": true
+  },
+  "scope": "Debug local QA bundle; no playback/performance/signing/relocation claim."
+}

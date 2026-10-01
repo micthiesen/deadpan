@@ -10,6 +10,7 @@ use serde_json::{Value, json};
 use super::*;
 use crate::ui_harness::{Options, gpu::Offscreen, report::*};
 
+mod delete_range;
 mod edit_latency;
 mod gain;
 mod generated_picture;
@@ -551,6 +552,12 @@ impl Driver<'_> {
             "footer_bottom":app.feedback.footer_bottom,
             "footer_command_open":app.feedback.footer_command_open,
         });
+        snapshot["edit_selection"] = json!(
+            app.selected_edit_range()
+                .map(|range| [range.start().0, range.end().0])
+        );
+        snapshot["edit_selection_state"] = json!(format!("{:?}", app.edit_selection()));
+        snapshot["edit_visual_active"] = json!(app.edit_range.active);
         snapshot["selected_event"] = json!(app.selected_event);
         snapshot["sound_events"] = json!(app.workspace.as_ref().map(|w| w.document.sounds()));
         snapshot["sound_routes"] = json!(app.workspace.as_ref().map(|w| w.document.sound_routes()));

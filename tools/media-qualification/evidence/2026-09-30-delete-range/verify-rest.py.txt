@@ -1,0 +1,20 @@
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+root = Path('/tmp/deadpan-delete-range-20260930')
+workspace = json.loads((root / 'workspace.json').read_text())
+assert workspace['exit_code'] == 0
+environment = dict(os.environ, DEADPAN_CHECK_OUTPUT=str(root))
+runner = 'tools/media-qualification/evidence/2026-09-29-generated-pictures/run-native.py'
+checks = [
+    ('app-ui', ['cargo', 'test', '--locked', '-p', 'deadpan-app', '--features', 'ui-harness']),
+    ('clippy', ['cargo', 'clippy', '--locked', '--workspace', '--all-targets', '--features', 'deadpan-app/ui-harness', '--', '-D', 'warnings']),
+]
+for name, command in checks:
+    assert not (root / (name + '.json')).exists(), f'Refusing to overwrite {name}'
+    status = subprocess.run(['python3', runner, name, *command], env=environment).returncode
+    if status:
+        sys.exit(status)

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness"
+  ],
+  "started": "2026-09-30T22:58:47.403722+00:00",
+  "base_commit": "67736d4d806b24f38bee384fd5de74c6ce5cabf2",
+  "diff_sha256": "ea97876aea734f9ada0ecb106e8435bef64c4b119286a2c883721f5341d97a65",
+  "source_manifest_sha256": "4c0d56444395600d699302636beea1213e1e242ca737a638619b694e55ca9d4c",
+  "pid": 24480,
+  "exit_code": 0,
+  "seconds": 0.13298474997282028
+}

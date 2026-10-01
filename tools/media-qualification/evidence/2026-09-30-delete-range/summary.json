@@ -1,0 +1,360 @@
+{
+  "app-first": {
+    "exit_code": 101,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "app-second": {
+    "exit_code": 0,
+    "passed": 4,
+    "failed": 0,
+    "ignored": 0
+  },
+  "app-third": {
+    "exit_code": 0,
+    "passed": 5,
+    "failed": 0,
+    "ignored": 0
+  },
+  "app-ui-pinned": {
+    "exit_code": 0,
+    "passed": 380,
+    "failed": 0,
+    "ignored": 0
+  },
+  "app-ui": {
+    "exit_code": 0,
+    "passed": 380,
+    "failed": 0,
+    "ignored": 0
+  },
+  "before-build": {
+    "exit_code": 0,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "before-replay": {
+    "exit_code": 1,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "build-fifth": {
+    "exit_code": 101,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "build-first": {
+    "exit_code": 0,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "build-fourth": {
+    "exit_code": 0,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "build-second": {
+    "exit_code": 0,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "build-seventh": {
+    "exit_code": 0,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "build-sixth": {
+    "exit_code": 0,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "build-third": {
+    "exit_code": 0,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "clippy-pinned": {
+    "exit_code": 0,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "clippy": {
+    "exit_code": 101,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "core-first": {
+    "exit_code": 101,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "core-range-fixed": {
+    "exit_code": 0,
+    "passed": 86,
+    "failed": 0,
+    "ignored": 0
+  },
+  "core-range": {
+    "exit_code": 101,
+    "passed": 56,
+    "failed": 2,
+    "ignored": 0
+  },
+  "core-refactor": {
+    "exit_code": 0,
+    "passed": 50,
+    "failed": 0,
+    "ignored": 0
+  },
+  "core-reviewed": {
+    "exit_code": 0,
+    "passed": 87,
+    "failed": 0,
+    "ignored": 0
+  },
+  "fmt-pinned": {
+    "exit_code": 0,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "fmt": {
+    "exit_code": 0,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "place-slice-final": {
+    "exit_code": 0,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "range-cli-first": {
+    "exit_code": 0,
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0
+  },
+  "range-pcm-first": {
+    "exit_code": 0,
+    "passed": 5,
+    "failed": 0,
+    "ignored": 0
+  },
+  "range-pcm-reviewed": {
+    "exit_code": 0,
+    "passed": 6,
+    "failed": 0,
+    "ignored": 0
+  },
+  "range-store-first": {
+    "exit_code": 0,
+    "passed": 2,
+    "failed": 0,
+    "ignored": 0
+  },
+  "replay-fifth": {
+    "exit_code": 1,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "replay-first": {
+    "exit_code": 1,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "replay-fourth": {
+    "exit_code": 1,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "replay-second": {
+    "exit_code": 1,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "replay-sixth": {
+    "exit_code": 0,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "replay-third": {
+    "exit_code": 1,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "workspace": {
+    "exit_code": 0,
+    "passed": 2685,
+    "failed": 0,
+    "ignored": 0
+  },
+  "replays": {
+    "before": {
+      "failed": true,
+      "scenarios": {
+        "kestrel-shortcuts": {
+          "checks": 1,
+          "failed": false,
+          "skipped": []
+        },
+        "delete-range": {
+          "checks": 4,
+          "failed": true,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      }
+    },
+    "after-first": {
+      "failed": true,
+      "scenarios": {
+        "kestrel-shortcuts": {
+          "checks": 1,
+          "failed": false,
+          "skipped": []
+        },
+        "delete-range": {
+          "checks": 5,
+          "failed": true,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      }
+    },
+    "after-second": {
+      "failed": true,
+      "scenarios": {
+        "kestrel-shortcuts": {
+          "checks": 1,
+          "failed": false,
+          "skipped": []
+        },
+        "delete-range": {
+          "checks": 19,
+          "failed": true,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      }
+    },
+    "after-third": {
+      "failed": true,
+      "scenarios": {
+        "kestrel-shortcuts": {
+          "checks": 1,
+          "failed": false,
+          "skipped": []
+        },
+        "delete-range": {
+          "checks": 49,
+          "failed": true,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      }
+    },
+    "after-fourth": {
+      "failed": true,
+      "scenarios": {
+        "kestrel-shortcuts": {
+          "checks": 1,
+          "failed": false,
+          "skipped": []
+        },
+        "delete-range": {
+          "checks": 60,
+          "failed": true,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      }
+    },
+    "after-fifth": {
+      "failed": true,
+      "scenarios": {
+        "kestrel-shortcuts": {
+          "checks": 1,
+          "failed": false,
+          "skipped": []
+        },
+        "delete-range": {
+          "checks": 63,
+          "failed": true,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      }
+    },
+    "after-sixth": {
+      "failed": false,
+      "scenarios": {
+        "kestrel-shortcuts": {
+          "checks": 1,
+          "failed": false,
+          "skipped": []
+        },
+        "delete-range": {
+          "checks": 98,
+          "failed": false,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      }
+    },
+    "place-slice-final": {
+      "failed": false,
+      "scenarios": {
+        "kestrel-shortcuts": {
+          "checks": 1,
+          "failed": false,
+          "skipped": []
+        },
+        "place-slice": {
+          "checks": 400,
+          "failed": false,
+          "skipped": [
+            "Place slice covers linked Original insertions and explicit replacement in ordinary Sequence scopes. Edited-slice move/copy, separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.",
+            "The replay uses genuine source qualification, endpoint decoding, SDR GPU pictures, proposed documents and durable commands. Audio delivery and a concurrent service Undo are explicitly injected. It does not open an audio device or establish acoustic quality.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      }
+    }
+  }
+}

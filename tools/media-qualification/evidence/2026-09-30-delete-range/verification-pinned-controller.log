@@ -1,0 +1,54 @@
+{"command": ["rustup", "run", "1.97.1", "cargo", "clippy", "--locked", "--workspace", "--all-targets", "--features", "deadpan-app/ui-harness", "--", "-D", "warnings"], "started": "2026-10-01T00:15:24.790030+00:00", "base_commit": "67736d4d806b24f38bee384fd5de74c6ce5cabf2", "diff_sha256": "e11b6d47bb0214722860640ab5653734e78650d4734fdfffd4d7a1881878212e", "source_manifest_sha256": "66108b6f2b03fe21a0011fa43a30d94a07841ab3587cc61ac0a83621c8b336d4", "pid": 49870, "exit_code": 0, "seconds": 580.6637833747081}
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Checking deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+    Checking deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+    Checking deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Checking deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 9m 40s
+
+{"command": ["rustup", "run", "1.97.1", "cargo", "fmt", "--all", "--check"], "started": "2026-10-01T00:25:05.639235+00:00", "base_commit": "67736d4d806b24f38bee384fd5de74c6ce5cabf2", "diff_sha256": "e11b6d47bb0214722860640ab5653734e78650d4734fdfffd4d7a1881878212e", "source_manifest_sha256": "66108b6f2b03fe21a0011fa43a30d94a07841ab3587cc61ac0a83621c8b336d4", "pid": 51684, "exit_code": 0, "seconds": 1.4457133342511952}
+
+{"command": ["rustup", "run", "1.97.1", "cargo", "test", "--locked", "-p", "deadpan-app", "--features", "ui-harness"], "started": "2026-10-01T00:25:07.323187+00:00", "base_commit": "67736d4d806b24f38bee384fd5de74c6ce5cabf2", "diff_sha256": "e11b6d47bb0214722860640ab5653734e78650d4734fdfffd4d7a1881878212e", "source_manifest_sha256": "66108b6f2b03fe21a0011fa43a30d94a07841ab3587cc61ac0a83621c8b336d4", "pid": 51692, "exit_code": 0, "seconds": 27.613382291980088}
+test worker::project_tests::actual_decoded_freeze_keeps_sequence_position_and_rejects_old_revision_reply ... ok
+test worker::project_tests::cancelled_open_does_not_leave_a_later_project_request_without_a_source ... ok
+test worker::tests::actual_preview_worker_opens_then_coalesces_source_frame_requests ... ok
+test worker::tests::nonregular_input_is_rejected_before_hashing ... ok
+test worker::tests::opening_another_source_invalidates_even_completed_old_reply ... ok
+test worker::tests::rapid_navigation_keeps_only_latest_work_and_cancels_inflight_decode ... ok
+test worker::tests::shutdown_cancels_active_and_pending_and_prevents_publication ... ok
+test worker::project_tests::proposed_tests::proposed_decode_and_presentation_reject_stale_changes_and_name_the_proposed_edit ... ok
+test worker::project_tests::frozen_context_reaches_sequence_preview_without_leaking_into_original_view ... ok
+test worker::project_tests::freeze_background_and_empty_sequence_follow_the_plan ... ok
+test worker::project_tests::proposed_tests::proposed_picture_rejects_public_field_tampering_and_equal_but_foreign_base ... ok
+test ui_harness::comparison::tests::complete_reports_above_sixteen_mib_remain_valid_baselines ... ok
+test transport::tests::original::original_resume_checks_source_receipt_view_rate_and_loop_window ... ok
+test transport::tests::original::edge_selection_windows_exclude_audio_lead_tail_and_project_enclosure_until_context_is_added ... ok
+test worker::endpoints::tests::vfr_endpoints_use_exact_in_and_last_included_ordinals_and_canonical_pixels ... ok
+test worker::project_tests::proposed_tests::proposed_picture_uses_exact_slice_joins_without_stored_revision_and_retains_decoder ... ok
+test worker::project_tests::registered_source_and_sequence_decode_the_same_original_frame ... ok
+test worker::project_tests::sequence_samples_exact_mapping_and_endpoint_policy_after_a_revision_change ... ok
+test worker::project_tests::worker_timing_precedes_notification_and_preserves_decoder_across_revisions ... ok
+test worker::project_tests::revision_receipt_index_and_session_identity_are_checked ... ok
+test project::tests::splice::equivalence::interior_proposal_and_commit_match_both_joins_and_preserve_original_suffix_pcm ... ok
+test project::tests::splice::equivalence::service_proposal_and_commit_match_decoded_pictures_and_canonical_pcm_at_both_joins ... ok
+test project::tests::splice::equivalence::replacement_proposal_matches_saved_picture_pcm_and_retained_suffix_at_both_joins ... ok
+
+test result: ok. 377 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 15.95s
+
+     Running tests/headless.rs (target/debug/deps/headless-e178f18b4f10557f)
+
+running 3 tests
+test headless_errors_keep_the_same_structured_protocol ... ok
+test native_binary_runs_headless_without_initializing_a_window ... ok
+test native_binary_dispatches_private_render_workers_without_a_window_or_argument_wrapper ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+

@@ -16,10 +16,18 @@ on the current direct child. Inspector Enter retains its parameter action;
 normal Enter opens a Sequence. Text fields, IME, menus, dialogs, help and Camera
 keep their input ownership. Navigation clears pending operators and counts.
 
-Deletion submits one `DeleteRipple` command and retains the sample entry of
-every following audio owner, including later siblings outside the current group.
+Whole-beat deletion submits one `DeleteRipple` command and retains the sample
+entry of every following audio owner, including later siblings outside the current group.
 Empty groups remain deletable without changing time. One Undo restores the full
 authored document. See [retained deletion clocks](AUDIO_REANCHORS.md#ripple-deletion).
+
+`v`, motions, `d` cuts a nonempty active or finished Edit range through one
+`DeleteRange` command. Source, ordinary Hold and supported fragment endpoints
+may be split; complete intervening composites may be removed. Enter the intended
+ordinary Sequence to cut its children. The cursor returns to the exact cut join,
+and one Undo restores all authored state. Empty selections never delete a beat.
+`:delete` captures its range or beat when command entry opens and rejects stale
+scope/revision/session targets. See [range deletion](AUDIO_REANCHORS.md#selected-ranges).
 
 ## Command ownership
 
@@ -56,8 +64,8 @@ at compact and large sizes, including a long path. The contributed
 duration, history, Camera and endpoint refusal using production inputs.
 
 Repeat plays, gaps and Retime descendants still require occurrence-aware
-navigation. Group creation/ungroup controls, ranges, semantic operators,
-general cursor splicing and the full editing workflow remain required. This
+navigation. Group creation/ungroup controls, role-only edits, semantic operators,
+edited-slice copy/move and the full editing workflow remain required. This
 increment does not make any full-product requirement or gate complete.
 The [qualification record](qualification/group-navigation-2026-09-26.md) separates
 completed checks from the environment's unavailable GPU replay.

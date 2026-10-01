@@ -1,0 +1,62 @@
+{
+  "authored_document_restored_except_revision": true,
+  "old_revision": "4ec425aa-1e52-436a-88bc-7e1256cc5ecb",
+  "new_revision": "21b50f0e-6793-4a28-9423-2b04d22d35db",
+  "revisions": [
+    [
+      "8114c641-32b3-4210-8832-42ca64eefe74",
+      "4ec425aa-1e52-436a-88bc-7e1256cc5ecb",
+      "edit"
+    ],
+    [
+      "21b50f0e-6793-4a28-9423-2b04d22d35db",
+      "8114c641-32b3-4210-8832-42ca64eefe74",
+      "undo"
+    ]
+  ],
+  "new_command": {
+    "command": "delete_range",
+    "parent": "08d5d299-4845-4ef7-83e1-d604af68611a",
+    "range": {
+      "start": 5,
+      "end": 10
+    },
+    "identities": {
+      "nodes": [
+        "4584c52f-5a55-43b0-b4b5-3e0383a0adf5",
+        "87b1669b-1ae7-4adc-bbd1-29bb871c93a4",
+        "b64032f7-f33a-449f-949a-b8b1d5d6bc4f",
+        "a78db052-9be4-4a6e-8c37-5a6d092649b7"
+      ]
+    },
+    "timing": {
+      "allocation": "8114c641-32b3-4210-8832-42ca64eefe74",
+      "ordinal": 0
+    }
+  },
+  "changed_tables": [
+    "history",
+    "redo",
+    "revisions",
+    "state"
+  ],
+  "unchanged_tables": [
+    "generation_attempt_heads",
+    "generation_attempts",
+    "generation_bundle_receipts",
+    "generation_candidate_receipts",
+    "generation_requests",
+    "hold_request_clocks",
+    "original_media",
+    "render_attempts",
+    "render_candidate_checkpoints",
+    "render_encoding_decisions",
+    "render_job_heads",
+    "render_jobs",
+    "render_publication_operations",
+    "render_publications",
+    "single_source",
+    "source_qualifications"
+  ],
+  "writer_lock_released": true
+}

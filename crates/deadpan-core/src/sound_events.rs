@@ -132,6 +132,7 @@ pub(crate) fn validate_command(
                 | Command::SpliceSourceAt { .. }
                 | Command::ReplaceSource { .. }
                 | Command::DeleteRipple { .. }
+                | Command::DeleteRange { .. }
                 | Command::Delete { .. }
         )
         || matches!(command, Command::Split { node, .. } if node != document.root())
@@ -204,6 +205,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::SpliceSourceAt { .. }
         | Command::ReplaceSource { .. }
         | Command::DeleteRipple { .. }
+        | Command::DeleteRange { .. }
         | Command::Split { .. }
         | Command::Insert { .. }
         | Command::Delete { .. }

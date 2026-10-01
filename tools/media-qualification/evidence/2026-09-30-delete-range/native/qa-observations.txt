@@ -1,0 +1,13 @@
+Native range-delete QA observations
+
+Target: /tmp/deadpan-delete-range-20260930/Deadpan Range QA.app (dev.thiesen.deadpan.range-qa)
+Package: /tmp/deadpan-delete-range-20260930/after-sixth/projects/delete-range/Documents/Deadpan/cfr-bframes.deadpan
+
+- Opened package; UI reported cfr-bframes.mp4 with 120 decoded video frames and Your edit at 120 f.
+- At Edit boundary 0, v then d reported: “The Edit selection is empty. Move its boundary or press Esc before deleting a beat; no edit was made.” Total remained 120 f.
+- Esc cleared the selection. gg5lv5l showed Edit [5..10), 5 f, extending, with d cuts hint.
+- One d reported “Cut Edit [5..10) · 5 frames removed · saved”; total became 115 f and boundary 5/115.
+- One h and one l moved the reported edit boundary 5 -> 4 -> 5. Picture/slate digits were not inspected, so the expected 004/010 images are unverified.
+- One u reported “Undo saved”; total returned to 120 f, boundary 5/120. No other authored edits or playback were performed.
+- Screenshot evidence was unavailable: this session’s native CUA screenshot method did not expose an output path.
+- Cleanup: final app inventory no longer listed dev.thiesen.deadpan.range-qa, so the isolated QA app is closed. dev.thiesen.deadpan.cursor-qa remained running and was not selected or operated.

@@ -67,6 +67,25 @@ Linked insertion at ordinary Sequence seams and direct Source/Hold interiors
 is available; counted `j/k` also works from an interior. The remaining
 [slice placement modes](SLICE_PLACEMENT.md) are still required.
 
+## Visual deletion
+
+In Your edit, plain `d` cuts the active or finished nonempty Visual range once.
+An empty selection produces guidance and never falls back to whole-beat deletion.
+Without a selection, `dd` retains its whole-beat meaning. Counts and held `d`
+activation cannot repeat a range cut. Native text, composition and focused
+controls retain their input. Original, catalog sounds and placed sounds retain
+their separate routes.
+
+`:delete` captures the range or beat when command entry opens, including an
+empty or missing target. Later selection or cursor changes cannot supply a
+different target; changed sessions, revisions or groups reject it. The command
+footer shows the captured interval and linked picture/sound scope.
+
+The `delete-range` production replay checks both selection directions, finished
+and empty selections, captured targets, native focus, synthetic IME, exact
+decoded joins, minimum-window paint clips and one-transaction Undo. These checks
+do not qualify physical IME or keyboard layouts.
+
 ## Render
 
 **`⌘E`** and **`:render`** open the native Render flow for the full committed
@@ -122,9 +141,10 @@ cargo test --locked -p deadpan-app navigation::
 
 [The audit](../crates/deadpan-app/src/navigation/shortcut_audit.rs) sends each of
 the 62 exact global Kestrel bindings through the actual `Bindings::key`, Camera,
-text-action, inspector, room-tone, Gain and Place slice routers. The current source expects
-104 routing cases per reservation, or 6,448 total, including pending prefix
-states, counts and overflow, text/IME states, and repeat/focus combinations.
+text-action, inspector, room-tone, Gain and Place slice routers, including
+`Bindings::key_with_selection` for empty and nonempty Edit selections. The current
+source expects 192 routing cases per reservation, or 11,904 total, including
+pending prefixes, counts and overflow, text/IME and repeat/focus combinations.
 The earlier corrected workspace, room-tone, gain and retime runs each passed all 5,456
 cases with no conflicts or live-source drift; all 298 app/harness tests also
 pass. The [native-gain qualification](qualification/native-gain-2026-09-28.md) retains

@@ -1,0 +1,27 @@
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+root = Path('/tmp/deadpan-delete-range-20260930')
+environment = dict(os.environ, DEADPAN_CHECK_OUTPUT=str(root))
+prefix = ['rustup', 'run', '1.97.1']
+versions = {}
+for name, args in [('rustc', ['rustc', '--version', '--verbose']),
+                   ('cargo', ['cargo', '--version']),
+                   ('clippy', ['cargo', 'clippy', '--version'])]:
+    versions[name] = subprocess.check_output(prefix + args, text=True)
+assert versions['rustc'].startswith('rustc 1.97.1 ')
+(root / 'pinned-toolchain.json').write_text(json.dumps(versions, indent=2) + '\n')
+runner = 'tools/media-qualification/evidence/2026-09-29-generated-pictures/run-native.py'
+checks = [
+    ('clippy-pinned', ['cargo', 'clippy', '--locked', '--workspace', '--all-targets', '--features', 'deadpan-app/ui-harness', '--', '-D', 'warnings']),
+    ('fmt-pinned', ['cargo', 'fmt', '--all', '--check']),
+    ('app-ui-pinned', ['cargo', 'test', '--locked', '-p', 'deadpan-app', '--features', 'ui-harness']),
+]
+for name, args in checks:
+    assert not (root / (name + '.json')).exists(), f'Refusing to overwrite {name}'
+    status = subprocess.run(['python3', runner, name, *prefix, *args], env=environment).returncode
+    if status:
+        sys.exit(status)

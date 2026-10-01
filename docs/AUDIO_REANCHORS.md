@@ -90,10 +90,34 @@ database 43 need no new fields or migration. Frozen command adapters reject
 the new tag. [Qualification](qualification/ripple-delete-2026-09-30.md) records
 the decoded-PCM regression, durable history and integration checks.
 
+### Selected ranges
+
+`DeleteRange { parent, range, identities, timing }` removes a nonempty global
+half-open interval in an explicit ordinary Sequence. It shares endpoint
+admission and splitting with `ReplaceSource`, without reserving an inserted
+Source. The structural `range_deletion` query reports the required Split IDs;
+it does not waive the separate audio-work or final-document validation limits.
+
+Capture original sampling lattices before splitting either endpoint. When a
+suffix also moves, a second timing identity retains its entries on the split,
+undeleted tree before removing time. Both identities use the new revision; the
+second ordinal is the supplied ordinal plus one. A deletion with no endpoint
+split uses the supplied identity for its suffix alone. An aligned terminal
+deletion captures no clock. Prefix fragments retain their original mapping.
+The root sound bus receives one deletion transform, and Split transports Hold
+permissions and marks before their usual removal policies apply.
+
+Source, ordinary Hold and supported transparent fragments may be partial
+endpoints. Complete intervening composites are retained structurally until
+removal. Empty groups at either endpoint survive; those strictly inside the
+range are removed. Repeat/Retime ancestry and partial composite endpoints still
+require occurrence editing. One inverse restores the complete authored state.
+The operation adds no persisted document fields or schema version.
+
 ## Remaining work
 
 Current steps represent Source, Hold, Repeat-gap and opaque Preserve output resumes.
-Complete movement/raw-recipe lifecycle, range/role-only deletion, temporal
+Complete movement/raw-recipe lifecycle, role-only deletion, temporal
 occurrence deletion and the full Visual/register workflow remain open.
 Native paste and partial-range deletion must not use separate Split/Edit commits.
 

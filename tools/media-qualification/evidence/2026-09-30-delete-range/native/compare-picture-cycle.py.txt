@@ -1,0 +1,39 @@
+import fcntl
+import json
+from pathlib import Path
+import sqlite3
+import sys
+
+package, evidence = map(Path, sys.argv[1:])
+before = json.loads((evidence / 'after.json').read_text())
+after = json.loads((evidence / 'picture-after.json').read_text())
+old = json.loads((evidence / 'after-document.json').read_text())
+new = json.loads((evidence / 'picture-after-document.json').read_text())
+old_revision = old.pop('revision_id')
+new_revision = new.pop('revision_id')
+assert old == new
+assert old_revision != new_revision
+changed = [table for table in before if before[table] != after[table]]
+assert set(changed) == {'revisions', 'state'}, changed
+assert after['revisions']['rows'] == before['revisions']['rows'] + 2
+prior = sqlite3.connect(evidence / 'after.sqlite')
+actual = sqlite3.connect(evidence / 'picture-after.sqlite')
+old_ids = {row[0] for row in prior.execute('SELECT id FROM revisions')}
+revisions = [row for row in actual.execute('SELECT id,parent_id,kind FROM revisions') if row[0] not in old_ids]
+assert sorted(row[2] for row in revisions) == ['redo', 'undo']
+redo = next(row for row in revisions if row[2] == 'redo')
+undo = next(row for row in revisions if row[2] == 'undo')
+assert redo[1] == old_revision and undo[1] == redo[0] and undo[0] == new_revision
+with (package / '.writer.lock').open('r+b') as handle:
+    fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    fcntl.flock(handle, fcntl.LOCK_UN)
+report = {
+    'authored_document_restored_except_revision': True,
+    'new_commands': 0,
+    'revisions': revisions,
+    'changed_tables': changed,
+    'unchanged_tables': [table for table in before if before[table] == after[table]],
+    'writer_lock_released': True,
+}
+(evidence / 'picture-database-comparison.json').write_text(json.dumps(report, indent=2) + '\n')
+print(json.dumps(report, indent=2))

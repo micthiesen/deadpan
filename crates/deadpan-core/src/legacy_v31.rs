@@ -1162,6 +1162,7 @@ pub fn validate_request_context(
         Command::SpliceSourceAt { .. }
             | Command::ReplaceSource { .. }
             | Command::DeleteRipple { .. }
+            | Command::DeleteRange { .. }
     ) {
         return Err(EditError::new(
             EditErrorCode::InvalidCommand,
@@ -1259,6 +1260,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::SpliceSourceAt { .. }
         | Command::ReplaceSource { .. }
         | Command::DeleteRipple { .. }
+        | Command::DeleteRange { .. }
         | Command::Split { .. }
         | Command::Insert { .. }
         | Command::Delete { .. }

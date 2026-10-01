@@ -1,0 +1,39 @@
+{
+  "core": {
+    "reviewer": "/root/delete_range_core_review",
+    "scope": "DeleteRange, shared Sequence range splitting, replacement regression, sound and mark transforms",
+    "resolved": [
+      "Do not capture clocks for aligned terminal/full deletion without endpoint splits or a surviving suffix.",
+      "Require a second timing ordinal only when endpoint capture and a surviving suffix both need it."
+    ],
+    "final_findings": []
+  },
+  "native_service": {
+    "reviewer": "/root/range_ui",
+    "scope": "Native range deletion, command capture, persisted receipts and preview completion",
+    "resolved": [
+      "Retain a successful durable edit receipt when workspace refresh fails and report saved state with reopen guidance.",
+      "Do not consume a receipt against an unchanged stale workspace; retain coalesced registration completion behavior."
+    ],
+    "final_findings": []
+  },
+  "parent": {
+    "scope": "Production diff, bounded identity allocation, shared replacement path, input ownership, tests, evidence and documentation",
+    "visuals_inspected": [
+      "delete-range-018.png",
+      "delete-range-025.png",
+      "delete-range-101.png",
+      "delete-range-117.png",
+      "delete-range-118.png",
+      "delete-range-121.png"
+    ],
+    "remaining_limits": [
+      "Physical IME and keyboard layouts",
+      "Role-only cuts",
+      "Repeat/Retime occurrence interiors",
+      "Edited-content registers and copy/move",
+      "Acoustics, performance and export acceptance"
+    ],
+    "native_verification": "Separate Range QA app: empty rejection, one DeleteRange[5,10), Undo, then Redo with actual 004/010 picture inspection and Undo. Both SQLite comparisons passed with released locks."
+  }
+}

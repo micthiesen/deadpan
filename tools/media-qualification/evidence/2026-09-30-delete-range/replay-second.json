@@ -1,0 +1,20 @@
+{
+  "command": [
+    "target/debug/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "delete-range",
+    "--retain-projects",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+    "--output",
+    "/tmp/deadpan-delete-range-20260930/after-second"
+  ],
+  "started": "2026-09-30T23:00:29.500347+00:00",
+  "base_commit": "67736d4d806b24f38bee384fd5de74c6ce5cabf2",
+  "diff_sha256": "ea97876aea734f9ada0ecb106e8435bef64c4b119286a2c883721f5341d97a65",
+  "source_manifest_sha256": "4b171f30559598e3566a5140ac3826fcc6939031b8e628ed20688351d32e3fb1",
+  "pid": 25233,
+  "exit_code": 1,
+  "seconds": 7.371737250126898
+}
