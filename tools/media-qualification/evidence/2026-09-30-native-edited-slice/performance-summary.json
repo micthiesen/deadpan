@@ -1,0 +1,68 @@
+{
+  "rapid-input": {
+    "warm_navigation_input_cpu_ms": {
+      "completed": {
+        "max_ms": 0.195708,
+        "n": 120,
+        "p50_ms": 0.147125,
+        "p95_ms": 0.154417,
+        "p99_ms": 0.193292
+      },
+      "failed": 0,
+      "samples": 120,
+      "timed_out": 0
+    },
+    "warm_navigation_input_to_picture_complete_ms": {
+      "completed": {
+        "max_ms": 1.60425,
+        "n": 120,
+        "p50_ms": 1.137333,
+        "p95_ms": 1.514584,
+        "p99_ms": 1.549
+      },
+      "failed": 0,
+      "samples": 120,
+      "timed_out": 0
+    }
+  },
+  "large-project": {
+    "large_project_navigation_cpu_ms": {
+      "completed": {
+        "max_ms": 0.5461659999999999,
+        "n": 160,
+        "p50_ms": 0.32087499999999997,
+        "p95_ms": 0.350167,
+        "p99_ms": 0.472542
+      },
+      "failed": 0,
+      "samples": 160,
+      "timed_out": 0
+    }
+  },
+  "edit-latency": {
+    "cached_repeat_input_to_picture_complete_ms": {
+      "completed": {
+        "max_ms": 5.657209,
+        "n": 40,
+        "p50_ms": 5.234458,
+        "p95_ms": 5.532541,
+        "p99_ms": 5.657209
+      },
+      "failed": 0,
+      "samples": 40,
+      "timed_out": 0
+    },
+    "hold_fallback_input_to_picture_complete_ms": {
+      "completed": {
+        "max_ms": 8.363417,
+        "n": 40,
+        "p50_ms": 5.289791999999999,
+        "p95_ms": 5.510291,
+        "p99_ms": 8.363417
+      },
+      "failed": 0,
+      "samples": 40,
+      "timed_out": 0
+    }
+  }
+}

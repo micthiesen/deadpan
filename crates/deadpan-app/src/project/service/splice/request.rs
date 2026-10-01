@@ -3,7 +3,10 @@
 use std::ops::Range;
 use std::sync::atomic::AtomicBool;
 
-use deadpan_core::{AudioTimingId, EditTransaction, FrameRange, ProjectFrame, SplitIdentities};
+use deadpan_core::{
+    AudioTimingId, CapturedEditSlice, Command, CommandRequest, EditTransaction, FrameDuration,
+    FrameRange, ProjectFrame, SplitIdentities,
+};
 use deadpan_store::source_registration::{
     SourceMomentInsertionRequest, SourceMomentInteriorInsertionRequest,
     SourceMomentReplacementRequest,
@@ -18,9 +21,105 @@ pub(in crate::project::service) enum Request {
     Slot(SourceMomentInsertionRequest),
     Interior(SourceMomentInteriorInsertionRequest),
     Replace(SourceMomentReplacementRequest),
+    Edited {
+        request: Box<CommandRequest>,
+        node: NodeId,
+        duration: FrameDuration,
+        removed: Option<FrameRange>,
+    },
 }
 
 impl Request {
+    pub(in crate::project::service) fn edited(
+        workspace: &Workspace,
+        parent: &NodeId,
+        destination: &Destination,
+        slice: &CapturedEditSlice,
+    ) -> Result<(Self, ProjectFrame)> {
+        let (cursor, required_ids) = match destination {
+            Destination::Slot(index) => (
+                workspace
+                    .document
+                    .source_splice_boundary(parent, *index)
+                    .map_err(display)?,
+                0,
+            ),
+            Destination::Interior { target, at } => {
+                let target = workspace
+                    .document
+                    .slice_splice_interior(parent, target, *at, slice)
+                    .map_err(display)?;
+                (target.boundary, target.required_ids)
+            }
+            Destination::Replace { range } => {
+                let target = workspace
+                    .document
+                    .slice_replacement(parent, *range, slice)
+                    .map_err(display)?;
+                (target.range.start(), target.required_ids)
+            }
+        };
+        let identities = super::super::edit_slice::paste_identities(slice)?;
+        let node = identities
+            .authored
+            .nodes
+            .first()
+            .cloned()
+            .ok_or("Copied slice has no imported root")?;
+        let split_identities = SplitIdentities {
+            nodes: (0..required_ids).map(|_| super::super::node()).collect(),
+        };
+        let new_revision = revision();
+        let timing = AudioTimingId {
+            allocation: new_revision.clone(),
+            ordinal: 0,
+        };
+        let command = match destination {
+            Destination::Slot(index) => Command::SpliceSlice {
+                parent: parent.clone(),
+                index: *index,
+                slice: slice.clone(),
+                identities,
+                timing,
+            },
+            Destination::Interior { target, at } => Command::SpliceSliceAt {
+                parent: parent.clone(),
+                target: target.clone(),
+                at: *at,
+                slice: slice.clone(),
+                identities,
+                split_identities,
+                timing,
+            },
+            Destination::Replace { range } => Command::ReplaceSlice {
+                parent: parent.clone(),
+                range: *range,
+                slice: slice.clone(),
+                identities,
+                split_identities,
+                timing,
+            },
+        };
+        let removed = match destination {
+            Destination::Replace { range } => Some(*range),
+            _ => None,
+        };
+        Ok((
+            Self::Edited {
+                request: Box::new(CommandRequest {
+                    project_id: workspace.document.project_id().clone(),
+                    expected_revision: workspace.document.revision_id().clone(),
+                    new_revision,
+                    command,
+                }),
+                node,
+                duration: slice.duration(),
+                removed,
+            },
+            cursor,
+        ))
+    }
+
     pub(in crate::project::service) fn capture(
         workspace: &Workspace,
         parent: &NodeId,
@@ -114,14 +213,30 @@ impl Request {
             Self::Slot(request) => &request.node,
             Self::Interior(request) => &request.node,
             Self::Replace(request) => &request.node,
+            Self::Edited { node, .. } => node,
         }
     }
 
-    pub(in crate::project::service) fn asset(&self) -> &AssetId {
+    pub(in crate::project::service) fn asset(&self) -> Option<&AssetId> {
         match self {
-            Self::Slot(request) => &request.asset,
-            Self::Interior(request) => &request.asset,
-            Self::Replace(request) => &request.asset,
+            Self::Slot(request) => Some(&request.asset),
+            Self::Interior(request) => Some(&request.asset),
+            Self::Replace(request) => Some(&request.asset),
+            Self::Edited { .. } => None,
+        }
+    }
+
+    pub(super) fn edited_command(&self) -> Option<&CommandRequest> {
+        match self {
+            Self::Edited { request, .. } => Some(request),
+            _ => None,
+        }
+    }
+
+    pub(super) fn inserted_duration(&self) -> Option<FrameDuration> {
+        match self {
+            Self::Edited { duration, .. } => Some(*duration),
+            _ => None,
         }
     }
 
@@ -129,6 +244,7 @@ impl Request {
         match self {
             Self::Replace(request) => Some(request.range),
             Self::Slot(_) | Self::Interior(_) => None,
+            Self::Edited { removed, .. } => *removed,
         }
     }
 
@@ -146,25 +262,44 @@ impl Request {
             Self::Replace(request) => {
                 store.preview_prepared_source_replacement(request, source, cancelled)
             }
+            Self::Edited { request, .. } => store.preview(request),
         }
     }
 
     pub(in crate::project::service) fn commit(
         &self,
         store: &mut ProjectStore,
-        source: &PreparedSourceRegistration,
+        source: Option<&PreparedSourceRegistration>,
         cancelled: &AtomicBool,
     ) -> std::result::Result<CommitOutcome, StoreError> {
         match self {
-            Self::Slot(request) => {
-                store.commit_prepared_source_moment(request, source, None, cancelled)
-            }
-            Self::Interior(request) => {
-                store.commit_prepared_source_moment_interior(request, source, None, cancelled)
-            }
-            Self::Replace(request) => {
-                store.commit_prepared_source_replacement(request, source, None, cancelled)
-            }
+            Self::Slot(request) => store.commit_prepared_source_moment(
+                request,
+                require_source(source)?,
+                None,
+                cancelled,
+            ),
+            Self::Interior(request) => store.commit_prepared_source_moment_interior(
+                request,
+                require_source(source)?,
+                None,
+                cancelled,
+            ),
+            Self::Replace(request) => store.commit_prepared_source_replacement(
+                request,
+                require_source(source)?,
+                None,
+                cancelled,
+            ),
+            Self::Edited { request, .. } => store.commit(request),
         }
     }
+}
+
+fn require_source(
+    source: Option<&PreparedSourceRegistration>,
+) -> std::result::Result<&PreparedSourceRegistration, StoreError> {
+    source.ok_or_else(|| {
+        StoreError::SourceRegistration("Original paste has no prepared source".into())
+    })
 }

@@ -1,8 +1,8 @@
 # Visual slice placement
 
-`:splice` opens an unsaved linked Original placement at the retained Edit
-cursor. Copy a half-open Original range with `v`, motion and `y`, then return
-to Your edit. To replace time, select an Edit range with `v`, motion and `v`,
+`:splice` opens an unsaved linked Original or edited-slice placement at the retained
+Edit cursor. Copy a half-open range with `v`, motion and `y` in Original or
+Your edit. To replace time, select an Edit range with `v`, motion and `v`,
 open `:splice`, then choose **Replace selection · r**. Fast `p/P` replaces a
 selected Edit range immediately; without one it inserts at a Sequence slot.
 
@@ -50,12 +50,15 @@ Text composition and reserved macOS/Kestrel chords retain input ownership.
 The native UI owns only a local range and destination draft. It sends a
 session/project/base-revision/draft/change identity to the project service.
 The service retains one exact `SourceMomentInsertionRequest`,
-`SourceMomentInteriorInsertionRequest` or `SourceMomentReplacementRequest`,
+`SourceMomentInteriorInsertionRequest`, `SourceMomentReplacementRequest`, or
+edited-slice `CommandRequest`,
 qualified media, proposed document and
 compiled plan. Preparation creates no authored revision
 or undo entry. It does not emit an asset-import completion or change selection.
 
-Picture and audio consume the same genuine `Snapshot::proposed` document.
+Picture and audio consume the same genuine proposed document. Original uses
+`Snapshot::proposed`; edited contents use `Snapshot::proposed_edit_slice` with
+the opaque store admission described in [edited slices](EDITED_SLICES.md).
 The picture worker validates its private admission against the exact committed
 base, checks the captured receipts, and compiles its own plan on its worker
 thread. It cannot turn a proposed picture into a committed Camera target.
@@ -94,7 +97,7 @@ authority. Audition advances the draft cursor without moving saved editor
 cursors or beat selection.
 
 Edit selection has its own project/session/revision/group identity, independent
-of the Original register. `v` starts and finishes selection; Escape clears it.
+of the copied register. `v` starts and finishes selection; Escape clears it.
 Finished ranges remain while the cursor moves, and playback never extends an
 active range. Command entry captures the range, including its absence, so a
 later completion cannot supply a new target. Before audition covers the removed
@@ -104,6 +107,6 @@ suffix using exact absolute frame-to-sample boundaries.
 ## Remaining specification work
 
 This is partial [§9.7](spec/DEADPAN_SPEC.md#97-visual-slice-placement).
-Copying and moving edited slices, picture-only and audio-only policies,
+Moving edited slices, picture-only and audio-only policies,
 and Repeat/Retime occurrence destinations
 remain required. These controls do not establish completion of DP-05 or DP-20.

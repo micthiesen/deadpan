@@ -21,9 +21,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     select(d, 20, 30, true)?;
     let copied = d
         .app()
-        .moment
         .copied
-        .as_ref()
+        .original()
         .map(|value| value.ordinals.clone());
     let revision = d.revision();
     d.key(Key::Colon)?;
@@ -40,9 +39,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         d.app().sequence_cursor == 20
             && d.app().sequence_length() == 110
             && d.app()
-                .moment
                 .copied
-                .as_ref()
+                .original()
                 .map(|value| value.ordinals.clone())
                 == copied,
         json!({"range":[20,30],"copied":copied}),

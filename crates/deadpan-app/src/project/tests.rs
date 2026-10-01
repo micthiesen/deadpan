@@ -12,6 +12,7 @@ use super::*;
 
 mod delete;
 mod delete_range;
+mod edited_slice;
 mod gain;
 mod headless;
 mod moment;

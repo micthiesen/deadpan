@@ -20,6 +20,9 @@ use super::*;
 #[path = "proposed_tests.rs"]
 mod proposed_tests;
 
+#[path = "edited_slice_tests.rs"]
+mod edited_slice_tests;
+
 #[test]
 fn generated_decoder_identity_preserves_edits_but_rechecks_media_interpretation() {
     use deadpan_core::{
@@ -169,7 +172,10 @@ impl Fixture {
     }
 
     pub(super) fn source(name: &str) -> Self {
-        let mut fixture = Self::empty();
+        Self::with_source(Self::empty(), name)
+    }
+
+    fn with_source(mut fixture: Self, name: &str) -> Self {
         let cancelled = AtomicBool::new(false);
         let limits = OriginalMediaLimits::default();
         let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))

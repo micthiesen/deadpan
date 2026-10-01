@@ -173,7 +173,7 @@ impl DeadpanApp {
                 frames: recipe.duration.frames(),
             })
         })();
-        let copied = self.moment.copied_audio_selection();
+        let copied = self.copied.copied_audio_selection();
         let selection = (|| {
             let target = target.as_ref().ok()?;
             let workspace = self.workspace.as_ref()?;

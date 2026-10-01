@@ -1,14 +1,14 @@
 //! Independent, replaceable endpoint pair. The main picture queue is untouched.
 
 use super::*;
+use crate::project::slice::CopiedViewId;
 use deadpan_core::{ProjectId, RevisionId};
 
 #[cfg(test)]
 #[path = "endpoint_tests.rs"]
 mod tests;
 
-/// One half-open Original selection, captured in a committed editor context.
-/// Both pictures belong to this asset: In and the last included (Out - 1) frame.
+/// One half-open source selection, captured in a committed destination context.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct EndpointIdentity {
     pub session: u64,
@@ -16,9 +16,23 @@ pub struct EndpointIdentity {
     pub revision: RevisionId,
     pub draft: u64,
     pub change: u64,
-    pub asset: AssetId,
-    pub in_frame: SourceFrameId,
-    pub out_frame: SourceFrameId,
+    pub source: EndpointSourceId,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum EndpointSourceId {
+    Original {
+        asset: AssetId,
+        qualification: SourceQualificationId,
+        in_frame: SourceFrameId,
+        out_frame: SourceFrameId,
+    },
+    Copied(CopiedViewId),
+}
+
+pub enum EndpointInput {
+    Original(Arc<Workspace>),
+    Copied(Arc<CopiedView>),
 }
 
 pub struct EndpointPictures {
@@ -33,7 +47,7 @@ pub struct EndpointReply {
 
 struct EndpointRequest {
     identity: EndpointIdentity,
-    workspace: Arc<Workspace>,
+    input: EndpointInput,
     cancelled: Arc<AtomicBool>,
 }
 
@@ -60,7 +74,7 @@ impl EndpointMailbox {
         self.reply = None;
     }
 
-    fn submit(&mut self, identity: EndpointIdentity, workspace: Arc<Workspace>) -> bool {
+    fn submit(&mut self, identity: EndpointIdentity, input: EndpointInput) -> bool {
         if self.shutdown {
             return false;
         }
@@ -68,7 +82,7 @@ impl EndpointMailbox {
         self.latest = Some(identity.clone());
         self.pending = Some(EndpointRequest {
             identity,
-            workspace,
+            input,
             cancelled: Arc::new(AtomicBool::new(false)),
         });
         true
@@ -116,13 +130,13 @@ impl EndpointWorker {
         Ok(Self { shared })
     }
 
-    pub fn submit(&self, identity: EndpointIdentity, workspace: Arc<Workspace>) {
+    pub fn submit(&self, identity: EndpointIdentity, input: EndpointInput) {
         if self
             .shared
             .mailbox
             .lock()
             .expect("endpoint mailbox")
-            .submit(identity, workspace)
+            .submit(identity, input)
         {
             self.shared.changed.notify_one();
         }
@@ -161,6 +175,7 @@ impl Drop for EndpointWorker {
 
 fn run_endpoints(shared: Arc<EndpointShared>, context: egui::Context) {
     let mut retained = None;
+    let mut plan = None;
     loop {
         let request = {
             let mut mailbox = shared.mailbox.lock().expect("endpoint mailbox");
@@ -179,9 +194,10 @@ fn run_endpoints(shared: Arc<EndpointShared>, context: egui::Context) {
         };
         let Some(request) = request else {
             retained = None;
+            plan = None;
             continue;
         };
-        let pictures = endpoint_pictures(&request, &mut retained);
+        let pictures = endpoint_pictures(&request, &mut retained, &mut plan);
         let published = shared.mailbox.lock().expect("endpoint mailbox").publish(
             EndpointReply {
                 identity: request.identity,
@@ -198,9 +214,59 @@ fn run_endpoints(shared: Arc<EndpointShared>, context: egui::Context) {
 fn endpoint_pictures(
     request: &EndpointRequest,
     retained: &mut Option<RetainedSession>,
+    plan: &mut Option<PlanCache>,
 ) -> Result<EndpointPictures, String> {
     let identity = &request.identity;
-    let workspace = &request.workspace;
+    if identity.session == 0 || identity.draft == 0 || identity.change == 0 {
+        return Err("Endpoints require an active captured placement.".into());
+    }
+    match (&identity.source, &request.input) {
+        (EndpointSourceId::Original { .. }, EndpointInput::Original(workspace)) => {
+            original_endpoints(request, workspace, retained)
+        }
+        (EndpointSourceId::Copied(id), EndpointInput::Copied(view)) => {
+            if id != view.id()
+                || identity.session != id.copy.session
+                || identity.project != id.copy.project
+            {
+                return Err("Endpoints belong to another copied source view.".into());
+            }
+            let duration = slice_view::admit_copied(view, plan, &request.cancelled)?.duration();
+            let first = slice_view::copied_picture(
+                view,
+                ProjectFrame(0),
+                plan,
+                &request.cancelled,
+                retained,
+            )?;
+            let last = slice_view::copied_picture(
+                view,
+                ProjectFrame(duration.frames() - 1),
+                plan,
+                &request.cancelled,
+                retained,
+            )?;
+            Ok(EndpointPictures { first, last })
+        }
+        _ => Err("Endpoint source kind differs from its admitted input.".into()),
+    }
+}
+
+fn original_endpoints(
+    request: &EndpointRequest,
+    workspace: &Workspace,
+    retained: &mut Option<RetainedSession>,
+) -> Result<EndpointPictures, String> {
+    let identity = &request.identity;
+    let EndpointSourceId::Original {
+        asset,
+        qualification,
+        in_frame,
+        out_frame,
+    } = &identity.source
+    else {
+        return Err("Original endpoints require Original source identity.".into());
+    };
     if identity.session != workspace.session
         || &identity.project != workspace.document.project_id()
         || &identity.revision != workspace.document.revision_id()
@@ -209,30 +275,33 @@ fn endpoint_pictures(
     {
         return Err("Source endpoints belong to another captured placement.".into());
     }
-    let registered = registered_source(workspace, &identity.asset)?;
+    let registered = registered_source(workspace, asset)?;
+    if registered.receipt.id() != qualification {
+        return Err("Original endpoint qualification has changed.".into());
+    }
     let index = registered
         .video_index
         .as_ref()
         .ok_or("Source has no picture index.")?;
     let count = u64::try_from(index.frames().len()).map_err(|_| "Source index is too large.")?;
-    if identity.in_frame.0 >= identity.out_frame.0 || identity.out_frame.0 > count {
+    if in_frame.0 >= out_frame.0 || out_frame.0 > count {
         return Err("Choose a nonempty source range within the measured picture index.".into());
     }
-    let last = SourceFrameId(identity.out_frame.0 - 1);
+    let last = SourceFrameId(out_frame.0 - 1);
     let mut decode = |frame| {
         project_picture(
             workspace,
             &workspace.document,
             &workspace.plan,
             &ProjectView::Source {
-                asset: identity.asset.clone(),
+                asset: asset.clone(),
                 frame,
             },
             &request.cancelled,
             retained,
         )
     };
-    let first = decode(identity.in_frame)?;
+    let first = decode(*in_frame)?;
     let last = decode(last)?;
     if request.cancelled.load(Ordering::Acquire) {
         return Err("Source endpoints were cancelled.".into());

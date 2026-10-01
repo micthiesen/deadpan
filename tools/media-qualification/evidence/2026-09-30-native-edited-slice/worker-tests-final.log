@@ -1,0 +1,44 @@
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `deadpan-app` (bin "deadpan-app") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.05s
+     Running unittests src/main.rs (target/debug/deps/deadpan_app-ee1862e87f36dd24)
+
+running 25 tests
+test worker::project_tests::index_validation_observes_cancellation_between_bounded_chunks ... ok
+test worker::project_tests::generated_decoder_identity_preserves_edits_but_rechecks_media_interpretation ... ok
+test worker::project_tests::proposed_tests::proposed_decode_and_presentation_reject_stale_changes_and_name_the_proposed_edit ... ok
+test worker::project_tests::sequence_samples_exact_mapping_and_endpoint_policy_after_a_revision_change ... ok
+test worker::tests::nonregular_input_is_rejected_before_hashing ... ok
+test worker::tests::opening_another_source_invalidates_even_completed_old_reply ... ok
+test worker::project_tests::proposed_tests::proposed_picture_rejects_public_field_tampering_and_equal_but_foreign_base ... ok
+test worker::tests::rapid_navigation_keeps_only_latest_work_and_cancels_inflight_decode ... ok
+test worker::tests::shutdown_cancels_active_and_pending_and_prevents_publication ... ok
+test worker::project_tests::actual_decoded_freeze_keeps_sequence_position_and_rejects_old_revision_reply ... ok
+test worker::project_tests::cancelled_open_does_not_leave_a_later_project_request_without_a_source ... ok
+test worker::tests::actual_preview_worker_opens_then_coalesces_source_frame_requests ... ok
+test worker::project_tests::edited_slice_tests::copied_freeze_context_background_and_identical_images_keep_distinct_edit_clocks ... ok
+test worker::endpoints::tests::endpoint_replacement_cancels_active_work_and_rejects_stale_success_and_failure ... ok
+test worker::project_tests::frozen_context_reaches_sequence_preview_without_leaking_into_original_view ... ok
+test worker::project_tests::edited_slice_tests::full_receipt_contracts_are_checked_once_per_view_not_per_warm_picture ... ok
+test worker::project_tests::proposed_tests::proposed_picture_uses_exact_slice_joins_without_stored_revision_and_retains_decoder ... ok
+test worker::endpoints::tests::endpoint_queue_never_replaces_the_main_picture_and_rejects_invalid_contexts ... ok
+test worker::project_tests::edited_slice_tests::copied_endpoints_keep_owned_clocks_pixels_and_exclude_both_ancestor_views ... ok
+test worker::project_tests::registered_source_and_sequence_decode_the_same_original_frame ... ok
+test worker::project_tests::worker_timing_precedes_notification_and_preserves_decoder_across_revisions ... ok
+test worker::project_tests::edited_slice_tests::historical_source_decodes_after_undo_and_sealed_views_revoke_even_with_warm_media ... ok
+test worker::project_tests::freeze_background_and_empty_sequence_follow_the_plan ... ok
+test worker::endpoints::tests::vfr_endpoints_use_exact_in_and_last_included_ordinals_and_canonical_pixels ... ok
+test worker::project_tests::revision_receipt_index_and_session_identity_are_checked ... ok
+
+test result: ok. 25 passed; 0 failed; 0 ignored; 0 measured; 372 filtered out; finished in 0.87s
+
+     Running tests/headless.rs (target/debug/deps/headless-e178f18b4f10557f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+

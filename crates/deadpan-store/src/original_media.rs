@@ -366,7 +366,8 @@ impl Seek for PreparedOriginalSnapshot {
 }
 
 impl OriginalImportHandle {
-    fn check_live(&self, cancelled: &AtomicBool) -> Result<(), StoreError> {
+    /// Check revocation even when a consumer already owns decoded private bytes.
+    pub fn check_live(&self, cancelled: &AtomicBool) -> Result<(), StoreError> {
         if self.closed.load(Ordering::Acquire) {
             return Err(OriginalMediaError::ImportSessionClosed.into());
         }
@@ -374,6 +375,11 @@ impl OriginalImportHandle {
             return Err(OriginalMediaError::Cancelled.into());
         }
         Ok(())
+    }
+
+    /// Pointer identity establishes the owning session, independently of liveness.
+    pub fn same_session(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.storage, &other.storage) && Arc::ptr_eq(&self.closed, &other.closed)
     }
 
     fn validate_for(&self, store: &ProjectStore, cancelled: &AtomicBool) -> Result<(), StoreError> {

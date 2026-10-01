@@ -93,6 +93,13 @@ points at 960×640; this is not a general picture-height guarantee for populated
 sound lists or larger fonts. See the
 [compact-workspace qualification](../qualification/compact-workspace-2026-09-28.md).
 
+The [edited-slice qualification](../qualification/native-edited-slice-2026-09-30.md)
+adds compact viewer margins of 8 points vertically below a 700-point viewport
+height. This returns 8 points to the picture while retaining 12-point horizontal
+margins, control reserves and hit sizes. Default-size viewers keep the existing
+12-point margins. The wider replay exposed small picture-height misses in Sound,
+Room tone and Gain; their original failures remain in the qualification record.
+
 Changing pane placement during input must be detected before submitting a
 picture target. The implementation captures one placement per layout pass and
 checks it after viewer-tab actions, immediately before rendering. Native

@@ -32,6 +32,8 @@ mod schema;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod single_source;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod slice_preview;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod source_registration;
 mod validation;
 

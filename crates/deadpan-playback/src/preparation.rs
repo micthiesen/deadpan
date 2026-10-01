@@ -21,6 +21,7 @@ use crate::{Target, WaveformStatus, Window};
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum PreparationEvent {
     PlaybackAdmitted,
+    PlaybackBatchPrepared,
     WaveformAdmitted,
     WaveformReleased,
 }
@@ -136,6 +137,9 @@ fn prepare(shared: &Shared, job: &Job, retained: &mut Option<Retained>) -> Resul
     }
     job.snapshot
         .validate_admission()
+        .map_err(|error| error.to_string())?;
+    job.snapshot
+        .check_media_live(&job.cancelled)
         .map_err(|error| error.to_string())?;
     if !retained.as_ref().is_some_and(|retained| {
         let Retained::Playback(prepared) = retained else {
@@ -256,6 +260,13 @@ fn prepare(shared: &Shared, job: &Job, retained: &mut Option<Retained>) -> Resul
             }
         }
         let eos = !window.looping() && cursor == window.end();
+        #[cfg(test)]
+        shared.observe_preparation(PreparationEvent::PlaybackBatchPrepared, &job.cancelled);
+        // Cached canonical blocks and short-loop replication can bypass source
+        // lookups. Recheck the owning session before publishing their PCM too.
+        job.snapshot
+            .check_media_live(&job.cancelled)
+            .map_err(|error| error.to_string())?;
         publish(
             shared,
             job,

@@ -1,0 +1,29 @@
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `deadpan-app` (bin "deadpan-app") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.50s
+     Running unittests src/main.rs (target/debug/deps/deadpan_app-ee1862e87f36dd24)
+
+running 10 tests
+test project::service::headless::tests::compact_host_reply_preserves_commit_even_after_refresh_failure ... ok
+test project::tests::render::refresh_failure_keeps_the_durable_preview_receipt_without_starting_render ... ok
+test project::tests::headless::committed_receipt_survives_native_workspace_refresh_failure ... ok
+test project::tests::delete_range::native_range_delete_reports_saved_when_refresh_fails_then_reopen_undo_restores ... ok
+test project::tests::edited_slice::edited_fast_paste_retains_its_saved_receipt_when_refresh_fails ... ok
+test project::tests::edited_slice::edited_proposal_retains_its_saved_receipt_and_duplicate_commit_when_refresh_fails ... ok
+test project::tests::headless::preparation::completion_waits_for_native_receipt_and_retains_operational_success_on_refresh_failure ... ok
+test project::tests::splice::replacement::cached_fast_replacement_retains_saved_receipt_when_preview_refresh_fails ... ok
+test project::tests::splice::abandon_does_not_cancel_unrelated_import_and_commit_receipt_survives_refresh_failure ... ok
+test project::tests::splice::replacement::cold_fast_replacement_finishes_saved_when_preview_refresh_fails ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 387 filtered out; finished in 0.67s
+
+     Running tests/headless.rs (target/debug/deps/headless-e178f18b4f10557f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+

@@ -1,0 +1,9 @@
+sound-placement: FAIL
+UI feedback: /tmp/deadpan-native-slices-20260930/layout-before-sound-placement/report.html
+Error: "UI feedback checks failed; inspect report.json and report.html"
+room-tone: FAIL
+UI feedback: /tmp/deadpan-native-slices-20260930/layout-before-room-tone/report.html
+Error: "UI feedback checks failed; inspect report.json and report.html"
+gain: FAIL
+UI feedback: /tmp/deadpan-native-slices-20260930/layout-before-gain/report.html
+Error: "UI feedback checks failed; inspect report.json and report.html"

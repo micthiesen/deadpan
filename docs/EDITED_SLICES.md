@@ -141,18 +141,47 @@ Preview is read-only. Commit records one command, patch, revision and history
 cursor change atomically. Undo and Redo restore authored state under fresh
 revision identities; they cannot make an old destination request current again.
 
-## Remaining product work
+## Native register and previews
 
-Native edited-content registers, endpoint pictures and local refinement must
-use this capture on the service worker and reject late copy completions by
-session and request identity. Extend the existing Original placement proposal
-without losing its visible unsaved state, comparison windows, audition joins,
-stale-target rejection or saved-edit recovery.
+In Your edit, `v`, motion and `y` capture the selected range on the project
+service. The ephemeral register retains the exact project session, request and
+source revision. Copying creates no history entry. Later edits and Undo preserve
+the accepted copy; closing the project clears it. A newer yank supersedes a
+pending copy even when its focused pane rejects copying. Late or duplicate
+replies cannot replace newer content or finish a newer selection.
+
+Fast `p/P` inserts beside the selected beat or replaces the selected Edit range.
+`:splice` opens the same visible placement workflow used for Original slices.
+In/Out refinement recaptures the historical source within its ordinary Sequence
+parent, leaving the register unchanged. Source endpoint pictures remain available
+when destination preflight rejects placement. Copied Edit and destination Edit
+clocks have separate labels; the main viewer can inspect either endpoint.
+
+The store issues an opaque `AdmittedSliceView` containing the exact immutable
+document, historical media receipts and session handles. A standalone source
+view materializes the slice in an empty neutral Sequence. It excludes unselected
+source ancestors and destination framing. A placement view captures the exact
+command and committed base. Neither writes history. Qualified historical sources
+and accepted Generated providers retain their original admission requirements.
+
+`Snapshot::proposed_edit_slice` binds those store-issued values; the existing
+strict Original proposal path remains separate. Catalog validation happens at
+construction, with Arc identity checks on repeated reads. Temporary edited views
+check session liveness around warm and cold reads and before publishing cached
+audio batches. Ordinary committed playback keeps its existing warm private-PCM
+behavior after the store closes. Workers compile and decode away from the UI.
+
+Commit uses the exact prepared request in one transaction. A successful receipt
+survives refresh failure. The stale visible workspace retains its selection and
+cursor, and a coalesced copy completion cannot replace reopening guidance.
+
+## Remaining product work
 
 Atomic move remains required. It must preserve destination clocks before endpoint
 splits and before removing any selected children, and reject placement inside
 its own removed interval.
 Named register persistence, role-only placement, cut-to-register behavior,
 motion/text-object operators and nested occurrence interiors remain required.
-These workflows remain open beyond the core/headless capture and placement
-commands described above.
+These workflows remain open beyond the capture and placement commands described
+above. Native media, interaction and performance evidence is recorded separately
+from the core timing proofs.

@@ -24,6 +24,7 @@ pub mod render_history;
 pub mod retime;
 mod scope;
 mod service;
+pub mod slice;
 pub mod sound;
 pub mod splice;
 #[cfg(test)]
@@ -131,6 +132,8 @@ pub struct ProjectUpdate {
     pub splice: Option<splice::ProposalUpdate>,
     /// Exact placement commit acknowledgements survive proposal and query traffic.
     pub splice_commit: Option<splice::SpliceCommitUpdate>,
+    /// History-neutral edited copies retain their source identity across replies.
+    pub captured_slice: Option<slice::CaptureUpdate>,
     /// Operational render feedback is retained independently of editor feedback.
     pub render: Option<ProjectRenderUpdate>,
     /// Bounded history replies retain their exact query and session independently
@@ -408,6 +411,8 @@ pub enum ProjectRequest {
         index: usize,
     },
     PasteMoment(MomentPaste),
+    CaptureEditSlice(slice::CaptureRequest),
+    PasteEditedSlice(slice::Paste),
     PrepareSplice(splice::Proposal),
     CommitSplice(splice::ProposalId),
     AbandonSplice(splice::ProposalId),

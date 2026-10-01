@@ -1,8 +1,10 @@
 //! Ephemeral navigation through ordinary authored Sequence groups.
 
 use deadpan_core::{
-    FrameDuration, MAX_DOCUMENT_DEPTH, MAX_DOCUMENT_NODES, NodeId, NodeKind, ProjectFrame,
+    FrameDuration, MAX_DOCUMENT_DEPTH, MAX_DOCUMENT_NODES, NodeId, NodeKind, ProjectDocument,
+    ProjectFrame,
 };
+use deadpan_plan::RenderPlan;
 
 use super::Workspace;
 
@@ -33,22 +35,39 @@ impl SequenceScope {
     /// Resolve this path and calculate its absolute span from only the Sequence
     /// prefixes along the path. Durations come from the immutable compiled plan.
     pub fn resolve<'a>(&self, workspace: &'a Workspace) -> Result<SequenceScopeView<'a>, String> {
-        self.path(workspace)?
+        self.resolve_document(&workspace.document, &workspace.plan)
+    }
+
+    /// Historical capture resolves the same ordinary path without manufacturing
+    /// a committed workspace or granting media access to its document.
+    pub(super) fn resolve_document<'a>(
+        &self,
+        document: &'a ProjectDocument,
+        plan: &RenderPlan,
+    ) -> Result<SequenceScopeView<'a>, String> {
+        self.document_path(document, plan)?
             .last()
             .copied()
             .ok_or_else(|| "The project root has no Sequence scope".into())
     }
 
     fn path<'a>(&self, workspace: &'a Workspace) -> Result<Vec<SequenceScopeView<'a>>, String> {
+        self.document_path(&workspace.document, &workspace.plan)
+    }
+
+    fn document_path<'a>(
+        &self,
+        document: &'a ProjectDocument,
+        plan: &RenderPlan,
+    ) -> Result<Vec<SequenceScopeView<'a>>, String> {
         if self.groups.len() > MAX_DOCUMENT_DEPTH {
             return Err("Sequence navigation exceeds the document depth limit".into());
         }
-        let document = &workspace.document;
         let mut owner = document.root();
         let mut start = 0_u64;
         let mut views = Vec::with_capacity(self.groups.len() + 1);
         let root_children = sequence_children(document.nodes().get(owner).map(|node| &node.kind))?;
-        let root_end = duration_frames(workspace, owner)?;
+        let root_end = duration_frames(plan, owner)?;
         views.push(SequenceScopeView {
             owner,
             children: root_children,
@@ -68,7 +87,7 @@ impl SequenceScope {
                     .filter(|work| *work <= MAX_DOCUMENT_NODES)
                     .ok_or("Sequence scope prefix exceeds the document work limit")?;
                 start = start
-                    .checked_add(duration_frames(workspace, sibling)?)
+                    .checked_add(duration_frames(plan, sibling)?)
                     .ok_or("Sequence scope position overflowed")?;
             }
             let nested = document
@@ -82,7 +101,7 @@ impl SequenceScope {
                 .get(index)
                 .ok_or("The active Sequence path is no longer valid")?;
             let children = sequence_children(document.nodes().get(owner).map(|node| &node.kind))?;
-            let duration = duration_frames(workspace, owner)?;
+            let duration = duration_frames(plan, owner)?;
             let end = start
                 .checked_add(duration)
                 .ok_or("Sequence scope end overflowed")?;
@@ -207,9 +226,8 @@ fn sequence_children(kind: Option<&NodeKind>) -> Result<&[NodeId], String> {
     }
 }
 
-fn duration_frames(workspace: &Workspace, node: &NodeId) -> Result<u64, String> {
-    let duration: FrameDuration = workspace
-        .plan
+fn duration_frames(plan: &RenderPlan, node: &NodeId) -> Result<u64, String> {
+    let duration: FrameDuration = plan
         .node_duration(node)
         .ok_or("The active Sequence path references a node outside the render plan")?;
     u64::try_from(duration.frames()).map_err(|_| "Sequence duration is negative".into())

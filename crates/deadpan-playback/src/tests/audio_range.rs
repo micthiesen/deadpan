@@ -304,16 +304,23 @@ fn selected_44100_samples_round_once_and_reject_wrong_contracts() {
     let mut mismatched = Snapshot::committed(
         captured.session,
         captured.document.clone(),
-        captured.sources.clone(),
+        captured.sources.as_ref().clone(),
         captured.originals.clone(),
     );
-    mismatched.sources.get_mut(&asset).unwrap().original =
-        captured.sources[&other].original.clone();
+    Arc::make_mut(&mut mismatched.sources)
+        .get_mut(&asset)
+        .unwrap()
+        .original = captured.sources[&other].original.clone();
     assert!(target.document(&mismatched).is_err());
-    mismatched.sources.get_mut(&asset).unwrap().original =
-        captured.sources[&asset].original.clone();
-    mismatched.sources.get_mut(&asset).unwrap().receipt = captured.sources[&other].receipt.clone();
+    Arc::make_mut(&mut mismatched.sources)
+        .get_mut(&asset)
+        .unwrap()
+        .original = captured.sources[&asset].original.clone();
+    Arc::make_mut(&mut mismatched.sources)
+        .get_mut(&asset)
+        .unwrap()
+        .receipt = captured.sources[&other].receipt.clone();
     assert!(target.document(&mismatched).is_err());
-    mismatched.sources.remove(&asset);
+    Arc::make_mut(&mut mismatched.sources).remove(&asset);
     assert!(target.document(&mismatched).is_err());
 }

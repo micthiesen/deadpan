@@ -1,4 +1,4 @@
-//! Ephemeral half-open Original selection and an identity-bound copy register.
+//! Ephemeral half-open Original selection and shared copied-content controls.
 
 use std::ops::Range;
 
@@ -30,7 +30,7 @@ pub(super) struct PlacementTarget {
     pub source_cursor: u64,
     pub pane: Pane,
     pub selected_beat: Option<NodeId>,
-    pub copied: Option<Copied>,
+    pub copied: Option<copied::Content>,
     pub selection: edit_range::Selection,
     pub range: Option<deadpan_core::FrameRange>,
 }
@@ -40,18 +40,9 @@ pub(super) struct Selection {
     identity: Option<Identity>,
     bounds: Option<(u64, u64)>,
     pub active: bool,
-    pub copied: Option<Copied>,
 }
 
 impl Selection {
-    pub(super) fn copied_audio_selection(&self) -> Option<crate::project::RoomToneSelection> {
-        let copied = self.copied.as_ref()?;
-        Some(crate::project::RoomToneSelection::Original {
-            asset: copied.identity.asset.clone(),
-            qualification: copied.identity.qualification.clone(),
-            ordinals: copied.ordinals.clone(),
-        })
-    }
     fn reconcile(&mut self, identity: Option<Identity>) {
         if self.identity != identity {
             self.cancel();
@@ -86,7 +77,7 @@ impl Selection {
         self.bounds = None;
     }
 
-    fn copy(&mut self) -> Result<(), String> {
+    fn copy(&mut self) -> Result<Copied, String> {
         let identity = self
             .identity
             .clone()
@@ -94,9 +85,8 @@ impl Selection {
         let ordinals = self
             .range()
             .ok_or("Select a nonempty Original range: v, then h/l, then y")?;
-        self.copied = Some(Copied { identity, ordinals });
         self.active = false;
-        Ok(())
+        Ok(Copied { identity, ordinals })
     }
 }
 
@@ -156,7 +146,7 @@ impl DeadpanApp {
             source_cursor: self.source_cursor,
             pane: self.pane,
             selected_beat: self.selected_beat.clone(),
-            copied: self.moment.copied.clone(),
+            copied: self.copied.content().cloned(),
             selection: self.edit_range.clone(),
             range: self.selected_edit_range(),
         })
@@ -178,14 +168,8 @@ impl DeadpanApp {
                     .into(),
             );
         }
-        if let Some(copied) = &target.copied
-            && (copied.identity.session != workspace.session
-                || workspace
-                    .sources
-                    .get(&copied.identity.asset)
-                    .is_none_or(|source| source.receipt.id() != &copied.identity.qualification))
-        {
-            return Err("The captured Original slice is no longer available.".into());
+        if let Some(copied) = &target.copied {
+            copied.check(workspace)?;
         }
         Ok(())
     }
@@ -207,17 +191,7 @@ impl DeadpanApp {
 
     pub(super) fn reconcile_moment(&mut self) {
         self.moment.reconcile(self.moment_identity());
-        if self.moment.copied.as_ref().is_some_and(|copied| {
-            self.workspace.as_ref().is_none_or(|workspace| {
-                workspace.session != copied.identity.session
-                    || workspace
-                        .sources
-                        .get(&copied.identity.asset)
-                        .is_none_or(|source| source.receipt.id() != &copied.identity.qualification)
-            })
-        }) {
-            self.moment.copied = None;
-        }
+        self.copied.reconcile(self.workspace.as_deref());
         if self.view != View::Source {
             self.moment.active = false;
         }
@@ -248,6 +222,7 @@ impl DeadpanApp {
     }
 
     pub(super) fn copy_moment(&mut self) {
+        self.copied.supersede();
         self.bindings.clear();
         self.reconcile_moment();
         if self.view != View::Source {
@@ -255,7 +230,8 @@ impl DeadpanApp {
             return;
         }
         match self.moment.copy() {
-            Ok(()) => {
+            Ok(copied) => {
+                self.copied.original_copied(copied);
                 self.error = None;
                 self.message = Some("Moment copied. Return to Your edit (:sequence): :splice previews placement; p/P replaces an Edit selection or pastes beside a beat.".into());
             }
@@ -281,7 +257,7 @@ impl DeadpanApp {
             let copied = target
                 .copied
                 .as_ref()
-                .ok_or("Copy an Original range first: :source, v, h/l, y")?;
+                .ok_or("Copy a range first: v, h/l, y in Original or Your edit.")?;
             let destination = if let Some(range) = target.range {
                 crate::project::splice::Destination::Replace { range }
             } else {
@@ -291,16 +267,30 @@ impl DeadpanApp {
                     before,
                 )?)
             };
-            Ok::<_, String>(ProjectRequest::PasteMoment(crate::project::MomentPaste {
-                expected_session: target.base.session,
-                expected_revision: target.base.document.revision_id().clone(),
-                asset: copied.identity.asset.clone(),
-                qualification: copied.identity.qualification.clone(),
-                ordinals: copied.ordinals.clone(),
-                scope: target.scope,
-                parent: target.parent,
-                destination,
-            }))
+            Ok::<_, String>(match copied {
+                copied::Content::Original(copied) => {
+                    ProjectRequest::PasteMoment(crate::project::MomentPaste {
+                        expected_session: target.base.session,
+                        expected_revision: target.base.document.revision_id().clone(),
+                        asset: copied.identity.asset.clone(),
+                        qualification: copied.identity.qualification.clone(),
+                        ordinals: copied.ordinals.clone(),
+                        scope: target.scope,
+                        parent: target.parent,
+                        destination,
+                    })
+                }
+                copied::Content::Edited(copied) => {
+                    ProjectRequest::PasteEditedSlice(crate::project::slice::Paste {
+                        expected_session: target.base.session,
+                        expected_revision: target.base.document.revision_id().clone(),
+                        copied: copied.clone(),
+                        scope: target.scope,
+                        parent: target.parent,
+                        destination,
+                    })
+                }
+            })
         })();
         match result {
             Ok(request) => {
@@ -380,13 +370,10 @@ impl DeadpanApp {
             ui.add(egui::Label::new(egui::RichText::new(&label).color(style::LAVENDER)).truncate())
                 .on_hover_text(label);
         } else if self.view == View::Sequence
-            && let Some(copied) = &self.moment.copied
+            && let Some(copied) = self.copied.content()
         {
             let replacing = self.selected_edit_range().is_some();
-            let label = format!(
-                "Copied Original [{}..{})",
-                copied.ordinals.start, copied.ordinals.end
-            );
+            let label = copied.label();
             ui.horizontal_wrapped(|ui| {
                 ui.colored_label(style::LAVENDER, label);
                 if ui
@@ -463,8 +450,8 @@ impl DeadpanApp {
                     if ui.button("Cancel selection  Esc").clicked() { self.pane = Pane::Inspector; self.moment.cancel(); }
                     ui.separator();
                     ui.weak("Your Original stays intact. Copying does not change the project.");
-                    if let Some(copied) = &self.moment.copied {
-                        ui.colored_label(style::LAVENDER, format!("Copied [{}..{})", copied.ordinals.start, copied.ordinals.end));
+                    if let Some(copied) = self.copied.content() {
+                        ui.colored_label(style::LAVENDER, copied.label());
                         ui.weak("Return to Your edit, choose a beat, then p after or P before. One paste, one undo.");
                         if ui.button("Your edit  :sequence").clicked() {
                             self.view.set(View::Sequence, &mut self.message);
@@ -573,13 +560,13 @@ mod tests {
         assert!(state.copy().is_err());
         state.move_to(60);
         assert_eq!(state.range(), Some(60..84));
-        state.copy().unwrap();
+        let copied = state.copy().unwrap();
         assert!(!state.active);
         state.move_to(100);
         assert_eq!(state.range(), Some(60..84));
         state.cancel();
         assert_eq!(state.range(), None);
-        assert_eq!(state.copied.unwrap().ordinals, 60..84);
+        assert_eq!(copied.ordinals, 60..84);
     }
 
     #[test]

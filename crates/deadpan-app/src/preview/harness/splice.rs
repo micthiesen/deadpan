@@ -6,6 +6,7 @@ use deadpan_core::{AudioSample, ProjectFrame};
 use deadpan_playback::{ContentIdentity, Phase, Update};
 use egui::{Key, Modifiers};
 
+mod edited;
 mod input;
 mod replacement;
 
@@ -14,7 +15,7 @@ const CANCEL: &str = "Cancel · Esc";
 const HEADING: &str = "Place slice keyboard controls";
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
-    d.report.skipped.push("Place slice covers linked Original insertions and explicit replacement in ordinary Sequence scopes. Edited-slice move/copy, separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.".into());
+    d.report.skipped.push("Place slice covers linked Original and edited-slice copying, insertion and replacement in ordinary Sequence scopes. Atomic move, separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.".into());
     d.report.skipped.push("The replay uses genuine source qualification, endpoint decoding, SDR GPU pictures, proposed documents and durable commands. Audio delivery and a concurrent service Undo are explicitly injected. It does not open an audio device or establish acoustic quality.".into());
     let full_original = document(d)?.nodes().clone();
     let baseline = d.revision();
@@ -105,7 +106,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     wait_picture(d, 26, "Showing source frame 27")?;
     d.check(
         "Counted i/o refinement is local and the viewer follows the included endpoint",
-        draft(d)?.proposal_for_check().ordinals == (12..27)
+        draft(d)?.proposal_for_check().source.boundaries()? == (12..27)
             && copied(d) == Some(10..24)
             && d.revision() == entry_revision
             && editor(d) == entry,
@@ -172,13 +173,14 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         "Reopening starts a new draft from the untouched copied register",
         commit_id.draft != chosen_id.draft
             && commit_proposal.node != chosen.node
-            && draft(d)?.proposal_for_check().ordinals == (10..24),
+            && draft(d)?.proposal_for_check().source.boundaries()? == (10..24),
         json!({"fresh_draft":true,"copied":[10,24]}),
         state(d),
     )?;
     d.app_mut().receive_splice(
         Some(ProposalUpdate {
             id: chosen_id,
+            source_view: None,
             result: Ok(chosen),
         }),
         None,
@@ -217,6 +219,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     stale_revision(d, &full_original)?;
     input::run(d)?;
     replacement::run(d)?;
+    edited::run(d)?;
     Ok(())
 }
 
@@ -635,6 +638,7 @@ fn stale_revision(
     d.app_mut().receive_splice(
         Some(ProposalUpdate {
             id: stale_id,
+            source_view: None,
             result: Ok(stale),
         }),
         None,
@@ -918,19 +922,28 @@ fn focus_with_tab(d: &mut Driver<'_>, label: &str) -> Result<(), String> {
 
 fn endpoint_painted(d: &mut Driver<'_>, label: &str) -> Result<(), String> {
     let image = d.rect(label)?;
+    // Edited endpoints retain the canonical canvas, including its aspect fit.
+    // Original endpoints use their uncomposed source thumbnail allocation.
+    let content = match &draft(d)?.proposal_for_check().source {
+        crate::project::splice::Source::Original { .. } => image,
+        crate::project::splice::Source::Edited { copied, .. } => {
+            let basis = copied.slice().presentation_basis();
+            fit_rect(image, basis.width as f32 / basis.height as f32)
+        }
+    };
     let viewport = d.harness.ctx.content_rect();
     let shapes = &d.harness.output().shapes;
     let meshes = shapes.iter().enumerate().filter_map(|(index, clipped)| {
         let egui::Shape::Mesh(mesh) = &clipped.shape else { return None; };
         let bounds = mesh.calc_bounds();
-        if bounds.min.distance(image.min) > 0.5 || bounds.max.distance(image.max) > 0.5 { return None; }
+        if bounds.min.distance(content.min) > 0.5 || bounds.max.distance(content.max) > 0.5 { return None; }
         let opaque_cover = shapes[index + 1..].iter().any(|later| {
             let egui::Shape::Rect(rect) = &later.shape else { return false; };
             rect.fill.is_opaque() && rect.brush.is_none() && rect.blur_width == 0.0
                 && rect.rect.shrink(4.0).intersect(later.clip_rect).intersect(bounds).is_positive()
         });
         Some(json!({"texture":format!("{:?}",mesh.texture_id),"bounds":[bounds.min.x,bounds.min.y,bounds.max.x,bounds.max.y],
-            "visible":matches!(mesh.texture_id, egui::TextureId::User(_)) && clipped.clip_rect.contains_rect(bounds) && viewport.contains_rect(bounds) && !opaque_cover,
+            "visible":matches!(mesh.texture_id, egui::TextureId::User(_)) && image.contains_rect(bounds) && clipped.clip_rect.contains_rect(bounds) && viewport.contains_rect(bounds) && !opaque_cover,
             "opaque_cover":opaque_cover}))
     }).collect::<Vec<_>>();
     d.check("The labelled endpoint contains a submitted image mesh with an unclipped, unobscured paint area",
@@ -1117,11 +1130,7 @@ fn prepared(d: &Driver<'_>) -> Result<Arc<Prepared>, String> {
 }
 
 fn copied(d: &Driver<'_>) -> Option<std::ops::Range<u64>> {
-    d.app()
-        .moment
-        .copied
-        .as_ref()
-        .map(|copy| copy.ordinals.clone())
+    d.app().copied.original().map(|copy| copy.ordinals.clone())
 }
 
 fn editor(d: &Driver<'_>) -> Value {
@@ -1134,7 +1143,7 @@ pub(super) fn state(d: &Driver<'_>) -> Value {
     json!(d.app().splice.as_ref().map(|draft| {
         let proposal = draft.proposal_for_check();
         json!({"session":proposal.id.session,"project":proposal.id.project,"base_revision":proposal.id.base_revision,
-            "draft":proposal.id.draft,"change":proposal.id.change,"ordinals":proposal.ordinals,"parent":proposal.parent,
+            "draft":proposal.id.draft,"change":proposal.id.change,"ordinals":proposal.source.boundaries().ok(),"parent":proposal.parent,
             "destination":format!("{:?}",proposal.destination),"ready":draft.ready_for_check(),"before":draft.before_for_check(),"invalidated":draft.invalidated_for_check(),
             "cursor":draft.cursor,"position":draft.position.map(|sample| sample.0),
             "prepared":draft.prepared_for_check().map(|prepared| json!({"revision":prepared.snapshot.document.revision_id(),

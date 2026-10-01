@@ -111,10 +111,41 @@ fn historical_slice_restores_only_source_metadata_admitted_by_its_stored_revisio
             "InvalidCommand"
         );
         assert_eq!(store.commit(&command).unwrap_err().code(), "InvalidCommand");
+        assert_eq!(
+            store.preview_edit_slice(&command).err().unwrap().code(),
+            "InvalidCommand"
+        );
+        assert_eq!(
+            store
+                .view_edit_slice(&forged, view_ids(&before, &forged, name)?)
+                .err()
+                .unwrap()
+                .code(),
+            "InvalidCommand"
+        );
         assert_eq!(store.snapshot()?, before);
         assert_eq!(counts(&path)?, saved_counts);
     }
+    let admitted = store.preview_edit_slice(&paste(&before, &slice, "admitted")?)?;
+    let standalone = store.view_edit_slice(&slice, view_ids(&before, &slice, "standalone")?)?;
+    assert_eq!(admitted.sources().len(), 1);
+    assert_eq!(standalone.sources().len(), 1);
+    assert_eq!(
+        admitted.sources()[&id("camera")]
+            .receipt
+            .asset_record(record.label.clone())?,
+        record
+    );
+    assert_eq!(
+        standalone.document().assets().len(),
+        1,
+        "unselected historical catalog is excluded"
+    );
+    assert_eq!(counts(&path)?, saved_counts);
+    admitted.check_live(&active())?;
     drop(store);
+    assert!(admitted.check_live(&active()).is_err());
+    assert!(standalone.check_live(&active()).is_err());
     let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
     let command = paste(&before, &slice, "restored")?;
     let preview = store.preview(&command)?;
@@ -133,6 +164,22 @@ fn historical_slice_restores_only_source_metadata_admitted_by_its_stored_revisio
     assert_eq!(Some(receipt.id()), record.source_qualification.as_ref());
     reader.validate()?;
     Ok(())
+}
+
+fn view_ids(
+    document: &ProjectDocument,
+    slice: &CapturedEditSlice,
+    name: &str,
+) -> Result<deadpan_store::slice_preview::SliceViewIdentities> {
+    let Command::SpliceSlice { identities, .. } = paste(document, slice, name)?.command else {
+        unreachable!()
+    };
+    Ok(deadpan_store::slice_preview::SliceViewIdentities {
+        empty_revision: revision(&format!("{name}-empty")),
+        view_revision: revision(name),
+        root: NodeId::new(format!("{name}-root"))?,
+        paste: identities,
+    })
 }
 
 fn placement(

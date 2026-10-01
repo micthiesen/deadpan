@@ -592,7 +592,7 @@ fn seek_reuses_private_pcm_but_a_new_session_must_reopen_sources() {
     let next_session = Arc::new(Snapshot::committed(
         5,
         snapshot.document.clone(),
-        snapshot.sources.clone(),
+        snapshot.sources.as_ref().clone(),
         snapshot.originals.clone(),
     ));
     engine.play(3, next_session, AudioSample(0), 0.1).unwrap();
@@ -775,7 +775,7 @@ fn canonical_playback_consumes_pause_bindings_and_a_real_preserve_stage() {
     let edited = Arc::new(Snapshot::committed(
         captured.session,
         Arc::new(ProjectDocument::from_json(&wire.to_string()).unwrap()),
-        captured.sources.clone(),
+        captured.sources.as_ref().clone(),
         captured.originals.clone(),
     ));
     let mut sources = Sources::new(edited.clone());

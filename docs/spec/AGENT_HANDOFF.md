@@ -190,6 +190,52 @@ frames can include unselected ancestor framing and are not a sufficient source
 strip. Native integration, atomic move and the remaining full-spec operations
 are still open.
 
+## Native edited slices, 2026-09-30
+
+`v`, motion and `y` in Your edit now capture immutable historical contents on
+the service worker without writing history. One session register holds either
+Original or edited content. New copy intent supersedes late replies; accepted
+edited copies survive subsequent edits and Undo. Closing or switching projects
+clears the register. `p/P` inserts at a seam or replaces a selected Edit range
+using the existing atomic commands.
+
+`:splice` materializes a neutral copied source view, refines against its exact
+historical parent and previews the proposed destination. Source endpoint
+preparation survives destination rejection. Copied pictures exclude unselected
+historical/destination ancestors, retain owned clocks/framing, carry a distinct
+presentation identity and never become Camera targets. Store-issued opaque
+views admit historical Original and accepted generated media to picture/audio;
+strict ordinary Original proposal validation remains separate. Temporary edited
+views check session liveness during warm reuse; ordinary committed warm private
+PCM behavior stays unchanged. Full catalog checks occur once per immutable view.
+
+See [qualification](../qualification/native-edited-slice-2026-09-30.md) for
+review corrections, retained failures, rendered checks and remaining evidence.
+The slice replay passes 547 checks plus the 11,904-case Kestrel audit, including
+genuine historical capture, unsupported destinations, refinement, actual commit,
+Undo and deliberately delayed workspace delivery. Final minimum/default Metal
+captures were compared with the design target. Audition delivery in that replay
+is injected; decoded PCM has separate tests.
+
+The retained-project run adds one storage-root check. Separate native keys verify
+copy/refinement, decoded endpoint slates, one 18-frame insertion and Undo. The
+accepted register retains its historical Hold after undoing the source edit.
+SQLite backups prove copy/cancel leave all 20 tables unchanged, insertion adds
+one revision, and both Undos restore complete authored state. The temporary app
+exits and releases its writer lock. The corrected full release replay passes
+3,110 checks. Compact viewer padding now returns 8 points to the picture while
+keeping control reserves and hit sizes; failed Sound/Room tone/Gain minimums and
+their passing corrections remain in the evidence record.
+All 2,766 locked workspace tests pass with none failed or ignored. Formatting
+and strict all-target workspace Clippy with the UI harness also pass on Rust
+1.97.1. The collector rechecks all 1,330 inputs against the final source manifest.
+
+Core 34/database 43 are unchanged. Atomic move, named/persistent registers,
+cut-to-register, role-only placement, motion/text-object operators and temporal
+occurrence interiors remain required. DP-06 is partial for the session register;
+all DP requirements and release gates remain incomplete. The user's separately
+positioned Cursor QA window must stay untouched.
+
 ## Native identity, 2026-09-30
 
 The user requested a complete ImageGen icon/logo set and app integration.

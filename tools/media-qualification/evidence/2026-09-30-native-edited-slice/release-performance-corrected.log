@@ -1,0 +1,24 @@
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `release` profile [optimized] target(s) in 1m 40s
+     Running `target/release/deadpan-app --ui-check --mode performance --output /tmp/deadpan-native-slices-20260930/release-performance-corrected --kestrel-source /Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift`
+workspace: PASS
+editing: PASS
+camera: PASS
+menus: PASS
+delayed-preview: PASS
+rapid-input: PASS
+playback-feedback: PASS
+large-project: PASS
+edit-latency: PASS
+nested-pause: PASS
+original-moment: PASS
+place-slice: PASS
+delete-range: PASS
+original-playback: PASS
+sound-playback: PASS
+sound-placement: PASS
+room-tone: PASS
+gain: PASS
+retime: PASS
+render: PASS
+UI feedback: /tmp/deadpan-native-slices-20260930/release-performance-corrected/report.html

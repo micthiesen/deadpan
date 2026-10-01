@@ -1,0 +1,39 @@
+{
+  "checks": {
+    "copy_and_cancel_all_tables_unchanged": true,
+    "placement_one_revision": true,
+    "placement_undo_all_authored_fields": true,
+    "fixture_undo_all_authored_fields": true,
+    "writer_lock_released": true,
+    "qa_process_exited": true
+  },
+  "revision_counts": {
+    "before": 52,
+    "fixture": 53,
+    "copied": 53,
+    "cancelled": 53,
+    "committed": 54,
+    "placement-undone": 55,
+    "restored": 56
+  },
+  "unchanged_tables": [
+    "generation_attempt_heads",
+    "generation_attempts",
+    "generation_bundle_receipts",
+    "generation_candidate_receipts",
+    "generation_requests",
+    "hold_request_clocks",
+    "original_media",
+    "render_attempts",
+    "render_candidate_checkpoints",
+    "render_encoding_decisions",
+    "render_job_heads",
+    "render_jobs",
+    "render_publication_operations",
+    "render_publications",
+    "single_source",
+    "source_qualifications"
+  ],
+  "remaining_exact_qa_processes": [],
+  "observations": "Native v/count/y, visible [9,27)18-frame insertion at60, decoded endpoints009/015, cancel, commit, Undo, historical copied endpoint013 after undoing original Hold. No native audio or IME claim."
+}

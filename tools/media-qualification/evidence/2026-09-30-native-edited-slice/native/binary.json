@@ -1,0 +1,8 @@
+{
+  "bundle_id": "dev.thiesen.deadpan.edited-slice-qa-20260930",
+  "binary_sha256": "58dfbb94fee218d2a1dbf43f16dfecf4bb9b5511d9942ecaba9206f27bb6fe79",
+  "source_manifest_sha256": "65fa24bf37e2a6c647c092a52d5ebf9196b48605b98e2d4107034a48da52dbe6",
+  "build_report": "release-performance-corrected.json",
+  "project": "/tmp/deadpan-native-slices-20260930/native-qa/Edited slices.deadpan",
+  "reserved_window": "dev.thiesen.deadpan.cursor-qa remains untouched"
+}

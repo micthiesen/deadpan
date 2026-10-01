@@ -53,7 +53,9 @@ impl Service {
         if let Some((cached_asset, token)) = self.cached.take() {
             if cached_asset == asset {
                 let cancelled = AtomicBool::new(false);
-                let outcome = moment.request.commit(self.writer()?, &token, &cancelled);
+                let outcome = moment
+                    .request
+                    .commit(self.writer()?, Some(&token), &cancelled);
                 match outcome {
                     Ok(commit) => {
                         self.cached = Some((cached_asset, token));
@@ -115,13 +117,18 @@ impl Service {
         }
         let commit = moment
             .request
-            .commit(self.writer()?, &prepared, &active.cancelled)
+            .commit(self.writer()?, Some(&prepared), &active.cancelled)
             .map_err(display)?;
-        self.cached = Some((moment.request.asset().clone(), prepared));
+        let asset = moment
+            .request
+            .asset()
+            .ok_or("Original paste has no asset")?
+            .clone();
+        self.cached = Some((asset.clone(), prepared));
         self.complete_moment(&moment, active.scope, commit.revision_id);
         if let Some(status) = &mut self.import {
             status.stage = ImportStage::Complete;
-            status.asset = Some(moment.request.asset().clone());
+            status.asset = Some(asset);
         }
         Ok(())
     }
@@ -132,14 +139,31 @@ impl Service {
         scope: SequenceScope,
         revision: RevisionId,
     ) {
+        self.complete_slice_placement(
+            &moment.request,
+            moment.cursor,
+            scope,
+            revision,
+            "Original moment",
+        );
+    }
+
+    pub(super) fn complete_slice_placement(
+        &mut self,
+        request: &Request,
+        cursor: ProjectFrame,
+        scope: SequenceScope,
+        revision: RevisionId,
+        label: &str,
+    ) {
         // SQLite already committed. Preserve its receipt even if rebuilding
         // the workspace fails, and never label a saved cold paste as a failed
         // import or invite an implicit second edit.
         self.committed = Some(CommittedEdit {
             revision,
-            selected_node: Some(moment.request.node().clone()),
+            selected_node: Some(request.node().clone()),
             preserve_cursor: false,
-            cursor: Some(moment.cursor),
+            cursor: Some(cursor),
             scope,
             sound: None,
         });
@@ -151,9 +175,11 @@ impl Service {
                 .swap(false, Ordering::AcqRel);
         }
         self.message = Some(match self.refresh() {
-            Ok(()) => "Original moment pasted and saved. Undo with u.".into(),
+            Ok(()) => format!("{label} pasted and saved. Undo with u."),
             Err(error) => {
-                format!("Original moment saved, but the preview could not refresh: {error}")
+                format!(
+                    "{label} saved, but the preview could not refresh: {error}. Reopen the project to view the saved edit."
+                )
             }
         });
     }

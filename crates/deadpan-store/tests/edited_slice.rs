@@ -8,6 +8,8 @@ type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
 #[path = "edited_slice/placement.rs"]
 mod placement;
+#[path = "edited_slice/preview.rs"]
+mod preview;
 
 fn node(name: &str) -> NodeId {
     NodeId::new(name).unwrap()

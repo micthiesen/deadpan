@@ -260,7 +260,7 @@ fn refine_and_cancel(d: &mut Driver<'_>) -> Result<(), String> {
     wait_ready(d)?;
     d.check("Replace fixes the removed Edit interval while local In refinement changes only the inserted slice",
         draft(d)?.proposal_for_check().destination == Destination::Replace { range: range(30,60) }
-            && draft(d)?.proposal_for_check().ordinals == (11..24)
+            && draft(d)?.proposal_for_check().source.boundaries()? == (11..24)
             && prepared(d)?.range == range(30,43) && prepared(d)?.removed == Some(range(30,60)) && copied(d) == Some(10..24),
         json!({"removed":[30,60],"inserted":[30,43],"delta":-17,"copied":[10,24]}), state(d))?;
     let identity = draft(d)?.proposal_for_check().id.clone();
@@ -271,7 +271,7 @@ fn refine_and_cancel(d: &mut Driver<'_>) -> Result<(), String> {
     d.key(Key::R)?;
     wait_ready(d)?;
     d.check("Returning to Insert restores the exact entry destination with local source refinement retained",
-        draft(d)?.proposal_for_check().destination == insertion && draft(d)?.proposal_for_check().ordinals == (11..24),
+        draft(d)?.proposal_for_check().destination == insertion && draft(d)?.proposal_for_check().source.boundaries()? == (11..24),
         json!(format!("{insertion:?}")), state(d))?;
     d.key(Key::R)?;
     wait_ready(d)?;

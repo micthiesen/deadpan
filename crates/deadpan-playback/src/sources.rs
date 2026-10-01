@@ -13,6 +13,7 @@ use deadpan_media::audio_session::{AudioSession, AudioSessionLimits};
 use deadpan_store::original_media::{
     OriginalImportHandle, OriginalMediaLimits, OriginalMediaRecord,
 };
+use deadpan_store::slice_preview::AdmittedSliceView;
 use deadpan_store::source_registration::SourceQualificationReceipt;
 
 #[derive(Clone)]
@@ -49,6 +50,8 @@ pub enum SnapshotError {
     InvalidDocument(String),
     #[error("playback content differs from its captured proposal admission")]
     InvalidAdmission,
+    #[error("playback media admission failed: {0}")]
+    MediaAdmission(String),
 }
 
 struct ProposalAdmission {
@@ -56,6 +59,9 @@ struct ProposalAdmission {
     base: Arc<ProjectDocument>,
     proposed: Arc<ProjectDocument>,
     content: ContentIdentity,
+    sources: Arc<BTreeMap<AssetId, SourceEntry>>,
+    originals: OriginalImportHandle,
+    slice: Option<Arc<AdmittedSliceView>>,
 }
 
 /// A capability issued by the live project service. Committed receipts belong
@@ -65,7 +71,7 @@ pub struct Snapshot {
     pub session: u64,
     pub content: ContentIdentity,
     pub document: Arc<ProjectDocument>,
-    pub sources: BTreeMap<AssetId, SourceEntry>,
+    pub sources: Arc<BTreeMap<AssetId, SourceEntry>>,
     pub originals: OriginalImportHandle,
     admission: Option<ProposalAdmission>,
 }
@@ -83,7 +89,7 @@ impl Snapshot {
             session,
             content: ContentIdentity::Committed,
             document,
-            sources,
+            sources: Arc::new(sources),
             originals,
             admission: None,
         }
@@ -117,24 +123,105 @@ impl Snapshot {
         document
             .validate()
             .map_err(|error| SnapshotError::InvalidDocument(error.to_string()))?;
+        validate_sources(&document, &base.sources)?;
+        base.check_media_live(&AtomicBool::new(false))?;
+        Ok(Self::admitted(
+            base,
+            document,
+            base.sources.clone(),
+            draft,
+            change,
+            None,
+        ))
+    }
+
+    /// Admit a store-validated edited placement, including historical media
+    /// absent from the current base. The view supplies the entire output document.
+    pub fn proposed_edit_slice(
+        base: &Snapshot,
+        view: Arc<AdmittedSliceView>,
+        draft: u64,
+        change: u64,
+    ) -> Result<Self, SnapshotError> {
+        base.validate_admission()?;
+        if base.content != ContentIdentity::Committed {
+            return Err(SnapshotError::BaseNotCommitted);
+        }
+        if draft == 0 || change == 0 {
+            return Err(SnapshotError::InvalidIdentity);
+        }
+        if view.document().project_id() != base.document.project_id() {
+            return Err(SnapshotError::ForeignProject);
+        }
+        if view.document().revision_id() == base.document.revision_id() {
+            return Err(SnapshotError::ReusedRevision);
+        }
+        if view
+            .placement_base()
+            .is_none_or(|expected| **expected != *base.document)
+            || view.document().presentation_basis() != base.document.presentation_basis()
+            || !view.matches_originals(&base.originals)
+        {
+            return Err(SnapshotError::InvalidAdmission);
+        }
+        base.check_media_live(&AtomicBool::new(false))?;
+        view.check_live(&AtomicBool::new(false))
+            .map_err(media_error)?;
+        validate_sources(&base.document, &base.sources)?;
+        let sources = Arc::new(
+            view.sources()
+                .iter()
+                .map(|(id, source)| {
+                    (
+                        id.clone(),
+                        SourceEntry {
+                            receipt: source.receipt.clone(),
+                            original: source.original.clone(),
+                        },
+                    )
+                })
+                .collect(),
+        );
+        validate_sources(view.document(), &sources)?;
+        Ok(Self::admitted(
+            base,
+            view.document().clone(),
+            sources,
+            draft,
+            change,
+            Some(view),
+        ))
+    }
+
+    fn admitted(
+        base: &Snapshot,
+        document: Arc<ProjectDocument>,
+        sources: Arc<BTreeMap<AssetId, SourceEntry>>,
+        draft: u64,
+        change: u64,
+        slice: Option<Arc<AdmittedSliceView>>,
+    ) -> Self {
         let content = ContentIdentity::Proposed {
             base_revision: base.document.revision_id().clone(),
             draft,
             change,
         };
-        Ok(Self {
+        Self {
             session: base.session,
             content: content.clone(),
             document: document.clone(),
-            sources: base.sources.clone(),
+            sources: sources.clone(),
             originals: base.originals.clone(),
             admission: Some(ProposalAdmission {
                 session: base.session,
                 base: base.document.clone(),
                 proposed: document,
                 content,
+                sources,
+                originals: base.originals.clone(),
+                slice,
             }),
-        })
+        }
     }
 
     /// Check that this genuine proposal was admitted from this exact committed
@@ -157,6 +244,54 @@ impl Snapshot {
         }
     }
 
+    /// Require the original strict proposal path, even when an edited view has
+    /// no source catalog entries to distinguish its media authority.
+    pub fn validate_original_proposal(&self) -> Result<(), SnapshotError> {
+        self.validate_admission()?;
+        if self
+            .admission
+            .as_ref()
+            .is_some_and(|admission| admission.slice.is_none())
+        {
+            Ok(())
+        } else {
+            Err(SnapshotError::InvalidAdmission)
+        }
+    }
+
+    /// Match the exact opaque view used for this edited proposal, not an equal
+    /// public document or a view prepared for another placement.
+    pub fn validate_edit_slice_view(
+        &self,
+        view: &Arc<AdmittedSliceView>,
+    ) -> Result<(), SnapshotError> {
+        self.validate_admission()?;
+        if self
+            .admission
+            .as_ref()
+            .and_then(|admission| admission.slice.as_ref())
+            .is_some_and(|admitted| Arc::ptr_eq(admitted, view))
+        {
+            Ok(())
+        } else {
+            Err(SnapshotError::InvalidAdmission)
+        }
+    }
+
+    pub(crate) fn check_media_live(&self, cancelled: &AtomicBool) -> Result<(), SnapshotError> {
+        // Committed and base-only proposals retain the established warm private
+        // PCM behavior. Historical edited views carry an explicitly revocable
+        // store admission, including when preparation reuses cached samples.
+        if let Some(view) = self
+            .admission
+            .as_ref()
+            .and_then(|admission| admission.slice.as_ref())
+        {
+            view.check_live(cancelled).map_err(media_error)?;
+        }
+        Ok(())
+    }
+
     pub(crate) fn validate_admission(&self) -> Result<(), SnapshotError> {
         match (&self.content, &self.admission) {
             (ContentIdentity::Committed, None) => Ok(()),
@@ -164,6 +299,8 @@ impl Snapshot {
                 if self.session == admission.session
                     && self.content == admission.content
                     && Arc::ptr_eq(&self.document, &admission.proposed)
+                    && Arc::ptr_eq(&self.sources, &admission.sources)
+                    && self.originals.same_session(&admission.originals)
                     && base_revision == admission.base.revision_id() =>
             {
                 Ok(())
@@ -171,6 +308,47 @@ impl Snapshot {
             _ => Err(SnapshotError::InvalidAdmission),
         }
     }
+}
+
+fn media_error(error: impl std::fmt::Display) -> SnapshotError {
+    SnapshotError::MediaAdmission(error.to_string())
+}
+
+#[cfg(test)]
+thread_local! {
+    pub(crate) static CATALOG_ENTRIES_CHECKED: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
+/// Complete catalog verification is constructor work, never a hot lookup scan.
+fn validate_sources(
+    document: &ProjectDocument,
+    sources: &BTreeMap<AssetId, SourceEntry>,
+) -> Result<(), SnapshotError> {
+    let mut count = 0;
+    for (id, record) in document.assets() {
+        let Some(qualification) = &record.source_qualification else {
+            continue;
+        };
+        #[cfg(test)]
+        CATALOG_ENTRIES_CHECKED.with(|checked| checked.set(checked.get() + 1));
+        count += 1;
+        let entry = sources.get(id).ok_or(SnapshotError::InvalidAdmission)?;
+        if entry.receipt.id() != qualification
+            || entry
+                .receipt
+                .asset_record(record.label.clone())
+                .map_err(media_error)?
+                != *record
+            || entry.original.object() != entry.receipt.original()
+            || entry.original.sha256() != entry.receipt.snapshot().content().sha256()
+        {
+            return Err(SnapshotError::InvalidAdmission);
+        }
+    }
+    if count != sources.len() {
+        return Err(SnapshotError::InvalidAdmission);
+    }
+    Ok(())
 }
 
 /// Aggregate physical PCM on disk, separate from the DSP residency limit.
@@ -208,13 +386,15 @@ impl Sources {
             && self.snapshot.content == snapshot.content
             && self.snapshot.session == snapshot.session
             && Arc::ptr_eq(&self.snapshot.document, &snapshot.document)
-            && self.snapshot.sources.len() == snapshot.sources.len()
-            && self.snapshot.sources.iter().all(|(asset, before)| {
-                snapshot.sources.get(asset).is_some_and(|after| {
-                    Arc::ptr_eq(&before.receipt, &after.receipt)
-                        && before.original == after.original
-                })
-            })
+            && (Arc::ptr_eq(&self.snapshot.sources, &snapshot.sources)
+                || (self.snapshot.sources.len() == snapshot.sources.len()
+                    && self.snapshot.sources.iter().all(|(asset, before)| {
+                        snapshot.sources.get(asset).is_some_and(|after| {
+                            Arc::ptr_eq(&before.receipt, &after.receipt)
+                                && before.original == after.original
+                        })
+                    })))
+            && self.snapshot.originals.same_session(&snapshot.originals)
     }
 }
 
@@ -242,6 +422,9 @@ impl AudioSourceProvider for Sources {
     ) -> Result<&PreparedSource, PreparationError> {
         check_cancel(cancelled)?;
         self.snapshot.validate_admission().map_err(unavailable)?;
+        self.snapshot
+            .check_media_live(cancelled)
+            .map_err(unavailable)?;
         let document = &self.snapshot.document;
         if project != document.project_id() || revision != document.revision_id() {
             return Err(unavailable(
@@ -346,6 +529,9 @@ impl AudioSourceProvider for Sources {
             self.cache_bytes = reserved_bytes;
             self.cache_index_frames = reserved_frames;
         }
+        self.snapshot
+            .check_media_live(cancelled)
+            .map_err(unavailable)?;
         self.cache
             .get(asset)
             .map(|source| &source.prepared)

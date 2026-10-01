@@ -1,0 +1,55 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error[E0609]: no field `copied` on type `preview::moment::Selection`
+  --> crates/deadpan-app/src/preview/harness/delete_range/capture.rs:25:10
+   |
+25 |         .copied
+   |          ^^^^^^ unknown field
+   |
+   = note: available field is: `active`
+
+error[E0609]: no field `copied` on type `preview::moment::Selection`
+  --> crates/deadpan-app/src/preview/harness/delete_range/capture.rs:44:18
+   |
+44 |                 .copied
+   |                  ^^^^^^ unknown field
+   |
+   = note: available field is: `active`
+
+error[E0609]: no field `copied` on type `preview::moment::Selection`
+  --> crates/deadpan-app/src/preview/harness/moment.rs:51:14
+   |
+51 |             .copied
+   |              ^^^^^^ unknown field
+   |
+   = note: available field is: `active`
+
+error[E0609]: no field `copied` on type `preview::moment::Selection`
+   --> crates/deadpan-app/src/preview/harness/moment.rs:121:18
+    |
+121 |                 .copied
+    |                  ^^^^^^ unknown field
+    |
+    = note: available field is: `active`
+
+error[E0609]: no field `copied` on type `preview::moment::Selection`
+  --> crates/deadpan-app/src/preview/harness/room_tone.rs:64:14
+   |
+64 |             .copied
+   |              ^^^^^^ unknown field
+   |
+   = note: available field is: `active`
+
+For more information about this error, try `rustc --explain E0609`.
+error: could not compile `deadpan-app` (bin "deadpan-app") due to 5 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `deadpan-app` (bin "deadpan-app" test) due to 5 previous errors

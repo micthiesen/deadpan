@@ -1,0 +1,21 @@
+Native edited-slice service review, 2026-09-30
+
+Implemented:
+- Exact snapshot_at historical capture with checked ordinary Sequence owner and parent bounds; fresh scratch timing; no writes.
+- Independent retained CaptureUpdate reply; early dispatcher preserves generic saved-edit error/message/commit receipts.
+- Session replacement clears capture reply, source cache and source-view feedback.
+- Copied source materialization precedes destination scope and destination command preflight.
+- Refined source recaptures same revision/parent, retains original register; same-view reuse requires CopyId/range/parent and exact accepted Captured Arc.
+- MediaView catalogs built from sealed AdmittedSliceView receipts and live handles on project service thread.
+- Request::Edited retains exact generic command, imported root, duration and removed range, and shares fast/staged paths.
+- Proposed playback uses proposed_edit_slice; prepared result carries MediaView and compiled inserted root duration.
+- Commit retains exact request and durable receipt through refresh failure; duplicate staged commit returns receipt; stale fast paste fails store revision check.
+- Original qualification/cache/import flow preserved through optional prepared token in Request::commit.
+
+Checks completed before Cargo gate release:
+- Owned rustfmt --edition 2024 --config skip_children=true
+- git diff --check -- crates/deadpan-app/src/project
+- Manual complete diff review including new untracked files
+
+Added eight project::tests::edited_slice tests. Existing project/tests/splice.rs, splice/replacement.rs and splice_equivalence.rs converted to Source::Original.
+No Cargo or native UI inspection run by this agent. Root owns first app compiler pass.

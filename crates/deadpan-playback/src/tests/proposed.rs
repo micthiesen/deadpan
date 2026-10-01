@@ -2,6 +2,9 @@
 //! admission remains anchored in one captured, unchanged committed revision.
 use super::*;
 
+#[path = "proposed/edited_slice.rs"]
+mod edited_slice;
+
 fn gain_document(
     store: &ProjectStore,
     base: &Snapshot,
@@ -157,7 +160,7 @@ fn proposal_admission_rejects_bad_identity_changed_assets_and_retargeted_public_
     let committed_shape = Snapshot::committed(
         base.session,
         document.clone(),
-        base.sources.clone(),
+        base.sources.as_ref().clone(),
         base.originals.clone(),
     );
     let sources = Sources::new(proposal.clone());
@@ -293,7 +296,7 @@ fn proposed_source_failure_is_tagged_and_cannot_poison_later_before_playback() {
     let base = snapshot(&store, 53);
     let document = gain_document(&store, &base, "failed-draft", -6000);
     let mut failed = Snapshot::proposed(&base, document.clone(), 28, 1).unwrap();
-    failed.sources.clear();
+    Arc::make_mut(&mut failed.sources).clear();
     let failed = Arc::new(failed);
     let expected = reference(&base, AudioSample(160), 128);
     let (engine, devices) = engine(&permit);
@@ -303,7 +306,7 @@ fn proposed_source_failure_is_tagged_and_cannot_poison_later_before_playback() {
     let error = update(&engine, Phase::Failed);
     assert_eq!(error.content, failed.content);
     assert_eq!(error.revision_id, *document.revision_id());
-    assert!(error.error.unwrap().contains("receipt"));
+    assert!(error.error.unwrap().contains("proposal admission"));
     engine
         .play(2, base.clone(), AudioSample(160), 0.25)
         .unwrap();

@@ -36,6 +36,10 @@ impl Service {
     /// True completes the short user command; false retains its admission while
     /// a requested session replacement drains the old writer's render work.
     pub(super) fn dispatch_request(&mut self, request: ProjectRequest) -> bool {
+        if let ProjectRequest::CaptureEditSlice(request) = request {
+            self.capture_edit_slice_command(request);
+            return true;
+        }
         if let ProjectRequest::RenderHistory(request) = request {
             self.render_history_command(request);
             return true;

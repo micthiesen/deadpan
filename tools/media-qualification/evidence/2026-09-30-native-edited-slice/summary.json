@@ -1,0 +1,1240 @@
+{
+  "runs": {
+    "app-harness-tests-2": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked"
+      ],
+      "started": "2026-10-01T03:18:27.428911+00:00",
+      "base_commit": "41c540aab86af1414bfe73b1378694659bb6763d",
+      "diff_sha256": "2947d9e3280a535a798e726d5cd1857b15c198056961350e0c0fe713b8ff6348",
+      "source_manifest_sha256": "ed3c51322c77a1b3b71b1e4141d0b21f88770d0b69584fe9b34919b4283168bb",
+      "pid": 23864,
+      "exit_code": 0,
+      "seconds": 35.56041920790449,
+      "test_result_groups": 2,
+      "passed": 399,
+      "failed": 0,
+      "ignored": 0
+    },
+    "clippy-final": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--features",
+        "deadpan-app/ui-harness",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-10-01T03:40:03.751832+00:00",
+      "base_commit": "41c540aab86af1414bfe73b1378694659bb6763d",
+      "diff_sha256": "fc61e3b19dc6784cad3c04171e3a38ec10176264dd888a29ba20b6f9dfece9db",
+      "source_manifest_sha256": "65fa24bf37e2a6c647c092a52d5ebf9196b48605b98e2d4107034a48da52dbe6",
+      "pid": 47536,
+      "exit_code": 0,
+      "seconds": 620.4735004999675,
+      "test_result_groups": 0,
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    "fmt-final": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "started": "2026-10-01T03:40:02.113311+00:00",
+      "base_commit": "41c540aab86af1414bfe73b1378694659bb6763d",
+      "diff_sha256": "fc61e3b19dc6784cad3c04171e3a38ec10176264dd888a29ba20b6f9dfece9db",
+      "source_manifest_sha256": "65fa24bf37e2a6c647c092a52d5ebf9196b48605b98e2d4107034a48da52dbe6",
+      "pid": 47508,
+      "exit_code": 0,
+      "seconds": 1.4862952497787774,
+      "test_result_groups": 0,
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    "layout-final-gain": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "--ui-check",
+        "--scenario",
+        "gain",
+        "--output",
+        "/tmp/deadpan-native-slices-20260930/layout-final-gain",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "started": "2026-10-01T03:36:21.076937+00:00",
+      "base_commit": "41c540aab86af1414bfe73b1378694659bb6763d",
+      "diff_sha256": "0a6a11034986c10453aa13ff13b19bf40cdbe5c789940f2cc65bb47bb76d44b1",
+      "source_manifest_sha256": "65fa24bf37e2a6c647c092a52d5ebf9196b48605b98e2d4107034a48da52dbe6",
+      "pid": 46691,
+      "exit_code": 0,
+      "seconds": 38.175995625089854,
+      "test_result_groups": 0,
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    "layout-final-place-slice": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "--ui-check",
+        "--scenario",
+        "place-slice",
+        "--output",
+        "/tmp/deadpan-native-slices-20260930/layout-final-place-slice",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "started": "2026-10-01T03:36:59.403791+00:00",
+      "base_commit": "41c540aab86af1414bfe73b1378694659bb6763d",
+      "diff_sha256": "fc61e3b19dc6784cad3c04171e3a38ec10176264dd888a29ba20b6f9dfece9db",
+      "source_manifest_sha256": "65fa24bf37e2a6c647c092a52d5ebf9196b48605b98e2d4107034a48da52dbe6",
+      "pid": 46857,
+      "exit_code": 0,
+      "seconds": 20.82323016691953,
+      "test_result_groups": 0,
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    "layout-final-room-tone": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "--ui-check",
+        "--scenario",
+        "room-tone",
+        "--output",
+        "/tmp/deadpan-native-slices-20260930/layout-final-room-tone",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "started": "2026-10-01T03:36:04.032451+00:00",
+      "base_commit": "41c540aab86af1414bfe73b1378694659bb6763d",
+      "diff_sha256": "0a6a11034986c10453aa13ff13b19bf40cdbe5c789940f2cc65bb47bb76d44b1",
+      "source_manifest_sha256": "65fa24bf37e2a6c647c092a52d5ebf9196b48605b98e2d4107034a48da52dbe6",
+      "pid": 46532,
+      "exit_code": 0,
+      "seconds": 16.897517791949213,
+      "test_result_groups": 0,
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    "layout-final-sound-placement": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "--ui-check",
+        "--scenario",
+        "sound-placement",
+        "--output",
+        "/tmp/deadpan-native-slices-20260930/layout-final-sound-placement",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "started": "2026-10-01T03:35:46.904168+00:00",
+      "base_commit": "41c540aab86af1414bfe73b1378694659bb6763d",
+      "diff_sha256": "0a6a11034986c10453aa13ff13b19bf40cdbe5c789940f2cc65bb47bb76d44b1",
+      "source_manifest_sha256": "65fa24bf37e2a6c647c092a52d5ebf9196b48605b98e2d4107034a48da52dbe6",
+      "pid": 46322,
+      "exit_code": 0,
+      "seconds": 16.88965641707182,
+      "test_result_groups": 0,
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    "recovery-tests-final": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "refresh_fail"
+      ],
+      "started": "2026-10-01T03:35:16.289348+00:00",
+      "base_commit": "41c540aab86af1414bfe73b1378694659bb6763d",
+      "diff_sha256": "0a6a11034986c10453aa13ff13b19bf40cdbe5c789940f2cc65bb47bb76d44b1",
+      "source_manifest_sha256": "65fa24bf37e2a6c647c092a52d5ebf9196b48605b98e2d4107034a48da52dbe6",
+      "pid": 46094,
+      "exit_code": 0,
+      "seconds": 16.21817091712728,
+      "test_result_groups": 2,
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0
+    },
+    "release-performance-corrected": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-app",
+        "--release",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "--ui-check",
+        "--mode",
+        "performance",
+        "--output",
+        "/tmp/deadpan-native-slices-20260930/release-performance-corrected",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "started": "2026-10-01T03:37:48.692643+00:00",
+      "base_commit": "41c540aab86af1414bfe73b1378694659bb6763d",
+      "diff_sha256": "fc61e3b19dc6784cad3c04171e3a38ec10176264dd888a29ba20b6f9dfece9db",
+      "source_manifest_sha256": "65fa24bf37e2a6c647c092a52d5ebf9196b48605b98e2d4107034a48da52dbe6",
+      "pid": 47091,
+      "exit_code": 0,
+      "seconds": 117.54939541732892,
+      "test_result_groups": 0,
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    "release-performance-final": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-app",
+        "--release",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "--ui-check",
+        "--mode",
+        "performance",
+        "--output",
+        "/tmp/deadpan-native-slices-20260930/release-performance-final",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "started": "2026-10-01T03:27:50.187862+00:00",
+      "base_commit": "41c540aab86af1414bfe73b1378694659bb6763d",
+      "diff_sha256": "9fe4fb3140dd100328fb4cdedb775dc09fd593d736d209c19493735d0128c011",
+      "source_manifest_sha256": "025bcbb02cad60eb4d474ede5cc77c5770b9c9d3dd684481a1f6e1f9acf6dbbf",
+      "pid": 40801,
+      "exit_code": 1,
+      "seconds": 257.776601083111,
+      "test_result_groups": 0,
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    "visual-delete-final": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "--ui-check",
+        "--scenario",
+        "delete-range",
+        "--output",
+        "/tmp/deadpan-native-slices-20260930/visual-delete-final",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "started": "2026-10-01T03:27:07.606897+00:00",
+      "base_commit": "41c540aab86af1414bfe73b1378694659bb6763d",
+      "diff_sha256": "9fe4fb3140dd100328fb4cdedb775dc09fd593d736d209c19493735d0128c011",
+      "source_manifest_sha256": "025bcbb02cad60eb4d474ede5cc77c5770b9c9d3dd684481a1f6e1f9acf6dbbf",
+      "pid": 39986,
+      "exit_code": 0,
+      "seconds": 16.120608875062317,
+      "test_result_groups": 0,
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    "visual-moment-final": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "--ui-check",
+        "--scenario",
+        "original-moment",
+        "--output",
+        "/tmp/deadpan-native-slices-20260930/visual-moment-final",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "started": "2026-10-01T03:26:27.852092+00:00",
+      "base_commit": "41c540aab86af1414bfe73b1378694659bb6763d",
+      "diff_sha256": "9fe4fb3140dd100328fb4cdedb775dc09fd593d736d209c19493735d0128c011",
+      "source_manifest_sha256": "025bcbb02cad60eb4d474ede5cc77c5770b9c9d3dd684481a1f6e1f9acf6dbbf",
+      "pid": 38720,
+      "exit_code": 0,
+      "seconds": 7.723046457860619,
+      "test_result_groups": 0,
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    "visual-place-1": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "--ui-check",
+        "--scenario",
+        "place-slice",
+        "--output",
+        "/tmp/deadpan-native-slices-20260930/visual-place-1",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+        "--retain-projects"
+      ],
+      "started": "2026-10-01T03:21:40.762754+00:00",
+      "base_commit": "41c540aab86af1414bfe73b1378694659bb6763d",
+      "diff_sha256": "da78c37723184973e4bafa907b1220a6bef3792838712e3dc046999e516222db",
+      "source_manifest_sha256": "3ac5fd1ae6efa877b7ccc0e7bfd2d2f3b273ef33ceb1b0461bc0d1d72fb266dd",
+      "pid": 27025,
+      "exit_code": 1,
+      "seconds": 19.1241494580172,
+      "test_result_groups": 0,
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    "visual-place-2": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "--ui-check",
+        "--scenario",
+        "place-slice",
+        "--output",
+        "/tmp/deadpan-native-slices-20260930/visual-place-2",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+        "--retain-projects"
+      ],
+      "started": "2026-10-01T03:23:24.665530+00:00",
+      "base_commit": "41c540aab86af1414bfe73b1378694659bb6763d",
+      "diff_sha256": "9fe4fb3140dd100328fb4cdedb775dc09fd593d736d209c19493735d0128c011",
+      "source_manifest_sha256": "025bcbb02cad60eb4d474ede5cc77c5770b9c9d3dd684481a1f6e1f9acf6dbbf",
+      "pid": 28000,
+      "exit_code": 0,
+      "seconds": 32.05909779109061,
+      "test_result_groups": 0,
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    "worker-tests-final": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "worker::"
+      ],
+      "started": "2026-10-01T03:20:45.753029+00:00",
+      "base_commit": "41c540aab86af1414bfe73b1378694659bb6763d",
+      "diff_sha256": "da78c37723184973e4bafa907b1220a6bef3792838712e3dc046999e516222db",
+      "source_manifest_sha256": "3ac5fd1ae6efa877b7ccc0e7bfd2d2f3b273ef33ceb1b0461bc0d1d72fb266dd",
+      "pid": 26051,
+      "exit_code": 0,
+      "seconds": 15.964634415693581,
+      "test_result_groups": 2,
+      "passed": 25,
+      "failed": 0,
+      "ignored": 0
+    },
+    "workspace-final": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "--no-fail-fast"
+      ],
+      "started": "2026-10-01T03:50:24.399509+00:00",
+      "base_commit": "41c540aab86af1414bfe73b1378694659bb6763d",
+      "diff_sha256": "f91c4cad4203f09805c0e828183558d7b7aa652a9764f9a52f72103b932d6dc7",
+      "source_manifest_sha256": "65fa24bf37e2a6c647c092a52d5ebf9196b48605b98e2d4107034a48da52dbe6",
+      "pid": 49862,
+      "exit_code": 0,
+      "seconds": 734.2583715422079,
+      "test_result_groups": 182,
+      "passed": 2766,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  "replays": {
+    "layout-before-gain": {
+      "failed": true,
+      "scenarios": {
+        "kestrel-shortcuts": {
+          "failed": false,
+          "checks": 1,
+          "findings": [],
+          "skipped": []
+        },
+        "gain": {
+          "failed": true,
+          "checks": 68,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            },
+            {
+              "message": "Check failed: Gain editing retains a useful painted picture above its controls",
+              "severity": "failure"
+            }
+          ],
+          "skipped": [
+            "Gain uses real qualified source evidence, writer previews, durable commands and canonical PCM for measured waveforms. Comparison audio delivery and labelled waveform failure replies are injected; this replay does not open an audio device or establish acoustic quality. Canonical Before/Draft mix and scheduling qualification belong to playback tests.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      }
+    },
+    "layout-before-room-tone": {
+      "failed": true,
+      "scenarios": {
+        "kestrel-shortcuts": {
+          "failed": false,
+          "checks": 1,
+          "findings": [],
+          "skipped": []
+        },
+        "room-tone": {
+          "failed": true,
+          "checks": 70,
+          "findings": [
+            {
+              "message": "Check failed: Copied Original controls and empty Sounds retain at least 140 points of picture",
+              "severity": "failure"
+            }
+          ],
+          "skipped": [
+            "Source and committed Sequence audition use injected typed delivery updates, with real descriptor preparation and project writes. This replay does not prepare PCM, open an output device, establish acoustic quality or certify speech absence.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      }
+    },
+    "layout-before-sound-placement": {
+      "failed": true,
+      "scenarios": {
+        "kestrel-shortcuts": {
+          "failed": false,
+          "checks": 1,
+          "findings": [],
+          "skipped": []
+        },
+        "sound-placement": {
+          "failed": true,
+          "checks": 115,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            },
+            {
+              "message": "Check failed: Sound editing retains useful picture height at the minimum viewport",
+              "severity": "failure"
+            }
+          ],
+          "skipped": [
+            "Sound placement uses real source qualification and durable project commands. This scenario does not start audio output or establish PCM, device timing, or listening evidence.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      }
+    },
+    "layout-final-gain": {
+      "failed": false,
+      "scenarios": {
+        "kestrel-shortcuts": {
+          "failed": false,
+          "checks": 1,
+          "findings": [],
+          "skipped": []
+        },
+        "gain": {
+          "failed": false,
+          "checks": 290,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "skipped": [
+            "Gain uses real qualified source evidence, writer previews, durable commands and canonical PCM for measured waveforms. Comparison audio delivery and labelled waveform failure replies are injected; this replay does not open an audio device or establish acoustic quality. Canonical Before/Draft mix and scheduling qualification belong to playback tests.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      }
+    },
+    "layout-final-place-slice": {
+      "failed": false,
+      "scenarios": {
+        "kestrel-shortcuts": {
+          "failed": false,
+          "checks": 1,
+          "findings": [],
+          "skipped": []
+        },
+        "place-slice": {
+          "failed": false,
+          "checks": 547,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "skipped": [
+            "Place slice covers linked Original and edited-slice copying, insertion and replacement in ordinary Sequence scopes. Atomic move, separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.",
+            "The replay uses genuine source qualification, endpoint decoding, SDR GPU pictures, proposed documents and durable commands. Audio delivery and a concurrent service Undo are explicitly injected. It does not open an audio device or establish acoustic quality.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      }
+    },
+    "layout-final-room-tone": {
+      "failed": false,
+      "scenarios": {
+        "kestrel-shortcuts": {
+          "failed": false,
+          "checks": 1,
+          "findings": [],
+          "skipped": []
+        },
+        "room-tone": {
+          "failed": false,
+          "checks": 220,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "skipped": [
+            "Source and committed Sequence audition use injected typed delivery updates, with real descriptor preparation and project writes. This replay does not prepare PCM, open an output device, establish acoustic quality or certify speech absence.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      }
+    },
+    "layout-final-sound-placement": {
+      "failed": false,
+      "scenarios": {
+        "kestrel-shortcuts": {
+          "failed": false,
+          "checks": 1,
+          "findings": [],
+          "skipped": []
+        },
+        "sound-placement": {
+          "failed": false,
+          "checks": 216,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "skipped": [
+            "Sound placement uses real source qualification and durable project commands. This scenario does not start audio output or establish PCM, device timing, or listening evidence.",
+            "Preparing/Playing at 960 pixels uses the real transport controls with simulated delivery reports only. It does not start a device or prepare PCM.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      }
+    },
+    "release-performance-corrected": {
+      "failed": false,
+      "scenarios": {
+        "kestrel-shortcuts": {
+          "failed": false,
+          "checks": 1,
+          "findings": [],
+          "skipped": []
+        },
+        "workspace": {
+          "failed": false,
+          "checks": 80,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "editing": {
+          "failed": false,
+          "checks": 29,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "camera": {
+          "failed": false,
+          "checks": 12,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "menus": {
+          "failed": false,
+          "checks": 37,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "delayed-preview": {
+          "failed": false,
+          "checks": 8,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "rapid-input": {
+          "failed": false,
+          "checks": 319,
+          "findings": [],
+          "skipped": [
+            "Repeat boundary checks delay delivery of real SQLite updates; the writer and production event router remain live. Physical key delivery is not exercised.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "playback-feedback": {
+          "failed": false,
+          "checks": 12,
+          "findings": [],
+          "skipped": [
+            "Playback service updates are explicitly simulated. This scenario qualifies UI feedback and picture routing, not PCM preparation, device timing or listening.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "large-project": {
+          "failed": false,
+          "checks": 524,
+          "findings": [],
+          "skipped": [
+            "Large-project fixture: 10,000 root Background/Silence Holds in a real SQLite package. No source media, decoding, PCM or large asset inventory is stressed.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "edit-latency": {
+          "failed": false,
+          "checks": 448,
+          "findings": [],
+          "skipped": [
+            "Edit timings measure the real committed revision through offscreen GPU completion. Physical display presentation and acoustic Hold silence are outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "nested-pause": {
+          "failed": false,
+          "checks": 72,
+          "findings": [],
+          "skipped": [
+            "This replay enters Sequence groups. Repeat and Retime entry, occurrence isolation, and their pause insertion remain outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "original-moment": {
+          "failed": false,
+          "checks": 16,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "place-slice": {
+          "failed": false,
+          "checks": 547,
+          "findings": [],
+          "skipped": [
+            "Place slice covers linked Original and edited-slice copying, insertion and replacement in ordinary Sequence scopes. Atomic move, separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.",
+            "The replay uses genuine source qualification, endpoint decoding, SDR GPU pictures, proposed documents and durable commands. Audio delivery and a concurrent service Undo are explicitly injected. It does not open an audio device or establish acoustic quality.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "delete-range": {
+          "failed": false,
+          "checks": 97,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "original-playback": {
+          "failed": false,
+          "checks": 18,
+          "findings": [],
+          "skipped": [
+            "Playback service updates are explicitly injected. This scenario exercises Original controls, clock admission, looping and picture routing, not PCM preparation, device timing or listening.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "sound-playback": {
+          "failed": false,
+          "checks": 38,
+          "findings": [],
+          "skipped": [
+            "Sound registration and widgets use production services. Delivery reports are deterministic fakes, not real PCM playback, device timing, or listening evidence.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "sound-placement": {
+          "failed": false,
+          "checks": 216,
+          "findings": [],
+          "skipped": [
+            "Sound placement uses real source qualification and durable project commands. This scenario does not start audio output or establish PCM, device timing, or listening evidence.",
+            "Preparing/Playing at 960 pixels uses the real transport controls with simulated delivery reports only. It does not start a device or prepare PCM.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "room-tone": {
+          "failed": false,
+          "checks": 220,
+          "findings": [],
+          "skipped": [
+            "Source and committed Sequence audition use injected typed delivery updates, with real descriptor preparation and project writes. This replay does not prepare PCM, open an output device, establish acoustic quality or certify speech absence.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "gain": {
+          "failed": false,
+          "checks": 290,
+          "findings": [],
+          "skipped": [
+            "Gain uses real qualified source evidence, writer previews, durable commands and canonical PCM for measured waveforms. Comparison audio delivery and labelled waveform failure replies are injected; this replay does not open an audio device or establish acoustic quality. Canonical Before/Draft mix and scheduling qualification belong to playback tests.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "retime": {
+          "failed": false,
+          "checks": 15,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "render": {
+          "failed": false,
+          "checks": 111,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "generated-picture": {
+          "failed": false,
+          "checks": 0,
+          "findings": [],
+          "skipped": [
+            "Requires explicit --scenario generated-picture --project and the real bundle qualification fixture; ordinary replay does not fabricate accepted evidence."
+          ]
+        }
+      }
+    },
+    "release-performance-final": {
+      "failed": true,
+      "scenarios": {
+        "kestrel-shortcuts": {
+          "failed": false,
+          "checks": 1,
+          "findings": [],
+          "skipped": []
+        },
+        "workspace": {
+          "failed": false,
+          "checks": 80,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "editing": {
+          "failed": false,
+          "checks": 29,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "camera": {
+          "failed": false,
+          "checks": 12,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "menus": {
+          "failed": false,
+          "checks": 37,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "delayed-preview": {
+          "failed": false,
+          "checks": 8,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "rapid-input": {
+          "failed": false,
+          "checks": 319,
+          "findings": [],
+          "skipped": [
+            "Repeat boundary checks delay delivery of real SQLite updates; the writer and production event router remain live. Physical key delivery is not exercised.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "playback-feedback": {
+          "failed": false,
+          "checks": 12,
+          "findings": [],
+          "skipped": [
+            "Playback service updates are explicitly simulated. This scenario qualifies UI feedback and picture routing, not PCM preparation, device timing or listening.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "large-project": {
+          "failed": false,
+          "checks": 524,
+          "findings": [],
+          "skipped": [
+            "Large-project fixture: 10,000 root Background/Silence Holds in a real SQLite package. No source media, decoding, PCM or large asset inventory is stressed.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "edit-latency": {
+          "failed": false,
+          "checks": 448,
+          "findings": [],
+          "skipped": [
+            "Edit timings measure the real committed revision through offscreen GPU completion. Physical display presentation and acoustic Hold silence are outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "nested-pause": {
+          "failed": false,
+          "checks": 72,
+          "findings": [],
+          "skipped": [
+            "This replay enters Sequence groups. Repeat and Retime entry, occurrence isolation, and their pause insertion remain outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "original-moment": {
+          "failed": false,
+          "checks": 16,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "place-slice": {
+          "failed": false,
+          "checks": 547,
+          "findings": [],
+          "skipped": [
+            "Place slice covers linked Original and edited-slice copying, insertion and replacement in ordinary Sequence scopes. Atomic move, separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.",
+            "The replay uses genuine source qualification, endpoint decoding, SDR GPU pictures, proposed documents and durable commands. Audio delivery and a concurrent service Undo are explicitly injected. It does not open an audio device or establish acoustic quality.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "delete-range": {
+          "failed": false,
+          "checks": 97,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "original-playback": {
+          "failed": false,
+          "checks": 18,
+          "findings": [],
+          "skipped": [
+            "Playback service updates are explicitly injected. This scenario exercises Original controls, clock admission, looping and picture routing, not PCM preparation, device timing or listening.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "sound-playback": {
+          "failed": false,
+          "checks": 38,
+          "findings": [],
+          "skipped": [
+            "Sound registration and widgets use production services. Delivery reports are deterministic fakes, not real PCM playback, device timing, or listening evidence.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "sound-placement": {
+          "failed": true,
+          "checks": 115,
+          "findings": [
+            {
+              "message": "Check failed: Sound editing retains useful picture height at the minimum viewport",
+              "severity": "failure"
+            }
+          ],
+          "skipped": [
+            "Sound placement uses real source qualification and durable project commands. This scenario does not start audio output or establish PCM, device timing, or listening evidence.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "room-tone": {
+          "failed": true,
+          "checks": 70,
+          "findings": [
+            {
+              "message": "Check failed: Copied Original controls and empty Sounds retain at least 140 points of picture",
+              "severity": "failure"
+            }
+          ],
+          "skipped": [
+            "Source and committed Sequence audition use injected typed delivery updates, with real descriptor preparation and project writes. This replay does not prepare PCM, open an output device, establish acoustic quality or certify speech absence.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "gain": {
+          "failed": true,
+          "checks": 68,
+          "findings": [
+            {
+              "message": "Check failed: Gain editing retains a useful painted picture above its controls",
+              "severity": "failure"
+            }
+          ],
+          "skipped": [
+            "Gain uses real qualified source evidence, writer previews, durable commands and canonical PCM for measured waveforms. Comparison audio delivery and labelled waveform failure replies are injected; this replay does not open an audio device or establish acoustic quality. Canonical Before/Draft mix and scheduling qualification belong to playback tests.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "retime": {
+          "failed": false,
+          "checks": 15,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "render": {
+          "failed": false,
+          "checks": 111,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        "generated-picture": {
+          "failed": false,
+          "checks": 0,
+          "findings": [],
+          "skipped": [
+            "Requires explicit --scenario generated-picture --project and the real bundle qualification fixture; ordinary replay does not fabricate accepted evidence."
+          ]
+        }
+      }
+    },
+    "visual-delete-final": {
+      "failed": false,
+      "scenarios": {
+        "kestrel-shortcuts": {
+          "failed": false,
+          "checks": 1,
+          "findings": [],
+          "skipped": []
+        },
+        "delete-range": {
+          "failed": false,
+          "checks": 97,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      }
+    },
+    "visual-moment-final": {
+      "failed": false,
+      "scenarios": {
+        "kestrel-shortcuts": {
+          "failed": false,
+          "checks": 1,
+          "findings": [],
+          "skipped": []
+        },
+        "original-moment": {
+          "failed": false,
+          "checks": 16,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      }
+    },
+    "visual-place-1": {
+      "failed": true,
+      "scenarios": {
+        "kestrel-shortcuts": {
+          "failed": false,
+          "checks": 1,
+          "findings": [],
+          "skipped": []
+        },
+        "place-slice": {
+          "failed": true,
+          "checks": 464,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            },
+            {
+              "message": "Check failed: The labelled endpoint contains a submitted image mesh with an unclipped, unobscured paint area",
+              "severity": "failure"
+            }
+          ],
+          "skipped": [
+            "Place slice covers linked Original and edited-slice copying, insertion and replacement in ordinary Sequence scopes. Atomic move, separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.",
+            "The replay uses genuine source qualification, endpoint decoding, SDR GPU pictures, proposed documents and durable commands. Audio delivery and a concurrent service Undo are explicitly injected. It does not open an audio device or establish acoustic quality.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      }
+    },
+    "visual-place-2": {
+      "failed": false,
+      "scenarios": {
+        "kestrel-shortcuts": {
+          "failed": false,
+          "checks": 1,
+          "findings": [],
+          "skipped": []
+        },
+        "place-slice": {
+          "failed": false,
+          "checks": 548,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "skipped": [
+            "Place slice covers linked Original and edited-slice copying, insertion and replacement in ordinary Sequence scopes. Atomic move, separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.",
+            "The replay uses genuine source qualification, endpoint decoding, SDR GPU pictures, proposed documents and durable commands. Audio delivery and a concurrent service Undo are explicitly injected. It does not open an audio device or establish acoustic quality.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      }
+    }
+  },
+  "limits": [
+    "Native generated-Hold copying has no new decoded fixture in this milestone.",
+    "Replay audition transport is injected; decoded PCM tests are separate.",
+    "No full native IME, accessibility, listening or product acceptance claim."
+  ],
+  "final_source_manifest_sha256": "65fa24bf37e2a6c647c092a52d5ebf9196b48605b98e2d4107034a48da52dbe6",
+  "final_source_files_rechecked": 1330,
+  "environment": {
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+    "machine": "Mac17,7",
+    "architecture": "arm64",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6",
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "power": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=22741091)\t80%; AC attached; not charging present: true",
+    "ffmpeg_prefix": "/tmp/deadpan-ui-ffmpeg/prefix"
+  }
+}

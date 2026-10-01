@@ -302,7 +302,19 @@ families and injectively renamed historical timing aliases. Filter partial mark
 fragments by exact boundary bias. Store admission must recapture the named immutable
 revision before reusing historical media; clipboard data grants no qualification.
 Independent root sounds remain separate and transform once at insertion.
-Native edited-slice controls, registers and atomic move remain open. See
+Native `v`/motion/`y` captures an immutable edited range on the project service.
+The shared session register holds either Original or edited content; accepted
+edited copies survive edits and Undo, while newer copy intent supersedes pending
+replies. Clear it on session change. Native `p/P` and `:splice` use the same atomic
+slice commands. Refine against the captured historical parent, and admit a neutral
+source view before destination preflight so rejected destinations retain usable
+endpoints. Copied pictures have a distinct presentation identity and never become
+committed Camera targets. Historical picture/audio previews require store-issued
+opaque admission, complete catalog validation once per immutable view and live
+session checks on warm reuse. Preserve strict Original proposal validation and
+ordinary committed warm private PCM behavior. A saved receipt without refreshed
+workspace cannot consume the old visible selection or lose its reopening warning.
+Atomic move, persistent/named registers and cut-to-register remain open. See
 [edited slices](docs/EDITED_SLICES.md).
 
 Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 34 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings, audio edge policies, transparent Retime partitions, owned timing bindings and direct sound replacement maps, and binds qualified assets to immutable source receipts. Database schemas 1 through 38 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
@@ -532,7 +544,7 @@ Preserve captured revision/scope through async preparation and return explicit
 committed cursor/selection. Session-local copy is not persistent register support.
 See [Original moments](docs/SOURCE_MOMENTS.md).
 
-`:splice` retains a service-owned proposed linked Original insertion at an
+`:splice` retains a service-owned proposed linked Original or edited insertion at an
 ordinary Sequence seam or direct Source/ordinary Hold/supported fragment
 interior. Keep the captured Sequence owner explicit; never silently descend a
 child group. Interior placement retains Split identities and commits one
@@ -548,7 +560,7 @@ ReplaceSource removes one captured global Edit range and inserts its qualified
 Source atomically. Preserve zero-duration children at both endpoints, remove
 strictly interior ones, and transform marks once after the final structure.
 Use one direct Replace sound map, never intermediate Delete/Insert rounding.
-Keep Edit selection separate from the copied Original register and capture
+Keep Edit selection separate from the copied-content register and capture
 command-entry targets including absence. Replace mode fixes the removed range;
 Before and Proposed have separate exact audition windows. Move and
 Repeat/Retime occurrence destinations remain open.

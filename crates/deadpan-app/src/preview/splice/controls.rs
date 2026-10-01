@@ -94,10 +94,11 @@ impl DeadpanApp {
             }
             if focus.has_focus() { ui.painter().rect_stroke(heading, 2.0, egui::Stroke::new(1.0, style::LAVENDER), egui::StrokeKind::Inside); }
             let enabled = !draft.invalidated && !draft.applying;
+            let source_range = draft.source_range();
             ui.horizontal_wrapped(|ui| {
                 for (label, selected, key) in [
-                    (format!("In {} · i", draft.proposal.ordinals.start), draft.focus == Focus::In, SpliceKey::In),
-                    (format!("Out {} exclusive · o", draft.proposal.ordinals.end), draft.focus == Focus::Out, SpliceKey::Out),
+                    (format!("In {} · i", source_range.start), draft.focus == Focus::In, SpliceKey::In),
+                    (format!("Out {} exclusive · o", source_range.end), draft.focus == Focus::Out, SpliceKey::Out),
                     (format!("Destination Edit {} · d", draft.destination), draft.focus == Focus::Destination, SpliceKey::Destination),
                     ("Inspect picture · f".into(), draft.focus == Focus::Picture, SpliceKey::Picture),
                 ] {
@@ -132,13 +133,13 @@ impl DeadpanApp {
             let endpoints = draft.endpoint_identity();
             ui.horizontal_top(|ui| {
                 ui.allocate_ui_with_layout(egui::vec2(left_width, height), egui::Layout::top_down(egui::Align::Min), |ui| {
-                    ui.strong("ORIGINAL SLICE");
-                    ui.label(format!("Boundaries [{}..{}) · {} source frames", draft.proposal.ordinals.start, draft.proposal.ordinals.end, draft.proposal.ordinals.end - draft.proposal.ordinals.start));
+                    ui.strong(if draft.edited_source() { "COPIED EDIT SLICE" } else { "ORIGINAL SLICE" });
+                    ui.label(format!("Boundaries [{}..{}) · {} {} frames", source_range.start, source_range.end, source_range.end - source_range.start, if draft.edited_source() { "Edit" } else { "source" }));
                     draft.endpoints.show(ui, &mut self.renderer, &endpoints, height);
                 });
                 ui.allocate_ui_with_layout(egui::vec2(picture_width, height), egui::Layout::top_down(egui::Align::Min), |ui| {
                     let viewing_endpoint = matches!(draft.focus, Focus::In | Focus::Out) && self.transport.is_none();
-                    let title = if viewing_endpoint { "ORIGINAL ENDPOINT" } else if draft.before { "BEFORE · SAVED EDIT" } else if draft.prepared.is_some() { "PROPOSED · UNSAVED EDIT" } else { "DESTINATION · SAVED EDIT" };
+                    let title = if viewing_endpoint { if draft.edited_source() { "COPIED EDIT ENDPOINT" } else { "ORIGINAL ENDPOINT" } } else if draft.before { "BEFORE · SAVED EDIT" } else if draft.prepared.is_some() { "PROPOSED · UNSAVED EDIT" } else { "DESTINATION · SAVED EDIT" };
                     ui.strong(title);
                     let (rect, response) = ui.allocate_exact_size(egui::vec2(picture_width, (height - 54.0).max(100.0)), egui::Sense::hover());
                     ui.painter().rect_filled(rect, 3.0, egui::Color32::BLACK);
@@ -151,7 +152,7 @@ impl DeadpanApp {
                     response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Image, true, &label));
                     ui.label(&label);
                     let in_slice = !draft.before && draft.prepared.as_ref().is_some_and(|prepared| prepared.range.start().0 <= draft.cursor as i64 && (draft.cursor as i64) < prepared.range.end().0);
-                    ui.weak(if viewing_endpoint { "Original clock · endpoint inspection".into() } else { format!("Requested Edit picture {} · {}", u128::from(draft.cursor) + 1, if in_slice { "inside inserted slice" } else { "destination context" }) });
+                    ui.weak(if viewing_endpoint { if draft.edited_source() { "Copied Edit clock · endpoint inspection".into() } else { "Original clock · endpoint inspection".into() } } else { format!("Requested Edit picture {} · {}", u128::from(draft.cursor) + 1, if in_slice { "inside inserted slice" } else { "destination context" }) });
                 });
             });
             ui.separator();

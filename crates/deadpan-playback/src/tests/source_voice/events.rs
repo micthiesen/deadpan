@@ -272,7 +272,7 @@ fn silent_authored_sound_retains_source_admission_through_limiter_cache_and_reco
         .unwrap();
     assert_eq!(warm.samples, vec![[0.0; 2]; 256]);
     assert_eq!(limited.cached_tile_count(), 1);
-    let mut missing_sources = captured.sources.clone();
+    let mut missing_sources = captured.sources.as_ref().clone();
     missing_sources.remove(&asset);
     let missing = Arc::new(Snapshot::committed(
         captured.session,

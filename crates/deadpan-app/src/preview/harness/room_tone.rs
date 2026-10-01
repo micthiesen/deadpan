@@ -60,9 +60,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.check(
         "Original v, counted motion and y capture a half-open source range without history",
         d.app()
-            .moment
             .copied
-            .as_ref()
+            .original()
             .is_some_and(|copy| copy.ordinals == (10..20))
             && !d.app().moment.active
             && d.revision() == silent_revision,

@@ -6,10 +6,11 @@ use deadpan_playback::{Snapshot, Window};
 use super::*;
 use crate::navigation::splice::SpliceKey;
 use crate::project::splice::{
-    Destination, Prepared, Proposal, ProposalId, ProposalUpdate, SpliceCommitUpdate,
+    Destination, Prepared, PreparedMedia, Proposal, ProposalId, ProposalUpdate, Source,
+    SpliceCommitUpdate,
 };
 use crate::transport::Domain;
-use crate::worker::EndpointIdentity;
+use crate::worker::{EndpointIdentity, EndpointInput, EndpointReply, EndpointSourceId};
 
 mod controls;
 mod pictures;
@@ -47,7 +48,8 @@ pub(super) struct Draft {
     looping: bool,
     pub(super) position: Option<AudioSample>,
     count: Option<u32>,
-    source_frames: u64,
+    source_bounds: std::ops::Range<u64>,
+    source_view: Option<Arc<crate::project::slice::CopiedView>>,
     endpoint_change: u64,
     endpoints_pending: bool,
     endpoints: pictures::Display,
@@ -157,16 +159,43 @@ impl Draft {
     }
 
     fn endpoint_identity(&self) -> EndpointIdentity {
+        let source = match &self.proposal.source {
+            Source::Original {
+                asset,
+                qualification,
+                ordinals,
+            } => EndpointSourceId::Original {
+                asset: asset.clone(),
+                qualification: qualification.clone(),
+                in_frame: SourceFrameId(ordinals.start),
+                out_frame: SourceFrameId(ordinals.end),
+            },
+            Source::Edited { .. } => EndpointSourceId::Copied(
+                self.proposal
+                    .source
+                    .copied_view_id()
+                    .expect("edited slice identity"),
+            ),
+        };
         EndpointIdentity {
             session: self.proposal.id.session,
             project: self.proposal.id.project.clone(),
             revision: self.proposal.id.base_revision.clone(),
             draft: self.proposal.id.draft,
             change: self.endpoint_change,
-            asset: self.proposal.asset.clone(),
-            in_frame: SourceFrameId(self.proposal.ordinals.start),
-            out_frame: SourceFrameId(self.proposal.ordinals.end),
+            source,
         }
+    }
+
+    fn source_range(&self) -> std::ops::Range<u64> {
+        self.proposal
+            .source
+            .boundaries()
+            .expect("checked slice boundaries")
+    }
+
+    fn edited_source(&self) -> bool {
+        matches!(self.proposal.source, Source::Edited { .. })
     }
 
     fn changed(&mut self, endpoints: bool) -> Result<(), String> {
@@ -182,6 +211,7 @@ impl Draft {
                 .checked_add(1)
                 .ok_or("Slice endpoint identities exhausted")?;
             self.endpoints_pending = true;
+            self.source_view = None;
         }
         self.prepared = None;
         self.error = None;
@@ -281,7 +311,7 @@ impl DeadpanApp {
             let copied = target
                 .copied
                 .as_ref()
-                .ok_or("Copy an Original range first: :source, v, h/l, y.")?;
+                .ok_or("Copy a range from Original or Your edit first: v, h/l, y.")?;
             let view = target.scope.resolve(&base)?;
             let mut seams = Vec::with_capacity(view.children.len() + 1);
             let mut at = view.start;
@@ -299,24 +329,33 @@ impl DeadpanApp {
             }
             let parent = view.owner.clone();
             let children = view.children.to_vec();
-            let source_frames = base
-                .sources
-                .get(&copied.identity.asset)
-                .and_then(|source| source.video_index.as_ref())
-                .ok_or("The copied Original has no qualified pictures.")?
-                .frames()
-                .len() as u64;
-            Ok((
-                base,
-                copied.clone(),
-                parent,
-                seams,
-                children,
-                source_frames,
-                target,
-            ))
+            let source = copied.source();
+            let range = source.boundaries()?;
+            let source_bounds = match copied {
+                copied::Content::Original(copied) => {
+                    0..base
+                        .sources
+                        .get(&copied.identity.asset)
+                        .and_then(|source| source.video_index.as_ref())
+                        .ok_or("The copied Original has no qualified pictures.")?
+                        .frames()
+                        .len() as u64
+                }
+                copied::Content::Edited(copied) => {
+                    u64::try_from(copied.bounds().start().0).map_err(|_| "Negative source In")?
+                        ..u64::try_from(copied.bounds().end().0)
+                            .map_err(|_| "Negative source Out")?
+                }
+            };
+            if range.start >= range.end
+                || range.start < source_bounds.start
+                || range.end > source_bounds.end
+            {
+                return Err("The copied range is outside its source scope.".into());
+            }
+            Ok((base, source, parent, seams, children, source_bounds, target))
         })();
-        let (base, copied, parent, seams, children, source_frames, target) = match captured {
+        let (base, source, parent, seams, children, source_bounds, target) = match captured {
             Ok(value) => value,
             Err(error) => {
                 self.error = Some(error);
@@ -342,9 +381,7 @@ impl DeadpanApp {
                 draft: token,
                 change: 1,
             },
-            asset: copied.identity.asset,
-            qualification: copied.identity.qualification,
-            ordinals: copied.ordinals,
+            source,
             scope: target.scope,
             parent,
             destination,
@@ -376,7 +413,8 @@ impl DeadpanApp {
             looping: false,
             position: None,
             count: None,
-            source_frames,
+            source_bounds,
+            source_view: None,
             endpoint_change: 1,
             endpoints_pending: true,
             endpoints: pictures::Display::new(self.render_state.clone()),
@@ -412,9 +450,15 @@ impl DeadpanApp {
                 .is_some_and(|draft| draft.applying && draft.proposal.id == commit.id)
         {
             match commit.result {
-                Ok(_) => {
+                Ok(saved) => {
                     self.stop_playback();
-                    self.edit_range.clear();
+                    if self.workspace.as_ref().is_some_and(|workspace| {
+                        workspace.session == commit.id.session
+                            && workspace.document.project_id() == &commit.id.project
+                            && workspace.document.revision_id() == &saved.revision
+                    }) {
+                        self.edit_range.clear();
+                    }
                     self.splice = None;
                     self.endpoint_worker.clear();
                     self.bindings.clear();
@@ -433,11 +477,70 @@ impl DeadpanApp {
         {
             draft.pending = None;
             if draft.proposal.id == update.id && !draft.invalidated {
+                if let Some(source) = update.source_view
+                    && draft.proposal.source.copied_view_id().as_ref() == Some(&source.id)
+                {
+                    let result = source.result.and_then(|view| {
+                        if view.id() != &source.id
+                            || view.media().session() != update.id.session
+                            || view.media().admitted().document().project_id() != &update.id.project
+                            || view.media().admitted().capture_revision()
+                                != &source.id.copy.source_revision
+                        {
+                            return Err("Slice endpoints returned a different copied range.".into());
+                        }
+                        Ok(view)
+                    });
+                    match result {
+                        Ok(view) => {
+                            if draft
+                                .source_view
+                                .as_ref()
+                                .is_none_or(|old| !Arc::ptr_eq(old, &view))
+                            {
+                                draft.endpoints_pending = true;
+                            }
+                            draft.source_view = Some(view);
+                        }
+                        Err(error) => {
+                            draft.source_view = None;
+                            draft.endpoints_pending = false;
+                            draft.endpoints.receive(EndpointReply {
+                                identity: draft.endpoint_identity(),
+                                pictures: Err(error),
+                            });
+                        }
+                    }
+                }
                 let result = update.result.and_then(|prepared| {
                     prepared
                         .snapshot
                         .validate_proposed_base(prepared.base.session, &prepared.base.document)
                         .map_err(|error| error.to_string())?;
+                    match (&draft.proposal.source, &prepared.media) {
+                        (Source::Original { .. }, PreparedMedia::Original) => {
+                            prepared
+                                .snapshot
+                                .validate_original_proposal()
+                                .map_err(|error| error.to_string())?;
+                        }
+                        (Source::Edited { .. }, PreparedMedia::Edited(media)) => {
+                            if media.session() != update.id.session {
+                                return Err(
+                                    "Slice media belongs to another project session.".into()
+                                );
+                            }
+                            prepared
+                                .snapshot
+                                .validate_edit_slice_view(media.admitted())
+                                .map_err(|error| error.to_string())?;
+                        }
+                        _ => {
+                            return Err(
+                                "Slice preparation returned a different source kind.".into()
+                            );
+                        }
+                    }
                     if prepared.base.session != update.id.session
                         || prepared.base.document.project_id() != &update.id.project
                         || prepared.base.document.revision_id() != &update.id.base_revision
@@ -529,9 +632,21 @@ impl DeadpanApp {
             return;
         }
         if draft.endpoints_pending {
-            self.endpoint_worker
-                .submit(draft.endpoint_identity(), draft.base.clone());
-            draft.endpoints_pending = false;
+            let input = match &draft.proposal.source {
+                Source::Original { .. } => Some(EndpointInput::Original(draft.base.clone())),
+                Source::Edited { .. } => draft
+                    .source_view
+                    .as_ref()
+                    .filter(|view| {
+                        Some(view.id()) == draft.proposal.source.copied_view_id().as_ref()
+                    })
+                    .map(|view| EndpointInput::Copied(view.clone())),
+            };
+            if let Some(input) = input {
+                self.endpoint_worker
+                    .submit(draft.endpoint_identity(), input);
+                draft.endpoints_pending = false;
+            }
         }
         if draft.dirty && draft.pending.is_none() {
             match self
@@ -562,16 +677,27 @@ impl DeadpanApp {
             return None;
         }
         if frame.is_none() && matches!(draft.focus, Focus::In | Focus::Out) {
-            let ordinal = if draft.focus == Focus::In {
-                draft.proposal.ordinals.start
-            } else {
-                draft.proposal.ordinals.end - 1
-            };
-            return Some(Work::Project {
-                workspace: draft.base.clone(),
-                view: ProjectView::Source {
-                    asset: draft.proposal.asset.clone(),
-                    frame: SourceFrameId(ordinal),
+            return Some(match &draft.proposal.source {
+                Source::Original {
+                    asset, ordinals, ..
+                } => Work::Project {
+                    workspace: draft.base.clone(),
+                    view: ProjectView::Source {
+                        asset: asset.clone(),
+                        frame: SourceFrameId(if draft.focus == Focus::In {
+                            ordinals.start
+                        } else {
+                            ordinals.end - 1
+                        }),
+                    },
+                },
+                Source::Edited { range, .. } => Work::Copied {
+                    view: draft.source_view.as_ref()?.clone(),
+                    frame: ProjectFrame(if draft.focus == Focus::In {
+                        0
+                    } else {
+                        range.duration().frames() - 1
+                    }),
                 },
             });
         }
@@ -587,10 +713,19 @@ impl DeadpanApp {
                 view,
             })
         } else {
-            Some(Work::Proposed {
-                base: draft.base.clone(),
-                snapshot: draft.prepared.as_ref()?.snapshot.clone(),
-                view,
+            let prepared = draft.prepared.as_ref()?;
+            Some(match &prepared.media {
+                PreparedMedia::Original => Work::Proposed {
+                    base: draft.base.clone(),
+                    snapshot: prepared.snapshot.clone(),
+                    view,
+                },
+                PreparedMedia::Edited(media) => Work::EditedProposed {
+                    base: draft.base.clone(),
+                    snapshot: prepared.snapshot.clone(),
+                    media: media.clone(),
+                    frame: ProjectFrame(i64::try_from(at).ok()?),
+                },
             })
         }
     }
@@ -731,20 +866,22 @@ impl DeadpanApp {
                 };
                 match draft.focus {
                     Focus::In => {
-                        draft.proposal.ordinals.start = advance(
-                            draft.proposal.ordinals.start,
-                            0,
-                            draft.proposal.ordinals.end - 1,
-                        );
+                        let range = draft.source_range();
+                        let start = advance(range.start, draft.source_bounds.start, range.end - 1);
+                        if let Err(error) = draft.proposal.source.set_boundaries(start..range.end) {
+                            draft.error = Some(error);
+                            return;
+                        }
                         changed = true;
                         endpoints = true;
                     }
                     Focus::Out => {
-                        draft.proposal.ordinals.end = advance(
-                            draft.proposal.ordinals.end,
-                            draft.proposal.ordinals.start + 1,
-                            draft.source_frames,
-                        );
+                        let range = draft.source_range();
+                        let end = advance(range.end, range.start + 1, draft.source_bounds.end);
+                        if let Err(error) = draft.proposal.source.set_boundaries(range.start..end) {
+                            draft.error = Some(error);
+                            return;
+                        }
                         changed = true;
                         endpoints = true;
                     }

@@ -590,10 +590,10 @@ fn catalog_voice_keeps_plan_receipt_layout_and_live_original_admission() {
     let mut missing = Snapshot::committed(
         captured.session,
         captured.document.clone(),
-        captured.sources.clone(),
+        captured.sources.as_ref().clone(),
         store.original_import_handle().unwrap(),
     );
-    missing.sources.remove(&asset);
+    Arc::make_mut(&mut missing.sources).remove(&asset);
     assert!(
         StageAudio::new(plan.clone())
             .read_tape(

@@ -1,0 +1,15 @@
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.93s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_playback-4ee185cb64a4515c)
+
+running 7 tests
+test tests::proposed::edited_slice::closed_original_revokes_reused_loop_batches ... ok
+test tests::proposed::proposed_source_failure_is_tagged_and_cannot_poison_later_before_playback ... ok
+test tests::proposed::edited_slice::edited_proposal_rejects_catalog_document_and_handle_substitution ... ok
+test tests::proposed::edited_slice::historical_slice_admission_uses_exact_view_and_base_and_matches_committed_pcm ... ok
+test tests::proposed::two_gain_proposals_and_before_have_separate_real_pcm_and_tagged_device_generations ... ok
+test tests::proposed::edited_slice::large_catalog_is_checked_once_then_hot_admission_and_reads_keep_constant_work ... ok
+test tests::proposed::proposal_admission_rejects_bad_identity_changed_assets_and_retargeted_public_fields ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 53 filtered out; finished in 14.26s
+

@@ -174,7 +174,7 @@ fn verify_equivalence(placement: Placement) {
     // AAC tail present after the insertion exit join. Replacement resumes at
     // frame 60, where this fixture is silent; its retained final impulse is
     // checked separately against the saved baseline below.
-    request.ordinals = 0..30;
+    set_ordinals(&mut request, 0..30);
     request.destination = match placement {
         Placement::Interior => Destination::Interior {
             target: original,
@@ -226,8 +226,14 @@ fn verify_equivalence(placement: Placement) {
             },
         ));
     }
-    assert_eq!(pictures[1].id, SourceFrameId(request.ordinals.start));
-    assert_eq!(pictures[2].id, SourceFrameId(request.ordinals.end - 1));
+    assert_eq!(
+        pictures[1].id,
+        SourceFrameId(original_source(&request).2.start)
+    );
+    assert_eq!(
+        pictures[2].id,
+        SourceFrameId(original_source(&request).2.end - 1)
+    );
     assert_ne!(
         pictures[0].id, pictures[1].id,
         "entry join changes the actual source picture"
@@ -251,7 +257,7 @@ fn verify_equivalence(placement: Placement) {
         AudioSample(rate.audio_boundary(proposed.range.end()).unwrap().0 - 128),
         AudioSample(final_boundary.0 - 256),
     ];
-    let mut source = ProposedOriginal::open(&proposed, &request.asset, &cancelled);
+    let mut source = ProposedOriginal::open(&proposed, original_source(&request).0, &cancelled);
     let mut limited = LimitedAudio::new(proposed.plan.clone());
     let mut pcm = Vec::new();
     for (window, start) in starts.into_iter().enumerate() {

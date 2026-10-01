@@ -161,7 +161,7 @@ fn proposed_picture_rejects_public_field_tampering_and_equal_but_foreign_base() 
     changed.document = Arc::new((*document).clone());
     rejects(changed, &base);
     let mut changed = make();
-    changed.sources.clear();
+    Arc::make_mut(&mut changed.sources).clear();
     rejects(changed, &base);
     let mut forged = base.playback_snapshot();
     forged.document = document.clone();

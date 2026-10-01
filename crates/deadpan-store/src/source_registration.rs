@@ -212,7 +212,8 @@ impl SourceQualificationReceipt {
         &self.snapshot
     }
 
-    pub(crate) fn asset_record(&self, label: String) -> Result<AssetRecord, StoreError> {
+    /// Reconstruct the complete authored contract for this measured receipt.
+    pub fn asset_record(&self, label: String) -> Result<AssetRecord, StoreError> {
         // Asset extents stay in original clocks. One fps avoids attaching the
         // metadata to any project's presentation basis.
         let timing = self

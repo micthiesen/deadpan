@@ -123,10 +123,32 @@ fn historical_slice_reuses_accepted_artifact_after_last_hold_is_deleted() -> Res
             "InvalidCommand"
         );
         assert_eq!(store.commit(&command).unwrap_err().code(), "InvalidCommand");
+        assert_eq!(
+            store.preview_edit_slice(&command).err().unwrap().code(),
+            "InvalidCommand"
+        );
+        assert_eq!(
+            store
+                .view_edit_slice(&forged, view_ids(&before, &forged, name)?)
+                .err()
+                .unwrap()
+                .code(),
+            "InvalidCommand"
+        );
         assert_eq!(authored(&package)?, cells);
         assert_eq!(store.snapshot()?, before);
     }
+    let admitted = store.preview_edit_slice(&paste(&before, &slice, "admitted")?)?;
+    let standalone = store.view_edit_slice(&slice, view_ids(&before, &slice, "standalone")?)?;
+    assert_eq!(standalone.document().duration()?.frames(), 12);
+    assert_eq!(standalone.document().assets(), accepted.assets());
+    assert!(standalone.document().nodes().values().any(|node| matches!(&node.kind, NodeKind::Hold { recipe } if matches!(recipe.video, HoldVideo::Generated { .. }))));
+    assert_eq!(authored(&package)?, cells);
+    let active = std::sync::atomic::AtomicBool::new(false);
+    admitted.check_live(&active)?;
     drop(store);
+    assert!(admitted.check_live(&active).is_err());
+    assert!(standalone.generated().check_live(&active).is_err());
     let slice: CapturedEditSlice = serde_json::from_slice(&wire)?;
     let mut store = ProjectStore::open(&package, AccessMode::ReadWrite)?;
     let command = paste(&before, &slice, "pasted")?;
@@ -166,6 +188,22 @@ fn historical_slice_reuses_accepted_artifact_after_last_hold_is_deleted() -> Res
     assert_eq!(provider(&reader.snapshot()?), provider(&accepted));
     reader.validate()?;
     Ok(())
+}
+
+fn view_ids(
+    document: &ProjectDocument,
+    slice: &CapturedEditSlice,
+    name: &str,
+) -> Result<deadpan_store::slice_preview::SliceViewIdentities> {
+    let Command::SpliceSlice { identities, .. } = paste(document, slice, name)?.command else {
+        unreachable!()
+    };
+    Ok(deadpan_store::slice_preview::SliceViewIdentities {
+        empty_revision: RevisionId::new(format!("{name}-empty"))?,
+        view_revision: RevisionId::new(name)?,
+        root: NodeId::new(format!("{name}-root"))?,
+        paste: identities,
+    })
 }
 
 fn placement(

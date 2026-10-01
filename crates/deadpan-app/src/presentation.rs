@@ -2,6 +2,7 @@
 
 use deadpan_core::{ProjectId, RevisionId, SourceFrameId};
 
+use crate::project::slice::CopiedViewId;
 use crate::worker::{Picture, ProjectView, Reply, SourceSummary, Ticket, Work};
 
 #[cfg(test)]
@@ -23,6 +24,10 @@ enum Location {
         revision: RevisionId,
         content: deadpan_playback::ContentIdentity,
         view: ProjectView,
+    },
+    Copied {
+        source: CopiedViewId,
+        frame: deadpan_core::ProjectFrame,
     },
 }
 
@@ -51,6 +56,19 @@ impl RequestedPicture {
                 revision: snapshot.document.revision_id().clone(),
                 content: snapshot.content.clone(),
                 view: view.clone(),
+            },
+            Work::EditedProposed {
+                snapshot, frame, ..
+            } => Location::Proposed {
+                session: snapshot.session,
+                project: snapshot.document.project_id().clone(),
+                revision: snapshot.document.revision_id().clone(),
+                content: snapshot.content.clone(),
+                view: ProjectView::Sequence { frame: *frame },
+            },
+            Work::Copied { view, frame } => Location::Copied {
+                source: view.id().clone(),
+                frame: *frame,
             },
         };
         Self { ticket, location }
@@ -84,6 +102,10 @@ impl RequestedPicture {
             } => Some(format!(
                 "Showing proposed edit frame {}",
                 i128::from(frame.0) + 1
+            )),
+            Location::Copied { source, frame } => Some(format!(
+                "Showing copied Edit frame {}",
+                i128::from(source.range.start().0) + i128::from(frame.0) + 1
             )),
         }
     }

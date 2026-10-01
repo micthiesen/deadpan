@@ -242,11 +242,17 @@ selected child or at the current group's end. `/` searches; `?` opens keyboard h
 In Original, `v` starts/finishes a half-open temporal range, `h/l` adjusts its
 head, and `y` copies it without history. The inspector displays In, excluded Out,
 original ordinal count and measured duration; the bar uses measured PTS. Return
-to Your edit and use `p`/`P` after/before its selected direct child. An empty group
-accepts paste at its start. `:select`, `:yank`, `:paste` and `:paste-before` expose
-the same actions. The session-local copy survives selection cancellation and
-ordinary edits, but not session or source receipt changes. Named/persistent
-registers and Visual replacement remain open. See [Original moments](SOURCE_MOMENTS.md).
+to Your edit and use `p`/`P` after/before its selected direct child, or replace a
+selected Edit range. An empty group accepts paste at its start. Your edit also
+supports `v`, motion and `y`: its copied content retains the historical revision,
+including owned Hold, framing and timing choices. `:splice` opens visible
+In/Out refinement, endpoint inspection, destination comparison and audition
+before one reversible commit. `:select`, `:yank`, `:paste` and `:paste-before`
+expose the same actions. The session-local register survives selection
+cancellation and ordinary edits, but closes with the project; Original copies
+also require their current source receipt. Named/persistent registers, atomic
+move and occurrence interiors remain open. See [Original moments](SOURCE_MOMENTS.md),
+[edited slices](EDITED_SLICES.md) and [placement](SLICE_PLACEMENT.md).
 
 Native panels are constructed on the main app thread and polled through a retained
 future/waker. One panel may be open at a time, and an active import disables another import

@@ -79,7 +79,7 @@ fn nested_replacement_refines_only_source_and_fast_paste_uses_the_same_range() {
     };
     let first = prepare(&harness, &request);
     request.id.change += 1;
-    request.ordinals = 12..31;
+    set_ordinals(&mut request, 12..31);
     let exact = prepare(&harness, &request);
     assert_eq!(exact.removed, first.removed);
     assert_eq!(exact.range, range(35, 54));
@@ -93,9 +93,9 @@ fn nested_replacement_refines_only_source_and_fast_paste_uses_the_same_range() {
         ProjectRequest::PasteMoment(MomentPaste {
             expected_session: before.session,
             expected_revision: before.document.revision_id().clone(),
-            asset: request.asset,
-            qualification: request.qualification,
-            ordinals: request.ordinals,
+            asset: original_source(&request).0.clone(),
+            qualification: original_source(&request).1.clone(),
+            ordinals: original_source(&request).2.clone(),
             scope: scope.clone(),
             parent: request.parent,
             destination: request.destination,
@@ -212,9 +212,9 @@ fn fast_replacement(before: &Workspace) -> ProjectRequest {
     ProjectRequest::PasteMoment(MomentPaste {
         expected_session: before.session,
         expected_revision: before.document.revision_id().clone(),
-        asset: request.asset,
-        qualification: request.qualification,
-        ordinals: request.ordinals,
+        asset: original_source(&request).0.clone(),
+        qualification: original_source(&request).1.clone(),
+        ordinals: original_source(&request).2.clone(),
         scope: request.scope,
         parent: request.parent,
         destination: Destination::Replace {

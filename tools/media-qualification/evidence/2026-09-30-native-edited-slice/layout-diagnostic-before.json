@@ -1,0 +1,6 @@
+{
+  "binary_sha256": "af91c0294c8ae53c9cdcbc2e914bad4e5556c0cd9438dccfb6ef24a90c6f34f4",
+  "build_report": "release-performance-final.json",
+  "source_manifest_sha256": "025bcbb02cad60eb4d474ede5cc77c5770b9c9d3dd684481a1f6e1f9acf6dbbf",
+  "purpose": "One diagnostic replay of failed layouts using the exact existing release binary; current recovery-message source changes are not in this binary."
+}

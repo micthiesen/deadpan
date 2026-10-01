@@ -1,5 +1,5 @@
 use super::*;
-use crate::project::splice::{Destination, Prepared, Proposal, ProposalId};
+use crate::project::splice::{Destination, Prepared, Proposal, ProposalId, Source};
 
 #[path = "splice_equivalence.rs"]
 mod equivalence;
@@ -36,13 +36,36 @@ fn proposal(workspace: &Workspace, draft: u64, change: u64) -> Proposal {
             draft,
             change,
         },
-        asset: source.asset.clone(),
-        qualification: source.receipt.id().clone(),
-        ordinals: 10..24,
+        source: Source::Original {
+            asset: source.asset.clone(),
+            qualification: source.receipt.id().clone(),
+            ordinals: 10..24,
+        },
         scope: SequenceScope::default(),
         parent: workspace.document.root().clone(),
         destination: Destination::Slot(0),
     }
+}
+
+fn set_ordinals(proposal: &mut Proposal, range: std::ops::Range<u64>) {
+    let Source::Original { ordinals, .. } = &mut proposal.source else {
+        panic!("Original proposal")
+    };
+    *ordinals = range;
+}
+
+fn original_source(
+    proposal: &Proposal,
+) -> (&AssetId, &SourceQualificationId, &std::ops::Range<u64>) {
+    let Source::Original {
+        asset,
+        qualification,
+        ordinals,
+    } = &proposal.source
+    else {
+        panic!("Original proposal")
+    };
+    (asset, qualification, ordinals)
 }
 
 fn prepared(update: &ProjectUpdate, id: &ProposalId) -> Arc<Prepared> {
@@ -102,7 +125,7 @@ fn cached_refinement_and_abandon_leave_history_unchanged_and_exact_commit_undo_o
     unchanged(&before);
 
     let mut refined = proposal(&before, 1, 2);
-    refined.ordinals = 12..31;
+    set_ordinals(&mut refined, 12..31);
     refined.destination = Destination::Slot(1);
     let update = command(
         &harness.service,
@@ -210,7 +233,7 @@ fn uncached_qualification_prepares_latest_exact_nested_destination_without_commi
     );
     let job = harness.job();
     let mut latest = proposal(&before, 1, 2);
-    latest.ordinals = 31..45;
+    set_ordinals(&mut latest, 31..45);
     latest.scope = SequenceScope::default()
         .descend(&before, &node("slice-group"))
         .unwrap();
@@ -370,7 +393,10 @@ fn invalid_identity_qualification_scope_and_reopened_session_fail_without_retarg
             .is_err()
     );
     let mut wrong = proposal(&before, 1, 1);
-    wrong.qualification = SourceQualificationId::new("b".repeat(64)).unwrap();
+    let Source::Original { qualification, .. } = &mut wrong.source else {
+        panic!("Original proposal")
+    };
+    *qualification = SourceQualificationId::new("b".repeat(64)).unwrap();
     assert!(
         command(&harness.service, ProjectRequest::PrepareSplice(wrong))
             .splice
@@ -394,7 +420,7 @@ fn invalid_identity_qualification_scope_and_reopened_session_fail_without_retarg
     );
     prepared(&ready, &request.id);
     let mut reused = request.clone();
-    reused.ordinals = 40..55;
+    set_ordinals(&mut reused, 40..55);
     assert!(
         command(&harness.service, ProjectRequest::PrepareSplice(reused))
             .splice
@@ -468,7 +494,11 @@ fn abandon_does_not_cancel_unrelated_import_and_commit_receipt_survives_refresh_
         &harness.service,
         ProjectRequest::CommitSplice(request.id.clone()),
     );
-    assert!(applied.error.unwrap().contains("Injected failure"));
+    assert!(applied.error.is_none());
+    let warning = applied.message.as_ref().unwrap();
+    assert!(warning.contains("saved, but"));
+    assert!(warning.contains("Injected failure"));
+    assert!(warning.contains("Reopen"));
     let receipt = applied.splice_commit.unwrap().result.unwrap();
     assert_eq!(&receipt.revision, exact.snapshot.document.revision_id());
     assert_eq!(applied.committed.unwrap(), receipt);

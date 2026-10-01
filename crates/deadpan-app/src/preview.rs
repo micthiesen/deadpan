@@ -23,6 +23,7 @@ use crate::worker::{PreviewWorker, ProjectView, SourceSummary, Ticket, Work};
 mod camera;
 mod camera_fields;
 mod cards;
+mod copied;
 mod delete;
 mod edit_range;
 mod gain;
@@ -139,6 +140,7 @@ pub struct DeadpanApp {
     pane: Pane,
     source_cursor: u64,
     moment: moment::Selection,
+    copied: copied::Register,
     edit_range: edit_range::Selection,
     placement_command_target: Option<Result<moment::PlacementTarget, String>>,
     delete_command_target: Option<Result<delete::CommandTarget, String>>,
@@ -252,6 +254,7 @@ impl DeadpanApp {
             pane: Pane::Viewer,
             source_cursor: 0,
             moment: moment::Selection::default(),
+            copied: copied::Register::default(),
             edit_range: edit_range::Selection::default(),
             placement_command_target: None,
             delete_command_target: None,
@@ -429,6 +432,11 @@ impl DeadpanApp {
         }
         let work = if self.splice.is_some() {
             let Some(work) = self.splice_picture_work(picture) else {
+                // A refined copied source may still be awaiting admission.
+                // Keep the displayed picture, but reject the preceding draft's
+                // unfinished decode while no replacement can be submitted.
+                self.worker.cancel();
+                self.presentation.invalidate_pending();
                 return;
             };
             work
@@ -627,14 +635,13 @@ impl DeadpanApp {
             // A durable receipt can outlive a failed workspace refresh. Keep
             // the visible cursor/selection bound to the snapshot we actually
             // have; the saved warning explains that reopening is required.
-            if completion == selection::Completion::Edit
-                && old_revision == new_revision
+            let unrefreshed_commit = old_revision == new_revision
                 && update.committed.as_ref().is_some_and(|commit| {
                     self.workspace.as_ref().is_none_or(|workspace| {
                         workspace.document.revision_id() != &commit.revision
                     })
-                })
-            {
+                });
+            if completion == selection::Completion::Edit && unrefreshed_commit {
                 completion = selection::Completion::None;
             }
             let committed_selection = completion == selection::Completion::Edit;
@@ -712,6 +719,7 @@ impl DeadpanApp {
             if let Some(bindings) = repeat_bindings {
                 self.bindings = bindings;
             }
+            self.receive_copied(update.captured_slice, unrefreshed_commit);
         }
         #[cfg(feature = "ui-harness")]
         let reply = self.feedback.take_reply(&self.worker);
@@ -1215,6 +1223,11 @@ impl DeadpanApp {
     }
 
     fn action(&mut self, action: Action, context: &egui::Context) {
+        if action == Action::CopyMoment {
+            // A newer yank owns the intent even when its focused pane rejects
+            // copying. An older background reply cannot finish that request.
+            self.copied.supersede();
+        }
         if action == Action::Render {
             // Fields below the header must consume this frame's native text
             // before the exact preview proposal is captured.
@@ -1304,7 +1317,7 @@ impl DeadpanApp {
                     self.visual_moment();
                 }
             }
-            Action::CopyMoment => self.copy_moment(),
+            Action::CopyMoment => self.copy_slice(),
             Action::DeleteSelection => self.delete_captured(self.capture_delete_target()),
             Action::PasteMoment { before } => self.paste_moment(before),
             Action::Edit(edit) => self.edit(edit),
@@ -2074,6 +2087,7 @@ impl DeadpanApp {
                         style::key_hint(ui, "h l", "frame");
                         style::key_hint(ui, "j k", "beat");
                         style::key_hint(ui, "v", if self.edit_range.active { "finish range" } else { "select range" });
+                        style::key_hint(ui, "y", if self.copied.is_pending() { "copying range…" } else { "copy range" });
                         if self.selected_group() { style::key_hint(ui, "Enter", "open group"); }
                         if !self.sequence_scope.groups().is_empty() { style::key_hint(ui, "Backspace", "parent"); }
                         style::key_hint(ui, "s", "split");
@@ -2086,7 +2100,7 @@ impl DeadpanApp {
                             navigation::EditSelection::Empty => style::key_hint(ui, "d", "empty range"),
                             navigation::EditSelection::None => style::key_hint(ui, "dd", "cut beat"),
                         };
-                        if self.moment.copied.is_some() { style::key_hint(ui, "p / P", if self.selected_edit_range().is_some() { "replace range" } else { "paste after / before" }); }
+                        if self.copied.content().is_some() { style::key_hint(ui, "p / P", if self.selected_edit_range().is_some() { "replace range" } else { "paste after / before" }); }
                         style::key_hint(ui, "u", "undo");
                     } else {
                         style::key_hint(ui, "h l", "frame");
@@ -2648,6 +2662,14 @@ impl DeadpanApp {
                                 self.edit(BeatEdit::WrapRepeat(2));
                             }
                             let selection = self.edit_selection();
+                            if ui.add_enabled(selection == navigation::EditSelection::Range && !self.service.is_busy(),
+                                egui::Button::new(if self.copied.is_pending() { "Copying range…" } else { "Copy range  ·  y" })
+                                    .min_size(egui::vec2(ui.available_width(), 28.0)))
+                                .on_hover_text("Retain this linked Edit slice for paste or visible placement. Copying does not change the edit.")
+                                .clicked()
+                            {
+                                self.copy_slice();
+                            }
                             if ui
                                 .add_enabled(selection != navigation::EditSelection::Empty,
                                     egui::Button::new(if selection == navigation::EditSelection::None { "Delete beat  ·  dd" } else { "Delete selection  ·  d" })
@@ -2674,7 +2696,17 @@ impl DeadpanApp {
     }
 
     fn viewer(&mut self, ui: &mut egui::Ui, compact_empty_sounds: bool) {
-        egui::CentralPanel::default().frame(style::panel()).show(ui, |ui| {
+        // At compact heights give the picture the eight points otherwise spent
+        // on extra outer padding. Keep control reserves and hit sizes intact.
+        let frame = if ui
+            .ctx()
+            .input(|input| input.content_rect().height() < 700.0)
+        {
+            style::panel().inner_margin(egui::Margin::symmetric(12, 8))
+        } else {
+            style::panel()
+        };
+        egui::CentralPanel::default().frame(frame).show(ui, |ui| {
             ui.spacing_mut().item_spacing.y = 4.0;
             ui.horizontal(|ui| {
                 for (label, view) in [(if self.focused_workflow() { "Original" } else { "Source" }, View::Source), (if self.focused_workflow() { "Your edit" } else { "Sequence" }, View::Sequence)] {
@@ -2704,7 +2736,7 @@ impl DeadpanApp {
             if self.camera.is_some() {
                 ui.label(egui::RichText::new("CAMERA · Draft preview").color(style::LAVENDER));
             }
-            let controls_height = if self.gain.is_some() { 54.0 } else if self.camera.is_some() { 76.0 } else if self.view == View::Sequence { if self.moment.copied.is_some() { if compact_empty_sounds { 132.0 } else { 156.0 } } else if self.compact_sound_layout(ui.ctx()) && self.transport.is_none() { 86.0 } else { 118.0 } } else { 174.0 };
+            let controls_height = if self.gain.is_some() { 54.0 } else if self.camera.is_some() { 76.0 } else if self.view == View::Sequence { if self.copied.content().is_some() { if compact_empty_sounds { 132.0 } else { 156.0 } } else if self.compact_sound_layout(ui.ctx()) && self.transport.is_none() { 86.0 } else { 118.0 } } else { 174.0 };
             let available = egui::vec2(ui.available_width().max(1.0), (ui.available_height() - controls_height).max(50.0));
             let (_, rect) = ui.allocate_space(available);
             let response = pane_focus(ui, Pane::Viewer, rect, "Picture viewer pane");
@@ -2937,9 +2969,9 @@ impl DeadpanApp {
                         ("Camera r · Enter · Esc", "Reset the draft, apply once, or restore entry framing. Normal adjustments preserve an existing curve."),
                         (",z / ,c", "One undoable 1.35× punch / whole-beat smoothstep creep to 1.35×. These replace an existing framing curve."),
                         (":hold-duration 11f", "Set a selected Hold to exactly 11 project frames."),
-                        ("v / :select · y / :yank", "Start or finish a half-open time selection in Original or Your edit. h/l, counted motions and gg/G extend it; Edit j/k also extends to beat boundaries. A finished range stays fixed. In Original, y copies the range. In Your edit, d cuts a selected range and p/P replaces it. Esc clears selection. Source and Edit ranges stay independent. Changing the Edit revision or group discards its range."),
-                        ("p / P · :paste / :paste-before", "In Your edit, a selected nonempty Edit range is replaced by the copied Original slice in one undoable transaction. Without an Edit range, p/P pastes after/before the selected beat in the displayed group. An empty group accepts a paste at its start. Command entry captures the exact range, including its absence; stale destinations fail."),
-                        (":splice", "Preview a copied Original slice at the Edit cursor. Insert is the default. With a captured Edit range, r explicitly toggles Replace selection; the removed interval stays fixed and r restores the retained Insert destination. i/o refines Original endpoints; f then h/l inspects either join. Insert d selects destination and j/k chooses seams. b compares corresponding Before/Proposed context, Space auditions, Shift+Space loops joins, Enter commits once and Escape restores entry selection and cursors. Source/Hold/fragment endpoints and whole intervening beats work in ordinary Sequence scopes. Enter a group to place inside it."),
+                        ("v / :select · y / :yank", "Start or finish a half-open time selection in Original or Your edit. h/l, counted motions and gg/G extend it; Edit j/k also extends to beat boundaries. A finished range stays fixed. y copies either range. Edit copies retain their captured revision through later edits and Undo. In Your edit, d cuts a selected range and p/P replaces it. Esc clears selection. Source and Edit ranges stay independent. Changing the Edit revision or group discards its selection."),
+                        ("p / P · :paste / :paste-before", "In Your edit, a selected nonempty Edit range is replaced by the copied Original or Edit slice in one undoable transaction. Without an Edit range, p/P pastes after/before the selected beat in the displayed group. An empty group accepts a paste at its start. Command entry captures the exact range, including its absence; stale destinations fail."),
+                        (":splice", "Preview a copied Original or Edit slice at the Edit cursor. Insert is the default. With a captured Edit range, r explicitly toggles Replace selection; the removed interval stays fixed and r restores the retained Insert destination. i/o refines the copied source endpoints without changing the register; f then h/l inspects either join. Insert d selects destination and j/k chooses seams. b compares corresponding Before/Proposed context, Space auditions, Shift+Space loops joins, Enter commits once and Escape restores entry selection and cursors. Source/Hold/fragment endpoints and whole intervening beats work in ordinary Sequence scopes. Enter a group to place inside it."),
                         (",i / :insert", "Reuse the full Original after the selected beat in the current group, or append to an empty group. Legacy projects insert their selected source."),
                         ("u / Ctrl R", "Undo / redo. Native ⌘Z / ⌘Shift Z also work."),
                         ("⌘E / :render", "Render the saved full edit with automatic SDR output settings. For an unsaved Camera, Gain or Room tone preview, choose Commit preview and render, Discard preview and render, or Keep editing."),

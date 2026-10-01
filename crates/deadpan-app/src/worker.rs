@@ -21,6 +21,7 @@ use deadpan_store::original_media::OriginalMediaLimits;
 use eframe::egui;
 use sha2::{Digest, Sha256};
 
+use crate::project::slice::{CopiedView, MediaView};
 use crate::project::{RegisteredSource, Workspace};
 
 const HASH_TIMEOUT: Duration = Duration::from_secs(300);
@@ -28,7 +29,12 @@ const FRAME_TIMEOUT: Duration = Duration::from_secs(15);
 
 mod endpoints;
 mod proposed;
-pub use endpoints::{EndpointIdentity, EndpointPictures, EndpointReply, EndpointWorker};
+mod slice_view;
+pub use endpoints::{
+    EndpointIdentity, EndpointInput, EndpointPictures, EndpointReply, EndpointSourceId,
+    EndpointWorker,
+};
+use slice_view::{PictureMedia, PlanCache};
 
 #[cfg(test)]
 mod project_tests;
@@ -53,6 +59,16 @@ pub enum Work {
         base: Arc<Workspace>,
         snapshot: Arc<deadpan_playback::Snapshot>,
         view: ProjectView,
+    },
+    EditedProposed {
+        base: Arc<Workspace>,
+        snapshot: Arc<deadpan_playback::Snapshot>,
+        media: Arc<MediaView>,
+        frame: ProjectFrame,
+    },
+    Copied {
+        view: Arc<CopiedView>,
+        frame: ProjectFrame,
     },
 }
 
@@ -366,7 +382,7 @@ struct RetainedSession {
 fn perform(
     request: &Request,
     retained: &mut Option<RetainedSession>,
-    proposal: &mut Option<proposed::ProposedPlan>,
+    proposal: &mut Option<PlanCache>,
 ) -> Result<Picture, String> {
     if let Work::Project { workspace, view } = &request.work {
         return project_picture(
@@ -394,6 +410,31 @@ fn perform(
             retained,
         );
     }
+    if let Work::EditedProposed {
+        base,
+        snapshot,
+        media,
+        frame,
+    } = &request.work
+    {
+        let plan = slice_view::admit_edited(base, snapshot, media, proposal, &request.cancelled)?;
+        let picture = media_picture(
+            PictureMedia::Slice(media),
+            &snapshot.document,
+            plan,
+            &ProjectView::Sequence { frame: *frame },
+            &request.cancelled,
+            retained,
+        )?;
+        media
+            .admitted()
+            .check_live(&request.cancelled)
+            .map_err(|error| error.to_string())?;
+        return Ok(picture);
+    }
+    if let Work::Copied { view, frame } = &request.work {
+        return slice_view::copied_picture(view, *frame, proposal, &request.cancelled, retained);
+    }
     let (summary, id) = match &request.work {
         Work::Open(path) => {
             *retained = None;
@@ -409,7 +450,10 @@ fn perform(
             (Some(summary), SourceFrameId(0))
         }
         Work::Frame(id) => (None, *id),
-        Work::Project { .. } | Work::Proposed { .. } => {
+        Work::Project { .. }
+        | Work::Proposed { .. }
+        | Work::EditedProposed { .. }
+        | Work::Copied { .. } => {
             unreachable!("project requests handled above")
         }
     };
@@ -434,6 +478,24 @@ fn perform(
 
 fn project_picture(
     workspace: &Workspace,
+    document: &deadpan_core::ProjectDocument,
+    plan: &RenderPlan,
+    view: &ProjectView,
+    cancelled: &AtomicBool,
+    retained: &mut Option<RetainedSession>,
+) -> Result<Picture, String> {
+    media_picture(
+        PictureMedia::Committed(workspace),
+        document,
+        plan,
+        view,
+        cancelled,
+        retained,
+    )
+}
+
+fn media_picture(
+    media: PictureMedia<'_>,
     document: &deadpan_core::ProjectDocument,
     plan: &RenderPlan,
     view: &ProjectView,
@@ -477,7 +539,7 @@ fn project_picture(
                         );
                     }
                     let mut picture = generated_picture(
-                        workspace,
+                        media,
                         document,
                         &sample.picture,
                         artifact,
@@ -498,7 +560,7 @@ fn project_picture(
                     );
                 }
             };
-            let registered = registered_source(workspace, asset)?;
+            let registered = media_source(media, document, asset)?;
             let index = registered
                 .video_index
                 .as_ref()
@@ -509,15 +571,15 @@ fn project_picture(
                 .map_err(|error| error.to_string())?
                 .identity;
             let mut picture =
-                registered_picture(workspace, registered, frame, canvas, cancelled, retained)?;
+                registered_picture(media, registered, frame, canvas, cancelled, retained)?;
             picture.framing = sample.framing;
             picture.framing_gap = sample.gap_after.is_some();
             picture.picture_context = sample.picture_context;
             return Ok(picture);
         }
     };
-    let registered = registered_source(workspace, asset)?;
-    registered_picture(workspace, registered, frame, canvas, cancelled, retained)
+    let registered = media_source(media, document, asset)?;
+    registered_picture(media, registered, frame, canvas, cancelled, retained)
 }
 
 fn background_picture(canvas: Option<(u32, u32)>) -> Picture {
@@ -533,7 +595,7 @@ fn background_picture(canvas: Option<(u32, u32)>) -> Picture {
 }
 
 fn generated_picture(
-    workspace: &Workspace,
+    media: PictureMedia<'_>,
     document: &deadpan_core::ProjectDocument,
     picture: &deadpan_plan::Picture,
     artifact: &Arc<deadpan_core::GeneratedArtifact>,
@@ -541,18 +603,18 @@ fn generated_picture(
     cancelled: &AtomicBool,
     retained: &mut Option<RetainedSession>,
 ) -> Result<Picture, String> {
-    workspace
-        .generated
+    media
+        .generated()
         .check_live(cancelled)
         .map_err(|error| error.to_string())?;
     let key = SessionKey::Generated {
-        session: workspace.session,
+        session: media.session(),
         media: Arc::new(GeneratedMediaKey::new(document, artifact)?),
     };
     if retained.as_ref().is_none_or(|session| session.key != key) {
         *retained = None;
         let source = deadpan_cli::picture::open_generated_picture(
-            &workspace.generated,
+            media.generated(),
             document,
             artifact,
             cancelled,
@@ -576,8 +638,8 @@ fn generated_picture(
         .frame(id, FRAME_TIMEOUT, cancelled)
         .map_err(|error| error.to_string())?;
     let frame = render_frame(decoded, session.source.info())?;
-    workspace
-        .generated
+    media
+        .generated()
         .check_live(cancelled)
         .map_err(|error| error.to_string())?;
     Ok(Picture {
@@ -595,15 +657,29 @@ fn registered_source<'a>(
     workspace: &'a Workspace,
     asset: &AssetId,
 ) -> Result<&'a Arc<RegisteredSource>, String> {
-    let registered = workspace
-        .sources
+    media_source(
+        PictureMedia::Committed(workspace),
+        &workspace.document,
+        asset,
+    )
+}
+
+fn media_source<'a>(
+    media: PictureMedia<'a>,
+    document: &deadpan_core::ProjectDocument,
+    asset: &AssetId,
+) -> Result<&'a Arc<RegisteredSource>, String> {
+    let registered = media
+        .sources()
         .get(asset)
         .ok_or("This source has no registered media evidence.")?;
-    let authored = workspace
-        .document
+    let authored = document
         .assets()
         .get(asset)
         .ok_or("This source is absent from the selected project revision.")?;
+    // Complete contracts are checked by the catalog/proposal constructors and
+    // on a sealed slice view's first admission. Keep this hot lookup independent
+    // of the receipt's measured audio-index length.
     if registered.asset != *asset
         || authored.source_qualification.as_ref() != Some(registered.receipt.id())
         || authored.content_hash != registered.receipt.original().content().to_string()
@@ -616,13 +692,14 @@ fn registered_source<'a>(
 }
 
 fn registered_picture(
-    workspace: &Workspace,
+    media: PictureMedia<'_>,
     registered: &Arc<RegisteredSource>,
     id: SourceFrameId,
     canvas: Option<(u32, u32)>,
     cancelled: &AtomicBool,
     retained: &mut Option<RetainedSession>,
 ) -> Result<Picture, String> {
+    media.check_slice_live(cancelled)?;
     let video = registered
         .receipt
         .snapshot()
@@ -647,7 +724,7 @@ fn registered_picture(
         return Err("The source picture index disagrees with its immutable receipt.".into());
     }
     let key = SessionKey::Project {
-        session: workspace.session,
+        session: media.session(),
         asset: registered.asset.clone(),
         receipt: registered.receipt.id().clone(),
     };
@@ -661,8 +738,8 @@ fn registered_picture(
         if registered.receipt.snapshot().content().byte_length() > limits.decode.max_input_bytes {
             return Err("Source original exceeds the native preview byte limit.".into());
         }
-        let mut snapshot = workspace
-            .originals
+        let mut snapshot = media
+            .originals()
             .snapshot_original(
                 &registered.original,
                 OriginalMediaLimits::default(),
@@ -705,6 +782,7 @@ fn registered_picture(
         .source
         .frame(id, FRAME_TIMEOUT, cancelled)
         .map_err(|error| error.to_string())?;
+    media.check_slice_live(cancelled)?;
     Ok(Picture {
         summary,
         id,

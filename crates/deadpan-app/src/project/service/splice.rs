@@ -4,7 +4,8 @@ use deadpan_core::{EditTransaction, FrameRange, ProjectFrame};
 
 use super::*;
 use crate::project::splice::{
-    Prepared as PreparedSplice, Proposal, ProposalId, ProposalUpdate, SpliceCommitUpdate,
+    Prepared as PreparedSplice, PreparedMedia, Proposal, ProposalId, ProposalUpdate, Source,
+    SpliceCommitUpdate,
 };
 
 mod request;
@@ -21,6 +22,7 @@ pub(super) struct Draft {
 impl Service {
     pub(super) fn prepare_splice_command(&mut self, proposal: Proposal) {
         let id = proposal.id.clone();
+        self.splice_source_view = None;
         if let Err(error) = self.prepare_splice(proposal) {
             if self
                 .splice_draft
@@ -36,6 +38,7 @@ impl Service {
             }
             self.splice = Some(ProposalUpdate {
                 id,
+                source_view: self.splice_source_view.clone(),
                 result: Err(error),
             });
         }
@@ -68,15 +71,15 @@ impl Service {
         // the preceding ready draft or reuse a proposal revision.
         self.splice_seen = Some(proposal.id.clone());
         self.splice = None;
+        self.splice_source_view = None;
         let previous = self.splice_draft.take();
         let mut token = None;
         if let Some(previous) = previous {
-            let same_source = previous.proposal.asset == proposal.asset
-                && previous.proposal.qualification == proposal.qualification;
+            let same_source = same_original(&previous.proposal.source, &proposal.source);
             if same_source {
                 token = previous.source;
             } else {
-                self.cache_splice_source(&previous.proposal.asset, previous.source);
+                self.cache_splice_source(previous.request.asset(), previous.source);
             }
             if let Some(active) = &mut self.active
                 && active.splice.as_ref() == Some(&previous.proposal.id)
@@ -88,32 +91,85 @@ impl Service {
                 }
             }
         }
+        // Source preparation is independent of destination validity. Its sealed
+        // neutral view remains useful when a slot or endpoint cannot be placed.
+        let edited = match &proposal.source {
+            Source::Edited { copied, range } => Some(self.prepare_copied_view(copied, *range)?),
+            Source::Original { .. } => None,
+        };
         let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
         let view = proposal.scope.resolve(workspace)?;
         if view.owner != &proposal.parent {
             return Err("Slice destination is outside the captured Sequence scope".into());
         }
-        if proposal.ordinals.start >= proposal.ordinals.end {
+        if let Some(slice) = edited {
+            let (request, cursor) =
+                Request::edited(workspace, &proposal.parent, &proposal.destination, &slice)?;
+            let draft = Draft {
+                proposal,
+                request,
+                cursor,
+                source: None,
+                prepared: None,
+            };
+            let store = self.store.as_ref().ok_or("Open a project first")?;
+            let command = draft
+                .request
+                .edited_command()
+                .ok_or("Missing edited placement command")?;
+            let media =
+                self.slice_media_view(store.preview_edit_slice(command).map_err(display)?)?;
+            let snapshot = Arc::new(
+                deadpan_playback::Snapshot::proposed_edit_slice(
+                    &workspace.playback_snapshot(),
+                    media.admitted().clone(),
+                    draft.proposal.id.draft,
+                    draft.proposal.id.change,
+                )
+                .map_err(display)?,
+            );
+            let prepared =
+                self.finish_splice_preview(&draft, snapshot, PreparedMedia::Edited(media))?;
+            self.splice = Some(ProposalUpdate {
+                id: draft.proposal.id.clone(),
+                source_view: self.splice_source_view.clone(),
+                result: Ok(prepared.clone()),
+            });
+            self.splice_draft = Some(Draft {
+                prepared: Some(prepared),
+                ..draft
+            });
+            return Ok(());
+        }
+        let Source::Original {
+            asset,
+            qualification,
+            ordinals,
+        } = &proposal.source
+        else {
+            return Err("Copied Edit was not prepared".into());
+        };
+        if ordinals.start >= ordinals.end {
             return Err("Select a nonempty Original slice".into());
         }
         let source = workspace
             .sources
-            .get(&proposal.asset)
+            .get(asset)
             .cloned()
             .ok_or("Copied Original is no longer registered")?;
-        if source.receipt.id() != &proposal.qualification || source.video_index.is_none() {
+        if source.receipt.id() != qualification || source.video_index.is_none() {
             return Err("Copied Original qualification has changed; select and copy again".into());
         }
         let (request, cursor) = Request::capture(
             workspace,
             &proposal.parent,
             &proposal.destination,
-            &proposal.asset,
-            proposal.ordinals.clone(),
+            asset,
+            ordinals.clone(),
             &source.label,
         )?;
         let id = proposal.id.clone();
-        let asset = proposal.asset.clone();
+        let asset = asset.clone();
         let scope = proposal.scope.clone();
         self.splice_draft = Some(Draft {
             proposal,
@@ -184,7 +240,10 @@ impl Service {
             .as_ref()
             .ok_or("Slice proposal was abandoned")?;
         self.check_splice_context(&draft.proposal.id)?;
-        if source.receipt().id() != &draft.proposal.qualification {
+        let Source::Original { qualification, .. } = &draft.proposal.source else {
+            return Err("Original preparation cannot replace an edited slice".into());
+        };
+        if source.receipt().id() != qualification {
             return Err("Fresh source qualification differs from the copied Original".into());
         }
         let store = self.store.as_ref().ok_or("Open a project first")?;
@@ -204,6 +263,7 @@ impl Service {
         draft.prepared = Some(prepared.clone());
         self.splice = Some(ProposalUpdate {
             id: draft.proposal.id.clone(),
+            source_view: None,
             result: Ok(prepared),
         });
         Ok(true)
@@ -216,16 +276,6 @@ impl Service {
     ) -> Result<Arc<PreparedSplice>> {
         let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
         let document = Arc::new(edit.forward.apply(&workspace.document).map_err(display)?);
-        let NodeKind::Source { source } = &document.nodes()[draft.request.node()].kind else {
-            return Err("Slice preview did not produce its Source beat".into());
-        };
-        let end = draft
-            .cursor
-            .0
-            .checked_add(source.duration.frames())
-            .ok_or("Slice range overflow")?;
-        let range = FrameRange::new(draft.cursor, ProjectFrame(end)).map_err(display)?;
-        let plan = Arc::new(RenderPlan::compile(&document).map_err(display)?);
         let snapshot = Arc::new(
             deadpan_playback::Snapshot::proposed(
                 &workspace.playback_snapshot(),
@@ -235,9 +285,37 @@ impl Service {
             )
             .map_err(display)?,
         );
+        self.finish_splice_preview(draft, snapshot, PreparedMedia::Original)
+    }
+
+    fn finish_splice_preview(
+        &self,
+        draft: &Draft,
+        snapshot: Arc<deadpan_playback::Snapshot>,
+        media: PreparedMedia,
+    ) -> Result<Arc<PreparedSplice>> {
+        let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
+        let plan = Arc::new(RenderPlan::compile(&snapshot.document).map_err(display)?);
+        let duration = plan
+            .node_duration(draft.request.node())
+            .ok_or("Slice preview did not produce its inserted root")?;
+        if draft
+            .request
+            .inserted_duration()
+            .is_some_and(|expected| expected != duration)
+        {
+            return Err("Slice preview changed the captured duration".into());
+        }
+        let end = draft
+            .cursor
+            .0
+            .checked_add(duration.frames())
+            .ok_or("Slice range overflow")?;
+        let range = FrameRange::new(draft.cursor, ProjectFrame(end)).map_err(display)?;
         Ok(Arc::new(PreparedSplice {
             base: workspace.clone(),
             snapshot,
+            media,
             plan,
             node: draft.request.node().clone(),
             range,
@@ -307,8 +385,12 @@ impl Service {
                         .splice_commit_refresh_failure
                         .swap(false, Ordering::AcqRel);
                 }
-                self.refresh()?;
-                self.message = Some("Slice placed and saved. Undo with u.".into());
+                self.message = Some(match self.refresh() {
+                    Ok(()) => "Slice placed and saved. Undo with u.".into(),
+                    Err(error) => format!(
+                        "Slice saved, but the preview could not refresh: {error}. Reopen the project to view the saved edit."
+                    ),
+                });
             }
             Err(error) => {
                 self.splice_commit = Some(SpliceCommitUpdate {
@@ -329,7 +411,7 @@ impl Service {
         if &draft.proposal.id != id {
             return Err("Slice proposal was superseded; preview the latest placement".into());
         }
-        if draft.prepared.is_none() || draft.source.is_none() {
+        if draft.prepared.is_none() || (draft.request.asset().is_some() && draft.source.is_none()) {
             return Err("Slice preview is still preparing".into());
         }
         // Consume only the matching ready draft. Failure cannot make it eligible
@@ -338,14 +420,11 @@ impl Service {
             .splice_draft
             .take()
             .ok_or("Slice proposal is no longer available")?;
-        let source = draft
-            .source
-            .take()
-            .ok_or("Slice source is no longer prepared")?;
+        let source = draft.source.take();
         let store = self.writer()?;
         let cancelled = AtomicBool::new(false);
-        let outcome = draft.request.commit(store, &source, &cancelled);
-        self.cache_splice_source(&draft.proposal.asset, Some(source));
+        let outcome = draft.request.commit(store, source.as_ref(), &cancelled);
+        self.cache_splice_source(draft.request.asset(), source);
         let commit = outcome.map_err(display)?;
         Ok(CommittedEdit {
             revision: commit.revision_id,
@@ -384,15 +463,20 @@ impl Service {
         {
             active.cancelled.store(true, Ordering::Release);
         }
-        self.cache_splice_source(&draft.proposal.asset, draft.source);
+        self.cache_splice_source(draft.request.asset(), draft.source);
         self.splice = Some(ProposalUpdate {
             id: draft.proposal.id,
+            source_view: self.splice_source_view.clone(),
             result: Err(error.into()),
         });
     }
 
-    fn cache_splice_source(&mut self, asset: &AssetId, source: Option<PreparedSourceRegistration>) {
-        if let Some(source) = source {
+    fn cache_splice_source(
+        &mut self,
+        asset: Option<&AssetId>,
+        source: Option<PreparedSourceRegistration>,
+    ) {
+        if let (Some(asset), Some(source)) = (asset, source) {
             self.cached = Some((asset.clone(), source));
         }
     }
@@ -406,4 +490,11 @@ impl Service {
             self.invalidate_splice("Import worker stopped before completing the slice preview");
         }
     }
+}
+
+fn same_original(left: &Source, right: &Source) -> bool {
+    matches!((left, right),
+        (Source::Original { asset: left, qualification: left_qualification, .. },
+         Source::Original { asset: right, qualification: right_qualification, .. })
+        if left == right && left_qualification == right_qualification)
 }

@@ -130,9 +130,9 @@ impl DeadpanApp {
         self.error = None;
         self.message = Some(
             if self.edit_range.active {
-                "h/l and j/k extend the Edit range; d cuts it; v finishes; Esc clears."
+                "h/l and j/k extend the Edit range; y copies; d cuts; v finishes; Esc clears."
             } else if self.selected_edit_range().is_some() {
-                "Edit range retained. d cuts it; :splice previews replacement; p/P replaces now."
+                "Edit range retained. y copies; d cuts; :splice previews replacement; p/P replaces now."
             } else {
                 "Empty Edit range. Press v and move to select time."
             }
@@ -151,9 +151,9 @@ impl DeadpanApp {
                 range.end().0,
                 range.end().0 - range.start().0,
                 if self.edit_range.active {
-                    "extending · d cuts · v finishes"
+                    "extending · y copies · d cuts · v finishes"
                 } else {
-                    "selected · d cuts · Esc clears"
+                    "selected · y copies · d cuts · Esc clears"
                 },
             )
         })

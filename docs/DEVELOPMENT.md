@@ -158,8 +158,11 @@ The [native workspace](NATIVE_WORKSPACE.md) uses `⌘N`, `⌘O` and `⌘I` for
 project creation, project opening and media import through macOS panels. Import
 registers a source; `,i` explicitly inserts the entire source after the
 selected beat, or at sequence end. In Original, `v` plus h/l selects a
-half-open moment and `y` copies it. In Your edit, `p`/`P` paste after/before
-the selected beat in the current ordinary Sequence group. `⌘Z` / `⌘Shift Z` navigate saved history.
+half-open moment and `y` copies it. Your edit also supports `v`, motion and `y`
+for historical edited contents, including complete owned beats and supported
+Source/Hold fragments. `:splice` previews local In/Out refinement and insertion
+or replacement. Fast `p`/`P` paste after/before the selected beat or replace a
+selected range in the current ordinary Sequence group. `⌘Z` / `⌘Shift Z` navigate saved history.
 Use `--project /absolute/project.deadpan` to reopen directly, or
 `--preview-source /absolute/video.mp4` for standalone source inspection.
 The source decoder retains the [admitted MP4/Matroska grammar](SOURCE_ADMISSION.md).

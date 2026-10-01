@@ -8,9 +8,19 @@ fn identity(workspace: &Workspace, change: u64, start: u64, end: u64) -> Endpoin
         revision: workspace.document.revision_id().clone(),
         draft: 30,
         change,
-        asset: workspace.sources.keys().next().unwrap().clone(),
-        in_frame: SourceFrameId(start),
-        out_frame: SourceFrameId(end),
+        source: EndpointSourceId::Original {
+            asset: workspace.sources.keys().next().unwrap().clone(),
+            qualification: workspace
+                .sources
+                .values()
+                .next()
+                .unwrap()
+                .receipt
+                .id()
+                .clone(),
+            in_frame: SourceFrameId(start),
+            out_frame: SourceFrameId(end),
+        },
     }
 }
 
@@ -43,7 +53,7 @@ fn vfr_endpoints_use_exact_in_and_last_included_ordinals_and_canonical_pixels() 
     let mut reference_decoder = None;
     for (change, start, end) in [(1, 2, 17), (2, count - 2, count), (3, 9, 10)] {
         let identity = identity(&workspace, change, start, end);
-        worker.submit(identity.clone(), workspace.clone());
+        worker.submit(identity.clone(), EndpointInput::Original(workspace.clone()));
         let reply = await_endpoints(&worker);
         assert_eq!(reply.identity, identity);
         let pictures = reply.pictures.unwrap();
@@ -86,10 +96,16 @@ fn endpoint_replacement_cancels_active_work_and_rejects_stale_success_and_failur
     let workspace = fixture.workspace(82);
     let first_identity = identity(&workspace, 1, 2, 17);
     let mut mailbox = EndpointMailbox::default();
-    assert!(mailbox.submit(first_identity.clone(), workspace.clone()));
+    assert!(mailbox.submit(
+        first_identity.clone(),
+        EndpointInput::Original(workspace.clone())
+    ));
     let active = mailbox.start_next().unwrap();
     // Even resubmitting the identical external identity cancels this generation.
-    assert!(mailbox.submit(first_identity.clone(), workspace.clone()));
+    assert!(mailbox.submit(
+        first_identity.clone(),
+        EndpointInput::Original(workspace.clone())
+    ));
     assert!(active.cancelled.load(Ordering::Acquire));
     assert!(!mailbox.publish(
         EndpointReply {
@@ -100,10 +116,13 @@ fn endpoint_replacement_cancels_active_work_and_rejects_stale_success_and_failur
     ));
     let active = mailbox.start_next().unwrap();
     let mut decoder = None;
-    let pictures = endpoint_pictures(&active, &mut decoder).unwrap();
+    let pictures = endpoint_pictures(&active, &mut decoder, &mut None).unwrap();
     let latest = identity(&workspace, 3, 35, 40);
-    assert!(mailbox.submit(identity(&workspace, 2, 20, 25), workspace.clone()));
-    assert!(mailbox.submit(latest.clone(), workspace));
+    assert!(mailbox.submit(
+        identity(&workspace, 2, 20, 25),
+        EndpointInput::Original(workspace.clone())
+    ));
+    assert!(mailbox.submit(latest.clone(), EndpointInput::Original(workspace)));
     assert!(!mailbox.publish(
         EndpointReply {
             identity: first_identity,
@@ -115,7 +134,7 @@ fn endpoint_replacement_cancels_active_work_and_rejects_stale_success_and_failur
     let current = mailbox.start_next().unwrap();
     assert_eq!(current.identity, latest);
     assert!(mailbox.pending.is_none());
-    let pictures = endpoint_pictures(&current, &mut decoder).unwrap();
+    let pictures = endpoint_pictures(&current, &mut decoder, &mut None).unwrap();
     assert!(mailbox.publish(
         EndpointReply {
             identity: latest.clone(),
@@ -154,7 +173,7 @@ fn endpoint_queue_never_replaces_the_main_picture_and_rejects_invalid_contexts()
     for change in 1..=20 {
         endpoints.submit(
             identity(&workspace, change, change, change + 5),
-            workspace.clone(),
+            EndpointInput::Original(workspace.clone()),
         );
     }
     let endpoint_reply = await_endpoints(&endpoints);
@@ -193,7 +212,7 @@ fn endpoint_queue_never_replaces_the_main_picture_and_rejects_invalid_contexts()
         identity(&workspace, 25, 2, 2),
         identity(&workspace, 26, 0, 121),
     ] {
-        endpoints.submit(invalid.clone(), workspace.clone());
+        endpoints.submit(invalid.clone(), EndpointInput::Original(workspace.clone()));
         let reply = await_endpoints(&endpoints);
         assert_eq!(reply.identity, invalid);
         assert!(reply.pictures.is_err());

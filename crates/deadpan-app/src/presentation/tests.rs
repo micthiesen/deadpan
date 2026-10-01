@@ -572,3 +572,122 @@ fn proposed_content_identity_never_becomes_a_committed_display_or_camera_target(
         Some("Showing sequence frame 13")
     );
 }
+
+fn copied_request(frame: i64, serial: u64, start: i64) -> RequestedPicture {
+    RequestedPicture {
+        ticket: ticket(1, serial),
+        location: Location::Copied {
+            source: CopiedViewId {
+                copy: crate::project::slice::CopyId {
+                    session: 1,
+                    project: ProjectId::new("copied-presentation").unwrap(),
+                    source_revision: RevisionId::new("historical-source").unwrap(),
+                    request: 10,
+                },
+                parent: deadpan_core::NodeId::new("historical-owner").unwrap(),
+                range: deadpan_core::FrameRange::new(ProjectFrame(start), ProjectFrame(start + 3))
+                    .unwrap(),
+            },
+            frame: ProjectFrame(frame),
+        },
+    }
+}
+
+#[test]
+fn copied_identical_images_advance_only_the_submitted_historical_clock_and_cannot_enter_camera() {
+    let mut state = Presentation {
+        requested: Some(copied_request(0, 1, 120)),
+        ..Default::default()
+    };
+    accept(&mut state, ticket(1, 1), picture(20));
+    assert_eq!(state.displayed_label(), None);
+    state.presented();
+    assert_eq!(
+        state.displayed_label().as_deref(),
+        Some("Showing copied Edit frame 121")
+    );
+    assert_eq!(
+        state.stable_sequence_ticket(
+            1,
+            &RevisionId::new("historical-source").unwrap(),
+            ProjectFrame(120)
+        ),
+        None
+    );
+    state.requested = Some(copied_request(1, 2, 120));
+    accept(&mut state, ticket(1, 2), picture(20));
+    assert!(
+        state.needs_render(),
+        "same source image still occupies a different owner clock"
+    );
+    state.render_failed("replacement allocation failed".into());
+    assert_eq!(
+        state.displayed_label().as_deref(),
+        Some("Showing copied Edit frame 121")
+    );
+    assert_eq!(state.displayed_source_frame(), Some(SourceFrameId(20)));
+    accept(&mut state, ticket(1, 2), picture(20));
+    state.presented();
+    assert_eq!(
+        state.displayed_label().as_deref(),
+        Some("Showing copied Edit frame 122")
+    );
+    assert_eq!(state.error(), None);
+    assert_eq!(
+        state.stable_sequence_ticket(
+            1,
+            &RevisionId::new("historical-source").unwrap(),
+            ProjectFrame(121)
+        ),
+        None
+    );
+}
+
+#[test]
+fn refined_copied_identity_rejects_old_success_and_failure_and_accepts_explicit_background() {
+    let mut state = Presentation {
+        requested: Some(copied_request(0, 1, 20)),
+        ..Default::default()
+    };
+    accept(&mut state, ticket(1, 1), picture(20));
+    state.presented();
+    state.requested = Some(copied_request(0, 2, 123));
+    for result in [Ok(picture(20)), Err("superseded source failure".into())] {
+        assert!(
+            state
+                .receive(Reply {
+                    #[cfg(feature = "ui-harness")]
+                    timing: None,
+                    ticket: ticket(1, 1),
+                    picture: result,
+                })
+                .is_none()
+        );
+        assert_eq!(
+            state.displayed_label().as_deref(),
+            Some("Showing copied Edit frame 21")
+        );
+    }
+    let mut background = picture(0);
+    background.frame = None;
+    background.canvas = Some((101, 61));
+    accept(&mut state, ticket(1, 2), background);
+    assert_eq!(
+        state.displayed_label().as_deref(),
+        Some("Showing copied Edit frame 21")
+    );
+    state.presented();
+    assert_eq!(
+        state.displayed_label().as_deref(),
+        Some("Showing copied Edit frame 124")
+    );
+    assert_eq!(state.displayed_source_frame(), None);
+    assert_eq!(
+        state.stable_sequence_ticket(
+            1,
+            &RevisionId::new("historical-source").unwrap(),
+            ProjectFrame(123)
+        ),
+        None
+    );
+}

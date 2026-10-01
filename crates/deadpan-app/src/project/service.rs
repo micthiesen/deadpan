@@ -29,6 +29,7 @@ use super::{
 type Result<T> = std::result::Result<T, String>;
 
 mod delete_range;
+pub(super) mod edit_slice;
 mod gain;
 mod headless;
 mod moment;
@@ -64,6 +65,9 @@ struct Service {
     splice_commit: Option<super::splice::SpliceCommitUpdate>,
     splice_draft: Option<splice::Draft>,
     splice_seen: Option<super::splice::ProposalId>,
+    captured_slice: Option<super::slice::CaptureUpdate>,
+    copied_view: Option<edit_slice::PreparedCopy>,
+    splice_source_view: Option<super::slice::SourceViewUpdate>,
     active: Option<Pending>,
     // One reusable catalog token. A live slice draft can additionally retain
     // its exact prepared Original, never a token for every catalog asset.
@@ -106,6 +110,9 @@ pub(super) fn run(
         splice_commit: None,
         splice_draft: None,
         splice_seen: None,
+        captured_slice: None,
+        copied_view: None,
+        splice_source_view: None,
         active: None,
         cached: None,
         session: 0,
@@ -235,6 +242,7 @@ impl Service {
             gain: self.gain.clone(),
             splice: self.splice.clone(),
             splice_commit: self.splice_commit.clone(),
+            captured_slice: self.captured_slice.clone(),
             render: self.render_update.clone(),
             render_history: self.render_history.clone(),
         };
@@ -248,6 +256,10 @@ impl Service {
 
     fn command(&mut self, request: ProjectRequest) -> Result<()> {
         let request = match request {
+            ProjectRequest::CaptureEditSlice(request) => {
+                self.capture_edit_slice_command(request);
+                return Ok(());
+            }
             ProjectRequest::PrepareSplice(proposal) => {
                 self.prepare_splice_command(proposal);
                 return Ok(());
@@ -307,6 +319,7 @@ impl Service {
                 self.store = None;
                 self.workspace = None;
                 self.cached = None;
+                self.clear_copied_slice();
                 self.import = None;
                 self.message = Some("Project closed".into());
                 Ok(())
@@ -337,6 +350,8 @@ impl Service {
                 index,
             ),
             ProjectRequest::PasteMoment(request) => self.paste_moment(request),
+            ProjectRequest::PasteEditedSlice(request) => self.paste_edited_slice(request),
+            ProjectRequest::CaptureEditSlice(_) => unreachable!("copy uses independent feedback"),
             ProjectRequest::PrepareSplice(_)
             | ProjectRequest::CommitSplice(_)
             | ProjectRequest::AbandonSplice(_) => unreachable!("splice uses independent feedback"),
@@ -569,6 +584,7 @@ impl Service {
         self.workspace = Some(Arc::new(workspace));
         self.session = next;
         self.cached = None;
+        self.clear_copied_slice();
         self.import = None;
         self.initialize_source(next, document.revision_id().clone(), path)
     }
@@ -968,6 +984,7 @@ impl Service {
         self.session = prepared.workspace.session;
         self.workspace = Some(Arc::new(prepared.workspace));
         self.cached = None;
+        self.clear_copied_slice();
         self.import = None;
         self.message = Some(prepared.message);
         Ok(())
@@ -1435,35 +1452,9 @@ fn snapshot(
             sources.insert(asset.clone(), cached.clone());
             continue;
         }
-        let original_audition = receipt
-            .snapshot()
-            .video()
-            .map(|_| {
-                deadpan_playback::Original::new(rate, asset.clone(), receipt.clone()).map(Arc::new)
-            })
-            .transpose()
-            .map_err(display)?;
-        let video_index = original_audition.as_ref().map(|view| view.index().clone());
-        let sound_audition =
-            if receipt.snapshot().video().is_none() && receipt.snapshot().audio().is_some() {
-                Some(Arc::new(
-                    deadpan_playback::Sound::new(rate, asset.clone(), receipt.clone())
-                        .map_err(display)?,
-                ))
-            } else {
-                None
-            };
         sources.insert(
             asset.clone(),
-            Arc::new(RegisteredSource {
-                asset: asset.clone(),
-                label: metadata.label.clone(),
-                receipt,
-                original,
-                video_index,
-                original_audition,
-                sound_audition,
-            }),
+            registered_source(asset, metadata, rate, receipt, original)?,
         );
     }
     let (can_undo, can_redo) = store.history_availability().map_err(display)?;
@@ -1493,6 +1484,51 @@ fn snapshot(
         single_source,
         original_duration,
     })
+}
+
+fn registered_source(
+    asset: &AssetId,
+    metadata: &deadpan_core::AssetRecord,
+    rate: deadpan_core::FrameRate,
+    receipt: Arc<deadpan_store::source_registration::SourceQualificationReceipt>,
+    original: OriginalMediaRecord,
+) -> Result<Arc<RegisteredSource>> {
+    if receipt
+        .asset_record(metadata.label.clone())
+        .map_err(display)?
+        != *metadata
+        || original.object() != receipt.original()
+        || original.sha256() != receipt.snapshot().content().sha256()
+    {
+        return Err("Source catalog differs from its admitted media".into());
+    }
+    let original_audition = receipt
+        .snapshot()
+        .video()
+        .map(|_| {
+            deadpan_playback::Original::new(rate, asset.clone(), receipt.clone()).map(Arc::new)
+        })
+        .transpose()
+        .map_err(display)?;
+    let video_index = original_audition.as_ref().map(|view| view.index().clone());
+    let sound_audition = if receipt.snapshot().video().is_none()
+        && receipt.snapshot().audio().is_some()
+    {
+        Some(Arc::new(
+            deadpan_playback::Sound::new(rate, asset.clone(), receipt.clone()).map_err(display)?,
+        ))
+    } else {
+        None
+    };
+    Ok(Arc::new(RegisteredSource {
+        asset: asset.clone(),
+        label: metadata.label.clone(),
+        receipt,
+        original,
+        video_index,
+        original_audition,
+        sound_audition,
+    }))
 }
 
 fn new_document() -> Result<ProjectDocument> {

@@ -47,9 +47,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.check(
         "Yank leaves a reusable range and exits Visual without history",
         d.app()
-            .moment
             .copied
-            .as_ref()
+            .original()
             .is_some_and(|copy| copy.ordinals == (10..24))
             && !d.app().moment.active
             && d.revision() == initial_revision,
@@ -59,7 +58,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.key(Key::Escape)?;
     d.check(
         "Escape cancels selection but preserves the copied moment",
-        d.app().moment.range().is_none() && d.app().moment.copied.is_some(),
+        d.app().moment.range().is_none() && d.app().copied.original().is_some(),
         json!("copy retained"),
         d.snapshot(),
     )?;
@@ -117,9 +116,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         d.app().pane == Pane::Inspector
             && d.revision() == before_pointer
             && d.app()
-                .moment
                 .copied
-                .as_ref()
+                .original()
                 .is_some_and(|copy| copy.ordinals == (23..24)),
         json!("Inspector focus, copied [23,24), unchanged revision"),
         d.snapshot(),
