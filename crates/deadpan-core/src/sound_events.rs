@@ -33,6 +33,7 @@ pub struct SoundEvent {
     pub owner: NodeId,
     pub label: String,
     pub source: SourceAudio,
+    #[serde(deserialize_with = "crate::legacy_audio_mapping_v35::sound_mapping")]
     pub mapping: SourceAudioMapping,
     pub offset: AudioSample,
     pub gain_millidecibels: i32,

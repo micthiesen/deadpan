@@ -1,0 +1,18 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running tests/prepared_source_registration.rs (target/debug/deps/prepared_source_registration-eec01583c48349ce)
+
+running 1 test
+test moment::dormant::moments_outside_measured_audio_keep_dormant_link_through_history_and_reopen ... FAILED
+
+failures:
+
+---- moment::dormant::moments_outside_measured_audio_keep_dormant_link_through_history_and_reopen stdout ----
+Error: Native(Native { code: "invalid_input", message: "unqualified MP4 brand" })
+
+
+failures:
+    moment::dormant::moments_outside_measured_audio_keep_dormant_link_through_history_and_reopen
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 22 filtered out; finished in 0.07s
+
+error: test failed, to rerun pass `-p deadpan-store --test prepared_source_registration`

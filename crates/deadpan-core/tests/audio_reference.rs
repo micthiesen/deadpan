@@ -607,7 +607,25 @@ fn admission_rejects_tampered_structure_durations_placements_and_policies() {
     let mut value = original.clone();
     value["nodes"]["source"]["kind"]["placement"]["end"] =
         value["nodes"]["source"]["kind"]["placement"]["start"].clone();
+    FrozenAudioLayout::from_json(&value.to_string()).unwrap();
+    let start: ExactRatio =
+        serde_json::from_value(value["nodes"]["source"]["kind"]["placement"]["start"].clone())
+            .unwrap();
+    value["nodes"]["source"]["kind"]["placement"]["end"] =
+        serde_json::to_value(start.checked_sub(ExactRatio::ONE).unwrap()).unwrap();
     rejected(value);
+    for point in [
+        ExactRatio::integer(i64::MIN)
+            .checked_sub(ExactRatio::ONE)
+            .unwrap(),
+        ExactRatio::integer(i64::MAX)
+            .checked_add(ExactRatio::ONE)
+            .unwrap(),
+    ] {
+        let mut value = original.clone();
+        value["nodes"]["source"]["kind"]["placement"] = json!({"start":point, "end":point});
+        rejected(value);
+    }
     let mut value = original.clone();
     value["overrides"]["pre"] = value["overrides"]["repeat"].clone();
     rejected(value);

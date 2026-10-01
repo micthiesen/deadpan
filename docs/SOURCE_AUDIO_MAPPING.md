@@ -14,6 +14,14 @@ constraining audible support and fade endpoints. The separate offset translates
 both mapping and selection. See [Original moments](SOURCE_MOMENTS.md) for the
 measured-range derivation, rendering policy and migration boundary.
 
+Core schema 36 also permits equal selection endpoints. This retains a dormant
+Source's complete audio mapping and linked intent while producing digital silence
+without requesting source PCM. Growing the selection reveals audio on the same
+affine mapping; it does not change source phase or the independent offset. Empty support
+does not create source-coordinate anchors. `audio: null` still means intentionally
+absent audio, and a mapping edit cannot recreate it. Catalog sound events continue
+to require positive support.
+
 `SourceAudioMapping::natural_rate(span, frame_rate)` computes the destination
 duration from original timestamp units and rational project frame rate, without
 rounding. For a one-second audio selection beneath a two-second picture at 30

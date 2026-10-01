@@ -118,6 +118,13 @@ impl RenderPlan {
             constraints,
             gap,
         } = placement;
+        // Preserve the retained binding while dormant, but do not ask its empty
+        // meaningful domain for an audible sample or an owner phase.
+        if gap.is_none()
+            && matches!(&self.nodes[node].kind, CompiledKind::Source { audio: Some(audio), .. } if audio.selection.start == audio.selection.end)
+        {
+            return Ok(None);
+        }
         let id = &self.nodes[node].inspection.id;
         let bindings = if gap.is_some() {
             self.audio_bindings.gap_bindings()

@@ -788,7 +788,10 @@ impl<'a> AnchorIndex<'a> {
                 self.document.presentation_basis().frame_rate,
             )?,
         };
-        if position.compare(selection.start).is_lt() || position.compare(selection.end).is_gt() {
+        if selection.start == selection.end
+            || position.compare(selection.start).is_lt()
+            || position.compare(selection.end).is_gt()
+        {
             return Err(AnchorError::new(
                 AnchorErrorCode::OutsideMapping,
                 "source boundary is outside the selected moment",

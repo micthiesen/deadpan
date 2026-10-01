@@ -974,6 +974,14 @@ impl<'plan> AudioSignal<'plan> {
                 CompiledKind::Source {
                     audio: Some(audio), ..
                 } => {
+                    if audio.selection.start == audio.selection.end {
+                        break (
+                            AudioSignalContent::Leaf(AudioContent::Silence {
+                                reason: SilenceReason::OutsideSourceSelection,
+                            }),
+                            None,
+                        );
+                    }
                     let start = transform.signal_from_local(audio.selection.start)?;
                     let end = transform.signal_from_local(audio.selection.end)?;
                     let content = if sample < grid.boundary(start)? {

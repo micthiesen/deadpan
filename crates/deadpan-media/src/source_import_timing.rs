@@ -146,8 +146,8 @@ pub struct SourceMomentTiming {
     pub video_context: StreamPlacement,
     /// Visible half-open window in the full picture context's local clock.
     pub video_selection: ExactFrameRange,
-    /// None means no selected audio stream or no measured overlap. It never
-    /// changes the immutable asset's stream inventory.
+    /// None means no measured audio stream. A stream with no overlap remains
+    /// linked with equal selection endpoints and its complete affine context.
     pub audio: Option<SelectedAudioPlacement>,
     /// Ceiling of the selected picture duration, rounded only once. Picture
     /// holds its selected endpoint in the slack; audio remains cropped exactly.
@@ -238,7 +238,7 @@ pub fn derive_source_moment(
     .selection_in_source(video_context.span, duration)?;
     let audio = measured_audio
         .map(
-            |span| -> Result<Option<SelectedAudioPlacement>, ImportTimingError> {
+            |span| -> Result<SelectedAudioPlacement, ImportTimingError> {
                 let placement = stream_placement(span, origin_seconds, project_rate)?;
                 let end = placement
                     .start_frames
@@ -248,23 +248,27 @@ pub fn derive_source_moment(
                 } else {
                     ExactRatio::ZERO
                 };
-                let selected_end = if end
-                    .checked_sub(video.duration_frames)?
-                    .compare_integer(0)
-                    .is_lt()
-                {
+                let selected_end = if end.compare(video.duration_frames).is_lt() {
                     end
                 } else {
                     video.duration_frames
                 };
-                if !selected_end
-                    .checked_sub(selected_start)?
-                    .compare_integer(0)
-                    .is_gt()
-                {
-                    return Ok(None);
-                }
-                let selection = ExactFrameRange::new(selected_start, selected_end)?;
+                let selection = if selected_start.compare(selected_end).is_lt() {
+                    ExactFrameRange::new(selected_start, selected_end)?
+                } else {
+                    // Keep an explicit empty window at the closest point of the
+                    // full audio mapping to the exact picture selection. Never
+                    // let audio in rounded picture slack become audible.
+                    let point = if end.compare_integer(0).is_le() {
+                        end
+                    } else {
+                        placement.start_frames
+                    };
+                    ExactFrameRange {
+                        start: point,
+                        end: point,
+                    }
+                };
                 // Check authored mapping bounds even when a small window hides a
                 // distant original origin or a much longer measured audio stream.
                 SourceAudioMapping::SelectedPlacement {
@@ -273,14 +277,13 @@ pub fn derive_source_moment(
                     selection,
                 }
                 .duration_frames(duration)?;
-                Ok(Some(SelectedAudioPlacement {
+                Ok(SelectedAudioPlacement {
                     placement,
                     selection,
-                }))
+                })
             },
         )
-        .transpose()?
-        .flatten();
+        .transpose()?;
     Ok(SourceMomentTiming {
         ordinals,
         origin_seconds,

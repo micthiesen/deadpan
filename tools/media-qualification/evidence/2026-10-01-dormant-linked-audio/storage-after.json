@@ -1,0 +1,24 @@
+{
+  "command": [
+    "rustup",
+    "run",
+    "1.97.1",
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-store",
+    "--test",
+    "prepared_source_registration",
+    "moment::dormant::moments_outside_measured_audio_keep_dormant_link_through_history_and_reopen",
+    "--",
+    "--exact"
+  ],
+  "started": "2026-10-01T10:55:51.087651+00:00",
+  "base_commit": "11f3404f2bf11b623f1bbdf568cd449f2ddd5a16",
+  "diff_sha256": "5c092545364aaebbc6e6febf31cd77742d6cc393f23fb0c0670dc3daf9c5a0ec",
+  "source_manifest_sha256": "c3756a7998b6c788a7c6a561b9a0ad782e19af0f2a1ab11007fe0a9304d6c43c",
+  "pid": 92529,
+  "exit_code": 101,
+  "seconds": 37.70009004091844
+}

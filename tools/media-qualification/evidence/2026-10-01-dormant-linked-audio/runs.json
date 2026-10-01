@@ -1,0 +1,543 @@
+{
+  "affected-tests-corrected": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-core",
+      "-p",
+      "deadpan-plan",
+      "-p",
+      "deadpan-media",
+      "-p",
+      "deadpan-audio",
+      "-p",
+      "deadpan-store",
+      "-p",
+      "deadpan-cli"
+    ],
+    "started": "2026-10-01T11:13:42.914750+00:00",
+    "base_commit": "11f3404f2bf11b623f1bbdf568cd449f2ddd5a16",
+    "diff_sha256": "40ffa770deccab3588e906ea494302d4001c5314b85aff25cae71c1eb7e83793",
+    "source_manifest_sha256": "e76e230924322ab4306ba2102d8fd295c5730d5561acc3fcb7948b93122741da",
+    "pid": 97061,
+    "exit_code": 101,
+    "seconds": 96.97784483339638,
+    "tests": {
+      "targets": 46,
+      "passed": 941,
+      "failed": 1,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "unit_and_integration": {
+      "targets": 46,
+      "passed": 941,
+      "failed": 1,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "doc_tests": {
+      "targets": 0
+    }
+  },
+  "affected-tests": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-core",
+      "-p",
+      "deadpan-plan",
+      "-p",
+      "deadpan-media",
+      "-p",
+      "deadpan-audio",
+      "-p",
+      "deadpan-store",
+      "-p",
+      "deadpan-cli"
+    ],
+    "started": "2026-10-01T10:56:58.191281+00:00",
+    "base_commit": "11f3404f2bf11b623f1bbdf568cd449f2ddd5a16",
+    "diff_sha256": "5c092545364aaebbc6e6febf31cd77742d6cc393f23fb0c0670dc3daf9c5a0ec",
+    "source_manifest_sha256": "28e98278913de1ed9fe1e9dc90731b2d04c412c6aed578fe7c3ec2221eeb897b",
+    "pid": 92968,
+    "exit_code": 101,
+    "seconds": 958.1883551250212,
+    "tests": {
+      "targets": 42,
+      "passed": 897,
+      "failed": 1,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "unit_and_integration": {
+      "targets": 42,
+      "passed": 897,
+      "failed": 1,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "doc_tests": {
+      "targets": 0
+    }
+  },
+  "audio-after-oracle-fix": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "dormant_source"
+    ],
+    "started": "2026-10-01T10:56:39.215748+00:00",
+    "base_commit": "11f3404f2bf11b623f1bbdf568cd449f2ddd5a16",
+    "diff_sha256": "5c092545364aaebbc6e6febf31cd77742d6cc393f23fb0c0670dc3daf9c5a0ec",
+    "source_manifest_sha256": "ab6f6a5b22acd7733a34e53aa3b077b37f5681e3efcaceff111e00141e6a5c3f",
+    "pid": 92906,
+    "exit_code": 0,
+    "seconds": 11.71134258294478,
+    "tests": {
+      "targets": 1,
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "unit_and_integration": {
+      "targets": 1,
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "doc_tests": {
+      "targets": 0
+    }
+  },
+  "audio-after": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "dormant_source"
+    ],
+    "started": "2026-10-01T10:54:21.601344+00:00",
+    "base_commit": "11f3404f2bf11b623f1bbdf568cd449f2ddd5a16",
+    "diff_sha256": "92f848060b55a6353f40ad57b022c65272948ebe8be03150a99d32a38d645a98",
+    "source_manifest_sha256": "2df460b812e98f0c235fc34e4830dcd0d1851e53aaa39a6c5397cf504b6edfb7",
+    "pid": 92101,
+    "exit_code": 101,
+    "seconds": 62.43099912488833,
+    "tests": {
+      "targets": 1,
+      "passed": 2,
+      "failed": 1,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "unit_and_integration": {
+      "targets": 1,
+      "passed": 2,
+      "failed": 1,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "doc_tests": {
+      "targets": 0
+    }
+  },
+  "audio-before": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "dormant_source"
+    ],
+    "started": "2026-10-01T10:50:04.037483+00:00",
+    "base_commit": "11f3404f2bf11b623f1bbdf568cd449f2ddd5a16",
+    "diff_sha256": "030fd9d74283d5ae1844ea350d76cb9a6b27f09223da4fd9cb5071138aa57119",
+    "source_manifest_sha256": "c0696089d0b94389190cd6a05b70fe3e05e4e951d4014bccc9c5450b3ced497f",
+    "pid": 90784,
+    "exit_code": 101,
+    "seconds": 23.654041749890894,
+    "tests": {
+      "targets": 1,
+      "passed": 0,
+      "failed": 3,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "unit_and_integration": {
+      "targets": 1,
+      "passed": 0,
+      "failed": 3,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "doc_tests": {
+      "targets": 0
+    }
+  },
+  "formatting-final": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "started": "2026-10-01T11:17:21.829688+00:00",
+    "base_commit": "11f3404f2bf11b623f1bbdf568cd449f2ddd5a16",
+    "diff_sha256": "5e999127ea1d2ef6c0d4500503098f131c8a9ac85d333845c58977935e534f5f",
+    "source_manifest_sha256": "16f529a6f784c365dbf998754b5d702ef1e8ab1216e0dd8476bc1d7b86e94d1f",
+    "pid": 98311,
+    "exit_code": 0,
+    "seconds": 1.8943725829012692,
+    "tests": {
+      "targets": 0
+    },
+    "unit_and_integration": {
+      "targets": 0
+    },
+    "doc_tests": {
+      "targets": 0
+    }
+  },
+  "formatting": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "started": "2026-10-01T11:00:18.405840+00:00",
+    "base_commit": "11f3404f2bf11b623f1bbdf568cd449f2ddd5a16",
+    "diff_sha256": "facececf73847bfca085f00af66eb649e25ed0095531ba675b37b4fc313fc0cd",
+    "source_manifest_sha256": "f798a25793ad76388696f1fd7d7eb8f5bd5c1422b56e5843bb74804bbf493970",
+    "pid": 93677,
+    "exit_code": 0,
+    "seconds": 1.8834864581003785,
+    "tests": {
+      "targets": 0
+    },
+    "unit_and_integration": {
+      "targets": 0
+    },
+    "doc_tests": {
+      "targets": 0
+    }
+  },
+  "remaining-tests": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "--no-fail-fast",
+      "-p",
+      "deadpan-core",
+      "-p",
+      "deadpan-plan",
+      "-p",
+      "deadpan-media",
+      "-p",
+      "deadpan-store"
+    ],
+    "started": "2026-10-01T11:16:24.744092+00:00",
+    "base_commit": "11f3404f2bf11b623f1bbdf568cd449f2ddd5a16",
+    "diff_sha256": "5e999127ea1d2ef6c0d4500503098f131c8a9ac85d333845c58977935e534f5f",
+    "source_manifest_sha256": "2a504e73f992a9405428ac71dd6d8ae94fc61924357c1247a0ff366e7a0abc2b",
+    "pid": 98063,
+    "exit_code": 0,
+    "seconds": 634.6049132500775,
+    "tests": {
+      "targets": 102,
+      "passed": 1473,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "unit_and_integration": {
+      "targets": 98,
+      "passed": 1471,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    },
+    "doc_tests": {
+      "targets": 4,
+      "passed": 2,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 0
+    }
+  },
+  "storage-after": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-store",
+      "--test",
+      "prepared_source_registration",
+      "moment::dormant::moments_outside_measured_audio_keep_dormant_link_through_history_and_reopen",
+      "--",
+      "--exact"
+    ],
+    "started": "2026-10-01T10:55:51.087651+00:00",
+    "base_commit": "11f3404f2bf11b623f1bbdf568cd449f2ddd5a16",
+    "diff_sha256": "5c092545364aaebbc6e6febf31cd77742d6cc393f23fb0c0670dc3daf9c5a0ec",
+    "source_manifest_sha256": "c3756a7998b6c788a7c6a561b9a0ad782e19af0f2a1ab11007fe0a9304d6c43c",
+    "pid": 92529,
+    "exit_code": 101,
+    "seconds": 37.70009004091844,
+    "tests": {
+      "targets": 1,
+      "passed": 0,
+      "failed": 1,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 22
+    },
+    "unit_and_integration": {
+      "targets": 1,
+      "passed": 0,
+      "failed": 1,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 22
+    },
+    "doc_tests": {
+      "targets": 0
+    }
+  },
+  "storage-before-mp4": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-store",
+      "--test",
+      "prepared_source_registration",
+      "moment::dormant::moments_outside_measured_audio_keep_dormant_link_through_history_and_reopen",
+      "--",
+      "--exact"
+    ],
+    "started": "2026-10-01T10:51:06.631512+00:00",
+    "base_commit": "11f3404f2bf11b623f1bbdf568cd449f2ddd5a16",
+    "diff_sha256": "030fd9d74283d5ae1844ea350d76cb9a6b27f09223da4fd9cb5071138aa57119",
+    "source_manifest_sha256": "901b6c88f6f3931bdd3123edc20f8e81ae2e478fc6e92a48fb91b4a9b202fd81",
+    "pid": 91029,
+    "exit_code": 101,
+    "seconds": 11.829672875348479,
+    "tests": {
+      "targets": 1,
+      "passed": 0,
+      "failed": 1,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 22
+    },
+    "unit_and_integration": {
+      "targets": 1,
+      "passed": 0,
+      "failed": 1,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 22
+    },
+    "doc_tests": {
+      "targets": 0
+    }
+  },
+  "storage-before-qualified": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-store",
+      "--test",
+      "prepared_source_registration",
+      "moment::dormant::moments_outside_measured_audio_keep_dormant_link_through_history_and_reopen",
+      "--",
+      "--exact"
+    ],
+    "started": "2026-10-01T10:49:51.445889+00:00",
+    "base_commit": "11f3404f2bf11b623f1bbdf568cd449f2ddd5a16",
+    "diff_sha256": "030fd9d74283d5ae1844ea350d76cb9a6b27f09223da4fd9cb5071138aa57119",
+    "source_manifest_sha256": "c0696089d0b94389190cd6a05b70fe3e05e4e951d4014bccc9c5450b3ced497f",
+    "pid": 90624,
+    "exit_code": 101,
+    "seconds": 0.1564047080464661,
+    "tests": {
+      "targets": 1,
+      "passed": 0,
+      "failed": 1,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 22
+    },
+    "unit_and_integration": {
+      "targets": 1,
+      "passed": 0,
+      "failed": 1,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 22
+    },
+    "doc_tests": {
+      "targets": 0
+    }
+  },
+  "storage-before": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-store",
+      "--test",
+      "prepared_source_registration",
+      "moments_outside_measured_audio_keep_dormant_link_through_history_and_reopen",
+      "--",
+      "--exact"
+    ],
+    "started": "2026-10-01T10:46:48.269572+00:00",
+    "base_commit": "11f3404f2bf11b623f1bbdf568cd449f2ddd5a16",
+    "diff_sha256": "030fd9d74283d5ae1844ea350d76cb9a6b27f09223da4fd9cb5071138aa57119",
+    "source_manifest_sha256": "c0696089d0b94389190cd6a05b70fe3e05e4e951d4014bccc9c5450b3ced497f",
+    "pid": 90229,
+    "exit_code": 0,
+    "seconds": 37.705500500276685,
+    "tests": {
+      "targets": 1,
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 23
+    },
+    "unit_and_integration": {
+      "targets": 1,
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0,
+      "measured": 0,
+      "filtered": 23
+    },
+    "doc_tests": {
+      "targets": 0
+    }
+  },
+  "strict-clippy": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "deadpan-app/ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started": "2026-10-01T11:27:28.461466+00:00",
+    "base_commit": "11f3404f2bf11b623f1bbdf568cd449f2ddd5a16",
+    "diff_sha256": "c74bad8d6e37cbe485f03d0b9abaa75f2198a921d78ad4c293debd51d72faa9b",
+    "source_manifest_sha256": "16f529a6f784c365dbf998754b5d702ef1e8ab1216e0dd8476bc1d7b86e94d1f",
+    "pid": 1061,
+    "exit_code": 0,
+    "seconds": 736.4906421666965,
+    "tests": {
+      "targets": 0
+    },
+    "unit_and_integration": {
+      "targets": 0
+    },
+    "doc_tests": {
+      "targets": 0
+    }
+  },
+  "verified_audio_cli": {
+    "targets": 36,
+    "passed": 698,
+    "failed": 0,
+    "ignored": 0,
+    "measured": 0,
+    "filtered": 0
+  },
+  "distinct_affected_tests": {
+    "targets": 134,
+    "passed": 2169,
+    "failed": 0,
+    "ignored": 0
+  }
+}

@@ -9,6 +9,9 @@ mod interior;
 #[path = "moment/replacement.rs"]
 mod replacement;
 
+#[path = "moment/dormant.rs"]
+mod dormant;
+
 fn ready(parent: &Path) -> Result<(PathBuf, ProjectStore, PreparedSourceRegistration)> {
     let (path, mut store) = project(parent)?;
     let original = retain(&mut store, "offset-bframes.mp4")?;

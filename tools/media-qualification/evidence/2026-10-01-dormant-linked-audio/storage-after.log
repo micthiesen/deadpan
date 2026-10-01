@@ -1,0 +1,25 @@
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 37.55s
+     Running tests/prepared_source_registration.rs (target/debug/deps/prepared_source_registration-eec01583c48349ce)
+
+running 1 test
+test moment::dormant::moments_outside_measured_audio_keep_dormant_link_through_history_and_reopen ... FAILED
+
+failures:
+
+---- moment::dormant::moments_outside_measured_audio_keep_dormant_link_through_history_and_reopen stdout ----
+
+thread 'moment::dormant::moments_outside_measured_audio_keep_dormant_link_through_history_and_reopen' (60597390) panicked at crates/deadpan-store/tests/prepared_source_registration/moment/dormant.rs:36:9:
+assertion `left == right` failed
+  left: 88217
+ right: 89156
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    moment::dormant::moments_outside_measured_audio_keep_dormant_link_through_history_and_reopen
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 22 filtered out; finished in 0.12s
+
+error: test failed, to rerun pass `-p deadpan-store --test prepared_source_registration`

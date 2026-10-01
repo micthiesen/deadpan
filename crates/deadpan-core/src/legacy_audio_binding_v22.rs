@@ -52,7 +52,8 @@ impl<'de> Deserialize<'de> for LegacyAudioBindingState {
         }
         crate::legacy_audio_binding_v21::validate_v22_layouts(raw.get())
             .map_err(de::Error::custom)?;
-        let state = AudioBindingState::from_json(raw.get()).map_err(de::Error::custom)?;
+        let state =
+            crate::legacy_audio_binding_v35::from_json(raw.get()).map_err(de::Error::custom)?;
         if !supports(&state) {
             return Err(de::Error::custom(
                 "new recipe ownership in legacy audio binding",
@@ -63,10 +64,11 @@ impl<'de> Deserialize<'de> for LegacyAudioBindingState {
 }
 
 fn supports(state: &AudioBindingState) -> bool {
-    state
-        .timings()
-        .values()
-        .all(|layout| layout.gap_overrides().is_empty())
+    crate::legacy_audio_binding_v35::supports(state)
+        && state
+            .timings()
+            .values()
+            .all(|layout| layout.gap_overrides().is_empty())
         && state.bindings().values().all(|binding| {
             binding
                 .placements()

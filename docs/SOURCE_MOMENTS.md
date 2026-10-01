@@ -21,9 +21,9 @@ endpoint holding still selects only frames intersecting the selected window.
 Fractional source ticks remain exact, and source-anchor queries reject hidden
 context outside the selected boundaries. See [picture timing](SOURCE_VIDEO_MAPPING.md).
 
-Core schema 35/database 44 store this representation. Development databases
-39 through 43 are refused without migration or writes. Retaining handles does
-not yet implement the Trim, Slip or Roll workflow.
+Core schema 36/database 45 store this representation and dormant linked audio.
+Development databases 39 through 44 are refused without migration or writes.
+Retaining handles does not yet implement the Trim, Slip or Roll workflow.
 
 ## Audio selection and phase
 
@@ -35,12 +35,13 @@ keeps the complete measured integer-sample `SourceAudio.span` and its affine
 local project-frame clock. The independent mix-sample `audio_offset` shifts both
 mapping and selection by the same exact amount.
 
-The interval must be nonempty and contained in `[start, start + frames)`.
+The interval must be ordered and contained between `start` and `start + frames`.
+Equal endpoints explicitly retain dormant audio with no audible sample support.
 Mapping endpoints and offset-shifted endpoints must fit signed frame bounds.
 Validation applies to typed callers as well as JSON. The selected interval need
 not lie inside the integer Source host, which remains an independent crop.
 
-For video seconds `[v0,v1)`, audio seconds `[a0,a1)` and project rate `r`:
+For overlapping video seconds `[v0,v1)`, audio seconds `[a0,a1)` and project rate `r`:
 
 ```text
 mapping start = (a0 - v0) * r
@@ -49,8 +50,12 @@ selection = [(max(a0, v0) - v0) * r, (min(a1, v1) - v0) * r)
 beat duration = ceil((v1 - v0) * r)
 ```
 
-No A/V overlap produces a picture-only moment without changing the Original's
-immutable asset metadata. A positive selection containing no discrete original
+No A/V overlap retains the full audio span and linked intent with an empty
+selection at the nearest audio boundary. Audio before the picture selects its
+mapped end; audio after the picture selects its mapped start. This includes
+touching boundaries and prevents audio in rounded picture slack from leaking
+into the slice. The Original's immutable asset metadata stays unchanged.
+A positive selection containing no discrete original
 sample remains valid and renders zero PCM. Missing terminal-duration evidence,
 unavailable interior audio, mismatched originals/streams, invalid ordinal ranges
 and arithmetic overflow fail explicitly. No priming trim is inferred.
@@ -58,7 +63,8 @@ and arithmetic overflow fail explicitly. No priming trim is inferred.
 The picture and audio selections keep original timestamps. Audio source anchors
 outside the selected interval are unavailable even if their samples remain in
 the retained full-span recipe. Exact selected endpoints remain valid boundary
-anchors. Normal revision checks, occurrence isolation, inverse patches and
+anchors for nonempty selections. Dormant audio has no source-coordinate anchor.
+Normal revision checks, occurrence isolation, inverse patches and
 durable history apply to `set_source_audio_mapping`.
 
 For example, with a retained one-second audio span beginning at source zero in
@@ -105,6 +111,10 @@ Source placement field. `FrozenAudioContext` schema 2 also retains the complete
 phase mapping. Its schema-1 reader uses the closed historical mapping vocabulary;
 old contexts remain usable against matching retained project history. Matching
 ignores only the context wire version and compares every authored/media fact.
+Context schema 5 admits empty Source support. Earlier context and supported
+document/history readers retain their positive-support grammar, including nested
+frozen layouts. Empty Source support produces digital silence without requesting
+source PCM through both ordinary and retained audio clocks.
 
 ## Native selection and paste
 

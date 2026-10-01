@@ -141,6 +141,22 @@ rendered checks plus the expanded Kestrel audit, 3,589 full release checks, and
 native keyboard/reopen verification with consistent SQLite backups. No release
 gate is completed by these results.
 
+[Dormant linked audio](qualification/dormant-linked-audio-2026-10-01.md) retains
+the Original's audio context in silent slices. Empty support emits silence without
+requesting source PCM, and selection growth preserves the full affine mapping and retained
+sample clock. Absent audio remains distinct. Core 36/database 45 and audio context
+5 retain the new meaning while supported older grammars stay closed. This is
+further Trim groundwork for DP-02/DP-05/DP-20; physical-origin translation, effect
+owner clocks and the native Trim workflow remain required. No requirement or
+gate changes status.
+
+Verification covers 2,169 distinct affected-crate tests and both documentation
+tests, including no-read silence, independently expected PCM after selection
+growth and durable linked context through reopen/Undo/Redo. Independent review
+has no remaining findings. Workspace formatting and strict all-target Clippy pass.
+No native app was opened for this increment; the final process check found none
+running.
+
 [Exact picture context](qualification/selected-video-context-2026-10-01.md)
 retains the complete measured video span in new Original slices while keeping
 their visible endpoints separate and exact. Rounded tails hold the last selected

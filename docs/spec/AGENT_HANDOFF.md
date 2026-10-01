@@ -19,6 +19,30 @@ test instances after testing instead of leaving them idle. The previously
 running `dev.thiesen.deadpan.cursor-qa` instance has been quit, and the native
 app inventory confirmed no Deadpan app remained running.
 
+## Dormant linked audio, 2026-10-01
+
+New Original moments outside measured audio retain the complete audio span,
+affine mapping and `Linked` intent with equal selected endpoints. Ordinary and
+captured audio plans return silence without requesting source PCM. Growing the
+selection reveals the retained phase. `audio: null` remains intentionally absent, placed
+sounds still require positive support, and dormant audio has no source anchor.
+See [the contract](../SOURCE_MOMENTS.md) and
+[qualification](../qualification/dormant-linked-audio-2026-10-01.md).
+
+Current core schema 36/database 45 and audio context schema 5 store this meaning.
+Supported historical document, command, patch and context grammars remain closed.
+Unused development databases 39 through 44 reject without mutation or migration;
+create fresh native QA packages. Full Trim still needs physical Source-origin
+translation, retained framing/treatment owner clocks and native boundary controls.
+
+Verification covers 2,169 distinct affected-crate unit/integration tests and both
+compile-fail documentation tests, workspace formatting and strict all-target
+Clippy. The new PCM tests check exact no-read silence,
+fractional-phase selection growth and inverse restoration. Real-media storage
+tests retain the link through close/reopen and Undo/Redo. The evidence keeps the
+old-code failures and corrected test setup; independent review has no findings.
+No native app was opened.
+
 ## Exact picture selection context, 2026-10-01
 
 New Original moments retain the complete measured video span and affine mapping
@@ -29,7 +53,7 @@ Audio placement and beat duration are unchanged. See
 [source picture timing](../SOURCE_VIDEO_MAPPING.md) and
 [qualification](../qualification/selected-video-context-2026-10-01.md).
 
-Current core schema 35 and database 44 reject unused development databases
+At this checkpoint, core schema 35 and database 44 reject unused development databases
 39 through 43 without writes or migration. Existing frozen adapters for 1 through
 38 remain. Create fresh native QA packages.
 
@@ -41,9 +65,8 @@ and normalized framing. Partition crops preserve owner domains, but extension
 beyond those domains still needs explicit semantics. Linked edits must retain
 exact A/V alignment and the captured audio lattice through one atomic commit.
 Extending before a Source's local zero needs an exact translation between live
-and retained audio clocks. Moments with no audio overlap currently omit audio;
-future handle extension needs retained dormant linked context so it can preserve
-that intent without inferring it from the asset receipt.
+and retained audio clocks. The subsequent dormant-audio work above retains
+linked intent for moments with no audio overlap.
 
 Qualification covers 2,956 distinct workspace unit/integration tests plus both
 documentation tests. All 270 plan tests pass after removing duplicate clock

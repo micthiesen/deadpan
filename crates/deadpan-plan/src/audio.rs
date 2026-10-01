@@ -561,6 +561,14 @@ impl RenderPlan {
                 CompiledKind::Source {
                     audio: Some(audio), ..
                 } => {
+                    if audio.selection.start == audio.selection.end {
+                        break (
+                            AudioSignalContent::Leaf(AudioContent::Silence {
+                                reason: SilenceReason::OutsideSourceSelection,
+                            }),
+                            None,
+                        );
+                    }
                     let start = transform.project_at(audio.selection.start)?;
                     let end = transform.project_at(audio.selection.end)?;
                     let envelope = envelope

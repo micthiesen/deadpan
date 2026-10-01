@@ -916,7 +916,15 @@ fn validate_node(node: &FrozenAudioNode) -> Result<(), DocumentError> {
         placement: Some(placement),
     } = &node.kind
     {
-        ExactFrameRange::new(placement.start, placement.end)?;
+        if placement.start == placement.end {
+            if placement.start.compare_integer(i64::MIN).is_lt()
+                || placement.end.compare_integer(i64::MAX).is_gt()
+            {
+                return Err(crate::TimeError::Overflow.into());
+            }
+        } else {
+            ExactFrameRange::new(placement.start, placement.end)?;
+        }
     }
     if let FrozenAudioKind::Repeat {
         gap_duration: FrameDuration::ZERO,

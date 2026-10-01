@@ -1,0 +1,18 @@
+{
+  "recorded_utc": "2026-10-01T11:40:01.117476+00:00",
+  "hardware": "hw.memsize: 137438953472\nmachdep.cpu.brand_string: Apple M5 Max\n",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n",
+  "fixture_sha256": "0542a0f4ef9768b126bceb5954ff5757ba8b4289d6c2df8ea5b7bc0b240c93f3",
+  "native_app_process_check": {
+    "command": [
+      "pgrep",
+      "-fl",
+      "deadpan-app|Deadpan.app"
+    ],
+    "exit_code": 1,
+    "stdout": "",
+    "stderr": ""
+  },
+  "native_app_opened": false,
+  "review": "Independent read-only review of product, regression tests, fixture and historical readers reported no actionable findings."
+}

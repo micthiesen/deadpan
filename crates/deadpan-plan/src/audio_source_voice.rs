@@ -220,7 +220,11 @@ impl<'plan> AudioSignal<'plan> {
         let start = transform.signal_from_local(audio.selection.start)?;
         let end = transform.signal_from_local(audio.selection.end)?;
         let mut extent = self.support.clone();
-        let content = if sample < grid.boundary(start)? {
+        let content = if audio.selection.start == audio.selection.end {
+            AudioContent::Silence {
+                reason: audio.outside_reason(),
+            }
+        } else if sample < grid.boundary(start)? {
             extent.end = minimum(extent.end, start)?;
             AudioContent::Silence {
                 reason: audio.outside_reason(),

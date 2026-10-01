@@ -1,0 +1,36 @@
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 23.62s
+     Running tests/dormant_source.rs (target/debug/deps/dormant_source-c07292514149d14b)
+
+running 3 tests
+test growing_support_reveals_canonical_pcm_without_reclocking_fractional_source_mapping ... FAILED
+test intentionally_absent_audio_stays_absent_and_cannot_be_created_by_growing_support ... FAILED
+test explicit_empty_support_is_digital_silence_without_media_for_live_and_retained_clocks ... FAILED
+
+failures:
+
+---- growing_support_reveals_canonical_pcm_without_reclocking_fractional_source_mapping stdout ----
+
+thread 'growing_support_reveals_canonical_pcm_without_reclocking_fractional_source_mapping' (60586206) panicked at crates/deadpan-audio/tests/dormant_source.rs:129:51:
+called `Result::unwrap()` on an `Err` value: DocumentError { code: InvalidJson, message: "exact ratios require a positive denominator and division requires a nonzero divisor at line 1 column 1378" }
+
+---- intentionally_absent_audio_stays_absent_and_cannot_be_created_by_growing_support stdout ----
+
+thread 'intentionally_absent_audio_stays_absent_and_cannot_be_created_by_growing_support' (60586207) panicked at crates/deadpan-audio/tests/dormant_source.rs:129:51:
+called `Result::unwrap()` on an `Err` value: DocumentError { code: InvalidJson, message: "exact ratios require a positive denominator and division requires a nonzero divisor at line 1 column 1380" }
+
+---- explicit_empty_support_is_digital_silence_without_media_for_live_and_retained_clocks stdout ----
+
+thread 'explicit_empty_support_is_digital_silence_without_media_for_live_and_retained_clocks' (60586205) panicked at crates/deadpan-audio/tests/dormant_source.rs:129:51:
+called `Result::unwrap()` on an `Err` value: DocumentError { code: InvalidJson, message: "exact ratios require a positive denominator and division requires a nonzero divisor at line 1 column 1376" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    explicit_empty_support_is_digital_silence_without_media_for_live_and_retained_clocks
+    growing_support_reveals_canonical_pcm_without_reclocking_fractional_source_mapping
+    intentionally_absent_audio_stays_absent_and_cannot_be_created_by_growing_support
+
+test result: FAILED. 0 passed; 3 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p deadpan-audio --test dormant_source`

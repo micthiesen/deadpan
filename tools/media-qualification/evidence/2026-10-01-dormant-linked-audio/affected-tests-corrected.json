@@ -1,0 +1,29 @@
+{
+  "command": [
+    "rustup",
+    "run",
+    "1.97.1",
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-core",
+    "-p",
+    "deadpan-plan",
+    "-p",
+    "deadpan-media",
+    "-p",
+    "deadpan-audio",
+    "-p",
+    "deadpan-store",
+    "-p",
+    "deadpan-cli"
+  ],
+  "started": "2026-10-01T11:13:42.914750+00:00",
+  "base_commit": "11f3404f2bf11b623f1bbdf568cd449f2ddd5a16",
+  "diff_sha256": "40ffa770deccab3588e906ea494302d4001c5314b85aff25cae71c1eb7e83793",
+  "source_manifest_sha256": "e76e230924322ab4306ba2102d8fd295c5730d5561acc3fcb7948b93122741da",
+  "pid": 97061,
+  "exit_code": 101,
+  "seconds": 96.97784483339638
+}

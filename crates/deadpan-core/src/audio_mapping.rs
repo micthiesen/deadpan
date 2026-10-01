@@ -26,6 +26,8 @@ pub enum SourceAudioMapping {
     /// Keep the full source span's affine mapping and select an exact half-open
     /// part of its output. The selection is in local project frames before
     /// `audio_offset`; it constrains audibility and filter support, never rate.
+    /// Equal endpoints retain a dormant source with no audible/filter support.
+    /// This is distinct from a Source node with no authored audio stream.
     SelectedPlacement {
         start: ExactRatio,
         frames: ExactRatio,
@@ -175,17 +177,11 @@ fn validate_selection(
     selection: ExactFrameRange,
 ) -> Result<(), TimeError> {
     validate_placement(start, frames)?;
-    validate_duration(selection.end.checked_sub(selection.start)?)?;
-    if selection
-        .start
-        .checked_sub(start)?
-        .compare_integer(0)
-        .is_lt()
-        || start
-            .checked_add(frames)?
-            .checked_sub(selection.end)?
-            .compare_integer(0)
-            .is_lt()
+    if selection.start != selection.end {
+        validate_duration(selection.end.checked_sub(selection.start)?)?;
+    }
+    if selection.start.compare(start).is_lt()
+        || selection.end.compare(start.checked_add(frames)?).is_gt()
     {
         return Err(TimeError::InvalidRatio);
     }
@@ -236,7 +232,7 @@ mod tests {
     #[test]
     fn typed_and_wire_selection_validation_reject_the_same_invalid_intervals() {
         let beat = FrameDuration::new(1).unwrap();
-        for (start, end) in [(-1, 1), (0, 0), (2, 1), (0, 3)] {
+        for (start, end) in [(-1, 1), (-1, -1), (3, 3), (2, 1), (0, 3)] {
             let mapping = SourceAudioMapping::SelectedPlacement {
                 start: ExactRatio::ZERO,
                 frames: ExactRatio::integer(2),
@@ -321,5 +317,59 @@ mod tests {
             old["selection"] = Value::Null;
             assert!(serde_json::from_value::<SourceAudioMapping>(old).is_err());
         }
+    }
+
+    #[test]
+    fn empty_selection_retains_full_mapping_and_exact_offset() {
+        let beat = FrameDuration::new(1).unwrap();
+        for point in [ratio(-1, 3), ratio(1, 7), ratio(3, 1)] {
+            let mapping = SourceAudioMapping::SelectedPlacement {
+                start: ratio(-1, 3),
+                frames: ratio(10, 3),
+                selection: ExactFrameRange {
+                    start: point,
+                    end: point,
+                },
+            };
+            assert_eq!(mapping.duration_frames(beat).unwrap(), ratio(10, 3));
+            assert_eq!(
+                serde_json::from_value::<SourceAudioMapping>(
+                    serde_json::to_value(mapping).unwrap()
+                )
+                .unwrap(),
+                mapping
+            );
+            let selection = mapping
+                .selection_frames_with_offset(
+                    beat,
+                    AudioSample(16016),
+                    FrameRate::new(30000, 1001).unwrap(),
+                )
+                .unwrap();
+            assert_eq!(
+                selection.start,
+                point.checked_add(ExactRatio::integer(10)).unwrap()
+            );
+            assert_eq!(selection.start, selection.end);
+        }
+        // Empty support still closes the full mapped endpoints and offset.
+        let mapping = SourceAudioMapping::SelectedPlacement {
+            start: ExactRatio::integer(i64::MAX - 1),
+            frames: ExactRatio::ONE,
+            selection: ExactFrameRange {
+                start: ExactRatio::integer(i64::MAX),
+                end: ExactRatio::integer(i64::MAX),
+            },
+        };
+        assert!(mapping.selection_frames(beat).is_ok());
+        assert!(
+            mapping
+                .selection_frames_with_offset(
+                    beat,
+                    AudioSample(1),
+                    FrameRate::new(48000, 1).unwrap()
+                )
+                .is_err()
+        );
     }
 }

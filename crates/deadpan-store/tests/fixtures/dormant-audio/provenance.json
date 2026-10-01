@@ -1,0 +1,252 @@
+{
+  "purpose": "Synthetic 30000/1001 picture with 44100 Hz mono sound confined to an interior interval.",
+  "command": [
+    "ffmpeg",
+    "-hide_banner",
+    "-loglevel",
+    "error",
+    "-nostdin",
+    "-n",
+    "-i",
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+    "-itsoffset",
+    "1",
+    "-i",
+    "native/deadpan-source/tests/audio-fixtures/pcm-mono-44100.wav",
+    "-map",
+    "0:v:0",
+    "-map",
+    "1:a:0",
+    "-c:v",
+    "copy",
+    "-c:a",
+    "aac",
+    "-b:a",
+    "128k",
+    "-map_metadata",
+    "-1",
+    "-movflags",
+    "+faststart",
+    "crates/deadpan-store/tests/fixtures/dormant-audio/middle-audio.mp4"
+  ],
+  "ffmpeg_version": "ffmpeg version 9.0.1 Copyright (c) 2000-2026 the FFmpeg developers\nbuilt with Apple clang version 21.0.0 (clang-2100.1.1.101)\nconfiguration: --prefix=/opt/homebrew/Cellar/ffmpeg/9.0.1_1 --enable-shared --enable-pthreads --enable-version3 --cc=clang --host-cflags= --host-ldflags= --enable-ffplay --enable-gpl --enable-libsvtav1 --enable-libopus --enable-libx264 --enable-libmp3lame --enable-libdav1d --enable-libvmaf --enable-libvpx --enable-libx265 --enable-openssl --enable-videotoolbox --enable-audiotoolbox --enable-neon\nlibavutil      61.  1.101 / 61.  1.101\nlibavcodec     63.  1.101 / 63.  1.101\nlibavformat    63.  1.101 / 63.  1.101\nlibavdevice    63.  1.101 / 63.  1.101\nlibavfilter    12.  1.101 / 12.  1.101\nlibswscale     10.  1.101 / 10.  1.101\nlibswresample   7.  1.101 /  7.  1.101\n\nExiting with exit code 0\n",
+  "inputs_sha256": {
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+    "native/deadpan-source/tests/audio-fixtures/pcm-mono-44100.wav": "b95b3debd2c83cf2590fddfaa98276c23c3b383b720fd96ac52c2c00c668318b"
+  },
+  "output_sha256": "0542a0f4ef9768b126bceb5954ff5757ba8b4289d6c2df8ea5b7bc0b240c93f3",
+  "output_bytes": 49065,
+  "streams": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "index": 0,
+        "codec_name": "h264",
+        "codec_type": "video",
+        "time_base": "1/30000",
+        "start_pts": 0,
+        "start_time": "0.000000",
+        "duration_ts": 120120,
+        "duration": "4.004000"
+      },
+      {
+        "index": 1,
+        "codec_name": "aac",
+        "codec_type": "audio",
+        "sample_rate": "44100",
+        "channels": 1,
+        "channel_layout": "mono",
+        "time_base": "1/44100",
+        "start_pts": 43076,
+        "start_time": "0.976780",
+        "duration_ts": 45141,
+        "duration": "1.023605"
+      }
+    ]
+  },
+  "decoded_audio_frames": {
+    "frames": [
+      {
+        "pts": 43076,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 44100,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 45124,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 46148,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 47172,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 48196,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 49220,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 50244,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 51268,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 52292,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 53316,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 54340,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 55364,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 56388,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 57412,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 58436,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 59460,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 60484,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 61508,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 62532,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 63556,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 64580,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 65604,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 66628,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 67652,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 68676,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 69700,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 70724,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 71748,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 72772,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 73796,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 74820,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 75844,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 76868,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 77892,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 78916,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 79940,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 80964,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 81988,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 83012,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 84036,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 85060,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 86084,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 87108,
+        "nb_samples": 1024
+      },
+      {
+        "pts": 88132,
+        "nb_samples": 1024
+      }
+    ]
+  }
+}

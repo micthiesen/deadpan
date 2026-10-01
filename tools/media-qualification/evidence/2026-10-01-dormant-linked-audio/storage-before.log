@@ -1,0 +1,10 @@
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 37.67s
+     Running tests/prepared_source_registration.rs (target/debug/deps/prepared_source_registration-eec01583c48349ce)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 23 filtered out; finished in 0.00s
+

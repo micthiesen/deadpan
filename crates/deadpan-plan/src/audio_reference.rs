@@ -610,6 +610,14 @@ impl<'plan> ReferenceAudioClock<'plan> {
                 FrozenAudioKind::Source {
                     placement: Some(placement),
                 } => {
+                    if placement.start == placement.end {
+                        break (
+                            leaf(ReferenceAudioContent::Silence {
+                                reason: SilenceReason::OutsideSourceSelection,
+                            }),
+                            None,
+                        );
+                    }
                     let start = transform.at(placement.start)?;
                     let end = transform.at(placement.end)?;
                     let content = if sample < self.grid.boundary(start)? {

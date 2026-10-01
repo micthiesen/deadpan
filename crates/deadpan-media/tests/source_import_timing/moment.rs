@@ -209,22 +209,46 @@ fn delayed_early_ending_and_nonoverlapping_audio_keep_measured_av_alignment() {
         assert_eq!(audio.placement.span.end().ticks, start + i64::from(count));
         assert_eq!(selected.duration.frames(), 1);
     }
-    for (start, count) in [(-480, 480), (480, 480), (960, 480)] {
+    for (start, count, point) in [
+        (-480, 480, ratio(0, 1)),
+        (480, 480, ratio(3, 10)),
+        (960, 480, ratio(3, 5)),
+    ] {
         let audio = indexed_audio(start, 48_000, &[count]);
         let selected = moment(&video, Some(&audio), 0, 1);
-        assert!(selected.audio.is_none());
+        let dormant = selected.audio.unwrap();
+        assert_eq!(
+            dormant.selection,
+            ExactFrameRange {
+                start: point,
+                end: point
+            }
+        );
+        assert_eq!(dormant.placement.span.start().ticks, start);
+        assert_eq!(dormant.placement.span.end().ticks, start + i64::from(count));
         let node = selected.source_node(AssetId::new("source").unwrap());
-        assert!(node.audio.is_none());
-        assert_eq!(node.audio_mapping, SourceAudioMapping::FitBeat);
-        assert_eq!(node.link, LinkRelation::Independent);
-        // Known absence in this moment does not remove the Original's audio.
-        assert!(
+        assert_eq!(node.audio.as_ref().unwrap().span, dormant.placement.span);
+        assert_eq!(
+            node.audio_mapping.selection_frames(node.duration).unwrap(),
+            dormant.selection
+        );
+        assert_eq!(node.link, LinkRelation::Linked);
+        assert_eq!(node.audio_offset, AudioSample(0));
+        assert_eq!(
             derive_import_timing(Some(&video), Some(&audio), selected.project_rate)
                 .unwrap()
                 .audio
-                .is_some()
+                .unwrap()
+                .span,
+            dormant.placement.span
         );
     }
+    let absent = moment(&video, None, 0, 1);
+    assert!(absent.audio.is_none());
+    let node = absent.source_node(AssetId::new("source").unwrap());
+    assert!(node.audio.is_none());
+    assert_eq!(node.audio_mapping, SourceAudioMapping::FitBeat);
+    assert_eq!(node.link, LinkRelation::Independent);
 }
 
 #[test]
@@ -412,4 +436,34 @@ fn decoded_cfr_offset_and_vfr_moments_retain_real_pts_and_endpoint_picture_ident
             );
         }
     }
+}
+
+#[test]
+fn dormant_and_audible_moments_share_the_original_fractional_sample_clock() {
+    let video = indexed_video(0, &[1, 1, 1], SourceTimeBase::new(1, 1000).unwrap());
+    let audio = indexed_audio(60, 44_100, &[200]);
+    let dormant = moment(&video, Some(&audio), 0, 1);
+    let audible = moment(&video, Some(&audio), 1, 2);
+    let retained = dormant.audio.unwrap();
+    assert_eq!(retained.selection.start, retained.selection.end);
+    assert_eq!(retained.selection.start, ratio(2, 49));
+    assert_eq!(
+        retained.placement.span,
+        audible.audio.unwrap().placement.span
+    );
+    assert_eq!(
+        retained.placement.duration_frames,
+        audible.audio.unwrap().placement.duration_frames
+    );
+    assert_eq!(
+        selected_original_ticks(&dormant, ratio(3, 100)),
+        selected_original_ticks(&audible, ExactRatio::ZERO)
+    );
+    assert_eq!(
+        selected_original_ticks(&audible, ExactRatio::ZERO),
+        ratio(441, 10)
+    );
+    // The source clock may lie before measured audio; only the selected support
+    // controls reads. Derivation does not round the affine clock to sample 60.
+    assert_eq!(audible.audio.unwrap().selection.start, ratio(53, 4900));
 }

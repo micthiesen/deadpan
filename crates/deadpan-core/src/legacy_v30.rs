@@ -5,8 +5,9 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
-use crate::SourceAudioMapping as AudioMapping;
 use crate::document::unique_map;
+use crate::legacy_audio_binding_v35::{LegacyAudioBindingState, project_change};
+use crate::legacy_audio_mapping_v35::AudioMapping;
 use crate::legacy_mark_v13::{LegacyMark, project_mark_changes, project_marks, upgrade_marks};
 use crate::legacy_video_mapping_v34::LegacySourceNode;
 use crate::legacy_video_mapping_v34::VideoMapping;
@@ -210,8 +211,8 @@ pub struct Document {
         skip_serializing_if = "BTreeMap::is_empty"
     )]
     audio_lineage: BTreeMap<NodeId, AudioLineageId>,
-    #[serde(default, skip_serializing_if = "AudioBindingState::is_empty")]
-    audio_bindings: AudioBindingState,
+    #[serde(default, skip_serializing_if = "LegacyAudioBindingState::is_empty")]
+    audio_bindings: LegacyAudioBindingState,
 }
 
 impl Document {
@@ -237,7 +238,7 @@ impl Document {
             sound_allowances: BTreeMap::new(),
             gap_overrides: self.gap_overrides,
             audio_lineage: self.audio_lineage,
-            audio_bindings: self.audio_bindings,
+            audio_bindings: self.audio_bindings.upgrade(),
             schema_version: DOCUMENT_SCHEMA_VERSION,
             project_id: self.project_id,
             revision_id: self.revision_id,
@@ -258,6 +259,10 @@ impl Document {
     }
 
     pub fn matches(&self, document: &ProjectDocument) -> bool {
+        let Some(audio_bindings) = LegacyAudioBindingState::project(&document.audio_bindings)
+        else {
+            return false;
+        };
         if document
             .sound_routes
             .values()
@@ -295,7 +300,7 @@ impl Document {
             overrides: document.overrides.clone(),
             audio_lineage: document.audio_lineage.clone(),
             gap_overrides: document.gap_overrides.clone(),
-            audio_bindings: document.audio_bindings.clone(),
+            audio_bindings,
         }
     }
 }
@@ -506,7 +511,10 @@ impl OldOccurrenceEdit {
                 mapping: mapping.upgrade(),
             },
             Self::SetSourceAudioMapping { mapping, offset } => {
-                OccurrenceEdit::SetSourceAudioMapping { mapping, offset }
+                OccurrenceEdit::SetSourceAudioMapping {
+                    mapping: mapping.upgrade(),
+                    offset,
+                }
             }
             Self::SetHoldDuration { duration } => OccurrenceEdit::SetHoldDuration { duration },
             Self::SetHoldProvider { video } => OccurrenceEdit::SetHoldProvider { video },
@@ -907,7 +915,7 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
             offset,
         } => Command::SetSourceAudioMapping {
             node,
-            mapping,
+            mapping: mapping.upgrade(),
             offset,
         },
         OldCommand::SetHoldDuration { node, duration } => {
@@ -1040,7 +1048,7 @@ struct Patch {
     #[serde(default, deserialize_with = "unique_map")]
     audio_lineage: BTreeMap<NodeId, ValueChange<AudioLineageId>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    audio_bindings: Option<ValueChange<AudioBindingState>>,
+    audio_bindings: Option<ValueChange<LegacyAudioBindingState>>,
 }
 
 impl Patch {
@@ -1089,7 +1097,7 @@ impl Patch {
             overrides: patch.overrides.clone(),
             gap_overrides: patch.gap_overrides.clone(),
             audio_lineage: patch.audio_lineage.clone(),
-            audio_bindings: patch.audio_bindings.clone(),
+            audio_bindings: project_change(&patch.audio_bindings)?,
         })
     }
 }

@@ -31,10 +31,11 @@ impl LegacyAudioBindingState {
 }
 
 pub(crate) fn supports(state: &AudioBindingState) -> bool {
-    state
-        .timings()
-        .values()
-        .all(|layout| layout.gap_overrides().is_empty())
+    crate::legacy_audio_binding_v35::supports(state)
+        && state
+            .timings()
+            .values()
+            .all(|layout| layout.gap_overrides().is_empty())
         && state.gap_bindings().is_empty()
         && state.bindings().values().all(|binding| {
             binding.placements().all(|placement| {
@@ -76,7 +77,7 @@ impl<'de> Deserialize<'de> for LegacyAudioBindingState {
             )));
         }
         validate_v21(raw.get()).map_err(de::Error::custom)?;
-        AudioBindingState::from_json(raw.get())
+        crate::legacy_audio_binding_v35::from_json(raw.get())
             .map(Self)
             .map_err(de::Error::custom)
     }

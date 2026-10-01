@@ -1,0 +1,27 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 02s
+     Running tests/dormant_source.rs (target/debug/deps/dormant_source-c07292514149d14b)
+
+running 3 tests
+test intentionally_absent_audio_stays_absent_and_cannot_be_created_by_growing_support ... ok
+test growing_support_reveals_canonical_pcm_without_reclocking_fractional_source_mapping ... FAILED
+test explicit_empty_support_is_digital_silence_without_media_for_live_and_retained_clocks ... ok
+
+failures:
+
+---- growing_support_reveals_canonical_pcm_without_reclocking_fractional_source_mapping stdout ----
+
+thread 'growing_support_reveals_canonical_pcm_without_reclocking_fractional_source_mapping' (60594889) panicked at crates/deadpan-audio/tests/dormant_source.rs:396:14:
+called `Result::unwrap()` on an `Err` value: InvalidRecipe("block outside authored output interval")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    growing_support_reveals_canonical_pcm_without_reclocking_fractional_source_mapping
+
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+error: test failed, to rerun pass `-p deadpan-audio --test dormant_source`

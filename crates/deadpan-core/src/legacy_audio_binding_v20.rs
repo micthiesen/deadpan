@@ -61,7 +61,7 @@ impl<'de> Deserialize<'de> for LegacyAudioBindingState {
         // or collections. The existing decoder then enforces aggregate budgets,
         // unique map keys, frozen layout schemas and every unchanged value.
         crate::legacy_audio_binding_v21::validate_v20(raw.get()).map_err(de::Error::custom)?;
-        AudioBindingState::from_json(raw.get())
+        crate::legacy_audio_binding_v35::from_json(raw.get())
             .map(Self)
             .map_err(de::Error::custom)
     }

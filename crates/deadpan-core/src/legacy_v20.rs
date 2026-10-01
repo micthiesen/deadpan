@@ -5,9 +5,9 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 
-use crate::SourceAudioMapping as AudioMapping;
 use crate::document::unique_map;
 use crate::legacy_audio_binding_v20::{LegacyAudioBindingState, project_change};
+use crate::legacy_audio_mapping_v35::AudioMapping;
 use crate::legacy_mark_v13::{LegacyMark, project_mark_changes, project_marks, upgrade_marks};
 use crate::legacy_video_mapping_v34::LegacySourceNode;
 use crate::legacy_video_mapping_v34::VideoMapping;
@@ -452,7 +452,10 @@ impl OldOccurrenceEdit {
                 mapping: mapping.upgrade(),
             },
             Self::SetSourceAudioMapping { mapping, offset } => {
-                OccurrenceEdit::SetSourceAudioMapping { mapping, offset }
+                OccurrenceEdit::SetSourceAudioMapping {
+                    mapping: mapping.upgrade(),
+                    offset,
+                }
             }
             Self::SetHoldDuration { duration } => OccurrenceEdit::SetHoldDuration { duration },
             Self::SetHoldProvider { video } => OccurrenceEdit::SetHoldProvider { video },
@@ -756,7 +759,7 @@ pub fn upgrade_request(json: &str) -> Result<CommandRequest, DocumentError> {
             offset,
         } => Command::SetSourceAudioMapping {
             node,
-            mapping,
+            mapping: mapping.upgrade(),
             offset,
         },
         OldCommand::SetHoldDuration { node, duration } => {

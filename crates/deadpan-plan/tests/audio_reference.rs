@@ -1533,3 +1533,156 @@ fn invalid_owner_paths_ranges_and_budgets_fail_before_results() {
         ));
     }
 }
+
+fn dormant_source(point: ExactRatio) -> BeatNode {
+    let mut node = source(32);
+    let NodeKind::Source { source } = &mut node.kind else {
+        panic!()
+    };
+    source.audio_mapping = SourceAudioMapping::SelectedPlacement {
+        start: ExactRatio::integer(-10),
+        frames: ExactRatio::integer(60),
+        selection: ExactFrameRange {
+            start: point,
+            end: point,
+        },
+    };
+    node
+}
+
+#[test]
+fn dormant_source_is_one_silent_allocation_in_live_point_and_frozen_queries() {
+    for point in [
+        ExactRatio::integer(-10),
+        ratio(13, 7),
+        ExactRatio::integer(50),
+    ] {
+        let doc = document(
+            FrameRate::new(48000, 1).unwrap(),
+            &["source"],
+            vec![("source", dormant_source(point))],
+        );
+        let plan = RenderPlan::compile(&doc).unwrap();
+        let spans = plan
+            .audio(AudioSample(0)..AudioSample(32), Default::default())
+            .unwrap()
+            .spans;
+        assert_eq!(spans.len(), 1);
+        assert_eq!(spans[0].samples, AudioSample(0)..AudioSample(32));
+        assert!(matches!(
+            spans[0].content,
+            AudioContent::Silence {
+                reason: SilenceReason::OutsideSourceSelection
+            }
+        ));
+        let processing = plan
+            .audio_processing(AudioSample(0)..AudioSample(32), Default::default())
+            .unwrap();
+        assert!(matches!(
+            processing.spans[0].content,
+            AudioSignalContent::Leaf(AudioContent::Silence {
+                reason: SilenceReason::OutsideSourceSelection
+            })
+        ));
+        let signal = plan
+            .audio_signal()
+            .query(SignalSample(0)..SignalSample(32), Default::default())
+            .unwrap();
+        assert_eq!(signal.spans.len(), 1);
+        assert!(matches!(
+            signal.spans[0].content,
+            AudioSignalContent::Leaf(AudioContent::Silence {
+                reason: SilenceReason::OutsideSourceSelection
+            })
+        ));
+        plan.audio_owners(AudioSample(0)..AudioSample(32), Default::default())
+            .unwrap();
+        plan.audio_gain_owners(AudioSample(0)..AudioSample(32), Default::default())
+            .unwrap();
+        let frozen = compile(&doc);
+        let spans = frozen
+            .root_clock()
+            .query(samples(0, 32), Default::default())
+            .unwrap()
+            .spans;
+        assert_eq!(spans.len(), 1);
+        assert_eq!(spans[0].samples, samples(0, 32));
+        assert!(matches!(
+            spans[0].content,
+            ReferenceAudioContent::Silence {
+                reason: SilenceReason::OutsideSourceSelection
+            }
+        ));
+    }
+}
+
+#[test]
+fn dormant_bound_recipe_retains_its_lattice_and_can_reveal_existing_phase() {
+    let doc = document(
+        FrameRate::new(48000, 1).unwrap(),
+        &["source"],
+        vec![("source", dormant_source(ratio(13, 7)))],
+    );
+    let state = capture_unbound_audio_bindings(
+        &doc,
+        AudioTimingId {
+            allocation: RevisionId::new("captured").unwrap(),
+            ordinal: 0,
+        },
+    )
+    .unwrap();
+    let mut wire = serde_json::to_value(&doc).unwrap();
+    wire["audio_bindings"] = serde_json::to_value(&state).unwrap();
+    let bound = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let plan = RenderPlan::compile(&bound).unwrap();
+    let query = plan
+        .audio_processing(AudioSample(0)..AudioSample(32), Default::default())
+        .unwrap();
+    assert_eq!(query.spans.len(), 1);
+    assert!(matches!(
+        query.spans[0].content,
+        AudioSignalContent::Leaf(AudioContent::Silence {
+            reason: SilenceReason::OutsideSourceSelection
+        })
+    ));
+    plan.audio_owners(AudioSample(0)..AudioSample(32), Default::default())
+        .unwrap();
+    plan.audio_gain_owners(AudioSample(0)..AudioSample(32), Default::default())
+        .unwrap();
+    assert_eq!(bound.audio_bindings(), &state);
+    let tx = apply(
+        &bound,
+        &CommandRequest {
+            project_id: bound.project_id().clone(),
+            expected_revision: bound.revision_id().clone(),
+            new_revision: RevisionId::new("audible").unwrap(),
+            command: Command::SetSourceAudioMapping {
+                node: id("source"),
+                offset: AudioSample(0),
+                mapping: SourceAudioMapping::SelectedPlacement {
+                    start: ExactRatio::integer(-10),
+                    frames: ExactRatio::integer(60),
+                    selection: ExactFrameRange {
+                        start: ratio(13, 7),
+                        end: ExactRatio::integer(20),
+                    },
+                },
+            },
+        },
+    )
+    .unwrap();
+    let audible = tx.forward.apply(&bound).unwrap();
+    assert_eq!(audible.audio_bindings(), &state);
+    let plan = RenderPlan::compile(&audible).unwrap();
+    let query = plan
+        .audio_processing(AudioSample(10)..AudioSample(11), Default::default())
+        .unwrap();
+    let AudioSignalContent::Bound(binding) = &query.spans[0].content else {
+        panic!("retained lattice was discarded")
+    };
+    assert_eq!(
+        binding.reference_at_offset(10).unwrap(),
+        ExactRatio::integer(10)
+    );
+    assert_eq!(tx.inverse.apply(&audible).unwrap(), bound);
+}

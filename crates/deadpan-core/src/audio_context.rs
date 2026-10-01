@@ -15,7 +15,7 @@ use crate::{
     RevisionId, SourceAudio, SourceAudioMapping,
 };
 
-const AUDIO_CONTEXT_SCHEMA: u32 = 4;
+const AUDIO_CONTEXT_SCHEMA: u32 = 5;
 
 /// Full authored audio input. Source mapping and signed mix offset are retained
 /// because their effective placement need not fit SourceAudioMapping::Placement.
@@ -48,6 +48,37 @@ enum LegacyInput {
 }
 
 impl LegacyInput {
+    fn upgrade(self) -> FrozenAudioInput {
+        match self {
+            Self::Source {
+                source,
+                mapping,
+                offset,
+            } => FrozenAudioInput::Source {
+                source,
+                mapping: mapping.upgrade(),
+                offset,
+            },
+            Self::Hold { source } => FrozenAudioInput::Hold { source },
+        }
+    }
+}
+
+/// Schemas 2 through 4 admit selections but require positive audible support.
+#[derive(Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+enum LegacyInputV4 {
+    Source {
+        source: SourceAudio,
+        mapping: crate::legacy_audio_mapping_v35::AudioMapping,
+        offset: AudioSample,
+    },
+    Hold {
+        source: SourceAudio,
+    },
+}
+
+impl LegacyInputV4 {
     fn upgrade(self) -> FrozenAudioInput {
         match self {
             Self::Source {
@@ -228,6 +259,10 @@ impl FrozenAudioContext {
                 serde_json::from_str::<LegacyInput>(raw.get())
                     .map_err(DocumentError::json)?
                     .upgrade()
+            } else if wire.schema_version < 5 {
+                serde_json::from_str::<LegacyInputV4>(raw.get())
+                    .map_err(DocumentError::json)?
+                    .upgrade()
             } else {
                 serde_json::from_str(raw.get()).map_err(DocumentError::json)?
             };
@@ -278,6 +313,13 @@ impl FrozenAudioContext {
             ));
         }
         self.layout.validate()?;
+        if self.schema_version < 5
+            && !crate::legacy_audio_binding_v35::supports_layout(&self.layout)
+        {
+            return Err(invalid(
+                "legacy audio context cannot contain dormant source support",
+            ));
+        }
         self.validate_treatments()?;
         if self.inputs.len() > MAX_DOCUMENT_NODES || self.assets.len() > MAX_DOCUMENT_ASSETS {
             return Err(limit("audio context inventory exceeds document limits"));

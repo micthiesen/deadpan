@@ -1,0 +1,66 @@
+{
+  "purpose": "Synthetic 30000/1001 picture with 44100 Hz mono sound confined to an interior interval.",
+  "command": [
+    "ffmpeg",
+    "-hide_banner",
+    "-loglevel",
+    "error",
+    "-nostdin",
+    "-n",
+    "-i",
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+    "-itsoffset",
+    "1",
+    "-i",
+    "native/deadpan-source/tests/audio-fixtures/pcm-mono-44100.wav",
+    "-map",
+    "0:v:0",
+    "-map",
+    "1:a:0",
+    "-c:v",
+    "copy",
+    "-c:a",
+    "pcm_s16le",
+    "-map_metadata",
+    "-1",
+    "-movflags",
+    "+faststart",
+    "crates/deadpan-store/tests/fixtures/dormant-audio/middle-audio.mov"
+  ],
+  "ffmpeg_version": "ffmpeg version 9.0.1 Copyright (c) 2000-2026 the FFmpeg developers\nbuilt with Apple clang version 21.0.0 (clang-2100.1.1.101)\nconfiguration: --prefix=/opt/homebrew/Cellar/ffmpeg/9.0.1_1 --enable-shared --enable-pthreads --enable-version3 --cc=clang --host-cflags= --host-ldflags= --enable-ffplay --enable-gpl --enable-libsvtav1 --enable-libopus --enable-libx264 --enable-libmp3lame --enable-libdav1d --enable-libvmaf --enable-libvpx --enable-libx265 --enable-openssl --enable-videotoolbox --enable-audiotoolbox --enable-neon\nlibavutil      61.  1.101 / 61.  1.101\nlibavcodec     63.  1.101 / 63.  1.101\nlibavformat    63.  1.101 / 63.  1.101\nlibavdevice    63.  1.101 / 63.  1.101\nlibavfilter    12.  1.101 / 12.  1.101\nlibswscale     10.  1.101 / 10.  1.101\nlibswresample   7.  1.101 /  7.  1.101\n\nExiting with exit code 0\n",
+  "inputs_sha256": {
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+    "native/deadpan-source/tests/audio-fixtures/pcm-mono-44100.wav": "b95b3debd2c83cf2590fddfaa98276c23c3b383b720fd96ac52c2c00c668318b"
+  },
+  "output_sha256": "d8ce75ea89fb65eb82d35686d10cd7c584aaff4a83e25d52015e134fd25b97d5",
+  "output_bytes": 120627,
+  "streams": {
+    "programs": [],
+    "stream_groups": [],
+    "streams": [
+      {
+        "index": 0,
+        "codec_name": "h264",
+        "codec_type": "video",
+        "time_base": "1/30000",
+        "start_pts": 0,
+        "start_time": "0.000000",
+        "duration_ts": 120120,
+        "duration": "4.004000"
+      },
+      {
+        "index": 1,
+        "codec_name": "pcm_s16le",
+        "codec_type": "audio",
+        "sample_rate": "44100",
+        "channels": 1,
+        "channel_layout": "mono",
+        "time_base": "1/44100",
+        "start_pts": 44100,
+        "start_time": "1.000000",
+        "duration_ts": 44117,
+        "duration": "1.000385"
+      }
+    ]
+  }
+}

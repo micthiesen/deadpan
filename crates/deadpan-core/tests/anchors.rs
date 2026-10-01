@@ -1772,3 +1772,46 @@ fn audio_placement_isolates_one_play_and_retains_source_marks_through_retimes() 
         assert_eq!(mark.boundary, coordinate.boundary);
     }
 }
+
+#[test]
+fn dormant_source_audio_has_no_resolvable_source_boundary() {
+    let original = source_document();
+    let document = edit(
+        &original,
+        Command::SetSourceAudioMapping {
+            node: node("source"),
+            offset: AudioSample(0),
+            mapping: SourceAudioMapping::SelectedPlacement {
+                start: ExactRatio::ZERO,
+                frames: ExactRatio::integer(60),
+                selection: ExactFrameRange {
+                    start: ExactRatio::integer(30),
+                    end: ExactRatio::integer(30),
+                },
+            },
+        },
+        "dormant",
+    );
+    let index = AnchorIndex::new(&document).unwrap();
+    assert_eq!(
+        index
+            .resolve_target(&source_target(SourceMoment::AudioSample {
+                sample: 0,
+                sample_rate: 48000
+            }))
+            .unwrap_err()
+            .code,
+        AnchorErrorCode::OutsideMapping
+    );
+    let video = source_target(SourceMoment::Timestamp {
+        stream: SourceStream::Video,
+        timestamp: SourceTimestamp {
+            ticks: 0,
+            time_base: SourceTimeBase::new(1, 90000).unwrap(),
+        },
+    });
+    assert_eq!(
+        index.resolve_target(&video).unwrap().exact_frame,
+        ExactRatio::integer(30)
+    );
+}

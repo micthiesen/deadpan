@@ -2,10 +2,11 @@
 
 use serde::{Deserialize, Serialize};
 
+use crate::legacy_audio_mapping_v35::AudioMapping;
 use crate::source_mapping::{validate_duration, validate_placement};
 use crate::{
-    AudioSample, EndpointPolicy, ExactRatio, FrameDuration, LinkRelation, SourceAudio,
-    SourceAudioMapping, SourceNode, SourceVideo, SourceVideoMapping,
+    AudioSample, EndpointPolicy, ExactRatio, FrameDuration, LinkRelation, SourceAudio, SourceNode,
+    SourceVideo, SourceVideoMapping,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -110,7 +111,7 @@ pub(crate) struct LegacySourceNode {
     audio: Option<SourceAudio>,
     link: LinkRelation,
     audio_offset: AudioSample,
-    audio_mapping: SourceAudioMapping,
+    audio_mapping: AudioMapping,
     video_mapping: VideoMapping,
 }
 
@@ -122,7 +123,7 @@ impl LegacySourceNode {
             audio: self.audio,
             link: self.link,
             audio_offset: self.audio_offset,
-            audio_mapping: self.audio_mapping,
+            audio_mapping: self.audio_mapping.upgrade(),
             video_mapping: self.video_mapping.upgrade(),
         }
     }
@@ -134,7 +135,7 @@ impl LegacySourceNode {
             audio: source.audio.clone(),
             link: source.link,
             audio_offset: source.audio_offset,
-            audio_mapping: source.audio_mapping,
+            audio_mapping: AudioMapping::project(source.audio_mapping)?,
             video_mapping: VideoMapping::project(source.video_mapping)?,
         })
     }

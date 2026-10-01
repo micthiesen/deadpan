@@ -289,7 +289,7 @@ fn selected_context_keeps_full_phase_mapping_and_captures_only_its_audible_exten
         context
     );
     let mut wire = serde_json::to_value(context).unwrap();
-    assert_eq!(wire["schema_version"], json!(4));
+    assert_eq!(wire["schema_version"], json!(5));
     wire["schema_version"] = json!(1);
     assert!(FrozenAudioContext::from_json(&wire.to_string()).is_err());
     let escaped = wire
@@ -322,7 +322,7 @@ fn ingress_rejects_open_or_inconsistent_inventory() {
         FrozenAudioContext::capture(&fixture(AudioSample(0), SourceAudioMapping::FitBeat)).unwrap();
     let mut value: Value = serde_json::from_str(&context.to_json().unwrap()).unwrap();
     let baseline = value.clone();
-    value["schema_version"] = json!(5);
+    value["schema_version"] = json!(6);
     assert_eq!(
         FrozenAudioContext::from_json(&value.to_string())
             .unwrap_err()
@@ -371,8 +371,8 @@ fn ingress_rejects_open_or_inconsistent_inventory() {
         DocumentErrorCode::LimitExceeded
     );
     let duplicate = context.to_json().unwrap().replacen(
-        "\"schema_version\":4",
-        "\"schema_version\":4,\"schema_version\":4",
+        "\"schema_version\":5",
+        "\"schema_version\":5,\"schema_version\":5",
         1,
     );
     assert!(FrozenAudioContext::from_json(&duplicate).is_err());
@@ -639,4 +639,76 @@ fn effective_placement_can_exceed_authored_placement_bounds() {
         FrozenAudioContext::from_json(&context.to_json().unwrap()).unwrap(),
         context
     );
+}
+
+#[test]
+fn dormant_context_keeps_input_asset_offset_and_distinguishes_absent_audio() {
+    let mapping = SourceAudioMapping::SelectedPlacement {
+        start: ExactRatio::ZERO,
+        frames: ExactRatio::integer(20),
+        selection: ExactFrameRange {
+            start: ratio(2, 1),
+            end: ratio(2, 1),
+        },
+    };
+    let document = fixture(AudioSample(16016), mapping);
+    let context = FrozenAudioContext::capture(&document).unwrap();
+    assert_eq!(
+        context.inputs()[&node("source")],
+        FrozenAudioInput::Source {
+            source: SourceAudio {
+                asset: asset("original"),
+                span: span()
+            },
+            mapping,
+            offset: AudioSample(16016),
+        }
+    );
+    assert!(context.assets().contains_key(&asset("original")));
+    assert!(matches!(&context.layout().nodes()[&node("source")].kind,
+        FrozenAudioKind::Source { placement: Some(placement) } if placement.start == ratio(12, 1) && placement.end == ratio(12, 1)));
+    assert!(!context.inputs().contains_key(&node("pictureonly")));
+    assert_eq!(
+        FrozenAudioContext::from_json(&context.to_json().unwrap()).unwrap(),
+        context
+    );
+    let wire = serde_json::to_value(&context).unwrap();
+    assert_eq!(wire["schema_version"], json!(5));
+    for version in 1..=4 {
+        let mut forged = wire.clone();
+        forged["schema_version"] = json!(version);
+        assert!(FrozenAudioContext::from_json(&forged.to_string()).is_err());
+        // Reject a dormant frozen layout even when the input mapping itself is
+        // legal old vocabulary. New meaning cannot hide in the retained layout.
+        forged["inputs"]["source"]["mapping"] = json!({"type":"fit_beat"});
+        assert!(FrozenAudioContext::from_json(&forged.to_string()).is_err());
+    }
+}
+
+#[test]
+fn positive_audio_context_support_keeps_all_pre_dormant_versions_readable() {
+    for mapping in [
+        SourceAudioMapping::FitBeat,
+        SourceAudioMapping::SelectedPlacement {
+            start: ExactRatio::ZERO,
+            frames: ratio(20, 1),
+            selection: ExactFrameRange {
+                start: ratio(2, 1),
+                end: ratio(4, 1),
+            },
+        },
+    ] {
+        let document = fixture(AudioSample(0), mapping);
+        let context = FrozenAudioContext::capture(&document).unwrap();
+        for version in 1..=4 {
+            let mut wire = serde_json::to_value(&context).unwrap();
+            wire["schema_version"] = json!(version);
+            let result = FrozenAudioContext::from_json(&wire.to_string());
+            if version == 1 && matches!(mapping, SourceAudioMapping::SelectedPlacement { .. }) {
+                assert!(result.is_err());
+            } else {
+                assert!(result.unwrap().matches_document(&document).unwrap());
+            }
+        }
+    }
 }

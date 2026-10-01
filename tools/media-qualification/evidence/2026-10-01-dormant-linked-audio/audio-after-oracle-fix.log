@@ -1,0 +1,11 @@
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.59s
+     Running tests/dormant_source.rs (target/debug/deps/dormant_source-c07292514149d14b)
+
+running 3 tests
+test intentionally_absent_audio_stays_absent_and_cannot_be_created_by_growing_support ... ok
+test explicit_empty_support_is_digital_silence_without_media_for_live_and_retained_clocks ... ok
+test growing_support_reveals_canonical_pcm_without_reclocking_fractional_source_mapping ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+

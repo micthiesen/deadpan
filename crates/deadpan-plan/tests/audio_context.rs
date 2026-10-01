@@ -354,3 +354,62 @@ fn billion_play_context_keeps_sparse_override_and_bounded_last_seek() {
         Err(PlanError::AudioOnlyContext)
     ));
 }
+
+#[test]
+fn frozen_dormant_audio_keeps_assets_and_emits_silence_through_partition() {
+    let mut leaf = source(32, Some(audio(0, 32)), 3);
+    let NodeKind::Source { source } = &mut leaf.kind else {
+        panic!()
+    };
+    source.audio_mapping = SourceAudioMapping::SelectedPlacement {
+        start: ExactRatio::integer(-8),
+        frames: ExactRatio::integer(64),
+        selection: ExactFrameRange {
+            start: ExactRatio::integer(7),
+            end: ExactRatio::integer(7),
+        },
+    };
+    let doc = document(
+        &["crop"],
+        [
+            (
+                "crop",
+                retime(
+                    "source",
+                    16,
+                    8..24,
+                    PitchPolicy::FollowSpeed,
+                    RetimePurpose::Partition,
+                ),
+            ),
+            ("source", leaf),
+        ],
+        BTreeMap::new(),
+    );
+    let context = FrozenAudioContext::capture(&doc).unwrap();
+    assert!(context.inputs().contains_key(&id("source")));
+    assert!(
+        context
+            .assets()
+            .contains_key(&AssetId::new("original").unwrap())
+    );
+    let frozen = RenderPlan::compile_audio_context(&context).unwrap();
+    let live = RenderPlan::compile(&doc).unwrap();
+    let range = AudioSample(0)..AudioSample(16);
+    let actual = frozen.audio(range.clone(), Default::default()).unwrap();
+    assert_eq!(
+        actual,
+        live.audio(range.clone(), Default::default()).unwrap()
+    );
+    assert_eq!(actual.spans.len(), 1);
+    assert!(matches!(
+        actual.spans[0].content,
+        AudioContent::Silence {
+            reason: SilenceReason::OutsideSourceSelection
+        }
+    ));
+    frozen
+        .audio_gain_owners(range.clone(), Default::default())
+        .unwrap();
+    frozen.audio_owners(range, Default::default()).unwrap();
+}
