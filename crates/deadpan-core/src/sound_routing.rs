@@ -487,10 +487,18 @@ impl RootSoundEditCapture {
                 index,
                 slice,
                 ..
-            } => RootSoundOperation::Insert {
-                at: document.source_splice_boundary(parent, *index)?,
-                duration: slice.duration(),
-            },
+            } => {
+                let at = document.source_splice_boundary(parent, *index)?;
+                if slice.duration() == FrameDuration::ZERO {
+                    // No root time changes when an empty structural child is
+                    // added. Keep recipes and routing journals untouched.
+                    return Ok(None);
+                }
+                RootSoundOperation::Insert {
+                    at,
+                    duration: slice.duration(),
+                }
+            }
             Command::SpliceSliceAt {
                 parent,
                 target,

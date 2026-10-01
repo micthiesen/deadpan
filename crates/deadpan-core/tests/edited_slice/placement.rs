@@ -373,7 +373,7 @@ fn joint_pools_clock_overflow_and_split_mark_fragment_limits_reject_atomically()
     );
 }
 
-fn with_sound(document: &ProjectDocument) -> ProjectDocument {
+pub(super) fn with_sound(document: &ProjectDocument) -> ProjectDocument {
     assert_eq!(document.duration().unwrap(), duration(10));
     let time_base = SourceTimeBase::new(1, 48_000).unwrap();
     let span = SourceSpan::new(

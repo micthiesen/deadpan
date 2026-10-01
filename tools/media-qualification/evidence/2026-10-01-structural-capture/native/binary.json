@@ -1,0 +1,7 @@
+{
+  "binary": "/tmp/deadpan-structural-capture-20261001/native-qa/DeadpanStructuralQA.app/Contents/MacOS/deadpan-app",
+  "sha256": "4c8329ccc9f2d698dd1e772b8a45d7695b103181c3cb3848d829e8213a9b7f02",
+  "profile": "debug with ui-harness",
+  "source_manifest_sha256": "55df165772764063e162c8b1eb397f8e691aff3f2a625bd39d4711355236d4c5",
+  "functional_native_qa_only": true
+}

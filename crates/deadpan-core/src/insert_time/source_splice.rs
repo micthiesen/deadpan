@@ -41,6 +41,11 @@ impl ProjectDocument {
         slice: &crate::CapturedEditSlice,
     ) -> Result<SourceSpliceInterior, EditError> {
         slice.check_destination(self)?;
+        if slice.duration() == FrameDuration::ZERO {
+            return Err(super::invalid(
+                "empty copied structure requires an explicit Sequence seam",
+            ));
+        }
         self.splice_interior(
             parent,
             target,

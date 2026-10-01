@@ -1,4 +1,6 @@
 use super::*;
+use crate::preview::copied::Content;
+use std::sync::Arc;
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     let baseline = document(d)?.clone();
@@ -14,16 +16,11 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         "Resize before checking captured deletion command hints",
         false,
     )?;
-    // A copied Original region is independent of the deleted Edit interval.
+    // A successful cut replaces the previous Original register only after save.
     d.command("source")?;
     d.chord(&[Key::G, Key::G, Key::V, Key::Num1, Key::Num0, Key::L, Key::Y])?;
     d.command("sequence")?;
     select(d, 20, 30, true)?;
-    let copied = d
-        .app()
-        .copied
-        .original()
-        .map(|value| value.ordinals.clone());
     let revision = d.revision();
     d.key(Key::Colon)?;
     d.events(
@@ -35,17 +32,19 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.key(Key::Enter)?;
     d.changed(&revision)?;
     d.check(
-        "The command cuts its captured range without changing the independent Original register",
+        "The saved command cut replaces the Original register with its historical Edit range",
         d.app().sequence_cursor == 20
             && d.app().sequence_length() == 110
-            && d.app()
-                .copied
-                .original()
-                .map(|value| value.ordinals.clone())
-                == copied,
-        json!({"range":[20,30],"copied":copied}),
+            && matches!(d.app().copied.content(), Some(Content::Edited(copied))
+                if copied.slice().range() == range(20, 30)
+                    && copied.slice().revision_id().as_str() == revision
+                    && copied.slice().duration().frames() == 10),
+        json!({"range":[20,30],"source_revision":revision,"copied":"Edited"}),
         d.snapshot(),
     )?;
+    let Some(Content::Edited(copied)) = d.app().copied.content().cloned() else {
+        return Err("Saved cut did not produce an edited copy".into());
+    };
     undo(d, &baseline)?;
 
     select(d, 20, 20, true)?;
@@ -80,6 +79,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.check(
         "A captured deletion rejects a revision change instead of retargeting",
         *document(d)? == saved
+            && matches!(d.app().copied.content(), Some(Content::Edited(current))
+                if Arc::ptr_eq(current, &copied))
             && d.app()
                 .error
                 .as_deref()
@@ -113,6 +114,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.check(
         "Late completion cannot supply a missing deletion target",
         *document(d)? == saved
+            && matches!(d.app().copied.content(), Some(Content::Edited(current))
+                if Arc::ptr_eq(current, &copied))
             && d.app()
                 .error
                 .as_deref()

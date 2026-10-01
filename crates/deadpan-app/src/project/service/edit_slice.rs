@@ -21,6 +21,8 @@ pub(super) struct PreparedCopy {
 impl Service {
     pub(super) fn clear_copied_slice(&mut self) {
         self.captured_slice = None;
+        self.cut_slice = None;
+        self.last_cut = None;
         self.copied_view = None;
         self.splice_source_view = None;
     }
@@ -47,7 +49,7 @@ impl Service {
         Ok(())
     }
 
-    fn capture_edit_slice(&self, request: &CaptureRequest) -> Result<Arc<Captured>> {
+    pub(super) fn capture_edit_slice(&self, request: &CaptureRequest) -> Result<Arc<Captured>> {
         self.check_copy_context(&request.id)?;
         let document = self
             .store
@@ -68,12 +70,11 @@ impl Service {
             ProjectFrame(i64::try_from(owner.end).map_err(display)?),
         )
         .map_err(display)?;
-        check_range(bounds, request.range)?;
         let slice = Arc::new(
-            CapturedEditSlice::capture(
+            CapturedEditSlice::capture_selection(
                 &document,
                 &request.parent,
-                request.range,
+                &request.selection,
                 AudioTimingId {
                     allocation: revision(),
                     ordinal: 0,
@@ -82,11 +83,28 @@ impl Service {
             .map_err(display)?,
         );
         self.check_copy_context(&request.id)?;
+        let source_path = std::iter::once("Your edit".to_owned())
+            .chain(
+                request
+                    .scope
+                    .groups()
+                    .iter()
+                    .map(|id| document.nodes()[id].label.clone()),
+            )
+            .collect();
+        let child_label = match &request.selection {
+            deadpan_core::SliceCaptureSelection::Range { .. } => None,
+            deadpan_core::SliceCaptureSelection::Child { node } => {
+                Some(document.nodes()[node].label.clone())
+            }
+        };
         Ok(Arc::new(Captured {
             id: request.id.clone(),
             scope: request.scope.clone(),
             slice,
             bounds,
+            source_path,
+            child_label,
         }))
     }
 
@@ -171,10 +189,10 @@ impl Service {
             });
         }
         let document = self.validate_copy(copied)?;
-        check_range(copied.bounds(), id.range)?;
         let slice = if id.range == copied.slice().range() {
             copied.slice().clone()
         } else {
+            check_range(copied.bounds(), id.range)?;
             Arc::new(
                 CapturedEditSlice::capture(
                     &document,

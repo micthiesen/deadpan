@@ -53,23 +53,57 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.wait_for("Open nested deletion fixture", |app| {
         app.workspace.is_some() && !app.service.is_busy()
     })?;
+    d.command("source")?;
+    d.chord(&[Key::G, Key::G, Key::V, Key::Num5, Key::L, Key::Y])?;
+    let copied = d
+        .app()
+        .copied
+        .original()
+        .cloned()
+        .ok_or("Missing accepted Original before rejected composite cut")?;
     d.command("sequence")?;
     select(d, 30, 60, true)?;
     let saved = document(d)?.clone();
     let selection = d.app().edit_range.clone();
+    let reader = ProjectStore::open(
+        &d.app().workspace.as_ref().unwrap().path,
+        AccessMode::ReadOnly,
+    )
+    .map_err(|error| error.to_string())?;
+    let history = reader
+        .history_availability()
+        .map_err(|error| error.to_string())?;
+    const UNSUPPORTED: &str = "Range endpoints require a Source, ordinary Hold or supported fragment; enter the intended group for other structures";
     d.key(Key::D)?;
     d.wait_for(
-        "Unsupported composite endpoint is rejected by the project service",
-        |app| !app.service.is_busy() && app.project_error.is_some(),
+        "Unsupported composite endpoint settles with its typed cut rejection",
+        |app| {
+            !app.service.is_busy()
+                && !app.copied.is_pending()
+                && app.error.as_deref() == Some(UNSUPPORTED)
+        },
     )?;
     d.check(
-        "A partial composite endpoint fails without losing the selected range",
+        "A partial composite cut rejects without changing its range, accepted copy or durable history",
         *document(d)? == saved
             && d.app().edit_range == selection
-            && d.app().project_error.is_some(),
-        json!("enter group before cutting its interior"),
+            && d.app().copied.original().is_some_and(|current| {
+                current.identity == copied.identity && current.ordinals == copied.ordinals
+            })
+            && !d.app().copied.is_pending()
+            && d.app().error.as_deref() == Some(UNSUPPORTED)
+            && d.app().project_error.is_none()
+            && reader.snapshot().map_err(|error| error.to_string())? == saved
+            && reader
+                .history_availability()
+                .map_err(|error| error.to_string())?
+                == history
+            && (d.app().workspace.as_ref().unwrap().can_undo,
+                d.app().workspace.as_ref().unwrap().can_redo) == history,
+        json!({"error":UNSUPPORTED,"range":[30,60],"original":[0,5],"history":history,"unchanged":true}),
         d.snapshot(),
     )?;
+    drop(reader);
     d.key(Key::Escape)?;
     d.chord(&[Key::Enter, Key::Enter])?;
     d.check(

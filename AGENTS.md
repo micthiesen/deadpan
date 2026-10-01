@@ -292,6 +292,17 @@ the exact join. A saved edit survives preview-refresh failure with its receipt
 and explicit reopen guidance; stale views cannot consume its cursor/selection.
 See [selected ranges](docs/AUDIO_REANCHORS.md#selected-ranges).
 
+Native cuts capture an exact range or direct child privately, commit one deletion,
+then publish its historical contents to the session register. Failed capture or
+commit preserves the previous copy. Keep the last durable cut receipt independent
+of the latest query or failed cut response, so saved refresh failures retain the
+copy and reopening warning. New register intent may supersede an old reply but
+cannot cancel queued authored work or consume selection in its stale workspace.
+Fresh Undo revisions must not revive that warning. Whole-child capture includes
+empty Sequence structures; zero-duration paste uses an explicit sibling slot,
+never a time-only guess, and allocates no timing. Empty placement schedules no
+source pictures or audio. See [edited slices](docs/EDITED_SLICES.md).
+
 Edited-content capture, seam/interior insertion and range replacement use
 `CapturedEditSlice`, `SpliceSlice`, `SpliceSliceAt` and `ReplaceSlice` through the
 core/headless path. Capture lattices before Split and suffix entries before

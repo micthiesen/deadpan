@@ -10,6 +10,7 @@ mod edited;
 mod input;
 mod move_range;
 mod replacement;
+mod structural_capture;
 
 const APPLY: &str = "Place slice · Enter";
 const CANCEL: &str = "Cancel · Esc";
@@ -222,6 +223,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     replacement::run(d)?;
     edited::run(d)?;
     move_range::run(d)?;
+    structural_capture::run(d)?;
     Ok(())
 }
 

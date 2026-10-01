@@ -14,6 +14,7 @@ use crate::worker::{EndpointIdentity, EndpointInput, EndpointReply, EndpointSour
 
 mod comparison;
 mod controls;
+mod empty;
 mod pictures;
 
 use comparison::{Comparison, Site, map_comparison};
@@ -95,6 +96,10 @@ impl Draft {
     #[cfg(feature = "ui-harness")]
     pub(in crate::preview) fn error_for_check(&self) -> Option<&str> {
         self.error.as_deref()
+    }
+    #[cfg(feature = "ui-harness")]
+    pub(in crate::preview) fn empty_endpoints_for_check(&self) -> bool {
+        self.empty_structure() && !self.endpoints_pending && self.endpoints.empty_for_check()
     }
     #[cfg(feature = "ui-harness")]
     pub(in crate::preview) fn site_for_check(&self) -> &'static str {
@@ -245,6 +250,10 @@ impl Draft {
         matches!(self.proposal.source, Source::Edited { .. })
     }
 
+    fn empty_structure(&self) -> bool {
+        empty::is_structural(&self.proposal.source)
+    }
+
     fn changed(&mut self, endpoints: bool) -> Result<(), String> {
         self.proposal.id.change = self
             .proposal
@@ -257,7 +266,7 @@ impl Draft {
                 .endpoint_change
                 .checked_add(1)
                 .ok_or("Slice endpoint identities exhausted")?;
-            self.endpoints_pending = true;
+            self.endpoints_pending = !self.empty_structure();
             self.source_view = None;
         }
         self.prepared = None;
@@ -370,7 +379,7 @@ impl DeadpanApp {
                             .map_err(|_| "Negative source Out")?
                 }
             };
-            if range.start >= range.end
+            if (range.start >= range.end && !empty::is_structural(&source))
                 || range.start < source_bounds.start
                 || range.end > source_bounds.end
             {
@@ -388,7 +397,13 @@ impl DeadpanApp {
         let Some(token) = self.next_serial() else {
             return;
         };
-        let slot = seams.iter().position(|at| *at == target.cursor);
+        let empty_structure = empty::is_structural(&source);
+        let slot = empty::initial_slot(
+            &seams,
+            &children,
+            target.selected_beat.as_ref().filter(|_| empty_structure),
+            target.cursor,
+        );
         let destination = match placement_at(&seams, &children, slot, target.cursor) {
             Ok(destination) => destination,
             Err(error) => {
@@ -442,7 +457,7 @@ impl DeadpanApp {
             source_bounds,
             source_view: None,
             endpoint_change: 1,
-            endpoints_pending: true,
+            endpoints_pending: !empty_structure,
             endpoints: pictures::Display::new(self.render_state.clone()),
             entry_cursor: target.cursor,
             entry_source: target.source_cursor,
@@ -517,7 +532,7 @@ impl DeadpanApp {
                                 .as_ref()
                                 .is_none_or(|old| !Arc::ptr_eq(old, &view))
                             {
-                                draft.endpoints_pending = true;
+                                draft.endpoints_pending = !draft.empty_structure();
                             }
                             draft.source_view = Some(view);
                         }
@@ -565,6 +580,15 @@ impl DeadpanApp {
                         || prepared.base.document.project_id() != &update.id.project
                         || prepared.base.document.revision_id() != &update.id.base_revision
                         || prepared.parent != draft.proposal.parent
+                        || prepared.empty_slot
+                            != if draft.empty_structure() {
+                                match draft.proposal.destination {
+                                    Destination::Slot(slot) => Some(slot),
+                                    _ => None,
+                                }
+                            } else {
+                                None
+                            }
                         || prepared.movement.is_some()
                             != (draft.proposal.operation == Operation::Move)
                         || prepared.removed
@@ -626,6 +650,7 @@ impl DeadpanApp {
         if let Some(reply) = self.endpoint_worker.take_reply()
             && let Some(draft) = &mut self.splice
             && !draft.invalidated
+            && !draft.empty_structure()
             && reply.identity == draft.endpoint_identity()
         {
             draft.endpoints.receive(reply);
@@ -652,7 +677,7 @@ impl DeadpanApp {
         if draft.invalidated || draft.applying {
             return;
         }
-        if draft.endpoints_pending {
+        if draft.endpoints_pending && !draft.empty_structure() {
             let input = match &draft.proposal.source {
                 Source::Original { .. } => Some(EndpointInput::Original(draft.base.clone())),
                 Source::Edited { .. } => draft
@@ -698,6 +723,9 @@ impl DeadpanApp {
             return None;
         }
         if frame.is_none() && matches!(draft.focus, Focus::In | Focus::Out) {
+            if draft.empty_structure() {
+                return None;
+            }
             return Some(match &draft.proposal.source {
                 Source::Original {
                     asset, ordinals, ..
@@ -722,13 +750,16 @@ impl DeadpanApp {
                 },
             });
         }
+        if draft.frames() == 0 {
+            return None;
+        }
         let at = frame
             .unwrap_or(draft.cursor)
             .min(draft.frames().saturating_sub(1));
         let view = ProjectView::Sequence {
             frame: ProjectFrame(i64::try_from(at).ok()?),
         };
-        if draft.before || draft.prepared.is_none() {
+        if draft.before || draft.prepared.is_none() || draft.empty_structure() {
             Some(Work::Project {
                 workspace: draft.base.clone(),
                 view,
@@ -810,6 +841,17 @@ impl DeadpanApp {
             action,
             SpliceKey::Play | SpliceKey::Loop | SpliceKey::Compare
         ) {
+            if let Some(draft) = &mut self.splice
+                && draft.empty_structure()
+                && (draft.frames() == 0 || matches!(draft.focus, Focus::In | Focus::Out))
+            {
+                draft.error = Some(if draft.frames() == 0 {
+                    "The destination edit is empty; there are no pictures or audio to audition."
+                } else {
+                    "This empty group has no pictures or audio. Use d or f to audition the destination."
+                }.into());
+                return;
+            }
             let ready = self.splice.as_ref().is_some_and(|draft| {
                 draft.prepared.is_some() && !draft.dirty && draft.pending.is_none()
             });
@@ -840,7 +882,12 @@ impl DeadpanApp {
         let mut endpoints = false;
         match action {
             SpliceKey::Move => {
-                if !draft.edited_source() {
+                let entering_move = draft.proposal.operation != Operation::Move;
+                if entering_move && draft.empty_structure() {
+                    draft.error = Some(empty::PLACEMENT_REASON.into());
+                    return;
+                }
+                if entering_move && !draft.edited_source() {
                     draft.error = Some(
                         "Original stays immutable. Copy a range from Your edit to move it.".into(),
                     );
@@ -858,6 +905,10 @@ impl DeadpanApp {
                 changed = true;
             }
             SpliceKey::Replace => {
+                if draft.empty_structure() {
+                    draft.error = Some(empty::PLACEMENT_REASON.into());
+                    return;
+                }
                 if draft.replacement.is_none() {
                     draft.error = Some(
                         "Select an Edit range with v before opening Place slice to replace it."
@@ -882,9 +933,15 @@ impl DeadpanApp {
             }
             SpliceKey::In => {
                 draft.focus = Focus::In;
+                if draft.empty_structure() {
+                    draft.error = Some(empty::ENDPOINT_REASON.into());
+                }
             }
             SpliceKey::Out => {
                 draft.focus = Focus::Out;
+                if draft.empty_structure() {
+                    draft.error = Some(empty::ENDPOINT_REASON.into());
+                }
             }
             SpliceKey::Destination => {
                 if draft.replacing {
@@ -919,6 +976,10 @@ impl DeadpanApp {
                 };
                 match draft.focus {
                     Focus::In => {
+                        if draft.empty_structure() {
+                            draft.error = Some(empty::ENDPOINT_REASON.into());
+                            return;
+                        }
                         let range = draft.source_range();
                         let start = advance(range.start, draft.source_bounds.start, range.end - 1);
                         if let Err(error) = draft.proposal.source.set_boundaries(start..range.end) {
@@ -929,6 +990,10 @@ impl DeadpanApp {
                         endpoints = true;
                     }
                     Focus::Out => {
+                        if draft.empty_structure() {
+                            draft.error = Some(empty::ENDPOINT_REASON.into());
+                            return;
+                        }
                         let range = draft.source_range();
                         let end = advance(range.end, range.start + 1, draft.source_bounds.end);
                         if let Err(error) = draft.proposal.source.set_boundaries(range.start..end) {
@@ -939,6 +1004,10 @@ impl DeadpanApp {
                         endpoints = true;
                     }
                     Focus::Destination => {
+                        if draft.empty_structure() {
+                            draft.error = Some(empty::PLACEMENT_REASON.into());
+                            return;
+                        }
                         let destination = advance(
                             draft.destination,
                             draft.seams[0],
@@ -1018,6 +1087,12 @@ impl DeadpanApp {
         let Some(draft) = &mut self.splice else {
             return;
         };
+        if draft.frames() == 0 {
+            draft.error = Some(
+                "The destination edit is empty; there are no pictures or audio to audition.".into(),
+            );
+            return;
+        }
         if let Some(heard) = heard {
             draft.position = Some(heard);
         }

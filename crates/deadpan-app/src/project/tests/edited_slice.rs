@@ -8,6 +8,9 @@ use deadpan_core::{CapturedEditSlice, FrameRange};
 #[path = "edited_slice/move_range.rs"]
 mod move_range;
 
+#[path = "edited_slice/cut.rs"]
+mod cut;
+
 fn range(start: i64, end: i64) -> FrameRange {
     FrameRange::new(ProjectFrame(start), ProjectFrame(end)).unwrap()
 }
@@ -31,7 +34,7 @@ fn capture_request(workspace: &Workspace, request: u64, range: FrameRange) -> Ca
         },
         scope: SequenceScope::default(),
         parent: workspace.document.root().clone(),
-        range,
+        selection: deadpan_core::SliceCaptureSelection::Range { range },
     }
 }
 

@@ -1,4 +1,4 @@
-//! Deletion captures its own target, independently of the Original copy register.
+//! A cut captures one exact deletion target and updates the register after save.
 
 use super::*;
 
@@ -7,7 +7,6 @@ pub(super) struct CommandTarget {
     base: Arc<Workspace>,
     scope: SequenceScope,
     parent: NodeId,
-    cursor: ProjectFrame,
     edit: ProjectEdit,
 }
 
@@ -40,15 +39,10 @@ impl DeadpanApp {
                 ProjectEdit::Delete { node }
             }
         };
-        let cursor = ProjectFrame(
-            i64::try_from(self.sequence_cursor)
-                .map_err(|_| "Edit cursor exceeds the project frame range")?,
-        );
         Ok(CommandTarget {
             base,
             scope,
             parent,
-            cursor,
             edit,
         })
     }
@@ -56,6 +50,7 @@ impl DeadpanApp {
     pub(super) fn delete_captured(&mut self, captured: Result<CommandTarget, String>) {
         self.cancel_repeats("deletion was requested");
         self.bindings.clear();
+        self.copied.supersede();
         let result = captured.and_then(|target| {
             let workspace = self
                 .workspace
@@ -72,17 +67,35 @@ impl DeadpanApp {
                         .into(),
                 );
             }
-            Ok(ProjectRequest::Edit {
-                expected_session: target.base.session,
-                expected_revision: target.base.document.revision_id().clone(),
+            let selection = match target.edit {
+                ProjectEdit::Delete { node } => deadpan_core::SliceCaptureSelection::Child { node },
+                ProjectEdit::DeleteRange { range, .. } => {
+                    deadpan_core::SliceCaptureSelection::Range { range }
+                }
+                _ => return Err("The captured command is not a picture cut.".into()),
+            };
+            Ok(crate::project::slice::CaptureRequest {
+                id: crate::project::slice::CopyId {
+                    session: target.base.session,
+                    project: target.base.document.project_id().clone(),
+                    source_revision: target.base.document.revision_id().clone(),
+                    request: 0,
+                },
                 scope: target.scope,
-                cursor: target.cursor,
-                edit: target.edit,
+                parent: target.parent,
+                selection,
             })
         });
         match result {
-            Ok(request) => {
-                self.submit(request);
+            Ok(mut request) => {
+                let Some(serial) = self.next_serial() else {
+                    return;
+                };
+                request.id.request = serial;
+                if self.submit(ProjectRequest::CutEditSlice(request.clone())) {
+                    self.copied.expect_cut(request);
+                    self.message = Some("Saving cut and copy…".into());
+                }
             }
             Err(error) => self.error = Some(error),
         }

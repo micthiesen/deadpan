@@ -123,10 +123,11 @@ impl Timings {
     ) -> Result<Self, EditError> {
         let splits = placement.split_count() != 0;
         // Seam paste retains its original reserved suffix slot, even at the end.
-        let suffix = match placement.destination {
-            Destination::Replacement { range, .. } => range.end().0 < total,
-            _ => true,
-        };
+        let suffix = placement.slice.duration() != FrameDuration::ZERO
+            && match placement.destination {
+                Destination::Replacement { range, .. } => range.end().0 < total,
+                _ => true,
+            };
         let destination = u32::from(splits) + u32::from(suffix);
         let count = u32::try_from(imported)
             .ok()
@@ -277,11 +278,17 @@ pub(crate) fn apply(
         .filter(|(id, _)| !working.nodes.contains_key(*id))
         .map(|(id, lineage)| (id.clone(), lineage.clone()))
         .collect();
-    crate::audio_lineage::reconcile(&working, &mut result, command)?;
+    if placement.slice.duration() != FrameDuration::ZERO {
+        crate::audio_lineage::reconcile(&working, &mut result, command)?;
+    }
     result.audio_lineage.extend(retained_lineage);
     let mut marks = std::mem::take(&mut result.marks);
     marks.retain(|id, _| !working.marks.contains_key(id));
-    result.marks = crate::marks::transform_marks(&working, &result, command)?;
+    result.marks = if placement.slice.duration() == FrameDuration::ZERO {
+        working.marks.clone()
+    } else {
+        crate::marks::transform_marks(&working, &result, command)?
+    };
     let copied = crate::marks::finish_slice_marks(&result, marks)?;
     result.marks.extend(copied);
     crate::audio_binding_lifecycle::prune(&mut result);

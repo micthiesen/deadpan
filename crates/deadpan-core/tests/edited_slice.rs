@@ -5,6 +5,9 @@ use std::collections::{BTreeMap, BTreeSet};
 #[path = "edited_slice/placement.rs"]
 mod placement;
 
+#[path = "edited_slice/child.rs"]
+mod child;
+
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }

@@ -11,6 +11,8 @@ mod delete_range;
 mod move_range;
 #[path = "edited_slice/placement.rs"]
 mod placement;
+#[path = "edited_slice/structural_capture.rs"]
+mod structural_capture;
 
 fn id(name: &str) -> NodeId {
     NodeId::new(name).unwrap()

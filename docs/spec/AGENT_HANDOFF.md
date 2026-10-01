@@ -327,14 +327,47 @@ formatting and strict all-target Clippy including the UI harness. The evidence
 collector rechecked all 1,348 final source inputs. No new UI or device
 qualification is claimed.
 
-Next implement exact whole-child capture, including empty Sequence structures,
-and zero-duration paste at an explicit child slot. Then connect native deletion
-and register publication through one service operation: capture privately from
-the pre-edit revision, commit one deletion, and publish the retained copy only
-after durable success. Failed capture/commit preserves the prior register;
-saved refresh failure retains the successful cut and reopening guidance.
-Cut-to-register, named/persistent registers and temporal occurrence interiors
-remain open. No DP requirement or release gate is complete.
+The whole-child and cut register increment below follows this checkpoint.
+No DP requirement or release gate is complete.
+
+## Whole-child copy and cut register, 2026-10-01
+
+`SliceCaptureSelection::Child` names exactly one direct child of an ordinary
+Sequence, including zero-duration nested groups. Never infer that identity from
+its interval: several empty children can share a boundary. Range captures keep
+their previous wire form; the literal old-binary fixture checks saved history
+without requiring a project migration. Empty insertion uses an explicit child
+slot, fresh imported identities and no timing allocation. Existing picture,
+audio, marks and sound clocks remain unchanged.
+
+Native `y` copies the selected child when no Visual range exists. Empty Visual
+selection remains an error. Visual `d`, `dd` and captured `:delete` submit one
+typed cut request: capture privately from the pre-edit revision, commit one
+deletion, then publish the retained copy. Failed capture/commit preserves the
+prior register. Keep the last durable cut receipt independent of the latest
+query or failed cut reply. A newer yank may accept its copy while the old
+workspace remains visible, but must not consume that stale selection or erase
+the saved refresh warning. Undo has a fresh revision and must not revive that
+warning. Register supersession never cancels an already queued authored cut.
+
+Place slice shows an empty group's retained name/path and nested structure.
+It schedules no source pictures or audio and selects exact same-time sibling
+slots with `j/k`. A wholly empty destination has no invented frame zero.
+Empty sources reject refinement, Move, Replace and interior insertion. Positive
+whole-child captures retain ordinary Move support; its endpoint rules exclude
+adjacent empty siblings. Move always permits returning to Copy after a no-op.
+
+See [qualification](../qualification/structural-capture-2026-10-01.md) for review
+corrections, retained failures and exact verification boundaries. All 2,883
+workspace tests pass. Final formatting, strict all-target Clippy and 386
+default-feature app/headless tests pass; rendered cut/placement checks pass
+150/820 cases plus their Kestrel audits. Native keys and SQLite backups verify
+cut, paste, cancellation and Undo. The QA app was closed and its writer lock
+released. Full release replay passes 3,434 checks with no findings or failed
+timing samples. Core 34/database 43 are unchanged.
+Named/persistent registers, role-only placement, motion/text-object
+operators and temporal occurrence interiors remain open. No DP requirement or
+release gate is complete.
 
 ## Native identity, 2026-09-30
 
@@ -355,6 +388,9 @@ unchanged, and the user-requested window position/size was retained. Inspection
 of pinned rfd confirms inferred sheet parenting and retained completion, with no
 confirmed deadlock. Explicit parenting through `eframe::Frame` is a possible
 hardening step that still needs a real native reproduction and verification.
+The user subsequently confirmed that all such QA windows belong to this session:
+open, close and test them as needed, then close them when testing finishes. The
+earlier window and the structural-capture QA window have both been closed.
 
 ## Native saved-render recovery, 2026-09-30
 

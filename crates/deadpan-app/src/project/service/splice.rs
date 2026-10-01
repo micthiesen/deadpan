@@ -325,12 +325,31 @@ impl Service {
             .checked_add(duration.frames())
             .ok_or("Slice range overflow")?;
         let range = FrameRange::new(draft.cursor, ProjectFrame(end)).map_err(display)?;
-        let node = crate::project::splice::result_forest_first(
-            &snapshot.document,
-            &plan,
-            &draft.proposal.parent,
-            range,
-        )?;
+        let empty_slot = if duration == deadpan_core::FrameDuration::ZERO {
+            let crate::project::splice::Destination::Slot(index) = draft.proposal.destination
+            else {
+                return Err(
+                    "Empty groups can only be inserted at an explicit Sequence slot".into(),
+                );
+            };
+            Some(index)
+        } else {
+            None
+        };
+        let node = if empty_slot.is_some() {
+            draft
+                .request
+                .node()
+                .cloned()
+                .ok_or("Empty slice request has no inserted root")?
+        } else {
+            crate::project::splice::result_forest_first(
+                &snapshot.document,
+                &plan,
+                &draft.proposal.parent,
+                range,
+            )?
+        };
         if draft
             .request
             .node()
@@ -346,6 +365,7 @@ impl Service {
             node,
             parent: draft.proposal.parent.clone(),
             range,
+            empty_slot,
             removed: draft.request.removed(),
             movement: draft.request.movement().cloned(),
         };

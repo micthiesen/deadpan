@@ -45,6 +45,13 @@ pub(super) struct Display {
 }
 
 impl Display {
+    #[cfg(feature = "ui-harness")]
+    pub(super) fn empty_for_check(&self) -> bool {
+        self.identity.is_none()
+            && self.pictures.is_none()
+            && self.targets.iter().all(Option::is_none)
+    }
+
     pub fn new(state: egui_wgpu::RenderState) -> Self {
         Self {
             state,

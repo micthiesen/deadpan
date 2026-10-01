@@ -95,7 +95,9 @@ pub use audio_reference::*;
 pub use basis::*;
 pub use command::*;
 pub use document::*;
-pub use edit_slice::{CapturedEditSlice, SliceIdentityRequirements, SlicePasteIdentities};
+pub use edit_slice::{
+    CapturedEditSlice, SliceCaptureSelection, SliceIdentityRequirements, SlicePasteIdentities,
+};
 pub use exact::ExactRatio;
 pub use framing::*;
 pub use generated::*;

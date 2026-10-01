@@ -500,7 +500,29 @@ impl DeadpanApp {
         let update = self.feedback.take_project_update(&self.service);
         #[cfg(not(feature = "ui-harness"))]
         let update = self.service.take_update();
-        if let Some(update) = update {
+        if let Some(mut update) = update {
+            let unrefreshed_cut = update
+                .saved_cut
+                .as_ref()
+                .is_some_and(|receipt| receipt.needs_refresh(update.workspace.as_deref()));
+            if unrefreshed_cut
+                && let Some(message) = update
+                    .saved_cut
+                    .as_ref()
+                    .and_then(|receipt| receipt.refresh_error.as_ref())
+            {
+                update.message = Some(message.clone());
+            }
+            if update.committed.is_none()
+                && let Some(receipt) = update.saved_cut.as_ref()
+                && update.workspace.as_ref().is_some_and(|workspace| {
+                    workspace.session == receipt.copied.id().session
+                        && workspace.document.project_id() == &receipt.copied.id().project
+                        && workspace.document.revision_id() == &receipt.committed.revision
+                })
+            {
+                update.committed = Some(receipt.committed.clone());
+            }
             self.finish_gain_commit(&update);
             self.receive_room_tone(update.room_tone, update.room_tone_error);
             self.receive_gain(update.gain);
@@ -649,7 +671,8 @@ impl DeadpanApp {
             // A durable receipt can outlive a failed workspace refresh. Keep
             // the visible cursor/selection bound to the snapshot we actually
             // have; the saved warning explains that reopening is required.
-            let unrefreshed_commit = update.committed.is_some() && !commit_matches_visible;
+            let unrefreshed_commit =
+                unrefreshed_cut || (update.committed.is_some() && !commit_matches_visible);
             if completion == selection::Completion::Edit && unrefreshed_commit {
                 completion = selection::Completion::None;
             }
@@ -734,6 +757,7 @@ impl DeadpanApp {
                 self.bindings = bindings;
             }
             self.receive_copied(update.captured_slice, unrefreshed_commit);
+            self.receive_cut(update.cut_slice);
         }
         #[cfg(feature = "ui-harness")]
         let reply = self.feedback.take_reply(&self.worker);
@@ -1237,9 +1261,13 @@ impl DeadpanApp {
     }
 
     fn action(&mut self, action: Action, context: &egui::Context) {
-        if action == Action::CopyMoment {
-            // A newer yank owns the intent even when its focused pane rejects
-            // copying. An older background reply cannot finish that request.
+        if matches!(action, Action::CopyMoment | Action::DeleteSelection)
+            || (action == Action::Edit(BeatEdit::Delete)
+                && self.pane != Pane::Sounds
+                && !self.event_focused())
+        {
+            // A newer yank or picture cut owns register intent even when its
+            // focused pane rejects it. Sound deletion is an independent action.
             self.copied.supersede();
         }
         if action == Action::Render {
@@ -2101,7 +2129,7 @@ impl DeadpanApp {
                         style::key_hint(ui, "h l", "frame");
                         style::key_hint(ui, "j k", "beat");
                         style::key_hint(ui, "v", if self.edit_range.active { "finish range" } else { "select range" });
-                        style::key_hint(ui, "y", if self.copied.is_pending() { "copying range…" } else { "copy range" });
+                        style::key_hint(ui, "y", if self.copied.is_pending() { "copy pending…" } else if self.edit_selection() == navigation::EditSelection::None { "copy beat" } else { "copy range" });
                         if self.selected_group() { style::key_hint(ui, "Enter", "open group"); }
                         if !self.sequence_scope.groups().is_empty() { style::key_hint(ui, "Backspace", "parent"); }
                         style::key_hint(ui, "s", "split");
@@ -2676,8 +2704,8 @@ impl DeadpanApp {
                                 self.edit(BeatEdit::WrapRepeat(2));
                             }
                             let selection = self.edit_selection();
-                            if ui.add_enabled(selection == navigation::EditSelection::Range && !self.service.is_busy(),
-                                egui::Button::new(if self.copied.is_pending() { "Copying range…" } else { "Copy range  ·  y" })
+                            if ui.add_enabled(selection != navigation::EditSelection::Empty && !self.service.is_busy(),
+                                egui::Button::new(if self.copied.is_pending() { "Copy pending…" } else if selection == navigation::EditSelection::None { "Copy beat  ·  y" } else { "Copy range  ·  y" })
                                     .min_size(egui::vec2(ui.available_width(), 28.0)))
                                 .on_hover_text("Retain this linked Edit slice for paste or visible placement. Copying does not change the edit.")
                                 .clicked()
@@ -2686,10 +2714,10 @@ impl DeadpanApp {
                             }
                             if ui
                                 .add_enabled(selection != navigation::EditSelection::Empty,
-                                    egui::Button::new(if selection == navigation::EditSelection::None { "Delete beat  ·  dd" } else { "Delete selection  ·  d" })
+                                    egui::Button::new(if selection == navigation::EditSelection::None { "Cut beat  ·  dd" } else { "Cut selection  ·  d" })
                                         .min_size(egui::vec2(ui.available_width(), 28.0)),
                                 )
-                                .on_hover_text("Cut linked picture and sound, close the time, and retain the join. One Undo restores it.")
+                                .on_hover_text("Save one linked cut and copy its structure for paste. Failure keeps the previous copy; Undo restores the removed content.")
                                 .clicked()
                             {
                                 self.edit(BeatEdit::Delete);
@@ -2960,7 +2988,7 @@ impl DeadpanApp {
                         (":hold 1.5s", "Choose an exact pause duration: 12f, 250ms, 1.5s, or 01:02.500. Seconds round once to project frames. Zero makes no edit. Source and pause fragments work inside Sequence groups; Repeat and Retime interiors remain unavailable."),
                         ("rr / 3rr", "Wrap the selected beat in two / three total plays. Rapid wraps wait in order, up to 16 pending; each has its own undo. Escape, navigation or another action cancels the waiting wraps."),
                         ("v · motions · d", "Cut the nonempty active or finished Edit range and close its time in one undo. Linked picture and sound stay together. Source/Hold/fragment endpoints and whole intervening beats work in an ordinary Sequence. Enter a group to cut inside it. Empty selections never cut a beat."),
-                        ("dd / :delete", "Without a Visual selection, dd cuts one whole beat. :delete captures the exact range or beat when command entry opens; stale or missing targets fail. The cursor stays at a range cut's join. Undo restores it."),
+                        ("dd / :delete", "Without a Visual selection, dd cuts one whole beat, including an empty group. :delete captures the exact range or beat when command entry opens; stale or missing targets fail. A saved cut replaces the copy register; p/P or :splice places that copy. Failure keeps the previous copy. The cursor stays at a range cut's join. Undo restores the removed content and retains the copy for this project session."),
                         (":repeat 3", "Set total plays on a Repeat; wrap a different selected beat."),
                         (":wrap-repeat 3", "Always add an enclosing Repeat, including nesting."),
                         (":retime 0.75 pitch=preserve", "Slow the selected beat to 0.75× input speed. Use pitch=tape to let pitch follow speed. Exact fractions such as 3/4 work too. The command shows its resolved duration before Enter; Escape cancels entry."),
@@ -2983,7 +3011,7 @@ impl DeadpanApp {
                         ("Camera r · Enter · Esc", "Reset the draft, apply once, or restore entry framing. Normal adjustments preserve an existing curve."),
                         (",z / ,c", "One undoable 1.35× punch / whole-beat smoothstep creep to 1.35×. These replace an existing framing curve."),
                         (":hold-duration 11f", "Set a selected Hold to exactly 11 project frames."),
-                        ("v / :select · y / :yank", "Start or finish a half-open time selection in Original or Your edit. h/l, counted motions and gg/G extend it; Edit j/k also extends to beat boundaries. A finished range stays fixed. y copies either range. Edit copies retain their captured revision through later edits and Undo. In Your edit, d cuts a selected range and p/P replaces it. Esc clears selection. Source and Edit ranges stay independent. Changing the Edit revision or group discards its selection."),
+                        ("v / :select · y / :yank", "Start or finish a half-open time selection in Original or Your edit. h/l, counted motions and gg/G extend it; Edit j/k also extends to beat boundaries. A finished range stays fixed. y copies either range; without an Edit selection it copies the whole selected beat, including an empty group. Edit copies retain their captured revision through later edits and Undo. In Your edit, d cuts a selected range and p/P replaces it. Empty groups paste at explicit Sequence slots without adding time. Esc clears selection. Source and Edit ranges stay independent. Changing the Edit revision or group discards its selection."),
                         ("p / P · :paste / :paste-before", "In Your edit, a selected nonempty Edit range is replaced by the copied Original or Edit slice in one undoable transaction. Without an Edit range, p/P pastes after/before the selected beat in the displayed group. An empty group accepts a paste at its start. Command entry captures the exact range, including its absence; stale destinations fail."),
                         (":splice", "Preview a copied Original or Edit slice at the Edit cursor. Insert is the default. m toggles Move for a fresh Edit copy: one undoable edit relocates the linked slice and selects its full result. A copy from an older revision can still be inserted; yank again to move. With a captured Edit range, r toggles Replace selection and always uses Copy. Returning to Insert or Move restores the retained insertion destination. i/o refines source endpoints without changing the register; d selects destination and j/k chooses seams. In Move, s inspects removal and f insertion; h/l inspects nearby frames. b compares Before/Proposed at that join, Space auditions, and Shift+Space loops its local context. Enter commits once; Escape restores entry selection and cursors. Source/Hold/fragment endpoints and whole intervening beats work in ordinary Sequence scopes. Enter a group before opening placement to target it."),
                         (",i / :insert", "Reuse the full Original after the selected beat in the current group, or append to an empty group. Legacy projects insert their selected source."),

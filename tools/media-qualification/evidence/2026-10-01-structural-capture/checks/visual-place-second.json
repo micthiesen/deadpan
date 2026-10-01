@@ -1,0 +1,20 @@
+{
+  "command": [
+    "target/debug/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "place-slice",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+    "--retain-projects",
+    "--output",
+    "/tmp/deadpan-structural-capture-20261001/visual-place-second"
+  ],
+  "started": "2026-10-01T08:03:01.679226+00:00",
+  "base_commit": "2ea675646abc24e8410616af74b4193ed4af51da",
+  "diff_sha256": "d1e07cb97c0af71f7f52611310e660f454692a647e46f13a3c08c0a63707b169",
+  "source_manifest_sha256": "ddb54d17e81a96be75533ec7b2c27645f06f7ab9d86ba4d2bea470a18f7f6436",
+  "pid": 57063,
+  "exit_code": 1,
+  "seconds": 27.140523415990174
+}

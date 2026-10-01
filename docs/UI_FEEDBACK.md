@@ -11,6 +11,19 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+The [whole-child copy and cut increment](qualification/structural-capture-2026-10-01.md)
+adds exact structural capture, cut-to-register and empty-group placement. Final
+rendered runs pass 150 cut and 820 placement checks, each plus the 11,904-case
+Kestrel audit. Inspected minimum/default captures show the saved join, historical
+paste, empty source structure and exact neighboring slots; empty-group placement
+retains a 281/461-point viewer. Native keys and SQLite backups verify cut,
+cancel, paste, Undo and whole-child copy. The QA app was closed afterward.
+Full release replay passes 3,434 checks with no findings or failed timing
+samples; warm navigation, cached Repeat and Hold picture completion p95 is
+1.517/5.844/5.785 ms. Source manifests, corrected replay assumptions and
+injected-delivery limits remain in the qualification record. Full editor,
+physical listening, native IME and complete accessibility acceptance remain open.
+
 The [native Move increment](qualification/native-move-2026-09-30.md) adds explicit
 Copy/Move selection, local removal/insertion views and exact final range selection
 to `place-slice`. Its final visual run passes 752 checks plus the 11,904-case

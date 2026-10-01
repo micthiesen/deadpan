@@ -3,7 +3,9 @@
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use deadpan_core::{CapturedEditSlice, FrameRange, NodeId, ProjectId, RevisionId};
+use deadpan_core::{
+    CapturedEditSlice, FrameRange, NodeId, ProjectId, RevisionId, SliceCaptureSelection,
+};
 use deadpan_store::slice_preview::AdmittedSliceView;
 
 use super::{RegisteredSource, SequenceScope, splice};
@@ -16,12 +18,12 @@ pub struct CopyId {
     pub request: u64,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CaptureRequest {
     pub id: CopyId,
     pub scope: SequenceScope,
     pub parent: NodeId,
-    pub range: FrameRange,
+    pub selection: SliceCaptureSelection,
 }
 
 /// Accepted content outlives later edits and Undo within its original session.
@@ -32,6 +34,8 @@ pub struct Captured {
     pub(super) slice: Arc<CapturedEditSlice>,
     /// Complete historical parent extent, bounding local In/Out refinement.
     pub(super) bounds: FrameRange,
+    pub(super) source_path: Vec<String>,
+    pub(super) child_label: Option<String>,
 }
 
 impl Captured {
@@ -50,12 +54,49 @@ impl Captured {
     pub fn bounds(&self) -> FrameRange {
         self.bounds
     }
+
+    pub fn source_path(&self) -> &[String] {
+        &self.source_path
+    }
+
+    pub fn child_label(&self) -> Option<&str> {
+        self.child_label.as_deref()
+    }
 }
 
 #[derive(Clone, Debug)]
 pub struct CaptureUpdate {
     pub id: CopyId,
     pub result: Result<Arc<Captured>, String>,
+}
+
+/// Copied content is published only after a durable deletion. This reply is
+/// retained independently of ordinary copy, query and selection feedback.
+#[derive(Clone, Debug)]
+pub struct CutUpdate {
+    pub request: CaptureRequest,
+    pub result: Result<CutReceipt, String>,
+}
+
+#[derive(Clone, Debug)]
+pub struct CutReceipt {
+    pub copied: Arc<Captured>,
+    pub committed: super::CommittedEdit,
+    pub refresh_error: Option<String>,
+}
+
+impl CutReceipt {
+    /// Revision IDs are never reused, so the captured pre-cut revision means
+    /// the saved cut is still absent from this view. A later Undo has a fresh
+    /// revision and must not be mistaken for an unrefreshed cut.
+    pub fn needs_refresh(&self, workspace: Option<&super::Workspace>) -> bool {
+        workspace.is_some_and(|workspace| {
+            workspace.session == self.copied.id().session
+                && workspace.document.project_id() == &self.copied.id().project
+                && workspace.document.revision_id() == &self.copied.id().source_revision
+                && workspace.document.revision_id() != &self.committed.revision
+        })
+    }
 }
 
 pub struct Paste {

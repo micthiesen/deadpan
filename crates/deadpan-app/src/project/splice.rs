@@ -136,6 +136,8 @@ pub struct Prepared {
     pub parent: NodeId,
     /// Exact proposed Edit interval occupied by the linked insertion.
     pub range: FrameRange,
+    /// Empty structure has an exact sibling slot; its timestamp is insufficient.
+    pub empty_slot: Option<usize>,
     /// The exact interval removed from the committed base, if replacing.
     pub removed: Option<FrameRange>,
     pub movement: Option<Movement>,
@@ -145,6 +147,27 @@ impl Prepared {
     /// A move can retain several roots. Validate their entire final interval,
     /// without requiring a synthetic group or treating the first root as all of it.
     pub fn validate_result(&self) -> Result<(), String> {
+        if let Some(index) = self.empty_slot {
+            let document = &self.snapshot.document;
+            let Some(NodeKind::Sequence { children }) =
+                document.nodes().get(&self.parent).map(|node| &node.kind)
+            else {
+                return Err("Empty slice parent is not an ordinary Sequence".into());
+            };
+            if self.range.start() != self.range.end()
+                || children.get(index) != Some(&self.node)
+                || self.plan.node_duration(&self.node) != Some(FrameDuration::ZERO)
+                || document
+                    .source_splice_boundary(&self.parent, index)
+                    .map_err(|error| error.to_string())?
+                    != self.range.start()
+                || self.movement.is_some()
+                || self.removed.is_some()
+            {
+                return Err("Empty slice differs from its exact retained slot".into());
+            }
+            return Ok(());
+        }
         let first = result_forest_first(
             &self.snapshot.document,
             &self.plan,

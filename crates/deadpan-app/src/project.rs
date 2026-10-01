@@ -134,6 +134,9 @@ pub struct ProjectUpdate {
     pub splice_commit: Option<splice::SpliceCommitUpdate>,
     /// History-neutral edited copies retain their source identity across replies.
     pub captured_slice: Option<slice::CaptureUpdate>,
+    pub cut_slice: Option<slice::CutUpdate>,
+    /// Last durable cut remains visible even after a newer cut is rejected.
+    pub saved_cut: Option<slice::CutReceipt>,
     /// Operational render feedback is retained independently of editor feedback.
     pub render: Option<ProjectRenderUpdate>,
     /// Bounded history replies retain their exact query and session independently
@@ -422,6 +425,7 @@ pub enum ProjectRequest {
     },
     PasteMoment(MomentPaste),
     CaptureEditSlice(slice::CaptureRequest),
+    CutEditSlice(slice::CaptureRequest),
     PasteEditedSlice(slice::Paste),
     PrepareSplice(splice::Proposal),
     CommitSplice(splice::ProposalId),

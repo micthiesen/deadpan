@@ -4,6 +4,7 @@ use deadpan_core::{FrameRange, ProjectDocument};
 use egui::Key;
 
 mod capture;
+mod cut;
 mod input;
 mod nested;
 
@@ -122,6 +123,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
 
     capture::run(d)?;
     input::run(d)?;
+    cut::run(d)?;
     nested::run(d)?;
     Ok(())
 }

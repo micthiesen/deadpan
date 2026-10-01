@@ -6,12 +6,22 @@ Your edit. To replace time, select an Edit range with `v`, motion and `v`,
 open `:splice`, then choose **Replace selection · r**. Fast `p/P` replaces a
 selected Edit range immediately; without one it inserts at a Sequence slot.
 
-For a copy freshly captured from Your edit, **Move slice · m** relocates the
+Without an Edit range, `y` copies the selected whole beat. A saved `d`/`dd` or
+`:delete` cut also supplies the register. Empty groups retain their complete
+structure and historical label, and insert only at explicit Sequence slots.
+Their source card has no picture or audio endpoints; In/Out, Replace and Move
+are unavailable. `j/k` distinguishes neighboring slots at the same Edit frame.
+Placement adds one structural revision, selects the inserted group and adds no
+time. The retained destination picture remains visible.
+
+For a nonempty range or whole beat freshly captured from Your edit, **Move slice · m** relocates the
 linked range in one transaction. The source and destination must still refer
 to that same committed revision. An older register remains valid for Copy;
 after another edit or Undo, yank again before moving. Original is immutable
 and only supports Copy. Move and Replace are mutually exclusive. Toggling
 either operation retains the separately captured insertion destination.
+Whole-beat Move preserves adjacent empty siblings at either endpoint. Empty
+groups use cut/paste to move.
 
 The current implementation accepts child seams and strict interiors of direct
 Source, ordinary Hold and supported transparent-fragment children in ordinary
@@ -153,6 +163,5 @@ suffix using exact absolute frame-to-sample boundaries.
 ## Remaining specification work
 
 This is partial [§9.7](spec/DEADPAN_SPEC.md#97-visual-slice-placement).
-Picture-only and audio-only policies, cut-to-register, named registers,
-and Repeat/Retime occurrence destinations
+Picture-only and audio-only policies, named registers, and Repeat/Retime occurrence destinations
 remain required. These controls do not establish completion of DP-05 or DP-20.

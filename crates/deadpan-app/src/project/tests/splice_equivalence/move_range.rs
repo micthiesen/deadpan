@@ -32,7 +32,7 @@ fn move_proposal(
         },
         scope: source_scope,
         parent: source_parent,
-        range: selected,
+        selection: deadpan_core::SliceCaptureSelection::Range { range: selected },
     };
     let update = command(
         &harness.service,

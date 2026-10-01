@@ -101,7 +101,7 @@ fn rejected_yank_supersedes(d: &mut Driver<'_>, copied: &Arc<Captured>) -> Resul
             id: copied.id().clone(),
             scope: copied.scope().clone(),
             parent: copied.slice().parent().clone(),
-            range: copied.slice().range(),
+            selection: copied.slice().selection().clone(),
         },
         selection,
     );
@@ -247,7 +247,7 @@ pub(super) fn capture_request(copied: &Captured) -> CaptureRequest {
         id: copied.id().clone(),
         scope: copied.scope().clone(),
         parent: copied.slice().parent().clone(),
-        range: copied.slice().range(),
+        selection: copied.slice().selection().clone(),
     }
 }
 

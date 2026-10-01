@@ -28,6 +28,7 @@ use super::{
 
 type Result<T> = std::result::Result<T, String>;
 
+mod cut_slice;
 mod delete_range;
 pub(super) mod edit_slice;
 mod gain;
@@ -66,6 +67,8 @@ struct Service {
     splice_draft: Option<splice::Draft>,
     splice_seen: Option<super::splice::ProposalId>,
     captured_slice: Option<super::slice::CaptureUpdate>,
+    cut_slice: Option<super::slice::CutUpdate>,
+    last_cut: Option<(super::slice::CaptureRequest, super::slice::CutReceipt)>,
     copied_view: Option<edit_slice::PreparedCopy>,
     splice_source_view: Option<super::slice::SourceViewUpdate>,
     active: Option<Pending>,
@@ -111,6 +114,8 @@ pub(super) fn run(
         splice_draft: None,
         splice_seen: None,
         captured_slice: None,
+        cut_slice: None,
+        last_cut: None,
         copied_view: None,
         splice_source_view: None,
         active: None,
@@ -243,6 +248,8 @@ impl Service {
             splice: self.splice.clone(),
             splice_commit: self.splice_commit.clone(),
             captured_slice: self.captured_slice.clone(),
+            cut_slice: self.cut_slice.clone(),
+            saved_cut: self.last_cut.as_ref().map(|(_, receipt)| receipt.clone()),
             render: self.render_update.clone(),
             render_history: self.render_history.clone(),
         };
@@ -258,6 +265,10 @@ impl Service {
         let request = match request {
             ProjectRequest::CaptureEditSlice(request) => {
                 self.capture_edit_slice_command(request);
+                return Ok(());
+            }
+            ProjectRequest::CutEditSlice(request) => {
+                self.cut_edit_slice_command(request);
                 return Ok(());
             }
             ProjectRequest::PrepareSplice(proposal) => {
@@ -352,6 +363,7 @@ impl Service {
             ProjectRequest::PasteMoment(request) => self.paste_moment(request),
             ProjectRequest::PasteEditedSlice(request) => self.paste_edited_slice(request),
             ProjectRequest::CaptureEditSlice(_) => unreachable!("copy uses independent feedback"),
+            ProjectRequest::CutEditSlice(_) => unreachable!("cut uses independent feedback"),
             ProjectRequest::PrepareSplice(_)
             | ProjectRequest::CommitSplice(_)
             | ProjectRequest::AbandonSplice(_) => unreachable!("splice uses independent feedback"),

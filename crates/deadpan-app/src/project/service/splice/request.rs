@@ -41,6 +41,11 @@ impl Request {
         destination: &Destination,
         slice: &CapturedEditSlice,
     ) -> Result<(Self, ProjectFrame)> {
+        if slice.duration() == FrameDuration::ZERO {
+            return Err(
+                "Move requires picture time. Use cut and paste to move an empty group.".into(),
+            );
+        }
         if slice.revision_id() != workspace.document.revision_id() {
             return Err(
                 "Copied Edit is from an older revision; select and copy again to move".into(),

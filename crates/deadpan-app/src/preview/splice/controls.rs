@@ -77,11 +77,12 @@ impl DeadpanApp {
     pub(in crate::preview) fn splice_workspace(&mut self, ui: &mut egui::Ui) {
         egui::CentralPanel::default().frame(style::panel()).show(ui, |ui| {
             let Some(mut draft) = self.splice.take() else { return; };
+            let empty_structure = draft.empty_structure();
             let keys = std::mem::take(&mut draft.keys);
             let mut action = None;
             let heading = ui.horizontal_wrapped(|ui| {
                 let title = ui.heading("Place slice");
-                let operation = ui.colored_label(style::LAVENDER, if draft.replacing { "UNSAVED · Replace · Linked picture + sound" } else if draft.proposal.operation == Operation::Move { "UNSAVED · Move · Linked picture + sound" } else { "UNSAVED · Insert · Linked picture + sound" });
+                let operation = ui.colored_label(style::LAVENDER, if empty_structure { "UNSAVED · Insert empty group · Structure only" } else if draft.replacing { "UNSAVED · Replace · Linked picture + sound" } else if draft.proposal.operation == Operation::Move { "UNSAVED · Move · Linked picture + sound" } else { "UNSAVED · Insert · Linked picture + sound" });
                 let mut rect = title.rect.union(operation.rect);
                 if let Some(count) = draft.count { rect = rect.union(ui.monospace(format!("COUNT {count}")).rect); }
                 rect
@@ -97,8 +98,8 @@ impl DeadpanApp {
             let enabled = !draft.invalidated && !draft.applying;
             let source_range = draft.source_range();
             ui.horizontal_wrapped(|ui| {
-                if draft.edited_source() && ui.add_enabled(enabled, egui::Button::new(if draft.proposal.operation == Operation::Move { "Copy instead · m" } else { "Move slice · m" }).selected(draft.proposal.operation == Operation::Move)).clicked() { action = Some(SpliceKey::Move); }
-                if draft.replacement.is_some() && ui.add_enabled(enabled, egui::Button::new(if draft.replacing { "Insert instead · r" } else { "Replace selection · r" }).selected(draft.replacing)).clicked() { action = Some(SpliceKey::Replace); }
+                if draft.edited_source() && ui.add_enabled(enabled && (draft.proposal.operation == Operation::Move || !empty_structure), egui::Button::new(if draft.proposal.operation == Operation::Move { "Copy instead · m" } else { "Move slice · m" }).selected(draft.proposal.operation == Operation::Move)).on_disabled_hover_text(empty::PLACEMENT_REASON).clicked() { action = Some(SpliceKey::Move); }
+                if draft.replacement.is_some() && ui.add_enabled(enabled && !empty_structure, egui::Button::new(if draft.replacing { "Insert instead · r" } else { "Replace selection · r" }).selected(draft.replacing)).on_disabled_hover_text(empty::PLACEMENT_REASON).clicked() { action = Some(SpliceKey::Replace); }
                 for (label, selected, key) in [
                     (format!("In {} · i", source_range.start), draft.focus == Focus::In, SpliceKey::In),
                     (format!("Out {} exclusive · o", source_range.end), draft.focus == Focus::Out, SpliceKey::Out),
@@ -106,7 +107,8 @@ impl DeadpanApp {
                     ((if draft.proposal.operation == Operation::Move { "Insertion join · f" } else { "Inspect picture · f" }).into(), draft.focus == Focus::Picture && draft.site == Site::Insertion, SpliceKey::Picture),
                 ] {
                     if draft.replacing && key == SpliceKey::Destination { continue; }
-                    if ui.add_enabled(enabled, egui::Button::new(label).selected(selected)).clicked() { action = Some(key); }
+                    let endpoint = matches!(key, SpliceKey::In | SpliceKey::Out);
+                    if ui.add_enabled(enabled && !(empty_structure && endpoint), egui::Button::new(label).selected(selected)).on_disabled_hover_text(empty::ENDPOINT_REASON).clicked() { action = Some(key); }
                 }
                 if draft.proposal.operation == Operation::Move && ui.add_enabled(enabled, egui::Button::new("Removal join · s").selected(draft.focus == Focus::Picture && draft.site == Site::Removal)).clicked() { action = Some(SpliceKey::Removal); }
                 if !draft.replacing && draft.proposal.operation != Operation::Move {
@@ -117,20 +119,22 @@ impl DeadpanApp {
                 }
             });
             ui.horizontal_wrapped(|ui| {
-                if ui.add_enabled(enabled, egui::Button::new("−1 · h")).on_hover_text("Previous frame in the selected control").clicked() { action = Some(SpliceKey::Step(false)); }
-                if ui.add_enabled(enabled, egui::Button::new("+1 · l")).on_hover_text("Next frame in the selected control").clicked() { action = Some(SpliceKey::Step(true)); }
+                let frames_enabled = enabled && (!empty_structure || draft.focus == Focus::Picture && draft.frames() > 0);
+                if ui.add_enabled(frames_enabled, egui::Button::new("−1 · h")).on_hover_text("Previous frame in the selected control").on_disabled_hover_text(empty::PLACEMENT_REASON).clicked() { action = Some(SpliceKey::Step(false)); }
+                if ui.add_enabled(frames_enabled, egui::Button::new("+1 · l")).on_hover_text("Next frame in the selected control").on_disabled_hover_text(empty::PLACEMENT_REASON).clicked() { action = Some(SpliceKey::Step(true)); }
                 if draft.proposal.operation == Operation::Move {
                     if ui.add_enabled(enabled, egui::Button::new("Prev · k")).on_hover_text("Previous Sequence seam at the destination").clicked() { action = Some(SpliceKey::Boundary(false)); }
                     if ui.add_enabled(enabled, egui::Button::new("Next · j")).on_hover_text("Next Sequence seam at the destination").clicked() { action = Some(SpliceKey::Boundary(true)); }
                 }
                 let ready = enabled && draft.prepared.is_some() && !draft.dirty && draft.pending.is_none();
-                if ui.add_enabled(ready, egui::Button::new(if draft.before { "Before · b" } else { "Proposed · b" }).selected(!draft.before)).clicked() { action = Some(SpliceKey::Compare); }
-                if ui.add_enabled(ready || self.transport.is_some(), egui::Button::new(if self.transport.is_some() { "Pause · Space" } else { "Audition · Space" })).clicked() { action = Some(SpliceKey::Play); }
-                if ui.add_enabled(ready, egui::Button::new(if draft.proposal.operation == Operation::Move { "Loop this join · Shift Space" } else { "Loop both joins · Shift Space" })).clicked() { action = Some(SpliceKey::Loop); }
+                let audition_ready = ready && draft.frames() > 0 && !(empty_structure && matches!(draft.focus, Focus::In | Focus::Out));
+                if ui.add_enabled(audition_ready, egui::Button::new(if draft.before { "Before · b" } else { "Proposed · b" }).selected(!draft.before)).clicked() { action = Some(SpliceKey::Compare); }
+                if ui.add_enabled(audition_ready || self.transport.is_some(), egui::Button::new(if self.transport.is_some() { "Pause · Space" } else { "Audition · Space" })).on_disabled_hover_text("Empty groups contain no pictures or audio. Select a nonempty destination to audition its context.").clicked() { action = Some(SpliceKey::Play); }
+                if ui.add_enabled(audition_ready, egui::Button::new(if empty_structure { "Loop destination · Shift Space" } else if draft.proposal.operation == Operation::Move { "Loop this join · Shift Space" } else { "Loop both joins · Shift Space" })).clicked() { action = Some(SpliceKey::Loop); }
                 if ui.add_enabled(ready, egui::Button::new("Place slice · Enter").fill(style::SELECTED)).clicked() { action = Some(SpliceKey::Apply); }
                 if ui.add_enabled(!draft.applying, egui::Button::new("Cancel · Esc")).clicked() { action = Some(SpliceKey::Cancel); }
             });
-            ui.weak(if draft.proposal.operation == Operation::Move { "h/l adjusts frames; j/k chooses destination seams. Counts work: 12l. Tab / Shift Tab selects buttons; Enter activates." } else { "h/l adjusts the selected control; counts work: 12l. Tab / Shift Tab selects buttons; Enter activates." });
+            ui.weak(if empty_structure { "j/k chooses an exact destination slot, including slots at the same Edit frame. f then h/l inspects destination pictures. Enter inserts the group." } else if draft.proposal.operation == Operation::Move { "h/l adjusts frames; j/k chooses destination seams. Counts work: 12l. Tab / Shift Tab selects buttons; Enter activates." } else { "h/l adjusts the selected control; counts work: 12l. Tab / Shift Tab selects buttons; Enter activates." });
             if action.is_some() || !keys.is_empty() {
                 ui.ctx().request_discard("Place slice controls changed before picture submission");
             }
@@ -140,28 +144,33 @@ impl DeadpanApp {
             let left_width = 220.0_f32.min(ui.available_width() * 0.29);
             let picture_width = (ui.available_width() - left_width - ui.spacing().item_spacing.x).max(100.0);
             let endpoints = draft.endpoint_identity();
-            let viewing_endpoint = matches!(draft.focus, Focus::In | Focus::Out) && self.transport.is_none();
-            let title = if viewing_endpoint { if draft.edited_source() { "COPIED EDIT ENDPOINT" } else { "ORIGINAL ENDPOINT" } } else if draft.before { "BEFORE · SAVED EDIT" } else if draft.prepared.is_some() { "PROPOSED · UNSAVED EDIT" } else { "DESTINATION · SAVED EDIT" };
-            let label = self.presentation.displayed_label().unwrap_or_else(|| "Preparing picture…".into());
+            let viewing_endpoint = !empty_structure && matches!(draft.focus, Focus::In | Focus::Out) && self.transport.is_none();
+            let empty_destination = draft.frames() == 0;
+            let title = if empty_structure { "DESTINATION · SAVED EDIT" } else if viewing_endpoint { if draft.edited_source() { "COPIED EDIT ENDPOINT" } else { "ORIGINAL ENDPOINT" } } else if draft.before { "BEFORE · SAVED EDIT" } else if draft.prepared.is_some() { "PROPOSED · UNSAVED EDIT" } else { "DESTINATION · SAVED EDIT" };
+            let label = if empty_destination { "Empty edit · no pictures or audio".into() } else { self.presentation.displayed_label().unwrap_or_else(|| "Preparing picture…".into()) };
             let in_slice = !draft.before && draft.prepared.as_ref().is_some_and(|prepared| prepared.range.start().0 <= draft.cursor as i64 && (draft.cursor as i64) < prepared.range.end().0);
-            let requested = if viewing_endpoint { if draft.edited_source() { "Copied Edit clock · endpoint inspection".into() } else { "Original clock · endpoint inspection".into() } } else if draft.cursor == draft.frames() { format!("Requested terminal Edit boundary {} · displaying the final picture", draft.cursor) } else { format!("Requested Edit picture {} · {}", u128::from(draft.cursor) + 1, if in_slice { "inside inserted slice" } else if draft.site == Site::Removal { "removal context" } else { "destination context" }) };
+            let requested = if empty_destination { "Inserting this group adds structure without picture or audio time.".into() } else if empty_structure && matches!(draft.focus, Focus::In | Focus::Out) { "Empty source group · destination picture retained".into() } else if viewing_endpoint { if draft.edited_source() { "Copied Edit clock · endpoint inspection".into() } else { "Original clock · endpoint inspection".into() } } else if draft.cursor == draft.frames() { format!("Requested terminal Edit boundary {} · displaying the final picture", draft.cursor) } else { format!("Requested Edit picture {} · {}", u128::from(draft.cursor) + 1, if in_slice { "inside inserted slice" } else if draft.site == Site::Removal { "removal context" } else { "destination context" }) };
             let picture_text = [egui::RichText::new(title).strong(), egui::RichText::new(&label), egui::RichText::new(requested).color(style::MUTED)].map(|text| {
                 egui::WidgetText::from(text).into_galley(ui, Some(egui::TextWrapMode::Wrap), picture_width, egui::TextStyle::Body)
             });
             let picture_height = (height - picture_text.iter().map(|text| text.size().y).sum::<f32>() - 3.0 * ui.spacing().item_spacing.y).max(1.0);
             ui.horizontal_top(|ui| {
                 ui.allocate_ui_with_layout(egui::vec2(left_width, height), egui::Layout::top_down(egui::Align::Min), |ui| {
-                    ui.strong(if draft.edited_source() { "COPIED EDIT SLICE" } else { "ORIGINAL SLICE" });
-                    ui.label(format!("Boundaries [{}..{}) · {} {} frames", source_range.start, source_range.end, source_range.end - source_range.start, if draft.edited_source() { "Edit" } else { "source" }));
-                    draft.endpoints.show(ui, &mut self.renderer, &endpoints, height);
+                    if empty_structure {
+                        egui::ScrollArea::vertical().id_salt("empty-slice-source").max_height(height).show(ui, |ui| empty::source_card(ui, &draft));
+                    } else {
+                        ui.strong(if draft.edited_source() { "COPIED EDIT SLICE" } else { "ORIGINAL SLICE" });
+                        ui.label(format!("Boundaries [{}..{}) · {} {} frames", source_range.start, source_range.end, source_range.end - source_range.start, if draft.edited_source() { "Edit" } else { "source" }));
+                        draft.endpoints.show(ui, &mut self.renderer, &endpoints, height);
+                    }
                 });
                 ui.allocate_ui_with_layout(egui::vec2(picture_width, height), egui::Layout::top_down(egui::Align::Min), |ui| {
                     ui.add(egui::Label::new(picture_text[0].clone()));
                     let (rect, response) = ui.allocate_exact_size(egui::vec2(picture_width, picture_height), egui::Sense::hover());
                     ui.painter().rect_filled(rect, 3.0, egui::Color32::BLACK);
                     let canvas = self.presentation.canvas().map_or(rect, |(width, height)| fit_rect(rect, width as f32 / height as f32));
-                    self.render_picture(ui.ctx(), canvas.size());
-                    if self.presentation.has_displayed() && let Some(target) = &self.target {
+                    if !empty_destination { self.render_picture(ui.ctx(), canvas.size()); }
+                    if !empty_destination && self.presentation.has_displayed() && let Some(target) = &self.target {
                         ui.painter().image(target.texture, canvas, egui::Rect::from_min_max(egui::Pos2::ZERO, egui::pos2(1.0, 1.0)), egui::Color32::WHITE);
                     }
                     response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Image, true, &label));
@@ -219,6 +228,21 @@ impl Footer {
                 slot + 1,
                 draft.seams.len()
             ));
+            if draft.empty_structure() {
+                let label = |index: usize| {
+                    draft
+                        .children
+                        .get(index)
+                        .and_then(|node| draft.base.document.nodes().get(node))
+                        .map(|node| node.label.as_str())
+                };
+                if let Some(previous) = slot.checked_sub(1).and_then(label) {
+                    text[0].0.push_str(&format!(" · after ‘{previous}’"));
+                }
+                if let Some(next) = label(slot) {
+                    text[0].0.push_str(&format!(" · before ‘{next}’"));
+                }
+            }
         }
         if let Some(prepared) = &draft.prepared {
             let inserted = prepared.range.end().0 - prepared.range.start().0;
@@ -250,7 +274,11 @@ impl Footer {
                 ));
                 if let Some(comparison) = draft.comparison() {
                     if comparison.timing_unchanged {
-                        text.push(("Move between groups; timing unchanged · compare framing and sound at the same Edit frames".into(), style::MUTED));
+                        text.push((
+                            "Timing unchanged · compare framing and sound at the same Edit frames"
+                                .into(),
+                            style::MUTED,
+                        ));
                     } else if comparison
                         .windows(
                             draft.base.document.presentation_basis().frame_rate,
@@ -274,6 +302,8 @@ impl Footer {
                     ),
                     style::LAVENDER,
                 ));
+            } else if prepared.empty_slot.is_some() {
+                text[0].0.push_str(" · empty group · duration unchanged");
             } else {
                 text[0]
                     .0
@@ -281,7 +311,15 @@ impl Footer {
             }
         }
         if draft.dirty || draft.pending.is_some() {
-            text.push(("Preparing proposed picture and sound…".into(), style::MUTED));
+            text.push((
+                if draft.empty_structure() {
+                    "Preparing structural placement…"
+                } else {
+                    "Preparing proposed picture and sound…"
+                }
+                .into(),
+                style::MUTED,
+            ));
         }
         if draft.applying {
             text.push(("Saving the exact proposed slice…".into(), style::MUTED));
@@ -312,7 +350,9 @@ impl Footer {
             .collect();
         let spacing = ui.spacing().item_spacing.y;
         let timeline = draft.prepared.as_ref().map_or(0.0, |prepared| {
-            if prepared.movement.is_some() {
+            if prepared.empty_slot.is_some() {
+                0.0
+            } else if prepared.movement.is_some() {
                 88.0 + 2.0 * spacing
             } else if prepared.removed.is_some() {
                 58.0 + 2.0 * spacing
@@ -333,6 +373,9 @@ fn timeline(ui: &mut egui::Ui, draft: &Draft) {
     let Some(prepared) = &draft.prepared else {
         return;
     };
+    if prepared.empty_slot.is_some() {
+        return;
+    }
     if prepared.movement.is_some() {
         for site in [Site::Removal, Site::Insertion] {
             move_timeline(ui, draft, site);

@@ -31,6 +31,15 @@ pub struct SliceIdentityRequirements {
     pub timings: usize,
 }
 
+/// A temporal interval or one exact direct child of an ordinary Sequence.
+/// Child identity distinguishes empty siblings at the same project boundary.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+pub enum SliceCaptureSelection {
+    Range { range: FrameRange },
+    Child { node: NodeId },
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(crate) struct SlicePart {
@@ -48,6 +57,14 @@ struct SliceWire {
     presentation_basis: PresentationBasis,
     parent: NodeId,
     range: FrameRange,
+    // Missing only while reading the original range-only wire. Normalize before
+    // validation; current Range output keeps that original serialized shape.
+    #[serde(
+        default,
+        skip_serializing_if = "range_selection",
+        deserialize_with = "read_selection"
+    )]
+    selection: Option<SliceCaptureSelection>,
     source_duration: FrameDuration,
     parts: Vec<SlicePart>,
     #[serde(deserialize_with = "crate::audio_gain::node_map")]
@@ -70,6 +87,17 @@ struct SliceWire {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(transparent)]
 pub struct CapturedEditSlice(SliceWire);
+
+fn range_selection(selection: &Option<SliceCaptureSelection>) -> bool {
+    matches!(selection, None | Some(SliceCaptureSelection::Range { .. }))
+}
+
+fn read_selection<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<SliceCaptureSelection>, D::Error> {
+    // Unlike Option's reader, an explicitly present null is not a legacy range.
+    SliceCaptureSelection::deserialize(deserializer).map(Some)
+}
 
 impl<'de> Deserialize<'de> for CapturedEditSlice {
     fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
@@ -102,13 +130,57 @@ impl CapturedEditSlice {
         range: FrameRange,
         timing: AudioTimingId,
     ) -> Result<Self, EditError> {
+        Self::capture_selection(
+            document,
+            parent,
+            &SliceCaptureSelection::Range { range },
+            timing,
+        )
+    }
+
+    /// Capture a range or one whole direct child, including an empty Sequence
+    /// tree. The named parent and all its ancestors must be ordinary Sequences.
+    pub fn capture_selection(
+        document: &ProjectDocument,
+        parent: &NodeId,
+        selection: &SliceCaptureSelection,
+        timing: AudioTimingId,
+    ) -> Result<Self, EditError> {
         document.validate()?;
-        crate::insert_time::sequence_range::preflight_capture(document, parent, range)?;
+        if let SliceCaptureSelection::Range { range } = selection {
+            crate::insert_time::sequence_range::preflight_capture(document, parent, *range)?;
+        }
+        let parent_start = document.source_splice_boundary(parent, 0)?;
         let durations = document.durations()?;
         let NodeKind::Sequence { children } = &document.nodes()[parent].kind else {
             unreachable!()
         };
-        let mut offset = document.source_splice_boundary(parent, 0)?.0;
+        let range = match selection {
+            SliceCaptureSelection::Range { range } => *range,
+            SliceCaptureSelection::Child { node } => {
+                let index = children
+                    .iter()
+                    .position(|child| child == node)
+                    .ok_or_else(|| {
+                        EditError::new(
+                            EditErrorCode::SelectionUnavailable,
+                            "capture target is not a direct child of its named Sequence",
+                        )
+                    })?;
+                let start = document.source_splice_boundary(parent, index)?;
+                FrameRange::new(
+                    start,
+                    ProjectFrame(
+                        start
+                            .0
+                            .checked_add(durations[node].frames())
+                            .ok_or_else(overflow)?,
+                    ),
+                )
+                .map_err(DocumentError::from)?
+            }
+        };
+        let mut offset = parent_start.0;
         let mut parts = Vec::new();
         let mut selected = BTreeSet::new();
         for child in children {
@@ -117,8 +189,14 @@ impl CapturedEditSlice {
                 .ok_or_else(overflow)?;
             let start = offset.max(range.start().0);
             let stop = end.min(range.end().0);
-            if start < stop || (offset == end && offset > range.start().0 && offset < range.end().0)
-            {
+            let included = match selection {
+                SliceCaptureSelection::Range { .. } => {
+                    start < stop
+                        || (offset == end && offset > range.start().0 && offset < range.end().0)
+                }
+                SliceCaptureSelection::Child { node } => child == node,
+            };
+            if included {
                 parts.push(SlicePart {
                     root: child.clone(),
                     mapping: FrameRange::new(
@@ -133,65 +211,22 @@ impl CapturedEditSlice {
             offset = end;
         }
         let marks = crate::marks::capture_slice_mark_bindings(document, &parts, &selected)?;
-        // The independent root bus is outside this ownership selection. Only a
-        // private structural view is detached; the source document is unchanged.
-        let mut structural = document.clone();
-        structural.sounds.clear();
-        structural.sound_routes.clear();
-        structural.sound_allowances.clear();
-        let captured = crate::audio_binding_lifecycle::capture_for_composite_insertion(
-            &structural,
-            timing.clone(),
-        )?;
-        let mut state = captured.state;
-        if let Some(layout) = captured.phase_only_layout {
-            state.timings.insert(timing.clone(), layout);
-        }
-        let mut affected = BTreeSet::new();
-        let mut pending: Vec<_> = parts.iter().map(|part| &part.root).collect();
-        while let Some(id) = pending.pop() {
-            affected.insert(id.clone());
-            if !matches!(&document.nodes()[id].kind,
-                NodeKind::Retime { duration, mapping, pitch: PitchPolicy::Preserve, .. }
-                if *duration != mapping.duration())
-            {
-                pending.extend(document.children(id));
+        let state = if range.duration() == FrameDuration::ZERO {
+            // A validated zero-duration owned tree can contain only Sequences.
+            // Prove this rather than discarding a physical owner's clock.
+            if selected.iter().any(|id| {
+                !matches!(document.nodes()[id].kind, NodeKind::Sequence { .. })
+                    || document.audio_bindings.bindings.contains_key(id)
+                    || document.audio_bindings.gap_bindings.contains_key(id)
+            }) {
+                return Err(invalid(
+                    "empty child capture requires a Sequence-only tree without physical audio bindings",
+                ));
             }
-        }
-        let window = ExactFrameRange::new(
-            ExactRatio::integer(range.start().0),
-            ExactRatio::integer(range.end().0),
-        )?;
-        let mut entries = state
-            .owners()
-            .flat_map(|(_, _, binding)| binding.placements())
-            .try_fold(0usize, |count, placement| {
-                count
-                    .checked_add(placement.entry_count())
-                    .ok_or_else(|| limit("slice audio entries overflow"))
-            })?;
-        crate::insert_time::composite::append_steps(
-            &mut state.bindings,
-            captured.node_placements,
-            &affected,
-            window,
-            &mut entries,
-        )?;
-        crate::insert_time::composite::append_steps(
-            &mut state.gap_bindings,
-            captured.gap_placements,
-            &affected,
-            window,
-            &mut entries,
-        )?;
-        state.bindings.retain(|id, _| selected.contains(id));
-        state.gap_bindings.retain(|id, _| selected.contains(id));
-        let retained: BTreeSet<_> = state
-            .owners()
-            .flat_map(|(_, _, binding)| binding.placements())
-            .map(|placement| placement.reference.timing.clone())
-            .collect();
-        state.timings.retain(|id, _| retained.contains(id));
+            AudioBindingState::default()
+        } else {
+            capture_audio(document, &parts, &selected, range, &timing)?
+        };
         let nodes: BTreeMap<_, _> = selected
             .iter()
             .map(|id| (id.clone(), document.nodes()[id].clone()))
@@ -217,6 +252,7 @@ impl CapturedEditSlice {
             presentation_basis: document.presentation_basis().clone(),
             parent: parent.clone(),
             range,
+            selection: Some(selection.clone()),
             source_duration: document.duration()?,
             parts,
             nodes,
@@ -265,10 +301,10 @@ impl CapturedEditSlice {
                 "slice capture source is a different revision",
             ));
         }
-        let captured = Self::capture(
+        let captured = Self::capture_selection(
             source,
             &self.0.parent,
-            self.0.range,
+            self.selection(),
             self.0.capture_timing.clone(),
         )?;
         if captured != *self {
@@ -291,6 +327,12 @@ impl CapturedEditSlice {
     }
     pub fn range(&self) -> FrameRange {
         self.0.range
+    }
+    pub fn selection(&self) -> &SliceCaptureSelection {
+        self.0
+            .selection
+            .as_ref()
+            .expect("normalized slice selector")
     }
     pub fn duration(&self) -> FrameDuration {
         self.0.range.duration()
@@ -326,7 +368,12 @@ impl CapturedEditSlice {
         if json.len() > MAX_DOCUMENT_JSON_BYTES {
             return Err(limit("slice JSON exceeds byte limit"));
         }
-        let slice = Self(serde_json::from_str(json).map_err(DocumentError::json)?);
+        let mut slice = Self(serde_json::from_str(json).map_err(DocumentError::json)?);
+        if slice.0.selection.is_none() {
+            slice.0.selection = Some(SliceCaptureSelection::Range {
+                range: slice.0.range,
+            });
+        }
         slice.validate()?;
         Ok(slice)
     }
@@ -377,16 +424,40 @@ impl CapturedEditSlice {
 
     fn validate(&self) -> Result<(), EditError> {
         let value = &self.0;
-        if self.duration() == FrameDuration::ZERO
-            || value.range.start().0 < 0
-            || value.range.end().0 > value.source_duration.frames()
-        {
-            return Err(invalid(
-                "slice requires a nonempty captured project interval",
-            ));
+        if value.range.start().0 < 0 || value.range.end().0 > value.source_duration.frames() {
+            return Err(invalid("slice bounds are outside its captured project"));
         }
         let context = self.context()?;
         let durations = context.durations()?;
+        match self.selection() {
+            SliceCaptureSelection::Range { range } => {
+                if *range != value.range || range.duration() == FrameDuration::ZERO {
+                    return Err(invalid("slice requires a nonempty matching captured range"));
+                }
+            }
+            SliceCaptureSelection::Child { node } => {
+                if value.parts.len() != 1
+                    || &value.parts[0].root != node
+                    || value.parts[0].mapping.start() != ProjectFrame(0)
+                    || value.parts[0].mapping.duration() != durations[node]
+                {
+                    return Err(invalid(
+                        "child slice requires exactly its whole selected subtree",
+                    ));
+                }
+                if self.duration() == FrameDuration::ZERO
+                    && (value
+                        .nodes
+                        .values()
+                        .any(|node| !matches!(node.kind, NodeKind::Sequence { .. }))
+                        || value.audio_bindings != AudioBindingState::default())
+                {
+                    return Err(invalid(
+                        "empty child slice requires a Sequence-only tree without audio bindings",
+                    ));
+                }
+            }
+        }
         let mut boundary = value.range.start().0;
         for part in &value.parts {
             let duration = durations[&part.root];
@@ -424,6 +495,75 @@ impl CapturedEditSlice {
         self.identity_requirements()?;
         Ok(())
     }
+}
+
+fn capture_audio(
+    document: &ProjectDocument,
+    parts: &[SlicePart],
+    selected: &BTreeSet<NodeId>,
+    range: FrameRange,
+    timing: &AudioTimingId,
+) -> Result<AudioBindingState, EditError> {
+    // The independent root bus is outside this ownership selection. Only a
+    // private structural view is detached; the source document is unchanged.
+    let mut structural = document.clone();
+    structural.sounds.clear();
+    structural.sound_routes.clear();
+    structural.sound_allowances.clear();
+    let captured = crate::audio_binding_lifecycle::capture_for_composite_insertion(
+        &structural,
+        timing.clone(),
+    )?;
+    let mut state = captured.state;
+    if let Some(layout) = captured.phase_only_layout {
+        state.timings.insert(timing.clone(), layout);
+    }
+    let mut affected = BTreeSet::new();
+    let mut pending: Vec<_> = parts.iter().map(|part| &part.root).collect();
+    while let Some(id) = pending.pop() {
+        affected.insert(id.clone());
+        if !matches!(&document.nodes()[id].kind,
+                NodeKind::Retime { duration, mapping, pitch: PitchPolicy::Preserve, .. }
+                if *duration != mapping.duration())
+        {
+            pending.extend(document.children(id));
+        }
+    }
+    let window = ExactFrameRange::new(
+        ExactRatio::integer(range.start().0),
+        ExactRatio::integer(range.end().0),
+    )?;
+    let mut entries = state
+        .owners()
+        .flat_map(|(_, _, binding)| binding.placements())
+        .try_fold(0usize, |count, placement| {
+            count
+                .checked_add(placement.entry_count())
+                .ok_or_else(|| limit("slice audio entries overflow"))
+        })?;
+    crate::insert_time::composite::append_steps(
+        &mut state.bindings,
+        captured.node_placements,
+        &affected,
+        window,
+        &mut entries,
+    )?;
+    crate::insert_time::composite::append_steps(
+        &mut state.gap_bindings,
+        captured.gap_placements,
+        &affected,
+        window,
+        &mut entries,
+    )?;
+    state.bindings.retain(|id, _| selected.contains(id));
+    state.gap_bindings.retain(|id, _| selected.contains(id));
+    let retained: BTreeSet<_> = state
+        .owners()
+        .flat_map(|(_, _, binding)| binding.placements())
+        .map(|placement| placement.reference.timing.clone())
+        .collect();
+    state.timings.retain(|id, _| retained.contains(id));
+    Ok(state)
 }
 
 struct SliceJson(Vec<u8>, bool);

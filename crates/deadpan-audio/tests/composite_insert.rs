@@ -34,6 +34,8 @@ mod nested_sequence;
 mod source_replace;
 #[path = "composite_insert/source_splice.rs"]
 mod source_splice;
+#[path = "composite_insert/structural_capture.rs"]
+mod structural_capture;
 
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()

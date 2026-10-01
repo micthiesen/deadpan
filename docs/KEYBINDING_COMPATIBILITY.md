@@ -63,7 +63,13 @@ and separate native keyboard check. Local Kestrel source SHA-256 is
 `368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2`.
 
 In Your edit, `v` starts a temporal range and a second `v` finishes it; Escape
-clears it. `y` copies a nonempty range from either Original or Your edit. An Edit
+clears it. `y` copies a nonempty range from either Original or Your edit; without
+an Edit selection it copies the exact selected beat, including an empty group.
+Visual `d`, whole-beat `dd` and captured `:delete` update the session register
+only after saving the cut. A failed cut keeps the previous copy. No shortcut
+chords change. Empty groups paste at explicit slots; `j/k` retains equal-time
+sibling ordering in Place slice. Their In/Out, Replace and Move controls explain
+why time-based operations are unavailable. An Edit
 copy retains its source revision through later edits and Undo. The range stays
 independent of the copied register. In Place slice,
 `r` explicitly toggles **Replace selection** for the captured range. In/Out
