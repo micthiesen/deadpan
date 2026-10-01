@@ -637,8 +637,11 @@ fn slice_capture_revision(
     connection: &Connection,
     request: &CommandRequest,
 ) -> Result<Option<ProjectDocument>, StoreError> {
-    let deadpan_core::Command::SpliceSlice { slice, .. } = &request.command else {
-        return Ok(None);
+    let slice = match &request.command {
+        deadpan_core::Command::SpliceSlice { slice, .. }
+        | deadpan_core::Command::SpliceSliceAt { slice, .. }
+        | deadpan_core::Command::ReplaceSlice { slice, .. } => slice,
+        _ => return Ok(None),
     };
     let captured = validation::read_revision(connection, slice.revision_id().as_str())?.document;
     slice.validate_capture(&captured)?;

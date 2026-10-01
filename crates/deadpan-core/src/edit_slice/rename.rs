@@ -506,20 +506,25 @@ pub(super) fn validate_pools(
     slice: &SliceWire,
     identities: &SlicePasteIdentities,
     requirements: SliceIdentityRequirements,
+    split_nodes: &[NodeId],
+    required_splits: usize,
 ) -> Result<(), EditError> {
     if identities.authored.nodes.len() < requirements.nodes
         || identities.authored.marks.len() < requirements.marks
         || identities.aliases.len() < requirements.aliases
+        || split_nodes.len() < required_splits
     {
         return Err(limit("slice identity pool is insufficient"));
     }
     if identities.authored.nodes.len() > MAX_DOCUMENT_NODES
         || identities.authored.marks.len() > MAX_DOCUMENT_MARKS
         || identities.aliases.len() > MAX_AUDIO_BINDING_ENTRIES
+        || split_nodes.len() > MAX_DOCUMENT_NODES
         || document
             .nodes
             .len()
             .checked_add(requirements.nodes)
+            .and_then(|count| count.checked_add(required_splits))
             .is_none_or(|count| count > MAX_DOCUMENT_NODES)
     {
         return Err(limit("slice identities exceed destination limits"));
@@ -551,7 +556,13 @@ pub(super) fn validate_pools(
             .values()
             .map(|lineage| &lineage.origin),
     );
-    for id in identities.authored.nodes.iter().chain(&identities.aliases) {
+    for id in identities
+        .authored
+        .nodes
+        .iter()
+        .chain(&identities.aliases)
+        .chain(split_nodes)
+    {
         if !occupied.insert(id) {
             return Err(EditError::new(
                 EditErrorCode::IdentityConflict,
@@ -649,10 +660,7 @@ pub(super) fn prepare(
         .keys()
         .enumerate()
         .map(|(index, old)| {
-            let offset = u32::try_from(index)
-                .ok()
-                .and_then(|value| value.checked_add(1))
-                .ok_or_else(|| limit("slice timing offset overflow"))?;
+            let offset = u32::try_from(index).map_err(|_| limit("slice timing offset overflow"))?;
             Ok((
                 old.clone(),
                 AudioTimingId {

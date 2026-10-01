@@ -5,6 +5,9 @@ use std::collections::BTreeMap;
 use deadpan_core::*;
 use deadpan_plan::{Picture, PictureSample, RenderPlan};
 
+#[path = "edited_slice/placement.rs"]
+mod placement;
+
 fn id(name: &str) -> NodeId {
     NodeId::new(name).unwrap()
 }

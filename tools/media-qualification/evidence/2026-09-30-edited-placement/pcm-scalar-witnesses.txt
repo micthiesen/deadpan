@@ -1,0 +1,30 @@
+B(0)=0
+B(1)=1602
+B(2)=3203
+B(3)=4805
+B(4)=6406
+B(5)=8008
+B(6)=9610
+B(7)=11211
+B(8)=12813
+B(9)=14414
+B(10)=16016
+B(11)=17618
+B(12)=19219
+B(13)=20821
+B(14)=22422
+B(15)=24024
+B(16)=25626
+B(17)=27227
+B(18)=28829
+B(19)=30430
+B(20)=32032
+B(21)=33634
+B(22)=35235
+Equal middle replacement: suffix [B(2),B(3))=[3203,4805), length=1602, final old sample=4804.
+Strict nested insertion: retained Source4 entry=8007/5; inserted prior-history entry=32032/5.
+Replace [2,4) with 1 frames: copy length=1602, suffix [3,6) length=4805; retained suffix phase=24022/5.
+Replace [2,4) with 2 frames: copy length=3203, suffix [4,7) length=4805; retained suffix phase=24022/5.
+Replace [2,4) with 4 frames: copy length=6407, suffix [6,9) length=4804; retained suffix phase=24022/5.
+Nested copied partitions: captured phase=24026/5, first interior resume=40041/5, later replacement resume=48051/5.
+A 7-frame source has exact extent=56056/5=11211.2 points. Extra destination final point11211 is supported; no vector padding is needed.

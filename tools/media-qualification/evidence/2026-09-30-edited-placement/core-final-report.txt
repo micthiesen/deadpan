@@ -1,0 +1,35 @@
+Core edited slice placement checkpoint
+
+Public commands
+SpliceSliceAt { parent, target, at: FrameDuration, slice, identities: SlicePasteIdentities, split_identities: SplitIdentities, timing }.
+ReplaceSlice { parent, range: FrameRange, slice, identities: SlicePasteIdentities, split_identities: SplitIdentities, timing }.
+Existing SpliceSlice, CapturedEditSlice and SlicePasteIdentities remain stable.
+
+Public queries
+ProjectDocument::slice_splice_interior(&self, parent: &NodeId, target: &NodeId, at: FrameDuration, slice: &CapturedEditSlice) -> Result<SourceSpliceInterior, EditError>.
+ProjectDocument::slice_replacement(&self, parent: &NodeId, range: FrameRange, slice: &CapturedEditSlice) -> Result<SequenceRangeEdit, EditError>.
+Both returned required_ids counts Split nodes only. slice.identity_requirements remains imported contents only. Query checks peak destination+Split+paste node counts.
+
+Behavior
+New placement admission follows bounded nested unity Partition chains to Source/ordinary Hold. Existing Source command admission remains unchanged and tests prove its continued refusal of unsupported nested inputs.
+Strict interior captures original lattices, splits under outer EditContext, captures suffix entries on unchanged duration, then installs imported forest. Replacement splits endpoints only if needed, captures original suffix before deleting anything, directly replaces child interval, then prunes final result.
+Joint node-pool validation rejects collisions across Split nodes, pasted current nodes, historical aliases, destination/capture identities. Combined marks/treatments checked again after Split. Historical state merge is validated before graph installation.
+Seam timing assignments unchanged. Interior uses two destination slots then imports. Replacement uses a pre-Split slot iff needed and a suffix slot iff range.end < original total, then imports. Maximum-ordinal terminal/whole-range regression passes with no unused clocks.
+Existing marks move from split undeleted tree to final graph once; imported marks finish separately with absolute pins/unresolved states intact. Root sounds get one outer Insert/Replace transform. Split allowances move to retained fragments once; deleted issuers disappear, copied Holds gain none. One reversible patch results.
+
+Changed files, all within crates/deadpan-core
+New src/edit_slice/placement.rs and tests/edited_slice/placement.rs.
+Modified src/command.rs, src/edit_slice.rs, src/edit_slice/rename.rs, src/insert_time/sequence_range.rs, src/insert_time/source_splice.rs, src/sound_events.rs, src/sound_routing.rs, src/legacy_v29.rs through src/legacy_v32.rs, tests/edited_slice.rs.
+
+Commands/results (all use rustup run 1.97.1)
+check-01.log: cargo check -p deadpan-core --locked; exit0.
+test-01.log: initial combined test attempt exit101:18slice passed,3 new fixtures rejected before commands because Sources had no media. Corrected only fixtures to asset-backed Sources. Other targets had not run yet.
+test-02.log: cargo test -p deadpan-core --test edited_slice --locked; exit0,21passed.
+regressions-03.log: cargo test -p deadpan-core --test insert_time --test marks --test sound_routing --test sound_allowances --locked; exit0,59+18+16+12passed.
+clippy-01.log: cargo clippy -p deadpan-core --all-targets --locked -- -D warnings; exit0,2m40s.
+All126 targeted tests passed with no ignored tests. Explicit owned rustfmt and final git diff --check passed. Parent reported fresh independent review found no concrete findings.
+Cargo slot returned to root for PCM/picture/store/CLI serialization.
+
+Limits
+Same project and presentation basis. Strict direct-child interiors and nonempty global ranges under ordinary Sequence ancestors. Partial Repeat/nonunity Retime/Generated/occurrence interiors remain rejected; whole selected/imported composites stay structural. No move operation, native register/UI or persistent-register integration added. No native windows touched.
+Public preflights estimate structural identity needs; they are not mutation authority or a waiver of final aggregate clock/mark/depth/byte limits. Store provenance/media authority remains parent-owned. Parent/sibling decoded PCM, picture, store, CLI and final workspace gates pending at this report. No commits/pushes/worktrees/global formatting by this worker.

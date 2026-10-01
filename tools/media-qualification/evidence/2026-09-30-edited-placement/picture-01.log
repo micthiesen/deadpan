@@ -1,0 +1,15 @@
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.51s
+     Running tests/edited_slice.rs (target/debug/deps/edited_slice-a58d29f26e190bf1)
+
+running 7 tests
+test partial_copy_of_an_already_cropped_partition_keeps_the_original_owner_clock ... ok
+test cropped_source_and_hold_retain_owner_progress_and_full_nested_clips ... ok
+test partial_partition_copy_survives_deletion_and_each_paste_has_independent_owners ... ok
+test full_repeat_overrides_gaps_and_preserve_retime_keep_exact_picture_clocks ... ok
+test placement::copied_nested_partitions_allow_interior_insert_and_replacement_without_owner_clock_reset ... ok
+test placement::interior_insertion_retains_destination_clocks_and_copied_composite_ownership ... ok
+test placement::shorter_equal_and_longer_replacement_preserve_both_joins_and_owned_clocks ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.17s
+

@@ -6,6 +6,9 @@ use std::{collections::BTreeMap, error::Error, path::Path};
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
+#[path = "edited_slice/placement.rs"]
+mod placement;
+
 fn node(name: &str) -> NodeId {
     NodeId::new(name).unwrap()
 }
@@ -200,8 +203,8 @@ fn captured_slice_survives_source_deletion_and_independent_pastes_reopen_undo_re
     assert!(!removed.nodes().contains_key(&node("voice")));
     drop(store);
 
-    // The retained value crosses serialization and a writer restart. It must
-    // not look up the deleted capture revision's nodes during insertion.
+    // The retained value crosses serialization and a writer restart. The current
+    // document lacks its original nodes; the historical revision proves capture.
     let slice: CapturedEditSlice = serde_json::from_slice(&bytes)?;
     let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
     let first = paste(&removed, &slice, "first", 1)?;

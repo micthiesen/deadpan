@@ -1,0 +1,28 @@
+Edited placement PCM verification, 2026-09-30 Vancouver.
+
+Command:
+DEADPAN_FFMPEG_PREFIX=/tmp/deadpan-ui-ffmpeg/prefix rustup run 1.97.1 cargo test --locked -p deadpan-audio --test composite_insert edited_slice -- --nocapture
+
+Final passing log: 20261001T021003.856266Z-focused.log
+15 passed; 0 failed; 0 ignored; 32 filtered out; tests 6.55s.
+Compiler rustc 1.97.1 (8bab26f4f 2026-07-14); HEAD 233c3796b15c23814a1798535eb58414d9da8758 plus shared working changes.
+
+Earlier retained logs:
+20261001T020418.780529Z-focused.log: 14 passed, 1 failed. Full 15-test run.
+20261001T020804.224656Z-focused.log: same single failure after adding literal plan-support assertions. Those assertions passed before the PCM mismatch.
+
+Oracle correction, independently confirmed by the core author:
+The original scalar-witnesses.txt final sentence claimed point 11211 was supported solely because a seven-frame Source has exact geometric extent 11211.2 mix points. That statement was incomplete and is superseded by this note; the original file remains unchanged as failure evidence.
+A Source originally placed at frame 0 also owns discrete RootRoundEven support [0,B(7))=[0,11211). Its current recipe still has complete geometric support [0,7) and retained reconstruction context. AudioBound::raw_domain returns that complete Root domain; AudioDomain::root_samples rounds on the old root grid; DomainSignalTransfer and RootSignalTransfer suppress reference positions outside its half-open discrete support.
+In the Repeat interior case, the suffix moves from frames [5,7) to [19,21). Its new 3204 points map to retained q=8008+j. Last j=3203 maps to 11211, outside support. Output sample 33633 is therefore explicitly suppressed on [33633,33634). The corrected oracle preserves all 3204 destination points and independently clips only exhausted old sample labels. It neither resizes old PCM nor changes the destination interval.
+Permanent assertions retain raw-domain extent [0,7), root samples [0,11211), exact final reference mapping, and the explicit suppression interval. Other copied interior selections still prove a real additional sample where full retained support exists. The equal-duration Source with three frames replacement retains sample 4804 because its old discrete endpoint is B(3)=4805.
+References: docs/INSERT_TIME.md; docs/OWNED_AUDIO_BINDINGS.md; docs/AUDIO_PROJECTED_ROOT.md; crates/deadpan-plan/src/audio_bound.rs; crates/deadpan-plan/src/audio_domain.rs; crates/deadpan-audio/src/domain_transfer.rs.
+No production source changes were needed for this diagnosis.
+
+Owned source changes:
+crates/deadpan-audio/tests/composite_insert/edited_slice.rs: placement submodule declaration only.
+crates/deadpan-audio/tests/composite_insert/edited_slice/placement.rs: 7 decoded PCM fixtures and independent reference helpers.
+Owned rustfmt and module-declaration whitespace checks pass.
+
+Coverage uses real finite 44.1 kHz decoded WAV through StageAudio at 30000/1001 fps. It includes shorter/equal/longer replacements; the exact retained final 4804 sample; prior InsertTime/DeleteRange capture and destination bindings; Source/RoomTone; editing nested copied Partitions twice; whole imported Repeat with retired birth runs/sparse overrides; complete Preserve preparation; partial endpoints around whole removed Repeat/Preserve; cold terminal and reverse irregular reads; old prefix/suffix and exact independently computed allocations.
+Limits: no mastering/edge-acoustic, export, GUI, listening, or device-delivery qualification. Parent owns broader integration checks. Cargo returned to root after the passing run.

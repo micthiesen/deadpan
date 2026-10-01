@@ -1,0 +1,7 @@
+All Cargo via explicit rustup run 1.97.1 and locked dependencies.
+check-01.log: cargo check -p deadpan-core --locked; exit0.
+test-01.log: cargo test -p deadpan-core --test edited_slice --test insert_time --test marks --test sound_routing --test sound_allowances --locked; exit101. First target 18pass/3fail because new fixtures constructed a Source without media. Corrected the fixtures to asset-backed video Source; no production correction needed. Cargo stopped before remaining regression targets.
+test-02.log: cargo test -p deadpan-core --test edited_slice --locked; exit0,21pass including6 new placement tests.
+regressions-03.log: cargo test -p deadpan-core --test insert_time --test marks --test sound_routing --test sound_allowances --locked; exit0,59+18+16+12pass.
+clippy-01.log: cargo clippy -p deadpan-core --all-targets --locked -- -D warnings; running at report time.
+Explicit owned-file rustfmt completed; git diff --check -- crates/deadpan-core passed. No whole-tree formatter, workspace check, commit, push, worktree, or UI operation.

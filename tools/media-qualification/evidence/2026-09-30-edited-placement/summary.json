@@ -1,0 +1,23 @@
+{
+  "base_commit": "233c3796b15c23814a1798535eb58414d9da8758",
+  "source_manifest_sha256": "ab4c1da26bb1dacdc521dfc3f38575aed1e5d70cd2505fe88a3618cd4b0f3d44",
+  "workspace_tests_passed": 2739,
+  "workspace_result_groups": 182,
+  "failed": 0,
+  "ignored": 0,
+  "source_hashes_match_after_checks": true,
+  "host": {
+    "macos": "26.5.2",
+    "model": "Mac17,7",
+    "architecture": "arm64"
+  },
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+  "ffmpeg_prefix": "/tmp/deadpan-ui-ffmpeg/prefix",
+  "limits": [
+    "Backend-only change; no native UI or Kestrel replay.",
+    "Picture fixtures inspect the canonical plan, not decoded GPU output.",
+    "Decoded PCM is not acoustic, device or mastered-export qualification.",
+    "Generated bundle test uses synthetic accepted evidence, not AI footage.",
+    "Native edited registers and placement controls, atomic move and temporal occurrence interiors remain open."
+  ]
+}

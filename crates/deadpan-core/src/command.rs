@@ -92,6 +92,25 @@ pub enum Command {
         identities: crate::SlicePasteIdentities,
         timing: crate::AudioTimingId,
     },
+    /// Paste edited contents strictly inside one named ordinary Sequence child.
+    SpliceSliceAt {
+        parent: NodeId,
+        target: NodeId,
+        at: FrameDuration,
+        slice: crate::CapturedEditSlice,
+        identities: crate::SlicePasteIdentities,
+        split_identities: crate::SplitIdentities,
+        timing: crate::AudioTimingId,
+    },
+    /// Replace one nonempty global ordinary Sequence range with edited contents.
+    ReplaceSlice {
+        parent: NodeId,
+        range: crate::FrameRange,
+        slice: crate::CapturedEditSlice,
+        identities: crate::SlicePasteIdentities,
+        split_identities: crate::SplitIdentities,
+        timing: crate::AudioTimingId,
+    },
     /// Insert one Source strictly inside an explicitly named direct Sequence
     /// child, retaining both split contexts in one atomic edit.
     SpliceSourceAt {
@@ -616,8 +635,10 @@ pub fn apply(
             timing,
             &request.new_revision,
         )?,
-        Command::SpliceSlice { .. } => {
-            crate::edit_slice::apply(input, &request.command, &request.new_revision)?
+        Command::SpliceSlice { .. }
+        | Command::SpliceSliceAt { .. }
+        | Command::ReplaceSlice { .. } => {
+            crate::edit_slice::apply(input, &request.command, context)?
         }
         Command::SpliceSourceAt {
             parent,
@@ -953,6 +974,8 @@ pub(crate) fn reduce(
         Command::InsertTime { .. }
         | Command::SpliceSource { .. }
         | Command::SpliceSlice { .. }
+        | Command::SpliceSliceAt { .. }
+        | Command::ReplaceSlice { .. }
         | Command::ReplaceSource { .. }
         | Command::DeleteRipple { .. }
         | Command::DeleteRange { .. }
@@ -1961,6 +1984,8 @@ fn description(command: &Command) -> &'static str {
         Command::InsertTime { .. } => "Insert pause",
         Command::SpliceSource { .. } => "Paste source moment",
         Command::SpliceSlice { .. } => "Paste edited slice",
+        Command::SpliceSliceAt { .. } => "Paste edited slice inside beat",
+        Command::ReplaceSlice { .. } => "Replace with edited slice",
         Command::SpliceSourceAt { .. } => "Splice source moment inside beat",
         Command::ReplaceSource { .. } => "Replace selection with source moment",
         Command::Split { .. } => "Split beat",

@@ -145,11 +145,50 @@ native controls changed, so this checkpoint adds no new UI or acoustic evidence.
 Next connect capture to the native register on the service worker. Reject late
 copy completions by project session and request identity; extend the existing
 visible placement proposal, endpoint pictures, local refinement, audition joins
-and saved-edit recovery. Interior insertion, edited replacement and move need
-atomic commands that retain destination clocks before splitting or removal.
+and saved-edit recovery. Interior insertion and edited replacement now have
+atomic commands, recorded below; move still needs its own atomic command.
 Named registers, role-only placement, cut-to-register, motion/text-object
 operators and partial Repeat/Retime/generated-Hold occurrence interiors remain
 required. The seam insertion boundary alone does not complete those workflows.
+
+## Edited interior insertion and replacement, 2026-09-30
+
+`SpliceSliceAt` pastes strictly inside a named direct child and `ReplaceSlice`
+replaces a nonempty global range under an ordinary Sequence. Both preserve the
+captured edited structure and commit as one reversible transaction. See the
+[contract](../EDITED_SLICES.md) and
+[qualification](../qualification/edited-placement-2026-09-30.md).
+
+Destination lattices are captured before endpoint Split, and the original
+suffix entry is retained before removing anything. No deletion-only clock is
+observed. Joint Split/import identity pools, conditional timing ordinals,
+mark fragments, sound routes and allowances are checked atomically. New slice
+commands admit nested unity Partition destinations without widening existing
+Original command admission. Store recapture and historical media authority
+cover all three slice commands. Core 34/database 43 remain unchanged.
+
+Focused checks pass 126 core, 15 decoded-PCM, seven picture-plan, 39 store and
+two CLI tests. An initial PCM oracle omitted the old rounded discrete support;
+the corrected test preserves the entire output allocation and explicitly
+checks the one exhausted sample. Independent core inspection confirmed the
+diagnosis; production code did not change. The qualification record preserves
+this failure and the three initially invalid Source test fixtures. Independent
+implementation review found no defects. All 2,739 locked workspace tests,
+formatting and strict all-target workspace Clippy pass on Rust 1.97.1, with none
+failed or ignored. The qualification record retains exact source hashes and
+logs; all source hashes still matched after the gate. No native UI or acoustic
+qualification was added by this backend checkpoint.
+
+Next connect edited capture to the native service/register and existing visible
+proposal. Preserve immutable capture revision and parent during local refinement;
+newer copy intent supersedes late replies, but accepted copies survive edits and
+Undo. Historical assets require an explicitly admitted preview inventory. Keep
+the existing strict default proposal asset checks. Source endpoints need copied
+owner contexts, which can be materialized by pure in-memory paste into a neutral
+document and rendered through the shared pipeline. Whole historical-document
+frames can include unselected ancestor framing and are not a sufficient source
+strip. Native integration, atomic move and the remaining full-spec operations
+are still open.
 
 ## Native identity, 2026-09-30
 

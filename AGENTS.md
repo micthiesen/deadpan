@@ -292,14 +292,17 @@ the exact join. A saved edit survives preview-refresh failure with its receipt
 and explicit reopen guidance; stale views cannot consume its cursor/selection.
 See [selected ranges](docs/AUDIO_REANCHORS.md#selected-ranges).
 
-Edited-content capture and seam insertion use `CapturedEditSlice` and
-`SpliceSlice` through the core/headless path. Retain complete owner contexts
-behind neutral crop windows, old sample entries, scoped Repeat families and
-injectively renamed historical timing aliases. Filter partial mark fragments
-by exact boundary bias. Store admission must recapture the named immutable
+Edited-content capture, seam/interior insertion and range replacement use
+`CapturedEditSlice`, `SpliceSlice`, `SpliceSliceAt` and `ReplaceSlice` through the
+core/headless path. Capture lattices before Split and suffix entries before
+removing selected children. Keep Split and import identity pools disjoint and
+allocate only the destination clocks each new operation needs. Retain complete
+owner contexts behind neutral crop windows, old sample entries, scoped Repeat
+families and injectively renamed historical timing aliases. Filter partial mark
+fragments by exact boundary bias. Store admission must recapture the named immutable
 revision before reusing historical media; clipboard data grants no qualification.
 Independent root sounds remain separate and transform once at insertion.
-Native registers, replacement and move remain open. See
+Native edited-slice controls, registers and atomic move remain open. See
 [edited slices](docs/EDITED_SLICES.md).
 
 Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 34 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings, audio edge policies, transparent Retime partitions, owned timing bindings and direct sound replacement maps, and binds qualified assets to immutable source receipts. Database schemas 1 through 38 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.

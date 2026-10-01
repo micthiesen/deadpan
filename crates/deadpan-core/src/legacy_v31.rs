@@ -1160,6 +1160,8 @@ pub fn validate_request_context(
     if matches!(
         command,
         Command::SpliceSlice { .. }
+            | Command::SpliceSliceAt { .. }
+            | Command::ReplaceSlice { .. }
             | Command::SpliceSourceAt { .. }
             | Command::ReplaceSource { .. }
             | Command::DeleteRipple { .. }
@@ -1259,6 +1261,8 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::InsertTime { .. }
         | Command::SpliceSource { .. }
         | Command::SpliceSlice { .. }
+        | Command::SpliceSliceAt { .. }
+        | Command::ReplaceSlice { .. }
         | Command::SpliceSourceAt { .. }
         | Command::ReplaceSource { .. }
         | Command::DeleteRipple { .. }

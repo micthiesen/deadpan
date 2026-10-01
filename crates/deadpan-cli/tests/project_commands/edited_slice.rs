@@ -4,6 +4,9 @@ use deadpan_core::{
     SlicePasteIdentities,
 };
 
+#[path = "edited_slice/placement.rs"]
+mod placement;
+
 fn authored(package: &Path) -> Result<Vec<String>> {
     let database = rusqlite::Connection::open(package.join("project.sqlite"))?;
     let mut rows = Vec::new();

@@ -2,9 +2,11 @@
 
 `CapturedEditSlice` holds an immutable, editable copy of a selected half-open
 range from Your edit. `Command::SpliceSlice` inserts it at an ordinary Sequence
-seam in one reversible transaction. These core and headless boundaries support
+seam, `SpliceSliceAt` inserts inside a named direct child, and `ReplaceSlice`
+replaces a nonempty range in that Sequence. Each is one reversible transaction.
+These core and headless boundaries support
 the native placement workflow specified in Section 9.7; they do not establish
-that its native controls, replacement, move or occurrence editing are complete.
+that its native controls, move or occurrence editing are complete.
 
 ## Ownership and capture
 
@@ -33,6 +35,30 @@ traverse nested unity Partition windows without changing historical Split
 admission. It does not flatten
 Repeat plays or retimed output into new source clips. Partial Repeat/Retime
 occurrences and generated Hold interiors remain outside this boundary.
+
+## Destination placement
+
+The destination parent and its ancestors must be ordinary Sequences. Interior
+insertion names a direct child and a strict local boundary inside it. Replacement
+names a nonempty global Edit interval within the parent. Source and ordinary
+Hold endpoints may sit behind bounded chains of unity Partition windows, so a
+pasted fragment remains eligible for later interior insertion or replacement.
+Whole intervening composites remain structural. These commands do not resolve
+Repeat or nonunity Retime occurrences implicitly.
+
+The read-only `slice_splice_interior` and `slice_replacement` queries return the
+number of Split node identities needed. Those identities are separate from
+`slice.identity_requirements()`. Validate both pools together, including unused
+supplied identities and historical aliases, before constructing a candidate.
+The temporary peak includes destination, split and imported nodes.
+
+Capture original sampling lattices before splitting endpoints. Prepare the
+destination suffix on the split, undeleted tree at the original insertion
+boundary or replacement Out. Replace the selected child interval directly with
+the imported root; never construct a shorter deletion-only clock. Existing
+marks and lineage reconcile against the final structure, imported marks finish
+separately, and the outer command transforms root sounds and allowances once.
+Copied Holds receive no new permission to play independent root sounds.
 
 ## Exact picture and audio clocks
 
@@ -69,9 +95,13 @@ Repeats can share old allocation/ordinal values without becoming one family.
 Compact play order and complete birth Run support, including retired plays,
 remain intact. No operation expands every Repeat play to perform this rename.
 
-The command's `timing.allocation` equals its new revision. Its first ordinal is
-reserved for destination capture; consecutive checked ordinals name imported
-records. Combined identity, node, mark, clock, treatment, serialization and work
+The command's `timing.allocation` equals its new revision. Seam insertion retains
+its reserved destination ordinal. Strict interior insertion uses a pre-Split
+lattice ordinal, then a suffix ordinal. Replacement uses a pre-Split ordinal
+only when endpoints need splitting and a suffix ordinal only when material
+follows its Out. Imported records follow the used destination ordinals. Check
+only the consumed interval, so whole-range replacement needs no unused suffix
+clock. Combined identity, node, mark, clock, treatment, serialization and work
 limits apply before a candidate is admitted. Frozen layout indexes are rebuilt
 after renaming. Ordinary subtree insertion's positional Repeat normalization is
 not a substitute for this path.
@@ -97,7 +127,7 @@ the same project and presentation basis. Immutable media is shared, while beat,
 mark, play and timing identities remain independent.
 
 The store reads the named immutable capture revision before admitting a
-`SpliceSlice` and verifies the complete payload against a deterministic capture
+slice placement and verifies the complete payload against a deterministic capture
 of that parent and range, using its retained scratch timing identity. This also
 rejects valid historical media from outside the declared selection. An exact
 qualified asset record or accepted generated artifact in that verified capture
@@ -119,9 +149,10 @@ session and request identity. Extend the existing Original placement proposal
 without losing its visible unsaved state, comparison windows, audition joins,
 stale-target rejection or saved-edit recovery.
 
-Insertion inside a destination beat, edited-content replacement and move must
-each be a single atomic command. Preserve destination clocks before endpoint
-splits and before removing any selected children.
+Atomic move remains required. It must preserve destination clocks before endpoint
+splits and before removing any selected children, and reject placement inside
+its own removed interval.
 Named register persistence, role-only placement, cut-to-register behavior,
 motion/text-object operators and nested occurrence interiors remain required.
-None of these is supplied by the seam insertion command alone.
+These workflows remain open beyond the core/headless capture and placement
+commands described above.

@@ -1,0 +1,24 @@
+DEADPAN_FFMPEG_PREFIX=/tmp/deadpan-ui-ffmpeg/prefix rustup run 1.97.1 cargo test --locked -p deadpan-audio --test composite_insert edited_slice::placement::interior_and_replacement_keep_imported_repeat_and_complete_preserve_contexts -- --nocapture
+rustc 1.97.1 (8bab26f4f 2026-07-14)
+233c3796b15c23814a1798535eb58414d9da8758
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.48s
+     Running tests/composite_insert.rs (target/debug/deps/composite_insert-83f2643f39d161d3)
+
+running 1 test
+
+thread 'edited_slice::placement::interior_and_replacement_keep_imported_repeat_and_complete_preserve_contexts' (59346728) panicked at crates/deadpan-audio/tests/composite_insert/edited_slice/placement.rs:166:5:
+sample 3203, channel 0: 0 != 0.15111773
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test edited_slice::placement::interior_and_replacement_keep_imported_repeat_and_complete_preserve_contexts ... FAILED
+
+failures:
+
+failures:
+    edited_slice::placement::interior_and_replacement_keep_imported_repeat_and_complete_preserve_contexts
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 46 filtered out; finished in 0.97s
+
+error: test failed, to rerun pass `-p deadpan-audio --test composite_insert`
+
+EXIT_CODE=101

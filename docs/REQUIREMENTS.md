@@ -208,12 +208,24 @@ exact picture plans and decoded NTSC PCM, repeated and partial copy-of-copy,
 untouched destination content, historical media admission and durable Undo/Redo.
 The store recaptures the named immutable revision before reusing its media, so
 copies survive source deletion without accepting forged or unselected assets.
-See [qualification](qualification/edited-slice-2026-09-30.md). Native registers,
-placement/refinement for edited content, replacement/move, cut-to-register and
+See [qualification](qualification/edited-slice-2026-09-30.md). Native edited
+registers, placement, refinement and replacement, atomic move, cut-to-register and
 temporal occurrence interiors remain open. No DP requirement or gate changes
 status. Independent review is complete; all 2,717 locked workspace tests,
 formatting and strict all-target workspace Clippy pass on Rust 1.97.1, with none
 failed or ignored. Core 34/database 43 remain unchanged.
+
+[Edited interior placement and replacement](qualification/edited-placement-2026-09-30.md)
+adds `SpliceSliceAt` and `ReplaceSlice` through the same typed core/headless path.
+Destination endpoint splits retain original lattices; replacement captures the
+old suffix before removing selected children. Conditional clock allocation,
+joint identity pools and one root-sound transform retain exact undo semantics.
+Focused verification passes 126 core, 15 decoded-PCM, seven picture-plan,
+39 store and two CLI tests. Independent review found no implementation defects.
+All 2,739 locked workspace tests, formatting and strict all-target workspace
+Clippy pass on Rust 1.97.1, with none failed or ignored. Native edited registers and
+placement controls, atomic move and temporal occurrence interiors remain open;
+no DP requirement or gate changes status.
 
 The [shared render workflow](RENDER_JOBS.md#shared-workflow-and-native-ownership)
 connects capture, encoding, retained checkpoints, fresh verification, publication

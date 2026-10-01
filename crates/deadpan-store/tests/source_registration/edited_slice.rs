@@ -1,7 +1,8 @@
 use super::*;
 use deadpan_core::{
-    AudioTimingId, CapturedEditSlice, CommandRequest, FrameRange, OccurrenceIdentities,
-    ProjectFrame, SlicePasteIdentities,
+    AudioTimingId, BeatNode, CapturedEditSlice, CommandRequest, FrameDuration, FrameRange,
+    HoldAudio, HoldRecipe, HoldVideo, OccurrenceIdentities, ProjectFrame, SlicePasteIdentities,
+    SplitIdentities, Subtree,
 };
 
 fn paste(
@@ -131,5 +132,149 @@ fn historical_slice_restores_only_source_metadata_admitted_by_its_stored_revisio
     let receipt = reader.registered_source(restored.revision_id(), &id("camera"))?;
     assert_eq!(Some(receipt.id()), record.source_qualification.as_ref());
     reader.validate()?;
+    Ok(())
+}
+
+fn placement(
+    document: &ProjectDocument,
+    slice: &CapturedEditSlice,
+    name: &str,
+    replace: bool,
+) -> Result<CommandRequest> {
+    let mut request = paste(document, slice, name)?;
+    let Command::SpliceSlice {
+        parent,
+        slice,
+        identities,
+        timing,
+        ..
+    } = request.command
+    else {
+        unreachable!()
+    };
+    let target = NodeId::new("destination")?;
+    let at = FrameDuration::new(2)?;
+    let range = FrameRange::new(ProjectFrame(1), ProjectFrame(4))?;
+    let required = if replace {
+        document
+            .slice_replacement(&parent, range, &slice)?
+            .required_ids
+    } else {
+        document
+            .slice_splice_interior(&parent, &target, at, &slice)?
+            .required_ids
+    };
+    let split_identities = SplitIdentities {
+        nodes: (0..required)
+            .map(|i| NodeId::new(format!("{name}-split-{i}")))
+            .collect::<std::result::Result<_, _>>()?,
+    };
+    request.command = if replace {
+        Command::ReplaceSlice {
+            parent,
+            range,
+            slice,
+            identities,
+            split_identities,
+            timing,
+        }
+    } else {
+        Command::SpliceSliceAt {
+            parent,
+            target,
+            at,
+            slice,
+            identities,
+            split_identities,
+            timing,
+        }
+    };
+    Ok(request)
+}
+
+#[test]
+fn interior_and_replacement_restore_only_the_verified_historical_source() -> Result {
+    for replace in [false, true] {
+        let scratch = tempfile::tempdir()?;
+        let (path, mut store) = project(scratch.path())?;
+        let original = retain(&mut store, "offset-bframes.mp4")?;
+        let decoded = decode(&store, &original)?;
+        let registration = request(&store, &original, "registered", "camera", Some("clip"))?;
+        store.register_source(&registration, &decoded, None, limits(), &active())?;
+        let registered = store.snapshot()?;
+        let slice = CapturedEditSlice::capture(
+            &registered,
+            registered.root(),
+            FrameRange::new(ProjectFrame(1), ProjectFrame(9))?,
+            AudioTimingId {
+                allocation: revision("copy"),
+                ordinal: 0,
+            },
+        )?;
+        store.undo(registered.revision_id(), revision("undo-registration"))?;
+        let empty = store.snapshot()?;
+        let target = NodeId::new("destination")?;
+        store.commit(&CommandRequest {
+            project_id: empty.project_id().clone(),
+            expected_revision: empty.revision_id().clone(),
+            new_revision: revision("destination"),
+            command: Command::Insert {
+                parent: empty.root().clone(),
+                index: 0,
+                subtree: Subtree {
+                    root: target.clone(),
+                    nodes: std::collections::BTreeMap::from([(
+                        target,
+                        BeatNode::hold(
+                            "Destination",
+                            HoldRecipe {
+                                picture_context: None,
+                                duration: FrameDuration::new(5)?,
+                                video: HoldVideo::Background,
+                                audio: HoldAudio::Silence,
+                            },
+                        ),
+                    )]),
+                    overrides: Default::default(),
+                    gap_overrides: Default::default(),
+                },
+            },
+        })?;
+        let before = store.snapshot()?;
+        assert!(before.assets().is_empty());
+        let saved_counts = counts(&path)?;
+        let mut forged = serde_json::to_value(&slice)?;
+        forged["assets"]["camera"]["source_qualification"] = serde_json::json!("f".repeat(64));
+        let forged: CapturedEditSlice = serde_json::from_value(forged)?;
+        let invalid = placement(&before, &forged, "forged", replace)?;
+        deadpan_core::apply(&before, &invalid)?;
+        assert_eq!(
+            store.preview(&invalid).unwrap_err().code(),
+            "InvalidCommand"
+        );
+        assert_eq!(store.commit(&invalid).unwrap_err().code(), "InvalidCommand");
+        assert_eq!(store.snapshot()?, before);
+        assert_eq!(counts(&path)?, saved_counts);
+        let command = placement(&before, &slice, "placed", replace)?;
+        let preview = store.preview(&command)?;
+        assert_eq!(preview.duration_delta, if replace { 5 } else { 8 });
+        assert_eq!(counts(&path)?, saved_counts);
+        assert_eq!(store.commit(&command)?.edit, preview);
+        let after = store.snapshot()?;
+        assert_eq!(after.assets(), registered.assets());
+        assert_eq!(
+            counts(&path)?,
+            (saved_counts.0 + 1, saved_counts.1 + 1, saved_counts.2)
+        );
+        store.validate()?;
+        drop(store);
+        let reader = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+        let receipt = reader.registered_source(after.revision_id(), &id("camera"))?;
+        assert_eq!(
+            Some(receipt.id()),
+            after.assets()[&id("camera")].source_qualification.as_ref()
+        );
+        reader.validate()?;
+    }
     Ok(())
 }

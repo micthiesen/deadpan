@@ -2,6 +2,9 @@ use deadpan_core::*;
 use serde_json::json;
 use std::collections::{BTreeMap, BTreeSet};
 
+#[path = "edited_slice/placement.rs"]
+mod placement;
+
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }

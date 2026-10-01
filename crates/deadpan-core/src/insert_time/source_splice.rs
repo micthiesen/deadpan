@@ -28,6 +28,36 @@ impl ProjectDocument {
         target: &NodeId,
         at: FrameDuration,
     ) -> Result<SourceSpliceInterior, EditError> {
+        self.splice_interior(parent, target, at, 1, false)
+    }
+
+    /// Preflight a copied-content insertion, including both Split and imported
+    /// node counts. `required_ids` counts only the destination Split identities.
+    pub fn slice_splice_interior(
+        &self,
+        parent: &NodeId,
+        target: &NodeId,
+        at: FrameDuration,
+        slice: &crate::CapturedEditSlice,
+    ) -> Result<SourceSpliceInterior, EditError> {
+        slice.check_destination(self)?;
+        self.splice_interior(
+            parent,
+            target,
+            at,
+            slice.identity_requirements()?.nodes,
+            true,
+        )
+    }
+
+    fn splice_interior(
+        &self,
+        parent: &NodeId,
+        target: &NodeId,
+        at: FrameDuration,
+        inserted_nodes: usize,
+        nested_windows: bool,
+    ) -> Result<SourceSpliceInterior, EditError> {
         let node = self.nodes().get(parent).ok_or_else(|| {
             EditError::new(
                 EditErrorCode::SelectionUnavailable,
@@ -53,7 +83,7 @@ impl ProjectDocument {
                 "source splice must be strictly inside its named child",
             ));
         }
-        super::physical(self, target).map_err(|error| EditError::new(
+        (if nested_windows { super::slice_physical(self, target) } else { super::physical(self, target) }).map_err(|error| EditError::new(
             error.code,
             "Slice placement here requires a Source, ordinary Hold or supported fragment; enter a group or choose a seam for other structures",
         ))?;
@@ -61,7 +91,8 @@ impl ProjectDocument {
         if self
             .nodes()
             .len()
-            .checked_add(required_ids + 1)
+            .checked_add(required_ids)
+            .and_then(|count| count.checked_add(inserted_nodes))
             .is_none_or(|count| count > MAX_DOCUMENT_NODES)
         {
             return Err(super::limit(

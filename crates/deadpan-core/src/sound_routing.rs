@@ -474,6 +474,30 @@ impl RootSoundEditCapture {
                 at: document.source_splice_boundary(parent, *index)?,
                 duration: slice.duration(),
             },
+            Command::SpliceSliceAt {
+                parent,
+                target,
+                at,
+                slice,
+                ..
+            } => RootSoundOperation::Insert {
+                at: document
+                    .slice_splice_interior(parent, target, *at, slice)?
+                    .boundary,
+                duration: slice.duration(),
+            },
+            Command::ReplaceSlice {
+                parent,
+                range,
+                slice,
+                ..
+            } => {
+                document.slice_replacement(parent, *range, slice)?;
+                RootSoundOperation::Replace {
+                    range: *range,
+                    duration: slice.duration(),
+                }
+            }
             Command::SpliceSourceAt {
                 parent,
                 target,

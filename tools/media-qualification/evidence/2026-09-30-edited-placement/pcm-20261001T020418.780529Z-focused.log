@@ -1,0 +1,41 @@
+DEADPAN_FFMPEG_PREFIX=/tmp/deadpan-ui-ffmpeg/prefix rustup run 1.97.1 cargo test --locked -p deadpan-audio --test composite_insert edited_slice -- --nocapture
+rustc 1.97.1 (8bab26f4f 2026-07-14)
+233c3796b15c23814a1798535eb58414d9da8758
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 56.24s
+     Running tests/composite_insert.rs (target/debug/deps/composite_insert-83f2643f39d161d3)
+
+running 15 tests
+test edited_slice::contents_exclude_unselected_parent_gain_while_owned_group_retains_it ... ok
+test edited_slice::terminal_source_crop_allocates_the_destination_interval_without_invented_support ... ok
+test edited_slice::placement::equal_replacement_keeps_the_final_4804_sample_without_a_shorter_intermediate_clock ... ok
+test edited_slice::placement::partial_endpoint_replacement_across_repeat_and_preserve_keeps_both_outer_joins ... ok
+test edited_slice::immutable_capture_survives_source_change_and_deletion_and_pastes_independently ... ok
+test edited_slice::crop_retains_prior_insert_and_delete_resume_terms ... ok
+test edited_slice::placement::interior_in_a_previously_cut_fragment_composes_both_retained_histories ... ok
+test edited_slice::placement::copied_nested_partitions_remain_editable_by_interior_and_range_replacement ... ok
+test edited_slice::unrelated_repeats_with_equal_raw_play_ids_keep_distinct_historical_clocks ... ok
+
+thread 'edited_slice::placement::interior_and_replacement_keep_imported_repeat_and_complete_preserve_contexts' (59342407) panicked at crates/deadpan-audio/tests/composite_insert/edited_slice/placement.rs:166:5:
+sample 3203, channel 0: 0 != 0.15111773
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test edited_slice::placement::interior_and_replacement_keep_imported_repeat_and_complete_preserve_contexts ... FAILED
+test edited_slice::preserve_partition_copy_keeps_complete_input_history_on_cold_final_read ... ok
+test edited_slice::placement::nested_interior_keeps_source_and_roomtone_suffixes_and_prior_copied_phase ... ok
+test edited_slice::nested_nonzero_source_and_roomtone_crop_keep_phase_and_exact_destination_allocation ... ok
+test edited_slice::copied_repeat_keeps_reordered_births_sparse_overrides_retired_runs_and_copy_of_copy ... ok
+test edited_slice::placement::shorter_equal_and_longer_replacements_use_exact_new_allocations_and_old_support ... ok
+
+failures:
+
+failures:
+    edited_slice::placement::interior_and_replacement_keep_imported_repeat_and_complete_preserve_contexts
+
+test result: FAILED. 14 passed; 1 failed; 0 ignored; 0 measured; 32 filtered out; finished in 6.63s
+
+error: test failed, to rerun pass `-p deadpan-audio --test composite_insert`
+
+EXIT_CODE=101

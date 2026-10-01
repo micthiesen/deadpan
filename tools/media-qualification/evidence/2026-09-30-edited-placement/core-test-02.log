@@ -1,0 +1,29 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.59s
+     Running tests/edited_slice.rs (target/debug/deps/edited_slice-9042556675bce760)
+
+running 21 tests
+test incompatible_historical_play_union_rejects_capture_without_expanding_plays ... ok
+test insufficient_conflicting_stale_and_overflow_requests_fail_atomically ... ok
+test pins_stay_absolute_and_resolve_loss_policy_without_rebinding_dormant_intent ... ok
+test capture_provenance_rejects_other_revisions_and_valid_forged_content ... ok
+test existing_root_local_mark_shifts_once_while_sequence_pin_stays_absolute ... ok
+test partial_marks_keep_exact_positions_bias_and_each_fragments_state ... ok
+test missing_external_host_uses_loss_policy_and_wire_cannot_bind_to_omitted_parent ... ok
+test lineage_allocation_origin_pairs_rename_injectively_across_live_and_history ... ok
+test partial_windows_preserve_the_original_external_endpoint_biases ... ok
+test source_marks_use_the_captured_explicit_occurrence_and_exact_boundary ... ok
+test placement::equal_replacement_keeps_the_suffix_clock_through_its_last_rounded_sample ... ok
+test whole_units_keep_hidden_marks_partial_endpoints_filter_them ... ok
+test history_neutral_capture_survives_source_deletion_and_repeated_paste ... ok
+test placement::repeated_interior_paste_retains_original_lattice_and_chronological_sample_phase ... ok
+test pasted_contents_exclude_root_sound_bus_and_append_one_exact_route_edit ... ok
+test placement::placement_transforms_marks_root_sound_and_split_allowances_once ... ok
+test partial_copy_of_an_untreated_copy_retains_every_complete_context ... ok
+test placement::replacement_uses_only_needed_destination_timing_slots_even_at_max_ordinal ... ok
+test wire_mark_and_scoped_play_union_limits_fail_without_cloning_a_paste ... ok
+test placement::pasted_nested_partitions_support_both_new_placements_without_broadening_source_admission ... ok
+test placement::joint_pools_clock_overflow_and_split_mark_fragment_limits_reject_atomically ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+

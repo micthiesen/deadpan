@@ -1,8 +1,11 @@
 //! Immutable, history-neutral copies of selected ordinary Sequence contents.
 //! Complete owners retain their recipe clocks; transparent windows select output.
 
+mod placement;
 mod rename;
 mod wire;
+
+pub(crate) use placement::apply;
 
 use crate::*;
 use serde::{Deserialize, Serialize};
@@ -23,8 +26,8 @@ pub struct SliceIdentityRequirements {
     pub nodes: usize,
     pub marks: usize,
     pub aliases: usize,
-    /// Imported records only. The command reserves its first timing ordinal for
-    /// destination capture, then uses this many consecutive imported ordinals.
+    /// Imported records only. Each command first uses or reserves its documented
+    /// destination timing slots, then these consecutive imported ordinals.
     pub timings: usize,
 }
 
@@ -76,6 +79,20 @@ impl<'de> Deserialize<'de> for CapturedEditSlice {
 }
 
 impl CapturedEditSlice {
+    pub(crate) fn check_destination(&self, document: &ProjectDocument) -> Result<(), EditError> {
+        if self.project_id() != document.project_id() {
+            return Err(EditError::new(
+                EditErrorCode::ProjectConflict,
+                "slice belongs to another project",
+            ));
+        }
+        if self.presentation_basis() != document.presentation_basis() {
+            return Err(invalid(
+                "slice presentation basis differs from the destination",
+            ));
+        }
+        Ok(())
+    }
     /// Select a nonempty global Edit range under an ordinary Sequence. Partial
     /// endpoints use the existing Source/Hold/fragment admission; complete middle
     /// composites remain structural. `timing` is only a scratch capture name.
@@ -427,123 +444,6 @@ impl std::io::Write for SliceJson {
     fn flush(&mut self) -> std::io::Result<()> {
         Ok(())
     }
-}
-
-pub(crate) fn apply(
-    document: &ProjectDocument,
-    command: &Command,
-    allocation: &RevisionId,
-) -> Result<ProjectDocument, EditError> {
-    let Command::SpliceSlice {
-        parent,
-        index,
-        slice,
-        identities,
-        timing,
-    } = command
-    else {
-        return Err(invalid("slice insertion requires SpliceSlice"));
-    };
-    let index = *index;
-    if slice.project_id() != document.project_id() {
-        return Err(EditError::new(
-            EditErrorCode::ProjectConflict,
-            "slice belongs to another project",
-        ));
-    }
-    if slice.presentation_basis() != document.presentation_basis() {
-        return Err(invalid(
-            "slice presentation basis differs from the destination",
-        ));
-    }
-    if &timing.allocation != allocation {
-        return Err(invalid(
-            "slice timing allocation must equal the new revision",
-        ));
-    }
-    let at = document.source_splice_boundary(parent, index)?;
-    let total = document.duration()?.frames();
-    total
-        .checked_add(slice.duration().frames())
-        .ok_or_else(overflow)?;
-    let requirements = slice.identity_requirements()?;
-    rename::validate_pools(document, &slice.0, identities, requirements)?;
-    let last = u32::try_from(requirements.timings)
-        .ok()
-        .and_then(|count| timing.ordinal.checked_add(count))
-        .ok_or_else(|| limit("slice timing ordinal range overflows"))?;
-    if document.audio_bindings.timings.keys().any(|id| {
-        id.allocation == *allocation && id.ordinal >= timing.ordinal && id.ordinal <= last
-    }) {
-        return Err(EditError::new(
-            EditErrorCode::IdentityConflict,
-            "slice timing range is already retained",
-        ));
-    }
-    for (id, asset) in &slice.0.assets {
-        if document
-            .assets
-            .get(id)
-            .is_some_and(|existing| existing != asset)
-        {
-            return Err(EditError::new(
-                EditErrorCode::ImmutableAsset,
-                "captured asset differs from the immutable destination asset",
-            ));
-        }
-    }
-    if document
-        .assets
-        .len()
-        .checked_add(
-            slice
-                .0
-                .assets
-                .keys()
-                .filter(|id| !document.assets.contains_key(*id))
-                .count(),
-        )
-        .is_none_or(|count| count > MAX_DOCUMENT_ASSETS)
-    {
-        return Err(limit("slice exceeds the destination asset limit"));
-    }
-    crate::audio_gain::validate_nodes_with_limit(
-        document.nodes.values().chain(slice.0.nodes.values()),
-        crate::audio_gain::MAX_ISOLATED_GAIN_RECORDS,
-    )?;
-    crate::picture_context::validate_nodes_with_limit(
-        document.nodes.values().chain(slice.0.nodes.values()),
-        crate::picture_context::MAX_ISOLATED_FRAMING_RECORDS,
-    )?;
-    crate::marks::check_combined_slice_limits(document.marks(), &slice.0.marks)?;
-    let imported = rename::prepare(&slice.0, identities, timing)?;
-    // Prepare the entire combined historical inventory before mutating a candidate.
-    let mut working =
-        crate::insert_time::composite::prepare_suffix(document, parent, index, at, total, timing)?;
-    let root = identities.authored.nodes[0].clone();
-    imported.install(&mut working)?;
-    let NodeKind::Sequence { children } =
-        &mut working.nodes.get_mut(parent).expect("admitted parent").kind
-    else {
-        unreachable!()
-    };
-    children.insert(index, root);
-    // Reconcile only destination content; imported lineage has independent authority.
-    let retained_lineage: BTreeMap<_, _> = working
-        .audio_lineage
-        .iter()
-        .filter(|(id, _)| !document.nodes.contains_key(*id))
-        .map(|(id, lineage)| (id.clone(), lineage.clone()))
-        .collect();
-    crate::audio_lineage::reconcile(document, &mut working, command)?;
-    working.audio_lineage.extend(retained_lineage);
-    let mut marks = std::mem::take(&mut working.marks);
-    marks.retain(|id, _| !document.marks.contains_key(id));
-    working.marks = crate::marks::transform_marks(document, &working, command)?;
-    let copied = crate::marks::finish_slice_marks(&working, marks)?;
-    working.marks.extend(copied);
-    working.validate()?;
-    Ok(working)
 }
 
 fn node_assets(node: &BeatNode, output: &mut BTreeSet<AssetId>) {

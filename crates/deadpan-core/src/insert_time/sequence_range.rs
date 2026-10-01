@@ -13,7 +13,7 @@ pub struct SequenceRangeEdit {
     /// Original direct-child interval intersecting the selected picture time.
     pub start_index: usize,
     pub end_index: usize,
-    /// Split identities only, excluding any inserted Source.
+    /// Split identities only, excluding inserted contents.
     pub required_ids: usize,
 }
 
@@ -23,7 +23,7 @@ pub(crate) fn preflight(
     range: FrameRange,
     inserted_nodes: usize,
 ) -> Result<SequenceRangeEdit, EditError> {
-    preflight_with(document, parent, range, inserted_nodes, true)
+    preflight_with(document, parent, range, inserted_nodes, EndpointMode::Split)
 }
 
 pub(crate) fn preflight_capture(
@@ -31,7 +31,33 @@ pub(crate) fn preflight_capture(
     parent: &NodeId,
     range: FrameRange,
 ) -> Result<SequenceRangeEdit, EditError> {
-    preflight_with(document, parent, range, 0, false)
+    preflight_with(document, parent, range, 0, EndpointMode::Capture)
+}
+
+enum EndpointMode {
+    Split,
+    Capture,
+    SliceSplit,
+}
+
+impl ProjectDocument {
+    /// Preflight endpoint Split counts and peak nodes for copied replacement.
+    /// Complete selected middle composites are removed as owned units.
+    pub fn slice_replacement(
+        &self,
+        parent: &NodeId,
+        range: FrameRange,
+        slice: &crate::CapturedEditSlice,
+    ) -> Result<SequenceRangeEdit, EditError> {
+        slice.check_destination(self)?;
+        preflight_with(
+            self,
+            parent,
+            range,
+            slice.identity_requirements()?.nodes,
+            EndpointMode::SliceSplit,
+        )
+    }
 }
 
 fn preflight_with(
@@ -39,7 +65,7 @@ fn preflight_with(
     parent: &NodeId,
     range: FrameRange,
     inserted_nodes: usize,
-    split: bool,
+    mode: EndpointMode,
 ) -> Result<SequenceRangeEdit, EditError> {
     let start = document.source_splice_boundary(parent, 0)?;
     let NodeKind::Sequence { children } = &document.nodes()[parent].kind else {
@@ -66,7 +92,7 @@ fn preflight_with(
             let split_start = offset < range.start().0;
             let split_end = next > range.end().0;
             if split_start || split_end {
-                let endpoint = if split {
+                let endpoint = if matches!(mode, EndpointMode::Split) {
                     super::physical(document, child)
                 } else {
                     super::slice_physical(document, child)
@@ -74,7 +100,7 @@ fn preflight_with(
                 endpoint.map_err(|error| {
                     EditError::new(error.code, "Range endpoints require a Source, ordinary Hold or supported fragment; enter the intended group for other structures")
                 })?;
-                if !split {
+                if matches!(mode, EndpointMode::Capture) {
                     offset = next;
                     continue;
                 }
@@ -121,7 +147,7 @@ fn preflight_with(
     })
 }
 
-pub(super) fn split_endpoints(
+pub(crate) fn split_endpoints(
     document: &ProjectDocument,
     parent: &NodeId,
     range: FrameRange,
@@ -161,13 +187,13 @@ pub(super) fn split_endpoints(
     Ok(working)
 }
 
-pub(super) struct SelectedChildren {
+pub(crate) struct SelectedChildren {
     pub first: usize,
     pub end: usize,
     pub nodes: Vec<NodeId>,
 }
 
-pub(super) fn selected_children(
+pub(crate) fn selected_children(
     document: &ProjectDocument,
     parent: &NodeId,
     range: FrameRange,

@@ -3,7 +3,7 @@
 use super::*;
 use deadpan_core::{
     AudioTimingId, CapturedEditSlice, FrameRange, OccurrenceIdentities, ProjectFrame,
-    SlicePasteIdentities,
+    SlicePasteIdentities, SplitIdentities,
 };
 
 fn paste(
@@ -165,5 +165,189 @@ fn historical_slice_reuses_accepted_artifact_after_last_hold_is_deleted() -> Res
     let reader = ProjectStore::open(&package, AccessMode::ReadOnly)?;
     assert_eq!(provider(&reader.snapshot()?), provider(&accepted));
     reader.validate()?;
+    Ok(())
+}
+
+fn placement(
+    document: &ProjectDocument,
+    slice: &CapturedEditSlice,
+    name: &str,
+    replace: bool,
+) -> Result<CommandRequest> {
+    let mut request = paste(document, slice, name)?;
+    let Command::SpliceSlice {
+        parent,
+        slice,
+        identities,
+        timing,
+        ..
+    } = request.command
+    else {
+        unreachable!()
+    };
+    let target = NodeId::new("destination")?;
+    let at = FrameDuration::new(2)?;
+    let range = FrameRange::new(ProjectFrame(1), ProjectFrame(4))?;
+    let required = if replace {
+        document
+            .slice_replacement(&parent, range, &slice)?
+            .required_ids
+    } else {
+        document
+            .slice_splice_interior(&parent, &target, at, &slice)?
+            .required_ids
+    };
+    let split_identities = SplitIdentities {
+        nodes: (0..required)
+            .map(|i| NodeId::new(format!("{name}-split-{i}")))
+            .collect::<std::result::Result<_, _>>()?,
+    };
+    request.command = if replace {
+        Command::ReplaceSlice {
+            parent,
+            range,
+            slice,
+            identities,
+            split_identities,
+            timing,
+        }
+    } else {
+        Command::SpliceSliceAt {
+            parent,
+            target,
+            at,
+            slice,
+            identities,
+            split_identities,
+            timing,
+        }
+    };
+    Ok(request)
+}
+
+fn assert_authored(actual: &ProjectDocument, expected: &ProjectDocument) -> Result {
+    let mut expected = serde_json::to_value(expected)?;
+    expected["revision_id"] = serde_json::to_value(actual.revision_id())?;
+    assert_eq!(serde_json::to_value(actual)?, expected);
+    Ok(())
+}
+
+#[test]
+fn interior_and_replacement_reuse_accepted_artifacts_without_reviving_generation() -> Result {
+    for replace in [false, true] {
+        let scratch = tempfile::tempdir()?;
+        let package = scratch.path().join("historical-placement.deadpan");
+        let mut store = ProjectStore::create(&package, &document()?)?;
+        let input = ready_for_acceptance(&mut store)?;
+        store.accept_generation_bundle(
+            &input,
+            &unchanged_relevance(&store, &input.new_revision)?,
+            media_limits(),
+        )?;
+        let accepted = store.snapshot()?;
+        let slice = CapturedEditSlice::capture(
+            &accepted,
+            accepted.root(),
+            FrameRange::new(ProjectFrame(0), ProjectFrame(12))?,
+            AudioTimingId {
+                allocation: RevisionId::new("copy")?,
+                ordinal: 0,
+            },
+        )?;
+        edit_reconciled(
+            &mut store,
+            "deleted",
+            Command::DeleteRipple {
+                node: NodeId::new("hold")?,
+                timing: AudioTimingId {
+                    allocation: RevisionId::new("deleted")?,
+                    ordinal: 0,
+                },
+            },
+        )?;
+        let empty = store.snapshot()?;
+        let target = NodeId::new("destination")?;
+        edit_reconciled(
+            &mut store,
+            "destination",
+            Command::Insert {
+                parent: empty.root().clone(),
+                index: 0,
+                subtree: Subtree {
+                    root: target.clone(),
+                    nodes: BTreeMap::from([(
+                        target,
+                        BeatNode::hold(
+                            "Destination",
+                            HoldRecipe {
+                                picture_context: None,
+                                duration: FrameDuration::new(5)?,
+                                video: HoldVideo::Background,
+                                audio: HoldAudio::Silence,
+                            },
+                        ),
+                    )]),
+                    overrides: Default::default(),
+                    gap_overrides: Default::default(),
+                },
+            },
+        )?;
+        let before = store.snapshot()?;
+        let cells = authored(&package)?;
+        let mut forged = serde_json::to_value(&slice)?;
+        forged["nodes"]["hold"]["kind"]["recipe"]["video"]["accepted"]["artifact"]["provenance"] =
+            serde_json::to_value(object(b"never accepted"))?;
+        let forged: CapturedEditSlice = serde_json::from_value(forged)?;
+        let invalid = placement(&before, &forged, "forged", replace)?;
+        deadpan_core::apply(&before, &invalid)?;
+        assert_eq!(
+            store.preview(&invalid).unwrap_err().code(),
+            "InvalidCommand"
+        );
+        assert_eq!(store.commit(&invalid).unwrap_err().code(), "InvalidCommand");
+        assert_eq!(store.snapshot()?, before);
+        assert_eq!(authored(&package)?, cells);
+        let command = placement(&before, &slice, "placed", replace)?;
+        let preview = store.preview(&command)?;
+        assert_eq!(preview.duration_delta, if replace { 9 } else { 12 });
+        assert_eq!(authored(&package)?, cells);
+        assert_eq!(store.commit(&command)?.edit, preview);
+        let after = store.snapshot()?;
+        assert_eq!(after.duration()?.frames(), if replace { 14 } else { 17 });
+        assert_eq!(after.assets(), accepted.assets());
+        let expected_provider = match &accepted.nodes()[&NodeId::new("hold")?].kind {
+            NodeKind::Hold { recipe } => &recipe.video,
+            _ => unreachable!(),
+        };
+        assert!(after.nodes().values().any(|node| {
+            matches!(&node.kind, NodeKind::Hold { recipe } if &recipe.video == expected_provider)
+        }));
+        assert_eq!(
+            store
+                .generation_request(&input.identity.request_id)?
+                .unwrap()
+                .relevance,
+            deadpan_jobs::Relevance::Detached
+        );
+        store.undo(after.revision_id(), RevisionId::new("undo-placement")?)?;
+        assert_authored(&store.snapshot()?, &before)?;
+        store.redo(
+            &RevisionId::new("undo-placement")?,
+            RevisionId::new("redo-placement")?,
+        )?;
+        assert_authored(&store.snapshot()?, &after)?;
+        store.validate()?;
+        drop(store);
+        let reader = ProjectStore::open(&package, AccessMode::ReadOnly)?;
+        assert_authored(&reader.snapshot()?, &after)?;
+        assert_eq!(
+            reader
+                .generation_request(&input.identity.request_id)?
+                .unwrap()
+                .relevance,
+            deadpan_jobs::Relevance::Detached
+        );
+        reader.validate()?;
+    }
     Ok(())
 }
