@@ -1,0 +1,29 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 10.57s
+     Running tests/edited_slice.rs (target/debug/deps/edited_slice-9042556675bce760)
+
+running 8 tests
+test insufficient_conflicting_stale_and_overflow_requests_fail_atomically ... ok
+test pins_stay_absolute_and_resolve_loss_policy_without_rebinding_dormant_intent ... ok
+test source_marks_use_the_captured_explicit_occurrence_and_exact_boundary ... ok
+test partial_marks_keep_exact_positions_bias_and_each_fragments_state ... ok
+test whole_units_keep_hidden_marks_partial_endpoints_filter_them ... ok
+test missing_external_host_uses_loss_policy_and_wire_cannot_bind_to_omitted_parent ... ok
+test history_neutral_capture_survives_source_deletion_and_repeated_paste ... FAILED
+test wire_mark_and_scoped_play_union_limits_fail_without_cloning_a_paste ... ok
+
+failures:
+
+---- history_neutral_capture_survives_source_deletion_and_repeated_paste stdout ----
+
+thread 'history_neutral_capture_survives_source_deletion_and_repeated_paste' (59145352) panicked at crates/deadpan-core/tests/edited_slice.rs:72:98:
+called `Result::unwrap()` on an `Err` value: Error("invalid type: newtype struct, expected any valid JSON value", line: 1, column: 2016)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    history_neutral_capture_survives_source_deletion_and_repeated_paste
+
+test result: FAILED. 7 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `-p deadpan-core --test edited_slice`

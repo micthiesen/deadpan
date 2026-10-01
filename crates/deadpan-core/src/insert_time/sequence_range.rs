@@ -17,11 +17,29 @@ pub struct SequenceRangeEdit {
     pub required_ids: usize,
 }
 
-pub(super) fn preflight(
+pub(crate) fn preflight(
     document: &ProjectDocument,
     parent: &NodeId,
     range: FrameRange,
     inserted_nodes: usize,
+) -> Result<SequenceRangeEdit, EditError> {
+    preflight_with(document, parent, range, inserted_nodes, true)
+}
+
+pub(crate) fn preflight_capture(
+    document: &ProjectDocument,
+    parent: &NodeId,
+    range: FrameRange,
+) -> Result<SequenceRangeEdit, EditError> {
+    preflight_with(document, parent, range, 0, false)
+}
+
+fn preflight_with(
+    document: &ProjectDocument,
+    parent: &NodeId,
+    range: FrameRange,
+    inserted_nodes: usize,
+    split: bool,
 ) -> Result<SequenceRangeEdit, EditError> {
     let start = document.source_splice_boundary(parent, 0)?;
     let NodeKind::Sequence { children } = &document.nodes()[parent].kind else {
@@ -48,9 +66,18 @@ pub(super) fn preflight(
             let split_start = offset < range.start().0;
             let split_end = next > range.end().0;
             if split_start || split_end {
-                super::physical(document, child).map_err(|error| {
+                let endpoint = if split {
+                    super::physical(document, child)
+                } else {
+                    super::slice_physical(document, child)
+                };
+                endpoint.map_err(|error| {
                     EditError::new(error.code, "Range endpoints require a Source, ordinary Hold or supported fragment; enter the intended group for other structures")
                 })?;
+                if !split {
+                    offset = next;
+                    continue;
+                }
                 let count = super::split_node_count(document, child)?;
                 required_ids = required_ids
                     .checked_add(count)

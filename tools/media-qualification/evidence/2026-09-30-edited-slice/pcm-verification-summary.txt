@@ -1,0 +1,10 @@
+Decoded-PCM edited-slice verification, 2026-09-30 Vancouver.
+Command: DEADPAN_FFMPEG_PREFIX=/tmp/deadpan-ui-ffmpeg/prefix rustup run 1.97.1 cargo test --locked -p deadpan-audio --test composite_insert edited_slice -- --nocapture
+Passing log: 20261001T005835.563419Z-focused.log
+Result: 8 passed; 0 failed; 0 ignored; 32 filtered out; tests 3.28s.
+Compiler: rustc 1.97.1 (8bab26f4f 2026-07-14).
+Recorded HEAD: 745b8e165b718c7f939d442fdaae478a341d43cb plus shared working changes.
+First run 20261001T005612.199721Z-focused.log: 7 pass, 1 invalid synthetic fixture rejected before capture. Corrected fixture creates an explicit Run only for a Repeat absent from the original frozen layout. No production fix was required for these PCM tests.
+All raw timing fixtures use real decoded mono 44.1kHz WAV at 30000/1001fps, StageAudio::read, final seek on a cold renderer, reverse irregular requests and entry reread. Full Source/RoomTone/Preserve oracles independently supply phase, support and complete processing context. Separate authored-bus test checks scalar Q32 owner gain and contents-versus-owned-group selection.
+Limits: no mastered-edge, acoustic, export, GUI or device-delivery qualification. Core capture_timing provenance patch was announced after the passing run; parent owns final integration checks.
+Owned-file rustfmt check and module declaration whitespace check pass.

@@ -44,6 +44,23 @@ impl TryFrom<OrderWire> for IterationOrder {
 }
 
 impl IterationOrder {
+    /// Rebuild compact order after a checked identity rename, never by play position.
+    pub(crate) fn from_segments(
+        segments: impl IntoIterator<Item = (RevisionId, u32, u32)>,
+    ) -> Result<Self, DocumentError> {
+        let order = Self {
+            runs: segments
+                .into_iter()
+                .map(|(allocation, first, count)| IterationRun {
+                    allocation,
+                    first,
+                    count,
+                })
+                .collect(),
+        };
+        order.validate()?;
+        Ok(order)
+    }
     pub fn new(allocation: RevisionId, plays: u32) -> Result<Self, DocumentError> {
         let order = Self {
             runs: vec![IterationRun {

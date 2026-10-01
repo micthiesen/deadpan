@@ -111,45 +111,45 @@ operators, edited-content registers/copy/move and Repeat/Retime occurrence
 interiors remain required. A range cut currently does not populate an editable
 register, so this does not complete the full delete/register contract.
 
-The next slice boundary is capture and insertion of editable Your edit content.
-`Subtree` contains only nodes/overrides and cannot carry marks, audio lineage,
-bindings or frozen timing records by itself. Reuse `sequence_range` admission
-and endpoint splitting, `occurrence_edit` traversal, mark ownership rules and
-destination `prepare_suffix`; give every paste fresh authored identities while
-sharing immutable media. Retain the captured revision, complete processing
-contexts, declared owner clocks and historical timing aliases. A neutral unity
-Partition can crop a complete owner context without changing its duration or
-curve origin. `CapturedFraming` is static Hold state, not a general slice context.
-Define and teach the owned copy scope before deciding which ancestors to carry:
-the spec distinguishes group contents (`ig`) from the owned group (`ag`), and
-does not explicitly require copying every unselected ancestor or the project root.
-Do not treat transparent Split/isolation cloning as a complete copy operation.
-Root sound events remain separate from subtree-owned attachments.
+## Edited slice core, 2026-09-30
 
-First prove copying with existing timing types: retain complete selected owner
-contexts behind neutral Partition windows, then injectively rename the pasted
-nodes, per-Repeat play identities and cloned historical timing aliases together.
-Keep complete birth Run support, preserve compact play order, remap lineage
-allocation/origin pairs without collisions and rebuild frozen indexes. Generic
-`prepare_subtree` resets Repeat identities by position and is insufficient here.
-Do not add runtime clock translation fields before testing this narrower route.
-Mark validation permits hidden Bound intent behind a Partition. Partial copies
-therefore need exact, bias-aware filtering of each mark fragment; whole owned
-units retain hidden intent. Preserve unresolved states and absolute Sequence
-pins deliberately, and reject ambiguous Source occurrences instead of dropping
-their marks. A bounded capture helper can reuse existing projection and binding
-APIs without treating ordinary isolation as a selection filter.
+`CapturedEditSlice` now captures immutable edited contents without history writes;
+`SpliceSlice` inserts them at an ordinary Sequence seam in one reversible command.
+See the [contract](../EDITED_SLICES.md) and
+[qualification](../qualification/edited-slice-2026-09-30.md). Partial Source,
+ordinary Hold and nested unity Partition endpoints retain complete owner contexts
+behind neutral output windows. Whole intervening composites stay editable.
+Group contents exclude the unselected parent's treatment; whole owned groups
+retain it. Independent root sounds stay separate and transform once on paste.
 
-Decisive next tests: capture changes no history; later source edits cannot alter
-the captured content; repeated pastes have distinct identities; copied picture
-and PCM match the capture at NTSC rates; existing destination samples remain
-exact; one Undo restores all authored state. Include copy-of-paste, reordered
-Repeats with prior bindings and distinct Repeats sharing raw play IDs. Compare
-the selected owned contribution, with separate group-contents/owned-group tests;
-unselected ancestors are not silently copied. Start with the current ordinary
-Sequence admission boundary while retaining partial composites, occurrences,
-role-only placement and atomic move as required follow-up scope. This paragraph
-records a read-only design investigation, not implemented register behavior.
+Paste gives fresh identities to authored nodes, marks, scoped Repeat families,
+lineage allocation/origin pairs and historical timing aliases. It retains compact
+order, complete birth Run support, old sample entries and opaque Preserve
+contexts, then rebuilds frozen indexes. Partial marks use exact bias-aware
+fragment filtering; whole units retain hidden intent. Unresolved marks and
+absolute Sequence pins keep their semantics. Core 34/database 43 and existing
+runtime clock types are unchanged.
+
+The store reads the named immutable revision and recaptures the declared range
+before admitting historical media. A serialized copy can survive deletion of
+its source or accepted Hold without admitting unselected catalog media or
+reviving generation requests. Tests cover independent repeated pastes, partial
+copy-of-copy, exact picture plans and decoded PCM, untouched destination content,
+read-only preview, one-command persistence and fresh-revision Undo/Redo.
+
+Independent review is complete. All 2,717 locked workspace tests, formatting and
+strict all-target workspace Clippy pass on Rust 1.97.1, with no failed or ignored
+tests. The qualification record retains exact source hashes and test logs. No
+native controls changed, so this checkpoint adds no new UI or acoustic evidence.
+
+Next connect capture to the native register on the service worker. Reject late
+copy completions by project session and request identity; extend the existing
+visible placement proposal, endpoint pictures, local refinement, audition joins
+and saved-edit recovery. Interior insertion, edited replacement and move need
+atomic commands that retain destination clocks before splitting or removal.
+Named registers, role-only placement, cut-to-register, motion/text-object
+operators and partial Repeat/Retime/generated-Hold occurrence interiors remain
+required. The seam insertion boundary alone does not complete those workflows.
 
 ## Native identity, 2026-09-30
 

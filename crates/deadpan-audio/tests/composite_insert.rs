@@ -26,6 +26,8 @@ const TIMEOUT: Duration = Duration::from_secs(10);
 mod delete;
 #[path = "composite_insert/delete_range.rs"]
 mod delete_range;
+#[path = "composite_insert/edited_slice.rs"]
+mod edited_slice;
 #[path = "composite_insert/nested_sequence.rs"]
 mod nested_sequence;
 #[path = "composite_insert/source_replace.rs"]

@@ -11,10 +11,10 @@ use crate::{
     ProjectDocument, ProjectFrame, RetimePurpose, RevisionId, SplitIdentities, Subtree,
 };
 
-mod composite;
+pub(crate) mod composite;
 mod delete;
 mod delete_range;
-mod sequence_range;
+pub(crate) mod sequence_range;
 mod source_replace;
 mod source_splice;
 mod target;
@@ -509,9 +509,26 @@ fn ordinary_hold(recipe: &HoldRecipe) -> bool {
 /// Return the physical owner and its visible local entry. Transparent
 /// partitions retain complete physical children; their selection is allocation,
 /// not a new sampling support or a new raw audio recipe.
-fn physical<'a>(
+pub(crate) fn physical<'a>(
     document: &'a ProjectDocument,
     node: &'a NodeId,
+) -> Result<(&'a NodeId, i64), EditError> {
+    physical_context(document, node, false)
+}
+
+/// Capture keeps every intermediate owner intact and therefore admits nested
+/// unity windows without requiring the older Split refinement restriction.
+pub(crate) fn slice_physical<'a>(
+    document: &'a ProjectDocument,
+    node: &'a NodeId,
+) -> Result<(&'a NodeId, i64), EditError> {
+    physical_context(document, node, true)
+}
+
+fn physical_context<'a>(
+    document: &'a ProjectDocument,
+    node: &'a NodeId,
+    nested_windows: bool,
 ) -> Result<(&'a NodeId, i64), EditError> {
     let mut owner = node;
     let mut start = 0i64;
@@ -539,7 +556,7 @@ fn physical<'a>(
     // A treated Partition is a meaningful retained effect scope. A subsequent
     // Split must keep it, so modern treatments can introduce transparent nesting.
     // Old untreated nested inputs keep core17's refusal and frozen replay grammar.
-    if partitions > 1 && !treated {
+    if partitions > 1 && !treated && !nested_windows {
         return Err(invalid(
             "pause insertion cannot yet shift unframed nested beats",
         ));

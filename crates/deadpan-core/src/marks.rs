@@ -559,7 +559,7 @@ pub(crate) fn validate_marks(
     Ok(())
 }
 
-fn check_binding_limits(
+pub(crate) fn check_binding_limits(
     marks: &BTreeMap<MarkId, Mark>,
 ) -> std::result::Result<usize, DocumentError> {
     if marks.len() > MAX_DOCUMENT_MARKS {
@@ -590,6 +590,235 @@ fn check_binding_limits(
         }
     }
     Ok(total)
+}
+
+/// Filter each physical binding by ownership and, only for partial endpoints,
+/// exact visible output. Whole units retain hidden and dormant intent.
+pub(crate) fn capture_slice_mark_bindings(
+    document: &ProjectDocument,
+    parts: &[crate::edit_slice::SlicePart],
+    selected: &std::collections::BTreeSet<NodeId>,
+) -> std::result::Result<BTreeMap<MarkId, Mark>, crate::EditError> {
+    check_binding_limits(document.marks())?;
+    let durations = document.durations()?;
+    let anchors = AnchorIndex::from_durations(document, durations.clone())?;
+    let mut owners = BTreeMap::new();
+    for part in parts {
+        for owner in crate::occurrence_edit::subtree_order(document, &part.root)? {
+            owners.insert(owner, part);
+        }
+    }
+    let mut output = BTreeMap::new();
+    for (id, mark) in document.marks() {
+        let mut retained = Vec::new();
+        for mut binding in mark.bindings() {
+            let Some(part) = owners.get(&binding.owner) else {
+                continue;
+            };
+            if binding.state != MarkState::Bound {
+                retained.push(binding);
+                continue;
+            }
+            let closed = match &binding.coordinate {
+                Anchor::Local { node, .. } => selected.contains(node),
+                Anchor::Occurrence { instance, .. } => {
+                    selected.contains(&instance.node)
+                        && instance
+                            .repeats
+                            .iter()
+                            .all(|step| selected.contains(&step.node))
+                }
+                Anchor::Source { .. } | Anchor::Sequence { .. } => true,
+            };
+            if !closed {
+                if mark.loss_policy == AnchorLossPolicy::KeepUnresolved {
+                    binding.state = MarkState::Unresolved {
+                        reason: MarkLossReason::HostMissing,
+                    };
+                    retained.push(binding);
+                }
+                continue;
+            }
+            if part.mapping.duration() == durations[&part.root] {
+                retained.push(binding);
+                continue;
+            }
+            let occurrence = if matches!(binding.coordinate, Anchor::Source { .. }) {
+                let (physical, _) = crate::insert_time::slice_physical(document, &part.root)?;
+                if !matches!(document.nodes()[physical].kind, NodeKind::Source { .. }) {
+                    return Err(crate::EditError::new(
+                        crate::EditErrorCode::SelectionUnavailable,
+                        "partial slice Source mark has no explicit Source occurrence",
+                    ));
+                }
+                Some(InstancePath {
+                    node: physical.clone(),
+                    repeats: Vec::new(),
+                })
+            } else {
+                None
+            };
+            let point = match anchors.resolve_target(&crate::AnchorTarget {
+                boundary: BoundaryAnchor {
+                    coordinate: binding.coordinate.clone(),
+                    bias: mark.boundary.bias,
+                },
+                occurrence,
+            }) {
+                Ok(point) => point.exact_frame,
+                Err(error)
+                    if matches!(
+                        error.code,
+                        AnchorErrorCode::OutsideMapping | AnchorErrorCode::OutOfRange
+                    ) =>
+                {
+                    continue;
+                }
+                Err(error) => return Err(slice_anchor_error(error)),
+            };
+            let start = part
+                .source_start
+                .0
+                .checked_add(part.mapping.start().0)
+                .ok_or_else(|| slice_anchor_error(TimeError::Overflow.into()))?;
+            let end = part
+                .source_start
+                .0
+                .checked_add(part.mapping.end().0)
+                .ok_or_else(|| slice_anchor_error(TimeError::Overflow.into()))?;
+            if point.compare_integer(start).is_lt()
+                || point.compare_integer(end).is_gt()
+                || (point.compare_integer(start).is_eq()
+                    && part.mapping.start().0 > 0
+                    && mark.boundary.bias == InsertionBias::Left)
+                || (point.compare_integer(end).is_eq()
+                    && part.mapping.end().0 < durations[&part.root].frames()
+                    && mark.boundary.bias == InsertionBias::Right)
+            {
+                continue;
+            }
+            retained.push(binding);
+        }
+        if let Some(mark) = mark.with_bindings(retained) {
+            output.insert(id.clone(), mark);
+        }
+    }
+    check_binding_limits(&output)?;
+    Ok(output)
+}
+
+fn slice_anchor_error(error: AnchorError) -> crate::EditError {
+    crate::EditError::new(
+        match error.code {
+            AnchorErrorCode::TimingOverflow => crate::EditErrorCode::TimingOverflow,
+            AnchorErrorCode::QueryLimit => crate::EditErrorCode::LimitExceeded,
+            _ => crate::EditErrorCode::SelectionUnavailable,
+        },
+        format!("slice mark projection failed: {}", error.message),
+    )
+}
+
+pub(crate) fn validate_slice_marks(
+    context: &ProjectDocument,
+    marks: &BTreeMap<MarkId, Mark>,
+    source_duration: FrameDuration,
+) -> std::result::Result<(), DocumentError> {
+    check_binding_limits(marks)?;
+    let index = Index::new(context, context.structural_durations()?)?;
+    for mark in marks.values() {
+        crate::document::validate_label(&mark.label)?;
+        for binding in mark.bindings() {
+            if binding.owner == *context.root() || !context.nodes().contains_key(&binding.owner) {
+                return Err(Failure::Lost(MarkLossReason::OwnerMissing).document());
+            }
+            if binding.state == MarkState::Bound
+                && match &binding.coordinate {
+                    Anchor::Local { node, .. } => {
+                        node == context.root() || !context.nodes().contains_key(node)
+                    }
+                    Anchor::Occurrence { instance, .. } => {
+                        instance.node == *context.root()
+                            || !context.nodes().contains_key(&instance.node)
+                            || instance.repeats.iter().any(|step| {
+                                step.node == *context.root()
+                                    || !context.nodes().contains_key(&step.node)
+                            })
+                    }
+                    Anchor::Source { .. } | Anchor::Sequence { .. } => false,
+                }
+            {
+                return Err(Failure::Lost(MarkLossReason::HostMissing).document());
+            }
+            if let Anchor::Sequence { frame } = binding.coordinate
+                && binding.state == MarkState::Bound
+            {
+                within(
+                    ExactRatio::integer(frame.0),
+                    source_duration.frames(),
+                    MarkLossReason::OutOfRange,
+                )
+                .map_err(Failure::document)?;
+            } else {
+                validate_binding(&index, &binding, mark.boundary.bias, mark.loss_policy)?;
+            }
+        }
+    }
+    Ok(())
+}
+
+pub(crate) fn check_combined_slice_limits(
+    existing: &BTreeMap<MarkId, Mark>,
+    imported: &BTreeMap<MarkId, Mark>,
+) -> std::result::Result<(), DocumentError> {
+    let left = check_binding_limits(existing)?;
+    let right = check_binding_limits(imported)?;
+    if existing
+        .len()
+        .checked_add(imported.len())
+        .is_none_or(|count| count > MAX_DOCUMENT_MARKS)
+        || left
+            .checked_add(right)
+            .is_none_or(|count| count > MAX_DOCUMENT_MARK_BINDINGS)
+    {
+        return Err(DocumentError::new(
+            DocumentErrorCode::LimitExceeded,
+            "slice exceeds combined mark limits",
+        ));
+    }
+    Ok(())
+}
+
+/// Pinned Sequence coordinates stay absolute. Only an out-of-range pin can lose
+/// its binding at paste; dormant records are never rebound by this operation.
+pub(crate) fn finish_slice_marks(
+    document: &ProjectDocument,
+    marks: BTreeMap<MarkId, Mark>,
+) -> std::result::Result<BTreeMap<MarkId, Mark>, DocumentError> {
+    let durations = document.structural_durations()?;
+    let total = durations[document.root()].frames();
+    let index = Index::new(document, durations)?;
+    let mut output = BTreeMap::new();
+    for (id, mark) in marks {
+        let mut retained = Vec::new();
+        for mut binding in mark.bindings() {
+            if binding.state == MarkState::Bound
+                && matches!(binding.coordinate, Anchor::Sequence { frame } if frame.0 > total)
+            {
+                if mark.loss_policy == AnchorLossPolicy::DeleteOwned {
+                    continue;
+                }
+                binding.state = MarkState::Unresolved {
+                    reason: MarkLossReason::OutOfRange,
+                };
+            }
+            validate_binding(&index, &binding, mark.boundary.bias, mark.loss_policy)?;
+            retained.push(binding);
+        }
+        if let Some(mark) = mark.with_bindings(retained) {
+            output.insert(id, mark);
+        }
+    }
+    Ok(output)
 }
 
 fn validate_binding(

@@ -1159,7 +1159,8 @@ pub fn validate_request_context(
     let command = &request.command;
     if matches!(
         command,
-        Command::SpliceSourceAt { .. }
+        Command::SpliceSlice { .. }
+            | Command::SpliceSourceAt { .. }
             | Command::ReplaceSource { .. }
             | Command::DeleteRipple { .. }
             | Command::DeleteRange { .. }
@@ -1257,6 +1258,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::SetHoldAudio { .. }
         | Command::InsertTime { .. }
         | Command::SpliceSource { .. }
+        | Command::SpliceSlice { .. }
         | Command::SpliceSourceAt { .. }
         | Command::ReplaceSource { .. }
         | Command::DeleteRipple { .. }

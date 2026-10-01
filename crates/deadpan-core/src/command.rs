@@ -84,6 +84,14 @@ pub enum Command {
         label: String,
         timing: crate::AudioTimingId,
     },
+    /// Paste a captured editable forest at an explicit ordinary Sequence seam.
+    SpliceSlice {
+        parent: NodeId,
+        index: usize,
+        slice: crate::CapturedEditSlice,
+        identities: crate::SlicePasteIdentities,
+        timing: crate::AudioTimingId,
+    },
     /// Insert one Source strictly inside an explicitly named direct Sequence
     /// child, retaining both split contexts in one atomic edit.
     SpliceSourceAt {
@@ -608,6 +616,9 @@ pub fn apply(
             timing,
             &request.new_revision,
         )?,
+        Command::SpliceSlice { .. } => {
+            crate::edit_slice::apply(input, &request.command, &request.new_revision)?
+        }
         Command::SpliceSourceAt {
             parent,
             target,
@@ -941,6 +952,7 @@ pub(crate) fn reduce(
         }
         Command::InsertTime { .. }
         | Command::SpliceSource { .. }
+        | Command::SpliceSlice { .. }
         | Command::ReplaceSource { .. }
         | Command::DeleteRipple { .. }
         | Command::DeleteRange { .. }
@@ -1948,6 +1960,7 @@ fn description(command: &Command) -> &'static str {
         Command::SetSoundAllowance { .. } => "Set sound Hold allowance",
         Command::InsertTime { .. } => "Insert pause",
         Command::SpliceSource { .. } => "Paste source moment",
+        Command::SpliceSlice { .. } => "Paste edited slice",
         Command::SpliceSourceAt { .. } => "Splice source moment inside beat",
         Command::ReplaceSource { .. } => "Replace selection with source moment",
         Command::Split { .. } => "Split beat",

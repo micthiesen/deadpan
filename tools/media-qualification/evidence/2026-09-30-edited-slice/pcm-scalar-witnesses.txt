@@ -1,0 +1,22 @@
+B(0)=0
+B(1)=1602
+B(2)=3203
+B(3)=4805
+B(4)=6406
+B(5)=8008
+B(6)=9610
+B(7)=11211
+B(9)=14414
+B(10)=16016
+B(13)=20821
+B(14)=22422
+B(19)=30430
+B(20)=32032
+B(25)=40040
+B(33)=52853
+B(39)=62462
+Crop [2,4): length=3203, phase=8007/5
+Destination [4,6): length=3204, final retained phase=24022/5
+Terminal full Source2: extent=16016/5, retained entry=2/5, destination last phase=16017/5
+Preserve window: phase=16018/5, destination [4,13) length=14415
+Repeat old [5,19) length=22422, copy [25,39) length=22422

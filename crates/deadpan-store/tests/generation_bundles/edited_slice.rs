@@ -1,0 +1,169 @@
+//! Reuses the parent's synthetic admitted-bundle fixture. This establishes
+//! durable acceptance boundaries, not generated-video decoding or quality.
+use super::*;
+use deadpan_core::{
+    AudioTimingId, CapturedEditSlice, FrameRange, OccurrenceIdentities, ProjectFrame,
+    SlicePasteIdentities,
+};
+
+fn paste(
+    document: &ProjectDocument,
+    slice: &CapturedEditSlice,
+    name: &str,
+) -> Result<CommandRequest> {
+    let count = slice.identity_requirements()?;
+    assert_eq!(count.marks, 0);
+    let next = RevisionId::new(name)?;
+    Ok(CommandRequest {
+        project_id: document.project_id().clone(),
+        expected_revision: document.revision_id().clone(),
+        new_revision: next.clone(),
+        command: Command::SpliceSlice {
+            parent: document.root().clone(),
+            index: 0,
+            slice: slice.clone(),
+            identities: SlicePasteIdentities {
+                authored: OccurrenceIdentities {
+                    nodes: (0..count.nodes)
+                        .map(|i| NodeId::new(format!("{name}-node-{i}")))
+                        .collect::<std::result::Result<_, _>>()?,
+                    marks: Vec::new(),
+                },
+                aliases: (0..count.aliases)
+                    .map(|i| NodeId::new(format!("{name}-alias-{i}")))
+                    .collect::<std::result::Result<_, _>>()?,
+            },
+            timing: AudioTimingId {
+                allocation: next,
+                ordinal: 0,
+            },
+        },
+    })
+}
+
+fn authored(package: &Path) -> Result<Vec<String>> {
+    let database = Connection::open(package.join("project.sqlite"))?;
+    let mut rows = Vec::new();
+    for sql in [
+        "SELECT json_array(id,parent_id,kind,document) FROM revisions ORDER BY id",
+        "SELECT json_array(id,parent_id,revision_id,request,edit) FROM history ORDER BY id",
+        "SELECT json_array(singleton,head_revision,cursor,workflow) FROM state",
+        "SELECT json_array(position,history_id) FROM redo ORDER BY position",
+    ] {
+        rows.extend(
+            database
+                .prepare(sql)?
+                .query_map([], |row| row.get::<_, String>(0))?
+                .collect::<std::result::Result<Vec<_>, _>>()?,
+        );
+    }
+    Ok(rows)
+}
+
+#[test]
+fn historical_slice_reuses_accepted_artifact_after_last_hold_is_deleted() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = scratch.path().join("historical-slice.deadpan");
+    let initial = document()?;
+    let mut store = ProjectStore::create(&package, &initial)?;
+    let input = ready_for_acceptance(&mut store)?;
+    store.accept_generation_bundle(
+        &input,
+        &unchanged_relevance(&store, &input.new_revision)?,
+        media_limits(),
+    )?;
+    let accepted = store.snapshot()?;
+    let slice = CapturedEditSlice::capture(
+        &accepted,
+        accepted.root(),
+        FrameRange::new(ProjectFrame(0), ProjectFrame(12))?,
+        AudioTimingId {
+            allocation: RevisionId::new("copy")?,
+            ordinal: 0,
+        },
+    )?;
+    let wire = serde_json::to_vec(&slice)?;
+    edit_reconciled(
+        &mut store,
+        "deleted",
+        Command::DeleteRipple {
+            node: NodeId::new("hold")?,
+            timing: AudioTimingId {
+                allocation: RevisionId::new("deleted")?,
+                ordinal: 0,
+            },
+        },
+    )?;
+    let before = store.snapshot()?;
+    assert_eq!(before.duration()?.frames(), 0);
+    assert!(!before.nodes().contains_key(&NodeId::new("hold")?));
+    assert_eq!(
+        store
+            .generation_request(&input.identity.request_id)?
+            .unwrap()
+            .relevance,
+        deadpan_jobs::Relevance::Detached
+    );
+    let cells = authored(&package)?;
+    for (name, change) in [("wrong-artifact", true), ("wrong-history", false)] {
+        let mut forged = serde_json::to_value(&slice)?;
+        if change {
+            let provenance = &mut forged["nodes"]["hold"]["kind"]["recipe"]["video"]["accepted"]["artifact"]
+                ["provenance"];
+            assert!(provenance.is_object());
+            *provenance = serde_json::to_value(object(b"never accepted"))?;
+        } else {
+            forged["revision_id"] = serde_json::to_value(initial.revision_id())?;
+        }
+        let forged: CapturedEditSlice = serde_json::from_value(forged)?;
+        let command = paste(&before, &forged, name)?;
+        deadpan_core::apply(&before, &command)?;
+        assert_eq!(
+            store.preview(&command).unwrap_err().code(),
+            "InvalidCommand"
+        );
+        assert_eq!(store.commit(&command).unwrap_err().code(), "InvalidCommand");
+        assert_eq!(authored(&package)?, cells);
+        assert_eq!(store.snapshot()?, before);
+    }
+    drop(store);
+    let slice: CapturedEditSlice = serde_json::from_slice(&wire)?;
+    let mut store = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let command = paste(&before, &slice, "pasted")?;
+    let preview = store.preview(&command)?;
+    assert_eq!(preview.duration_delta, 12);
+    assert_eq!(authored(&package)?, cells);
+    assert_eq!(store.commit(&command)?.edit, preview);
+    let pasted = store.snapshot()?;
+    assert_eq!(pasted.duration()?.frames(), 12);
+    assert_eq!(pasted.assets(), accepted.assets());
+    let provider = |document: &ProjectDocument| {
+        document.nodes().values().find_map(|node| match &node.kind {
+            NodeKind::Hold { recipe } if matches!(recipe.video, HoldVideo::Generated { .. }) => {
+                Some(recipe.video.clone())
+            }
+            _ => None,
+        })
+    };
+    assert_eq!(provider(&pasted), provider(&accepted));
+    assert_eq!(
+        store
+            .generation_request(&input.identity.request_id)?
+            .unwrap()
+            .relevance,
+        deadpan_jobs::Relevance::Detached
+    );
+    store.undo(pasted.revision_id(), RevisionId::new("undo-paste")?)?;
+    assert_eq!(store.snapshot()?.nodes(), before.nodes());
+    store.redo(
+        &RevisionId::new("undo-paste")?,
+        RevisionId::new("redo-paste")?,
+    )?;
+    assert_eq!(store.snapshot()?.nodes(), pasted.nodes());
+    store.validate()?;
+    drop(store);
+    let reader = ProjectStore::open(&package, AccessMode::ReadOnly)?;
+    assert_eq!(provider(&reader.snapshot()?), provider(&accepted));
+    reader.validate()?;
+    Ok(())
+}

@@ -1,0 +1,13 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 34.70s
+     Running tests/edited_slice.rs (target/debug/deps/edited_slice-a58d29f26e190bf1)
+
+running 4 tests
+test partial_copy_of_an_already_cropped_partition_keeps_the_original_owner_clock ... ok
+test cropped_source_and_hold_retain_owner_progress_and_full_nested_clips ... ok
+test partial_partition_copy_survives_deletion_and_each_paste_has_independent_owners ... ok
+test full_repeat_overrides_gaps_and_preserve_retime_keep_exact_picture_clocks ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+

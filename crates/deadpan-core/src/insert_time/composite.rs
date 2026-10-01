@@ -51,7 +51,7 @@ pub(super) fn apply_at(
 /// Capture each retained suffix owner's old entry before changing the tree.
 /// Replacement uses this on the split, undeleted tree so there is no shorter
 /// intermediate clock that could discard the suffix's last rounded sample.
-pub(super) fn prepare_suffix(
+pub(crate) fn prepare_suffix(
     document: &ProjectDocument,
     parent: &NodeId,
     slot: usize,
@@ -150,7 +150,7 @@ fn shifted_owners(
     Ok(affected)
 }
 
-fn append_steps(
+pub(crate) fn append_steps(
     bindings: &mut BTreeMap<NodeId, OwnedAudioBinding>,
     placements: BTreeMap<NodeId, AudioPlacementTemplate>,
     affected: &BTreeSet<NodeId>,

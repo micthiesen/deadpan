@@ -37,6 +37,9 @@ use rusqlite::Connection;
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
+#[path = "generation_bundles/edited_slice.rs"]
+mod edited_slice;
+
 const NATIVE_BYTES: &[u8] = b"canonical native fixture";
 const SAMPLED_BYTES: &[u8] = b"canonical sampled fixture";
 const PROVENANCE_BYTES: &[u8] = b"bounded provenance fixture";

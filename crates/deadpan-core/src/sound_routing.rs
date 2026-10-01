@@ -465,6 +465,15 @@ impl RootSoundEditCapture {
                 at: document.source_splice_boundary(parent, *index)?,
                 duration: source.duration,
             },
+            Command::SpliceSlice {
+                parent,
+                index,
+                slice,
+                ..
+            } => RootSoundOperation::Insert {
+                at: document.source_splice_boundary(parent, *index)?,
+                duration: slice.duration(),
+            },
             Command::SpliceSourceAt {
                 parent,
                 target,

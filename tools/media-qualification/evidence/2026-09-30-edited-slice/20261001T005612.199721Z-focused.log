@@ -1,0 +1,34 @@
+DEADPAN_FFMPEG_PREFIX=/tmp/deadpan-ui-ffmpeg/prefix rustup run 1.97.1 cargo test --locked -p deadpan-audio --test composite_insert edited_slice -- --nocapture
+rustc 1.97.1 (8bab26f4f 2026-07-14)
+745b8e165b718c7f939d442fdaae478a341d43cb
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 57.43s
+     Running tests/composite_insert.rs (target/debug/deps/composite_insert-83f2643f39d161d3)
+
+running 8 tests
+
+thread 'edited_slice::copied_repeat_keeps_reordered_births_sparse_overrides_retired_runs_and_copy_of_copy' (59156924) panicked at crates/deadpan-audio/tests/composite_insert/edited_slice.rs:475:6:
+called `Result::unwrap()` on an `Err` value: DocumentError { code: InvalidTree, message: "explicit birth run cannot replace a captured Repeat's survivors" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test edited_slice::copied_repeat_keeps_reordered_births_sparse_overrides_retired_runs_and_copy_of_copy ... FAILED
+test edited_slice::contents_exclude_unselected_parent_gain_while_owned_group_retains_it ... ok
+test edited_slice::terminal_source_crop_allocates_the_destination_interval_without_invented_support ... ok
+test edited_slice::immutable_capture_survives_source_change_and_deletion_and_pastes_independently ... ok
+test edited_slice::crop_retains_prior_insert_and_delete_resume_terms ... ok
+test edited_slice::unrelated_repeats_with_equal_raw_play_ids_keep_distinct_historical_clocks ... ok
+test edited_slice::preserve_partition_copy_keeps_complete_input_history_on_cold_final_read ... ok
+test edited_slice::nested_nonzero_source_and_roomtone_crop_keep_phase_and_exact_destination_allocation ... ok
+
+failures:
+
+failures:
+    edited_slice::copied_repeat_keeps_reordered_births_sparse_overrides_retired_runs_and_copy_of_copy
+
+test result: FAILED. 7 passed; 1 failed; 0 ignored; 0 measured; 32 filtered out; finished in 1.76s
+
+error: test failed, to rerun pass `-p deadpan-audio --test composite_insert`
+
+EXIT_CODE=101

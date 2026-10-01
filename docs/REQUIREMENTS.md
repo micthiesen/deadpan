@@ -200,6 +200,21 @@ the UI harness feature pass on Rust 1.97.1.
 Role-only deletion, temporal occurrence interiors, motion/text-object operators,
 edited-content registers and copy/move remain open.
 
+The [edited slice core](EDITED_SLICES.md) adds immutable capture and atomic seam
+insertion through typed core/headless commands. Partial Source/Hold/Partition
+windows retain complete owner contexts, historical clocks and bias-filtered
+marks; each paste has independent authored/play/timing identities. Tests compare
+exact picture plans and decoded NTSC PCM, repeated and partial copy-of-copy,
+untouched destination content, historical media admission and durable Undo/Redo.
+The store recaptures the named immutable revision before reusing its media, so
+copies survive source deletion without accepting forged or unselected assets.
+See [qualification](qualification/edited-slice-2026-09-30.md). Native registers,
+placement/refinement for edited content, replacement/move, cut-to-register and
+temporal occurrence interiors remain open. No DP requirement or gate changes
+status. Independent review is complete; all 2,717 locked workspace tests,
+formatting and strict all-target workspace Clippy pass on Rust 1.97.1, with none
+failed or ignored. Core 34/database 43 remain unchanged.
+
 The [shared render workflow](RENDER_JOBS.md#shared-workflow-and-native-ownership)
 connects capture, encoding, retained checkpoints, fresh verification, publication
 and reconciliation to the native project service. Close/switch/shutdown retain

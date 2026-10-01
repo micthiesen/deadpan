@@ -1,0 +1,62 @@
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 44.79s
+     Running tests/edited_slice.rs (target/debug/deps/edited_slice-426720f06e652619)
+
+running 2 tests
+test invalid_slice_identity_and_clock_pools_leave_all_authored_rows_unchanged ... ok
+test captured_slice_survives_source_deletion_and_independent_pastes_reopen_undo_redo ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.85s
+
+     Running tests/generated_admission.rs (target/debug/deps/generated_admission-0301a9e9a293bafe)
+
+running 2 tests
+test generic_commands_cannot_bypass_dedicated_candidate_admission ... ok
+test existing_authored_artifact_resizes_reverts_and_navigates_durable_history ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+     Running tests/generation_bundles.rs (target/debug/deps/generation_bundles-cd411edc867bb87f)
+
+running 16 tests
+test object_alias_requires_an_identical_video_contract ... ok
+test admission_wire_rejects_alias_conflicts_and_unchecked_spans ... ok
+test malformed_nonnull_plan_is_never_projected_as_a_legacy_request ... ok
+test protocol_kinds_cannot_cross_attempt_or_readiness_boundaries ... ok
+test persisted_bundle_json_cannot_bypass_constructor_invariants ... ok
+test cancelled_and_stale_bridge_completions_never_select ... ok
+test modern_ready_requires_objects_and_eviction_survives_reopen ... ok
+test retry_supersedes_modern_selection_and_corrupt_objects_cannot_be_ready ... ok
+test identical_masters_can_share_one_fresh_asset_identity ... ok
+test acceptance_rollback_read_only_and_legacy_receipt_are_safe ... ok
+test bridge_allocation_and_acceptance_require_one_concrete_occurrence ... ok
+test explicit_acceptance_derives_assets_and_survives_history_without_worker ... ok
+test edited_slice::historical_slice_reuses_accepted_artifact_after_last_hold_is_deleted ... ok
+test admission_requires_all_six_immutable_objects_and_matching_context ... ok
+test acceptance_rechecks_selection_receipt_revision_and_complete_relevance ... ok
+test stale_and_detached_bundles_never_revive_through_undo ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.62s
+
+     Running tests/source_registration.rs (target/debug/deps/source_registration-0f20b6398ed14eb7)
+
+running 14 tests
+test hold_audio::legacy_unqualified_hold_survives_unrelated_edits_but_cannot_author_a_new_source_policy ... ok
+test generic_asset_and_initial_snapshot_cannot_bypass_source_admission ... ok
+test hold_audio::hold_audio_rejects_outside_and_fractional_source_sample_spans_without_history ... ok
+test sounds::sound_command_rechecks_receipt_inside_its_revision_transaction ... ok
+test failed_transaction_retains_original_but_rolls_back_receipt_asset_history_and_cursor ... ok
+test sounds::qualified_sound_edits_are_atomic_durable_and_keep_picture_time ... ok
+test hold_audio::direct_and_occurrence_policy_commands_recheck_receipt_and_original_binding ... ok
+test hold_audio::hold_audio_policy_history_is_atomic_durable_and_timing_neutral ... ok
+test actual_source_registration_deduplicates_then_inserts_and_survives_undo_relocation ... ok
+test missing_bytes_identity_mismatch_cancelled_stale_and_read_only_requests_preserve_history ... ok
+test sounds::sound_allowance_edits_recheck_sources_and_survive_atomic_history_reopen ... ok
+test edited_slice::historical_slice_restores_only_source_metadata_admitted_by_its_stored_revision ... ok
+test reused_asset_alias_retains_both_branch_receipts_and_revision_specific_indexes ... ok
+test tampered_qualification_payload_and_missing_receipt_fail_reopen ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.92s
+

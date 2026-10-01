@@ -143,7 +143,7 @@ impl ProjectStore {
         let json = document.to_json()?;
         check_document_size(&json)?;
         ensure_generated_admission(None, document)?;
-        ensure_source_admission(None, document, None)?;
+        ensure_source_admission(None, document, None, None)?;
         fs::create_dir(path).map_err(|error| {
             if error.kind() == std::io::ErrorKind::AlreadyExists {
                 StoreError::PackageAlreadyExists(path.into())
@@ -595,8 +595,9 @@ fn prepare_command_with_admission(
     ensure_unused_revision(connection, &request.new_revision)?;
     let next = edit.forward.apply(&current)?;
     check_document_size(&next.to_json()?)?;
-    ensure_generated_admission_with(Some(&current), &next, generated)?;
-    ensure_source_admission(Some(&current), &next, source)?;
+    let captured = slice_capture_revision(connection, request)?;
+    ensure_generated_admission_with(Some(&current), &next, generated, captured.as_ref())?;
+    ensure_source_admission(Some(&current), &next, source, captured.as_ref())?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     source_registration::validate_sound_sources(connection, &current, &next)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -629,17 +630,34 @@ fn prepare_command_with_admission(
     })
 }
 
+/// A slice may reuse media admitted in its immutable capture revision after the
+/// original beat was deleted or its source registration undone. The payload's
+/// provenance names a stored revision; it never supplies admission evidence.
+fn slice_capture_revision(
+    connection: &Connection,
+    request: &CommandRequest,
+) -> Result<Option<ProjectDocument>, StoreError> {
+    let deadpan_core::Command::SpliceSlice { slice, .. } = &request.command else {
+        return Ok(None);
+    };
+    let captured = validation::read_revision(connection, slice.revision_id().as_str())?.document;
+    slice.validate_capture(&captured)?;
+    Ok(Some(captured))
+}
+
 /// A qualified source binding may enter history only through the host's
 /// decoded-source registration. Retaining existing immutable records is safe;
-/// undo/redo restores already-admitted records from durable history.
+/// undo/redo and edited-slice paste can restore records from durable history.
 fn ensure_source_admission(
     current: Option<&ProjectDocument>,
     next: &ProjectDocument,
     admitted: Option<(&deadpan_core::AssetId, &deadpan_core::AssetRecord)>,
+    captured: Option<&ProjectDocument>,
 ) -> Result<(), StoreError> {
     for (id, asset) in next.assets() {
         if asset.source_qualification.is_none()
             || current.is_some_and(|document| document.assets().get(id) == Some(asset))
+            || captured.is_some_and(|document| document.assets().get(id) == Some(asset))
             || admitted.is_some_and(|(allowed_id, allowed)| allowed_id == id && allowed == asset)
         {
             continue;
@@ -694,13 +712,14 @@ fn ensure_generated_admission(
     current: Option<&ProjectDocument>,
     next: &ProjectDocument,
 ) -> Result<(), StoreError> {
-    ensure_generated_admission_with(current, next, None)
+    ensure_generated_admission_with(current, next, None, None)
 }
 
 fn ensure_generated_admission_with(
     current: Option<&ProjectDocument>,
     next: &ProjectDocument,
     admitted: Option<&deadpan_core::GeneratedArtifact>,
+    captured: Option<&ProjectDocument>,
 ) -> Result<(), StoreError> {
     use deadpan_core::{HoldVideo, NodeKind};
     use std::collections::BTreeSet;
@@ -727,6 +746,9 @@ fn ensure_generated_admission_with(
         Some(document) => artifacts(document)?,
         None => BTreeSet::new(),
     };
+    if let Some(document) = captured {
+        retained.extend(artifacts(document)?);
+    }
     if let Some(artifact) = admitted {
         retained.insert(serde_json::to_vec(artifact)?);
     }

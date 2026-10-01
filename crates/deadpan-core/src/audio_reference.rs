@@ -219,6 +219,24 @@ enum ProjectionMode {
 }
 
 impl FrozenAudioLayout {
+    /// Rebuild all indexes after a typed historical identity rename.
+    pub(crate) fn from_renamed_parts(
+        root: NodeId,
+        rate: FrameRate,
+        nodes: BTreeMap<NodeId, FrozenAudioNode>,
+        overrides: BTreeMap<NodeId, PlayOverrides>,
+        gap_overrides: BTreeMap<NodeId, PlayOverrides>,
+        audio_lineage: BTreeMap<NodeId, AudioLineageId>,
+    ) -> Result<Self, DocumentError> {
+        Self::admit(LayoutWire {
+            root,
+            rate,
+            nodes,
+            overrides,
+            gap_overrides,
+            audio_lineage,
+        })
+    }
     pub fn capture(document: &ProjectDocument) -> Result<Self, DocumentError> {
         // Precharge before cloning nodes, overrides or iteration vectors and
         // before durations() builds any derived Repeat layouts.
