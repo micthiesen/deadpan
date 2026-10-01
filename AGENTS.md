@@ -115,6 +115,16 @@ transition. Retain the old target until a resized replacement renders successful
 Picture errors belong to presentation and clear on successful recovery. These
 state transitions must remain testable without a native window.
 
+Native letter marks use the shared authored ID `native-mark-{letter}` plus its
+exact single-letter label; conflicting named marks reject without writes.
+Original marks retain measured PTS, and Edit marks retain exact host occurrences.
+Mark-only saves have independent receipts and preserve both cursors, pane, beat
+and Visual selection. Capture prefix/command-entry absence and reject delayed
+jumps after navigation. Temporary jump history is bounded and revision-bound:
+rebase only proven mark-only commits, prune expired Edit entries, and retain
+Original entries only while their qualification and boundary remain valid.
+See [mark navigation](docs/MARK_NAVIGATION.md).
+
 Footer layout retries must preserve one outer frame's external state. Consume
 service, playback and dialog updates once; defer Repeat continuation and picture
 scheduling to the final pass, and do not render a discarded viewer size. Process

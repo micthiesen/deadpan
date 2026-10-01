@@ -21,6 +21,17 @@ pub(super) struct Selection {
 }
 
 impl Selection {
+    /// A typed mark-only receipt proves the timeline and this scope unchanged.
+    /// Never rebase through an unrelated edit or a stale visible workspace.
+    pub(super) fn rebase_mark(&mut self, saved: &crate::project::marks::Saved) {
+        if let Some(identity) = &mut self.identity
+            && identity.session == saved.id.session
+            && identity.project == saved.id.project
+            && identity.revision == saved.id.revision
+        {
+            identity.revision = saved.revision.clone();
+        }
+    }
     fn reconcile(&mut self, identity: Option<Identity>) {
         if self.identity != identity {
             self.clear();

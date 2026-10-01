@@ -1,0 +1,125 @@
+{
+  "label": "edit-mark",
+  "revisions": 14,
+  "history": 11,
+  "marks": {
+    "native-mark-S": {
+      "owner": "18005c1b-5776-4c03-8775-a42c348db766",
+      "label": "S",
+      "boundary": {
+        "coordinate": {
+          "space": "source",
+          "asset": "120876b0-475b-4741-a496-7e305662f9af",
+          "moment": {
+            "type": "timestamp",
+            "stream": "video",
+            "timestamp": {
+              "ticks": 120120,
+              "time_base": {
+                "numerator": 1,
+                "denominator": 30000
+              }
+            }
+          }
+        },
+        "bias": "left"
+      },
+      "loss_policy": "keep_unresolved",
+      "state": {
+        "type": "bound"
+      }
+    },
+    "native-mark-a": {
+      "owner": "4373c61b-b1e5-41a9-8550-1070896dad59",
+      "label": "a",
+      "boundary": {
+        "coordinate": {
+          "space": "occurrence",
+          "instance": {
+            "node": "4373c61b-b1e5-41a9-8550-1070896dad59",
+            "repeats": []
+          },
+          "position": {
+            "numerator": "60",
+            "denominator": "1"
+          }
+        },
+        "bias": "right"
+      },
+      "loss_policy": "keep_unresolved",
+      "state": {
+        "type": "bound"
+      }
+    },
+    "native-mark-b": {
+      "owner": "4373c61b-b1e5-41a9-8550-1070896dad59",
+      "label": "b",
+      "boundary": {
+        "coordinate": {
+          "space": "occurrence",
+          "instance": {
+            "node": "4373c61b-b1e5-41a9-8550-1070896dad59",
+            "repeats": []
+          },
+          "position": {
+            "numerator": "25",
+            "denominator": "1"
+          }
+        },
+        "bias": "right"
+      },
+      "loss_policy": "keep_unresolved",
+      "state": {
+        "type": "bound"
+      }
+    },
+    "native-mark-q": {
+      "owner": "39bed95b-d0b6-4bdc-979d-c1fc3689466c",
+      "label": "q",
+      "boundary": {
+        "coordinate": {
+          "space": "occurrence",
+          "instance": {
+            "node": "39bed95b-d0b6-4bdc-979d-c1fc3689466c",
+            "repeats": []
+          },
+          "position": {
+            "numerator": "20",
+            "denominator": "1"
+          }
+        },
+        "bias": "right"
+      },
+      "loss_policy": "keep_unresolved",
+      "state": {
+        "type": "bound"
+      }
+    },
+    "native-mark-s": {
+      "owner": "18005c1b-5776-4c03-8775-a42c348db766",
+      "label": "s",
+      "boundary": {
+        "coordinate": {
+          "space": "source",
+          "asset": "120876b0-475b-4741-a496-7e305662f9af",
+          "moment": {
+            "type": "timestamp",
+            "stream": "video",
+            "timestamp": {
+              "ticks": 10010,
+              "time_base": {
+                "numerator": 1,
+                "denominator": 30000
+              }
+            }
+          }
+        },
+        "bias": "right"
+      },
+      "loss_policy": "keep_unresolved",
+      "state": {
+        "type": "bound"
+      }
+    }
+  }
+}

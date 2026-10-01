@@ -33,6 +33,7 @@ mod delete_range;
 pub(super) mod edit_slice;
 mod gain;
 mod headless;
+mod marks;
 mod moment;
 mod render;
 mod render_history;
@@ -69,6 +70,8 @@ struct Service {
     captured_slice: Option<super::slice::CaptureUpdate>,
     cut_slice: Option<super::slice::CutUpdate>,
     last_cut: Option<(super::slice::CaptureRequest, super::slice::CutReceipt)>,
+    marks: super::marks::Update,
+    marks_state: marks::State,
     copied_view: Option<edit_slice::PreparedCopy>,
     splice_source_view: Option<super::slice::SourceViewUpdate>,
     active: Option<Pending>,
@@ -116,6 +119,8 @@ pub(super) fn run(
         captured_slice: None,
         cut_slice: None,
         last_cut: None,
+        marks: super::marks::Update::default(),
+        marks_state: marks::State::default(),
         copied_view: None,
         splice_source_view: None,
         active: None,
@@ -250,6 +255,7 @@ impl Service {
             captured_slice: self.captured_slice.clone(),
             cut_slice: self.cut_slice.clone(),
             saved_cut: self.last_cut.as_ref().map(|(_, receipt)| receipt.clone()),
+            marks: self.marks.clone(),
             render: self.render_update.clone(),
             render_history: self.render_history.clone(),
         };
@@ -263,6 +269,10 @@ impl Service {
 
     fn command(&mut self, request: ProjectRequest) -> Result<()> {
         let request = match request {
+            ProjectRequest::Marks(request) => {
+                self.marks_command(request);
+                return Ok(());
+            }
             ProjectRequest::CaptureEditSlice(request) => {
                 self.capture_edit_slice_command(request);
                 return Ok(());
@@ -295,6 +305,7 @@ impl Service {
         self.room_tone_error = None;
         self.gain = None;
         match request {
+            ProjectRequest::Marks(_) => unreachable!("marks use independent feedback"),
             ProjectRequest::Render(_) => unreachable!("render commands use their own feedback"),
             ProjectRequest::RenderHistory(_) => {
                 unreachable!("render history queries use their own feedback")
@@ -331,6 +342,7 @@ impl Service {
                 self.workspace = None;
                 self.cached = None;
                 self.clear_copied_slice();
+                self.clear_marks();
                 self.import = None;
                 self.message = Some("Project closed".into());
                 Ok(())
@@ -598,6 +610,7 @@ impl Service {
         self.session = next;
         self.cached = None;
         self.clear_copied_slice();
+        self.clear_marks();
         self.import = None;
         self.initialize_source(next, document.revision_id().clone(), path)
     }
@@ -1002,6 +1015,7 @@ impl Service {
         self.clear_copied_slice();
         self.import = None;
         self.message = Some(prepared.message);
+        self.clear_marks();
         Ok(())
     }
 

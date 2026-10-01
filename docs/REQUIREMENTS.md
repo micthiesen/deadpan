@@ -128,6 +128,19 @@ native matrix passes 872 pictures and 180 exact audio event coordinates. All
 2,359 workspace tests, strict Clippy, formatting and native startup/shutdown pass.
 This is DP-17/DP-18 groundwork; public Render remains open.
 
+[Native marks](MARK_NAVIGATION.md) add persistent case-sensitive letter positions,
+exact Original/Edit jumps, a keyboard-accessible list and bounded back/forward
+navigation. Mark-only saves preserve editorial selection and history positions;
+unrelated revisions expire transient Edit history while saved marks continue to
+follow core transforms. Original history retains its qualified measured clock.
+This remains partial DP-05/DP-20 work; full operator grammar, occurrence navigation
+and complete physical-input/accessibility acceptance remain required.
+[Qualification](qualification/native-marks-2026-10-01.md) records 448 UI-feature
+and 412 default app/headless tests, formatting, strict workspace lint, 156 focused
+rendered checks plus the expanded Kestrel audit, 3,589 full release checks, and
+native keyboard/reopen verification with consistent SQLite backups. No release
+gate is completed by these results.
+
 [Visual slice placement](spec/DEADPAN_SPEC.md#97-visual-slice-placement) is an
 explicit DP-05/DP-20 requirement: select and refine a time range, see its source
 endpoints and destination, audition both proposed joins, then commit or cancel

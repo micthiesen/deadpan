@@ -1,0 +1,7 @@
+{
+  "bundle_id": "dev.thiesen.deadpan.marks-qa",
+  "binary_sha256": "800b72e9dee6b3e5a53e384466a0e08b61ab5dcbcdc9cd63ec0914e074c72959",
+  "matches_release": true,
+  "source_manifest_sha256": "9f81d48542fa16934f3aabafe0af4f2d5b1a3511d47b343c704936442c786ea8",
+  "purpose": "isolated native keyboard QA; close after testing"
+}

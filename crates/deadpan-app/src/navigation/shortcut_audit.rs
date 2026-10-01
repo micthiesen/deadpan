@@ -86,18 +86,28 @@ fn audit_reservation(
 ) {
     // Cover every state in the currently shipped prefix parser, including its
     // overflow branch. Prefixes and the final key both use production routing.
+    let mut overflow_mark = [Key::Num9; 12];
+    overflow_mark[11] = Key::M;
+    let mut overflow_jump = [Key::Num9; 12];
+    overflow_jump[11] = Key::Quote;
     let prefixes: &[&[Key]] = &[
         &[],
         &[Key::G],
         &[Key::R],
         &[Key::D],
         &[Key::Comma],
+        &[Key::M],
+        &[Key::Quote],
         &[Key::Num3],
         &[Key::Num3, Key::G],
         &[Key::Num3, Key::R],
         &[Key::Num3, Key::D],
         &[Key::Num3, Key::Comma],
+        &[Key::Num3, Key::M],
+        &[Key::Num3, Key::Quote],
         &[Key::Num9; 11],
+        &overflow_mark,
+        &overflow_jump,
     ];
     for (text, ime) in [(false, false), (true, false), (false, true), (true, true)] {
         for prefix in prefixes {
@@ -385,7 +395,7 @@ mod tests {
     fn shipped_routers_never_claim_a_kestrel_global_chord_or_prefix() {
         let report = audit().unwrap();
         assert_eq!(report.reserved_bindings, 62);
-        assert_eq!(report.routing_cases, 62 * 192);
+        assert_eq!(report.routing_cases, 62 * 264);
         assert!(report.passed(), "{report:#?}");
     }
 
@@ -431,6 +441,34 @@ mod tests {
         assert!(!report.passed());
         assert!(report.conflicts.iter().any(|conflict| {
             conflict.context.contains("prefix=\"\"") && conflict.response.contains("pending=\"1\"")
+        }));
+    }
+
+    #[test]
+    fn audit_rejects_reserved_keys_that_only_resolve_a_mark_prefix() {
+        let (_, reservations) = parse_fixture(FIXTURE).unwrap();
+        let reservation = reservations
+            .iter()
+            .find(|entry| entry.key == Key::H && entry.modifiers == Modifiers::ALT)
+            .unwrap();
+        let mut report = audit().unwrap();
+        audit_reservation(
+            reservation,
+            &mut report,
+            |bindings, key, modifiers, text, ime| {
+                if bindings.mark_prefix().is_some() && !text && !ime {
+                    bindings.key(key, Modifiers::NONE, false, false)
+                } else {
+                    bindings.key(key, modifiers, text, ime)
+                }
+            },
+        );
+        assert!(!report.passed());
+        assert!(report.conflicts.iter().any(|conflict| {
+            conflict.context.contains("prefix=\"m\"") && conflict.response.contains("SetMark('h')")
+        }));
+        assert!(report.conflicts.iter().any(|conflict| {
+            conflict.context.contains("prefix=\"'\"") && conflict.response.contains("JumpMark('h')")
         }));
     }
 

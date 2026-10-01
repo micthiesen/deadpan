@@ -44,6 +44,21 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         return Err("Extra arguments are not supported by this command.".into());
     }
     let action = match verb.as_str() {
+        "mark" | "jump" | "unmark" => {
+            let letter = argument
+                .filter(|value| value.len() == 1 && value.as_bytes()[0].is_ascii_alphabetic())
+                .ok_or("A mark name must be exactly one ASCII letter, a–z or A–Z.")?
+                .as_bytes()[0];
+            let letter = char::from(letter);
+            return Ok(Entry::Action(match verb.as_str() {
+                "mark" => Action::SetMark(letter),
+                "jump" => Action::JumpMark(letter),
+                _ => Action::DeleteMark(letter),
+            }));
+        }
+        "marks" => Action::Marks,
+        "jump-back" => Action::JumpHistory { forward: false },
+        "jump-forward" => Action::JumpHistory { forward: true },
         "gain" => {
             return argument
                 .map(crate::gain::parse_db)

@@ -14,6 +14,7 @@ mod delete_range;
 mod edit_latency;
 mod gain;
 mod generated_picture;
+mod marks;
 mod moment;
 mod nested_pause;
 mod original_playback;

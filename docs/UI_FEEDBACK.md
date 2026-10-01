@@ -11,6 +11,19 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+The [native mark increment](qualification/native-marks-2026-10-01.md) adds visible
+pending letter prefixes, a keyboard-accessible Marks list and exact back/forward
+jumps. The focused rendered run passes 156 checks plus a 16,368-case Kestrel audit.
+Inspected minimum/default captures show both clocks, saved/error states and native
+focus. All 52 rows are reachable by Tab; the final row scrolls into view and focus
+wraps in both directions. Stable modal frames use one layout pass. Native keys
+and seven SQLite backups verify saving, jumping, cancellation, removal, Undo and
+reopening. The QA app was closed and its writer lock released. The full release
+replay passes 3,589 checks with no findings or failed timing samples; warm
+navigation/Repeat/Hold p95 is 1.523/5.886/5.914 ms. Transient Edit history expires
+after unrelated revisions; saved marks still follow content. Complete editor,
+IME, physical layout and accessibility acceptance remain open.
+
 The [whole-child copy and cut increment](qualification/structural-capture-2026-10-01.md)
 adds exact structural capture, cut-to-register and empty-group placement. Final
 rendered runs pass 150 cut and 820 placement checks, each plus the 11,904-case

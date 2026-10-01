@@ -1,0 +1,22 @@
+{
+  "command": [
+    "rustup",
+    "run",
+    "1.97.1",
+    "cargo",
+    "test",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "--locked",
+    "--no-fail-fast"
+  ],
+  "started": "2026-10-01T08:48:34.417783+00:00",
+  "base_commit": "291853145eb434864cdf84dcbbab92c81881ff73",
+  "diff_sha256": "2edc8db20fb2f1c4407d866226d78b3475eecd39ac6c4a11025645bff5016b53",
+  "source_manifest_sha256": "387981a00c24b5bd738d71ab899fbd39d9f0f1def4b80e7c9e0310c510e5db5a",
+  "pid": 65372,
+  "exit_code": 0,
+  "seconds": 49.32615862507373
+}

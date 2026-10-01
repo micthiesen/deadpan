@@ -1,0 +1,49 @@
+{
+  "passed": true,
+  "counts": {
+    "before": [
+      13,
+      10
+    ],
+    "edit-mark": [
+      14,
+      11
+    ],
+    "original-mark": [
+      15,
+      12
+    ],
+    "navigated-cancelled": [
+      15,
+      12
+    ],
+    "removed": [
+      16,
+      13
+    ],
+    "undo": [
+      17,
+      13
+    ],
+    "reopened": [
+      17,
+      13
+    ]
+  },
+  "database_tables": 20,
+  "unchanged_nonhistory_tables": 16,
+  "navigation_and_cancel_changed_no_tables": true,
+  "reopen_and_jump_changed_no_tables": true,
+  "all_nonmark_authored_fields_unchanged": true,
+  "undo_restores_all_mark_fields": true,
+  "revision_ids_never_reused": true,
+  "original_q_pts": 5005,
+  "original_q_time_base": [
+    1,
+    30000
+  ],
+  "edit_q_exact_frame": [
+    20,
+    1
+  ]
+}

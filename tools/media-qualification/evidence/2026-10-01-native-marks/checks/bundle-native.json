@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python3",
+    "tools/build-app.py",
+    "--binary",
+    "target/release/deadpan-app",
+    "--output",
+    "/tmp/deadpan-native-marks-20261001/Deadpan Marks QA.app",
+    "--bundle-id",
+    "dev.thiesen.deadpan.marks-qa"
+  ],
+  "started": "2026-10-01T09:17:15.824369+00:00",
+  "base_commit": "291853145eb434864cdf84dcbbab92c81881ff73",
+  "diff_sha256": "13d36632e1ec750ecad5e7cb3f987787a3e6da735ce03008243e511cf16c578d",
+  "source_manifest_sha256": "9f81d48542fa16934f3aabafe0af4f2d5b1a3511d47b343c704936442c786ea8",
+  "pid": 71871,
+  "exit_code": 0,
+  "seconds": 1.74198512500152
+}

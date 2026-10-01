@@ -31,6 +31,7 @@ mod gain;
 pub(crate) mod harness;
 mod help_scroll;
 mod inspector;
+mod marks;
 mod moment;
 mod playback;
 mod render;
@@ -144,6 +145,7 @@ pub struct DeadpanApp {
     edit_range: edit_range::Selection,
     placement_command_target: Option<Result<moment::PlacementTarget, String>>,
     delete_command_target: Option<Result<delete::CommandTarget, String>>,
+    marks: marks::State,
     sequence_cursor: u64,
     source_search: String,
     command: String,
@@ -258,6 +260,7 @@ impl DeadpanApp {
             edit_range: edit_range::Selection::default(),
             placement_command_target: None,
             delete_command_target: None,
+            marks: marks::State::default(),
             sequence_cursor: 0,
             source_search: String::new(),
             command: String::new(),
@@ -397,6 +400,8 @@ impl DeadpanApp {
     }
 
     fn request_picture(&mut self, clear: bool) {
+        let mark_position = self.capture_mark().ok();
+        self.marks.navigated(mark_position.as_ref());
         self.reconcile_moment();
         self.reconcile_edit_range();
         // Pointer navigation also reaches this boundary. Revoke the draft in
@@ -495,12 +500,18 @@ impl DeadpanApp {
         self.worker.submit(ticket, work);
     }
 
-    fn receive(&mut self) {
+    fn receive(&mut self, context: &egui::Context) {
         #[cfg(feature = "ui-harness")]
         let update = self.feedback.take_project_update(&self.service);
         #[cfg(not(feature = "ui-harness"))]
         let update = self.service.take_update();
         if let Some(mut update) = update {
+            if let Some(saved) = &update.marks.saved
+                && saved.needs_refresh(update.workspace.as_deref())
+                && let Some(warning) = &saved.refresh_error
+            {
+                update.message = Some(warning.clone());
+            }
             let unrefreshed_cut = update
                 .saved_cut
                 .as_ref()
@@ -568,6 +579,7 @@ impl DeadpanApp {
             self.import = update.import;
             if old_session != new_session {
                 self.render_session_changed();
+                self.marks = marks::State::default();
             }
             let incoming_identity = update
                 .render
@@ -735,6 +747,8 @@ impl DeadpanApp {
             self.sequence_cursor = self.sequence_cursor.min(self.sequence_length());
             self.source_cursor = self.source_cursor.min(self.source_length());
             self.reconcile_moment();
+            self.rebase_mark_metadata(&update.marks);
+            self.marks.reconcile(self.workspace.as_deref());
             self.reconcile_edit_range();
             if let Some(range) = committed_range {
                 self.select_committed_range(&range);
@@ -758,6 +772,7 @@ impl DeadpanApp {
             }
             self.receive_copied(update.captured_slice, unrefreshed_commit);
             self.receive_cut(update.cut_slice);
+            self.receive_marks(update.marks, context);
         }
         #[cfg(feature = "ui-harness")]
         let reply = self.feedback.take_reply(&self.worker);
@@ -1112,6 +1127,7 @@ impl DeadpanApp {
     }
 
     fn open_command(&mut self, command: String, context: &egui::Context) {
+        self.marks.command = Some(self.capture_mark());
         self.placement_command_target = Some(self.capture_placement_target());
         self.delete_command_target = Some(self.capture_delete_target());
         self.gain_command_target = Some(self.capture_gain_target());
@@ -1261,6 +1277,12 @@ impl DeadpanApp {
     }
 
     fn action(&mut self, action: Action, context: &egui::Context) {
+        if !matches!(
+            action,
+            Action::SetMark(_) | Action::JumpMark(_) | Action::DeleteMark(_)
+        ) {
+            self.marks.cancel_jump();
+        }
         if matches!(action, Action::CopyMoment | Action::DeleteSelection)
             || (action == Action::Edit(BeatEdit::Delete)
                 && self.pane != Pane::Sounds
@@ -1333,6 +1355,12 @@ impl DeadpanApp {
         }
         match action {
             Action::Render => unreachable!("Render handles previews before ordinary actions"),
+            Action::SetMark(_) | Action::JumpMark(_) | Action::DeleteMark(_) => {
+                let captured = self.marks.prefix.take();
+                self.mark_action(action, captured);
+            }
+            Action::JumpHistory { forward } => self.jump_history(forward, context),
+            Action::Marks => self.open_marks(context),
             Action::Sound(action) => self.sound_action(action, context),
             Action::GainStep(delta) => self.gain_step(delta, context),
             Action::Framing(action) => self.framing_action(action, context),
@@ -1551,6 +1579,9 @@ impl DeadpanApp {
     }
 
     fn keyboard(&mut self, context: &egui::Context) -> Option<(TextAction, bool)> {
+        if self.marks_keyboard(context) {
+            return None;
+        }
         if self.render_keyboard(context) {
             return None;
         }
@@ -1704,7 +1735,7 @@ impl DeadpanApp {
                     self.bindings.clear();
                     continue;
                 }
-                if repeat && !navigation::allows_key_repeat(key, modifiers) {
+                if repeat && !self.bindings.allows_key_repeat(key, modifiers) {
                     continue;
                 }
                 if navigation::inspector_parameter_key(
@@ -1721,6 +1752,7 @@ impl DeadpanApp {
                     continue;
                 }
                 let before = self.bindings.pending();
+                let mark_prefix = self.bindings.mark_prefix();
                 // Command mode remains text-only until the end-of-frame blur
                 // handling closes it, even if a click has already moved focus.
                 let selection = self.routed_edit_selection();
@@ -1743,6 +1775,11 @@ impl DeadpanApp {
                         i.consume_key(modifiers, key);
                     });
                 }
+                if mark_prefix.is_none() && self.bindings.mark_prefix().is_some() {
+                    self.begin_mark_prefix();
+                } else if self.bindings.mark_prefix().is_none() {
+                    self.marks.prefix = None;
+                }
             }
         }
         text_result
@@ -1755,6 +1792,7 @@ impl DeadpanApp {
         let gain_target = self.gain_command_target.take();
         let placement_target = self.placement_command_target.take();
         let delete_target = self.delete_command_target.take();
+        let mark_target = self.marks.command.take();
         self.bindings.clear();
         self.command_open = false;
         self.command_focus_pending = false;
@@ -1801,6 +1839,16 @@ impl DeadpanApp {
             }
         }
         match command {
+            Ok(navigation::command::Entry::Action(
+                action @ (Action::SetMark(_) | Action::JumpMark(_) | Action::DeleteMark(_)),
+            )) => {
+                self.mark_action(
+                    action,
+                    Some(mark_target.unwrap_or_else(|| {
+                        Err("Open the mark command again to capture its context.".into())
+                    })),
+                );
+            }
             Ok(navigation::command::Entry::Action(Action::Edit(BeatEdit::Delete))) => {
                 self.delete_captured(delete_target.unwrap_or_else(|| {
                     Err("Open :delete again to capture its target; no edit was made.".into())
@@ -2080,6 +2128,11 @@ impl DeadpanApp {
                     } else { ui.weak("No beat selected"); }
                 } else { ui.weak("Unchanged source"); }
                 ui.colored_label(style::LAVENDER, format!("Focus: {}", if self.pane == Pane::Sources && self.focused_workflow() { "Original / sounds" } else { pane_name(self.pane) }));
+                if !self.command_open && !self.sound_focused() && self.pane != Pane::Sounds && !self.event_focused()
+                    && ui.small_button("Marks  m / '").on_hover_text("m + letter saves this position; ' + letter returns. Browse with :marks.").clicked()
+                {
+                    self.open_marks(ui.ctx());
+                }
                 if !pending.is_empty() { style::keycap(ui, &pending); }
                 if let Some(hint) = self.bindings.pending_hint() { ui.label(egui::RichText::new(hint).size(11.0).color(style::LAVENDER)); }
             });
@@ -2975,6 +3028,9 @@ impl DeadpanApp {
                         ("h l · Left Right", "Move one frame in the current clock. Prefix a count: 12l."),
                         ("j k", "In the sound catalog, select the next / previous sound. Elsewhere select a beat at the current group depth and return to Your edit. In legacy Sources, choose a source."),
                         ("gg / G", "First / final boundary of the current group or Original."),
+                        ("m + letter · ' + letter", "Save an exact Original or Edit mark, then jump to it. Uppercase letters are separate. Edit marks follow their content through edits; deleted targets stay unresolved until Undo or an explicit new mark. Setting a mark is undoable and preserves both cursors and selection."),
+                        ("Ctrl O / Ctrl I", "Back / forward through successful mark jumps. Original positions retain their qualified source clock. A changed Edit revision expires old history positions instead of seeking unrelated content; saved marks still follow structural edits."),
+                        (":marks · :mark a · :jump a · :unmark a", "Browse marks, save the captured position, jump to a saved letter, or remove it. Commands capture their project and target on entry."),
                         ("Enter / Backspace · :enter / :parent", "Open a selected Sequence group / return to its parent. The project cursor stays exact; breadcrumbs show the active group. Repeat plays and Retime descendants are not yet navigable."),
                         (":source / :sequence", "Browse unchanged Original / work on Your edit."),
                         ("Tab / Shift Tab", "Cycle Original, Viewer, visible Inspector, Beats, and Placed sounds focus."),
@@ -3047,7 +3103,7 @@ impl eframe::App for DeadpanApp {
         // A layout retry reuses this frame's external state. In particular it
         // must not consume a second Repeat completion between input and paint.
         if first_pass {
-            self.receive();
+            self.receive(&context);
             self.reconcile_room_tone(&context);
             self.reconcile_gain(&context);
             self.reconcile_splice(&context);
@@ -3129,7 +3185,7 @@ impl eframe::App for DeadpanApp {
             self.selected_source.clone(),
             self.selected_sound.clone(),
         );
-        if self.render.blocking() {
+        if self.render.blocking() || self.marks.open {
             ui.disable();
             ui.set_opacity(1.0);
         }
@@ -3169,6 +3225,7 @@ impl eframe::App for DeadpanApp {
             self.room_tone_sheet(&context);
         }
         self.render_windows(&context);
+        self.marks_window(&context);
         if input_scope
             != (
                 self.pane,

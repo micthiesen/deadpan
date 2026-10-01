@@ -42,6 +42,22 @@ paint and complete hit-target clips. Native CUA also verified gain boundary
 wrapping, keyboard envelope/key editing, field reveal, literal shortcut text and
 Escape cancellation without changing the saved project.
 
+## Marks and jumps
+
+Normal mode uses `m` then one ASCII letter to save, and `'` then one letter to
+jump. Shift selects a separate uppercase letter. The logical Quote symbol may
+require Shift or Option on a keyboard layout; Command and Control stay reserved.
+Prefixes have no timeout, show the valid next keys and reject counts. A held
+movement key cannot complete a pending mark. Native text and IME retain input.
+
+`Ctrl O` / `Ctrl I` traverse the bounded mark-jump trail; `Cmd O` / `Cmd I`
+retain Open/Import. The same Control keys work in the Marks modal, whose text
+field and buttons use native Tab and activation. Composition and held activation
+cannot save, remove, close or jump. `:mark a`, `:jump a`, `:unmark a`, `:marks`,
+`:jump-back` and `:jump-forward` share the production router. See
+[mark navigation](MARK_NAVIGATION.md) for capture, expiration and clock rules.
+The expanded reservation matrix has 16,368 cases over the same 62 Kestrel globals.
+
 ## Place slice
 
 **`:splice`** opens a local linked Original or Edit placement draft in Your edit.

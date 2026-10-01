@@ -1,0 +1,20 @@
+{
+  "command": [
+    "target/debug/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "marks",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+    "--retain-projects",
+    "--output",
+    "/tmp/deadpan-native-marks-20261001/visual-marks-third"
+  ],
+  "started": "2026-10-01T09:05:00.239094+00:00",
+  "base_commit": "291853145eb434864cdf84dcbbab92c81881ff73",
+  "diff_sha256": "2d4196b3910e55dbb35f94ecb961c2e462638f7d02be4d4b2746944f7b33f996",
+  "source_manifest_sha256": "24bd14718fc0615cdde4717e04778af91a01a1fb790ec17f14877c9eccfdc21b",
+  "pid": 69945,
+  "exit_code": 1,
+  "seconds": 14.988464124966413
+}

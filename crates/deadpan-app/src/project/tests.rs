@@ -15,6 +15,7 @@ mod delete_range;
 mod edited_slice;
 mod gain;
 mod headless;
+mod marks;
 mod moment;
 mod pause;
 mod render;

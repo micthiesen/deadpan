@@ -6,6 +6,8 @@ pub mod command;
 mod delete_range_tests;
 pub mod duration;
 pub mod gain;
+#[cfg(test)]
+mod mark_tests;
 pub mod retime;
 pub mod room_tone;
 mod sound;
@@ -89,6 +91,11 @@ pub enum Action {
     VisualMoment,
     DeleteSelection,
     CopyMoment,
+    SetMark(char),
+    JumpMark(char),
+    DeleteMark(char),
+    JumpHistory { forward: bool },
+    Marks,
     PasteMoment { before: bool },
     Step { forward: bool, count: u32 },
     Beat { forward: bool, count: u32 },
@@ -147,6 +154,12 @@ const DIGITS: &[(Key, u32)] = &[
     (Key::Num9, 9),
 ];
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MarkPrefix {
+    Set,
+    Jump,
+}
+
 #[derive(Default)]
 pub struct Bindings {
     count: Option<u32>,
@@ -154,11 +167,24 @@ pub struct Bindings {
     g: bool,
     comma: bool,
     operator: Option<Key>,
+    mark: Option<MarkPrefix>,
 }
 
 impl Bindings {
     pub fn clear(&mut self) {
         *self = Self::default();
+    }
+
+    /// The app captures the mark target when the prefix starts, before a later
+    /// project update can change the location represented by the second key.
+    pub fn mark_prefix(&self) -> Option<MarkPrefix> {
+        self.mark
+    }
+
+    /// Motion keys are also valid mark names. A held motion must not complete
+    /// a mark prefix even though ordinary frame and beat motion may repeat.
+    pub fn allows_key_repeat(&self, key: Key, modifiers: Modifiers) -> bool {
+        self.mark.is_none() && allows_key_repeat(key, modifiers)
     }
 
     /// Original browsing may retain this prefix for explicit whole-source
@@ -168,6 +194,13 @@ impl Bindings {
     }
 
     pub fn pending(&self) -> String {
+        if let Some(mark) = self.mark {
+            return match mark {
+                MarkPrefix::Set => "m",
+                MarkPrefix::Jump => "'",
+            }
+            .into();
+        }
         format!(
             "{}{}",
             if self.count_overflow {
@@ -186,6 +219,12 @@ impl Bindings {
     }
 
     pub fn pending_hint(&self) -> Option<&'static str> {
+        if let Some(mark) = self.mark {
+            return Some(match mark {
+                MarkPrefix::Set => "a–z / A–Z saves this position · Esc cancels",
+                MarkPrefix::Jump => "a–z / A–Z jumps to that mark · Esc cancels",
+            });
+        }
         if self.count_overflow {
             return Some("Count is too large. Esc clears it.");
         }
@@ -243,6 +282,24 @@ impl Bindings {
             self.clear();
             return None;
         }
+        // egui's Control also carries `command` on non-macOS platforms. These
+        // exact Control bindings must precede Cmd+O and Cmd+I handling.
+        if matches!(key, Key::O | Key::I)
+            && modifiers.matches_exact(Modifiers::CTRL)
+            && !modifiers.mac_cmd
+        {
+            let pending = !self.pending().is_empty();
+            self.clear();
+            return (!text).then_some(if pending {
+                Action::Invalid(
+                    "Use Ctrl-o or Ctrl-i without a count or pending prefix; no jump was made.",
+                )
+            } else {
+                Action::JumpHistory {
+                    forward: key == Key::I,
+                }
+            });
+        }
         // egui also sets `command` for Control on non-macOS platforms. Check
         // this explicit Control binding before the platform command shortcuts.
         if key == Key::R && modifiers.matches_exact(Modifiers::CTRL) && !modifiers.mac_cmd {
@@ -282,6 +339,41 @@ impl Bindings {
             return Some(Action::Pane {
                 reverse: modifiers.shift,
             });
+        }
+        // Consume the name before ordinary motion and operator keys, including
+        // g, r, d and uppercase G. Modified global chords remain unclaimed.
+        if let Some(mark) = self.mark {
+            self.clear();
+            if modifiers != Modifiers::NONE && modifiers != Modifiers::SHIFT {
+                return None;
+            }
+            return Some(match mark_letter(key, modifiers.shift) {
+                Some(letter) => match mark {
+                    MarkPrefix::Set => Action::SetMark(letter),
+                    MarkPrefix::Jump => Action::JumpMark(letter),
+                },
+                None => Action::Invalid(
+                    "A mark name must be one letter, a–z or A–Z; no mark action was taken.",
+                ),
+            });
+        }
+        // Quote is a logical symbol, so Shift/Option may be needed on a
+        // non-US layout. M starts a prefix only as a plain letter.
+        if (key == Key::M && modifiers == Modifiers::NONE)
+            || (key == Key::Quote && !modifiers.ctrl && !modifiers.command && !modifiers.mac_cmd)
+        {
+            if !self.pending().is_empty() {
+                self.clear();
+                return Some(Action::Invalid(
+                    "Use m or ' without a count or another prefix; no mark action was taken.",
+                ));
+            }
+            self.mark = Some(if key == Key::M {
+                MarkPrefix::Set
+            } else {
+                MarkPrefix::Jump
+            });
+            return None;
         }
         // These are logical symbols: layouts may need Shift or Option to type
         // them. Never infer a colon from the physical US semicolon position.
@@ -465,6 +557,43 @@ impl Bindings {
         self.clear();
         action
     }
+}
+
+fn mark_letter(key: Key, uppercase: bool) -> Option<char> {
+    let letter: char = match key {
+        Key::A => 'a',
+        Key::B => 'b',
+        Key::C => 'c',
+        Key::D => 'd',
+        Key::E => 'e',
+        Key::F => 'f',
+        Key::G => 'g',
+        Key::H => 'h',
+        Key::I => 'i',
+        Key::J => 'j',
+        Key::K => 'k',
+        Key::L => 'l',
+        Key::M => 'm',
+        Key::N => 'n',
+        Key::O => 'o',
+        Key::P => 'p',
+        Key::Q => 'q',
+        Key::R => 'r',
+        Key::S => 's',
+        Key::T => 't',
+        Key::U => 'u',
+        Key::V => 'v',
+        Key::W => 'w',
+        Key::X => 'x',
+        Key::Y => 'y',
+        Key::Z => 'z',
+        _ => return None,
+    };
+    Some(if uppercase {
+        letter.to_ascii_uppercase()
+    } else {
+        letter
+    })
 }
 
 /// A held key may navigate, but cannot finish an operator or repeat an edit.
@@ -1216,7 +1345,14 @@ mod tests {
                     (Key::O, Action::Open),
                     (Key::I, Action::Import),
                 ] {
-                    assert_eq!(bindings.key(key, command, text, false), Some(expected));
+                    let expected = if command.ctrl && matches!(key, Key::O | Key::I) {
+                        (!text).then_some(Action::JumpHistory {
+                            forward: key == Key::I,
+                        })
+                    } else {
+                        Some(expected)
+                    };
+                    assert_eq!(bindings.key(key, command, text, false), expected);
                 }
             }
             for (key, modifiers, expected) in [

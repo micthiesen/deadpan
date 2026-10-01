@@ -19,6 +19,7 @@ use deadpan_store::source_registration::SourceQualificationReceipt;
 use crate::library::ProjectLibrary;
 
 pub mod gain;
+pub mod marks;
 mod pause;
 pub mod render_history;
 pub mod retime;
@@ -137,6 +138,8 @@ pub struct ProjectUpdate {
     pub cut_slice: Option<slice::CutUpdate>,
     /// Last durable cut remains visible even after a newer cut is rejected.
     pub saved_cut: Option<slice::CutReceipt>,
+    /// Mark metadata saves and navigation queries never retarget a selection.
+    pub marks: marks::Update,
     /// Operational render feedback is retained independently of editor feedback.
     pub render: Option<ProjectRenderUpdate>,
     /// Bounded history replies retain their exact query and session independently
@@ -382,6 +385,7 @@ pub struct MomentPaste {
 }
 
 pub enum ProjectRequest {
+    Marks(marks::Request),
     Render(ProjectRenderRequest),
     RenderHistory(render_history::Request),
     /// Source first: native projects are always allocated in Documents/Deadpan.

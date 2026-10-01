@@ -1,0 +1,130 @@
+{
+  "base": "291853145eb434864cdf84dcbbab92c81881ff73",
+  "source_manifest_sha256": "9f81d48542fa16934f3aabafe0af4f2d5b1a3511d47b343c704936442c786ea8",
+  "source_files_rechecked": 1369,
+  "ui_unit_source_manifest_sha256": "58728a6de59f5bd27cac771e0cba00c34cc5fb220625bdc3056bc359e50cfbe2",
+  "changed_since_ui_unit_tests": [
+    "crates/deadpan-app/src/preview/harness/marks.rs"
+  ],
+  "backend_changes_since_previous_workspace_gate": [],
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+  "chip": "Apple M5 Max",
+  "memory_bytes": 137438953472,
+  "compiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6",
+  "visual_replays": {
+    "visual-marks-fifth": {
+      "failed": false,
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "checks": 1,
+          "failed": false,
+          "findings": []
+        },
+        {
+          "name": "marks",
+          "checks": 156,
+          "failed": false,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ]
+        }
+      ]
+    },
+    "visual-marks-first": {
+      "failed": true,
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "checks": 1,
+          "failed": false,
+          "findings": []
+        },
+        {
+          "name": "marks",
+          "checks": 12,
+          "failed": true,
+          "findings": [
+            {
+              "message": "Check failed: Jump retains the precise coordinate domain and boundary",
+              "severity": "failure"
+            }
+          ]
+        }
+      ]
+    },
+    "visual-marks-fourth": {
+      "failed": false,
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "checks": 1,
+          "failed": false,
+          "findings": []
+        },
+        {
+          "name": "marks",
+          "checks": 96,
+          "failed": false,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ]
+        }
+      ]
+    },
+    "visual-marks-second": {
+      "failed": true,
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "checks": 1,
+          "failed": false,
+          "findings": []
+        },
+        {
+          "name": "marks",
+          "checks": 45,
+          "failed": true,
+          "findings": [
+            {
+              "message": "Check failed: Held navigation keeps the exact mark prefix pending",
+              "severity": "failure"
+            }
+          ]
+        }
+      ]
+    },
+    "visual-marks-third": {
+      "failed": true,
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "checks": 1,
+          "failed": false,
+          "findings": []
+        },
+        {
+          "name": "marks",
+          "checks": 71,
+          "failed": true,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            },
+            {
+              "message": "Check failed: Jump retains the precise coordinate domain and boundary",
+              "severity": "failure"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

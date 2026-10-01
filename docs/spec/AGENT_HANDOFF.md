@@ -19,6 +19,34 @@ test instances after testing instead of leaving them idle. The previously
 running `dev.thiesen.deadpan.cursor-qa` instance has been quit, and the native
 app inventory confirmed no Deadpan app remained running.
 
+## Native marks and jump history, 2026-10-01
+
+`m` + letter, `'` + letter and the Marks list use persisted core marks. Original
+positions retain exact measured PTS; Edit positions retain concrete host
+occurrences and follow core edit transforms. `native-mark-{letter}` plus the
+exact single-letter label is the shared native/headless address. Different-label
+collisions reject. Copies have independent IDs. No schema change is needed.
+
+Mark-only saves have separate durable receipts and never carry a selection-changing
+edit completion. Preserve both cursors, pane, beat and live Visual range. Capture
+prefix/command entry including absence, reject stale revisions, and discard a
+late jump after navigation. A failed post-save refresh retains the reopen warning.
+
+Ctrl-O/Ctrl-I navigate bounded session history with exact fractional positions.
+Only mark-only commits rebase Edit history; unrelated revisions expire it.
+Prune expired entries in both directions while preserving qualified Original
+positions. Saved marks still follow structural changes. See
+[the contract](../MARK_NAVIGATION.md). Full editing grammar and occurrence-level
+navigation remain open; this does not complete DP-05 or DP-20.
+
+[Qualification](../qualification/native-marks-2026-10-01.md) retains 448 UI-feature
+and 412 default app/headless passing tests, strict all-target workspace Clippy,
+formatting, 156 focused rendered checks and the 16,368-case Kestrel audit.
+Full release replay passes 3,589 checks with no findings or failed timing samples.
+Native keyboard input and seven consistent backups verify both clocks, modal
+focus, removal/Undo and restart persistence. Both QA processes exited normally;
+no Deadpan app remains running and its project lock is released.
+
 ## Visual slice replacement, 2026-09-30
 
 Your edit now has an independent half-open selection (`v`, motion, `v`).

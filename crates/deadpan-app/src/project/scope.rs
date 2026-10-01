@@ -25,6 +25,45 @@ pub struct SequenceScopeView<'a> {
 }
 
 impl SequenceScope {
+    /// Follow a retained host identity, including empty groups at shared
+    /// boundaries. Composite ancestors stop native descent at their parent.
+    pub(super) fn for_target(
+        workspace: &Workspace,
+        target: &NodeId,
+    ) -> Result<(Self, Option<NodeId>), String> {
+        let document = &workspace.document;
+        if !document.nodes().contains_key(target) {
+            return Err("The marked host no longer exists".into());
+        }
+        let parents: std::collections::BTreeMap<_, _> = document
+            .nodes()
+            .keys()
+            .flat_map(|owner| document.children(owner).map(move |child| (child, owner)))
+            .collect();
+        let mut path = Vec::new();
+        let mut current = target;
+        while current != document.root() {
+            if path.len() >= MAX_DOCUMENT_DEPTH {
+                return Err("The marked host exceeds the document depth limit".into());
+            }
+            path.push(current);
+            current = parents
+                .get(current)
+                .copied()
+                .ok_or("The marked host is outside the authored tree")?;
+        }
+        path.reverse();
+        let mut scope = Self::default();
+        for child in path {
+            if child == target || !matches!(document.nodes()[child].kind, NodeKind::Sequence { .. })
+            {
+                return Ok((scope, Some(child.clone())));
+            }
+            scope = scope.descend(workspace, child)?;
+        }
+        Ok((scope, None))
+    }
+
     /// Identity-only fixture for reducers that compare scopes without resolving
     /// a workspace. Production paths still come from checked descent.
     #[cfg(test)]
