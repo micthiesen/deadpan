@@ -1,0 +1,18 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+error[E0432]: unresolved import `deadpan_media::derive_source_moment`
+ --> crates/deadpan-cli/tests/source_registration/slip.rs:5:5
+  |
+5 | use deadpan_media::derive_source_moment;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ no `derive_source_moment` in the root
+
+For more information about this error, try `rustc --explain E0432`.
+error: could not compile `deadpan-cli` (test "source_registration") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

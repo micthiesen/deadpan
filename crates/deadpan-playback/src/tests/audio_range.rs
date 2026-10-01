@@ -29,8 +29,16 @@ fn descriptor(snapshot: &Snapshot, asset: &AssetId, selected: SourceSpan) -> Arc
 }
 
 fn raw(snapshot: &Arc<Snapshot>, target: &Target, start: i64, count: u32) -> Vec<[f32; 2]> {
-    let document = target.document(snapshot).unwrap();
-    StageAudio::new(Arc::new(RenderPlan::compile(&document).unwrap()))
+    raw_document(snapshot, &target.document(snapshot).unwrap(), start, count)
+}
+
+fn raw_document(
+    snapshot: &Arc<Snapshot>,
+    document: &ProjectDocument,
+    start: i64,
+    count: u32,
+) -> Vec<[f32; 2]> {
+    StageAudio::new(Arc::new(RenderPlan::compile(document).unwrap()))
         .read(
             &mut Sources::new(snapshot.clone()),
             AudioSample(start),
@@ -133,6 +141,28 @@ fn selected_original_audio_keeps_complete_source_context_and_cold_seek_phase() {
                 raw(&captured, &original, 137 + at, 256),
                 "{name}: sample {at}"
             );
+        }
+        let mut generic_source = source.clone();
+        generic_source.edit_window = None;
+        let generic_view = captured
+            .document
+            .source_view(
+                &source.audio.as_ref().unwrap().asset,
+                generic_source,
+                node("audition-audio-range-root"),
+                node("audition-audio-range-source"),
+            )
+            .unwrap();
+        for (at, count) in [(0, 256), (992, 32)] {
+            let selected_pcm = raw_document(&captured, &view, at, count);
+            assert_eq!(
+                selected_pcm,
+                raw_document(&captured, &generic_view, at, count),
+                "{name}: editorial metadata must not change PCM"
+            );
+            if at == 992 {
+                assert!(selected_pcm[11..].iter().all(|frame| *frame == [0.0; 2]));
+            }
         }
         assert_eq!(store.snapshot().unwrap(), *captured.document);
     }
@@ -256,6 +286,67 @@ fn selected_44100_samples_round_once_and_reject_wrong_contracts() {
         source.audio_mapping.start_frames(),
         ExactRatio::new(-43, 1470).unwrap()
     );
+    // 957 selected 44.1 kHz samples at 30 fps end at 319/490 frames,
+    // before both the 1042-sample mix enclosure and the one-frame allocation.
+    let selected_frames = ExactRatio::new(319, 490).unwrap();
+    assert_eq!(source.duration.frames(), 1);
+    assert_eq!(
+        source.edit_window,
+        Some(SourceEditWindow::new(ExactRatio::ZERO, selected_frames).unwrap())
+    );
+    assert_eq!(
+        source.audio_mapping,
+        SourceAudioMapping::SelectedPlacement {
+            start: ExactRatio::new(-43, 1470).unwrap(),
+            frames: ExactRatio::new(44117, 1470).unwrap(),
+            selection: ExactFrameRange::new(ExactRatio::ZERO, selected_frames).unwrap(),
+        }
+    );
+    assert_eq!(source.audio_offset, AudioSample(0));
+    assert_eq!(source.link, LinkRelation::Independent);
+
+    // This plain mono WAV has no declared speaker layout. Metadata preserves
+    // its exact plan and explicit PCM refusal; the qualified AAC cases above
+    // verify actual PCM and silence after the selected endpoint.
+    let mut generic_source = source.clone();
+    generic_source.edit_window = None;
+    let generic_view = captured
+        .document
+        .source_view(
+            &asset,
+            generic_source,
+            node("audition-audio-range-root"),
+            node("audition-audio-range-source"),
+        )
+        .unwrap();
+    let audio_range = AudioSample(0)..AudioSample(1600);
+    assert_eq!(
+        RenderPlan::compile(&view)
+            .unwrap()
+            .audio(audio_range.clone(), Default::default())
+            .unwrap(),
+        RenderPlan::compile(&generic_view)
+            .unwrap()
+            .audio(audio_range, Default::default())
+            .unwrap()
+    );
+    for document in [&view, &generic_view] {
+        let error = StageAudio::new(Arc::new(RenderPlan::compile(document).unwrap()))
+            .read(
+                &mut Sources::new(captured.clone()),
+                AudioSample(0),
+                256,
+                Duration::from_secs(60),
+                &cancelled(),
+            )
+            .unwrap_err();
+        assert!(matches!(
+            error,
+            deadpan_audio::StageAudioError::Preparation(
+                deadpan_audio::PreparationError::UnsupportedLayout
+            )
+        ));
+    }
     let end = RenderPlan::compile(&view)
         .unwrap()
         .audio_duration()

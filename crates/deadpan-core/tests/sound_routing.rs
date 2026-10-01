@@ -217,6 +217,7 @@ fn replace_source(
         parent: node(parent),
         range: FrameRange::new(ProjectFrame(start), ProjectFrame(end)).unwrap(),
         source: SourceNode {
+            edit_window: None,
             duration: frames(inserted),
             video: SourceVideo::Blank,
             audio: Some(doc.sounds()[&sound()].source.clone()),
@@ -546,6 +547,7 @@ fn splice_one_frame(doc: &ProjectDocument, name: &str) -> Command {
         id: node(name),
         label: name.into(),
         source: SourceNode {
+            edit_window: None,
             duration: frames(1),
             video: SourceVideo::Blank,
             video_mapping: SourceVideoMapping::FitBeat,
@@ -717,6 +719,7 @@ fn splice_and_nonroot_split_preserve_routing_while_root_split_stays_closed() {
         id: node("pasted"),
         label: "Pasted".into(),
         source: SourceNode {
+            edit_window: None,
             duration: frames(3),
             video: SourceVideo::Blank,
             video_mapping: SourceVideoMapping::FitBeat,

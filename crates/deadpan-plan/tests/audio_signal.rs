@@ -53,6 +53,7 @@ fn source(frames: i64, start: i64, end: i64, mapping: SourceAudioMapping) -> Bea
         label: "Source".into(),
         kind: NodeKind::Source {
             source: SourceNode {
+                edit_window: None,
                 duration: duration(frames),
                 video: SourceVideo::Blank,
                 video_mapping: SourceVideoMapping::FitBeat,

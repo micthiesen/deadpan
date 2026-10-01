@@ -1,7 +1,8 @@
 use super::*;
 
 use deadpan_core::{
-    ExactFrameRange, LinkRelation, SourceAudioMapping, SourcePoint, SourceVideo, TimeError,
+    ExactFrameRange, LinkRelation, SourceAudioMapping, SourceEditWindow, SourcePoint, SourceVideo,
+    TimeError,
 };
 use deadpan_media::source_import_timing::{SourceMomentTiming, derive_source_moment};
 
@@ -12,6 +13,18 @@ fn moment(
     end: u64,
 ) -> SourceMomentTiming {
     derive_source_moment(video, audio, start..end, FrameRate::new(30, 1).unwrap()).unwrap()
+}
+
+fn assert_window(moment: &SourceMomentTiming, end: ExactRatio) {
+    let expected = SourceEditWindow::new(ExactRatio::ZERO, end).unwrap();
+    assert_eq!(moment.edit_window, expected);
+    expected.validate(moment.duration).unwrap();
+    assert_eq!(
+        moment
+            .source_node(AssetId::new("source").unwrap())
+            .edit_window,
+        Some(expected)
+    );
 }
 
 fn selected_original_ticks(moment: &SourceMomentTiming, local: ExactRatio) -> ExactRatio {
@@ -40,6 +53,7 @@ fn fractional_audio_selection_keeps_full_samples_phase_and_exact_cut_before_pict
     assert_eq!(selected.origin_seconds, ratio(1, 1000));
     assert_eq!(selected.duration.frames(), 1);
     assert_eq!(selected.video.duration_frames, ratio(3, 100));
+    assert_window(&selected, ratio(3, 100));
     let placement = selected.audio.unwrap();
     assert_eq!(placement.placement.span.start().ticks, 0);
     assert_eq!(placement.placement.span.end().ticks, 441);
@@ -131,6 +145,7 @@ fn vfr_selection_uses_presentation_intervals_and_the_measured_final_boundary() {
         assert_eq!(selected.video.span.start().ticks, start);
         assert_eq!(selected.video.span.end().ticks, end);
         assert_eq!(selected.video.duration_frames, frames);
+        assert_window(&selected, frames);
         assert_eq!(selected.duration.frames(), 1);
         let held = video
             .index()
@@ -150,6 +165,7 @@ fn vfr_selection_uses_presentation_intervals_and_the_measured_final_boundary() {
     let video = indexed_video(1, &[11, 13, 17], SourceTimeBase::new(1, 1000).unwrap());
     let selected = derive_source_moment(&video, None, 1..3, rate()).unwrap();
     assert_eq!(selected.video.duration_frames, ratio(900, 1001));
+    assert_window(&selected, ratio(900, 1001));
     assert_eq!(selected.duration.frames(), 1);
 }
 
@@ -164,6 +180,7 @@ fn moving_the_shared_signed_origin_preserves_relative_audio_selection() {
         );
         let audio = indexed_audio(shift * 44_100, 44_100, &[441]);
         let selected = moment(&video, Some(&audio), 0, 1);
+        assert_window(&selected, ratio(3, 100));
         assert_eq!(
             selected.origin_seconds,
             ExactRatio::integer(shift)
@@ -200,6 +217,7 @@ fn delayed_early_ending_and_nonoverlapping_audio_keep_measured_av_alignment() {
     ] {
         let audio = indexed_audio(start, 48_000, &[count]);
         let selected = moment(&video, Some(&audio), 0, 1);
+        assert_window(&selected, ratio(3, 10));
         let audio = selected.audio.unwrap();
         assert_eq!(
             audio.selection,
@@ -216,6 +234,7 @@ fn delayed_early_ending_and_nonoverlapping_audio_keep_measured_av_alignment() {
     ] {
         let audio = indexed_audio(start, 48_000, &[count]);
         let selected = moment(&video, Some(&audio), 0, 1);
+        assert_window(&selected, ratio(3, 10));
         let dormant = selected.audio.unwrap();
         assert_eq!(
             dormant.selection,
@@ -244,6 +263,7 @@ fn delayed_early_ending_and_nonoverlapping_audio_keep_measured_av_alignment() {
         );
     }
     let absent = moment(&video, None, 0, 1);
+    assert_window(&absent, ratio(3, 10));
     assert!(absent.audio.is_none());
     let node = absent.source_node(AssetId::new("source").unwrap());
     assert!(node.audio.is_none());
@@ -258,6 +278,7 @@ fn a_positive_window_with_no_discrete_audio_sample_is_retained_without_snapping(
     let selected = moment(&video, Some(&audio), 0, 1);
     let selection = selected.audio.unwrap().selection;
     assert_eq!(selection.end, ratio(3, 100_000));
+    assert_window(&selected, ratio(3, 100_000));
     let first = selected_original_ticks(&selected, selection.start);
     let last = selected_original_ticks(&selected, selection.end);
     assert_eq!(first, ratio(441, 10_000));
@@ -444,6 +465,8 @@ fn dormant_and_audible_moments_share_the_original_fractional_sample_clock() {
     let audio = indexed_audio(60, 44_100, &[200]);
     let dormant = moment(&video, Some(&audio), 0, 1);
     let audible = moment(&video, Some(&audio), 1, 2);
+    assert_window(&dormant, ratio(3, 100));
+    assert_window(&audible, ratio(3, 100));
     let retained = dormant.audio.unwrap();
     assert_eq!(retained.selection.start, retained.selection.end);
     assert_eq!(retained.selection.start, ratio(2, 49));

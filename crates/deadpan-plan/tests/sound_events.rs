@@ -49,6 +49,7 @@ fn document() -> ProjectDocument {
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
+                edit_window: None,
                 duration: FrameDuration::new(64).unwrap(),
                 video: SourceVideo::Still {
                     asset: AssetId::new("picture").unwrap(),

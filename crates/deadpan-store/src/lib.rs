@@ -553,6 +553,46 @@ fn read_snapshot(connection: &Connection) -> Result<ProjectDocument, StoreError>
     Ok(validation::read_revision(connection, &head)?.document)
 }
 
+/// The same optimistic guard covers command preparation and descriptive
+/// previews which may legitimately produce no EditTransaction.
+fn read_command_snapshot(
+    connection: &Connection,
+    request: &CommandRequest,
+) -> Result<ProjectDocument, StoreError> {
+    use deadpan_core::{EditError, EditErrorCode};
+
+    let current = read_snapshot(connection)?;
+    if request.project_id != *current.project_id() {
+        return Err(EditError {
+            code: EditErrorCode::ProjectConflict,
+            message: "command targets a different project".into(),
+            current_revision: None,
+        }
+        .into());
+    }
+    if request.expected_revision != *current.revision_id() {
+        return Err(EditError {
+            code: EditErrorCode::RevisionConflict,
+            message: format!(
+                "expected revision {}; current revision is {}",
+                request.expected_revision,
+                current.revision_id()
+            ),
+            current_revision: Some(current.revision_id().clone()),
+        }
+        .into());
+    }
+    if request.expected_revision == request.new_revision {
+        return Err(EditError {
+            code: EditErrorCode::InvalidCommand,
+            message: "new revision must differ from the current revision".into(),
+            current_revision: None,
+        }
+        .into());
+    }
+    Ok(current)
+}
+
 fn check_document_size(json: &str) -> Result<(), StoreError> {
     if json.len() > schema::MAX_DOCUMENT_BYTES {
         return Err(StoreError::Integrity(
@@ -592,7 +632,20 @@ fn prepare_command_with_admission(
     source: Option<(&deadpan_core::AssetId, &deadpan_core::AssetRecord)>,
     geometry: Option<(u32, u32)>,
 ) -> Result<CommandPlan, StoreError> {
-    let current = read_snapshot(connection)?;
+    let current = read_command_snapshot(connection, request)?;
+    prepare_current_command_with_admission(
+        connection, current, request, generated, source, geometry,
+    )
+}
+
+fn prepare_current_command_with_admission(
+    connection: &Connection,
+    current: ProjectDocument,
+    request: &CommandRequest,
+    generated: Option<&deadpan_core::GeneratedArtifact>,
+    source: Option<(&deadpan_core::AssetId, &deadpan_core::AssetRecord)>,
+    geometry: Option<(u32, u32)>,
+) -> Result<CommandPlan, StoreError> {
     let edit = deadpan_core::apply(&current, request)?;
     ensure_unused_revision(connection, &request.new_revision)?;
     let next = edit.forward.apply(&current)?;
@@ -604,6 +657,12 @@ fn prepare_command_with_admission(
     source_registration::validate_sound_sources(connection, &current, &next)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     source_registration::validate_hold_audio_source(connection, &current, &next, request)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    source_registration::validate_source_slip(connection, &current, &next, request)?;
+    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+    if matches!(&request.command, deadpan_core::Command::SlipSource { .. }) {
+        return Err(StoreError::SourceAdmissionUnavailable);
+    }
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     single_source::check_transition(connection, &current, &next, source.is_some())?;
     match &request.command {

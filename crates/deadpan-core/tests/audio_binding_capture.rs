@@ -295,6 +295,7 @@ fn source_capture_retains_its_current_placement_without_freezing_raw_assets() {
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
+                edit_window: None,
                 duration: frames(4),
                 video: SourceVideo::Blank,
                 video_mapping: SourceVideoMapping::FitBeat,

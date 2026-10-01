@@ -355,7 +355,7 @@ and workspace delivery order. Keep the first child's identity separate from the
 complete result interval. See
 [atomic moves](docs/ATOMIC_MOVES.md).
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 38 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings with exact picture selections and dormant linked audio, audio edge policies, transparent Retime partitions, owned timing bindings with exact local-origin translations, retained framing clocks and direct sound replacement maps, and binds qualified assets to immutable source receipts. Database schemas 1 through 38 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 39 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings with exact picture selections and dormant linked audio, audio edge policies, transparent Retime partitions, owned timing bindings with exact local-origin translations, retained framing clocks and direct sound replacement maps, and binds qualified assets to immutable source receipts. Database schemas 1 through 38 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
 
 Audio placement offsets map current physical-local coordinates into retained
 historical-local coordinates. Rebase lattice, phase-term and reanchor templates
@@ -368,6 +368,18 @@ duration and translate its offset, and shift all existing gain/mute keys by the
 nonnegative prefix. Crops preserve complete owners behind Partitions. Compose
 media, selection, duration, bindings and effects atomically; these pure helpers
 do not authorize a Trim command by themselves.
+
+`SourceNode.edit_window` retains exact selected time in physical-local coordinates
+after the independent audio offset. Generic stream-mapping changes clear it;
+structural views preserve the complete owner's window. Never infer it from a
+rounded duration. [Atomic Source Slip](docs/SOURCE_SLIP.md) admits a qualified
+Source or one neutral unity Partition under ordinary Sequences, verifies shared
+affine A/V clocks, and clamps whole-frame moves inward to exact picture handles.
+Move both enabled maps in one transaction, subtract the independent offset once
+when storing selected audio, and preserve dormant audio, owner effects, bindings
+and root sounds. Store preview and commit recheck the revision and stored receipt;
+an applied-zero preview creates no history. Audio-only picture lead/tail, nested
+or treated targets and native Trim controls remain explicit unsupported scope.
 
 Durable render jobs capture immutable project/revision/document/range/policy
 intent outside authored undo/redo. Require fresh attempt IDs and cancellation
@@ -430,14 +442,14 @@ receipts are independent of authored revisions and survive compact replies,
 workspace refresh failure and final stdout failure. Terminal cancellation needs
 worker completion; a lost observer does not prove cancellation.
 
-Database schema 47 stores core schema 38 and retains operational generation requests,
+Database schema 48 stores core schema 39 and retains operational generation requests,
 plus an optional validated single-Original workflow profile. Use the dedicated
 `create_single_source` / `initialize_prepared_source` path to bind the full measured
 Original, basis and protected baseline atomically. Undo never crosses that baseline;
 deleting all current beats does not unlock a replacement video. Generic migrations
 gain no profile. Native Open uses backed-up migration before replacing its current
 session. Under the user's development-format permission, databases 39 through
-46 are rejected without mutation or migration; existing frozen adapters for
+47 are rejected without mutation or migration; existing frozen adapters for
 databases 1 through 38 remain. See [the single-Original contract](docs/SINGLE_ORIGINAL.md).
 
 The database also retains operational generation
@@ -868,7 +880,7 @@ Database-18 history uses frozen core 12; all earlier mark wires reject fragments
 including empty arrays and null. Database 19 uses frozen core 13, including its
 multi-binding mark vocabulary but excluding Split. Database 20 uses frozen core 14
 including closed direct/occurrence Split identity pools. Database 21 uses frozen
-core 15. Database 22 uses frozen core 16, including closed binding vocabulary but excluding InsertTime. Database 23 uses frozen core 17, excluding framing. Database 24 uses frozen core 18, excluding captured Hold geometry and its setter. Database 25 uses frozen core 19, excluding selected audio placements. Database 26 uses frozen core 20, excluding chronological reanchor steps. Database 27 uses frozen core 21, excluding gap binding maps and nested gap clock/placement vocabulary. Database 28 uses frozen core 22, excluding sparse gap branches and detached gap-clock references. Database 29 uses frozen core 23. Database 30 uses frozen core 24, retaining composite root-seam InsertTime admission but rejecting interiors before composite suffixes. Earlier replays check the stricter physical-suffix admission before modern apply. Database 31 uses frozen core 25, retaining root physical interiors but refusing nested Sequence insertion. Database 32 uses frozen core 26, retaining nested Sequence pause admission while rejecting SpliceSource. Database 33 uses frozen core 27, retaining SpliceSource while rejecting new Retime edits. Database 34 uses frozen core 28, retaining Retime commands but rejecting sound state and commands. Database 35 uses frozen core 29, retaining sound recipes while rejecting routed state, ReplaceSound and formerly forbidden sound-bearing temporal commands. Database 36 uses frozen core 30, retaining sound routes and ReplaceSound with their original contextual admission while rejecting allowance state and commands. Database 37 uses frozen core 31, preserving exact allowances but rejecting direct and occurrence Hold audio setters. Database 38 uses frozen core 32, retaining Hold audio setters while rejecting node audio treatments and their commands. Historical database 39 stores core 33, schema 40 adds operational render jobs, schema 41 adds publication records, and schema 42 adds immutable automatic encoder decisions. Historical database 43 stores core 34 and its direct sound replacement maps; later development formats add exact Source selections and audio-origin translations. Current database 47 stores core 38 with retained framing clocks. Under the approved unused-project policy, schemas 39 through 46 are refused before writes or backups; the frozen 1 through 38 adapters remain supported. Legacy initial snapshots gain empty audio lineage; replayed copies may
+core 15. Database 22 uses frozen core 16, including closed binding vocabulary but excluding InsertTime. Database 23 uses frozen core 17, excluding framing. Database 24 uses frozen core 18, excluding captured Hold geometry and its setter. Database 25 uses frozen core 19, excluding selected audio placements. Database 26 uses frozen core 20, excluding chronological reanchor steps. Database 27 uses frozen core 21, excluding gap binding maps and nested gap clock/placement vocabulary. Database 28 uses frozen core 22, excluding sparse gap branches and detached gap-clock references. Database 29 uses frozen core 23. Database 30 uses frozen core 24, retaining composite root-seam InsertTime admission but rejecting interiors before composite suffixes. Earlier replays check the stricter physical-suffix admission before modern apply. Database 31 uses frozen core 25, retaining root physical interiors but refusing nested Sequence insertion. Database 32 uses frozen core 26, retaining nested Sequence pause admission while rejecting SpliceSource. Database 33 uses frozen core 27, retaining SpliceSource while rejecting new Retime edits. Database 34 uses frozen core 28, retaining Retime commands but rejecting sound state and commands. Database 35 uses frozen core 29, retaining sound recipes while rejecting routed state, ReplaceSound and formerly forbidden sound-bearing temporal commands. Database 36 uses frozen core 30, retaining sound routes and ReplaceSound with their original contextual admission while rejecting allowance state and commands. Database 37 uses frozen core 31, preserving exact allowances but rejecting direct and occurrence Hold audio setters. Database 38 uses frozen core 32, retaining Hold audio setters while rejecting node audio treatments and their commands. Historical database 39 stores core 33, schema 40 adds operational render jobs, schema 41 adds publication records, and schema 42 adds immutable automatic encoder decisions. Historical database 43 stores core 34 and its direct sound replacement maps; later development formats add exact Source selections and audio-origin translations. Current database 48 stores core 39 with retained framing clocks, exact editorial windows and atomic Source Slip. Under the approved unused-project policy, schemas 39 through 47 are refused before writes or backups; the frozen 1 through 38 adapters remain supported. Legacy initial snapshots gain empty audio lineage; replayed copies may
 establish it. Compare every old projected patch and changed-ID summary exactly
 while retaining complete modern transactions for historical undo/redo.
 

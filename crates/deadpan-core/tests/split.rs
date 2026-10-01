@@ -272,6 +272,7 @@ fn source_identity_and_original_clock_scopes_survive_the_cut() {
     .unwrap();
     wire["nodes"]["t"]["kind"] = serde_json::to_value(NodeKind::Source {
         source: SourceNode {
+            edit_window: None,
             duration: duration(10),
             video: SourceVideo::Stream {
                 asset: asset.clone(),

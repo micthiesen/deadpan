@@ -38,6 +38,7 @@ pub(crate) fn fixture_plan(preserve: bool) -> RenderPlan {
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
+                edit_window: None,
                 duration: FrameDuration::new(30).unwrap(),
                 video: SourceVideo::Blank,
                 video_mapping: SourceVideoMapping::FitBeat,

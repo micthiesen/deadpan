@@ -457,6 +457,7 @@ fn source_document() -> ProjectDocument {
                         label: "Source".into(),
                         kind: NodeKind::Source {
                             source: SourceNode {
+                                edit_window: None,
                                 duration: duration(60),
                                 video: SourceVideo::Stream {
                                     asset: asset.clone(),

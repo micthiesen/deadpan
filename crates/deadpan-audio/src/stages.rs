@@ -2367,6 +2367,7 @@ mod controlled_reads {
             audio_edges: Default::default(),
             kind: NodeKind::Source {
                 source: SourceNode {
+                    edit_window: None,
                     duration: duration(end - start),
                     video: SourceVideo::Blank,
                     video_mapping: SourceVideoMapping::FitBeat,
@@ -2789,6 +2790,7 @@ mod controlled_reads {
             audio_edges: Default::default(),
             kind: NodeKind::Source {
                 source: SourceNode {
+                    edit_window: None,
                     duration: duration(1),
                     video: SourceVideo::Blank,
                     video_mapping: SourceVideoMapping::FitBeat,

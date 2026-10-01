@@ -71,6 +71,7 @@ fn source_with_mapping(
 ) -> BeatNode {
     node(NodeKind::Source {
         source: SourceNode {
+            edit_window: None,
             duration: duration(frames),
             video_mapping,
             video: SourceVideo::Stream {
@@ -1449,6 +1450,7 @@ fn accepted_frames_floor_only_after_composed_retimes_and_validate_index() {
 fn still_blank_freeze_and_background_are_distinct_picture_requests() {
     let still = node(NodeKind::Source {
         source: SourceNode {
+            edit_window: None,
             duration: duration(1),
             video_mapping: SourceVideoMapping::FitBeat,
             video: SourceVideo::Still {
@@ -1462,6 +1464,7 @@ fn still_blank_freeze_and_background_are_distinct_picture_requests() {
     });
     let blank = node(NodeKind::Source {
         source: SourceNode {
+            edit_window: None,
             duration: duration(1),
             video_mapping: SourceVideoMapping::FitBeat,
             video: SourceVideo::Blank,

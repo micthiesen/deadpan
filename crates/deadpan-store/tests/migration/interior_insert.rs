@@ -169,6 +169,7 @@ fn interior_initial(source: bool) -> Result<ProjectDocument> {
             audio_edges: AudioEdgePolicies::default(),
             kind: NodeKind::Source {
                 source: SourceNode {
+                    edit_window: None,
                     duration: FrameDuration::new(4)?,
                     video: SourceVideo::Stream { asset, span },
                     audio: None,

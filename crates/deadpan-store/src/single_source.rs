@@ -5,7 +5,7 @@
 use std::{collections::BTreeSet, path::Path, sync::atomic::AtomicBool};
 
 use deadpan_core::{
-    AssetId, BasisState, HoldVideo, NodeId, NodeKind, ProjectDocument, RevisionId,
+    AssetId, BasisState, HoldVideo, NodeId, NodeKind, ProjectDocument, RevisionId, SourceNode,
     SourceQualificationId,
 };
 use rusqlite::{Connection, OptionalExtension, params};
@@ -401,7 +401,7 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
         || !baseline.marks().is_empty()
         || baseline.presentation_basis() != &basis
         || !matches!(&baseline.nodes()[baseline.root()].kind, NodeKind::Sequence { children } if children.as_slice() == [node.clone()])
-        || !matches!(baseline.nodes().get(node).map(|node| &node.kind), Some(NodeKind::Source { source }) if *source == expected_source)
+        || !matches!(baseline.nodes().get(node).map(|node| &node.kind), Some(NodeKind::Source { source }) if matches_full_original(source, &expected_source))
         || receipt.asset_record(expected_record.label.clone())? != *expected_record
     {
         return Err(invalid(
@@ -425,6 +425,21 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
         check_ready_transition(&state, &before, &after)?;
     }
     Ok(())
+}
+
+fn matches_full_original(source: &SourceNode, expected: &SourceNode) -> bool {
+    if source == expected {
+        return true;
+    }
+    if source.edit_window.is_some() {
+        return false;
+    }
+    // Historical upgrades retain absent editorial intent. Only that optional
+    // field may differ; an explicit window and every measured media field must
+    // still equal the full Original. Do not rewrite the saved baseline.
+    let mut historical = expected.clone();
+    historical.edit_window = None;
+    source == &historical
 }
 
 fn check_history_floor(connection: &Connection, floor: i64) -> Result<(), StoreError> {
@@ -464,4 +479,71 @@ fn check_history_floor(connection: &Connection, floor: i64) -> Result<(), StoreE
     Err(invalid(
         "current cursor does not descend from the original baseline",
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use deadpan_core::{
+        AudioSample, EndpointPolicy, ExactRatio, FrameDuration, LinkRelation, SourceAudio,
+        SourceAudioMapping, SourceEditWindow, SourceSpan, SourceTimeBase, SourceTimestamp,
+        SourceVideo, SourceVideoMapping,
+    };
+
+    #[test]
+    fn historical_baseline_may_omit_only_the_editorial_window() {
+        let time_base = SourceTimeBase::new(1, 30).unwrap();
+        let span = SourceSpan::new(
+            SourceTimestamp {
+                ticks: 0,
+                time_base,
+            },
+            SourceTimestamp {
+                ticks: 10,
+                time_base,
+            },
+        )
+        .unwrap();
+        let asset = AssetId::new("original").unwrap();
+        let expected = SourceNode {
+            duration: FrameDuration::new(10).unwrap(),
+            edit_window: Some(
+                SourceEditWindow::new(ExactRatio::ZERO, ExactRatio::integer(10)).unwrap(),
+            ),
+            video: SourceVideo::Stream {
+                asset: asset.clone(),
+                span,
+            },
+            video_mapping: SourceVideoMapping::Placement {
+                start: ExactRatio::ZERO,
+                frames: ExactRatio::integer(10),
+                endpoints: EndpointPolicy::HoldAdjacent,
+            },
+            audio: Some(SourceAudio { asset, span }),
+            audio_mapping: SourceAudioMapping::Placement {
+                start: ExactRatio::ZERO,
+                frames: ExactRatio::integer(10),
+            },
+            link: LinkRelation::Linked,
+            audio_offset: AudioSample(0),
+        };
+        assert!(matches_full_original(&expected, &expected));
+        let mut historical = expected.clone();
+        historical.edit_window = None;
+        assert!(matches_full_original(&historical, &expected));
+        let mut wrong_window = expected.clone();
+        wrong_window.edit_window =
+            Some(SourceEditWindow::new(ExactRatio::integer(1), ExactRatio::integer(10)).unwrap());
+        assert!(!matches_full_original(&wrong_window, &expected));
+        for change in 0..4 {
+            let mut changed = historical.clone();
+            match change {
+                0 => changed.duration = FrameDuration::new(11).unwrap(),
+                1 => changed.video_mapping = SourceVideoMapping::FitBeat,
+                2 => changed.audio_offset = AudioSample(1),
+                _ => changed.audio.as_mut().unwrap().asset = AssetId::new("other").unwrap(),
+            }
+            assert!(!matches_full_original(&changed, &expected), "case {change}");
+        }
+    }
 }

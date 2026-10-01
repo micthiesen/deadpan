@@ -141,13 +141,22 @@ rendered checks plus the expanded Kestrel audit, 3,589 full release checks, and
 native keyboard/reopen verification with consistent SQLite backups. No release
 gate is completed by these results.
 
+[Exact Source windows](SOURCE_EDIT_WINDOWS.md) retain selected time before
+whole-frame enclosure. [Atomic Source Slip](SOURCE_SLIP.md) shifts both linked
+maps in one transaction under ordinary Sequences, preserving duration, effects,
+bindings and root sounds. Stored admission is rechecked at commit; headless dry
+runs expose exact handle clamping and no-op results. All 3,114 workspace
+unit/integration tests, both documentation tests, formatting and strict all-target
+Clippy with `ui-harness` pass. See [qualification](qualification/source-slip-2026-10-01.md).
+Native Trim controls and the command's explicitly unsupported scopes remain open.
+
 [Source effect clocks](SOURCE_EFFECT_CLOCKS.md) preserve existing camera paths,
 gain envelopes and mute ranges when a physical Source grows earlier or later.
 Core 38/database 47 retain explicit framing domains; gain translation uses the
 existing owner coordinates. All 3,046 workspace unit/integration tests, both
 documentation tests, formatting and strict workspace/all-target Clippy pass,
-including lint with `ui-harness`. Exact linked
-editorial windows, atomic Trim commands and native boundary previews remain open. No
+including lint with `ui-harness`. Physical growth, complete Trim commands and
+native boundary previews remain open. No
 requirement or gate changes status.
 
 [Retained Source origins](SOURCE_ORIGINS.md) add an exact translation between

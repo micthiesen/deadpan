@@ -5,11 +5,11 @@ use serde::{Deserialize, Deserializer, Serialize, de};
 
 use crate::{
     AudioSample, BasisState, FrameDuration, FrameRange, FrameRate, IterationOrder, Mark,
-    PlayOverrides, RepeatLayout, SourceAudioMapping, SourceTimestamp, SourceVideoMapping,
-    TimeError,
+    PlayOverrides, RepeatLayout, SourceAudioMapping, SourceEditWindow, SourceTimestamp,
+    SourceVideoMapping, TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 38;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 39;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -229,6 +229,13 @@ pub enum LinkRelation {
 #[serde(deny_unknown_fields)]
 pub struct SourceNode {
     pub duration: FrameDuration,
+    /// Exact selected editorial interval in this physical owner's local clock,
+    /// after the independent audio offset. Selected audio mapping support is
+    /// stored before that offset.
+    /// Absence denotes generic intent without a declared common window. Stream
+    /// mappings still control rendering; this interval grants no media authority.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub edit_window: Option<SourceEditWindow>,
     pub video: SourceVideo,
     /// Exact picture placement and selected-span endpoint behavior.
     pub video_mapping: SourceVideoMapping,
@@ -854,6 +861,9 @@ impl ProjectDocument {
             let duration = match &node.kind {
                 NodeKind::Source { source } => {
                     positive(source.duration, "source")?;
+                    if let Some(window) = source.edit_window {
+                        window.validate(source.duration)?;
+                    }
                     match &source.video {
                         SourceVideo::Stream { asset, span } => {
                             self.validate_video_span(asset, *span)?;

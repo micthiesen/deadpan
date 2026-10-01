@@ -42,6 +42,7 @@ fn source(frames: i64) -> BeatNode {
         label: "Original".into(),
         kind: NodeKind::Source {
             source: SourceNode {
+                edit_window: None,
                 duration: duration(frames),
                 video: SourceVideo::Stream {
                     asset: AssetId::new("media").unwrap(),

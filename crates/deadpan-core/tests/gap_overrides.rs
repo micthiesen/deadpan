@@ -129,6 +129,7 @@ fn with_source_base(document: &ProjectDocument) -> ProjectDocument {
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
+                edit_window: None,
                 duration: duration(2),
                 video: SourceVideo::Stream {
                     asset: AssetId::new("media").unwrap(),

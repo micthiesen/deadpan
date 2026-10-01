@@ -43,6 +43,7 @@ fn detached_source_view_keeps_revision_and_asset_but_does_not_edit_the_capture()
     let captured = ProjectDocument::from_json(&captured.to_string()).unwrap();
     let before = captured.clone();
     let source = SourceNode {
+        edit_window: None,
         duration: FrameDuration::new(24).unwrap(),
         video: SourceVideo::Blank,
         video_mapping: SourceVideoMapping::FitBeat,

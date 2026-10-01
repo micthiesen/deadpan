@@ -10,8 +10,8 @@ use std::ops::Range;
 use deadpan_core::{
     AssetId, AudioSample, ColorPolicy, DocumentError, EndpointPolicy, ExactFrameRange, ExactRatio,
     FrameDuration, FrameRate, LinkRelation, PresentationBasis, SourceAudio, SourceAudioMapping,
-    SourceFrameId, SourceNode, SourceSpan, SourceTimeBase, SourceTimestamp, SourceVideo,
-    SourceVideoMapping, TerminalProvenance, TimeError,
+    SourceEditWindow, SourceFrameId, SourceNode, SourceSpan, SourceTimeBase, SourceTimestamp,
+    SourceVideo, SourceVideoMapping, TerminalProvenance, TimeError,
 };
 use deadpan_source::SourceStreamInfo;
 
@@ -76,6 +76,8 @@ pub struct ImportTiming {
     /// Ceiling of the exact union extent. Full-source outward enclosure keeps
     /// both tails; text-input nearest-frame rounding is a separate policy.
     pub duration: FrameDuration,
+    /// Exact selected A/V union before integral frame enclosure.
+    pub edit_window: SourceEditWindow,
     /// Hold the selected picture endpoints over lead, tail and rounding slack.
     pub video_endpoints: EndpointPolicy,
     pub audio_policy: ImportAudioPolicy,
@@ -87,6 +89,7 @@ impl ImportTiming {
     pub fn source_node(&self, asset: AssetId) -> SourceNode {
         SourceNode {
             duration: self.duration,
+            edit_window: Some(self.edit_window),
             video: self
                 .video
                 .map_or(SourceVideo::Blank, |placement| SourceVideo::Stream {
@@ -152,6 +155,9 @@ pub struct SourceMomentTiming {
     /// Ceiling of the selected picture duration, rounded only once. Picture
     /// holds its selected endpoint in the slack; audio remains cropped exactly.
     pub duration: FrameDuration,
+    /// Exact selected picture interval, independent of rounded duration and
+    /// any audible, dormant, or absent audio support.
+    pub edit_window: SourceEditWindow,
 }
 
 impl SourceMomentTiming {
@@ -159,6 +165,7 @@ impl SourceMomentTiming {
     pub fn source_node(&self, asset: AssetId) -> SourceNode {
         SourceNode {
             duration: self.duration,
+            edit_window: Some(self.edit_window),
             video: SourceVideo::Stream {
                 asset: asset.clone(),
                 span: self.video_context.span,
@@ -225,9 +232,11 @@ pub fn derive_source_moment(
         origin_seconds,
         project_rate,
     )?;
+    let edit_window = SourceEditWindow::new(ExactRatio::ZERO, video.duration_frames)?;
     let duration = FrameDuration::new(
         i64::try_from(video.duration_frames.ceil()?).map_err(|_| TimeError::Overflow)?,
     )?;
+    edit_window.validate(duration)?;
     let video_selection = ExactFrameRange::new(ExactRatio::ZERO, video.duration_frames)?;
     SourceVideoMapping::SelectedPlacement {
         start: video_context.start_frames,
@@ -293,6 +302,7 @@ pub fn derive_source_moment(
         video_selection,
         audio,
         duration,
+        edit_window,
     })
 }
 
@@ -365,8 +375,10 @@ pub fn derive_import_timing(
     let extent = end
         .checked_sub(origin)?
         .checked_mul(rate_ratio(project_rate)?)?;
+    let edit_window = SourceEditWindow::new(ExactRatio::ZERO, extent)?;
     let duration =
         FrameDuration::new(i64::try_from(extent.ceil()?).map_err(|_| TimeError::Overflow)?)?;
+    edit_window.validate(duration)?;
     Ok(ImportTiming {
         origin_seconds: origin,
         project_rate,
@@ -377,6 +389,7 @@ pub fn derive_import_timing(
             .map(|span| stream_placement(span, origin, project_rate))
             .transpose()?,
         duration,
+        edit_window,
         video_endpoints: EndpointPolicy::HoldAdjacent,
         audio_policy: ImportAudioPolicy::MeasuredAvailableCoverage,
     })

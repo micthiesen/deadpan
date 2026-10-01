@@ -36,6 +36,7 @@ fn source() -> BeatNode {
         label: "Original speech".into(),
         kind: NodeKind::Source {
             source: SourceNode {
+                edit_window: None,
                 duration: duration(12),
                 video: SourceVideo::Stream {
                     asset: AssetId::new("original").unwrap(),

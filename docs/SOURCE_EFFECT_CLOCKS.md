@@ -1,7 +1,8 @@
 # Effects across Source context growth
 
-Core schema 38/database 47 retain camera paths and audio treatments when an
-existing physical Source gains earlier or later context. These operations are
+Introduced in core schema 38/database 47, retained effect clocks preserve camera
+paths and audio treatments when an existing physical Source gains earlier or
+later context. These operations are
 prerequisites for atomic Trim authoring; they add no Trim command or native mode.
 Combine them with [retained audio origins](SOURCE_ORIGINS.md).
 
@@ -67,12 +68,14 @@ null or escaped field name. Historical projection accepts only `OwnerOutput`.
 Captured Hold framing contains static poses, and frozen audio contexts contain
 no live Framing recipe, so neither needs a new grammar.
 
-Unused development databases 39 through 46 refuse without writes or migration.
+Unused development databases 39 through 47 refuse without writes or migration.
 The existing frozen adapters for databases 1 through 38 remain supported.
 
 Verification covers exact curve/endpoint preservation, checked failure,
 current and historical serialization, picture identity through Partition/Split,
 Camera draft retention, and independent PCM/gain comparisons. See
 [qualification](qualification/source-effects-2026-10-01.md) for actual results.
-Atomic In/Out/Slip/Roll, exact linked editorial windows, marks, sound routing,
-handle clamping and native Trim previews remain required work.
+[Exact editorial windows](SOURCE_EDIT_WINDOWS.md) and a bounded
+[atomic Slip command](SOURCE_SLIP.md) now use the retained full Source context.
+In/Out/Roll, physical growth, their mark/sound transforms and native Trim previews
+remain required work.

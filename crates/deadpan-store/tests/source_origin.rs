@@ -31,6 +31,7 @@ fn fixture() -> Result<(ProjectDocument, FrozenAudioLayout)> {
     )?;
     let asset = AssetId::new("audio")?;
     let mut source = SourceNode {
+        edit_window: None,
         duration: FrameDuration::new(4)?,
         video: SourceVideo::Blank,
         video_mapping: SourceVideoMapping::FitBeat,

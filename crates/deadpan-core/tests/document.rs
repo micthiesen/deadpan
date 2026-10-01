@@ -663,6 +663,7 @@ fn with_asset() -> (ProjectDocument, AssetId) {
 fn source_streams_retain_timestamps_and_validate_bounds_independently() {
     let (document, asset) = with_asset();
     let source = SourceNode {
+        edit_window: None,
         duration: duration(12),
         video: SourceVideo::Stream {
             asset: asset.clone(),

@@ -1,0 +1,22 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+error[E0583]: file not found for module `edit_window`
+   --> crates/deadpan-plan/tests/selected_video_window.rs:677:1
+    |
+677 | mod edit_window;
+    | ^^^^^^^^^^^^^^^^
+    |
+    = help: to create the module `edit_window`, create file "crates/deadpan-plan/tests/edit_window.rs" or "crates/deadpan-plan/tests/edit_window/mod.rs"
+    = note: if there is a `mod edit_window` elsewhere in the crate already, import it with `use crate::...` instead
+
+error[E0583]: file not found for module `slip`
+   --> crates/deadpan-plan/tests/selected_video_window.rs:678:1
+    |
+678 | mod slip;
+    | ^^^^^^^^^
+    |
+    = help: to create the module `slip`, create file "crates/deadpan-plan/tests/slip.rs" or "crates/deadpan-plan/tests/slip/mod.rs"
+    = note: if there is a `mod slip` elsewhere in the crate already, import it with `use crate::...` instead
+
+For more information about this error, try `rustc --explain E0583`.
+error: could not compile `deadpan-plan` (test "selected_video_window") due to 2 previous errors

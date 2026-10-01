@@ -310,6 +310,7 @@ fn source_clock_bindings_share_explicit_source_scope_independently_of_ownership(
     for id in ["a", "b"] {
         wire["nodes"][id]["kind"] = serde_json::to_value(NodeKind::Source {
             source: SourceNode {
+                edit_window: None,
                 duration: FrameDuration::new(10).unwrap(),
                 video: SourceVideo::Stream {
                     asset: asset.clone(),

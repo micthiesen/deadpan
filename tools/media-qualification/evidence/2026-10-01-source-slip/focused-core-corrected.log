@@ -1,0 +1,67 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.52s
+     Running tests/legacy_source_edit_window.rs (target/debug/deps/legacy_source_edit_window-6ea2e6c7b57a4b07)
+
+running 32 tests
+test strict_v1 ... ok
+test strict_v2 ... ok
+test strict_v11 ... ok
+test strict_v13 ... ok
+test strict_v17 ... ok
+test strict_v19 ... ok
+test strict_v10 ... ok
+test strict_v21 ... ok
+test strict_v14 ... ok
+test strict_v15 ... ok
+test strict_v12 ... ok
+test strict_v18 ... ok
+test strict_v16 ... ok
+test strict_v24 ... ok
+test strict_v25 ... ok
+test strict_v23 ... ok
+test strict_v22 ... ok
+test strict_v20 ... ok
+test strict_v3 ... ok
+test strict_v4 ... ok
+test strict_v5 ... ok
+test strict_v6 ... ok
+test strict_v26 ... ok
+test strict_v27 ... ok
+test strict_v7 ... ok
+test strict_v29 ... ok
+test strict_v8 ... ok
+test strict_v30 ... ok
+test strict_v28 ... ok
+test strict_v31 ... ok
+test strict_v9 ... ok
+test strict_v32 ... ok
+
+test result: ok. 32 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/source_edit_window.rs (target/debug/deps/source_edit_window-7ae0a6f2f1b2063a)
+
+running 5 tests
+test audio_only_and_dormant_sources_keep_window_distinct_from_render_support ... ok
+test window_is_optional_and_document_checks_its_exact_owner_extent ... ok
+test actual_generic_mapping_changes_clear_window_but_noops_and_undo_preserve_it ... ok
+test occurrence_mapping_changes_clear_only_the_isolated_play_window ... ok
+test split_and_partial_capture_preserve_complete_physical_window_through_paste ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/source_slip.rs (target/debug/deps/source_slip-3d889e14af133b3f)
+
+running 10 tests
+test distant_linked_context_overflow_is_an_error_not_a_handle_clamp ... ok
+test treated_nested_and_authored_retimes_are_explicitly_unsupported ... ok
+test neutral_partition_uses_visible_handles_and_preserves_hidden_owner_context ... ok
+test common_nonnatural_slope_and_signed_original_origins_stay_exact ... ok
+test linked_audio_offset_is_subtracted_once_and_dormant_audio_can_activate ... ok
+test fixed_clocks_effects_bindings_and_root_sounds_survive_slip ... ok
+test rejects_unqualified_incoherent_and_unsupported_sources_without_mutation ... ok
+test local_and_sequence_marks_stay_fixed_while_source_pts_resolves_or_leaves_selection ... ok
+test exact_fractional_handles_clamp_inward_and_zero_never_authors ... ok
+test frozen_command_grammars_reject_slip_including_escaped_variant ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

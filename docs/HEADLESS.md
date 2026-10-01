@@ -305,6 +305,21 @@ Inserting a subtree remaps its Repeat plays to the actual insertion revision,
 preserving their count. An imported initial document reserves its existing
 allocation names, so later revisions cannot resurrect retired identities.
 
+## Source Slip
+
+`slip_source` takes an explicit ordinary Sequence `parent`, its direct child
+`node`, and signed `delta_frames`. Positive moves select later Original material
+without changing output position or duration. The target must be an admitted
+Source or one neutral unity Partition with full qualified context and an exact
+editorial window. See [Source Slip](SOURCE_SLIP.md) for its current scope.
+
+On `command --dry-run`, `source_slip` reports requested/applied deltas, exact and
+whole-frame handle bounds, and the limiting picture boundary. The sibling `edit`
+is null for an applied zero. Preview writes no history or revision reservation;
+normal commit rechecks the captured revision and receipt. Raw zero commits return
+`InvalidCommand`. This response is shared with the live project writer and
+`deadpan-app --headless`.
+
 ## Sparse play overrides
 
 `set_play_override` replaces one play of an authored Repeat with an ordinary

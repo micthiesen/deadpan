@@ -99,6 +99,7 @@ fn fixture() -> Result<ProjectDocument> {
                 audio_edges: Default::default(),
                 kind: NodeKind::Source {
                     source: SourceNode {
+                        edit_window: None,
                         duration: duration(15),
                         video: SourceVideo::Blank,
                         video_mapping: SourceVideoMapping::FitBeat,

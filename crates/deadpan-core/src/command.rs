@@ -46,6 +46,14 @@ pub struct SourceInsertion {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Command {
+    /// Shift linked Original material while retaining output position/duration.
+    /// The target is a direct Source or one neutral unity Partition in an
+    /// ordinary Sequence scope. Positive delta selects later Original material.
+    SlipSource {
+        parent: NodeId,
+        node: NodeId,
+        delta_frames: i64,
+    },
     /// Add or replace one independent sound without changing picture duration.
     SetSound {
         id: crate::SoundId,
@@ -237,11 +245,15 @@ pub enum Command {
         audio: HoldAudio,
     },
     /// Changes picture rate and endpoint behavior without changing beat or audio time.
+    /// An actual mapping change clears the common editorial window; a
+    /// value-identical assignment retains it.
     SetSourceVideoMapping {
         node: NodeId,
         mapping: SourceVideoMapping,
     },
     /// Changes audio alignment and extent without changing picture or beat time.
+    /// A mapping or independent offset change clears the common editorial
+    /// window; a value-identical assignment retains it.
     SetSourceAudioMapping {
         node: NodeId,
         mapping: SourceAudioMapping,
@@ -1236,6 +1248,25 @@ pub(crate) fn reduce(
             let iterations = iterations_mut(document, node)?;
             *iterations = iterations.moved(*start, *end, *destination)?;
         }
+        Command::SlipSource {
+            parent,
+            node,
+            delta_frames,
+        } => {
+            let resolved = document.source_slip(parent, node, *delta_frames)?;
+            if resolved.applied_delta_frames == 0 {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "source slip resolves to no change",
+                ));
+            }
+            let NodeKind::Source { source } =
+                &mut node_mut(document, &resolved.physical_source)?.kind
+            else {
+                unreachable!()
+            };
+            *source = resolved.after;
+        }
         Command::SetSourceVideoMapping { node, mapping } => {
             let NodeKind::Source { source } = &mut node_mut(document, node)?.kind else {
                 return Err(EditError::new(
@@ -1248,6 +1279,9 @@ pub(crate) fn reduce(
                     EditErrorCode::SourceRangeInvalid,
                     "video mapping requires selected video",
                 ));
+            }
+            if source.video_mapping != *mapping {
+                source.edit_window = None;
             }
             source.video_mapping = *mapping;
         }
@@ -1267,6 +1301,9 @@ pub(crate) fn reduce(
                     EditErrorCode::SourceRangeInvalid,
                     "audio mapping requires selected audio",
                 ));
+            }
+            if source.audio_mapping != *mapping || source.audio_offset != *offset {
+                source.edit_window = None;
             }
             source.audio_mapping = *mapping;
             source.audio_offset = *offset;
@@ -2018,6 +2055,7 @@ fn description(command: &Command) -> &'static str {
         Command::SetHoldAudio { .. } => "Change hold audio",
         Command::SetSourceAudioMapping { .. } => "Change source audio mapping",
         Command::SetSourceVideoMapping { .. } => "Change source video mapping",
+        Command::SlipSource { .. } => "Slip source material",
         Command::SetHoldProvider { .. } => "Change hold provider",
         Command::SetHoldPictureContext { .. } => "Change captured picture context",
         Command::AcceptGeneratedHold { .. } => "Accept generated hold",

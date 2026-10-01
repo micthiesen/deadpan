@@ -82,6 +82,7 @@ fn every_frozen_document_patch_and_command_rejects_new_vocabulary() {
             target: id("hold"),
             at: frames(1),
             source: SourceNode {
+                edit_window: None,
                 duration: frames(1),
                 video: SourceVideo::Blank,
                 video_mapping: SourceVideoMapping::FitBeat,
@@ -215,6 +216,7 @@ fn frozen_sound_context_guards_reject_interior_splices_without_sounds() {
             target: id("hold"),
             at: frames(1),
             source: SourceNode {
+                edit_window: None,
                 duration: frames(1),
                 video: SourceVideo::Blank,
                 video_mapping: SourceVideoMapping::FitBeat,

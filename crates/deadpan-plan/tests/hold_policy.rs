@@ -91,6 +91,7 @@ fn source(length: i64, audio: Option<SourceAudio>, mapping: SourceAudioMapping) 
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
+                edit_window: None,
                 duration: frames(length),
                 video: SourceVideo::Still {
                     asset: AssetId::new("original").unwrap(),

@@ -43,12 +43,12 @@ fn success(arguments: &[&str]) -> Result<Value> {
 #[test]
 fn doctor_reports_hold_audio_document_and_migration_schemas() -> Result {
     let report = success(&["doctor"])?;
-    assert_eq!(report["document_schema"], 38);
-    assert_eq!(report["database_schema"], 47);
+    assert_eq!(report["document_schema"], 39);
+    assert_eq!(report["database_schema"], 48);
     let partial = report["partial"].as_array().unwrap();
     for capability in [
         "schema-1-through-38-migration",
-        "schema-39-through-42-development-format-refusal",
+        "schema-39-through-47-development-format-refusal",
         "hold-audio-policy-commands",
         "native-original-audition",
         "selection-loop-audition",
@@ -446,6 +446,7 @@ fn independent_stream_mappings_use_headless_commands_and_durable_undo() -> Resul
                         label: "Two-second picture, one-second audio".into(),
                         kind: NodeKind::Source {
                             source: SourceNode {
+                                edit_window: None,
                                 duration: FrameDuration::new(60)?,
                                 video: SourceVideo::Stream {
                                     asset: asset.clone(),

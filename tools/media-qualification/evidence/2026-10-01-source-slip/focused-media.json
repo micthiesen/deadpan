@@ -1,0 +1,23 @@
+{
+  "command": [
+    "rustup",
+    "run",
+    "1.97.1",
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-media",
+    "--test",
+    "source_import_timing",
+    "--test",
+    "source_session"
+  ],
+  "started": "2026-10-01T13:24:21.158822+00:00",
+  "base_commit": "1ea3e4f4b70a805992a56455f8db8d95bf401a7e",
+  "diff_sha256": "b859c75536b8d574a1657cd3866de36e5fff7aa292ecaa7f19423ecab52ead4a",
+  "source_manifest_sha256": "701a162bba6cbf47eba28dbf7a96706f7e431635f7afb4762745509a28f6c1d7",
+  "pid": 31271,
+  "exit_code": 101,
+  "seconds": 27.564474207814783
+}

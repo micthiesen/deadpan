@@ -49,6 +49,7 @@ fn source(length: i64, input: Option<SourceAudio>, offset: i64) -> BeatNode {
         },
         kind: NodeKind::Source {
             source: SourceNode {
+                edit_window: None,
                 duration: frames(length),
                 video: if input.is_none() {
                     SourceVideo::Stream {

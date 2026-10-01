@@ -57,6 +57,7 @@ fn document(parts: &[(i64, bool)], rate: u32) -> ProjectDocument {
         } else {
             NodeKind::Source {
                 source: SourceNode {
+                    edit_window: None,
                     duration,
                     video: SourceVideo::Still {
                         asset: AssetId::new("picture").unwrap(),

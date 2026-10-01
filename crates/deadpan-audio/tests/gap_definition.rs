@@ -94,6 +94,7 @@ fn document(rate: FrameRate, recipe: Option<HoldRecipe>, revision: &str) -> Proj
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
+                edit_window: None,
                 duration: FrameDuration::new(3).unwrap(),
                 video: SourceVideo::Blank,
                 video_mapping: SourceVideoMapping::FitBeat,

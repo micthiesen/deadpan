@@ -1,0 +1,59 @@
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 41.81s
+     Running tests/prepared_source_registration.rs (target/debug/deps/prepared_source_registration-eec01583c48349ce)
+
+running 23 tests
+test preparation_can_run_on_worker_while_writer_edits_and_does_not_author_state ... ok
+test cancelled_prepared_insertion_leaves_no_receipt_or_edit_and_allows_retry ... ok
+test prepared_duplicate_reuses_receipt_but_corrupted_existing_payload_is_rejected ... ok
+test moment::paste_rechecks_original_and_live_writer_session ... ok
+test changed_managed_original_invalidates_prepared_token_without_history_changes ... ok
+test moment::failed_paste_transaction_keeps_revision_history_and_receipt_unchanged ... ok
+test moment::paste_reconciles_complete_generation_relevance_in_its_single_transaction ... ok
+test moment::interior::interior_rejection_and_cursor_failure_never_publish_a_preliminary_split ... ok
+test moment::replacement::stale_invalid_and_failed_replacement_never_saves_splits_or_removal ... ok
+test prepared_insertion_reconciles_generation_atomically_and_retries_after_cursor_failure ... ok
+test moment::replacement::replacement_admits_measured_source_and_persists_one_exact_undo_redo ... ok
+test moment::paste_uses_exact_measured_selection_and_one_durable_undo_entry ... ok
+test moment::interior::interior_preview_and_commit_share_one_exact_transaction_and_durable_undo ... ok
+test prepared_commit_rejects_read_only_wrong_project_and_reopened_sessions ... ok
+test linked_relocation_requires_fresh_inventory_proof_even_when_old_path_is_unchanged ... ok
+test moment::paste_rejects_stale_wrong_asset_and_invalid_selection_without_writes ... ok
+test preview_is_read_only_and_prepared_token_is_bound_to_issuing_writer ... ok
+test moment::paste_requires_existing_unchanged_receipt_and_never_repairs_evidence ... ok
+test stale_target_is_rejected_then_same_token_registers_against_current_revision ... ok
+test prepared_insertion_rolls_back_on_history_failure_and_retries_same_token ... ok
+test moment::dormant::moments_outside_measured_audio_keep_dormant_link_through_history_and_reopen ... ok
+test prepared_primary_uses_current_timing_after_automatic_basis_becomes_explicit ... ok
+test prepared_token_rejects_delete_same_bytes_and_in_place_rewrite ... ok
+
+test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.63s
+
+     Running tests/source_registration.rs (target/debug/deps/source_registration-0f20b6398ed14eb7)
+
+running 21 tests
+test hold_audio::legacy_unqualified_hold_survives_unrelated_edits_but_cannot_author_a_new_source_policy ... ok
+test slip::zero_slip_preview_keeps_its_handle_reason_without_reserving_history ... ok
+test hold_audio::hold_audio_rejects_outside_and_fractional_source_sample_spans_without_history ... ok
+test failed_transaction_retains_original_but_rolls_back_receipt_asset_history_and_cursor ... ok
+test generic_asset_and_initial_snapshot_cannot_bypass_source_admission ... ok
+test slip::linked_slip_commits_one_exact_edit_and_survives_fresh_history_and_reopen ... ok
+test slip::slip_rolls_back_the_complete_write_and_does_not_require_current_media_bytes ... ok
+test slip::slip_revision_guards_cover_preview_noop_and_late_commit ... ok
+test slip::slip_rechecks_receipts_assets_and_ownership_even_for_zero_preview ... ok
+test hold_audio::hold_audio_policy_history_is_atomic_durable_and_timing_neutral ... ok
+test sounds::qualified_sound_edits_are_atomic_durable_and_keep_picture_time ... ok
+test hold_audio::direct_and_occurrence_policy_commands_recheck_receipt_and_original_binding ... ok
+test actual_source_registration_deduplicates_then_inserts_and_survives_undo_relocation ... ok
+test missing_bytes_identity_mismatch_cancelled_stale_and_read_only_requests_preserve_history ... ok
+test sounds::sound_command_rechecks_receipt_inside_its_revision_transaction ... ok
+test reused_asset_alias_retains_both_branch_receipts_and_revision_specific_indexes ... ok
+test edited_slice::historical_slice_restores_only_source_metadata_admitted_by_its_stored_revision ... ok
+test sounds::sound_allowance_edits_recheck_sources_and_survive_atomic_history_reopen ... ok
+test edited_slice::interior_and_replacement_restore_only_the_verified_historical_source ... ok
+test tampered_qualification_payload_and_missing_receipt_fail_reopen ... ok
+test sounds::move_range::moves_preserve_qualified_root_sound_recipes_routes_and_hold_grants ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.70s
+

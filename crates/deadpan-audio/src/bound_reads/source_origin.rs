@@ -44,11 +44,11 @@ fn prefix_patch(
     source.audio_mapping = SourceAudioMapping::SelectedPlacement {
         start: mapping.start_frames().checked_add(shift).unwrap(),
         frames: mapping.duration_frames(duration).unwrap(),
-        selection: ExactFrameRange::new(
-            selection.start.checked_add(shift).unwrap(),
-            selection.end.checked_add(shift).unwrap(),
-        )
-        .unwrap(),
+        // An explicit dormant selection keeps equal endpoints when rebased.
+        selection: ExactFrameRange {
+            start: selection.start.checked_add(shift).unwrap(),
+            end: selection.end.checked_add(shift).unwrap(),
+        },
     };
     source.duration = frames(duration.frames() + prefix);
     // Blank picture has no source clock. The independent sample offset is

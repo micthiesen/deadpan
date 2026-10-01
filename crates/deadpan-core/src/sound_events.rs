@@ -156,6 +156,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::ReplaceSound { .. }
         | Command::DeleteSound { .. }
         | Command::SetSoundAllowance { .. }
+        | Command::SlipSource { .. }
         | Command::SetSourceVideoMapping { .. }
         | Command::SetSourceAudioMapping { .. }
         | Command::SetHoldAudio { .. }

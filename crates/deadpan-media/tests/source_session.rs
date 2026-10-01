@@ -191,6 +191,7 @@ fn natural_picture_plan_selects_and_decodes_original_pixels_after_trim_rounding(
                             kind: NodeKind::Source {
                                 source: SourceNode {
                                     duration,
+                                    edit_window: None,
                                     video: SourceVideo::Stream {
                                         asset,
                                         span: selected,

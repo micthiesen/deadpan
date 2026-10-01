@@ -113,6 +113,7 @@ fn source_tree(frames: i64) -> ProjectDocument {
     let mut node = hold(frames);
     node.kind = NodeKind::Source {
         source: SourceNode {
+            edit_window: None,
             duration: duration(frames),
             video: SourceVideo::Stream {
                 asset: asset.clone(),

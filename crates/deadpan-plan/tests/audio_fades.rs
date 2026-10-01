@@ -530,6 +530,7 @@ fn virtual_source_support_can_have_zero_or_one_fade_samples() {
             audio_edges: Default::default(),
             kind: NodeKind::Source {
                 source: SourceNode {
+                    edit_window: None,
                     duration: frames(4),
                     video: SourceVideo::Blank,
                     video_mapping: SourceVideoMapping::FitBeat,

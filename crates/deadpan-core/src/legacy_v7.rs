@@ -27,6 +27,7 @@ pub(crate) struct LegacySourceNode {
 impl LegacySourceNode {
     pub(crate) fn upgrade(self) -> SourceNode {
         SourceNode {
+            edit_window: None,
             duration: self.duration,
             video: self.video,
             audio: self.audio,
@@ -38,6 +39,9 @@ impl LegacySourceNode {
     }
 
     pub(crate) fn project(source: &SourceNode) -> Option<Self> {
+        if source.edit_window.is_some() {
+            return None;
+        }
         Some(Self {
             duration: source.duration,
             video: source.video.clone(),

@@ -339,11 +339,18 @@ pub fn execute_short(
                 ));
             }
             if *dry_run {
-                let edit = store.preview(request).map_err(LiveError::store)?;
-                (
-                    serde_json::json!({"protocol":1,"committed":false,"edit":edit}),
-                    None,
-                )
+                let output = if matches!(&request.command, deadpan_core::Command::SlipSource { .. })
+                {
+                    let preview = store
+                        .preview_source_slip(request)
+                        .map_err(LiveError::store)?;
+                    serde_json::json!({"protocol":1,"committed":false,
+                        "edit":preview.edit,"source_slip":preview.resolution})
+                } else {
+                    let edit = store.preview(request).map_err(LiveError::store)?;
+                    serde_json::json!({"protocol":1,"committed":false,"edit":edit})
+                };
+                (output, None)
             } else {
                 let outcome = store.commit(request).map_err(LiveError::store)?;
                 let revision = outcome.revision_id.clone();

@@ -625,6 +625,7 @@ fn unqualified_source_still_and_accepted_providers_fail_without_fallback() -> Re
                 audio_treatments: Default::default(),
                 kind: NodeKind::Source {
                     source: deadpan_core::SourceNode {
+                        edit_window: None,
                         duration: frames(3),
                         video: if still {
                             deadpan_core::SourceVideo::Still { asset: asset() }

@@ -90,6 +90,7 @@ fn document(
         } else {
             NodeKind::Source {
                 source: SourceNode {
+                    edit_window: None,
                     duration: duration(frames),
                     video: SourceVideo::Still {
                         asset: AssetId::new("picture").unwrap(),

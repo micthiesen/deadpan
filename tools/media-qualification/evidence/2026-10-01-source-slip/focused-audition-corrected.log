@@ -1,0 +1,11 @@
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.57s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_playback-4ee185cb64a4515c)
+
+running 3 tests
+test tests::audio_range::audio_range_callbacks_stop_at_exact_end_loop_and_replace_same_source_ranges ... ok
+test tests::audio_range::selected_44100_samples_round_once_and_reject_wrong_contracts ... ok
+test tests::audio_range::selected_original_audio_keeps_complete_source_context_and_cold_seek_phase ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 57 filtered out; finished in 3.23s
+

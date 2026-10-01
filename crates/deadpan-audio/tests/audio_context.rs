@@ -58,6 +58,7 @@ fn source(length: i64, selection: SourceAudio, offset: i64) -> BeatNode {
         },
         kind: NodeKind::Source {
             source: SourceNode {
+                edit_window: None,
                 duration: frames(length),
                 video: SourceVideo::Blank,
                 video_mapping: SourceVideoMapping::FitBeat,

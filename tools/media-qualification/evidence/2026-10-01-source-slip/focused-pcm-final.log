@@ -1,0 +1,27 @@
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.36s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_audio-8e2ffef251e4926c)
+
+running 6 tests
+test stages::bound_reads::source_origin::gain::slip::slip_moves_decoded_media_phase_and_keeps_retained_owner_gain_mute_and_root_sound ... FAILED
+test stages::bound_reads::source_origin::gain::slip::slip_keeps_symbolic_resume_and_chronological_reanchors_on_the_same_sample_clock ... ok
+test stages::bound_reads::source_origin::physical_prefix_keeps_symbolic_resume_and_chronological_reanchor_pcm ... ok
+test stages::bound_reads::source_origin::gain::physical_source_prefix_translates_gain_keys_once_and_preserves_authored_pcm ... ok
+test stages::bound_reads::source_origin::gain::slip::slip_activates_dormant_measured_audio_without_replacing_its_captured_lattice ... ok
+test stages::bound_reads::source_origin::physical_prefix_keeps_plain_captured_and_previously_bound_ntsc_pcm ... ok
+
+failures:
+
+---- stages::bound_reads::source_origin::gain::slip::slip_moves_decoded_media_phase_and_keeps_retained_owner_gain_mute_and_root_sound stdout ----
+
+thread 'stages::bound_reads::source_origin::gain::slip::slip_moves_decoded_media_phase_and_keeps_retained_owner_gain_mute_and_root_sound' (60944231) panicked at crates/deadpan-audio/src/bound_reads/source_origin/gain/slip.rs:329:68:
+called `Result::unwrap()` on an `Err` value: DocumentError { code: InvalidJson, message: "missing field `node_start` at line 1 column 2424" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    stages::bound_reads::source_origin::gain::slip::slip_moves_decoded_media_phase_and_keeps_retained_owner_gain_mute_and_root_sound
+
+test result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 64 filtered out; finished in 2.36s
+
+error: test failed, to rerun pass `-p deadpan-audio --lib`

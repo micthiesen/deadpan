@@ -21,11 +21,14 @@ endpoint holding still selects only frames intersecting the selected window.
 Fractional source ticks remain exact, and source-anchor queries reject hidden
 context outside the selected boundaries. See [picture timing](SOURCE_VIDEO_MAPPING.md).
 
-Core schema 38/database 47 store this representation, dormant linked audio,
+Core schema 39/database 48 store this representation, dormant linked audio,
 [retained local-origin translations](SOURCE_ORIGINS.md) and
-[retained framing clocks](SOURCE_EFFECT_CLOCKS.md).
-Development databases 39 through 46 are refused without migration or writes.
-Retaining handles does not yet implement the Trim, Slip or Roll workflow.
+[retained framing clocks](SOURCE_EFFECT_CLOCKS.md). The
+[exact editorial window](SOURCE_EDIT_WINDOWS.md) retains selection before
+whole-frame enclosure. [Atomic Slip](SOURCE_SLIP.md) uses the qualified full
+context for a bounded Source/Partition command.
+Development databases 39 through 47 are refused without migration or writes.
+Native Trim, Slip and Roll interaction remains open.
 
 ## Audio selection and phase
 

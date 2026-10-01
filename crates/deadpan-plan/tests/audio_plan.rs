@@ -61,6 +61,7 @@ fn source(frames: i64, mapping: SourceAudioMapping, offset: i64) -> BeatNode {
         label: "Original audio".into(),
         kind: NodeKind::Source {
             source: SourceNode {
+                edit_window: None,
                 duration: duration(frames),
                 video: SourceVideo::Blank,
                 video_mapping: SourceVideoMapping::FitBeat,
@@ -947,6 +948,7 @@ fn hold_policies_and_absent_source_audio_remain_distinct() {
         label: "Still".into(),
         kind: NodeKind::Source {
             source: SourceNode {
+                edit_window: None,
                 duration: duration(2),
                 video: SourceVideo::Still {
                     asset: AssetId::new("media").unwrap(),

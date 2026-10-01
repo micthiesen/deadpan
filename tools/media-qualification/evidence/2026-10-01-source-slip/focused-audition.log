@@ -1,0 +1,24 @@
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.44s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_playback-4ee185cb64a4515c)
+
+running 3 tests
+test tests::audio_range::selected_original_audio_keeps_complete_source_context_and_cold_seek_phase ... ok
+test tests::audio_range::selected_44100_samples_round_once_and_reject_wrong_contracts ... FAILED
+test tests::audio_range::audio_range_callbacks_stop_at_exact_end_loop_and_replace_same_source_ranges ... ok
+
+failures:
+
+---- tests::audio_range::selected_44100_samples_round_once_and_reject_wrong_contracts stdout ----
+
+thread 'tests::audio_range::selected_44100_samples_round_once_and_reject_wrong_contracts' (60937962) panicked at crates/deadpan-playback/src/tests/audio_range.rs:49:10:
+called `Result::unwrap()` on an `Err` value: Preparation(UnsupportedLayout)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    tests::audio_range::selected_44100_samples_round_once_and_reject_wrong_contracts
+
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 57 filtered out; finished in 3.13s
+
+error: test failed, to rerun pass `-p deadpan-playback --lib`

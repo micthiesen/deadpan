@@ -675,6 +675,7 @@ fn source_marks_use_the_captured_explicit_occurrence_and_exact_boundary() {
     wire["assets"] = json!({"video":AssetRecord {label:"Video".into(),content_hash:"a".repeat(64),video:Some(span),audio:None,still_image:false,frame_count:None,source_qualification:None}});
     wire["nodes"]["held"]["kind"] = serde_json::to_value(NodeKind::Source {
         source: SourceNode {
+            edit_window: None,
             duration: duration(10),
             video: SourceVideo::Stream {
                 asset: AssetId::new("video").unwrap(),

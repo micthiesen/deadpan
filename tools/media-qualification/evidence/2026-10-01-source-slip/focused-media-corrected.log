@@ -1,0 +1,50 @@
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.16s
+     Running tests/source_import_timing.rs (target/debug/deps/source_import_timing-ebfa99e3c2736049)
+
+running 25 tests
+test audio_moment::inward_audio_ranges_require_a_measured_terminal_even_for_a_prefix ... ok
+test audio_moment::inward_audio_ranges_use_measured_pts_and_native_sample_clock ... ok
+test geometry_applies_sar_before_rotation_with_even_rounding_and_no_target_upscale ... ok
+test audio_interior_exclusions_identity_mismatch_and_unmeasured_video_end_fail ... ok
+test edit_window::single_stream_imports_keep_their_exact_window_without_inventing_linkage ... ok
+test edit_window::full_import_window_retains_exact_union_with_audio_lead_tail_and_signed_origin ... ok
+test moment::a_positive_window_with_no_discrete_audio_sample_is_retained_without_snapping ... ok
+test moment::moment_duration_and_mapping_arithmetic_are_checked ... ok
+test moment::fractional_audio_selection_keeps_full_samples_phase_and_exact_cut_before_picture_slack ... ok
+test moment::dormant_and_audible_moments_share_the_original_fractional_sample_clock ... ok
+test moment::moment_rejects_invalid_ordinals_and_reuses_full_stream_evidence_checks ... ok
+test audio_moment::inward_audio_ranges_reject_empty_overlap_gaps_wrong_identity_and_overflow ... ok
+test moment::moving_the_shared_signed_origin_preserves_relative_audio_selection ... ok
+test moment::delayed_early_ending_and_nonoverlapping_audio_keep_measured_av_alignment ... ok
+test high_rates_use_highest_common_exact_divisor_then_exact_rational_fallback ... ok
+test signed_global_origins_do_not_change_fractional_cross_clock_placement ... ok
+test moment::vfr_selection_uses_presentation_intervals_and_the_measured_final_boundary ... ok
+test cadence_requires_repeated_integral_evidence_and_bounds_histogram_growth ... ok
+test edit_window::edit_window_is_inert_for_held_picture_and_audible_dormant_or_absent_audio ... ok
+test an_existing_project_rate_changes_sampling_occupancy_but_never_original_duration ... ok
+test decoded_rgb_rotation_anamorphic_and_single_frame_basis_use_measured_geometry_and_cadence ... ok
+test decoded_44100_audio_keeps_native_samples_and_exact_extent_on_audio_only_canvas ... ok
+test measured_av_candidates_drive_picture_plans_through_leading_and_trailing_holds ... ok
+test decoded_cfr_offset_and_vfr_keep_measured_tails_and_original_av_alignment ... ok
+test moment::decoded_cfr_offset_and_vfr_moments_retain_real_pts_and_endpoint_picture_identity ... ok
+
+test result: ok. 25 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.08s
+
+     Running tests/source_session.rs (target/debug/deps/source_session-4e20d2e507d7ab37)
+
+running 8 tests
+test invalid_native_limits_fail_before_any_snapshot_read ... ok
+test shared_input_checks_limits_before_reading_and_identity_before_publication ... ok
+[h264 @ 0x86f08ad80] Invalid level prefix
+[h264 @ 0x86f08ad80] error while decoding MB 0 0
+[h264 @ 0x86f08ad80] concealing 1 DC, 1 AC, 1 MV errors in I frame
+test unqualified_tags_and_corrupt_frames_cannot_create_a_source_session ... ok
+test cancelled_or_budgeted_seek_reopens_only_the_decoder_and_preserves_the_index ... ok
+test shared_verified_bytes_survive_original_loss_and_independent_decoder_positions ... ok
+test hash_length_cancellation_and_index_budgets_fail_without_inventing_an_index ... ok
+test natural_picture_plan_selects_and_decodes_original_pixels_after_trim_rounding ... ok
+test indexed_original_frames_seek_exactly_and_own_pixels_after_source_and_decoder_loss ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

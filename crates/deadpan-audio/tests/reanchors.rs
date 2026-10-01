@@ -65,6 +65,7 @@ fn source(rate: FrameRate, duration: i64) -> BeatNode {
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
+                edit_window: None,
                 duration: frames(duration),
                 video: SourceVideo::Blank,
                 video_mapping: SourceVideoMapping::FitBeat,

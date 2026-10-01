@@ -316,6 +316,7 @@ fn interior_source_splice_copies_hold_allowances_once_and_ripples_placed_sound_o
         target,
         at: frames(5),
         source: SourceNode {
+            edit_window: None,
             duration: frames(40),
             video: SourceVideo::Blank,
             audio: Some(original.sounds()[&sound()].source.clone()),
@@ -379,6 +380,7 @@ fn replacement_splits_allowances_twice_then_prunes_only_the_removed_middle() {
         parent: node("root"),
         range: FrameRange::new(ProjectFrame(5), ProjectFrame(15)).unwrap(),
         source: SourceNode {
+            edit_window: None,
             duration: frames(3),
             video: SourceVideo::Blank,
             audio: Some(original.sounds()[&sound()].source.clone()),
@@ -412,6 +414,7 @@ fn replacement_splits_allowances_twice_then_prunes_only_the_removed_middle() {
 fn splice_retains_policy_and_deleting_the_issuer_prunes_it_without_removing_surviving_sound() {
     let original = allow(&fixture(false), address("hold", vec![]));
     let source = SourceNode {
+        edit_window: None,
         duration: frames(40),
         video: SourceVideo::Blank,
         audio: Some(original.sounds()[&sound()].source.clone()),

@@ -103,6 +103,7 @@ fn fixture(plays: u32) -> ProjectDocument {
                 },
                 kind: NodeKind::Source {
                     source: SourceNode {
+                        edit_window: None,
                         duration: duration(6),
                         video: SourceVideo::Blank,
                         video_mapping: SourceVideoMapping::FitBeat,

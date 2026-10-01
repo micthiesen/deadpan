@@ -92,13 +92,15 @@ timing. Schema-11 audio and schema-12 picture mappings remain intact. Fields,
 variants and commands absent from each historical vocabulary are rejected inside
 old snapshots, commands and patches, even when a field is null.
 Migration retains revision identities, undo/redo, abandoned branches and
-operational original-media and generation records. Current database schema 47
-stores core schema 38 with dormant linked audio, retained local-origin
-translations and retained framing clocks. Unused development schemas 39 through 46 are rejected
+operational original-media and generation records. Current database schema 48
+stores core schema 39 with dormant linked audio, retained local-origin
+translations, retained framing clocks, exact editorial windows and atomic Source
+Slip. Unused development schemas 39 through 47 are rejected
 without migration, backup or writes under the session's authorized format break.
 
-Retaining source context is a prerequisite for Trim. It does not implement
-in/out trimming, slip, roll, handle clamping or the native Trim preview.
+Retaining source context is a prerequisite for Trim. The bounded
+[Source Slip command](SOURCE_SLIP.md) now checks and uses those handles. In/out
+trimming, Roll and the native Trim preview remain open.
 
 This provides authored timing and frame selection. It does not establish source
 qualification, native editorial playback or export. The measured import helper supplies common-origin and enclosure

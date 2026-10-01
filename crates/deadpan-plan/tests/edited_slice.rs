@@ -70,6 +70,7 @@ fn source(frames: i64, start: i64, end: i64) -> BeatNode {
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
+                edit_window: None,
                 duration: duration(frames),
                 video: SourceVideo::Stream {
                     asset: asset(),

@@ -62,7 +62,7 @@ including nested phase/reanchor templates. Projection into a historical form
 requires zero offsets. Existing dormant-support and older gap/reanchor guards
 still apply.
 
-Database schemas 39 through 46 are unused development formats and are refused
+Database schemas 39 through 47 are unused development formats and are refused
 without writable acquisition, migration or backup creation. Existing adapters
 for schemas 1 through 38 remain. `FrozenAudioContext` stays at schema 5 because
 it cannot carry owned binding state.

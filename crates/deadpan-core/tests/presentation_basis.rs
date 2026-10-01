@@ -57,6 +57,7 @@ fn insertion(name: &str, index: usize, audio_only: bool) -> SourceInsertion {
         node: node(name),
         label: "Original".into(),
         source: SourceNode {
+            edit_window: None,
             duration: FrameDuration::new(60).unwrap(),
             video: if audio_only {
                 SourceVideo::Blank

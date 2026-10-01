@@ -50,6 +50,7 @@ fn document(hold_start: i64) -> ProjectDocument {
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
+                edit_window: None,
                 duration: duration(frames),
                 video: SourceVideo::Blank,
                 video_mapping: SourceVideoMapping::FitBeat,

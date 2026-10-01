@@ -85,6 +85,19 @@ fn paste_uses_exact_measured_selection_and_one_durable_undo_entry() -> Result {
         selection.end().ticks,
         deadpan_core::ExactRatio::integer(index.interval(deadpan_core::SourceFrameId(2))?.1)
     );
+    let window = source
+        .edit_window
+        .expect("qualified moment retains exact selected time");
+    assert_eq!(window.start(), deadpan_core::ExactRatio::ZERO);
+    let source_clock = selection.start().time_base;
+    let project_rate = before.presentation_basis().frame_rate;
+    let selected_ticks = selection.end().ticks.checked_sub(selection.start().ticks)?;
+    let frames_per_tick = deadpan_core::ExactRatio::new(
+        i128::from(source_clock.numerator()) * i128::from(project_rate.numerator()),
+        i128::from(source_clock.denominator()) * i128::from(project_rate.denominator()),
+    )?;
+    assert_eq!(window.end(), selected_ticks.checked_mul(frames_per_tick)?);
+    window.validate(source.duration)?;
     let timing = derive_source_moment(
         prepared.receipt().snapshot().video().unwrap().index(),
         prepared.receipt().snapshot().audio(),
@@ -116,6 +129,8 @@ fn paste_uses_exact_measured_selection_and_one_durable_undo_entry() -> Result {
         reopened.snapshot()?.audio_bindings(),
         expected.audio_bindings()
     );
+    assert_eq!(reopened.snapshot_at(expected.revision_id())?, expected);
+    assert_eq!(reopened.snapshot_at(before.revision_id())?, before);
     reopened.validate()?;
     Ok(())
 }

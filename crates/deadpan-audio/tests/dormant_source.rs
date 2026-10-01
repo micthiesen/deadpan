@@ -78,6 +78,7 @@ fn document(
         label: "Linked Original with dormant audio".into(),
         kind: NodeKind::Source {
             source: SourceNode {
+                edit_window: None,
                 duration: duration(beat_frames),
                 video: SourceVideo::Stream {
                     asset: asset(),
@@ -557,3 +558,6 @@ fn intentionally_absent_audio_stays_absent_and_cannot_be_created_by_growing_supp
         assert_silence(&before);
     }
 }
+
+#[path = "dormant_source/edit_window.rs"]
+mod edit_window;

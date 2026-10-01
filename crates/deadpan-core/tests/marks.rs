@@ -962,6 +962,7 @@ fn named_source_and_authored_local_marks_require_explicit_repeat_scope() {
                         label: "Source".into(),
                         kind: NodeKind::Source {
                             source: SourceNode {
+                                edit_window: None,
                                 duration: duration(10),
                                 video: SourceVideo::Stream {
                                     asset: asset.clone(),

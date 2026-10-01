@@ -41,6 +41,7 @@ fn insertion(name: &str, index: usize) -> SourceInsertion {
         node: node(name),
         label: "Imported source".into(),
         source: SourceNode {
+            edit_window: None,
             duration: duration(60),
             video: SourceVideo::Stream {
                 asset: asset_id(),

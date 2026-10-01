@@ -1180,7 +1180,8 @@ pub fn validate_request_context(
     let command = &request.command;
     if matches!(
         command,
-        Command::SpliceSlice { .. }
+        Command::SlipSource { .. }
+            | Command::SpliceSlice { .. }
             | Command::SpliceSliceAt { .. }
             | Command::ReplaceSlice { .. }
             | Command::MoveRange { .. }
@@ -1282,6 +1283,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::SetHoldAudio { .. }
         | Command::InsertTime { .. }
         | Command::SpliceSource { .. }
+        | Command::SlipSource { .. }
         | Command::SpliceSlice { .. }
         | Command::SpliceSliceAt { .. }
         | Command::ReplaceSlice { .. }

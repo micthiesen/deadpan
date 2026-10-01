@@ -74,6 +74,7 @@ fn beat(kind: NodeKind) -> BeatNode {
 fn source(context: SourceSpan, mapping: SourceVideoMapping) -> BeatNode {
     beat(NodeKind::Source {
         source: SourceNode {
+            edit_window: None,
             duration: duration(2),
             video: SourceVideo::Stream {
                 asset: asset(),
@@ -672,3 +673,8 @@ fn inverse_source_window_composes_enclosing_retime_and_explicit_repeat_identity(
         );
     }
 }
+
+#[path = "selected_video_window/edit_window.rs"]
+mod edit_window;
+#[path = "selected_video_window/slip.rs"]
+mod slip;

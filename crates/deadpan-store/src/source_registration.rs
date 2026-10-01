@@ -29,6 +29,11 @@ use crate::original_media::{
 };
 use crate::{CommandPlan, CommitOutcome, ProjectStore, StoreError};
 
+#[path = "source_registration/slip.rs"]
+mod slip;
+pub use slip::SourceSlipPreview;
+pub(crate) use slip::validate_source_slip;
+
 const MAX_QUALIFICATIONS: i64 = 100_000;
 const MAX_ORIGINAL_REF_BYTES: usize = 256;
 const RECEIPT_DOMAIN: &[u8] = b"deadpan-source-qualification-v1\0";

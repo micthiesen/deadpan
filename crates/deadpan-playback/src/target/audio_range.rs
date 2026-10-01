@@ -2,8 +2,8 @@
 
 use super::*;
 use deadpan_core::{
-    ExactFrameRange, LinkRelation, SourceAudio, SourceAudioMapping, SourceSpan, SourceVideo,
-    SourceVideoMapping,
+    ExactFrameRange, LinkRelation, SourceAudio, SourceAudioMapping, SourceEditWindow, SourceSpan,
+    SourceVideo, SourceVideoMapping,
 };
 
 /// An audio-only audition of an explicit range from a qualified Original or
@@ -69,10 +69,15 @@ impl AudioRange {
         let selected_frames = seconds
             .checked_mul(frames_per_second)
             .map_err(|error| error.to_string())?;
+        let edit_window = SourceEditWindow::new(ExactRatio::ZERO, selected_frames)
+            .map_err(|error| error.to_string())?;
         let duration = selected_frames
             .ceil()
             .and_then(|frames| i64::try_from(frames).map_err(|_| deadpan_core::TimeError::Overflow))
             .and_then(FrameDuration::new)
+            .map_err(|error| error.to_string())?;
+        edit_window
+            .validate(duration)
             .map_err(|error| error.to_string())?;
         let start = ExactRatio::new(
             i128::from(full.start().ticks) - i128::from(span.start().ticks),
@@ -87,6 +92,7 @@ impl AudioRange {
             .map_err(|error| error.to_string())?;
         let source = SourceNode {
             duration,
+            edit_window: Some(edit_window),
             video: SourceVideo::Blank,
             video_mapping: SourceVideoMapping::FitBeat,
             audio: Some(SourceAudio {

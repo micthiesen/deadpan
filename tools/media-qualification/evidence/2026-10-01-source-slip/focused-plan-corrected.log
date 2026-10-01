@@ -1,0 +1,19 @@
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.21s
+     Running tests/selected_video_window.rs (target/debug/deps/selected_video_window-19db60250f69201a)
+
+running 11 tests
+test inverse_source_anchors_admit_exact_fractional_endpoints_and_reject_hidden_context ... ok
+test public_source_pictures_reject_incomplete_context_and_inconsistent_exact_windows ... ok
+test reject_policy_never_uses_available_context_beyond_the_selected_end ... ok
+test inverse_source_window_composes_enclosing_retime_and_explicit_repeat_identity ... ok
+test exact_selected_ticks_hold_only_intersecting_vfr_intervals_on_both_sides ... ok
+test edit_window::editorial_window_metadata_preserves_vfr_selection_and_rounded_picture_tail ... ok
+test full_context_promotion_preserves_vfr_picture_and_rounded_tail_at_signed_origins ... ok
+test nested_retimes_and_repeat_plays_preserve_selection_without_rounding_source_points ... ok
+test slip::indexed_slip_and_source_anchor_inverse_agree_without_rounding_vfr_pts ... ok
+test slip::partition_slip_preserves_full_owner_context_and_retained_camera_domain ... ok
+test slip::signed_vfr_slip_selects_known_pts_in_both_directions_and_holds_the_rounded_tail ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+

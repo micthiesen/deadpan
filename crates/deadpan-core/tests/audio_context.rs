@@ -89,6 +89,7 @@ fn fixture(offset: AudioSample, mapping: SourceAudioMapping) -> ProjectDocument 
         },
         kind: NodeKind::Source {
             source: SourceNode {
+                edit_window: None,
                 duration: frames(10),
                 video: SourceVideo::Stream {
                     asset: asset("picture"),
@@ -109,6 +110,7 @@ fn fixture(offset: AudioSample, mapping: SourceAudioMapping) -> ProjectDocument 
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
+                edit_window: None,
                 duration: frames(2),
                 video: SourceVideo::Stream {
                     asset: asset("picture"),

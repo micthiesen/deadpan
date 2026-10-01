@@ -69,6 +69,7 @@ fn source(frames: i64, start: i64, end: i64) -> BeatNode {
         label: "Original speech".into(),
         kind: NodeKind::Source {
             source: SourceNode {
+                edit_window: None,
                 duration: duration(frames),
                 video_mapping: SourceVideoMapping::FitBeat,
                 video: SourceVideo::Stream {

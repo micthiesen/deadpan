@@ -19,6 +19,25 @@ test instances after testing instead of leaving them idle. The previously
 running `dev.thiesen.deadpan.cursor-qa` instance has been quit, and the native
 app inventory confirmed no Deadpan app remained running.
 
+## Exact Source windows and atomic Slip, 2026-10-01
+
+Current core schema 39/database 48 retain an exact `SourceNode.edit_window`
+before whole-frame enclosure. Full imports, selected Original moments and
+temporary sound-range audition construct it; generic mapping changes clear it.
+The shared `SlipSource` command shifts qualified linked material atomically while
+preserving placement, duration, bindings, effects and root sounds. Its store
+preview and headless dry run report exact handles, applied delta and a nullable
+edit for zero movement. See [the command contract](../SOURCE_SLIP.md).
+
+All 3,114 workspace unit/integration tests, both compile-fail documentation
+tests, formatting and strict workspace/all-target Clippy with `ui-harness` pass.
+Independent window, command and PCM reviews found no outstanding issues.
+Original fixture/oracle/import failures remain with their corrected runs.
+See [qualification](../qualification/source-slip-2026-10-01.md). No native app has
+been opened. Native controls, full Trim/Roll, physical growth, nested/treated
+targets and audio-only picture lead/tail remain open. No requirement/gate changes
+status. Unused databases 39 through 47 are refused without migration.
+
 ## Source effect clocks, 2026-10-01
 
 Core schema 38/database 47 add an explicit retained framing duration/offset.
@@ -32,10 +51,9 @@ clock; explicit reset creates a new static owner-clock pose. See
 All 3,046 workspace unit/integration tests, both compile-fail documentation
 tests, formatting and strict workspace/all-target Clippy pass. The focused Camera
 test and lint also include `ui-harness`. No native app was opened, and the final
-process check found none running. Atomic Trim authoring,
-exact linked editorial windows, handle clamping,
-mark/sound transforms and native controls remain open. No requirement or gate
-changes status. Unused databases 39 through 46 reject without migration; existing
+process check found none running. At this checkpoint, exact linked windows,
+handle clamping, atomic Trim and native controls remained open. No requirement
+or gate changed status. Unused databases 39 through 46 were rejected; existing
 frozen adapters for 1 through 38 retain closed historical framing vocabulary.
 
 ## Retained Source origins, 2026-10-01

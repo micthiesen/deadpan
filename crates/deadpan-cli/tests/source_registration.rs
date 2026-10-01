@@ -608,3 +608,6 @@ fn pending_generation_allows_preview_but_requires_real_relevance_on_commit() -> 
     );
     Ok(())
 }
+
+#[path = "source_registration/slip.rs"]
+mod slip;

@@ -124,6 +124,7 @@ fn source_and_gap_choices_are_kind_checked_and_retained_when_not_audible() {
                         label: "Unvoiced source".into(),
                         kind: NodeKind::Source {
                             source: SourceNode {
+                                edit_window: None,
                                 duration: FrameDuration::new(3).unwrap(),
                                 video: SourceVideo::Still {
                                     asset: AssetId::new("still").unwrap(),

@@ -1,0 +1,21 @@
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+error[E0599]: no associated function or constant named `new` found for struct `SourceTimestamp` in the current scope
+   --> crates/deadpan-store/src/single_source.rs:458:30
+    |
+458 |             SourceTimestamp::new(0, time_base),
+    |                              ^^^ associated function or constant not found in `SourceTimestamp`
+    |
+help: there is a method `ne` with a similar name, but with different arguments
+   --> /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/core/src/cmp.rs:263:4
+
+error[E0599]: no associated function or constant named `new` found for struct `SourceTimestamp` in the current scope
+   --> crates/deadpan-store/src/single_source.rs:459:30
+    |
+459 |             SourceTimestamp::new(10, time_base),
+    |                              ^^^ associated function or constant not found in `SourceTimestamp`
+    |
+help: there is a method `ne` with a similar name, but with different arguments
+   --> /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/core/src/cmp.rs:263:4
+
+For more information about this error, try `rustc --explain E0599`.
+error: could not compile `deadpan-store` (lib test) due to 2 previous errors

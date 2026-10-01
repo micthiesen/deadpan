@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "gain/slip.rs"]
+mod slip;
+
 fn gain(value: i32) -> GainDb {
     GainDb::new(value).unwrap()
 }

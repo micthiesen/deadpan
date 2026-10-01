@@ -1047,6 +1047,7 @@ fn selected_source_resume_retains_owner_clock_and_rejects_exhausted_selection() 
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
+                edit_window: None,
                 duration: frames(4),
                 video: SourceVideo::Blank,
                 video_mapping: SourceVideoMapping::FitBeat,

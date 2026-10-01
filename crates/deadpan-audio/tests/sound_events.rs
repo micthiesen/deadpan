@@ -148,6 +148,7 @@ fn many_original_dependencies(count: u32, routed: bool) -> Arc<RenderPlan> {
                 audio_edges: Default::default(),
                 kind: NodeKind::Source {
                     source: SourceNode {
+                        edit_window: None,
                         duration: duration(1),
                         video: SourceVideo::Blank,
                         video_mapping: SourceVideoMapping::FitBeat,
