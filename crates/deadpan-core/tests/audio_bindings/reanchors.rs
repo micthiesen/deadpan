@@ -42,6 +42,7 @@ fn clipped_first_play_and_full_later_plays_have_distinct_resume_entries() {
         repeated(),
         None,
         vec![AudioReanchorStep {
+            anchor: Default::default(),
             placement: repeated(),
             window: window(1, 6),
         }],
@@ -81,6 +82,7 @@ fn hidden_retained_plays_leave_the_previous_map_intact() {
         },
     };
     let step = AudioReanchorStep {
+        anchor: Default::default(),
         placement: repeated(),
         window: window(2, 6),
     };
@@ -132,6 +134,7 @@ fn born_play_drops_outer_cut_but_keeps_intrinsic_partition_entry() {
         template.clone(),
         None,
         vec![AudioReanchorStep {
+            anchor: Default::default(),
             placement: template,
             window: window(1, 4),
         }],
@@ -181,6 +184,7 @@ fn outer_birth_at_the_same_retained_root_keeps_its_intrinsic_window() {
         template.clone(),
         None,
         vec![AudioReanchorStep {
+            anchor: Default::default(),
             placement: template,
             window: window(2, 4),
         }],
@@ -222,6 +226,7 @@ fn preserve_input_selection_constrains_the_step_on_its_point_grid() {
         template.clone(),
         None,
         vec![AudioReanchorStep {
+            anchor: Default::default(),
             placement: template,
             window: window(2, 4),
         }],
@@ -253,10 +258,12 @@ fn chronological_steps_extend_an_existing_phase_on_each_captured_clock() {
         }),
         vec![
             AudioReanchorStep {
+                anchor: Default::default(),
                 placement: plain(1),
                 window: window(3, 5),
             },
             AudioReanchorStep {
+                anchor: Default::default(),
                 placement: plain(2),
                 window: window(5, 6),
             },
@@ -291,6 +298,7 @@ fn reanchor_queries_stay_bounded_for_billion_play_and_birth_occurrences() {
         repeated(),
         None,
         vec![AudioReanchorStep {
+            anchor: Default::default(),
             placement: repeated(),
             window: window(1, 2_000_000_000),
         }],
@@ -328,6 +336,7 @@ fn reanchor_queries_stay_bounded_for_billion_play_and_birth_occurrences() {
 fn aggregate_terms_steps_and_invalid_windows_fail_typed_and_wire_admission() {
     let old = document(&["a"], [("a", hold(4))]);
     let step = AudioReanchorStep {
+        anchor: Default::default(),
         placement: plain(0),
         window: window(1, 4),
     };
@@ -368,6 +377,7 @@ fn aggregate_terms_steps_and_invalid_windows_fail_typed_and_wire_admission() {
         .unwrap()
         .push(
             serde_json::to_value(AudioReanchorStep {
+                anchor: Default::default(),
                 placement: plain(0),
                 window: None,
             })
@@ -379,6 +389,7 @@ fn aggregate_terms_steps_and_invalid_windows_fail_typed_and_wire_admission() {
         plain(0),
         None,
         vec![AudioReanchorStep {
+            anchor: Default::default(),
             placement: plain(0),
             window: None,
         }],

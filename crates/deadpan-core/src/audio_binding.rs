@@ -157,6 +157,48 @@ pub struct AudioResume {
     pub phase: AudioLocalPhase,
 }
 
+/// A closed structural boundary, independent of Source audio support.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AudioSourceEndpoint {
+    Start,
+    End,
+}
+
+/// Select an entry on each occurrence's captured clock without baking its phase.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+pub enum AudioReanchorAnchor {
+    #[default]
+    AllocationEntry,
+    SourceEndpoint {
+        endpoint: AudioSourceEndpoint,
+    },
+}
+
+impl<'de> Deserialize<'de> for AudioReanchorAnchor {
+    fn deserialize<D: Deserializer<'de>>(decoder: D) -> Result<Self, D::Error> {
+        // Tagged unit variants otherwise ignore extra fields despite the enum's
+        // deny_unknown_fields. Struct variants keep both choices closed.
+        #[derive(Deserialize)]
+        #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+        enum Wire {
+            AllocationEntry {},
+            SourceEndpoint { endpoint: AudioSourceEndpoint },
+        }
+        Ok(match Wire::deserialize(decoder)? {
+            Wire::AllocationEntry {} => Self::AllocationEntry,
+            Wire::SourceEndpoint { endpoint } => Self::SourceEndpoint { endpoint },
+        })
+    }
+}
+
+impl AudioReanchorAnchor {
+    pub fn is_allocation_entry(&self) -> bool {
+        matches!(self, Self::AllocationEntry)
+    }
+}
+
 /// A chronological reanchor on a retained allocation, evaluated separately for
 /// each effective occurrence. The window uses the placement's captured scope;
 /// an inner definition birth drops an enclosing window, not intrinsic crops.
@@ -166,6 +208,11 @@ pub struct AudioReanchorStep {
     pub placement: AudioPlacementTemplate,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub window: Option<ExactFrameRange>,
+    #[serde(
+        default,
+        skip_serializing_if = "AudioReanchorAnchor::is_allocation_entry"
+    )]
+    pub anchor: AudioReanchorAnchor,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -950,12 +997,57 @@ impl AudioPlacementTemplate {
 }
 
 impl AudioReanchorStep {
+    pub fn for_allocation(
+        placement: AudioPlacementTemplate,
+        window: Option<ExactFrameRange>,
+    ) -> Self {
+        Self {
+            placement,
+            window,
+            anchor: AudioReanchorAnchor::AllocationEntry,
+        }
+    }
+
+    pub fn for_source_endpoint(
+        placement: AudioPlacementTemplate,
+        endpoint: AudioSourceEndpoint,
+    ) -> Self {
+        Self {
+            placement,
+            window: None,
+            anchor: AudioReanchorAnchor::SourceEndpoint { endpoint },
+        }
+    }
+
+    fn validate_anchor(&self, layout: &FrozenAudioLayout) -> Result<(), DocumentError> {
+        if self.anchor.is_allocation_entry() {
+            return Ok(());
+        }
+        if self.window.is_some()
+            || self.placement.reference.recipe != AudioRecipeKind::Node
+            || self.placement.gap_after.is_some()
+            || !matches!(
+                layout
+                    .nodes()
+                    .get(&self.placement.reference.physical)
+                    .map(|node| &node.kind),
+                Some(FrozenAudioKind::Source { .. })
+            )
+        {
+            return Err(invalid(
+                "Source endpoint requires a Source node clock without a window",
+            ));
+        }
+        Ok(())
+    }
+
     fn allocation_entry(
         &self,
         layout: &FrozenAudioLayout,
         placement: &ResolvedAudioPlacement,
         work: &mut Work,
     ) -> Result<Option<ExactRatio>, DocumentError> {
+        self.validate_anchor(layout)?;
         let scope = clock_scope(layout, &placement.clock)?;
         let (projection, mut allocation) = scope.project(
             layout,
@@ -990,10 +1082,25 @@ impl AudioReanchorStep {
         }
         // The frozen projection and its window still use historical local
         // coordinates. Resume evaluation consumes the current physical clock.
-        allocation
-            .map(|range| {
-                range
-                    .start
+        let entry = match (self.anchor, allocation) {
+            (AudioReanchorAnchor::AllocationEntry, range) => range.map(|range| range.start),
+            (AudioReanchorAnchor::SourceEndpoint { endpoint }, Some(range))
+                if range.start.compare(range.end).is_lt() =>
+            {
+                Some(match endpoint {
+                    AudioSourceEndpoint::Start => range.start,
+                    AudioSourceEndpoint::End => range.end,
+                })
+            }
+            (AudioReanchorAnchor::SourceEndpoint { .. }, _) => {
+                return Err(invalid(
+                    "Source endpoint requires a positive captured allocation",
+                ));
+            }
+        };
+        entry
+            .map(|point| {
+                point
                     .checked_sub(self.placement.reference_local_offset)
                     .map_err(DocumentError::from)
             })
@@ -1146,6 +1253,11 @@ impl AudioBindingState {
                 if let Some(window) = step.window {
                     ExactFrameRange::new(window.start, window.end)?;
                 }
+                let layout = self
+                    .timings
+                    .get(&step.placement.reference.timing)
+                    .ok_or_else(|| invalid("audio timing identity is missing"))?;
+                step.validate_anchor(layout)?;
             }
             for template in binding.placements() {
                 if template.reference.recipe != kind
@@ -1201,6 +1313,16 @@ impl AudioBindingState {
                 .nodes()
                 .get(owner)
                 .ok_or_else(|| invalid("audio binding owner is missing"))?;
+            if binding
+                .reanchors
+                .iter()
+                .any(|step| !step.anchor.is_allocation_entry())
+                && (kind != AudioRecipeKind::Node || !matches!(node.kind, NodeKind::Source { .. }))
+            {
+                return Err(invalid(
+                    "Source endpoint binding requires a current Source owner",
+                ));
+            }
             if kind == AudioRecipeKind::RepeatGap && !matches!(node.kind, NodeKind::Repeat { .. }) {
                 return Err(invalid("gap binding owner is not a Repeat"));
             }

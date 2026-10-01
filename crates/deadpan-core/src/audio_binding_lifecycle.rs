@@ -713,6 +713,7 @@ mod tests {
             .get_mut(&node("hold"))
             .unwrap();
         binding.reanchors.push(AudioReanchorStep {
+            anchor: Default::default(),
             placement: binding.lattice.clone(),
             window: None,
         });
@@ -987,6 +988,7 @@ mod tests {
             .unwrap()
             .reanchors
             .push(AudioReanchorStep {
+                anchor: Default::default(),
                 placement: step,
                 window: None,
             });

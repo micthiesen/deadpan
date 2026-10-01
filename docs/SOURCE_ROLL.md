@@ -82,9 +82,9 @@ both cold and live writers. Commit re-resolves the original request through
 the common preparation path and saves one revision/history/cursor transaction.
 Reopen and durable Undo/Redo retain fresh revision identities.
 
-Core schema 41 and database 50 identify this command. Unused development
-databases 39 through 49 are refused without writes or migration under the
-session's format policy. Existing frozen adapters remain closed to Roll.
+Core schema 41 and database 50 introduced this command. The
+[current format policy](HEADLESS.md#schema-migration) refuses unused development
+formats without writes or migration. Existing frozen adapters remain closed to Roll.
 
 ## Remaining scope
 

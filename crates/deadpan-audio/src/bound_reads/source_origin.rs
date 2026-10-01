@@ -333,6 +333,7 @@ fn physical_prefix_keeps_symbolic_resume_and_chronological_reanchor_pcm() {
                 reanchors: [(1, 2, 7), (2, 4, 8)]
                     .into_iter()
                     .map(|(ordinal, start, end)| AudioReanchorStep {
+                        anchor: Default::default(),
                         placement: historical_placement(ordinal),
                         window: Some(
                             ExactFrameRange::new(
@@ -426,3 +427,6 @@ fn physical_prefix_keeps_symbolic_resume_and_chronological_reanchor_pcm() {
         );
     }
 }
+
+#[path = "source_origin/endpoints.rs"]
+mod endpoints;

@@ -154,6 +154,15 @@ closed. See [qualification](qualification/native-slip-2026-10-01.md). Full Trim,
 waveforms/audition, unsupported target scopes and physical-input/accessibility
 acceptance remain open. No requirement or gate changes status.
 
+[Combined Trim timing primitives](TRIM_DRAFT_FOUNDATION.md) advance
+DP-02/DP-05. Complete-intent geometry, Source endpoint bindings and the root-sound
+Trim map passed independent review and focused runtime checks, including 57 new
+tests. The full workspace passed 3,333 unit/integration tests and both
+documentation tests; strict workspace/all-target lint and formatting passed on
+the same unchanged source inventory. The combined
+authoring command, overwrite overlay and full native Trim remain required.
+No requirement or gate changes status.
+
 [Adjacent Source Roll](SOURCE_ROLL.md) adds a backend subset for DP-02/DP-05.
 It resolves one shared movement against both exact
 Source limits, preserves combined duration, captures audio clocks once, retains

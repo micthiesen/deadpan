@@ -1,0 +1,14 @@
+    let diagnostic = RenderPlan::compile(&after)
+        .unwrap()
+        .audio(AudioSample(1602)..AudioSample(1603), Default::default())
+        .unwrap();
+    eprintln!("earlier endpoint span: {diagnostic:#?}");
+    eprintln!(
+        "earlier endpoint source: {:?}; resume: {:?}",
+        diagnostic.spans[0].source_point(AudioSample(1602)),
+        after.audio_bindings().resolve(
+            &id("a"),
+            &InstancePath { node: id("a"), repeats: vec![] },
+            1000,
+        )
+    );

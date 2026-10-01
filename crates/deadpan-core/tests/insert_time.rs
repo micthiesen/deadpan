@@ -336,6 +336,7 @@ fn insertion_after_compact_steps_appends_after_them_and_round_trips_atomically()
     )
     .unwrap();
     let step = AudioReanchorStep {
+        anchor: Default::default(),
         placement: state.bindings()[&id("original")].lattice.clone(),
         window: Some(ExactFrameRange::new(ExactRatio::ONE, ExactRatio::integer(4)).unwrap()),
     };

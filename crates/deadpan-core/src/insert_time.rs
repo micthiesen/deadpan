@@ -220,6 +220,7 @@ pub(crate) fn apply(
             // Reanchor steps are chronological. A later pause must follow
             // them, not alter the legacy initial phase evaluated before them.
             binding.reanchors.push(AudioReanchorStep {
+                anchor: Default::default(),
                 placement: AudioPlacementTemplate {
                     reference_local_offset: crate::ExactRatio::ZERO,
                     gap_after: None,

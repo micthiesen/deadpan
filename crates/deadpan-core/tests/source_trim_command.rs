@@ -594,6 +594,7 @@ fn trim_refuses_a_full_reanchor_budget_without_replacing_the_old_clock() {
     let binding = bindings.get_mut(&id("source")).unwrap();
     binding.reanchors = vec![
         AudioReanchorStep {
+            anchor: Default::default(),
             placement: binding.lattice.clone(),
             window: None,
         };

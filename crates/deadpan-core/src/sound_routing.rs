@@ -7,12 +7,18 @@ use serde::{Deserialize, Serialize};
 use crate::{
     AudioEdgePolicy, Command, DocumentError, DocumentErrorCode, EditError, EditErrorCode,
     ExactFrameRange, ExactRatio, FrameDuration, FrameRange, FrameRate, MIX_SAMPLE_RATE, NodeKind,
-    ProjectDocument, ProjectFrame, SoundEvent, SoundId, SoundRippleMap, SoundRippleNode,
-    SoundRoute, SoundRouteNode, TimeError,
+    ProjectDocument, ProjectFrame, SoundEvent, SoundId, SoundRippleMap, SoundRoute, SoundRouteNode,
+    TimeError,
 };
 
 pub const MAX_ROOT_SOUND_EDITS: usize = 1024;
 pub const MAX_DOCUMENT_SOUND_ROUTE_BYTES: usize = 1024 * 1024;
+
+mod projection;
+pub use projection::{RootSoundKeep, RootSoundProjection};
+
+// A monotone edit can split existing support at at most two retained cuts.
+const MAX_ROOT_SOUND_SUPPORT_INTERVALS: usize = 1 + 2 * MAX_ROOT_SOUND_EDITS;
 
 /// A root clock always allocates at 48 kHz with ties-to-even boundaries.
 /// Keep each historical origin and rate, never reconstruct a final time offset.
@@ -61,6 +67,13 @@ pub enum RootSoundOperation {
     Replace {
         range: FrameRange,
         duration: FrameDuration,
+    },
+    /// One entry-anchored combined Ripple Trim map. Roll and Slip do not move
+    /// the independent root bus and are deliberately absent from this operation.
+    Trim {
+        range: FrameRange,
+        in_frames: i64,
+        out_frames: i64,
     },
 }
 
@@ -139,100 +152,17 @@ impl RootSoundRoute {
 }
 
 impl RootSoundOperation {
+    /// One validated projection for sampled routing, retained support and edges.
+    pub fn projection(self, input_frames: i64) -> Result<RootSoundProjection, DocumentError> {
+        RootSoundProjection::new(self, input_frames)
+    }
+
     pub fn output_frames(self, input_frames: i64) -> Result<i64, DocumentError> {
-        match self {
-            Self::Insert { at, duration } => {
-                if at.0 < 0 || at.0 > input_frames || duration == FrameDuration::ZERO {
-                    return Err(invalid("sound insertion is outside its previous clock"));
-                }
-                input_frames
-                    .checked_add(duration.frames())
-                    .ok_or(TimeError::Overflow.into())
-            }
-            Self::Delete { range } => {
-                if range.start().0 < 0
-                    || range.end().0 > input_frames
-                    || range.duration() == FrameDuration::ZERO
-                {
-                    return Err(invalid("sound deletion is outside its previous clock"));
-                }
-                Ok(input_frames - range.duration().frames())
-            }
-            Self::Replace { range, duration } => {
-                if range.start().0 < 0
-                    || range.end().0 > input_frames
-                    || range.duration() == FrameDuration::ZERO
-                    || duration == FrameDuration::ZERO
-                {
-                    return Err(invalid("sound replacement is outside its previous clock"));
-                }
-                (input_frames - range.duration().frames())
-                    .checked_add(duration.frames())
-                    .ok_or(TimeError::Overflow.into())
-            }
-        }
+        Ok(self.projection(input_frames)?.output_duration().frames())
     }
 
     fn map(self, extent: i64) -> Result<SoundRippleMap, DocumentError> {
-        if self.output_frames(extent)? <= 0 {
-            return Err(invalid("empty root sound output must remove the event"));
-        }
-        let mut nodes = Vec::new();
-        let mut keep = |start, end| {
-            if start < end {
-                nodes.push(SoundRippleNode::Keep {
-                    range: ExactFrameRange {
-                        start: ExactRatio::integer(start),
-                        end: ExactRatio::integer(end),
-                    },
-                });
-            }
-        };
-        match self {
-            Self::Insert { at, duration } => {
-                keep(0, at.0);
-                nodes.push(SoundRippleNode::Gap {
-                    duration: ExactRatio::integer(duration.frames()),
-                });
-                if at.0 < extent {
-                    nodes.push(SoundRippleNode::Keep {
-                        range: ExactFrameRange {
-                            start: ExactRatio::integer(at.0),
-                            end: ExactRatio::integer(extent),
-                        },
-                    });
-                }
-            }
-            Self::Delete { range } => {
-                keep(0, range.start().0);
-                keep(range.end().0, extent);
-            }
-            Self::Replace { range, duration } => {
-                keep(0, range.start().0);
-                nodes.push(SoundRippleNode::Gap {
-                    duration: ExactRatio::integer(duration.frames()),
-                });
-                if range.end().0 < extent {
-                    nodes.push(SoundRippleNode::Keep {
-                        range: ExactFrameRange {
-                            start: ExactRatio::integer(range.end().0),
-                            end: ExactRatio::integer(extent),
-                        },
-                    });
-                }
-            }
-        }
-        if nodes.len() > 1 {
-            let parts = (0..nodes.len())
-                .map(|i| u32::try_from(i).expect("at most three parts"))
-                .collect();
-            nodes.push(SoundRippleNode::Sequence { parts });
-        }
-        SoundRippleMap::new(
-            ExactRatio::integer(extent),
-            u32::try_from(nodes.len() - 1).map_err(|_| TimeError::Overflow)?,
-            nodes,
-        )
+        self.projection(extent)?.ripple_map()
     }
 }
 
@@ -288,34 +218,17 @@ fn retains_selection(event: &SoundEvent, journal: &RootSoundRoute) -> Result<boo
     }
     // Keep actual old integral samples, just like the sampled route. Re-rounding
     // moved exact endpoints loses accumulated phase and can delete a surviving
-    // sample. One edit splits at most one interval; no audio query is needed.
+    // sample. One edit adds at most two interval cuts; no audio query is needed.
     let mut support: Vec<_> = std::iter::once(first..last).collect();
     let mut extent = journal.recipe_extent.frames();
     let mut old_grid = journal.recipe_grid;
     for edit in &journal.edits {
-        let new_extent = edit.operation.output_frames(extent)?;
-        let keeps = match edit.operation {
-            RootSoundOperation::Insert { at, duration } => [
-                (0..at.0, 0..at.0),
-                (at.0..extent, at.0 + duration.frames()..new_extent),
-            ],
-            RootSoundOperation::Delete { range } => [
-                (0..range.start().0, 0..range.start().0),
-                (range.end().0..extent, range.start().0..new_extent),
-            ],
-            RootSoundOperation::Replace { range, duration } => [
-                (0..range.start().0, 0..range.start().0),
-                (
-                    range.end().0..extent,
-                    range.start().0 + duration.frames()..new_extent,
-                ),
-            ],
-        };
-        let mut next = Vec::with_capacity(support.len() + 1);
-        for (old, destination) in keeps {
-            if old.is_empty() {
-                continue;
-            }
+        let projection = edit.operation.projection(extent)?;
+        let new_extent = projection.output_duration().frames();
+        let mut next = Vec::with_capacity(support.len() + 2);
+        for keep in projection.keeps() {
+            let old = keep.input.start().0..keep.input.end().0;
+            let destination = keep.output.start().0..keep.output.end().0;
             let old_start = sound_sample_boundary(old_grid, ExactRatio::integer(old.start))?;
             let old_end = sound_sample_boundary(old_grid, ExactRatio::integer(old.end))?;
             let new_start =
@@ -333,10 +246,11 @@ fn retains_selection(event: &SoundEvent, journal: &RootSoundRoute) -> Result<boo
                 let first = (i128::from(first) + shift).max(i128::from(new_start));
                 let last = (i128::from(last) + shift).min(i128::from(new_end));
                 if first < last {
-                    next.push(
+                    push_support(
+                        &mut next,
                         i64::try_from(first).map_err(|_| TimeError::Overflow)?
                             ..i64::try_from(last).map_err(|_| TimeError::Overflow)?,
-                    );
+                    )?;
                 }
             }
         }
@@ -363,66 +277,33 @@ fn retains_logical_selection(
     journal: &RootSoundRoute,
 ) -> Result<bool, DocumentError> {
     let mut support = vec![selection];
+    let mut extent = journal.recipe_extent.frames();
     for edit in &journal.edits {
-        let mut next = Vec::with_capacity(support.len() + 1);
-        for interval in support {
-            match edit.operation {
-                RootSoundOperation::Insert { at, duration } => {
-                    let at = ExactRatio::integer(at.0);
-                    let shift = ExactRatio::integer(duration.frames());
-                    if interval.end.checked_sub(at)?.compare_integer(0).is_le() {
-                        next.push(interval);
-                    } else if interval.start.checked_sub(at)?.compare_integer(0).is_ge() {
-                        next.push(ExactFrameRange {
-                            start: interval.start.checked_add(shift)?,
-                            end: interval.end.checked_add(shift)?,
-                        });
-                    } else {
-                        next.push(ExactFrameRange {
-                            start: interval.start,
-                            end: at,
-                        });
-                        next.push(ExactFrameRange {
-                            start: at.checked_add(shift)?,
-                            end: interval.end.checked_add(shift)?,
-                        });
-                    }
-                }
-                RootSoundOperation::Delete { range }
-                | RootSoundOperation::Replace { range, .. } => {
-                    let start = ExactRatio::integer(range.start().0);
-                    let end = ExactRatio::integer(range.end().0);
-                    let inserted = match edit.operation {
-                        RootSoundOperation::Replace { duration, .. } => duration.frames(),
-                        _ => 0,
-                    };
-                    let shift = ExactRatio::integer(range.duration().frames() - inserted);
-                    if interval
-                        .start
-                        .checked_sub(start)?
-                        .compare_integer(0)
-                        .is_lt()
-                    {
-                        next.push(ExactFrameRange {
-                            start: interval.start,
-                            end: if interval.end.checked_sub(start)?.compare_integer(0).is_lt() {
-                                interval.end
-                            } else {
-                                start
-                            },
-                        });
-                    }
-                    if interval.end.checked_sub(end)?.compare_integer(0).is_gt() {
-                        next.push(ExactFrameRange {
-                            start: if interval.start.checked_sub(end)?.compare_integer(0).is_gt() {
-                                interval.start
-                            } else {
-                                end
-                            }
-                            .checked_sub(shift)?,
-                            end: interval.end.checked_sub(shift)?,
-                        });
-                    }
+        let projection = edit.operation.projection(extent)?;
+        let mut next = Vec::with_capacity(support.len() + 2);
+        for keep in projection.keeps() {
+            let start = ExactRatio::integer(keep.input.start().0);
+            let end = ExactRatio::integer(keep.input.end().0);
+            let shift = ExactRatio::integer(keep.output.start().0).checked_sub(start)?;
+            for interval in &support {
+                let first = if interval.start.compare(start).is_gt() {
+                    interval.start
+                } else {
+                    start
+                };
+                let last = if interval.end.compare(end).is_lt() {
+                    interval.end
+                } else {
+                    end
+                };
+                if first.compare(last).is_lt() {
+                    push_support(
+                        &mut next,
+                        ExactFrameRange {
+                            start: first.checked_add(shift)?,
+                            end: last.checked_add(shift)?,
+                        },
+                    )?;
                 }
             }
         }
@@ -430,8 +311,19 @@ fn retains_logical_selection(
         if support.is_empty() {
             return Ok(false);
         }
+        extent = projection.output_duration().frames();
     }
     Ok(true)
+}
+
+fn push_support<T>(support: &mut Vec<T>, value: T) -> Result<(), DocumentError> {
+    if support.len() >= MAX_ROOT_SOUND_SUPPORT_INTERVALS {
+        return Err(limit(
+            "root sound retained support exceeds its interval limit",
+        ));
+    }
+    support.push(value);
+    Ok(())
 }
 
 /// Own the bus outside the temporary structural document. Public context
@@ -612,8 +504,25 @@ impl RootSoundEditCapture {
             }
             _ => return Ok(None),
         };
+        Self::prepare_operation(document, operation).map(Some)
+    }
+
+    /// Prepare one complete operation against the original root clock. The
+    /// command path and future complete-intent edits share this boundary.
+    pub(crate) fn prepare_operation(
+        document: &ProjectDocument,
+        operation: RootSoundOperation,
+    ) -> Result<Self, EditError> {
         let extent = document.duration()?;
-        let output_frames = operation.output_frames(extent.frames())?;
+        let projection = operation.projection(extent.frames())?;
+        let output_frames = projection.output_duration().frames();
+        if projection.is_identity() {
+            return Ok(Self {
+                sounds: document.sounds.clone(),
+                routes: document.sound_routes.clone(),
+                output_frames,
+            });
+        }
         let mut sounds = document.sounds.clone();
         let mut routes = document.sound_routes.clone();
         if output_frames == 0 {
@@ -624,6 +533,12 @@ impl RootSoundEditCapture {
                 let journal = routes.entry(id.clone()).or_insert_with(|| {
                     RootSoundRoute::identity(extent, document.presentation_basis.frame_rate)
                 });
+                if journal.edits.len() >= MAX_ROOT_SOUND_EDITS {
+                    // Preserve the existing compile-time refusal before growth.
+                    return Err(
+                        invalid("invalid root sound recipe extent or history length").into(),
+                    );
+                }
                 journal.edits.push(RootSoundEdit {
                     grid: journal.recipe_grid,
                     operation,
@@ -636,11 +551,11 @@ impl RootSoundEditCapture {
             }
             routes.retain(|id, _| sounds.contains_key(id));
         }
-        Ok(Some(Self {
+        Ok(Self {
             sounds,
             routes,
             output_frames,
-        }))
+        })
     }
 
     pub(crate) fn structural_document(&self, document: &ProjectDocument) -> ProjectDocument {
@@ -700,3 +615,6 @@ fn limit(message: &str) -> DocumentError {
 fn edit_invalid(message: &str) -> EditError {
     EditError::new(EditErrorCode::InvalidCommand, message)
 }
+
+#[cfg(test)]
+mod tests;

@@ -114,6 +114,7 @@ fn fixture() -> Result<(ProjectDocument, FrozenAudioLayout)> {
         },
     });
     binding.reanchors.push(AudioReanchorStep {
+        anchor: Default::default(),
         placement: binding.lattice.clone(),
         window: Some(ExactFrameRange::new(
             ExactRatio::ONE,

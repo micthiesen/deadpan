@@ -1,0 +1,7 @@
+{
+  "base_commit": "3a5e7b71d098a1184fc84470b636bf12ed016ad1",
+  "patch_sha256": "379eced71e151a6c10489a363e2661ea9eabf99c2786e3ced1f983dae69f0795",
+  "stage": "/tmp/deadpan-source-roll-20261001/staged-source-endpoint",
+  "all_changed_base_hashes_verified": true,
+  "review_correction_owed_before_cargo": "Default anchor for closed_gap_origin! one-line literal in tests/audio_bindings/gaps.rs."
+}

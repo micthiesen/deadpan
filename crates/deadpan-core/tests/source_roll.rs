@@ -615,6 +615,7 @@ fn roll_preserves_existing_clocks_effects_root_routes_and_hold_allowances() {
         },
     });
     right.reanchors.push(AudioReanchorStep {
+        anchor: Default::default(),
         placement: right.lattice.clone(),
         window: Some(
             ExactFrameRange::new(ExactRatio::integer(10), ExactRatio::integer(20)).unwrap(),

@@ -33,6 +33,7 @@ fn symbolic() -> OwnedAudioBinding {
             },
         }),
         reanchors: vec![AudioReanchorStep {
+            anchor: Default::default(),
             placement: repeated(),
             window: Some(ExactFrameRange::new(ratio(1, 1), ratio(3, 1)).unwrap()),
         }],
@@ -207,10 +208,12 @@ fn chronological_reanchors_convert_historical_entries_after_local_translation() 
                 }),
                 reanchors: vec![
                     AudioReanchorStep {
+                        anchor: Default::default(),
                         placement: plain(1),
                         window: Some(ExactFrameRange::new(ratio(3, 1), ratio(5, 1)).unwrap()),
                     },
                     AudioReanchorStep {
+                        anchor: Default::default(),
                         placement: plain(2),
                         window: Some(ExactFrameRange::new(ratio(5, 1), ratio(6, 1)).unwrap()),
                     },

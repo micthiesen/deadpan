@@ -1,0 +1,10 @@
+{
+  "base_commit": "3a5e7b71d098a1184fc84470b636bf12ed016ad1",
+  "production_stage": "/tmp/deadpan-source-roll-20261001/staged-trim-root-sounds",
+  "production_patch_sha256": "488fb4cfbae60028ede6b11370f0e4c9444e5afcb6a1977ef5ac447d67b50d45",
+  "pcm_stage": "/tmp/deadpan-source-roll-20261001/staged-trim-root-sound-audio",
+  "pcm_patch_sha256": "a9102b463ae25ef882272e168e0a5fc35c8624c5cf3662709ce1338e670f2fab",
+  "all_changed_base_hashes_verified": true,
+  "all_production_read_dependency_hashes_verified": true,
+  "static_pcm_fixture_correction_owed": "Blank picture-only Source must declare a picture Stream and asset."
+}

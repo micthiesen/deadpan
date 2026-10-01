@@ -203,6 +203,7 @@ mod tests {
                 if $version == 21 {
                     for binding in document.audio_bindings.bindings.values_mut() {
                         binding.reanchors.push(AudioReanchorStep {
+                            anchor: Default::default(),
                             placement: binding.lattice.clone(),
                             window: None,
                         });
@@ -274,6 +275,7 @@ mod tests {
                 "phase" => &mut binding.resume.as_mut().unwrap().phase.terms[0].placement,
                 _ => {
                     binding.reanchors.push(AudioReanchorStep {
+                        anchor: Default::default(),
                         placement: binding.lattice.clone(),
                         window: None,
                     });
@@ -354,6 +356,7 @@ mod tests {
                     .get_mut(&node("hold"))
                     .unwrap();
                 binding.reanchors.push(AudioReanchorStep {
+                    anchor: Default::default(),
                     placement: binding.lattice.clone(),
                     window: None,
                 });

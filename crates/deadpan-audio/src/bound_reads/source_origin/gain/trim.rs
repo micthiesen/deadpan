@@ -336,6 +336,7 @@ fn in_extension_keeps_symbolic_resume_and_chronological_entries_before_physical_
                 reanchors: [(1, 2, 7), (2, 4, 8)]
                     .into_iter()
                     .map(|(ordinal, start, end)| AudioReanchorStep {
+                        anchor: Default::default(),
                         placement: historical_placement(ordinal),
                         window: Some(
                             ExactFrameRange::new(

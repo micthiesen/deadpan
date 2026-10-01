@@ -109,7 +109,27 @@ pub(crate) fn edge_candidate(
     edge: SourceTrimEdge,
     applied: i64,
 ) -> Result<SourceEdgeCandidate, DocumentError> {
-    if applied == 0 {
+    let delta = ExactRatio::integer(applied);
+    let (start, end) = match edge {
+        SourceTrimEdge::In => (delta, ExactRatio::ZERO),
+        SourceTrimEdge::Out => (ExactRatio::ZERO, delta),
+    };
+    window_candidate(document, admission, start, end, ExactRatio::ZERO)
+}
+
+/// Simultaneously move both delivered endpoints and the common media clock.
+/// Inputs are integral frame deltas; no intermediate Source or duration exists.
+pub(crate) fn window_candidate(
+    document: &ProjectDocument,
+    admission: &Admission<'_>,
+    in_delta: ExactRatio,
+    out_delta: ExactRatio,
+    slip_delta: ExactRatio,
+) -> Result<SourceEdgeCandidate, DocumentError> {
+    if [in_delta, out_delta, slip_delta]
+        .iter()
+        .all(|value| *value == ExactRatio::ZERO)
+    {
         return Ok(SourceEdgeCandidate {
             allocation: admission.allocation,
             effective: admission.effective,
@@ -119,55 +139,30 @@ pub(crate) fn edge_candidate(
             needs_wrapper: false,
         });
     }
-    let delta = ExactRatio::integer(applied);
-    let mut allocation = admission.allocation;
-    let mut effective = window_range(admission.effective);
+    let mut allocation = FrameRange::new(
+        integral_frame(ExactRatio::integer(admission.allocation.start().0).checked_add(in_delta)?)?,
+        integral_frame(ExactRatio::integer(admission.allocation.end().0).checked_add(out_delta)?)?,
+    )?;
+    let effective = ExactFrameRange {
+        start: admission.effective.start().checked_add(in_delta)?,
+        end: admission.effective.end().checked_add(out_delta)?,
+    };
     let mut window = window_range(admission.window);
-    match edge {
-        SourceTrimEdge::In => {
-            allocation = FrameRange::new(
-                ProjectFrame(
-                    allocation
-                        .start()
-                        .0
-                        .checked_add(applied)
-                        .ok_or(TimeError::Overflow)?,
-                ),
-                allocation.end(),
-            )?;
-            effective.start = effective.start.checked_add(delta)?;
-            // Preserve hidden selected support when the delivered edge has no
-            // fractional padding; otherwise move the authored fractional edge.
-            window.start = if effective.start == ExactRatio::integer(allocation.start().0)
-                && window.start.compare(effective.start).is_lt()
-            {
-                window.start
-            } else {
-                effective.start
-            };
-        }
-        SourceTrimEdge::Out => {
-            allocation = FrameRange::new(
-                allocation.start(),
-                ProjectFrame(
-                    allocation
-                        .end()
-                        .0
-                        .checked_add(applied)
-                        .ok_or(TimeError::Overflow)?,
-                ),
-            )?;
-            effective.end = effective.end.checked_add(delta)?;
-            window.end = if effective.end == ExactRatio::integer(allocation.end().0)
-                && window.end.compare(effective.end).is_gt()
-            {
-                window.end
-            } else {
-                effective.end
-            };
-        }
+    // Retain hidden selected support independently at each integral crop edge.
+    // Fractional padding moves with its corresponding delivered endpoint.
+    if effective.start != ExactRatio::integer(allocation.start().0)
+        || window.start.compare(effective.start).is_ge()
+    {
+        window.start = effective.start;
     }
-    if !contains(admission.video_support, effective)
+    if effective.end != ExactRatio::integer(allocation.end().0)
+        || window.end.compare(effective.end).is_le()
+    {
+        window.end = effective.end;
+    }
+    let video_start = admission.video_start.checked_sub(slip_delta)?;
+    let video_support = support(video_start, admission.video_frames)?;
+    if !contains(video_support, effective)
         || intersect(window, frame_range(allocation)) != effective
         || effective.start.compare(effective.end).is_ge()
     {
@@ -220,20 +215,21 @@ pub(crate) fn edge_candidate(
         effective.end.checked_add(p)?,
     )?;
     after.edit_window = Some(window_after);
-    if window != window_range(admission.window) {
+    if window != window_range(admission.window) || slip_delta != ExactRatio::ZERO {
         after.video_mapping = SourceVideoMapping::SelectedPlacement {
-            start: admission.video_start,
+            start: video_start,
             frames: admission.video_frames,
-            selection: intersect(window, admission.video_support),
+            selection: intersect(window, video_support),
             endpoints: EndpointPolicy::HoldAdjacent,
         };
         if let Some(audio) = admission.audio {
+            let start = audio.start.checked_sub(slip_delta)?;
             let selection = selected_audio(
                 window,
-                support(audio.start.checked_add(audio.offset)?, audio.frames)?,
+                support(start.checked_add(audio.offset)?, audio.frames)?,
             );
             after.audio_mapping = SourceAudioMapping::SelectedPlacement {
-                start: audio.start,
+                start,
                 frames: audio.frames,
                 selection: ExactFrameRange {
                     start: selection.start.checked_sub(audio.offset)?,
@@ -268,6 +264,16 @@ pub(crate) fn edge_candidate(
         source: after,
         needs_wrapper,
     })
+}
+
+fn integral_frame(value: ExactRatio) -> Result<ProjectFrame, TimeError> {
+    let integer = value.floor();
+    if ExactRatio::new(integer, 1)? != value {
+        return Err(TimeError::InvalidRatio);
+    }
+    Ok(ProjectFrame(
+        i64::try_from(integer).map_err(|_| TimeError::Overflow)?,
+    ))
 }
 
 fn translate_video(

@@ -228,6 +228,7 @@ fn placement(
 
 fn step(placement: AudioPlacementTemplate, window: Option<Range<i64>>) -> AudioReanchorStep {
     AudioReanchorStep {
+        anchor: Default::default(),
         placement,
         window: window.map(|range| {
             ExactFrameRange::new(

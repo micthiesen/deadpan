@@ -755,3 +755,6 @@ fn extreme_destination_clips_support_before_narrowing_retained_labels() {
         .unwrap();
     assert!(retained.spans.iter().all(|span| span.sampling.is_some()));
 }
+
+#[path = "root_sound_routes/trim.rs"]
+mod trim;

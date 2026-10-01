@@ -5,10 +5,12 @@ use serde::Deserializer;
 use std::collections::BTreeMap;
 
 pub(crate) fn admitted(route: &RootSoundRoute) -> bool {
-    route
-        .edits
-        .iter()
-        .all(|edit| !matches!(edit.operation, RootSoundOperation::Replace { .. }))
+    route.edits.iter().all(|edit| {
+        matches!(
+            edit.operation,
+            RootSoundOperation::Insert { .. } | RootSoundOperation::Delete { .. }
+        )
+    })
 }
 
 pub(crate) fn routes<'de, D: Deserializer<'de>>(
@@ -17,7 +19,7 @@ pub(crate) fn routes<'de, D: Deserializer<'de>>(
     let routes: BTreeMap<SoundId, RootSoundRoute> = crate::document::unique_map(deserializer)?;
     if routes.values().any(|route| !admitted(route)) {
         return Err(serde::de::Error::custom(
-            "legacy root sound replacement is unsupported",
+            "legacy root sound operation is unsupported",
         ));
     }
     Ok(routes)
@@ -34,7 +36,7 @@ pub(crate) fn changes<'de, D: Deserializer<'de>>(
         .any(|route| !admitted(route))
     {
         return Err(serde::de::Error::custom(
-            "legacy root sound replacement patch is unsupported",
+            "legacy root sound operation patch is unsupported",
         ));
     }
     Ok(changes)

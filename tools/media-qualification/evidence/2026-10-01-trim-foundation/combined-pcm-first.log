@@ -1,0 +1,46 @@
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 27.76s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_audio-8e2ffef251e4926c)
+
+running 22 tests
+test stages::bound_reads::source_origin::endpoints::absent_source_audio_keeps_endpoint_clock_without_reading_media ... ok
+test stages::bound_reads::source_origin::endpoints::disjoint_later_endpoint_keeps_literal_phase_through_rebase_and_inverse ... ok
+test stages::bound_reads::source_origin::gain::trim::in_extension_keeps_symbolic_resume_and_chronological_entries_before_physical_rebase ... ok
+test stages::bound_reads::source_origin::endpoints::disjoint_earlier_endpoint_uses_signed_old_origin_with_offset_once ... FAILED
+test stages::bound_reads::source_origin::gain::trim::roll::roll_right_prefix_preserves_symbolic_resume_and_chronological_reanchors ... ok
+test stages::bound_reads::source_origin::endpoints::previously_dormant_source_uses_structural_endpoint_then_reveals_real_pcm ... ok
+test stages::bound_reads::source_origin::endpoints::endpoint_extends_prior_resume_terms_and_reanchors_without_recapturing_phase ... ok
+test stages::bound_reads::source_origin::gain::trim::roll::roll_preserves_explicit_hard_on_one_side_without_suppressing_the_other_sides_default_fade ... ok
+test stages::bound_reads::source_origin::gain::trim::slip_fades_a_previously_continuous_split_seam_without_changing_raw_clocks ... ok
+test stages::bound_reads::source_origin::gain::slip::slip_keeps_symbolic_resume_and_chronological_reanchors_on_the_same_sample_clock ... ok
+test stages::bound_reads::source_origin::gain::trim::in_extension_activates_audio_before_the_window_and_keeps_absence_silent ... ok
+test stages::bound_reads::source_origin::gain::trim::trim_preserves_filter_context_and_authors_only_the_new_entry_fade ... ok
+test stages::bound_reads::source_origin::gain::trim::roll::roll_exposes_dormant_right_audio_but_keeps_intentionally_absent_audio_silent ... ok
+test stages::bound_reads::source_origin::gain::trim::trim_fades_both_new_join_sides_but_keeps_an_untouched_split_join_continuous ... ok
+test stages::bound_reads::source_origin::gain::trim::roll::reverse_roll_grows_the_right_physical_prefix_without_shifting_its_retained_body ... ok
+test stages::bound_reads::source_origin::physical_prefix_keeps_symbolic_resume_and_chronological_reanchor_pcm ... ok
+test stages::bound_reads::source_origin::gain::physical_source_prefix_translates_gain_keys_once_and_preserves_authored_pcm ... ok
+test stages::bound_reads::source_origin::gain::trim::in_extension_exposes_one_and_three_frame_prefixes_on_the_retained_sample_grid ... ok
+test stages::bound_reads::source_origin::gain::slip::slip_activates_dormant_measured_audio_without_replacing_its_captured_lattice ... ok
+test stages::bound_reads::source_origin::gain::trim::roll::roll_ntsc_transfers_1601_samples_and_marks_only_the_changed_join ... ok
+test stages::bound_reads::source_origin::gain::slip::slip_moves_decoded_media_phase_and_keeps_retained_owner_gain_mute_and_root_sound ... ok
+test stages::bound_reads::source_origin::physical_prefix_keeps_plain_captured_and_previously_bound_ntsc_pcm ... ok
+
+failures:
+
+---- stages::bound_reads::source_origin::endpoints::disjoint_earlier_endpoint_uses_signed_old_origin_with_offset_once stdout ----
+
+thread 'stages::bound_reads::source_origin::endpoints::disjoint_earlier_endpoint_uses_signed_old_origin_with_offset_once' (61646109) panicked at crates/deadpan-audio/src/bound_reads/source_origin/endpoints.rs:187:9:
+endpoint PCM first mismatch 0: [0.2184842, -0.012945384] != [0.19484523, -0.012694668]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    stages::bound_reads::source_origin::endpoints::disjoint_earlier_endpoint_uses_signed_old_origin_with_offset_once
+
+test result: FAILED. 21 passed; 1 failed; 0 ignored; 0 measured; 65 filtered out; finished in 2.47s
+
+error: test failed, to rerun pass `-p deadpan-audio --lib`
+error: 1 target failed:
+    `-p deadpan-audio --lib`

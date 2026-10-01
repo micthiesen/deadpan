@@ -469,6 +469,7 @@ fn interrupted_first_gap_and_later_full_gap_resume_distinct_ntsc_phases() {
     let mut gaps = captured.audio_bindings().gap_bindings().clone();
     let binding = gaps.get_mut(&id("repeat")).unwrap();
     binding.reanchors.push(AudioReanchorStep {
+        anchor: Default::default(),
         placement: binding.lattice.clone(),
         window: Some(ExactFrameRange::new(ExactRatio::integer(2), ExactRatio::integer(7)).unwrap()),
     });

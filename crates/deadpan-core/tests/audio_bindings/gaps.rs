@@ -242,6 +242,7 @@ fn repeat_output_window_does_not_survive_same_id_gap_definition_birth() {
     let state = gap_state(&old, |binding| {
         binding.lattice.reference.root = AudioClockRoot::DefinitionPointCeil { root: id("r") };
         binding.reanchors.push(AudioReanchorStep {
+            anchor: Default::default(),
             placement: binding.lattice.clone(),
             window: Some(ExactFrameRange::new(ExactRatio::ONE, ExactRatio::integer(4)).unwrap()),
         });
@@ -257,6 +258,7 @@ fn hidden_gap_has_no_reanchor_entry_and_later_visible_gap_starts_at_zero() {
     let old = fixture(3);
     let state = gap_state(&old, |binding| {
         binding.reanchors.push(AudioReanchorStep {
+            anchor: Default::default(),
             placement: binding.lattice.clone(),
             window: Some(
                 ExactFrameRange::new(ExactRatio::integer(5), ExactRatio::integer(9)).unwrap(),
@@ -572,6 +574,7 @@ fn transparent_partition_hidden_gap_does_not_gain_a_clamped_reanchor() {
     );
     let state = gap_state(&original, |binding| {
         binding.reanchors.push(AudioReanchorStep {
+            anchor: Default::default(),
             placement: binding.lattice.clone(),
             window: None,
         });
@@ -591,6 +594,7 @@ fn gap_and_node_templates_share_the_aggregate_admission_budget() {
     let mut gap_binding = captured.gap_bindings()[&id("r")].clone();
     gap_binding.reanchors = vec![
         AudioReanchorStep {
+            anchor: Default::default(),
             placement: gap_binding.lattice.clone(),
             window: None
         };
@@ -599,6 +603,7 @@ fn gap_and_node_templates_share_the_aggregate_admission_budget() {
     let mut node_binding = captured.bindings()[&id("prefix")].clone();
     node_binding.reanchors = vec![
         AudioReanchorStep {
+            anchor: Default::default(),
             placement: node_binding.lattice.clone(),
             window: None
         };
@@ -744,7 +749,7 @@ macro_rules! closed_gap_origin {
                 binding.resume = Some(AudioResume { local_boundary: ExactRatio::ZERO, phase: AudioLocalPhase {
                     constant: ExactRatio::ZERO, terms: vec![AudioPhaseTerm { placement: binding.lattice.clone(), from_local: ExactRatio::ZERO, to_local: ExactRatio::ONE }],
                 } });
-                binding.reanchors.push(AudioReanchorStep { placement: binding.lattice.clone(), window: None });
+                binding.reanchors.push(AudioReanchorStep { placement: binding.lattice.clone(), window: None, anchor: Default::default() });
             });
             let document = install(&original, &state);
             let mut wire = serde_json::to_value(&document).unwrap();

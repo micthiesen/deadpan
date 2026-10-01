@@ -867,3 +867,6 @@ fn near_limit_binding_round_trips_inside_a_pretty_project_document() {
     let reopened = ProjectDocument::from_json(&pretty).unwrap();
     assert_eq!(reopened, admitted);
 }
+
+#[path = "audio_bindings/source_endpoints.rs"]
+mod source_endpoints;

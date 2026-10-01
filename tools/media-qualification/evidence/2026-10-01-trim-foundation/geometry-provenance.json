@@ -1,0 +1,6 @@
+{
+  "base_commit": "3a5e7b71d098a1184fc84470b636bf12ed016ad1",
+  "patch_sha256": "c6815f4445f1a404f1c909f86679f789bb6d69387205319da37c1e65fe6ea556",
+  "stage": "/tmp/deadpan-source-roll-20261001/staged-trim-geometry",
+  "base_and_dependency_hashes_verified": true
+}

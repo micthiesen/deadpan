@@ -1101,17 +1101,17 @@ migration writer-lock conflict uses the IPC fallback, whose admitted native
 store can report its current schema. Closed legacy packages keep the migration
 behavior below; an open endpoint does not perform legacy migration.
 
-Schemas 39 through 49 are unsupported development formats. The user authorized
+Schemas 39 through 50 are unsupported development formats. The user authorized
 a format break for the unused project, so this build does not migrate them.
 Open and migration reject them before writer recovery, backups or database
 changes. Create a new project for this build; the old package stays intact.
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-50-*.sqlite`, named for the destination schema, and upgrades a separate candidate. It
+`Snapshots/before-schema-51-*.sqlite`, named for the destination schema, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 50 and core document schema 41. Supported older schemas gain empty
+schema 51 and core document schema 42. Supported older schemas gain empty
 [render job tables](RENDER_JOBS.md), publication tables and automatic encoding
 decision tables. Migration invents no historical decisions. Existing frozen
 adapters retain strict replay.

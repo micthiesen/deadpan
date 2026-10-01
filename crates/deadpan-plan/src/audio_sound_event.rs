@@ -3,8 +3,8 @@
 use std::{collections::BTreeMap, ops::Range, sync::Arc};
 
 use deadpan_core::{
-    AudioEdgePolicy, AudioSample, ExactRatio, FrameDuration, MIX_SAMPLE_RATE, RootSoundOperation,
-    RootSoundRoute, SoundEvent, SoundHoldAllowances, SoundId, TimeError,
+    AudioEdgePolicy, AudioSample, ExactRatio, FrameDuration, MIX_SAMPLE_RATE, RootSoundRoute,
+    SoundEvent, SoundHoldAllowances, SoundId, TimeError,
 };
 
 use crate::{
@@ -970,54 +970,17 @@ fn compile_islands(
             edit.grid.frames_per_sample()?,
             AudioBoundaryRule::RoundEven,
         )?;
-        let new_extent = edit
+        let projection = edit
             .operation
-            .output_frames(extent)
-            .map_err(|_| PlanError::InvalidPlan("invalid root sound edit extent"))?;
-        let keeps = match edit.operation {
-            RootSoundOperation::Insert { at, duration } => [
-                (0..at.0, 0..at.0, None, Some(edit.cuts.before)),
-                (
-                    at.0..extent,
-                    at.0 + duration.frames()..new_extent,
-                    Some(edit.cuts.after),
-                    None,
-                ),
-            ],
-            RootSoundOperation::Delete { range } => [
-                (
-                    0..range.start().0,
-                    0..range.start().0,
-                    None,
-                    Some(edit.cuts.before),
-                ),
-                (
-                    range.end().0..extent,
-                    range.start().0..new_extent,
-                    Some(edit.cuts.after),
-                    None,
-                ),
-            ],
-            RootSoundOperation::Replace { range, duration } => [
-                (
-                    0..range.start().0,
-                    0..range.start().0,
-                    None,
-                    Some(edit.cuts.before),
-                ),
-                (
-                    range.end().0..extent,
-                    range.start().0 + duration.frames()..new_extent,
-                    Some(edit.cuts.after),
-                    None,
-                ),
-            ],
-        };
+            .projection(extent)
+            .map_err(|_| PlanError::InvalidPlan("invalid root sound edit projection"))?;
+        let new_extent = projection.output_duration().frames();
         let mut next = Vec::new();
-        for (old, destination, start_cut, end_cut) in keeps {
-            if old.is_empty() {
-                continue;
-            }
+        for keep in projection.keeps() {
+            let old = keep.input.start().0..keep.input.end().0;
+            let destination = keep.output.start().0..keep.output.end().0;
+            let start_cut = keep.start_cut.then_some(edit.cuts.after);
+            let end_cut = keep.end_cut.then_some(edit.cuts.before);
             let old_start = old_grid.boundary(ExactRatio::integer(old.start))?;
             let old_end = old_grid.boundary(ExactRatio::integer(old.end))?;
             let destination_start = next_grid.boundary(ExactRatio::integer(destination.start))?;

@@ -2352,6 +2352,7 @@ mod binding_patch_tests {
             .unwrap()
             .reanchors
             .push(crate::AudioReanchorStep {
+                anchor: Default::default(),
                 placement: placement.clone(),
                 window: None,
             });

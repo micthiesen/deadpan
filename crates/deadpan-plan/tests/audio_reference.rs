@@ -1817,6 +1817,7 @@ fn source_prefix_behind_partition_keeps_unbound_and_retained_source_phase() {
                     },
                 });
                 binding.reanchors.push(AudioReanchorStep {
+                    anchor: Default::default(),
                     placement: binding.lattice.clone(),
                     window: Some(
                         ExactFrameRange::new(ExactRatio::integer(3), ExactRatio::integer(33))

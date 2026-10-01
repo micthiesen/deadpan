@@ -952,3 +952,6 @@ fn deep_history_and_large_repeat_queries_use_bounded_iterative_work() {
         .join()
         .unwrap();
 }
+
+#[path = "sound_routing/trim.rs"]
+mod trim;

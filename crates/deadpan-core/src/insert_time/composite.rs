@@ -176,6 +176,7 @@ pub(crate) fn append_steps(
             .filter(|count| *count <= MAX_AUDIO_BINDING_ENTRIES)
             .ok_or_else(|| super::limit("composite pause binding entries"))?;
         binding.reanchors.push(AudioReanchorStep {
+            anchor: Default::default(),
             placement,
             window: Some(window),
         });

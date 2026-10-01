@@ -90,6 +90,7 @@ mod source_mapping;
 mod source_roll;
 mod source_slip;
 mod source_trim;
+mod source_trim_geometry;
 mod split;
 mod time;
 mod video_mapping;
@@ -133,6 +134,7 @@ pub use source_slip::{SourceSlipClamp, SourceSlipResolution};
 pub use source_trim::{
     SourceTrimClamp, SourceTrimEdge, SourceTrimLimit, SourceTrimMode, SourceTrimResolution,
 };
+pub use source_trim_geometry::*;
 pub use split::SplitIdentities;
 pub use video_mapping::SourceVideoMapping;
 

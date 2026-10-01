@@ -210,6 +210,7 @@ fn modern_reanchor_intent_survives_durable_history_undo_redo_and_reopen() -> Res
     let (owner, binding) = original.audio_bindings().bindings().iter().next().unwrap();
     let mut binding = binding.clone();
     binding.reanchors.push(AudioReanchorStep {
+        anchor: Default::default(),
         placement: binding.lattice.clone(),
         window: None,
     });

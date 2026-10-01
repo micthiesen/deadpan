@@ -1,0 +1,211 @@
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.46s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_audio-8e2ffef251e4926c)
+
+running 1 test
+earlier endpoint span: AudioQuery {
+    project_id: ProjectId(
+        "controlled-read",
+    ),
+    revision_id: RevisionId(
+        "endpoint-phase",
+    ),
+    samples: AudioSample(
+        1602,
+    )..AudioSample(
+        1603,
+    ),
+    spans: [
+        AudioSpan {
+            definition: None,
+            samples: AudioSample(
+                1602,
+            )..AudioSample(
+                1603,
+            ),
+            allocated_samples: AudioSample(
+                1602,
+            )..AudioSample(
+                3203,
+            ),
+            project_extent: ExactRatio {
+                numerator: 1,
+                denominator: 1,
+            }..ExactRatio {
+                numerator: 2,
+                denominator: 1,
+            },
+            envelope_extent: ExactRatio {
+                numerator: 1,
+                denominator: 1,
+            }..ExactRatio {
+                numerator: 11007,
+                denominator: 2002,
+            },
+            envelope_samples: AudioSample(
+                1602,
+            )..AudioSample(
+                8806,
+            ),
+            envelope: AudioEnvelope {
+                length: 7204,
+                progress_at_anchor: 0,
+                anchor: AudioSample(
+                    1602,
+                ),
+                endpoint: Silence,
+            },
+            boundaries: AudioBoundaries {
+                start: [
+                    AudioBoundaryOrigin {
+                        instance: InstancePath {
+                            node: NodeId(
+                                "a",
+                            ),
+                            repeats: [],
+                        },
+                        gap_after: None,
+                        kind: NodeStart,
+                        placement_support: false,
+                        policy: Automatic,
+                    },
+                ],
+                end: [
+                    AudioBoundaryOrigin {
+                        instance: InstancePath {
+                            node: NodeId(
+                                "a",
+                            ),
+                            repeats: [],
+                        },
+                        gap_after: None,
+                        kind: SourcePlacementEnd,
+                        placement_support: false,
+                        policy: Automatic,
+                    },
+                ],
+            },
+            instance: InstancePath {
+                node: NodeId(
+                    "a",
+                ),
+                repeats: [],
+            },
+            gap_after: None,
+            transform: AudioTransform {
+                project_origin: ExactRatio {
+                    numerator: 1,
+                    denominator: 1,
+                },
+                project_frames_per_local_frame: ExactRatio {
+                    numerator: 1,
+                    denominator: 1,
+                },
+                project_frames_per_sample: ExactRatio {
+                    numerator: 5,
+                    denominator: 8008,
+                },
+            },
+            grid: AudioSampleGrid {
+                frame_origin: ExactRatio {
+                    numerator: 0,
+                    denominator: 1,
+                },
+                frames_per_sample: ExactRatio {
+                    numerator: 5,
+                    denominator: 8008,
+                },
+                boundary_rule: RoundEven,
+                sample_domain: PhantomData<deadpan_core::time::AudioSample>,
+            },
+            sampling: AudioSampleMap {
+                anchor: AudioSample(
+                    1602,
+                ),
+                local_at_anchor: ExactRatio {
+                    numerator: 1,
+                    denominator: 4004,
+                },
+                local_frames_per_sample: ExactRatio {
+                    numerator: 5,
+                    denominator: 8008,
+                },
+            },
+            retimes: [],
+            content: Source {
+                source: SourceAudio {
+                    asset: AssetId(
+                        "media",
+                    ),
+                    span: SourceSpan {
+                        start: SourceTimestamp {
+                            ticks: 0,
+                            time_base: SourceTimeBase {
+                                numerator: 1,
+                                denominator: 48000,
+                            },
+                        },
+                        end: SourceTimestamp {
+                            ticks: 8197,
+                            time_base: SourceTimeBase {
+                                numerator: 1,
+                                denominator: 48000,
+                            },
+                        },
+                    },
+                },
+                start: ExactRatio {
+                    numerator: -4965,
+                    denominator: 8008,
+                },
+                duration: ExactRatio {
+                    numerator: 5855,
+                    denominator: 1144,
+                },
+                support: SourceSamplingSupport {
+                    start: SourcePoint {
+                        ticks: ExactRatio {
+                            numerator: 993,
+                            denominator: 1,
+                        },
+                        time_base: SourceTimeBase {
+                            numerator: 1,
+                            denominator: 48000,
+                        },
+                    },
+                    end: SourcePoint {
+                        ticks: ExactRatio {
+                            numerator: 8197,
+                            denominator: 1,
+                        },
+                        time_base: SourceTimeBase {
+                            numerator: 1,
+                            denominator: 48000,
+                        },
+                    },
+                },
+            },
+        },
+    ],
+    lookup: LookupStats {
+        visited_nodes: 3,
+        sequence_comparisons: 2,
+        iteration_run_comparisons: 0,
+    },
+    work: 7,
+}
+earlier endpoint source: Ok(SourcePoint { ticks: ExactRatio { numerator: 4967, denominator: 5 }, time_base: SourceTimeBase { numerator: 1, denominator: 48000 } }); resume: Ok(ResolvedAudioBinding { lattice: ResolvedAudioPlacement { clock: ProjectRootRoundEven, grid_rule: RootRoundEven, grid_origin: ExactRatio { numerator: 0, denominator: 1 }, frames_per_sample: ExactRatio { numerator: 5, denominator: 8008 }, origin: ExactRatio { numerator: -1, denominator: 1 }, frames_per_local_frame: ExactRatio { numerator: 1, denominator: 1 }, local_duration: FrameDuration(6), local_support: ExactRatio { numerator: 0, denominator: 1 }..ExactRatio { numerator: 6, denominator: 1 }, instance: InstancePath { node: NodeId("a"), repeats: [] }, gap_after: None, birth: None, gap_birth: false, work: 10 }, resume: Some(ResolvedAudioResume { local_boundary: ExactRatio { numerator: 2, denominator: 1 }, reference_local_delta: ExactRatio { numerator: 4005, denominator: 2002 } }), work: 25 })
+
+thread 'stages::bound_reads::source_origin::endpoints::disjoint_earlier_endpoint_uses_signed_old_origin_with_offset_once' (61649396) panicked at crates/deadpan-audio/src/bound_reads/source_origin/endpoints.rs:201:9:
+endpoint PCM first mismatch 0: [0.2184842, -0.012945384] != [0.19484523, -0.012694668]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test stages::bound_reads::source_origin::endpoints::disjoint_earlier_endpoint_uses_signed_old_origin_with_offset_once ... FAILED
+
+failures:
+
+failures:
+    stages::bound_reads::source_origin::endpoints::disjoint_earlier_endpoint_uses_signed_old_origin_with_offset_once
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 86 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `-p deadpan-audio --lib`

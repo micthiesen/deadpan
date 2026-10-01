@@ -372,6 +372,7 @@ fn roll_right_prefix_preserves_symbolic_resume_and_chronological_reanchors() {
                 reanchors: [(1, 2, 7), (2, 4, 8)]
                     .into_iter()
                     .map(|(ordinal, start, end)| AudioReanchorStep {
+                        anchor: Default::default(),
                         placement: historical_placement(ordinal),
                         window: Some(
                             ExactFrameRange::new(

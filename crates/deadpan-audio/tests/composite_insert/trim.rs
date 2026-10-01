@@ -336,3 +336,6 @@ fn in_extension_reanchors_repeat_gap_preserve_and_outer_suffix_owners_once() {
 
 #[path = "trim/roll.rs"]
 mod roll;
+
+#[path = "trim/source_endpoints.rs"]
+mod source_endpoints;

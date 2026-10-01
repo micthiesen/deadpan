@@ -487,6 +487,7 @@ fn slip_keeps_symbolic_resume_and_chronological_reanchors_on_the_same_sample_clo
                 reanchors: [(1, 2, 7), (2, 4, 8)]
                     .into_iter()
                     .map(|(ordinal, start, end)| AudioReanchorStep {
+                        anchor: Default::default(),
                         placement: historical_placement(ordinal),
                         window: Some(
                             ExactFrameRange::new(

@@ -1,0 +1,79 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 06s
+     Running tests/audio_bindings.rs (target/debug/deps/audio_bindings-53ae5a8268c33447)
+
+running 2 tests
+test compilation_never_silently_discards_persisted_sampling_clocks ... ok
+test source_endpoints::source_endpoint_anchor_projects_outside_final_crop_without_clamping ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/audio_reference.rs (target/debug/deps/audio_reference-dd05e59091680ff5)
+
+running 18 tests
+test invalid_owner_paths_ranges_and_budgets_fail_before_results ... ok
+test retained_root_maps_keep_wide_exhausted_coordinates_and_fractional_phase ... ok
+test preserve_input_uses_selected_origin_and_flattens_nested_policies ... ok
+test ntsc_resume_keeps_later_domains_first_sample_and_composes_active_phase ... ok
+test processing_domains_keep_preserve_opaque_and_preparation_clocks_distinct ... ok
+test copied_preserve_lineage_does_not_merge_distinct_preparation_clocks ... ok
+test tiny_zero_allocated_leaves_and_source_placement_remain_explicit ... ok
+test tail_maximum_retains_local_hold_and_gap_units_through_retime ... ok
+test partition_allocation_keeps_full_context_but_edit_crops_are_meaningful ... ok
+test ntsc_old_root_and_preserve_output_keep_both_rounding_phases ... ok
+test dormant_source_is_one_silent_allocation_in_live_point_and_frozen_queries ... ok
+test dormant_bound_recipe_retains_its_lattice_and_can_reveal_existing_phase ... ok
+test billion_play_reference_keeps_old_order_gap_identity_after_current_edits ... ok
+test copy_lineage_keeps_compact_repeat_paths_and_gap_identity_explicit ... ok
+test nested_occurrence_split_retains_copy_lineage_without_expanding_repeats ... ok
+test sparse_override_clock_validates_its_effective_play_and_retains_partition_allocation ... ok
+test copy_lineage_survives_root_split_refinement_but_rejects_detached_or_moved_audio ... ok
+test source_prefix_behind_partition_keeps_unbound_and_retained_source_phase ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/root_sound_routes.rs (target/debug/deps/root_sound_routes-7731429ed96ff2f9)
+
+running 18 tests
+test two_ntsc_insertions_preserve_each_old_physical_clock ... ok
+test extreme_destination_clips_support_before_narrowing_retained_labels ... ok
+test deleting_onset_cuts_envelope_but_keeps_complete_recipe_and_source_phase ... ok
+test current_hold_owns_exact_coincident_boundary_after_odd_sample_translation ... ok
+test identity_route_matches_unrouted_tiny_hold_islands_and_shuffled_queries ... ok
+test allowing_current_holds_never_restores_samples_deleted_from_the_route ... ok
+test selected_range_finds_subframe_support_without_filling_routed_gaps ... ok
+test trim::direct_equal_in_out_retains_final_sample_that_sequential_edits_drop ... ok
+test current_hold_masks_physical_drift_even_when_semantic_onset_is_later ... ok
+test replacement_uses_final_boundaries_for_shorter_and_longer_sound_islands ... ok
+test trim::normalized_keep_retains_independent_offset_on_both_source_sample_rates ... ok
+test equal_ntsc_replacement_retains_last_suffix_sample_without_intermediate_clipping ... ok
+test trim::mixed_extension_keeps_both_cut_policies_without_marking_query_boundaries ... ok
+test forty_chronological_cuts_are_not_a_nested_map_depth_limit ... ok
+test trim::previous_route_then_one_trim_retains_literal_labels_and_shuffled_chunks ... ok
+test trim::in_only_merges_translated_body_and_suffix_without_new_phase_or_fade ... ok
+test trim::all_scalar_trim_edges_preserve_existing_insert_delete_cut_policy_queries ... ok
+test hundreds_of_fragmented_cuts_have_indexed_cold_envelope_queries ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+     Running tests/sound_route_sampling.rs (target/debug/deps/sound_route_sampling-3ed919bd416a302b)
+
+running 14 tests
+test a_moved_selection_never_reintroduces_samples_after_its_old_cut ... ok
+test deleting_an_event_start_keeps_the_complete_recipe_and_its_suffix_phase ... ok
+test recipe_exhaustion_is_silent_when_new_allocation_has_an_extra_sample ... ok
+test tiny_zero_sample_gap_is_skipped_without_losing_the_following_keep ... ok
+test intrinsic_point_ceil_and_root_round_even_have_distinct_allocations ... ok
+test shared_work_and_span_budgets_are_exact_and_empty_reads_do_no_work ... ok
+test billion_period_route_seeks_directly_and_gap_only_route_stays_compact ... ok
+test admission_rejects_missing_clocks_changed_rates_rules_and_overflow ... ok
+test a_shifted_window_preserves_prior_gaps_in_the_retained_sample_clock ... ok
+test shuffled_partial_reads_keep_the_same_phase_and_gap_samples ... ok
+test fractional_windows_and_signed_grid_origins_match_dense_sample_copy ... ok
+test two_ntsc_insertions_resume_the_current_sample_phase ... ok
+test sixty_four_ntsc_edits_match_successive_physical_sample_copies ... ok
+test deep_chronology_uses_bounded_query_work_without_recursive_history ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.57s
+

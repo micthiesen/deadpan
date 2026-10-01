@@ -49,6 +49,26 @@ Full Trim, waveform/audition,
 In/Out/Roll, ripple/overwrite and broader target admission remain open. No
 requirement or gate is complete.
 
+## Combined Trim timing foundation, 2026-10-01
+
+The Roll checkpoint `3a5e7b7` is committed and pushed. Complete-intent geometry,
+Source endpoint phase bindings and the root-sound Trim map are integrated after
+independent review. Focused runtime checks cover 57 new tests plus existing
+editing and PCM behavior. The complete workspace passed 3,333 unit/integration
+tests and both documentation tests; strict workspace/all-target lint and
+formatting also passed on the same unchanged source inventory.
+Core 42/database 51 refuse prior unused development formats without migration.
+See [the foundation](../TRIM_DRAFT_FOUNDATION.md) and
+[retained qualification](../qualification/trim-foundation-2026-10-01.md).
+
+Keep the four accepted I/O/S/R values distinct from active inspection. Preserve
+all values on a policy toggle or refuse. Overwrite geometry is not structural
+admission. Keep the entry-anchored root Keep/Gap intent, normalize contiguous
+equal-shift Keeps and preserve prior route history. Disjoint Source allocations
+need exact historical closed endpoint phase; never narrow handles or skip the
+reanchor to avoid that case. Full combined authoring and native Trim remain open.
+No native GUI is open, and no requirement or gate is complete.
+
 ## Adjacent Source Roll backend, 2026-10-01
 
 The shared backend command adds `RollSources` for literally adjacent admitted

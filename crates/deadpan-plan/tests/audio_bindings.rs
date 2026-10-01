@@ -117,3 +117,6 @@ fn compilation_never_silently_discards_persisted_sampling_clocks() {
     );
     assert!(FrozenAudioContext::capture(&bound).is_err());
 }
+
+#[path = "audio_bindings/source_endpoints.rs"]
+mod source_endpoints;

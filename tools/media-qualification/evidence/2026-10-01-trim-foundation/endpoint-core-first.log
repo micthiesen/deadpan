@@ -1,0 +1,48 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+error: `validate` is ambiguous
+   --> crates/deadpan-core/src/legacy_audio_binding_v36.rs:213:17
+    |
+213 |         assert!(validate(&encoded).is_ok());
+    |                 ^^^^^^^^ ambiguous name
+    |
+    = note: ambiguous because of multiple glob imports of a name in the same module
+note: `validate` could refer to the function imported here
+   --> crates/deadpan-core/src/legacy_audio_binding_v36.rs:152:9
+    |
+152 |     use super::*;
+    |         ^^^^^^^^
+    = help: consider adding an explicit import of `validate` to disambiguate
+note: `validate` could also refer to the function imported here
+   --> crates/deadpan-core/src/legacy_audio_binding_v36.rs:153:9
+    |
+153 |     use crate::*;
+    |         ^^^^^^^^
+    = help: consider adding an explicit import of `validate` to disambiguate
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #114095 <https://github.com/rust-lang/rust/issues/114095>
+    = note: `#[deny(ambiguous_glob_imports)]` (part of `#[deny(future_incompatible)]`) on by default
+
+error: `validate` is ambiguous
+   --> crates/deadpan-core/src/legacy_audio_binding_v36.rs:253:25
+    |
+253 |                 assert!(validate(&encoded).is_err());
+    |                         ^^^^^^^^ ambiguous name
+    |
+    = note: ambiguous because of multiple glob imports of a name in the same module
+note: `validate` could refer to the function imported here
+   --> crates/deadpan-core/src/legacy_audio_binding_v36.rs:152:9
+    |
+152 |     use super::*;
+    |         ^^^^^^^^
+    = help: consider adding an explicit import of `validate` to disambiguate
+note: `validate` could also refer to the function imported here
+   --> crates/deadpan-core/src/legacy_audio_binding_v36.rs:153:9
+    |
+153 |     use crate::*;
+    |         ^^^^^^^^
+    = help: consider adding an explicit import of `validate` to disambiguate
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #114095 <https://github.com/rust-lang/rust/issues/114095>
+
+error: could not compile `deadpan-core` (lib test) due to 4 previous errors
+warning: build failed, waiting for other jobs to finish...
