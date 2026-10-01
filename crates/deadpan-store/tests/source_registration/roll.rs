@@ -47,7 +47,7 @@ fn roll(
     )
 }
 
-fn ready(parent: &Path, right_ordinals: Range<u64>) -> Result<(PathBuf, ProjectStore)> {
+pub(super) fn ready(parent: &Path, right_ordinals: Range<u64>) -> Result<(PathBuf, ProjectStore)> {
     let (path, mut store) = project(parent)?;
     // Generic compatibility projects admit two different Originals. Reusing one
     // receipt twice would not prove admission checks the right-hand asset.
@@ -126,7 +126,7 @@ fn range(start: i64, end: i64) -> FrameRange {
 
 // Compare every authored/admission row and cursor, including a nonempty redo
 // branch, so rejection cannot silently repair evidence or partly write an edit.
-fn stored(database: &Connection) -> Result<String> {
+pub(super) fn stored(database: &Connection) -> Result<String> {
     Ok(database.query_row(
         "SELECT json_array(
          (SELECT json_group_array(json_array(id,parent_id,kind,document)) FROM
@@ -144,7 +144,7 @@ fn stored(database: &Connection) -> Result<String> {
     )?)
 }
 
-fn same_content(actual: &ProjectDocument, expected: &ProjectDocument) -> Result {
+pub(super) fn same_content(actual: &ProjectDocument, expected: &ProjectDocument) -> Result {
     let mut expected = serde_json::to_value(expected)?;
     expected["revision_id"] = serde_json::to_value(actual.revision_id())?;
     assert_eq!(serde_json::to_value(actual)?, expected);

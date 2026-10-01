@@ -90,6 +90,7 @@ mod source_mapping;
 mod source_roll;
 mod source_slip;
 mod source_trim;
+mod source_trim_edit;
 mod source_trim_geometry;
 mod split;
 mod time;
@@ -133,6 +134,11 @@ pub use source_roll::{
 pub use source_slip::{SourceSlipClamp, SourceSlipResolution};
 pub use source_trim::{
     SourceTrimClamp, SourceTrimEdge, SourceTrimLimit, SourceTrimMode, SourceTrimResolution,
+};
+pub use source_trim_edit::{
+    SourceTrimCapture, SourceTrimEditResolution, SourceTrimEmptyMove, SourceTrimFinalOwner,
+    SourceTrimReanchorGroup, SourceTrimResources, SourceTrimResultIdentities,
+    SourceTrimRightDisposition, SourceTrimSplit,
 };
 pub use source_trim_geometry::*;
 pub use split::SplitIdentities;

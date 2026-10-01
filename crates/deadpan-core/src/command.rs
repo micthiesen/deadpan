@@ -46,6 +46,14 @@ pub struct SourceInsertion {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Command {
+    /// Install one complete accepted Source Trim intent from its entry revision.
+    ApplySourceTrim {
+        parent: NodeId,
+        node: NodeId,
+        right: Option<NodeId>,
+        intent: crate::SourceTrimIntent,
+        resources: crate::SourceTrimResources,
+    },
     /// Move one explicitly captured adjacent seam without changing pair duration.
     /// Only a contracting direct Source requires a fresh wrapper.
     RollSources {
@@ -685,6 +693,9 @@ pub fn apply(
             crate::edit_slice::apply(input, &request.command, context)?
         }
         Command::MoveRange { .. } => crate::move_range::apply(input, &request.command, context)?,
+        Command::ApplySourceTrim { .. } => {
+            crate::source_trim_edit::apply(input, &request.command, context)?
+        }
         Command::TrimSource { .. } => {
             crate::source_trim::apply(input, &request.command, &request.new_revision)?
         }
@@ -1286,6 +1297,12 @@ pub(crate) fn reduce(
         } => {
             let iterations = iterations_mut(document, node)?;
             *iterations = iterations.moved(*start, *end, *destination)?;
+        }
+        Command::ApplySourceTrim { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "combined Source trim requires the atomic timing and sound path",
+            ));
         }
         Command::RollSources { .. } => {
             return Err(EditError::new(
@@ -2119,6 +2136,7 @@ fn description(command: &Command) -> &'static str {
         Command::SlipSource { .. } => "Slip source material",
         Command::TrimSource { .. } => "Ripple trim source edge",
         Command::RollSources { .. } => "Roll adjacent source boundary",
+        Command::ApplySourceTrim { .. } => "Apply complete Source trim",
         Command::SetHoldProvider { .. } => "Change hold provider",
         Command::SetHoldPictureContext { .. } => "Change captured picture context",
         Command::AcceptGeneratedHold { .. } => "Accept generated hold",

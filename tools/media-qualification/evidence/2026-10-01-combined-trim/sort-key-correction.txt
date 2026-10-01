@@ -1,0 +1,11 @@
+--- a/crates/deadpan-core/src/source_trim_edit/apply.rs
++++ b/crates/deadpan-core/src/source_trim_edit/apply.rs
+@@ -407,7 +407,7 @@
+     }
+     // Empty sibling runs keep their entry order at ties, before the next positive
+     // child. Positive entries must tile the scope exactly with the fresh fillers.
+-    entries.sort_by(|a, b| (a.0, a.1, a.2).cmp(&(b.0, b.1, b.2)));
++    entries.sort_by_key(|entry| (entry.0, entry.1, entry.2));
+     let mut cursor = g.scope_before.start().0;
+     let mut final_children = Vec::with_capacity(entries.len());
+     for (start, _, _, id, end) in entries {

@@ -1193,7 +1193,8 @@ pub fn validate_request_context(
     let command = &request.command;
     if matches!(
         command,
-        Command::TrimSource { .. }
+        Command::ApplySourceTrim { .. }
+            | Command::TrimSource { .. }
             | Command::RollSources { .. }
             | Command::SlipSource { .. }
             | Command::SpliceSlice { .. }
@@ -1296,6 +1297,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         Command::SetAudioTreatments { .. }
         | Command::InsertTime { .. }
         | Command::SpliceSource { .. }
+        | Command::ApplySourceTrim { .. }
         | Command::TrimSource { .. }
         | Command::RollSources { .. }
         | Command::SlipSource { .. }

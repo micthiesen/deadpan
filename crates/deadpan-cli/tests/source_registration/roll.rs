@@ -7,7 +7,7 @@ use deadpan_core::{
     BeatNode, CommandRequest, EditTransaction, ProjectDocument, RevisionId, Subtree,
 };
 
-fn ready(directory: &Path) -> Result<PathBuf> {
+pub(super) fn ready(directory: &Path) -> Result<PathBuf> {
     let package = directory.join("roll.deadpan");
     create(&package, "30000/1001")?;
     for (asset, bytes, registered, inserted, slot) in [
@@ -109,7 +109,7 @@ fn envelope(
     })
 }
 
-fn typed(envelope: &Value) -> Result<CommandRequest> {
+pub(super) fn typed(envelope: &Value) -> Result<CommandRequest> {
     Ok(CommandRequest {
         project_id: serde_json::from_value(envelope["project_id"].clone())?,
         expected_revision: serde_json::from_value(envelope["expected_revision"].clone())?,
@@ -118,7 +118,7 @@ fn typed(envelope: &Value) -> Result<CommandRequest> {
     })
 }
 
-fn hosted(
+pub(super) fn hosted(
     store: &mut ProjectStore,
     request: &Value,
     dry_run: bool,
@@ -135,7 +135,7 @@ fn hosted(
     )?)
 }
 
-fn same_content(actual: &ProjectDocument, expected: &ProjectDocument) -> Result {
+pub(super) fn same_content(actual: &ProjectDocument, expected: &ProjectDocument) -> Result {
     let mut expected = serde_json::to_value(expected)?;
     expected["revision_id"] = json!(actual.revision_id());
     assert_eq!(serde_json::to_value(actual)?, expected);

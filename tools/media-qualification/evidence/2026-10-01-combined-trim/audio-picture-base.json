@@ -1,0 +1,8 @@
+{
+  "head": "8ddf5863f53ebb471fe3dced2d442647f05cd228",
+  "files": {
+    "crates/deadpan-audio/src/bound_reads/source_origin/gain/trim.rs": "db18427636fa9f600a51e4ecfc2ebda0489d76eb33f733e3232af3523229d6b8",
+    "crates/deadpan-audio/tests/composite_insert/trim.rs": "bfcfbf327077ddb135ef61c2cc892722d2b50a163d6752b5847436a66813df5b",
+    "crates/deadpan-plan/tests/selected_video_window.rs": "e2862b7ae7549c7466757418f4de5add757a3ee6edc8bdd85acde9f7e27bcf5a"
+  }
+}

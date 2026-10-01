@@ -1,0 +1,7 @@
+{
+  "crates/deadpan-store/src/lib.rs": "2d1459283e16f674a7b6a2e832fe40c000586f04811dbc1cedfbecb32104c304",
+  "crates/deadpan-store/src/source_registration.rs": "564d63a66ea22d5ede8af72737cbcb6fda06722bc3664b8571c5908a7d57f6bf",
+  "crates/deadpan-cli/src/live_project.rs": "cee04cef3211bf20f9694b2c8cb0094c657cb102146d91606f3dd26f61fada38",
+  "crates/deadpan-store/tests/source_registration.rs": "283f2c7d8e75a88a3b9c47bc08f3af49f4e10bb8560d5453739f2f740e329057",
+  "crates/deadpan-store/tests/source_registration/roll.rs": "2f958a3ef1ffae733f0a634ad85c80a930b1fbacf09018ba26935aefddcaf20e"
+}

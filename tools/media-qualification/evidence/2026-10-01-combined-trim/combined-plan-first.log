@@ -1,0 +1,16 @@
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+error[E0716]: temporary value dropped while borrowed
+   --> crates/deadpan-plan/tests/selected_video_window/combined.rs:271:35
+    |
+271 |             .select_source_frame(&vfr_index(origin))
+    |                                   ^^^^^^^^^^^^^^^^^ creates a temporary value which is freed while still in use
+272 |             .unwrap();
+    |                      - temporary value is freed at the end of this statement
+273 |         assert_eq!(
+274 |             (chosen.identity, chosen.pts),
+    |              --------------- borrow later used here
+    |
+    = note: consider using a `let` binding to create a longer lived value
+
+For more information about this error, try `rustc --explain E0716`.
+error: could not compile `deadpan-plan` (test "selected_video_window") due to 1 previous error

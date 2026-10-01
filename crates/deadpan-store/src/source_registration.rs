@@ -42,6 +42,11 @@ mod roll;
 pub use roll::SourceRollPreview;
 pub(crate) use roll::validate_source_roll;
 
+#[path = "source_registration/combined_trim.rs"]
+mod combined_trim;
+pub use combined_trim::SourceTrimEditPreview;
+pub(crate) use combined_trim::validate_source_trim_edit;
+
 const MAX_QUALIFICATIONS: i64 = 100_000;
 const MAX_ORIGINAL_REF_BYTES: usize = 256;
 const RECEIPT_DOMAIN: &[u8] = b"deadpan-source-qualification-v1\0";

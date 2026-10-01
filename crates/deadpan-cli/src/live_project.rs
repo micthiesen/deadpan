@@ -358,6 +358,15 @@ pub fn execute_short(
                         .map_err(LiveError::store)?;
                     serde_json::json!({"protocol":1,"committed":false,
                         "edit":preview.edit,"source_roll":preview.resolution})
+                } else if matches!(
+                    &request.command,
+                    deadpan_core::Command::ApplySourceTrim { .. }
+                ) {
+                    let preview = store
+                        .preview_source_trim_edit(request)
+                        .map_err(LiveError::store)?;
+                    serde_json::json!({"protocol":1,"committed":false,
+                        "edit":preview.edit,"source_trim_edit":preview.resolution})
                 } else {
                     let edit = store.preview(request).map_err(LiveError::store)?;
                     serde_json::json!({"protocol":1,"committed":false,"edit":edit})

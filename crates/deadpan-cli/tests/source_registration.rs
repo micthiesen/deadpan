@@ -615,3 +615,6 @@ mod roll;
 mod slip;
 #[path = "source_registration/trim.rs"]
 mod trim;
+
+#[path = "source_registration/combined_trim.rs"]
+mod combined_trim;

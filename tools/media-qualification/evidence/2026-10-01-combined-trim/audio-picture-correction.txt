@@ -1,0 +1,16 @@
+diff --git a/crates/deadpan-plan/tests/selected_video_window/combined.rs b/crates/deadpan-plan/tests/selected_video_window/combined.rs
+--- a/crates/deadpan-plan/tests/selected_video_window/combined.rs
++++ b/crates/deadpan-plan/tests/selected_video_window/combined.rs
+@@ -266,10 +266,8 @@
+         );
+         // The frame at source7007 exists but belongs to the excluded interval.
+         // HoldAdjacent must retain ordinal4 ending there, not ordinal5 or6.
+-        let chosen = sample
+-            .picture
+-            .select_source_frame(&vfr_index(origin))
+-            .unwrap();
++        let index = vfr_index(origin);
++        let chosen = sample.picture.select_source_frame(&index).unwrap();
+         assert_eq!(
+             (chosen.identity, chosen.pts),
+             (SourceFrameId(4), origin + 6200)

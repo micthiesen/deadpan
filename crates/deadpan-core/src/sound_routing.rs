@@ -343,6 +343,24 @@ impl RootSoundEditCapture {
         if document.sounds.is_empty() {
             return Ok(None);
         }
+        if let Command::ApplySourceTrim {
+            parent,
+            node,
+            right,
+            intent,
+            ..
+        } = command
+        {
+            let resolved = document.source_trim_edit(parent, node, right.as_ref(), *intent)?;
+            return match resolved.root_operation {
+                Some(operation) => Self::prepare_operation(document, operation).map(Some),
+                None => Ok(Some(Self {
+                    sounds: document.sounds.clone(),
+                    routes: document.sound_routes.clone(),
+                    output_frames: document.duration()?.frames(),
+                })),
+            };
+        }
         let fixed_duration = match command {
             Command::MoveRange {
                 source_parent,

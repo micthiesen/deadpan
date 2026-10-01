@@ -1,0 +1,28 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 12s
+     Running tests/source_registration.rs (target/debug/deps/source_registration-0f20b6398ed14eb7)
+
+running 5 tests
+
+thread 'combined_trim::combined_trim_qualifies_two_originals_and_replays_one_durable_transaction' (61786191) panicked at crates/deadpan-store/tests/source_registration/combined_trim.rs:114:9:
+assertion `left == right` failed
+  left: ExactRatio { numerator: 0, denominator: 1 }
+ right: ExactRatio { numerator: 1, denominator: 1 }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test combined_trim::combined_trim_qualifies_two_originals_and_replays_one_durable_transaction ... FAILED
+test combined_trim::zero_preview_requires_empty_resources_and_never_reserves_a_revision ... ok
+test combined_trim::overwrite_admits_and_removes_the_fully_consumed_right_source ... ok
+test combined_trim::combined_refusals_preserve_nonempty_redo_and_every_authored_admission_row ... ok
+test combined_trim::every_used_source_requires_its_receipt_and_original_even_when_overwrite_retires_it ... ok
+
+failures:
+
+failures:
+    combined_trim::combined_trim_qualifies_two_originals_and_replays_one_durable_transaction
+
+test result: FAILED. 4 passed; 1 failed; 0 ignored; 0 measured; 28 filtered out; finished in 0.76s
+
+error: test failed, to rerun pass `-p deadpan-store --test source_registration`

@@ -154,13 +154,21 @@ closed. See [qualification](qualification/native-slip-2026-10-01.md). Full Trim,
 waveforms/audition, unsupported target scopes and physical-input/accessibility
 acceptance remain open. No requirement or gate changes status.
 
+[Combined Trim authoring](COMBINED_TRIM.md) is implemented,
+including one accepted In/Out/Slip/Roll command, fixed-duration overwrite and
+qualified store/CLI admission. Core 43/database 52 identify its vocabulary.
+[Qualification](qualification/combined-trim-2026-10-01.md) records 3,366 passing
+workspace tests and both documentation tests. After one equivalent stable-sort
+cleanup, strict lint, 132 core tests and final formatting passed. Native Trim
+remains required and no requirement or gate changes status.
+
 [Combined Trim timing primitives](TRIM_DRAFT_FOUNDATION.md) advance
 DP-02/DP-05. Complete-intent geometry, Source endpoint bindings and the root-sound
 Trim map passed independent review and focused runtime checks, including 57 new
 tests. The full workspace passed 3,333 unit/integration tests and both
 documentation tests; strict workspace/all-target lint and formatting passed on
-the same unchanged source inventory. The combined
-authoring command, overwrite overlay and full native Trim remain required.
+the same unchanged source inventory. The combined authoring command and overwrite
+overlay are qualified above; full native Trim remains required.
 No requirement or gate changes status.
 
 [Adjacent Source Roll](SOURCE_ROLL.md) adds a backend subset for DP-02/DP-05.

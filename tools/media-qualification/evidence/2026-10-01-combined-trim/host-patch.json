@@ -1,0 +1,14 @@
+{
+  "patch_sha256": "bfe286d76f6bbf4d7090b4f3619f0a6520c0a76d08bac3206e3aa2d7da9773a9",
+  "files": {
+    "crates/deadpan-cli/src/live_project.rs": "378de4bfe9721141c85a144fe7a320719555d959f8851940e6f57c8941482f73",
+    "crates/deadpan-store/src/lib.rs": "0f3bd06080a09addeebd68d1690250025655553e6214cb306fa44c40fdeb1fdd",
+    "crates/deadpan-store/src/source_registration/combined_trim.rs": "aba4571aaa32f1f1a9362c545e73d4f0ecedbc2ab1e5ae341423d7317e3c43f7",
+    "crates/deadpan-store/src/source_registration.rs": "c3a3016906556f98ade25477c752e03aa94a50d2ddf2a8f6ffd7b6ddbb4a123f",
+    "crates/deadpan-store/tests/source_registration/combined_trim.rs": "f569893847fd5daca4f12d027bfccd3a15967c0048a189bce37f8fcc628ca199",
+    "crates/deadpan-store/tests/source_registration/roll.rs": "9ee84b283bd4bccc163c31a2bd30d9deebdf0ea5e6be2f4ca8b4c98630553a7c",
+    "crates/deadpan-store/tests/source_registration.rs": "9802fef7ae08d98a896f64a355cf3b43b118d1580f4de08843022ce597ec1f7a"
+  },
+  "new_test_count": 5,
+  "runtime_executed": false
+}

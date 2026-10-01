@@ -685,3 +685,6 @@ mod trim;
 
 #[path = "selected_video_window/roll.rs"]
 mod roll;
+
+#[path = "selected_video_window/combined.rs"]
+mod combined;

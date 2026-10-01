@@ -684,3 +684,6 @@ fn slip_fades_a_previously_continuous_split_seam_without_changing_raw_clocks() {
 
 #[path = "trim/roll.rs"]
 mod roll;
+
+#[path = "trim/combined.rs"]
+mod combined;

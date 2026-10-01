@@ -28,6 +28,9 @@ mod edited_slice;
 mod hold_audio;
 #[path = "source_registration/roll.rs"]
 mod roll;
+
+#[path = "source_registration/combined_trim.rs"]
+mod combined_trim;
 #[path = "source_registration/slip.rs"]
 mod slip;
 #[path = "source_registration/sounds.rs"]

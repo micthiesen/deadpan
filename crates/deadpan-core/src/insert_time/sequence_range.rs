@@ -169,14 +169,40 @@ pub(crate) fn split_endpoints(
     range: FrameRange,
     identities: &SplitIdentities,
     timing: &AudioTimingId,
-    mut context: crate::command::EditContext<'_>,
+    context: crate::command::EditContext<'_>,
 ) -> Result<ProjectDocument, EditError> {
     let mut working = document.clone();
     // Capture sampling lattices BEFORE copying retained physical owners.
     working.audio_bindings =
         crate::audio_binding_lifecycle::capture_unbound_audio_bindings(document, timing.clone())?;
+    split_prepared(
+        &working,
+        parent,
+        &[range.start(), range.end()],
+        identities,
+        context,
+    )
+    .map(|(document, _)| document)
+}
+
+/// Refine already captured full contexts without observing a new audio clock.
+/// Mark fragments, copied bindings and allowances are those produced by Split
+/// itself. The caller retains this document as its final-loss baseline.
+pub(crate) fn split_prepared(
+    document: &ProjectDocument,
+    parent: &NodeId,
+    boundaries: &[ProjectFrame],
+    identities: &SplitIdentities,
+    mut context: crate::command::EditContext<'_>,
+) -> Result<(ProjectDocument, usize), EditError> {
+    if boundaries.len() > 2 {
+        return Err(super::invalid(
+            "prepared endpoint split exceeds two boundaries",
+        ));
+    }
+    let mut working = document.clone();
     let mut consumed = 0usize;
-    for boundary in [range.start(), range.end()] {
+    for &boundary in boundaries {
         if let Some((target, at)) = interior(&working, parent, boundary)? {
             let count = super::split_node_count(&working, &target)?;
             let end = consumed.checked_add(count).ok_or_else(super::overflow)?;
@@ -200,7 +226,7 @@ pub(crate) fn split_endpoints(
             )?;
         }
     }
-    Ok(working)
+    Ok((working, consumed))
 }
 
 pub(crate) struct SelectedChildren {

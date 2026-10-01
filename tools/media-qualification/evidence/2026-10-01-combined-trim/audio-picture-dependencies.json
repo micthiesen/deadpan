@@ -1,0 +1,37 @@
+{
+  "head": "8ddf5863f53ebb471fe3dced2d442647f05cd228",
+  "note": "Working core is the corrected integrated source, not the superseded frozen core patch. Unlisted tracked dependencies use the recorded HEAD. All test runtime remains unexecuted.",
+  "files": {
+    "Cargo.lock": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+    "crates/deadpan-audio/src/bound_reads.rs": "c5027cdd24b02d9b783e2413084458f8d11b98e7eb193b0a1f7b97009b4f6666",
+    "crates/deadpan-audio/src/bound_reads/source_origin.rs": "4b425f2340cddcf16d5116339296cc2786e6c5df2a264319529354af9acec151",
+    "crates/deadpan-audio/src/bound_reads/source_origin/gain.rs": "072d1d578a93979ee5891bdd850e33ec07551270be7063b0813da0054d631bd7",
+    "crates/deadpan-audio/src/bound_reads/source_origin/gain/trim.rs": "db18427636fa9f600a51e4ecfc2ebda0489d76eb33f733e3232af3523229d6b8",
+    "crates/deadpan-audio/tests/composite_insert.rs": "9f61c4c3a830a19332a361351b00783fd4a5dc94ae6664a8622026a3f1644b1d",
+    "crates/deadpan-audio/tests/composite_insert/trim.rs": "bfcfbf327077ddb135ef61c2cc892722d2b50a163d6752b5847436a66813df5b",
+    "crates/deadpan-core/src/command.rs": "85aa2f4d936827dba74850da79798214aff3786f173911c2536716dc187f49ab",
+    "crates/deadpan-core/src/document.rs": "f736eabf0874b560378505870a025789056e4870cb46668acdc0239d9389098e",
+    "crates/deadpan-core/src/insert_time/composite.rs": "46a708c4f6533eaa3213344f41a3740c97f062b3d16d0376e6f9880b290ef114",
+    "crates/deadpan-core/src/insert_time/sequence_range.rs": "eecd0ef760ba9f1569f5329361eae0c395eb217c1942e999fb506e2c82a562b3",
+    "crates/deadpan-core/src/legacy_v29.rs": "23961323fa9f8b79463e2d4d306db8ff902fc23eb62caf5572fbacbbf88ca58d",
+    "crates/deadpan-core/src/legacy_v30.rs": "6f8ba9bea7ed260d47bef347aaf17dc86b45fe1f9252b3c4c0e1060bdb2fac21",
+    "crates/deadpan-core/src/legacy_v31.rs": "68f848bba51ba13bc6c48c90e7797cc4e3ad331f0c6393dd5b51dfca4ef473e0",
+    "crates/deadpan-core/src/legacy_v32.rs": "17bf1f8dc3b95b0208a7fdd3a277cd3ba0458900a60bb31bac81f0c5d212c23e",
+    "crates/deadpan-core/src/lib.rs": "e8eb6675350ddd82631b2b36762058ed297c407d8208d852fefbc171c2b36fc0",
+    "crates/deadpan-core/src/marks.rs": "4c24b090140366005735db47022d181b70a498b8f491fd830804b6addbbb4514",
+    "crates/deadpan-core/src/sound_events.rs": "4ce9febdc1a6174b57d6d35237cf4b5eac550a08fa1201c90e27308d5dbc3214",
+    "crates/deadpan-core/src/sound_routing.rs": "bb0a8ca896a77db018ed03cba873d3f0badee8c8b6f155bb0041cf2920b55396",
+    "crates/deadpan-core/src/source_trim_edit.rs": "29650ee3b77481914ecfad775aaf78f81c64e6c9c7d6cc9c29f61bf3ef28390c",
+    "crates/deadpan-core/src/source_trim_edit/apply.rs": "f33ecf2478a283ef8437b8a0f55013a351f44455a9a5566ded3a686db9064139",
+    "crates/deadpan-core/src/source_trim_geometry.rs": "8cc478a940a66e1a8235c772c62a4e865de2ab6b2795635a889ba6012a4cfdda",
+    "crates/deadpan-plan/tests/selected_video_window.rs": "e2862b7ae7549c7466757418f4de5add757a3ee6edc8bdd85acde9f7e27bcf5a",
+    "native/deadpan-source/tests/audio-fixtures/pcm-mono-44100.wav": "b95b3debd2c83cf2590fddfaa98276c23c3b383b720fd96ac52c2c00c668318b",
+    "native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee",
+    "native/deadpan-source/tests/generate_audio_fixtures.py": "9a9a7299a4758db9ad467f9706ee983afbb4e4e9b8210460d46ef26248c84bcf",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  },
+  "external_design_review": {
+    "/tmp/deadpan-combined-trim-prereqs-20261001/combined-authoring-design.md": "00689481e5982d21abae99a4d314b0c357adaf7914524bb6c90296c297397100",
+    "/tmp/deadpan-combined-trim-authoring-20261001/staged-core/independent-review.md": "501c388c239cbe67d9c59bedd1f26a036abf75208a9e927483b1beb4e40d5737"
+  }
+}

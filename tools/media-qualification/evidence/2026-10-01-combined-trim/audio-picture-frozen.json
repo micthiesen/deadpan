@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "patch": "combined-audio-picture-v1.patch",
+  "patch_sha256": "b04555e2dfec39baccb10e3cca7eb8e3766ec48ade95786cf842b485a6edea55",
+  "base_manifest_sha256": "772384b3a592d0a0632ed9f5611088f1954e230542a4ad32f2cd9c6f550e8809",
+  "dependency_manifest_sha256": "3fe36c66679955d2b3c4ee57396b2d4d9afd27375674fc9d055f0b697a90cccf",
+  "original_partial_manifest_sha256": "47c4ec7c7caba3cd7ae31721026741500ca336941994e89c7f33cfdb4e6e44b9",
+  "files": {
+    "crates/deadpan-audio/src/bound_reads/source_origin/gain/trim/combined.rs": "625ce402a40521daedebdf0ae3b40af60b108fcab8632d551320ae06d70db768",
+    "crates/deadpan-audio/src/bound_reads/source_origin/gain/trim.rs": "a902b9318ef94362fd50f91268d2037deb3ed5ef409ce10f5a98131735214294",
+    "crates/deadpan-audio/tests/composite_insert/trim/combined.rs": "5cc674438f0f99d2b8a503c583461daf07adaf6fb8696826086f6df54480f4ff",
+    "crates/deadpan-audio/tests/composite_insert/trim.rs": "f4c6f3369115816283b75ebf459dd97073e3378e54ba5370b05c87c59410ab83",
+    "crates/deadpan-plan/tests/selected_video_window/combined.rs": "39b5e0fb42ba4f1ddee2177b500b1c487ca41fcfffd37ff91282a315dd810525",
+    "crates/deadpan-plan/tests/selected_video_window.rs": "22ab366b0b292c0f9c0f18069e87919debdc245642a1356e405c1872f8d9df43"
+  },
+  "test_functions": 5,
+  "parameter_cases": 10,
+  "tests_executed": 0
+}

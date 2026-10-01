@@ -1,0 +1,19 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 51s
+     Running tests/source_registration.rs (target/debug/deps/source_registration-6398e1e001a28924)
+
+running 3 tests
+test combined_trim::used_qualification_refusal_including_retired_b_matches_both_dispatch_paths ... ok
+test combined_trim::combined_zero_and_invalid_resources_preserve_nonempty_redo_and_all_rows ... ok
+test combined_trim::combined_trim_cold_and_live_match_exact_geometry_transaction_and_fresh_history ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 2.61s
+

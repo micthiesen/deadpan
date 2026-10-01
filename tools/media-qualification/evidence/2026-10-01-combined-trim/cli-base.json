@@ -1,0 +1,25 @@
+{
+  "head": "8ddf5863f53ebb471fe3dced2d442647f05cd228",
+  "bases": {
+    "crates/deadpan-cli/tests/source_registration.rs": "842bbf43c45b7f1bcab05b1ae389fa97988e9f3b084f10572e1a4a28c9398b28",
+    "crates/deadpan-cli/tests/source_registration/roll.rs": "f3ccc4085c824e088ad8be53ee1d1675468b436698a0e837c1e782cab2e0385a"
+  },
+  "dependencies": {
+    "crates/deadpan-cli/Cargo.toml": "3614c42d724fba20b4acdc9d928e403875b87898350754de47acf658ec6d3c44",
+    "Cargo.lock": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+    "crates/deadpan-cli/src/lib.rs": "91be86b81220b7786a899419ec595c3c5d7cb762a82bb8ea7fcb684dfc23e537",
+    "crates/deadpan-cli/tests/source_registration/trim.rs": "e94f57daff305cd5dea45da2d4c072112e966bfe0e306b652102c7d6791c1a02",
+    "crates/deadpan-store/tests/source_registration/roll.rs": "2f958a3ef1ffae733f0a634ad85c80a930b1fbacf09018ba26935aefddcaf20e",
+    "crates/deadpan-core/src/source_trim_geometry.rs": "a1b9f03f743f18e4024e141640041588ff4c838de2ce7c4a5fdb5e3d1296c104",
+    "crates/deadpan-core/src/document.rs": "b173aa7c28773f28bbe205f9fe2b8a6fa50de82a004167851223419aa5a08f4b",
+    "crates/deadpan-media/src/source_import_timing.rs": "8346f9a0676af5fab73afb119306b82e5f704f957c92e3ad2713eaedbbf49232",
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+    "native/deadpan-source/tests/fixtures/offset-bframes.mp4": "1504e8c41c2e8e33cf588bbe46e7c79f9fb507437533f5d6cd6f280b6bfdb120"
+  },
+  "staged_dependencies": {
+    "/tmp/deadpan-combined-trim-authoring-20261001/staged-core-v2/combined-trim-core.patch": "3a3324a92ffb72aab82db13fe01bb19ebf18a17471fc344c8e90d947371558f7",
+    "/tmp/deadpan-combined-trim-authoring-20261001/staged-host/work/crates/deadpan-store/src/source_registration/combined_trim.rs": "aba4571aaa32f1f1a9362c545e73d4f0ecedbc2ab1e5ae341423d7317e3c43f7",
+    "/tmp/deadpan-combined-trim-authoring-20261001/staged-host/work/crates/deadpan-cli/src/live_project.rs": "378de4bfe9721141c85a144fe7a320719555d959f8851940e6f57c8941482f73"
+  }
+}

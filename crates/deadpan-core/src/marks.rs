@@ -866,7 +866,7 @@ pub(crate) fn transform_marks(
     after: &ProjectDocument,
     command: &Command,
 ) -> std::result::Result<BTreeMap<MarkId, Mark>, DocumentError> {
-    transform_marks_with_prefix(before, after, command, None)
+    transform_marks_with_source_prefixes(before, after, command, &[])
 }
 
 /// Growing a physical Source before local zero moves its retained content
@@ -878,15 +878,22 @@ pub(crate) fn transform_marks_with_source_prefix(
     source: &NodeId,
     prefix: FrameDuration,
 ) -> std::result::Result<BTreeMap<MarkId, Mark>, DocumentError> {
-    transform_marks_with_prefix(before, after, command, Some((source, prefix)))
+    transform_marks_with_source_prefixes(before, after, command, &[(source, prefix)])
 }
 
-fn transform_marks_with_prefix(
+/// Translate both retained physical Source owners in one final loss pass.
+pub(crate) fn transform_marks_with_source_prefixes(
     before: &ProjectDocument,
     after: &ProjectDocument,
     command: &Command,
-    prefix: Option<(&NodeId, FrameDuration)>,
+    prefixes: &[(&NodeId, FrameDuration)],
 ) -> std::result::Result<BTreeMap<MarkId, Mark>, DocumentError> {
+    if prefixes.len() > 2 || (prefixes.len() == 2 && prefixes[0].0 == prefixes[1].0) {
+        return Err(DocumentError::new(
+            DocumentErrorCode::InvalidTree,
+            "mark prefix translation requires at most two distinct Source owners",
+        ));
+    }
     // Validate the new structure even when no marks are present. Marks may be
     // temporarily dangling here; they are transformed before full validation.
     let new_durations = after.structural_durations()?;
@@ -912,14 +919,14 @@ fn transform_marks_with_prefix(
                     Anchor::Local { node, position } => {
                         let point = translate_source_content(
                             old.decompose(node, *position, mark.boundary.bias)?,
-                            prefix,
+                            prefixes,
                         )?;
                         *position = new.reconstruct(node, point, mark.boundary.bias, command)?;
                     }
                     Anchor::Occurrence { instance, position } => {
                         let point = translate_source_content(
                             old.decompose(&instance.node, *position, mark.boundary.bias)?,
-                            prefix,
+                            prefixes,
                         )?;
                         *position =
                             new.reconstruct(&instance.node, point, mark.boundary.bias, command)?;
@@ -954,11 +961,10 @@ fn transform_marks_with_prefix(
 
 fn translate_source_content(
     mut point: ContentPoint,
-    prefix: Option<(&NodeId, FrameDuration)>,
+    prefixes: &[(&NodeId, FrameDuration)],
 ) -> Result<ContentPoint> {
-    if let Some((source, prefix)) = prefix
-        && let ContentPoint::Content { node, position, .. } = &mut point
-        && node == source
+    if let ContentPoint::Content { node, position, .. } = &mut point
+        && let Some((_, prefix)) = prefixes.iter().find(|(source, _)| &*node == *source)
     {
         *position = position.checked_add(ExactRatio::integer(prefix.frames()))?;
     }

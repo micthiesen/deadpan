@@ -157,6 +157,31 @@ pub(crate) fn append_steps(
     window: ExactFrameRange,
     entries: &mut usize,
 ) -> Result<(), EditError> {
+    append_anchored_steps(
+        bindings,
+        placements,
+        affected,
+        Default::default(),
+        Some(window),
+        entries,
+    )
+}
+
+/// Shared bounded chronological append. Source endpoints keep window=None;
+/// validation of the complete binding enforces their captured Source owner.
+pub(crate) fn append_anchored_steps(
+    bindings: &mut BTreeMap<NodeId, OwnedAudioBinding>,
+    placements: BTreeMap<NodeId, AudioPlacementTemplate>,
+    affected: &BTreeSet<NodeId>,
+    anchor: crate::AudioReanchorAnchor,
+    window: Option<ExactFrameRange>,
+    entries: &mut usize,
+) -> Result<(), EditError> {
+    if !anchor.is_allocation_entry() && window.is_some() {
+        return Err(super::invalid(
+            "Source endpoint cannot carry an allocation window",
+        ));
+    }
     for (owner, placement) in placements {
         if !affected.contains(&owner) {
             continue;
@@ -176,9 +201,9 @@ pub(crate) fn append_steps(
             .filter(|count| *count <= MAX_AUDIO_BINDING_ENTRIES)
             .ok_or_else(|| super::limit("composite pause binding entries"))?;
         binding.reanchors.push(AudioReanchorStep {
-            anchor: Default::default(),
+            anchor,
             placement,
-            window: Some(window),
+            window,
         });
     }
     Ok(())

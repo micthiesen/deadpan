@@ -1,0 +1,10 @@
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.56s
+     Running tests/selected_video_window.rs (target/debug/deps/selected_video_window-19db60250f69201a)
+
+running 2 tests
+test combined::overwrite_keeps_a_real_b_owner_even_when_only_its_terminal_padding_survives ... ok
+test combined::complete_intent_moves_two_physical_origins_but_samples_literal_original_pts ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 15 filtered out; finished in 0.01s
+

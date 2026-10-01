@@ -185,7 +185,9 @@ pub struct SourceTrimGeometry {
     /// Absence/ineligibility never blocks an otherwise valid non-Roll intent.
     pub right: Option<SourceTrimOwnerGeometry>,
     pub roll_availability: SourceTrimRollAvailability,
-    /// Minimum own-Source crop identities only; overwrite refinement is separate.
+    /// Candidate Source crop identities, before overwrite retention is known.
+    /// Overwrite may retire B or need a different final crop. Its structural and
+    /// peak-resource admission belongs to the complete authoring preflight.
     pub required_source_wrappers: usize,
     pub requires_overwrite_overlay: bool,
 }
@@ -411,7 +413,15 @@ impl<'a> Context<'a> {
             .transpose()?;
         let required_source_wrappers = usize::from(target.needs_wrapper)
             + usize::from(right.as_ref().is_some_and(|right| right.needs_wrapper));
-        check_wrapper_budget(document.nodes().len(), required_source_wrappers)?;
+        let requires_overwrite_overlay = intent.policy == SourceTrimPolicy::Overwrite
+            && (intent.in_frames != 0 || intent.out_frames != 0);
+        // A provisional B crop may retire in the final overlay. Interactive
+        // geometry must not charge an identity that will never be allocated.
+        // The complete author checks final wrappers, fillers and every temporary
+        // Split copy before removal; this geometry does not admit the overlay.
+        if !requires_overwrite_overlay {
+            check_wrapper_budget(document.nodes().len(), required_source_wrappers)?;
+        }
         Ok(SourceTrimGeometry {
             parent: self.target.parent.clone(),
             intent,
@@ -435,8 +445,7 @@ impl<'a> Context<'a> {
             right,
             roll_availability: self.availability.clone(),
             required_source_wrappers,
-            requires_overwrite_overlay: intent.policy == SourceTrimPolicy::Overwrite
-                && (intent.in_frames != 0 || intent.out_frames != 0),
+            requires_overwrite_overlay,
         })
     }
 }

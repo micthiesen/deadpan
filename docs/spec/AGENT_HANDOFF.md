@@ -49,6 +49,31 @@ Full Trim, waveform/audition,
 In/Out/Roll, ripple/overwrite and broader target admission remain open. No
 requirement or gate is complete.
 
+## Combined Trim authoring, 2026-10-01
+
+The timing checkpoint `8ddf586` is committed and pushed. The complete
+`ApplySourceTrim` core command and qualified store/CLI path are implemented in
+core 43/database 52. Its corrected scratch stages received
+independent review. All 19 combined core integration tests, five qualified store
+tests, three CLI parity tests and five decoded-audio/indexed-picture tests pass.
+The complete workspace passed 3,366 unit/integration tests and both documentation
+tests. Strict lint found one equivalent stable-sort spelling correction; after
+that one-line change, strict workspace/all-target lint, 132 core tests and final
+formatting passed. Exact source inventories and original failures are retained in
+[qualification](../qualification/combined-trim-2026-10-01.md). The first compiler
+errors were an ambiguous glob
+export and two wrong error adapters, both corrected. Capacity fixtures now
+distinguish geometric preflight from the independent capture budget; a store
+oracle now retains hidden physical Source context behind the visible crop.
+A picture test also needed a named VFR index to retain its frame borrow.
+See [the backend contract](../COMBINED_TRIM.md). No native Trim UI is integrated.
+Waveform, junction-pair, service, keyboard and native UI work remain separate
+staged changes. Their static reviews found and corrected proposal identity,
+partial waveform retention, final-raster Apply, same-batch native focus, transport
+resume and modal/notice issues. They still require compilation, focused tests,
+production replay, keyboard audit and real native QA. No native GUI was opened
+for this backend increment; no Deadpan executable remained at the final scan.
+
 ## Combined Trim timing foundation, 2026-10-01
 
 The Roll checkpoint `3a5e7b7` is committed and pushed. Complete-intent geometry,
@@ -66,7 +91,8 @@ all values on a policy toggle or refuse. Overwrite geometry is not structural
 admission. Keep the entry-anchored root Keep/Gap intent, normalize contiguous
 equal-shift Keeps and preserve prior route history. Disjoint Source allocations
 need exact historical closed endpoint phase; never narrow handles or skip the
-reanchor to avoid that case. Full combined authoring and native Trim remain open.
+reanchor to avoid that case. Combined authoring is qualified above; native Trim
+remains open.
 No native GUI is open, and no requirement or gate is complete.
 
 ## Adjacent Source Roll backend, 2026-10-01

@@ -1,0 +1,10 @@
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 28.55s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_audio-8e2ffef251e4926c)
+
+running 1 test
+test stages::bound_reads::source_origin::gain::trim::combined::combined_mixed_intent_preserves_old_phase_through_distinct_source_prefixes ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 87 filtered out; finished in 0.08s
+

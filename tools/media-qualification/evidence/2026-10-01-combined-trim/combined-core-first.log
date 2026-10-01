@@ -1,0 +1,541 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+error[E0659]: `apply` is ambiguous
+   --> crates/deadpan-core/src/occurrence_edit.rs:637:28
+    |
+637 |         let error = crate::apply(&document, &request).unwrap_err();
+    |                            ^^^^^ ambiguous name
+    |
+    = note: ambiguous because of multiple glob imports of a name in the same module
+note: `apply` could refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:108:9
+    |
+108 | pub use command::*;
+    |         ^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+note: `apply` could also refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:138:9
+    |
+138 | pub use source_trim_edit::*;
+    |         ^^^^^^^^^^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+
+error[E0659]: `apply` is ambiguous
+   --> crates/deadpan-core/src/occurrence_edit.rs:664:28
+    |
+664 |         let error = crate::apply(&document, &request).unwrap_err();
+    |                            ^^^^^ ambiguous name
+    |
+    = note: ambiguous because of multiple glob imports of a name in the same module
+note: `apply` could refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:108:9
+    |
+108 | pub use command::*;
+    |         ^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+note: `apply` could also refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:138:9
+    |
+138 | pub use source_trim_edit::*;
+    |         ^^^^^^^^^^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+
+warning: ambiguous glob re-exports
+   --> crates/deadpan-core/src/lib.rs:108:9
+    |
+108 | pub use command::*;
+    |         ^^^^^^^^^^ the name `apply` in the value namespace is first re-exported here
+...
+138 | pub use source_trim_edit::*;
+    |         ------------------- but the name `apply` in the value namespace is also re-exported here
+    |
+    = note: `#[warn(ambiguous_glob_reexports)]` on by default
+
+error: `apply` is ambiguous
+   --> crates/deadpan-core/src/audio_binding_lifecycle.rs:635:27
+    |
+635 |         let transaction = apply(
+    |                           ^^^^^ ambiguous name
+    |
+    = note: ambiguous because of multiple glob imports of a name in the same module
+note: `apply` could refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:108:9
+    |
+108 | pub use command::*;
+    |         ^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+note: `apply` could also refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:138:9
+    |
+138 | pub use source_trim_edit::*;
+    |         ^^^^^^^^^^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #114095 <https://github.com/rust-lang/rust/issues/114095>
+    = note: `#[deny(ambiguous_glob_imports)]` (part of `#[deny(future_incompatible)]`) on by default
+
+error: `apply` is ambiguous
+   --> crates/deadpan-core/src/legacy_audio_binding_v20.rs:220:28
+    |
+220 |                 let edit = apply(
+    |                            ^^^^^ ambiguous name
+...
+251 |     strict_gap_schema!(schema16_rejects_nested_gap_vocabulary, 16, legacy_v16);
+    |     -------------------------------------------------------------------------- in this macro invocation
+    |
+    = note: ambiguous because of multiple glob imports of a name in the same module
+note: `apply` could refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:108:9
+    |
+108 | pub use command::*;
+    |         ^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+note: `apply` could also refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:138:9
+    |
+138 | pub use source_trim_edit::*;
+    |         ^^^^^^^^^^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #114095 <https://github.com/rust-lang/rust/issues/114095>
+    = note: this error originates in the macro `strict_gap_schema` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: `apply` is ambiguous
+   --> crates/deadpan-core/src/legacy_audio_binding_v20.rs:220:28
+    |
+220 |                 let edit = apply(
+    |                            ^^^^^ ambiguous name
+...
+252 |     strict_gap_schema!(schema17_rejects_nested_gap_vocabulary, 17, legacy_v17);
+    |     -------------------------------------------------------------------------- in this macro invocation
+    |
+    = note: ambiguous because of multiple glob imports of a name in the same module
+note: `apply` could refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:108:9
+    |
+108 | pub use command::*;
+    |         ^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+note: `apply` could also refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:138:9
+    |
+138 | pub use source_trim_edit::*;
+    |         ^^^^^^^^^^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #114095 <https://github.com/rust-lang/rust/issues/114095>
+    = note: this error originates in the macro `strict_gap_schema` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: `apply` is ambiguous
+   --> crates/deadpan-core/src/legacy_audio_binding_v20.rs:220:28
+    |
+220 |                 let edit = apply(
+    |                            ^^^^^ ambiguous name
+...
+253 |     strict_gap_schema!(schema18_rejects_nested_gap_vocabulary, 18, legacy_v18);
+    |     -------------------------------------------------------------------------- in this macro invocation
+    |
+    = note: ambiguous because of multiple glob imports of a name in the same module
+note: `apply` could refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:108:9
+    |
+108 | pub use command::*;
+    |         ^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+note: `apply` could also refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:138:9
+    |
+138 | pub use source_trim_edit::*;
+    |         ^^^^^^^^^^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #114095 <https://github.com/rust-lang/rust/issues/114095>
+    = note: this error originates in the macro `strict_gap_schema` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: `apply` is ambiguous
+   --> crates/deadpan-core/src/legacy_audio_binding_v20.rs:220:28
+    |
+220 |                 let edit = apply(
+    |                            ^^^^^ ambiguous name
+...
+254 |     strict_gap_schema!(schema19_rejects_nested_gap_vocabulary, 19, legacy_v19);
+    |     -------------------------------------------------------------------------- in this macro invocation
+    |
+    = note: ambiguous because of multiple glob imports of a name in the same module
+note: `apply` could refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:108:9
+    |
+108 | pub use command::*;
+    |         ^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+note: `apply` could also refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:138:9
+    |
+138 | pub use source_trim_edit::*;
+    |         ^^^^^^^^^^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #114095 <https://github.com/rust-lang/rust/issues/114095>
+    = note: this error originates in the macro `strict_gap_schema` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: `apply` is ambiguous
+   --> crates/deadpan-core/src/legacy_audio_binding_v20.rs:220:28
+    |
+220 |                 let edit = apply(
+    |                            ^^^^^ ambiguous name
+...
+255 |     strict_gap_schema!(schema20_rejects_nested_gap_vocabulary, 20, legacy_v20);
+    |     -------------------------------------------------------------------------- in this macro invocation
+    |
+    = note: ambiguous because of multiple glob imports of a name in the same module
+note: `apply` could refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:108:9
+    |
+108 | pub use command::*;
+    |         ^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+note: `apply` could also refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:138:9
+    |
+138 | pub use source_trim_edit::*;
+    |         ^^^^^^^^^^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #114095 <https://github.com/rust-lang/rust/issues/114095>
+    = note: this error originates in the macro `strict_gap_schema` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: `apply` is ambiguous
+   --> crates/deadpan-core/src/legacy_audio_binding_v20.rs:220:28
+    |
+220 |                 let edit = apply(
+    |                            ^^^^^ ambiguous name
+...
+256 |     strict_gap_schema!(schema21_rejects_nested_gap_vocabulary, 21, legacy_v21);
+    |     -------------------------------------------------------------------------- in this macro invocation
+    |
+    = note: ambiguous because of multiple glob imports of a name in the same module
+note: `apply` could refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:108:9
+    |
+108 | pub use command::*;
+    |         ^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+note: `apply` could also refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:138:9
+    |
+138 | pub use source_trim_edit::*;
+    |         ^^^^^^^^^^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #114095 <https://github.com/rust-lang/rust/issues/114095>
+    = note: this error originates in the macro `strict_gap_schema` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: `apply` is ambiguous
+   --> crates/deadpan-core/src/legacy_audio_binding_v20.rs:320:28
+    |
+320 |                 let edit = apply(
+    |                            ^^^^^ ambiguous name
+...
+372 |     strict_schema!(schema16_rejects_new_binding_vocabulary, 16, legacy_v16);
+    |     ----------------------------------------------------------------------- in this macro invocation
+    |
+    = note: ambiguous because of multiple glob imports of a name in the same module
+note: `apply` could refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:108:9
+    |
+108 | pub use command::*;
+    |         ^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+note: `apply` could also refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:138:9
+    |
+138 | pub use source_trim_edit::*;
+    |         ^^^^^^^^^^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #114095 <https://github.com/rust-lang/rust/issues/114095>
+    = note: this error originates in the macro `strict_schema` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: `apply` is ambiguous
+   --> crates/deadpan-core/src/legacy_audio_binding_v20.rs:320:28
+    |
+320 |                 let edit = apply(
+    |                            ^^^^^ ambiguous name
+...
+373 |     strict_schema!(schema17_rejects_new_binding_vocabulary, 17, legacy_v17);
+    |     ----------------------------------------------------------------------- in this macro invocation
+    |
+    = note: ambiguous because of multiple glob imports of a name in the same module
+note: `apply` could refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:108:9
+    |
+108 | pub use command::*;
+    |         ^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+note: `apply` could also refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:138:9
+    |
+138 | pub use source_trim_edit::*;
+    |         ^^^^^^^^^^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #114095 <https://github.com/rust-lang/rust/issues/114095>
+    = note: this error originates in the macro `strict_schema` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: `apply` is ambiguous
+   --> crates/deadpan-core/src/legacy_audio_binding_v20.rs:320:28
+    |
+320 |                 let edit = apply(
+    |                            ^^^^^ ambiguous name
+...
+374 |     strict_schema!(schema18_rejects_new_binding_vocabulary, 18, legacy_v18);
+    |     ----------------------------------------------------------------------- in this macro invocation
+    |
+    = note: ambiguous because of multiple glob imports of a name in the same module
+note: `apply` could refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:108:9
+    |
+108 | pub use command::*;
+    |         ^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+note: `apply` could also refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:138:9
+    |
+138 | pub use source_trim_edit::*;
+    |         ^^^^^^^^^^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #114095 <https://github.com/rust-lang/rust/issues/114095>
+    = note: this error originates in the macro `strict_schema` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: `apply` is ambiguous
+   --> crates/deadpan-core/src/legacy_audio_binding_v20.rs:320:28
+    |
+320 |                 let edit = apply(
+    |                            ^^^^^ ambiguous name
+...
+375 |     strict_schema!(schema19_rejects_new_binding_vocabulary, 19, legacy_v19);
+    |     ----------------------------------------------------------------------- in this macro invocation
+    |
+    = note: ambiguous because of multiple glob imports of a name in the same module
+note: `apply` could refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:108:9
+    |
+108 | pub use command::*;
+    |         ^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+note: `apply` could also refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:138:9
+    |
+138 | pub use source_trim_edit::*;
+    |         ^^^^^^^^^^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #114095 <https://github.com/rust-lang/rust/issues/114095>
+    = note: this error originates in the macro `strict_schema` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: `apply` is ambiguous
+   --> crates/deadpan-core/src/legacy_audio_binding_v20.rs:320:28
+    |
+320 |                 let edit = apply(
+    |                            ^^^^^ ambiguous name
+...
+376 |     strict_schema!(schema20_rejects_new_binding_vocabulary, 20, legacy_v20);
+    |     ----------------------------------------------------------------------- in this macro invocation
+    |
+    = note: ambiguous because of multiple glob imports of a name in the same module
+note: `apply` could refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:108:9
+    |
+108 | pub use command::*;
+    |         ^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+note: `apply` could also refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:138:9
+    |
+138 | pub use source_trim_edit::*;
+    |         ^^^^^^^^^^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #114095 <https://github.com/rust-lang/rust/issues/114095>
+    = note: this error originates in the macro `strict_schema` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error: `apply` is ambiguous
+   --> crates/deadpan-core/src/legacy_v10.rs:915:24
+    |
+915 |             let edit = apply(
+    |                        ^^^^^ ambiguous name
+    |
+    = note: ambiguous because of multiple glob imports of a name in the same module
+note: `apply` could refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:108:9
+    |
+108 | pub use command::*;
+    |         ^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+note: `apply` could also refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:138:9
+    |
+138 | pub use source_trim_edit::*;
+    |         ^^^^^^^^^^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #114095 <https://github.com/rust-lang/rust/issues/114095>
+
+error: `apply` is ambiguous
+   --> crates/deadpan-core/src/legacy_v5.rs:892:24
+    |
+892 |             let edit = apply(
+    |                        ^^^^^ ambiguous name
+    |
+    = note: ambiguous because of multiple glob imports of a name in the same module
+note: `apply` could refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:108:9
+    |
+108 | pub use command::*;
+    |         ^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+note: `apply` could also refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:138:9
+    |
+138 | pub use source_trim_edit::*;
+    |         ^^^^^^^^^^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #114095 <https://github.com/rust-lang/rust/issues/114095>
+
+error: `apply` is ambiguous
+   --> crates/deadpan-core/src/legacy_v5.rs:967:24
+    |
+967 |             let edit = apply(
+    |                        ^^^^^ ambiguous name
+    |
+    = note: ambiguous because of multiple glob imports of a name in the same module
+note: `apply` could refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:108:9
+    |
+108 | pub use command::*;
+    |         ^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+note: `apply` could also refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:138:9
+    |
+138 | pub use source_trim_edit::*;
+    |         ^^^^^^^^^^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #114095 <https://github.com/rust-lang/rust/issues/114095>
+
+error: `apply` is ambiguous
+   --> crates/deadpan-core/src/legacy_v6.rs:998:24
+    |
+998 |             let edit = apply(
+    |                        ^^^^^ ambiguous name
+    |
+    = note: ambiguous because of multiple glob imports of a name in the same module
+note: `apply` could refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:108:9
+    |
+108 | pub use command::*;
+    |         ^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+note: `apply` could also refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:138:9
+    |
+138 | pub use source_trim_edit::*;
+    |         ^^^^^^^^^^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #114095 <https://github.com/rust-lang/rust/issues/114095>
+
+error: `apply` is ambiguous
+    --> crates/deadpan-core/src/legacy_v7.rs:1066:24
+     |
+1066 |             let edit = apply(
+     |                        ^^^^^ ambiguous name
+     |
+     = note: ambiguous because of multiple glob imports of a name in the same module
+note: `apply` could refer to the function imported here
+    --> crates/deadpan-core/src/lib.rs:108:9
+     |
+ 108 | pub use command::*;
+     |         ^^^^^^^^^^
+     = help: consider adding an explicit import of `apply` to disambiguate
+note: `apply` could also refer to the function imported here
+    --> crates/deadpan-core/src/lib.rs:138:9
+     |
+ 138 | pub use source_trim_edit::*;
+     |         ^^^^^^^^^^^^^^^^^^^
+     = help: consider adding an explicit import of `apply` to disambiguate
+     = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+     = note: for more information, see issue #114095 <https://github.com/rust-lang/rust/issues/114095>
+
+error: `apply` is ambiguous
+   --> crates/deadpan-core/src/legacy_v8.rs:995:24
+    |
+995 |             let edit = apply(
+    |                        ^^^^^ ambiguous name
+    |
+    = note: ambiguous because of multiple glob imports of a name in the same module
+note: `apply` could refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:108:9
+    |
+108 | pub use command::*;
+    |         ^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+note: `apply` could also refer to the function imported here
+   --> crates/deadpan-core/src/lib.rs:138:9
+    |
+138 | pub use source_trim_edit::*;
+    |         ^^^^^^^^^^^^^^^^^^^
+    = help: consider adding an explicit import of `apply` to disambiguate
+    = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in a future release!
+    = note: for more information, see issue #114095 <https://github.com/rust-lang/rust/issues/114095>
+
+error[E0308]: mismatched types
+   --> crates/deadpan-core/src/source_trim_edit.rs:396:31
+    |
+396 |               window: Some(time(ExactFrameRange::new(
+    |  __________________________----_^
+    | |                          |
+    | |                          arguments to this function are incorrect
+397 | |                 ExactRatio::integer(at),
+398 | |                 ExactRatio::integer(end),
+399 | |             ))?),
+    | |_____________^ expected `Result<_, TimeError>`, found `Result<ExactFrameRange, DocumentError>`
+    |
+    = note: expected enum `std::result::Result<_, time::TimeError>`
+               found enum `std::result::Result<audio_reference::ExactFrameRange, document::DocumentError>`
+note: function defined here
+   --> crates/deadpan-core/src/source_trim_edit.rs:530:4
+    |
+530 | fn time<T>(r: Result<T, TimeError>) -> Result<T, EditError> {
+    |    ^^^^    -----------------------
+
+error[E0308]: mismatched types
+   --> crates/deadpan-core/src/source_trim_edit.rs:464:27
+    |
+464 |                   Some(time(ExactFrameRange::new(
+    |  ______________________----_^
+    | |                      |
+    | |                      arguments to this function are incorrect
+465 | |                     ExactRatio::integer(add(offset, allocation.start().0)?),
+466 | |                     ExactRatio::integer(add(offset, allocation.end().0)?),
+467 | |                 ))?),
+    | |_________________^ expected `Result<_, TimeError>`, found `Result<ExactFrameRange, DocumentError>`
+    |
+    = note: expected enum `std::result::Result<_, time::TimeError>`
+               found enum `std::result::Result<audio_reference::ExactFrameRange, document::DocumentError>`
+note: function defined here
+   --> crates/deadpan-core/src/source_trim_edit.rs:530:4
+    |
+530 | fn time<T>(r: Result<T, TimeError>) -> Result<T, EditError> {
+    |    ^^^^    -----------------------
+
+For more information about this error, try `rustc --explain E0308`.
+warning: `deadpan-core` (lib) generated 1 warning (1 duplicate)
+error: could not compile `deadpan-core` (lib) due to 2 previous errors; 1 warning emitted
+warning: build failed, waiting for other jobs to finish...
+Some errors have detailed explanations: E0308, E0659.
+For more information about an error, try `rustc --explain E0308`.
+warning: `deadpan-core` (lib test) generated 1 warning
+error: could not compile `deadpan-core` (lib test) due to 40 previous errors; 1 warning emitted

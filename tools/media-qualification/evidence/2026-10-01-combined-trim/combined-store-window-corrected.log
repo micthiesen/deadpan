@@ -1,0 +1,13 @@
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.31s
+     Running tests/source_registration.rs (target/debug/deps/source_registration-0f20b6398ed14eb7)
+
+running 5 tests
+test combined_trim::overwrite_admits_and_removes_the_fully_consumed_right_source ... ok
+test combined_trim::zero_preview_requires_empty_resources_and_never_reserves_a_revision ... ok
+test combined_trim::combined_refusals_preserve_nonempty_redo_and_every_authored_admission_row ... ok
+test combined_trim::every_used_source_requires_its_receipt_and_original_even_when_overwrite_retires_it ... ok
+test combined_trim::combined_trim_qualifies_two_originals_and_replays_one_durable_transaction ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 28 filtered out; finished in 0.76s
+

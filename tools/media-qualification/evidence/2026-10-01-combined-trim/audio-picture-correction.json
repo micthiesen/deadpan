@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "kind": "root-applied post-freeze test-only correction",
+  "applies_after": "combined-audio-picture-v1.patch",
+  "base_patch_sha256": "b04555e2dfec39baccb10e3cca7eb8e3766ec48ade95786cf842b485a6edea55",
+  "patch": "post-freeze-index-lifetime-v2.patch",
+  "patch_sha256": "437835575312a0a4417ac40ba692e8cede36252e9cde125ac6d1205cbd0209d7",
+  "file": "crates/deadpan-plan/tests/selected_video_window/combined.rs",
+  "before_sha256": "39b5e0fb42ba4f1ddee2177b500b1c487ca41fcfffd37ff91282a315dd810525",
+  "after_sha256": "9d06d3195aa91b90e71393e1fb3433de83b6a2afd583d49eb01f3a58caf3d48c",
+  "reason": "E0716: retain a named VFR index while the returned selected-frame reference remains borrowed.",
+  "test_status": "Root reports all five test functions passed after this correction. This scratch agent executed zero runtime tests."
+}

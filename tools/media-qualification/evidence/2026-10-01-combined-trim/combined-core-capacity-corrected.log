@@ -1,0 +1,27 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.20s
+     Running tests/source_trim_edit.rs (target/debug/deps/source_trim_edit-d4795cd0d512e98c)
+
+running 19 tests
+test retained_padding_only_b_tail_keeps_its_full_window_and_is_not_a_retired_owner ... ok
+test raw_zero_bad_resources_stale_targets_and_absence_never_author_or_retarget ... ok
+test complete_ripple_intent_has_disjoint_old_owner_groups_and_one_history_patch ... ok
+test near_empty_siblings_move_with_a_while_far_endpoints_survive_and_interior_empties_retire ... ok
+test nested_scope_ripple_captures_ancestor_suffix_but_overwrite_cannot_consume_it ... ok
+test linked_dormant_support_can_activate_and_absent_audio_stays_absent ... ok
+test split_occurrence_fragments_receive_loss_only_after_the_final_survivor_exists ... ok
+test closed_resources_and_historical_commands_reject_new_vocabulary ... ok
+test overwrite_copies_existing_repeat_allowance_but_grants_nothing_to_filler ... ok
+test two_exterior_splits_retain_both_contexts_without_using_a_cached_target_slot ... ok
+test disjoint_and_exact_touch_use_chronological_source_endpoints_not_invalid_scalar_edits ... ok
+test root_sound_mapping_uses_the_complete_in_out_intent_once_and_identity_restores_objects ... ok
+test both_physical_prefixes_translate_content_marks_and_retained_clocks_once ... ok
+test all_scalar_paths_preserve_their_exact_source_candidates ... ok
+test overwrite_normal_form_handles_compensation_and_disjoint_swept_silence ... ok
+test partial_composite_overwrite_retains_full_context_bindings_and_copied_lineage ... ok
+test reanchor_term_limit_fails_before_mutation_and_does_not_replace_the_old_clock ... ok
+test overwrite_rejects_real_temporary_split_peak_even_when_final_tree_would_fit ... ok
+test full_capacity_geometry_defers_retired_b_wrapper_without_authorizing_capture ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 26.21s
+

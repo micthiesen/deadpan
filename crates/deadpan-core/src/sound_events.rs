@@ -129,6 +129,7 @@ pub(crate) fn validate_command(
         || matches!(
             command,
             Command::InsertTime { .. }
+                | Command::ApplySourceTrim { .. }
                 | Command::TrimSource { .. }
                 | Command::RollSources { .. }
                 | Command::SpliceSource { .. }
@@ -209,6 +210,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
             | OccurrenceEdit::ClearGapOverride { .. } => false,
         },
         Command::InsertTime { .. }
+        | Command::ApplySourceTrim { .. }
         | Command::TrimSource { .. }
         | Command::RollSources { .. }
         | Command::SpliceSource { .. }

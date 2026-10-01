@@ -66,7 +66,7 @@ or change undo history. It checks the same reducer, serialized size limits, and
 never-reused revision rule as commit. A stale expected
 revision fails with `RevisionConflict` and the current revision, without writing.
 
-Supported commands are `insert`, `insert_time`, `split`, `slip_source`, `trim_source`, `roll_sources`, `delete`, `delete_ripple`, `delete_range`, `move`, `move_range`, `group`,
+Supported commands are `insert`, `insert_time`, `split`, `slip_source`, `trim_source`, `roll_sources`, `apply_source_trim`, `delete`, `delete_ripple`, `delete_range`, `move`, `move_range`, `group`,
 `ungroup`, `splice_source`, `splice_source_at`, `replace_source`, `splice_slice`, `splice_slice_at`, `replace_slice`, `wrap_repeat`, `set_repeat`, `wrap_retime`, `set_retime`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`, `set_hold_picture_context`, `set_source_audio_mapping`, `set_source_video_mapping`,
 `rename`, `set_audio_edge`, `set_audio_treatments`, `set_hold_audio`, `set_framing`, `set_sound`, `replace_sound`, `delete_sound`, `set_sound_allowance`, `add_asset`, `set_canvas`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, `set_gap_override`, `clear_gap_override`, `isolate_gap`, and `edit_occurrence`. Their exact typed parameters are defined in
 [`Command`](../crates/deadpan-core/src/command.rs). `set_repeat` changes an existing
@@ -338,7 +338,8 @@ revision, timing and wrapper metadata even when it resolves to zero. It reserves
 no identity or history. Commit rechecks the captured request and stored receipt;
 a raw zero commit fails `InvalidCommand`. The live writer and
 `deadpan-app --headless` share this response and one atomic history change.
-Overwrite is not yet supported.
+Scalar `trim_source` supports Ripple. Use the combined command below for
+Overwrite.
 
 ## Adjacent Source Roll
 
@@ -356,6 +357,29 @@ side needs a fresh wrapper. Supply each wrapper exactly when its side reports
 `needs_wrapper`; zero requires both null. Preview validates both receipts and
 all revision/timing metadata without reserving identities. Raw zero refuses.
 Cold and live writers use the same response and atomic commit path.
+
+## Combined Source Trim
+
+`apply_source_trim` accepts `parent`, `node`, nullable captured `right`, an
+`intent` with `in_frames`, `out_frames`, `slip_frames`, `roll_frames` and
+`policy` (`ripple` or `overwrite`), and an exact `resources` pool. All four
+values refer to the same entry revision. They are accepted values, so this
+command does not independently clamp or save intermediate scalar commands.
+See [Combined Trim](COMBINED_TRIM.md) for output geometry and current verification.
+
+Resources contain nullable `target_wrapper` and `right_wrapper`,
+`split: {"nodes": [...]}`, `fillers: [...]` and nullable `timing`. Resolve their
+exact roles through `ProjectDocument::source_trim_edit`; provide only the
+required fresh identities. A timing allocation, when required, names
+`new_revision`. The resolver's report is descriptive and cannot bypass
+command validation or stored Source admission.
+
+Dry runs return `source_trim_edit` and nullable `edit`. Zero intent requires
+empty resources, validates A and the unused result revision, and returns
+`edit: null` without reserving anything. Raw zero authoring is refused. Both
+used Sources are admitted even when overwrite removes B; an unused diagnostic
+neighbor does not become a required media source. Standalone and owned-project
+dispatch share these checks and save one atomic history entry.
 
 ## Sparse play overrides
 
@@ -1101,17 +1125,17 @@ migration writer-lock conflict uses the IPC fallback, whose admitted native
 store can report its current schema. Closed legacy packages keep the migration
 behavior below; an open endpoint does not perform legacy migration.
 
-Schemas 39 through 50 are unsupported development formats. The user authorized
+Schemas 39 through 51 are unsupported development formats. The user authorized
 a format break for the unused project, so this build does not migrate them.
 Open and migration reject them before writer recovery, backups or database
 changes. Create a new project for this build; the old package stays intact.
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-51-*.sqlite`, named for the destination schema, and upgrades a separate candidate. It
+`Snapshots/before-schema-52-*.sqlite`, named for the destination schema, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 51 and core document schema 42. Supported older schemas gain empty
+schema 52 and core document schema 43. Supported older schemas gain empty
 [render job tables](RENDER_JOBS.md), publication tables and automatic encoding
 decision tables. Migration invents no historical decisions. Existing frozen
 adapters retain strict replay.

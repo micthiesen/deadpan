@@ -1,0 +1,10 @@
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 27.95s
+     Running tests/composite_insert.rs (target/debug/deps/composite_insert-83f2643f39d161d3)
+
+running 2 tests
+test trim::combined::combined_ripple_appends_one_root_map_after_a_prior_route_with_exact_44100_phase ... ok
+test trim::combined::overwrite_keeps_complete_preserve_history_and_repeat_play_gap_context ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 65 filtered out; finished in 0.10s
+

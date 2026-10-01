@@ -339,3 +339,6 @@ mod roll;
 
 #[path = "trim/source_endpoints.rs"]
 mod source_endpoints;
+
+#[path = "trim/combined.rs"]
+mod combined;
