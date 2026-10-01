@@ -54,6 +54,7 @@ fn node(kind: NodeKind) -> BeatNode {
     BeatNode {
         label: "Private fixture label https://private.invalid/secret".into(),
         kind,
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         audio_treatments: Default::default(),
         framing: None,

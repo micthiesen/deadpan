@@ -74,6 +74,7 @@ fn document(
     let source = BeatNode {
         framing: None,
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         label: "Linked Original with dormant audio".into(),
         kind: NodeKind::Source {

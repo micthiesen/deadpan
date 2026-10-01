@@ -43,8 +43,8 @@ fn success(arguments: &[&str]) -> Result<Value> {
 #[test]
 fn doctor_reports_hold_audio_document_and_migration_schemas() -> Result {
     let report = success(&["doctor"])?;
-    assert_eq!(report["document_schema"], 39);
-    assert_eq!(report["database_schema"], 48);
+    assert_eq!(report["document_schema"], 40);
+    assert_eq!(report["database_schema"], 49);
     let partial = report["partial"].as_array().unwrap();
     for capability in [
         "schema-1-through-38-migration",
@@ -442,6 +442,7 @@ fn independent_stream_mappings_use_headless_commands_and_durable_undo() -> Resul
                     BeatNode {
                         audio_treatments: Default::default(),
                         framing: None,
+                        audio_editorial_edges: Default::default(),
                         audio_edges: Default::default(),
                         label: "Two-second picture, one-second audio".into(),
                         kind: NodeKind::Source {

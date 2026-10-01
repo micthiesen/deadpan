@@ -39,7 +39,9 @@ pub use audio_source_root::AudioRootSource;
 pub use audio_tape::{AudioSignalTape, AudioSignalTapeRun};
 
 pub use picture::{Picture, PictureFraming, PictureSample};
-pub use plan::{AudioBound, AudioBoundDomain, AudioFadeQuery, AudioFadeSpan, AudioPolicyQuery};
+pub use plan::{
+    AudioBound, AudioBoundDomain, AudioFadeEdge, AudioFadeQuery, AudioFadeSpan, AudioPolicyQuery,
+};
 pub use plan::{
     AudioBoundaries, AudioBoundaryKind, AudioBoundaryOrigin, AudioContent, AudioDomain, AudioQuery,
     AudioQueryLimits, AudioRetimeStage, AudioSpan, AudioTransform, LookupStats, NodeInspection,

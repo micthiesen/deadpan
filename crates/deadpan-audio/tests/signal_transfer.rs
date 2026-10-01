@@ -551,6 +551,7 @@ fn reference(gap: InputGap) -> Arc<AudioReferencePlan> {
         framing: None,
         label: "Synthetic input".into(),
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
@@ -615,6 +616,7 @@ fn reference(gap: InputGap) -> Arc<AudioReferencePlan> {
                 framing: None,
                 label: "Full Preserve history".into(),
                 audio_treatments: Default::default(),
+                audio_editorial_edges: Default::default(),
                 audio_edges: Default::default(),
                 kind: NodeKind::Retime {
                     child: id("input"),

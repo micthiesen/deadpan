@@ -469,6 +469,20 @@ impl RootSoundEditCapture {
             }));
         }
         let operation = match command {
+            Command::TrimSource {
+                parent,
+                node,
+                edge,
+                delta_frames,
+                mode,
+                ..
+            } => {
+                let resolved = document.source_trim(parent, node, *edge, *delta_frames, *mode)?;
+                let Some(operation) = resolved.root_operation else {
+                    return Ok(None);
+                };
+                operation
+            }
             Command::InsertTime { at, hold, .. } => RootSoundOperation::Insert {
                 at: *at,
                 duration: hold.duration,

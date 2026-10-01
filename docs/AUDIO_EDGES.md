@@ -20,6 +20,19 @@ claim individual-gap editing. Ungroup refuses a Sequence with explicit edge
 exceptions until they are reset, so removing the wrapper cannot silently lose
 them. Deletion removes the deleted node's choices with its other authored state.
 
+The current Trim increment adds separate `audio_editorial_edges` intent to a
+beat: `start` and `end` identify newly authored allocation edges. The object is
+omitted when both are false; both boolean fields are required when present.
+Each side uses the owner's existing `node_start` or `node_end` policy. This
+intent is separate from raw sampling support, so a retained Partition can carry
+a new creative fade while preserving its full filtering context. A Split of a
+marked owner retains that context and does not add fades at the split itself.
+Ungroup refuses a Sequence carrying this intent because removing its owner
+would lose the edge. Transferring or clearing that intent is not yet exposed.
+The [Source Trim contract](SOURCE_TRIM.md) and
+[qualification](qualification/source-trim-2026-10-01.md) record the implementation
+and indexed-picture, decoded-PCM and persistence checks.
+
 Direct policy changes preserve temporal coordinates, marks and presentation
 basis. Occurrence edits preserve timing while copying or relocating owned marks
 under the existing isolation rules; their mark inventory may grow. Edge choices
@@ -85,6 +98,18 @@ it does not create a fade or change the width of an existing short fade.
 Partitioned reads and fresh cropped reads therefore match the same full render.
 An authored trim is different: it creates a new structural edge and a fade at
 that new edge. Continuous time-mapping history remains unchanged beneath it.
+At a changed join, Trim records both incident sides, including a neighbor whose
+previous boundary was transparent. Each new edge starts on its consuming output
+sample boundary; a retained source phase does not delay the new ramp. The
+opposite unchanged side retains its existing progress. The resulting creative
+gain is the minimum of the applicable side ramps, never their product.
+New ramps shorten to the incident voice's delivered sample interval. Retained
+ramps keep their existing width and progress. A group's edge belongs to its
+incident voice; a later child cannot inherit it merely because hidden Source
+context overlaps the edge. Bound playback resolves that voice from its retained
+sample clock while keeping authored coordinates separate for Hard precedence.
+Transporting a marker into that retained domain must not recreate the same
+owner's marker without its incident-voice constraint.
 The envelope uses the existing read deadline/cancellation checks and bounded
 256-sample output block; it starts no worker or additional preparation pass.
 

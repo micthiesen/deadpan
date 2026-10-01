@@ -318,6 +318,7 @@ fn replacement_rejects_repeat_and_retime_ancestors_without_descending() {
                         label: "Container".into(),
                         framing: None,
                         audio_treatments: Default::default(),
+                        audio_editorial_edges: Default::default(),
                         audio_edges: Default::default(),
                         kind,
                     },

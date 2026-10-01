@@ -84,6 +84,7 @@ fn fixture(plays: u32, branches: &[(u32, &str)]) -> ProjectDocument {
                     .unwrap(),
                 ),
                 audio_treatments: Default::default(),
+                audio_editorial_edges: Default::default(),
                 audio_edges: AudioEdgePolicies {
                     repeat_gap_start: AudioEdgePolicy::Hard,
                     ..Default::default()
@@ -114,6 +115,7 @@ fn fixture(plays: u32, branches: &[(u32, &str)]) -> ProjectDocument {
                 label: "Nested".into(),
                 framing: None,
                 audio_treatments: Default::default(),
+                audio_editorial_edges: Default::default(),
                 audio_edges: Default::default(),
                 kind: NodeKind::Repeat {
                     child: id("branch-hold"),
@@ -261,10 +263,15 @@ fn nested_gap_branch_has_its_own_picture_audio_and_reference_path() {
     let fade = plan
         .audio_fades(AudioSample(1600)..AudioSample(3200), Default::default())
         .unwrap();
-    assert!(fade.spans[0].boundaries.start.iter().any(|edge| {
-        edge.kind == AudioBoundaryKind::RepeatGapStart
-            && edge.policy == AudioEdgePolicy::Hard
-            && edge.gap_after == Some(play(0))
+    let retained_start = fade.spans[0]
+        .start
+        .iter()
+        .find(|edge| !edge.editorial)
+        .expect("the retained gap voice has a start edge");
+    assert!(retained_start.origins.iter().any(|origin| {
+        origin.kind == AudioBoundaryKind::RepeatGapStart
+            && origin.policy == AudioEdgePolicy::Hard
+            && origin.gap_after == Some(play(0))
     }));
     let quiet = plan
         .audio_processing(AudioSample(8000)..AudioSample(9600), Default::default())

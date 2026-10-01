@@ -55,6 +55,7 @@ fn source(frames: i64) -> BeatNode {
                 audio_offset: AudioSample(0),
             },
         },
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
     }
 }
@@ -582,6 +583,7 @@ fn sequence_interiors_and_root_composite_seams_preserve_their_owners() {
         audio_treatments: Default::default(),
         framing: None,
         label: "Repeat".into(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
             child: id("inner"),
@@ -634,6 +636,7 @@ fn composite_seam_moves_root_marks_once_and_retains_occurrence_and_source_clocks
                     audio_treatments: Default::default(),
                     label: "Repeated Original".into(),
                     framing: None,
+                    audio_editorial_edges: Default::default(),
                     audio_edges: Default::default(),
                     kind: NodeKind::Repeat {
                         child: id("inner"),
@@ -720,6 +723,7 @@ fn billion_play_seam_insertion_keeps_one_step_per_owned_recipe() {
                     audio_treatments: Default::default(),
                     label: "Repeat".into(),
                     framing: None,
+                    audio_editorial_edges: Default::default(),
                     audio_edges: Default::default(),
                     kind: NodeKind::Repeat {
                         child: id("inner"),

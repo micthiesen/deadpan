@@ -39,6 +39,7 @@ fn repeat(child: &str, count: u32) -> BeatNode {
         audio_treatments: Default::default(),
         framing: None,
         label: "repeat".into(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
             child: id(child),
@@ -52,6 +53,7 @@ fn retime(child: &str, duration: i64, start: i64, end: i64, pitch: PitchPolicy) 
         audio_treatments: Default::default(),
         framing: None,
         label: "retime".into(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             child: id(child),
@@ -292,6 +294,7 @@ fn source_capture_retains_its_current_placement_without_freezing_raw_assets() {
         audio_treatments: Default::default(),
         framing: None,
         label: "source".into(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {

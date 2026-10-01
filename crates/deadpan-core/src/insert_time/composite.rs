@@ -102,7 +102,7 @@ pub(crate) fn prepare_suffix(
     Ok(working)
 }
 
-fn shifted_owners(
+pub(crate) fn shifted_owners(
     document: &ProjectDocument,
     parent: &NodeId,
     slot: usize,

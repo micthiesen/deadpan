@@ -52,13 +52,16 @@ fn creative_gains(
         .checked_add(i64::try_from(frames).map_err(|_| StageAudioError::Range)?)
         .ok_or(StageAudioError::Range)?;
     let mut cursor = start.0;
-    let mut gains = vec![1.0; frames];
+    let mut gains = vec![1.0_f32; frames];
     for span in spans {
         if span.samples.start.0 != cursor
             || span.samples.start >= span.samples.end
             || span.samples.end.0 > end
-            || (span.length >= 2
-                && (span.boundaries.start.is_empty() || span.boundaries.end.is_empty()))
+            || span
+                .start
+                .iter()
+                .chain(&span.end)
+                .any(|edge| edge.length >= 2 && edge.origins.is_empty())
         {
             return Err(StageAudioError::Range);
         }
@@ -67,21 +70,26 @@ fn creative_gains(
             usize::try_from(span.samples.start.0 - start.0).map_err(|_| StageAudioError::Range)?;
         let right =
             usize::try_from(span.samples.end.0 - start.0).map_err(|_| StageAudioError::Range)?;
-        let start_fade = !span
-            .boundaries
-            .start
-            .iter()
-            .any(|origin| origin.policy == AudioEdgePolicy::Hard);
-        let end_fade = !span
-            .boundaries
-            .end
-            .iter()
-            .any(|origin| origin.policy == AudioEdgePolicy::Hard);
         for (offset, gain) in gains[left..right].iter_mut().enumerate() {
-            let progress = span.progress_at_start.checked_add(ExactRatio::integer(
-                i64::try_from(offset).map_err(|_| StageAudioError::Range)?,
-            ))?;
-            *gain = creative_gain(span.length, progress, start_fade, end_fade)?;
+            let offset =
+                ExactRatio::integer(i64::try_from(offset).map_err(|_| StageAudioError::Range)?);
+            for (edges, increasing) in [(&span.start, true), (&span.end, false)] {
+                for edge in edges {
+                    if edge
+                        .origins
+                        .iter()
+                        .any(|origin| origin.policy == AudioEdgePolicy::Hard)
+                    {
+                        continue;
+                    }
+                    let distance = if increasing {
+                        edge.distance_at_start.checked_add(offset)?
+                    } else {
+                        edge.distance_at_start.checked_sub(offset)?
+                    };
+                    *gain = (*gain).min(creative_gain(edge.length, distance, true, false)?);
+                }
+            }
         }
     }
     if cursor != end {
@@ -301,19 +309,51 @@ mod tests {
     }
 
     #[test]
+    fn editorial_ramps_merge_by_minimum_and_keep_independent_sides() {
+        let base = span(0..4, AudioEnvelope::new(4, 0, AudioSample(0)).unwrap());
+        let edge = |length, distance, at| deadpan_plan::AudioFadeEdge {
+            at: ExactRatio::integer(at),
+            length,
+            distance_at_start: ExactRatio::integer(distance),
+            origins: base.boundaries.start.clone(),
+            editorial: true,
+        };
+        let fades = AudioFadeSpan {
+            samples: AudioSample(0)..AudioSample(2),
+            start: vec![edge(4, 0, 0), edge(2, 0, 1)],
+            end: vec![edge(2, 1, 2)],
+        };
+        let mut pcm = vec![[1.0; 2]; 2];
+        apply_creative_fades(AudioSample(0), &mut pcm, &[fades]).unwrap();
+        assert_eq!(pcm, vec![[0.25; 2], [0.5; 2]]);
+        let tiny = AudioFadeSpan {
+            samples: AudioSample(0)..AudioSample(1),
+            start: vec![edge(1, 0, 0)],
+            end: vec![edge(1, 0, 1)],
+        };
+        let mut pcm = [[0.75, -0.5]];
+        apply_creative_fades(AudioSample(0), &mut pcm, &[tiny]).unwrap();
+        assert_eq!(pcm, [[0.75, -0.5]]);
+    }
+
+    #[test]
     fn derived_fade_validation_is_atomic_for_a_later_invalid_span() {
         let base = span(0..2, AudioEnvelope::new(2, 0, AudioSample(0)).unwrap());
         let first = AudioFadeSpan {
             samples: AudioSample(0)..AudioSample(2),
-            length: 4,
-            progress_at_start: ExactRatio::ZERO,
-            boundaries: base.boundaries.clone(),
+            start: vec![deadpan_plan::AudioFadeEdge {
+                at: ExactRatio::ZERO,
+                length: 4,
+                distance_at_start: ExactRatio::ZERO,
+                origins: base.boundaries.start.clone(),
+                editorial: false,
+            }],
+            end: Vec::new(),
         };
         let invalid = AudioFadeSpan {
             samples: AudioSample(1)..AudioSample(3),
-            length: 4,
-            progress_at_start: ExactRatio::integer(1),
-            boundaries: base.boundaries,
+            start: first.start.clone(),
+            end: Vec::new(),
         };
         let mut samples = vec![[0.75, -0.5]; 4];
         let original = samples.clone();

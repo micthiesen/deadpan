@@ -35,6 +35,7 @@ pub(crate) fn fixture_plan(preserve: bool) -> RenderPlan {
         framing: None,
         label: "Original speech".into(),
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
@@ -66,6 +67,7 @@ pub(crate) fn fixture_plan(preserve: bool) -> RenderPlan {
                 framing: None,
                 label: "Full preparation".into(),
                 audio_treatments: Default::default(),
+                audio_editorial_edges: Default::default(),
                 audio_edges: Default::default(),
                 kind: NodeKind::Retime {
                     purpose: RetimePurpose::Edit,

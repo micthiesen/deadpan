@@ -9,14 +9,18 @@ use std::marker::PhantomData;
 
 pub(crate) fn supports(state: &AudioBindingState) -> bool {
     state
-        .bindings()
+        .timings()
         .values()
-        .chain(state.gap_bindings().values())
-        .all(|binding| {
-            binding
-                .placements()
-                .all(|placement| placement.reference_local_offset == ExactRatio::ZERO)
-        })
+        .all(|layout| !layout.has_editorial_edges())
+        && state
+            .bindings()
+            .values()
+            .chain(state.gap_bindings().values())
+            .all(|binding| {
+                binding
+                    .placements()
+                    .all(|placement| placement.reference_local_offset == ExactRatio::ZERO)
+            })
 }
 pub(crate) fn validate(json: &str) -> Result<(), serde_json::Error> {
     serde_json::from_str::<State>(json).map(|_| ())
@@ -25,11 +29,25 @@ pub(crate) fn validate(json: &str) -> Result<(), serde_json::Error> {
 #[serde(deny_unknown_fields)]
 struct State {
     #[serde(rename = "timings")]
-    _timings: IgnoredAny,
+    _timings: Sequence<Timing>,
     #[serde(rename = "bindings")]
     _bindings: Map<Binding>,
     #[serde(rename = "gap_bindings")]
     _gap_bindings: Option<Map<Binding>>,
+}
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Timing {
+    #[serde(rename = "id")]
+    _id: IgnoredAny,
+    #[serde(rename = "layout", deserialize_with = "pre_editorial_layout")]
+    _layout: (),
+}
+
+fn pre_editorial_layout<'de, D: Deserializer<'de>>(decoder: D) -> Result<(), D::Error> {
+    let raw = <&serde_json::value::RawValue>::deserialize(decoder)?;
+    crate::FrozenAudioLayout::validate_pre_editorial_json(raw.get())
+        .map_err(serde::de::Error::custom)
 }
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]

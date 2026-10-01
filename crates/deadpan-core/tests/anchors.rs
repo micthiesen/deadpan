@@ -122,6 +122,7 @@ fn retime(child: &str, start: i64, end: i64, frames: i64) -> BeatNode {
     BeatNode {
         audio_treatments: Default::default(),
         framing: None,
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         label: "Retime".into(),
         kind: NodeKind::Retime {
@@ -453,6 +454,7 @@ fn source_document() -> ProjectDocument {
                     BeatNode {
                         audio_treatments: Default::default(),
                         framing: None,
+                        audio_editorial_edges: Default::default(),
                         audio_edges: Default::default(),
                         label: "Source".into(),
                         kind: NodeKind::Source {

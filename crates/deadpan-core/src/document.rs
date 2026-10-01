@@ -9,7 +9,7 @@ use crate::{
     SourceVideoMapping, TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 39;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 40;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -385,6 +385,8 @@ pub struct BeatNode {
         skip_serializing_if = "crate::AudioEdgePolicies::is_automatic"
     )]
     pub audio_edges: crate::AudioEdgePolicies,
+    #[serde(default, skip_serializing_if = "crate::AudioEditorialEdges::is_empty")]
+    pub audio_editorial_edges: crate::AudioEditorialEdges,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub framing: Option<crate::Framing>,
 }
@@ -396,6 +398,7 @@ impl BeatNode {
             kind: NodeKind::Sequence { children },
             audio_treatments: Default::default(),
             audio_edges: crate::AudioEdgePolicies::default(),
+            audio_editorial_edges: Default::default(),
             framing: None,
         }
     }
@@ -405,6 +408,7 @@ impl BeatNode {
             kind: NodeKind::Hold { recipe },
             audio_treatments: Default::default(),
             audio_edges: crate::AudioEdgePolicies::default(),
+            audio_editorial_edges: Default::default(),
             framing: None,
         }
     }
@@ -574,6 +578,7 @@ impl ProjectDocument {
                 audio_treatments: Default::default(),
                 label: record.label.clone(),
                 framing: None,
+                audio_editorial_edges: Default::default(),
                 audio_edges: Default::default(),
                 kind: NodeKind::Source { source },
             },
@@ -971,11 +976,14 @@ impl ProjectDocument {
                 } => {
                     positive(*duration, "retime")?;
                     if *purpose == RetimePurpose::Partition
-                        && (*duration != mapping.duration() || !node.audio_edges.is_automatic())
+                        && (*duration != mapping.duration()
+                            || !node
+                                .audio_editorial_edges
+                                .permits_partition_policies(node.audio_edges))
                     {
                         return Err(DocumentError::new(
                             DocumentErrorCode::InvalidTree,
-                            "a transparent partition requires unity timing and automatic audio edges",
+                            "a partition requires unity timing and Hard policies only on marked editorial sides",
                         ));
                     }
                     let child_frames = child_duration(child)?.frames();

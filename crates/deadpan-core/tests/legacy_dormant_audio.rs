@@ -213,6 +213,18 @@ macro_rules! legacy_binding_tests {
             let (wire, current) = bound_wire($v);
             let old = $legacy::Document::from_json(&wire.to_string()).unwrap();
             assert!(old.matches(&current));
+            for flags in [Value::Null, json!({"start":false,"end":false}), json!({"start":true,"end":false})] {
+                let mut forged = wire.clone();
+                forged["audio_bindings"]["timings"][0]["layout"]["nodes"]["source"]["editorial_edges"] = flags;
+                let raw = forged.to_string();
+                assert!($legacy::Document::from_json(&raw).is_err());
+                assert!($legacy::Document::from_json(&raw.replace("editorial_edges", "editorial_\\u0065dges")).is_err());
+            }
+            let mut marked = wire.clone();
+            marked["schema_version"] = json!(DOCUMENT_SCHEMA_VERSION);
+            marked["audio_bindings"]["timings"][0]["layout"]["nodes"]["source"]["editorial_edges"] = json!({"start":true,"end":false});
+            let editorial_layout = ProjectDocument::from_json(&marked.to_string()).unwrap();
+            assert!(!old.matches(&editorial_layout));
             let mut forged = wire.clone();
             empty_retained_placement(&mut forged["audio_bindings"]);
             assert!($legacy::Document::from_json(&forged.to_string()).is_err());
@@ -232,12 +244,19 @@ macro_rules! legacy_binding_tests {
             for direction in ["forward", "inverse"] {
                 for side in ["before", "after"] {
                     let mut forged = wire.clone();
+                    forged[direction]["audio_bindings"][side]["timings"][0]["layout"]["nodes"]["source"]["editorial_edges"] = json!({"start":false,"end":false});
+                    assert!($legacy::matches_edit(&forged.to_string(), &tx).is_err());
+                    let mut forged = wire.clone();
                     empty_retained_placement(&mut forged[direction]["audio_bindings"][side]);
                     assert!($legacy::matches_edit(&forged.to_string(), &tx).is_err());
                     let mut modern = tx.clone();
                     let patch = if direction == "forward" { &mut modern.forward } else { &mut modern.inverse };
                     let change = patch.audio_bindings.as_mut().unwrap();
                     *if side == "before" { &mut change.before } else { &mut change.after } = Some(dormant_layout.audio_bindings().clone());
+                    assert!(!$legacy::matches_edit(&wire.to_string(), &modern).unwrap());
+                    let patch = if direction == "forward" { &mut modern.forward } else { &mut modern.inverse };
+                    let change = patch.audio_bindings.as_mut().unwrap();
+                    *if side == "before" { &mut change.before } else { &mut change.after } = Some(editorial_layout.audio_bindings().clone());
                     assert!(!$legacy::matches_edit(&wire.to_string(), &modern).unwrap());
                 }
             }

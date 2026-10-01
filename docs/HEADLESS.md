@@ -66,7 +66,7 @@ or change undo history. It checks the same reducer, serialized size limits, and
 never-reused revision rule as commit. A stale expected
 revision fails with `RevisionConflict` and the current revision, without writing.
 
-Supported commands are `insert`, `insert_time`, `split`, `slip_source`, `delete`, `delete_ripple`, `delete_range`, `move`, `move_range`, `group`,
+Supported commands are `insert`, `insert_time`, `split`, `slip_source`, `trim_source`, `delete`, `delete_ripple`, `delete_range`, `move`, `move_range`, `group`,
 `ungroup`, `splice_source`, `splice_source_at`, `replace_source`, `splice_slice`, `splice_slice_at`, `replace_slice`, `wrap_repeat`, `set_repeat`, `wrap_retime`, `set_retime`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`, `set_hold_picture_context`, `set_source_audio_mapping`, `set_source_video_mapping`,
 `rename`, `set_audio_edge`, `set_audio_treatments`, `set_hold_audio`, `set_framing`, `set_sound`, `replace_sound`, `delete_sound`, `set_sound_allowance`, `add_asset`, `set_canvas`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, `set_gap_override`, `clear_gap_override`, `isolate_gap`, and `edit_occurrence`. Their exact typed parameters are defined in
 [`Command`](../crates/deadpan-core/src/command.rs). `set_repeat` changes an existing
@@ -319,6 +319,26 @@ is null for an applied zero. Preview writes no history or revision reservation;
 normal commit rechecks the captured revision and receipt. Raw zero commits return
 `InvalidCommand`. This response is shared with the live project writer and
 `deadpan-app --headless`.
+
+## Source edge Trim
+
+`trim_source` takes an ordinary Sequence `parent`, its direct child `node`,
+`edge: "in" | "out"`, signed `delta_frames`, `mode: "ripple"`, a nullable
+`wrapper`, and a `timing` identity allocated in `new_revision`. Positive moves
+the named edge later in Original material. A contraction shortens the output;
+an extension grows it and shifts the suffix. The admitted Source/Partition scope
+and exact bounds are described in [Source Trim](SOURCE_TRIM.md).
+
+`command --dry-run` returns a `source_trim` resolution alongside nullable `edit`.
+The resolution reports exact inclusive/exclusive bounds, inward whole-frame
+clamps, old/new allocation and selection, physical prefix, duration change and
+whether a fresh Partition wrapper is needed. Supply that wrapper exactly when
+`needs_wrapper` is true; zero previews require null. A dry run must carry valid
+revision, timing and wrapper metadata even when it resolves to zero. It reserves
+no identity or history. Commit rechecks the captured request and stored receipt;
+a raw zero commit fails `InvalidCommand`. The live writer and
+`deadpan-app --headless` share this response and one atomic history change.
+Overwrite and Roll are not admitted modes.
 
 ## Sparse play overrides
 
@@ -1064,17 +1084,17 @@ migration writer-lock conflict uses the IPC fallback, whose admitted native
 store can report its current schema. Closed legacy packages keep the migration
 behavior below; an open endpoint does not perform legacy migration.
 
-Schemas 39 through 42 are unsupported development formats. The user authorized
+Schemas 39 through 48 are unsupported development formats. The user authorized
 a format break for the unused project, so this build does not migrate them.
 Open and migration reject them before writer recovery, backups or database
 changes. Create a new project for this build; the old package stays intact.
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-43-*.sqlite`, named for the destination schema, and upgrades a separate candidate. It
+`Snapshots/before-schema-49-*.sqlite`, named for the destination schema, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 43 and core document schema 34. Supported older schemas gain empty
+schema 49 and core document schema 40. Supported older schemas gain empty
 [render job tables](RENDER_JOBS.md), publication tables and automatic encoding
 decision tables. Migration invents no historical decisions. Existing frozen
 adapters retain strict replay.

@@ -147,6 +147,8 @@ impl FrozenAudioKind {
 pub struct FrozenAudioNode {
     pub duration: FrameDuration,
     pub edges: AudioEdgePolicies,
+    #[serde(default, skip_serializing_if = "crate::AudioEditorialEdges::is_empty")]
+    pub editorial_edges: crate::AudioEditorialEdges,
     pub kind: FrozenAudioKind,
 }
 
@@ -219,6 +221,18 @@ enum ProjectionMode {
 }
 
 impl FrozenAudioLayout {
+    /// Closed grammar for layouts embedded in older documents and contexts.
+    /// Reject presence of the new field even when both flags are false.
+    pub(crate) fn validate_pre_editorial_json(json: &str) -> Result<(), DocumentError> {
+        preflight::check_pre_editorial(json)
+    }
+
+    pub(crate) fn has_editorial_edges(&self) -> bool {
+        self.nodes
+            .values()
+            .any(|node| !node.editorial_edges.is_empty())
+    }
+
     /// Rebuild all indexes after a typed historical identity rename.
     pub(crate) fn from_renamed_parts(
         root: NodeId,
@@ -313,6 +327,7 @@ impl FrozenAudioLayout {
                 FrozenAudioNode {
                     duration: durations[id],
                     edges: node.audio_edges,
+                    editorial_edges: node.audio_editorial_edges,
                     kind,
                 },
             );
@@ -956,10 +971,11 @@ fn validate_node(node: &FrozenAudioNode) -> Result<(), DocumentError> {
         mapping,
         ..
     } = &node.kind
-        && (node.duration != mapping.duration() || !node.edges.is_automatic())
+        && (node.duration != mapping.duration()
+            || !node.editorial_edges.permits_partition_policies(node.edges))
     {
         return Err(invalid(
-            "frozen Partition requires unity timing and automatic edges",
+            "frozen Partition requires unity timing and Hard policies only on marked editorial sides",
         ));
     }
     Ok(())

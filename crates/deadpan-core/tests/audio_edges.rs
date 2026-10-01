@@ -2,6 +2,44 @@ use std::collections::BTreeMap;
 
 use deadpan_core::*;
 
+#[test]
+fn editorial_edge_wire_is_optional_but_closed_and_boolean_when_present() {
+    let baseline = BeatNode::sequence("Empty", vec![]);
+    let wire = serde_json::to_value(&baseline).unwrap();
+    assert!(wire.get("audio_editorial_edges").is_none());
+    for flags in [
+        serde_json::json!({"start":true,"end":false}),
+        serde_json::json!({"start":false,"end":true}),
+        serde_json::json!({"start":false,"end":false}),
+    ] {
+        let mut value = wire.clone();
+        value["audio_editorial_edges"] = flags.clone();
+        let parsed: BeatNode = serde_json::from_value(value).unwrap();
+        assert_eq!(
+            parsed.audio_editorial_edges.start,
+            flags["start"].as_bool().unwrap()
+        );
+        assert_eq!(
+            parsed.audio_editorial_edges.end,
+            flags["end"].as_bool().unwrap()
+        );
+    }
+    for invalid in [
+        serde_json::Value::Null,
+        serde_json::json!({}),
+        serde_json::json!({"start":true}),
+        serde_json::json!({"start":true,"end":null}),
+        serde_json::json!({"start":1,"end":false}),
+        serde_json::json!({"start":true,"end":false,"future":false}),
+    ] {
+        let mut value = wire.clone();
+        value["audio_editorial_edges"] = invalid;
+        assert!(serde_json::from_value::<BeatNode>(value).is_err());
+    }
+    let duplicate = r#"{"start":true,"st\u0061rt":false,"end":false}"#;
+    assert!(serde_json::from_str::<AudioEditorialEdges>(duplicate).is_err());
+}
+
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }
@@ -136,6 +174,7 @@ fn source_and_gap_choices_are_kind_checked_and_retained_when_not_audible() {
                                 link: LinkRelation::Independent,
                             },
                         },
+                        audio_editorial_edges: Default::default(),
                         audio_edges: Default::default(),
                     },
                 )]),

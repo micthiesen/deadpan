@@ -1,0 +1,38 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 51.68s
+     Running tests/selected_video_window.rs (target/debug/deps/selected_video_window-19db60250f69201a)
+
+running 14 tests
+test inverse_source_anchors_admit_exact_fractional_endpoints_and_reject_hidden_context ... ok
+test inverse_source_window_composes_enclosing_retime_and_explicit_repeat_identity ... ok
+test reject_policy_never_uses_available_context_beyond_the_selected_end ... ok
+test public_source_pictures_reject_incomplete_context_and_inconsistent_exact_windows ... ok
+test exact_selected_ticks_hold_only_intersecting_vfr_intervals_on_both_sides ... ok
+test edit_window::editorial_window_metadata_preserves_vfr_selection_and_rounded_picture_tail ... ok
+test full_context_promotion_preserves_vfr_picture_and_rounded_tail_at_signed_origins ... ok
+test nested_retimes_and_repeat_plays_preserve_selection_without_rounding_source_points ... ok
+test trim::ripple_trim_grown_camera_holds_endpoints_while_ancestor_uses_its_new_duration ... FAILED
+test trim::ripple_trim_partition_crop_retains_hidden_selection_and_source_camera ... ok
+test slip::indexed_slip_and_source_anchor_inverse_agree_without_rounding_vfr_pts ... ok
+test slip::partition_slip_preserves_full_owner_context_and_retained_camera_domain ... ok
+test trim::ripple_trim_signed_vfr_edges_keep_fractional_terminal_selection_and_clamp_handles ... ok
+test slip::signed_vfr_slip_selects_known_pts_in_both_directions_and_holds_the_rounded_tail ... ok
+
+failures:
+
+---- trim::ripple_trim_grown_camera_holds_endpoints_while_ancestor_uses_its_new_duration stdout ----
+
+thread 'trim::ripple_trim_grown_camera_holds_endpoints_while_ancestor_uses_its_new_duration' (61155801) panicked at crates/deadpan-plan/tests/selected_video_window/trim.rs:264:13:
+assertion `left == right` failed
+  left: NodeId("root")
+ right: NodeId("group")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    trim::ripple_trim_grown_camera_holds_endpoints_while_ancestor_uses_its_new_duration
+
+test result: FAILED. 13 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `-p deadpan-plan --test selected_video_window`

@@ -96,6 +96,7 @@ fn fixture() -> ProjectDocument {
                         audio_treatments: Default::default(),
                         label: "Picture time".into(),
                         framing: None,
+                        audio_editorial_edges: Default::default(),
                         audio_edges: Default::default(),
                         kind: NodeKind::Hold {
                             recipe: HoldRecipe {

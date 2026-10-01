@@ -21,7 +21,7 @@ impl LegacyAudioBindingState {
     }
 }
 pub(crate) fn supports_layout(layout: &FrozenAudioLayout) -> bool {
-    layout.nodes().values().all(|node| !matches!(&node.kind,
+    !layout.has_editorial_edges() && layout.nodes().values().all(|node| !matches!(&node.kind,
         FrozenAudioKind::Source { placement: Some(placement) } if placement.start == placement.end
     ))
 }

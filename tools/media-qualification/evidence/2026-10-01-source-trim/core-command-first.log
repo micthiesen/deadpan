@@ -1,0 +1,1447 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_edit.rs:65:100
+     |
+  43 | ) -> Result<Admission<'a>, EditError> {
+     |      -------------------------------- expected `command::EditError` because of this
+...
+  65 |         ProjectFrame(start.0.checked_add(allocation.duration().frames()).ok_or(TimeError::Overflow)?),
+     |                                                                          --------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                                                          |
+     |                                                                          this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_edit.rs:66:6
+     |
+  43 |   ) -> Result<Admission<'a>, EditError> {
+     |        -------------------------------- expected `command::EditError` because of this
+...
+  63 |       let output = FrameRange::new(
+     |  __________________-
+  64 | |         start,
+  65 | |         ProjectFrame(start.0.checked_add(allocation.duration().frames()).ok_or(TimeError::Overflow)?),
+  66 | |     )?;
+     | |     -^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     | |_____|
+     |       this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_edit.rs:74:74
+     |
+  43 | ) -> Result<Admission<'a>, EditError> {
+     |      -------------------------------- expected `command::EditError` because of this
+...
+  74 |     let effective = SourceEditWindow::new(effective.start, effective.end)?;
+     |                     -----------------------------------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                     |
+     |                     this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_edit.rs:91:77
+     |
+  43 | ) -> Result<Admission<'a>, EditError> {
+     |      -------------------------------- expected `command::EditError` because of this
+...
+  91 |     let video_frames = source.video_mapping.duration_frames(source.duration)?;
+     |                                             --------------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                             |
+     |                                             this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_edit.rs:92:59
+     |
+  43 | ) -> Result<Admission<'a>, EditError> {
+     |      -------------------------------- expected `command::EditError` because of this
+...
+  92 |     let video_support = support(video_start, video_frames)?;
+     |                         ----------------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                         |
+     |                         this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_edit.rs:98:62
+     |
+  43 | ) -> Result<Admission<'a>, EditError> {
+     |      -------------------------------- expected `command::EditError` because of this
+...
+  98 |     if source.video_mapping.selection_frames(source.duration)?
+     |                             ---------------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                             |
+     |                             this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_edit.rs:122:85
+     |
+ 117 | ) -> Result<(&'a NodeId, FrameRange), EditError> {
+     |      ------------------------------------------- expected `command::EditError` because of this
+...
+ 122 |             FrameRange::new(ProjectFrame(0), ProjectFrame(source.duration.frames()))?,
+     |             ------------------------------------------------------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |             |
+     |             this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_slip.rs:61:65
+     |
+  61 |     let minimum_delta = video_start.checked_sub(effective.start)?;
+     |                                     ----------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                     |
+     |                                     this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_slip.rs:62:69
+     |
+  62 |     let maximum_delta = video_support.end.checked_sub(effective.end)?;
+     |                                           --------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                           |
+     |                                           this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_slip.rs:64:43
+     |
+  64 |         i64::try_from(minimum_delta.ceil()?).map_err(|_| TimeError::Overflow)?;
+     |                                     ------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                     |
+     |                                     this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_slip.rs:64:78
+     |
+  64 |         i64::try_from(minimum_delta.ceil()?).map_err(|_| TimeError::Overflow)?;
+     |         ------------------------------------ --------------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |         |                                    |
+     |         |                                    this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |         this has type `Result<_, TryFromIntError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_slip.rs:66:78
+     |
+  66 |         i64::try_from(maximum_delta.floor()).map_err(|_| TimeError::Overflow)?;
+     |         ------------------------------------ --------------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |         |                                    |
+     |         |                                    this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |         this has type `Result<_, TryFromIntError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_slip.rs:79:51
+     |
+  79 |         let start = video_start.checked_sub(delta)?;
+     |                                 ------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                 |
+     |                                 this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_slip.rs:80:56
+     |
+  80 |         let next_support = support(start, video_frames)?;
+     |                            ----------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                            |
+     |                            this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_slip.rs:92:72
+     |
+  92 |             .selection_in_source(admission.video_span, source.duration)?;
+     |              ----------------------------------------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |              |
+     |              this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_slip.rs:94:55
+     |
+  94 |             let start = audio.start.checked_sub(delta)?;
+     |                                     ------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                     |
+     |                                     this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_slip.rs:97:56
+     |
+  97 |                 support(start.checked_add(audio.offset)?, audio.frames)?,
+     |                               -------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                               |
+     |                               this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_slip.rs:97:72
+     |
+  97 |                 support(start.checked_add(audio.offset)?, audio.frames)?,
+     |                 -------------------------------------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                 |
+     |                 this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_slip.rs:103:68
+     |
+ 103 |                     start: selected.start.checked_sub(audio.offset)?,
+     |                                           -------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                           |
+     |                                           this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_slip.rs:104:64
+     |
+ 104 |                     end: selected.end.checked_sub(audio.offset)?,
+     |                                       -------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                       |
+     |                                       this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_slip.rs:111:14
+     |
+ 107 |               after.audio_mapping.selection_frames_with_offset(
+     |  _________________________________-
+ 108 | |                 source.duration,
+ 109 | |                 source.audio_offset,
+ 110 | |                 document.presentation_basis().frame_rate,
+ 111 | |             )?;
+     | |             -^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     | |_____________|
+     |               this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:120:66
+     |
+ 119 | ) -> Result<SourceTrimResolution, EditError> {
+     |      --------------------------------------- expected `command::EditError` because of this
+ 120 |     let (minimum_delta, maximum_delta) = limits(&admission, edge)?;
+     |                                          ------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                          |
+     |                                          this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:121:63
+     |
+ 119 | ) -> Result<SourceTrimResolution, EditError> {
+     |      --------------------------------------- expected `command::EditError` because of this
+ 120 |     let (minimum_delta, maximum_delta) = limits(&admission, edge)?;
+ 121 |     let minimum_delta_frames = minimum_delta.minimum_integer()?;
+     |                                              -----------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                              |
+     |                                              this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:122:63
+     |
+ 119 | ) -> Result<SourceTrimResolution, EditError> {
+     |      --------------------------------------- expected `command::EditError` because of this
+...
+ 122 |     let maximum_delta_frames = maximum_delta.maximum_integer()?;
+     |                                              -----------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                              |
+     |                                              this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:128:79
+     |
+ 119 | ) -> Result<SourceTrimResolution, EditError> {
+     |      --------------------------------------- expected `command::EditError` because of this
+...
+ 128 |         SourceTrimEdge::In => applied.checked_neg().ok_or(TimeError::Overflow)?,
+     |                                                     --------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                                     |
+     |                                                     this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:133:101
+     |
+ 119 | ) -> Result<SourceTrimResolution, EditError> {
+     |      --------------------------------------- expected `command::EditError` because of this
+...
+ 133 |         ProjectFrame(admission.output.end().0.checked_add(duration_delta).ok_or(TimeError::Overflow)?),
+     |                                                                           --------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                                                           |
+     |                                                                           this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:134:6
+     |
+ 119 |   ) -> Result<SourceTrimResolution, EditError> {
+     |        --------------------------------------- expected `command::EditError` because of this
+...
+ 131 |       let output_after = FrameRange::new(
+     |  ________________________-
+ 132 | |         admission.output.start(),
+ 133 | |         ProjectFrame(admission.output.end().0.checked_add(duration_delta).ok_or(TimeError::Overflow)?),
+ 134 | |     )?;
+     | |     -^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     | |_____|
+     |       this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:136:65
+     |
+ 119 | ) -> Result<SourceTrimResolution, EditError> {
+     |      --------------------------------------- expected `command::EditError` because of this
+...
+ 136 |     total.checked_add(duration_delta).ok_or(TimeError::Overflow)?;
+     |                                       --------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                       |
+     |                                       this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:142:73
+     |
+ 119 | ) -> Result<SourceTrimResolution, EditError> {
+     |      --------------------------------------- expected `command::EditError` because of this
+...
+ 142 |     let root_operation = root_operation(admission.output, edge, applied)?;
+     |                          -----------------------------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                          |
+     |                          this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:145:68
+     |
+ 119 | ) -> Result<SourceTrimResolution, EditError> {
+     |      --------------------------------------- expected `command::EditError` because of this
+...
+ 145 |             .checked_add(applied.max(0)).ok_or(TimeError::Overflow)?;
+     |                                          --------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                          |
+     |                                          this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:249:98
+     |
+ 237 | ) -> Result<Candidate, EditError> {
+     |      ---------------------------- expected `command::EditError` because of this
+...
+ 249 |                 ProjectFrame(allocation.start().0.checked_add(applied).ok_or(TimeError::Overflow)?),
+     |                                                                        --------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                                                        |
+     |                                                                        this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:251:14
+     |
+ 237 |   ) -> Result<Candidate, EditError> {
+     |        ---------------------------- expected `command::EditError` because of this
+...
+ 248 |               allocation = FrameRange::new(
+     |  __________________________-
+ 249 | |                 ProjectFrame(allocation.start().0.checked_add(applied).ok_or(TimeError::Overflow)?),
+ 250 | |                 allocation.end(),
+ 251 | |             )?;
+     | |             -^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     | |_____________|
+     |               this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:252:65
+     |
+ 237 | ) -> Result<Candidate, EditError> {
+     |      ---------------------------- expected `command::EditError` because of this
+...
+ 252 |             effective.start = effective.start.checked_add(delta)?;
+     |                                               ------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                               |
+     |                                               this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:262:96
+     |
+ 237 | ) -> Result<Candidate, EditError> {
+     |      ---------------------------- expected `command::EditError` because of this
+...
+ 262 |                 ProjectFrame(allocation.end().0.checked_add(applied).ok_or(TimeError::Overflow)?),
+     |                                                                      --------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                                                      |
+     |                                                                      this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:263:14
+     |
+ 237 |   ) -> Result<Candidate, EditError> {
+     |        ---------------------------- expected `command::EditError` because of this
+...
+ 260 |               allocation = FrameRange::new(
+     |  __________________________-
+ 261 | |                 allocation.start(),
+ 262 | |                 ProjectFrame(allocation.end().0.checked_add(applied).ok_or(TimeError::Overflow)?),
+ 263 | |             )?;
+     | |             -^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     | |_____________|
+     |               this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:264:61
+     |
+ 237 | ) -> Result<Candidate, EditError> {
+     |      ---------------------------- expected `command::EditError` because of this
+...
+ 264 |             effective.end = effective.end.checked_add(delta)?;
+     |                                           ------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                           |
+     |                                           this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:279:70
+     |
+ 237 | ) -> Result<Candidate, EditError> {
+     |      ---------------------------- expected `command::EditError` because of this
+...
+ 279 |         allocation.start().0.checked_neg().ok_or(TimeError::Overflow)?
+     |                                            --------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                            |
+     |                                            this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:280:18
+     |
+ 237 |   ) -> Result<Candidate, EditError> {
+     |        ---------------------------- expected `command::EditError` because of this
+...
+ 278 |       let prefix = FrameDuration::new(if allocation.start().0 < 0 {
+     |  __________________-
+ 279 | |         allocation.start().0.checked_neg().ok_or(TimeError::Overflow)?
+ 280 | |     } else { 0 })?;
+     | |                 -^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     | |_________________|
+     |                   this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:283:98
+     |
+ 237 | ) -> Result<Candidate, EditError> {
+     |      ---------------------------- expected `command::EditError` because of this
+...
+ 283 |         ProjectFrame(allocation.start().0.checked_add(prefix.frames()).ok_or(TimeError::Overflow)?),
+     |                                                                        --------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                                                        |
+     |                                                                        this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:284:96
+     |
+ 237 | ) -> Result<Candidate, EditError> {
+     |      ---------------------------- expected `command::EditError` because of this
+...
+ 284 |         ProjectFrame(allocation.end().0.checked_add(prefix.frames()).ok_or(TimeError::Overflow)?),
+     |                                                                      --------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                                                      |
+     |                                                                      this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:285:6
+     |
+ 237 |   ) -> Result<Candidate, EditError> {
+     |        ---------------------------- expected `command::EditError` because of this
+...
+ 282 |       allocation = FrameRange::new(
+     |  __________________-
+ 283 | |         ProjectFrame(allocation.start().0.checked_add(prefix.frames()).ok_or(TimeError::Overflow)?),
+ 284 | |         ProjectFrame(allocation.end().0.checked_add(prefix.frames()).ok_or(TimeError::Overflow)?),
+ 285 | |     )?;
+     | |     -^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     | |_____|
+     |       this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:288:88
+     |
+ 237 | ) -> Result<Candidate, EditError> {
+     |      ---------------------------- expected `command::EditError` because of this
+...
+ 288 |         after.duration.frames().checked_add(prefix.frames()).ok_or(TimeError::Overflow)?
+     |                                                              --------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                                              |
+     |                                                              this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:290:6
+     |
+ 237 |   ) -> Result<Candidate, EditError> {
+     |        ---------------------------- expected `command::EditError` because of this
+...
+ 287 |       after.duration = FrameDuration::new(
+     |  ______________________-
+ 288 | |         after.duration.frames().checked_add(prefix.frames()).ok_or(TimeError::Overflow)?
+ 289 | |             .max(allocation.end().0),
+ 290 | |     )?;
+     | |     -^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     | |_____|
+     |       this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:291:73
+     |
+ 237 | ) -> Result<Candidate, EditError> {
+     |      ---------------------------- expected `command::EditError` because of this
+...
+ 291 |     let window_after = SourceEditWindow::new(window.start.checked_add(p)?, window.end.checked_add(p)?)?;
+     |                                                           --------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                                           |
+     |                                                           this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:291:101
+     |
+ 237 | ) -> Result<Candidate, EditError> {
+     |      ---------------------------- expected `command::EditError` because of this
+...
+ 291 |     let window_after = SourceEditWindow::new(window.start.checked_add(p)?, window.end.checked_add(p)?)?;
+     |                                                                                       --------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                                                                       |
+     |                                                                                       this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:291:103
+     |
+ 237 | ) -> Result<Candidate, EditError> {
+     |      ---------------------------- expected `command::EditError` because of this
+...
+ 291 |     let window_after = SourceEditWindow::new(window.start.checked_add(p)?, window.end.checked_add(p)?)?;
+     |                        -------------------------------------------------------------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                        |
+     |                        this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:292:42
+     |
+ 237 | ) -> Result<Candidate, EditError> {
+     |      ---------------------------- expected `command::EditError` because of this
+...
+ 292 |     window_after.validate(after.duration)?;
+     |                  ------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                  |
+     |                  this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:293:79
+     |
+ 237 | ) -> Result<Candidate, EditError> {
+     |      ---------------------------- expected `command::EditError` because of this
+...
+ 293 |     let effective_after = SourceEditWindow::new(effective.start.checked_add(p)?, effective.end.checked_add(p)?)?;
+     |                                                                 --------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                                                 |
+     |                                                                 this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:293:110
+     |
+ 237 | ) -> Result<Candidate, EditError> {
+     |      ---------------------------- expected `command::EditError` because of this
+...
+ 293 |     let effective_after = SourceEditWindow::new(effective.start.checked_add(p)?, effective.end.checked_add(p)?)?;
+     |                                                                                                --------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                                                                                |
+     |                                                                                                this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:293:112
+     |
+ 237 | ) -> Result<Candidate, EditError> {
+     |      ---------------------------- expected `command::EditError` because of this
+...
+ 293 |     let effective_after = SourceEditWindow::new(effective.start.checked_add(p)?, effective.end.checked_add(p)?)?;
+     |                           -------------------------------------------------------------------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                           |
+     |                           this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:303:97
+     |
+ 237 | ) -> Result<Candidate, EditError> {
+     |      ---------------------------- expected `command::EditError` because of this
+...
+ 303 |             let selection = selected_audio(window, support(audio.start.checked_add(audio.offset)?, audio.frames)?);
+     |                                                                        -------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                                                        |
+     |                                                                        this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:303:113
+     |
+ 237 | ) -> Result<Candidate, EditError> {
+     |      ---------------------------- expected `command::EditError` because of this
+...
+ 303 |             let selection = selected_audio(window, support(audio.start.checked_add(audio.offset)?, audio.frames)?);
+     |                                                    -------------------------------------------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                                    |
+     |                                                    this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:307:69
+     |
+ 237 | ) -> Result<Candidate, EditError> {
+     |      ---------------------------- expected `command::EditError` because of this
+...
+ 307 |                     start: selection.start.checked_sub(audio.offset)?,
+     |                                            -------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                            |
+     |                                            this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:308:65
+     |
+ 237 | ) -> Result<Candidate, EditError> {
+     |      ---------------------------- expected `command::EditError` because of this
+...
+ 308 |                     end: selection.end.checked_sub(audio.offset)?,
+     |                                        -------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                        |
+     |                                        this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:314:70
+     |
+ 237 | ) -> Result<Candidate, EditError> {
+     |      ---------------------------- expected `command::EditError` because of this
+...
+ 314 |         after.video_mapping = translate_video(after.video_mapping, p)?;
+     |                               ---------------------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                               |
+     |                               this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:316:74
+     |
+ 237 | ) -> Result<Candidate, EditError> {
+     |      ---------------------------- expected `command::EditError` because of this
+...
+ 316 |             after.audio_mapping = translate_audio(after.audio_mapping, p)?;
+     |                                   ---------------------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                                   |
+     |                                   this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:319:82
+     |
+ 237 | ) -> Result<Candidate, EditError> {
+     |      ---------------------------- expected `command::EditError` because of this
+...
+ 319 |     after.video_mapping.selection_in_source(admission.video_span, after.duration)?;
+     |                         ---------------------------------------------------------^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     |                         |
+     |                         this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+error[E0277]: `?` couldn't convert the error to `command::EditError`
+    --> crates/deadpan-core/src/source_trim.rs:323:10
+     |
+ 237 |   ) -> Result<Candidate, EditError> {
+     |        ---------------------------- expected `command::EditError` because of this
+...
+ 321 |           after.audio_mapping.selection_frames_with_offset(
+     |  _____________________________-
+ 322 | |             after.duration, after.audio_offset, document.presentation_basis().frame_rate,
+ 323 | |         )?;
+     | |         -^ the trait `From<TimeError>` is not implemented for `command::EditError`
+     | |_________|
+     |           this can't be annotated with `?` because it has type `Result<_, TimeError>`
+     |
+note: `command::EditError` needs to implement `From<TimeError>`
+    --> crates/deadpan-core/src/command.rs:2142:1
+     |
+2142 | pub struct EditError {
+     | ^^^^^^^^^^^^^^^^^^^^
+     = note: the question mark operation (`?`) implicitly performs a conversion on the error value using the `From` trait
+help: the trait `From<TimeError>` is not implemented for `command::EditError`
+      but trait `From<document::DocumentError>` is implemented for it
+    --> crates/deadpan-core/src/command.rs:2158:1
+     |
+2158 | impl From<DocumentError> for EditError {
+     | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+     = help: for that trait implementation, expected `document::DocumentError`, found `TimeError`
+
+For more information about this error, try `rustc --explain E0277`.
+error: could not compile `deadpan-core` (lib) due to 58 previous errors

@@ -1,0 +1,25 @@
+{
+  "command": [
+    "rustup",
+    "run",
+    "1.97.1",
+    "cargo",
+    "test",
+    "--workspace",
+    "--locked",
+    "--no-fail-fast",
+    "--features",
+    "deadpan-app/ui-harness",
+    "nested_partition_slip_keeps_wrapper_selection_and_other_fragment_pictures"
+  ],
+  "started": "2026-10-01T17:31:56.967847+00:00",
+  "base_commit": "40f3320dd117e024699ed8d83d498650dbdfde9a",
+  "diff_sha256": "53577997179dbbd3306509094804910f6fe3af7444bd4e3c6296e28a81b63f81",
+  "source_manifest_sha256": "cf35fdfdd4008fa19a77b09649297fbe2140ce9bfa97c5b678b483be86978d11",
+  "pid": 3561,
+  "exit_code": 0,
+  "seconds": 15.039302083197981,
+  "source_manifest_after_sha256": "cf35fdfdd4008fa19a77b09649297fbe2140ce9bfa97c5b678b483be86978d11",
+  "source_unchanged": true,
+  "gate_exit_code": 0
+}

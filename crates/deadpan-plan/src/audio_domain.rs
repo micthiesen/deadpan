@@ -105,6 +105,10 @@ pub(super) struct AudioWalkSeed {
     pub(super) extent: Range<ExactRatio>,
     pub(super) envelope: Option<Range<ExactRatio>>,
     pub(super) constraints: Vec<EnvelopeConstraint>,
+    pub(super) editorial: Vec<super::audio::EditorialConstraint>,
+    /// A bound fade inspection has already transported these sides of its
+    /// entry owner's marker. Do not recreate them without eligibility probes.
+    pub(super) suppress_entry_editorial: deadpan_core::AudioEditorialEdges,
     pub(super) repeats: Vec<RepeatInstance>,
     pub(super) retimes: Vec<AudioRetimeStage>,
     pub(super) gap: Option<DomainGap>,

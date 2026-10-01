@@ -113,6 +113,7 @@ fn whole_child_retains_positive_composites_and_excludes_adjacent_empty_siblings(
         label: "Repeated owner".into(),
         framing: None,
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
             child: id("unit"),
@@ -124,6 +125,7 @@ fn whole_child_retains_positive_composites_and_excludes_adjacent_empty_siblings(
         label: "Preserve owner".into(),
         framing: None,
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             child: id("slow-unit"),
@@ -456,6 +458,7 @@ fn child_under_repeat_clock_is_rejected_and_extra_wrapper_obeys_depth_limit() {
         label: "Repeat".into(),
         framing: None,
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
             child: id("group"),

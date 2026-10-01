@@ -250,6 +250,7 @@ fn repeat_child_restarts_and_repeat_gain_spans_plays_and_roomtone_gaps_once() {
     let repeated = BeatNode {
         label: "Repeated voice".into(),
         framing: None,
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         audio_treatments: Default::default(),
         kind: NodeKind::Repeat {

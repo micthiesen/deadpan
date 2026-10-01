@@ -65,6 +65,7 @@ fn beat(kind: NodeKind) -> BeatNode {
     BeatNode {
         framing: None,
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         label: "Selected picture fixture".into(),
         kind,
@@ -678,3 +679,6 @@ fn inverse_source_window_composes_enclosing_retime_and_explicit_repeat_identity(
 mod edit_window;
 #[path = "selected_video_window/slip.rs"]
 mod slip;
+
+#[path = "selected_video_window/trim.rs"]
+mod trim;

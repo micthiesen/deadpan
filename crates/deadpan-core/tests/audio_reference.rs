@@ -97,6 +97,7 @@ fn fixture(plays: u32) -> ProjectDocument {
                 audio_treatments: Default::default(),
                 framing: None,
                 label: "original selection".into(),
+                audio_editorial_edges: Default::default(),
                 audio_edges: AudioEdgePolicies {
                     source_placement_start: AudioEdgePolicy::Hard,
                     ..Default::default()
@@ -124,6 +125,7 @@ fn fixture(plays: u32) -> ProjectDocument {
                 audio_treatments: Default::default(),
                 framing: None,
                 label: "preserve".into(),
+                audio_editorial_edges: Default::default(),
                 audio_edges: Default::default(),
                 kind: NodeKind::Retime {
                     child: id("source"),
@@ -142,6 +144,7 @@ fn fixture(plays: u32) -> ProjectDocument {
             audio_treatments: Default::default(),
             framing: None,
             label: "repeat".into(),
+            audio_editorial_edges: Default::default(),
             audio_edges: Default::default(),
             kind: NodeKind::Repeat {
                 child: id("retime"),

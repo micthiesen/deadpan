@@ -1,0 +1,13 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+error[E0609]: no field `boundaries` on type `AudioFadeSpan`
+   --> crates/deadpan-plan/tests/gap_bindings.rs:179:14
+    |
+179 |             .boundaries
+    |              ^^^^^^^^^^ unknown field
+    |
+    = note: available fields are: `samples`, `start`, `end`
+
+For more information about this error, try `rustc --explain E0609`.
+error: could not compile `deadpan-plan` (test "gap_bindings") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

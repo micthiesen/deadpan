@@ -1,0 +1,28 @@
+{
+  "command": [
+    "rustup",
+    "run",
+    "1.97.1",
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-core",
+    "--test",
+    "source_slip",
+    "--test",
+    "source_trim_command",
+    "--test",
+    "source_trim_resolution"
+  ],
+  "started": "2026-10-01T16:35:29.249553+00:00",
+  "base_commit": "40f3320dd117e024699ed8d83d498650dbdfde9a",
+  "diff_sha256": "d93249cbc0ad7157be5f450004fcc46d75806ea52d7dddf573b71e18332b0016",
+  "source_manifest_sha256": "af653a57f318bd1474bf900c637dd3833fbcc4177140505c44933bfb33343363",
+  "pid": 90095,
+  "exit_code": 0,
+  "seconds": 39.08652412472293,
+  "source_manifest_after_sha256": "af653a57f318bd1474bf900c637dd3833fbcc4177140505c44933bfb33343363",
+  "source_unchanged": true,
+  "gate_exit_code": 0
+}

@@ -54,6 +54,7 @@ fn source(length: i64, audio: bool, selected: bool) -> BeatNode {
         label: "Original".into(),
         framing: None,
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
@@ -301,6 +302,7 @@ fn tape_recomputes_fractional_hold_boundaries_on_its_consuming_grid() {
                     label: "Preserve".into(),
                     framing: None,
                     audio_treatments: Default::default(),
+                    audio_editorial_edges: Default::default(),
                     audio_edges: Default::default(),
                     kind: NodeKind::Retime {
                         child: id("group"),
@@ -377,6 +379,7 @@ fn repeated_and_definition_issuers_survive_the_independent_provider() {
                     label: "Repeat".into(),
                     framing: None,
                     audio_treatments: Default::default(),
+                    audio_editorial_edges: Default::default(),
                     audio_edges: Default::default(),
                     kind: NodeKind::Repeat {
                         child: id("silent"),

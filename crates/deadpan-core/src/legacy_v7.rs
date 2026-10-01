@@ -94,6 +94,7 @@ impl LegacyBeatNode {
             audio_treatments: Default::default(),
             framing: None,
             label: self.label,
+            audio_editorial_edges: Default::default(),
             audio_edges: AudioEdgePolicies::default(),
             kind: match self.kind {
                 LegacyNodeKind::Source { source } => NodeKind::Source {
@@ -127,6 +128,9 @@ impl LegacyBeatNode {
     }
 
     pub(crate) fn project(value: &BeatNode) -> Option<Self> {
+        if !value.audio_editorial_edges.is_empty() {
+            return None;
+        }
         if !value.audio_treatments.is_empty() {
             return None;
         }

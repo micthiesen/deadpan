@@ -33,6 +33,10 @@ use crate::{CommandPlan, CommitOutcome, ProjectStore, StoreError};
 mod slip;
 pub use slip::SourceSlipPreview;
 pub(crate) use slip::validate_source_slip;
+#[path = "source_registration/trim.rs"]
+mod trim;
+pub use trim::SourceTrimPreview;
+pub(crate) use trim::validate_source_trim;
 
 const MAX_QUALIFICATIONS: i64 = 100_000;
 const MAX_ORIGINAL_REF_BYTES: usize = 256;

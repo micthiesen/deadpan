@@ -552,6 +552,7 @@ mod tests {
                 audio_treatments: Default::default(),
                 framing: None,
                 label: "Repeat".into(),
+                audio_editorial_edges: Default::default(),
                 audio_edges: Default::default(),
                 kind: NodeKind::Repeat {
                     child: node("hold"),
@@ -669,6 +670,7 @@ mod tests {
             audio_treatments: Default::default(),
             framing: None,
             label: "repeat".into(),
+            audio_editorial_edges: Default::default(),
             audio_edges: Default::default(),
             kind: NodeKind::Repeat {
                 child: node(child),
@@ -855,6 +857,7 @@ mod tests {
             audio_treatments: Default::default(),
             framing: None,
             label: "preserve".into(),
+            audio_editorial_edges: Default::default(),
             audio_edges: Default::default(),
             kind: NodeKind::Retime {
                 child: node(child),

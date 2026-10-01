@@ -3,6 +3,69 @@ use std::collections::BTreeMap;
 use deadpan_core::*;
 use serde_json::{Value, json};
 
+#[test]
+fn editorial_edges_survive_context_capture_with_closed_historical_vocabulary() {
+    let before = fixture(AudioSample(0), SourceAudioMapping::FitBeat);
+    let original = FrozenAudioContext::capture(&before).unwrap();
+    let mut authored = serde_json::to_value(&before).unwrap();
+    authored["nodes"]["source"]["audio_editorial_edges"] = json!({"start":true,"end":false});
+    let marked = ProjectDocument::from_json(&authored.to_string()).unwrap();
+    let context = FrozenAudioContext::capture(&marked).unwrap();
+    assert_eq!(
+        context.layout().nodes()[&node("source")].editorial_edges,
+        AudioEditorialEdges {
+            start: true,
+            end: false
+        }
+    );
+    assert_eq!(context.inputs(), original.inputs());
+    assert!(context.matches_document(&marked).unwrap());
+    assert!(!original.matches_document(&marked).unwrap());
+    assert_eq!(
+        FrozenAudioContext::from_json(&context.to_json().unwrap()).unwrap(),
+        context
+    );
+    let baseline = serde_json::to_value(&original).unwrap();
+    for version in 1..=5 {
+        let mut historical = baseline.clone();
+        historical["schema_version"] = json!(version);
+        assert!(FrozenAudioContext::from_json(&historical.to_string()).is_ok());
+        for flags in [
+            Value::Null,
+            json!({"start":false,"end":false}),
+            json!({"start":true,"end":false}),
+        ] {
+            historical["layout"]["nodes"]["source"]["editorial_edges"] = flags;
+            let encoded = historical.to_string();
+            assert!(
+                FrozenAudioContext::from_json(&encoded).is_err(),
+                "context {version} admitted new field"
+            );
+            assert!(
+                FrozenAudioContext::from_json(
+                    &encoded.replace("editorial_edges", "editorial_\\u0065dges")
+                )
+                .is_err()
+            );
+        }
+    }
+    for value in [
+        json!({}),
+        json!({"start":true}),
+        json!({"start":true,"end":null}),
+        json!({"start":true,"end":false,"other":0}),
+    ] {
+        let mut bad = serde_json::to_value(&context).unwrap();
+        bad["layout"]["nodes"]["source"]["editorial_edges"] = value;
+        assert!(FrozenAudioContext::from_json(&bad.to_string()).is_err());
+    }
+    let duplicated = context.to_json().unwrap().replace(
+        "\"editorial_edges\":",
+        "\"editorial_edges\":{\"start\":false,\"end\":false},\"editorial_\\u0065dges\":",
+    );
+    assert!(FrozenAudioContext::from_json(&duplicated).is_err());
+}
+
 fn node(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }
@@ -83,6 +146,7 @@ fn fixture(offset: AudioSample, mapping: SourceAudioMapping) -> ProjectDocument 
         audio_treatments: Default::default(),
         framing: None,
         label: "private source label".into(),
+        audio_editorial_edges: Default::default(),
         audio_edges: AudioEdgePolicies {
             source_placement_start: AudioEdgePolicy::Hard,
             ..Default::default()
@@ -107,6 +171,7 @@ fn fixture(offset: AudioSample, mapping: SourceAudioMapping) -> ProjectDocument 
         audio_treatments: Default::default(),
         framing: None,
         label: "picture only".into(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
@@ -140,6 +205,7 @@ fn fixture(offset: AudioSample, mapping: SourceAudioMapping) -> ProjectDocument 
         audio_treatments: Default::default(),
         framing: None,
         label: "repeat".into(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
             child: node("source"),
@@ -291,7 +357,7 @@ fn selected_context_keeps_full_phase_mapping_and_captures_only_its_audible_exten
         context
     );
     let mut wire = serde_json::to_value(context).unwrap();
-    assert_eq!(wire["schema_version"], json!(5));
+    assert_eq!(wire["schema_version"], json!(6));
     wire["schema_version"] = json!(1);
     assert!(FrozenAudioContext::from_json(&wire.to_string()).is_err());
     let escaped = wire
@@ -324,7 +390,7 @@ fn ingress_rejects_open_or_inconsistent_inventory() {
         FrozenAudioContext::capture(&fixture(AudioSample(0), SourceAudioMapping::FitBeat)).unwrap();
     let mut value: Value = serde_json::from_str(&context.to_json().unwrap()).unwrap();
     let baseline = value.clone();
-    value["schema_version"] = json!(6);
+    value["schema_version"] = json!(7);
     assert_eq!(
         FrozenAudioContext::from_json(&value.to_string())
             .unwrap_err()
@@ -373,8 +439,8 @@ fn ingress_rejects_open_or_inconsistent_inventory() {
         DocumentErrorCode::LimitExceeded
     );
     let duplicate = context.to_json().unwrap().replacen(
-        "\"schema_version\":5",
-        "\"schema_version\":5,\"schema_version\":5",
+        "\"schema_version\":6",
+        "\"schema_version\":6,\"schema_version\":6",
         1,
     );
     assert!(FrozenAudioContext::from_json(&duplicate).is_err());
@@ -675,7 +741,7 @@ fn dormant_context_keeps_input_asset_offset_and_distinguishes_absent_audio() {
         context
     );
     let wire = serde_json::to_value(&context).unwrap();
-    assert_eq!(wire["schema_version"], json!(5));
+    assert_eq!(wire["schema_version"], json!(6));
     for version in 1..=4 {
         let mut forged = wire.clone();
         forged["schema_version"] = json!(version);

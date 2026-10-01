@@ -8,6 +8,7 @@ fn partition(child: &str, start: i64, end: i64) -> BeatNode {
         framing: None,
         label: "Retained physical source".into(),
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             child: id(child),

@@ -1,0 +1,30 @@
+{
+  "command": [
+    "rustup",
+    "run",
+    "1.97.1",
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-plan",
+    "--test",
+    "audio_fades",
+    "--test",
+    "gap_bindings",
+    "--test",
+    "audio_context",
+    "--test",
+    "selected_video_window"
+  ],
+  "started": "2026-10-01T16:30:37.757844+00:00",
+  "base_commit": "40f3320dd117e024699ed8d83d498650dbdfde9a",
+  "diff_sha256": "728f40e66247483660a3b5401c686ed79e10f61ba34db49218e7b1a1f26fc86a",
+  "source_manifest_sha256": "8272462bdb9a3a0b6bd90b6e0149dda12814cb5673b917dab6d2ad09a1e33618",
+  "pid": 89446,
+  "exit_code": 101,
+  "seconds": 65.66796575020999,
+  "source_manifest_after_sha256": "8272462bdb9a3a0b6bd90b6e0149dda12814cb5673b917dab6d2ad09a1e33618",
+  "source_unchanged": true,
+  "gate_exit_code": 101
+}

@@ -280,6 +280,24 @@ pub(super) struct EnvelopeConstraint {
     pub(super) kinds: (AudioBoundaryKind, AudioBoundaryKind),
 }
 
+/// Creative boundaries use the current output clock. They never restrict raw
+/// support or the retained sampling/envelope domain.
+#[derive(Debug, Clone)]
+pub(super) struct EditorialConstraint {
+    pub(super) boundary: EnvelopeConstraint,
+    pub(super) edges: deadpan_core::AudioEditorialEdges,
+    /// Only transported outer markers use sample probes. A resumed binding can
+    /// deliver a different incident inner voice at the authored boundary.
+    pub(super) incident_samples: Option<(ExactRatio, ExactRatio)>,
+}
+
+#[derive(Default)]
+pub(super) struct EditorialCapture {
+    pub(super) editorial: Vec<EditorialConstraint>,
+    pub(super) constraints: Vec<EnvelopeConstraint>,
+    pub(super) repeats: Vec<RepeatInstance>,
+}
+
 pub(super) enum AudioWalkSpan<'plan> {
     Leaf(AudioSpan),
     Stage(AudioProcessingSpan<'plan>),
@@ -383,6 +401,47 @@ impl RenderPlan {
         stop_at_bindings: bool,
         capture: Option<&mut Option<AudioDomainSeed>>,
     ) -> Result<AudioWalkSpan<'plan>, PlanError> {
+        self.audio_walk_inner(
+            sample,
+            budget,
+            seed,
+            stop_at_preserve,
+            stop_at_bindings,
+            (capture, None),
+        )
+    }
+
+    pub(super) fn audio_walk_editorial<'plan>(
+        &'plan self,
+        sample: AudioSample,
+        budget: &mut Budget,
+        seed: Option<&AudioWalkSeed>,
+        stops: (bool, bool),
+        editorial: &mut EditorialCapture,
+    ) -> Result<AudioWalkSpan<'plan>, PlanError> {
+        self.audio_walk_inner(
+            sample,
+            budget,
+            seed,
+            stops.0,
+            stops.1,
+            (None, Some(editorial)),
+        )
+    }
+
+    fn audio_walk_inner<'plan>(
+        &'plan self,
+        sample: AudioSample,
+        budget: &mut Budget,
+        seed: Option<&AudioWalkSeed>,
+        stop_at_preserve: bool,
+        stop_at_bindings: bool,
+        captures: (
+            Option<&mut Option<AudioDomainSeed>>,
+            Option<&mut EditorialCapture>,
+        ),
+    ) -> Result<AudioWalkSpan<'plan>, PlanError> {
+        let (capture, editorial_capture) = captures;
         let rate = self.metadata.presentation_basis.frame_rate;
         let mut transform = AudioTransform {
             project_origin: ExactRatio::ZERO,
@@ -404,25 +463,35 @@ impl RenderPlan {
         let mut extent = ExactRatio::ZERO..ExactRatio::integer(self.duration().frames());
         let mut envelope: Option<Range<ExactRatio>> = None;
         let mut constraints = Vec::new();
+        let mut editorial = Vec::new();
         let mut current = self.root;
         let mut repeats = Vec::new();
         let mut retimes = Vec::new();
         let mut seeded_gap = None;
         let definition = seed.and_then(|seed| seed.definition.as_ref());
         let bypass_binding = seed.and_then(|seed| seed.bypass_binding);
+        let mut suppress_entry_editorial =
+            seed.map_or_else(Default::default, |seed| seed.suppress_entry_editorial);
         if let Some(seed) = seed {
-            budget.spend(seed.constraints.len() + seed.repeats.len() + seed.retimes.len())?;
+            budget.spend(
+                seed.constraints.len()
+                    + seed.editorial.len()
+                    + seed.repeats.len()
+                    + seed.retimes.len(),
+            )?;
             current = seed.node;
             transform = seed.transform;
             extent = seed.extent.clone();
             envelope = seed.envelope.clone();
             constraints = seed.constraints.clone();
+            editorial = seed.editorial.clone();
             repeats = seed.repeats.clone();
             retimes = seed.retimes.clone();
             seeded_gap = seed.gap.clone();
         }
         let mut inherited_envelope;
         let mut inherited_constraints;
+        let mut inherited_editorial;
         let mut domain_gap = None;
         let (content, gap_after) = loop {
             budget.spend(1)?;
@@ -440,6 +509,8 @@ impl RenderPlan {
                 };
                 let gap_extent = transform.project_origin
                     ..transform.project_at(ExactRatio::integer(gap.duration.frames()))?;
+                retain_incident_editorial(&mut editorial, &gap_extent, grid, budget)?;
+                inherited_editorial = editorial.len();
                 extent = intersect(extent, gap_extent.clone())?;
                 envelope = Some(match envelope {
                     Some(previous) => intersect(previous, gap_extent.clone())?,
@@ -492,7 +563,29 @@ impl RenderPlan {
             }
             let node_extent = transform.project_origin
                 ..transform.project_at(ExactRatio::integer(node.inspection.duration.frames()))?;
+            retain_incident_editorial(&mut editorial, &node_extent, grid, budget)?;
+            inherited_editorial = editorial.len();
             extent = intersect(extent, node_extent.clone())?;
+            let suppressed = std::mem::take(&mut suppress_entry_editorial);
+            let own_editorial = deadpan_core::AudioEditorialEdges {
+                start: node.audio_editorial_edges.start && !suppressed.start,
+                end: node.audio_editorial_edges.end && !suppressed.end,
+            };
+            if !own_editorial.is_empty() {
+                budget.spend(1)?;
+                editorial.push(EditorialConstraint {
+                    boundary: EnvelopeConstraint {
+                        placement_support: false,
+                        range: node_extent.clone(),
+                        node: current,
+                        repeat_count: repeats.len(),
+                        gap_after: None,
+                        kinds: (AudioBoundaryKind::NodeStart, AudioBoundaryKind::NodeEnd),
+                    },
+                    edges: own_editorial,
+                    incident_samples: None,
+                });
+            }
             if !matches!(
                 node.kind,
                 CompiledKind::Retime {
@@ -723,6 +816,7 @@ impl RenderPlan {
                                 ..transform.project_at(ExactRatio::integer(
                                     location.play.gap_after.frames(),
                                 ))?;
+                            retain_incident_editorial(&mut editorial, &gap_extent, grid, budget)?;
                             constraints.push(EnvelopeConstraint {
                                 placement_support: false,
                                 range: gap_extent,
@@ -767,7 +861,9 @@ impl RenderPlan {
             envelope.ok_or(PlanError::InvalidPlan("audio has no envelope domain"))?,
         );
         if let Some(capture) = capture {
-            budget.spend(inherited_constraints + repeats.len() + retimes.len() + 1)?;
+            budget.spend(
+                inherited_constraints + inherited_editorial + repeats.len() + retimes.len() + 1,
+            )?;
             let samples =
                 grid.boundary(envelope.range.start)?..grid.boundary(envelope.range.end)?;
             if !samples.contains(&sample) {
@@ -785,6 +881,8 @@ impl RenderPlan {
                     extent: envelope.range.clone(),
                     envelope: inherited_envelope,
                     constraints: constraints[..inherited_constraints].to_vec(),
+                    editorial: editorial[..inherited_editorial].to_vec(),
+                    suppress_entry_editorial: Default::default(),
                     repeats: repeats.clone(),
                     retimes: retimes.clone(),
                     gap: domain_gap,
@@ -796,6 +894,14 @@ impl RenderPlan {
                     repeats: repeats.clone(),
                 },
             });
+        }
+        if let Some(capture) = editorial_capture {
+            budget.spend(editorial.len() + constraints.len() + repeats.len())?;
+            *capture = EditorialCapture {
+                editorial,
+                constraints: constraints.clone(),
+                repeats: repeats.clone(),
+            };
         }
         for constraint in constraints {
             let node = &self.nodes[constraint.node];
@@ -872,6 +978,46 @@ impl RenderPlan {
             content,
         }))
     }
+}
+
+/// A marker on an ancestor belongs only to the incident descendant allocation.
+/// Filter before introducing this node's own markers: a full owner behind a
+/// neutral Partition must retain its hidden fade progress, while an unrelated
+/// later Partition cannot acquire an earlier sibling's edge through that same
+/// hidden context. Start and end ownership are directionally half-open.
+fn retain_incident_editorial(
+    editorial: &mut Vec<EditorialConstraint>,
+    allocation: &Range<ExactRatio>,
+    grid: AudioSampleGrid<AudioSample>,
+    budget: &mut Budget,
+) -> Result<(), PlanError> {
+    budget.spend(editorial.len())?;
+    if editorial.is_empty() {
+        return Ok(());
+    }
+    let samples = grid.boundary(allocation.start)?..grid.boundary(allocation.end)?;
+    editorial.retain_mut(|marker| {
+        if let Some((start, end)) = marker.incident_samples {
+            let contains = |at: ExactRatio| {
+                at.compare_integer(samples.start.0).is_ge()
+                    && at.compare_integer(samples.end.0).is_lt()
+            };
+            marker.edges.start &= contains(start);
+            marker.edges.end &= contains(end);
+        } else {
+            marker.edges.start &= marker
+                .boundary
+                .range
+                .start
+                .compare(allocation.start)
+                .is_ge()
+                && marker.boundary.range.start.compare(allocation.end).is_lt();
+            marker.edges.end &= marker.boundary.range.end.compare(allocation.start).is_gt()
+                && marker.boundary.range.end.compare(allocation.end).is_le();
+        }
+        !marker.edges.is_empty()
+    });
+    Ok(())
 }
 
 pub(super) fn minimum(a: ExactRatio, b: ExactRatio) -> Result<ExactRatio, TimeError> {

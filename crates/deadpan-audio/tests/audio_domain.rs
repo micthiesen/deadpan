@@ -63,6 +63,7 @@ fn source(rate: FrameRate, frames: i64, selected: Range<i64>, sample_rate: u32) 
         framing: None,
         label: "Qualified original".into(),
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
@@ -96,6 +97,7 @@ fn retime(child: &str, frames: i64, selected: Range<i64>, pitch: PitchPolicy) ->
         framing: None,
         label: "Authored retime".into(),
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             purpose: RetimePurpose::Edit,
@@ -768,6 +770,7 @@ fn hidden_room_tone_gap_keeps_its_loop_origin_and_rechecks_cached_admission() {
                     framing: None,
                     label: "Repeated speech".into(),
                     audio_treatments: Default::default(),
+                    audio_editorial_edges: Default::default(),
                     audio_edges: Default::default(),
                     kind: NodeKind::Repeat {
                         child: id("a"),

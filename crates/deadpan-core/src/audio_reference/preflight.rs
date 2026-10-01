@@ -34,6 +34,7 @@ enum Role {
     Ratio,
     Rate,
     Edges,
+    EditorialEdges,
     Audibility,
     Mapping,
     String,
@@ -53,6 +54,7 @@ enum Charge {
 
 #[derive(Default)]
 struct Counts {
+    allow_editorial_edges: bool,
     nodes: usize,
     edges: usize,
     runs: usize,
@@ -110,9 +112,23 @@ pub(super) fn check(json: &str) -> Result<(), DocumentError> {
     complexity(json).map(|_| ())
 }
 
+pub(super) fn check_pre_editorial(json: &str) -> Result<(), DocumentError> {
+    scan_complexity(json, false).map(|_| ())
+}
+
 /// Shared aggregate admission counts for a collection of retained layouts.
 pub(super) fn complexity(json: &str) -> Result<(usize, usize, usize), DocumentError> {
-    let mut counts = Counts::default();
+    scan_complexity(json, true)
+}
+
+fn scan_complexity(
+    json: &str,
+    allow_editorial_edges: bool,
+) -> Result<(usize, usize, usize), DocumentError> {
+    let mut counts = Counts {
+        allow_editorial_edges,
+        ..Counts::default()
+    };
     let mut deserializer = serde_json::Deserializer::from_str(json);
     let result = Scan {
         counts: &mut counts,
@@ -253,6 +269,10 @@ impl<'de> Visitor<'de> for Scan<'_> {
                 (Role::Node, "kind") => (Role::Kind, Charge::None),
                 (Role::Node, "duration") => (Role::Scalar, Charge::None),
                 (Role::Node, "edges") => (Role::Edges, Charge::None),
+                (Role::Node, "editorial_edges") if self.counts.allow_editorial_edges => {
+                    (Role::EditorialEdges, Charge::None)
+                }
+                (Role::EditorialEdges, "start" | "end") => (Role::Scalar, Charge::None),
                 (Role::Kind, "children") => (Role::Children, Charge::None),
                 (Role::Kind, "child") => (Role::String, Charge::Edge),
                 (Role::Kind, "iterations") => (Role::Iterations, Charge::None),
@@ -368,6 +388,7 @@ fn record_field_bit(key: &str) -> u64 {
         "audio_lineage" => 35,
         "origin" => 36,
         "gap_overrides" => 37,
+        "editorial_edges" => 38,
         _ => return 0,
     };
     1 << ordinal

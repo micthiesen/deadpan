@@ -61,6 +61,7 @@ fn fixture(root: &Path) -> Result<(PathBuf, ProjectStore)> {
             audio_treatments: Default::default(),
             framing: None,
             label: "Retime".into(),
+            audio_editorial_edges: Default::default(),
             audio_edges: Default::default(),
             kind: NodeKind::Retime {
                 child: NodeId::new(child)?,
@@ -75,6 +76,7 @@ fn fixture(root: &Path) -> Result<(PathBuf, ProjectStore)> {
         audio_treatments: Default::default(),
         framing: None,
         label: "Repeat".into(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
             child: NodeId::new("inner")?,

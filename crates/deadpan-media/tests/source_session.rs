@@ -186,6 +186,7 @@ fn natural_picture_plan_selects_and_decodes_original_pixels_after_trim_rounding(
                         BeatNode {
                             audio_treatments: Default::default(),
                             framing: None,
+                            audio_editorial_edges: Default::default(),
                             audio_edges: Default::default(),
                             label: "Natural trimmed picture".into(),
                             kind: NodeKind::Source {

@@ -154,6 +154,19 @@ closed. See [qualification](qualification/native-slip-2026-10-01.md). Full Trim,
 waveforms/audition, unsupported target scopes and physical-input/accessibility
 acceptance remain open. No requirement or gate changes status.
 
+[Ripple Source edge trimming](SOURCE_TRIM.md) adds a verified backend subset
+for DP-02/DP-05. The atomic command moves one In/Out edge with exact handle
+clamping, retained physical owners, old-clock audio captures and one root sound
+transform. Separate editorial audio intent adds the required fades at new Trim
+edges and both Slip joins without changing raw sampling support.
+[Qualification](qualification/source-trim-2026-10-01.md) records indexed-picture,
+decoded-PCM and store/headless checks. The full workspace passed 3,250 tests and
+both documentation tests with one outdated Slip assertion; only that test changed
+and its rerun passed. Default app checks, strict all-target lint and formatting
+also pass. The failed invocation and exact source comparison remain recorded.
+Native Trim, overwrite, Roll and broader target admission remain open; no
+requirement or gate changes status.
+
 [Exact Source windows](SOURCE_EDIT_WINDOWS.md) retain selected time before
 whole-frame enclosure. [Atomic Source Slip](SOURCE_SLIP.md) shifts both linked
 maps in one transaction under ordinary Sequences, preserving duration, effects,

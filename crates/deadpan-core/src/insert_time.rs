@@ -305,7 +305,12 @@ pub(crate) fn split_node_count(
             child,
             purpose: RetimePurpose::Partition,
             ..
-        } if node.framing.is_none() && node.audio_treatments.is_empty() => child,
+        } if node.framing.is_none()
+            && node.audio_treatments.is_empty()
+            && node.audio_editorial_edges.is_empty() =>
+        {
+            child
+        }
         _ => target,
     };
     Ok(
@@ -541,7 +546,9 @@ fn physical_context<'a>(
     let mut treated = false;
     loop {
         let node = &document.nodes()[owner];
-        treated |= node.framing.is_some() || !node.audio_treatments.is_empty();
+        treated |= node.framing.is_some()
+            || !node.audio_treatments.is_empty()
+            || !node.audio_editorial_edges.is_empty();
         let NodeKind::Retime {
             child,
             mapping,

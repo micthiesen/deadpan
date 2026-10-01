@@ -1,0 +1,22 @@
+{
+  "command": [
+    "rustup",
+    "run",
+    "1.97.1",
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-audio",
+    "--test",
+    "composite_insert",
+    "trim::"
+  ],
+  "started": "2026-10-01T15:28:44.843026+00:00",
+  "base_commit": "40f3320dd117e024699ed8d83d498650dbdfde9a",
+  "diff_sha256": "62dce06e18e79a85873c260a5e0ca1158dc9af8c6dec8e63d4de0ea620d4a7f3",
+  "source_manifest_sha256": "906553d1ab6167ae435da3c3f2fc1dce4b09f434d2183b7db6b9032d24e40c28",
+  "pid": 67872,
+  "exit_code": 0,
+  "seconds": 26.98443341581151
+}

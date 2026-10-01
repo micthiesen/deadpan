@@ -33,6 +33,7 @@ fn instance(node: &str, repeats: &[(&str, &str, u32)]) -> InstancePath {
 fn node(frames: i64, kind: FrozenAudioKind) -> FrozenAudioNode {
     FrozenAudioNode {
         duration: duration(frames),
+        editorial_edges: Default::default(),
         edges: Default::default(),
         kind,
     }

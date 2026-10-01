@@ -281,6 +281,7 @@ fn adjacent_tiles_reuse_exact_bus_context_and_revalidate_its_source_layout() {
     let repeated = BeatNode {
         framing: None,
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         label: "Long original reuse".into(),
         kind: NodeKind::Repeat {

@@ -44,6 +44,7 @@ fn plan(rate: FrameRate) -> RenderPlan {
                 label: "Repeat".into(),
                 framing: None,
                 audio_treatments: Default::default(),
+                audio_editorial_edges: Default::default(),
                 audio_edges: Default::default(),
                 kind: NodeKind::Repeat {
                     child: id("stage"),
@@ -58,6 +59,7 @@ fn plan(rate: FrameRate) -> RenderPlan {
                 label: "Preserve".into(),
                 framing: None,
                 audio_treatments: Default::default(),
+                audio_editorial_edges: Default::default(),
                 audio_edges: Default::default(),
                 kind: NodeKind::Retime {
                     child: id("input"),

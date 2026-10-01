@@ -80,6 +80,7 @@ fn fixture() -> Result<ProjectDocument> {
                 label: "Original body".into(),
                 framing: None,
                 audio_treatments: Default::default(),
+                audio_editorial_edges: Default::default(),
                 audio_edges: Default::default(),
                 kind: NodeKind::Retime {
                     child: node("source"),
@@ -96,6 +97,7 @@ fn fixture() -> Result<ProjectDocument> {
                 label: "Retained effects".into(),
                 framing: Some(framing),
                 audio_treatments: gain,
+                audio_editorial_edges: Default::default(),
                 audio_edges: Default::default(),
                 kind: NodeKind::Source {
                     source: SourceNode {

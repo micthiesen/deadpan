@@ -231,6 +231,7 @@ fn is_refinement(node: &crate::BeatNode) -> bool {
         }
     ) && node.framing.is_none()
         && node.audio_treatments.is_empty()
+        && node.audio_editorial_edges.is_empty()
 }
 
 pub(crate) fn apply(

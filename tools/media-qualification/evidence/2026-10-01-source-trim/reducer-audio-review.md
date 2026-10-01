@@ -1,0 +1,22 @@
+# Trim reducer: audio, marks and root-sound review
+
+Read-only review of the current `source_trim/apply.rs`, source-prefix mark transform, Trim root-sound branch and their outer command lifecycle. No Cargo/native execution or checkout edits.
+
+## Result
+
+No actionable semantic defect found in this pass. The reducer follows the reviewed old-capture/target-reanchor/suffix-reanchor ordering. The six PCM tests remain necessary execution evidence, especially audible extension through prior chronological steps and an empty audio selection.
+
+## Checked paths
+
+- **Old capture and budget:** `apply.rs:54` captures before modifying Source duration, maps, effects or the crop. `capture_timing` calls `capture_for_composite_insertion` once, installs any phase-only layout before adding references, and uses one aggregate placement-entry counter for target, suffix nodes and suffix gaps. `append_steps` retains its existing term and entry limits. The result is pruned only after translation/tree replacement; the outer command's `result.duration()` runs full document/binding validation after sound and allowance restoration.
+- **Target entry:** the resolver's In window begins at `T+max(d,0)` and ends at old `T+L`; Out has no target step. `apply.rs:159` removes the target placement from the captured map before suffix processing. This avoids a second step on that owner. Existing lattice, explicit resume and chronological steps remain intact.
+- **Suffix entry:** `shifted_owners(document,parent,slot+1)` receives the unchanged tree and the resolver supplies `[old T+L,old total)`. The traversal includes later ordinary-ancestor siblings, Repeat default/gap owners and opaque Preserve outputs. Empty terminal suffixes receive no step. The new target wrapper cannot enter this old suffix set.
+- **Physical translation:** the target's newly appended step is already present when `rebase_local(p)` runs at `apply.rs:92`. All its historical placement offsets and resume arguments translate together; frozen layouts/windows and suffix bindings do not move. Gain keys shift once for positive p. Framing uses old duration on any physical growth, including tail-only growth with p=0. Source ID, authored edge policies and audio offset stay on the physical owner.
+- **Neutral Partition:** the reducer calls `split::partition` and only changes an existing wrapper's mapping/duration. It neither copies Source edge policies to the wrapper nor inserts a Hold. Existing plan walkers exclude Partition from meaningful sampling support and envelope-edge constraints. Thus a W-preserving crop adds no filter cutoff or fade; changed Source selection may legitimately change endpoint filtering/fades. The new raw/edge-faded PCM tests assert that distinction.
+- **Mark prefix:** `marks.rs:955` translates only decomposed `Content { node == physical_source, position }`. Local/Occurrence reconstruction then sees the final crop/tree. Leading/trailing sentinels, Source PTS and Sequence coordinates remain in their own clocks. Existing unresolved fragments are skipped; loss restores the original bound coordinate before marking it unresolved. No edge delta is added to content marks, only physical p.
+- **Root sounds once:** `sound_routing.rs:472` resolves the same immutable target and uses its one `root_operation`. The four signed edge cases match the agreed old-root ranges. `command::apply` prepares/detaches once, invokes the dedicated reducer once, then restores once. No nested command invokes sound routing. Restore checks final structural length against the prepared operation. Generic allowance capture retains existing issuer identities and introduces no silent-Hold issuer.
+- **PCM cache identity:** the dedicated reducer calls ordinary `audio_lineage::reconcile` against the original structural input. Source duration/audio-map/offset changes and changed wrapper/ancestor routes invalidate affected raw lineage. Unchanged physical Source context behind a new transparent crop can retain its own raw lineage, which is consistent with retained filtering context.
+
+## Remaining checks
+
+Run the six queued PCM tests, existing binding/mark/routing suites, and core tests proving term/layout-limit failures leave the input unchanged. Add/retain explicit mark tests for Left/Right host sentinels versus physical content coordinates, and root-sound route assertions that exactly one operation is appended. This review confirms the implementation path, not native Trim UX or durable store admission.

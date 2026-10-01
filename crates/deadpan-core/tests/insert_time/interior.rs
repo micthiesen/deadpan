@@ -11,6 +11,7 @@ fn composite_suffix(lead: BeatNode, plays: u32) -> ProjectDocument {
                     audio_treatments: Default::default(),
                     label: "Repeated Original".into(),
                     framing: None,
+                    audio_editorial_edges: Default::default(),
                     audio_edges: Default::default(),
                     kind: NodeKind::Repeat {
                         child: id("inner"),

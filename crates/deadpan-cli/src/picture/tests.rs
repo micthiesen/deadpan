@@ -621,6 +621,7 @@ fn unqualified_source_still_and_accepted_providers_fail_without_fallback() -> Re
             BeatNode {
                 label: "Still".into(),
                 framing: None,
+                audio_editorial_edges: Default::default(),
                 audio_edges: Default::default(),
                 audio_treatments: Default::default(),
                 kind: NodeKind::Source {

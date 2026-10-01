@@ -2,6 +2,8 @@ use super::*;
 
 #[path = "gain/slip.rs"]
 mod slip;
+#[path = "gain/trim.rs"]
+mod trim;
 
 fn gain(value: i32) -> GainDb {
     GainDb::new(value).unwrap()

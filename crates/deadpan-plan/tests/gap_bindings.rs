@@ -54,6 +54,7 @@ fn captured(plays: u32) -> ProjectDocument {
                 label: "Repeat".into(),
                 framing: None,
                 audio_treatments: Default::default(),
+                audio_editorial_edges: Default::default(),
                 audio_edges: AudioEdgePolicies {
                     node_start: AudioEdgePolicy::Hard,
                     node_end: AudioEdgePolicy::Hard,
@@ -164,20 +165,20 @@ fn moved_gap_is_bound_in_root_and_captured_domains_with_its_own_edges() {
     );
     let fade = plan.audio_fades(samples, Default::default()).unwrap();
     assert_eq!(fade.spans.len(), 1);
-    assert_eq!(fade.spans[0].length, 3203);
-    assert_eq!(fade.spans[0].progress_at_start, ExactRatio::ZERO);
+    assert_eq!(fade.spans[0].start[0].length, 3203);
+    assert_eq!(fade.spans[0].start[0].distance_at_start, ExactRatio::ZERO);
     assert!(
         fade.spans[0]
-            .boundaries
             .start
             .iter()
+            .flat_map(|edge| &edge.origins)
             .any(|edge| edge.policy == AudioEdgePolicy::Hard)
     );
     assert!(
         fade.spans[0]
-            .boundaries
             .end
             .iter()
+            .flat_map(|edge| &edge.origins)
             .all(|edge| edge.policy == AudioEdgePolicy::Automatic)
     );
 }

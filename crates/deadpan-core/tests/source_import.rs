@@ -160,6 +160,7 @@ fn import_registers_and_inserts_in_one_reversible_edit_without_changing_basis() 
         BeatNode {
             audio_treatments: Default::default(),
             framing: None,
+            audio_editorial_edges: Default::default(),
             audio_edges: Default::default(),
             label: insertion.label,
             kind: NodeKind::Source {

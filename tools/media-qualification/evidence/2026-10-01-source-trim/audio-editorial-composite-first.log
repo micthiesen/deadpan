@@ -1,0 +1,71 @@
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 26.38s
+     Running tests/composite_insert.rs (target/debug/deps/composite_insert-83f2643f39d161d3)
+
+running 63 tests
+test delete::historical_delete_keeps_its_unbound_phase_for_replay ... ok
+test delete_range::nested_partition::repeated_nested_deletions_transform_the_existing_root_sound_route_exactly_once ... ok
+test edited_slice::contents_exclude_unselected_parent_gain_while_owned_group_retains_it ... ok
+test delete::delete_before_preserve_crop_retains_full_preparation_history ... ok
+test delete_range::nested_partition::nested_terminal_allocation_keeps_the_last_supported_sample_and_suppresses_only_the_extra ... ok
+test delete::delete_preserves_nonzero_ntsc_source_suffix_phase ... ok
+test delete_range::interior_range_delete_preserves_every_ntsc_prefix_and_suffix_sample ... ok
+test delete_range::range_delete_retains_clocks_from_an_earlier_pause_insertion ... ok
+test edited_slice::move_range::moved_voice_keeps_its_gain_clock_and_uses_live_destination_gain_once ... ok
+test delete::repeated_deletes_keep_preexisting_insert_time_bindings ... ok
+test delete::nested_delete_preserves_inner_and_outer_source_suffixes ... ok
+test delete_range::aligned_range_delete_retains_suffix_and_terminal_prefix_without_extra_capture ... ok
+test delete::delete_preserves_fractional_ntsc_preserve_output_entry ... ok
+test delete::delete_preserves_repeat_play_and_roomtone_gap_entries ... ok
+test edited_slice::immutable_capture_survives_source_change_and_deletion_and_pastes_independently ... ok
+test edited_slice::crop_retains_prior_insert_and_delete_resume_terms ... ok
+test edited_slice::move_range::root_sound_stays_at_frames_one_to_three_when_a_moves_to_the_end ... ok
+test edited_slice::move_range::prior_pause_delete_bindings_survive_another_move_without_restarting_the_source ... ok
+test delete_range::range_delete_preserves_ntsc_preserve_suffix_full_history ... ok
+test delete::delete_preserves_roomtone_loop_phase_through_the_final_sample ... ok
+test edited_slice::placement::equal_replacement_keeps_the_final_4804_sample_without_a_shorter_intermediate_clock ... ok
+test delete_range::range_delete_preserves_every_repeated_play_and_roomtone_gap_sample ... ok
+test edited_slice::move_range::whole_owner_move_allocates_the_new_terminal_sample_but_reports_exhausted_old_support ... ok
+test edited_slice::terminal_source_crop_allocates_the_destination_interval_without_invented_support ... ok
+test edited_slice::placement::partial_endpoint_replacement_across_repeat_and_preserve_keeps_both_outer_joins ... ok
+test edited_slice::placement::interior_in_a_previously_cut_fragment_composes_both_retained_histories ... ok
+test edited_slice::move_range::three_cuts_in_one_source_move_left_and_right_with_a_real_extra_continuing_sample ... ok
+test edited_slice::move_range::root_sound_recipe_stays_fixed_while_live_hold_gates_and_grants_follow_the_hold ... ok
+test inserting_before_preserve_crop_keeps_full_history_and_exact_silence ... ok
+test interior_pause_before_nested_retime_preserves_intrinsic_dsp_input_clock ... ok
+test edited_slice::placement::copied_nested_partitions_remain_editable_by_interior_and_range_replacement ... ok
+test nested_sequence::nested_fragment_split_composes_a_previously_shifted_source_clock ... ok
+test interior_source_fragment_pause_composes_an_existing_resume_before_repeat ... ok
+test interior_source_pause_uses_each_suffix_boundary_instead_of_one_rounded_shift ... ok
+test nested_sequence::nested_pause_resumes_each_level_at_its_own_ntsc_sample_and_stays_editable ... ok
+test edited_slice::move_range::cross_parent_moves_preserve_every_source_sample_entry_in_both_directions ... ok
+test source_replace::replacement_before_repeated_and_preserved_suffix_retains_their_entries ... ok
+test source_splice::fresh_ntsc_source_uses_project_phase_while_repeat_fragments_keep_distinct_entries ... ok
+test nested_sequence::nested_sequence_pause_preserves_later_preserve_input_and_roomtone_gap_clocks ... ok
+test source_splice::interior_ntsc_source_splice_and_fragment_refinement_keep_nonzero_pcm_at_both_joins ... ok
+test source_splice::pasted_selected_audio_ends_on_its_exact_interval_after_another_splice ... ok
+test source_splice::nested_group_edges_keep_ownership_ancestor_suffix_clocks_and_live_recipe_edits ... ok
+test split_repeat_suffix_inserts_twice_and_resumes_each_old_ntsc_play ... ok
+test edited_slice::unrelated_repeats_with_equal_raw_play_ids_keep_distinct_historical_clocks ... ok
+test edited_slice::preserve_partition_copy_keeps_complete_input_history_on_cold_final_read ... ok
+test trim::trim_44100_crop_keeps_filter_context_and_tail_growth_uses_the_original_rate ... ok
+test inserted_composite_keeps_isolated_gap_phase_and_default_gap_births ... ok
+test delete_range::nested_range_delete_preserves_roomtone_source_and_outer_siblings ... ok
+test source_splice::source_splice_leaves_shifted_preserve_preparation_and_roomtone_on_their_own_clocks ... ok
+test edited_slice::nested_nonzero_source_and_roomtone_crop_keep_phase_and_exact_destination_allocation ... ok
+test delete_range::nested_partition::different_nested_children_keep_partial_source_and_roomtone_with_a_real_extra_sample ... ok
+test edited_slice::move_range::full_repeat_families_and_preserve_contexts_move_without_changing_their_prepared_pcm ... ok
+test source_splice::interior_ntsc_roomtone_splice_keeps_nonzero_hold_recipe_phase ... ok
+test edited_slice::placement::nested_interior_keeps_source_and_roomtone_suffixes_and_prior_copied_phase ... ok
+test edited_slice::move_range::existing_root_sound_routes_and_sample_labels_are_unchanged_by_left_and_right_moves ... ok
+test source_replace::ntsc_replacement_retains_source_roomtone_and_outer_suffix_samples_in_one_shift ... ok
+test trim::in_extension_reanchors_repeat_gap_preserve_and_outer_suffix_owners_once ... ok
+test edited_slice::copied_repeat_keeps_reordered_births_sparse_overrides_retired_runs_and_copy_of_copy ... ok
+test interior_roomtone_hold_and_fragment_keep_phase_before_repeat_gaps ... ok
+test edited_slice::placement::interior_and_replacement_keep_imported_repeat_and_complete_preserve_contexts ... ok
+test delete_range::nested_partition::two_and_three_windows_retain_source_and_roomtone_prefix_suffix_and_owned_gain ... ok
+test edited_slice::placement::shorter_equal_and_longer_replacements_use_exact_new_allocations_and_old_support ... ok
+test structural_capture::empty_group_paste_preserves_all_pcm_gain_and_routed_sounds_at_every_seam ... ok
+
+test result: ok. 63 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 24.38s
+

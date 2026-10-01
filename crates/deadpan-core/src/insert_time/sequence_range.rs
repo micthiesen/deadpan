@@ -134,7 +134,8 @@ fn preflight_with(
                             ..
                         }
                     ) && original.framing.is_none()
-                        && original.audio_treatments.is_empty();
+                        && original.audio_treatments.is_empty()
+                        && original.audio_editorial_edges.is_empty();
                     required_ids = required_ids
                         .checked_add(count - usize::from(!already_refined))
                         .ok_or_else(super::overflow)?;

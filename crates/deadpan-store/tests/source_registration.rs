@@ -30,6 +30,8 @@ mod hold_audio;
 mod slip;
 #[path = "source_registration/sounds.rs"]
 mod sounds;
+#[path = "source_registration/trim.rs"]
+mod trim;
 
 fn active() -> AtomicBool {
     AtomicBool::new(false)

@@ -209,6 +209,7 @@ fn nested_scope_and_split_partition_are_preserved_by_retime() {
     let fragment = BeatNode {
         audio_treatments: Default::default(),
         label: "Fragment".into(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         framing: None,
         kind: NodeKind::Retime {

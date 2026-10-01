@@ -67,7 +67,10 @@ pub(crate) fn apply(
             mapping,
             purpose: RetimePurpose::Partition,
             ..
-        } if original.framing.is_none() && original.audio_treatments.is_empty() => {
+        } if original.framing.is_none()
+            && original.audio_treatments.is_empty()
+            && original.audio_editorial_edges.is_empty() =>
+        {
             Some((child, *mapping))
         }
         _ => None,
@@ -196,7 +199,7 @@ pub(crate) fn apply(
     Ok(result)
 }
 
-fn partition(
+pub(crate) fn partition(
     label: &str,
     child: NodeId,
     start: i64,
@@ -216,6 +219,7 @@ fn partition(
             pitch,
             purpose: RetimePurpose::Partition,
         },
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
     })
 }

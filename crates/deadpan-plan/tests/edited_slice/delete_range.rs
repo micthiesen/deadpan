@@ -6,6 +6,7 @@ fn window(child: &str, start: i64, end: i64) -> BeatNode {
         label: "Window".into(),
         framing: None,
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             child: id(child),

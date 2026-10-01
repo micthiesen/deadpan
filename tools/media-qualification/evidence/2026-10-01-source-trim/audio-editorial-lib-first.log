@@ -1,0 +1,10 @@
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+error[E0689]: can't call method `min` on ambiguous numeric type `{float}`
+  --> crates/deadpan-audio/src/edges.rs:90:37
+   |
+90 |                     *gain = (*gain).min(creative_gain(edge.length, distance, true, false)?);
+   |                                     ^^^
+
+For more information about this error, try `rustc --explain E0689`.
+error: could not compile `deadpan-audio` (lib test) due to 1 previous error

@@ -404,6 +404,7 @@ fn extending_a_captured_repeat_hold_keeps_each_surviving_play_clock() {
                     framing: None,
                     label: "Twice".into(),
                     audio_treatments: Default::default(),
+                    audio_editorial_edges: Default::default(),
                     audio_edges: Default::default(),
                     kind: NodeKind::Repeat {
                         child: id("room"),

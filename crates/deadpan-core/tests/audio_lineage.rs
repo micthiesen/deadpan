@@ -52,6 +52,7 @@ fn source() -> BeatNode {
                 link: LinkRelation::Linked,
             },
         },
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
     }
 }
@@ -79,6 +80,7 @@ fn repeat(child: &str, plays: u32) -> BeatNode {
             iterations: IterationOrder::new(rev("plays"), plays).unwrap(),
             gap: None,
         },
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
     }
 }
@@ -94,6 +96,7 @@ fn retime(child: &str, input: i64, output: i64) -> BeatNode {
             pitch: PitchPolicy::Preserve,
             purpose: RetimePurpose::Edit,
         },
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
     }
 }

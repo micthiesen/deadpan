@@ -2,13 +2,15 @@
 
 `SlipSource { parent, node, delta_frames }` changes which Original material a
 beat uses while keeping its output position and duration. Positive deltas select
-later material. Core schema 39/database 48 include this command and the exact
-[editorial window](SOURCE_EDIT_WINDOWS.md) it requires.
+later material. Core schema 39/database 48 introduced this command and the exact
+[editorial window](SOURCE_EDIT_WINDOWS.md) it requires. The current core 40 /
+database 49 increment also records the changed audio joins described below;
+[Trim qualification](qualification/source-trim-2026-10-01.md) covers that correction.
 
 ## Scope
 
 The target is a direct child of an explicit ordinary Sequence, under ordinary
-Sequence ancestors. It may be a Source or one neutral unity Partition containing
+Sequence ancestors. It may be a Source or one unity Partition containing
 a Source. Source-owned framing and audio treatments are retained.
 
 The Source must retain a full qualified video span, an explicit mapping with
@@ -53,6 +55,14 @@ stay fixed. Changed source content invalidates its current audio lineage through
 the ordinary command path. Local, Occurrence and Sequence marks keep their
 coordinates. Source marks retain their immutable PTS and resolve at the changed
 output position or report `OutsideMapping` in that occurrence.
+
+A nonzero Slip changes both media joins. It records separate editorial edges
+on both target sides and each incident neighboring side, including through
+ordinary Sequence ancestors. These use the shared short fades while retaining
+raw filtering support and sample phase. Exact coincident Hard policies retain
+precedence. This is required even when a Split Partition keeps its full hidden
+window: unchanged allocation alone does not make the new media join continuous.
+See [audio edges](AUDIO_EDGES.md) and the current [Trim increment](SOURCE_TRIM.md).
 
 ## Store and headless use
 

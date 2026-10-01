@@ -153,6 +153,7 @@ impl RenderPlan {
                 },
                 kind,
                 audio_edges: node.edges,
+                audio_editorial_edges: node.editorial_edges,
                 audio_treatments: context
                     .audio_treatments()
                     .get(id)
@@ -186,6 +187,10 @@ impl RenderPlan {
             audio_assets: context.assets().clone(),
             audio_context: true,
             has_audio_treatments: !context.audio_treatments().is_empty(),
+            has_audio_editorial_edges: layout
+                .nodes()
+                .values()
+                .any(|node| !node.editorial_edges.is_empty()),
             audio_bindings: Default::default(),
             // Context schema 1 cannot carry bindings. Definition exclusions
             // are therefore immaterial in these retained legacy operands.

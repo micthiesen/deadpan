@@ -42,7 +42,7 @@ mod audio_hold_policy;
 pub use audio_hold_policy::{AudioHoldIssuer, AudioHoldPolicyQuery, AudioHoldRule};
 #[path = "audio_fades.rs"]
 mod audio_fades;
-pub use audio_fades::{AudioFadeQuery, AudioFadeSpan};
+pub use audio_fades::{AudioFadeEdge, AudioFadeQuery, AudioFadeSpan};
 #[path = "audio_owners.rs"]
 mod audio_owners;
 pub use audio_owners::{
@@ -121,6 +121,7 @@ pub struct RenderPlan {
     // Frozen admission stays distinct even when its catalog is empty.
     audio_context: bool,
     has_audio_treatments: bool,
+    has_audio_editorial_edges: bool,
     audio_bindings: deadpan_core::AudioBindingState,
     parents: Vec<Option<usize>>,
 }
@@ -130,6 +131,7 @@ struct PlanNode {
     inspection: NodeInspection,
     kind: CompiledKind,
     audio_edges: deadpan_core::AudioEdgePolicies,
+    audio_editorial_edges: deadpan_core::AudioEditorialEdges,
     audio_treatments: deadpan_core::AudioTreatments,
     framing: Option<deadpan_core::Framing>,
 }
@@ -447,6 +449,7 @@ impl RenderPlan {
                 },
                 kind,
                 audio_edges: node.audio_edges,
+                audio_editorial_edges: node.audio_editorial_edges,
                 audio_treatments: node.audio_treatments.clone(),
                 framing: node.framing.clone(),
             });
@@ -482,6 +485,10 @@ impl RenderPlan {
                 .nodes()
                 .values()
                 .any(|node| !node.audio_treatments.is_empty()),
+            has_audio_editorial_edges: document
+                .nodes()
+                .values()
+                .any(|node| !node.audio_editorial_edges.is_empty()),
         };
         plan.compiled_sounds = plan.compile_root_sounds()?;
         Ok(plan)

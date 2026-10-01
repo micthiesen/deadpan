@@ -49,6 +49,41 @@ Full Trim, waveform/audition,
 In/Out/Roll, ripple/overwrite and broader target admission remain open. No
 requirement or gate is complete.
 
+## Ripple Source edge Trim backend, 2026-10-01
+
+The shared command adds atomic `TrimSource` In/Out with explicit ripple
+policy, exact handle limits, grow-only physical Source ownership, retained effects
+and audio clocks, and one independent root sound transform. Core schema 40 and
+database 49 refuse unused intermediate development formats without migration.
+See [the contract](../SOURCE_TRIM.md) and
+[qualification](../qualification/source-trim-2026-10-01.md), based on the native
+Slip checkpoint `40f3320`.
+
+Keep the one old-tree capture: append separate target and suffix reanchor windows
+before target-only physical rebasing. Partitions preserve hidden filtering
+context. A final spec audit found that the initial Trim implementation omitted
+the required fade at a new cut; its raw-equals-faded test encoded that mistake.
+The correction records separate one-sided editorial intent on the target and
+incident neighbor without changing raw sampling support or retained phase.
+Independent PCM checks now cover that intent, delivered fade widths and
+retained bound-owner context.
+The same audit found unfaded joins when Slip changes material inside a neutral
+Split Partition. The correction also marks both Slip joins and their incident
+neighbors; raw clocks and root sounds remain fixed. Keep this regression in
+the shared plan/audio tests.
+Source PTS and physical-local marks can stay
+stored behind a crop; ancestor-local and concrete Occurrence marks retain their
+existing loss policies. Independent picture and decoded-PCM tests cover exact
+extensions, prior resume/reanchors, dormant audio and shifted composite suffixes.
+The workspace run passed 3,250 unit/integration tests and both documentation
+tests; one outdated native Slip assertion failed. Only that assertion file
+changed, and its same-feature rerun passed. Together the runs cover all 3,251
+workspace tests. Default app checks pass 428 app and 3 headless tests; strict
+all-target lint and formatting pass. Exact manifests and original failures are
+retained. No native GUI was opened and the final process scan found no Deadpan
+instance running. Full Trim mode, overwrite, Roll and broader scopes remain
+required; no requirement or gate is complete.
+
 ## Exact Source windows and atomic Slip, 2026-10-01
 
 Current core schema 39/database 48 retain an exact `SourceNode.edit_window`

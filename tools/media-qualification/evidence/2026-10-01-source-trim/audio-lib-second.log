@@ -1,0 +1,12 @@
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 12.76s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_audio-8e2ffef251e4926c)
+
+running 4 tests
+test stages::bound_reads::source_origin::gain::trim::in_extension_keeps_symbolic_resume_and_chronological_entries_before_physical_rebase ... ok
+test stages::bound_reads::source_origin::gain::trim::neutral_partition_crop_preserves_filter_context_and_does_not_add_an_edge_fade ... ok
+test stages::bound_reads::source_origin::gain::trim::in_extension_activates_audio_before_the_window_and_keeps_absence_silent ... ok
+test stages::bound_reads::source_origin::gain::trim::in_extension_exposes_one_and_three_frame_prefixes_on_the_retained_sample_grid ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 70 filtered out; finished in 0.16s
+

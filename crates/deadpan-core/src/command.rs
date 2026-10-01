@@ -46,6 +46,17 @@ pub struct SourceInsertion {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Command {
+    /// Move one linked Source edge under an explicit time-placement policy.
+    /// A fresh wrapper is supplied exactly when a direct Source needs a crop.
+    TrimSource {
+        parent: NodeId,
+        node: NodeId,
+        edge: crate::SourceTrimEdge,
+        delta_frames: i64,
+        mode: crate::SourceTrimMode,
+        wrapper: Option<NodeId>,
+        timing: crate::AudioTimingId,
+    },
     /// Shift linked Original material while retaining output position/duration.
     /// The target is a direct Source or one neutral unity Partition in an
     /// ordinary Sequence scope. Positive delta selects later Original material.
@@ -648,6 +659,7 @@ pub fn apply(
                 audio_treatments: Default::default(),
                 label: label.clone(),
                 framing: None,
+                audio_editorial_edges: Default::default(),
                 audio_edges: Default::default(),
                 kind: NodeKind::Source {
                     source: source.clone(),
@@ -662,6 +674,9 @@ pub fn apply(
             crate::edit_slice::apply(input, &request.command, context)?
         }
         Command::MoveRange { .. } => crate::move_range::apply(input, &request.command, context)?,
+        Command::TrimSource { .. } => {
+            crate::source_trim::apply(input, &request.command, &request.new_revision)?
+        }
         Command::SpliceSourceAt {
             parent,
             target,
@@ -681,6 +696,7 @@ pub fn apply(
                     audio_treatments: Default::default(),
                     label: label.clone(),
                     framing: None,
+                    audio_editorial_edges: Default::default(),
                     audio_edges: Default::default(),
                     kind: NodeKind::Source {
                         source: source.clone(),
@@ -709,6 +725,7 @@ pub fn apply(
                     audio_treatments: Default::default(),
                     label: label.clone(),
                     framing: None,
+                    audio_editorial_edges: Default::default(),
                     audio_edges: Default::default(),
                     kind: NodeKind::Source {
                         source: source.clone(),
@@ -1066,6 +1083,12 @@ pub(crate) fn reduce(
         Command::Ungroup { node } => {
             let parent = sequence_parent(document, node)?;
             let beat = document.nodes.get(node).ok_or_else(|| missing(node))?;
+            if !beat.audio_editorial_edges.is_empty() {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "ungroup cannot yet preserve this Sequence's editorial audio edges; retain the group",
+                ));
+            }
             let children = match &beat.kind {
                 NodeKind::Sequence { children } => children.clone(),
                 _ => {
@@ -1121,6 +1144,7 @@ pub(crate) fn reduce(
                 BeatNode {
                     audio_treatments: Default::default(),
                     framing: None,
+                    audio_editorial_edges: Default::default(),
                     audio_edges: Default::default(),
                     label: "Repeat".into(),
                     kind: NodeKind::Repeat {
@@ -1196,6 +1220,7 @@ pub(crate) fn reduce(
                 BeatNode {
                     audio_treatments: Default::default(),
                     framing: None,
+                    audio_editorial_edges: Default::default(),
                     audio_edges: Default::default(),
                     label: "Retime".into(),
                     kind: NodeKind::Retime {
@@ -1248,6 +1273,12 @@ pub(crate) fn reduce(
             let iterations = iterations_mut(document, node)?;
             *iterations = iterations.moved(*start, *end, *destination)?;
         }
+        Command::TrimSource { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "source trim requires the atomic timing and sound path",
+            ));
+        }
         Command::SlipSource {
             parent,
             node,
@@ -1266,6 +1297,15 @@ pub(crate) fn reduce(
                 unreachable!()
             };
             *source = resolved.after;
+            crate::source_edit::mark_edges(
+                document,
+                parent,
+                node,
+                crate::AudioEditorialEdges {
+                    start: true,
+                    end: true,
+                },
+            )?;
         }
         Command::SetSourceVideoMapping { node, mapping } => {
             let NodeKind::Source { source } = &mut node_mut(document, node)?.kind else {
@@ -1448,6 +1488,7 @@ pub(crate) fn reduce(
                     BeatNode {
                         audio_treatments: Default::default(),
                         framing: None,
+                        audio_editorial_edges: Default::default(),
                         audio_edges: Default::default(),
                         label: insertion.label.clone(),
                         kind: NodeKind::Source {
@@ -2056,6 +2097,7 @@ fn description(command: &Command) -> &'static str {
         Command::SetSourceAudioMapping { .. } => "Change source audio mapping",
         Command::SetSourceVideoMapping { .. } => "Change source video mapping",
         Command::SlipSource { .. } => "Slip source material",
+        Command::TrimSource { .. } => "Ripple trim source edge",
         Command::SetHoldProvider { .. } => "Change hold provider",
         Command::SetHoldPictureContext { .. } => "Change captured picture context",
         Command::AcceptGeneratedHold { .. } => "Accept generated hold",

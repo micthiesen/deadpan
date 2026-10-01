@@ -108,6 +108,7 @@ fn document(
             kind,
             framing: None,
             audio_treatments: Default::default(),
+            audio_editorial_edges: Default::default(),
             audio_edges: Default::default()
         });
     }

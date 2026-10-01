@@ -1,0 +1,8 @@
+{
+  "workspace_manifest": "03c82a9a7178f601ffb605af91da542efb450abac0548bac9f224f947852a107",
+  "corrected_manifest": "cf35fdfdd4008fa19a77b09649297fbe2140ce9bfa97c5b678b483be86978d11",
+  "changed_paths": [
+    "crates/deadpan-app/src/project/tests/slip.rs"
+  ],
+  "scope": "Test-only expected editorial markers; production sources unchanged. Full run passed 3250 tests and 2 docs, failed this single assertion. Exact corrected test passed in the same workspace feature graph."
+}

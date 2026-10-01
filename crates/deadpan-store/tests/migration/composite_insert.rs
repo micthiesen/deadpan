@@ -127,6 +127,7 @@ fn composite_initial() -> Result<ProjectDocument> {
                 audio_treatments: Default::default(),
                 framing: None,
                 label: "Repeat".into(),
+                audio_editorial_edges: Default::default(),
                 audio_edges: AudioEdgePolicies::default(),
                 kind: NodeKind::Repeat {
                     child: hold.clone(),

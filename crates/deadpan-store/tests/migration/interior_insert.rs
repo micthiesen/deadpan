@@ -166,6 +166,7 @@ fn interior_initial(source: bool) -> Result<ProjectDocument> {
             audio_treatments: Default::default(),
             framing: None,
             label: "Original".into(),
+            audio_editorial_edges: Default::default(),
             audio_edges: AudioEdgePolicies::default(),
             kind: NodeKind::Source {
                 source: SourceNode {
@@ -195,6 +196,7 @@ fn interior_initial(source: bool) -> Result<ProjectDocument> {
                 audio_treatments: Default::default(),
                 framing: None,
                 label: "Repeat".into(),
+                audio_editorial_edges: Default::default(),
                 audio_edges: AudioEdgePolicies::default(),
                 kind: NodeKind::Repeat {
                     child: child.clone(),

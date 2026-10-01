@@ -357,6 +357,7 @@ fn nested_override_insertion_remaps_ids_and_wrapping_preserves_actual_ancestry()
                 BeatNode {
                     audio_treatments: Default::default(),
                     framing: None,
+                    audio_editorial_edges: Default::default(),
                     audio_edges: Default::default(),
                     label: "Inner".into(),
                     kind: NodeKind::Repeat {

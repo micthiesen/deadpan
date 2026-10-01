@@ -60,6 +60,7 @@ fn initial() -> Result<ProjectDocument> {
         Ok(BeatNode {
             audio_treatments: Default::default(),
             framing: None,
+            audio_editorial_edges: Default::default(),
             audio_edges: Default::default(),
             label: name.into(),
             kind: NodeKind::Repeat {

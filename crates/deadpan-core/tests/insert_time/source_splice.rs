@@ -205,6 +205,7 @@ fn repeat_or_retime_ancestry_never_silently_changes_scope() {
             audio_treatments: Default::default(),
             label: "Repeat".into(),
             framing: None,
+            audio_editorial_edges: Default::default(),
             audio_edges: Default::default(),
             kind: NodeKind::Repeat {
                 child: id("group"),
@@ -216,6 +217,7 @@ fn repeat_or_retime_ancestry_never_silently_changes_scope() {
             audio_treatments: Default::default(),
             label: "Unity Retime".into(),
             framing: None,
+            audio_editorial_edges: Default::default(),
             audio_edges: Default::default(),
             kind: NodeKind::Retime {
                 child: id("group"),

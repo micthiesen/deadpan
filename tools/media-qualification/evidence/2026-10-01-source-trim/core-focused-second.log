@@ -1,0 +1,47 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 50.29s
+     Running tests/source_slip.rs (target/debug/deps/source_slip-3d889e14af133b3f)
+
+running 10 tests
+test distant_linked_context_overflow_is_an_error_not_a_handle_clamp ... ok
+test treated_nested_and_authored_retimes_are_explicitly_unsupported ... ok
+test common_nonnatural_slope_and_signed_original_origins_stay_exact ... ok
+test neutral_partition_uses_visible_handles_and_preserves_hidden_owner_context ... ok
+test linked_audio_offset_is_subtracted_once_and_dormant_audio_can_activate ... ok
+test fixed_clocks_effects_bindings_and_root_sounds_survive_slip ... ok
+test rejects_unqualified_incoherent_and_unsupported_sources_without_mutation ... ok
+test local_and_sequence_marks_stay_fixed_while_source_pts_resolves_or_leaves_selection ... ok
+test exact_fractional_handles_clamp_inward_and_zero_never_authors ... ok
+test frozen_command_grammars_reject_slip_including_escaped_variant ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/source_trim_command.rs (target/debug/deps/source_trim_command-245391d89a9e964a)
+
+running 7 tests
+test trim_rejects_missing_extra_colliding_or_stale_command_metadata_atomically ... ok
+test trim_prefix_moves_physical_content_marks_but_keeps_host_edge_sentinels ... ok
+test frozen_command_grammars_reject_trim_including_escaped_variant ... ok
+test trim_marks_distinguish_stored_source_coordinates_from_visible_occurrences ... ok
+test trim_capture_precedes_growth_and_retains_effect_clocks_and_root_sound_once ... ok
+test trim_both_edges_grows_only_the_physical_owner_and_round_trips_exactly ... ok
+test trim_refuses_a_full_reanchor_budget_without_replacing_the_old_clock ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/source_trim_resolution.rs (target/debug/deps/source_trim_resolution-b42ba4e139f1b21b)
+
+running 10 tests
+test prefix_overflow_in_dormant_context_is_an_error_without_clamping_or_mutation ... ok
+test linked_non_natural_affine_clock_and_independent_offset_survive_prefix_and_extension ... ok
+test nested_sequence_reports_old_project_windows_and_exact_root_ripple_once ... ok
+test zero_resolution_preserves_mapping_variants_and_carries_no_authored_work ... ok
+test rejects_treated_partition_and_composite_scope_including_zero_queries ... ok
+test fractional_padding_moves_with_either_edge_and_owner_only_grows ... ok
+test exact_handle_reports_distinguish_exclusive_selected_and_inclusive_output_limits ... ok
+test extension_activates_dormant_linked_context_on_either_side_but_never_invents_audio ... ok
+test neutral_crop_retains_hidden_window_and_filters_until_an_edge_reaches_them ... ok
+test rejects_missing_qualification_generic_or_incoherent_clocks_and_held_picture_windows ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

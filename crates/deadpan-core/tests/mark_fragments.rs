@@ -290,6 +290,7 @@ fn retained_copy_ownership_depends_on_authored_nodes_not_visible_matching_plays(
         audio_treatments: Default::default(),
         framing: None,
         label: "Repeated pair".into(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
             child: node(child),
@@ -301,6 +302,7 @@ fn retained_copy_ownership_depends_on_authored_nodes_not_visible_matching_plays(
         audio_treatments: Default::default(),
         framing: None,
         label: "Retained partition".into(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             child: node(child),

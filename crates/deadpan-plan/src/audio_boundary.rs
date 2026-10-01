@@ -48,7 +48,7 @@ pub(super) struct BoundaryOwner<'a> {
 }
 
 impl BoundaryOwner<'_> {
-    fn capture(
+    pub(super) fn capture(
         self,
         kind: AudioBoundaryKind,
         budget: &mut Budget,

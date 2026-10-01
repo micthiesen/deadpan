@@ -132,7 +132,7 @@ fn split(document: &ProjectDocument, target: &str, at: i64, prefix: &str) -> Pro
 #[test]
 fn treatment_is_authored_intent_with_guarded_reversible_node_patches() {
     let before = fixture();
-    assert_eq!(before.schema_version(), 39);
+    assert_eq!(before.schema_version(), 40);
     assert!(
         serde_json::to_value(&before).unwrap()["nodes"]["hold"]
             .get("audio_treatments")
@@ -731,6 +731,7 @@ fn replacement_and_isolation_bound_transient_gain_without_rejecting_valid_final_
             BeatNode {
                 label: "Repeat".into(),
                 framing: None,
+                audio_editorial_edges: Default::default(),
                 audio_edges: Default::default(),
                 audio_treatments: Default::default(),
                 kind: NodeKind::Repeat {

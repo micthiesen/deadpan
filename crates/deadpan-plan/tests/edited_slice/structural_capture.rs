@@ -6,6 +6,7 @@ fn fixture() -> ProjectDocument {
         label: "repeat".into(),
         framing: None,
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
             child: id("repeated-source"),

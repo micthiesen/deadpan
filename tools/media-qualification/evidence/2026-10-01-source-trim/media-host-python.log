@@ -1,0 +1,9 @@
+test_failed_check_keeps_exit_status (test_build_sanitized.HarnessProcessTests.test_failed_check_keeps_exit_status) ... ok
+test_missing_executable_is_recorded (test_build_sanitized.HarnessProcessTests.test_missing_executable_is_recorded) ... ok
+test_success_keeps_output (test_build_sanitized.HarnessProcessTests.test_success_keeps_output) ... ok
+test_timeout_stops_and_reaps_the_process (test_build_sanitized.HarnessProcessTests.test_timeout_stops_and_reaps_the_process) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.106s
+
+OK

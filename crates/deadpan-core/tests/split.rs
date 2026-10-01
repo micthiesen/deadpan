@@ -33,6 +33,7 @@ fn repeat(child: &str, plays: u32) -> BeatNode {
             iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), plays).unwrap(),
             gap: None,
         },
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
     }
 }
@@ -48,6 +49,7 @@ fn retime(child: &str, start: i64, end: i64, output: i64, purpose: RetimePurpose
             pitch: PitchPolicy::FollowSpeed,
             purpose,
         },
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
     }
 }

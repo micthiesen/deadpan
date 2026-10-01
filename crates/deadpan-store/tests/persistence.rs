@@ -873,6 +873,7 @@ fn transparent_partition_intent_is_durable_atomic_and_undoable() -> Result {
                 pitch: PitchPolicy::Preserve,
                 purpose: RetimePurpose::Partition,
             },
+            audio_editorial_edges: Default::default(),
             audio_edges: Default::default(),
         },
     );

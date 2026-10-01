@@ -34,6 +34,9 @@ impl LegacyBeatNode {
     }
 
     fn project(node: &BeatNode) -> Option<Self> {
+        if !node.audio_editorial_edges.is_empty() {
+            return None;
+        }
         if !node.audio_treatments.is_empty() {
             return None;
         }
@@ -45,6 +48,7 @@ impl LegacyBeatNode {
             framing: None,
             label: node.label.clone(),
             kind: node.kind.clone(),
+            audio_editorial_edges: Default::default(),
             audio_edges: AudioEdgePolicies::default(),
         })?;
         Some(Self {

@@ -205,6 +205,7 @@ mod tests {
             audio_treatments: Default::default(),
             label: "Pause".into(),
             framing: None,
+            audio_editorial_edges: Default::default(),
             audio_edges: Default::default(),
             kind: NodeKind::Hold {
                 recipe: HoldRecipe {
@@ -234,6 +235,7 @@ mod tests {
             audio_treatments: Default::default(),
             label: "Again".into(),
             framing: None,
+            audio_editorial_edges: Default::default(),
             audio_edges: Default::default(),
             kind: NodeKind::Repeat {
                 child: NodeId::new("child").unwrap(),
@@ -269,6 +271,7 @@ mod tests {
             audio_treatments: Default::default(),
             label: "Delivery".into(),
             framing: None,
+            audio_editorial_edges: Default::default(),
             audio_edges: Default::default(),
             kind: NodeKind::Retime {
                 child: NodeId::new("child").unwrap(),

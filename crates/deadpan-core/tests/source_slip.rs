@@ -100,7 +100,7 @@ fn fixture(audio: Option<(i64, i64)>, offset: i64) -> ProjectDocument {
         "basis_state":{"rate_origin":"explicit","geometry_origin":"explicit","primary":null},
         "root":"root","marks":{},"overrides":{},
         "assets":{"original":AssetRecord {label:"Original".into(),content_hash:"a".repeat(64),video:Some(picture),audio:sound,still_image:false,frame_count:Some(frames(100)),source_qualification:Some(SourceQualificationId::new("b".repeat(64)).unwrap())}},
-        "nodes":{"root":BeatNode::sequence("Root",vec![id("source")]),"source":BeatNode {label:"Source".into(),framing:None,audio_treatments:Default::default(),audio_edges:Default::default(),kind:NodeKind::Source {source}}},
+        "nodes":{"root":BeatNode::sequence("Root",vec![id("source")]),"source":BeatNode {label:"Source".into(),framing:None,audio_treatments:Default::default(),audio_editorial_edges: Default::default(), audio_edges:Default::default(),kind:NodeKind::Source {source}}},
     }).to_string()).unwrap()
 }
 fn source(document: &ProjectDocument) -> &SourceNode {
@@ -280,6 +280,7 @@ fn neutral_partition_uses_visible_handles_and_preserves_hidden_owner_context() {
             label: "View".into(),
             framing: None,
             audio_treatments: Default::default(),
+            audio_editorial_edges: Default::default(),
             audio_edges: Default::default(),
             kind: NodeKind::Retime {
                 child: id("source"),
@@ -298,7 +299,12 @@ fn neutral_partition_uses_visible_handles_and_preserves_hidden_owner_context() {
         SourceEditWindow::new(ExactRatio::integer(4), ExactRatio::integer(8)).unwrap()
     );
     let after = edit(&before, command("view", 100));
-    assert_eq!(after.nodes()[&id("view")], before.nodes()[&id("view")]);
+    let mut marked_view = before.nodes()[&id("view")].clone();
+    marked_view.audio_editorial_edges = AudioEditorialEdges {
+        start: true,
+        end: true,
+    };
+    assert_eq!(after.nodes()[&id("view")], marked_view);
     assert_eq!(source(&after).duration, frames(10));
     assert_eq!(source(&after).edit_window, Some(window()));
     assert_eq!(
@@ -309,6 +315,111 @@ fn neutral_partition_uses_visible_handles_and_preserves_hidden_owner_context() {
         ExactFrameRange::new(window().start(), ExactRatio::integer(8)).unwrap()
     );
     assert_eq!(after.duration().unwrap(), frames(4));
+}
+
+#[test]
+fn slip_marks_both_incident_joins_across_groups_without_changing_clocks_or_policies() {
+    for partition in [false, true] {
+        let before = modify(&fixture(Some((0, 147000)), 7), |wire| {
+            let source = wire["nodes"]["source"].clone();
+            wire["nodes"]["previous"] = source.clone();
+            wire["nodes"]["next"] = source;
+            for node in ["previous", "source", "next"] {
+                wire["nodes"][node]["audio_edges"] = serde_json::to_value(AudioEdgePolicies {
+                    node_start: AudioEdgePolicy::Hard,
+                    node_end: AudioEdgePolicy::Hard,
+                    ..Default::default()
+                })
+                .unwrap();
+            }
+            let target = if partition {
+                wire["nodes"]["view"] = serde_json::to_value(BeatNode {
+                    label: "View".into(),
+                    framing: None,
+                    audio_treatments: Default::default(),
+                    audio_edges: Default::default(),
+                    audio_editorial_edges: Default::default(),
+                    kind: NodeKind::Retime {
+                        child: id("source"),
+                        duration: frames(4),
+                        mapping: FrameRange::new(ProjectFrame(2), ProjectFrame(6)).unwrap(),
+                        pitch: PitchPolicy::FollowSpeed,
+                        purpose: RetimePurpose::Partition,
+                    },
+                })
+                .unwrap();
+                "view"
+            } else {
+                "source"
+            };
+            wire["nodes"]["zero_before"] =
+                serde_json::to_value(BeatNode::sequence("Empty", vec![])).unwrap();
+            wire["nodes"]["zero_after"] = wire["nodes"]["zero_before"].clone();
+            wire["nodes"]["group"] = serde_json::to_value(BeatNode::sequence(
+                "Group",
+                vec![id("zero_before"), id(target), id("zero_after")],
+            ))
+            .unwrap();
+            wire["nodes"]["root"]["kind"]["children"] = json!(["previous", "group", "next"]);
+        });
+        let target = if partition { "view" } else { "source" };
+        let command = Command::SlipSource {
+            parent: id("group"),
+            node: id(target),
+            delta_frames: 3,
+        };
+        let after = edit(&before, command);
+        assert_eq!(
+            after.nodes()[&id(target)].audio_editorial_edges,
+            AudioEditorialEdges {
+                start: true,
+                end: true
+            }
+        );
+        assert_eq!(
+            after.nodes()[&id("previous")].audio_editorial_edges,
+            AudioEditorialEdges {
+                start: false,
+                end: true
+            }
+        );
+        assert_eq!(
+            after.nodes()[&id("next")].audio_editorial_edges,
+            AudioEditorialEdges {
+                start: true,
+                end: false
+            }
+        );
+        for node in ["root", "group", "zero_before", "zero_after"] {
+            assert!(after.nodes()[&id(node)].audio_editorial_edges.is_empty());
+        }
+        for node in ["previous", "source", "next"] {
+            assert_eq!(
+                after.nodes()[&id(node)].audio_edges,
+                before.nodes()[&id(node)].audio_edges
+            );
+        }
+        assert_eq!(before.nodes().len(), after.nodes().len());
+        assert_eq!(before.duration().unwrap(), after.duration().unwrap());
+        assert_eq!(before.audio_bindings(), after.audio_bindings());
+        assert_eq!(before.sounds(), after.sounds());
+        assert_eq!(before.sound_routes(), after.sound_routes());
+        if partition {
+            assert!(
+                after.nodes()[&id("source")]
+                    .audio_editorial_edges
+                    .is_empty()
+            );
+        }
+        let snapshot = before.clone();
+        let noop = Command::SlipSource {
+            parent: id("group"),
+            node: id(target),
+            delta_frames: 0,
+        };
+        assert!(apply(&before, &request(&before, noop)).is_err());
+        assert_eq!(before, snapshot);
+    }
 }
 
 #[test]
@@ -641,6 +752,7 @@ fn treated_nested_and_authored_retimes_are_explicitly_unsupported() {
         label: "View".into(),
         framing: None,
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             child: id("source"),
@@ -666,6 +778,7 @@ fn treated_nested_and_authored_retimes_are_explicitly_unsupported() {
                         label: "Outer".into(),
                         framing: None,
                         audio_treatments: Default::default(),
+                        audio_editorial_edges: Default::default(),
                         audio_edges: Default::default(),
                         kind: NodeKind::Retime {
                             child: id("view"),

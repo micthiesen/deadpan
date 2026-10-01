@@ -292,6 +292,7 @@ fn interior_splice_never_descends_a_repeat_or_authored_retime() {
                         label: "Container".into(),
                         framing: None,
                         audio_treatments: Default::default(),
+                        audio_editorial_edges: Default::default(),
                         audio_edges: Default::default(),
                         kind,
                     },

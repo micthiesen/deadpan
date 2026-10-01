@@ -51,6 +51,7 @@ fn source(length: i64, selection: SourceAudio, offset: i64) -> BeatNode {
         framing: None,
         label: "Original speech".into(),
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: AudioEdgePolicies {
             node_start: AudioEdgePolicy::Hard,
             node_end: AudioEdgePolicy::Hard,
@@ -107,6 +108,7 @@ fn retime(
         framing: None,
         label: "Retime".into(),
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             purpose: RetimePurpose::Edit,

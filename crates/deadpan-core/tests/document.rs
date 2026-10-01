@@ -273,6 +273,7 @@ fn inserted_repeat_cannot_reserve_a_future_revision_and_revive_retired_plays() {
                         BeatNode {
                             audio_treatments: Default::default(),
                             framing: None,
+                            audio_editorial_edges: Default::default(),
                             audio_edges: Default::default(),
                             label: "Imported".into(),
                             kind: NodeKind::Repeat {
@@ -690,6 +691,7 @@ fn source_streams_retain_timestamps_and_validate_bounds_independently() {
                 BeatNode {
                     audio_treatments: Default::default(),
                     framing: None,
+                    audio_editorial_edges: Default::default(),
                     audio_edges: Default::default(),
                     label: "Source".into(),
                     kind: NodeKind::Source { source },
@@ -840,6 +842,7 @@ fn retime_range_is_in_child_clock_and_overflow_is_rejected() {
         BeatNode {
             audio_treatments: Default::default(),
             framing: None,
+            audio_editorial_edges: Default::default(),
             audio_edges: Default::default(),
             label: "Slow".into(),
             kind: NodeKind::Retime {

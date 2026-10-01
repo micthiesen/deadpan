@@ -1,0 +1,11 @@
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 41.54s
+     Running tests/source_registration.rs (target/debug/deps/source_registration-0f20b6398ed14eb7)
+
+running 2 tests
+test trim::trim_preview_checks_noop_metadata_and_commits_one_receipt_bound_edit ... ok
+test trim::trimmed_edge_hard_policy_survives_reopen_and_two_durable_history_steps ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 21 filtered out; finished in 0.31s
+

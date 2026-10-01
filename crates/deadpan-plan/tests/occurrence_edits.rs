@@ -36,6 +36,7 @@ fn repeat(child: &str, plays: u32, gap_frames: i64, allocation: &str) -> BeatNod
     BeatNode {
         framing: None,
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         label: allocation.into(),
         kind: NodeKind::Repeat {
@@ -65,6 +66,7 @@ fn source(frames: i64, start: i64, end: i64) -> BeatNode {
     BeatNode {
         framing: None,
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         label: "Original speech".into(),
         kind: NodeKind::Source {
@@ -88,6 +90,7 @@ fn retime(child: &str, frames: i64, start: i64, end: i64) -> BeatNode {
     BeatNode {
         framing: None,
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         label: "Exact retime".into(),
         kind: NodeKind::Retime {

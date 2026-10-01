@@ -1,0 +1,36 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1m 17s
+     Running tests/audio_context.rs (target/debug/deps/audio_context-9c6cf9ae500b2a5b)
+
+running 15 tests
+test effective_placement_can_exceed_authored_placement_bounds ... ok
+test copied_snapshot_is_independent_of_later_document_revision ... ok
+test ingress_rejects_open_or_inconsistent_inventory ... FAILED
+test legacy_context_roundtrips_its_closed_mapping_vocabulary_without_upgrading ... ok
+test selected_context_keeps_full_phase_mapping_and_captures_only_its_audible_extent ... ok
+test compact_repeat_overrides_and_lineage_survive_capture ... ok
+test old_context_versions_reject_even_empty_gap_branch_vocabulary ... ok
+test captures_exact_inputs_and_only_their_full_asset_records ... ok
+test frozen_gain_retains_group_and_picture_only_owners_and_authenticates_every_recipe ... ok
+test dormant_context_keeps_input_asset_offset_and_distinguishes_absent_audio ... ok
+test legacy_context_gain_vocabulary_is_closed_even_for_null_empty_or_escaped_names ... ok
+test positive_audio_context_support_keeps_all_pre_dormant_versions_readable ... ok
+test frozen_gain_rejects_unknown_empty_duplicate_and_overlayered_owners ... ok
+test editorial_edges_survive_context_capture_with_closed_historical_vocabulary ... ok
+test frozen_context_rejects_aggregate_gain_records_during_ingress ... ok
+
+failures:
+
+---- ingress_rejects_open_or_inconsistent_inventory stdout ----
+
+thread 'ingress_rejects_open_or_inconsistent_inventory' (61312939) panicked at crates/deadpan-core/tests/audio_context.rs:396:14:
+called `Result::unwrap_err()` on an `Ok` value: FrozenAudioContext { schema_version: 6, project_id: ProjectId("context"), revision_id: RevisionId("r1xxxx"), layout: FrozenAudioLayout { root: NodeId("root"), rate: FrameRate { numerator: 30000, denominator: 1001 }, nodes: {NodeId("hold"): FrozenAudioNode { duration: FrameDuration(3), edges: AudioEdgePolicies { node_start: Automatic, node_end: Automatic, source_placement_start: Automatic, source_placement_end: Automatic, repeat_gap_start: Automatic, repeat_gap_end: Automatic }, editorial_edges: AudioEditorialEdges { start: false, end: false }, kind: Hold { audio: Tail { maximum: FrameDuration(2) } } }, NodeId("pictureonly"): FrozenAudioNode { duration: FrameDuration(2), edges: AudioEdgePolicies { node_start: Automatic, node_end: Automatic, source_placement_start: Automatic, source_placement_end: Automatic, repeat_gap_start: Automatic, repeat_gap_end: Automatic }, editorial_edges: AudioEditorialEdges { start: false, end: false }, kind: Source { placement: None } }, NodeId("repeat"): FrozenAudioNode { duration: FrameDuration(10999999999), edges: AudioEdgePolicies { node_start: Automatic, node_end: Automatic, source_placement_start: Automatic, source_placement_end: Automatic, repeat_gap_start: Automatic, repeat_gap_end: Automatic }, editorial_edges: AudioEditorialEdges { start: false, end: false }, kind: Repeat { child: NodeId("source"), iterations: IterationOrder { runs: [IterationRun { allocation: RevisionId("r1xxxx"), first: 0, count: 1000000000 }] }, gap_duration: FrameDuration(1), gap_audio: RoomTone } }, NodeId("root"): FrozenAudioNode { duration: FrameDuration(11000000004), edges: AudioEdgePolicies { node_start: Automatic, node_end: Automatic, source_placement_start: Automatic, source_placement_end: Automatic, repeat_gap_start: Automatic, repeat_gap_end: Automatic }, editorial_edges: AudioEditorialEdges { start: false, end: false }, kind: Sequence { children: [NodeId("sequence")] } }, NodeId("sequence"): FrozenAudioNode { duration: FrameDuration(11000000004), edges: AudioEdgePolicies { node_start: Automatic, node_end: Automatic, source_placement_start: Automatic, source_placement_end: Automatic, repeat_gap_start: Automatic, repeat_gap_end: Automatic }, editorial_edges: AudioEditorialEdges { start: false, end: false }, kind: Sequence { children: [NodeId("repeat"), NodeId("hold"), NodeId("pictureonly")] } }, NodeId("source"): FrozenAudioNode { duration: FrameDuration(10), edges: AudioEdgePolicies { node_start: Automatic, node_end: Automatic, source_placement_start: Hard, source_placement_end: Automatic, repeat_gap_start: Automatic, repeat_gap_end: Automatic }, editorial_edges: AudioEditorialEdges { start: false, end: false }, kind: Source { placement: Some(ExactFrameRange { start: ExactRatio { numerator: 0, denominator: 1 }, end: ExactRatio { numerator: 10, denominator: 1 } }) } }}, overrides: {}, gap_overrides: {}, audio_lineage: {}, index: FrozenIndex { parents: {NodeId("hold"): (NodeId("sequence"), 10999999999), NodeId("pictureonly"): (NodeId("sequence"), 11000000002), NodeId("repeat"): (NodeId("sequence"), 0), NodeId("sequence"): (NodeId("root"), 0), NodeId("source"): (NodeId("repeat"), 0)}, repeats: {NodeId("repeat"): RepeatLayout { segments: [Segment { start: 0, end: 10999999999, first_play: 0, count: 1000000000, allocation: RevisionId("r1xxxx"), first: 0, child: NodeId("source"), child_duration: FrameDuration(10), gap_child: None, gap_duration: FrameDuration(1) }], plays: 1000000000, duration: FrameDuration(10999999999) }} } }, inputs: {NodeId("hold"): Hold { source: SourceAudio { asset: AssetId("original"), span: SourceSpan { start: SourceTimestamp { ticks: 0, time_base: SourceTimeBase { numerator: 1, denominator: 48000 } }, end: SourceTimestamp { ticks: 480000, time_base: SourceTimeBase { numerator: 1, denominator: 48000 } } } } }, NodeId("repeat"): Hold { source: SourceAudio { asset: AssetId("original"), span: SourceSpan { start: SourceTimestamp { ticks: 0, time_base: SourceTimeBase { numerator: 1, denominator: 48000 } }, end: SourceTimestamp { ticks: 480000, time_base: SourceTimeBase { numerator: 1, denominator: 48000 } } } } }, NodeId("source"): Source { source: SourceAudio { asset: AssetId("original"), span: SourceSpan { start: SourceTimestamp { ticks: 0, time_base: SourceTimeBase { numerator: 1, denominator: 48000 } }, end: SourceTimestamp { ticks: 480000, time_base: SourceTimeBase { numerator: 1, denominator: 48000 } } } }, mapping: FitBeat, offset: AudioSample(0) }}, audio_treatments: {}, assets: {AssetId("original"): AssetRecord { label: "original", content_hash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", video: Some(SourceSpan { start: SourceTimestamp { ticks: 0, time_base: SourceTimeBase { numerator: 1, denominator: 48000 } }, end: SourceTimestamp { ticks: 480000, time_base: SourceTimeBase { numerator: 1, denominator: 48000 } } }), audio: Some(SourceSpan { start: SourceTimestamp { ticks: 0, time_base: SourceTimeBase { numerator: 1, denominator: 48000 } }, end: SourceTimestamp { ticks: 480000, time_base: SourceTimeBase { numerator: 1, denominator: 48000 } } }), still_image: false, frame_count: None, source_qualification: None }} }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    ingress_rejects_open_or_inconsistent_inventory
+
+test result: FAILED. 14 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.74s
+
+error: test failed, to rerun pass `-p deadpan-core --test audio_context`

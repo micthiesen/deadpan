@@ -19,6 +19,7 @@ fn fixture() -> ProjectDocument {
                     audio_treatments: Default::default(),
                     label: "Compact suffix".into(),
                     framing: None,
+                    audio_editorial_edges: Default::default(),
                     audio_edges: Default::default(),
                     kind: NodeKind::Repeat {
                         child: id("repeated"),
@@ -182,6 +183,7 @@ fn nested_insertion_failures_do_not_publish_intermediate_copies_or_clocks() {
                     audio_treatments: Default::default(),
                     label: "Retime".into(),
                     framing: None,
+                    audio_editorial_edges: Default::default(),
                     audio_edges: Default::default(),
                     kind: NodeKind::Retime {
                         child: id("group"),

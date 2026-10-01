@@ -33,6 +33,7 @@ fn native_range_delete_nested_partitions_commit_once_and_reopen_with_undo_redo()
             BeatNode {
                 label: name.into(),
                 audio_treatments: Default::default(),
+                audio_editorial_edges: Default::default(),
                 audio_edges: Default::default(),
                 framing: None,
                 kind: NodeKind::Retime {

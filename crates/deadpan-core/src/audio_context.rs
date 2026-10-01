@@ -15,7 +15,7 @@ use crate::{
     RevisionId, SourceAudio, SourceAudioMapping,
 };
 
-const AUDIO_CONTEXT_SCHEMA: u32 = 5;
+const AUDIO_CONTEXT_SCHEMA: u32 = 6;
 
 /// Full authored audio input. Source mapping and signed mix offset are retained
 /// because their effective placement need not fit SourceAudioMapping::Placement.
@@ -233,6 +233,9 @@ impl FrozenAudioContext {
         }
         // Layout ingress must use its own streaming preflight before typed
         // materialization. A generic nested Deserialize would bypass that gate.
+        if wire.schema_version < 6 {
+            FrozenAudioLayout::validate_pre_editorial_json(wire.layout.get())?;
+        }
         if wire.schema_version < 4 && wire.audio_treatments.is_some() {
             return Err(invalid(
                 "legacy audio context cannot contain audio treatments",
@@ -313,6 +316,11 @@ impl FrozenAudioContext {
             ));
         }
         self.layout.validate()?;
+        if self.schema_version < 6 && self.layout.has_editorial_edges() {
+            return Err(invalid(
+                "legacy audio context cannot contain editorial edges",
+            ));
+        }
         if self.schema_version < 5
             && !crate::legacy_audio_binding_v35::supports_layout(&self.layout)
         {

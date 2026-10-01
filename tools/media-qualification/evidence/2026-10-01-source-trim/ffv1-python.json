@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "tools/media-qualification/ffv1",
+    "-p",
+    "test_*.py",
+    "-v"
+  ],
+  "started": "2026-10-01T15:37:03.215815+00:00",
+  "base_commit": "40f3320dd117e024699ed8d83d498650dbdfde9a",
+  "diff_sha256": "c10e24035ab202b6be7a141b9a5c5a120c20363dbc6b7184d286d12bf40f4ce1",
+  "source_manifest_sha256": "623f8ce868fca7f9728d5bd97ccdb1338c421f2dfce3bc70f3aaec95193e8365",
+  "pid": 72714,
+  "exit_code": 0,
+  "seconds": 0.06821466702967882
+}

@@ -73,6 +73,7 @@ impl LegacyBeatNode {
             audio_treatments: Default::default(),
             framing: self.framing.map(LegacyFraming::upgrade),
             label: self.label,
+            audio_editorial_edges: Default::default(),
             audio_edges: self.audio_edges,
             kind: match self.kind {
                 LegacyNodeKind::Source { source } => NodeKind::Source {
@@ -110,6 +111,9 @@ impl LegacyBeatNode {
     }
 
     fn project(node: &BeatNode) -> Option<Self> {
+        if !node.audio_editorial_edges.is_empty() {
+            return None;
+        }
         if !node.audio_treatments.is_empty() {
             return None;
         }
@@ -1130,7 +1134,8 @@ pub fn validate_request_context(
 ) -> Result<(), EditError> {
     if matches!(
         &request.command,
-        Command::SlipSource { .. }
+        Command::TrimSource { .. }
+            | Command::SlipSource { .. }
             | Command::SpliceSlice { .. }
             | Command::SpliceSliceAt { .. }
             | Command::ReplaceSlice { .. }
@@ -1226,6 +1231,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::ReplaceSound { .. }
         | Command::InsertTime { .. }
         | Command::SpliceSource { .. }
+        | Command::TrimSource { .. }
         | Command::SlipSource { .. }
         | Command::SpliceSlice { .. }
         | Command::SpliceSliceAt { .. }

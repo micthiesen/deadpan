@@ -445,6 +445,7 @@ fn mapped_inspection_prepares_preserve_from_historical_aac_without_writing() -> 
                         BeatNode {
                             audio_treatments: Default::default(),
                             framing: None,
+                            audio_editorial_edges: Default::default(),
                             audio_edges: Default::default(),
                             label: "Preserve speech pitch".into(),
                             kind: NodeKind::Retime {

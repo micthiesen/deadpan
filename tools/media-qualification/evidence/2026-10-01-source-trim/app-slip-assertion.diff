@@ -1,0 +1,36 @@
+diff --git a/crates/deadpan-app/src/project/tests/slip.rs b/crates/deadpan-app/src/project/tests/slip.rs
+index 6581058..5cace4e 100644
+--- a/crates/deadpan-app/src/project/tests/slip.rs
++++ b/crates/deadpan-app/src/project/tests/slip.rs
+@@ -512,10 +512,27 @@ fn nested_partition_slip_keeps_wrapper_selection_and_other_fragment_pictures() {
+     assert_eq!(receipt.scope, scope);
+     assert_eq!(receipt.cursor, Some(ProjectFrame(20)));
+     let after = committed.workspace.unwrap();
+-    assert_eq!(
+-        after.document.nodes()[&right],
+-        before.document.nodes()[&right]
+-    );
++    let mut expected_right = before.document.nodes()[&right].clone();
++    expected_right.audio_editorial_edges = deadpan_core::AudioEditorialEdges {
++        start: true,
++        end: true,
++    };
++    assert_eq!(after.document.nodes()[&right], expected_right);
++    let NodeKind::Sequence { children } = &before.document.nodes()[&node("slip-group")].kind else {
++        unreachable!()
++    };
++    let left = &children[0];
++    let mut expected_left = before.document.nodes()[left].clone();
++    expected_left.audio_editorial_edges.end = true;
++    assert_eq!(after.document.nodes()[left], expected_left);
++    let NodeKind::Sequence { children } = &before.document.nodes()[before.document.root()].kind
++    else {
++        unreachable!()
++    };
++    let following = &children[1];
++    let mut expected_following = before.document.nodes()[following].clone();
++    expected_following.audio_editorial_edges.start = true;
++    assert_eq!(after.document.nodes()[following], expected_following);
+     assert_eq!(after.plan.duration(), before.plan.duration());
+     for frame in 0..5 {
+         assert_eq!(

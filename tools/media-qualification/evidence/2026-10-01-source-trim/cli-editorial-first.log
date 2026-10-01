@@ -1,0 +1,24 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+error[E0425]: cannot find function `node` in this scope
+   --> crates/deadpan-cli/tests/source_registration/trim.rs:163:24
+    |
+163 |         after.nodes()[&node("trim-wrapper")].audio_editorial_edges,
+    |                        ^^^^ not found in this scope
+
+error[E0425]: cannot find function `node` in this scope
+   --> crates/deadpan-cli/tests/source_registration/trim.rs:170:24
+    |
+170 |         after.nodes()[&node("clip")]
+    |                        ^^^^ not found in this scope
+
+For more information about this error, try `rustc --explain E0425`.
+error: could not compile `deadpan-cli` (test "source_registration") due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...

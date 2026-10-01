@@ -86,6 +86,7 @@ fn ready(parent: &Path, ordinals: Range<u64>) -> Result<(PathBuf, ProjectStore)>
                         label: "Selected Original".into(),
                         framing: None,
                         audio_treatments: Default::default(),
+                        audio_editorial_edges: Default::default(),
                         audio_edges: Default::default(),
                         kind: NodeKind::Source { source },
                     },

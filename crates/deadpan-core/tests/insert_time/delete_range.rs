@@ -217,6 +217,7 @@ fn complete_composites_are_admitted_but_partial_or_clocked_ancestry_is_rejected(
                         label: "Container".into(),
                         framing: None,
                         audio_treatments: Default::default(),
+                        audio_editorial_edges: Default::default(),
                         audio_edges: Default::default(),
                         kind,
                     },

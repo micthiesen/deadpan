@@ -1,0 +1,10 @@
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 25.67s
+     Running tests/composite_insert.rs (target/debug/deps/composite_insert-83f2643f39d161d3)
+
+running 2 tests
+test trim::trim_44100_crop_keeps_filter_context_and_tail_growth_uses_the_original_rate ... ok
+test trim::in_extension_reanchors_repeat_gap_preserve_and_outer_suffix_owners_once ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 61 filtered out; finished in 1.28s
+

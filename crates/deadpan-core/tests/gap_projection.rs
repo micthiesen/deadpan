@@ -45,6 +45,7 @@ fn repeat(child: &str, allocation: &str, plays: u32, gap: i64) -> BeatNode {
         audio_treatments: Default::default(),
         framing: None,
         label: "repeat".into(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
             child: id(child),
@@ -65,6 +66,7 @@ fn retime(
         audio_treatments: Default::default(),
         framing: None,
         label: "retime".into(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             child: id(child),

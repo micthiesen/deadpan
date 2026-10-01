@@ -37,6 +37,7 @@ fn source(rate: FrameRate, start: i64, end: i64, duration: i64) -> BeatNode {
         framing: None,
         label: "Source".into(),
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
@@ -70,6 +71,7 @@ fn preserve(child: &str, selected: i64, duration: i64) -> BeatNode {
         framing: None,
         label: "Preserve".into(),
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             child: id(child),
@@ -605,6 +607,7 @@ fn bound_hidden_negative_support_is_not_capped_to_the_old_project() {
         framing: None,
         label: "Hidden start".into(),
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             child: id("a"),
@@ -680,6 +683,7 @@ fn new_ordinary_edit_crop_excludes_filter_context_from_bound_raw_source() {
         framing: None,
         label: "Authored trim".into(),
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             child: id("a"),
@@ -1047,6 +1051,7 @@ fn reordered_survivors_keep_old_phase_and_a_fresh_play_uses_definition_phase() {
         framing: None,
         label: "Repeat".into(),
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
             child: id("a"),

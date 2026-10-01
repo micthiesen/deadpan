@@ -574,6 +574,7 @@ mod tests {
             BeatNode {
                 audio_treatments: Default::default(),
                 framing: None,
+                audio_editorial_edges: Default::default(),
                 audio_edges: Default::default(),
                 label: "repeat".into(),
                 kind: NodeKind::Repeat {

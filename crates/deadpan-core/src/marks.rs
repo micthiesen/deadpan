@@ -866,6 +866,27 @@ pub(crate) fn transform_marks(
     after: &ProjectDocument,
     command: &Command,
 ) -> std::result::Result<BTreeMap<MarkId, Mark>, DocumentError> {
+    transform_marks_with_prefix(before, after, command, None)
+}
+
+/// Growing a physical Source before local zero moves its retained content
+/// points, while Source PTS and host edge sentinels keep their own semantics.
+pub(crate) fn transform_marks_with_source_prefix(
+    before: &ProjectDocument,
+    after: &ProjectDocument,
+    command: &Command,
+    source: &NodeId,
+    prefix: FrameDuration,
+) -> std::result::Result<BTreeMap<MarkId, Mark>, DocumentError> {
+    transform_marks_with_prefix(before, after, command, Some((source, prefix)))
+}
+
+fn transform_marks_with_prefix(
+    before: &ProjectDocument,
+    after: &ProjectDocument,
+    command: &Command,
+    prefix: Option<(&NodeId, FrameDuration)>,
+) -> std::result::Result<BTreeMap<MarkId, Mark>, DocumentError> {
     // Validate the new structure even when no marks are present. Marks may be
     // temporarily dangling here; they are transformed before full validation.
     let new_durations = after.structural_durations()?;
@@ -889,11 +910,17 @@ pub(crate) fn transform_marks(
                 }
                 match &mut binding.coordinate {
                     Anchor::Local { node, position } => {
-                        let point = old.decompose(node, *position, mark.boundary.bias)?;
+                        let point = translate_source_content(
+                            old.decompose(node, *position, mark.boundary.bias)?,
+                            prefix,
+                        )?;
                         *position = new.reconstruct(node, point, mark.boundary.bias, command)?;
                     }
                     Anchor::Occurrence { instance, position } => {
-                        let point = old.decompose(&instance.node, *position, mark.boundary.bias)?;
+                        let point = translate_source_content(
+                            old.decompose(&instance.node, *position, mark.boundary.bias)?,
+                            prefix,
+                        )?;
                         *position =
                             new.reconstruct(&instance.node, point, mark.boundary.bias, command)?;
                         *instance = new.occurrence(instance, command)?;
@@ -923,6 +950,19 @@ pub(crate) fn transform_marks(
         }
     }
     Ok(output)
+}
+
+fn translate_source_content(
+    mut point: ContentPoint,
+    prefix: Option<(&NodeId, FrameDuration)>,
+) -> Result<ContentPoint> {
+    if let Some((source, prefix)) = prefix
+        && let ContentPoint::Content { node, position, .. } = &mut point
+        && node == source
+    {
+        *position = position.checked_add(ExactRatio::integer(prefix.frames()))?;
+    }
+    Ok(point)
 }
 
 /// A transparent clone changes structure, not local time. Keeping coordinates

@@ -83,10 +83,12 @@ mod sound_allowance;
 mod sound_events;
 mod sound_route;
 mod sound_routing;
+mod source_edit;
 mod source_edit_window;
 mod source_index;
 mod source_mapping;
 mod source_slip;
+mod source_trim;
 mod split;
 mod time;
 mod video_mapping;
@@ -124,6 +126,9 @@ pub use sound_routing::*;
 pub use source_edit_window::SourceEditWindow;
 pub use source_index::*;
 pub use source_slip::{SourceSlipClamp, SourceSlipResolution};
+pub use source_trim::{
+    SourceTrimClamp, SourceTrimEdge, SourceTrimLimit, SourceTrimMode, SourceTrimResolution,
+};
 pub use split::SplitIdentities;
 pub use video_mapping::SourceVideoMapping;
 

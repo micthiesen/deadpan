@@ -49,6 +49,7 @@ impl Beat {
             audio_treatments: Default::default(),
             framing: None,
             label: self.label,
+            audio_editorial_edges: Default::default(),
             audio_edges: AudioEdgePolicies::default(),
             kind: match self.kind {
                 Kind::Source { source } => NodeKind::Source {
@@ -79,6 +80,9 @@ impl Beat {
         })
     }
     fn project(node: &BeatNode) -> Option<Self> {
+        if !node.audio_editorial_edges.is_empty() {
+            return None;
+        }
         if !node.audio_treatments.is_empty() {
             return None;
         }

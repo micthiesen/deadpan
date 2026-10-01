@@ -128,6 +128,7 @@ fn waveform_repeat_gap_and_selection_exhaustion_use_intrinsic_definition_clocks(
                     framing: None,
                     label: "Three plays with silence".into(),
                     audio_treatments: Default::default(),
+                    audio_editorial_edges: Default::default(),
                     audio_edges: Default::default(),
                     kind: NodeKind::Repeat {
                         child: id("source"),

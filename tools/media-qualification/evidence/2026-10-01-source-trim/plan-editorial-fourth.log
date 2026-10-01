@@ -1,0 +1,46 @@
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 37.55s
+     Running tests/audio_context.rs (target/debug/deps/audio_context-5771fef255045b46)
+
+running 3 tests
+test frozen_dormant_audio_keeps_assets_and_emits_silence_through_partition ... ok
+test billion_play_context_keeps_sparse_override_and_bounded_last_seek ... ok
+test restored_context_retains_source_offsets_edges_room_tone_and_preserve_clocks_after_delete ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/audio_fades.rs (target/debug/deps/audio_fades-e3c5000af0d803a8)
+
+running 16 tests
+test editorial_hard_precedence_uses_exact_coordinates_not_rounded_samples ... ok
+test opaque_preserve_uses_output_geometry_and_does_not_transport_input_fades ... ok
+test tiny_voice_shortens_a_large_marked_owner_and_frozen_context_keeps_the_marker ... ok
+test signed_domain_and_retained_negative_origin_keep_absolute_tie_parity ... ok
+test bound_preserve_inner_leaf_cannot_lend_hard_policy_to_a_different_current_leaf ... ok
+test bound_outer_edge_fades_the_voice_delivered_at_the_cut_not_the_next_inner_voice ... ok
+test virtual_source_support_can_have_zero_or_one_fade_samples ... ok
+test later_partition_drops_ancestor_marker_but_retains_its_own_hidden_owner_edge ... ok
+test fractional_progress_and_inverse_ceil_partitioning_are_request_independent ... ok
+test editorial_entry_uses_current_grid_without_reclocking_the_retained_opposite_edge ... ok
+test current_coincident_hard_edges_survive_while_noncoincident_crop_edges_do_not_inherit_them ... ok
+test bound_opaque_owner_suppression_keeps_a_distinct_inner_marker ... ok
+test new_bound_edge_width_uses_delivered_samples_instead_of_virtual_envelope_rounding ... FAILED
+test transported_bound_owner_edges_are_not_reintroduced_after_eligibility_rejects_them ... ok
+test selected_origin_point_clock_uses_current_support_without_resetting_phase ... ok
+test translated_output_retains_tiny_width_and_rate_changes_use_a_stable_virtual_origin ... ok
+
+failures:
+
+---- new_bound_edge_width_uses_delivered_samples_instead_of_virtual_envelope_rounding stdout ----
+
+thread 'new_bound_edge_width_uses_delivered_samples_instead_of_virtual_envelope_rounding' (61348970) panicked at crates/deadpan-plan/tests/audio_fades.rs:65:51:
+called `Result::unwrap()` on an `Err` value: DocumentError { code: InvalidDuration, message: "hold duration must be positive" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    new_bound_edge_width_uses_delivered_samples_instead_of_virtual_envelope_rounding
+
+test result: FAILED. 15 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p deadpan-plan --test audio_fades`

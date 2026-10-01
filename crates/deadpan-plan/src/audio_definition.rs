@@ -219,6 +219,8 @@ impl<'plan> AudioDefinition<'plan> {
                     gap_after: None,
                     kinds: (AudioBoundaryKind::NodeStart, AudioBoundaryKind::NodeEnd),
                 }],
+                editorial: Vec::new(),
+                suppress_entry_editorial: Default::default(),
                 repeats: Vec::new(),
                 retimes: Vec::new(),
                 gap: self.gap.clone(),

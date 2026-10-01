@@ -67,6 +67,7 @@ fn source(frames: i64, start: i64, end: i64) -> BeatNode {
         label: "Source".into(),
         framing: None,
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {
@@ -599,6 +600,7 @@ fn full_repeat_overrides_gaps_and_preserve_retime_keep_exact_picture_clocks() {
         label: String::new(),
         framing: None,
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
             child: id("base"),
@@ -610,6 +612,7 @@ fn full_repeat_overrides_gaps_and_preserve_retime_keep_exact_picture_clocks() {
         label: String::new(),
         framing: None,
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             purpose: RetimePurpose::Edit,

@@ -61,6 +61,7 @@ fn hold(frames: i64) -> ProjectDocument {
         audio_treatments: Default::default(),
         framing: None,
         label: "Pause".into(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Hold {
             recipe: HoldRecipe {
@@ -763,6 +764,7 @@ fn canonical_playback_consumes_pause_bindings_and_a_real_preserve_stage() {
         audio_treatments: Default::default(),
         framing: None,
         label: "Preserve".into(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             child: node("root"),

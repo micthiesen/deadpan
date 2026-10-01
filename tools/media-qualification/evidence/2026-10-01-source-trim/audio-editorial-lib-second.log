@@ -1,0 +1,85 @@
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 14.05s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_audio-8e2ffef251e4926c)
+
+running 77 tests
+test matrix::tests::ambiguous_invalid_and_unsupported_layouts_fail_explicitly ... ok
+test loudness::tests::both_gates_are_strict_and_the_absolute_gate_remains_in_force ... ok
+test loudness::tests::full_day_capacity_and_window_edges_are_exact ... ok
+test edges::tests::tiny_fragments_and_default_two_millisecond_edges_are_sample_centered ... ok
+test matrix::tests::sparse_surround_layout_uses_native_interleaved_order ... ok
+test matrix::tests::every_supported_non_lfe_speaker_can_be_interpreted ... ok
+test matrix::tests::malformed_pcm_and_invalid_omitted_lfe_are_rejected ... ok
+test matrix::tests::mono_and_stereo_retain_unity_gain_and_channel_separation ... ok
+test limiter::tests::coefficient_bits_match_the_retained_pilot ... ok
+test matrix::tests::native_channel_impulses_follow_speaker_bits_with_holes ... ok
+test matrix::tests::fixed_matrix_preserves_dynamics_without_normalizing_or_clipping ... ok
+test room_tone::tests::phase_modulo_remains_exact_beyond_float_integer_precision ... ok
+test room_tone::tests::rejects_invalid_extents_allocations_pcm_and_reads_and_cancels ... ok
+test edges::tests::hard_coincident_owners_disable_only_in_domain_fades ... ok
+test edges::tests::bounded_pcm_keeps_wide_allocation_and_envelope_progress ... ok
+test edges::tests::derived_fade_validation_is_atomic_for_a_later_invalid_span ... ok
+test edges::tests::raw_reads_keep_in_domain_pcm_and_silence_both_retained_endpoints ... ok
+test edges::tests::editorial_ramps_merge_by_minimum_and_keep_independent_sides ... ok
+test edges::tests::invalid_queries_owners_and_progress_fail_before_modifying_pcm ... ok
+test edges::tests::tiny_retained_envelopes_do_not_widen_to_fit_the_shifted_allocation ... ok
+test edges::tests::ntsc_shift_resumes_old_progress_and_silences_the_extra_allocated_sample ... ok
+test session::tests::index_comparison_stops_on_deadline_in_raw_and_derived_chunks ... ok
+test session::tests::index_comparison_checks_cancellation_through_raw_and_derived_chunks ... ok
+test room_tone::tests::integer_seam_follows_complementary_linear_overlap ... ok
+test limiter::tests::exact_integer_envelope_has_the_declared_finite_horizons ... ok
+test room_tone::tests::unity_weights_preserve_dc_and_levels_without_normalizing ... ok
+test limiter::tests::final_verification_rejects_peaks_on_actual_outer_project_rows ... ok
+test stages::bound_reads::captured_source_keeps_current_coincident_ancestor_hard_edges ... ok
+test stages::bound_reads::expanded_edit_reveals_current_source_without_reclocking_its_binding ... ok
+test stages::bound_reads::new_ordinary_edit_crop_excludes_filter_context_from_bound_raw_source ... ok
+test stages::bound_reads::bound_hidden_negative_support_is_not_capped_to_the_old_project ... ok
+test stages::bound_reads::resumed_binding_retains_old_envelope_progress_and_exhaustion ... ok
+test stages::bound_reads::cached_intrinsic_depth_is_readmitted_before_dependency_access ... ok
+test stages::bound_reads::reordered_survivors_keep_old_phase_and_a_fresh_play_uses_definition_phase ... ok
+test stages::bound_reads::bound_reads_share_cancellation_work_and_complete_cached_dependencies ... ok
+test sequence::sampling_recipes::sequence_source_recipe_resumes_current_ntsc_phase_with_full_44100_support ... ok
+test stages::bound_reads::capture_only_preserve_keeps_the_consuming_output_envelope ... ok
+test stages::bound_reads::bound_preserve_evaluates_changed_room_tone_without_old_silence ... ok
+test stages::bound_reads::normal_root_binding_retains_fractional_ntsc_source_phase_and_block_parity ... ok
+test stages::bound_reads::fresh_follow_speed_keeps_two_millisecond_post_mapping_fades ... ok
+test stages::bound_reads::source_origin::gain::trim::in_extension_keeps_symbolic_resume_and_chronological_entries_before_physical_rebase ... ok
+test stages::bound_reads::source_origin::gain::slip::slip_keeps_symbolic_resume_and_chronological_reanchors_on_the_same_sample_clock ... ok
+test session::tests::provenance_hashing_retains_deadline_errors_and_stops_writing ... ok
+test stages::bound_reads::capture_only_zero_point_source_absence_preserves_processed_decay ... ok
+test stages::bound_reads::bound_source_retains_nonzero_point_origin_inside_current_preserve ... ok
+test stages::bound_reads::bound_hold_with_no_old_input_point_still_suppresses_new_preserve_output ... ok
+test stages::bound_reads::translated_binding_retains_two_sample_automatic_envelope ... ok
+test stages::bound_reads::source_origin::gain::trim::in_extension_activates_audio_before_the_window_and_keeps_absence_silent ... ok
+test stages::controlled_reads::every_controlled_block_retains_dependencies_already_observed_or_cached ... ok
+test stages::controlled_reads::controlled_depth_cannot_restart_at_a_domain_or_bypass_through_cache ... ok
+test stages::bound_reads::source_origin::gain::trim::slip_fades_a_previously_continuous_split_seam_without_changing_raw_clocks ... ok
+test edges::tests::derived_creative_gain_preserves_integer_fades_and_exact_fractional_progress ... ok
+test waveform::tests::aggregate_reservations_survive_all_arc_clones_and_release_after_final_drop ... ok
+test waveform::tests::empty_and_huge_extents_have_bounded_geometry_without_eager_sample_work ... ok
+test waveform::tests::failed_admission_releases_its_descriptor_and_all_limits_are_closed ... ok
+test waveform::tests::invalid_block_is_atomic_even_when_its_good_prefix_would_finish_a_leaf ... ok
+test waveform::tests::irregular_blocks_and_signed_zero_produce_identical_pyramids ... ok
+test stages::controlled_reads::placed_point_source_keeps_selected_origin_and_matches_partitioned_pcm ... ok
+test waveform::tests::partial_leaf_and_unpaired_prefix_never_claim_parent_coverage ... ok
+test waveform::tests::ntsc_terminal_frame_clamps_only_the_final_exact_sample_boundary ... ok
+test waveform::tests::signed_stereo_extrema_keep_polarity_boundary_impulses_and_over_range_values ... ok
+test stages::controlled_reads::controlled_transfer_unions_halo_dependencies_and_keeps_parent_work_limit ... ok
+test stages::controlled_reads::placed_ntsc_source_preserves_signed_reference_phase_and_controlled_dependencies ... ok
+test stages::bound_reads::source_origin::gain::trim::trim_preserves_filter_context_and_authors_only_the_new_entry_fade ... ok
+test stages::bound_reads::source_origin::gain::trim::trim_fades_both_new_join_sides_but_keeps_an_untouched_split_join_continuous ... ok
+test stages::sampling_recipes::prepared_and_source_recipe_steps_come_from_sampling_not_structure ... ok
+test stages::controlled_reads::placed_point_preserve_rechecks_policy_that_owned_no_input_point ... ok
+test stages::sampling_recipes::prepared_stage_recipes_resume_full_canonical_pcm_without_repreparation ... ok
+test stages::sampling_recipes::processing_source_recipes_use_resumed_root_and_signal_maps ... ok
+test room_tone::tests::tiny_fragments_shorten_fades_and_skip_unobserved_cycles ... ok
+test room_tone::tests::fractional_44100_extent_keeps_exact_period_and_partition_identity ... ok
+test stages::bound_reads::source_origin::gain::physical_source_prefix_translates_gain_keys_once_and_preserves_authored_pcm ... ok
+test stages::bound_reads::source_origin::physical_prefix_keeps_symbolic_resume_and_chronological_reanchor_pcm ... ok
+test stages::bound_reads::source_origin::gain::trim::in_extension_exposes_one_and_three_frame_prefixes_on_the_retained_sample_grid ... ok
+test stages::bound_reads::source_origin::gain::slip::slip_activates_dormant_measured_audio_without_replacing_its_captured_lattice ... ok
+test stages::bound_reads::source_origin::gain::slip::slip_moves_decoded_media_phase_and_keeps_retained_owner_gain_mute_and_root_sound ... ok
+test stages::bound_reads::source_origin::physical_prefix_keeps_plain_captured_and_previously_bound_ntsc_pcm ... ok
+
+test result: ok. 77 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.43s
+

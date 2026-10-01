@@ -167,6 +167,7 @@ pub(super) fn nested_initial(source: bool) -> Result<ProjectDocument> {
             audio_treatments: Default::default(),
             framing: None,
             label: "Original".into(),
+            audio_editorial_edges: Default::default(),
             audio_edges: AudioEdgePolicies::default(),
             kind: NodeKind::Source {
                 source: SourceNode {

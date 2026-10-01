@@ -494,6 +494,7 @@ fn whole_units_keep_hidden_marks_partial_endpoints_filter_them() {
         label: "Fragment".into(),
         framing: None,
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             child: id("held"),
@@ -890,6 +891,7 @@ fn incompatible_historical_play_union_rejects_capture_without_expanding_plays() 
                     label: "Repeat".into(),
                     framing: None,
                     audio_treatments: Default::default(),
+                    audio_editorial_edges: Default::default(),
                     audio_edges: Default::default(),
                     kind: NodeKind::Repeat {
                         child: id("held"),

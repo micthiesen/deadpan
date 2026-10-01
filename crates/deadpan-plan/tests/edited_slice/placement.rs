@@ -172,6 +172,7 @@ fn repeat(child: &str, plays: u32, allocation: &str) -> BeatNode {
         label: String::new(),
         framing: None,
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
             child: id(child),
@@ -186,6 +187,7 @@ fn preserve(child: &str) -> BeatNode {
         label: String::new(),
         framing: None,
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Retime {
             purpose: RetimePurpose::Edit,

@@ -1044,6 +1044,7 @@ fn selected_source_resume_retains_owner_clock_and_rejects_exhausted_selection() 
         label: "Selected Original audio".into(),
         framing: None,
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {

@@ -2364,6 +2364,7 @@ mod controlled_reads {
             framing: None,
             label: "Source".into(),
             audio_treatments: Default::default(),
+            audio_editorial_edges: Default::default(),
             audio_edges: Default::default(),
             kind: NodeKind::Source {
                 source: SourceNode {
@@ -2421,6 +2422,7 @@ mod controlled_reads {
                     framing: None,
                     label: "Preserve".into(),
                     audio_treatments: Default::default(),
+                    audio_editorial_edges: Default::default(),
                     audio_edges: Default::default(),
                     kind: NodeKind::Retime {
                         child: id("b"),
@@ -2787,6 +2789,7 @@ mod controlled_reads {
             framing: None,
             label: "Source".into(),
             audio_treatments: Default::default(),
+            audio_editorial_edges: Default::default(),
             audio_edges: Default::default(),
             kind: NodeKind::Source {
                 source: SourceNode {
@@ -2806,6 +2809,7 @@ mod controlled_reads {
             framing: None,
             label: "Preserve".into(),
             audio_treatments: Default::default(),
+            audio_editorial_edges: Default::default(),
             audio_edges: Default::default(),
             kind: NodeKind::Retime {
                 child: id(child),

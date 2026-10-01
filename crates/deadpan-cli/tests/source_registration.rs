@@ -611,3 +611,5 @@ fn pending_generation_allows_preview_but_requires_real_relevance_on_commit() -> 
 
 #[path = "source_registration/slip.rs"]
 mod slip;
+#[path = "source_registration/trim.rs"]
+mod trim;

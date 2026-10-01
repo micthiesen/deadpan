@@ -4,6 +4,28 @@ use serde::{Deserialize, Serialize};
 
 use crate::{DocumentError, DocumentErrorCode, NodeKind};
 
+/// Authored creative edges at the owning beat's current output endpoints.
+/// These add fade intent without cropping selected source or sampling support.
+/// The corresponding node_start/node_end policy controls Automatic versus Hard.
+/// Both flags are required when the object is present; absence means neither.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AudioEditorialEdges {
+    pub start: bool,
+    pub end: bool,
+}
+
+impl AudioEditorialEdges {
+    pub fn is_empty(&self) -> bool {
+        !self.start && !self.end
+    }
+
+    pub(crate) fn permits_partition_policies(self, policies: AudioEdgePolicies) -> bool {
+        (self.start || policies.node_start == AudioEdgePolicy::Automatic)
+            && (self.end || policies.node_end == AudioEdgePolicy::Automatic)
+    }
+}
+
 /// The side of the original constraint, even when that constraint borders a
 /// silent span on the opposite side. Repeat gap settings apply to every gap of
 /// this authored Repeat; they are not an individual gap override.

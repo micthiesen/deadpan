@@ -126,6 +126,7 @@ fn with_source_base(document: &ProjectDocument) -> ProjectDocument {
         audio_treatments: Default::default(),
         label: "Original".into(),
         framing: None,
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Source {
             source: SourceNode {

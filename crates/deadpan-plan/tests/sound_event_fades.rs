@@ -75,6 +75,7 @@ fn document(parts: &[(i64, bool)], rate: u32) -> ProjectDocument {
             kind,
             framing: None,
             audio_treatments: Default::default(),
+            audio_editorial_edges: Default::default(),
             audio_edges: Default::default()
         });
     }
@@ -112,6 +113,7 @@ fn custom_allowances_select_one_contribution_and_exact_repeat_issuers() {
         label: "Three silent plays".into(),
         framing: None,
         audio_treatments: Default::default(),
+        audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         kind: NodeKind::Repeat {
             child: node("part0"),
