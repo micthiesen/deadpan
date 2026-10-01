@@ -419,6 +419,7 @@ impl Capture<'_> {
 
     fn placement(&self, id: &NodeId, recipe: AudioRecipeKind) -> AudioPlacementTemplate {
         AudioPlacementTemplate {
+            reference_local_offset: crate::ExactRatio::ZERO,
             reference: AudioReferenceClock {
                 timing: self.timing.clone(),
                 root: self.clock.clone(),
@@ -577,6 +578,7 @@ mod tests {
             ordinal: 0,
         };
         let template = AudioPlacementTemplate {
+            reference_local_offset: crate::ExactRatio::ZERO,
             gap_after: None,
             reference: AudioReferenceClock {
                 recipe: crate::AudioRecipeKind::Node,
@@ -1129,6 +1131,7 @@ mod tests {
             OwnedAudioBinding {
                 reanchors: Vec::new(),
                 lattice: AudioPlacementTemplate {
+                    reference_local_offset: crate::ExactRatio::ZERO,
                     gap_after: None,
                     reference: AudioReferenceClock {
                         recipe: crate::AudioRecipeKind::Node,

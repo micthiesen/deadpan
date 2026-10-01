@@ -27,10 +27,12 @@ pub(crate) fn supports_layout(layout: &FrozenAudioLayout) -> bool {
 }
 pub(crate) fn supports(state: &AudioBindingState) -> bool {
     state.timings().values().all(supports_layout)
+        && crate::legacy_audio_binding_v36::supports(state)
 }
 pub(crate) fn from_json(json: &str) -> Result<AudioBindingState, DocumentError> {
     // Keep the bounded streaming decoder and duplicate-field validation.
     let state = AudioBindingState::from_json(json)?;
+    crate::legacy_audio_binding_v36::validate(json).map_err(DocumentError::json)?;
     if !supports(&state) {
         return Err(DocumentError::new(
             DocumentErrorCode::InvalidTree,

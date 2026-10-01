@@ -4,6 +4,8 @@ use deadpan_core::*;
 
 #[path = "audio_bindings/gaps.rs"]
 mod gaps;
+#[path = "audio_bindings/origins.rs"]
+mod origins;
 #[path = "audio_bindings/reanchors.rs"]
 mod reanchors;
 
@@ -119,6 +121,7 @@ fn instance(repeats: &[(&str, &str, u32)]) -> InstancePath {
 }
 fn plain(ordinal: u32) -> AudioPlacementTemplate {
     AudioPlacementTemplate {
+        reference_local_offset: deadpan_core::ExactRatio::ZERO,
         gap_after: None,
         reference: AudioReferenceClock {
             recipe: deadpan_core::AudioRecipeKind::Node,
@@ -132,6 +135,7 @@ fn plain(ordinal: u32) -> AudioPlacementTemplate {
 }
 fn repeated() -> AudioPlacementTemplate {
     AudioPlacementTemplate {
+        reference_local_offset: deadpan_core::ExactRatio::ZERO,
         arguments: vec![AudioRepeatArgument {
             reference_repeat: id("inner"),
             value: AudioRepeatValue::Live {

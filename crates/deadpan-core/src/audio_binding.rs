@@ -101,6 +101,13 @@ pub struct AudioBirthClause {
 #[serde(deny_unknown_fields)]
 pub struct AudioPlacementTemplate {
     pub reference: AudioReferenceClock,
+    /// Historical physical-local coordinate = current physical-local coordinate
+    /// + this offset. It translates the origin, never the rate or sample grid.
+    #[serde(
+        default = "zero_reference_local_offset",
+        skip_serializing_if = "is_zero_reference_local_offset"
+    )]
+    pub reference_local_offset: ExactRatio,
     /// The gap's own preceding play is separate from its outer Repeat path.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub gap_after: Option<AudioRepeatValue>,
@@ -109,6 +116,13 @@ pub struct AudioPlacementTemplate {
     /// Outer-to-inner lexical order. The innermost matching birth wins.
     #[serde(deserialize_with = "path_vec")]
     pub births: Vec<AudioBirthClause>,
+}
+
+fn zero_reference_local_offset() -> ExactRatio {
+    ExactRatio::ZERO
+}
+fn is_zero_reference_local_offset(value: &ExactRatio) -> bool {
+    *value == ExactRatio::ZERO
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -168,6 +182,42 @@ pub struct OwnedAudioBinding {
 }
 
 impl OwnedAudioBinding {
+    /// Re-express this binding after a signed translation of its physical local
+    /// coordinates: `new_local = old_local + prefix`. A positive prefix moves
+    /// existing material later in the new physical domain. Negative values undo
+    /// that translation; the caller separately owns current recipe validation.
+    ///
+    /// Historical layouts and enclosing reanchor windows keep their clocks.
+    /// Phase terms keep their exact sample distances. This pure operation changes
+    /// neither the binding nor a document when checked arithmetic fails.
+    pub fn rebase_local(&self, prefix: ExactRatio) -> Result<Self, DocumentError> {
+        let terms = self
+            .resume
+            .as_ref()
+            .map_or(0, |resume| resume.phase.terms.len());
+        if terms
+            .checked_add(self.reanchors.len())
+            .is_none_or(|count| count > MAX_AUDIO_BINDING_TERMS)
+        {
+            return Err(limit("audio phase term and reanchor count"));
+        }
+        binding_wire_size(self)?;
+        let mut result = self.clone();
+        for placement in result.placements_mut() {
+            placement.reference_local_offset =
+                placement.reference_local_offset.checked_sub(prefix)?;
+        }
+        if let Some(resume) = &mut result.resume {
+            resume.local_boundary = resume.local_boundary.checked_add(prefix)?;
+            for term in &mut resume.phase.terms {
+                term.from_local = term.from_local.checked_add(prefix)?;
+                term.to_local = term.to_local.checked_add(prefix)?;
+            }
+        }
+        binding_wire_size(&result)?;
+        Ok(result)
+    }
+
     pub(crate) fn placements(&self) -> impl Iterator<Item = &AudioPlacementTemplate> {
         std::iter::once(&self.lattice)
             .chain(
@@ -338,8 +388,9 @@ pub struct ResolvedAudioPlacement {
     pub frames_per_sample: ExactRatio,
     pub origin: ExactRatio,
     pub frames_per_local_frame: ExactRatio,
+    /// Historical recipe duration; translation does not make its domain start at zero.
     pub local_duration: FrameDuration,
-    /// Meaningful captured Edit/clock support in physical-local frames. Source
+    /// Meaningful captured Edit/clock support in current physical-local frames. Source
     /// placement and audibility still come from the current owned recipe.
     pub local_support: std::ops::Range<ExactRatio>,
     pub instance: InstancePath,
@@ -868,6 +919,14 @@ impl AudioPlacementTemplate {
                     .checked_div(projection.frames_per_local_frame)?;
             crate::audio_reference::clip_binding_support(&mut local_support, selected)?;
         }
+        let origin = projection.origin.checked_add(
+            self.reference_local_offset
+                .checked_mul(projection.frames_per_local_frame)?,
+        )?;
+        let local_support = local_support
+            .start
+            .checked_sub(self.reference_local_offset)?
+            ..local_support.end.checked_sub(self.reference_local_offset)?;
         let rate = layout.rate();
         Ok(ResolvedAudioPlacement {
             grid_rule: scope.rule,
@@ -876,7 +935,7 @@ impl AudioPlacementTemplate {
                 i128::from(rate.numerator()),
                 i128::from(MIX_SAMPLE_RATE) * i128::from(rate.denominator()),
             )?,
-            origin: projection.origin,
+            origin,
             frames_per_local_frame: projection.frames_per_local_frame,
             local_duration: projection.local_duration,
             local_support,
@@ -929,7 +988,16 @@ impl AudioReanchorStep {
                 allocation = None;
             }
         }
-        Ok(allocation.map(|range| range.start))
+        // The frozen projection and its window still use historical local
+        // coordinates. Resume evaluation consumes the current physical clock.
+        allocation
+            .map(|range| {
+                range
+                    .start
+                    .checked_sub(self.placement.reference_local_offset)
+                    .map_err(DocumentError::from)
+            })
+            .transpose()
     }
 }
 

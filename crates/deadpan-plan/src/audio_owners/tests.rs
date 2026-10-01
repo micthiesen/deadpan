@@ -111,6 +111,7 @@ fn bind(
             OwnedAudioBinding {
                 reanchors: vec![],
                 lattice: AudioPlacementTemplate {
+                    reference_local_offset: deadpan_core::ExactRatio::ZERO,
                     gap_after: None,
                     reference: AudioReferenceClock {
                         recipe: AudioRecipeKind::Node,

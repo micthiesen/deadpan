@@ -190,6 +190,7 @@ fn placement(
     birth_root: &str,
 ) -> AudioPlacementTemplate {
     AudioPlacementTemplate {
+        reference_local_offset: deadpan_core::ExactRatio::ZERO,
         gap_after: None,
         reference: AudioReferenceClock {
             recipe: AudioRecipeKind::Node,

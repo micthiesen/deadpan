@@ -2184,6 +2184,7 @@ mod binding_patch_tests {
                     crate::OwnedAudioBinding {
                         reanchors: Vec::new(),
                         lattice: crate::AudioPlacementTemplate {
+                            reference_local_offset: crate::ExactRatio::ZERO,
                             gap_after: None,
                             reference: crate::AudioReferenceClock {
                                 recipe: crate::AudioRecipeKind::Node,

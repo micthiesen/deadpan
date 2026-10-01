@@ -246,6 +246,7 @@ fn projected_root_regrids_bound_retained_hold_context_on_absolute_grid() {
                 reanchors: vec![],
                 resume: None,
                 lattice: AudioPlacementTemplate {
+                    reference_local_offset: deadpan_core::ExactRatio::ZERO,
                     gap_after: None,
                     arguments: vec![],
                     births: vec![],

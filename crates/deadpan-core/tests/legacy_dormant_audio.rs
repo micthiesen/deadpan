@@ -255,3 +255,60 @@ legacy_binding_tests! {
     frozen_support_v30:30=>legacy_v30, frozen_support_v31:31=>legacy_v31,
     frozen_support_v32:32=>legacy_v32,
 }
+
+macro_rules! legacy_origin_tests {
+    ($($name:ident: $v:literal => $legacy:ident),+ $(,)?) => {$(
+        #[test]
+        fn $name() {
+            let (mut wire, _) = bound_wire($v);
+            let binding = &mut wire["audio_bindings"]["bindings"]["source"];
+            let placement = binding["lattice"].clone();
+            binding["resume"] = json!({"local_boundary":ratio(0),"phase":{"constant":ratio(0),"terms":[{"placement":placement,"from_local":ratio(0),"to_local":ratio(1)}]}});
+            if $v >= 21 { binding["reanchors"] = json!([{"placement":placement,"window":null}]); }
+            let old = $legacy::Document::from_json(&wire.to_string()).unwrap();
+            let current = old.clone().upgrade().unwrap();
+            assert!(old.matches(&current));
+            let mut paths = vec!["lattice", "resume/phase/terms/0/placement"];
+            if $v >= 21 { paths.push("reanchors/0/placement"); }
+            for path in paths {
+                for offset in [ratio(0), ratio(1), Value::Null] {
+                    let mut forged = wire.clone();
+                    let pointer = format!("/audio_bindings/bindings/source/{path}");
+                    forged.pointer_mut(&pointer).unwrap()["reference_local_offset"] = offset.clone();
+                    let encoded = forged.to_string();
+                    assert!($legacy::Document::from_json(&encoded).is_err());
+                    assert!($legacy::Document::from_json(&encoded.replace("reference_local_offset", "reference_local_\\u006fffset")).is_err());
+                    if offset != Value::Null {
+                        forged["schema_version"] = json!(DOCUMENT_SCHEMA_VERSION);
+                        let modern = ProjectDocument::from_json(&forged.to_string()).unwrap();
+                        assert_eq!(old.matches(&modern), offset == ratio(0));
+                    }
+                }
+            }
+            let tx = apply(&current, &CommandRequest {
+                project_id: current.project_id().clone(), expected_revision: current.revision_id().clone(), new_revision: RevisionId::new("origin-patch").unwrap(),
+                command: Command::Split { node: NodeId::new("source").unwrap(), at: FrameDuration::new(15).unwrap(), identities: SplitIdentities { nodes: vec![NodeId::new("left").unwrap(),NodeId::new("right").unwrap(),NodeId::new("copy").unwrap()] } },
+            }).unwrap();
+            let edit = serde_json::to_value(&tx).unwrap();
+            assert!($legacy::matches_edit(&edit.to_string(), &tx).unwrap());
+            for direction in ["forward", "inverse"] {
+                for side in ["before", "after"] {
+                    for offset in [ratio(0), ratio(1), Value::Null] {
+                        let mut forged = edit.clone();
+                        let binding = forged[direction]["audio_bindings"][side]["bindings"].as_object_mut().unwrap().values_mut().next().unwrap();
+                        binding["lattice"]["reference_local_offset"] = offset;
+                        assert!($legacy::matches_edit(&forged.to_string(), &tx).is_err());
+                    }
+                }
+            }
+        }
+    )+};
+}
+legacy_origin_tests! {
+    origin_v16:16=>legacy_v16, origin_v17:17=>legacy_v17, origin_v18:18=>legacy_v18,
+    origin_v19:19=>legacy_v19, origin_v20:20=>legacy_v20, origin_v21:21=>legacy_v21,
+    origin_v22:22=>legacy_v22, origin_v23:23=>legacy_v23, origin_v24:24=>legacy_v24,
+    origin_v25:25=>legacy_v25, origin_v26:26=>legacy_v26, origin_v27:27=>legacy_v27,
+    origin_v28:28=>legacy_v28, origin_v29:29=>legacy_v29, origin_v30:30=>legacy_v30,
+    origin_v31:31=>legacy_v31, origin_v32:32=>legacy_v32,
+}

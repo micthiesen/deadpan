@@ -734,3 +734,39 @@ fn a_gap_own_argument_cannot_be_confused_with_its_outer_repeat_path() {
             .is_err()
     );
 }
+
+macro_rules! closed_gap_origin {
+    ($($name:ident: $version:literal => $legacy:ident),+ $(,)?) => {$(
+        #[test]
+        fn $name() {
+            let original = fixture(2);
+            let state = gap_state(&original, |binding| {
+                binding.resume = Some(AudioResume { local_boundary: ExactRatio::ZERO, phase: AudioLocalPhase {
+                    constant: ExactRatio::ZERO, terms: vec![AudioPhaseTerm { placement: binding.lattice.clone(), from_local: ExactRatio::ZERO, to_local: ExactRatio::ONE }],
+                } });
+                binding.reanchors.push(AudioReanchorStep { placement: binding.lattice.clone(), window: None });
+            });
+            let document = install(&original, &state);
+            let mut wire = serde_json::to_value(&document).unwrap();
+            wire["schema_version"] = serde_json::json!($version);
+            let old = $legacy::Document::from_json(&wire.to_string()).unwrap();
+            assert!(old.matches(&document));
+            for path in ["lattice", "resume/phase/terms/0/placement", "reanchors/0/placement"] {
+                for value in [serde_json::json!(null), serde_json::to_value(ExactRatio::ZERO).unwrap(), serde_json::to_value(ExactRatio::ONE).unwrap()] {
+                    let mut forged = wire.clone();
+                    forged.pointer_mut(&format!("/audio_bindings/gap_bindings/r/{path}")).unwrap()["reference_local_offset"] = value;
+                    assert!($legacy::Document::from_json(&forged.to_string()).is_err());
+                }
+            }
+            let state = gap_state(&original, |binding| { *binding = binding.rebase_local(ExactRatio::ONE).unwrap(); });
+            assert!(!old.matches(&install(&original, &state)));
+        }
+    )+};
+}
+closed_gap_origin! {
+    origin_gap_v22:22=>legacy_v22, origin_gap_v23:23=>legacy_v23,
+    origin_gap_v24:24=>legacy_v24, origin_gap_v25:25=>legacy_v25,
+    origin_gap_v26:26=>legacy_v26, origin_gap_v27:27=>legacy_v27,
+    origin_gap_v28:28=>legacy_v28, origin_gap_v29:29=>legacy_v29,
+    origin_gap_v30:30=>legacy_v30, origin_gap_v31:31=>legacy_v31, origin_gap_v32:32=>legacy_v32,
+}

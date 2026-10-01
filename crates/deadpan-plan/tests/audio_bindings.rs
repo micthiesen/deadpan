@@ -49,6 +49,7 @@ fn compilation_never_silently_discards_persisted_sampling_clocks() {
             OwnedAudioBinding {
                 reanchors: Vec::new(),
                 lattice: AudioPlacementTemplate {
+                    reference_local_offset: deadpan_core::ExactRatio::ZERO,
                     gap_after: None,
                     reference: AudioReferenceClock {
                         recipe: AudioRecipeKind::Node,

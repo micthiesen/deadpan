@@ -2,6 +2,9 @@ use super::controlled_reads::{Provider, fixture_document_at_rate};
 use super::*;
 use deadpan_core::*;
 
+#[path = "bound_reads/source_origin.rs"]
+mod source_origin;
+
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }
@@ -101,6 +104,7 @@ fn document(
 
 fn lattice(owner: &str, clock: AudioClockRoot) -> AudioPlacementTemplate {
     AudioPlacementTemplate {
+        reference_local_offset: deadpan_core::ExactRatio::ZERO,
         gap_after: None,
         reference: AudioReferenceClock {
             recipe: AudioRecipeKind::Node,

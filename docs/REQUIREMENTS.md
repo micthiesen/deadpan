@@ -141,6 +141,16 @@ rendered checks plus the expanded Kestrel audit, 3,589 full release checks, and
 native keyboard/reopen verification with consistent SQLite backups. No release
 gate is completed by these results.
 
+[Retained Source origins](SOURCE_ORIGINS.md) add an exact translation between
+current physical coordinates and captured audio clocks. Pure binding rebases
+preserve sample grids, frozen layouts and chronological phase composition.
+Decoded-PCM regressions pass for physical prefixes, fractional NTSC phase,
+independent sample offsets and inverse restoration. Core 37/database 46 persist
+the translation. All 3,019 workspace unit/integration tests, both documentation
+tests, formatting and strict all-target Clippy pass. Framing/treatment clocks,
+atomic Trim authoring and native controls remain open; no requirement or gate
+changes status.
+
 [Dormant linked audio](qualification/dormant-linked-audio-2026-10-01.md) retains
 the Original's audio context in silent slices. Empty support emits silence without
 requesting source PCM, and selection growth preserves the full affine mapping and retained

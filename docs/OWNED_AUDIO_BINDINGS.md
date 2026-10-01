@@ -56,6 +56,11 @@ intrinsic lattice merely because it adds an enclosing Repeat.
 
 ## Phase expressions
 
+[Physical local-origin changes](SOURCE_ORIGINS.md) retain an exact offset on each
+placement template. Resolution folds it into the historical origin and support;
+the sample grid and frozen layout remain unchanged. A checked binding rebase
+also translates resume boundaries and phase-term endpoints.
+
 A resume retains a local boundary and an exact local-frame phase. The phase is
 a constant plus bounded terms, each with its own placement template and two
 local boundaries. A term evaluates:

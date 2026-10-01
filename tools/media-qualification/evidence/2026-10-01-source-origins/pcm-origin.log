@@ -1,0 +1,32 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 50.05s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_audio-8e2ffef251e4926c)
+
+running 2 tests
+test stages::bound_reads::source_origin::physical_prefix_keeps_symbolic_resume_and_chronological_reanchor_pcm ... FAILED
+test stages::bound_reads::source_origin::physical_prefix_keeps_plain_captured_and_previously_bound_ntsc_pcm ... FAILED
+
+failures:
+
+---- stages::bound_reads::source_origin::physical_prefix_keeps_symbolic_resume_and_chronological_reanchor_pcm stdout ----
+
+thread 'stages::bound_reads::source_origin::physical_prefix_keeps_symbolic_resume_and_chronological_reanchor_pcm' (60704481) panicked at crates/deadpan-audio/src/bound_reads.rs:100:55:
+called `Result::unwrap()` on an `Err` value: DocumentError { code: SourceRangeInvalid, message: "audio selection exceeds asset media stream bounds or uses a different time base" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- stages::bound_reads::source_origin::physical_prefix_keeps_plain_captured_and_previously_bound_ntsc_pcm stdout ----
+
+thread 'stages::bound_reads::source_origin::physical_prefix_keeps_plain_captured_and_previously_bound_ntsc_pcm' (60704480) panicked at crates/deadpan-audio/src/bound_reads/source_origin.rs:199:18:
+called `Result::unwrap()` on an `Err` value: InvalidRecipe("block must contain 1..256 frames")
+
+
+failures:
+    stages::bound_reads::source_origin::physical_prefix_keeps_plain_captured_and_previously_bound_ntsc_pcm
+    stages::bound_reads::source_origin::physical_prefix_keeps_symbolic_resume_and_chronological_reanchor_pcm
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 64 filtered out; finished in 0.01s
+
+error: test failed, to rerun pass `-p deadpan-audio --lib`

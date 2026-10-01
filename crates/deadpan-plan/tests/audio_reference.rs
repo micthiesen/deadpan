@@ -1686,3 +1686,235 @@ fn dormant_bound_recipe_retains_its_lattice_and_can_reveal_existing_phase() {
     );
     assert_eq!(tx.inverse.apply(&audible).unwrap(), bound);
 }
+
+fn local_origin_document(prefix: i64) -> ProjectDocument {
+    let mut leaf = source(32 + prefix);
+    let NodeKind::Source { source } = &mut leaf.kind else {
+        panic!()
+    };
+    source.audio_mapping = SourceAudioMapping::SelectedPlacement {
+        start: ExactRatio::integer(prefix),
+        frames: ExactRatio::integer(32),
+        selection: ExactFrameRange {
+            start: ExactRatio::integer(prefix),
+            end: ExactRatio::integer(prefix + 32),
+        },
+    };
+    let mut crop = retime("source", 32, prefix, prefix + 32, PitchPolicy::FollowSpeed);
+    let NodeKind::Retime { purpose, .. } = &mut crop.kind else {
+        panic!()
+    };
+    *purpose = RetimePurpose::Partition;
+    document(
+        FrameRate::new(30000, 1001).unwrap(),
+        &["lead", "crop"],
+        vec![
+            ("lead", hold(1, HoldAudio::Silence)),
+            ("crop", crop),
+            ("source", leaf),
+        ],
+    )
+}
+
+fn with_origin_bindings(document: &ProjectDocument, state: &AudioBindingState) -> ProjectDocument {
+    let mut wire = serde_json::to_value(document).unwrap();
+    wire["audio_bindings"] = serde_json::to_value(state).unwrap();
+    ProjectDocument::from_json(&wire.to_string()).unwrap()
+}
+
+fn translated_origin_bindings(state: &AudioBindingState, prefix: ExactRatio) -> AudioBindingState {
+    AudioBindingState::new(
+        state
+            .timings()
+            .iter()
+            .map(|(id, layout)| AudioTimingRecord {
+                id: id.clone(),
+                layout: layout.clone(),
+            })
+            .collect(),
+        state
+            .bindings()
+            .iter()
+            .map(|(owner, binding)| {
+                (
+                    owner.clone(),
+                    if *owner == id("source") {
+                        binding.rebase_local(prefix).unwrap()
+                    } else {
+                        binding.clone()
+                    },
+                )
+            })
+            .collect(),
+    )
+    .unwrap()
+}
+
+#[test]
+fn source_prefix_behind_partition_keeps_unbound_and_retained_source_phase() {
+    let original = local_origin_document(0);
+    let captured = capture_unbound_audio_bindings(
+        &original,
+        AudioTimingId {
+            allocation: RevisionId::new("origin-capture").unwrap(),
+            ordinal: 0,
+        },
+    )
+    .unwrap();
+    let plain = RenderPlan::compile(&original).unwrap();
+    let expected = plain
+        .audio(AudioSample(1602)..AudioSample(1603), Default::default())
+        .unwrap();
+    // Independent arithmetic: sample 1602 is 2/5 of a mix sample after frame 1.
+    // A 48000-tick source mapped over 32 frames therefore starts at 375/1001.
+    assert_eq!(
+        expected.spans[0]
+            .source_point(AudioSample(1602))
+            .unwrap()
+            .ticks,
+        ratio(375, 1001)
+    );
+    for prefix in [1, 2, 7] {
+        let rebased = local_origin_document(prefix);
+        let moved_plain = RenderPlan::compile(&rebased).unwrap();
+        for sample in [1602, 5000, 12000, 40000] {
+            let range = AudioSample(sample)..AudioSample(sample + 1);
+            let old = plain.audio(range.clone(), Default::default()).unwrap();
+            let new = moved_plain.audio(range, Default::default()).unwrap();
+            assert_eq!(
+                old.spans[0].source_point(AudioSample(sample)).unwrap(),
+                new.spans[0].source_point(AudioSample(sample)).unwrap()
+            );
+            assert_eq!(
+                old.spans[0].allocated_samples,
+                new.spans[0].allocated_samples
+            );
+            assert_eq!(old.spans[0].envelope_samples, new.spans[0].envelope_samples);
+        }
+        for resumed in [false, true] {
+            let mut bindings = captured.bindings().clone();
+            if resumed {
+                let binding = bindings.get_mut(&id("source")).unwrap();
+                binding.resume = Some(AudioResume {
+                    local_boundary: ExactRatio::ONE,
+                    phase: AudioLocalPhase {
+                        constant: ExactRatio::ZERO,
+                        terms: vec![AudioPhaseTerm {
+                            placement: binding.lattice.clone(),
+                            from_local: ExactRatio::ZERO,
+                            to_local: ExactRatio::ONE,
+                        }],
+                    },
+                });
+                binding.reanchors.push(AudioReanchorStep {
+                    placement: binding.lattice.clone(),
+                    window: Some(
+                        ExactFrameRange::new(ExactRatio::integer(3), ExactRatio::integer(33))
+                            .unwrap(),
+                    ),
+                });
+            }
+            let state = AudioBindingState::new(
+                captured
+                    .timings()
+                    .iter()
+                    .map(|(id, layout)| AudioTimingRecord {
+                        id: id.clone(),
+                        layout: layout.clone(),
+                    })
+                    .collect(),
+                bindings,
+            )
+            .unwrap();
+            let before = with_origin_bindings(&original, &state);
+            let translated = translated_origin_bindings(&state, ExactRatio::integer(prefix));
+            let after = with_origin_bindings(&rebased, &translated);
+            assert_eq!(translated.timings(), state.timings());
+            let old_plan = RenderPlan::compile(&before).unwrap();
+            let new_plan = RenderPlan::compile(&after).unwrap();
+            for sample in [5000, 12000, 40000] {
+                let range = AudioSample(sample)..AudioSample(sample + 1);
+                let old_query = old_plan
+                    .audio_processing(range.clone(), Default::default())
+                    .unwrap();
+                let new_query = new_plan
+                    .audio_processing(range.clone(), Default::default())
+                    .unwrap();
+                let AudioSignalContent::Bound(old) = &old_query.spans[0].content else {
+                    panic!("retained source")
+                };
+                let AudioSignalContent::Bound(new) = &new_query.spans[0].content else {
+                    panic!("retained source")
+                };
+                let old_at = old
+                    .reference_at_offset(sample - old_query.spans[0].allocated_samples.start.0)
+                    .unwrap();
+                let new_at = new
+                    .reference_at_offset(sample - new_query.spans[0].allocated_samples.start.0)
+                    .unwrap();
+                assert_eq!(old_at, new_at);
+                assert_eq!(
+                    old.reference_samples_per_output_sample(),
+                    new.reference_samples_per_output_sample()
+                );
+                let deadpan_plan::AudioBoundDomain::Root(old_domain) = old.raw_domain().unwrap()
+                else {
+                    panic!("root clock")
+                };
+                let deadpan_plan::AudioBoundDomain::Root(new_domain) = new.raw_domain().unwrap()
+                else {
+                    panic!("root clock")
+                };
+                assert_eq!(old_domain.root_samples(), new_domain.root_samples());
+                let index = i64::try_from(old_at.floor()).unwrap();
+                let range = AudioSample(index)..AudioSample(index + 1);
+                let old_raw = old_domain.audio(range.clone(), Default::default()).unwrap();
+                let new_raw = new_domain.audio(range, Default::default()).unwrap();
+                assert_eq!(
+                    old_raw.spans[0].source_point(AudioSample(index)).unwrap(),
+                    new_raw.spans[0].source_point(AudioSample(index)).unwrap()
+                );
+                new_plan
+                    .audio_owners(
+                        AudioSample(sample)..AudioSample(sample + 1),
+                        Default::default(),
+                    )
+                    .unwrap();
+            }
+            let patch = DocumentPatch {
+                project_id: before.project_id().clone(),
+                from_revision: before.revision_id().clone(),
+                to_revision: RevisionId::new("rebased-origin").unwrap(),
+                presentation: None,
+                nodes: [id("source"), id("crop")]
+                    .into_iter()
+                    .map(|id| {
+                        (
+                            id.clone(),
+                            ValueChange {
+                                before: Some(before.nodes()[&id].clone()),
+                                after: Some(after.nodes()[&id].clone()),
+                            },
+                        )
+                    })
+                    .collect(),
+                assets: BTreeMap::new(),
+                marks: BTreeMap::new(),
+                sounds: BTreeMap::new(),
+                sound_routes: BTreeMap::new(),
+                sound_allowances: BTreeMap::new(),
+                overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
+                audio_lineage: BTreeMap::new(),
+                audio_bindings: Some(ValueChange {
+                    before: Some(state.clone()),
+                    after: Some(translated),
+                }),
+            };
+            let applied = patch.apply(&before).unwrap();
+            assert_eq!(applied.nodes(), after.nodes());
+            assert_eq!(applied.audio_bindings(), after.audio_bindings());
+            assert_eq!(patch.inverse().apply(&applied).unwrap(), before);
+        }
+    }
+}

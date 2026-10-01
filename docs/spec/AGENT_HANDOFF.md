@@ -19,6 +19,25 @@ test instances after testing instead of leaving them idle. The previously
 running `dev.thiesen.deadpan.cursor-qa` instance has been quit, and the native
 app inventory confirmed no Deadpan app remained running.
 
+## Retained Source origins, 2026-10-01
+
+Core schema 37/database 46 retain exact translations from current physical-local
+coordinates to captured audio clocks. `OwnedAudioBinding::rebase_local` updates
+every placement, resume boundary and phase endpoint atomically in a returned
+value. Frozen layouts and enclosing reanchor windows remain unchanged. Reanchor
+entries convert back to current-local coordinates before phase composition.
+See [the contract](../SOURCE_ORIGINS.md).
+
+The decoded-PCM regressions preserve fractional NTSC phase, independent sample
+offsets, edge fades and chronological resumes behind a unity Partition, with
+exact inverse restoration. All 3,019 workspace unit/integration tests, both
+compile-fail documentation tests, formatting and strict all-target Clippy pass. Retained
+commands and failed fixture setup are in
+[the evidence](../../tools/media-qualification/evidence/2026-10-01-source-origins/README.md).
+No native app was opened. This adds no public Trim operation. Framing and
+audio-treatment owner clocks and native boundary controls remain required.
+Unused development databases 39 through 45 reject without migration or writes.
+
 ## Dormant linked audio, 2026-10-01
 
 New Original moments outside measured audio retain the complete audio span,
@@ -29,11 +48,12 @@ sounds still require positive support, and dormant audio has no source anchor.
 See [the contract](../SOURCE_MOMENTS.md) and
 [qualification](../qualification/dormant-linked-audio-2026-10-01.md).
 
-Current core schema 36/database 45 and audio context schema 5 store this meaning.
+At this checkpoint, core schema 36/database 45 and audio context schema 5 store this meaning.
 Supported historical document, command, patch and context grammars remain closed.
 Unused development databases 39 through 44 reject without mutation or migration;
-create fresh native QA packages. Full Trim still needs physical Source-origin
-translation, retained framing/treatment owner clocks and native boundary controls.
+create fresh native QA packages. The subsequent origin work above adds audio
+clock translation. Full Trim still needs retained framing/treatment owner clocks
+and native boundary controls.
 
 Verification covers 2,169 distinct affected-crate unit/integration tests and both
 compile-fail documentation tests, workspace formatting and strict all-target

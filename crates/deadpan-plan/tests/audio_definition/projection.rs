@@ -574,6 +574,7 @@ fn intrinsic_policy_window_preserves_bound_support_outside_the_visible_run() {
                 reanchors: vec![],
                 resume: None,
                 lattice: AudioPlacementTemplate {
+                    reference_local_offset: deadpan_core::ExactRatio::ZERO,
                     gap_after: None,
                     arguments: vec![],
                     births: vec![],

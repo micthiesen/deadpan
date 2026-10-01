@@ -1,0 +1,261 @@
+{
+  "formatting-final": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "started": "2026-10-01T12:00:52.549639+00:00",
+    "base_commit": "f2388e5a379288ea2a9284f7cf40a2c2ac1ee642",
+    "diff_sha256": "0316a1aa420ed2eb2240a0d2624a8e797507356cae7ce92690ef39810a2f3976",
+    "source_manifest_sha256": "8aa01bb8b1783d7476bfdbe425a7f9fdc4c71c90f6bb7d992087b157fbe4c039",
+    "pid": 9320,
+    "exit_code": 0,
+    "seconds": 1.9127992079593241,
+    "tests": {
+      "unit_integration": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "documentation": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  },
+  "formatting": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "started": "2026-10-01T11:48:22.786193+00:00",
+    "base_commit": "f2388e5a379288ea2a9284f7cf40a2c2ac1ee642",
+    "diff_sha256": "ca99db778bbd6873bfc5484ead8d2a067f6df3fc09569f1e334b61d68f9f1eb1",
+    "source_manifest_sha256": "0687aba75051f06c3df778260ca9e7a17a94bab3a7c3c6de027b1dd5ce7f03fd",
+    "pid": 5806,
+    "exit_code": 0,
+    "seconds": 1.9086917503736913,
+    "tests": {
+      "unit_integration": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "documentation": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  },
+  "pcm-origin-bounded": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--lib",
+      "physical_prefix_"
+    ],
+    "started": "2026-10-01T11:45:39.913724+00:00",
+    "base_commit": "f2388e5a379288ea2a9284f7cf40a2c2ac1ee642",
+    "diff_sha256": "fa6f053758bc213407a5e70e56e7025f67626aca19663b0060149f5712c9dc2a",
+    "source_manifest_sha256": "86ad66ef612875123eeb7aab8c115fd333d3323b992fd202a34c22bc5965c227",
+    "pid": 4892,
+    "exit_code": 0,
+    "seconds": 14.389811208005995,
+    "tests": {
+      "unit_integration": {
+        "passed": 2,
+        "failed": 0,
+        "ignored": 0
+      },
+      "documentation": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  },
+  "pcm-origin-corrected": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--lib",
+      "physical_prefix_"
+    ],
+    "started": "2026-10-01T11:44:58.187838+00:00",
+    "base_commit": "f2388e5a379288ea2a9284f7cf40a2c2ac1ee642",
+    "diff_sha256": "fa6f053758bc213407a5e70e56e7025f67626aca19663b0060149f5712c9dc2a",
+    "source_manifest_sha256": "6ce9a77aa9e45c2cdc29f5320a271bc63ca5d9afda5a35cc6807308d573bbaed",
+    "pid": 4502,
+    "exit_code": 101,
+    "seconds": 12.088147167116404,
+    "tests": {
+      "unit_integration": {
+        "passed": 0,
+        "failed": 2,
+        "ignored": 0
+      },
+      "documentation": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  },
+  "pcm-origin": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--lib",
+      "physical_prefix_"
+    ],
+    "started": "2026-10-01T11:42:24.956412+00:00",
+    "base_commit": "f2388e5a379288ea2a9284f7cf40a2c2ac1ee642",
+    "diff_sha256": "eee4d76be5dc3d30239a5cc1739f7d8cd04a403b098694967d1794d32fd0a917",
+    "source_manifest_sha256": "2ec83e16919901f771410fc82a161a98043c3e1ac00bb3b0b78c42add040bbff",
+    "pid": 3437,
+    "exit_code": 101,
+    "seconds": 50.09451095899567,
+    "tests": {
+      "unit_integration": {
+        "passed": 0,
+        "failed": 2,
+        "ignored": 0
+      },
+      "documentation": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  },
+  "strict-clippy": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "deadpan-app/ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started": "2026-10-01T12:12:11.828000+00:00",
+    "base_commit": "f2388e5a379288ea2a9284f7cf40a2c2ac1ee642",
+    "diff_sha256": "0316a1aa420ed2eb2240a0d2624a8e797507356cae7ce92690ef39810a2f3976",
+    "source_manifest_sha256": "8aa01bb8b1783d7476bfdbe425a7f9fdc4c71c90f6bb7d992087b157fbe4c039",
+    "pid": 12237,
+    "exit_code": 0,
+    "seconds": 755.1835330408067,
+    "tests": {
+      "unit_integration": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "documentation": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  },
+  "workspace-tests-corrected": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "--workspace",
+      "--no-fail-fast"
+    ],
+    "started": "2026-10-01T12:00:28.224273+00:00",
+    "base_commit": "f2388e5a379288ea2a9284f7cf40a2c2ac1ee642",
+    "diff_sha256": "0316a1aa420ed2eb2240a0d2624a8e797507356cae7ce92690ef39810a2f3976",
+    "source_manifest_sha256": "8aa01bb8b1783d7476bfdbe425a7f9fdc4c71c90f6bb7d992087b157fbe4c039",
+    "pid": 9269,
+    "exit_code": 0,
+    "seconds": 694.7408232078888,
+    "tests": {
+      "unit_integration": {
+        "passed": 3019,
+        "failed": 0,
+        "ignored": 0
+      },
+      "documentation": {
+        "passed": 2,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  },
+  "workspace-tests": {
+    "command": [
+      "rustup",
+      "run",
+      "1.97.1",
+      "cargo",
+      "test",
+      "--locked",
+      "--workspace",
+      "--no-fail-fast"
+    ],
+    "started": "2026-10-01T11:46:31.363793+00:00",
+    "base_commit": "f2388e5a379288ea2a9284f7cf40a2c2ac1ee642",
+    "diff_sha256": "da3ed0013e0f878f2fd3a0d037b0aa3a8916816e19c05160050da01350e44ba1",
+    "source_manifest_sha256": "86ad66ef612875123eeb7aab8c115fd333d3323b992fd202a34c22bc5965c227",
+    "pid": 5104,
+    "exit_code": 101,
+    "seconds": 817.0909874169156,
+    "tests": {
+      "unit_integration": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "documentation": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  }
+}

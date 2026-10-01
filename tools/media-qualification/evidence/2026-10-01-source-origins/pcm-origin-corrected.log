@@ -1,0 +1,29 @@
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 11.99s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_audio-8e2ffef251e4926c)
+
+running 2 tests
+test stages::bound_reads::source_origin::physical_prefix_keeps_symbolic_resume_and_chronological_reanchor_pcm ... FAILED
+test stages::bound_reads::source_origin::physical_prefix_keeps_plain_captured_and_previously_bound_ntsc_pcm ... FAILED
+
+failures:
+
+---- stages::bound_reads::source_origin::physical_prefix_keeps_symbolic_resume_and_chronological_reanchor_pcm stdout ----
+
+thread 'stages::bound_reads::source_origin::physical_prefix_keeps_symbolic_resume_and_chronological_reanchor_pcm' (60707757) panicked at crates/deadpan-audio/src/bound_reads.rs:170:10:
+called `Result::unwrap()` on an `Err` value: Range
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- stages::bound_reads::source_origin::physical_prefix_keeps_plain_captured_and_previously_bound_ntsc_pcm stdout ----
+
+thread 'stages::bound_reads::source_origin::physical_prefix_keeps_plain_captured_and_previously_bound_ntsc_pcm' (60707756) panicked at crates/deadpan-audio/src/bound_reads.rs:170:10:
+called `Result::unwrap()` on an `Err` value: Range
+
+
+failures:
+    stages::bound_reads::source_origin::physical_prefix_keeps_plain_captured_and_previously_bound_ntsc_pcm
+    stages::bound_reads::source_origin::physical_prefix_keeps_symbolic_resume_and_chronological_reanchor_pcm
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 64 filtered out; finished in 0.07s
+
+error: test failed, to rerun pass `-p deadpan-audio --lib`

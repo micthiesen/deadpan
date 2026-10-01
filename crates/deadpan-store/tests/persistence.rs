@@ -1045,6 +1045,7 @@ fn imported_audio_timing_namespaces_remain_reserved_after_bindings_are_removed()
             OwnedAudioBinding {
                 reanchors: Vec::new(),
                 lattice: AudioPlacementTemplate {
+                    reference_local_offset: deadpan_core::ExactRatio::ZERO,
                     reference: AudioReferenceClock {
                         timing,
                         root: AudioClockRoot::ProjectRootRoundEven,

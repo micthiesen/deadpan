@@ -221,6 +221,7 @@ pub(crate) fn apply(
             // them, not alter the legacy initial phase evaluated before them.
             binding.reanchors.push(AudioReanchorStep {
                 placement: AudioPlacementTemplate {
+                    reference_local_offset: crate::ExactRatio::ZERO,
                     gap_after: None,
                     reference: AudioReferenceClock {
                         recipe: crate::AudioRecipeKind::Node,
@@ -251,6 +252,7 @@ pub(crate) fn apply(
                 .ok_or_else(|| limit("pause resume work"))?;
             resume.phase.terms.push(AudioPhaseTerm {
                 placement: AudioPlacementTemplate {
+                    reference_local_offset: crate::ExactRatio::ZERO,
                     gap_after: None,
                     reference: AudioReferenceClock {
                         recipe: crate::AudioRecipeKind::Node,

@@ -92,9 +92,9 @@ timing. Schema-11 audio and schema-12 picture mappings remain intact. Fields,
 variants and commands absent from each historical vocabulary are rejected inside
 old snapshots, commands and patches, even when a field is null.
 Migration retains revision identities, undo/redo, abandoned branches and
-operational original-media and generation records. Current database schema 45
-stores core schema 36 with dormant linked audio. Unused development schemas
-39 through 44 are rejected
+operational original-media and generation records. Current database schema 46
+stores core schema 37 with dormant linked audio and retained local-origin
+translations. Unused development schemas 39 through 45 are rejected
 without migration, backup or writes under the session's authorized format break.
 
 Retaining source context is a prerequisite for Trim. It does not implement
