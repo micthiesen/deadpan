@@ -11,7 +11,7 @@ impl ProjectDocument {
         parent: &NodeId,
         range: FrameRange,
     ) -> Result<super::SequenceRangeEdit, EditError> {
-        super::sequence_range::preflight(self, parent, range, 0)
+        super::sequence_range::preflight_deletion(self, parent, range)
     }
 }
 

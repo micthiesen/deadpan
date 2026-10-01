@@ -277,6 +277,17 @@ copy/cancel and historical rejection preserve all 20 tables, one Move adds one
 revision/history entry, and Undo restores complete authored state. No DP or gate
 is complete.
 
+The [nested fragment deletion check](qualification/nested-delete-2026-09-30.md)
+extends `DeleteRange` to partial Source/ordinary Hold endpoints behind nested
+unity Partition windows. Exact Split pools retain owner contexts and original
+sample clocks; independent root sounds transform once. An isolated old-code
+regression fails at admission. Current core, indexed-picture, decoded-PCM and
+native service tests cover preserved content, marks, rejection bounds and one
+durable deletion with reopen/Undo/Redo. Cut-to-register and empty structural
+capture/paste remain open. All 2,823 locked workspace tests pass with none failed
+or ignored, along with formatting and strict all-target Clippy. No DP requirement
+or gate changes status.
+
 The [shared render workflow](RENDER_JOBS.md#shared-workflow-and-native-ownership)
 connects capture, encoding, retained checkpoints, fresh verification, publication
 and reconciliation to the native project service. Close/switch/shutdown retain

@@ -93,9 +93,11 @@ the decoded-PCM regression, durable history and integration checks.
 ### Selected ranges
 
 `DeleteRange { parent, range, identities, timing }` removes a nonempty global
-half-open interval in an explicit ordinary Sequence. It shares endpoint
-admission and splitting with `ReplaceSource`, without reserving an inserted
-Source. The structural `range_deletion` query reports the required Split IDs;
+half-open interval in an explicit ordinary Sequence. Its endpoint admission
+uses the recursive unity Partition path shared with edited-slice placement;
+splitting retains complete owner contexts without reserving an inserted Source.
+Historical Source replacement, standalone Split and InsertTime admission remain
+unchanged. The structural `range_deletion` query reports the required Split IDs;
 it does not waive the separate audio-work or final-document validation limits.
 
 Capture original sampling lattices before splitting either endpoint. When a
@@ -107,11 +109,13 @@ deletion captures no clock. Prefix fragments retain their original mapping.
 The root sound bus receives one deletion transform, and Split transports Hold
 permissions and marks before their usual removal policies apply.
 
-Source, ordinary Hold and supported transparent fragments may be partial
-endpoints. Complete intervening composites are retained structurally until
+Source, ordinary Hold and nested unity Partition fragments may be partial
+endpoints. Framing and audio treatments on retained windows keep their owner
+contexts. Complete intervening composites are retained structurally until
 removal. Empty groups at either endpoint survive; those strictly inside the
-range are removed. Repeat/Retime ancestry and partial composite endpoints still
-require occurrence editing. One inverse restores the complete authored state.
+range are removed. A Sequence under Repeat/Retime and partial Repeat, general
+Retime or Generated Hold endpoints still require occurrence editing. One inverse
+restores the complete authored state.
 The operation adds no persisted document fields or schema version.
 
 ## Atomic range moves

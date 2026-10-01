@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "delete_range/nested_partitions.rs"]
+mod nested_partitions;
+
 fn range(a: i64, b: i64) -> FrameRange {
     FrameRange::new(ProjectFrame(a), ProjectFrame(b)).unwrap()
 }

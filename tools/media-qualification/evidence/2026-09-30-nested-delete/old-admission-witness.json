@@ -1,0 +1,26 @@
+{
+  "command": [
+    "rustup",
+    "run",
+    "1.97.1",
+    "cargo",
+    "test",
+    "--manifest-path",
+    "/tmp/deadpan-nested-delete-20260930/baseline/Cargo.toml",
+    "--locked",
+    "-p",
+    "deadpan-core",
+    "--test",
+    "insert_time",
+    "delete_range::nested_partitions::two_and_three_windows_split_one_child_with_exact_pools_and_full_context",
+    "--",
+    "--exact"
+  ],
+  "started": "2026-10-01T06:28:38.732776+00:00",
+  "base_commit": "344ec32f243d8f5ccc45cecc7596a089ce0d827f",
+  "diff_sha256": "683de9f99c93d1bf3145132c791730043af3ce34e30d3fbed73dd2508a15f6ce",
+  "source_manifest_sha256": "6fe7eac672950c902d26f51cf6db46caa6b11292aa48842cdd1557217ab69799",
+  "pid": 20964,
+  "exit_code": 101,
+  "seconds": 24.433707375079393
+}

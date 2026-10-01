@@ -1,0 +1,11 @@
+{
+  "base_commit": "344ec32f243d8f5ccc45cecc7596a089ce0d827f",
+  "workspace": "/tmp/deadpan-nested-delete-20260930/baseline",
+  "old_production_sha256": {
+    "crates/deadpan-core/src/insert_time/delete_range.rs": "d1403cff267516d0ec935724a5e886864b66a2259e8ecbc675bbefe48aeadcf6",
+    "crates/deadpan-core/src/insert_time/sequence_range.rs": "342156afccf301b722b581caed9c3a4d5c53b34bedc0c428559679fb40b47b7e"
+  },
+  "new_regression_sha256": "892a56d626f5952092800bcb60e44a360d1f88eacc8aa97dc15faa344cec3487",
+  "selection": "delete_range::nested_partitions::two_and_three_windows_split_one_child_with_exact_pools_and_full_context",
+  "expected": "Failure in range_deletion preflight before mutation; shared checkout untouched."
+}

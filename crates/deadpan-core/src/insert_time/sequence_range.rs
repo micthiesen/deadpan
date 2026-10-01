@@ -34,6 +34,16 @@ pub(crate) fn preflight_capture(
     preflight_with(document, parent, range, 0, EndpointMode::Capture)
 }
 
+/// Deletion retains complete endpoint contexts through Split, just as copied
+/// replacement does. Its unity Partition windows may therefore be nested.
+pub(crate) fn preflight_deletion(
+    document: &ProjectDocument,
+    parent: &NodeId,
+    range: FrameRange,
+) -> Result<SequenceRangeEdit, EditError> {
+    preflight_with(document, parent, range, 0, EndpointMode::SliceSplit)
+}
+
 enum EndpointMode {
     Split,
     Capture,

@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "delete_range/nested_partition.rs"]
+mod nested_partition;
+
 fn cut(document: &ProjectDocument, parent: &str, range: Range<i64>, name: &str) -> ProjectDocument {
     let range = FrameRange::new(ProjectFrame(range.start), ProjectFrame(range.end)).unwrap();
     let required = document

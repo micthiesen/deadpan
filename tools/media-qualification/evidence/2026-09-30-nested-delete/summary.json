@@ -1,0 +1,307 @@
+{
+  "checks": {
+    "core-delete-initial": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-core",
+        "--test",
+        "insert_time",
+        "delete_range",
+        "--locked"
+      ],
+      "started": "2026-10-01T06:23:44.079397+00:00",
+      "base_commit": "344ec32f243d8f5ccc45cecc7596a089ce0d827f",
+      "diff_sha256": "ae33d0f25a08665fc28fad117cee421c7a7f5648d9645b3c0a9a885431c82ff9",
+      "source_manifest_sha256": "0752e2359fd0627441abf19731e7b87fc17921567103e429285f1b4b1687d406",
+      "pid": 19092,
+      "exit_code": 101,
+      "seconds": 43.62338066706434,
+      "test_totals": {
+        "passed": 17,
+        "failed": 1,
+        "ignored": 0
+      }
+    },
+    "app-delete-initial": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "project::tests::delete_range",
+        "--locked"
+      ],
+      "started": "2026-10-01T06:24:57.450506+00:00",
+      "base_commit": "344ec32f243d8f5ccc45cecc7596a089ce0d827f",
+      "diff_sha256": "23e43137d11301d1a4d7109158e16deaa04267aa0ad722369e841c0214be507a",
+      "source_manifest_sha256": "b61e949c6a020d164481406e1e76c05f51e195aedea277f78e3b8cb47e8f8120",
+      "pid": 19747,
+      "exit_code": 0,
+      "seconds": 89.59036116721109,
+      "test_totals": {
+        "passed": 4,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    "core-delete-final": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-core",
+        "--test",
+        "insert_time",
+        "delete_range"
+      ],
+      "started": "2026-10-01T06:26:42.067452+00:00",
+      "base_commit": "344ec32f243d8f5ccc45cecc7596a089ce0d827f",
+      "diff_sha256": "23e43137d11301d1a4d7109158e16deaa04267aa0ad722369e841c0214be507a",
+      "source_manifest_sha256": "b8b021fc2a3eaa59f8e2249fb3b312bff29d192823c6aa51487b32edcd8e8270",
+      "pid": 20509,
+      "exit_code": 0,
+      "seconds": 26.735893624834716,
+      "test_totals": {
+        "passed": 18,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    "plan-delete-final": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-plan",
+        "--test",
+        "edited_slice",
+        "delete_range"
+      ],
+      "started": "2026-10-01T06:27:09.025286+00:00",
+      "base_commit": "344ec32f243d8f5ccc45cecc7596a089ce0d827f",
+      "diff_sha256": "23e43137d11301d1a4d7109158e16deaa04267aa0ad722369e841c0214be507a",
+      "source_manifest_sha256": "b8b021fc2a3eaa59f8e2249fb3b312bff29d192823c6aa51487b32edcd8e8270",
+      "pid": 20741,
+      "exit_code": 0,
+      "seconds": 37.19834683416411,
+      "test_totals": {
+        "passed": 2,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    "audio-delete-final": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-audio",
+        "--test",
+        "composite_insert",
+        "delete_range::nested_partition"
+      ],
+      "started": "2026-10-01T06:27:46.446559+00:00",
+      "base_commit": "344ec32f243d8f5ccc45cecc7596a089ce0d827f",
+      "diff_sha256": "23e43137d11301d1a4d7109158e16deaa04267aa0ad722369e841c0214be507a",
+      "source_manifest_sha256": "b8b021fc2a3eaa59f8e2249fb3b312bff29d192823c6aa51487b32edcd8e8270",
+      "pid": 20782,
+      "exit_code": 101,
+      "seconds": 33.84465599991381,
+      "test_totals": {
+        "passed": 2,
+        "failed": 2,
+        "ignored": 0
+      }
+    },
+    "old-admission-witness": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "test",
+        "--manifest-path",
+        "/tmp/deadpan-nested-delete-20260930/baseline/Cargo.toml",
+        "--locked",
+        "-p",
+        "deadpan-core",
+        "--test",
+        "insert_time",
+        "delete_range::nested_partitions::two_and_three_windows_split_one_child_with_exact_pools_and_full_context",
+        "--",
+        "--exact"
+      ],
+      "started": "2026-10-01T06:28:38.732776+00:00",
+      "base_commit": "344ec32f243d8f5ccc45cecc7596a089ce0d827f",
+      "diff_sha256": "683de9f99c93d1bf3145132c791730043af3ce34e30d3fbed73dd2508a15f6ce",
+      "source_manifest_sha256": "6fe7eac672950c902d26f51cf6db46caa6b11292aa48842cdd1557217ab69799",
+      "pid": 20964,
+      "exit_code": 101,
+      "seconds": 24.433707375079393,
+      "test_totals": {
+        "passed": 0,
+        "failed": 1,
+        "ignored": 0
+      }
+    },
+    "audio-delete-corrected": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-audio",
+        "--test",
+        "composite_insert",
+        "--locked",
+        "delete_range::nested_partition"
+      ],
+      "started": "2026-10-01T06:29:44.024138+00:00",
+      "base_commit": "344ec32f243d8f5ccc45cecc7596a089ce0d827f",
+      "diff_sha256": "683de9f99c93d1bf3145132c791730043af3ce34e30d3fbed73dd2508a15f6ce",
+      "source_manifest_sha256": "6fe99501eec223fc725bb1edd7844b80c23e15c5834e680a4430b3fbe38d53cb",
+      "pid": 21335,
+      "exit_code": 0,
+      "seconds": 16.790861084125936,
+      "test_totals": {
+        "passed": 4,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    "plan-delete-unframed": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-plan",
+        "--test",
+        "edited_slice",
+        "--locked",
+        "delete_range"
+      ],
+      "started": "2026-10-01T06:30:15.544136+00:00",
+      "base_commit": "344ec32f243d8f5ccc45cecc7596a089ce0d827f",
+      "diff_sha256": "683de9f99c93d1bf3145132c791730043af3ce34e30d3fbed73dd2508a15f6ce",
+      "source_manifest_sha256": "6fe99501eec223fc725bb1edd7844b80c23e15c5834e680a4430b3fbe38d53cb",
+      "pid": 21436,
+      "exit_code": 0,
+      "seconds": 10.955971665680408,
+      "test_totals": {
+        "passed": 2,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    "fmt-final": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "started": "2026-10-01T06:31:47.667385+00:00",
+      "base_commit": "344ec32f243d8f5ccc45cecc7596a089ce0d827f",
+      "diff_sha256": "683de9f99c93d1bf3145132c791730043af3ce34e30d3fbed73dd2508a15f6ce",
+      "source_manifest_sha256": "6fe99501eec223fc725bb1edd7844b80c23e15c5834e680a4430b3fbe38d53cb",
+      "pid": 21767,
+      "exit_code": 0,
+      "seconds": 1.4575821668840945,
+      "test_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    "clippy-final": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--features",
+        "deadpan-app/ui-harness",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-10-01T06:31:49.337333+00:00",
+      "base_commit": "344ec32f243d8f5ccc45cecc7596a089ce0d827f",
+      "diff_sha256": "683de9f99c93d1bf3145132c791730043af3ce34e30d3fbed73dd2508a15f6ce",
+      "source_manifest_sha256": "6fe99501eec223fc725bb1edd7844b80c23e15c5834e680a4430b3fbe38d53cb",
+      "pid": 21776,
+      "exit_code": 0,
+      "seconds": 643.7404545000754,
+      "test_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    "workspace-final": {
+      "command": [
+        "rustup",
+        "run",
+        "1.97.1",
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "--no-fail-fast"
+      ],
+      "started": "2026-10-01T06:42:33.212058+00:00",
+      "base_commit": "344ec32f243d8f5ccc45cecc7596a089ce0d827f",
+      "diff_sha256": "037c8233d7378a63f6b5ae31adf52227e0fba7db5e42d84cadaaa5f5d969f500",
+      "source_manifest_sha256": "6fe99501eec223fc725bb1edd7844b80c23e15c5834e680a4430b3fbe38d53cb",
+      "pid": 27788,
+      "exit_code": 0,
+      "seconds": 1226.7738420828246,
+      "test_totals": {
+        "passed": 2823,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  },
+  "final_source_manifest_sha256": "6fe99501eec223fc725bb1edd7844b80c23e15c5834e680a4430b3fbe38d53cb",
+  "final_source_inputs_rechecked": 1348,
+  "baseline": "old-admission-witness intentionally fails using isolated HEAD production with the new untreated-chain regression; baseline-input.json and baseline/ retain exact inputs.",
+  "early_runs": "core-delete-initial and audio-delete-final failed new test fixtures/oracles; corrected runs pass. plan-delete-final predates final unframed variants; plan-delete-unframed and workspace-final cover them. app-delete-initial predates only subsequent test changes in other crates.",
+  "review": "Independent static review: no findings; root reviewed media oracles and complete diff.",
+  "native_app": "Agent-owned dev.thiesen.deadpan.cursor-qa quit through native UI; native app inventory returned no Deadpan apps. No new native UI/paint/device qualification."
+}

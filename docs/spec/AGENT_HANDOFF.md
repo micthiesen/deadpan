@@ -10,6 +10,15 @@ migrations when that simplifies implementation. Prefer this permission over
 historical compatibility requirements; it does not require deleting working
 adapters or reduce eventual runtime/recovery requirements.
 
+## Native QA app lifecycle, 2026-09-30
+
+The user clarified that the separately positioned Deadpan Cursor QA window is
+an agent test instance and is not in use. Agents may open, close and test it;
+the earlier instruction to leave it untouched no longer applies. Close native
+test instances after testing instead of leaving them idle. The previously
+running `dev.thiesen.deadpan.cursor-qa` instance has been quit, and the native
+app inventory confirmed no Deadpan app remained running.
+
 ## Visual slice replacement, 2026-09-30
 
 Your edit now has an independent half-open selection (`v`, motion, `v`).
@@ -24,8 +33,7 @@ fragment endpoints and complete intervening composites.
 Core 34 persists a direct sound replacement map and database 43 stores it.
 Development databases 39–42 are refused without writes or backup creation;
 existing frozen migration adapters for 1–38 remain. Use a new project for
-current native testing. Do not reopen or alter the user's separately positioned
-Cursor QA window as part of this work.
+current native testing. Follow the native QA app lifecycle policy above.
 
 [Qualification](../qualification/slice-replacement-2026-09-30.md) records the
 production replay, actual decoded media, failure corrections and review.
@@ -233,8 +241,8 @@ and strict all-target workspace Clippy with the UI harness also pass on Rust
 Core 34/database 43 are unchanged. Atomic move, named/persistent registers,
 cut-to-register, role-only placement, motion/text-object operators and temporal
 occurrence interiors remain required. DP-06 is partial for the session register;
-all DP requirements and release gates remain incomplete. The user's separately
-positioned Cursor QA window must stay untouched.
+all DP requirements and release gates remain incomplete. Follow the current
+native QA app lifecycle policy above.
 
 ## Atomic linked moves, 2026-09-30
 
@@ -296,8 +304,37 @@ verify both join comparisons, cancel, one Move commit, complete authored Undo
 and historical Move rejection. The separate app exited and released its lock.
 Core 34/database 43 are unchanged. Named/persistent registers, cut-to-register,
 role-only placement, motion/text-object operators and temporal occurrence
-interiors remain open. Preserve the reserved user app/Space. No requirement or
-delivery gate is complete.
+interiors remain open. Follow the current native QA app lifecycle policy above.
+No requirement or delivery gate is complete.
+
+## Nested fragment deletion, 2026-09-30
+
+`DeleteRange` now accepts partial Source/ordinary Hold endpoints behind nested
+unity Partition windows, matching the edited-slice capture/placement boundary.
+It selects the existing recursive preflight and retains complete owner contexts
+through the shared Split path. Capture original clocks before splitting, suffix
+entries before removal, and transform independent root sounds once. Exact pools,
+temporary node limits and inverse validation remain in force. Other commands'
+admission and core 34/database 43 are unchanged.
+
+The [qualification](../qualification/nested-delete-2026-09-30.md) records an
+isolated old-code failure, nine new core tests, two independent indexed-picture
+tests, four decoded-PCM tests and one native service persistence test. Retained
+records include the initial invalid sound fixture and oversized oracle-block
+failures, their corrections, independent review and the final gate results.
+All 2,823 locked workspace tests pass with none failed or ignored, along with
+formatting and strict all-target Clippy including the UI harness. The evidence
+collector rechecked all 1,348 final source inputs. No new UI or device
+qualification is claimed.
+
+Next implement exact whole-child capture, including empty Sequence structures,
+and zero-duration paste at an explicit child slot. Then connect native deletion
+and register publication through one service operation: capture privately from
+the pre-edit revision, commit one deletion, and publish the retained copy only
+after durable success. Failed capture/commit preserves the prior register;
+saved refresh failure retains the successful cut and reopening guidance.
+Cut-to-register, named/persistent registers and temporal occurrence interiors
+remain open. No DP requirement or release gate is complete.
 
 ## Native identity, 2026-09-30
 
