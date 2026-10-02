@@ -1,0 +1,53 @@
+import gzip,hashlib,json,pathlib,shutil,subprocess
+root=pathlib.Path('/tmp/deadpan-named-registers-20261002')
+out=pathlib.Path('tools/media-qualification/evidence/2026-10-02-named-registers')
+for d in ('checks','replays','images','native','scripts'):
+ (out/d).mkdir(parents=True,exist_ok=True)
+checks=[]
+for path in sorted(root.glob('*.json')):
+ data=json.loads(path.read_text())
+ if path.name.startswith('source-'):
+  shutil.copy2(path,out/'checks'/path.name)
+ elif 'command' in data:
+  if 'gate_exit_code' not in data: raise RuntimeError('Unfinished check: '+path.name)
+  shutil.copy2(path,out/'checks'/path.name)
+  log=path.with_suffix('.log')
+  (out/'checks'/(log.name+'.gz')).write_bytes(gzip.compress(log.read_bytes(),mtime=0))
+  checks.append(dict(name=path.stem,**data))
+replays=[]
+for directory in ('replay','replay-final','full-replay-final','replay-verified'):
+ path=root/directory/'report.json'
+ data=json.loads(path.read_text())
+ (out/'replays'/(directory+'.json.gz')).write_bytes(gzip.compress(path.read_bytes(),mtime=0))
+ scenarios=[]
+ for s in data['scenarios']:
+  scenarios.append({k:s[k] for k in ('name','failed','findings','skipped')}|{'checks':len(s['checks']),'failed_checks':[c for c in s['checks'] if not c['passed']]})
+ replays.append({'name':directory,'failed':data['failed'],'metadata':data['metadata'],'scenarios':scenarios})
+images=[]
+for number in ('045','047','051','056','060','124','125'):
+ name='named-registers-'+number+'.png'
+ src=root/'replay-verified'/name
+ if src.exists():
+  dest=out/'images'/name; shutil.copy2(src,dest)
+  images.append({'file':str(dest.relative_to(out)),'source':str(src),'sha256':hashlib.sha256(src.read_bytes()).hexdigest()})
+for path in sorted((root/'native').glob('*')):
+ if path.is_file() and path.suffix in ('.txt','.png','.json'):
+  shutil.copy2(path,out/'native'/path.name)
+for path in sorted((root/'native').glob('*.sql')):
+ (out/'native'/(path.name+'.gz')).write_bytes(gzip.compress(path.read_bytes(),mtime=0))
+for path in sorted((root/'native-verified').glob('*')):
+ if path.is_file() and path.suffix in ('.txt','.png','.json'):
+  shutil.copy2(path,out/'native'/('verified-'+path.name))
+shutil.copy2('/tmp/deadpan-original-layout-20261002/run-check.py',out/'scripts'/'run-check.py.txt')
+shutil.copy2(root/'final-checks.py',out/'scripts'/'final-checks.py.txt')
+shutil.copy2(root/'collect-evidence.py',out/'scripts'/'collect-evidence.py.txt')
+(out/'images'/'sources.json').write_text(json.dumps(images,indent=2)+'\n')
+(out/'summary.json').write_text(json.dumps({'checks':checks,'replays':replays},indent=2)+'\n')
+final=next(c for c in checks if c['name']=='release-build-verified')
+(out/'binaries.json').write_text(json.dumps({'base_commit':final['base_commit'],'final_source_manifest_sha256':final['source_manifest_sha256'],'final_binary_sha256':hashlib.sha256(pathlib.Path('target/release/deadpan-app').read_bytes()).hexdigest(),'pre_feedback_binary_sha256':'d6e485705d4fe5c0e8496bbbda7b36a17b6508ab0d8866122f8555f7aa2d73a4','scope':'App only. Core schema 43 and database 52 unchanged. Prior full workspace evidence retained; backend tests not repeated.'},indent=2)+'\n')
+lines=[]
+for p in sorted(out.rglob('*')):
+ if p.is_file() and p.name!='SHA256SUMS':
+  lines.append(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+str(p.relative_to(out)))
+(out/'SHA256SUMS').write_text('\n'.join(lines)+'\n')
+print('Collected',len(checks),'checks;',len(replays),'replays;',len(lines),'retained files')

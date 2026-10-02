@@ -81,6 +81,7 @@ impl Content {
 struct Pending {
     request: slice::CaptureRequest,
     intent: Intent,
+    destination: Option<char>,
 }
 
 enum Intent {
@@ -91,10 +92,55 @@ enum Intent {
 #[derive(Default)]
 pub(super) struct Register {
     content: Option<Content>,
+    named: std::collections::BTreeMap<char, Content>,
+    selected: Option<char>,
+    session: Option<(u64, deadpan_core::ProjectId)>,
     pending: Option<Pending>,
 }
 
 impl Register {
+    pub fn select(&mut self, name: char) -> Result<(), String> {
+        self.selected = match name {
+            '"' => None,
+            'a'..='z' | 'A'..='Z' => Some(name.to_ascii_lowercase()),
+            _ => return Err("Choose a register from a–z, or \" for the default copy.".into()),
+        };
+        Ok(())
+    }
+
+    pub fn selected(&self) -> Option<char> {
+        self.selected
+    }
+
+    pub fn clear_selection(&mut self) {
+        self.selected = None;
+    }
+
+    pub fn selected_content(&self) -> Option<&Content> {
+        self.selected
+            .map_or_else(|| self.content(), |name| self.named.get(&name))
+    }
+
+    pub fn entries(&self) -> impl Iterator<Item = (char, &Content)> {
+        self.content
+            .iter()
+            .map(|value| ('"', value))
+            .chain(self.named.iter().map(|(name, value)| (*name, value)))
+    }
+
+    /// A failed new write consumes its one-shot name but preserves every slot.
+    pub fn begin_write(&mut self) -> Option<char> {
+        self.supersede();
+        self.selected.take()
+    }
+
+    fn store(&mut self, destination: Option<char>, content: Content) {
+        if let Some(name) = destination {
+            self.named.insert(name, content.clone());
+        }
+        self.content = Some(content);
+    }
+
     pub fn content(&self) -> Option<&Content> {
         self.content.as_ref()
     }
@@ -115,26 +161,62 @@ impl Register {
         self.pending = None;
     }
 
+    #[cfg(test)]
     pub fn original_copied(&mut self, copied: moment::Copied) {
-        self.supersede();
-        self.content = Some(Content::Original(copied));
+        let destination = self.begin_write();
+        self.original_copied_to(destination, copied);
     }
 
+    pub fn original_copied_to(&mut self, destination: Option<char>, copied: moment::Copied) {
+        self.store(destination, Content::Original(copied));
+    }
+
+    #[cfg(any(test, feature = "ui-harness"))]
     pub fn expect(&mut self, request: slice::CaptureRequest, selection: edit_range::Selection) {
+        let destination = self.begin_write();
+        self.expect_to(destination, request, selection);
+    }
+
+    pub fn expect_to(
+        &mut self,
+        destination: Option<char>,
+        request: slice::CaptureRequest,
+        selection: edit_range::Selection,
+    ) {
         self.pending = Some(Pending {
             request,
             intent: Intent::Yank(selection),
+            destination,
         });
     }
 
+    #[cfg(any(test, feature = "ui-harness"))]
     pub fn expect_cut(&mut self, request: slice::CaptureRequest) {
+        let destination = self.begin_write();
+        self.expect_cut_to(destination, request);
+    }
+
+    pub fn expect_cut_to(&mut self, destination: Option<char>, request: slice::CaptureRequest) {
         self.pending = Some(Pending {
             request,
             intent: Intent::Cut,
+            destination,
         });
     }
 
     pub fn reconcile(&mut self, workspace: Option<&Workspace>) {
+        let session = workspace.map(|value| (value.session, value.document.project_id().clone()));
+        if workspace.is_none() || (self.session.is_some() && self.session != session) {
+            *self = Self::default();
+        }
+        self.session = session;
+        self.named.retain(|_, content| match content {
+            Content::Original(_) => workspace.is_some_and(|value| content.check(value).is_ok()),
+            Content::Edited(copied) => workspace.is_some_and(|value| {
+                value.session == copied.id().session
+                    && value.document.project_id() == &copied.id().project
+            }),
+        });
         if self.content.as_ref().is_some_and(|content| match content {
             Content::Original(_) => {
                 workspace.is_none_or(|workspace| content.check(workspace).is_err())
@@ -168,7 +250,7 @@ impl Register {
         let pending = self.pending.take().expect("matched copy request");
         let result = update
             .result
-            .and_then(|copied| self.accept(&pending.request, copied));
+            .and_then(|copied| self.accept(pending.destination, &pending.request, copied));
         let Intent::Yank(selection) = pending.intent else {
             unreachable!("matched yank intent")
         };
@@ -184,15 +266,16 @@ impl Register {
         }) {
             return None;
         }
-        self.pending = None;
+        let pending = self.pending.take().expect("matched cut request");
         Some(update.result.and_then(|receipt| {
-            self.accept(&update.request, receipt.copied.clone())?;
+            self.accept(pending.destination, &update.request, receipt.copied.clone())?;
             Ok(receipt)
         }))
     }
 
     fn accept(
         &mut self,
+        destination: Option<char>,
         request: &slice::CaptureRequest,
         copied: Arc<slice::Captured>,
     ) -> Result<(), String> {
@@ -207,7 +290,7 @@ impl Register {
         {
             return Err("Copy preparation returned a different Edit selection.".into());
         }
-        self.content = Some(Content::Edited(copied));
+        self.store(destination, Content::Edited(copied));
         Ok(())
     }
 
@@ -222,10 +305,55 @@ impl Register {
 }
 
 impl DeadpanApp {
+    pub(super) fn cancel_register_choice(&mut self) {
+        if self.copied.selected().is_some() {
+            self.copied.clear_selection();
+            self.message = Some("Register choice cancelled.".into());
+        }
+    }
+
+    pub(super) fn select_register(&mut self, name: char) {
+        self.bindings.clear();
+        if self.workspace.is_none() {
+            self.error = Some("Open a project before selecting a copy register.".into());
+            return;
+        }
+        match self.copied.select(name) {
+            Ok(()) => {
+                let label = self
+                    .copied
+                    .selected_content()
+                    .map_or_else(|| "empty".into(), Content::label);
+                self.error = None;
+                self.message = Some(match self.copied.selected() {
+                    Some(name) => format!(
+                        "Register {name} · {label}. Next copy, picture cut, paste or :splice uses it. Esc cancels."
+                    ),
+                    None => format!("Default copy · {label}."),
+                });
+            }
+            Err(error) => self.error = Some(error),
+        }
+    }
+
+    pub(super) fn register_status(&self) -> Option<String> {
+        let name = self.copied.selected()?;
+        let kind = match self.copied.selected_content() {
+            Some(Content::Original(_)) => "Original",
+            Some(Content::Edited(_)) => "Edit",
+            None => "empty",
+        };
+        Some(format!("Register {name} · {kind}"))
+    }
+
     pub(super) fn copy_slice(&mut self) {
-        self.copied.supersede();
+        self.copy_slice_to(self.copied.selected());
+    }
+
+    pub(super) fn copy_slice_to(&mut self, destination: Option<char>) {
+        self.copied.begin_write();
         if self.view == View::Source {
-            self.copy_moment();
+            self.copy_moment(destination);
             return;
         }
         self.bindings.clear();
@@ -289,7 +417,8 @@ impl DeadpanApp {
             .submit(ProjectRequest::CaptureEditSlice(request.clone()))
         {
             Ok(()) => {
-                self.copied.expect(request, self.edit_range.clone());
+                self.copied
+                    .expect_to(destination, request, self.edit_range.clone());
                 self.error = None;
                 self.message = Some("Copying the Edit selection…".into());
             }
@@ -394,6 +523,78 @@ mod tests {
             id: request.id.clone(),
             result: Err("copy failed".into()),
         }
+    }
+
+    #[test]
+    fn named_original_copies_are_independent_and_success_also_updates_default() {
+        let mut register = Register::default();
+        register.select('A').unwrap();
+        register.original_copied(original());
+        assert_eq!(register.selected(), None);
+        let mut other = original();
+        other.ordinals = 12..18;
+        register.select('b').unwrap();
+        register.original_copied(other);
+        assert_eq!(register.original().unwrap().ordinals, 12..18);
+        register.select('a').unwrap();
+        assert!(
+            matches!(register.selected_content(), Some(Content::Original(value)) if value.ordinals == (2..8))
+        );
+        register.select('B').unwrap();
+        assert!(
+            matches!(register.selected_content(), Some(Content::Original(value)) if value.ordinals == (12..18))
+        );
+        assert_eq!(register.entries().count(), 3);
+        register.select('z').unwrap();
+        assert!(
+            register.selected_content().is_none(),
+            "an empty named slot never falls back to unnamed"
+        );
+        assert_eq!(register.original().unwrap().ordinals, 12..18);
+        assert!(register.select('9').is_err());
+        assert_eq!(register.selected(), Some('z'));
+        register.select('"').unwrap();
+        assert!(register.selected_content().is_some());
+    }
+
+    #[test]
+    fn failed_named_capture_keeps_slots_and_newer_selection() {
+        let mut register = Register::default();
+        register.select('a').unwrap();
+        register.original_copied(original());
+        register.select('a').unwrap();
+        let pending = request(1);
+        register.expect(pending.clone(), edit_range::Selection::default());
+        assert_eq!(register.selected(), None);
+        register.select('b').unwrap();
+        assert!(register.receive(failure(&pending)).unwrap().1.is_err());
+        assert_eq!(register.selected(), Some('b'));
+        assert!(register.selected_content().is_none());
+        register.select('a').unwrap();
+        assert!(
+            matches!(register.selected_content(), Some(Content::Original(value)) if value.ordinals == (2..8))
+        );
+        assert_eq!(register.entries().count(), 2);
+    }
+
+    #[test]
+    fn rejected_write_consumes_name_and_close_clears_every_slot() {
+        let mut register = Register::default();
+        for name in 'a'..='z' {
+            register.select(name).unwrap();
+            register.original_copied(original());
+        }
+        assert_eq!(register.entries().count(), 27);
+        register.select('a').unwrap();
+        assert_eq!(register.begin_write(), Some('a'));
+        assert_eq!(register.selected(), None);
+        assert_eq!(register.entries().count(), 27);
+        register.select('z').unwrap();
+        register.expect_cut(request(1));
+        register.reconcile(None);
+        assert_eq!(register.entries().count(), 0);
+        assert_eq!(register.selected(), None);
+        assert!(!register.is_pending());
     }
 
     #[test]

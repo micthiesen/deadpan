@@ -1,0 +1,111 @@
+Window: "Deadpan", App: Deadpan.
+0 standard window Deadpan, Secondary Actions: Raise
+	1 container
+		2 text (settable) DEADPAN
+		3 button File
+		4 button Render  ⌘E
+		5 button Renders
+		6 text (settable) cfr-bframes
+		7 button Keys  ?
+		8 button Redo  Ctrl R
+		9 button (disabled) Undo  u
+		10 text (settable) Saved
+		11 text (settable) Move with h/l to select time. y copies; v finishes; Esc cancels.
+		12 text (settable) VISUAL
+		13 text (settable) ORIGINAL
+		14 text (settable) Unchanged source
+		15 text (settable) Focus: Viewer
+		16 button Marks  m / '
+		17 text (settable) "
+		18 text (settable) a–z / A–Z selects a register · " selects the unnamed register · Esc cancels
+		19 text (settable) Original boundary 8/120
+		20 text (settable) h l
+		21 text (settable) frame
+		22 text (settable) j k
+		23 text (settable) edit beat
+		24 text (settable) v
+		25 text (settable) finish selection
+		26 text (settable) y
+		27 text (settable) copy moment
+		28 text (settable) "
+		29 text (settable) register
+		30 text (settable) :sequence
+		31 text (settable) Your edit
+		32 text (settable) ,i
+		33 text (settable) reuse all
+		34 text (settable) Tab
+		35 text (settable) pane
+		36 text (settable) :
+		37 text (settable) command
+		38 text (settable) ?
+		39 text (settable) keys
+		40 text (settable) ORIGINAL
+		41 button Original and sounds pane
+		42 toggle button (settable, boolean) Original: cfr-bframes.mp4, 120 decoded video frames. Browse the unchanged original., Value: on
+		43 text (settable) ORIGINAL VIDEO
+		44 text (settable) cfr-bframes.mp4
+		45 text (settable) 120 decoded video frames
+		46 text (settable) Your starting point stays intact.
+		47 text (settable) Reuse from original
+		48 button Browse  :source
+		49 button Reuse full Original  ,i
+		50 text (settable) SOUND EFFECTS
+		51 text field (settable) Find sound  /
+		52 text (settable) No sounds added.
+		53 button Add sound…  ⌘I
+		54 button Sound import options
+		55 text (settable) ORIGINAL MOMENT
+		56 button Original moment inspector pane
+		57 text (settable) Select time. Reuse it.
+		58 text (settable) In · included
+		59 text (settable) 0
+		60 text (settable) Out · excluded
+		61 text (settable) 8
+		62 text (settable) Original frames
+		63 text (settable) 8
+		64 text (settable) Measured duration
+		65 text (settable) 0.267 s
+		66 text (settable) The Out boundary is excluded. Original frame count and project duration can differ.
+		67 button Finish selection  v
+		68 button Copy moment  y
+		69 button Cancel selection  Esc
+		70 text (settable) Your Original stays intact. Copying does not change the project.
+		71 text (settable) PLACED SOUNDS
+		72 text (settable) 0
+		73 button Placed sounds pane
+		74 text (settable) Choose a catalog sound, then place it with ,s. Picture length stays the same.
+		75 text (settable) BEATS
+		76 toggle button (disabled, settable, boolean) Your edit, Value: on
+		77 text (settable) 1 beats · 120 f
+		78 button Current group beat outline pane
+		79 toggle button (settable, boolean) Beat 1: cfr-bframes.mp4, Original, 120 frames, half-open frame boundaries 0 to 120, Value: on
+		80 text (settable) 1. cfr-bframes.mp4
+		81 text (settable) Original
+		82 text (settable) 120 f · 0–120
+		83 toggle button (settable, boolean) Original, Value: on
+		84 toggle button (settable, boolean) Your edit, Value: off
+		85 button Start  gg
+		86 button Previous  h
+		87 button Next  l
+		88 button End  G
+		89 image Showing source frame 9
+		90 text (settable) Showing source frame 9
+		91 text (settable) Full Original duration: 120 project frames
+		92 text (settable) Your edit duration: 120 project frames
+		93 text (settable) +0 f
+		94 text (settable) project clock · 30000/1001 fps
+		95 slider Original temporal range, cursor 8 of 120. In 0 · Out 8 excluded · 8 original frames
+		96 text (settable) In 0 · Out 8 excluded · 8 original frames
+		97 button Play Original  ·  Space
+		98 button Loop selection  ·  Shift+Space
+		99 text (settable) Loop context  500ms / 750ms
+		100 slider (settable, float) Monitor · :monitor, Value: 0.125
+		101 text (settable) Monitor · :monitor
+	102 close button
+	103 full screen button Help: this button also has an action to zoom the window, Secondary Actions: zoom the window
+	104 minimize button
+	105 text Deadpan
+106 menu bar
+	107 Deadpan
+
+The focused UI element is 89 image Showing source frame 9

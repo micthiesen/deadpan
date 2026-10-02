@@ -1,0 +1,109 @@
+Window: "Deadpan", App: Deadpan.
+0 standard window Deadpan, Secondary Actions: Raise
+	1 container (showing 0-100 of 137 items)
+		2 text (settable) DEADPAN
+		3 button File
+		4 button Render  ⌘E
+		5 button Renders
+		6 text (settable) cfr-bframes
+		7 button Keys  ?
+		8 button Redo  Ctrl R
+		9 button (disabled) Undo  u
+		10 text (settable) Saved
+		11 text (settable) Could not complete action: Register z is empty. Copy or cut into it first; no edit was made.
+		12 text (settable) NORMAL
+		13 text (settable) YOUR EDIT
+		14 text (settable) cfr-bframes.mp4 · Root beat
+		15 text (settable) Focus: Viewer
+		16 button Marks  m / '
+		17 text (settable) Edit boundary 0 / 120
+		18 text (settable) h l
+		19 text (settable) frame
+		20 text (settable) j k
+		21 text (settable) beat
+		22 text (settable) v
+		23 text (settable) select range
+		24 text (settable) y
+		25 text (settable) copy beat
+		26 text (settable) "
+		27 text (settable) register
+		28 text (settable) s
+		29 text (settable) split
+		30 text (settable) + / -
+		31 text (settable) gain 3 dB
+		32 text (settable) ,h
+		33 text (settable) pause
+		34 text (settable) ,f
+		35 text (settable) camera
+		36 text (settable) ,v
+		37 text (settable) Trim beat
+		38 text (settable) rr
+		39 text (settable) repeat
+		40 text (settable) x
+		41 text (settable) cut frame
+		42 text (settable) dd
+		43 text (settable) cut beat
+		44 text (settable) p / P
+		45 text (settable) paste after / before
+		46 text (settable) u
+		47 text (settable) undo
+		48 text (settable) Tab
+		49 text (settable) pane
+		50 text (settable) :
+		51 text (settable) command
+		52 text (settable) ?
+		53 text (settable) keys
+		54 text (settable) ORIGINAL
+		55 button Original and sounds pane
+		56 toggle button (settable, boolean) Original: cfr-bframes.mp4, 120 decoded video frames. Browse the unchanged original., Value: on
+		57 text (settable) ORIGINAL VIDEO
+		58 text (settable) cfr-bframes.mp4
+		59 text (settable) 120 decoded video frames
+		60 text (settable) Your starting point stays intact.
+		61 text (settable) Reuse from original
+		62 button Browse  :source
+		63 button Reuse full Original  ,i
+		64 text (settable) SOUND EFFECTS
+		65 text field (settable) Find sound  /
+		66 text (settable) No sounds added.
+		67 button Add sound…  ⌘I
+		68 button Sound import options
+		69 text (settable) INSPECTOR
+		70 button Selected beat inspector pane
+		71 text (settable) S
+		72 text (settable) cfr-bframes.mp4
+		73 text (settable) Source
+		74 text (settable) Duration
+		75 text (settable) 120 f
+		76 text (settable) 0 dB
+		77 text (settable) This beat · authored gain
+		78 text (settable) Placed sounds have their own gain.
+		79 button −  ·  -
+		80 button +  ·  +
+		81 button Mute
+		82 button Edit envelope… · :gain
+		83 text (settable) 0 envelopes · 0 mute ranges
+		84 button Change speed…  ·  :retime
+		85 button Camera…  ·  ,f
+		86 button Insert pause  ·  ,h
+		87 text (settable) Choose pause duration…  :hold
+		88 text (settable) Picture
+		89 text (settable) Original video
+		90 text (settable) Sound
+		91 text (settable) Original audio
+		92 text (settable) Link
+		93 text (settable) Linked
+		94 text (settable) Scope
+		95 text (settable) Root beat
+		96 text (settable) Boundaries
+		97 text (settable) 0–120
+		98 text (settable) 120 f at 30000/1001 fps
+		99 text (settable) This beat references retained source media. Structural edits preserve the original.
+		100 button (disabled) Split at cursor  ·  s
+		101 button Wrap repeat  ·  rr
+	102 close button
+	103 full screen button Help: this button also has an action to zoom the window, Secondary Actions: zoom the window
+	104 minimize button
+	105 text Deadpan
+106 menu bar
+	107 Deadpan

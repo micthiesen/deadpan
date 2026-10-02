@@ -1,0 +1,49 @@
+Window: "Deadpan", App: Deadpan.
+0 standard window Deadpan, Secondary Actions: Raise
+	1 container
+		2 text (settable) DEADPAN
+		3 button (disabled) File
+		4 button (disabled) Render  ⌘E
+		5 button (disabled) Renders
+		6 text (settable) cfr-bframes
+		7 button (disabled) Keys  ?
+		8 button (disabled) Redo  Ctrl R
+		9 button (disabled) Undo  u
+		10 text (settable) Saved
+		11 text (settable) Place slice
+		12 text (settable) UNSAVED · Insert · Linked picture + sound
+		13 button Place slice keyboard controls
+		14 toggle button (settable, boolean) In 0 · i, Value: off
+		15 toggle button (settable, boolean) Out 8 exclusive · o, Value: off
+		16 toggle button (settable, boolean) Destination Edit 12 · d, Value: on
+		17 toggle button (settable, boolean) Inspect picture · f, Value: off
+		18 button Previous seam · k
+		19 button Next seam · j
+		20 button −1 · h
+		21 button +1 · l
+		22 toggle button (settable, boolean) Proposed · b, Value: on
+		23 button Audition · Space
+		24 button Loop both joins · Shift Space
+		25 button Place slice · Enter
+		26 button Cancel · Esc
+		27 text (settable) h/l adjusts the selected control; counts work: 12l. Tab / Shift Tab selects buttons; Enter activates.
+		28 text (settable) ORIGINAL SLICE
+		29 text (settable) Boundaries [0..8) · 8 source frames
+		30 text (settable) First included · Original frame 1
+		31 image First included Original picture, frame 1
+		32 text (settable) Last included · Original frame 8
+		33 image Last included Original picture, frame 8
+		34 text (settable) PROPOSED · UNSAVED EDIT
+		35 image Showing proposed edit frame 13
+		36 text (settable) Showing proposed edit frame 13
+		37 text (settable) Requested Edit picture 13 · inside inserted slice
+		38 text (settable) Destination: Your edit · Edit boundary 12 · Inside cfr-bframes.mp4 · local boundary 12 · +8 project frames
+		39 text (settable) Provisional insertion at Edit 12, through exclusive 20, context 4 to 28
+	40 close button
+	41 full screen button Help: this button also has an action to zoom the window, Secondary Actions: zoom the window
+	42 minimize button
+	43 text Deadpan
+44 menu bar
+	45 Deadpan
+
+The focused UI element is 13 button Place slice keyboard controls

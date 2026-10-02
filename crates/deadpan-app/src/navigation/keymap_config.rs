@@ -98,6 +98,9 @@ fn parse_stroke(token: &str, mode: KeyMode) -> Result<Stroke, String> {
     if token.is_empty() || token.len() > MAX_TOKEN_BYTES {
         return Err("Key tokens require 1 to 32 bytes".into());
     }
+    if token == "\"" {
+        return Ok(Stroke(Key::Quote, true));
+    }
     let (name, mut shift) = token
         .strip_prefix("Shift+")
         .map_or((token, false), |name| (name, true));
@@ -137,13 +140,12 @@ fn parse_stroke(token: &str, mode: KeyMode) -> Result<Stroke, String> {
 }
 
 /// These egui identities are symbols, independent of the Shift/Option keys a
-/// layout used to produce them. Minus stays modifier-sensitive: egui can report
-/// a shifted physical Minus when the logical underscore has no named key.
+/// layout used to produce them. Minus and Quote stay modifier-sensitive: egui
+/// has no separate identities for underscore or double quote.
 pub(super) fn logical_symbol(key: Key) -> bool {
     matches!(
         key,
         Key::Comma
-            | Key::Quote
             | Key::Colon
             | Key::Slash
             | Key::Questionmark

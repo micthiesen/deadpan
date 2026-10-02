@@ -31,6 +31,7 @@ pub(super) struct PlacementTarget {
     pub pane: Pane,
     pub selected_beat: Option<NodeId>,
     pub copied: Option<copied::Content>,
+    pub register: Option<char>,
     pub selection: edit_range::Selection,
     pub range: Option<deadpan_core::FrameRange>,
 }
@@ -146,7 +147,8 @@ impl DeadpanApp {
             source_cursor: self.source_cursor,
             pane: self.pane,
             selected_beat: self.selected_beat.clone(),
-            copied: self.copied.content().cloned(),
+            copied: self.copied.selected_content().cloned(),
+            register: self.copied.selected(),
             selection: self.edit_range.clone(),
             range: self.selected_edit_range(),
         })
@@ -229,8 +231,7 @@ impl DeadpanApp {
         });
     }
 
-    pub(super) fn copy_moment(&mut self) {
-        self.copied.supersede();
+    pub(super) fn copy_moment(&mut self, destination: Option<char>) {
         self.bindings.clear();
         self.reconcile_moment();
         if self.view != View::Source {
@@ -239,7 +240,7 @@ impl DeadpanApp {
         }
         match self.moment.copy() {
             Ok(copied) => {
-                self.copied.original_copied(copied);
+                self.copied.original_copied_to(destination, copied);
                 self.error = None;
                 self.message = Some(format!(
                     "Moment copied. Return to Your edit (:sequence): :splice previews placement; {} replaces an Edit selection or pastes beside a beat.",
@@ -262,10 +263,16 @@ impl DeadpanApp {
         before: bool,
         target: Result<PlacementTarget, String>,
     ) {
+        self.copied.clear_selection();
         let result = (|| {
             let target = target?;
             self.check_placement_target(&target)?;
             let copied = target.copied.as_ref().ok_or_else(|| {
+                if let Some(name) = target.register {
+                    return format!(
+                        "Register {name} is empty. Copy or cut into it first; no edit was made."
+                    );
+                }
                 format!(
                     "Copy a range first: {} in Original or Your edit.",
                     self.editor_copy_recipe()
@@ -383,7 +390,7 @@ impl DeadpanApp {
             ui.add(egui::Label::new(egui::RichText::new(&label).color(style::LAVENDER)).truncate())
                 .on_hover_text(label);
         } else if self.view == View::Sequence
-            && let Some(copied) = self.copied.content()
+            && let Some(copied) = self.copied.selected_content()
         {
             let replacing = self.selected_edit_range().is_some();
             let label = copied.label();
@@ -469,11 +476,11 @@ impl DeadpanApp {
                     }
                     ui.add_space(8.0);
                     if ui.add(egui::Button::new(format!("{}  {}", if self.moment.active { "Finish selection" } else { "Select moment" }, self.editor_key(EditorKey::Visual))).wrap()).clicked() { self.pane = Pane::Inspector; self.visual_moment(); }
-                    if ui.add_enabled(self.moment.range().is_some(), egui::Button::new(format!("Copy moment  {}", self.editor_key(EditorKey::Copy))).wrap().fill(style::SELECTED)).clicked() { self.pane = Pane::Inspector; self.copy_moment(); }
-                    if ui.add(egui::Button::new(format!("Cancel selection  {}", self.editor_key(EditorKey::Escape))).wrap()).clicked() { self.pane = Pane::Inspector; self.moment.cancel(); }
+                    if ui.add_enabled(self.moment.range().is_some(), egui::Button::new(format!("Copy moment  {}", self.editor_key(EditorKey::Copy))).wrap().fill(style::SELECTED)).clicked() { self.pane = Pane::Inspector; self.copy_slice(); }
+                    if ui.add(egui::Button::new(format!("Cancel selection  {}", self.editor_key(EditorKey::Escape))).wrap()).clicked() { self.pane = Pane::Inspector; self.moment.cancel(); self.cancel_register_choice(); }
                     ui.separator();
                     ui.weak("Your Original stays intact. Copying does not change the project.");
-                    if let Some(copied) = self.copied.content() {
+                    if let Some(copied) = self.copied.selected_content() {
                         ui.colored_label(style::LAVENDER, copied.label());
                         ui.weak(format!("Return to Your edit, choose a beat, then {} after or {} before. One paste, one undo.", self.editor_key(EditorKey::PasteAfter), self.editor_key(EditorKey::PasteBefore)));
                         if ui.button("Your edit  :sequence").clicked() {

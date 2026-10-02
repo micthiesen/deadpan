@@ -12,6 +12,8 @@ pub use editor_map::BindingId;
 pub mod gain;
 #[cfg(test)]
 mod mark_tests;
+#[cfg(test)]
+mod register_tests;
 pub mod retime;
 pub mod room_tone;
 pub mod slip;
@@ -99,6 +101,7 @@ pub enum Action {
     DeleteSelection,
     DeleteFrames(u32),
     CopyMoment,
+    SelectRegister(char),
     SetMark(char),
     JumpMark(char),
     DeleteMark(char),
@@ -236,7 +239,13 @@ impl Bindings {
         self.selection.unwrap_or(EditSelection::None)
     }
     pub fn mark_prefix(&self) -> Option<MarkPrefix> {
-        self.map.mark_prefix(&self.path, self.active_selection())
+        match self.family_prefix() {
+            Some(editor_map::PrefixKind::Mark(kind)) => Some(kind),
+            _ => None,
+        }
+    }
+    fn family_prefix(&self) -> Option<editor_map::PrefixKind> {
+        self.map.prefix(&self.path, self.active_selection())
     }
     pub fn trim_pending(&self) -> bool {
         self.count.is_none()
@@ -490,7 +499,7 @@ impl Bindings {
             });
         }
 
-        if self.mark_prefix().is_some()
+        if self.family_prefix().is_some()
             && modifiers != Modifiers::NONE
             && modifiers != Modifiers::SHIFT
         {
@@ -529,7 +538,7 @@ impl Bindings {
         // Existing continuations always win. Semantic root interrupts retain
         // their shipped cancellation behavior only when no continuation exists.
         if existing.is_none()
-            && self.mark_prefix().is_none()
+            && self.family_prefix().is_none()
             && let Some(rule) = self.map.rule(&[stroke], selection)
             && rule.interrupt
         {
@@ -542,26 +551,30 @@ impl Bindings {
             let start_only = self
                 .map
                 .has_descendant(&self.path, selection, BindingId::First);
-            let attempted_mark = self.map.mark_prefix(&[stroke], selection).is_some();
+            let attempted_family = self.map.prefix(&[stroke], selection).is_some();
             let root_id = self
                 .map
                 .rule(&[stroke], selection)
                 .map(editor_map::Rule::id);
-            let deliberate_refusal = attempted_mark
+            let deliberate_refusal = attempted_family
                 || matches!(
                     root_id,
                     Some(BindingId::GainUp | BindingId::GainDown | BindingId::PasteBefore)
                 );
-            let modified =
-                modifiers != Modifiers::NONE && !deliberate_refusal && self.mark_prefix().is_none();
+            let modified = modifiers != Modifiers::NONE
+                && !deliberate_refusal
+                && self.family_prefix().is_none();
             self.clear();
             return (had_pending && !modified && (!start_only || deliberate_refusal)).then_some(
                 Action::Invalid("Key does not continue the pending command; no action was taken."),
             );
         };
-        if node.prefix().is_some() && (self.count.is_some() || self.count_overflow) {
+        if let Some(prefix) = node.prefix()
+            && (self.count.is_some() || self.count_overflow)
+        {
+            let message = prefix.value.count_refusal();
             self.clear();
-            return Some(Action::Invalid("Use mark commands without a count."));
+            return Some(Action::Invalid(message));
         }
         if let Some(binding) = node.terminal() {
             // Root transport/group commands have always ignored pending counts,

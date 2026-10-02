@@ -60,6 +60,17 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         return Err("Extra arguments are not supported by this command.".into());
     }
     let action = match verb.as_str() {
+        "register" => {
+            let name = argument
+                .filter(|value| {
+                    value.len() == 1
+                        && (value.as_bytes()[0].is_ascii_alphabetic() || *value == "\"")
+                })
+                .ok_or("Use :register a–z or :register \" to select the unnamed register.")?;
+            return Ok(Entry::Action(Action::SelectRegister(
+                char::from(name.as_bytes()[0]).to_ascii_lowercase(),
+            )));
+        }
         "mark" | "jump" | "unmark" => {
             let letter = argument
                 .filter(|value| value.len() == 1 && value.as_bytes()[0].is_ascii_alphabetic())
@@ -155,7 +166,8 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         "open" => Action::Open,
         "import" => Action::Import,
         "render" => Action::Render,
-        "source" | "sequence" | "help" | "renders" | "splice" | "room-tone" | "hold-silence"
+        "source" | "sequence" | "help" | "registers" | "renders" | "splice" | "room-tone"
+        | "hold-silence"
             if argument.is_none() =>
         {
             return Ok(match verb.as_str() {
@@ -168,7 +180,8 @@ pub fn parse(input: &str) -> Result<Entry, String> {
                 _ => Entry::Help,
             });
         }
-        "source" | "sequence" | "help" | "renders" | "splice" | "room-tone" | "hold-silence" => {
+        "source" | "sequence" | "help" | "registers" | "renders" | "splice" | "room-tone"
+        | "hold-silence" => {
             return Err("This command takes no arguments.".into());
         }
         _ => {
@@ -232,6 +245,36 @@ fn monitor(argument: Option<&str>) -> Result<u16, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn register_commands_select_only_one_ascii_letter_or_the_unnamed_slot() {
+        for name in 'a'..='z' {
+            for entered in [name, name.to_ascii_uppercase()] {
+                assert_eq!(
+                    parse(&format!(":register {entered}")),
+                    Ok(Entry::Action(Action::SelectRegister(name)))
+                );
+            }
+        }
+        assert_eq!(
+            parse(" :REGISTER \" "),
+            Ok(Entry::Action(Action::SelectRegister('"')))
+        );
+        assert_eq!(parse(":registers"), Ok(Entry::Help));
+        for input in [
+            "register",
+            "register ab",
+            "register a b",
+            "register 0",
+            "register 'a",
+            "register é",
+            "register 🐈",
+            "registers a",
+            "register a\"",
+        ] {
+            assert!(parse(input).is_err(), "{input}");
+        }
+    }
 
     #[test]
     fn frame_cut_command_requires_positive_typed_frames() {

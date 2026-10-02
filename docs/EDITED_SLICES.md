@@ -166,6 +166,11 @@ revision identities; they cannot make an old destination request current again.
 
 ## Native register and previews
 
+[Named session registers](NAMED_REGISTERS.md) extend the default copy with a–z
+slots. They use the same immutable captures, historical admission and saved-cut
+receipt path described below. A successful named write also updates the default
+copy; paste and placement retain the selected slot's exact content at entry.
+
 ### Frame cuts at the cursor
 
 `x` cuts one linked picture and sound frame at the retained Edit cursor;

@@ -11,6 +11,7 @@ pub(super) struct CommandTarget {
     scope: SequenceScope,
     parent: NodeId,
     edit: ProjectEdit,
+    register: Option<char>,
 }
 
 impl DeadpanApp {
@@ -47,6 +48,7 @@ impl DeadpanApp {
             scope,
             parent,
             edit,
+            register: self.copied.selected(),
         })
     }
 
@@ -54,6 +56,7 @@ impl DeadpanApp {
         self.cancel_repeats("deletion was requested");
         self.bindings.clear();
         self.copied.supersede();
+        self.copied.clear_selection();
         let result = captured.and_then(|target| {
             let workspace = self
                 .workspace
@@ -77,26 +80,29 @@ impl DeadpanApp {
                 }
                 _ => return Err("The captured command is not a picture cut.".into()),
             };
-            Ok(crate::project::slice::CaptureRequest {
-                id: crate::project::slice::CopyId {
-                    session: target.base.session,
-                    project: target.base.document.project_id().clone(),
-                    source_revision: target.base.document.revision_id().clone(),
-                    request: 0,
+            Ok((
+                target.register,
+                crate::project::slice::CaptureRequest {
+                    id: crate::project::slice::CopyId {
+                        session: target.base.session,
+                        project: target.base.document.project_id().clone(),
+                        source_revision: target.base.document.revision_id().clone(),
+                        request: 0,
+                    },
+                    scope: target.scope,
+                    parent: target.parent,
+                    selection,
                 },
-                scope: target.scope,
-                parent: target.parent,
-                selection,
-            })
+            ))
         });
         match result {
-            Ok(mut request) => {
+            Ok((register, mut request)) => {
                 let Some(serial) = self.next_serial() else {
                     return;
                 };
                 request.id.request = serial;
                 if self.submit(ProjectRequest::CutEditSlice(request.clone())) {
-                    self.copied.expect_cut(request);
+                    self.copied.expect_cut_to(register, request);
                     self.message = Some("Saving cut and copy…".into());
                 }
             }

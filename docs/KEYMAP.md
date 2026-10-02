@@ -39,9 +39,12 @@ can use its symbol. Digits belong to the count grammar and cannot be path steps.
 Control, Command and Option chords remain reserved. Escape, Tab and Shift+Tab
 keep their native editor roles. Actions cannot be unbound in this format.
 
-`mark.set` and `mark.jump` configure the prefix before a single `a–z` or `A–Z`
-argument. These families expand before ambiguity and resource checks, including
-the final argument's path length. No prefix timer executes a partial command.
+`mark.set`, `mark.jump` and `register.select` configure the prefix before a single
+letter argument. Register names are `a–z`; uppercase selects the same lowercase
+slot, and a double quote selects the unnamed register. Marks keep distinct
+`a–z` and `A–Z` names. These families expand before ambiguity and resource checks,
+including the final argument's path length. No prefix timer executes a partial
+command. The double quote token (`"\""` in JSON) and `Shift+Quote` are equivalent.
 
 | Action IDs | Meaning |
 | --- | --- |
@@ -59,6 +62,7 @@ the final argument's path length. No prefix timer executes a partial command.
 | `gain.up`, `gain.down` | Gain steps |
 | `camera`, `punch_in`, `creep`, `trim` | Enter a draft or apply the framing action |
 | `mark.set`, `mark.jump` | Letter-mark prefix families |
+| `register.select` | Select the register for the next copy, picture cut or paste |
 | `command`, `search`, `help` | Native command/search entry and Keys |
 | `pane.next`, `pane.previous`, `escape` | Fixed paths; included in the semantic catalog |
 
@@ -68,6 +72,11 @@ One `key_mode` applies to the complete map. `logical` follows the delivered egui
 key identity. The pinned egui-winit adapter falls back to a physical identity
 when a character or dead key has no named egui key. This is a known limit; it
 does not establish strict logical-key behavior for every layout.
+
+Egui uses `Quote` for both apostrophe and double quote, so Quote preserves Shift
+in both key modes: plain apostrophe opens mark jump and Shift+Quote opens register
+selection. Option+Quote remains with native input. This fallback does not prove
+quote behavior on every physical layout.
 
 `physical` requires the native physical key field and never substitutes a
 logical key when it is absent. It names keyboard positions. Physical defaults
@@ -98,8 +107,9 @@ Mark names resolve before ordinary editor actions. `mx`, `'d` and uppercase
 names remain marks. Escape, Tab and native menu actions retain their defined
 interrupt behavior. A valid continuation takes priority over a root action;
 otherwise transport and group navigation interrupt ordinary pending paths.
-A pending mark requires a letter. Invalid suffixes clear their
-prefix without executing the suffix as a new root command.
+A pending mark requires a letter. A pending register accepts a letter or double
+quote. Invalid suffixes clear their prefix without executing the suffix as a new
+root command. Register selection never captures a mark position.
 
 The app captures Trim's exact target at the first pending ancestor of a Trim
 path, or immediately before dispatch for a direct key. Mark capture starts
@@ -107,6 +117,14 @@ when the complete letter-family prefix is entered. Captured absence is a real
 result: a delayed service reply cannot supply a target missing on entry.
 Choosing another branch discards that capture. Pending paths retain their
 entry Normal/Visual mode. Compilation and help never mutate a project.
+
+`"a` selects session register `a` for the next yank, picture cut, paste or
+`:splice`; `""` selects the unnamed register. `:register a` and `:register "`
+are command aliases, and `:registers` opens the register inventory in Keys.
+Selection is one-shot and Escape cancels it. A successful named write also
+updates the unnamed copy. Register selection rejects all preceding counts;
+put a supported count after the name, such as `"a12x`. Session registers do not
+yet persist between app launches or hold macros.
 
 Entering Command or Search gives the new field only the ordered input suffix
 after its opener. The opener's immediate printable companion text is consumed;
@@ -174,6 +192,6 @@ retains the original held-key regression.
 Current configuration covers Normal and timeline Visual paths and their teaching.
 The remaining mode routers, strict logical provenance and physical layout/IME
 qualification remain open. Settings are file-based and require a restart; a
-native settings editor and live map replacement are not implemented. Named
-registers, semantic dot-repeat and atomic bounded macros remain separate DP-06
+native settings editor and live map replacement are not implemented. Register
+persistence, semantic dot-repeat and atomic bounded macros remain separate DP-06
 work. No requirement or product gate is complete on the basis of this increment.

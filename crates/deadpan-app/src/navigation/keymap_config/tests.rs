@@ -187,6 +187,102 @@ fn expanded_mark_paths_reject_collisions_and_excess_length() {
 }
 
 #[test]
+fn register_family_expands_custom_paths_and_keeps_mark_capture_separate() {
+    let mut map = configured(serde_json::json!([
+        {"action":"register.select","keys":[["F2","F3","F4","F5","F6","F7"]]},
+        {"action":"mark.set","keys":[["q","m"]]},
+        {"action":"hold","keys":[["q","b"]]}
+    ]));
+    let path = [Key::F2, Key::F3, Key::F4, Key::F5, Key::F6, Key::F7];
+    for (index, key) in path.into_iter().enumerate() {
+        assert_eq!(press(&mut map, key), None);
+        assert_eq!(map.mark_prefix(), None);
+        assert!(
+            map.map.prefix_paths().contains(
+                &path[..=index]
+                    .iter()
+                    .map(|key| Stroke(*key, false))
+                    .collect::<Vec<_>>()
+            )
+        );
+    }
+    assert_eq!(map.pending(), "F2 F3 F4 F5 F6 F7");
+    assert!(map.pending_hint().unwrap().contains("unnamed register"));
+    assert_eq!(
+        map.key(Key::A, Modifiers::SHIFT, false, false),
+        Some(Action::SelectRegister('a'))
+    );
+    for key in path {
+        press(&mut map, key);
+    }
+    assert_eq!(
+        map.key(Key::Quote, Modifiers::SHIFT, false, false),
+        Some(Action::SelectRegister('"'))
+    );
+    assert_eq!(map.key(Key::Quote, Modifiers::SHIFT, false, false), None);
+    assert!(
+        map.pending().is_empty(),
+        "replacement removes the shipped prefix"
+    );
+    press(&mut map, Key::Q);
+    press(&mut map, Key::M);
+    assert_eq!(map.mark_prefix(), Some(MarkPrefix::Set));
+    assert_eq!(press(&mut map, Key::A), Some(Action::SetMark('a')));
+    press(&mut map, Key::Q);
+    assert!(matches!(
+        press(&mut map, Key::B),
+        Some(Action::Edit(BeatEdit::InsertHold(_)))
+    ));
+    let report = crate::navigation::shortcut_audit::audit_bindings(&map).unwrap();
+    assert!(report.passed(), "{report:#?}");
+}
+
+#[test]
+fn register_prefix_rejects_counts_collisions_and_overlong_expansion() {
+    let template = configured(serde_json::json!([
+        {"action":"register.select","keys":[["F2","F3"]]}
+    ]));
+    for digit in [Key::Num0, Key::Num1, Key::Num3] {
+        let mut map = template.clone();
+        press(&mut map, digit);
+        press(&mut map, Key::F2);
+        assert_eq!(
+            map.pending_hint().as_deref(),
+            Some("Select a register without a count; put the count after its name.")
+        );
+        assert!(matches!(press(&mut map, Key::F3), Some(Action::Invalid(_))));
+        assert!(map.pending().is_empty());
+    }
+    for entries in [
+        serde_json::json!([{"action":"register.select","keys":[vec!["F2";16]]}]),
+        serde_json::json!([{"action":"register.select","keys":[["a"]]},{"action":"trim","keys":[["a","z"]]}]),
+        serde_json::json!([{"action":"register.select","keys":[["a"]]},{"action":"trim","keys":[["a","\""]]}]),
+        serde_json::json!([{"action":"register.select","keys":[["a"]]},{"action":"mark.set","keys":[["a","b"]]}]),
+    ] {
+        let bytes = serde_json::to_vec(
+            &serde_json::json!({"version":1,"key_mode":"logical","bindings":entries}),
+        )
+        .unwrap();
+        assert!(Bindings::from_json(&bytes).is_err());
+    }
+}
+
+#[test]
+fn double_quote_symbol_and_shift_quote_name_configure_the_same_path() {
+    for mode in ["logical", "physical"] {
+        for token in ["\"", "Shift+Quote"] {
+            let bytes = serde_json::to_vec(&serde_json::json!({"version":1,"key_mode":mode,"bindings":[{"action":"register.select","keys":[[token]]}]})).unwrap();
+            let mut map = Bindings::from_json(&bytes).unwrap();
+            assert_eq!(map.key_label(BindingId::RegisterSelect), "\"");
+            assert_eq!(map.key(Key::Quote, Modifiers::SHIFT, false, false), None);
+            assert_eq!(press(&mut map, Key::X), Some(Action::SelectRegister('x')));
+            assert_eq!(press(&mut map, Key::Quote), None);
+            assert_eq!(map.mark_prefix(), Some(MarkPrefix::Jump));
+        }
+    }
+}
+
+#[test]
 fn physical_mode_uses_positions_without_a_logical_fallback() {
     let mut map =
         Bindings::from_json(br#"{"version":1,"key_mode":"physical","bindings":[]}"#).unwrap();

@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/tmp/deadpan-named-registers-20261002/DeadpanRegisterVerifiedQA.app/Contents/MacOS/deadpan-app",
+    "--project",
+    "/tmp/deadpan-named-registers-20261002/native/cfr-bframes.deadpan"
+  ],
+  "started": "2026-10-02T07:21:24.621043+00:00",
+  "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+  "diff_sha256": "eb71725f52f3332de52791783218737793c3e1d47ac212ed8066014cc108e65f",
+  "source_manifest_sha256": "00f8a915f9d240f968d4c9676edf7c5e07a387ed8c86dc9edda23c98d408bc4e",
+  "pid": 46418,
+  "exit_code": 0,
+  "seconds": 26.12505141692236,
+  "source_manifest_after_sha256": "00f8a915f9d240f968d4c9676edf7c5e07a387ed8c86dc9edda23c98d408bc4e",
+  "source_unchanged": true,
+  "gate_exit_code": 0
+}

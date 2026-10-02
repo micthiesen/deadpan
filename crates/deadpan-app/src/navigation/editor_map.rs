@@ -10,6 +10,9 @@ pub(super) struct Stroke(pub Key, pub bool);
 
 impl Stroke {
     pub fn label(self) -> String {
+        if self == Self(Key::Quote, true) {
+            return "\"".into();
+        }
         if let Some(letter) = mark_letter(self.0, self.1) {
             return letter.to_string();
         }
@@ -70,6 +73,7 @@ pub enum BindingId {
     Trim,
     MarkSet,
     MarkJump,
+    RegisterSelect,
     Command,
     Search,
     Help,
@@ -79,7 +83,7 @@ pub enum BindingId {
 }
 
 impl BindingId {
-    pub const ALL: [Self; 37] = [
+    pub const ALL: [Self; 38] = [
         Self::FramePrevious,
         Self::FrameNext,
         Self::BeatPrevious,
@@ -111,6 +115,7 @@ impl BindingId {
         Self::Trim,
         Self::MarkSet,
         Self::MarkJump,
+        Self::RegisterSelect,
         Self::Command,
         Self::Search,
         Self::Help,
@@ -151,6 +156,7 @@ impl BindingId {
             Self::Trim => "trim",
             Self::MarkSet => "mark.set",
             Self::MarkJump => "mark.jump",
+            Self::RegisterSelect => "register.select",
             Self::Command => "command",
             Self::Search => "search",
             Self::Help => "help",
@@ -288,6 +294,7 @@ impl Rule {
             Action::Trim => I::Trim,
             Action::SetMark(_) => I::MarkSet,
             Action::JumpMark(_) => I::MarkJump,
+            Action::SelectRegister(_) => I::RegisterSelect,
             Action::Command => I::Command,
             Action::Search => I::Search,
             Action::Help => I::Help,
@@ -299,7 +306,39 @@ impl Rule {
     }
 }
 
-type EditorTrie = Trie<Stroke, Rule, MarkPrefix>;
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum PrefixKind {
+    Mark(MarkPrefix),
+    Register,
+}
+
+impl PrefixKind {
+    fn for_binding(id: BindingId) -> Option<Self> {
+        match id {
+            BindingId::MarkSet => Some(Self::Mark(MarkPrefix::Set)),
+            BindingId::MarkJump => Some(Self::Mark(MarkPrefix::Jump)),
+            BindingId::RegisterSelect => Some(Self::Register),
+            _ => None,
+        }
+    }
+
+    pub fn count_refusal(self) -> &'static str {
+        match self {
+            Self::Mark(_) => "Use mark commands without a count.",
+            Self::Register => "Select a register without a count; put the count after its name.",
+        }
+    }
+
+    fn letter_action(self, letter: char) -> Action {
+        match self {
+            Self::Mark(MarkPrefix::Set) => Action::SetMark(letter),
+            Self::Mark(MarkPrefix::Jump) => Action::JumpMark(letter),
+            Self::Register => Action::SelectRegister(letter.to_ascii_lowercase()),
+        }
+    }
+}
+
+type EditorTrie = Trie<Stroke, Rule, PrefixKind>;
 
 pub(super) struct Definition {
     pub id: BindingId,
@@ -338,7 +377,7 @@ impl Compiled {
         for binding in shipped(false).into_iter().chain(shipped(true)) {
             let id = binding.value.id();
             let mut path = binding.path;
-            if matches!(id, BindingId::MarkSet | BindingId::MarkJump) {
+            if PrefixKind::for_binding(id).is_some() {
                 path.pop();
             }
             if mode == KeyMode::Physical {
@@ -402,7 +441,7 @@ impl Compiled {
             .terminal()
             .map(|binding| &binding.value)
     }
-    pub fn mark_prefix(&self, path: &[Stroke], selection: EditSelection) -> Option<MarkPrefix> {
+    pub fn prefix(&self, path: &[Stroke], selection: EditSelection) -> Option<PrefixKind> {
         self.map(selection)
             .resolve(path)?
             .prefix()
@@ -478,10 +517,18 @@ impl Compiled {
     ) -> Option<String> {
         let node = self.map(selection).resolve(path)?;
         if let Some(prefix) = node.prefix() {
+            if prefix.value == PrefixKind::Register {
+                return Some(if compact {
+                    "a–z / A–Z · \" · Esc".into()
+                } else {
+                    "a–z / A–Z selects a register · \" selects the unnamed register · Esc cancels"
+                        .into()
+                });
+            }
             if compact {
                 return Some("a–z / A–Z · Esc".into());
             }
-            let verb = if prefix.value == MarkPrefix::Set {
+            let verb = if prefix.value == PrefixKind::Mark(MarkPrefix::Set) {
                 "saves this position"
             } else {
                 "jumps to that mark"
@@ -554,12 +601,7 @@ fn compile_mode(definitions: &[Definition], visual: bool) -> Result<EditorTrie, 
         .filter(|definition| enabled(definition.id, visual))
     {
         for path in &definition.paths {
-            if matches!(definition.id, BindingId::MarkSet | BindingId::MarkJump) {
-                let kind = if definition.id == BindingId::MarkSet {
-                    MarkPrefix::Set
-                } else {
-                    MarkPrefix::Jump
-                };
+            if let Some(kind) = PrefixKind::for_binding(definition.id) {
                 prefixes.push(Prefix {
                     path: path.clone(),
                     label: path_label(path),
@@ -571,17 +613,24 @@ fn compile_mode(definitions: &[Definition], visual: bool) -> Result<EditorTrie, 
                         let mut expanded = path.clone();
                         expanded.push(Stroke(key, shift));
                         let mut rule = definition.rule;
-                        rule.action = if kind == MarkPrefix::Set {
-                            Action::SetMark(letter)
-                        } else {
-                            Action::JumpMark(letter)
-                        };
+                        rule.action = kind.letter_action(letter);
                         bindings.push(Binding {
                             label: path_label(&expanded),
                             path: expanded,
                             value: rule,
                         });
                     }
+                }
+                if kind == PrefixKind::Register {
+                    let mut expanded = path.clone();
+                    expanded.push(Stroke(Key::Quote, true));
+                    let mut rule = definition.rule;
+                    rule.action = Action::SelectRegister('"');
+                    bindings.push(Binding {
+                        label: path_label(&expanded),
+                        path: expanded,
+                        value: rule,
+                    });
                 }
             } else {
                 let mut rule = definition.rule;
@@ -609,7 +658,7 @@ fn compile_mode(definitions: &[Definition], visual: bool) -> Result<EditorTrie, 
             }
         }
     }
-    // Bound structural branches as well as explicit mark-family annotations.
+    // Bound structural branches as well as explicit argument-family annotations.
     // This also bounds startup conflict auditing and generated pending hints.
     let mut branches: Vec<Vec<Stroke>> = Vec::new();
     for binding in &bindings {
@@ -893,6 +942,14 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
             }
         }
     }
+
+    add(
+        &[Stroke(Key::Quote, true), plain(Key::A)],
+        Action::SelectRegister('a'),
+        C::Refuse(PrefixKind::Register.count_refusal()),
+        "select register",
+        false,
+    );
 
     bindings
 }

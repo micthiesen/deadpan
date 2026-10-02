@@ -1,0 +1,7 @@
+{
+  "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+  "final_source_manifest_sha256": "00f8a915f9d240f968d4c9676edf7c5e07a387ed8c86dc9edda23c98d408bc4e",
+  "final_binary_sha256": "c04d111ccc04c2612a345c1fe895e636d551aeb7f3bcee0a8659358dfc94954a",
+  "pre_feedback_binary_sha256": "d6e485705d4fe5c0e8496bbbda7b36a17b6508ab0d8866122f8555f7aa2d73a4",
+  "scope": "App only. Core schema 43 and database 52 unchanged. Prior full workspace evidence retained; backend tests not repeated."
+}

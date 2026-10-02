@@ -162,6 +162,8 @@ pub struct DeadpanApp {
     copied: copied::Register,
     edit_range: edit_range::Selection,
     placement_command_target: Option<Result<moment::PlacementTarget, String>>,
+    copy_command_register: Option<(u64, char)>,
+    register_command_cancelled: bool,
     delete_command_target: Option<Result<delete::CommandTarget, String>>,
     frame_delete_command_target: Option<Result<delete::FrameTarget, String>>,
     marks: marks::State,
@@ -294,6 +296,8 @@ impl DeadpanApp {
             copied: copied::Register::default(),
             edit_range: edit_range::Selection::default(),
             placement_command_target: None,
+            copy_command_register: None,
+            register_command_cancelled: false,
             delete_command_target: None,
             frame_delete_command_target: None,
             marks: marks::State::default(),
@@ -1213,6 +1217,12 @@ impl DeadpanApp {
     fn open_command(&mut self, command: String, context: &egui::Context) {
         self.marks.command = Some(self.capture_mark());
         self.placement_command_target = Some(self.capture_placement_target());
+        self.copy_command_register = self.copied.selected().and_then(|name| {
+            self.workspace
+                .as_ref()
+                .map(|workspace| (workspace.session, name))
+        });
+        self.register_command_cancelled = false;
         self.delete_command_target = Some(self.capture_delete_target());
         self.frame_delete_command_target = Some(self.capture_frame_delete_target());
         self.gain_command_target = Some(self.capture_gain_target());
@@ -1440,6 +1450,15 @@ impl DeadpanApp {
                 | Action::DeleteFrames(_)
                 | Action::CopyMoment
                 | Action::PasteMoment { .. } => {
+                    if matches!(
+                        action,
+                        Action::CopyMoment
+                            | Action::DeleteSelection
+                            | Action::DeleteFrames(_)
+                            | Action::PasteMoment { .. }
+                    ) {
+                        self.copied.clear_selection();
+                    }
                     self.bindings.clear();
                     self.error = Some("Focus Beats to edit the video structure. Placed sounds support frame nudges, exact position, gain and removal.".into());
                     return;
@@ -1448,6 +1467,16 @@ impl DeadpanApp {
             }
         }
         if self.sound_focused() && !sound_action_allowed(action) {
+            if matches!(
+                action,
+                Action::CopyMoment
+                    | Action::DeleteSelection
+                    | Action::DeleteFrames(_)
+                    | Action::PasteMoment { .. }
+                    | Action::Edit(BeatEdit::Delete)
+            ) {
+                self.copied.clear_selection();
+            }
             self.bindings.clear();
             self.message = Some(
                 "Choose Original or Your edit for editing commands. Sounds can be auditioned here."
@@ -1496,6 +1525,7 @@ impl DeadpanApp {
                 }
             }
             Action::CopyMoment => self.copy_slice(),
+            Action::SelectRegister(name) => self.select_register(name),
             Action::DeleteSelection => self.delete_captured(self.capture_delete_target()),
             Action::DeleteFrames(count) => {
                 self.delete_frames_captured(self.capture_frame_delete_target(), count)
@@ -1652,6 +1682,7 @@ impl DeadpanApp {
                 self.bindings.clear();
             }
             Action::Escape => {
+                self.cancel_register_choice();
                 if !self.sound_focused() {
                     self.moment.cancel();
                     self.edit_range.clear();
@@ -1680,6 +1711,31 @@ impl DeadpanApp {
         let mut events = self
             .text_entry_gate
             .filter(context.input(|input| input.events.clone()));
+        // Register choice is one-shot editor intent. Observe cancellation even
+        // when a native field, help or preview owns delivery of the same key.
+        let composing = self.ime_composing
+            || events
+                .iter()
+                .any(|event| matches!(event, egui::Event::Ime(_)));
+        if events.iter().any(|event| {
+            matches!(event, egui::Event::WindowFocused(false))
+                || (!composing
+                    && matches!(
+                        event,
+                        egui::Event::Key {
+                            key: egui::Key::Escape,
+                            modifiers: egui::Modifiers::NONE,
+                            pressed: true,
+                            repeat: false,
+                            ..
+                        }
+                    ))
+        }) {
+            if self.command_open && self.copy_command_register.is_some() {
+                self.register_command_cancelled = true;
+            }
+            self.cancel_register_choice();
+        }
         context.input_mut(|input| input.events.clone_from(&events));
         if !self.bindings.trim_pending() {
             self.trim_prefix_target = None;
@@ -1769,6 +1825,7 @@ impl DeadpanApp {
                 }
             };
             if matches!(event, egui::Event::WindowFocused(false)) {
+                self.cancel_register_choice();
                 self.bindings.clear();
                 self.trim_prefix_target = None;
                 self.marks.prefix = None;
@@ -1995,12 +2052,53 @@ impl DeadpanApp {
         let trim_target = self.trim_command_target.take();
         self.trim_prefix_target = None;
         let placement_target = self.placement_command_target.take();
+        let copy_register = self.copy_command_register.take();
+        let register_cancelled = std::mem::take(&mut self.register_command_cancelled)
+            || copy_register.is_some_and(|(session, _)| {
+                self.workspace
+                    .as_ref()
+                    .is_none_or(|workspace| workspace.session != session)
+            });
         let delete_target = self.delete_command_target.take();
         let frame_delete_target = self.frame_delete_command_target.take();
         let mark_target = self.marks.command.take();
         self.bindings.clear();
         self.command_open = false;
         self.command_focus_pending = false;
+        if register_cancelled
+            && matches!(
+                command,
+                Ok(navigation::command::Entry::Splice
+                    | navigation::command::Entry::Action(
+                        Action::CopyMoment
+                            | Action::DeleteFrames(_)
+                            | Action::Edit(BeatEdit::Delete)
+                            | Action::PasteMoment { .. }
+                    ))
+            )
+        {
+            if matches!(
+                command,
+                Ok(navigation::command::Entry::Action(
+                    Action::CopyMoment | Action::DeleteFrames(_) | Action::Edit(BeatEdit::Delete)
+                ))
+            ) {
+                self.copied.supersede();
+            }
+            self.error = Some(
+                "Register choice was cancelled. Start the command again; no edit was made.".into(),
+            );
+            return;
+        }
+        if matches!(
+            command,
+            Ok(navigation::command::Entry::Action(
+                Action::Edit(BeatEdit::Delete) | Action::DeleteFrames(_)
+            ))
+        ) {
+            self.copied.supersede();
+            self.copied.clear_selection();
+        }
         if matches!(
             command,
             Ok(navigation::command::Entry::Action(Action::Edit(
@@ -2044,6 +2142,12 @@ impl DeadpanApp {
             }
         }
         match command {
+            Ok(navigation::command::Entry::Action(Action::CopyMoment)) => {
+                self.copied
+                    .select(copy_register.map_or('"', |(_, name)| name))
+                    .expect("captured register is validated");
+                self.action(Action::CopyMoment, context);
+            }
             Ok(navigation::command::Entry::Action(
                 action @ (Action::SetMark(_) | Action::JumpMark(_) | Action::DeleteMark(_)),
             )) => {
@@ -2124,7 +2228,17 @@ impl DeadpanApp {
                     self.request_picture(true);
                 }
             }
-            Ok(navigation::command::Entry::Help) => self.help_open = true,
+            Ok(navigation::command::Entry::Help) => {
+                if self
+                    .command
+                    .trim()
+                    .trim_start_matches(':')
+                    .eq_ignore_ascii_case("registers")
+                {
+                    self.help_scroll = Default::default();
+                }
+                self.help_open = true;
+            }
             Ok(navigation::command::Entry::Renders) => self.render.history.requested = true,
             Ok(navigation::command::Entry::Splice) => self.open_captured_splice(
                 context,
@@ -2393,6 +2507,9 @@ impl DeadpanApp {
                     } else { ui.weak("No beat selected"); }
                 } else { ui.weak("Unchanged source"); }
                 ui.colored_label(style::LAVENDER, format!("Focus: {}", if self.pane == Pane::Sources && self.focused_workflow() { "Original / sounds" } else { pane_name(self.pane) }));
+                if let Some(label) = self.register_status() {
+                    ui.colored_label(style::LAVENDER, label);
+                }
                 if !self.command_open && !self.sound_focused() && self.pane != Pane::Sounds && !self.event_focused()
                     && ui.add(egui::Button::new(format!("Marks  {}", self.editor_pair(EditorKey::MarkSet, EditorKey::MarkJump, " / "))).small().wrap()).on_hover_text(format!("{} + letter saves this position; {} + letter returns. Browse with :marks.", self.editor_key(EditorKey::MarkSet), self.editor_key(EditorKey::MarkJump))).clicked()
                 {
@@ -2453,6 +2570,7 @@ impl DeadpanApp {
                         self.add_editor_pair_hint(&mut hints, EditorKey::BeatNext, EditorKey::BeatPrevious, " ", "beat");
                         self.add_editor_hint(&mut hints, EditorKey::Visual, if self.edit_range.active { "finish range" } else { "select range" });
                         self.add_editor_hint(&mut hints, EditorKey::Copy, if self.copied.is_pending() { "copy pending…" } else if self.edit_selection() == navigation::EditSelection::None { "copy beat" } else { "copy range" });
+                        self.add_editor_hint(&mut hints, EditorKey::RegisterSelect, "register");
                         if self.selected_group() { self.add_editor_hint(&mut hints, EditorKey::EnterGroup, "open group"); }
                         if !self.sequence_scope.groups().is_empty() { self.add_editor_hint(&mut hints, EditorKey::LeaveGroup, "parent"); }
                         self.add_editor_hint(&mut hints, EditorKey::Split, "split");
@@ -2469,13 +2587,14 @@ impl DeadpanApp {
                                 self.add_editor_hint(&mut hints, EditorKey::CutBeat, "cut beat");
                             }
                         };
-                        if self.copied.content().is_some() { self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", if self.selected_edit_range().is_some() { "replace range" } else { "paste after / before" }); }
+                        if self.copied.selected_content().is_some() { self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", if self.selected_edit_range().is_some() { "replace range" } else { "paste after / before" }); }
                         self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
                     } else {
                         self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " ", "frame");
                         if self.focused_workflow() && !self.beat_rows.is_empty() { self.add_editor_pair_hint(&mut hints, EditorKey::BeatNext, EditorKey::BeatPrevious, " ", "edit beat"); }
                         self.add_editor_hint(&mut hints, EditorKey::Visual, if self.moment.active { "finish selection" } else { "select moment" });
                         self.add_editor_hint(&mut hints, EditorKey::Copy, "copy moment");
+                        self.add_editor_hint(&mut hints, EditorKey::RegisterSelect, "register");
                         hints.push((":sequence".into(), if self.focused_workflow() { "Your edit" } else { "Sequence" }.into()));
                         if self.workspace.is_some() && self.selected_source.is_some() { self.add_editor_hint(&mut hints, EditorKey::Insert, if self.focused_workflow() { "reuse all" } else { "insert source" }); }
                     }
@@ -3115,7 +3234,7 @@ impl DeadpanApp {
                 76.0
             } else {
                 let other_controls = if self.view == View::Sequence {
-                    if self.copied.content().is_some() {
+                    if self.copied.selected_content().is_some() {
                         if compact_sounds_heading { 68.0 } else { 92.0 }
                     } else {
                         54.0
@@ -3340,8 +3459,23 @@ impl DeadpanApp {
         let bindings = self.bindings.clone();
         let key = |id| bindings.key_labels(id);
         let keymap_status = self.keymap_status().to_owned();
+        let registers: Vec<_> = self
+            .copied
+            .entries()
+            .map(|(name, content)| (name, content.label()))
+            .collect();
         self.help_scroll.show(context, &mut self.help_open, |ui| {
                     ui.label(&keymap_status);
+                    ui.label(egui::RichText::new("REGISTERS").strong().color(style::LAVENDER));
+                    help_binding(ui, &format!("{} + letter · :register a", key(EditorKey::RegisterSelect)), "Choose a–z for the next copy, picture cut, paste or :splice. Uppercase chooses the same slot. Named writes also update the default copy. Esc cancels the choice.");
+                    help_binding(ui, &format!("{} + \" · :register \"", key(EditorKey::RegisterSelect)), "Use the default copy. :registers opens this list. Registers last for this open project session; closing the project clears them.");
+                    if registers.is_empty() {
+                        ui.weak("All registers are empty.");
+                    }
+                    for (name, content) in &registers {
+                        help_binding(ui, &format!("{} + {name}", key(EditorKey::RegisterSelect)), content);
+                    }
+                    ui.separator();
                     ui.label("New starts with your full video. Its Original stays intact while Your edit changes.");
                     ui.label(egui::RichText::new("START & MOVE").strong().color(style::LAVENDER));
                     for (key, description) in [
@@ -3414,7 +3548,7 @@ impl DeadpanApp {
                     ] { help_binding(ui, &key, &description); }
                     ui.separator();
                     ui.weak(format!("Original browsing never changes it. Your edit commands affect the selected beat in the displayed group and its linked picture and sound. Counts precede operators, such as {}; the visible PENDING badge waits without a timer.", bindings.counted_label(EditorKey::Repeat, 3)));
-                    ui.weak(format!("{} auditions the focused catalog sound, Original, or full edit. In the catalog, {} selects a sound and {} loops its complete measured audio. Catalog audition keeps the picture and both editor cursors in place. Leaving the catalog or choosing another sound stops it. Elsewhere {} loops the selected Original moment, Edit range or edited beat with context. Playback has edge fades and a safety limiter; pause before changing Monitor volume. Picture-only or sound-only range cuts and placement, named registers, Repeat/Retime descendant navigation and insertion, moving routed sounds, voice effects, the full mix, and AI generation in the app remain unavailable. Render supports the current SDR picture and audio path; unsupported content fails explicitly. Headless commands can use this open project. Use :renders for saved renders and recovery. HDR output and full mastering remain unavailable.", key(EditorKey::Playback), key_labels::aliases_pair(&bindings, EditorKey::BeatNext, EditorKey::BeatPrevious, "/"), key(EditorKey::Audition), key(EditorKey::Audition)));
+                    ui.weak(format!("{} auditions the focused catalog sound, Original, or full edit. In the catalog, {} selects a sound and {} loops its complete measured audio. Catalog audition keeps the picture and both editor cursors in place. Leaving the catalog or choosing another sound stops it. Elsewhere {} loops the selected Original moment, Edit range or edited beat with context. Playback has edge fades and a safety limiter; pause before changing Monitor volume. Picture-only or sound-only range cuts and placement, persistent registers, Repeat/Retime descendant navigation and insertion, moving routed sounds, voice effects, the full mix, and AI generation in the app remain unavailable. Render supports the current SDR picture and audio path; unsupported content fails explicitly. Headless commands can use this open project. Use :renders for saved renders and recovery. HDR output and full mastering remain unavailable.", key(EditorKey::Playback), key_labels::aliases_pair(&bindings, EditorKey::BeatNext, EditorKey::BeatPrevious, "/"), key(EditorKey::Audition), key(EditorKey::Audition)));
             });
     }
 }

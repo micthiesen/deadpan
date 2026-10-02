@@ -1,0 +1,1167 @@
+{
+  "checks": [
+    {
+      "name": "app-clippy-final",
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "deadpan-app",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-10-02T07:15:22.858842+00:00",
+      "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+      "diff_sha256": "48351e45f949f185c23e44b81038ad496ca50af5883fae0cb8796667540ffa7f",
+      "source_manifest_sha256": "b1a4566bae708d8380685b36ed07710e6fbec7651340b0b5a5d41748752e7342",
+      "pid": 45790,
+      "exit_code": 0,
+      "seconds": 17.73882441688329,
+      "source_manifest_after_sha256": "b1a4566bae708d8380685b36ed07710e6fbec7651340b0b5a5d41748752e7342",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "app-clippy-verified",
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "deadpan-app",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-10-02T07:17:59.009086+00:00",
+      "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+      "diff_sha256": "4c25de86e31122b8f16062f831e605e4f51292cf2543bde466b612b8f6ad8be0",
+      "source_manifest_sha256": "00f8a915f9d240f968d4c9676edf7c5e07a387ed8c86dc9edda23c98d408bc4e",
+      "pid": 46065,
+      "exit_code": 0,
+      "seconds": 16.199729583226144,
+      "source_manifest_after_sha256": "00f8a915f9d240f968d4c9676edf7c5e07a387ed8c86dc9edda23c98d408bc4e",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "app-tests-final",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--locked",
+        "--no-fail-fast"
+      ],
+      "started": "2026-10-02T07:09:23.469295+00:00",
+      "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+      "diff_sha256": "2703958d1651b378d0e0b526b31c2fc00f7acd90af486ab099701d4c0872115e",
+      "source_manifest_sha256": "563331e1f337fc258f2d100cbce8eac87286e4e6887857f041c9fde1454a4a86",
+      "pid": 44684,
+      "exit_code": 0,
+      "seconds": 51.682687791995704,
+      "source_manifest_after_sha256": "563331e1f337fc258f2d100cbce8eac87286e4e6887857f041c9fde1454a4a86",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "app-tests",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--locked",
+        "--no-fail-fast"
+      ],
+      "started": "2026-10-02T06:48:13.718605+00:00",
+      "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+      "diff_sha256": "d8f4ffdb4cd3031faa547e22c71570f30fd980ac62f74b804474d8e299b4c6e7",
+      "source_manifest_sha256": "487d8316fcda36ffbd1791563439c2fcafbe6315e19fd62b4a99433fb7c1e65a",
+      "pid": 40720,
+      "exit_code": 101,
+      "seconds": 50.752923915628344,
+      "source_manifest_after_sha256": "487d8316fcda36ffbd1791563439c2fcafbe6315e19fd62b4a99433fb7c1e65a",
+      "source_unchanged": true,
+      "gate_exit_code": 101
+    },
+    {
+      "name": "audit-tests",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--locked",
+        "navigation::shortcut_audit::tests"
+      ],
+      "started": "2026-10-02T06:50:33.480059+00:00",
+      "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+      "diff_sha256": "30803798b57d1c0f17ea3b970c0190fe6919b5336307b0432b8a5ecb327766d2",
+      "source_manifest_sha256": "73caa52b757ca137ec8e83bba4f26bf0507dd6d87e2322a2fffccc1839ff3eed",
+      "pid": 41415,
+      "exit_code": 0,
+      "seconds": 14.143346874974668,
+      "source_manifest_after_sha256": "73caa52b757ca137ec8e83bba4f26bf0507dd6d87e2322a2fffccc1839ff3eed",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "fmt-final",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "started": "2026-10-02T07:15:24.013663+00:00",
+      "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+      "diff_sha256": "48351e45f949f185c23e44b81038ad496ca50af5883fae0cb8796667540ffa7f",
+      "source_manifest_sha256": "b1a4566bae708d8380685b36ed07710e6fbec7651340b0b5a5d41748752e7342",
+      "pid": 45814,
+      "exit_code": 0,
+      "seconds": 1.868432458024472,
+      "source_manifest_after_sha256": "b1a4566bae708d8380685b36ed07710e6fbec7651340b0b5a5d41748752e7342",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "fmt-verified",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "started": "2026-10-02T07:18:32.708824+00:00",
+      "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+      "diff_sha256": "4c25de86e31122b8f16062f831e605e4f51292cf2543bde466b612b8f6ad8be0",
+      "source_manifest_sha256": "00f8a915f9d240f968d4c9676edf7c5e07a387ed8c86dc9edda23c98d408bc4e",
+      "pid": 46125,
+      "exit_code": 0,
+      "seconds": 1.7899179169908166,
+      "source_manifest_after_sha256": "00f8a915f9d240f968d4c9676edf7c5e07a387ed8c86dc9edda23c98d408bc4e",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "full-replay-final",
+      "command": [
+        "target/release/deadpan-app",
+        "--ui-check",
+        "--output",
+        "/tmp/deadpan-named-registers-20261002/full-replay-final",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "started": "2026-10-02T07:09:23.469225+00:00",
+      "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+      "diff_sha256": "2703958d1651b378d0e0b526b31c2fc00f7acd90af486ab099701d4c0872115e",
+      "source_manifest_sha256": "563331e1f337fc258f2d100cbce8eac87286e4e6887857f041c9fde1454a4a86",
+      "pid": 44683,
+      "exit_code": 0,
+      "seconds": 56.25662379199639,
+      "source_manifest_after_sha256": "563331e1f337fc258f2d100cbce8eac87286e4e6887857f041c9fde1454a4a86",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "native-qa-verified",
+      "command": [
+        "/tmp/deadpan-named-registers-20261002/DeadpanRegisterVerifiedQA.app/Contents/MacOS/deadpan-app",
+        "--project",
+        "/tmp/deadpan-named-registers-20261002/native/cfr-bframes.deadpan"
+      ],
+      "started": "2026-10-02T07:21:24.621043+00:00",
+      "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+      "diff_sha256": "eb71725f52f3332de52791783218737793c3e1d47ac212ed8066014cc108e65f",
+      "source_manifest_sha256": "00f8a915f9d240f968d4c9676edf7c5e07a387ed8c86dc9edda23c98d408bc4e",
+      "pid": 46418,
+      "exit_code": 0,
+      "seconds": 26.12505141692236,
+      "source_manifest_after_sha256": "00f8a915f9d240f968d4c9676edf7c5e07a387ed8c86dc9edda23c98d408bc4e",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "native-qa",
+      "command": [
+        "/tmp/deadpan-named-registers-20261002/DeadpanRegisterQA.app/Contents/MacOS/deadpan-app",
+        "--project",
+        "/tmp/deadpan-named-registers-20261002/native/cfr-bframes.deadpan"
+      ],
+      "started": "2026-10-02T07:10:55.745949+00:00",
+      "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+      "diff_sha256": "2703958d1651b378d0e0b526b31c2fc00f7acd90af486ab099701d4c0872115e",
+      "source_manifest_sha256": "563331e1f337fc258f2d100cbce8eac87286e4e6887857f041c9fde1454a4a86",
+      "pid": 45046,
+      "exit_code": 0,
+      "seconds": 90.61854150006548,
+      "source_manifest_after_sha256": "563331e1f337fc258f2d100cbce8eac87286e4e6887857f041c9fde1454a4a86",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "register-replay-final",
+      "command": [
+        "target/release/deadpan-app",
+        "--ui-check",
+        "--scenario",
+        "named-registers",
+        "--output",
+        "/tmp/deadpan-named-registers-20261002/replay-final",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+        "--retain-projects"
+      ],
+      "started": "2026-10-02T07:08:42.756744+00:00",
+      "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+      "diff_sha256": "2703958d1651b378d0e0b526b31c2fc00f7acd90af486ab099701d4c0872115e",
+      "source_manifest_sha256": "563331e1f337fc258f2d100cbce8eac87286e4e6887857f041c9fde1454a4a86",
+      "pid": 44413,
+      "exit_code": 0,
+      "seconds": 1.2959909592755139,
+      "source_manifest_after_sha256": "563331e1f337fc258f2d100cbce8eac87286e4e6887857f041c9fde1454a4a86",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "register-replay-verified",
+      "command": [
+        "target/release/deadpan-app",
+        "--ui-check",
+        "--scenario",
+        "named-registers",
+        "--output",
+        "/tmp/deadpan-named-registers-20261002/replay-verified",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+        "--retain-projects"
+      ],
+      "started": "2026-10-02T07:20:25.640871+00:00",
+      "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+      "diff_sha256": "4c25de86e31122b8f16062f831e605e4f51292cf2543bde466b612b8f6ad8be0",
+      "source_manifest_sha256": "00f8a915f9d240f968d4c9676edf7c5e07a387ed8c86dc9edda23c98d408bc4e",
+      "pid": 46242,
+      "exit_code": 0,
+      "seconds": 1.3082455000840127,
+      "source_manifest_after_sha256": "00f8a915f9d240f968d4c9676edf7c5e07a387ed8c86dc9edda23c98d408bc4e",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "register-replay",
+      "command": [
+        "target/release/deadpan-app",
+        "--ui-check",
+        "--scenario",
+        "named-registers",
+        "--output",
+        "/tmp/deadpan-named-registers-20261002/replay",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+        "--retain-projects"
+      ],
+      "started": "2026-10-02T06:57:17.477647+00:00",
+      "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+      "diff_sha256": "289c623b2d2551810f4bb31ea489f332b65c6946fecbee525251cc4dc688d0da",
+      "source_manifest_sha256": "55ec7b6a4cabc2eb3ff7d4fe277370edb58d1f77a00328c5b07a976962fac02f",
+      "pid": 42652,
+      "exit_code": 1,
+      "seconds": 1.190930750221014,
+      "source_manifest_after_sha256": "55ec7b6a4cabc2eb3ff7d4fe277370edb58d1f77a00328c5b07a976962fac02f",
+      "source_unchanged": true,
+      "gate_exit_code": 1
+    },
+    {
+      "name": "release-build-final",
+      "command": [
+        "cargo",
+        "build",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--release",
+        "--locked"
+      ],
+      "started": "2026-10-02T07:03:02.984908+00:00",
+      "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+      "diff_sha256": "2703958d1651b378d0e0b526b31c2fc00f7acd90af486ab099701d4c0872115e",
+      "source_manifest_sha256": "563331e1f337fc258f2d100cbce8eac87286e4e6887857f041c9fde1454a4a86",
+      "pid": 43860,
+      "exit_code": 0,
+      "seconds": 110.2228743750602,
+      "source_manifest_after_sha256": "563331e1f337fc258f2d100cbce8eac87286e4e6887857f041c9fde1454a4a86",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "release-build-verified",
+      "command": [
+        "cargo",
+        "build",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--release",
+        "--locked"
+      ],
+      "started": "2026-10-02T07:18:34.765345+00:00",
+      "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+      "diff_sha256": "4c25de86e31122b8f16062f831e605e4f51292cf2543bde466b612b8f6ad8be0",
+      "source_manifest_sha256": "00f8a915f9d240f968d4c9676edf7c5e07a387ed8c86dc9edda23c98d408bc4e",
+      "pid": 46150,
+      "exit_code": 0,
+      "seconds": 110.61322508286685,
+      "source_manifest_after_sha256": "00f8a915f9d240f968d4c9676edf7c5e07a387ed8c86dc9edda23c98d408bc4e",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "release-build",
+      "command": [
+        "cargo",
+        "build",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--release",
+        "--locked"
+      ],
+      "started": "2026-10-02T06:54:51.269390+00:00",
+      "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+      "diff_sha256": "289c623b2d2551810f4bb31ea489f332b65c6946fecbee525251cc4dc688d0da",
+      "source_manifest_sha256": "55ec7b6a4cabc2eb3ff7d4fe277370edb58d1f77a00328c5b07a976962fac02f",
+      "pid": 42386,
+      "exit_code": 0,
+      "seconds": 109.52031229203567,
+      "source_manifest_after_sha256": "55ec7b6a4cabc2eb3ff7d4fe277370edb58d1f77a00328c5b07a976962fac02f",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "ui-clippy-cancel",
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "deadpan-app",
+        "--all-targets",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-10-02T07:14:42.696221+00:00",
+      "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+      "diff_sha256": "48351e45f949f185c23e44b81038ad496ca50af5883fae0cb8796667540ffa7f",
+      "source_manifest_sha256": "b1a4566bae708d8380685b36ed07710e6fbec7651340b0b5a5d41748752e7342",
+      "pid": 45595,
+      "exit_code": 0,
+      "seconds": 17.186136125121266,
+      "source_manifest_after_sha256": "b1a4566bae708d8380685b36ed07710e6fbec7651340b0b5a5d41748752e7342",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "ui-clippy-final",
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "deadpan-app",
+        "--all-targets",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-10-02T07:02:30.759600+00:00",
+      "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+      "diff_sha256": "2703958d1651b378d0e0b526b31c2fc00f7acd90af486ab099701d4c0872115e",
+      "source_manifest_sha256": "563331e1f337fc258f2d100cbce8eac87286e4e6887857f041c9fde1454a4a86",
+      "pid": 43778,
+      "exit_code": 0,
+      "seconds": 19.720189416781068,
+      "source_manifest_after_sha256": "563331e1f337fc258f2d100cbce8eac87286e4e6887857f041c9fde1454a4a86",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "ui-clippy-verified",
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "deadpan-app",
+        "--all-targets",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-10-02T07:18:15.569797+00:00",
+      "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+      "diff_sha256": "4c25de86e31122b8f16062f831e605e4f51292cf2543bde466b612b8f6ad8be0",
+      "source_manifest_sha256": "00f8a915f9d240f968d4c9676edf7c5e07a387ed8c86dc9edda23c98d408bc4e",
+      "pid": 46112,
+      "exit_code": 0,
+      "seconds": 16.771346957888454,
+      "source_manifest_after_sha256": "00f8a915f9d240f968d4c9676edf7c5e07a387ed8c86dc9edda23c98d408bc4e",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "ui-tests-final",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--no-fail-fast"
+      ],
+      "started": "2026-10-02T07:10:42.073767+00:00",
+      "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+      "diff_sha256": "2703958d1651b378d0e0b526b31c2fc00f7acd90af486ab099701d4c0872115e",
+      "source_manifest_sha256": "563331e1f337fc258f2d100cbce8eac87286e4e6887857f041c9fde1454a4a86",
+      "pid": 45005,
+      "exit_code": 0,
+      "seconds": 52.709087249822915,
+      "source_manifest_after_sha256": "563331e1f337fc258f2d100cbce8eac87286e4e6887857f041c9fde1454a4a86",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "ui-tests-fixed",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--no-fail-fast"
+      ],
+      "started": "2026-10-02T06:51:30.445664+00:00",
+      "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+      "diff_sha256": "537a12d601474da0abdf473b122fda6a46dfe79294c3b2152edc762335a94c76",
+      "source_manifest_sha256": "3a9da8ad43f3cf6a265dabebeccabcc2e6c3e7ebc1cb14d1f4bb9c525c7f3aac",
+      "pid": 41707,
+      "exit_code": 0,
+      "seconds": 52.6732109580189,
+      "source_manifest_after_sha256": "3a9da8ad43f3cf6a265dabebeccabcc2e6c3e7ebc1cb14d1f4bb9c525c7f3aac",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "ui-tests-verified",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--no-fail-fast"
+      ],
+      "started": "2026-10-02T07:17:09.981959+00:00",
+      "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+      "diff_sha256": "4c25de86e31122b8f16062f831e605e4f51292cf2543bde466b612b8f6ad8be0",
+      "source_manifest_sha256": "00f8a915f9d240f968d4c9676edf7c5e07a387ed8c86dc9edda23c98d408bc4e",
+      "pid": 45950,
+      "exit_code": 0,
+      "seconds": 48.65630366606638,
+      "source_manifest_after_sha256": "00f8a915f9d240f968d4c9676edf7c5e07a387ed8c86dc9edda23c98d408bc4e",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "ui-tests",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--no-fail-fast"
+      ],
+      "started": "2026-10-02T06:50:57.942732+00:00",
+      "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+      "diff_sha256": "a02cccf5dc58422adf2d4635603102806c323f854cea07b6690fc9c6546c71f3",
+      "source_manifest_sha256": "b9d59754f527c7707cd76ac74cad5c5b48861bd05f06038032cc4f3ff4a1e96e",
+      "pid": 41565,
+      "exit_code": 101,
+      "seconds": 21.367934958077967,
+      "source_manifest_after_sha256": "b9d59754f527c7707cd76ac74cad5c5b48861bd05f06038032cc4f3ff4a1e96e",
+      "source_unchanged": true,
+      "gate_exit_code": 101
+    }
+  ],
+  "replays": [
+    {
+      "name": "replay",
+      "failed": true,
+      "metadata": {
+        "binary_sha256": "f77d027821f362e58265e6aa0fba6e3bef8beed283015c8a83bb188666a144e8",
+        "build_profile": "release",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+        "git_status": "M AGENTS.md\n M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/command.rs\n M crates/deadpan-app/src/navigation/editor_map.rs\n M crates/deadpan-app/src/navigation/keymap_config.rs\n M crates/deadpan-app/src/navigation/keymap_config/tests.rs\n M crates/deadpan-app/src/navigation/mark_tests.rs\n M crates/deadpan-app/src/navigation/shortcut_audit.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete.rs\n M crates/deadpan-app/src/preview/delete/frames.rs\n M crates/deadpan-app/src/preview/harness.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/moment.rs\n M crates/deadpan-app/src/preview/splice.rs\n M crates/deadpan-app/src/ui_harness.rs\n M docs/EDITED_SLICES.md\n M docs/KEYBINDING_COMPATIBILITY.md\n M docs/KEYMAP.md\n M docs/REQUIREMENTS.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/navigation/register_tests.rs\n?? crates/deadpan-app/src/preview/harness/registers.rs\n?? docs/NAMED_REGISTERS.md",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 899.881334,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790924237618,
+        "tracked_diff_sha256_at_run": "c0427aef05b852b27822816690e01fdb1314dbc9996c3e6206b2dbb1f7f5e36e",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "failed": false,
+          "findings": [],
+          "skipped": [],
+          "checks": 1,
+          "failed_checks": []
+        },
+        {
+          "name": "named-registers",
+          "failed": true,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            },
+            {
+              "message": "Check failed: A newer production write supersedes an older capture even when it used another register",
+              "severity": "failure"
+            }
+          ],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 109,
+          "failed_checks": [
+            {
+              "actual": {
+                "\"": "Copied Original [70..74)",
+                "a": "Copied Original [70..74)",
+                "b": "Copied Original [40..43)",
+                "c": "Copied Edit [8..25) \u00b7 17 frames",
+                "d": "Copied Edit [20..30) \u00b7 10 frames",
+                "e": "Copied Edit [55..61) \u00b7 6 frames",
+                "f": "Copied Edit [45..51) \u00b7 6 frames"
+              },
+              "expected": {
+                "a": [
+                  70,
+                  74
+                ],
+                "default": [
+                  70,
+                  74
+                ],
+                "h": "empty",
+                "newer_message_retained": true
+              },
+              "name": "A newer production write supersedes an older capture even when it used another register",
+              "passed": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "replay-final",
+      "failed": false,
+      "metadata": {
+        "binary_sha256": "d6e485705d4fe5c0e8496bbbda7b36a17b6508ab0d8866122f8555f7aa2d73a4",
+        "build_profile": "release",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+        "git_status": "M AGENTS.md\n M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/command.rs\n M crates/deadpan-app/src/navigation/editor_map.rs\n M crates/deadpan-app/src/navigation/keymap_config.rs\n M crates/deadpan-app/src/navigation/keymap_config/tests.rs\n M crates/deadpan-app/src/navigation/mark_tests.rs\n M crates/deadpan-app/src/navigation/shortcut_audit.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete.rs\n M crates/deadpan-app/src/preview/delete/frames.rs\n M crates/deadpan-app/src/preview/harness.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/moment.rs\n M crates/deadpan-app/src/preview/splice.rs\n M crates/deadpan-app/src/ui_harness.rs\n M docs/EDITED_SLICES.md\n M docs/KEYBINDING_COMPATIBILITY.md\n M docs/KEYMAP.md\n M docs/REQUIREMENTS.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/navigation/register_tests.rs\n?? crates/deadpan-app/src/preview/harness/registers.rs\n?? docs/NAMED_REGISTERS.md",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 1015.088542,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790924922903,
+        "tracked_diff_sha256_at_run": "af734c53c903f644d349da5d771bc1f3c039edf0f6b309b68824ffc89b9b4914",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "failed": false,
+          "findings": [],
+          "skipped": [],
+          "checks": 1,
+          "failed_checks": []
+        },
+        {
+          "name": "named-registers",
+          "failed": false,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 134,
+          "failed_checks": []
+        }
+      ]
+    },
+    {
+      "name": "full-replay-final",
+      "failed": false,
+      "metadata": {
+        "binary_sha256": "d6e485705d4fe5c0e8496bbbda7b36a17b6508ab0d8866122f8555f7aa2d73a4",
+        "build_profile": "release",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+        "git_status": "M AGENTS.md\n M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/command.rs\n M crates/deadpan-app/src/navigation/editor_map.rs\n M crates/deadpan-app/src/navigation/keymap_config.rs\n M crates/deadpan-app/src/navigation/keymap_config/tests.rs\n M crates/deadpan-app/src/navigation/mark_tests.rs\n M crates/deadpan-app/src/navigation/shortcut_audit.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete.rs\n M crates/deadpan-app/src/preview/delete/frames.rs\n M crates/deadpan-app/src/preview/harness.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/moment.rs\n M crates/deadpan-app/src/preview/splice.rs\n M crates/deadpan-app/src/ui_harness.rs\n M docs/EDITED_SLICES.md\n M docs/KEYBINDING_COMPATIBILITY.md\n M docs/KEYMAP.md\n M docs/REQUIREMENTS.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/navigation/register_tests.rs\n?? crates/deadpan-app/src/preview/harness/registers.rs\n?? docs/NAMED_REGISTERS.md",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 54664.700333,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790924963652,
+        "tracked_diff_sha256_at_run": "af734c53c903f644d349da5d771bc1f3c039edf0f6b309b68824ffc89b9b4914",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "failed": false,
+          "findings": [],
+          "skipped": [],
+          "checks": 1,
+          "failed_checks": []
+        },
+        {
+          "name": "workspace",
+          "failed": false,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 80,
+          "failed_checks": []
+        },
+        {
+          "name": "editing",
+          "failed": false,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 40,
+          "failed_checks": []
+        },
+        {
+          "name": "camera",
+          "failed": false,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 12,
+          "failed_checks": []
+        },
+        {
+          "name": "menus",
+          "failed": false,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 37,
+          "failed_checks": []
+        },
+        {
+          "name": "delayed-preview",
+          "failed": false,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 8,
+          "failed_checks": []
+        },
+        {
+          "name": "rapid-input",
+          "failed": false,
+          "findings": [],
+          "skipped": [
+            "Repeat boundary checks delay delivery of real SQLite updates; the writer and production event router remain live. Physical key delivery is not exercised.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 60,
+          "failed_checks": []
+        },
+        {
+          "name": "keymap",
+          "failed": false,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 56,
+          "failed_checks": []
+        },
+        {
+          "name": "keymap-error",
+          "failed": false,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 13,
+          "failed_checks": []
+        },
+        {
+          "name": "playback-feedback",
+          "failed": false,
+          "findings": [],
+          "skipped": [
+            "Playback service updates are explicitly simulated. This scenario qualifies UI feedback and picture routing, not PCM preparation, device timing or listening.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 12,
+          "failed_checks": []
+        },
+        {
+          "name": "large-project",
+          "failed": false,
+          "findings": [],
+          "skipped": [
+            "Large-project fixture: 10,000 root Background/Silence Holds in a real SQLite package. No source media, decoding, PCM or large asset inventory is stressed.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 235,
+          "failed_checks": []
+        },
+        {
+          "name": "edit-latency",
+          "failed": false,
+          "findings": [],
+          "skipped": [
+            "Edit timings measure the real committed revision through offscreen GPU completion. Physical display presentation and acoustic Hold silence are outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 26,
+          "failed_checks": []
+        },
+        {
+          "name": "nested-pause",
+          "failed": false,
+          "findings": [],
+          "skipped": [
+            "This replay enters Sequence groups. Repeat and Retime entry, occurrence isolation, and their pause insertion remain outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 72,
+          "failed_checks": []
+        },
+        {
+          "name": "original-moment",
+          "failed": false,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 16,
+          "failed_checks": []
+        },
+        {
+          "name": "original-layout",
+          "failed": false,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "skipped": [
+            "Original layout uses the real qualified picture and durable sound placement. Preparing/Playing uses injected typed delivery updates; no audio device, PCM preparation, physical keyboard, OS IME, or listening result is claimed.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 296,
+          "failed_checks": []
+        },
+        {
+          "name": "original-layout-long",
+          "failed": false,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "skipped": [
+            "Original layout uses the real qualified picture and durable sound placement. Preparing/Playing uses injected typed delivery updates; no audio device, PCM preparation, physical keyboard, OS IME, or listening result is claimed.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 315,
+          "failed_checks": []
+        },
+        {
+          "name": "place-slice",
+          "failed": false,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "skipped": [
+            "Place slice covers linked Original and edited-slice copying, insertion, replacement and atomic Move in ordinary Sequence scopes. Separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.",
+            "The replay uses genuine source qualification, endpoint decoding, SDR GPU pictures, proposed documents and durable commands. Audio delivery and a concurrent service Undo are explicitly injected. It does not open an audio device or establish acoustic quality.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 819,
+          "failed_checks": []
+        },
+        {
+          "name": "delete-range",
+          "failed": false,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 308,
+          "failed_checks": []
+        },
+        {
+          "name": "marks",
+          "failed": false,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "skipped": [
+            "Marks use real project writes, anchor transforms and decoded pictures. Delayed service delivery and IME input are explicitly injected; physical key layouts, native IME and VoiceOver remain separate acceptance.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 155,
+          "failed_checks": []
+        },
+        {
+          "name": "named-registers",
+          "failed": false,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 133,
+          "failed_checks": []
+        },
+        {
+          "name": "original-playback",
+          "failed": false,
+          "findings": [],
+          "skipped": [
+            "Playback service updates are explicitly injected. This scenario exercises Original controls, clock admission, looping and picture routing, not PCM preparation, device timing or listening.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 18,
+          "failed_checks": []
+        },
+        {
+          "name": "sound-playback",
+          "failed": false,
+          "findings": [],
+          "skipped": [
+            "Sound registration and widgets use production services. Delivery reports are deterministic fakes, not real PCM playback, device timing, or listening evidence.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 38,
+          "failed_checks": []
+        },
+        {
+          "name": "sound-placement",
+          "failed": false,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "skipped": [
+            "Sound placement uses real source qualification and durable project commands. This scenario does not start audio output or establish PCM, device timing, or listening evidence.",
+            "Preparing/Playing at 960 pixels uses the real transport controls with simulated delivery reports only. It does not start a device or prepare PCM.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 216,
+          "failed_checks": []
+        },
+        {
+          "name": "room-tone",
+          "failed": false,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "skipped": [
+            "Source and committed Sequence audition use injected typed delivery updates, with real descriptor preparation and project writes. This replay does not prepare PCM, open an output device, establish acoustic quality or certify speech absence.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 220,
+          "failed_checks": []
+        },
+        {
+          "name": "gain",
+          "failed": false,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "skipped": [
+            "Gain uses real qualified source evidence, writer previews, durable commands and canonical PCM for measured waveforms. Comparison audio delivery and labelled waveform failure replies are injected; this replay does not open an audio device or establish acoustic quality. Canonical Before/Draft mix and scheduling qualification belong to playback tests.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 290,
+          "failed_checks": []
+        },
+        {
+          "name": "retime",
+          "failed": false,
+          "findings": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 15,
+          "failed_checks": []
+        },
+        {
+          "name": "slip",
+          "failed": false,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "skipped": [
+            "Slip uses the real qualified fixture, project service, decoder and offscreen Metal submissions. Controlled delivery delays retain actual service/decoder replies. Physical display presentation, OS IME delivery, audio audition and the remaining In/Out/Roll Trim operations are outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 66,
+          "failed_checks": []
+        },
+        {
+          "name": "trim",
+          "failed": false,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "skipped": [
+            "Trim uses real qualified source receipts, ordered project-service proposals, endpoint decoding, offscreen Metal pair submission and measured waveform PCM. One real pair or service reply may be held for delivery-order checks. Audition delivery is explicitly injected; no output device, listening, physical display, OS IME or VoiceOver claim follows. Store grouping is fixture setup only; measured edits use production keyboard/pointer input.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 164,
+          "failed_checks": []
+        },
+        {
+          "name": "render",
+          "failed": false,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 111,
+          "failed_checks": []
+        },
+        {
+          "name": "generated-picture",
+          "failed": false,
+          "findings": [],
+          "skipped": [
+            "Requires explicit --scenario generated-picture --project and the real bundle qualification fixture; ordinary replay does not fabricate accepted evidence."
+          ],
+          "checks": 0,
+          "failed_checks": []
+        }
+      ]
+    },
+    {
+      "name": "replay-verified",
+      "failed": false,
+      "metadata": {
+        "binary_sha256": "c04d111ccc04c2612a345c1fe895e636d551aeb7f3bcee0a8659358dfc94954a",
+        "build_profile": "release",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+        "git_status": "M AGENTS.md\n M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/command.rs\n M crates/deadpan-app/src/navigation/editor_map.rs\n M crates/deadpan-app/src/navigation/keymap_config.rs\n M crates/deadpan-app/src/navigation/keymap_config/tests.rs\n M crates/deadpan-app/src/navigation/mark_tests.rs\n M crates/deadpan-app/src/navigation/shortcut_audit.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete.rs\n M crates/deadpan-app/src/preview/delete/frames.rs\n M crates/deadpan-app/src/preview/harness.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/moment.rs\n M crates/deadpan-app/src/preview/splice.rs\n M crates/deadpan-app/src/ui_harness.rs\n M docs/EDITED_SLICES.md\n M docs/KEYBINDING_COMPATIBILITY.md\n M docs/KEYMAP.md\n M docs/REQUIREMENTS.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/navigation/register_tests.rs\n?? crates/deadpan-app/src/preview/harness/registers.rs\n?? docs/NAMED_REGISTERS.md\n?? docs/qualification/named-registers-2026-10-02.md\n?? tools/media-qualification/evidence/2026-10-02-named-registers/",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 1015.4968339999999,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790925625783,
+        "tracked_diff_sha256_at_run": "f66394e03ca6e9ecb84b2e9a506f69053f41bbaee93320678e88d886f94bd8d2",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "failed": false,
+          "findings": [],
+          "skipped": [],
+          "checks": 1,
+          "failed_checks": []
+        },
+        {
+          "name": "named-registers",
+          "failed": false,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "checks": 136,
+          "failed_checks": []
+        }
+      ]
+    }
+  ]
+}

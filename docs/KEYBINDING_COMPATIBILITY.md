@@ -45,8 +45,9 @@ Escape cancellation without changing the saved project.
 ## Marks and jumps
 
 Normal mode uses `m` then one ASCII letter to save, and `'` then one letter to
-jump. Shift selects a separate uppercase letter. The logical Quote symbol may
-require Shift or Option on a keyboard layout; Command and Control stay reserved.
+jump. Shift selects a separate uppercase letter after that prefix. Quote is
+modifier-sensitive: plain Quote starts a mark jump, Shift+Quote starts register
+selection, and Option, Command and Control variants stay native.
 Prefixes have no timeout, show the valid next keys and reject counts. A held
 movement key cannot complete a pending mark. Native text and IME retain input.
 
@@ -57,6 +58,18 @@ cannot save, remove, close or jump. `:mark a`, `:jump a`, `:unmark a`, `:marks`,
 `:jump-back` and `:jump-forward` share the production router. See
 [mark navigation](MARK_NAVIGATION.md) for capture, expiration and clock rules.
 The marks qualification passed 16,368 cases over the same 62 Kestrel globals.
+
+## Named registers
+
+The configurable `register.select` family defaults to Shift+Quote, displayed
+as `"`. Letters select a–z (case-insensitive), and a second `"` selects the
+default copy. It has its own typed prefix; entering it cannot capture a mark.
+Counts before the prefix and invalid suffixes fail without executing the suffix
+as another command. Counts after a completed name belong to the next action.
+Held keys, native fields, IME and Kestrel reservations retain input ownership.
+The production audit enumerates the new family with the existing compiled paths.
+See [session register semantics](NAMED_REGISTERS.md). Strict logical provenance
+and physical layout/IME qualification remain open.
 
 ## Frame cuts
 

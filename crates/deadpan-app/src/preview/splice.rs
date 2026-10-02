@@ -323,6 +323,7 @@ impl DeadpanApp {
         context: &egui::Context,
         target: Result<moment::PlacementTarget, String>,
     ) {
+        self.copied.clear_selection();
         let captured = (|| {
             let target = target?;
             self.check_placement_target(&target)?;
@@ -342,6 +343,11 @@ impl DeadpanApp {
             }
             let base = target.base.clone();
             let copied = target.copied.as_ref().ok_or_else(|| {
+                if let Some(name) = target.register {
+                    return format!(
+                        "Register {name} is empty. Copy or cut into it before placing a slice."
+                    );
+                }
                 format!(
                     "Copy a range from Original or Your edit first: {}.",
                     self.editor_copy_recipe()

@@ -1,0 +1,15 @@
+import os, subprocess, sys
+root='/tmp/deadpan-named-registers-20261002'
+env=dict(os.environ,DEADPAN_CHECK_OUTPUT=root)
+checks=[
+ ('ui-tests-verified',['cargo','test','-p','deadpan-app','--features','ui-harness','--locked','--no-fail-fast']),
+ ('app-clippy-verified',['cargo','clippy','-p','deadpan-app','--all-targets','--locked','--','-D','warnings']),
+ ('ui-clippy-verified',['cargo','clippy','-p','deadpan-app','--all-targets','--features','ui-harness','--locked','--','-D','warnings']),
+ ('fmt-verified',['cargo','fmt','--all','--','--check']),
+ ('release-build-verified',['cargo','build','-p','deadpan-app','--features','ui-harness','--release','--locked']),
+ ('register-replay-verified',['target/release/deadpan-app','--ui-check','--scenario','named-registers','--output',root+'/replay-verified','--kestrel-source','/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift','--retain-projects']),
+]
+for name,command in checks:
+ print('START '+name,flush=True)
+ result=subprocess.run([sys.executable,'/tmp/deadpan-original-layout-20261002/run-check.py',name,*command],env=env)
+ if result.returncode: sys.exit(result.returncode)

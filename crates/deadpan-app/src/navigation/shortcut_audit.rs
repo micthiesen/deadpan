@@ -383,8 +383,19 @@ mod tests {
     fn shipped_routers_never_claim_a_kestrel_global_chord_or_prefix() {
         let report = audit().unwrap();
         assert_eq!(report.reserved_bindings, 62);
-        assert_eq!(audit_prefixes().len(), 28);
-        assert_eq!(report.routing_cases, 62 * (428 + 28 * 3 * 4 * 5));
+        // Root plus comma, d, g, r, m, apostrophe and double quote, each with
+        // absent, positive, zero and overflowing counts.
+        let prefix_cases = 8 * 4;
+        assert_eq!(audit_prefixes().len(), prefix_cases);
+        let editor_cases = prefix_cases * 3 * 4; // Normal/Empty/Range × text/IME.
+        // Five drafts × repeat/background, Camera × repeat, and native input,
+        // each under all four text/IME combinations.
+        let mode_cases = 4 * (5 * 2 * 2 + 2 + 1);
+        let layout_cases = prefix_cases * 3 * 4 * 5; // Five logical identities.
+        assert_eq!(
+            report.routing_cases,
+            62 * (editor_cases + mode_cases + layout_cases)
+        );
         assert!(report.passed(), "{report:#?}");
     }
 

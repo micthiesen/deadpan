@@ -822,6 +822,13 @@ outer frame, never on a layout retry. Preserve whole-batch IME ownership.
 Headless/worker and replay paths never read personal keymaps.
 See [bindings](docs/KEYMAP.md).
 
+Named session registers retain one global pending capture with its destination
+fixed at initiation. A later name selection cannot redirect it. Capture command
+names and paste content, including absence, at entry; successful named writes
+also update the default copy. Failed writes preserve both. Keep saved-cut
+receipts independent of register intent, and clear the bank on session close.
+See [registers](docs/NAMED_REGISTERS.md); durable registers and macros remain open.
+
 Native group navigation retains an ephemeral `SequenceScope` of direct ordinary
 Sequence children. Keep cursor/card positions on the absolute project clock and
 show the group-relative position separately. Restore captured scope before

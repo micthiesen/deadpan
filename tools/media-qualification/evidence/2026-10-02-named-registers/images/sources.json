@@ -1,0 +1,37 @@
+[
+  {
+    "file": "images/named-registers-045.png",
+    "source": "/tmp/deadpan-named-registers-20261002/replay-verified/named-registers-045.png",
+    "sha256": "8c78856113fff506e446a3d66ddce75e9831018658833eff96b0667803b5eecf"
+  },
+  {
+    "file": "images/named-registers-047.png",
+    "source": "/tmp/deadpan-named-registers-20261002/replay-verified/named-registers-047.png",
+    "sha256": "589f225e3b6c204306db921a973d0defa0a891c00a705fe695f1cc8b83b43ba1"
+  },
+  {
+    "file": "images/named-registers-051.png",
+    "source": "/tmp/deadpan-named-registers-20261002/replay-verified/named-registers-051.png",
+    "sha256": "a2349dc88804e582ca34bf5dbd908b8e2a50f95b0354e28122182cc0e7457abb"
+  },
+  {
+    "file": "images/named-registers-056.png",
+    "source": "/tmp/deadpan-named-registers-20261002/replay-verified/named-registers-056.png",
+    "sha256": "d8586501027a3de330df9ec295cd5cab4ccafa621628c368b343267f59fc8ee7"
+  },
+  {
+    "file": "images/named-registers-060.png",
+    "source": "/tmp/deadpan-named-registers-20261002/replay-verified/named-registers-060.png",
+    "sha256": "b9a945b82c73c2cffb0761dc090fb3aaf51cc2da0dd5fde0187fdde362ed70fe"
+  },
+  {
+    "file": "images/named-registers-124.png",
+    "source": "/tmp/deadpan-named-registers-20261002/replay-verified/named-registers-124.png",
+    "sha256": "e111cf1cc9318b9501f5375c25a6c0f554c0cde7cc2d9cf1868c92248d3901ec"
+  },
+  {
+    "file": "images/named-registers-125.png",
+    "source": "/tmp/deadpan-named-registers-20261002/replay-verified/named-registers-125.png",
+    "sha256": "5803046c7b05d55552d3f0d43563d41b88b632efaa2471f524fa2465288d0f7d"
+  }
+]

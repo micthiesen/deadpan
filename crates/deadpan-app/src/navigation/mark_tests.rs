@@ -107,20 +107,22 @@ fn batched_and_slow_mark_prefixes_have_the_same_meaning() {
 }
 
 #[test]
-fn mark_prefixes_respect_logical_quote_and_exact_letter_modifiers() {
-    for modifiers in [
-        Modifiers::NONE,
-        Modifiers::SHIFT,
-        Modifiers::ALT,
-        Modifiers::ALT | Modifiers::SHIFT,
-    ] {
+fn mark_prefixes_respect_apostrophe_and_exact_letter_modifiers() {
+    let mut bindings = Bindings::default();
+    assert_eq!(
+        bindings.key(Key::Quote, Modifiers::NONE, false, false),
+        None
+    );
+    assert_eq!(bindings.mark_prefix(), Some(MarkPrefix::Jump));
+    assert_eq!(
+        bindings.key(Key::A, Modifiers::NONE, false, false),
+        Some(Action::JumpMark('a'))
+    );
+    for modifiers in [Modifiers::ALT, Modifiers::ALT | Modifiers::SHIFT] {
         let mut bindings = Bindings::default();
         assert_eq!(bindings.key(Key::Quote, modifiers, false, false), None);
-        assert_eq!(bindings.mark_prefix(), Some(MarkPrefix::Jump));
-        assert_eq!(
-            bindings.key(Key::A, Modifiers::NONE, false, false),
-            Some(Action::JumpMark('a'))
-        );
+        assert_eq!(bindings.mark_prefix(), None);
+        assert!(bindings.pending().is_empty());
     }
     for key in [Key::Semicolon, Key::Backtick, Key::Equals] {
         let mut bindings = Bindings::default();

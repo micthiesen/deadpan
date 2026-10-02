@@ -21,6 +21,19 @@ app inventory confirmed no Deadpan app remained running.
 
 ## Configurable editor paths, current implementation
 
+The [named session register bank](../NAMED_REGISTERS.md) adds `"a` selection,
+`:register a` and a live `:registers` inventory. Keep a single pending capture
+with its destination fixed at initiation. New name selection cannot retarget a
+completion. Commands capture names and paste content, including absence, on
+entry. Successful named writes update that slot and the default together; cut
+writes still wait for a durable receipt. Preserve all slots across edits and
+Undo, clear them on session close, and consume the chosen name on the next
+copy/picture-cut/paste/placement attempt. Persistent registers and macros remain
+required. Escape and blur cancel both live choice and an open named command;
+project reopen cannot revive its captured name. See
+[qualification](../qualification/named-registers-2026-10-02.md) for native and
+rendered checks, source identities, retained failures and remaining limits.
+
 Normal/Visual bindings load once from the native user Application Support
 directory. Missing files use shipped keys; any read/schema/compile failure keeps
 the complete shipped map with a persistent diagnostic. The bounded compiler
@@ -31,7 +44,7 @@ from the compiled map. Held motions retain their resolved action and cannot
 consume a new prefix. Command/Search entry retains the ordered native input
 suffix and suppresses only the held opener. See [the contract](../KEYMAP.md).
 Other mode maps, strict logical provenance, physical layout/IME qualification,
-registers, semantic dot-repeat and macros remain required. No schema changes.
+persistent registers, semantic dot-repeat and macros remain required. No schema changes.
 The [qualification](../qualification/configurable-bindings-2026-10-01.md) records
 custom/fallback replay, final checks and remaining verification limits.
 

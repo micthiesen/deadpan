@@ -1,0 +1,23 @@
+{
+  "command": [
+    "target/release/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "named-registers",
+    "--output",
+    "/tmp/deadpan-named-registers-20261002/replay",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+    "--retain-projects"
+  ],
+  "started": "2026-10-02T06:57:17.477647+00:00",
+  "base_commit": "885b46b69272fc6957b5647b5c9fcb40d88afff8",
+  "diff_sha256": "289c623b2d2551810f4bb31ea489f332b65c6946fecbee525251cc4dc688d0da",
+  "source_manifest_sha256": "55ec7b6a4cabc2eb3ff7d4fe277370edb58d1f77a00328c5b07a976962fac02f",
+  "pid": 42652,
+  "exit_code": 1,
+  "seconds": 1.190930750221014,
+  "source_manifest_after_sha256": "55ec7b6a4cabc2eb3ff7d4fe277370edb58d1f77a00328c5b07a976962fac02f",
+  "source_unchanged": true,
+  "gate_exit_code": 1
+}

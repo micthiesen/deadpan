@@ -9,6 +9,7 @@ pub(in crate::preview) struct FrameTarget {
     parent: NodeId,
     cursor: u64,
     end: u64,
+    register: Option<char>,
 }
 
 impl FrameTarget {
@@ -35,6 +36,7 @@ impl FrameTarget {
         Ok(CommandTarget {
             base: self.base,
             scope: self.scope,
+            register: self.register,
             parent: self.parent.clone(),
             edit: ProjectEdit::DeleteRange {
                 parent: self.parent,
@@ -104,6 +106,7 @@ impl DeadpanApp {
             parent,
             cursor,
             end,
+            register: self.copied.selected(),
         })
     }
 
