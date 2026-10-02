@@ -93,14 +93,17 @@ native persisted-job recovery and release acceptance remain required.
 
 The foundation has typed Source/Sequence/Hold/Repeat/Retime nodes, stable nested occurrence identities, persistent marks with atomic edit transforms, sparse play override subtrees, automatic isolation for node edits through complete occurrence paths, an indexed structural picture plan, independent exact picture/audio mappings, and exact revision-aware boundary/named-mark range queries. Temporal attachments, effects, semantic editing through ranges, a full media engine, audio pipeline, and an app-managed inference worker remain open.
 
-Current persistence uses database schema 53 and core document schema 43.
+Current persistence uses database schema 54 and core document schema 43.
 The project register bank is independent of timeline revisions: copies preserve
 history, cuts update the bank with deletion atomically, and SQLite checkpoints
 retain both. Canonical payloads are deduplicated with a 64 MiB aggregate bound;
 opening validates historical provenance and restores fresh runtime identities.
-Schema 52 upgrades add an empty bank while preserving timeline data. Schemas
+Resolved [compound transactions](COMPOUND_TRANSACTIONS.md) save one authored
+history entry and a final register bank, with separate step allocations and
+sparse capture snapshots. Bank-only execution leaves timeline history intact.
+Schema 52 upgrades add empty bank and step tables while preserving timeline data. Schemas
 1 through 38 retain their validated migration path to the current schema. Unused
-development schemas 39 through 51 are refused before writable open or migration
+development schemas 39 through 51 and 53 are refused before writable open or migration
 backup, under the user's session-scoped permission to break unused development
 formats without migrations. Existing supported migrations remain intact.
 
@@ -199,7 +202,7 @@ Section 24 defines boundaries, not an obligation to create empty crates. Introdu
 | Component | Required responsibility | Status |
 | --- | --- | --- |
 | `deadpan-core` | Document/time types, nodes, anchors, occurrences, selectors, commands, reduction, validation, and serialization contracts. | Documents, timing, node/occurrence-targeted commands, inverse patches, persistent marks/edit transforms, sparse play overrides, and exact boundary queries implemented; temporal attachments and remaining domains open. |
-| `deadpan-store` | Authoritative SQLite document/history, one writer, migrations, recovery, and asset ownership. | SQLite schema 53/core document schema 43, history-neutral project registers and atomic cut copies, retained schema-1-through-38 migration and explicit refusal of unused development schemas 39 through 51, optional validated single-Original profile and protected full-source baseline, writer lock, durable transactions, request relevance, attempts/receipts/selection, interrupted recovery, checkpoints, verified object publication/readback, explicit bundle acceptance, managed/linked originals, relinking and qualified source registration implemented. Full asset lifecycle and application integration remain open. |
+| `deadpan-store` | Authoritative SQLite document/history, one writer, migrations, recovery, and asset ownership. | SQLite schema 54/core document schema 43, project registers, atomic cut copies and resolved compound transactions with retained intermediate captures, retained schema-1-through-38 migration and explicit refusal of unused development schemas 39 through 51 and 53, optional validated single-Original profile and protected full-source baseline, writer lock, durable transactions, request relevance, attempts/receipts/selection, interrupted recovery, checkpoints, verified object publication/readback, explicit bundle acceptance, managed/linked originals, relinking and qualified source registration implemented. Full asset lifecycle and application integration remain open. |
 | `deadpan-plan` | Compile immutable revisions into indexed render plans and incremental fragments. | Picture mapping and bounded structural audio queries implemented; fragment reuse, attachments/effects and full preview/export integration open. |
 | `deadpan-media` | Qualified FFmpeg/native probing, PTS indexing, bounded decoding, surfaces, encoding/mux interfaces. | Generated RGB-to-FFV1 conversion, persistent H.264/FFV1 source indexes/seeks and measured selected-stream qualification implemented. The store retains qualified indexes. The native workspace connects this bounded import path and the shared automatic SDR Render workflow. Full format coverage and complete playback/export qualification remain open. |
 | `deadpan-render` | Shared GPU composition, framing, color, visual effects, and output transformations. | SDR RGBA and ordered framing/clipping implemented with actual Metal/CPU comparison. The [encoder pixel boundary](SDR_ENCODER_PIXELS.md) adds owned Rec.709 I420 from that composed working target. Automatic native/public SDR Render uses this picture boundary. HDR, physical display integration, remaining effects and complete export qualification remain open. |

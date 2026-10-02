@@ -75,8 +75,8 @@ pub(super) fn assert_refused(package: &Path, version: u32) -> Result {
 }
 
 #[test]
-fn schemas39_through51_fail_before_reading_document_or_acquiring_writer() -> Result {
-    for version in 39..=51 {
+fn schemas39_through51_and53_fail_before_reading_document_or_acquiring_writer() -> Result {
+    for version in (39..=51).chain([53]) {
         let scratch = tempfile::tempdir()?;
         let package = scratch.path().join("unsupported.deadpan");
         fs::create_dir(&package)?;
@@ -99,10 +99,10 @@ fn schemas39_through51_fail_before_reading_document_or_acquiring_writer() -> Res
 }
 
 #[test]
-fn current_schema53_migration_is_read_only_and_needs_no_backup_or_writer() -> Result {
+fn current_schema54_migration_is_read_only_and_needs_no_backup_or_writer() -> Result {
     use deadpan_core::{ColorPolicy, FrameRate, PresentationBasis, ProjectId};
 
-    assert_eq!(DATABASE_SCHEMA_VERSION, 53);
+    assert_eq!(DATABASE_SCHEMA_VERSION, 54);
     let scratch = tempfile::tempdir()?;
     let package = scratch.path().join("current.deadpan");
     let document = ProjectDocument::new(
@@ -120,7 +120,7 @@ fn current_schema53_migration_is_read_only_and_needs_no_backup_or_writer() -> Re
     let database = Connection::open(package.join("project.sqlite"))?;
     let before = cells(&database)?;
     let outcome = ProjectStore::migrate(&package)?;
-    assert_eq!((outcome.from_schema, outcome.to_schema), (53, 53));
+    assert_eq!((outcome.from_schema, outcome.to_schema), (54, 54));
     assert!(outcome.backup.is_none());
     assert_eq!(cells(&database)?, before);
     assert_eq!(fs::read_dir(package.join("Snapshots"))?.count(), 0);
@@ -150,7 +150,7 @@ fn schema52_additive_migration_preserves_history_and_creates_empty_register_bank
     )?;
     drop(ProjectStore::create(&package, &document)?);
     let database = Connection::open(package.join("project.sqlite"))?;
-    database.execute_batch("DROP TABLE registers; DROP TABLE register_contents; DROP TABLE register_state; PRAGMA user_version=52;")?;
+    database.execute_batch("DROP TABLE registers; DROP TABLE register_contents; DROP TABLE register_state; DROP TABLE transaction_steps; PRAGMA user_version=52;")?;
     let before = cells(&database)?;
     for mode in [AccessMode::ReadOnly, AccessMode::ReadWrite] {
         assert!(matches!(
@@ -160,7 +160,7 @@ fn schema52_additive_migration_preserves_history_and_creates_empty_register_bank
         assert_eq!(cells(&database)?, before);
     }
     let migrated = ProjectStore::migrate(&package)?;
-    assert_eq!((migrated.from_schema, migrated.to_schema), (52, 53));
+    assert_eq!((migrated.from_schema, migrated.to_schema), (52, 54));
     assert!(migrated.backup.as_ref().is_some_and(|path| path.is_file()));
     let store = ProjectStore::open(&package, AccessMode::ReadOnly)?;
     assert_eq!(store.snapshot()?, document);
@@ -172,15 +172,93 @@ fn schema52_additive_migration_preserves_history_and_creates_empty_register_bank
     let comparison_path = scratch.path().join("comparison.sqlite");
     database.backup(rusqlite::MAIN_DB, &comparison_path, None)?;
     let comparison = Connection::open(comparison_path)?;
-    comparison.execute_batch("DROP TABLE registers; DROP TABLE register_contents; DROP TABLE register_state; PRAGMA user_version=52;")?;
+    comparison.execute_batch("DROP TABLE registers; DROP TABLE register_contents; DROP TABLE register_state; DROP TABLE transaction_steps; PRAGMA user_version=52;")?;
     assert_eq!(cells(&comparison)?, before);
+    Ok(())
+}
+
+#[test]
+fn schema52_rejects_compound_history_even_without_capture_checkpoints() -> Result {
+    use deadpan_core::{
+        BeatNode, ColorPolicy, Command, CommandRequest, FrameRate, LeafEdit, PresentationBasis,
+        ProjectId, ResolvedStep, ResolvedTransaction, Subtree,
+    };
+    use std::collections::BTreeMap;
+
+    let scratch = tempfile::tempdir()?;
+    let package = scratch.path().join("forged-compound.deadpan");
+    let initial = ProjectDocument::new(
+        ProjectId::new("forged-compound")?,
+        RevisionId::new("initial")?,
+        PresentationBasis {
+            width: 16,
+            height: 16,
+            frame_rate: FrameRate::new(30, 1)?,
+            color_policy: ColorPolicy::SdrRec709,
+        },
+        NodeId::new("root")?,
+    )?;
+    let mut store = ProjectStore::create(&package, &initial)?;
+    let child = NodeId::new("child")?;
+    store.commit(&CommandRequest {
+        project_id: initial.project_id().clone(),
+        expected_revision: initial.revision_id().clone(),
+        new_revision: RevisionId::new("compound")?,
+        command: Command::Compound {
+            transaction: ResolvedTransaction::new(
+                0,
+                BTreeMap::new(),
+                vec![ResolvedStep::Edit {
+                    edit: LeafEdit::new(
+                        RevisionId::new("stage")?,
+                        Command::Insert {
+                            parent: initial.root().clone(),
+                            index: 0,
+                            subtree: Subtree {
+                                root: child.clone(),
+                                nodes: BTreeMap::from([(
+                                    child,
+                                    BeatNode::sequence("Empty", Vec::new()),
+                                )]),
+                                overrides: BTreeMap::new(),
+                                gap_overrides: BTreeMap::new(),
+                            },
+                        },
+                    )?,
+                }],
+            )?,
+        },
+    })?;
+    drop(store);
+    let database = Connection::open(package.join("project.sqlite"))?;
+    // Its request, net patches and final snapshot agree. Removing the modern
+    // operational tables must not make that unknown command valid in schema52.
+    database.execute_batch("DROP TABLE registers; DROP TABLE register_contents; DROP TABLE register_state; DROP TABLE transaction_steps; PRAGMA user_version=52;")?;
+    let before = cells(&database)?;
+    let error = ProjectStore::migrate(&package).unwrap_err();
+    let StoreError::MigrationFailed { backup, source } = error else {
+        panic!("expected backed-up migration refusal")
+    };
+    assert!(
+        source
+            .to_string()
+            .contains("schema 52 cannot contain compound commands"),
+        "{source}"
+    );
+    assert_eq!(cells(&database)?, before);
+    let backup = Connection::open(backup)?;
+    assert_eq!(cells(&backup)?, before);
+    assert!(matches!(
+        ProjectStore::open(&package, AccessMode::ReadOnly),
+        Err(StoreError::MigrationRequired(52))
+    ));
     Ok(())
 }
 
 /// Synthetic legacy fixtures may remove only the newly created empty bank.
 /// Authentic older packages and deliberately injected collisions keep all cells.
 pub(super) fn remove_empty_register_tables(database: &Connection) -> Result {
-    for table in ["registers", "register_contents"] {
+    for table in ["registers", "register_contents", "transaction_steps"] {
         assert_eq!(
             database.query_row(&format!("SELECT count(*) FROM {table}"), [], |row| row
                 .get::<_, i64>(0))?,
@@ -193,7 +271,7 @@ pub(super) fn remove_empty_register_tables(database: &Connection) -> Result {
         .collect::<std::result::Result<Vec<_>, _>>()?;
     assert_eq!(states, vec![(1, 0)]);
     database.execute_batch(
-        "DROP TABLE registers; DROP TABLE register_contents; DROP TABLE register_state;",
+        "DROP TABLE registers; DROP TABLE register_contents; DROP TABLE register_state; DROP TABLE transaction_steps;",
     )?;
     Ok(())
 }

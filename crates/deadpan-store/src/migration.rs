@@ -170,6 +170,7 @@ fn migrate_candidate(
     if source_version < 52 {
         crate::render_jobs::create_decision_table(&transaction)?;
     }
+    crate::compound::create_tables(&transaction)?;
     crate::registers::create_tables(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::render_jobs::check_stored_sizes(&transaction)?;
@@ -189,6 +190,17 @@ fn migrate_candidate(
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::source_registration::check_stored_sizes(&transaction)?;
     validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
+    if source_version == 52 {
+        let compound: bool = transaction.query_row(
+            "SELECT EXISTS(SELECT 1 FROM history WHERE json_extract(request,'$.command.command')='compound')",
+            [], |row| row.get(0),
+        )?;
+        if compound {
+            return Err(StoreError::History(
+                "schema 52 cannot contain compound commands".into(),
+            ));
+        }
+    }
     if source_version >= 5 {
         crate::generation::check_stored_sizes(&transaction)?;
     }

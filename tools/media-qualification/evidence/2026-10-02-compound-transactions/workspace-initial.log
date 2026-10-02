@@ -1,0 +1,56 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+warning: unused import: `BTreeMap`
+ --> crates/deadpan-store/src/compound.rs:4:24
+  |
+4 | use std::collections::{BTreeMap, BTreeSet};
+  |                        ^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `OptionalExtension`
+  --> crates/deadpan-store/src/lib.rs:52:39
+   |
+52 | use rusqlite::{Connection, OpenFlags, OptionalExtension, params};
+   |                                       ^^^^^^^^^^^^^^^^^
+
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+warning: `deadpan-store` (lib) generated 2 warnings (run `cargo fix --lib -p deadpan-store` to apply 2 suggestions)
+warning: unused import: `OptionalExtension`
+  --> crates/deadpan-store/src/lib.rs:52:39
+   |
+52 | use rusqlite::{Connection, OpenFlags, OptionalExtension, params};
+   |                                       ^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `deadpan-store` (lib test) generated 1 warning (run `cargo fix --lib -p deadpan-store --tests` to apply 1 suggestion)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+   Compiling deadpan-media-worker v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-media-worker)
+error[E0603]: function `paste_identities` is private
+   --> crates/deadpan-app/src/project/tests/registers/compound.rs:103:58
+    |
+103 |                         identities: service::edit_slice::paste_identities(&slice).unwrap(),
+    |                                                          ^^^^^^^^^^^^^^^^ private function
+    |
+note: the function `paste_identities` is defined here
+   --> crates/deadpan-app/src/project/service/edit_slice.rs:315:1
+    |
+315 | pub(super) fn paste_identities(slice: &CapturedEditSlice) -> Result<SlicePasteIdentities> {
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For more information about this error, try `rustc --explain E0603`.
+error: could not compile `deadpan-app` (bin "deadpan-app" test) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `deadpan-app` (bin "deadpan-app") generated 1 warning

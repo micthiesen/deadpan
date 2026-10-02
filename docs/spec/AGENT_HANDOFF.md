@@ -19,6 +19,28 @@ test instances after testing instead of leaving them idle. The previously
 running `dev.thiesen.deadpan.cursor-qa` instance has been quit, and the native
 app inventory confirmed no Deadpan app remained running.
 
+## Resolved transactions, current implementation
+
+[Compound transactions](../COMPOUND_TRANSACTIONS.md) provide the shared core and
+store execution boundary for future semantic macros. Resolve each leaf against
+its preceding staged state, supply fresh allocation IDs and freeze chosen
+register inputs and their bank version. One compound saves one net edit and one
+final bank version. Bank-only programs use the dedicated store API and preserve
+timeline history and redo.
+
+Schema 54 reserves every leaf ID and retains only intermediate documents needed
+by captures. `capture_snapshot_at` resolves this historical copy provenance;
+live expected revisions, `snapshot_at`, playback and export remain timeline-only.
+Reopening checks each leaf's media admission, step rows, retained documents and
+aggregate patch through deterministic replay. Undo and register replacement
+cannot discard capture checkpoints. Schema 53 development packages require
+recreation; no migrations are required during this unused development goal.
+
+Macro recording, semantic selector resolution, count/call expansion and
+dot-repeat remain required. Expose macro controls only when those layers and
+the native workflow exist.
+See [qualification and limits](../qualification/compound-transactions-2026-10-02.md).
+
 ## Configurable editor paths, current implementation
 
 Sound edits, warm and worker-prepared Original insertion, and first-Original
@@ -34,7 +56,7 @@ The [project register bank](../NAMED_REGISTERS.md) adds `"a` selection,
 with its destination fixed at initiation. New name selection cannot retarget a
 completion. Commands capture names and paste content, including absence, on
 entry. Original and Edited copies save through the service without timeline
-revisions; cuts save deletion and registers atomically. SQLite schema 53 retains
+revisions; cuts save deletion and registers atomically. SQLite schema 54 retains
 at most 64 MiB of unique canonical contents. Preserve all slots across edits,
 Undo and reopen; restore fresh runtime identities and revalidate historical
 provenance. Publish versioned bank snapshots independently of pending UI
@@ -59,7 +81,8 @@ consume a new prefix. Command/Search entry retains the ordered native input
 suffix and suppresses only the held opener. See [the contract](../KEYMAP.md).
 Other mode maps, strict logical provenance, physical layout/IME qualification,
 semantic dot-repeat and macros remain required. The keymap increment made no
-schema changes; the register bank above adds schema 53.
+schema changes; registers were introduced in schema 53, followed by schema 54's
+compound step reservations and capture snapshots.
 The [qualification](../qualification/configurable-bindings-2026-10-01.md) records
 custom/fallback replay, final checks and remaining verification limits.
 

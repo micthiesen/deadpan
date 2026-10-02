@@ -13,64 +13,13 @@ use rusqlite::{Connection, params};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::{CommitOutcome, ProjectStore, StoreError, generation::RelevancePlan, validation};
+use crate::{CommitOutcome, ProjectStore, StoreError, generation::RelevancePlan};
 
 /// Total canonical bytes retained by distinct register values, including metadata.
 pub const MAX_REGISTER_BYTES: usize = 64 * 1024 * 1024;
 const MAX_SLOTS: i64 = 27;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
-#[serde(transparent)]
-pub struct RegisterName(char);
-
-impl RegisterName {
-    pub fn new(name: char) -> Result<Self, StoreError> {
-        if name == '"' || name.is_ascii_lowercase() {
-            Ok(Self(name))
-        } else {
-            Err(invalid(
-                "register name must be a-z or the unnamed register (\")",
-            ))
-        }
-    }
-
-    pub const fn unnamed() -> Self {
-        Self('"')
-    }
-
-    pub const fn as_char(self) -> char {
-        self.0
-    }
-}
-
-impl<'de> Deserialize<'de> for RegisterName {
-    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        Self::new(char::deserialize(deserializer)?).map_err(serde::de::Error::custom)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
-pub enum RegisterValue {
-    Original {
-        revision: RevisionId,
-        asset: AssetId,
-        qualification: SourceQualificationId,
-        ordinals: Range<u64>,
-    },
-    Edited {
-        slice: Arc<CapturedEditSlice>,
-    },
-}
-
-impl RegisterValue {
-    pub fn revision(&self) -> &RevisionId {
-        match self {
-            Self::Original { revision, .. } => revision,
-            Self::Edited { slice } => slice.revision_id(),
-        }
-    }
-}
+pub use deadpan_core::{RegisterName, RegisterValue};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -176,8 +125,10 @@ pub(crate) fn create_tables(connection: &Connection) -> Result<(), StoreError> {
         INSERT INTO register_state VALUES(1,0);
         CREATE TABLE register_contents (
             id TEXT PRIMARY KEY,
-            capture_revision TEXT NOT NULL REFERENCES revisions(id),
-            value TEXT NOT NULL CHECK(json_valid(value))
+            capture_revision TEXT REFERENCES revisions(id),
+            capture_step TEXT REFERENCES transaction_steps(step_revision),
+            value TEXT NOT NULL CHECK(json_valid(value)),
+            CHECK ((capture_revision IS NULL) != (capture_step IS NULL))
         ) STRICT;
         CREATE TABLE registers (
             name TEXT PRIMARY KEY CHECK(length(CAST(name AS BLOB))=1 AND (name='\"' OR name GLOB '[a-z]')),
@@ -202,8 +153,12 @@ pub(crate) fn check_stored_sizes(connection: &Connection) -> Result<(), StoreErr
             OR NOT (name='\"' OR name GLOB '[a-z]') OR typeof(content_id)!='text'
             OR length(CAST(content_id AS BLOB))!=64 OR content_id GLOB '*[^0-9a-f]*')
         OR EXISTS(SELECT 1 FROM register_contents WHERE typeof(id)!='text' OR length(CAST(id AS BLOB))!=64
-            OR id GLOB '*[^0-9a-f]*' OR typeof(capture_revision)!='text'
-            OR length(CAST(capture_revision AS BLOB)) NOT BETWEEN 1 AND ?2
+            OR id GLOB '*[^0-9a-f]*'
+            OR ((capture_revision IS NULL) = (capture_step IS NULL))
+            OR (capture_revision IS NOT NULL AND (typeof(capture_revision)!='text'
+                OR length(CAST(capture_revision AS BLOB)) NOT BETWEEN 1 AND ?2))
+            OR (capture_step IS NOT NULL AND (typeof(capture_step)!='text'
+                OR length(CAST(capture_step AS BLOB)) NOT BETWEEN 1 AND ?2))
             OR typeof(value)!='text' OR length(CAST(value AS BLOB)) NOT BETWEEN 1 AND ?1)",
         params![MAX_REGISTER_BYTES as i64, deadpan_core::MAX_IDENTITY_BYTES as i64],
         |r| r.get(0),
@@ -234,7 +189,8 @@ pub(crate) fn check_stored_sizes(connection: &Connection) -> Result<(), StoreErr
     let inconsistent: bool = connection.query_row(
         "SELECT EXISTS(SELECT 1 FROM register_contents c WHERE NOT EXISTS(SELECT 1 FROM registers r WHERE r.content_id=c.id))
         OR EXISTS(SELECT 1 FROM registers r WHERE NOT EXISTS(SELECT 1 FROM register_contents c WHERE c.id=r.content_id))
-        OR EXISTS(SELECT 1 FROM register_contents c WHERE NOT EXISTS(SELECT 1 FROM revisions v WHERE v.id=c.capture_revision))
+        OR EXISTS(SELECT 1 FROM register_contents c WHERE c.capture_revision IS NOT NULL AND NOT EXISTS(SELECT 1 FROM revisions v WHERE v.id=c.capture_revision))
+        OR EXISTS(SELECT 1 FROM register_contents c WHERE c.capture_step IS NOT NULL AND NOT EXISTS(SELECT 1 FROM transaction_steps s WHERE s.step_revision=c.capture_step AND s.document IS NOT NULL))
         OR (EXISTS(SELECT 1 FROM registers) AND NOT EXISTS(SELECT 1 FROM registers WHERE name='\"'))
         OR EXISTS(SELECT 1 FROM register_state WHERE (version=0)!=(NOT EXISTS(SELECT 1 FROM registers)))",
         [], |r| r.get(0),
@@ -251,13 +207,13 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
     read_bank(connection).map(|_| ())
 }
 
-fn read_bank(connection: &Connection) -> Result<RegisterBank, StoreError> {
+pub(crate) fn read_bank(connection: &Connection) -> Result<RegisterBank, StoreError> {
     read_bank_contents(connection).map(|(bank, _)| bank)
 }
 
 fn read_bank_contents(
     connection: &Connection,
-) -> Result<(RegisterBank, BTreeMap<String, Arc<RegisterValue>>), StoreError> {
+) -> Result<(RegisterBank, BTreeMap<String, CanonicalContent>), StoreError> {
     check_stored_sizes(connection)?;
     let project = crate::read_snapshot(connection)?.project_id().clone();
     let version: i64 = connection.query_row(
@@ -268,7 +224,7 @@ fn read_bank_contents(
     let version = u64::try_from(version).map_err(|_| invalid("invalid register version"))?;
     let mut values = BTreeMap::new();
     let mut statement = connection
-        .prepare("SELECT id,capture_revision,value FROM register_contents ORDER BY id")?;
+        .prepare("SELECT id,coalesce(capture_revision,capture_step),value FROM register_contents ORDER BY id")?;
     let mut rows = statement.query([])?;
     while let Some(row) = rows.next()? {
         let id: String = row.get(0)?;
@@ -284,7 +240,14 @@ fn read_bank_contents(
             ));
         }
         validate_value(connection, &value, &project)?;
-        values.insert(id, Arc::new(value));
+        values.insert(
+            id,
+            CanonicalContent {
+                value: Arc::new(value),
+                json: json.into_bytes(),
+                validated: true,
+            },
+        );
     }
     let mut entries = BTreeMap::new();
     let mut statement =
@@ -301,36 +264,48 @@ fn read_bank_contents(
         let value = values
             .get(&id)
             .ok_or_else(|| invalid("register content is missing"))?;
-        entries.insert(name, Arc::clone(value));
+        entries.insert(name, Arc::clone(&value.value));
     }
     Ok((RegisterBank { version, entries }, values))
 }
 
-fn validate_value(
+pub(crate) fn validate_value(
     connection: &Connection,
     value: &RegisterValue,
     project: &ProjectId,
 ) -> Result<(), StoreError> {
-    let captured = validation::read_revision(connection, value.revision().as_str())?.document;
+    let captured = crate::compound::read_capture(connection, value.revision())?;
+    validate_value_at(connection, value, project, &captured)
+}
+
+pub(crate) fn validate_value_at(
+    connection: &Connection,
+    value: &RegisterValue,
+    project: &ProjectId,
+    captured: &ProjectDocument,
+) -> Result<(), StoreError> {
+    if value.revision() != captured.revision_id() {
+        return Err(invalid("register capture revision differs from its source"));
+    }
     if captured.project_id() != project {
         return Err(invalid("register capture belongs to another project"));
     }
     match value {
-        RegisterValue::Edited { slice } => slice.validate_capture(&captured)?,
+        RegisterValue::Edited { slice } => slice.validate_capture(captured)?,
         RegisterValue::Original {
             asset,
             qualification,
             ordinals,
             ..
         } => {
-            validate_original(connection, &captured, asset, qualification, ordinals)?;
+            validate_original(connection, captured, asset, qualification, ordinals)?;
         }
     }
     Ok(())
 }
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
-fn validate_original(
+pub(crate) fn validate_original(
     connection: &Connection,
     captured: &ProjectDocument,
     asset: &AssetId,
@@ -368,7 +343,7 @@ fn validate_original(
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "linux")))]
-fn validate_original(
+pub(crate) fn validate_original(
     _: &Connection,
     _: &ProjectDocument,
     _: &AssetId,
@@ -378,49 +353,150 @@ fn validate_original(
     Err(StoreError::SourceAdmissionUnavailable)
 }
 
+struct CanonicalContent {
+    value: Arc<RegisterValue>,
+    json: Vec<u8>,
+    // Existing content was semantically validated while reading this same
+    // transaction. New checkpoint-backed contents are validated before writing.
+    validated: bool,
+}
+
+pub(crate) struct PreparedBank {
+    pub bank: RegisterBank,
+    contents: BTreeMap<String, CanonicalContent>,
+    slots: BTreeMap<RegisterName, String>,
+}
+
 fn write_register(
     connection: &Connection,
     name: RegisterName,
     value: RegisterValue,
     project: &ProjectId,
 ) -> Result<RegisterBank, StoreError> {
-    let (mut bank, contents) = read_bank_contents(connection)?;
-    let version = bank
+    let value = Arc::new(value);
+    let writes = BTreeMap::from([(RegisterName::unnamed(), Arc::clone(&value)), (name, value)]);
+    let prepared = prepare_writes(connection, &writes)?;
+    write_prepared_bank(connection, &prepared, project)?;
+    Ok(prepared.bank)
+}
+
+pub(crate) fn prepare_bank(connection: &Connection) -> Result<PreparedBank, StoreError> {
+    let (bank, contents) = read_bank_contents(connection)?;
+    canonical_contents(bank, contents)
+}
+
+pub(crate) fn prepare_writes(
+    connection: &Connection,
+    writes: &BTreeMap<RegisterName, Arc<RegisterValue>>,
+) -> Result<PreparedBank, StoreError> {
+    prepare_writes_from(prepare_bank(connection)?, writes)
+}
+
+pub(crate) fn prepare_writes_from(
+    prepared: PreparedBank,
+    writes: &BTreeMap<RegisterName, Arc<RegisterValue>>,
+) -> Result<PreparedBank, StoreError> {
+    if writes.is_empty() {
+        return Ok(prepared);
+    }
+    let PreparedBank {
+        mut bank, contents, ..
+    } = prepared;
+    bank.version = bank
         .version
         .checked_add(1)
         .filter(|version| *version <= i64::MAX as u64)
         .ok_or_else(|| invalid("register versions are exhausted"))?;
-    validate_value(connection, &value, project)?;
-    let json = canonical(&value)?;
-    let id = digest(&json);
-    let value = match contents.get(&id) {
-        Some(existing) if existing.as_ref() != &value => {
+    bank.entries.extend(
+        writes
+            .iter()
+            .map(|(name, value)| (*name, Arc::clone(value))),
+    );
+    canonical_contents(bank, contents)
+}
+
+fn canonical_contents(
+    mut bank: RegisterBank,
+    mut contents: BTreeMap<String, CanonicalContent>,
+) -> Result<PreparedBank, StoreError> {
+    // At most 27 slots. Arc identity avoids repeatedly serializing aliases;
+    // canonical bytes also deduplicate independently allocated equal values.
+    let mut known: Vec<_> = contents
+        .iter()
+        .map(|(id, content)| (Arc::clone(&content.value), id.clone()))
+        .collect();
+    let mut slots = BTreeMap::new();
+    for (name, value) in &mut bank.entries {
+        let id = if let Some((_, id)) = known.iter().find(|(seen, _)| Arc::ptr_eq(seen, value)) {
+            id.clone()
+        } else {
+            let json = canonical(value)?;
+            let id = digest(&json);
+            if let Some(existing) = contents.get(&id) {
+                if existing.json != json || existing.value.as_ref() != value.as_ref() {
+                    return Err(invalid("register content hash collision"));
+                }
+            } else {
+                contents.insert(
+                    id.clone(),
+                    CanonicalContent {
+                        value: Arc::clone(value),
+                        json,
+                        validated: false,
+                    },
+                );
+            }
+            known.push((Arc::clone(value), id.clone()));
+            id
+        };
+        *value = Arc::clone(&contents[&id].value);
+        slots.insert(*name, id);
+    }
+    contents.retain(|id, _| slots.values().any(|used| used == id));
+    let mut bytes = 0_usize;
+    for content in contents.values() {
+        bytes = bytes
+            .checked_add(content.json.len())
+            .filter(|bytes| *bytes <= MAX_REGISTER_BYTES)
+            .ok_or_else(|| invalid("register contents exceed the aggregate 64 MiB limit"))?;
+    }
+    Ok(PreparedBank {
+        bank,
+        contents,
+        slots,
+    })
+}
+
+pub(crate) fn write_prepared_bank(
+    connection: &Connection,
+    prepared: &PreparedBank,
+    project: &ProjectId,
+) -> Result<(), StoreError> {
+    // Checkpoints are inserted first, inside the same transaction. Each unique
+    // new payload is validated once; aliases reuse its prepared ID and bytes.
+    for (id, content) in &prepared.contents {
+        if !content.validated {
+            validate_value(connection, &content.value, project)?;
+        }
+        let (revision, step) =
+            crate::compound::capture_columns(connection, content.value.revision())?;
+        connection.execute(
+            "INSERT INTO register_contents(id,capture_revision,capture_step,value) VALUES(?1,?2,?3,?4) ON CONFLICT(id) DO NOTHING",
+            params![id, revision, step, std::str::from_utf8(&content.json).map_err(|_| invalid("register JSON is not UTF-8"))?],
+        )?;
+        let same: bool = connection.query_row(
+            "SELECT capture_revision IS ?2 AND capture_step IS ?3 AND CAST(value AS BLOB)=?4 FROM register_contents WHERE id=?1",
+            params![id, revision, step, content.json], |r| r.get(0),
+        )?;
+        if !same {
             return Err(invalid("register content hash collision"));
         }
-        Some(existing) => Arc::clone(existing),
-        None => Arc::new(value),
-    };
-    bank.entries
-        .insert(RegisterName::unnamed(), Arc::clone(&value));
-    bank.entries.insert(name, Arc::clone(&value));
-    // SQL deduplication is also checked against exact canonical bytes; the hash
-    // alone must not silently alias a different payload or capture revision.
-    connection.execute(
-        "INSERT INTO register_contents(id,capture_revision,value) VALUES(?1,?2,?3) ON CONFLICT(id) DO NOTHING",
-        params![id, value.revision().as_str(), std::str::from_utf8(&json).map_err(|_| invalid("register JSON is not UTF-8"))?],
-    )?;
-    let same: bool = connection.query_row(
-        "SELECT capture_revision=?2 AND CAST(value AS BLOB)=?3 FROM register_contents WHERE id=?1",
-        params![id, value.revision().as_str(), json],
-        |r| r.get(0),
-    )?;
-    if !same {
-        return Err(invalid("register content hash collision"));
     }
-    for destination in [RegisterName::unnamed(), name] {
+    connection.execute("DELETE FROM registers", [])?;
+    for (name, id) in &prepared.slots {
         connection.execute(
-            "INSERT INTO registers(name,content_id) VALUES(?1,?2) ON CONFLICT(name) DO UPDATE SET content_id=excluded.content_id",
-            params![destination.as_char().to_string(), id],
+            "INSERT INTO registers(name,content_id) VALUES(?1,?2)",
+            params![name.as_char().to_string(), id],
         )?;
     }
     connection.execute(
@@ -429,11 +505,10 @@ fn write_register(
     )?;
     connection.execute(
         "UPDATE register_state SET version=?1 WHERE singleton=1",
-        [i64::try_from(version).map_err(|_| invalid("register versions are exhausted"))?],
+        [i64::try_from(prepared.bank.version)
+            .map_err(|_| invalid("register versions are exhausted"))?],
     )?;
-    check_stored_sizes(connection)?;
-    bank.version = version;
-    Ok(bank)
+    check_stored_sizes(connection)
 }
 
 fn canonical(value: &RegisterValue) -> Result<Vec<u8>, StoreError> {

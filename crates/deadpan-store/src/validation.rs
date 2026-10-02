@@ -474,6 +474,8 @@ fn replay(connection: &Connection, schema: ReplaySchema) -> Result<(), StoreErro
         return Err(history_error("root revision is not initial"));
     }
     let mut current = first.initial()?;
+    crate::compound::validate_namespace(connection, &current)?;
+    let mut admitted = std::collections::BTreeSet::from([current.revision_id().clone()]);
     let initial_allocations: std::collections::BTreeSet<_> = current
         .nodes()
         .values()
@@ -504,8 +506,8 @@ fn replay(connection: &Connection, schema: ReplaySchema) -> Result<(), StoreErro
         write_migrated_revision(connection, &current)?;
     }
     let mut cursor = None;
-    // Only numeric history identifiers are retained. Memory is independent of
-    // total historical document size; the stack grows only with undone edits.
+    // Retain identities, never historical documents. Admitted revision IDs
+    // prevent future checkpoint references; the redo stack holds history IDs.
     let mut redo = Vec::<i64>::new();
     let mut visited = 1_i64;
     let mut edits = 0_i64;
@@ -607,7 +609,12 @@ fn replay(connection: &Connection, schema: ReplaySchema) -> Result<(), StoreErro
                         legacy_v23::validate_request_context(&current, &request)?;
                     }
                 }
-                let calculated = deadpan_core::apply(&current, &request)?;
+                let calculated =
+                    if matches!(request.command, deadpan_core::Command::Compound { .. }) {
+                        crate::compound::replay(connection, &current, &request, &admitted)?
+                    } else {
+                        deadpan_core::apply(&current, &request)?
+                    };
                 let matches_edit = match schema {
                     ReplaySchema::Current => {
                         calculated == serde_json::from_str::<EditTransaction>(&edit_json)?
@@ -646,6 +653,15 @@ fn replay(connection: &Connection, schema: ReplaySchema) -> Result<(), StoreErro
                     ReplaySchema::V32 => legacy_v32::matches_edit(&edit_json, &calculated)?,
                 };
                 let next_document = calculated.forward.apply(&current)?;
+                if !matches!(request.command, deadpan_core::Command::Compound { .. }) {
+                    crate::compound::validate_ordinary_history(
+                        connection,
+                        &current,
+                        &next_document,
+                        &request,
+                        &admitted,
+                    )?;
+                }
                 #[cfg(any(target_os = "macos", target_os = "linux"))]
                 crate::source_registration::validate_hold_audio_source(
                     connection,
@@ -703,6 +719,7 @@ fn replay(connection: &Connection, schema: ReplaySchema) -> Result<(), StoreErro
             }
             _ => return Err(history_error("noninitial revision has an invalid kind")),
         };
+        admitted.insert(next_document.revision_id().clone());
         current = next_document;
         if migrate {
             write_migrated_revision(connection, &current)?;

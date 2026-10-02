@@ -43,9 +43,23 @@ pub struct SourceInsertion {
 
 /// Structural node selectors are explicit. Range/text/occurrence resolution is
 /// deliberately not inferred from absent UI context.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
-pub enum Command {
+// Keep the public enum and its private serde mirror in one declaration. The
+// outer reader must bound a compound before serde buffers tagged-enum fields.
+macro_rules! define_commands {
+    ($($variants:tt)*) => {
+        #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+        #[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
+        pub enum Command { $($variants)* }
+        #[derive(Deserialize)]
+        #[serde(remote = "Command", tag = "command", rename_all = "snake_case", deny_unknown_fields)]
+        enum CommandWire { $($variants)* }
+    };
+}
+define_commands! {
+    /// One resolved, bounded sequence with frozen register inputs.
+    Compound {
+        transaction: crate::ResolvedTransaction,
+    },
     /// Install one complete accepted Source Trim intent from its entry revision.
     ApplySourceTrim {
         parent: NodeId,
@@ -385,6 +399,13 @@ pub enum Command {
         edit: OccurrenceEdit,
         identities: OccurrenceIdentities,
     },
+
+}
+impl<'de> Deserialize<'de> for Command {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let value = crate::compound::wire::read(deserializer)?;
+        CommandWire::deserialize(value).map_err(serde::de::Error::custom)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -630,12 +651,15 @@ pub fn apply(
         &request.expected_revision,
         &request.new_revision,
     )?;
+    if matches!(request.command, Command::Compound { .. }) {
+        return crate::replay_compound::<EditError>(document, request, |_| Ok(()))
+            .map(|outcome| outcome.edit);
+    }
     // Validate caller-owned context before cloning either the document or an
     // isolated occurrence. Public structs can be constructed without serde.
     crate::picture_context::validate_command(&request.command)?;
     crate::audio_gain::validate_command(&request.command)?;
     crate::sound_events::validate_command(document, &request.command)?;
-    let before_duration = document.duration()?.frames();
     let sound_edit =
         crate::sound_routing::RootSoundEditCapture::prepare(document, &request.command)?;
     let mut allowance_edit =
@@ -814,11 +838,22 @@ pub fn apply(
     crate::audio_binding_lifecycle::prune(&mut result);
     result.lock_timed_basis(document)?;
     result.revision_id = request.new_revision.clone();
+    net_transaction(document, &result, description(&request.command))
+}
+
+/// Build one reversible net patch. Leaf edits have already transformed sounds,
+/// allowances and clocks; aggregation must not run those transforms again.
+pub(crate) fn net_transaction(
+    document: &ProjectDocument,
+    result: &ProjectDocument,
+    description: &str,
+) -> Result<EditTransaction, EditError> {
+    let before_duration = document.duration()?.frames();
     let after_duration = result.duration()?.frames();
     let forward = DocumentPatch {
         project_id: document.project_id.clone(),
         from_revision: document.revision_id.clone(),
-        to_revision: request.new_revision.clone(),
+        to_revision: result.revision_id.clone(),
         presentation: (document.presentation_state() != result.presentation_state()).then(|| {
             PresentationChange {
                 before: document.presentation_state(),
@@ -885,7 +920,7 @@ pub fn apply(
         forward,
         // Both durations are nonnegative i64, so their difference always fits.
         duration_delta: after_duration - before_duration,
-        description: description(&request.command).to_owned(),
+        description: description.to_owned(),
     })
 }
 
@@ -936,7 +971,7 @@ fn changed_audio_binding_owners(
         .collect()
 }
 
-fn check_revision(
+pub(crate) fn check_revision(
     document: &ProjectDocument,
     project: &ProjectId,
     expected: &RevisionId,
@@ -973,6 +1008,12 @@ pub(crate) fn reduce(
     allocation: &RevisionId,
 ) -> Result<(), EditError> {
     match command {
+        Command::Compound { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "compound commands require the sequential replay entrypoint",
+            ));
+        }
         Command::SetSound { id, event } | Command::ReplaceSound { id, event } => {
             let replace = matches!(command, Command::ReplaceSound { .. });
             if replace && !document.sounds.contains_key(id) {
@@ -2103,6 +2144,7 @@ fn apply_changes<K: Ord + Clone, V: Eq + Clone>(
 
 fn description(command: &Command) -> &'static str {
     match command {
+        Command::Compound { .. } => "Apply resolved transaction",
         Command::SetSound { .. } => "Set sound event",
         Command::ReplaceSound { .. } => "Replace sound recipe",
         Command::DeleteSound { .. } => "Delete sound event",

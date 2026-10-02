@@ -1242,6 +1242,7 @@ pub fn validate_request_context(
 
 fn preserves_sound_clocks(command: &Command) -> bool {
     match command {
+        Command::Compound { .. } => false,
         Command::SetSound { .. }
         | Command::ReplaceSound { .. }
         | Command::DeleteSound { .. }

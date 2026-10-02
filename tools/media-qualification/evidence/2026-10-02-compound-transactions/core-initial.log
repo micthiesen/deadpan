@@ -1,0 +1,435 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+error[E0659]: `invalid` is ambiguous
+   --> crates/deadpan-core/src/compound/tests.rs:476:21
+    |
+476 |                 Err(invalid("host admission failed"))
+    |                     ^^^^^^^ ambiguous name
+    |
+    = note: ambiguous because of multiple glob imports of a name in the same module
+note: `invalid` could refer to the function imported here
+   --> crates/deadpan-core/src/compound/tests.rs:1:5
+    |
+  1 | use super::*;
+    |     ^^^^^^^^
+    = help: consider adding an explicit import of `invalid` to disambiguate
+note: `invalid` could also refer to the function imported here
+   --> crates/deadpan-core/src/compound/tests.rs:2:5
+    |
+  2 | use crate::*;
+    |     ^^^^^^^^
+    = help: consider adding an explicit import of `invalid` to disambiguate
+
+error[E0277]: the trait bound `std::sync::Arc<register::RegisterValue>: serde::Serialize` is not satisfied
+    --> crates/deadpan-core/src/compound.rs:88:9
+     |
+  88 |         value: Arc<RegisterValue>,
+     |         ^^^^^ the trait `anchor::_::_serde::Serialize` is not implemented for `std::sync::Arc<register::RegisterValue>`
+     |
+     = note: for local types consider adding `#[derive(serde::Serialize)]` to your `std::sync::Arc<register::RegisterValue>` type
+     = note: for types from other crates check whether the crate offers a `serde` feature flag
+     = help: the following other types implement trait `anchor::_::_serde::Serialize`:
+               &'a T
+               &'a mut T
+               ()
+               (T,)
+               (T0, T1)
+               (T0, T1, T2)
+               (T0, T1, T2, T3)
+               (T0, T1, T2, T3, T4)
+             and 406 others
+note: required by a bound in `anchor::_::_serde::ser::SerializeStruct::serialize_field`
+    --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_core-1.0.229/src/ser/mod.rs:1917:21
+     |
+1915 |     fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
+     |        --------------- required by a bound in this associated function
+1916 |     where
+1917 |         T: ?Sized + Serialize;
+     |                     ^^^^^^^^^ required by this bound in `SerializeStruct::serialize_field`
+
+error[E0277]: the trait bound `std::sync::Arc<edit_slice::CapturedEditSlice>: serde::Serialize` is not satisfied
+    --> crates/deadpan-core/src/compound.rs:92:9
+     |
+  92 |         slice: Arc<CapturedEditSlice>,
+     |         ^^^^^ the trait `anchor::_::_serde::Serialize` is not implemented for `std::sync::Arc<edit_slice::CapturedEditSlice>`
+     |
+     = note: for local types consider adding `#[derive(serde::Serialize)]` to your `std::sync::Arc<edit_slice::CapturedEditSlice>` type
+     = note: for types from other crates check whether the crate offers a `serde` feature flag
+     = help: the following other types implement trait `anchor::_::_serde::Serialize`:
+               &'a T
+               &'a mut T
+               ()
+               (T,)
+               (T0, T1)
+               (T0, T1, T2)
+               (T0, T1, T2, T3)
+               (T0, T1, T2, T3, T4)
+             and 406 others
+note: required by a bound in `anchor::_::_serde::ser::SerializeStruct::serialize_field`
+    --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_core-1.0.229/src/ser/mod.rs:1917:21
+     |
+1915 |     fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
+     |        --------------- required by a bound in this associated function
+1916 |     where
+1917 |         T: ?Sized + Serialize;
+     |                     ^^^^^^^^^ required by this bound in `SerializeStruct::serialize_field`
+
+error[E0277]: the trait bound `std::sync::Arc<register::RegisterValue>: serde::Deserialize<'de>` is not satisfied
+    --> crates/deadpan-core/src/compound.rs:88:16
+     |
+  88 |         value: Arc<RegisterValue>,
+     |                ^^^^^^^^^^^^^^^^^^ the trait `anchor::_::_serde::Deserialize<'_>` is not implemented for `std::sync::Arc<register::RegisterValue>`
+     |
+     = note: for local types consider adding `#[derive(serde::Deserialize)]` to your `std::sync::Arc<register::RegisterValue>` type
+     = note: for types from other crates check whether the crate offers a `serde` feature flag
+     = help: the following other types implement trait `anchor::_::_serde::Deserialize<'de>`:
+               &'a Path
+               &'a RawValue
+               &'a [u8]
+               &'a str
+               ()
+               (T,)
+               (T0, T1)
+               (T0, T1, T2)
+             and 378 others
+note: required by a bound in `next_element`
+    --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_core-1.0.229/src/de/mod.rs:1771:12
+     |
+1769 |     fn next_element<T>(&mut self) -> Result<Option<T>, Self::Error>
+     |        ------------ required by a bound in this associated function
+1770 |     where
+1771 |         T: Deserialize<'de>,
+     |            ^^^^^^^^^^^^^^^^ required by this bound in `SeqAccess::next_element`
+     = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/debug/deps/deadpan_core-b32f8ce8c7bbc4ac.long-type-15302696359481315555.txt'
+     = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `std::sync::Arc<register::RegisterValue>: serde::Deserialize<'de>` is not satisfied
+    --> crates/deadpan-core/src/compound.rs:88:16
+     |
+  88 |         value: Arc<RegisterValue>,
+     |                ^^^^^^^^^^^^^^^^^^ the trait `anchor::_::_serde::Deserialize<'_>` is not implemented for `std::sync::Arc<register::RegisterValue>`
+     |
+     = note: for local types consider adding `#[derive(serde::Deserialize)]` to your `std::sync::Arc<register::RegisterValue>` type
+     = note: for types from other crates check whether the crate offers a `serde` feature flag
+     = help: the following other types implement trait `anchor::_::_serde::Deserialize<'de>`:
+               &'a Path
+               &'a RawValue
+               &'a [u8]
+               &'a str
+               ()
+               (T,)
+               (T0, T1)
+               (T0, T1, T2)
+             and 378 others
+note: required by a bound in `next_value`
+    --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_core-1.0.229/src/de/mod.rs:1916:12
+     |
+1914 |     fn next_value<V>(&mut self) -> Result<V, Self::Error>
+     |        ---------- required by a bound in this associated function
+1915 |     where
+1916 |         V: Deserialize<'de>,
+     |            ^^^^^^^^^^^^^^^^ required by this bound in `MapAccess::next_value`
+     = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/debug/deps/deadpan_core-b32f8ce8c7bbc4ac.long-type-15302696359481315555.txt'
+     = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `std::sync::Arc<register::RegisterValue>: serde::Deserialize<'de>` is not satisfied
+  --> crates/deadpan-core/src/compound.rs:80:50
+   |
+80 | #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+   |                                                  ^^^^^^^^^^^ the trait `anchor::_::_serde::Deserialize<'_>` is not implemented for `std::sync::Arc<register::RegisterValue>`
+   |
+   = note: for local types consider adding `#[derive(serde::Deserialize)]` to your `std::sync::Arc<register::RegisterValue>` type
+   = note: for types from other crates check whether the crate offers a `serde` feature flag
+   = help: the following other types implement trait `anchor::_::_serde::Deserialize<'de>`:
+             &'a Path
+             &'a RawValue
+             &'a [u8]
+             &'a str
+             ()
+             (T,)
+             (T0, T1)
+             (T0, T1, T2)
+           and 378 others
+note: required by a bound in `anchor::_::_serde::__private229::de::missing_field`
+  --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/de.rs:26:8
+   |
+24 | pub fn missing_field<'de, V, E>(field: &'static str) -> Result<V, E>
+   |        ------------- required by a bound in this function
+25 | where
+26 |     V: Deserialize<'de>,
+   |        ^^^^^^^^^^^^^^^^ required by this bound in `missing_field`
+   = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/debug/deps/deadpan_core-b32f8ce8c7bbc4ac.long-type-15302696359481315555.txt'
+   = note: consider using `--verbose` to print the full type name to the console
+   = note: this error originates in the derive macro `Deserialize` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `std::sync::Arc<edit_slice::CapturedEditSlice>: serde::Deserialize<'de>` is not satisfied
+    --> crates/deadpan-core/src/compound.rs:92:16
+     |
+  92 |         slice: Arc<CapturedEditSlice>,
+     |                ^^^^^^^^^^^^^^^^^^^^^^ the trait `anchor::_::_serde::Deserialize<'_>` is not implemented for `std::sync::Arc<edit_slice::CapturedEditSlice>`
+     |
+     = note: for local types consider adding `#[derive(serde::Deserialize)]` to your `std::sync::Arc<edit_slice::CapturedEditSlice>` type
+     = note: for types from other crates check whether the crate offers a `serde` feature flag
+     = help: the following other types implement trait `anchor::_::_serde::Deserialize<'de>`:
+               &'a Path
+               &'a RawValue
+               &'a [u8]
+               &'a str
+               ()
+               (T,)
+               (T0, T1)
+               (T0, T1, T2)
+             and 378 others
+note: required by a bound in `next_element`
+    --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_core-1.0.229/src/de/mod.rs:1771:12
+     |
+1769 |     fn next_element<T>(&mut self) -> Result<Option<T>, Self::Error>
+     |        ------------ required by a bound in this associated function
+1770 |     where
+1771 |         T: Deserialize<'de>,
+     |            ^^^^^^^^^^^^^^^^ required by this bound in `SeqAccess::next_element`
+     = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/debug/deps/deadpan_core-b32f8ce8c7bbc4ac.long-type-15302696359481315555.txt'
+     = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `std::sync::Arc<edit_slice::CapturedEditSlice>: serde::Deserialize<'de>` is not satisfied
+    --> crates/deadpan-core/src/compound.rs:92:16
+     |
+  92 |         slice: Arc<CapturedEditSlice>,
+     |                ^^^^^^^^^^^^^^^^^^^^^^ the trait `anchor::_::_serde::Deserialize<'_>` is not implemented for `std::sync::Arc<edit_slice::CapturedEditSlice>`
+     |
+     = note: for local types consider adding `#[derive(serde::Deserialize)]` to your `std::sync::Arc<edit_slice::CapturedEditSlice>` type
+     = note: for types from other crates check whether the crate offers a `serde` feature flag
+     = help: the following other types implement trait `anchor::_::_serde::Deserialize<'de>`:
+               &'a Path
+               &'a RawValue
+               &'a [u8]
+               &'a str
+               ()
+               (T,)
+               (T0, T1)
+               (T0, T1, T2)
+             and 378 others
+note: required by a bound in `next_value`
+    --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_core-1.0.229/src/de/mod.rs:1916:12
+     |
+1914 |     fn next_value<V>(&mut self) -> Result<V, Self::Error>
+     |        ---------- required by a bound in this associated function
+1915 |     where
+1916 |         V: Deserialize<'de>,
+     |            ^^^^^^^^^^^^^^^^ required by this bound in `MapAccess::next_value`
+     = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/debug/deps/deadpan_core-b32f8ce8c7bbc4ac.long-type-15302696359481315555.txt'
+     = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `std::sync::Arc<edit_slice::CapturedEditSlice>: serde::Deserialize<'de>` is not satisfied
+  --> crates/deadpan-core/src/compound.rs:80:50
+   |
+80 | #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+   |                                                  ^^^^^^^^^^^ the trait `anchor::_::_serde::Deserialize<'_>` is not implemented for `std::sync::Arc<edit_slice::CapturedEditSlice>`
+   |
+   = note: for local types consider adding `#[derive(serde::Deserialize)]` to your `std::sync::Arc<edit_slice::CapturedEditSlice>` type
+   = note: for types from other crates check whether the crate offers a `serde` feature flag
+   = help: the following other types implement trait `anchor::_::_serde::Deserialize<'de>`:
+             &'a Path
+             &'a RawValue
+             &'a [u8]
+             &'a str
+             ()
+             (T,)
+             (T0, T1)
+             (T0, T1, T2)
+           and 378 others
+note: required by a bound in `anchor::_::_serde::__private229::de::missing_field`
+  --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/de.rs:26:8
+   |
+24 | pub fn missing_field<'de, V, E>(field: &'static str) -> Result<V, E>
+   |        ------------- required by a bound in this function
+25 | where
+26 |     V: Deserialize<'de>,
+   |        ^^^^^^^^^^^^^^^^ required by this bound in `missing_field`
+   = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/debug/deps/deadpan_core-b32f8ce8c7bbc4ac.long-type-15302696359481315555.txt'
+   = note: consider using `--verbose` to print the full type name to the console
+   = note: this error originates in the derive macro `Deserialize` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `std::sync::Arc<register::RegisterValue>: serde::Serialize` is not satisfied
+    --> crates/deadpan-core/src/compound.rs:110:39
+     |
+ 110 | #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+     |                                       ^^^^^^^^^ the trait `anchor::_::_serde::Serialize` is not implemented for `std::sync::Arc<register::RegisterValue>`
+...
+ 114 |     inputs: BTreeMap<RegisterName, Option<Arc<RegisterValue>>>,
+     |     ------ required by a bound introduced by this call
+     |
+     = note: for local types consider adding `#[derive(serde::Serialize)]` to your `std::sync::Arc<register::RegisterValue>` type
+     = note: for types from other crates check whether the crate offers a `serde` feature flag
+     = help: the following other types implement trait `anchor::_::_serde::Serialize`:
+               &'a T
+               &'a mut T
+               ()
+               (T,)
+               (T0, T1)
+               (T0, T1, T2)
+               (T0, T1, T2, T3)
+               (T0, T1, T2, T3, T4)
+             and 406 others
+     = note: required for `std::option::Option<std::sync::Arc<register::RegisterValue>>` to implement `anchor::_::_serde::Serialize`
+     = note: 1 redundant requirement hidden
+     = note: required for `BTreeMap<RegisterName, Option<Arc<RegisterValue>>>` to implement `anchor::_::_serde::Serialize`
+note: required by a bound in `anchor::_::_serde::ser::SerializeStruct::serialize_field`
+    --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_core-1.0.229/src/ser/mod.rs:1917:21
+     |
+1915 |     fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
+     |        --------------- required by a bound in this associated function
+1916 |     where
+1917 |         T: ?Sized + Serialize;
+     |                     ^^^^^^^^^ required by this bound in `SerializeStruct::serialize_field`
+     = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/debug/deps/deadpan_core-b32f8ce8c7bbc4ac.long-type-12607650360514480645.txt'
+     = note: consider using `--verbose` to print the full type name to the console
+     = note: this error originates in the derive macro `Serialize` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the trait bound `std::sync::Arc<register::RegisterValue>: serde::Deserialize<'de>` is not satisfied
+    --> crates/deadpan-core/src/compound.rs:162:40
+     |
+ 162 |             #[serde(deserialize_with = "crate::document::unique_map")]
+     |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ the trait `anchor::_::_serde::Deserialize<'_>` is not implemented for `std::sync::Arc<register::RegisterValue>`
+     |
+     = note: for local types consider adding `#[derive(serde::Deserialize)]` to your `std::sync::Arc<register::RegisterValue>` type
+     = note: for types from other crates check whether the crate offers a `serde` feature flag
+     = help: the following other types implement trait `anchor::_::_serde::Deserialize<'de>`:
+               &'a Path
+               &'a RawValue
+               &'a [u8]
+               &'a str
+               ()
+               (T,)
+               (T0, T1)
+               (T0, T1, T2)
+             and 378 others
+     = note: required for `std::option::Option<std::sync::Arc<register::RegisterValue>>` to implement `anchor::_::_serde::Deserialize<'_>`
+note: required by a bound in `unique_map`
+    --> crates/deadpan-core/src/document.rs:1359:8
+     |
+1355 | pub(crate) fn unique_map<'de, D, K, V>(deserializer: D) -> Result<BTreeMap<K, V>, D::Error>
+     |               ---------- required by a bound in this function
+...
+1359 |     V: Deserialize<'de>,
+     |        ^^^^^^^^^^^^^^^^ required by this bound in `unique_map`
+     = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/debug/deps/deadpan_core-b32f8ce8c7bbc4ac.long-type-15302696359481315555.txt'
+     = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `std::sync::Arc<edit_slice::CapturedEditSlice>: serde::Serialize` is not satisfied
+    --> crates/deadpan-core/src/register.rs:50:9
+     |
+  50 |         slice: Arc<CapturedEditSlice>,
+     |         ^^^^^ the trait `anchor::_::_serde::Serialize` is not implemented for `std::sync::Arc<edit_slice::CapturedEditSlice>`
+     |
+     = note: for local types consider adding `#[derive(serde::Serialize)]` to your `std::sync::Arc<edit_slice::CapturedEditSlice>` type
+     = note: for types from other crates check whether the crate offers a `serde` feature flag
+     = help: the following other types implement trait `anchor::_::_serde::Serialize`:
+               &'a T
+               &'a mut T
+               ()
+               (T,)
+               (T0, T1)
+               (T0, T1, T2)
+               (T0, T1, T2, T3)
+               (T0, T1, T2, T3, T4)
+             and 406 others
+note: required by a bound in `anchor::_::_serde::ser::SerializeStruct::serialize_field`
+    --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_core-1.0.229/src/ser/mod.rs:1917:21
+     |
+1915 |     fn serialize_field<T>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
+     |        --------------- required by a bound in this associated function
+1916 |     where
+1917 |         T: ?Sized + Serialize;
+     |                     ^^^^^^^^^ required by this bound in `SerializeStruct::serialize_field`
+
+error[E0277]: the trait bound `std::sync::Arc<edit_slice::CapturedEditSlice>: serde::Deserialize<'de>` is not satisfied
+    --> crates/deadpan-core/src/register.rs:50:16
+     |
+  50 |         slice: Arc<CapturedEditSlice>,
+     |                ^^^^^^^^^^^^^^^^^^^^^^ the trait `anchor::_::_serde::Deserialize<'_>` is not implemented for `std::sync::Arc<edit_slice::CapturedEditSlice>`
+     |
+     = note: for local types consider adding `#[derive(serde::Deserialize)]` to your `std::sync::Arc<edit_slice::CapturedEditSlice>` type
+     = note: for types from other crates check whether the crate offers a `serde` feature flag
+     = help: the following other types implement trait `anchor::_::_serde::Deserialize<'de>`:
+               &'a Path
+               &'a RawValue
+               &'a [u8]
+               &'a str
+               ()
+               (T,)
+               (T0, T1)
+               (T0, T1, T2)
+             and 371 others
+note: required by a bound in `next_element`
+    --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_core-1.0.229/src/de/mod.rs:1771:12
+     |
+1769 |     fn next_element<T>(&mut self) -> Result<Option<T>, Self::Error>
+     |        ------------ required by a bound in this associated function
+1770 |     where
+1771 |         T: Deserialize<'de>,
+     |            ^^^^^^^^^^^^^^^^ required by this bound in `SeqAccess::next_element`
+     = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/debug/deps/deadpan_core-b32f8ce8c7bbc4ac.long-type-9538369785984259160.txt'
+     = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `std::sync::Arc<edit_slice::CapturedEditSlice>: serde::Deserialize<'de>` is not satisfied
+    --> crates/deadpan-core/src/register.rs:50:16
+     |
+  50 |         slice: Arc<CapturedEditSlice>,
+     |                ^^^^^^^^^^^^^^^^^^^^^^ the trait `anchor::_::_serde::Deserialize<'_>` is not implemented for `std::sync::Arc<edit_slice::CapturedEditSlice>`
+     |
+     = note: for local types consider adding `#[derive(serde::Deserialize)]` to your `std::sync::Arc<edit_slice::CapturedEditSlice>` type
+     = note: for types from other crates check whether the crate offers a `serde` feature flag
+     = help: the following other types implement trait `anchor::_::_serde::Deserialize<'de>`:
+               &'a Path
+               &'a RawValue
+               &'a [u8]
+               &'a str
+               ()
+               (T,)
+               (T0, T1)
+               (T0, T1, T2)
+             and 371 others
+note: required by a bound in `next_value`
+    --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde_core-1.0.229/src/de/mod.rs:1916:12
+     |
+1914 |     fn next_value<V>(&mut self) -> Result<V, Self::Error>
+     |        ---------- required by a bound in this associated function
+1915 |     where
+1916 |         V: Deserialize<'de>,
+     |            ^^^^^^^^^^^^^^^^ required by this bound in `MapAccess::next_value`
+     = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/debug/deps/deadpan_core-b32f8ce8c7bbc4ac.long-type-9538369785984259160.txt'
+     = note: consider using `--verbose` to print the full type name to the console
+
+error[E0277]: the trait bound `std::sync::Arc<edit_slice::CapturedEditSlice>: serde::Deserialize<'de>` is not satisfied
+  --> crates/deadpan-core/src/register.rs:40:50
+   |
+40 | #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+   |                                                  ^^^^^^^^^^^ the trait `anchor::_::_serde::Deserialize<'_>` is not implemented for `std::sync::Arc<edit_slice::CapturedEditSlice>`
+   |
+   = note: for local types consider adding `#[derive(serde::Deserialize)]` to your `std::sync::Arc<edit_slice::CapturedEditSlice>` type
+   = note: for types from other crates check whether the crate offers a `serde` feature flag
+   = help: the following other types implement trait `anchor::_::_serde::Deserialize<'de>`:
+             &'a Path
+             &'a RawValue
+             &'a [u8]
+             &'a str
+             ()
+             (T,)
+             (T0, T1)
+             (T0, T1, T2)
+           and 371 others
+note: required by a bound in `anchor::_::_serde::__private229::de::missing_field`
+  --> /Users/michael/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.229/src/private/de.rs:26:8
+   |
+24 | pub fn missing_field<'de, V, E>(field: &'static str) -> Result<V, E>
+   |        ------------- required by a bound in this function
+25 | where
+26 |     V: Deserialize<'de>,
+   |        ^^^^^^^^^^^^^^^^ required by this bound in `missing_field`
+   = note: the full name for the type has been written to '/Users/michael/Code/deadpan/target/debug/deps/deadpan_core-b32f8ce8c7bbc4ac.long-type-9538369785984259160.txt'
+   = note: consider using `--verbose` to print the full type name to the console
+   = note: this error originates in the derive macro `Deserialize` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+Some errors have detailed explanations: E0277, E0659.
+For more information about an error, try `rustc --explain E0277`.
+error: could not compile `deadpan-core` (lib test) due to 16 previous errors

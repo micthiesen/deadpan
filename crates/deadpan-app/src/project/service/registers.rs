@@ -153,7 +153,9 @@ pub(super) fn restore(store: &ProjectStore, session: u64) -> Result<Arc<Bank>> {
                     ordinals: ordinals.clone(),
                 },
                 RegisterValue::Edited { slice } => {
-                    let document = store.snapshot_at(slice.revision_id()).map_err(display)?;
+                    let document = store
+                        .capture_snapshot_at(slice.revision_id())
+                        .map_err(display)?;
                     let plan = RenderPlan::compile(&document).map_err(display)?;
                     let scope =
                         SequenceScope::from_historical_parent(&document, &plan, slice.parent())?;

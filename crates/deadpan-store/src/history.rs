@@ -88,6 +88,7 @@ impl ProjectStore {
         Ok(CommitOutcome {
             revision_id: plan.next.revision_id().clone(),
             edit: plan.edit,
+            register_bank: None,
         })
     }
 
@@ -134,6 +135,7 @@ impl ProjectStore {
         Ok(CommitOutcome {
             revision_id: plan.next.revision_id().clone(),
             edit: plan.edit,
+            register_bank: None,
         })
     }
 }

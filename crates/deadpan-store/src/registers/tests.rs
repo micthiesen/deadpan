@@ -551,8 +551,8 @@ fn malformed_row_types_and_excess_slot_counts_fail_before_loading_values() {
         .pragma_update(None, "foreign_keys", false)
         .unwrap();
     store.connection.execute_batch("ALTER TABLE register_contents RENAME TO old_contents;
-        CREATE TABLE register_contents(id,capture_revision,value);
-        INSERT INTO register_contents SELECT id,capture_revision,CAST(value AS BLOB) FROM old_contents;").unwrap();
+        CREATE TABLE register_contents(id,capture_revision,capture_step,value);
+        INSERT INTO register_contents SELECT id,capture_revision,capture_step,CAST(value AS BLOB) FROM old_contents;").unwrap();
     let error = store.registers().unwrap_err();
     assert!(error.to_string().contains("field type or size"), "{error}");
     store

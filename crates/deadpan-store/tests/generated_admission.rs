@@ -177,6 +177,49 @@ fn generic_commands_cannot_bypass_dedicated_candidate_admission() -> Result {
             "GeneratedAcceptanceUnavailable"
         );
         assert_eq!(store.snapshot()?, initial);
+        // A valid later deletion cannot hide unauthorized media introduced by
+        // an earlier staged leaf, even when the net document drops that media.
+        let compound = request(
+            &initial,
+            "compound-rejected",
+            Command::Compound {
+                transaction: ResolvedTransaction::new(
+                    0,
+                    BTreeMap::new(),
+                    vec![
+                        ResolvedStep::Edit {
+                            edit: LeafEdit::new(
+                                RevisionId::new("accept-stage")?,
+                                operation.command.clone(),
+                            )?,
+                        },
+                        ResolvedStep::Edit {
+                            edit: LeafEdit::new(
+                                RevisionId::new("remove-stage")?,
+                                Command::DeleteRipple {
+                                    node: node(),
+                                    timing: AudioTimingId {
+                                        allocation: RevisionId::new("remove-stage")?,
+                                        ordinal: 0,
+                                    },
+                                },
+                            )?,
+                        },
+                    ],
+                )?,
+            },
+        );
+        apply(&initial, &compound)?;
+        assert_eq!(
+            store.preview(&compound).unwrap_err().code(),
+            "GeneratedAcceptanceUnavailable"
+        );
+        assert_eq!(
+            store.commit(&compound).unwrap_err().code(),
+            "GeneratedAcceptanceUnavailable"
+        );
+        assert_eq!(store.snapshot()?, initial);
+        assert_eq!(store.register_version()?, 0);
     }
     for (id, asset) in assets {
         let before = store.snapshot()?;

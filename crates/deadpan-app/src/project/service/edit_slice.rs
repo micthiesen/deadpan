@@ -133,7 +133,7 @@ impl Service {
             .store
             .as_ref()
             .ok_or("Open a project first")?
-            .snapshot_at(slice.revision_id())
+            .capture_snapshot_at(slice.revision_id())
             .map_err(display)?;
         slice.validate_capture(&document).map_err(display)?;
         let plan = RenderPlan::compile(&document).map_err(display)?;

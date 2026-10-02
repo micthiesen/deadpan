@@ -1,0 +1,82 @@
+{
+  "replay-limit-corrected": {
+    "exit_code": 0,
+    "result_lines": 1,
+    "passed": 75,
+    "failed": 0,
+    "ignored": 0,
+    "filtered_out": 0
+  },
+  "fmt-final": {
+    "exit_code": 0,
+    "result_lines": 0,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0,
+    "filtered_out": 0
+  },
+  "workspace": {
+    "exit_code": 0,
+    "result_lines": 201,
+    "passed": 3563,
+    "failed": 0,
+    "ignored": 0,
+    "filtered_out": 0
+  },
+  "clippy-workspace": {
+    "exit_code": 0,
+    "result_lines": 0,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0,
+    "filtered_out": 0
+  },
+  "app-ui-tests": {
+    "exit_code": 0,
+    "result_lines": 2,
+    "passed": 645,
+    "failed": 0,
+    "ignored": 0,
+    "filtered_out": 0
+  },
+  "clippy-ui": {
+    "exit_code": 0,
+    "result_lines": 0,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0,
+    "filtered_out": 0
+  },
+  "workspace-initial": {
+    "exit_code": 101,
+    "result_lines": 0,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0,
+    "filtered_out": 0
+  },
+  "compound-focused": {
+    "exit_code": 0,
+    "result_lines": 98,
+    "passed": 22,
+    "failed": 0,
+    "ignored": 0,
+    "filtered_out": 2349
+  },
+  "fmt": {
+    "exit_code": 0,
+    "result_lines": 0,
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0,
+    "filtered_out": 0
+  },
+  "replay-limit-witness": {
+    "exit_code": 101,
+    "result_lines": 1,
+    "passed": 0,
+    "failed": 1,
+    "ignored": 0,
+    "filtered_out": 74
+  }
+}

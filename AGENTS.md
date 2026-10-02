@@ -556,15 +556,24 @@ receipts are independent of authored revisions and survive compact replies,
 workspace refresh failure and final stdout failure. Terminal cancellation needs
 worker completion; a lost observer does not prove cancellation.
 
-Database schema 53 stores core schema 43 and retains operational generation requests,
+Database schema 54 stores core schema 43 and retains operational generation requests,
 plus an optional validated single-Original workflow profile. Use the dedicated
 `create_single_source` / `initialize_prepared_source` path to bind the full measured
 Original, basis and protected baseline atomically. Undo never crosses that baseline;
 deleting all current beats does not unlock a replacement video. Generic migrations
 gain no profile. Native Open uses backed-up migration before replacing its current
 session. Under the user's development-format permission, databases 39 through
-50 are rejected without mutation or migration; existing frozen adapters for
+51 and schema 53 are rejected without mutation or migration; existing frozen adapters for
 databases 1 through 38 remain. See [the single-Original contract](docs/SINGLE_ORIGINAL.md).
+
+Resolved compound transactions save one authored revision/history entry and one
+final register bank. Validate every staged leaf through ordinary media admission;
+never apply a second root sound transform around the compound. Retain every
+step allocation and exact intermediate capture checkpoints across Undo and
+register replacement. Only `capture_snapshot_at` may read those checkpoints;
+live expected revisions, playback and export remain timeline-only. Bank-only
+execution creates no edit receipt and preserves Undo/Redo. See
+[the compound contract](docs/COMPOUND_TRANSACTIONS.md).
 
 The database also retains operational generation
 attempts, validation receipts, and candidate selection. Modern bundle receipts add

@@ -6,6 +6,7 @@
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod checkpoint;
+mod compound;
 mod error;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod generated_media;
@@ -48,9 +49,10 @@ use std::sync::{
 };
 
 use deadpan_core::{CommandRequest, EditTransaction, ProjectDocument, RevisionId};
-use rusqlite::{Connection, OpenFlags, OptionalExtension, params};
+use rusqlite::{Connection, OpenFlags, params};
 use serde::Serialize;
 
+pub use compound::{CompoundCommitOutcome, CompoundPreview};
 pub use error::StoreError;
 pub use migration::MigrationOutcome;
 
@@ -127,6 +129,9 @@ impl Drop for ProjectStore {
 pub struct CommitOutcome {
     pub revision_id: RevisionId,
     pub edit: EditTransaction,
+    /// Prepared inside the commit transaction; no fallible read follows saving.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub register_bank: Option<registers::RegisterBank>,
 }
 
 impl ProjectStore {
@@ -364,9 +369,19 @@ impl ProjectStore {
         Ok(validation::read_revision(&self.connection, revision.as_str())?.document)
     }
 
+    /// Immutable copy provenance, including captured intermediate transaction
+    /// states. These identities never authorize a live command or export.
+    pub fn capture_snapshot_at(
+        &self,
+        revision: &RevisionId,
+    ) -> Result<ProjectDocument, StoreError> {
+        compound::read_capture(&self.connection, revision)
+    }
+
     pub fn validate(&self) -> Result<(), StoreError> {
         let transaction = self.connection.unchecked_transaction()?;
         validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
+        compound::check_stored_sizes(&transaction)?;
         registers::check_stored_sizes(&transaction)?;
         generation::check_stored_sizes(&transaction)?;
         generation_attempts::check_stored_sizes(&transaction)?;
@@ -411,7 +426,9 @@ impl ProjectStore {
 
     pub fn preview(&self, request: &CommandRequest) -> Result<EditTransaction, StoreError> {
         let transaction = self.connection.unchecked_transaction()?;
-        Ok(prepare_command(&transaction, request)?.edit)
+        let plan = prepare_command(&transaction, request)?;
+        compound::require_authored(&plan)?;
+        Ok(plan.edit)
     }
 
     pub fn commit(&mut self, request: &CommandRequest) -> Result<CommitOutcome, StoreError> {
@@ -455,6 +472,8 @@ impl ProjectStore {
             .backup(rusqlite::MAIN_DB, temporary.path(), None)?;
         let checkpoint = Connection::open_with_flags(temporary.path(), read_flags())?;
         schema::configure(&checkpoint)?;
+        compound::check_stored_sizes(&checkpoint)?;
+        validation::validate_history(&checkpoint)?;
         registers::validate_store(&checkpoint)?;
         drop(checkpoint);
         temporary.as_file().sync_all()?;
@@ -615,6 +634,7 @@ struct CommandPlan {
     edit: EditTransaction,
     request_json: String,
     edit_json: String,
+    compound: Option<compound::Prepared>,
 }
 
 fn prepare_command(
@@ -653,25 +673,98 @@ fn prepare_current_command_with_admission(
     source: Option<(&deadpan_core::AssetId, &deadpan_core::AssetRecord)>,
     geometry: Option<(u32, u32)>,
 ) -> Result<CommandPlan, StoreError> {
+    if matches!(&request.command, deadpan_core::Command::Compound { .. }) {
+        // Serialized commands cannot carry qualified import/acceptance capabilities.
+        if generated.is_some() || source.is_some() || geometry.is_some() {
+            return Err(StoreError::Integrity(
+                "compound commands require per-leaf admission".into(),
+            ));
+        }
+        return compound::prepare(connection, current, request);
+    }
     let edit = deadpan_core::apply(&current, request)?;
     ensure_unused_revision(connection, &request.new_revision)?;
     let next = edit.forward.apply(&current)?;
     check_document_size(&next.to_json()?)?;
     let captured = slice_capture_revision(connection, request)?;
-    ensure_generated_admission_with(Some(&current), &next, generated, captured.as_ref())?;
-    ensure_source_admission(Some(&current), &next, source, captured.as_ref())?;
+    validate_transition(
+        connection,
+        &current,
+        &next,
+        request,
+        Admission {
+            generated,
+            source,
+            geometry,
+        },
+        captured.as_ref(),
+    )?;
+    command_plan(current, next, edit, request, None)
+}
+
+fn command_plan(
+    current: ProjectDocument,
+    next: ProjectDocument,
+    edit: EditTransaction,
+    request: &CommandRequest,
+    compound: Option<compound::Prepared>,
+) -> Result<CommandPlan, StoreError> {
+    let request_json = serde_json::to_string(request)?;
+    check_document_size(&request_json)?;
+    // Typed native callers bypass JSON ingress. Admit their exact stored wire
+    // through the replay reader before any writes, including its value/depth
+    // bounds, so a successful save cannot create unreadable command history.
+    if serde_json::from_str::<CommandRequest>(&request_json)? != *request {
+        return Err(StoreError::Integrity(
+            "command changes meaning when decoded for history replay".into(),
+        ));
+    }
+    let edit_json = serde_json::to_string(&edit)?;
+    check_document_size(&edit_json)?;
+    Ok(CommandPlan {
+        current,
+        next,
+        edit,
+        request_json,
+        edit_json,
+        compound,
+    })
+}
+
+#[derive(Default)]
+struct Admission<'a> {
+    generated: Option<&'a deadpan_core::GeneratedArtifact>,
+    source: Option<(&'a deadpan_core::AssetId, &'a deadpan_core::AssetRecord)>,
+    geometry: Option<(u32, u32)>,
+}
+
+fn validate_transition(
+    connection: &Connection,
+    current: &ProjectDocument,
+    next: &ProjectDocument,
+    request: &CommandRequest,
+    admission: Admission<'_>,
+    captured: Option<&ProjectDocument>,
+) -> Result<(), StoreError> {
+    let Admission {
+        generated,
+        source,
+        geometry,
+    } = admission;
+    ensure_generated_admission_with(Some(current), next, generated, captured)?;
+    ensure_source_admission(Some(current), next, source, captured)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
-    source_registration::validate_sound_sources(connection, &current, &next)?;
+    source_registration::validate_sound_sources(connection, current, next)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
-    source_registration::validate_hold_audio_source(connection, &current, &next, request)?;
+    source_registration::validate_hold_audio_source(connection, current, next, request)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
-    source_registration::validate_source_slip(connection, &current, &next, request)?;
+    source_registration::validate_source_slip(connection, current, next, request)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
-    source_registration::validate_source_trim(connection, &current, &next, request)?;
+    source_registration::validate_source_trim(connection, current, next, request)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
-    source_registration::validate_source_roll(connection, &current, &next, request)?;
+    source_registration::validate_source_roll(connection, current, next, request)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
-    source_registration::validate_source_trim_edit(connection, &current, &next, request)?;
+    source_registration::validate_source_trim_edit(connection, current, next, request)?;
     #[cfg(not(any(target_os = "macos", target_os = "linux")))]
     if matches!(
         &request.command,
@@ -683,7 +776,7 @@ fn prepare_current_command_with_admission(
         return Err(StoreError::SourceAdmissionUnavailable);
     }
     #[cfg(any(target_os = "macos", target_os = "linux"))]
-    single_source::check_transition(connection, &current, &next, source.is_some())?;
+    single_source::check_transition(connection, current, next, source.is_some())?;
     match &request.command {
         deadpan_core::Command::ImportSource {
             primary: Some(_), ..
@@ -697,17 +790,7 @@ fn prepare_current_command_with_admission(
         }
         _ => {}
     }
-    let request_json = serde_json::to_string(request)?;
-    let edit_json = serde_json::to_string(&edit)?;
-    check_document_size(&request_json)?;
-    check_document_size(&edit_json)?;
-    Ok(CommandPlan {
-        current,
-        next,
-        edit,
-        request_json,
-        edit_json,
-    })
+    Ok(())
 }
 
 /// A slice may reuse media admitted in its immutable capture revision after the
@@ -723,7 +806,7 @@ fn slice_capture_revision(
         | deadpan_core::Command::ReplaceSlice { slice, .. } => slice,
         _ => return Ok(None),
     };
-    let captured = validation::read_revision(connection, slice.revision_id().as_str())?.document;
+    let captured = compound::read_capture(connection, slice.revision_id())?;
     slice.validate_capture(&captured)?;
     Ok(Some(captured))
 }
@@ -755,6 +838,7 @@ fn write_command_plan(
     plan: CommandPlan,
     relevance: Option<&generation::RelevancePlan>,
 ) -> Result<CommitOutcome, StoreError> {
+    compound::require_authored(&plan)?;
     match relevance {
         Some(relevance) => {
             generation::apply_relevance_plan(connection, &plan.current, &plan.next, relevance)?
@@ -762,6 +846,20 @@ fn write_command_plan(
         None => generation::ensure_no_current(connection)?,
     }
     insert_revision(connection, &plan.current, &plan.next, "edit")?;
+    let register_bank = match &plan.compound {
+        Some(prepared) => {
+            compound::write_steps(connection, plan.next.revision_id(), &prepared.steps)?;
+            if prepared.writes {
+                registers::write_prepared_bank(
+                    connection,
+                    &prepared.registers,
+                    plan.current.project_id(),
+                )?;
+            }
+            Some(prepared.registers.bank.clone())
+        }
+        None => None,
+    };
     let cursor: Option<i64> =
         connection.query_row("SELECT cursor FROM state WHERE singleton=1", [], |row| {
             row.get(0)
@@ -784,6 +882,7 @@ fn write_command_plan(
     Ok(CommitOutcome {
         revision_id: plan.next.revision_id().clone(),
         edit: plan.edit,
+        register_bank,
     })
 }
 
@@ -846,16 +945,13 @@ fn ensure_unused_revision(
     connection: &Connection,
     revision: &RevisionId,
 ) -> Result<(), StoreError> {
-    let exists: Option<i64> = connection
-        .query_row(
-            "SELECT 1 FROM revisions WHERE id=?1",
-            [revision.as_str()],
-            |row| row.get(0),
-        )
-        .optional()?;
-    if exists.is_some() {
-        return Err(StoreError::RevisionReused(revision.as_str().to_owned()));
-    }
+    ensure_unused_revisions(connection, &[revision])
+}
+
+fn ensure_unused_revisions(
+    connection: &Connection,
+    revisions: &[&RevisionId],
+) -> Result<(), StoreError> {
     // A package may start from a nonempty imported snapshot. Its occurrence
     // and audio-lineage/timing allocations predate this database's revision
     // rows. Retained timing layouts also own old play namespaces. Reserve all
@@ -863,17 +959,31 @@ fn ensure_unused_revision(
     // Subsequent command allocations use committed revision IDs.
     let initial =
         validation::read_revision(connection, &validation::read_initial_id(connection)?)?.document;
-    if initial.nodes().values().any(|node| {
-        matches!(&node.kind,
-        deadpan_core::NodeKind::Repeat { iterations, .. }
-        if iterations.segments().any(|(allocation,_,_)| allocation == revision))
-    }) || initial
-        .audio_lineage()
+    let allocations: std::collections::BTreeSet<_> = initial
+        .nodes()
         .values()
-        .any(|lineage| &lineage.allocation == revision)
-        || initial.audio_bindings().allocation_ids().contains(revision)
-    {
-        return Err(StoreError::RevisionReused(revision.as_str().to_owned()));
+        .filter_map(|node| match &node.kind {
+            deadpan_core::NodeKind::Repeat { iterations, .. } => Some(iterations),
+            _ => None,
+        })
+        .flat_map(|iterations| iterations.segments().map(|(id, _, _)| id))
+        .chain(
+            initial
+                .audio_lineage()
+                .values()
+                .map(|lineage| &lineage.allocation),
+        )
+        .chain(initial.audio_bindings().allocation_ids())
+        .collect();
+    let mut seen = std::collections::BTreeSet::new();
+    for revision in revisions {
+        let exists: bool = connection.query_row(
+            "SELECT EXISTS(SELECT 1 FROM revisions WHERE id=?1 UNION ALL SELECT 1 FROM transaction_steps WHERE step_revision=?1)",
+            [revision.as_str()], |row| row.get(0),
+        )?;
+        if exists || allocations.contains(revision) || !seen.insert(*revision) {
+            return Err(StoreError::RevisionReused(revision.as_str().to_owned()));
+        }
     }
     Ok(())
 }

@@ -4,6 +4,8 @@ use super::*;
 use crate::project::registers::{Bank, OriginalRequest, Value};
 use crate::project::slice::{CaptureRequest, CopyId};
 
+mod compound;
+
 fn id(workspace: &Workspace, request: u64) -> CopyId {
     CopyId {
         session: workspace.session,

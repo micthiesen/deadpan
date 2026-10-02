@@ -1,0 +1,25 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 59.67s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_store-3808e6a873718ff0)
+
+running 1 test
+test compound::tests::typed_requests_over_replay_limits_are_rejected_without_writes ... FAILED
+
+failures:
+
+---- compound::tests::typed_requests_over_replay_limits_are_rejected_without_writes stdout ----
+
+thread 'compound::tests::typed_requests_over_replay_limits_are_rejected_without_writes' (63877907) panicked at crates/deadpan-store/src/compound/tests.rs:397:9:
+a saved request must be readable by history replay
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    compound::tests::typed_requests_over_replay_limits_are_rejected_without_writes
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 74 filtered out; finished in 6.93s
+
+error: test failed, to rerun pass `-p deadpan-store --lib`

@@ -39,6 +39,12 @@ half-open ordinal range; Edited values retain their complete validated capture.
 Reopening recaptures provenance and creates fresh session identities. Historical
 media still requires normal admission before placement or preview.
 
+[Resolved compound transactions](COMPOUND_TRANSACTIONS.md) can capture an
+intermediate edited state. Schema 54 retains that exact capture separately from
+timeline revisions, so its copy survives Undo and reopening. Native restoration
+and historical placement use the capture reader; a retained intermediate state
+cannot become a new interactive capture or live edit target.
+
 An Original unavailable in the current revision remains visible in the bank
 with an unavailable label. Placement refuses until its exact qualification is
 available again; it never substitutes another source.

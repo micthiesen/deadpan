@@ -22,7 +22,8 @@ contains discovery identity only. No loose JSON document is read as current stat
 
 Copy the actual `project_id`, `revision_id`, and root node ID from the dump into
 a request such as this. `new_revision` is optional; the host generates a UUID
-when omitted. Caller-supplied revision IDs must never have been committed before.
+when omitted. Caller-supplied revision IDs must never have been committed or
+reserved by a compound step before.
 
 ```json
 {
@@ -74,6 +75,17 @@ Repeat; `wrap_repeat` deliberately adds nesting. A three-play repeat includes
 three total plays and only two gaps. These are structural edits, not rendered
 media. Editing through range/text selectors, registers, macros, and effects
 remain required future work.
+
+`compound` executes a bounded `ResolvedTransaction` through the same preview
+and commit boundary. Its flat Edit/Yank/Cut/Paste steps carry exact resolved
+targets and fresh leaf allocation revisions. The transaction captures the bank
+version and frozen register inputs; preview checks them without writes. A
+successful authored compound saves one history entry and returns its prepared
+register bank. Historical copies can refer to retained intermediate snapshots.
+See [compound transactions](COMPOUND_TRANSACTIONS.md) for identity, admission,
+recovery and size rules. This command does not parse semantic macros. Bank-only
+execution uses the dedicated store API; the generic headless edit command
+requires an authored leaf.
 
 `delete` takes `node` and resolves to `DeleteRipple` before preview or dispatch,
 with timing allocation equal to the new revision and ordinal zero. Explicit
@@ -1125,17 +1137,17 @@ migration writer-lock conflict uses the IPC fallback, whose admitted native
 store can report its current schema. Closed legacy packages keep the migration
 behavior below; an open endpoint does not perform legacy migration.
 
-Schemas 39 through 51 are unsupported development formats. The user authorized
+Schemas 39 through 51 and 53 are unsupported development formats. The user authorized
 a format break for the unused project, so this build does not migrate them.
 Open and migration reject them before writer recovery, backups or database
 changes. Create a new project for this build; the old package stays intact.
 
 Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-52-*.sqlite`, named for the destination schema, and upgrades a separate candidate. It
+`Snapshots/before-schema-54-*.sqlite`, named for the destination schema, and upgrades a separate candidate. It
 replays all commands, undo/redo revisions, and abandoned branches with their
 original revision IDs. Every snapshot and forward/inverse transaction is checked
 against its strict original schema meaning. Migration goes directly to database
-schema 52 and core document schema 43. Supported older schemas gain empty
+schema 54 and core document schema 43. Supported older schemas gain empty
 [render job tables](RENDER_JOBS.md), publication tables and automatic encoding
 decision tables. Migration invents no historical decisions. Existing frozen
 adapters retain strict replay.

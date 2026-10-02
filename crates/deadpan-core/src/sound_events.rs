@@ -155,6 +155,7 @@ pub(crate) fn validate_command(
 
 fn preserves_sound_clocks(command: &Command) -> bool {
     match command {
+        Command::Compound { .. } => false,
         Command::SetSound { .. }
         | Command::ReplaceSound { .. }
         | Command::DeleteSound { .. }

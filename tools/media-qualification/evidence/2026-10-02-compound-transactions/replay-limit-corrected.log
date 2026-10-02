@@ -1,0 +1,83 @@
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 14.05s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_store-3808e6a873718ff0)
+
+running 75 tests
+test object_storage::tests::controlled_publication_cancels_and_cleans_its_pending_object ... ok
+test object_storage::tests::clone_validation_failure_removes_only_its_observed_pending_entry ... ok
+test object_storage::tests::copy_fallback_never_overwrites_a_competing_object ... ok
+test object_storage::tests::an_existing_corrupt_object_is_never_overwritten ... ok
+test generation_acceptance::gap_occurrence_tests::dormant_gap_is_not_an_effective_generation_target ... ok
+test object_storage::tests::bounds_mismatches_and_source_errors_remove_only_pending_files ... ok
+test object_storage::tests::device_owner_and_type_checks_are_independent_of_schema_constraints ... ok
+test object_storage::tests::identifiers_and_references_have_a_strict_wire_shape ... ok
+test object_storage::tests::copy_fallback_rejects_a_source_changed_after_clone_attempt ... ok
+test object_storage::tests::generated_snapshot_rejects_an_expired_copy_deadline ... ok
+test object_storage::tests::missing_and_symbolic_directories_fail_only_media_operations ... ok
+test object_storage::tests::object_control_distinguishes_session_close_from_user_cancellation ... ok
+test object_storage::tests::namespace_authority_is_checked_at_each_media_operation ... ok
+test object_storage::tests::no_replace_race_verifies_and_durably_accepts_the_winner ... ok
+test object_storage::tests::generated_snapshot_observes_revocation_and_cancellation_after_open ... ok
+test object_storage::tests::hardlinks_writable_files_and_mutation_are_rejected ... ok
+test object_storage::tests::held_descriptors_defeat_directory_swaps_and_final_symlinks ... ok
+test object_storage::tests::replaced_pending_entry_is_not_published_or_deleted ... ok
+test object_storage::tests::publication_rejects_namespace_replacement_during_durability ... ok
+test object_storage::tests::promotion_is_read_only_deduplicated_and_snapshot_is_immutable ... ok
+test object_storage::tests::retry_after_post_publish_failure_finishes_existing_object_durability ... ok
+test object_storage::tests::publication_durability_failure_is_not_hidden_by_close_or_cancel ... ok
+test object_storage::tests::publication_finishes_durability_before_close_or_cancel_stops_verification ... ok
+test original_media::tests::final_link_confirmation_rejects_same_inode_changes_after_hashing ... ok
+test object_storage::tests::shared_original_storage_clones_or_copies_without_moving_the_source_cursor ... ok
+test object_storage::tests::unsupported_clone_uses_verified_copy_without_moving_the_source_cursor ... ok
+test publication_durability::tests::replacement_database_wal_and_package_fail_closed ... ok
+test publication_durability::tests::barrier_failure_at_every_step_denies_acknowledgement ... ok
+test checkpoint::tests::setup_failures_remove_only_owned_staging_entries ... ok
+test checkpoint::tests::setup_rollback_preserves_replacements_and_unknown_contents ... ok
+test compound::tests::register_only_compound_preserves_history_and_rejects_stale_or_forged_inputs ... ok
+test compound::tests::future_checkpoint_dependency_is_rejected_before_history_can_launder_it ... ok
+test migration::tests::disk_full_during_promotion_rolls_back_original ... ok
+test checkpoint::tests::failed_directory_sync_preserves_published_file_and_captured_receipt ... ok
+test compound::tests::late_failure_rolls_back_checkpoints_registers_timeline_and_redo ... ok
+test publication::tests::changed_package_database_revokes_all_previously_issued_permits ... ok
+test migration::tests::crash_during_partial_promotion ... ok
+test publication::tests::writers_request_full_sqlite_durability ... ok
+test publication::tests::last_sequence_is_reserved_for_a_terminal_result ... ok
+test registers::tests::canonical_but_forged_edited_payload_does_not_supply_its_own_provenance ... ok
+test publication::tests::altered_unrelated_history_is_found_by_full_audit_without_loading_it_for_selected_reads ... ok
+test render_jobs::audit_tests::render_audit_reads_each_job_and_revision_once_as_decision_history_grows ... ok
+test render_media::tests::manifest_failure_preserves_movie_already_published ... ok
+test render_media::tests::cancellation_and_absolute_deadline_cannot_return_prepared_bytes ... ok
+test render_media::tests::namespace_replacement_and_lock_replacement_are_detected ... ok
+test render_media::tests::read_only_open_never_creates_render_namespace ... ok
+test render_media::tests::references_are_strict_bounded_claims ... ok
+test registers::tests::exhausted_version_rejects_cut_before_commit ... ok
+test render_media::tests::pending_and_orphan_bytes_and_entry_count_consume_namespace_capacity ... ok
+test registers::tests::failed_cut_mismatch_and_post_bank_write_failure_preserve_everything ... ok
+test render_media::tests::revoked_worker_lock_serializes_replacement_session_until_guard_drops ... ok
+test render_media::tests::symlinks_hardlinks_and_unsafe_namespace_entries_are_rejected ... ok
+test render_media::tests::retention_deduplicates_at_exact_namespace_budget_and_snapshots_independently ... ok
+test single_source::tests::historical_baseline_may_omit_only_the_editorial_window ... ok
+test render_media::tests::snapshot_rehashes_both_objects_and_checks_declared_sha256 ... ok
+test registers::tests::selected_range_cut_matches_exact_parent_and_interval ... ok
+test render_media::tests::token_rejects_another_session_even_with_identical_package_and_bytes ... ok
+test validation::tests::stored_identity_metadata_is_bounded_before_text_extraction ... ok
+test validation::tests::stored_json_is_bounded_in_bytes_before_deserialization ... ok
+test registers::tests::stale_wrong_project_missing_capture_and_unavailable_original_preserve_bank ... ok
+test render_media::tests::wrong_hash_truncation_extra_bytes_and_combined_budget_publish_nothing ... ok
+test registers::tests::malformed_row_types_and_excess_slot_counts_fail_before_loading_values ... ok
+test registers::tests::named_copy_reopens_with_shared_default_and_preserves_timeline_redo ... ok
+test registers::tests::names_are_closed_and_all_slots_deduplicate_one_payload ... ok
+test tests::sqlite_full_error_keeps_last_committed_revision ... ok
+test tests::duplicated_handle_does_not_extend_writer_ownership ... ok
+test registers::tests::whole_child_cut_is_atomic_and_undo_keeps_copy_including_empty_children ... ok
+test compound::tests::repeat_cut_paste_has_one_undo_and_reopened_checkpoint_survives_branch_and_bank_gc ... ok
+test registers::tests::duplicate_names_and_content_ids_fail_before_loading_a_bank ... ok
+test render_jobs::audit_tests::render_audit_reuses_engineering_jobs_across_historical_checkpoint_retries ... ok
+test registers::tests::corrupt_hash_provenance_name_or_orphaned_content_is_rejected_on_reopen ... ok
+test compound::tests::hostile_checkpoint_mutations_fail_open_and_checkpoint_validation ... ok
+test publication::tests::post_commit_barrier_failures_keep_rows_but_revoke_permits_and_require_reopen ... ok
+test registers::tests::aggregate_bytes_are_bounded_before_json_allocation ... ok
+test compound::tests::typed_requests_over_replay_limits_are_rejected_without_writes ... ok
+
+test result: ok. 75 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 16.25s
+

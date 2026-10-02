@@ -256,6 +256,8 @@ impl CheckpointHandle {
             .filter(|bytes| *bytes > 0 && *bytes <= limits.max_database_bytes)
             .ok_or(CheckpointError::TooLarge)?;
         let captured = read_snapshot(&source)?;
+        crate::compound::check_stored_sizes(&source)?;
+        crate::validation::validate_history(&source)?;
         crate::registers::validate_store(&source)?;
         self.control(cancelled, deadline)?;
         self.check()?;

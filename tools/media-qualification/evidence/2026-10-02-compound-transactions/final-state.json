@@ -1,0 +1,15 @@
+{
+  "recorded": "2026-10-02T23:19:57.846949+00:00",
+  "source_manifest_sha256": "a8021562d926dcae89bb9751b460783a9f87526194968b3bed4a099f07b94094",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "branch": "main",
+  "app_process_check": {
+    "command": [
+      "pgrep",
+      "-x",
+      "deadpan-app"
+    ],
+    "exit_code": 1,
+    "stdout": ""
+  }
+}

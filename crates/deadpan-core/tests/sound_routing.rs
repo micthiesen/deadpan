@@ -414,6 +414,79 @@ fn retained_delete_routes_the_root_bus_once_and_prunes_its_removed_issuer() {
 }
 
 #[test]
+fn compound_delete_and_insert_preserve_sequential_sound_routes_and_one_inverse() {
+    let original = fixture();
+    let (before, _) = edit(
+        &original,
+        Command::SetSoundAllowance {
+            sound: sound(),
+            issuer: SoundHoldIssuer::Node {
+                instance: InstancePath {
+                    node: node("a"),
+                    repeats: vec![],
+                },
+            },
+            allowed: true,
+        },
+    );
+    let first_revision = RevisionId::new("compound-delete").unwrap();
+    let first = LeafEdit::new(
+        first_revision.clone(),
+        Command::DeleteRipple {
+            node: node("a"),
+            timing: AudioTimingId {
+                allocation: first_revision,
+                ordinal: 0,
+            },
+        },
+    )
+    .unwrap();
+    let deleted = apply(&before, &first.request(&before))
+        .unwrap()
+        .forward
+        .apply(&before)
+        .unwrap();
+    let insertion = request(&deleted, insert(&deleted, 20, "compound-pause"));
+    let expected = apply(&deleted, &insertion)
+        .unwrap()
+        .forward
+        .apply(&deleted)
+        .unwrap();
+    assert_eq!(expected.sound_routes()[&sound()].edits.len(), 2);
+    assert!(expected.sound_allowances().is_empty());
+    let transaction = ResolvedTransaction::new(
+        0,
+        BTreeMap::new(),
+        vec![
+            ResolvedStep::Edit { edit: first },
+            ResolvedStep::Edit {
+                edit: LeafEdit::new(insertion.new_revision, insertion.command).unwrap(),
+            },
+        ],
+    )
+    .unwrap();
+    let edit = apply(
+        &before,
+        &CommandRequest {
+            project_id: before.project_id().clone(),
+            expected_revision: before.revision_id().clone(),
+            new_revision: RevisionId::new("compound-routed").unwrap(),
+            command: Command::Compound { transaction },
+        },
+    )
+    .unwrap();
+    let actual = edit.forward.apply(&before).unwrap();
+    let mut expected_wire = json!(expected);
+    expected_wire["revision_id"] = json!("compound-routed");
+    assert_eq!(
+        actual,
+        ProjectDocument::from_json(&expected_wire.to_string()).unwrap()
+    );
+    assert_eq!(actual.duration().unwrap(), frames(91));
+    assert_eq!(edit.inverse.apply(&actual).unwrap(), before);
+}
+
+#[test]
 fn range_deletion_transforms_the_root_bus_once_and_splits_hold_allowances() {
     let original = fixture();
     let (before, _) = edit(
