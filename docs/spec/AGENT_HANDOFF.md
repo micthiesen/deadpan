@@ -21,6 +21,14 @@ app inventory confirmed no Deadpan app remained running.
 
 ## Configurable editor paths, current implementation
 
+Sound edits, warm and worker-prepared Original insertion, and first-Original
+initialization retain their exact commit receipt before workspace refresh.
+Refresh failure must report the saved outcome and reopening guidance. Keep the
+old view bound to its own revision; it cannot consume the newer receipt.
+Worker registration retains the saved asset even when refresh fails, and
+catalog-only registration creates no selection receipt. Precommit failures
+must not fabricate success. See [receipt qualification](../qualification/saved-receipts-2026-10-02.md).
+
 The [project register bank](../NAMED_REGISTERS.md) adds `"a` selection,
 `:register a` and a live `:registers` inventory. Keep a single pending capture
 with its destination fixed at initiation. New name selection cannot retarget a

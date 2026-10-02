@@ -503,6 +503,8 @@ struct Shared {
     slip_commit_refresh_failure: AtomicBool,
     #[cfg(test)]
     trim_commit_refresh_failure: AtomicBool,
+    #[cfg(test)]
+    workspace_refresh_failure: AtomicBool,
     update: Mutex<Option<ProjectUpdate>>,
     wake: Arc<dyn Fn() + Send + Sync>,
 }
@@ -538,6 +540,8 @@ impl ProjectService {
             slip_commit_refresh_failure: AtomicBool::new(false),
             #[cfg(test)]
             trim_commit_refresh_failure: AtomicBool::new(false),
+            #[cfg(test)]
+            workspace_refresh_failure: AtomicBool::new(false),
             update: Mutex::new(None),
             wake,
         });

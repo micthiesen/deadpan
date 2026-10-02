@@ -651,7 +651,6 @@ impl Service {
         // Recheck revision-bound source evidence and the existing generation
         // relevance guard in the writer transaction. Do not invent observations.
         let outcome = self.writer()?.commit(&request).map_err(display)?;
-        self.refresh()?;
         self.committed = Some(CommittedEdit {
             revision: outcome.revision_id,
             selected_node: None,
@@ -661,6 +660,7 @@ impl Service {
             sound: Some(SoundCommit { selected }),
             range_selection: None,
         });
+        self.refresh_saved(message)?;
         self.message = Some(message.into());
         Ok(())
     }
@@ -1104,7 +1104,25 @@ impl Service {
         Ok(())
     }
 
+    /// The writer has already committed. Refreshing cannot retract that result
+    /// or report the authored operation as unsaved.
+    fn refresh_saved(&mut self, saved: &str) -> Result<()> {
+        self.refresh().map_err(|error| {
+            format!(
+                "{saved}, but the workspace could not refresh: {error}. Reopen this project before editing or undoing."
+            )
+        })
+    }
+
     fn refresh(&mut self) -> Result<()> {
+        #[cfg(test)]
+        if self
+            .shared
+            .workspace_refresh_failure
+            .swap(false, Ordering::AcqRel)
+        {
+            return Err("Injected failure refreshing the saved workspace".into());
+        }
         // A history-neutral host write can update copies without a new revision.
         self.refresh_registers()?;
         #[cfg(test)]
@@ -1287,7 +1305,6 @@ impl Service {
                 {
                     Ok(outcome) => {
                         self.cached = Some((cached_asset, token));
-                        self.refresh()?;
                         self.committed = outcome.commit.and_then(|commit| {
                             registration
                                 .insertion
@@ -1302,6 +1319,7 @@ impl Service {
                                     range_selection: None,
                                 })
                         });
+                        self.refresh_saved("Source inserted and saved")?;
                         if self.active.is_none() {
                             self.import = Some(ImportStatus {
                                 path: PathBuf::from(&source.label),
@@ -1437,7 +1455,6 @@ impl Service {
                 .initialize_prepared_source(&initialization, &prepared, &active.cancelled)
                 .map_err(display)?;
             self.cached = Some((outcome.asset_id.clone(), prepared));
-            self.refresh()?;
             self.committed = outcome.commit.map(|commit| CommittedEdit {
                 revision: commit.revision_id,
                 selected_node: Some(initialization.node),
@@ -1447,6 +1464,10 @@ impl Service {
                 sound: None,
                 range_selection: None,
             });
+            if let Some(status) = &mut self.import {
+                status.asset = Some(outcome.asset_id.clone());
+            }
+            self.refresh_saved("Original saved with the full video on Your edit")?;
             if let Some(status) = &mut self.import {
                 status.stage = ImportStage::Complete;
                 status.asset = Some(outcome.asset_id);
@@ -1500,7 +1521,6 @@ impl Service {
             .register_prepared_source(&registration, &prepared, None, &active.cancelled)
             .map_err(display)?;
         self.cached = Some((outcome.asset_id.clone(), prepared));
-        self.refresh()?;
         if let (Some(insertion), Some(commit)) = (&registration.insertion, &outcome.commit) {
             self.committed = Some(CommittedEdit {
                 revision: commit.revision_id.clone(),
@@ -1512,17 +1532,26 @@ impl Service {
                 range_selection: None,
             });
         }
+        let saved = if is_insertion {
+            "Source inserted and saved"
+        } else if is_sound_catalog {
+            "Sound added to the catalog"
+        } else {
+            "Source registered and saved"
+        };
+        if let Some(status) = &mut self.import {
+            status.asset = Some(outcome.asset_id.clone());
+        }
+        self.refresh_saved(saved)?;
         if let Some(status) = &mut self.import {
             status.stage = ImportStage::Complete;
             status.asset = Some(outcome.asset_id);
         }
         self.message = Some(
-            if is_insertion {
-                "Source inserted and saved"
-            } else if is_sound_catalog {
-                "Sound added to the catalog"
-            } else {
+            if !is_insertion && !is_sound_catalog {
                 "Source registered; ready for explicit insertion"
+            } else {
+                saved
             }
             .into(),
         );

@@ -1,0 +1,16 @@
+Independent reviewer: /root/trim_native_service
+Scope: current app receipt implementation, tests, native receiver revision guard.
+Read-only review; no Cargo, native app, edits, commits or pushes.
+Result: no actionable findings.
+
+Confirmed receipt assignment follows durable success and precedes refresh;
+stale revision retries cannot duplicate history; native selection consumption
+requires the visible saved revision; import asset and saved/reopen feedback
+survive refresh failure. Final warning wording and initialization row count
+were included in the review.
+
+Reviewed file SHA-256:
+47530cd8121c921f9ec6f331a158cd032011d5b47c27c22d8287e6d9e6f5945d  crates/deadpan-app/src/project/service.rs
+d6cdca857590bc149ae513aa4d45c37637aee57e4706bd8fb22bf24868ac648e  crates/deadpan-app/src/project/tests/saved_receipts.rs
+
+Limit: painted native failure feedback was not inspected.

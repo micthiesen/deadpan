@@ -118,13 +118,14 @@ result: a delayed service reply cannot supply a target missing on entry.
 Choosing another branch discards that capture. Pending paths retain their
 entry Normal/Visual mode. Compilation and help never mutate a project.
 
-`"a` selects session register `a` for the next yank, picture cut, paste or
+`"a` selects project register `a` for the next yank, picture cut, paste or
 `:splice`; `""` selects the unnamed register. `:register a` and `:register "`
 are command aliases, and `:registers` opens the register inventory in Keys.
 Selection is one-shot and Escape cancels it. A successful named write also
 updates the unnamed copy. Register selection rejects all preceding counts;
-put a supported count after the name, such as `"a12x`. Session registers do not
-yet persist between app launches or hold macros.
+put a supported count after the name, such as `"a12x`. The project register bank
+persists across app launches; macro content and execution remain unimplemented.
+See [named registers](NAMED_REGISTERS.md) for durability and validation rules.
 
 Entering Command or Search gives the new field only the ordered input suffix
 after its opener. The opener's immediate printable companion text is consumed;
@@ -192,6 +193,6 @@ retains the original held-key regression.
 Current configuration covers Normal and timeline Visual paths and their teaching.
 The remaining mode routers, strict logical provenance and physical layout/IME
 qualification remain open. Settings are file-based and require a restart; a
-native settings editor and live map replacement are not implemented. Register
-persistence, semantic dot-repeat and atomic bounded macros remain separate DP-06
-work. No requirement or product gate is complete on the basis of this increment.
+native settings editor and live map replacement are not implemented. Semantic
+dot-repeat and atomic bounded macros remain separate DP-06 work. No requirement
+or product gate is complete on the basis of this increment.

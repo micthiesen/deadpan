@@ -2,6 +2,14 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+Native sound edits, whole-Original insertion and first-Original initialization
+now retain their saved revision before refreshing the workspace. A failed
+refresh reports durable success and asks the user to reopen; stale views cannot
+consume the receipt. Catalog registration retains its saved asset without
+inventing an edit receipt. See [verification and limits](qualification/saved-receipts-2026-10-02.md).
+This fixes a prerequisite for reliable semantic recording; dot-repeat and
+atomic macro execution remain unimplemented.
+
 [Project registers](NAMED_REGISTERS.md) now persist a–z and default copies of
 Original moments and editable slices in SQLite schema 53. Copies leave edit
 history and Undo/Redo unchanged; cuts save deletion and registers atomically.

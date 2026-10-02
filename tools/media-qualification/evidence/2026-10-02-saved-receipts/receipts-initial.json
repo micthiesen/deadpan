@@ -1,0 +1,22 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "-p",
+    "deadpan-app",
+    "--locked",
+    "project::tests::saved_receipts",
+    "--",
+    "--nocapture"
+  ],
+  "started": "2026-10-02T21:32:41.632389+00:00",
+  "base_commit": "66912edf1c4b4a4921fa6c4d8d2df3d8d329d1eb",
+  "diff_sha256": "2c54d571dad97d7a2b469345db73984d10a3ea207c959925d5f8927f190798be",
+  "source_manifest_sha256": "09fd7ade8bab34970e7ff1a98b7ac3fc5435354c36e122f554d15672ba50fbd7",
+  "pid": 95461,
+  "exit_code": 101,
+  "seconds": 23.124381666071713,
+  "source_manifest_after_sha256": "09fd7ade8bab34970e7ff1a98b7ac3fc5435354c36e122f554d15672ba50fbd7",
+  "source_unchanged": true,
+  "gate_exit_code": 101
+}

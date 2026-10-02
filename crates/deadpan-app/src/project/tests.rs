@@ -23,6 +23,7 @@ mod render;
 mod render_history;
 mod retime;
 mod room_tone;
+mod saved_receipts;
 mod scope;
 mod slip;
 mod sound;
@@ -662,6 +663,7 @@ fn shutdown_finishes_an_admitted_command_before_releasing_the_store() {
         splice_commit_refresh_failure: AtomicBool::new(false),
         slip_commit_refresh_failure: AtomicBool::new(false),
         trim_commit_refresh_failure: AtomicBool::new(false),
+        workspace_refresh_failure: AtomicBool::new(false),
         update: Mutex::new(None),
         wake: Arc::new(|| {}),
     });
@@ -939,6 +941,7 @@ impl Harness {
             splice_commit_refresh_failure: AtomicBool::new(false),
             slip_commit_refresh_failure: AtomicBool::new(false),
             trim_commit_refresh_failure: AtomicBool::new(false),
+            workspace_refresh_failure: AtomicBool::new(false),
             update: Mutex::new(None),
             wake: Arc::new(|| {}),
         });

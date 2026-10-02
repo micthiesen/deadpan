@@ -8,7 +8,7 @@ use super::*;
 
 mod allowances;
 
-fn catalog(harness: &Harness) -> Arc<Workspace> {
+pub(super) fn catalog(harness: &Harness) -> Arc<Workspace> {
     let update = command(
         &harness.service,
         ProjectRequest::CreateFromSource {
@@ -35,7 +35,7 @@ fn catalog(harness: &Harness) -> Arc<Workspace> {
     complete(&harness.service)
 }
 
-fn catalog_asset(workspace: &Workspace) -> AssetId {
+pub(super) fn catalog_asset(workspace: &Workspace) -> AssetId {
     workspace
         .sources
         .values()
@@ -45,7 +45,7 @@ fn catalog_asset(workspace: &Workspace) -> AssetId {
         .clone()
 }
 
-fn request(workspace: &Workspace, edit: ProjectSoundEdit) -> ProjectRequest {
+pub(super) fn request(workspace: &Workspace, edit: ProjectSoundEdit) -> ProjectRequest {
     ProjectRequest::SoundEdit {
         expected_session: workspace.session,
         expected_revision: workspace.document.revision_id().clone(),

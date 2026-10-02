@@ -1,0 +1,25 @@
+warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+warning: `deadpan-app` (bin "deadpan-app") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 13.99s
+     Running unittests src/main.rs (target/debug/deps/deadpan_app-9ddce6a675363c64)
+
+running 6 tests
+test project::tests::saved_receipts::catalog_registration_reports_saved_asset_without_inventing_an_edit_receipt ... ok
+test project::tests::saved_receipts::warm_original_insertion_retains_saved_receipt_after_refresh_failure ... ok
+test project::tests::saved_receipts::qualification_failure_has_no_saved_receipt_or_history_change ... ok
+test project::tests::saved_receipts::initialized_original_retains_saved_baseline_after_refresh_failure ... ok
+test project::tests::saved_receipts::worker_original_insertion_retains_saved_receipt_after_refresh_failure ... ok
+test project::tests::saved_receipts::sound_place_and_delete_retain_exact_saved_receipts_after_refresh_failure ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 599 filtered out; finished in 0.55s
+
+     Running tests/headless.rs (target/debug/deps/headless-83da85165e96b5d7)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.00s
+
