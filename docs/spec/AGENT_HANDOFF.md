@@ -19,6 +19,20 @@ test instances after testing instead of leaving them idle. The previously
 running `dev.thiesen.deadpan.cursor-qa` instance has been quit, and the native
 app inventory confirmed no Deadpan app remained running.
 
+## Native frame cuts, current implementation
+
+`x` and counted `12x` use one atomic `CutEditSlice` at the retained Edit cursor,
+clamped only to the displayed ordinary Sequence's end. `:delete-frames Nf`
+captures exact entry context and absence, then checks session/revision/scope
+before submission. Visual selections, Original, Sources, Placed sounds and
+unsupported partial endpoints refuse; the saved receipt reports the actual
+interval and preserves the existing register/Undo contract. No schema changes.
+See [frame-cut semantics](../EDITED_SLICES.md#frame-cuts-at-the-cursor).
+The [qualification](../qualification/native-frame-cuts-2026-10-01.md) records
+final app tests, input-race corrections and rendered layout checks. No ordinary
+native window was opened; the short-lived replay processes exited.
+The full editing grammar, arbitrary nested cuts and all product gates remain open.
+
 ## Native Trim, current implementation
 
 Native `,v` and `:trim` now connect the combined command to one unsaved

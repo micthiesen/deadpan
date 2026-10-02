@@ -1,0 +1,15 @@
+import os, subprocess
+ctx = dict(os.environ, DEADPAN_CHECK_OUTPUT="/tmp/deadpan-frame-cut-20261001/checks")
+recorder = "/tmp/deadpan-ripple-trim-20261001/run-check.py"
+checks = [
+    ("frame-cut-final-fmt", ["fmt", "--all", "--", "--check"]),
+    ("frame-cut-final-feature-clippy", ["clippy", "-p", "deadpan-app", "--all-targets", "--features", "ui-harness", "--locked", "--", "-D", "warnings"]),
+    ("frame-cut-final-base-tests", ["test", "-p", "deadpan-app", "--locked"]),
+    ("frame-cut-final-feature-tests", ["test", "-p", "deadpan-app", "--features", "ui-harness", "--locked"]),
+]
+for scenario in ["delete-range", "workspace", "marks"]:
+    checks.append(("frame-cut-final-" + scenario, ["run", "-p", "deadpan-app", "--features", "ui-harness", "--locked", "--", "--ui-check", "--scenario", scenario, "--output", "/tmp/deadpan-frame-cut-final-20261001-" + scenario, "--kestrel-source", "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"]))
+for name, args in checks:
+    result = subprocess.run(["python3", recorder, name, "cargo", *args], env=ctx)
+    if result.returncode:
+        raise SystemExit(result.returncode)

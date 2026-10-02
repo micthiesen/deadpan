@@ -58,6 +58,26 @@ cannot save, remove, close or jump. `:mark a`, `:jump a`, `:unmark a`, `:marks`,
 [mark navigation](MARK_NAVIGATION.md) for capture, expiration and clock rules.
 The marks qualification passed 16,368 cases over the same 62 Kestrel globals.
 
+## Frame cuts
+
+Plain `x` and a preceding positive count route one `DeleteFrames` intent.
+`0x`, overflow, pending operators and active or finished Visual selections cannot
+become a frame cut. A refused Visual cut still retires an older pending yank.
+Held key repeats, focused native controls, native text and composition cannot
+invoke it. A newly opened modal also blocks later `x` in the same input batch.
+The focus guard distinguishes bare `x` from mark names: `mx`, `'x` and their
+uppercase names retain ordinary mark routing.
+Command/Control/Option/Shift variants remain unclaimed. Sources and Placed
+sounds refuse timeline frame cuts even when Your edit is retained underneath.
+
+The command alias is `:delete-frames Nf`, defaulting to one frame. It captures
+entry context and reports the exact resolved range before submission. The
+existing atomic cut path preserves register and history behavior. The footer
+teaches `x cut frame` in an eligible pane without an Edit Visual selection, and
+contextual help explains counts and group boundaries. See
+[frame-cut semantics](EDITED_SLICES.md#frame-cuts-at-the-cursor) and the
+[18,352-case audit and rendered regressions](qualification/native-frame-cuts-2026-10-01.md).
+
 ## Source Slip preview
 
 **`:slip +5f`** opens a stopped-picture draft for the selected eligible Source or

@@ -166,6 +166,33 @@ revision identities; they cannot make an old destination request current again.
 
 ## Native register and previews
 
+### Frame cuts at the cursor
+
+`x` cuts one linked picture and sound frame at the retained Edit cursor;
+`12x` cuts up to twelve. The interval stops at the displayed ordinary Sequence's
+end and never falls back to the selected beat. At that end, outside the group,
+or with an active or finished Visual selection, including an empty one, it
+refuses without changing history. Use `d` for a Visual selection. Original,
+Sources and Placed sounds cannot direct `x` at the retained Edit cursor.
+
+`:delete-frames 12f` captures the cursor, group, session, revision and eligibility
+when command entry opens. Bare `:delete-frames` means one frame. It accepts only
+positive whole-frame amounts up to 4,294,967,295 with an `f` suffix; extra
+arguments, zero and overflow fail. Its hint shows the captured half-open range,
+actual frame count and any group-end clamp. A later reply cannot supply a missing
+target or retarget a stale command.
+
+The resolved interval uses the same `CutEditSlice` service as Visual deletion.
+Capture and deletion succeed together before the session register changes; one
+Undo restores the removed content. The saved receipt reports the actual interval
+and frame count. Unsupported partial composite endpoints reject the complete
+interval rather than shortening it to a convenient child boundary. Held `x`
+does not repeat edits, and native controls, text, IME and modified shortcuts
+retain input. A dialog opened earlier in the same input batch blocks the cut.
+This adds no schema or separate authored command.
+
+### Whole beats and ranges
+
 In Your edit, `v`, motion and `y` capture the selected range on the project
 service. The ephemeral register retains the exact project session, request and
 source revision. Copying creates no history entry. Later edits and Undo preserve

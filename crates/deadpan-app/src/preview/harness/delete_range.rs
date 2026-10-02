@@ -5,6 +5,7 @@ use egui::Key;
 
 mod capture;
 mod cut;
+mod frames;
 mod input;
 mod nested;
 
@@ -124,6 +125,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     capture::run(d)?;
     input::run(d)?;
     cut::run(d)?;
+    frames::run(d)?;
     nested::run(d)?;
     Ok(())
 }

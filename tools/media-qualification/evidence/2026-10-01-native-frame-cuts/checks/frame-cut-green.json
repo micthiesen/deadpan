@@ -1,0 +1,29 @@
+{
+  "command": [
+    "cargo",
+    "run",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "--locked",
+    "--",
+    "--ui-check",
+    "--scenario",
+    "delete-range",
+    "--output",
+    "/tmp/deadpan-frame-cut-visual-20261001-02",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "started": "2026-10-02T02:26:08.183509+00:00",
+  "base_commit": "bde973ad611b8cf1bdcbcc65783e1019a5ec315e",
+  "diff_sha256": "bf977a96b0c52d816d65f358935717168cab215fdaf992f62102ccfb287a78c9",
+  "source_manifest_sha256": "96b3f10665d6c1d2935738cf4144356f392aa16fad7c9ed83a451c69d398daf1",
+  "pid": 80414,
+  "exit_code": 0,
+  "seconds": 35.72095312504098,
+  "source_manifest_after_sha256": "96b3f10665d6c1d2935738cf4144356f392aa16fad7c9ed83a451c69d398daf1",
+  "source_unchanged": true,
+  "gate_exit_code": 0
+}

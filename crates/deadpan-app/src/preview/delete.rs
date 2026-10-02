@@ -2,6 +2,9 @@
 
 use super::*;
 
+mod frames;
+pub(super) use frames::FrameTarget;
+
 #[derive(Clone)]
 pub(super) struct CommandTarget {
     base: Arc<Workspace>,
@@ -63,7 +66,7 @@ impl DeadpanApp {
                 || target.scope.resolve(workspace)?.owner != &target.parent
             {
                 return Err(
-                    "The captured deletion target changed. Open :delete again; no edit was made."
+                    "The captured deletion target changed. Start the cut again; no edit was made."
                         .into(),
                 );
             }

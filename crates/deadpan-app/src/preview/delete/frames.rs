@@ -1,0 +1,143 @@
+//! Cursor cuts retain their entry boundary independently of selected beats.
+
+use super::*;
+
+#[derive(Clone)]
+pub(in crate::preview) struct FrameTarget {
+    base: Arc<Workspace>,
+    scope: SequenceScope,
+    parent: NodeId,
+    cursor: u64,
+    end: u64,
+}
+
+impl FrameTarget {
+    fn range(&self, count: u32) -> Result<deadpan_core::FrameRange, String> {
+        if count == 0 {
+            return Err("A frame cut count must be positive; no edit was made.".into());
+        }
+        let end = self
+            .cursor
+            .checked_add(u64::from(count))
+            .ok_or("The frame cut exceeds the project frame range.")?
+            .min(self.end);
+        let frame = |value| {
+            i64::try_from(value)
+                .map(ProjectFrame)
+                .map_err(|_| "The frame cut exceeds the project frame range.".to_owned())
+        };
+        deadpan_core::FrameRange::new(frame(self.cursor)?, frame(end)?)
+            .map_err(|error| error.to_string())
+    }
+
+    fn command(self, count: u32) -> Result<CommandTarget, String> {
+        let range = self.range(count)?;
+        Ok(CommandTarget {
+            base: self.base,
+            scope: self.scope,
+            parent: self.parent.clone(),
+            edit: ProjectEdit::DeleteRange {
+                parent: self.parent,
+                range,
+            },
+        })
+    }
+}
+
+impl DeadpanApp {
+    fn frame_delete_blocked(&self) -> Option<&'static str> {
+        if self.close_pending || self.dialogs.is_open() || self.render.blocking() || self.help_open
+        {
+            Some("Finish the current dialog or help before cutting frames.")
+        } else if self.camera.is_some()
+            || self.trim.is_some()
+            || self.slip.is_some()
+            || self.splice.is_some()
+            || self.gain.is_some()
+            || self.room_tone.is_some()
+        {
+            Some("Finish or cancel the current preview before cutting frames.")
+        } else {
+            None
+        }
+    }
+
+    pub(in crate::preview) fn capture_frame_delete_target(&self) -> Result<FrameTarget, String> {
+        // A previous event in this batch can have opened a modal after the
+        // outer keyboard guard. Capture absence instead of an editor target.
+        if let Some(error) = self.frame_delete_blocked() {
+            return Err(error.into());
+        }
+        if self.view != View::Sequence
+            || self.sound_focused()
+            || matches!(self.pane, Pane::Sources | Pane::Sounds)
+            || self.event_focused()
+        {
+            return Err("Return to Your edit and focus Beats before cutting frames. Use :sound-delete for a placed sound.".into());
+        }
+        if self.edit_selection() != navigation::EditSelection::None {
+            return Err(
+                "Use d to cut the Edit selection, or Esc then x to cut at the cursor.".into(),
+            );
+        }
+        let base = self
+            .workspace
+            .clone()
+            .ok_or("Open a project before cutting frames.")?;
+        let scope = self.sequence_scope.clone();
+        let view = scope.resolve(&base)?;
+        let cursor = self.sequence_cursor;
+        if cursor < view.start || cursor > view.end {
+            return Err("The Edit cursor is outside this group. Move into the group before cutting frames; no edit was made.".into());
+        }
+        if cursor == view.end {
+            return Err("The Edit cursor is at this group's end. Move left before cutting frames; no edit was made.".into());
+        }
+        let parent = view.owner.clone();
+        let end = view.end;
+        Ok(FrameTarget {
+            base,
+            scope,
+            parent,
+            cursor,
+            end,
+        })
+    }
+
+    pub(in crate::preview) fn delete_frames_captured(
+        &mut self,
+        target: Result<FrameTarget, String>,
+        count: u32,
+    ) {
+        let target = match self.frame_delete_blocked() {
+            Some(error) => Err(error.into()),
+            None => target,
+        };
+        self.delete_captured(target.and_then(|target| target.command(count)));
+    }
+
+    pub(in crate::preview) fn frame_delete_hint(&self) -> Option<String> {
+        let Ok(navigation::command::Entry::Action(Action::DeleteFrames(count))) =
+            navigation::command::parse(&self.command)
+        else {
+            return None;
+        };
+        Some(match self.frame_delete_command_target.as_ref()? {
+            Err(error) => error.clone(),
+            Ok(target) => match target.range(count) {
+                Err(error) => error,
+                Ok(range) => format!(
+                    "Cut captured Edit [{}..{}) · {} f{} · linked picture + sound · one undo",
+                    range.start().0,
+                    range.end().0,
+                    range.duration().frames(),
+                    if range.duration().frames() < i64::from(count) {
+                        " · stopped at group end"
+                    } else {
+                        ""
+                    },
+                ),
+            },
+        })
+    }
+}

@@ -1,0 +1,37 @@
+import datetime
+import gzip
+import hashlib
+import json
+import re
+import subprocess
+from pathlib import Path
+
+root = Path('tools/media-qualification/evidence/2026-10-01-native-frame-cuts')
+expected = json.loads((root / 'summary.json').read_text())['final_source_manifest_sha256']
+paths = subprocess.check_output(['git', '-c', 'core.fsmonitor=false', 'ls-files', '--cached', '--others', '--exclude-standard', '-z']).decode().split('\0')
+sources = {name: hashlib.sha256(Path(name).read_bytes()).hexdigest() for name in sorted(set(paths))
+           if name and Path(name).is_file() and (Path(name).suffix in ('.rs', '.toml', '.lock', '.cpp', '.h', '.hpp', '.c', '.m', '.py') or name.startswith(('.cargo/', 'crates/', 'native/')))}
+current = hashlib.sha256((json.dumps(sources, sort_keys=True, indent=2) + '\n').encode()).hexdigest()
+assert current == expected, (current, expected)
+rows = subprocess.check_output(['ps', '-axo', 'pid=,comm=,args='], text=True).splitlines()
+processes = [row for row in rows if any(name in row.split(None, 2)[1].lower() for name in ('deadpan', 'cargo', 'rustc'))]
+assert not processes, processes
+for doc in (Path('docs/qualification/native-frame-cuts-2026-10-01.md'), root / 'README.md'):
+    for target in re.findall(r'\]\(([^)]+)\)', doc.read_text()):
+        path = target.split('#', 1)[0]
+        assert not path or (doc.parent / path).exists(), (doc, path)
+for path in root.rglob('*.gz'):
+    gzip.decompress(path.read_bytes())
+(root / 'scripts/seal.py.txt').write_bytes(Path(__file__).read_bytes())
+(root / 'final-state.json').write_text(json.dumps({
+    'recorded_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    'current_source_manifest_sha256': current,
+    'deadpan_cargo_rustc_processes': processes,
+    'qualification_and_readme_local_links_exist': True,
+    'gzip_integrity': 'all retained compressed files decompressed successfully',
+}, indent=2) + '\n')
+inventory = {str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest()
+             for path in sorted(root.rglob('*')) if path.is_file() and path.name != 'SHA256SUMS.json'}
+(root / 'SHA256SUMS.json').write_text(json.dumps(inventory, indent=2, sort_keys=True) + '\n')
+assert all(hashlib.sha256((root / name).read_bytes()).hexdigest() == digest for name, digest in inventory.items())
+print(json.dumps({'sealed_files': len(inventory), 'source': current, 'processes': processes}))

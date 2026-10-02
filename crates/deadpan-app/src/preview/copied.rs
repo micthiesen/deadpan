@@ -341,7 +341,13 @@ impl DeadpanApp {
                 } else if self.workspace.as_ref().is_some_and(|workspace| {
                     workspace.document.revision_id() == &receipt.committed.revision
                 }) {
-                    self.message = Some("Cut saved and copied. p/P pastes; :splice previews placement. Undo with u.".into());
+                    let range = receipt.copied.slice().range();
+                    self.message = Some(format!(
+                        "Cut saved and copied: Edit [{}..{}) · {} f. p/P pastes; :splice previews placement. Undo with u.",
+                        range.start().0,
+                        range.end().0,
+                        range.duration().frames(),
+                    ));
                 }
             }
             Err(error) => self.error = Some(error),

@@ -1,0 +1,310 @@
+{
+  "final_source_manifest_sha256": "f4b664d41ab7e41c7b36c8466c376cd6b989abe9590a42f49a0123428662e3c0",
+  "replays": {
+    "register-red": {
+      "command_record": "checks/frame-cut-red.json",
+      "source_manifest_sha256": "21cb15efa7eee283f0359930588e11c74516636289d4c11b94f80d4c0344b618",
+      "failed": true,
+      "metadata": {
+        "binary_sha256": "c31e55297fad45196e0fc6cde8ea6d3eb0b824142a3555a809921e796d788a87",
+        "build_profile": "debug",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "bde973ad611b8cf1bdcbcc65783e1019a5ec315e",
+        "git_status": "M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/command.rs\n M crates/deadpan-app/src/navigation/delete_range_tests.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete.rs\n M crates/deadpan-app/src/preview/harness/delete_range.rs\n M docs/EDITED_SLICES.md\n M docs/KEYBINDING_COMPATIBILITY.md\n M docs/NATIVE_WORKSPACE.md\n M docs/REQUIREMENTS.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/preview/delete/\n?? crates/deadpan-app/src/preview/harness/delete_range/frames.rs",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 15448.989959,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790907912179,
+        "tracked_diff_sha256_at_run": "d3252422ee243c148d28480e1581e3bffba97f04f4977a461443cd124013c783",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "checks": 1,
+          "failed_checks": [],
+          "skipped": []
+        },
+        {
+          "name": "delete-range",
+          "checks": 182,
+          "failed_checks": [
+            "Refused Visual x immediately supersedes the older pending yank"
+          ],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ]
+    },
+    "initial-green": {
+      "command_record": "checks/frame-cut-green.json",
+      "source_manifest_sha256": "96b3f10665d6c1d2935738cf4144356f392aa16fad7c9ed83a451c69d398daf1",
+      "failed": false,
+      "metadata": {
+        "binary_sha256": "0dc5c9b7640dac18979515954a883842d69dcb96c75e27bcdfef0258b9d911ec",
+        "build_profile": "debug",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "bde973ad611b8cf1bdcbcc65783e1019a5ec315e",
+        "git_status": "M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/command.rs\n M crates/deadpan-app/src/navigation/delete_range_tests.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete.rs\n M crates/deadpan-app/src/preview/harness/delete_range.rs\n M docs/EDITED_SLICES.md\n M docs/KEYBINDING_COMPATIBILITY.md\n M docs/NATIVE_WORKSPACE.md\n M docs/REQUIREMENTS.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/preview/delete/\n?? crates/deadpan-app/src/preview/harness/delete_range/frames.rs",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 18931.261667000002,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790907983670,
+        "tracked_diff_sha256_at_run": "f9a3425337f15a6a19637ed70458eeaca0dcd1098c99f1a776634e1708360ac5",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "checks": 1,
+          "failed_checks": [],
+          "skipped": []
+        },
+        {
+          "name": "delete-range",
+          "checks": 293,
+          "failed_checks": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ]
+    },
+    "mark-red": {
+      "command_record": "checks/frame-cut-mark-red.json",
+      "source_manifest_sha256": "40f1a4ada36bb8c424d96bbd1df45aef08bce3dc2667c45e9a720e91718c3eee",
+      "failed": true,
+      "metadata": {
+        "binary_sha256": "e8a5eb787582c70cb49a9427694fbe1d73ba80625e503478988df1b17c06afc9",
+        "build_profile": "debug",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "bde973ad611b8cf1bdcbcc65783e1019a5ec315e",
+        "git_status": "M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/command.rs\n M crates/deadpan-app/src/navigation/delete_range_tests.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete.rs\n M crates/deadpan-app/src/preview/harness/delete_range.rs\n M docs/EDITED_SLICES.md\n M docs/KEYBINDING_COMPATIBILITY.md\n M docs/NATIVE_WORKSPACE.md\n M docs/REQUIREMENTS.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/preview/delete/\n?? crates/deadpan-app/src/preview/harness/delete_range/frames.rs",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 17777.209,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790908286669,
+        "tracked_diff_sha256_at_run": "0f2464e2524469d42b3edbcedd29d19a4efac0e4e288932be4faf100ebea20ff",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "checks": 1,
+          "failed_checks": [],
+          "skipped": []
+        },
+        {
+          "name": "delete-range",
+          "checks": 280,
+          "failed_checks": [
+            "Focused native control routes x as the pending mark name"
+          ],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ]
+    },
+    "delete-range": {
+      "command_record": "checks/frame-cut-final-delete-range.json",
+      "source_manifest_sha256": "f4b664d41ab7e41c7b36c8466c376cd6b989abe9590a42f49a0123428662e3c0",
+      "failed": false,
+      "metadata": {
+        "binary_sha256": "489ce446848e702b59853299c4a60907094fe5b811fec023b34379d5360616b8",
+        "build_profile": "debug",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "bde973ad611b8cf1bdcbcc65783e1019a5ec315e",
+        "git_status": "M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/command.rs\n M crates/deadpan-app/src/navigation/delete_range_tests.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete.rs\n M crates/deadpan-app/src/preview/harness/delete_range.rs\n M docs/EDITED_SLICES.md\n M docs/KEYBINDING_COMPATIBILITY.md\n M docs/NATIVE_WORKSPACE.md\n M docs/REQUIREMENTS.md\n M docs/UI_FEEDBACK.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/preview/delete/\n?? crates/deadpan-app/src/preview/harness/delete_range/frames.rs",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 19607.669125,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790908469449,
+        "tracked_diff_sha256_at_run": "9834f92d21a6dcde5fc038b0df070d3f5214ddf3cb18229c47abb96477a0e1ff",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "checks": 1,
+          "failed_checks": [],
+          "skipped": []
+        },
+        {
+          "name": "delete-range",
+          "checks": 308,
+          "failed_checks": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ]
+    },
+    "workspace": {
+      "command_record": "checks/frame-cut-final-workspace.json",
+      "source_manifest_sha256": "f4b664d41ab7e41c7b36c8466c376cd6b989abe9590a42f49a0123428662e3c0",
+      "failed": false,
+      "metadata": {
+        "binary_sha256": "489ce446848e702b59853299c4a60907094fe5b811fec023b34379d5360616b8",
+        "build_profile": "debug",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "bde973ad611b8cf1bdcbcc65783e1019a5ec315e",
+        "git_status": "M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/command.rs\n M crates/deadpan-app/src/navigation/delete_range_tests.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete.rs\n M crates/deadpan-app/src/preview/harness/delete_range.rs\n M docs/EDITED_SLICES.md\n M docs/KEYBINDING_COMPATIBILITY.md\n M docs/NATIVE_WORKSPACE.md\n M docs/REQUIREMENTS.md\n M docs/UI_FEEDBACK.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/preview/delete/\n?? crates/deadpan-app/src/preview/harness/delete_range/frames.rs",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 9686.548291,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790908490948,
+        "tracked_diff_sha256_at_run": "9834f92d21a6dcde5fc038b0df070d3f5214ddf3cb18229c47abb96477a0e1ff",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "checks": 1,
+          "failed_checks": [],
+          "skipped": []
+        },
+        {
+          "name": "workspace",
+          "checks": 80,
+          "failed_checks": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ]
+    },
+    "marks": {
+      "command_record": "checks/frame-cut-final-marks.json",
+      "source_manifest_sha256": "f4b664d41ab7e41c7b36c8466c376cd6b989abe9590a42f49a0123428662e3c0",
+      "failed": false,
+      "metadata": {
+        "binary_sha256": "489ce446848e702b59853299c4a60907094fe5b811fec023b34379d5360616b8",
+        "build_profile": "debug",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "bde973ad611b8cf1bdcbcc65783e1019a5ec315e",
+        "git_status": "M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/command.rs\n M crates/deadpan-app/src/navigation/delete_range_tests.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete.rs\n M crates/deadpan-app/src/preview/harness/delete_range.rs\n M docs/EDITED_SLICES.md\n M docs/KEYBINDING_COMPATIBILITY.md\n M docs/NATIVE_WORKSPACE.md\n M docs/REQUIREMENTS.md\n M docs/UI_FEEDBACK.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/preview/delete/\n?? crates/deadpan-app/src/preview/harness/delete_range/frames.rs",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 18012.141708000003,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790908501882,
+        "tracked_diff_sha256_at_run": "9834f92d21a6dcde5fc038b0df070d3f5214ddf3cb18229c47abb96477a0e1ff",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "checks": 1,
+          "failed_checks": [],
+          "skipped": []
+        },
+        {
+          "name": "marks",
+          "checks": 155,
+          "failed_checks": [],
+          "skipped": [
+            "Marks use real project writes, anchor transforms and decoded pictures. Delayed service delivery and IME input are explicitly injected; physical key layouts, native IME and VoiceOver remain separate acceptance.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ]
+    }
+  }
+}

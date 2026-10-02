@@ -269,7 +269,14 @@ and popup menus retain priority, including their Escape and IME handling.
 
 In Sequence context, `rr` wraps the selected child in two total plays;
 `3rr` makes three total plays and `1rr` retains one. `dd` deletes that child.
-Operator prefixes remain pending without a timer. Unsupported deletion counts,
+`x` cuts one linked frame at the Edit cursor; `12x` cuts up to twelve, stopping
+at the displayed group's end. `:delete-frames 12f` captures that exact cursor
+and group on entry and shows the resolved interval. Clear Visual selection
+first or use `d` for its range. Original, Sources, Placed sounds, terminal
+cursors and unsupported partial composites refuse without changing history.
+A saved cut reports its actual interval, supplies the copy register and undoes
+in one step. See [frame cuts](EDITED_SLICES.md#frame-cuts-at-the-cursor).
+Operator prefixes remain pending without a timer. Unsupported whole-beat deletion counts,
 zero/overflow counts and conflicting post-operator counts fail explicitly.
 Held-key autorepeat cannot complete an edit operator. Changing context, pane or
 selection cancels the pending operator. Source context remains non-destructive

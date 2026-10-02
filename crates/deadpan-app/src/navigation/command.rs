@@ -73,6 +73,15 @@ pub fn parse(input: &str) -> Result<Entry, String> {
             }));
         }
         "marks" => Action::Marks,
+        "delete-frames" => {
+            let frames = argument.unwrap_or("1f")
+                .strip_suffix('f')
+                .filter(|value| !value.is_empty() && value.bytes().all(|byte| byte.is_ascii_digit()))
+                .and_then(|value| value.parse::<u32>().ok())
+                .filter(|frames| *frames > 0)
+                .ok_or("Use :delete-frames Nf with 1..4294967295 whole project frames, for example 12f.")?;
+            return Ok(Entry::Action(Action::DeleteFrames(frames)));
+        }
         "jump-back" => Action::JumpHistory { forward: false },
         "jump-forward" => Action::JumpHistory { forward: true },
         "gain" => {
@@ -223,6 +232,34 @@ fn monitor(argument: Option<&str>) -> Result<u16, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn frame_cut_command_requires_positive_typed_frames() {
+        for (input, frames) in [
+            ("delete-frames", 1),
+            (":delete-frames 1f", 1),
+            ("delete-frames 12f", 12),
+            ("delete-frames 4294967295f", u32::MAX),
+        ] {
+            assert_eq!(
+                parse(input),
+                Ok(Entry::Action(Action::DeleteFrames(frames)))
+            );
+        }
+        for input in [
+            "delete-frames 0f",
+            "delete-frames 12",
+            "delete-frames -1f",
+            "delete-frames +1f",
+            "delete-frames 1.5f",
+            "delete-frames 1s",
+            "delete-frames f",
+            "delete-frames 4294967296f",
+            "delete-frames 1f extra",
+        ] {
+            assert!(parse(input).is_err(), "{input}");
+        }
+    }
 
     #[test]
     fn slip_command_requires_one_exact_frame_amount() {

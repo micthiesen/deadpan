@@ -1,0 +1,10 @@
+import os, subprocess
+ctx = dict(os.environ, DEADPAN_CHECK_OUTPUT="/tmp/deadpan-frame-cut-20261001/checks")
+recorder = "/tmp/deadpan-ripple-trim-20261001/run-check.py"
+for name, args in [
+    ("frame-cut-workspace-clippy", ["clippy", "--workspace", "--all-targets", "--locked", "--", "-D", "warnings"]),
+    ("frame-cut-workspace-tests", ["test", "--workspace", "--locked"]),
+]:
+    result = subprocess.run(["python3", recorder, name, "cargo", *args], env=ctx)
+    if result.returncode:
+        raise SystemExit(result.returncode)

@@ -93,6 +93,7 @@ pub enum Action {
     LeaveGroup,
     VisualMoment,
     DeleteSelection,
+    DeleteFrames(u32),
     CopyMoment,
     SetMark(char),
     JumpMark(char),
@@ -241,9 +242,9 @@ impl Bindings {
                 "i reuse Original · s place sound · h pause · f Camera · v Trim · z punch in · c creep · Esc cancels",
             ),
             _ if self.g => Some("g goes to the start · Esc cancels"),
-            _ if self.count.is_some() => {
-                Some("Then h/l to move, rr to repeat, +/- for gain, or ,h to pause · Esc cancels")
-            }
+            _ if self.count.is_some() => Some(
+                "Then h/l to move, x to cut frames, rr to repeat, +/- for gain, or ,h to pause · Esc cancels",
+            ),
             _ => None,
         }
     }
@@ -546,6 +547,12 @@ impl Bindings {
                 Key::Home => Some(Action::First),
                 Key::End => Some(Action::Last),
                 Key::U => Some(Action::Undo),
+                Key::X if self.count == Some(0) => Some(Action::Invalid(
+                    "A frame cut count must be positive; no edit was made.",
+                )),
+                // The app retires older copy intent before checking the exact
+                // target, including a refused active or finished Visual range.
+                Key::X => Some(Action::DeleteFrames(count)),
                 Key::V | Key::Y | Key::P if self.count.is_some() => Some(Action::Invalid(
                     "Use v, y, p or P without a count. Move the range boundary with counted h/l.",
                 )),

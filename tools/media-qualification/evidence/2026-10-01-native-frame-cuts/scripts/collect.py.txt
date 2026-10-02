@@ -1,0 +1,100 @@
+import gzip
+import hashlib
+import json
+import shutil
+import subprocess
+from pathlib import Path
+
+scratch = Path('/tmp/deadpan-frame-cut-20261001')
+checks = scratch / 'checks'
+output = Path('tools/media-qualification/evidence/2026-10-01-native-frame-cuts')
+required = [
+    'frame-cut-workspace-clippy', 'frame-cut-workspace-tests',
+    'frame-cut-final-fmt', 'frame-cut-final-feature-clippy',
+    'frame-cut-final-base-tests', 'frame-cut-final-feature-tests',
+    'frame-cut-final-delete-range', 'frame-cut-final-workspace', 'frame-cut-final-marks',
+]
+reports = {name: json.loads((checks / f'{name}.json').read_text()) for name in required}
+for name, report in reports.items():
+    assert report['gate_exit_code'] == 0 and report['source_unchanged'], name
+final_hashes = {report['source_manifest_sha256'] for name, report in reports.items() if '-final-' in name}
+assert len(final_hashes) == 1, final_hashes
+paths = subprocess.check_output(['git', '-c', 'core.fsmonitor=false', 'ls-files', '--cached', '--others', '--exclude-standard', '-z']).decode().split('\0')
+sources = {name: hashlib.sha256(Path(name).read_bytes()).hexdigest() for name in sorted(set(paths))
+           if name and Path(name).is_file() and (Path(name).suffix in ('.rs', '.toml', '.lock', '.cpp', '.h', '.hpp', '.c', '.m', '.py') or name.startswith(('.cargo/', 'crates/', 'native/')))}
+assert hashlib.sha256((json.dumps(sources, sort_keys=True, indent=2) + '\n').encode()).hexdigest() == next(iter(final_hashes))
+for path in checks.glob('frame-cut-*.json'):
+    report = json.loads(path.read_text())
+    assert 'gate_exit_code' in report, path
+assert not output.exists(), output
+output.mkdir(parents=True)
+
+def retain(source, destination, compressed=False):
+    source = Path(source)
+    destination = output / destination
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if compressed:
+        destination.write_bytes(gzip.compress(source.read_bytes(), mtime=0))
+    else:
+        shutil.copyfile(source, destination)
+
+for path in sorted(checks.iterdir()):
+    retain(path, 'checks/' + path.name + ('.gz' if path.suffix == '.log' or path.name.startswith('source-') else ''), path.suffix == '.log' or path.name.startswith('source-'))
+
+replays = {
+    'register-red': Path('/tmp/deadpan-frame-cut-visual-20261001-01'),
+    'initial-green': Path('/tmp/deadpan-frame-cut-visual-20261001-02'),
+    'mark-red': Path('/tmp/deadpan-frame-cut-visual-20261001-03'),
+    **{name: Path('/tmp/deadpan-frame-cut-final-20261001-' + name) for name in ('delete-range', 'workspace', 'marks')},
+}
+summary = {}
+for name, root in replays.items():
+    report = json.loads((root / 'report.json').read_text())
+    expected_failure = {
+        'register-red': 'Refused Visual x immediately supersedes the older pending yank',
+        'mark-red': 'Focused native control routes x as the pending mark name',
+    }.get(name)
+    failures = [check['name'] for scenario in report['scenarios'] for check in scenario['checks'] if not check['passed']]
+    assert failures == ([expected_failure] if expected_failure else []), (name, failures)
+    assert report['failed'] == bool(expected_failure), name
+    check_name = {'register-red': 'frame-cut-red', 'initial-green': 'frame-cut-green', 'mark-red': 'frame-cut-mark-red'}.get(name, 'frame-cut-final-' + name)
+    check_report = json.loads((checks / (check_name + '.json')).read_text())
+    assert str(root) in check_report['command'], name
+    assert check_report['source_unchanged'], name
+    assert check_report['base_commit'] == report['metadata']['git_revision'], name
+    retain(root / 'report.json', f'replays/{name}.json.gz', True)
+    summary[name] = {
+        'command_record': 'checks/' + check_name + '.json',
+        'source_manifest_sha256': check_report['source_manifest_sha256'],
+        'failed': report['failed'],
+        'metadata': report['metadata'],
+        'scenarios': [{
+            'name': scenario['name'],
+            'checks': len(scenario['checks']),
+            'failed_checks': [check['name'] for check in scenario['checks'] if not check['passed']],
+            'skipped': scenario['skipped'],
+        } for scenario in report['scenarios']],
+    }
+    if name in ('delete-range', 'workspace'):
+        for scenario in report['scenarios']:
+            for step in scenario['steps']:
+                if step.get('screenshot') and step['input'] in (
+                    'Counted frame cut retains the exact right join and historical copy',
+                    'Resize 960x640 at 1x, transition 3',
+                ):
+                    retain(root / step['screenshot'], 'images/' + step['screenshot'])
+retain('/tmp/deadpan-ripple-trim-20261001/run-check.py', 'scripts/run-check.py.txt')
+for name in ('base-gate.py', 'final-gate.py', 'collect.py'):
+    retain(scratch / name, 'scripts/' + name + '.txt')
+for name, root in (
+    ('initial-replay', '/tmp/deadpan-frame-cut-replay-20261001'),
+    ('held-yank', '/tmp/deadpan-frame-cut-held-yank-20261001'),
+    ('mark-name', '/tmp/deadpan-frame-cut-mark-name-20261001'),
+):
+    for source in Path(root).glob('*.patch'):
+        retain(source, f'scripts/{name}/{source.name}.gz', True)
+(output / 'summary.json').write_text(json.dumps({
+    'final_source_manifest_sha256': next(iter(final_hashes)),
+    'replays': summary,
+}, indent=2) + '\n')
+print(json.dumps({'output': str(output), 'final_source': next(iter(final_hashes)), 'files': len(list(output.rglob('*')))}))

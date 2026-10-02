@@ -159,6 +159,7 @@ pub struct DeadpanApp {
     edit_range: edit_range::Selection,
     placement_command_target: Option<Result<moment::PlacementTarget, String>>,
     delete_command_target: Option<Result<delete::CommandTarget, String>>,
+    frame_delete_command_target: Option<Result<delete::FrameTarget, String>>,
     marks: marks::State,
     sequence_cursor: u64,
     source_search: String,
@@ -285,6 +286,7 @@ impl DeadpanApp {
             edit_range: edit_range::Selection::default(),
             placement_command_target: None,
             delete_command_target: None,
+            frame_delete_command_target: None,
             marks: marks::State::default(),
             sequence_cursor: 0,
             source_search: String::new(),
@@ -1193,6 +1195,7 @@ impl DeadpanApp {
         self.marks.command = Some(self.capture_mark());
         self.placement_command_target = Some(self.capture_placement_target());
         self.delete_command_target = Some(self.capture_delete_target());
+        self.frame_delete_command_target = Some(self.capture_frame_delete_target());
         self.gain_command_target = Some(self.capture_gain_target());
         self.slip_command_target = Some(self.capture_slip_target());
         // Capture success or absence before pausing delivery or changing focus.
@@ -1358,10 +1361,12 @@ impl DeadpanApp {
         ) {
             self.marks.cancel_jump();
         }
-        if matches!(action, Action::CopyMoment | Action::DeleteSelection)
-            || (action == Action::Edit(BeatEdit::Delete)
-                && self.pane != Pane::Sounds
-                && !self.event_focused())
+        if matches!(
+            action,
+            Action::CopyMoment | Action::DeleteSelection | Action::DeleteFrames(_)
+        ) || (action == Action::Edit(BeatEdit::Delete)
+            && self.pane != Pane::Sounds
+            && !self.event_focused())
         {
             // A newer yank or picture cut owns register intent even when its
             // focused pane rejects it. Sound deletion is an independent action.
@@ -1413,6 +1418,7 @@ impl DeadpanApp {
                 | Action::LeaveGroup
                 | Action::VisualMoment
                 | Action::DeleteSelection
+                | Action::DeleteFrames(_)
                 | Action::CopyMoment
                 | Action::PasteMoment { .. } => {
                     self.bindings.clear();
@@ -1472,6 +1478,9 @@ impl DeadpanApp {
             }
             Action::CopyMoment => self.copy_slice(),
             Action::DeleteSelection => self.delete_captured(self.capture_delete_target()),
+            Action::DeleteFrames(count) => {
+                self.delete_frames_captured(self.capture_frame_delete_target(), count)
+            }
             Action::PasteMoment { before } => self.paste_moment(before),
             Action::Edit(edit) => self.edit(edit),
             Action::Invalid(error) => self.error = Some(error.into()),
@@ -1822,8 +1831,11 @@ impl DeadpanApp {
                     self.bindings.clear();
                     continue; // Preserve egui/AccessKit activation of a focused control.
                 }
-                if key == egui::Key::D
-                    && self.routed_edit_selection() != navigation::EditSelection::None
+                if ((key == egui::Key::X
+                    && modifiers == egui::Modifiers::NONE
+                    && self.bindings.mark_prefix().is_none())
+                    || (key == egui::Key::D
+                        && self.routed_edit_selection() != navigation::EditSelection::None))
                     && native_control_focused(context)
                 {
                     self.bindings.clear();
@@ -1907,6 +1919,7 @@ impl DeadpanApp {
         self.trim_prefix_target = None;
         let placement_target = self.placement_command_target.take();
         let delete_target = self.delete_command_target.take();
+        let frame_delete_target = self.frame_delete_command_target.take();
         let mark_target = self.marks.command.take();
         self.bindings.clear();
         self.command_open = false;
@@ -1968,6 +1981,17 @@ impl DeadpanApp {
                 self.delete_captured(delete_target.unwrap_or_else(|| {
                     Err("Open :delete again to capture its target; no edit was made.".into())
                 }));
+            }
+            Ok(navigation::command::Entry::Action(Action::DeleteFrames(count))) => {
+                self.delete_frames_captured(
+                    frame_delete_target.unwrap_or_else(|| {
+                        Err(
+                            "Open :delete-frames again to capture its cursor; no edit was made."
+                                .into(),
+                        )
+                    }),
+                    count,
+                );
             }
             Ok(navigation::command::Entry::Gain(value)) => {
                 self.gain_command(gain_target, value, context)
@@ -2286,6 +2310,7 @@ impl DeadpanApp {
                     }
                 }
                 if let Some(hint) = self.delete_hint() { ui.colored_label(style::LAVENDER, hint); }
+                if let Some(hint) = self.frame_delete_hint() { ui.colored_label(style::LAVENDER, hint); }
             } else {
                 ui.horizontal_wrapped(|ui| {
                     let clock = if self.sound_focused() { format!("Sound {}", playback::sound_time(self.sound_cursor)) } else if self.view == View::Source { format!("Original boundary {}/{}", self.source_cursor, self.source_length()) } else { self.scope_clock_label() };
@@ -2318,7 +2343,10 @@ impl DeadpanApp {
                         match self.edit_selection() {
                             navigation::EditSelection::Range => style::key_hint(ui, "d", "cut range"),
                             navigation::EditSelection::Empty => style::key_hint(ui, "d", "empty range"),
-                            navigation::EditSelection::None => style::key_hint(ui, "dd", "cut beat"),
+                            navigation::EditSelection::None => {
+                                if self.pane != Pane::Sources { style::key_hint(ui, "x", "cut frame"); }
+                                style::key_hint(ui, "dd", "cut beat");
+                            }
                         };
                         if self.copied.content().is_some() { style::key_hint(ui, "p / P", if self.selected_edit_range().is_some() { "replace range" } else { "paste after / before" }); }
                         style::key_hint(ui, "u", "undo");
@@ -3170,6 +3198,7 @@ impl DeadpanApp {
                         ("rr / 3rr", "Wrap the selected beat in two / three total plays. Rapid wraps wait in order, up to 16 pending; each has its own undo. Escape, navigation or another action cancels the waiting wraps."),
                         ("v · motions · d", "Cut the nonempty active or finished Edit range and close its time in one undo. Linked picture and sound stay together. Source/Hold/fragment endpoints and whole intervening beats work in an ordinary Sequence. Enter a group to cut inside it. Empty selections never cut a beat."),
                         ("dd / :delete", "Without a Visual selection, dd cuts one whole beat, including an empty group. :delete captures the exact range or beat when command entry opens; stale or missing targets fail. A saved cut replaces the copy register; p/P or :splice places that copy. Failure keeps the previous copy. The cursor stays at a range cut's join. Undo restores the removed content and retains the copy for this project session."),
+                        ("x / 12x / :delete-frames 12f", "Cut one or a counted number of linked picture and sound frames beginning at the Edit cursor, stopping at this group's end. The command captures its cursor and group when entry opens. A Visual selection must be cleared with Esc first, or cut with d. At the group's end no edit is made. One Undo restores the cut; the exact removed slice remains available for paste."),
                         (":repeat 3", "Set total plays on a Repeat; wrap a different selected beat."),
                         (":wrap-repeat 3", "Always add an enclosing Repeat, including nesting."),
                         (":retime 0.75 pitch=preserve", "Slow the selected beat to 0.75× input speed. Use pitch=tape to let pitch follow speed. Exact fractions such as 3/4 work too. The command shows its resolved duration before Enter; Escape cancels entry."),
@@ -4068,6 +4097,7 @@ mod tests {
     fn sound_catalog_shortcuts_cannot_target_the_retained_timeline_selection() {
         for action in [
             Action::Insert,
+            Action::DeleteFrames(1),
             Action::Edit(BeatEdit::Delete),
             Action::Edit(BeatEdit::Split),
             Action::Edit(BeatEdit::Repeat(3)),
