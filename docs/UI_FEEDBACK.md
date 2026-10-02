@@ -21,10 +21,16 @@ The [qualification](qualification/configurable-bindings-2026-10-01.md) records
 actual results, review corrections and remaining physical-input limits. No native
 window is left running after testing.
 
-The final keymap images also expose an open minimum-window layout issue:
-Original's picture is only about 50 points high at 960×640 when its time strip
-and the empty Placed sounds pane are present. Preserve their keyboard controls
-while restoring picture priority before claiming complete workspace acceptance.
+The [Original layout increment](qualification/original-layout-2026-10-02.md)
+restores a 141-point stopped picture in the selected/copied 960×640 fixture.
+Compact Original shows the actual placed-sound count beside Beats; focusing it
+opens the list in Your edit while retaining both cursors. Transport reserves
+use the text geometry actually painted, including long configured paths and
+live status. Pointer, focused Enter and accessibility Click finish before a
+resized picture is submitted. Retained textures keep their rendered aspect
+while a replacement prepares. The new ordinary/long-path replays check first
+paint, focus, state retention, complete control hits and 1×/2× scale transitions.
+This is scoped layout evidence; full workspace acceptance remains open.
 
 The [native Trim increment](COMBINED_TRIM.md#native-trim) adds ordered
 In/Out/Slip/Roll controls, Ripple/Overwrite policy, atomic Before/Proposed boundary
@@ -429,6 +435,7 @@ the real app. The initial viewport is 1280×820 points at 1×. The code lives in
 | `keymap` | Injects a private startup map with shared `q` branches, `ah` forward motion, `qb` Hold, `qc`/colon/F2 Command, `qs`/slash Search, Semicolon Help and `z` cut. Checks counts, held-action identity, release/focus cancellation, exact Hold/Undo, captured Trim absence, native controls, same-batch field input, literal punctuation/Unicode and synthetic IME. Shift changes cannot leak a held opener before or after field closure; text after Enter/Escape resumes in order. Minimum-window assertions inspect custom labels and keep the header compact through repeated field transitions. |
 | `keymap-error` | Loads a valid early override followed by an unknown action, requires complete shipped fallback, performs an edit/Undo and reopens the persistent error from the header. Checks the actual diagnostic paint after the help window's initial measurement frame. |
 | `workspace` | Pointer frame navigation, repeated `,i` Original reuse, selected-card visibility, resize transitions at 960×640/1×, 1492×929/2× and 1280×820/1×, and a real monitor-slider drag that must not create a revision. Checks actual picture mesh bounds against the fitted canvas and unclipped navigation text, including Original at the minimum size. |
+| `original-layout` / `original-layout-long` | Uses distinct Original/Edit cursors, a selected/copied Original range and real empty/populated sound states. Checks minimum/default sizes, first resize frames, 1×/2× scale, actual fitted picture height, complete text/hit clips, pointer and reverse-Tab Sounds entry, and retained state/revision. Play by pointer, focused Enter and accessibility Click during scale changes may submit only final geometry. Injected Preparing/Playing and catalog focus preserve the picture and editor state; no device or physical input result is claimed. The long variant admits private six-key transport paths before startup. |
 | `editing` | Held H across a comma prefix preserves the document and visible guidance; a fresh H inserts one silent half-second Hold and one Undo restores the baseline. Also covers counted Repeat, pointer opening of its setter, same-batch text submission, undo, exact pause insertion before a Repeat and before the Original, and Hold-duration editing. Checks duration and selection. Split, delete and redo have separate replays. |
 | `delete-range` | Cuts active and finished Visual selections in either direction, rejects empty selections, preserves whole-beat dd without a selection and captures independent :delete targets including absence. Checks exact decoded join pictures, one commit/Undo, stale revision/session/group refusal, native-control focus, synthetic IME, held/count/same-batch input and minimum-window text paint clips. Nested ordinary groups retain their owner; partial composite endpoints fail and whole composites can be removed. The frame-cut extension checks `x`/counts/`:delete-frames`, exact captured and clamped intervals, successful delayed-yank supersession, same-batch modal ownership, and focused-button mark names. See [current qualification](qualification/native-frame-cuts-2026-10-01.md) for counts and source identities. No device, acoustics or physical IME claim. |
 | `camera` | Pointer opening and numeric preview, Cancel, keyboard reopening/zoom and pointer Apply. Reach clipped inspector controls with real wheel input before clicking. Checks unchanged revision during preview, restoration of the submitted entry framing/source frame after Cancel, and authored framing after Apply. |

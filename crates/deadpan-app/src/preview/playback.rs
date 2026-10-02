@@ -4,6 +4,8 @@ use deadpan_playback::{ContentIdentity, Phase, Snapshot, Target, Window};
 use super::*;
 use crate::transport::{ContentRef, Domain, Identity, Run};
 
+mod controls;
+
 #[derive(Clone, Copy)]
 pub(super) struct AuditionContext {
     pub lead: AudioSample,
@@ -528,6 +530,10 @@ impl DeadpanApp {
         }
     }
 
+    pub(super) fn playback_controls_height(&self, ui: &egui::Ui) -> f32 {
+        controls::Controls::new(self, ui).height
+    }
+
     pub(super) fn playback_controls(&mut self, ui: &mut egui::Ui) {
         if self.workspace.is_none() {
             self.monitor_control = None;
@@ -537,34 +543,24 @@ impl DeadpanApp {
             self.monitor_control = None;
             return;
         }
-        let compact = self.compact_sound_layout(ui.ctx())
-            && self.transport.is_none()
-            && !self.sound_focused();
+        let layout = controls::Controls::new(self, ui);
         if !self.sound_focused() {
             ui.horizontal_wrapped(|ui| {
             let active = self.transport.is_some();
-            let preparing = self.transport.as_ref().is_some_and(|run| run.phase == Phase::Preparing);
             let enabled = active || (!self.service.is_busy() && self.playback_domain().and_then(|domain| domain.end()).is_ok_and(|end| end.0 > 0));
-            let action = if preparing { "Cancel preparation" } else if active { "Pause" } else if self.resume.as_ref().is_some_and(|resume| resume.window().looping()) { "Resume loop" } else if self.sound_focused() { "Play sound" } else if self.view == View::Source { "Play Original" } else { "Play edit" };
-            let label = format!("{action}  ·  {}", self.editor_key(EditorKey::Playback));
-            if ui.add_enabled(enabled, egui::Button::new(label).wrap().fill(style::SELECTED)).clicked() { self.toggle_playback(); }
+            if ui.add_enabled(enabled, egui::Button::new(egui::WidgetText::from(Arc::clone(&layout.play))).fill(style::SELECTED)).clicked() { self.toggle_playback(); }
             let looping = self.transport.as_ref().is_some_and(|run| run.window().looping());
-            let action = if looping { "Pause loop" } else if self.sound_focused() { "Loop sound" } else { "Loop selection" };
-            let label = format!("{action}  ·  {}", self.editor_key(EditorKey::Audition));
-            if ui.add_enabled(enabled && (looping || self.selected_playback_range().is_some()), egui::Button::new(label).wrap()).on_hover_text(format!("Loop the selected Original moment, Edit range or edited beat with {} lead-in and {} follow-through. {} pauses and resumes the exact heard position. Change context with :audition-context.", self.audition_context.lead_label(), self.audition_context.follow_label(), self.editor_key(EditorKey::Playback))).clicked() { self.audition_selection(); }
-            if let Some(run) = &self.transport {
-                let sample = run.content_sample().unwrap_or(run.sample).0;
-                let millis = sample / 48;
-                let status = if preparing { "Preparing" } else { "Playing" };
-                let lap = if looping { format!(" · loop {}", run.lap().unwrap_or(0) + 1) } else { String::new() };
-                ui.label(egui::RichText::new(format!("{status} · {:02}:{:02}.{:03}{lap}", millis / 60_000, (millis / 1000) % 60, millis % 1000)).monospace().size(10.0).color(style::MUTED));
+            if ui.add_enabled(enabled && (looping || self.selected_playback_range().is_some()), egui::Button::new(egui::WidgetText::from(Arc::clone(&layout.audition)))).on_hover_text(format!("Loop the selected Original moment, Edit range or edited beat with {} lead-in and {} follow-through. {} pauses and resumes the exact heard position. Change context with :audition-context.", self.audition_context.lead_label(), self.audition_context.follow_label(), self.editor_key(EditorKey::Playback))).clicked() { self.audition_selection(); }
+            if let Some(status) = &layout.status && !layout.status_in_context {
+                ui.label(Arc::clone(status));
             }
-            if compact { self.monitor_slider(ui); }
+            if layout.inline_monitor { self.monitor_slider(ui); }
         });
         }
-        if !compact {
+        if !layout.inline_monitor {
             ui.horizontal_wrapped(|ui| {
-            ui.label(egui::RichText::new(if self.sound_focused() { "Sound loop · complete measured audio".into() } else { format!("Loop context  {} / {}", self.audition_context.lead_label(), self.audition_context.follow_label()) }).size(10.5).color(style::MUTED))
+            if let Some(status) = &layout.status && layout.status_in_context { ui.label(Arc::clone(status)); }
+            ui.label(Arc::clone(&layout.context))
                 .on_hover_text("Lead-in / follow-through, clamped to this source or edit. Change with :audition-context lead=500ms follow=750ms. Playback uses edge fades and a safety limiter; full voice effects and mastering remain unavailable.");
             self.monitor_slider(ui);
         });
@@ -572,10 +568,11 @@ impl DeadpanApp {
         // Pointer activation runs while painting these controls, after the
         // viewer reserved their previous height. Reflow the same outer frame
         // before presenting an inline row that just gained a live clock.
-        let compact_now = self.compact_sound_layout(ui.ctx())
-            && self.transport.is_none()
-            && !self.sound_focused();
-        if compact != compact_now {
+        let next = controls::Controls::new(self, ui);
+        if layout.height != next.height
+            || layout.inline_monitor != next.inline_monitor
+            || layout.status_in_context != next.status_in_context
+        {
             ui.ctx().request_discard("playback controls changed height");
         }
     }

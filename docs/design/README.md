@@ -77,21 +77,30 @@ feedback on the status row so it does not push ordinary navigation hints into
 another row. The [footer qualification](../qualification/footer-layout-2026-09-27.md)
 records first-frame checks and the remaining small-window picture limitation.
 
-The implemented compact empty-Sounds layout addresses one specific minimum-size
-case: single-Original Your edit, window height below 700 logical points, with no
-placed events.
-Its visible `PLACED SOUNDS 0 · ,s place` entry shares the BEATS heading, keeps a
-distinct focus cue and the existing Sounds pane identity, and reserves its full
-measured width before the scrolling breadcrumbs. The empty panel remains in
-the UI tree at zero height. Copied-range, paste, audition and monitor controls
-keep their existing space. Room tone overlays the same compact background;
-its open/close does not restore the empty strip. Populated lists, default-size,
-Source, Camera and Gain layouts retain their existing treatment. Normal Tab
-still cycles visible panes. Scoped replay passes the 140-point minimum picture
-assertion and complete text/hit clips. The copied Hold viewer measures 143
-points at 960×640; this is not a general picture-height guarantee for populated
-sound lists or larger fonts. See the
-[compact-workspace qualification](../qualification/compact-workspace-2026-09-28.md).
+Below 700 logical points, single-Original workspaces place Sounds beside the
+BEATS heading when Original is visible or the edit has no placed sounds.
+The summary shows the actual count, a distinct focus cue and the existing
+Sounds pane identity. Its measured width is reserved before the scrolling
+breadcrumbs. The inactive panel remains in the UI tree at zero height.
+Focusing a populated summary opens its list in Your edit and retains both
+clocks, the selected beat and copied time. Normal Tab still cycles visible panes.
+Room tone overlays the same compact background; Camera, Gain and default-size
+layouts keep their existing treatment.
+
+Compact Original uses a read-only clock row and puts Monitor beside idle
+transport actions when their complete labels fit. Otherwise it reserves the
+actual wrapped rows. Transport measurement and paint share text geometry;
+long configured keys and live status cannot rely on a fixed two-row estimate.
+The selected/copied Original fixture measures 141 points at 960×640 with shipped
+keys and 109 points with the tested six-key paths. These are scoped observations,
+not general height guarantees for arbitrary content or fonts. See the
+[Original layout qualification](../qualification/original-layout-2026-10-02.md)
+and the earlier [compact-workspace qualification](../qualification/compact-workspace-2026-09-28.md).
+
+A retained GPU texture keeps its own rendered proportions while the viewer
+resizes or playback waits for a new frame. Fit the actual target raster inside
+the viewer; the desired canvas controls only the next render submission.
+Visibility checks must inspect the painted mesh, not just that desired canvas.
 
 The [edited-slice qualification](../qualification/native-edited-slice-2026-09-30.md)
 adds compact viewer margins of 8 points vertically below a 700-point viewport

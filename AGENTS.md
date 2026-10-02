@@ -143,6 +143,18 @@ expand the remaining parent space and let later panes overpaint the footer.
 Visibility checks inspect actual paint clips and later opaque backgrounds as
 well as accessible controls.
 
+At compact heights, Original keeps the Placed sounds count and focus target
+beside Beats. Entering it reveals the list in Your edit while preserving both
+cursors, beat and copied range. Keep the inactive panel in the widget ID tree.
+Measure transport rows with the same galleys used for painting, including
+configured key paths and live clocks. Before resized GPU submission, let late
+pointer, focused Enter/Space and accessibility Click input run through the
+below-picture controls on the first layout pass. See
+[Original layout qualification](docs/qualification/original-layout-2026-10-02.md).
+Paint a retained texture at its actual target raster aspect inside the viewer.
+Its pixels must not stretch to a newly desired canvas while decoding or GPU
+submission is pending. Keep that desired canvas as the next render input.
+
 Audition uses the device's reported content intervals, never producer
 progress as the heard clock. Retain past and future delivery reports; a terminal
 callback's nonempty prefix remains pending until its reported playback deadline.

@@ -25,10 +25,18 @@ const INVALID: &[u8] = br#"{
   ]
 }"#;
 
+const LONG_TRANSPORT: &[u8] = br#"{
+  "version":1,"key_mode":"logical","bindings":[
+    {"action":"playback","keys":[["F7","F8","F9","F10","F11","F12"],["Space"]]},
+    {"action":"audition","keys":[["F15","F16","F17","F18","F19","F20"],["Shift+Space"]]}
+  ]
+}"#;
+
 pub(super) fn startup(name: &str, documents: &Path) -> Result<crate::keymap::Startup, String> {
     let bytes = match name {
         "keymap" => VALID,
         "keymap-error" => INVALID,
+        "original-layout-long" => LONG_TRANSPORT,
         _ => return Ok(crate::keymap::Startup::shipped()),
     };
     // `documents` belongs to this replay's exclusive temporary/retained root.

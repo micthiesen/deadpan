@@ -2,6 +2,13 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+The [compact Original layout](qualification/original-layout-2026-10-02.md)
+returns picture space through a Sounds count heading, compact clocks and
+measured transport rows. Focus and scale-change replays retain both cursors,
+selection and copy while keeping complete controls visible. This advances
+DP-05 and DP-20; full keyboard, physical-input, accessibility and visual
+acceptance remain open. No schema changes or product gate completion.
+
 The [editor keymap](KEYMAP.md) now loads optional Normal/Visual overrides from
 macOS Application Support. Complete-map validation, logical or physical matching,
 semantic labels and persistent fallback diagnostics share the production router.

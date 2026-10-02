@@ -1,0 +1,16 @@
+import subprocess
+import sys
+runner = '/tmp/deadpan-original-layout-20261002/run-check.py'
+commands = [
+ ('format-verified', ['cargo','fmt','--all','--','--check']),
+ ('app-clippy-verified', ['cargo','clippy','-p','deadpan-app','--all-targets','--locked','--','-D','warnings']),
+ ('ui-clippy-verified', ['cargo','clippy','-p','deadpan-app','--features','ui-harness','--all-targets','--locked','--','-D','warnings']),
+ ('app-tests-verified', ['cargo','test','-p','deadpan-app','--locked','--no-fail-fast']),
+ ('ui-tests-verified', ['cargo','test','-p','deadpan-app','--features','ui-harness','--locked','--no-fail-fast']),
+ ('release-build-verified', ['cargo','build','-p','deadpan-app','--release','--features','ui-harness','--locked']),
+]
+for name, command in commands:
+    print('Running ' + name, flush=True)
+    result = subprocess.run([sys.executable, runner, name, *command])
+    if result.returncode:
+        sys.exit(result.returncode)

@@ -1,0 +1,22 @@
+{
+  "command": [
+    "target/debug/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "sound-placement",
+    "--output",
+    "/tmp/deadpan-original-layout-20261002/initial-sound-placement",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "started": "2026-10-02T05:38:28.918836+00:00",
+  "base_commit": "868203900bdc3653cdb03c4126acbf29c0624192",
+  "diff_sha256": "df1312d9857d75ff6944298f9611ff156f4d65bf3abe61cea7cfe0436acfae42",
+  "source_manifest_sha256": "0db9caea7b1f7eb297fa9953e3353cf43c5f847a147944c4d6dab1cb027205ca",
+  "pid": 26854,
+  "exit_code": 0,
+  "seconds": 17.76530116563663,
+  "source_manifest_after_sha256": "0db9caea7b1f7eb297fa9953e3353cf43c5f847a147944c4d6dab1cb027205ca",
+  "source_unchanged": true,
+  "gate_exit_code": 0
+}

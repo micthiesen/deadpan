@@ -34,10 +34,21 @@ Other mode maps, strict logical provenance, physical layout/IME qualification,
 registers, semantic dot-repeat and macros remain required. No schema changes.
 The [qualification](../qualification/configurable-bindings-2026-10-01.md) records
 custom/fallback replay, final checks and remaining verification limits.
-Its final release images expose an unresolved 960×640 Original layout issue:
-the picture gets only about 50 points of height beside its time strip and empty
-Placed sounds pane. Restore picture priority while retaining keyboard controls;
-the passing keymap replay does not settle this visual acceptance requirement.
+
+## Compact Original layout, current implementation
+
+Below 700 logical points, the single-Original workspace shows the actual placed
+sound count beside Beats. Entering that independent Sounds focus target reveals
+the list in Your edit while preserving both cursors, beat and copied range.
+Retain the zero-height panel in the widget tree. Compact read-only clocks and
+measured transport rows return space to the picture; complete long key paths
+can move Monitor onto another row. Measurement and paint share their galleys.
+First-pass pointer, focused native activation and accessibility Click are
+processed before resized GPU submission. Keep the existing picture and identity
+through retries, and fit the retained target by its actual raster aspect until
+a new submission replaces it. See [qualification](../qualification/original-layout-2026-10-02.md)
+for the selected/copied fixture, populated list, active transport and scale
+checks. Full workspace, accessibility and physical-input acceptance remain open.
 
 ## Native frame cuts, current implementation
 

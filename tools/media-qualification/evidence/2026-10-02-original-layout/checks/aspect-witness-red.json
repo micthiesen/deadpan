@@ -1,0 +1,22 @@
+{
+  "command": [
+    "target/debug/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "original-layout-long",
+    "--output",
+    "/tmp/deadpan-original-layout-20261002/aspect-witness-red",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "started": "2026-10-02T06:18:49.456914+00:00",
+  "base_commit": "868203900bdc3653cdb03c4126acbf29c0624192",
+  "diff_sha256": "558bcd617f087de8fdb75fef1e103f6c112e03c114555d6ff196e77ea1300190",
+  "source_manifest_sha256": "72de7278fc5b81b3844028582e3d830d0afe316f598f4b9b6dadfb362b0c256b",
+  "pid": 34722,
+  "exit_code": 1,
+  "seconds": 12.589589625131339,
+  "source_manifest_after_sha256": "72de7278fc5b81b3844028582e3d830d0afe316f598f4b9b6dadfb362b0c256b",
+  "source_unchanged": true,
+  "gate_exit_code": 1
+}

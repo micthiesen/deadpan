@@ -121,6 +121,8 @@ The minimum-size Original view still needs layout work: its picture is about
 50 points high when the Original strip and empty Placed sounds pane are present.
 This remains a workspace acceptance issue. The keymap captures make it visible;
 passing the input and paint assertions does not complete visual acceptance.
+The later [Original layout increment](original-layout-2026-10-02.md) addresses
+this observed minimum-window case and adds long-path transport coverage.
 
 The pinned egui-winit adapter can fall back from an unsupported logical symbol
 to its physical position. Strict logical provenance remains open. The existing

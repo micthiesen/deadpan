@@ -29,16 +29,18 @@ pub(super) struct CommandTarget {
 }
 
 impl DeadpanApp {
-    pub(super) fn compact_empty_sounds(&self, context: &egui::Context) -> bool {
-        self.view == View::Sequence
-            && self.focused_workflow()
+    pub(super) fn compact_sounds_heading(&self, context: &egui::Context) -> bool {
+        self.focused_workflow()
             && self.gain.is_none()
             && self.camera.is_none()
             && context.input(|input| input.content_rect().height() < 700.0)
-            && self
-                .workspace
-                .as_ref()
-                .is_some_and(|workspace| workspace.document.sounds().is_empty())
+            && self.workspace.as_ref().is_some_and(|workspace| {
+                self.view == View::Source || workspace.document.sounds().is_empty()
+            })
+    }
+
+    pub(super) fn compact_original_controls(&self, context: &egui::Context) -> bool {
+        self.view == View::Source && self.compact_sounds_heading(context)
     }
 
     pub(super) fn compact_sound_layout(&self, context: &egui::Context) -> bool {
@@ -337,11 +339,12 @@ impl DeadpanApp {
         true
     }
 
-    pub(super) fn placed_sounds(&mut self, ui: &mut egui::Ui, compact_empty_sounds: bool) {
-        if self.gain.is_some() || compact_empty_sounds {
+    pub(super) fn placed_sounds(&mut self, ui: &mut egui::Ui, compact_sounds_heading: bool) {
+        if self.gain.is_some() || compact_sounds_heading {
             // Preserve the panel's place in the ID tree while its inactive
             // list gives the picture room. In the compact normal workspace,
-            // the empty Sounds pane retains a visible focus target in Beats.
+            // Sounds retains a visible summary and focus target beside Beats.
+            // Focusing it from Original reveals the list in Your edit.
             egui::Panel::bottom("workspace-placed-sounds")
                 .resizable(false)
                 .show_separator_line(false)

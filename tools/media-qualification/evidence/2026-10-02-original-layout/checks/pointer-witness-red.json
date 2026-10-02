@@ -1,0 +1,22 @@
+{
+  "command": [
+    "target/debug/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "original-layout",
+    "--output",
+    "/tmp/deadpan-original-layout-20261002/pointer-witness-red",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "started": "2026-10-02T06:01:37.438419+00:00",
+  "base_commit": "868203900bdc3653cdb03c4126acbf29c0624192",
+  "diff_sha256": "7b80ebf1d52da7ee9643ee486860a9e61d5bebc275a3e140744b4f9376a067d7",
+  "source_manifest_sha256": "0b48eba492238a317c7d1caeaedef7b79300f615dcb6f4b9f4dd0ca0e1f0b716",
+  "pid": 31659,
+  "exit_code": 1,
+  "seconds": 12.872917666099966,
+  "source_manifest_after_sha256": "0b48eba492238a317c7d1caeaedef7b79300f615dcb6f4b9f4dd0ca0e1f0b716",
+  "source_unchanged": true,
+  "gate_exit_code": 1
+}

@@ -1,0 +1,22 @@
+{
+  "command": [
+    "target/debug/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "original-layout",
+    "--output",
+    "/tmp/deadpan-original-layout-20261002/original-layout-01",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "started": "2026-10-02T05:44:36.946633+00:00",
+  "base_commit": "868203900bdc3653cdb03c4126acbf29c0624192",
+  "diff_sha256": "b515fe42ee67823fb33b85dd4491c10b64702d173553e40724db6687460bc96d",
+  "source_manifest_sha256": "9f4cc9911224fe856d9895ccd4e4a2eadda264e02452e441c1e32b5ab131fd48",
+  "pid": 28585,
+  "exit_code": 1,
+  "seconds": 4.465990500058979,
+  "source_manifest_after_sha256": "9f4cc9911224fe856d9895ccd4e4a2eadda264e02452e441c1e32b5ab131fd48",
+  "source_unchanged": true,
+  "gate_exit_code": 1
+}

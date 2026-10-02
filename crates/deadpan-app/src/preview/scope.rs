@@ -120,20 +120,26 @@ impl DeadpanApp {
     pub(super) fn sequence_heading(
         &mut self,
         ui: &mut egui::Ui,
-        compact_empty_sounds: bool,
+        compact_sounds_heading: bool,
     ) -> egui::Response {
-        let (heading, destination) = if compact_empty_sounds {
+        let (heading, destination) = if compact_sounds_heading {
             let (heading, destination, sounds) = draw_compact_heading(
                 ui,
                 self.pane == Pane::Sequence,
-                self.pane == Pane::Sounds,
+                SoundsHeading {
+                    focused: self.pane == Pane::Sounds,
+                    count: self
+                        .workspace
+                        .as_ref()
+                        .map_or(0, |w| w.document.sounds().len()),
+                },
                 &self.scope_labels,
                 self.beat_rows.len(),
                 self.scope_end - self.scope_start,
                 &self.bindings,
             );
             if pane_focus(ui, Pane::Sounds, sounds.rect, "Placed sounds pane").has_focus()
-                && self.pane != Pane::Sounds
+                && (self.pane != Pane::Sounds || self.view != View::Sequence)
             {
                 self.focus_events(ui.ctx());
             }
@@ -165,25 +171,36 @@ impl DeadpanApp {
     }
 }
 
+#[derive(Default)]
+struct SoundsHeading {
+    focused: bool,
+    count: usize,
+}
+
 fn draw_compact_heading(
     ui: &mut egui::Ui,
     focused: bool,
-    sounds_focused: bool,
+    sound_state: SoundsHeading,
     labels: &[String],
     beats: usize,
     frames: u64,
     bindings: &Bindings,
 ) -> (egui::Response, Option<usize>, egui::Response) {
     let text = format!(
-        "PLACED SOUNDS 0 · {} place{}",
-        bindings.key_label(EditorKey::PlaceSound),
-        if sounds_focused { " · FOCUS" } else { "" }
+        "PLACED SOUNDS {} · {}{}",
+        sound_state.count,
+        if sound_state.count == 0 {
+            format!("{} place", bindings.key_label(EditorKey::PlaceSound))
+        } else {
+            ":sounds".into()
+        },
+        if sound_state.focused { " · FOCUS" } else { "" }
     );
     // A long configured path may use several lines, but cannot take the
     // breadcrumb's entire width or escape the viewport.
     let available = ui.available_width().max(1.0);
     let sounds = egui::WidgetText::from(egui::RichText::new(text).size(11.0).strong().color(
-        if sounds_focused {
+        if sound_state.focused {
             style::LAVENDER
         } else {
             style::MUTED
@@ -225,10 +242,16 @@ fn draw_compact_heading(
             .max_rect(sounds_rect)
             .layout(egui::Layout::top_down(egui::Align::Min)),
     );
-    let sounds = right.label(sounds).on_hover_text(format!(
-        "Choose a catalog sound, then place it with {}. Picture length stays the same.",
-        bindings.key_label(EditorKey::PlaceSound),
-    ));
+    let sounds = right
+        .label(sounds)
+        .on_hover_text(if sound_state.count == 0 {
+            format!(
+                "Choose a catalog sound, then place it with {}. Picture length stays the same.",
+                bindings.key_label(EditorKey::PlaceSound),
+            )
+        } else {
+            "Open placed sounds in Your edit · :sounds".into()
+        });
     ui.advance_cursor_after_rect(egui::Rect::from_min_size(
         origin,
         egui::vec2(available, height),
@@ -352,7 +375,7 @@ mod tests {
                     draw_compact_heading(
                         ui,
                         true,
-                        false,
+                        SoundsHeading::default(),
                         &["Nested group".into()],
                         2,
                         120,
@@ -409,7 +432,10 @@ mod tests {
                     let (beats, _, sounds) = draw_compact_heading(
                         ui,
                         !sounds_focused,
-                        sounds_focused,
+                        SoundsHeading {
+                            focused: sounds_focused,
+                            count: 0,
+                        },
                         &labels,
                         100_000,
                         u64::MAX,
@@ -468,7 +494,15 @@ mod tests {
                 ..Default::default()
             },
             |ui| {
-                draw_compact_heading(ui, true, false, &labels, 2, 120, &Bindings::default());
+                draw_compact_heading(
+                    ui,
+                    true,
+                    SoundsHeading::default(),
+                    &labels,
+                    2,
+                    120,
+                    &Bindings::default(),
+                );
             },
         );
         output.textures_delta.clear();
@@ -505,8 +539,15 @@ mod tests {
                 ..Default::default()
             },
             |ui| {
-                let (_, next, sounds) =
-                    draw_compact_heading(ui, true, false, &labels, 2, 120, &Bindings::default());
+                let (_, next, sounds) = draw_compact_heading(
+                    ui,
+                    true,
+                    SoundsHeading::default(),
+                    &labels,
+                    2,
+                    120,
+                    &Bindings::default(),
+                );
                 let sounds = pane_focus(ui, Pane::Sounds, sounds.rect, "Placed sounds pane");
                 assert!(!sounds.clicked());
                 destination = next;

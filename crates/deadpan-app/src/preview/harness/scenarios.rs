@@ -16,6 +16,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "edit-latency" => super::edit_latency::run(d),
         "nested-pause" => super::nested_pause::run(d),
         "original-moment" => super::moment::run(d),
+        "original-layout" | "original-layout-long" => super::original_layout::run(d),
         "place-slice" => super::splice::run(d),
         "delete-range" => super::delete_range::run(d),
         "marks" => super::marks::run(d),
@@ -354,14 +355,16 @@ pub(super) fn viewer_visible(d: &mut Driver<'_>) -> Result<(), String> {
         .displayed_label()
         .ok_or("No displayed picture")?;
     let viewer = d.rect(&label)?;
-    let texture = d.app().target.as_ref().ok_or("No picture texture")?.texture;
+    let target = d.app().target.as_ref().ok_or("No picture texture")?;
+    let texture = target.texture;
     let viewport = d.harness.ctx.content_rect();
     let pixels_per_point = d.harness.ctx.pixels_per_point();
     let viewer_in_viewport = picture_contains_rect(viewport, viewer, pixels_per_point);
-    let expected = d.app().presentation.canvas().map_or(viewer, |(w, h)| {
-        let scale = (viewer.width() / w as f32).min(viewer.height() / h as f32);
-        egui::Rect::from_center_size(viewer.center(), egui::vec2(w as f32, h as f32) * scale)
-    });
+    // A retained texture can outlive its decoded frame or a viewport resize.
+    // Its already composed pixels must fit uniformly until a new target lands.
+    let raster = egui::vec2(target.target.width() as f32, target.target.height() as f32);
+    let scale = (viewer.width() / raster.x).min(viewer.height() / raster.y);
+    let expected = egui::Rect::from_center_size(viewer.center(), raster * scale);
     let picture = d.harness.output().shapes.iter().filter_map(|clipped| {
         let egui::Shape::Mesh(mesh) = &clipped.shape else { return None; };
         if mesh.texture_id != texture { return None; }
@@ -380,7 +383,7 @@ pub(super) fn viewer_visible(d: &mut Driver<'_>) -> Result<(), String> {
         viewer_in_viewport
             && !picture.is_empty()
             && picture.iter().all(|p| p["visible"] == true && p["fills_fitted_canvas"] == true),
-        json!("unclipped fitted picture"),
+        json!("unclipped fitted picture preserving its submitted raster aspect"),
         json!({"viewer":[viewer.min.x,viewer.min.y,viewer.max.x,viewer.max.y],
             "viewer_in_viewport":viewer_in_viewport,"pixels_per_point":pixels_per_point,
             "containment_tolerance_pixels":PICTURE_TOLERANCE_PIXELS,

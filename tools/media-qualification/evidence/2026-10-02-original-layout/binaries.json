@@ -1,0 +1,40 @@
+{
+  "debug": {
+    "path": "target/debug/deadpan-app",
+    "sha256": "af26499e1249e083da229ffc85affd80ca737fa6f4d7514212738006e46f1f5f"
+  },
+  "release": {
+    "path": "target/release/deadpan-app",
+    "sha256": "e9bcc1853ac9e00538a1e487d0825de2e3edbb3b3906a1bc53ec3a0162fb1d3f"
+  },
+  "final_source_inventory": "8acf9a5bcf7e2170af545f1935c02911199f1f507a3f3f9eef204379cd3f71ef",
+  "previous_source_inventory": "79f3568cd19f1a3f644deb12fcd2163a03a47a9ee867c523050a5927f2efa5bd",
+  "previous_full_workspace_source_inventory": "f640b47e47465e0d8591c11e101d3d7d3a03289c713e667ea4dcf35d85ab1b38",
+  "changed_since_previous": [
+    "crates/deadpan-app/src/preview.rs",
+    "crates/deadpan-app/src/preview/harness.rs",
+    "crates/deadpan-app/src/preview/harness/keymap.rs",
+    "crates/deadpan-app/src/preview/harness/original_layout.rs",
+    "crates/deadpan-app/src/preview/harness/scenarios.rs",
+    "crates/deadpan-app/src/preview/playback.rs",
+    "crates/deadpan-app/src/preview/playback/controls.rs",
+    "crates/deadpan-app/src/preview/scope.rs",
+    "crates/deadpan-app/src/preview/sound_events.rs",
+    "crates/deadpan-app/src/ui_harness.rs"
+  ],
+  "changed_since_previous_workspace": [
+    "crates/deadpan-app/src/preview.rs",
+    "crates/deadpan-app/src/preview/harness.rs",
+    "crates/deadpan-app/src/preview/harness/keymap.rs",
+    "crates/deadpan-app/src/preview/harness/nested_pause.rs",
+    "crates/deadpan-app/src/preview/harness/original_layout.rs",
+    "crates/deadpan-app/src/preview/harness/scenarios.rs",
+    "crates/deadpan-app/src/preview/playback.rs",
+    "crates/deadpan-app/src/preview/playback/controls.rs",
+    "crates/deadpan-app/src/preview/scope.rs",
+    "crates/deadpan-app/src/preview/sound_events.rs",
+    "crates/deadpan-app/src/preview/trim/waveform.rs",
+    "crates/deadpan-app/src/ui_harness.rs"
+  ],
+  "source_unchanged_at_collection": true
+}

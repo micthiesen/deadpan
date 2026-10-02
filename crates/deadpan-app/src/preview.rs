@@ -2706,7 +2706,7 @@ impl DeadpanApp {
             });
     }
 
-    fn timeline(&mut self, ui: &mut egui::Ui, compact_empty_sounds: bool) {
+    fn timeline(&mut self, ui: &mut egui::Ui, compact_sounds_heading: bool) {
         let mut layout = self.workspace_layout(ui);
         if self.gain.is_some() {
             layout.beats = 42.0;
@@ -2723,7 +2723,7 @@ impl DeadpanApp {
                 }
                 return;
             }
-            let heading = self.sequence_heading(ui, compact_empty_sounds);
+            let heading = self.sequence_heading(ui, compact_sounds_heading);
             let beats = Arc::clone(&self.beat_rows);
             if pane_focus(
                 ui,
@@ -3068,7 +3068,7 @@ impl DeadpanApp {
             });
     }
 
-    fn viewer(&mut self, ui: &mut egui::Ui, compact_empty_sounds: bool) {
+    fn viewer(&mut self, ui: &mut egui::Ui, compact_sounds_heading: bool) {
         // At compact heights give the picture the eight points otherwise spent
         // on extra outer padding. Keep control reserves and hit sizes intact.
         let frame = if ui
@@ -3109,7 +3109,24 @@ impl DeadpanApp {
             if self.camera.is_some() {
                 ui.label(egui::RichText::new("CAMERA · Draft preview").color(style::LAVENDER));
             }
-            let controls_height = if self.gain.is_some() { 54.0 } else if self.camera.is_some() { 76.0 } else if self.view == View::Sequence { if self.copied.content().is_some() { if compact_empty_sounds { 132.0 } else { 156.0 } } else if self.compact_sound_layout(ui.ctx()) && self.transport.is_none() { 86.0 } else { 118.0 } } else { 174.0 };
+            let controls_height = if self.gain.is_some() {
+                54.0
+            } else if self.camera.is_some() {
+                76.0
+            } else {
+                let other_controls = if self.view == View::Sequence {
+                    if self.copied.content().is_some() {
+                        if compact_sounds_heading { 68.0 } else { 92.0 }
+                    } else {
+                        54.0
+                    }
+                } else if self.compact_original_controls(ui.ctx()) {
+                    100.0
+                } else {
+                    110.0
+                };
+                other_controls + self.playback_controls_height(ui)
+            };
             let available = egui::vec2(ui.available_width().max(1.0), (ui.available_height() - controls_height).max(50.0));
             let (_, rect) = ui.allocate_space(available);
             let response = pane_focus(ui, Pane::Viewer, rect, "Picture viewer pane");
@@ -3119,14 +3136,40 @@ impl DeadpanApp {
             let canvas = aspect.map_or(rect, |aspect| fit_rect(rect, aspect));
             // Earlier panes and this viewer's tabs can change view while
             // painting. Reject their old panel allocation before GPU work.
-            if compact_empty_sounds != self.compact_empty_sounds(ui.ctx()) {
-                ui.ctx().request_discard("empty Sounds heading changed placement");
+            if compact_sounds_heading != self.compact_sounds_heading(ui.ctx()) {
+                ui.ctx().request_discard("Sounds heading changed placement");
+            }
+            // Controls below the picture can change its reserved height later
+            // in this pass. Let their input run before any resized GPU target
+            // is submitted, including native button and accessibility actions.
+            if ui.ctx().current_pass_index() == 0 {
+                let controls = egui::Rect::from_min_max(
+                    egui::pos2(rect.left(), rect.bottom()), ui.max_rect().right_bottom(),
+                );
+                let native_focus = native_control_focused(ui.ctx());
+                let pending = ui.input(|input| {
+                    let dragging = input.pointer.is_decidedly_dragging();
+                    input.events.iter().any(|event| match event {
+                        egui::Event::PointerButton { pos, .. } => controls.contains(*pos) || dragging,
+                        egui::Event::PointerMoved(_) => dragging,
+                        egui::Event::Key { key: egui::Key::Enter | egui::Key::Space, pressed: true, .. } => native_focus,
+                        egui::Event::AccessKitActionRequest(request) => request.action == egui::accesskit::Action::Click,
+                        _ => false,
+                    })
+                });
+                if pending { ui.ctx().request_discard("viewer controls will process input"); }
             }
             self.render_picture(ui.ctx(), canvas.size());
             let displayed_label = self.presentation.displayed_label();
             response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Image, true, displayed_label.as_deref().unwrap_or("No picture displayed")));
             if self.presentation.has_displayed() && !(self.view == View::Sequence && self.sequence_length() == 0) {
-                if let Some(target) = &self.target { ui.painter().image(target.texture, canvas, egui::Rect::from_min_max(egui::Pos2::ZERO, egui::pos2(1.0, 1.0)), egui::Color32::WHITE); }
+                if let Some(target) = &self.target {
+                    // The retained texture includes its own composition and
+                    // letterboxing. Preserve those pixels' aspect while a new
+                    // layout or decoded canvas waits for GPU submission.
+                    let painted = fit_rect(rect, target.target.width() as f32 / target.target.height() as f32);
+                    ui.painter().image(target.texture, painted, egui::Rect::from_min_max(egui::Pos2::ZERO, egui::pos2(1.0, 1.0)), egui::Color32::WHITE);
+                }
                 else { ui.painter().rect_filled(canvas, 0.0, egui::Color32::BLACK); }
             } else {
                 let message = if self.presentation.loading() { "Preparing picture…" } else if self.presentation.error().is_some() { "Picture unavailable" } else if self.workspace.is_none() && self.raw_source.is_none() { "Start with one video. Make it strange." } else if self.view == View::Sequence { "Your edit is empty" } else if self.selected_source.is_some() && self.source_length() == 0 { "Audio source · no picture" } else { "Choose the Original to begin" };
@@ -3142,7 +3185,7 @@ impl DeadpanApp {
             if let Some(workspace) = &self.workspace && let Some(original) = workspace.original_duration {
                 // These clocks are read-only. At minimum height, reserve text
                 // height instead of the ordinary 28-point button row.
-                let clock_height = if compact_empty_sounds { 14.0 } else { ui.spacing().interact_size.y };
+                let clock_height = if compact_sounds_heading { 14.0 } else { ui.spacing().interact_size.y };
                 ui.allocate_ui_with_layout(egui::vec2(ui.available_width(), clock_height), egui::Layout::left_to_right(egui::Align::Center).with_main_wrap(true), |ui| {
                     let edit = workspace.plan.duration();
                     ui.label(egui::RichText::new(format!("Original {} f", original.frames())).monospace()).widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Label, true, format!("Full Original duration: {} project frames", original.frames())));
@@ -3505,7 +3548,7 @@ impl eframe::App for DeadpanApp {
         );
         // A pointer activation can change views while the panes are painted.
         // Use one placement decision for Sounds throughout this pass.
-        let compact_empty_sounds = self.compact_empty_sounds(&context);
+        let compact_sounds_heading = self.compact_sounds_heading(&context);
         let footer_mode = (
             self.command_open,
             self.camera.is_some(),
@@ -3531,9 +3574,9 @@ impl eframe::App for DeadpanApp {
             }
             self.sources(ui);
             self.inspector(ui);
-            self.placed_sounds(ui, compact_empty_sounds);
-            self.timeline(ui, compact_empty_sounds);
-            self.viewer(ui, compact_empty_sounds);
+            self.placed_sounds(ui, compact_sounds_heading);
+            self.timeline(ui, compact_sounds_heading);
+            self.viewer(ui, compact_sounds_heading);
         }
         if first_pass {
             self.finish_camera_entry(&context);
@@ -3591,8 +3634,8 @@ impl eframe::App for DeadpanApp {
         {
             context.request_discard("workspace footer mode changed after input");
         }
-        if compact_empty_sounds != self.compact_empty_sounds(&context) {
-            context.request_discard("empty Sounds heading changed placement");
+        if compact_sounds_heading != self.compact_sounds_heading(&context) {
+            context.request_discard("Sounds heading changed placement");
         }
         if !context.will_discard() {
             if self.trim.is_none() {
