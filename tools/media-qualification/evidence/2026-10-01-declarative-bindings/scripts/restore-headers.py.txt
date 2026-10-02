@@ -1,0 +1,48 @@
+import hashlib
+import io
+import json
+import re
+import tarfile
+import urllib.request
+from pathlib import Path
+
+scratch = Path('/tmp/deadpan-keymap-20261001')
+scratch.mkdir(exist_ok=True)
+pins = json.loads(Path('tools/media-qualification/compatible/pins.json').read_text())['ffmpeg']
+request = urllib.request.Request(pins['archive_url'], headers={'User-Agent': 'OpenAI File Downloader, XaiImageApiFetch/1.0'})
+with urllib.request.urlopen(request, timeout=60) as response:
+    archive = response.read(32 * 1024 * 1024 + 1)
+assert len(archive) <= 32 * 1024 * 1024
+assert hashlib.sha256(archive).hexdigest() == pins['archive_sha256']
+(scratch / 'ffmpeg-8.0.3.tar.xz').write_bytes(archive)
+prefix = Path('/tmp/deadpan-ui-ffmpeg/prefix')
+restored = {}
+with tarfile.open(fileobj=io.BytesIO(archive), mode='r:xz') as package:
+    members = {member.name: member for member in package.getmembers() if member.isfile()}
+    pending = list((prefix / 'include').glob('*/*.h'))
+    while pending:
+        header = pending.pop()
+        for include in re.findall(r'^\s*#\s*include\s*[<"]([^>"]+)[>"]', header.read_text(), re.M):
+            if '/' in include:
+                if not include.startswith(('libav', 'libsw')):
+                    continue
+                target = prefix / 'include' / include
+            else:
+                target = header.parent / include
+            if target.exists():
+                continue
+            relative = target.relative_to(prefix / 'include')
+            assert '..' not in relative.parts
+            member = members.get('ffmpeg-8.0.3/' + str(relative))
+            if member is None:
+                continue
+            data = package.extractfile(member).read()
+            target.parent.mkdir(exist_ok=True)
+            with target.open('xb') as output:
+                output.write(data)
+            restored[str(relative)] = hashlib.sha256(data).hexdigest()
+            pending.append(target)
+report = {'archive_sha256': pins['archive_sha256'], 'prefix': str(prefix), 'restored_missing_headers': restored,
+          'library_files_changed': False, 'reason': 'Development prefix retained libraries but lacked required includes; original source tree and download had also been removed.'}
+(scratch / 'header-repair.json').write_text(json.dumps(report, indent=2) + '\n')
+print(json.dumps(report))

@@ -1,0 +1,10 @@
+{
+  "checked_utc": "2026-10-02T03:44:07.698861+00:00",
+  "command": [
+    "ps",
+    "-axo",
+    "pid=,ppid=,etime=,comm="
+  ],
+  "matching_deadpan_processes": [],
+  "native_window_opened": false
+}

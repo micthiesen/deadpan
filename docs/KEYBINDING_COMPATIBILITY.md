@@ -78,6 +78,17 @@ contextual help explains counts and group boundaries. See
 [frame-cut semantics](EDITED_SLICES.md#frame-cuts-at-the-cursor) and the
 [18,352-case audit and rendered regressions](qualification/native-frame-cuts-2026-10-01.md).
 
+## Declarative editor paths
+
+The shipped Normal/Visual paths now use a [validated binding trie](KEYMAP.md).
+Prefix hints come from the same declarations, and the audit walks every
+structural branch rather than maintaining a separate list. Counted branches
+with no valid edit show the refusal. Held motion keys cannot consume or complete
+any pending prefix; this fixes held `h` becoming a comma-Hold edit. Native
+control protection follows the typed cut and preserves mark names.
+User keymap loading and the remaining mode-map migration are still open.
+See [qualification and exact source identities](qualification/declarative-bindings-2026-10-01.md).
+
 ## Source Slip preview
 
 **`:slip +5f`** opens a stopped-picture draft for the selected eligible Source or
@@ -154,11 +165,10 @@ chords remain unclaimed. Trim excludes ordinary editing, history, other editing
 drafts and Render. See [the native contract](COMBINED_TRIM.md#native-trim).
 
 The production reservation audit includes Trim's text, background, composition
-and held-key combinations. Its current expected coverage is 296 routing cases
-for each of 62 reservations, or 18,352 total. This is an expected count, not a
-passing-run claim. The help update checked source and fixture hashes only;
-compilation, audit execution, replay and native interaction remain separate
-qualification work. The local Kestrel source still matches the checked fixture:
+and held-key combinations. With compiled editor prefixes and four count states,
+its expected coverage is 428 routing cases for each of 62 reservations, or
+26,536 total. This describes coverage; dated qualification records establish
+which source was actually run. The local Kestrel source matches the checked fixture:
 SHA-256 `368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2`.
 
 ## Place slice

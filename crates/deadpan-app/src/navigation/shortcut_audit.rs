@@ -84,36 +84,23 @@ fn audit_reservation(
     report: &mut ShortcutAudit,
     route: impl Fn(&mut Bindings, Key, Modifiers, bool, bool) -> Option<super::Action>,
 ) {
-    // Cover every state in the currently shipped prefix parser, including its
-    // overflow branch. Prefixes and the final key both use production routing.
-    let mut overflow_mark = [Key::Num9; 12];
-    overflow_mark[11] = Key::M;
-    let mut overflow_jump = [Key::Num9; 12];
-    overflow_jump[11] = Key::Quote;
-    let prefixes: &[&[Key]] = &[
-        &[],
-        &[Key::G],
-        &[Key::R],
-        &[Key::D],
-        &[Key::Comma],
-        &[Key::M],
-        &[Key::Quote],
-        &[Key::Num3],
-        &[Key::Num3, Key::G],
-        &[Key::Num3, Key::R],
-        &[Key::Num3, Key::D],
-        &[Key::Num3, Key::Comma],
-        &[Key::Num3, Key::M],
-        &[Key::Num3, Key::Quote],
-        &[Key::Num9; 11],
-        &overflow_mark,
-        &overflow_jump,
-    ];
+    // Derive every pending branch from the compiled production grammar, then
+    // exercise absent, positive, zero and overflow counts before that branch.
+    let prefixes = audit_prefixes();
     for (text, ime) in [(false, false), (true, false), (false, true), (true, true)] {
-        for prefix in prefixes {
+        for prefix in &prefixes {
             let mut bindings = Bindings::default();
-            for key in *prefix {
-                bindings.key(*key, Modifiers::NONE, false, false);
+            for stroke in prefix {
+                bindings.key(
+                    stroke.0,
+                    if stroke.1 {
+                        Modifiers::SHIFT
+                    } else {
+                        Modifiers::NONE
+                    },
+                    false,
+                    false,
+                );
             }
             let context = format!(
                 "Normal prefix={:?} text={text} ime={ime}",
@@ -136,8 +123,18 @@ fn audit_reservation(
             );
             for selection in [super::EditSelection::Empty, super::EditSelection::Range] {
                 let mut bindings = Bindings::default();
-                for key in *prefix {
-                    bindings.key_with_selection(*key, Modifiers::NONE, false, false, selection);
+                for stroke in prefix {
+                    bindings.key_with_selection(
+                        stroke.0,
+                        if stroke.1 {
+                            Modifiers::SHIFT
+                        } else {
+                            Modifiers::NONE
+                        },
+                        false,
+                        false,
+                        selection,
+                    );
                 }
                 let context = format!(
                     "Edit selection={selection:?} prefix={:?} text={text} ime={ime}",
@@ -266,6 +263,25 @@ fn audit_reservation(
                 .then(|| format!("text={text_action:?}, inspector={inspector}")),
         );
     }
+}
+
+fn audit_prefixes() -> Vec<Vec<super::editor_map::Stroke>> {
+    use super::editor_map::Stroke;
+    let counts = [
+        Vec::new(),
+        vec![Stroke(Key::Num3, false)],
+        vec![Stroke(Key::Num0, false)],
+        vec![Stroke(Key::Num9, false); 11],
+    ];
+    let mut cases = Vec::new();
+    for prefix in super::editor_map::prefix_paths() {
+        for count in &counts {
+            let mut path = count.clone();
+            path.extend_from_slice(&prefix);
+            cases.push(path);
+        }
+    }
+    cases
 }
 
 fn record(
@@ -423,7 +439,8 @@ mod tests {
     fn shipped_routers_never_claim_a_kestrel_global_chord_or_prefix() {
         let report = audit().unwrap();
         assert_eq!(report.reserved_bindings, 62);
-        assert_eq!(report.routing_cases, 62 * 296);
+        assert_eq!(audit_prefixes().len(), 28);
+        assert_eq!(report.routing_cases, 62 * 428);
         assert!(report.passed(), "{report:#?}");
     }
 

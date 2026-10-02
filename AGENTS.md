@@ -79,6 +79,10 @@ Current crates:
 
 Use Rust 1.97.1 as pinned in `rust-toolchain.toml`, Cargo, rustfmt, Clippy, strong types, and meaningful unit/property tests. Keep platform-specific unsafe code inside qualified adapters and out of core. Avoid debug leftovers, broad suppressions, unchecked conversions, and unrelated dependency additions. Commit `Cargo.lock` and test locked dependencies.
 
+Use separate Cargo target directories for archived-source comparisons. Shared
+top-level executables can retain the other source's binary while Cargo reports
+a fresh fingerprint. Record the executed binary hash alongside source identity.
+
 All owned runtime subprocess launches use `deadpan_native_process::spawn`.
 Its cooperative macOS guard covers pipe creation through spawn return to prevent
 transient descriptor inheritance between participating launches. It does not
@@ -790,6 +794,11 @@ menu ownership; the current-pass `Context::any_popup_open` is empty at that poin
 Help owns ordered input until Escape, including when it opens within one batch.
 Discard its pointer/IME prefix on closing, preserve the command suffix, and keep
 popup/dialog composition observation without consuming their input.
+Normal/Visual editor paths use the bounded declarative trie. Keep terminal
+actions separate from prefix capture notifications; derive teaching and audit
+branches from the declarations. Held events may execute only the current leaf's
+explicit repeat policy, never consume a pending edit/mark prefix. Preserve native
+control cut ownership by typed action. See [bindings](docs/KEYMAP.md).
 
 Native group navigation retains an ephemeral `SequenceScope` of direct ordinary
 Sequence children. Keep cursor/card positions on the absolute project clock and

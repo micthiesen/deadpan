@@ -1,0 +1,29 @@
+import hashlib
+import json
+import shlex
+import subprocess
+import tarfile
+from pathlib import Path
+
+scratch = Path('/tmp/deadpan-keymap-20261001')
+prefix = Path('/tmp/deadpan-ui-ffmpeg/prefix')
+version = subprocess.check_output([str(prefix / 'bin/ffprobe'), '-version'], text=True)
+line = next(line for line in version.splitlines() if line.startswith('configuration: '))
+arguments = shlex.split(line.removeprefix('configuration: '))
+assert '--disable-gpl' in arguments and '--disable-network' in arguments
+root = scratch / 'configure-source'
+root.mkdir(exist_ok=True)
+with tarfile.open(scratch / 'ffmpeg-8.0.3.tar.xz', mode='r:xz') as package:
+    package.extractall(root, filter='data')
+source = root / 'ffmpeg-8.0.3'
+with (scratch / 'configure.log').open('w') as output:
+    subprocess.run(['sh', 'configure', *arguments], cwd=source, stdout=output, stderr=subprocess.STDOUT, check=True)
+header = source / 'libavutil/avconfig.h'
+destination = prefix / 'include/libavutil/avconfig.h'
+with destination.open('xb') as output:
+    output.write(header.read_bytes())
+report = {'ffprobe_version': version, 'configure_arguments': arguments,
+          'header': header.read_text(), 'header_sha256': hashlib.sha256(header.read_bytes()).hexdigest(),
+          'library_files_changed': False}
+(scratch / 'config-repair.json').write_text(json.dumps(report, indent=2) + '\n')
+print(json.dumps(report))

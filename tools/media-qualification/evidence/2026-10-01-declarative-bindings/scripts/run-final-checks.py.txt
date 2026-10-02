@@ -1,0 +1,20 @@
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+root = Path('/tmp/deadpan-keymap-20261001')
+environment = dict(os.environ, DEADPAN_CHECK_OUTPUT=str(root / 'checks'))
+commands = [
+    ('final-fmt', ['cargo', 'fmt', '--all', '--', '--check']),
+    ('final-feature-clippy', ['cargo', 'clippy', '-p', 'deadpan-app', '--all-targets', '--features', 'ui-harness', '--locked', '--', '-D', 'warnings']),
+    ('final-workspace-clippy', ['cargo', 'clippy', '--workspace', '--all-targets', '--locked', '--', '-D', 'warnings']),
+    ('final-workspace-tests', ['cargo', 'test', '--workspace', '--locked', '--no-fail-fast']),
+    ('final-feature-tests', ['cargo', 'test', '-p', 'deadpan-app', '--features', 'ui-harness', '--locked']),
+    ('final-editing-replay', ['cargo', 'run', '-p', 'deadpan-app', '--features', 'ui-harness', '--locked', '--', '--ui-check', '--scenario', 'editing', '--output', '/tmp/deadpan-keymap-green-20261001', '--kestrel-source', '/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift']),
+]
+for name, command in commands:
+    print('Starting ' + name, flush=True)
+    result = subprocess.run(['python3', str(root / 'run-check.py'), name, *command], env=environment)
+    if result.returncode:
+        sys.exit(result.returncode)

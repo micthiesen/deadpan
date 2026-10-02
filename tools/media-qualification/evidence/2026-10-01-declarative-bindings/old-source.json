@@ -1,0 +1,15 @@
+{
+  "base_commit": "b6bf7879384be9c740cdb7ccc39c813ebd6784ac",
+  "archive_inputs": [
+    "Cargo.toml",
+    "Cargo.lock",
+    "rust-toolchain.toml",
+    ".cargo",
+    "crates",
+    "native",
+    "assets"
+  ],
+  "archive_sha256": "022ae9efa601754169aec8c6d7f067b9d6bfbd00ac00c771a63fa3ab140dcc86",
+  "patch_sha256": "a2f68e2b0d60c9a307c3f93d38f54823ade63b1ed39669ca178e2511c54648a6",
+  "source_inventory_sha256": "19eb528321f4eb01a25b3548be7386fa4242cfa5d586f0ff30fc8c6c5f8717c2"
+}

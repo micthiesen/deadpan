@@ -1,0 +1,22 @@
+import hashlib
+import json
+import subprocess
+from pathlib import Path
+
+scratch = Path('/tmp/deadpan-keymap-20261001')
+prefix = Path('/tmp/deadpan-ui-ffmpeg/prefix')
+def inventory():
+    return {str(p.relative_to(prefix)): hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in sorted(prefix.rglob('*')) if p.is_file()}
+before = inventory()
+with (scratch / 'install-headers.log').open('w') as output:
+    subprocess.run(['make', 'install-headers'], cwd=scratch / 'configure-source/ffmpeg-8.0.3', stdout=output, stderr=subprocess.STDOUT, check=True)
+after = inventory()
+assert all(after.get(name) == digest for name, digest in before.items() if name.endswith('.dylib') or name.startswith('bin/'))
+report = {'command': ['make', 'install-headers'],
+          'added': {name: digest for name, digest in after.items() if name not in before},
+          'changed': {name: {'before':before[name], 'after':digest} for name, digest in after.items() if name in before and before[name] != digest},
+          'runtime_before': {name:digest for name,digest in before.items() if name.endswith('.dylib') or name.startswith('bin/')},
+          'runtime_unchanged': True}
+(scratch / 'installed-headers.json').write_text(json.dumps(report, indent=2) + '\n')
+print(json.dumps({'added':list(report['added']), 'changed':list(report['changed']), 'runtime_unchanged':True}))

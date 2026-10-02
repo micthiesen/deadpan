@@ -1,10 +1,12 @@
 use eframe::egui::{Key, Modifiers};
 
+mod binding_trie;
 pub mod camera;
 pub mod command;
 #[cfg(test)]
 mod delete_range_tests;
 pub mod duration;
+mod editor_map;
 pub mod gain;
 #[cfg(test)]
 mod mark_tests;
@@ -138,13 +140,6 @@ pub enum FramingAction {
     Creep,
 }
 
-/// The implemented navigation vocabulary. Prefixes have no timing dependency.
-const MOTIONS: &[(Key, bool)] = &[
-    (Key::H, false),
-    (Key::ArrowLeft, false),
-    (Key::L, true),
-    (Key::ArrowRight, true),
-];
 const DIGITS: &[(Key, u32)] = &[
     (Key::Num0, 0),
     (Key::Num1, 1),
@@ -164,110 +159,165 @@ pub enum MarkPrefix {
     Jump,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Bindings {
     count: Option<u32>,
     count_overflow: bool,
-    g: bool,
-    comma: bool,
-    operator: Option<Key>,
-    mark: Option<MarkPrefix>,
+    path: Vec<editor_map::Stroke>,
 }
 
 impl Bindings {
     pub fn clear(&mut self) {
-        *self = Self::default();
+        self.count = None;
+        self.count_overflow = false;
+        self.path.clear();
     }
 
-    /// The app captures the mark target when the prefix starts, before a later
-    /// project update can change the location represented by the second key.
+    fn prefix(&self) -> Option<&'static editor_map::PrefixInfo> {
+        editor_map::prefix(&self.path)
+    }
+
+    fn prefix_kind(&self) -> Option<editor_map::PrefixKind> {
+        self.prefix().map(|prefix| prefix.kind)
+    }
+
+    /// Prefix identity is semantic: the host captures its target on entry.
     pub fn mark_prefix(&self) -> Option<MarkPrefix> {
-        self.mark
+        match self.prefix_kind() {
+            Some(editor_map::PrefixKind::Mark(mark)) => Some(mark),
+            _ => None,
+        }
     }
 
-    /// Motion keys are also valid mark names. A held motion must not complete
-    /// a mark prefix even though ordinary frame and beat motion may repeat.
+    /// Only a repeatable leaf at the current trie position can autorepeat.
+    /// A held motion key must not complete an edit or a mark prefix.
     pub fn allows_key_repeat(&self, key: Key, modifiers: Modifiers) -> bool {
-        self.mark.is_none() && allows_key_repeat(key, modifiers)
+        if self.path.is_empty() {
+            return allows_key_repeat(key, modifiers);
+        }
+        if modifiers != Modifiers::NONE {
+            return false;
+        }
+        let mut path = self.path.clone();
+        path.push(editor_map::Stroke(key, false));
+        editor_map::rule(&path, EditSelection::None).is_some_and(|rule| rule.repeatable)
     }
 
-    /// Original browsing may retain this prefix for explicit whole-source
-    /// reuse. Other pending edit operators remain non-destructive there.
+    /// Keep native-control protection attached to the resolved cut, not the
+    /// physical key used to invoke it. Probing never mutates pending input.
+    pub fn native_control_owns_cut(
+        &self,
+        key: Key,
+        modifiers: Modifiers,
+        selection: EditSelection,
+    ) -> bool {
+        match self
+            .clone()
+            .key_with_selection(key, modifiers, false, false, selection)
+        {
+            Some(Action::DeleteFrames(_) | Action::DeleteSelection) => true,
+            Some(Action::Edit(BeatEdit::Delete)) => selection != EditSelection::None,
+            _ => false,
+        }
+    }
+
     pub fn reuse_pending(&self) -> bool {
-        self.comma && self.count.is_none() && !self.count_overflow
+        self.prefix_kind() == Some(editor_map::PrefixKind::Leader)
+            && self.count.is_none()
+            && !self.count_overflow
     }
 
     pub fn pending(&self) -> String {
-        if let Some(mark) = self.mark {
-            return match mark {
-                MarkPrefix::Set => "m",
-                MarkPrefix::Jump => "'",
-            }
-            .into();
-        }
         format!(
             "{}{}",
             if self.count_overflow {
                 "count overflow".into()
             } else {
-                self.count.map_or_else(String::new, |n| n.to_string())
+                self.count
+                    .map_or_else(String::new, |count| count.to_string())
             },
-            match self.operator {
-                Some(Key::R) => "r",
-                Some(Key::D) => "d",
-                _ if self.comma => ",",
-                _ if self.g => "g",
-                _ => "",
-            }
+            self.path
+                .iter()
+                .map(|stroke| stroke.label())
+                .collect::<String>(),
         )
     }
 
     pub fn pending_hint(&self) -> Option<&'static str> {
-        if let Some(mark) = self.mark {
-            return Some(match mark {
-                MarkPrefix::Set => "a–z / A–Z saves this position · Esc cancels",
-                MarkPrefix::Jump => "a–z / A–Z jumps to that mark · Esc cancels",
-            });
-        }
         if self.count_overflow {
             return Some("Count is too large. Esc clears it.");
         }
-        match self.operator {
-            Some(Key::R) => Some("r completes the Repeat · Esc cancels"),
-            Some(Key::D) => Some("d cuts this whole beat · Esc cancels"),
-            _ if self.comma && self.count.is_some() => {
-                Some("h inserts the counted pause · Esc cancels")
+        if let Some(prefix) = self.prefix() {
+            // A prefix that has no valid completion for this exact count must
+            // explain the refusal instead of teaching an unavailable edit.
+            if self.count.is_some()
+                && let Some(node) = editor_map::map(EditSelection::None).resolve(&self.path)
+            {
+                let mut refusal = None;
+                let mut available = false;
+                for (_, child) in node.children() {
+                    match child
+                        .terminal()
+                        .map(|binding| binding.value.resolve(self.count))
+                    {
+                        Some(Action::Invalid(message)) => refusal = refusal.or(Some(message)),
+                        _ => available = true,
+                    }
+                }
+                if !available && let Some(message) = refusal {
+                    return Some(message);
+                }
             }
-            _ if self.comma => Some(
-                "i reuse Original · s place sound · h pause · f Camera · v Trim · z punch in · c creep · Esc cancels",
-            ),
-            _ if self.g => Some("g goes to the start · Esc cancels"),
-            _ if self.count.is_some() => Some(
-                "Then h/l to move, x to cut frames, rr to repeat, +/- for gain, or ,h to pause · Esc cancels",
-            ),
-            _ => None,
+            return Some(if self.count.is_some() {
+                &prefix.counted_hint
+            } else {
+                &prefix.hint
+            });
         }
+        if self.count == Some(0) {
+            return Some("Zero count: h/l moves one frame; ,h requests zero time; Esc clears it.");
+        }
+        self.count.is_some().then_some(
+            "Then h/l to move, x to cut frames, rr to repeat, +/- for gain, or ,h to pause · Esc cancels",
+        )
     }
 
-    fn gain_step(&mut self, increase: bool) -> Action {
-        let action = if self.g || self.comma || self.operator.is_some() {
+    fn gain_step(&mut self, key: Key) -> Action {
+        let action = if !self.path.is_empty() {
             Action::Invalid("Use + or - for gain without an operator or comma prefix.")
         } else if self.count_overflow {
             Action::Invalid("Count exceeds 4294967295; no edit was made.")
-        } else if self.count == Some(0) {
-            Action::Invalid("A gain count must be positive; no edit was made.")
         } else {
-            let step = if increase { 3000 } else { -3000 };
-            match i32::try_from(self.count.unwrap_or(1))
-                .ok()
-                .and_then(|count| count.checked_mul(step))
-            {
-                Some(delta) => Action::GainStep(delta),
-                None => Action::Invalid("Gain step exceeds the supported range; no edit was made."),
-            }
+            editor_map::rule(&[editor_map::Stroke(key, false)], EditSelection::None)
+                .expect("gain keys are declared")
+                .resolve(self.count)
         };
         self.clear();
         action
+    }
+
+    fn route(&mut self, stroke: editor_map::Stroke, selection: EditSelection) -> Option<Action> {
+        // A pending ordinary d remains its captured operator if a caller changes
+        // selection. The application separately gives captured Visual time priority.
+        let selection = if self.prefix_kind() == Some(editor_map::PrefixKind::Delete) {
+            EditSelection::None
+        } else {
+            selection
+        };
+        let invalid = self.prefix().and_then(|prefix| prefix.invalid);
+        self.path.push(stroke);
+        let Some(node) = editor_map::map(selection).resolve(&self.path) else {
+            self.clear();
+            return invalid.map(Action::Invalid);
+        };
+        if let Some(binding) = node.terminal() {
+            let action = binding.value.resolve(self.count);
+            self.clear();
+            Some(action)
+        } else {
+            node.prefix()
+                .and_then(|prefix| prefix.value.offer_insert.then_some(Action::OfferInsert))
+        }
     }
 
     pub fn key(&mut self, key: Key, modifiers: Modifiers, text: bool, ime: bool) -> Option<Action> {
@@ -282,12 +332,13 @@ impl Bindings {
         ime: bool,
         selection: EditSelection,
     ) -> Option<Action> {
+        use editor_map::{PrefixKind, Stroke};
         if ime {
             self.clear();
             return None;
         }
-        // egui's Control also carries `command` on non-macOS platforms. These
-        // exact Control bindings must precede Cmd+O and Cmd+I handling.
+        // Native application shortcuts have priority over the editor trie.
+        // egui also carries `command` on Control outside macOS.
         if matches!(key, Key::O | Key::I)
             && modifiers.matches_exact(Modifiers::CTRL)
             && !modifiers.mac_cmd
@@ -304,8 +355,6 @@ impl Bindings {
                 }
             });
         }
-        // egui also sets `command` for Control on non-macOS platforms. Check
-        // this explicit Control binding before the platform command shortcuts.
         if key == Key::R && modifiers.matches_exact(Modifiers::CTRL) && !modifiers.mac_cmd {
             self.clear();
             return (!text).then_some(Action::Redo);
@@ -329,40 +378,25 @@ impl Bindings {
             self.clear();
             return None;
         }
-        if key == Key::Escape && modifiers == Modifiers::NONE {
-            self.clear();
-            return Some(Action::Escape);
-        }
-        if key == Key::Tab
-            && !modifiers.alt
-            && !modifiers.ctrl
-            && !modifiers.command
-            && !modifiers.mac_cmd
+        if (key == Key::Escape && modifiers == Modifiers::NONE)
+            || (key == Key::Tab
+                && !modifiers.alt
+                && !modifiers.ctrl
+                && !modifiers.command
+                && !modifiers.mac_cmd)
         {
             self.clear();
-            return Some(Action::Pane {
-                reverse: modifiers.shift,
-            });
+            return Some(editor_map::interrupt(key, modifiers.shift));
         }
-        // Consume the name before ordinary motion and operator keys, including
-        // g, r, d and uppercase G. Modified global chords remain unclaimed.
-        if let Some(mark) = self.mark {
-            self.clear();
+        // Mark-name leaves precede logical symbols and transport. Native
+        // modifiers never reach the trie as an unmodified mark name.
+        if self.mark_prefix().is_some() {
             if modifiers != Modifiers::NONE && modifiers != Modifiers::SHIFT {
+                self.clear();
                 return None;
             }
-            return Some(match mark_letter(key, modifiers.shift) {
-                Some(letter) => match mark {
-                    MarkPrefix::Set => Action::SetMark(letter),
-                    MarkPrefix::Jump => Action::JumpMark(letter),
-                },
-                None => Action::Invalid(
-                    "A mark name must be one letter, a–z or A–Z; no mark action was taken.",
-                ),
-            });
+            return self.route(Stroke(key, modifiers.shift), selection);
         }
-        // Quote is a logical symbol, so Shift/Option may be needed on a
-        // non-US layout. M starts a prefix only as a plain letter.
         if (key == Key::M && modifiers == Modifiers::NONE)
             || (key == Key::Quote && !modifiers.ctrl && !modifiers.command && !modifiers.mac_cmd)
         {
@@ -372,42 +406,26 @@ impl Bindings {
                     "Use m or ' without a count or another prefix; no mark action was taken.",
                 ));
             }
-            self.mark = Some(if key == Key::M {
-                MarkPrefix::Set
-            } else {
-                MarkPrefix::Jump
-            });
-            return None;
+            return self.route(Stroke(key, false), selection);
         }
-        // These are logical symbols: layouts may need Shift or Option to type
-        // them. Never infer a colon from the physical US semicolon position.
+        // Logical punctuation may require Shift/Option on a non-US layout.
+        // Preserve native modifier ownership before canonicalizing a symbol.
         if !modifiers.ctrl && !modifiers.command && !modifiers.mac_cmd {
-            if key == Key::Comma && !self.g && !self.comma && self.operator.is_none() {
-                self.comma = true;
-                return Some(Action::OfferInsert);
+            if key == Key::Comma && self.path.is_empty() {
+                return self.route(Stroke(key, false), selection);
             }
             if matches!(key, Key::Colon | Key::Slash | Key::Questionmark) {
                 self.clear();
-                return Some(match key {
-                    Key::Colon => Action::Command,
-                    Key::Questionmark => Action::Help,
-                    _ => Action::Search,
-                });
+                return Some(editor_map::interrupt(key, false));
             }
-            // Logical Plus may require Shift. egui can fall back from an
-            // unrecognized underscore to physical Minus, so Shift+Minus stays
-            // unclaimed, as in Camera. Never infer Plus from physical Equals.
             if !modifiers.alt && (key == Key::Plus || (key == Key::Minus && !modifiers.shift)) {
-                return Some(self.gain_step(key == Key::Plus));
+                return Some(self.gain_step(key));
             }
-            // Kestrel owns Option+1–5 and Shift+Option+1–5 globally. Do not
-            // start an editor count from Option-number keys if they reach us.
-            // Shift-only logical digits still support non-US layouts.
             if !modifiers.alt
-                && !self.g
+                && self.prefix_kind() != Some(PrefixKind::Start)
                 && let Some((_, digit)) = DIGITS.iter().find(|(bound, _)| *bound == key)
             {
-                if self.operator.is_some() || self.comma {
+                if !self.path.is_empty() {
                     self.clear();
                     return Some(Action::Invalid(
                         "Put one count before the operator, for example 3rr or 3,h.",
@@ -417,7 +435,7 @@ impl Bindings {
                     .count
                     .unwrap_or(0)
                     .checked_mul(10)
-                    .and_then(|n| n.checked_add(*digit))
+                    .and_then(|value| value.checked_add(*digit))
                 {
                     self.count = Some(count);
                 } else {
@@ -428,36 +446,28 @@ impl Bindings {
         }
         if key == Key::G && modifiers == Modifiers::SHIFT {
             self.clear();
-            return Some(Action::Last);
+            return Some(editor_map::interrupt(key, true));
         }
         if key == Key::P && modifiers == Modifiers::SHIFT {
             let standalone = self.pending().is_empty();
             self.clear();
             return Some(if standalone {
-                Action::PasteMoment { before: true }
+                editor_map::interrupt(key, true)
             } else {
                 Action::Invalid("Paste once with p or P, without a count or operator.")
             });
         }
         if key == Key::Space && modifiers == Modifiers::SHIFT {
             self.clear();
-            return Some(Action::Audition);
+            return Some(editor_map::interrupt(key, true));
         }
         if modifiers != Modifiers::NONE {
             self.clear();
             return None;
         }
-        if key == Key::Space {
+        if matches!(key, Key::Space | Key::Enter | Key::Backspace) {
             self.clear();
-            return Some(Action::Playback);
-        }
-        if matches!(key, Key::Enter | Key::Backspace) {
-            self.clear();
-            return Some(if key == Key::Enter {
-                Action::EnterGroup
-            } else {
-                Action::LeaveGroup
-            });
+            return Some(editor_map::interrupt(key, false));
         }
         if self.count_overflow {
             self.clear();
@@ -465,109 +475,7 @@ impl Bindings {
                 "Count exceeds 4294967295; no edit was made.",
             ));
         }
-        if self.comma {
-            let action = match key {
-                Key::I if self.count.is_none() => Action::Insert,
-                Key::I => Action::Invalid("Reuse inserts once. Use ,i without a count."),
-                Key::S if self.count.is_none() => Action::Sound(SoundAction::Place),
-                Key::S => Action::Invalid("Place one sound with ,s, without a count."),
-                Key::V if self.count.is_none() => Action::Trim,
-                Key::V => Action::Invalid("Open Trim once with ,v, without a count."),
-                Key::H => Action::Edit(BeatEdit::InsertHold(
-                    duration::DurationInput::half_seconds(self.count.unwrap_or(1)),
-                )),
-                Key::F | Key::Z | Key::C if self.count.is_none() => Action::Framing(match key {
-                    Key::F => FramingAction::EnterCamera,
-                    Key::Z => FramingAction::PunchIn,
-                    Key::C => FramingAction::Creep,
-                    _ => unreachable!("matched framing key"),
-                }),
-                Key::F | Key::Z | Key::C => {
-                    Action::Invalid("Counts apply only to ,h. Use ,f, ,z, or ,c without a count.")
-                }
-                _ => Action::Invalid(
-                    "After comma, use i to reuse the Original, s to place a sound, h for a pause, f for Camera, v for Trim, z to punch in, or c to creep.",
-                ),
-            };
-            self.clear();
-            return Some(action);
-        }
-        if let Some(operator) = self.operator {
-            let action = if key != operator {
-                Action::Invalid(
-                    "Use rr to repeat a beat, dd to delete a beat, or select time with v and cut it with d. Motion and text-object operators are not ready.",
-                )
-            } else if self.count == Some(0) {
-                Action::Invalid("An edit count must be positive; no edit was made.")
-            } else if operator == Key::R {
-                Action::Edit(BeatEdit::WrapRepeat(self.count.unwrap_or(2)))
-            } else if self.count.is_some_and(|count| count != 1) {
-                Action::Invalid("dd deletes one selected beat. Counted deletion is not available.")
-            } else {
-                Action::Edit(BeatEdit::Delete)
-            };
-            self.clear();
-            return Some(action);
-        }
-        if !self.g && key == Key::D && selection != EditSelection::None {
-            let action = if self.count.is_some() {
-                Action::Invalid("Delete the selected range once with d, without a count.")
-            } else {
-                Action::DeleteSelection
-            };
-            self.clear();
-            return Some(action);
-        }
-        if !self.g && matches!(key, Key::R | Key::D) {
-            self.operator = Some(key);
-            return Some(Action::OfferInsert);
-        }
-        if key == Key::G && !self.g {
-            self.g = true;
-            return None;
-        }
-        let count = self.count.unwrap_or(1).max(1);
-        let action = if self.g {
-            (key == Key::G).then_some(Action::First)
-        } else if let Some((_, forward)) = MOTIONS.iter().find(|(bound, _)| *bound == key) {
-            Some(Action::Step {
-                forward: *forward,
-                count,
-            })
-        } else {
-            match key {
-                Key::J | Key::ArrowDown => Some(Action::Beat {
-                    forward: true,
-                    count,
-                }),
-                Key::K | Key::ArrowUp => Some(Action::Beat {
-                    forward: false,
-                    count,
-                }),
-                Key::Home => Some(Action::First),
-                Key::End => Some(Action::Last),
-                Key::U => Some(Action::Undo),
-                Key::X if self.count == Some(0) => Some(Action::Invalid(
-                    "A frame cut count must be positive; no edit was made.",
-                )),
-                // The app retires older copy intent before checking the exact
-                // target, including a refused active or finished Visual range.
-                Key::X => Some(Action::DeleteFrames(count)),
-                Key::V | Key::Y | Key::P if self.count.is_some() => Some(Action::Invalid(
-                    "Use v, y, p or P without a count. Move the range boundary with counted h/l.",
-                )),
-                Key::V => Some(Action::VisualMoment),
-                Key::Y => Some(Action::CopyMoment),
-                Key::P => Some(Action::PasteMoment { before: false }),
-                Key::S if self.count.is_none() => Some(Action::Edit(BeatEdit::Split)),
-                Key::S => Some(Action::Invalid(
-                    "Split uses the current boundary. Move with a count first, for example 12l then s.",
-                )),
-                _ => None,
-            }
-        };
-        self.clear();
-        action
+        self.route(Stroke(key, false), selection)
     }
 }
 
@@ -611,17 +519,8 @@ fn mark_letter(key: Key, uppercase: bool) -> Option<char> {
 /// A held key may navigate, but cannot finish an operator or repeat an edit.
 pub fn allows_key_repeat(key: Key, modifiers: Modifiers) -> bool {
     modifiers == Modifiers::NONE
-        && matches!(
-            key,
-            Key::H
-                | Key::J
-                | Key::K
-                | Key::L
-                | Key::ArrowLeft
-                | Key::ArrowRight
-                | Key::ArrowUp
-                | Key::ArrowDown
-        )
+        && editor_map::rule(&[editor_map::Stroke(key, false)], EditSelection::None)
+            .is_some_and(|rule| rule.repeatable)
 }
 
 pub fn inspector_parameter_key(

@@ -1,0 +1,2507 @@
+{
+  "checks": [
+    {
+      "name": "clear-app-artifacts",
+      "command": [
+        "cargo",
+        "clean",
+        "-p",
+        "deadpan-app",
+        "--profile",
+        "dev"
+      ],
+      "started": "2026-10-02T03:36:34.202907+00:00",
+      "base_commit": "b6bf7879384be9c740cdb7ccc39c813ebd6784ac",
+      "diff_sha256": "e690e3c5fe52f1f9085cbe19e34382c8b7680cf5c571c4a84397d9c3cc7d9814",
+      "source_manifest_sha256": "f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c",
+      "pid": 1107,
+      "exit_code": 0,
+      "seconds": 55.390978042036295,
+      "source_manifest_after_sha256": "f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "final-all-replay",
+      "command": [
+        "cargo",
+        "run",
+        "--release",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "--ui-check",
+        "--output",
+        "/tmp/deadpan-keymap-all-20261001",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "started": "2026-10-02T03:39:38.780829+00:00",
+      "base_commit": "b6bf7879384be9c740cdb7ccc39c813ebd6784ac",
+      "diff_sha256": "26fefb57b2e427813f2b523491930bca9f93bf3d72a3a53eff17c30e6af26275",
+      "source_manifest_sha256": "f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c",
+      "pid": 1532,
+      "exit_code": 0,
+      "seconds": 146.09985012514517,
+      "source_manifest_after_sha256": "f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "final-editing-replay",
+      "command": [
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "--ui-check",
+        "--scenario",
+        "editing",
+        "--output",
+        "/tmp/deadpan-keymap-green-20261001",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "started": "2026-10-02T03:33:55.431981+00:00",
+      "base_commit": "b6bf7879384be9c740cdb7ccc39c813ebd6784ac",
+      "diff_sha256": "e690e3c5fe52f1f9085cbe19e34382c8b7680cf5c571c4a84397d9c3cc7d9814",
+      "source_manifest_sha256": "f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c",
+      "pid": 99950,
+      "exit_code": 1,
+      "seconds": 2.8801268748939037,
+      "source_manifest_after_sha256": "f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c",
+      "source_unchanged": true,
+      "gate_exit_code": 1
+    },
+    {
+      "name": "final-feature-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "deadpan-app",
+        "--all-targets",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-10-02T03:10:44.818964+00:00",
+      "base_commit": "b6bf7879384be9c740cdb7ccc39c813ebd6784ac",
+      "diff_sha256": "e7e39dd4168b1fad5599a9a0189fc32faee901335fae1d1df1e369f0606b4f00",
+      "source_manifest_sha256": "f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c",
+      "pid": 95727,
+      "exit_code": 0,
+      "seconds": 21.01301712496206,
+      "source_manifest_after_sha256": "f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "final-feature-tests",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked"
+      ],
+      "started": "2026-10-02T03:33:03.645747+00:00",
+      "base_commit": "b6bf7879384be9c740cdb7ccc39c813ebd6784ac",
+      "diff_sha256": "67cdc4a55dcc1fd3e7d9c072a964ba606406f5f4d57853139f24bfe8ee9f6094",
+      "source_manifest_sha256": "f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c",
+      "pid": 99846,
+      "exit_code": 0,
+      "seconds": 51.440434500109404,
+      "source_manifest_after_sha256": "f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_result_lines": [
+        [
+          "ok",
+          "568",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "3",
+          "0",
+          "0",
+          "0",
+          "0"
+        ]
+      ]
+    },
+    {
+      "name": "final-fmt",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "started": "2026-10-02T03:10:42.872028+00:00",
+      "base_commit": "b6bf7879384be9c740cdb7ccc39c813ebd6784ac",
+      "diff_sha256": "e7e39dd4168b1fad5599a9a0189fc32faee901335fae1d1df1e369f0606b4f00",
+      "source_manifest_sha256": "f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c",
+      "pid": 95717,
+      "exit_code": 0,
+      "seconds": 1.6966103338636458,
+      "source_manifest_after_sha256": "f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "final-workspace-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-10-02T03:11:06.167124+00:00",
+      "base_commit": "b6bf7879384be9c740cdb7ccc39c813ebd6784ac",
+      "diff_sha256": "e7e39dd4168b1fad5599a9a0189fc32faee901335fae1d1df1e369f0606b4f00",
+      "source_manifest_sha256": "f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c",
+      "pid": 95972,
+      "exit_code": 0,
+      "seconds": 19.67592587461695,
+      "source_manifest_after_sha256": "f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "final-workspace-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "--no-fail-fast"
+      ],
+      "started": "2026-10-02T03:11:26.194428+00:00",
+      "base_commit": "b6bf7879384be9c740cdb7ccc39c813ebd6784ac",
+      "diff_sha256": "e7e39dd4168b1fad5599a9a0189fc32faee901335fae1d1df1e369f0606b4f00",
+      "source_manifest_sha256": "f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c",
+      "pid": 96073,
+      "exit_code": 0,
+      "seconds": 1297.08692887472,
+      "source_manifest_after_sha256": "f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_result_lines": [
+        [
+          "ok",
+          "532",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "3",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "91",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "4",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "53",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "12",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "67",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "4",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "10",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "6",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "9",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "9",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "6",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "4",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "7",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "8",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "12",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "8",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "7",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "5",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "71",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "7",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "226",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "3",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "18",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "5",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "2",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "8",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "21",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "4",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "2",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "9",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "4",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "2",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "22",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "5",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "5",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "15",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "113",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "8",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "36",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "6",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "61",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "15",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "6",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "14",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "3",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "10",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "15",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "17",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "31",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "18",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "9",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "7",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "6",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "5",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "68",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "32",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "2",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "21",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "66",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "15",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "5",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "32",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "4",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "32",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "9",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "9",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "18",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "8",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "12",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "8",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "5",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "20",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "8",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "15",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "6",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "6",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "12",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "7",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "19",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "22",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "5",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "7",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "11",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "11",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "14",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "19",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "13",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "10",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "1",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "18",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "11",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "3",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "8",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "4",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "8",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "9",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "5",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "4",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "3",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "28",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "9",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "10",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "15",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "11",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "17",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "3",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "20",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "6",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "9",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "25",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "10",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "8",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "3",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "3",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "5",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "7",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "15",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "10",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "12",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "10",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "1",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "15",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "26",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "2",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "3",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "28",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "8",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "16",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "22",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "1",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "18",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "17",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "12",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "13",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "3",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "4",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "10",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "4",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "32",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "5",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "18",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "7",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "17",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "9",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "2",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "14",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "4",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "6",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "69",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "31",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "49",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "13",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "5",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "14",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "57",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "2",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "1",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "17",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "2",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "8",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "5",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "11",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "8",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "18",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "11",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "131",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "3",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "6",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "9",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "19",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "10",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "7",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "23",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "6",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "28",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "8",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "1",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "1",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "33",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "1",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "0",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "1",
+          "0",
+          "0",
+          "0",
+          "0"
+        ]
+      ]
+    },
+    {
+      "name": "keymap-first-tests",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked"
+      ],
+      "started": "2026-10-02T03:02:07.812377+00:00",
+      "base_commit": "b6bf7879384be9c740cdb7ccc39c813ebd6784ac",
+      "diff_sha256": "604648e76388fdc2729c59a1007f59d1fd28b3fc204a5a189e7e4b8402bc8fde",
+      "source_manifest_sha256": "f755b8f2e6190a9b99a98e16566c96524f2942e30ba2749ead35d162ac7ef9ad",
+      "pid": 93538,
+      "exit_code": 101,
+      "seconds": 0.3348508751951158,
+      "source_manifest_after_sha256": "f755b8f2e6190a9b99a98e16566c96524f2942e30ba2749ead35d162ac7ef9ad",
+      "source_unchanged": true,
+      "gate_exit_code": 101
+    },
+    {
+      "name": "keymap-header-restored-tests",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked"
+      ],
+      "started": "2026-10-02T03:02:50.212522+00:00",
+      "base_commit": "b6bf7879384be9c740cdb7ccc39c813ebd6784ac",
+      "diff_sha256": "604648e76388fdc2729c59a1007f59d1fd28b3fc204a5a189e7e4b8402bc8fde",
+      "source_manifest_sha256": "f755b8f2e6190a9b99a98e16566c96524f2942e30ba2749ead35d162ac7ef9ad",
+      "pid": 94085,
+      "exit_code": 0,
+      "seconds": 87.50746825011447,
+      "source_manifest_after_sha256": "f755b8f2e6190a9b99a98e16566c96524f2942e30ba2749ead35d162ac7ef9ad",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_result_lines": [
+        [
+          "ok",
+          "568",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "3",
+          "0",
+          "0",
+          "0",
+          "0"
+        ]
+      ]
+    },
+    {
+      "name": "rebuilt-base-app-tests",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--locked"
+      ],
+      "started": "2026-10-02T03:37:29.932300+00:00",
+      "base_commit": "b6bf7879384be9c740cdb7ccc39c813ebd6784ac",
+      "diff_sha256": "26fefb57b2e427813f2b523491930bca9f93bf3d72a3a53eff17c30e6af26275",
+      "source_manifest_sha256": "f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c",
+      "pid": 1154,
+      "exit_code": 0,
+      "seconds": 56.9447872499004,
+      "source_manifest_after_sha256": "f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_result_lines": [
+        [
+          "ok",
+          "532",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "3",
+          "0",
+          "0",
+          "0",
+          "0"
+        ]
+      ]
+    },
+    {
+      "name": "rebuilt-editing-replay",
+      "command": [
+        "cargo",
+        "run",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "--ui-check",
+        "--scenario",
+        "editing",
+        "--output",
+        "/tmp/deadpan-keymap-rebuilt-20261001",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "started": "2026-10-02T03:39:25.765433+00:00",
+      "base_commit": "b6bf7879384be9c740cdb7ccc39c813ebd6784ac",
+      "diff_sha256": "26fefb57b2e427813f2b523491930bca9f93bf3d72a3a53eff17c30e6af26275",
+      "source_manifest_sha256": "f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c",
+      "pid": 1400,
+      "exit_code": 0,
+      "seconds": 12.748757583554834,
+      "source_manifest_after_sha256": "f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c",
+      "source_unchanged": true,
+      "gate_exit_code": 0
+    },
+    {
+      "name": "rebuilt-feature-tests",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked"
+      ],
+      "started": "2026-10-02T03:38:27.229086+00:00",
+      "base_commit": "b6bf7879384be9c740cdb7ccc39c813ebd6784ac",
+      "diff_sha256": "26fefb57b2e427813f2b523491930bca9f93bf3d72a3a53eff17c30e6af26275",
+      "source_manifest_sha256": "f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c",
+      "pid": 1296,
+      "exit_code": 0,
+      "seconds": 58.07635795790702,
+      "source_manifest_after_sha256": "f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_result_lines": [
+        [
+          "ok",
+          "568",
+          "0",
+          "0",
+          "0",
+          "0"
+        ],
+        [
+          "ok",
+          "3",
+          "0",
+          "0",
+          "0",
+          "0"
+        ]
+      ]
+    }
+  ],
+  "replays": [
+    {
+      "name": "red",
+      "command_record": "red.json",
+      "failed": true,
+      "metadata": {
+        "binary_sha256": "107ade3406a8773fce891b35bb4545cfe1474f34866b140e11735b3770368b41",
+        "build_profile": "debug",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/private/tmp/deadpan-keymap-20261001/old-source/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": null,
+        "git_status": null,
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 2101.630459,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790910455704,
+        "tracked_diff_sha256_at_run": null,
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "passed": 1,
+          "failed": [],
+          "skipped": [],
+          "findings": []
+        },
+        {
+          "name": "editing",
+          "passed": 5,
+          "failed": [
+            "Repeated H leaves the document, history and comma prefix intact"
+          ],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": [
+            {
+              "message": "Check failed: Repeated H leaves the document, history and comma prefix intact",
+              "severity": "failure"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "stale-binary",
+      "command_record": "checks/final-editing-replay.json",
+      "failed": true,
+      "metadata": {
+        "binary_sha256": "107ade3406a8773fce891b35bb4545cfe1474f34866b140e11735b3770368b41",
+        "build_profile": "debug",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/private/tmp/deadpan-keymap-20261001/old-source/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "b6bf7879384be9c740cdb7ccc39c813ebd6784ac",
+        "git_status": "M AGENTS.md\n M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/shortcut_audit.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M docs/KEYBINDING_COMPATIBILITY.md\n M docs/REQUIREMENTS.md\n M docs/UI_FEEDBACK.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/navigation/binding_trie.rs\n?? crates/deadpan-app/src/navigation/binding_trie/\n?? crates/deadpan-app/src/navigation/editor_map.rs\n?? crates/deadpan-app/src/navigation/editor_map/\n?? docs/KEYMAP.md\n?? docs/qualification/declarative-bindings-2026-10-01.md",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 2104.0369170000004,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790912035718,
+        "tracked_diff_sha256_at_run": "f4791890337cc2fa6fb56152f96528abc964a1d0ebdd535055f118d645b0cd2f",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "passed": 1,
+          "failed": [],
+          "skipped": [],
+          "findings": []
+        },
+        {
+          "name": "editing",
+          "passed": 5,
+          "failed": [
+            "Repeated H leaves the document, history and comma prefix intact"
+          ],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": [
+            {
+              "message": "Check failed: Repeated H leaves the document, history and comma prefix intact",
+              "severity": "failure"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "green",
+      "command_record": "checks/rebuilt-editing-replay.json",
+      "failed": false,
+      "metadata": {
+        "binary_sha256": "ad68b406b105ecfefddd1cfdc5597ce2af361a324364c15325f730afeebaa2ee",
+        "build_profile": "debug",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "b6bf7879384be9c740cdb7ccc39c813ebd6784ac",
+        "git_status": "M AGENTS.md\n M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/shortcut_audit.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M docs/KEYBINDING_COMPATIBILITY.md\n M docs/REQUIREMENTS.md\n M docs/UI_FEEDBACK.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/navigation/binding_trie.rs\n?? crates/deadpan-app/src/navigation/binding_trie/\n?? crates/deadpan-app/src/navigation/editor_map.rs\n?? crates/deadpan-app/src/navigation/editor_map/\n?? docs/KEYMAP.md\n?? docs/qualification/declarative-bindings-2026-10-01.md",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 11575.335540999999,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790912366054,
+        "tracked_diff_sha256_at_run": "c7c450aaff8ab821cf0a033ccab6c66be78e61543ffb84de86bab80d12aaed1f",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "passed": 1,
+          "failed": [],
+          "skipped": [],
+          "findings": []
+        },
+        {
+          "name": "editing",
+          "passed": 40,
+          "failed": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": []
+        }
+      ]
+    },
+    {
+      "name": "full",
+      "command_record": "checks/final-all-replay.json",
+      "failed": false,
+      "metadata": {
+        "binary_sha256": "2a9b83bca8d0abe85cfcff7bfc4983bcadc212c2f4b711ee26e4f6b9720f64d0",
+        "build_profile": "release",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "b6bf7879384be9c740cdb7ccc39c813ebd6784ac",
+        "git_status": "M AGENTS.md\n M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/shortcut_audit.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M docs/KEYBINDING_COMPATIBILITY.md\n M docs/REQUIREMENTS.md\n M docs/UI_FEEDBACK.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/navigation/binding_trie.rs\n?? crates/deadpan-app/src/navigation/binding_trie/\n?? crates/deadpan-app/src/navigation/editor_map.rs\n?? crates/deadpan-app/src/navigation/editor_map/\n?? docs/KEYMAP.md\n?? docs/qualification/declarative-bindings-2026-10-01.md",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 34378.458334,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790912489380,
+        "tracked_diff_sha256_at_run": "c7c450aaff8ab821cf0a033ccab6c66be78e61543ffb84de86bab80d12aaed1f",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "passed": 1,
+          "failed": [],
+          "skipped": [],
+          "findings": []
+        },
+        {
+          "name": "workspace",
+          "passed": 80,
+          "failed": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": []
+        },
+        {
+          "name": "editing",
+          "passed": 40,
+          "failed": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": []
+        },
+        {
+          "name": "camera",
+          "passed": 12,
+          "failed": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": []
+        },
+        {
+          "name": "menus",
+          "passed": 37,
+          "failed": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": []
+        },
+        {
+          "name": "delayed-preview",
+          "passed": 8,
+          "failed": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": []
+        },
+        {
+          "name": "rapid-input",
+          "passed": 60,
+          "failed": [],
+          "skipped": [
+            "Repeat boundary checks delay delivery of real SQLite updates; the writer and production event router remain live. Physical key delivery is not exercised.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": []
+        },
+        {
+          "name": "playback-feedback",
+          "passed": 12,
+          "failed": [],
+          "skipped": [
+            "Playback service updates are explicitly simulated. This scenario qualifies UI feedback and picture routing, not PCM preparation, device timing or listening.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": []
+        },
+        {
+          "name": "large-project",
+          "passed": 235,
+          "failed": [],
+          "skipped": [
+            "Large-project fixture: 10,000 root Background/Silence Holds in a real SQLite package. No source media, decoding, PCM or large asset inventory is stressed.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": []
+        },
+        {
+          "name": "edit-latency",
+          "passed": 26,
+          "failed": [],
+          "skipped": [
+            "Edit timings measure the real committed revision through offscreen GPU completion. Physical display presentation and acoustic Hold silence are outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": []
+        },
+        {
+          "name": "nested-pause",
+          "passed": 72,
+          "failed": [],
+          "skipped": [
+            "This replay enters Sequence groups. Repeat and Retime entry, occurrence isolation, and their pause insertion remain outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": []
+        },
+        {
+          "name": "original-moment",
+          "passed": 16,
+          "failed": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": []
+        },
+        {
+          "name": "place-slice",
+          "passed": 819,
+          "failed": [],
+          "skipped": [
+            "Place slice covers linked Original and edited-slice copying, insertion, replacement and atomic Move in ordinary Sequence scopes. Separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.",
+            "The replay uses genuine source qualification, endpoint decoding, SDR GPU pictures, proposed documents and durable commands. Audio delivery and a concurrent service Undo are explicitly injected. It does not open an audio device or establish acoustic quality.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ]
+        },
+        {
+          "name": "delete-range",
+          "passed": 308,
+          "failed": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ]
+        },
+        {
+          "name": "marks",
+          "passed": 155,
+          "failed": [],
+          "skipped": [
+            "Marks use real project writes, anchor transforms and decoded pictures. Delayed service delivery and IME input are explicitly injected; physical key layouts, native IME and VoiceOver remain separate acceptance.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ]
+        },
+        {
+          "name": "original-playback",
+          "passed": 18,
+          "failed": [],
+          "skipped": [
+            "Playback service updates are explicitly injected. This scenario exercises Original controls, clock admission, looping and picture routing, not PCM preparation, device timing or listening.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": []
+        },
+        {
+          "name": "sound-playback",
+          "passed": 38,
+          "failed": [],
+          "skipped": [
+            "Sound registration and widgets use production services. Delivery reports are deterministic fakes, not real PCM playback, device timing, or listening evidence.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": []
+        },
+        {
+          "name": "sound-placement",
+          "passed": 216,
+          "failed": [],
+          "skipped": [
+            "Sound placement uses real source qualification and durable project commands. This scenario does not start audio output or establish PCM, device timing, or listening evidence.",
+            "Preparing/Playing at 960 pixels uses the real transport controls with simulated delivery reports only. It does not start a device or prepare PCM.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ]
+        },
+        {
+          "name": "room-tone",
+          "passed": 220,
+          "failed": [],
+          "skipped": [
+            "Source and committed Sequence audition use injected typed delivery updates, with real descriptor preparation and project writes. This replay does not prepare PCM, open an output device, establish acoustic quality or certify speech absence.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ]
+        },
+        {
+          "name": "gain",
+          "passed": 290,
+          "failed": [],
+          "skipped": [
+            "Gain uses real qualified source evidence, writer previews, durable commands and canonical PCM for measured waveforms. Comparison audio delivery and labelled waveform failure replies are injected; this replay does not open an audio device or establish acoustic quality. Canonical Before/Draft mix and scheduling qualification belong to playback tests.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ]
+        },
+        {
+          "name": "retime",
+          "passed": 15,
+          "failed": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": []
+        },
+        {
+          "name": "slip",
+          "passed": 66,
+          "failed": [],
+          "skipped": [
+            "Slip uses the real qualified fixture, project service, decoder and offscreen Metal submissions. Controlled delivery delays retain actual service/decoder replies. Physical display presentation, OS IME delivery, audio audition and the remaining In/Out/Roll Trim operations are outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ]
+        },
+        {
+          "name": "trim",
+          "passed": 164,
+          "failed": [],
+          "skipped": [
+            "Trim uses real qualified source receipts, ordered project-service proposals, endpoint decoding, offscreen Metal pair submission and measured waveform PCM. One real pair or service reply may be held for delivery-order checks. Audition delivery is explicitly injected; no output device, listening, physical display, OS IME or VoiceOver claim follows. Store grouping is fixture setup only; measured edits use production keyboard/pointer input.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ]
+        },
+        {
+          "name": "render",
+          "passed": 111,
+          "failed": [],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ],
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ]
+        },
+        {
+          "name": "generated-picture",
+          "passed": 0,
+          "failed": [],
+          "skipped": [
+            "Requires explicit --scenario generated-picture --project and the real bundle qualification fixture; ordinary replay does not fabricate accepted evidence."
+          ],
+          "findings": []
+        }
+      ]
+    }
+  ]
+}

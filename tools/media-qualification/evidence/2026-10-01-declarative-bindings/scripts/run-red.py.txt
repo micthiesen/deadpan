@@ -1,0 +1,35 @@
+import datetime
+import hashlib
+import json
+import os
+import subprocess
+import time
+from pathlib import Path
+
+scratch = Path('/tmp/deadpan-keymap-20261001')
+root = scratch / 'old-source'
+output = Path('/tmp/deadpan-keymap-red-20261001')
+assert not output.exists()
+inventory = json.loads((scratch / 'old-source-inventory.json').read_text())
+def unchanged():
+    return all((root / name).is_file() and hashlib.sha256((root / name).read_bytes()).hexdigest() == digest for name, digest in inventory.items())
+assert unchanged()
+command = ['cargo', 'run', '-p', 'deadpan-app', '--features', 'ui-harness', '--locked', '--', '--ui-check', '--scenario', 'editing', '--output', str(output), '--kestrel-source', '/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift']
+environment = dict(os.environ, DEADPAN_FFMPEG_PREFIX='/tmp/deadpan-ui-ffmpeg/prefix', CARGO_TARGET_DIR='/Users/michael/Code/deadpan/target')
+start = time.monotonic()
+record = {'command':command, 'cwd':str(root), 'source':json.loads((scratch / 'old-source.json').read_text()), 'started_utc':datetime.datetime.now(datetime.timezone.utc).isoformat()}
+with (scratch / 'red.log').open('w') as log:
+    child = subprocess.Popen(command, cwd=root, env=environment, stdout=log, stderr=subprocess.STDOUT)
+    record['pid'] = child.pid
+    (scratch / 'red.json').write_text(json.dumps(record,indent=2) + '\n')
+    record['exit_code'] = child.wait()
+record['seconds'] = time.monotonic() - start
+record['source_unchanged'] = unchanged()
+if (output / 'report.json').exists():
+    report = json.loads((output / 'report.json').read_text())
+    record['failures'] = [check['name'] for scenario in report['scenarios'] for check in scenario['checks'] if not check['passed']]
+    record['binary_sha256'] = report['metadata']['binary_sha256']
+record['expected_failure'] = record.get('failures') == ['Repeated H leaves the document, history and comma prefix intact']
+(scratch / 'red.json').write_text(json.dumps(record,indent=2) + '\n')
+print(json.dumps(record))
+assert record['exit_code'] != 0 and record['source_unchanged'] and record['expected_failure']

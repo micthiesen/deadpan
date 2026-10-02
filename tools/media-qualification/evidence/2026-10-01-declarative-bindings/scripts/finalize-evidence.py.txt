@@ -1,0 +1,37 @@
+import datetime
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+
+destination = Path('tools/media-qualification/evidence/2026-10-01-declarative-bindings')
+processes = subprocess.check_output(['ps', '-axo', 'pid=,ppid=,etime=,comm='], text=True)
+matches = [line.strip() for line in processes.splitlines() if 'deadpan' in line.lower()]
+assert not matches, matches
+(destination / 'cleanup.json').write_text(json.dumps(dict(
+    checked_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    command=['ps', '-axo', 'pid=,ppid=,etime=,comm='],
+    matching_deadpan_processes=matches,
+    native_window_opened=False,
+), indent=2) + '\n')
+
+names = subprocess.check_output(['git', '-c', 'core.fsmonitor=false', 'ls-files', '--cached', '--others', '--exclude-standard', '-z']).decode().split('\0')
+sources = {name: hashlib.sha256(Path(name).read_bytes()).hexdigest() for name in sorted(set(names))
+           if name and Path(name).is_file() and (Path(name).suffix in ('.rs', '.toml', '.lock', '.cpp', '.h', '.hpp', '.c', '.m', '.py') or name.startswith(('.cargo/', 'crates/', 'native/')))}
+wire = json.dumps(sources, sort_keys=True, indent=2) + '\n'
+digest = hashlib.sha256(wire.encode()).hexdigest()
+assert digest == 'f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c', digest
+expected = gzip.decompress((destination / 'checks' / ('source-' + digest + '.json.gz')).read_bytes())
+assert expected == wire.encode()
+
+replays = json.loads((destination / 'summary.json').read_text())['replays']
+full = next(replay for replay in replays if replay['name'] == 'full')
+assert sum(scenario['passed'] for scenario in full['scenarios']) == 3019
+assert all(not scenario['failed'] for scenario in full['scenarios'])
+(destination / 'final-source.json').write_text(json.dumps(dict(source_inventory_sha256=digest, source_unchanged=True), indent=2) + '\n')
+(destination / 'scripts' / 'finalize-evidence.py.txt').write_bytes(Path(__file__).read_bytes())
+paths = sorted(path for path in destination.rglob('*') if path.is_file() and path.name != 'SHA256SUMS')
+seal = ''.join(hashlib.sha256(path.read_bytes()).hexdigest() + '  ' + str(path.relative_to(destination)) + '\n' for path in paths)
+(destination / 'SHA256SUMS').write_text(seal)
+print(json.dumps(dict(source_inventory=digest, retained_files=len(paths), cleanup='no Deadpan processes', bytes=sum(path.stat().st_size for path in paths))))

@@ -1,0 +1,28 @@
+import hashlib
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+root = Path('/tmp/deadpan-keymap-20261001')
+environment = dict(os.environ, DEADPAN_CHECK_OUTPUT=str(root / 'checks'))
+commands = [
+    ('clear-app-artifacts', ['cargo', 'clean', '-p', 'deadpan-app', '--profile', 'dev']),
+    ('rebuilt-base-app-tests', ['cargo', 'test', '-p', 'deadpan-app', '--locked']),
+    ('rebuilt-feature-tests', ['cargo', 'test', '-p', 'deadpan-app', '--features', 'ui-harness', '--locked']),
+    ('rebuilt-editing-replay', ['cargo', 'run', '-p', 'deadpan-app', '--features', 'ui-harness', '--locked', '--', '--ui-check', '--scenario', 'editing', '--output', '/tmp/deadpan-keymap-rebuilt-20261001', '--kestrel-source', '/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift']),
+    ('final-all-replay', ['cargo', 'run', '--release', '-p', 'deadpan-app', '--features', 'ui-harness', '--locked', '--', '--ui-check', '--output', '/tmp/deadpan-keymap-all-20261001', '--kestrel-source', '/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift']),
+]
+for name, command in commands:
+    print('Starting ' + name, flush=True)
+    result = subprocess.run(['python3', str(root / 'run-check.py'), name, *command], env=environment)
+    if result.returncode:
+        sys.exit(result.returncode)
+    if name == 'rebuilt-feature-tests':
+        binary = Path('target/debug/deadpan-app').read_bytes()
+        identity = dict(sha256=hashlib.sha256(binary).hexdigest(), new_hint_present=b'Zero count: h/l moves one frame' in binary)
+        assert identity['sha256'] != json.loads((root / 'red.json').read_text())['binary_sha256']
+        assert identity['new_hint_present']
+        (root / 'rebuilt-binary.json').write_text(json.dumps(identity, indent=2) + '\n')
+        print(json.dumps(identity), flush=True)

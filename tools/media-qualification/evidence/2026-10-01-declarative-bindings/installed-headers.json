@@ -1,0 +1,38 @@
+{
+  "command": [
+    "make",
+    "install-headers"
+  ],
+  "added": {
+    "include/libavutil/display.h": "b9c78c80aa9331b945802b6bcd1db4ecc9ec4f9fad41993cc82b880c0dec2576",
+    "include/libavutil/imgutils.h": "8e0055fd86fb10b7c9e435e9375736b6db201cb9930a38fb4ff1e1a1da8e0cff",
+    "include/libavutil/pixdesc.h": "5e5b269eae685c54a3f9aa2ff6ab3749e6237a5dfee5bfad1d2c4aef6171a66a",
+    "include/libavutil/sha.h": "91280db6995b1b99b9e5aad0aa211a3177dc4d2841da2fea097f54964b7891fd"
+  },
+  "changed": {},
+  "runtime_before": {
+    "bin/ffprobe": "ee5ef69a0a778327e6dff3e1d0550bc01a57ac83f61f88ca08c201111eeef1e8",
+    "lib/libavcodec.62.11.103.dylib": "58aac15dab11ce599ae595eb8e5bf54ed68327d9929451650fa3b4bcf6307f1f",
+    "lib/libavcodec.62.dylib": "58aac15dab11ce599ae595eb8e5bf54ed68327d9929451650fa3b4bcf6307f1f",
+    "lib/libavcodec.dylib": "58aac15dab11ce599ae595eb8e5bf54ed68327d9929451650fa3b4bcf6307f1f",
+    "lib/libavdevice.62.1.103.dylib": "7b59be114d6dfd4a16184e688c9974337b2b3bac2188d96330c7d9aab6151184",
+    "lib/libavdevice.62.dylib": "7b59be114d6dfd4a16184e688c9974337b2b3bac2188d96330c7d9aab6151184",
+    "lib/libavdevice.dylib": "7b59be114d6dfd4a16184e688c9974337b2b3bac2188d96330c7d9aab6151184",
+    "lib/libavfilter.11.4.103.dylib": "be1fde7995745f1e6b98fc657a101e340b584f1a0fd072cff72149ca44d6b4c5",
+    "lib/libavfilter.11.dylib": "be1fde7995745f1e6b98fc657a101e340b584f1a0fd072cff72149ca44d6b4c5",
+    "lib/libavfilter.dylib": "be1fde7995745f1e6b98fc657a101e340b584f1a0fd072cff72149ca44d6b4c5",
+    "lib/libavformat.62.3.103.dylib": "1e95ffdb6a28931038273c3c30a1807b1254613efb806e429caddf703fa5972d",
+    "lib/libavformat.62.dylib": "1e95ffdb6a28931038273c3c30a1807b1254613efb806e429caddf703fa5972d",
+    "lib/libavformat.dylib": "1e95ffdb6a28931038273c3c30a1807b1254613efb806e429caddf703fa5972d",
+    "lib/libavutil.60.8.103.dylib": "a5245d17b143832d7b57351d0bb97d0e31d65ae6a53bea195627b64e9b44edb8",
+    "lib/libavutil.60.dylib": "a5245d17b143832d7b57351d0bb97d0e31d65ae6a53bea195627b64e9b44edb8",
+    "lib/libavutil.dylib": "a5245d17b143832d7b57351d0bb97d0e31d65ae6a53bea195627b64e9b44edb8",
+    "lib/libswresample.6.1.103.dylib": "ba3b62c128fbe9f50ef74a40b624efc1c1239e8bc4ddb822d56637bd2e9c10ce",
+    "lib/libswresample.6.dylib": "ba3b62c128fbe9f50ef74a40b624efc1c1239e8bc4ddb822d56637bd2e9c10ce",
+    "lib/libswresample.dylib": "ba3b62c128fbe9f50ef74a40b624efc1c1239e8bc4ddb822d56637bd2e9c10ce",
+    "lib/libswscale.9.1.103.dylib": "02a571c85bbd5df607f7aea1021d93764b4d53cb1c1432d03ed7d840cb15d104",
+    "lib/libswscale.9.dylib": "02a571c85bbd5df607f7aea1021d93764b4d53cb1c1432d03ed7d840cb15d104",
+    "lib/libswscale.dylib": "02a571c85bbd5df607f7aea1021d93764b4d53cb1c1432d03ed7d840cb15d104"
+  },
+  "runtime_unchanged": true
+}

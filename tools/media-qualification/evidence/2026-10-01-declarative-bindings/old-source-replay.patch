@@ -1,0 +1,150 @@
+--- a/crates/deadpan-app/src/preview/harness/scenarios.rs
++++ b/crates/deadpan-app/src/preview/harness/scenarios.rs
+@@ -415,6 +415,7 @@
+ }
+ 
+ fn editing(d: &mut Driver<'_>) -> Result<(), String> {
++    held_motion_after_leader(d)?;
+     let original = d.app().sequence_length();
+     let before = d.revision();
+     d.chord(&[Key::Num3, Key::R, Key::R])?;
+@@ -544,6 +545,139 @@
+         json!(d.app().sequence_length()),
+     )?;
+     d.capture("Edited pause and selected scope")
++}
++
++fn held_motion_after_leader(d: &mut Driver<'_>) -> Result<(), String> {
++    d.chord(&[Key::G, Key::G])?;
++    d.settled()?;
++    let baseline = d
++        .app()
++        .workspace
++        .as_ref()
++        .ok_or("Held-key replay has no workspace")?
++        .document
++        .clone();
++    let before = d.revision();
++    let history = {
++        let workspace = d.app().workspace.as_ref().unwrap();
++        (workspace.can_undo, workspace.can_redo)
++    };
++    let selected = d.app().selected_beat.clone();
++    let original_cursor = d.app().source_cursor;
++    let pause_frames = navigation::duration::DurationInput::half_seconds(1)
++        .resolve(baseline.presentation_basis().frame_rate)?
++        .frames();
++    d.check(
++        "Held-key pause witness starts at the protected Original baseline",
++        history == (false, false) && d.app().sequence_cursor == 0,
++        json!({"undo":false,"redo":false,"Edit":0}),
++        d.snapshot(),
++    )?;
++
++    // Keep H down at the start boundary, then press comma. Subsequent native
++    // repeats must not reinterpret the held motion as the comma's pause leaf.
++    d.events(
++        "Hold H at the start boundary",
++        vec![key_event(Key::H, egui::Modifiers::NONE, true)],
++    )?;
++    d.key(Key::Comma)?;
++    d.check(
++        "Comma waits for an explicit pause key while H is held",
++        d.app().bindings.pending() == "," && d.revision() == before,
++        json!({"pending":",","revision":before}),
++        d.snapshot(),
++    )?;
++    for _ in 0..3 {
++        d.events(
++            "Native repeated H cannot complete the pending pause",
++            vec![egui::Event::Key {
++                key: Key::H,
++                physical_key: None,
++                pressed: true,
++                repeat: true,
++                modifiers: egui::Modifiers::NONE,
++            }],
++        )?;
++        let workspace = d.app().workspace.as_ref().unwrap();
++        d.check(
++            "Repeated H leaves the document, history and comma prefix intact",
++            workspace.document.as_ref() == baseline.as_ref()
++                && (workspace.can_undo, workspace.can_redo) == history
++                && !d.app().service.is_busy()
++                && d.app().bindings.pending() == ","
++                && d.app().selected_beat == selected
++                && d.app().sequence_cursor == 0
++                && d.app().source_cursor == original_cursor,
++            json!({"revision":before,"pending":",","history":history,"Edit":0}),
++            d.snapshot(),
++        )?;
++    }
++    d.capture("Held H preserves the waiting pause prefix")?;
++    let hint = d
++        .app()
++        .bindings
++        .pending_hint()
++        .ok_or("Comma lost its teaching")?;
++    let paint = text_paint_visibility(d, hint);
++    d.check(
++        "Waiting comma guidance is fully painted after ignored repeats",
++        !paint.is_empty() && paint.iter().all(|part| part["fully_visible"] == true),
++        json!(hint),
++        json!(paint),
++    )?;
++
++    d.events(
++        "Release the held H before explicit pause input",
++        vec![key_event(Key::H, egui::Modifiers::NONE, false)],
++    )?;
++    d.key(Key::H)?;
++    d.changed(&before)?;
++    let workspace = d.app().workspace.as_ref().unwrap();
++    let holds: Vec<_> = workspace
++        .document
++        .nodes()
++        .values()
++        .filter_map(|node| match &node.kind {
++            deadpan_core::NodeKind::Hold { recipe } => Some(recipe),
++            _ => None,
++        })
++        .collect();
++    d.check(
++        "Explicit H completes the retained comma as exactly one silent half-second Hold",
++        holds.len() == 1
++            && holds[0].duration.frames() == pause_frames
++            && holds[0].audio == deadpan_core::HoldAudio::Silence
++            && workspace.plan.duration().frames()
++                == baseline
++                    .duration()
++                    .map_err(|error| error.to_string())?
++                    .frames()
++                    + pause_frames
++            && workspace.can_undo
++            && !workspace.can_redo
++            && d.app().bindings.pending().is_empty()
++            && d.app().sequence_cursor == 0,
++        json!({"holds":1,"pause_frames":pause_frames,"pending":"","Edit":0}),
++        d.snapshot(),
++    )?;
++    let saved = d.revision();
++    d.key(Key::U)?;
++    d.changed(&saved)?;
++    let restored = d.app().workspace.as_ref().unwrap();
++    let mut actual =
++        serde_json::to_value(restored.document.as_ref()).map_err(|error| error.to_string())?;
++    let expected = serde_json::to_value(baseline.as_ref()).map_err(|error| error.to_string())?;
++    actual["revision_id"] = json!(baseline.revision_id());
++    d.check(
++        "One Undo removes exactly the explicit pause and restores every authored field",
++        actual == expected
++            && restored.document.revision_id() != baseline.revision_id()
++            && !restored.can_undo
++            && restored.can_redo
++            && d.app().sequence_cursor == 0,
++        json!({"document":"exact baseline apart from fresh revision","undo":false,"redo":true}),
++        d.snapshot(),
++    )
+ }
+ 
+ fn camera(d: &mut Driver<'_>) -> Result<(), String> {

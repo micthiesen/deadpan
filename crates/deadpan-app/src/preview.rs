@@ -1831,12 +1831,12 @@ impl DeadpanApp {
                     self.bindings.clear();
                     continue; // Preserve egui/AccessKit activation of a focused control.
                 }
-                if ((key == egui::Key::X
-                    && modifiers == egui::Modifiers::NONE
-                    && self.bindings.mark_prefix().is_none())
-                    || (key == egui::Key::D
-                        && self.routed_edit_selection() != navigation::EditSelection::None))
-                    && native_control_focused(context)
+                if native_control_focused(context)
+                    && self.bindings.native_control_owns_cut(
+                        key,
+                        modifiers,
+                        self.routed_edit_selection(),
+                    )
                 {
                     self.bindings.clear();
                     continue;

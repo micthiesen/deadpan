@@ -1,0 +1,30 @@
+import hashlib
+import io
+import json
+import subprocess
+import tarfile
+from pathlib import Path
+
+scratch = Path('/tmp/deadpan-keymap-20261001')
+base = 'b6bf7879384be9c740cdb7ccc39c813ebd6784ac'
+root = scratch / 'old-source'
+assert not root.exists()
+root.mkdir()
+inputs = ['Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', '.cargo', 'crates', 'native', 'assets']
+archive = subprocess.check_output(['git', 'archive', '--format=tar', base, '--', *inputs])
+with tarfile.open(fileobj=io.BytesIO(archive)) as package:
+    package.extractall(root, filter='data')
+patch = Path('/tmp/deadpan-keymap-replay-20261001/native-keymap-repeat.patch')
+subprocess.run(['git', 'apply', '--check', str(patch)], cwd=root, check=True)
+subprocess.run(['git', 'apply', str(patch)], cwd=root, check=True)
+inventory = {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest()
+             for p in sorted(root.rglob('*')) if p.is_file()}
+wire = json.dumps(inventory, sort_keys=True, indent=2) + '\n'
+(scratch / 'old-source-inventory.json').write_text(wire)
+(scratch / 'old-source.json').write_text(json.dumps({
+    'base_commit': base, 'archive_inputs': inputs,
+    'archive_sha256': hashlib.sha256(archive).hexdigest(),
+    'patch_sha256': hashlib.sha256(patch.read_bytes()).hexdigest(),
+    'source_inventory_sha256': hashlib.sha256(wire.encode()).hexdigest(),
+}, indent=2) + '\n')
+print(json.dumps({'root':str(root), 'files':len(inventory), 'archive_bytes':len(archive)}))

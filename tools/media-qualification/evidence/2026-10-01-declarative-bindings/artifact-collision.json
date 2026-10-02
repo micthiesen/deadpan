@@ -1,0 +1,15 @@
+{
+  "intended_source_inventory": "f7c76db5de09d55ee4da19aa764cb94966a77ebade397e896c1c690a23c8428c",
+  "actual_binary_sha256": "107ade3406a8773fce891b35bb4545cfe1474f34866b140e11735b3770368b41",
+  "matches_old_source_binary": true,
+  "new_root_zero_count_hint_present": false,
+  "actual_audit": {
+    "conflicts": [],
+    "live_source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2",
+    "reserved_bindings": 62,
+    "routing_cases": 18352,
+    "source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2"
+  },
+  "cause": "Isolated old-source build and main checkout shared CARGO_TARGET_DIR. Cargo considered the main fingerprint fresh but the shared top-level executable contained the old build.",
+  "correction": "Clear app dev artifacts and rebuild both app suites before replay. No source change."
+}

@@ -19,6 +19,20 @@ test instances after testing instead of leaving them idle. The previously
 running `dev.thiesen.deadpan.cursor-qa` instance has been quit, and the native
 app inventory confirmed no Deadpan app remained running.
 
+## Declarative editor paths, current implementation
+
+The shipped Normal/Visual grammar uses one bounded compiler with separate
+terminal actions and prefix metadata. Preserve outer native shortcut/text/IME
+priority and semantic mark/Trim prefix captures. Hints derive valid continuations
+from declarations; every structural branch enters the Kestrel audit, including
+unannotated branches. Held input may execute only an explicitly repeatable leaf
+at the current position; it cannot consume a pending prefix or insert a Hold
+through comma-H. See [the contract and remaining work](../KEYMAP.md).
+User keymap loading, other mode maps, registers, semantic dot-repeat and macros
+remain required. No project schema changes.
+The [qualification](../qualification/declarative-bindings-2026-10-01.md) records
+the before/after held-key replay, final gates and remaining verification limits.
+
 ## Native frame cuts, current implementation
 
 `x` and counted `12x` use one atomic `CutEditSlice` at the retained Edit cursor,

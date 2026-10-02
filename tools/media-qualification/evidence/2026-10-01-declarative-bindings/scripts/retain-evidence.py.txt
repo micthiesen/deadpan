@@ -1,0 +1,67 @@
+import gzip
+import json
+from pathlib import Path
+import re
+
+scratch = Path('/tmp/deadpan-keymap-20261001')
+destination = Path('tools/media-qualification/evidence/2026-10-01-declarative-bindings')
+destination.mkdir(parents=True, exist_ok=True)
+
+def retain(source, relative, compress=False):
+    target = destination / relative
+    target.parent.mkdir(parents=True, exist_ok=True)
+    data = Path(source).read_bytes()
+    target.write_bytes(gzip.compress(data, mtime=0) if compress else data)
+
+checks = []
+for record in sorted((scratch / 'checks').glob('*.json')):
+    if record.name.startswith('source-'):
+        retain(record, 'checks/' + record.name + '.gz', True)
+        continue
+    value = json.loads(record.read_text())
+    assert 'exit_code' in value, record
+    checks.append(dict(name=record.stem, **value))
+    retain(record, 'checks/' + record.name)
+    log = record.with_suffix('.log')
+    retain(log, 'checks/' + log.name + '.gz', True)
+    results = re.findall(r'test result: (\w+)\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out', log.read_text())
+    if results:
+        checks[-1]['test_result_lines'] = results
+
+for name in ['red.json', 'old-source.json', 'header-repair.json', 'config-repair.json', 'installed-headers.json', 'artifact-collision.json', 'rebuilt-binary.json', 'review.md']:
+    retain(scratch / name, name)
+for name in ['red.log', 'old-source-inventory.json', 'configure.log', 'install-headers.log']:
+    retain(scratch / name, name + '.gz', True)
+for name in ['run-check.py', 'run-final-checks.py', 'rebuild-checks.py', 'run-red.py', 'prepare-red.py', 'retain-evidence.py']:
+    retain(scratch / name, 'scripts/' + name + '.txt')
+for name in ['restore-headers', 'restore-config', 'install-headers']:
+    retain('/tmp/deadpan-keymap-' + name + '.py', 'scripts/' + name + '.py.txt')
+retain('/tmp/deadpan-keymap-replay-20261001/native-keymap-repeat.patch', 'old-source-replay.patch')
+
+replays = []
+for label, directory, command in [
+    ('red', '/tmp/deadpan-keymap-red-20261001', 'red.json'),
+    ('stale-binary', '/tmp/deadpan-keymap-green-20261001', 'checks/final-editing-replay.json'),
+    ('green', '/tmp/deadpan-keymap-rebuilt-20261001', 'checks/rebuilt-editing-replay.json'),
+    ('full', '/tmp/deadpan-keymap-all-20261001', 'checks/final-all-replay.json'),
+]:
+    source = Path(directory)
+    report = json.loads((source / 'report.json').read_text())
+    if label in ('green', 'full'):
+        assert not report['failed'], label
+        audit = report['scenarios'][0]['checks'][0]['actual']
+        assert audit['routing_cases'] == 26536, audit
+        assert report['metadata']['binary_sha256'] != json.loads((scratch / 'red.json').read_text())['binary_sha256']
+    retain(source / 'report.json', label + '/report.json.gz', True)
+    replay = dict(name=label, command_record=command, failed=report['failed'], metadata=report['metadata'], scenarios=[])
+    for scenario in report['scenarios']:
+        replay['scenarios'].append(dict(
+            name=scenario['name'],
+            passed=sum(check['passed'] for check in scenario['checks']),
+            failed=[check['name'] for check in scenario['checks'] if not check['passed']],
+            skipped=scenario['skipped'],
+            findings=scenario['findings'],
+        ))
+    replays.append(replay)
+(destination / 'summary.json').write_text(json.dumps(dict(checks=checks,replays=replays), indent=2) + '\n')
+print(json.dumps(replays, indent=2))

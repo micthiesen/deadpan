@@ -1,0 +1,16 @@
+[
+  {
+    "source": "/tmp/deadpan-keymap-rebuilt-20261001/editing-018.png",
+    "retained": "held-prefix.png",
+    "report": "green/report.json.gz",
+    "inspection": "Held H preserves pending comma and complete guidance at 1280 by 820.",
+    "reviewer": "root"
+  },
+  {
+    "source": "/tmp/deadpan-keymap-all-20261001/workspace-044.png",
+    "retained": "minimum-workspace.png",
+    "report": "full/report.json.gz",
+    "inspection": "Workspace at 960 by 640 with wrapped footer keys clear of the picture and timeline.",
+    "reviewer": "root"
+  }
+]
