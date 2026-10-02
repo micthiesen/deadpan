@@ -64,7 +64,8 @@ pub use true_peak::{
     MAX_TRUE_PEAK_FRAMES, TRUE_PEAK_ID, TruePeakError, TruePeakMeter, TruePeakReport,
 };
 pub use waveform::{
-    DefinitionWaveform, MAX_WAVEFORM_BYTES, MAX_WAVEFORM_LEAVES, MAX_WAVEFORM_SAMPLES,
+    DefinitionWaveform, EditWaveform, EditWaveformDescriptor, EditWaveformMeasurement,
+    EditWaveformStage, MAX_WAVEFORM_BYTES, MAX_WAVEFORM_LEAVES, MAX_WAVEFORM_SAMPLES,
     StereoExtrema, WAVEFORM_STAGE, WaveformCompletion, WaveformControl, WaveformDescriptor,
     WaveformError, WaveformLimits, WaveformMeasurement, WaveformMemory, WaveformStopReason,
 };

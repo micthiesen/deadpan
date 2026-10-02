@@ -26,6 +26,7 @@ mod scope;
 mod slip;
 mod sound;
 mod splice;
+mod trim;
 
 const TIMEOUT: Duration = Duration::from_secs(20);
 
@@ -659,6 +660,7 @@ fn shutdown_finishes_an_admitted_command_before_releasing_the_store() {
         host_refresh_failure: AtomicBool::new(false),
         splice_commit_refresh_failure: AtomicBool::new(false),
         slip_commit_refresh_failure: AtomicBool::new(false),
+        trim_commit_refresh_failure: AtomicBool::new(false),
         update: Mutex::new(None),
         wake: Arc::new(|| {}),
     });
@@ -935,6 +937,7 @@ impl Harness {
             host_refresh_failure: AtomicBool::new(false),
             splice_commit_refresh_failure: AtomicBool::new(false),
             slip_commit_refresh_failure: AtomicBool::new(false),
+            trim_commit_refresh_failure: AtomicBool::new(false),
             update: Mutex::new(None),
             wake: Arc::new(|| {}),
         });

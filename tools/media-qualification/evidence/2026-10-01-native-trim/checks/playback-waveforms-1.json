@@ -1,0 +1,25 @@
+{
+  "command": [
+    "rustup",
+    "run",
+    "1.97.1",
+    "cargo",
+    "test",
+    "-p",
+    "deadpan-playback",
+    "--locked",
+    "--lib",
+    "waveform",
+    "--no-fail-fast"
+  ],
+  "started": "2026-10-01T21:59:18.171624+00:00",
+  "base_commit": "89f312429a4b4face407b3614bde47d0c0b12991",
+  "diff_sha256": "45f5d96f43677fcd02bc0dd116a829fc361a583fa3196688563709ae99c16a15",
+  "source_manifest_sha256": "7e5317b246360ea99ba4be9663492313b604d0f7db2da548affc2b5e8fc7bf80",
+  "pid": 15257,
+  "exit_code": 0,
+  "seconds": 44.98095287475735,
+  "source_manifest_after_sha256": "7e5317b246360ea99ba4be9663492313b604d0f7db2da548affc2b5e8fc7bf80",
+  "source_unchanged": true,
+  "gate_exit_code": 0
+}

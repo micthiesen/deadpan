@@ -1,0 +1,214 @@
+{
+  "label": "cancelled-before-focus",
+  "revisions": 8,
+  "history": 5,
+  "revision": "trim-replay-group-revision",
+  "root": "6e7363f1-30a6-43d1-97c8-e6df9433269c",
+  "nodes": {
+    "6e7363f1-30a6-43d1-97c8-e6df9433269c": {
+      "label": "Sequence",
+      "kind": {
+        "type": "sequence",
+        "children": [
+          "trim-replay-group"
+        ]
+      }
+    },
+    "9251ccf4-8130-4b46-9512-4cfa857f4d77": {
+      "label": "cfr-bframes.mp4 [10..24)",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 14,
+          "edit_window": {
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "end": {
+              "numerator": "14",
+              "denominator": "1"
+            }
+          },
+          "video": {
+            "type": "stream",
+            "asset": "933b3819-d6db-43ea-b632-1c244504a5e0",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              },
+              "end": {
+                "ticks": 120120,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "selected_placement",
+            "start": {
+              "numerator": "-10",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            },
+            "selection": {
+              "start": {
+                "numerator": "0",
+                "denominator": "1"
+              },
+              "end": {
+                "numerator": "14",
+                "denominator": "1"
+              }
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": {
+            "asset": "933b3819-d6db-43ea-b632-1c244504a5e0",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "selected_placement",
+            "start": {
+              "numerator": "-10",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            },
+            "selection": {
+              "start": {
+                "numerator": "0",
+                "denominator": "1"
+              },
+              "end": {
+                "numerator": "14",
+                "denominator": "1"
+              }
+            }
+          },
+          "link": "linked",
+          "audio_offset": 0
+        }
+      }
+    },
+    "fd7c8eaa-88b5-4de7-b152-89b136553bc8": {
+      "label": "cfr-bframes.mp4",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 120,
+          "edit_window": {
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "end": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "video": {
+            "type": "stream",
+            "asset": "933b3819-d6db-43ea-b632-1c244504a5e0",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              },
+              "end": {
+                "ticks": 120120,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": {
+            "asset": "933b3819-d6db-43ea-b632-1c244504a5e0",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "link": "linked",
+          "audio_offset": 0
+        }
+      }
+    },
+    "trim-replay-group": {
+      "label": "Trim captured group",
+      "kind": {
+        "type": "sequence",
+        "children": [
+          "9251ccf4-8130-4b46-9512-4cfa857f4d77",
+          "fd7c8eaa-88b5-4de7-b152-89b136553bc8"
+        ]
+      }
+    }
+  }
+}

@@ -25,6 +25,9 @@ const TIMEOUT: Duration = Duration::from_secs(10);
 #[path = "audio_definition/waveform.rs"]
 mod waveform;
 
+#[path = "audio_definition/edit_waveform.rs"]
+mod edit_waveform;
+
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }

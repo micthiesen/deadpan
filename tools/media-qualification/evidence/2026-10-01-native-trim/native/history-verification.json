@@ -1,0 +1,64 @@
+{
+  "snapshots": {
+    "before": {
+      "revision": "trim-replay-group-revision",
+      "revisions": 8,
+      "history": 5
+    },
+    "applied": {
+      "revision": "263b47a4-30e7-455d-b61d-082ce66dd59f",
+      "revisions": 9,
+      "history": 6
+    },
+    "undone": {
+      "revision": "e97d7c92-22b7-49db-a4c9-4715905d7335",
+      "revisions": 10,
+      "history": 6
+    },
+    "redone": {
+      "revision": "e47328be-7c31-4469-8bbb-88588fcefb64",
+      "revisions": 11,
+      "history": 6
+    },
+    "reopened": {
+      "revision": "e47328be-7c31-4469-8bbb-88588fcefb64",
+      "revisions": 11,
+      "history": 6
+    }
+  },
+  "one_complete_trim_history_entry": {
+    "project_id": "980f57ae-5eb7-4a7a-92ea-6284b56290a1",
+    "expected_revision": "trim-replay-group-revision",
+    "new_revision": "263b47a4-30e7-455d-b61d-082ce66dd59f",
+    "command": {
+      "command": "apply_source_trim",
+      "parent": "trim-replay-group",
+      "node": "9251ccf4-8130-4b46-9512-4cfa857f4d77",
+      "right": "fd7c8eaa-88b5-4de7-b152-89b136553bc8",
+      "intent": {
+        "in_frames": 0,
+        "out_frames": 0,
+        "slip_frames": 2,
+        "roll_frames": 0,
+        "policy": "ripple"
+      },
+      "resources": {
+        "target_wrapper": null,
+        "right_wrapper": null,
+        "split": {
+          "nodes": []
+        },
+        "fillers": [],
+        "timing": null
+      }
+    }
+  },
+  "source_mapping_start_before": "-10",
+  "source_mapping_start_after": "-12",
+  "selected_source_duration_frames": 14,
+  "unchanged_right_source_duration_frames": 120,
+  "undo_authored_data_exact": true,
+  "redo_authored_data_exact": true,
+  "reopen_all_tables_exact": true,
+  "operational_tables_unchanged": true
+}

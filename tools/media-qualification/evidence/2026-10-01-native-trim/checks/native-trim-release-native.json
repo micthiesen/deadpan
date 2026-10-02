@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/tmp/deadpan-native-trim-ui-20261001/native/Deadpan Trim Release QA.app/Contents/MacOS/deadpan-app",
+    "--project",
+    "/tmp/deadpan-native-trim-ui-20261001/native/Trim QA.deadpan"
+  ],
+  "started": "2026-10-02T01:41:37.967278+00:00",
+  "base_commit": "89f312429a4b4face407b3614bde47d0c0b12991",
+  "diff_sha256": "875d3140cb05073313c6526d1f381ad1291fb09a7f1dac922f066653685f2679",
+  "source_manifest_sha256": "a51de6546df98588d032ba45789341d74f4b47e12bb99fee6932dca07d449f71",
+  "pid": 70633,
+  "exit_code": 0,
+  "seconds": 114.94090516725555,
+  "source_manifest_after_sha256": "a51de6546df98588d032ba45789341d74f4b47e12bb99fee6932dca07d449f71",
+  "source_unchanged": true,
+  "gate_exit_code": 0
+}

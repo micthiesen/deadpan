@@ -11,7 +11,8 @@ pub use controller::{Engine, Phase, RequestError, StopHandle, Update};
 pub use sources::{ContentIdentity, Snapshot, SnapshotError, SourceEntry};
 pub use target::{AudioRange, Original, Sound, Target, Window};
 pub use waveform::{
-    WaveformRequest, WaveformRequestError, WaveformStatus, WaveformTicket, WaveformUpdate,
+    EditWaveformRequest, EditWaveformUpdate, WaveformRequest, WaveformRequestError, WaveformStatus,
+    WaveformTicket, WaveformUpdate,
 };
 
 #[cfg(test)]

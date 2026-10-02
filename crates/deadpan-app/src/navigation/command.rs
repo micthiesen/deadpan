@@ -13,6 +13,7 @@ pub enum Entry {
     Renders,
     Splice,
     Slip(i64),
+    Trim(super::trim::TrimInput),
     RoomTone,
     HoldSilence,
     Gain(Option<deadpan_core::GainDb>),
@@ -35,6 +36,9 @@ pub fn parse(input: &str) -> Result<Entry, String> {
     let verb = verb.to_ascii_lowercase();
     if verb == "audition-context" {
         return audition_context(words);
+    }
+    if verb == "trim" {
+        return super::trim::parse(words).map(Entry::Trim);
     }
     if verb == "retime" || verb == "wrap-retime" {
         return super::retime::parse(words, verb == "wrap-retime")

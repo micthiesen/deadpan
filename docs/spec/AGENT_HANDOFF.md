@@ -19,6 +19,37 @@ test instances after testing instead of leaving them idle. The previously
 running `dev.thiesen.deadpan.cursor-qa` instance has been quit, and the native
 app inventory confirmed no Deadpan app remained running.
 
+## Native Trim, current implementation
+
+Native `,v` and `:trim` now connect the combined command to one unsaved
+In/Out/Slip/Roll draft. Ordered adjustments start from the last accepted tuple;
+clamping changes only the active value, and a refused adjustment or Ripple/
+Overwrite toggle preserves all four. Entry captures the exact ordinary Sequence,
+eligible direct Source/neutral unity Partition, literal right sibling or absence,
+session, revision and both cursors. Original, Sounds, composite targets and Edit
+Visual ranges, including empty ranges, refuse entry.
+
+Before/Proposed shows an atomic outgoing/incoming pair at the entry/final target
+junction, with explicit exterior slots. Enter requires the fully acknowledged
+nonzero proposal and current Proposed pair at the final viewer raster. An
+admitted Edit waveform measures exact absolute 48 kHz context before limiting
+and monitor gain. Optional audition advances only the draft's heard position;
+the pair and editor cursors stay fixed. Empty/unavailable audio context does not
+block valid picture inspection or Apply. Cancel discards the draft; Apply
+consumes one retained command and keeps its durable receipt across refresh
+failure. Zero intent has no proposal or history.
+
+See [current controls and scope](../COMBINED_TRIM.md#native-trim),
+[waveform semantics](../EDIT_WAVEFORMS.md#native-trim-consumer) and the
+[native qualification record](../qualification/native-trim-2026-10-01.md) for
+execution evidence and its limits. Broader target admission, complete editor
+acceptance, physical keyboard/layout and IME coverage, accessibility and listening
+remain open. No requirement or gate is complete.
+
+The following dated Trim and Slip sections retain their checkpoint-specific
+results and then-outstanding work. Their test counts do not qualify this native
+increment.
+
 ## Native Source Slip, 2026-10-01
 
 The native integration connects `:slip +5f` to the shared qualified command
@@ -45,8 +76,8 @@ consistent SQLite backups. Both test instances exited 0; no Deadpan process or
 writer lock remains. Source identities, the two-label glyph correction and
 remaining physical-input limits are in the
 [qualification record](../qualification/native-slip-2026-10-01.md).
-Full Trim, waveform/audition,
-In/Out/Roll, ripple/overwrite and broader target admission remain open. No
+At this checkpoint, full Trim, waveform/audition,
+In/Out/Roll, ripple/overwrite and broader target admission remained open. No
 requirement or gate is complete.
 
 ## Combined Trim authoring, 2026-10-01
@@ -66,13 +97,14 @@ export and two wrong error adapters, both corrected. Capacity fixtures now
 distinguish geometric preflight from the independent capture budget; a store
 oracle now retains hidden physical Source context behind the visible crop.
 A picture test also needed a named VFR index to retain its frame borrow.
-See [the backend contract](../COMBINED_TRIM.md). No native Trim UI is integrated.
-Waveform, junction-pair, service, keyboard and native UI work remain separate
+See [the backend contract](../COMBINED_TRIM.md). At this backend checkpoint,
+waveform, junction-pair, service, keyboard and native UI work were separate
 staged changes. Their static reviews found and corrected proposal identity,
 partial waveform retention, final-raster Apply, same-batch native focus, transport
-resume and modal/notice issues. They still require compilation, focused tests,
-production replay, keyboard audit and real native QA. No native GUI was opened
-for this backend increment; no Deadpan executable remained at the final scan.
+resume and modal/notice issues. Native compilation, focused tests, production
+replay, keyboard audit and real native QA were outside this checkpoint. No native
+GUI was opened for this backend increment; no Deadpan executable remained at the
+final scan.
 
 ## Combined Trim timing foundation, 2026-10-01
 
@@ -92,8 +124,8 @@ admission. Keep the entry-anchored root Keep/Gap intent, normalize contiguous
 equal-shift Keeps and preserve prior route history. Disjoint Source allocations
 need exact historical closed endpoint phase; never narrow handles or skip the
 reanchor to avoid that case. Combined authoring is qualified above; native Trim
-remains open.
-No native GUI is open, and no requirement or gate is complete.
+was outside this foundation checkpoint.
+No native GUI was open at this checkpoint, and no requirement or gate is complete.
 
 ## Adjacent Source Roll backend, 2026-10-01
 
@@ -112,8 +144,8 @@ the same feature graph; the original failed run and exact source difference
 remain recorded. Strict all-target workspace lint and final formatting pass. See
 [qualification](../qualification/source-roll-2026-10-01.md), based on the pushed
 ripple Trim checkpoint `0304852`. No native GUI was opened; the final process scan
-found no Deadpan executable. Native Trim,
-overwrite and combined draft timing/sound semantics remain required.
+found no Deadpan executable. At this checkpoint, native Trim,
+overwrite and combined draft timing/sound semantics remained required.
 Do not implement one Enter as several saved commands. No requirement or gate
 is complete.
 
@@ -149,8 +181,8 @@ changed, and its same-feature rerun passed. Together the runs cover all 3,251
 workspace tests. Default app checks pass 428 app and 3 headless tests; strict
 all-target lint and formatting pass. Exact manifests and original failures are
 retained. No native GUI was opened and the final process scan found no Deadpan
-instance running. Full Trim mode, overwrite, Roll and broader scopes remain
-required; no requirement or gate is complete.
+instance running. At this checkpoint, full Trim mode, overwrite, Roll and broader
+scopes remained required; no requirement or gate is complete.
 
 ## Exact Source windows and atomic Slip, 2026-10-01
 
@@ -168,8 +200,8 @@ Independent window, command and PCM reviews found no outstanding issues.
 Original fixture/oracle/import failures remain with their corrected runs.
 See [qualification](../qualification/source-slip-2026-10-01.md). No native app was
 opened for that backend checkpoint. Full Trim/Roll, physical growth, nested/treated
-targets and audio-only picture lead/tail remain open. No requirement/gate changes
-status. Unused databases 39 through 47 are refused without migration.
+targets and audio-only picture lead/tail remained open then. No requirement/gate
+changes status. Unused databases 39 through 47 are refused without migration.
 
 ## Source effect clocks, 2026-10-01
 
@@ -206,7 +238,7 @@ commands and failed fixture setup are in
 [the evidence](../../tools/media-qualification/evidence/2026-10-01-source-origins/README.md).
 No native app was opened. This adds no public Trim operation. The subsequent
 effect-clock work above preserves framing and audio treatments; atomic authoring
-and native boundary controls remain required. At this checkpoint, unused
+and native boundary controls were still required then. At this checkpoint, unused
 development databases 39 through 45 reject without migration or writes.
 
 ## Dormant linked audio, 2026-10-01
@@ -223,8 +255,8 @@ At this checkpoint, core schema 36/database 45 and audio context schema 5 store 
 Supported historical document, command, patch and context grammars remain closed.
 Unused development databases 39 through 44 reject without mutation or migration;
 create fresh native QA packages. The subsequent origin work above adds audio
-clock translation. Full Trim still needs retained framing/treatment owner clocks
-and native boundary controls.
+clock translation. Full Trim still needed retained framing/treatment owner clocks
+and native boundary controls at this checkpoint.
 
 Verification covers 2,169 distinct affected-crate unit/integration tests and both
 compile-fail documentation tests, workspace formatting and strict all-target
@@ -248,10 +280,10 @@ At this checkpoint, core schema 35 and database 44 reject unused development dat
 39 through 43 without writes or migration. Existing frozen adapters for 1 through
 38 remain. Create fresh native QA packages.
 
-This is a Trim prerequisite. Native `,v`, in/out/slip/roll commands, ripple versus
+This was a Trim prerequisite. Native `,v`, in/out/slip/roll commands, ripple versus
 overwrite, clamped handles, outgoing/incoming pictures and candidate waveform
-remain open. Reuse the splice/gain captured draft, proposed snapshot and worker
-identity patterns. Do not resize a Source to trim it: that changes FitBeat rate
+remained open at this checkpoint. Reuse the splice/gain captured draft, proposed
+snapshot and worker identity patterns. Do not resize a Source to trim it: that changes FitBeat rate
 and normalized framing. Partition crops preserve owner domains, but extension
 beyond those domains still needs explicit semantics. Linked edits must retain
 exact A/V alignment and the captured audio lattice through one atomic commit.
@@ -264,7 +296,8 @@ documentation tests. All 270 plan tests pass after removing duplicate clock
 storage from the private compiled selection. Strict workspace/all-target Clippy
 and formatting pass. The archived range fixture remains unchanged and now proves
 rejection of its unsupported package while retaining command-shape checks. No
-native app was opened; Trim and full product acceptance remain pending.
+native app was opened; Trim was outside this checkpoint and full product
+acceptance remains pending.
 
 ## Native marks and jump history, 2026-10-01
 

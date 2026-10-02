@@ -141,6 +141,24 @@ rendered checks plus the expanded Kestrel audit, 3,589 full release checks, and
 native keyboard/reopen verification with consistent SQLite backups. No release
 gate is completed by these results.
 
+[Native Trim](COMBINED_TRIM.md#native-trim) adds an implemented subset of
+DP-02/DP-05/DP-20: `,v`/`:trim`, four ordered accepted In/Out/Slip/Roll values,
+Ripple/Overwrite policy, paired Before/Proposed junction pictures, an admitted
+Edit waveform and optional boundary audition. Apply requires the acknowledged
+nonzero proposal and its current Proposed pair at the final viewer raster, then
+saves one reversible transaction. Cancel preserves authored state; zero intent
+has no proposal or history. Captured scope, target/right absence and both editor
+cursors stay independent of inspection and heard position. Admission remains
+limited to eligible direct Source/neutral unity Partition children of ordinary
+Sequences; Original, Sounds, composites and Edit Visual ranges refuse entry.
+The [native qualification record](qualification/native-trim-2026-10-01.md)
+owns execution evidence and its limits. Broader target admission, the complete
+editor workflow, physical keyboard/IME, accessibility and listening acceptance
+remain open. No DP or gate status changes.
+
+The following Trim/Slip prerequisite summaries retain their historical results
+and checkpoint scope; those counts do not qualify the current native increment.
+
 [Native Source Slip](SOURCE_SLIP.md#native-stopped-picture-preview) adds a
 verified subset of DP-02/DP-05/DP-20. The `:slip`
 workflow captures the selected beat and revision, reports exact clamps/no-op,
@@ -150,9 +168,10 @@ if workspace refresh fails. The app passes 464 feature-enabled tests plus 3
 headless tests, and 428 default-feature tests plus the same 3 headless tests.
 The focused replay passes 67 Slip checks; the full release replay passes 3,655
 checks. Native cancel, apply, Undo/Redo and reopen pass, with both test instances
-closed. See [qualification](qualification/native-slip-2026-10-01.md). Full Trim,
-waveforms/audition, unsupported target scopes and physical-input/accessibility
-acceptance remain open. No requirement or gate changes status.
+closed. See [qualification](qualification/native-slip-2026-10-01.md). At that
+checkpoint, full Trim, waveforms/audition, unsupported target scopes and
+physical-input/accessibility acceptance remained open. No requirement or gate
+changes status.
 
 [Combined Trim authoring](COMBINED_TRIM.md) is implemented,
 including one accepted In/Out/Slip/Roll command, fixed-duration overwrite and
@@ -160,7 +179,7 @@ qualified store/CLI admission. Core 43/database 52 identify its vocabulary.
 [Qualification](qualification/combined-trim-2026-10-01.md) records 3,366 passing
 workspace tests and both documentation tests. After one equivalent stable-sort
 cleanup, strict lint, 132 core tests and final formatting passed. Native Trim
-remains required and no requirement or gate changes status.
+was outside that backend checkpoint; no requirement or gate changes status.
 
 [Combined Trim timing primitives](TRIM_DRAFT_FOUNDATION.md) advance
 DP-02/DP-05. Complete-intent geometry, Source endpoint bindings and the root-sound
@@ -168,7 +187,7 @@ Trim map passed independent review and focused runtime checks, including 57 new
 tests. The full workspace passed 3,333 unit/integration tests and both
 documentation tests; strict workspace/all-target lint and formatting passed on
 the same unchanged source inventory. The combined authoring command and overwrite
-overlay are qualified above; full native Trim remains required.
+overlay are qualified above; native Trim was outside this foundation checkpoint.
 No requirement or gate changes status.
 
 [Adjacent Source Roll](SOURCE_ROLL.md) adds a backend subset for DP-02/DP-05.
@@ -180,7 +199,7 @@ store admission and cold/live headless dispatch are integrated.
 picture, decoded-PCM and persistence checks. The full workspace passed 3,275
 tests and both documentation tests with one stale doctor assertion; only that
 test changed and its rerun passed. Strict all-target lint and formatting pass.
-No native Roll surface is claimed.
+That backend checkpoint claimed no native Roll surface.
 Full Trim requirements remain open; no requirement or gate changes status.
 
 [Ripple Source edge trimming](SOURCE_TRIM.md) adds a verified backend subset
@@ -193,7 +212,7 @@ decoded-PCM and store/headless checks. The full workspace passed 3,250 tests and
 both documentation tests with one outdated Slip assertion; only that test changed
 and its rerun passed. Default app checks, strict all-target lint and formatting
 also pass. The failed invocation and exact source comparison remain recorded.
-Native Trim, overwrite, Roll and broader target admission remain open; no
+Native Trim, overwrite, Roll and broader target admission remained open then; no
 requirement or gate changes status.
 
 [Exact Source windows](SOURCE_EDIT_WINDOWS.md) retain selected time before
@@ -203,7 +222,8 @@ bindings and root sounds. Stored admission is rechecked at commit; headless dry
 runs expose exact handle clamping and no-op results. All 3,114 workspace
 unit/integration tests, both documentation tests, formatting and strict all-target
 Clippy with `ui-harness` pass. See [qualification](qualification/source-slip-2026-10-01.md).
-Native Trim controls and the command's explicitly unsupported scopes remain open.
+Native Trim controls were outside that checkpoint; the command's explicitly
+unsupported scopes remain open.
 
 [Source effect clocks](SOURCE_EFFECT_CLOCKS.md) preserve existing camera paths,
 gain envelopes and mute ranges when a physical Source grows earlier or later.
@@ -211,7 +231,7 @@ Core 38/database 47 retain explicit framing domains; gain translation uses the
 existing owner coordinates. All 3,046 workspace unit/integration tests, both
 documentation tests, formatting and strict workspace/all-target Clippy pass,
 including lint with `ui-harness`. Physical growth, complete Trim commands and
-native boundary previews remain open. No
+native boundary previews remained open at that checkpoint. No
 requirement or gate changes status.
 
 [Retained Source origins](SOURCE_ORIGINS.md) add an exact translation between
@@ -222,7 +242,7 @@ independent sample offsets and inverse restoration. Core 37/database 46 persist
 the translation. All 3,019 workspace unit/integration tests, both documentation
 tests, formatting and strict all-target Clippy pass. The later effect-clock work
 above adds framing/treatment preservation. Atomic Trim authoring and native
-controls remain open; no requirement or gate changes status.
+controls remained open then; no requirement or gate changes status.
 
 [Dormant linked audio](qualification/dormant-linked-audio-2026-10-01.md) retains
 the Original's audio context in silent slices. Empty support emits silence without
@@ -230,8 +250,8 @@ requesting source PCM, and selection growth preserves the full affine mapping an
 sample clock. Absent audio remains distinct. Core 36/database 45 and audio context
 5 retain the new meaning while supported older grammars stay closed. This is
 further Trim groundwork for DP-02/DP-05/DP-20; physical-origin translation, effect
-owner clocks and the native Trim workflow remain required. No requirement or
-gate changes status.
+owner clocks and the native Trim workflow remained required then. No requirement
+or gate changes status.
 
 Verification covers 2,169 distinct affected-crate tests and both documentation
 tests, including no-read silence, independently expected PCM after selection
@@ -248,7 +268,7 @@ duration remain unchanged. Core 35/database 44 reject unused development
 databases 39 through 43 under the approved format policy, with old supported
 grammars kept closed. This is a Trim prerequisite for DP-02/DP-05/DP-20;
 native In/Out/Slip/Roll, ripple/overwrite and the complete visual Trim workflow
-remain required.
+were outside that checkpoint.
 Verification covers 2,956 distinct workspace unit/integration tests and both
 documentation tests across the broad run and corrected storage run. All 270 plan
 tests pass again after a private storage-layout adjustment; final strict

@@ -1,0 +1,32 @@
+{
+  "command": [
+    "rustup",
+    "run",
+    "1.97.1",
+    "cargo",
+    "run",
+    "-p",
+    "deadpan-app",
+    "--locked",
+    "--features",
+    "ui-harness",
+    "--",
+    "--ui-check",
+    "--scenario",
+    "trim",
+    "--output",
+    "/tmp/deadpan-trim-visual-20261001-10",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "started": "2026-10-02T01:37:16.938147+00:00",
+  "base_commit": "89f312429a4b4face407b3614bde47d0c0b12991",
+  "diff_sha256": "7da05e9ae8ccbd81b81dc9ea5b1ec111f388b0bc64b89d91aead58319649e8ce",
+  "source_manifest_sha256": "a51de6546df98588d032ba45789341d74f4b47e12bb99fee6932dca07d449f71",
+  "pid": 69564,
+  "exit_code": 0,
+  "seconds": 30.795563249848783,
+  "source_manifest_after_sha256": "a51de6546df98588d032ba45789341d74f4b47e12bb99fee6932dca07d449f71",
+  "source_unchanged": true,
+  "gate_exit_code": 0
+}

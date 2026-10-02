@@ -1,0 +1,25 @@
+{
+  "command": [
+    "target/release/deadpan-app",
+    "--ui-check",
+    "--mode",
+    "performance",
+    "--scenario",
+    "slip",
+    "--output",
+    "/tmp/deadpan-native-trim-ui-20261001/slip-investigation",
+    "--retain-projects",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "started": "2026-10-01T23:32:21.445479+00:00",
+  "base_commit": "89f312429a4b4face407b3614bde47d0c0b12991",
+  "diff_sha256": "0546a4d18f66282324a64bebf3c95d1470eb035ae87575abcd9429cb4abfa373",
+  "source_manifest_sha256": "b6bfc6870c44e97dfc95c5051b899133fab569f5d37b112f0a4d2d7e52e137ba",
+  "pid": 54631,
+  "exit_code": 1,
+  "seconds": 0.5492504579015076,
+  "source_manifest_after_sha256": "b6bfc6870c44e97dfc95c5051b899133fab569f5d37b112f0a4d2d7e52e137ba",
+  "source_unchanged": true,
+  "gate_exit_code": 1
+}

@@ -1,4 +1,4 @@
-//! Bounded, committed-definition analysis on the existing PCM preparation worker.
+//! Bounded definition and admitted Edit-window analysis on one PCM preparation worker.
 
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -8,6 +8,9 @@ use deadpan_core::{NodeId, ProjectId, RevisionId};
 
 use crate::controller::{Engine, Shared};
 use crate::{ContentIdentity, Snapshot};
+
+mod edit;
+pub use edit::{EditWaveformRequest, EditWaveformUpdate};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct WaveformTicket(u64);
@@ -54,28 +57,97 @@ pub enum WaveformRequestError {
     Proposed,
     #[error("invalid waveform snapshot admission: {0}")]
     InvalidAdmission(String),
+    #[error("Edit waveform range must be nonnegative and ordered")]
+    InvalidRange,
     #[error("playback engine has shut down")]
     Shutdown,
     #[error("waveform request identities are exhausted")]
     Exhausted,
 }
 
+pub(crate) enum Target {
+    Definition(NodeId),
+    Edit {
+        base: Arc<Snapshot>,
+        samples: std::ops::Range<deadpan_core::AudioSample>,
+        limits: deadpan_audio::WaveformLimits,
+    },
+}
+
+#[derive(Clone)]
+pub(crate) enum AnalysisUpdate {
+    Definition(WaveformUpdate),
+    Edit(EditWaveformUpdate),
+}
+impl AnalysisUpdate {
+    fn status(&self) -> WaveformStatus {
+        match self {
+            Self::Definition(v) => v.status,
+            Self::Edit(v) => v.status,
+        }
+    }
+    fn failure(&mut self, status: WaveformStatus, reason: &str) {
+        match self {
+            Self::Definition(v) => {
+                v.status = status;
+                v.error = Some(reason.into());
+            }
+            Self::Edit(v) => {
+                v.status = status;
+                v.error = Some(reason.into());
+            }
+        }
+    }
+    fn retain_progress(&mut self, previous: Self) {
+        match (self, previous) {
+            (Self::Definition(v), Self::Definition(p)) => {
+                v.waveform = p.waveform;
+                v.examined_samples = p.examined_samples;
+            }
+            (Self::Edit(v), Self::Edit(p)) => {
+                v.waveform = p.waveform;
+                v.examined_samples = p.examined_samples;
+            }
+            _ => {}
+        }
+    }
+}
+impl From<WaveformUpdate> for AnalysisUpdate {
+    fn from(value: WaveformUpdate) -> Self {
+        Self::Definition(value)
+    }
+}
+impl From<EditWaveformUpdate> for AnalysisUpdate {
+    fn from(value: EditWaveformUpdate) -> Self {
+        Self::Edit(value)
+    }
+}
+
 pub(crate) struct Job {
     pub ticket: WaveformTicket,
     pub snapshot: Arc<Snapshot>,
-    pub owner: NodeId,
+    pub target: Target,
     pub cancelled: AtomicBool,
     finished: AtomicBool,
 }
 
 impl Job {
-    pub(crate) fn update(&self, status: WaveformStatus) -> WaveformUpdate {
+    fn update(&self, status: WaveformStatus) -> AnalysisUpdate {
+        match &self.target {
+            Target::Definition(_) => self.definition_update(status).into(),
+            Target::Edit { .. } => self.edit_update(status).into(),
+        }
+    }
+    pub(crate) fn definition_update(&self, status: WaveformStatus) -> WaveformUpdate {
+        let Target::Definition(owner) = &self.target else {
+            unreachable!("definition waveform job")
+        };
         WaveformUpdate {
             ticket: self.ticket,
             session: self.snapshot.session,
             project_id: self.snapshot.document.project_id().clone(),
             revision_id: self.snapshot.document.revision_id().clone(),
-            owner: self.owner.clone(),
+            owner: owner.clone(),
             status,
             waveform: None,
             examined_samples: 0,
@@ -90,7 +162,7 @@ pub(crate) struct State {
     current: Option<Arc<Job>>,
     pending: Option<Arc<Job>>,
     running: Option<Arc<Job>>,
-    reply: Option<WaveformUpdate>,
+    reply: Option<AnalysisUpdate>,
     pub memory: WaveformMemory,
 }
 
@@ -98,6 +170,14 @@ impl State {
     fn request(
         &mut self,
         request: WaveformRequest,
+    ) -> Result<WaveformTicket, WaveformRequestError> {
+        self.request_target(request.snapshot, Target::Definition(request.owner))
+    }
+
+    fn request_target(
+        &mut self,
+        snapshot: Arc<Snapshot>,
+        target: Target,
     ) -> Result<WaveformTicket, WaveformRequestError> {
         let serial = self
             .serial
@@ -108,8 +188,8 @@ impl State {
         }
         let job = Arc::new(Job {
             ticket: WaveformTicket(serial),
-            snapshot: request.snapshot,
-            owner: request.owner,
+            snapshot,
+            target,
             cancelled: AtomicBool::new(false),
             finished: AtomicBool::new(false),
         });
@@ -143,10 +223,9 @@ impl State {
         }
         job.cancelled.store(true, Ordering::Release);
         let mut update = job.update(WaveformStatus::Interrupted);
-        update.error = Some(reason.into());
+        update.failure(WaveformStatus::Interrupted, reason);
         if let Some(previous) = self.reply.take() {
-            update.waveform = previous.waveform;
-            update.examined_samples = previous.examined_samples;
+            update.retain_progress(previous);
         }
         self.reply = Some(update);
         true
@@ -155,9 +234,9 @@ impl State {
     pub(crate) fn fail(&mut self, reason: &str) {
         self.interrupt(reason);
         if let Some(update) = &mut self.reply
-            && update.status == WaveformStatus::Interrupted
+            && update.status() == WaveformStatus::Interrupted
         {
-            update.status = WaveformStatus::Unavailable;
+            update.failure(WaveformStatus::Unavailable, reason);
         }
     }
 
@@ -170,7 +249,13 @@ impl State {
 }
 
 impl Shared {
-    pub(crate) fn publish_waveform(&self, job: &Job, mut update: WaveformUpdate, terminal: bool) {
+    pub(crate) fn publish_waveform(
+        &self,
+        job: &Job,
+        update: impl Into<AnalysisUpdate>,
+        terminal: bool,
+    ) {
+        let mut update = update.into();
         let mut state = self.lock();
         if terminal {
             job.finished.store(true, Ordering::Release);
@@ -196,8 +281,15 @@ impl Shared {
             if !terminal {
                 return;
             }
-            update.status = WaveformStatus::Interrupted;
-            update.error = Some("Waveform analysis was interrupted".into());
+            update.failure(
+                WaveformStatus::Interrupted,
+                "Waveform analysis was interrupted",
+            );
+        }
+        if let AnalysisUpdate::Edit(update) = &mut update {
+            // This is the last worker-side check, after measurement and cache
+            // release. It also protects partial/progress and empty results.
+            update.retain_live_media(&job.snapshot);
         }
         state.waveform.reply = Some(update);
         drop(state);
@@ -248,6 +340,13 @@ impl Engine {
     }
 
     pub fn poll_waveform(&self) -> Option<WaveformUpdate> {
-        self.shared.lock().waveform.reply.take()
+        let mut state = self.shared.lock();
+        if !matches!(state.waveform.reply, Some(AnalysisUpdate::Definition(_))) {
+            return None;
+        }
+        match state.waveform.reply.take() {
+            Some(AnalysisUpdate::Definition(update)) => Some(update),
+            _ => unreachable!("checked reply kind"),
+        }
     }
 }

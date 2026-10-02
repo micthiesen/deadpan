@@ -31,6 +31,7 @@ pub mod sound;
 pub mod splice;
 #[cfg(test)]
 mod tests;
+pub mod trim;
 mod worker;
 
 pub use scope::SequenceScope;
@@ -139,6 +140,11 @@ pub struct ProjectUpdate {
     pub slip_commit: Option<slip::CommitUpdate>,
     /// Last saved Slip in this session, independent of later failed requests.
     pub saved_slip: Option<slip::CommitReceipt>,
+    /// Ordered Trim acknowledgment is separate from current proposal admission.
+    pub trim: Option<trim::ProposalUpdate>,
+    pub trim_commit: Option<trim::CommitUpdate>,
+    /// Durable Trim success survives later failures and preview refresh errors.
+    pub saved_trim: Option<trim::CommitReceipt>,
     /// History-neutral edited copies retain their source identity across replies.
     pub captured_slice: Option<slice::CaptureUpdate>,
     pub cut_slice: Option<slice::CutUpdate>,
@@ -443,6 +449,9 @@ pub enum ProjectRequest {
     PrepareSlip(slip::Proposal),
     CommitSlip(slip::ProposalId),
     AbandonSlip(slip::ProposalId),
+    PrepareTrim(trim::Proposal),
+    CommitTrim(trim::ProposalId),
+    AbandonTrim(trim::ProposalId),
     /// Resolve source samples and prepare an audition descriptor off the UI.
     /// This does not select a Hold, author a policy, or create history.
     PrepareRoomTone {
@@ -487,6 +496,8 @@ struct Shared {
     splice_commit_refresh_failure: AtomicBool,
     #[cfg(test)]
     slip_commit_refresh_failure: AtomicBool,
+    #[cfg(test)]
+    trim_commit_refresh_failure: AtomicBool,
     update: Mutex<Option<ProjectUpdate>>,
     wake: Arc<dyn Fn() + Send + Sync>,
 }
@@ -520,6 +531,8 @@ impl ProjectService {
             splice_commit_refresh_failure: AtomicBool::new(false),
             #[cfg(test)]
             slip_commit_refresh_failure: AtomicBool::new(false),
+            #[cfg(test)]
+            trim_commit_refresh_failure: AtomicBool::new(false),
             update: Mutex::new(None),
             wake,
         });

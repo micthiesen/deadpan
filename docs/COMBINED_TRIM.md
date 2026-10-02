@@ -2,9 +2,11 @@
 
 `ApplySourceTrim` combines accepted In, Out, Slip and Roll values into one
 reversible backend edit. [Qualification](qualification/combined-trim-2026-10-01.md)
-records passing workspace, focused media, durable history and strict lint checks. Native
-[Trim mode](spec/DEADPAN_SPEC.md#77-trim-mode), boundary pictures, waveform and
-audition remain separate integration work.
+records passing backend workspace, focused media, durable history and strict lint
+checks. The native [Trim mode](spec/DEADPAN_SPEC.md#77-trim-mode) now connects the
+complete draft to boundary pictures, waveform and audition. The
+[native qualification record](qualification/native-trim-2026-10-01.md) retains
+its compilation, replay, keyboard and native interaction evidence separately.
 
 ## Captured intent
 
@@ -76,6 +78,78 @@ permissions and complete Preserve contexts remain part of the structural edit.
 One outer transaction contains the complete patch and inverse. No intermediate
 scalar Trim, Slip, Roll or Split is saved. The store assigns never-reused
 revision IDs to commit, Undo and Redo.
+
+## Native Trim
+
+Select an eligible Source or neutral unity Source Partition in an ordinary
+Sequence in **Your edit**, then press **`,v`** or enter **`:trim`**. A Partition
+is a Source fragment that retains its full hidden context. Original, catalog
+Sounds and Placed sounds cannot open Trim. Clear any active or retained Edit
+Visual range first, including an empty range. Enter an ordinary group before
+opening Trim to target its direct child. Roll needs an eligible literal right
+neighbor; the panel explains when it is unavailable.
+
+`,v` opens once without a count. Holding the activation key cannot open it
+again. The pending comma hint includes `v Trim`; plain `v` remains Visual
+selection. Entry captures the target, scope, revision, both cursors and literal
+right neighbor before stopping audition. Later navigation or replies cannot
+supply a different target. Bare `:trim` starts on In with all four values zero
+and Ripple policy.
+
+```text
+:trim
+:trim edge=out delta=-3f mode=ripple
+```
+
+The parameter form requires `edge`, `delta` and `mode` exactly once each, in any
+order. `edge` accepts `in`, `out`, `slip` or `roll`; `mode` accepts `ripple` or
+`overwrite`. `delta` is a signed or unsigned ASCII whole-frame integer with an
+`f` suffix, such as `-3f`, `+5f` or `7f`. Missing, duplicate or unknown arguments
+fail. It initializes only the named amount; the other three remain zero.
+
+These keys act when the Trim heading or background owns input:
+
+| Key | Action |
+| --- | --- |
+| `Tab` / `Shift-Tab` | Cycle In, Out, Slip and Roll forward/backward, preserving all four values. |
+| `h/l` | Nudge the active amount by −1/+1 project frame; Shift changes −10/+10. |
+| `r` | Toggle Ripple/Overwrite for the complete draft, preserving all values or reporting a refusal. |
+| `i/o` | Select In/Out; while Slip is active, choose its inspected edge and retain Slip. |
+| `b` | Compare Before/Proposed at the inspected junction. |
+| `e` | Focus the native amount field, which uses the same whole-frame grammar as `delta`. |
+| `Space` | Audition, pause or resume the inspected junction at the heard position. |
+| `Shift-Space` | Restart a context loop from its beginning. |
+| `Enter` | Apply one nonzero edit when all input is acknowledged and the current Proposed pair is displayed at the current viewer size. |
+| `Escape` | Cancel and restore entry context before saving starts. |
+
+Only `h/l` repeats while held, including Shift steps. Tab and all other actions
+require a fresh key press; Trim has no count prefix. Native fields and buttons
+retain Tab and activation. Enter in the amount field accepts text and returns
+to the Trim controls without applying on that same event. Plain Escape cancels
+from native fields/buttons outside composition; IME owns Enter and Escape while
+composing. Command, Control and Option chords remain reserved. See
+[keyboard compatibility](KEYBINDING_COMPATIBILITY.md#combined-trim).
+
+Native Tab navigation also reaches the feedback viewport. Its visible focus
+ring identifies when Up/Down, Page Up/Down and Home/End scroll the details.
+These keys preserve the accepted draft and picture pair. Tab leaves feedback;
+Escape still cancels Trim. The waveform and feedback stay bounded at the
+minimum window size so the boundary pictures remain visible.
+
+The outgoing/incoming picture pair stays fixed during audition. Its accepted
+pictures and labels remain together while a newer proposal prepares. The
+waveform and temporary heard position belong to the inspected Before/Proposed
+context; neither moves the ordinary Edit or Original cursor. Space resumes a
+paused loop; changing the draft or inspection resets its loop and resume state.
+Playback failures stop audition and appear at the top of feedback without
+manual scrolling. They preserve the accepted picture pair, draft and Apply.
+
+Trim excludes ordinary editing, history, other editing drafts and Render until
+Apply or Cancel. Apply saves the complete accepted intent in one transaction;
+zero intent saves nothing. A saved receipt remains independent of preview
+refresh, so a refresh failure reports that the edit was saved and needs reopening.
+The separate **`:slip +5f`** stopped-picture preview remains supported with its
+own inspection keys; it does not gain Trim's Tab cycling or audition.
 
 ## Host admission and headless access
 

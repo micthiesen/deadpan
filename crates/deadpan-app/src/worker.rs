@@ -31,8 +31,9 @@ mod endpoints;
 mod proposed;
 mod slice_view;
 pub use endpoints::{
-    EndpointIdentity, EndpointInput, EndpointPictures, EndpointReply, EndpointSourceId,
-    EndpointWorker,
+    EditJunctionIdentity, EditJunctionInput, EditJunctionPicture, EditJunctionPictures,
+    EditJunctionReply, EndpointIdentity, EndpointInput, EndpointPictures, EndpointReply,
+    EndpointSourceId, EndpointWorker, JunctionExterior, JunctionRole, JunctionSide,
 };
 use slice_view::{PictureMedia, PlanCache};
 

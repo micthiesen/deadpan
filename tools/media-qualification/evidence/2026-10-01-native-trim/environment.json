@@ -1,0 +1,20 @@
+{
+  "base_commit": "89f312429a4b4face407b3614bde47d0c0b12991",
+  "final_check": "native-trim-reveal-wake-clippy",
+  "final_visual_check": "native-trim-reveal-wake-green",
+  "final_visual_directory": "deadpan-trim-visual-20261001-14",
+  "final_visual_source_manifest_sha256": "ca88130583b3b8ca3a5de424ac6625fcef04c17a11456341c99bb5c80878bb13",
+  "final_source_manifest_sha256": "ca88130583b3b8ca3a5de424ac6625fcef04c17a11456341c99bb5c80878bb13",
+  "workspace_source_manifest_sha256": "9291e1ead7429b00123743fbfc57a26891ac6f468fe066d5a4d63dd94b24fc24",
+  "changed_after_workspace_gate": [
+    "crates/deadpan-app/src/preview/harness/slip.rs",
+    "crates/deadpan-app/src/preview/harness/trim.rs",
+    "crates/deadpan-app/src/preview/trim.rs",
+    "crates/deadpan-app/src/preview/trim/controls.rs"
+  ],
+  "source_files_rechecked": 1493,
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+  "chip": "Apple M5 Max",
+  "memory_bytes": 137438953472,
+  "compiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6"
+}

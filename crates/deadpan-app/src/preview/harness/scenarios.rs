@@ -23,6 +23,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "sound-playback" => super::sound_playback::run(d),
         "retime" => super::retime::run(d),
         "slip" => super::slip::run(d),
+        "trim" => super::trim::run(d),
         "render" => super::render::run(d),
         _ => Err(format!("Unknown scenario {name}")),
     }

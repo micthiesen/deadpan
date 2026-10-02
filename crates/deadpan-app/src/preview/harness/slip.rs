@@ -593,11 +593,16 @@ fn nested_partition(d: &mut Driver<'_>) -> Result<(), String> {
     d.capture("Nested Partition Slip with retained Source and live ancestor camera paths")?;
     d.click(APPLY)?;
     d.changed(saved.revision_id().as_str())?;
+    let mut expected_wrapper = saved.nodes()[&right].clone();
+    expected_wrapper.audio_editorial_edges = deadpan_core::AudioEditorialEdges {
+        start: true,
+        end: true,
+    };
     d.check(
-        "Partition Apply preserves its wrapper and captured group selection",
-        document(d)?.nodes()[&right] == saved.nodes()[&right] && editor(d) == entry,
-        json!({"wrapper_unchanged":true,"editor":entry}),
-        d.snapshot(),
+        "Partition Apply marks both changed audio joins and preserves its wrapper and group selection",
+        document(d)?.nodes()[&right] == expected_wrapper && editor(d) == entry,
+        json!({"wrapper":expected_wrapper,"editor":entry}),
+        json!({"wrapper":document(d)?.nodes()[&right],"editor":editor(d)}),
     )?;
     let revision = d.revision();
     d.key(Key::U)?;

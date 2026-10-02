@@ -1,0 +1,22 @@
+{
+  "command": [
+    "python3",
+    "tools/build-app.py",
+    "--binary",
+    "target/debug/deadpan-app",
+    "--output",
+    "/tmp/deadpan-native-trim-ui-20261001/native/Deadpan Trim Input Diagnostic.app",
+    "--bundle-id",
+    "dev.thiesen.deadpan.cursor-qa"
+  ],
+  "started": "2026-10-01T23:44:36.986312+00:00",
+  "base_commit": "89f312429a4b4face407b3614bde47d0c0b12991",
+  "diff_sha256": "7da05e9ae8ccbd81b81dc9ea5b1ec111f388b0bc64b89d91aead58319649e8ce",
+  "source_manifest_sha256": "3f0e7ecdad4609172b1dd34d466fc39803dc92afe83f4d993dac77c5a5ffc915",
+  "pid": 59465,
+  "exit_code": 0,
+  "seconds": 1.695274957921356,
+  "source_manifest_after_sha256": "3f0e7ecdad4609172b1dd34d466fc39803dc92afe83f4d993dac77c5a5ffc915",
+  "source_unchanged": true,
+  "gate_exit_code": 0
+}

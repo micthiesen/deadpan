@@ -59,7 +59,7 @@ external media contributes sound only.
 | `,t` | Reverb tail. |
 | `,g` | Group as gag. |
 | `,f` | Camera mode. |
-| `,v` | Trim mode. |
+| `,v` | Open Trim for an eligible Source beat or neutral Source fragment in Your edit; no count or held activation. |
 | `+/-` | Change selected/current beat's audio gain by ±3 dB. |
 
 ## Placed sounds
@@ -82,7 +82,40 @@ command and is rejected in sound context.
 
 Camera: numbered target selection; `h/j/k/l` move center 1%; uppercase moves 5%; `+/-` change scale by a 1.05 multiplier; `f` picks a target; `r` resets preview. Enter commits; Escape cancels.
 
-Trim: Tab cycles in/out/slip/roll; `h/l` adjusts frames; Shift adjusts ten frames; `r` toggles applicable ripple/overwrite policy. Enter commits; Escape cancels.
+### Native Trim
+
+`,v` or `:trim` opens the selected eligible Source or neutral unity Source
+Partition in an ordinary Sequence in Your edit. Clear active and retained Edit
+Visual ranges first, including an empty range. Original, catalog Sounds and
+Placed sounds cannot open Trim. Bare `:trim` starts on In with four zero amounts
+and Ripple policy. The separate `:slip +5f` preview remains supported.
+
+On the Trim heading/background:
+
+| Key | Action |
+| --- | --- |
+| `Tab` / `Shift-Tab` | Cycle In, Out, Slip and Roll forward/backward without clearing values. |
+| `h/l` | Adjust the active amount by −1/+1 project frame; Shift changes −10/+10. |
+| `r` | Toggle Ripple/Overwrite for all values, or show why the change is refused. |
+| `i/o` | Select In/Out; within Slip choose its inspected edge and keep Slip active. |
+| `b` | Compare Before/Proposed. |
+| `e` | Focus the native whole-frame amount field. |
+| `Space` | Audition, pause or resume the junction context. |
+| `Shift-Space` | Restart a loop of that context. |
+| `Enter` | Apply once after accepted input and the current nonzero Proposed pair are ready. |
+| `Escape` | Cancel and restore entry context before saving starts. |
+
+Only `h/l` repeats while held; Trim has no counts. Native fields and buttons
+keep Tab and activation. Field Enter accepts text without applying on that event;
+IME retains Enter/Escape. Outside composition, plain Escape cancels even from a
+field or button. Command, Control and Option chords remain reserved. Roll needs
+an eligible literal right neighbor. Finish or cancel Trim before editing, history
+or Render. See [the native contract](../COMBINED_TRIM.md#native-trim) and
+[qualification status](../KEYBINDING_COMPATIBILITY.md#combined-trim).
+
+Tab through native controls to reach feedback. While its focus ring is visible,
+Up/Down scroll, Page Up/Down page, and Home/End reach its ends without changing
+the draft. Tab leaves feedback and Escape cancels Trim.
 
 ## Commands
 
@@ -95,9 +128,17 @@ Trim: Tab cycles in/out/slip/roll; `h/l` adjusts frames; Shift adjusts ten frame
 :retime 0.75 pitch=preserve
 :cutaway register=r audio=keep
 :gain +6dB
+:trim
+:trim edge=out delta=-3f mode=ripple
 :render
 ```
 
 `:hold` inserts time; `:hold-provider` changes an existing Hold. `:repeat` sets parameters on an already selected Repeat; explicit `wrap-repeat` creates intentional nesting. AI completion only creates a candidate: audition and accept to change the committed picture.
+
+The parameterized `:trim` requires `edge=in|out|slip|roll`,
+`delta=<whole frames>f` and `mode=ripple|overwrite` exactly once each, in any
+order. Only the selected amount is initialized; the other three remain zero.
+Signed or unsigned ASCII integers such as `-3f`, `+5f` and `7f` are accepted.
+Missing, duplicate or unknown arguments fail.
 
 `:` opens commands; `?` opens searchable help; `Cmd-E` renders with automatic output settings. Text fields retain native text-editing behavior; Normal-mode shortcuts do not intercept typed captions, filenames, or IME composition.

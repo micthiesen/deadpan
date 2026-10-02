@@ -1,0 +1,37 @@
+{
+  "before_revision": "slip-replay-group-revision",
+  "after_revision": "e63cd6a8-df7d-4c62-935e-7406eda520d0",
+  "selected_node": "7a8c0b50-b762-428c-8a87-18d22490728f",
+  "before_node": {
+    "label": "cfr-bframes.mp4 [10..24)",
+    "kind": {
+      "type": "retime",
+      "child": "c67ccbc9-d3ab-4b2e-9a3e-dcd87641434f",
+      "duration": 9,
+      "mapping": {
+        "start": 5,
+        "end": 14
+      },
+      "pitch": "preserve",
+      "purpose": "partition"
+    }
+  },
+  "after_node": {
+    "label": "cfr-bframes.mp4 [10..24)",
+    "kind": {
+      "type": "retime",
+      "child": "c67ccbc9-d3ab-4b2e-9a3e-dcd87641434f",
+      "duration": 9,
+      "mapping": {
+        "start": 5,
+        "end": 14
+      },
+      "pitch": "preserve",
+      "purpose": "partition"
+    },
+    "audio_editorial_edges": {
+      "start": true,
+      "end": true
+    }
+  }
+}

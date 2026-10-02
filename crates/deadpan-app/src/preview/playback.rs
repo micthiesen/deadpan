@@ -94,6 +94,9 @@ impl DeadpanApp {
         let Some(run) = self.transport.take() else {
             return false;
         };
+        if let Some(draft) = &mut self.trim {
+            draft.position = run.content_sample().ok();
+        }
         if !run.domain().is_audio_only() {
             self.worker.cancel();
             self.presentation.invalidate_pending();
@@ -114,7 +117,7 @@ impl DeadpanApp {
         if self.stop_playback() {
             self.resume = Some(resume);
             // Cursor can name excluded Out, but the picture must not.
-            if !sound {
+            if !sound && self.trim.is_none() {
                 self.request_picture_for_transport_at(false, None, Some(position.picture));
             }
         }
@@ -125,6 +128,7 @@ impl DeadpanApp {
             && self.gain.is_none()
             && self.splice.is_none()
             && self.slip.is_none()
+            && self.trim.is_none()
             && !self.sound_focused()
             && self.view == View::Sequence
             && !looping
@@ -136,6 +140,10 @@ impl DeadpanApp {
     }
 
     pub(super) fn toggle_playback(&mut self) {
+        if self.trim.is_some() {
+            self.error = Some("Use the Trim audition controls while Trim is open.".into());
+            return;
+        }
         if self.slip.is_some() {
             self.error = Some("Finish or cancel Slip preview before playback.".into());
             return;
@@ -154,6 +162,10 @@ impl DeadpanApp {
     }
 
     pub(super) fn audition_selection(&mut self) {
+        if self.trim.is_some() {
+            self.error = Some("Use the Trim audition controls while Trim is open.".into());
+            return;
+        }
         if self.slip.is_some() {
             self.error = Some("Finish or cancel Slip preview before audition.".into());
             return;
@@ -370,7 +382,9 @@ impl DeadpanApp {
                     self.worker.cancel();
                     self.presentation.invalidate_pending();
                 }
-                if let Ok(position) = run.position() {
+                if let Some(draft) = &mut self.trim {
+                    draft.position = run.content_sample().ok();
+                } else if let Ok(position) = run.position() {
                     match run.domain() {
                         Domain::Original(_) => self.source_cursor = position.cursor,
                         Domain::Sequence { .. } => {
@@ -426,6 +440,13 @@ impl DeadpanApp {
             return;
         };
         match run.receive(&update) {
+            Ok(Some(_)) if self.trim.is_some() => {
+                // The delivery clock updates only Trim's local audio position.
+                // Its captured editor cursors and boundary pictures stay fixed.
+                if let Some(draft) = &mut self.trim {
+                    draft.position = run.content_sample().ok();
+                }
+            }
             Ok(Some(frame)) => match run.domain() {
                 Domain::Original(_) => self.source_cursor = frame,
                 Domain::Sequence { .. } => {
@@ -473,6 +494,9 @@ impl DeadpanApp {
     }
 
     pub(super) fn schedule_playback_picture(&mut self) {
+        if self.trim.is_some() {
+            return;
+        }
         if self
             .transport
             .as_ref()
@@ -503,7 +527,7 @@ impl DeadpanApp {
             self.monitor_control = None;
             return;
         }
-        if self.gain.is_some() || self.slip.is_some() {
+        if self.gain.is_some() || self.slip.is_some() || self.trim.is_some() {
             self.monitor_control = None;
             return;
         }

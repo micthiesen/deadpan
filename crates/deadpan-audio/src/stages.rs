@@ -49,6 +49,9 @@ mod authored_gain;
 #[path = "definition_waveform.rs"]
 mod definition_waveform;
 
+#[path = "edit_waveform.rs"]
+mod edit_waveform;
+
 #[path = "projected_root.rs"]
 mod projected_root;
 pub use projected_root::ProjectedRootBlock;

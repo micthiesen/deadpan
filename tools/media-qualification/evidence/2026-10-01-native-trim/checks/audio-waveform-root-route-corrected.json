@@ -1,0 +1,27 @@
+{
+  "command": [
+    "rustup",
+    "run",
+    "1.97.1",
+    "cargo",
+    "test",
+    "-p",
+    "deadpan-audio",
+    "--locked",
+    "--test",
+    "audio_definition",
+    "edit_waveform::root_routes_and_silent_hold_permissions_change_actual_window_peaks",
+    "--",
+    "--exact"
+  ],
+  "started": "2026-10-01T21:58:54.909831+00:00",
+  "base_commit": "89f312429a4b4face407b3614bde47d0c0b12991",
+  "diff_sha256": "45f5d96f43677fcd02bc0dd116a829fc361a583fa3196688563709ae99c16a15",
+  "source_manifest_sha256": "7e5317b246360ea99ba4be9663492313b604d0f7db2da548affc2b5e8fc7bf80",
+  "pid": 15053,
+  "exit_code": 0,
+  "seconds": 13.656161915976554,
+  "source_manifest_after_sha256": "7e5317b246360ea99ba4be9663492313b604d0f7db2da548affc2b5e8fc7bf80",
+  "source_unchanged": true,
+  "gate_exit_code": 0
+}

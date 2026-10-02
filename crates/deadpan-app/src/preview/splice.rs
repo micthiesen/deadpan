@@ -16,6 +16,7 @@ mod comparison;
 mod controls;
 mod empty;
 mod pictures;
+pub(super) use pictures::JunctionDisplay;
 
 use comparison::{Comparison, Site, map_comparison};
 

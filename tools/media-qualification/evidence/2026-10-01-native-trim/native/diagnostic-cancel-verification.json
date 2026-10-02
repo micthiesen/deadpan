@@ -1,0 +1,26 @@
+{
+  "all_tables_unchanged": [
+    "generation_attempt_heads",
+    "generation_attempts",
+    "generation_bundle_receipts",
+    "generation_candidate_receipts",
+    "generation_requests",
+    "history",
+    "hold_request_clocks",
+    "original_media",
+    "redo",
+    "render_attempts",
+    "render_candidate_checkpoints",
+    "render_encoding_decisions",
+    "render_job_heads",
+    "render_jobs",
+    "render_publication_operations",
+    "render_publications",
+    "revisions",
+    "single_source",
+    "source_qualifications",
+    "state"
+  ],
+  "deadpan_app_processes": [],
+  "writer_lock_available": true
+}

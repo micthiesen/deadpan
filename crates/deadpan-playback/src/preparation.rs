@@ -24,6 +24,8 @@ pub(crate) enum PreparationEvent {
     PlaybackBatchPrepared,
     WaveformAdmitted,
     WaveformReleased,
+    EditWaveformProgress,
+    EditWaveformPublished,
 }
 
 #[cfg(test)]
@@ -290,7 +292,23 @@ fn measure(
     memory: &WaveformMemory,
     retained: &mut Option<Retained>,
 ) {
-    let mut update = job.update(WaveformStatus::Measuring);
+    match &job.target {
+        crate::waveform::Target::Definition(_) => measure_definition(shared, job, memory, retained),
+        crate::waveform::Target::Edit { .. } => {
+            edit_waveform::measure(shared, job, memory, retained)
+        }
+    }
+}
+
+mod edit_waveform;
+
+fn measure_definition(
+    shared: &Shared,
+    job: &crate::waveform::Job,
+    memory: &WaveformMemory,
+    retained: &mut Option<Retained>,
+) {
+    let mut update = job.definition_update(WaveformStatus::Measuring);
     shared.publish_waveform(job, update.clone(), false);
     let result = measure_inner(shared, job, memory, retained);
     // Peaks retain their own bounded allocation; media and DSP are never kept
@@ -338,8 +356,11 @@ fn measure_inner(
     *retained = None;
     let plan =
         Arc::new(RenderPlan::compile(&job.snapshot.document).map_err(|error| error.to_string())?);
+    let crate::waveform::Target::Definition(owner) = &job.target else {
+        unreachable!("definition job")
+    };
     let selector = AudioDefinitionSelector::Node {
-        node: job.owner.clone(),
+        node: owner.clone(),
     };
     plan.audio_definition(selector.clone())
         .map_err(|error| error.to_string())?;
@@ -370,7 +391,7 @@ fn measure_inner(
                 memory,
             },
             |waveform| {
-                let mut update = job.update(WaveformStatus::Measuring);
+                let mut update = job.definition_update(WaveformStatus::Measuring);
                 update.examined_samples = u64::try_from(waveform.measured_end().0)
                     .expect("validated waveform coverage starts at sample zero");
                 update.waveform = Some(waveform);

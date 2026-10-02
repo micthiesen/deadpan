@@ -100,21 +100,25 @@ fn endpoint_replacement_cancels_active_work_and_rejects_stale_success_and_failur
         first_identity.clone(),
         EndpointInput::Original(workspace.clone())
     ));
-    let active = mailbox.start_next().unwrap();
+    let EndpointWork::Source(active) = mailbox.start_next().unwrap() else {
+        panic!("source endpoint request keeps its typed worker slot")
+    };
     // Even resubmitting the identical external identity cancels this generation.
     assert!(mailbox.submit(
         first_identity.clone(),
         EndpointInput::Original(workspace.clone())
     ));
     assert!(active.cancelled.load(Ordering::Acquire));
-    assert!(!mailbox.publish(
+    assert!(!mailbox.publish_source(
         EndpointReply {
             identity: first_identity.clone(),
             pictures: Err("late failure".into())
         },
         &active.cancelled
     ));
-    let active = mailbox.start_next().unwrap();
+    let EndpointWork::Source(active) = mailbox.start_next().unwrap() else {
+        panic!("replacement source endpoint request keeps its typed worker slot")
+    };
     let mut decoder = None;
     let pictures = endpoint_pictures(&active, &mut decoder, &mut None).unwrap();
     let latest = identity(&workspace, 3, 35, 40);
@@ -123,7 +127,7 @@ fn endpoint_replacement_cancels_active_work_and_rejects_stale_success_and_failur
         EndpointInput::Original(workspace.clone())
     ));
     assert!(mailbox.submit(latest.clone(), EndpointInput::Original(workspace)));
-    assert!(!mailbox.publish(
+    assert!(!mailbox.publish_source(
         EndpointReply {
             identity: first_identity,
             pictures: Ok(pictures)
@@ -131,11 +135,13 @@ fn endpoint_replacement_cancels_active_work_and_rejects_stale_success_and_failur
         &active.cancelled
     ));
     assert!(mailbox.reply.is_none());
-    let current = mailbox.start_next().unwrap();
+    let EndpointWork::Source(current) = mailbox.start_next().unwrap() else {
+        panic!("latest source endpoint request remains pending")
+    };
     assert_eq!(current.identity, latest);
     assert!(mailbox.pending.is_none());
     let pictures = endpoint_pictures(&current, &mut decoder, &mut None).unwrap();
-    assert!(mailbox.publish(
+    assert!(mailbox.publish_source(
         EndpointReply {
             identity: latest.clone(),
             pictures: Ok(pictures)
@@ -219,4 +225,313 @@ fn endpoint_queue_never_replaces_the_main_picture_and_rejects_invalid_contexts()
     }
     main.shutdown();
     endpoints.shutdown();
+}
+
+fn junction_identity(
+    workspace: &Workspace,
+    content: deadpan_playback::ContentIdentity,
+    proposal_revision: Option<RevisionId>,
+    side: JunctionSide,
+    inspection: u64,
+    boundary: i64,
+) -> EditJunctionIdentity {
+    let outgoing = (boundary > 0).then(|| ProjectFrame(boundary - 1));
+    let incoming =
+        (boundary < workspace.plan.duration().frames()).then_some(ProjectFrame(boundary));
+    EditJunctionIdentity {
+        session: workspace.session,
+        project: workspace.document.project_id().clone(),
+        base_revision: workspace.document.revision_id().clone(),
+        draft: 41,
+        change: 7,
+        content,
+        proposal_revision,
+        inspection,
+        side,
+        role: JunctionRole::In,
+        boundary: ProjectFrame(boundary),
+        outgoing,
+        incoming,
+    }
+}
+
+fn await_junction(worker: &EndpointWorker) -> EditJunctionReply {
+    let deadline = Instant::now() + Duration::from_secs(15);
+    loop {
+        if let Some(reply) = worker.take_junction_reply() {
+            return reply;
+        }
+        assert!(Instant::now() < deadline, "Edit junction response deadline");
+        std::thread::sleep(Duration::from_millis(2));
+    }
+}
+
+fn proposed_background_snapshot(base: &Arc<Workspace>) -> Arc<deadpan_playback::Snapshot> {
+    use deadpan_core::{
+        BeatNode, Command, CommandRequest, FrameDuration, HoldAudio, HoldRecipe, HoldVideo, NodeId,
+        Subtree,
+    };
+    use std::collections::BTreeMap;
+
+    let hold = NodeId::new("junction-proposed-background").unwrap();
+    let request = CommandRequest {
+        project_id: base.document.project_id().clone(),
+        expected_revision: base.document.revision_id().clone(),
+        new_revision: RevisionId::new("junction-proposed-revision").unwrap(),
+        command: Command::Insert {
+            parent: NodeId::new("root").unwrap(),
+            index: 0,
+            subtree: Subtree {
+                root: hold.clone(),
+                nodes: BTreeMap::from([(
+                    hold.clone(),
+                    BeatNode::hold(
+                        "Authored black lead",
+                        HoldRecipe {
+                            picture_context: None,
+                            duration: FrameDuration::new(3).unwrap(),
+                            video: HoldVideo::Background,
+                            audio: HoldAudio::Silence,
+                        },
+                    ),
+                )]),
+                overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
+            },
+        },
+    };
+    let patch = deadpan_core::apply(&base.document, &request)
+        .unwrap()
+        .forward;
+    let document = Arc::new(patch.apply(&base.document).unwrap());
+    Arc::new(
+        deadpan_playback::Snapshot::proposed(&base.playback_snapshot(), document, 41, 7).unwrap(),
+    )
+}
+
+#[test]
+fn edit_junction_uses_exact_edit_boundaries_and_keeps_exterior_distinct_from_background() {
+    use deadpan_playback::ContentIdentity;
+
+    let fixture = Fixture::source("cfr-bframes.mp4");
+    let base = fixture.workspace(91);
+    let worker = EndpointWorker::new(egui::Context::default()).unwrap();
+
+    let exterior_identity = junction_identity(
+        &base,
+        ContentIdentity::Committed,
+        None,
+        JunctionSide::Proposed,
+        1,
+        0,
+    );
+    worker.submit_junction(
+        exterior_identity.clone(),
+        EditJunctionInput {
+            base: base.clone(),
+            snapshot: None,
+        },
+    );
+    let exterior = await_junction(&worker);
+    assert_eq!(exterior.identity, exterior_identity);
+    let exterior = exterior.pictures.unwrap();
+    assert!(matches!(
+        exterior.outgoing,
+        EditJunctionPicture::Exterior(JunctionExterior::NoOutgoing)
+    ));
+    let EditJunctionPicture::Picture(incoming) = exterior.incoming else {
+        panic!("boundary zero has the real Edit frame zero on its incoming side")
+    };
+    assert_eq!(incoming.id, SourceFrameId(0));
+    assert!(
+        incoming.frame.is_some(),
+        "the source frame is decoded media"
+    );
+
+    let snapshot = proposed_background_snapshot(&base);
+    let proposed_content = snapshot.content.clone();
+    let proposal_revision = Some(snapshot.document.revision_id().clone());
+    let before_identity = junction_identity(
+        &base,
+        proposed_content.clone(),
+        proposal_revision.clone(),
+        JunctionSide::Before,
+        2,
+        0,
+    );
+    worker.submit_junction(
+        before_identity.clone(),
+        EditJunctionInput {
+            base: base.clone(),
+            snapshot: Some(snapshot.clone()),
+        },
+    );
+    let before = await_junction(&worker);
+    assert_eq!(before.identity, before_identity);
+    let before = before.pictures.unwrap();
+    assert!(matches!(
+        before.outgoing,
+        EditJunctionPicture::Exterior(JunctionExterior::NoOutgoing)
+    ));
+    let EditJunctionPicture::Picture(before_zero) = before.incoming else {
+        panic!("Before is authenticated by the proposal but renders committed content")
+    };
+    assert_eq!(before_zero.id, SourceFrameId(0));
+    assert!(before_zero.frame.is_some());
+
+    let proposed_identity = junction_identity(
+        &base,
+        proposed_content,
+        proposal_revision,
+        JunctionSide::Proposed,
+        3,
+        3,
+    );
+    worker.submit_junction(
+        proposed_identity.clone(),
+        EditJunctionInput {
+            base: base.clone(),
+            snapshot: Some(snapshot),
+        },
+    );
+    let proposed = await_junction(&worker);
+    assert_eq!(proposed.identity, proposed_identity);
+    let proposed = proposed.pictures.unwrap();
+    let EditJunctionPicture::Picture(outgoing) = proposed.outgoing else {
+        panic!("authored Background is a real successful picture, not exterior absence")
+    };
+    assert!(
+        outgoing.frame.is_none(),
+        "the proposed lead is authored black"
+    );
+    assert_eq!(outgoing.canvas, Some(proposed.canvas));
+    let EditJunctionPicture::Picture(incoming) = proposed.incoming else {
+        panic!("the frame after the proposed lead is still present")
+    };
+    assert_eq!(incoming.id, SourceFrameId(0));
+    worker.shutdown();
+}
+
+#[test]
+fn edit_junction_rejects_forged_proposal_revision_and_boundary_addresses() {
+    use deadpan_playback::ContentIdentity;
+
+    let fixture = Fixture::source("cfr-bframes.mp4");
+    let base = fixture.workspace(92);
+    let snapshot = proposed_background_snapshot(&base);
+    let worker = EndpointWorker::new(egui::Context::default()).unwrap();
+    let valid = junction_identity(
+        &base,
+        snapshot.content.clone(),
+        Some(snapshot.document.revision_id().clone()),
+        JunctionSide::Before,
+        5,
+        0,
+    );
+    let mut forged_revision = valid.clone();
+    forged_revision.proposal_revision = Some(RevisionId::new("wrong-proposal").unwrap());
+    worker.submit_junction(
+        forged_revision.clone(),
+        EditJunctionInput {
+            base: base.clone(),
+            snapshot: Some(snapshot.clone()),
+        },
+    );
+    let reply = await_junction(&worker);
+    assert_eq!(reply.identity, forged_revision);
+    assert!(reply.pictures.is_err());
+
+    let mut missing_incoming = junction_identity(
+        &base,
+        ContentIdentity::Committed,
+        None,
+        JunctionSide::Proposed,
+        6,
+        0,
+    );
+    missing_incoming.incoming = None;
+    worker.submit_junction(
+        missing_incoming.clone(),
+        EditJunctionInput {
+            base: base.clone(),
+            snapshot: None,
+        },
+    );
+    let reply = await_junction(&worker);
+    assert_eq!(reply.identity, missing_incoming);
+    assert!(reply.pictures.is_err());
+    worker.shutdown();
+}
+
+#[test]
+fn edit_junction_latest_identity_rejects_stale_success_and_failure() {
+    use deadpan_playback::ContentIdentity;
+
+    let fixture = Fixture::source("cfr-bframes.mp4");
+    let base = fixture.workspace(93);
+    let mut mailbox = EndpointMailbox::default();
+    let first_identity = junction_identity(
+        &base,
+        ContentIdentity::Committed,
+        None,
+        JunctionSide::Proposed,
+        1,
+        0,
+    );
+    assert!(mailbox.submit_junction(
+        first_identity.clone(),
+        EditJunctionInput {
+            base: base.clone(),
+            snapshot: None,
+        },
+    ));
+    let EndpointWork::EditJunction(active) = mailbox.start_next().unwrap() else {
+        panic!("junction request keeps its typed worker slot")
+    };
+    let newer = junction_identity(
+        &base,
+        ContentIdentity::Committed,
+        None,
+        JunctionSide::Proposed,
+        2,
+        2,
+    );
+    assert!(mailbox.submit_junction(
+        newer.clone(),
+        EditJunctionInput {
+            base,
+            snapshot: None,
+        },
+    ));
+    assert!(active.cancelled.load(Ordering::Acquire));
+    assert!(!mailbox.publish_junction(
+        EditJunctionReply {
+            identity: first_identity.clone(),
+            pictures: Err("stale decode failure".into()),
+        },
+        &active.cancelled,
+    ));
+    let EndpointWork::EditJunction(current) = mailbox.start_next().unwrap() else {
+        panic!("newest request remains pending")
+    };
+    assert_eq!(current.identity, newer);
+    assert!(!mailbox.publish_junction(
+        EditJunctionReply {
+            identity: first_identity.clone(),
+            pictures: Err("stale decode failure".into()),
+        },
+        &current.cancelled,
+    ));
+    assert!(!mailbox.publish_junction(
+        EditJunctionReply {
+            identity: first_identity,
+            pictures: Ok(EditJunctionPictures {
+                outgoing: EditJunctionPicture::Exterior(JunctionExterior::NoOutgoing),
+                incoming: EditJunctionPicture::Exterior(JunctionExterior::NoIncoming),
+                canvas: (320, 180),
+            }),
+        },
+        &current.cancelled,
+    ));
+    assert!(mailbox.junction_reply.is_none());
 }

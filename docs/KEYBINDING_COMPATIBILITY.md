@@ -79,8 +79,9 @@ Tab and Shift+Tab use native control traversal. Amount text, focused buttons and
 IME retain their input; Enter in the amount field does not apply. Composition
 owns Enter/Escape. Held movement may repeat, while Apply, Cancel, `b` and `i/o`
 do not. Command, Control and Option variants remain reserved. The modal excludes
-ordinary editing, transport and Render. It adds no modified global shortcut and
-no `,v` binding. Full Trim's Tab mode cycling and waveform remain pending.
+ordinary editing, transport and Render. It adds no modified global shortcut.
+`:slip` remains a separate stopped-picture preview; `,v` opens the combined
+Trim mode described below.
 
 The production `slip` replay passes the exact picture gate, clamps,
 comparison, batched input, text/IME focus, late replies, cancel, one commit and
@@ -89,6 +90,56 @@ conflicts or live Kestrel registry drift. Rendered and native evidence is retain
 in [native Slip qualification](qualification/native-slip-2026-10-01.md).
 See [Source Slip](SOURCE_SLIP.md#native-stopped-picture-preview) for the full
 capture, picture and saved-receipt contract.
+
+## Combined Trim
+
+**`,v`** or bare **`:trim`** opens the selected eligible Source or neutral unity
+Source Partition in an ordinary Sequence in Your edit. Clear any active or
+retained Edit Visual range first, including an empty range. Original, catalog
+Sounds and Placed sounds cannot open Trim. The target and literal right neighbor
+are captured at prefix/command entry before audition stops; late replies cannot
+replace that context. Roll requires an eligible literal right neighbor.
+
+The comma hint lists `v Trim`. Activation rejects counts and held repeats;
+plain `v` retains its Visual selection behavior. Bare `:trim` starts on In with
+four zero amounts and Ripple policy. The parameter form is:
+
+```text
+:trim edge=out delta=-3f mode=ripple
+```
+
+Supply `edge=in|out|slip|roll`, `delta=<whole frames>f` and
+`mode=ripple|overwrite` exactly once each, in any order. Amounts accept an
+optional ASCII sign, as in `-3f`, `+5f` or `7f`; the other three values start at
+zero. Missing, duplicate or unknown arguments are rejected.
+
+On the Trim heading/background, Tab cycles In → Out → Slip → Roll; Shift-Tab
+reverses. Switching controls preserves every amount. `h/l` changes the active
+value by −1/+1 project frame, or −10/+10 with Shift. `r` toggles the complete
+draft's Ripple/Overwrite policy, preserving all values or reporting a refusal.
+`i/o` selects In/Out; inside Slip it chooses the inspected edge without leaving
+Slip. `b` compares Before/Proposed. `e` focuses the native amount field. Space
+auditions, pauses or resumes, and Shift-Space restarts the junction's context
+loop. The outgoing/incoming pair stays fixed during audio.
+
+Enter applies one nonzero edit only after all input is acknowledged and the
+current Proposed pair has been submitted at the current viewer size. Escape
+restores entry context before saving starts. Only `h/l` repeats while held;
+Tab, compare, policy, inspection, transport and activation keys require a fresh
+press. Trim has no count prefix. Native fields and buttons keep Tab and
+activation. Enter in the amount field accepts text and returns to Trim controls
+without applying on the same event. Plain Escape cancels from a field or button
+outside composition; IME retains Enter/Escape. Command, Control and Option
+chords remain unclaimed. Trim excludes ordinary editing, history, other editing
+drafts and Render. See [the native contract](COMBINED_TRIM.md#native-trim).
+
+The production reservation audit includes Trim's text, background, composition
+and held-key combinations. Its current expected coverage is 296 routing cases
+for each of 62 reservations, or 18,352 total. This is an expected count, not a
+passing-run claim. The help update checked source and fixture hashes only;
+compilation, audit execution, replay and native interaction remain separate
+qualification work. The local Kestrel source still matches the checked fixture:
+SHA-256 `368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2`.
 
 ## Place slice
 
@@ -208,12 +259,14 @@ cargo test --locked -p deadpan-app navigation::
 
 [The audit](../crates/deadpan-app/src/navigation/shortcut_audit.rs) sends each of
 the 62 exact global Kestrel bindings through the actual `Bindings::key`, Camera,
-text-action, inspector, room-tone, Gain, Marks, Place slice and Slip routers,
+text-action, inspector, room-tone, Gain, Marks, Place slice, Slip and Trim routers,
 including `Bindings::key_with_selection` for empty and nonempty Edit selections.
-The Slip integration passes 280 routing cases per reservation, or 17,360 total,
+The prior Slip integration passed 280 routing cases per reservation, or 17,360 total,
 including pending prefixes, counts and overflow, text/IME and repeat/focus
 combinations. Its execution and matching live-source digest are retained in the
 [native Slip record](qualification/native-slip-2026-10-01.md).
+The added Trim cases bring the expected count to 18,352; see the separate
+[Trim qualification status](#combined-trim) above.
 The earlier corrected workspace, room-tone, gain and retime runs each passed all 5,456
 cases with no conflicts or live-source drift; all 298 app/harness tests also
 pass. The [native-gain qualification](qualification/native-gain-2026-09-28.md) retains
@@ -307,8 +360,9 @@ available. Preserve a clear focused-pane cue separately from selected content.
 
 Original Visual selection and range reuse now have the `original-moment` replay;
 its current native/visual evidence limits remain explicit in qualification.
-General Visual replacement, targets, and Trim still need their own replay
-scenarios, visible selection scope, reversible previews, and measured feedback.
-Their specification bindings do not establish implemented capabilities. Any new
-modifier binding must pass this audit and its real interaction scenario before
-being added to help or keycaps.
+General Visual replacement and targets still need their own replay scenarios,
+visible selection scope, reversible previews, and measured feedback. Trim's
+implemented keys and controls are described above; their presence does not
+establish replay or native qualification. Specification bindings alone do not
+establish implemented capabilities. Any new modifier binding must pass this
+audit and its real interaction scenario before being added to help or keycaps.

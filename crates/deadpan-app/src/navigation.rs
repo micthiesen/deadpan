@@ -13,6 +13,7 @@ pub mod room_tone;
 pub mod slip;
 mod sound;
 pub mod splice;
+pub mod trim;
 pub use sound::SoundAction;
 #[cfg(any(test, feature = "ui-harness"))]
 pub mod shortcut_audit;
@@ -83,6 +84,7 @@ pub enum Action {
     Import,
     Render,
     Insert,
+    Trim,
     Undo,
     Redo,
     Playback,
@@ -236,7 +238,7 @@ impl Bindings {
                 Some("h inserts the counted pause · Esc cancels")
             }
             _ if self.comma => Some(
-                "i reuse Original · s place sound · h pause · f Camera · z punch in · c creep · Esc cancels",
+                "i reuse Original · s place sound · h pause · f Camera · v Trim · z punch in · c creep · Esc cancels",
             ),
             _ if self.g => Some("g goes to the start · Esc cancels"),
             _ if self.count.is_some() => {
@@ -468,6 +470,8 @@ impl Bindings {
                 Key::I => Action::Invalid("Reuse inserts once. Use ,i without a count."),
                 Key::S if self.count.is_none() => Action::Sound(SoundAction::Place),
                 Key::S => Action::Invalid("Place one sound with ,s, without a count."),
+                Key::V if self.count.is_none() => Action::Trim,
+                Key::V => Action::Invalid("Open Trim once with ,v, without a count."),
                 Key::H => Action::Edit(BeatEdit::InsertHold(
                     duration::DurationInput::half_seconds(self.count.unwrap_or(1)),
                 )),
@@ -481,7 +485,7 @@ impl Bindings {
                     Action::Invalid("Counts apply only to ,h. Use ,f, ,z, or ,c without a count.")
                 }
                 _ => Action::Invalid(
-                    "After comma, use i to reuse the Original, s to place a sound, h for a pause, f for Camera, z to punch in, or c to creep.",
+                    "After comma, use i to reuse the Original, s to place a sound, h for a pause, f for Camera, v for Trim, z to punch in, or c to creep.",
                 ),
             };
             self.clear();

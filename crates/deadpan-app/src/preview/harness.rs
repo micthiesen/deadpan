@@ -29,6 +29,7 @@ mod sound_placement;
 mod sound_playback;
 mod splice;
 mod telemetry;
+mod trim;
 mod wake;
 
 use telemetry::{Event, InputOrigins, Outcome, PictureTelemetry};
@@ -45,6 +46,10 @@ pub(super) struct Feedback {
     pub held_reply: Option<crate::worker::Reply>,
     pub release_reply: Option<crate::worker::Reply>,
     pub fail_next_preview: bool,
+    /// One actual pair reply may be retained to witness stale/pending delivery.
+    pub hold_junction: bool,
+    pub held_junction: Option<crate::worker::EditJunctionReply>,
+    pub release_junction: Option<crate::worker::EditJunctionReply>,
     pub simulate_playback: bool,
     pub playback_updates: std::collections::VecDeque<deadpan_playback::Update>,
     events: Vec<Event<Ticket>>,
@@ -62,6 +67,21 @@ impl Feedback {
         } else {
             service.take_update()
         }
+    }
+
+    pub fn take_junction_reply(
+        &mut self,
+        worker: &crate::worker::EndpointWorker,
+    ) -> Option<crate::worker::EditJunctionReply> {
+        if self.hold_junction {
+            if self.held_junction.is_none() {
+                self.held_junction = worker.take_junction_reply();
+            }
+            return None;
+        }
+        self.release_junction
+            .take()
+            .or_else(|| worker.take_junction_reply())
     }
 
     pub fn record(&mut self, stage: &'static str) {
@@ -577,6 +597,7 @@ impl Driver<'_> {
         })));
         snapshot["splice"] = splice::state(self);
         snapshot["slip"] = slip::state(self);
+        snapshot["trim"] = trim::state(self);
         snapshot
     }
 

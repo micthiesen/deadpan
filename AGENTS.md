@@ -404,7 +404,7 @@ and root sounds. Mark both changed media joins and their incident neighbors as
 editorial audio edges, retaining exact Hard precedence and raw sampling context.
 Store preview and commit recheck the revision and stored receipt;
 an applied-zero preview creates no history. Audio-only picture lead/tail, nested
-or treated targets and native Trim controls remain explicit unsupported scope.
+or treated targets remain explicit unsupported scope.
 
 Native `:slip +5f` uses a captured selected picture beat under the admitted
 Source/Partition scope. Capture command-entry absence, session, revision, group,
@@ -419,7 +419,8 @@ refresh; report a saved refresh failure without repeating the edit. Historical
 receipts cannot replay selection or warnings after navigation/Undo, and clear
 on session replacement. See [native Slip](docs/SOURCE_SLIP.md#native-stopped-picture-preview)
 and its [qualification](docs/qualification/native-slip-2026-10-01.md).
-The stopped-picture preview does not implement full Trim or audio audition.
+The separate `:slip` preview remains limited to stopped pictures; combined native
+Trim below owns its four-value draft and boundary audition.
 
 `TrimSource` implements atomic ripple In/Out edges for that same admitted
 Source/Partition scope. Retain exact fractional selection padding, clamp inward
@@ -440,8 +441,8 @@ markers after transport. Zero previews retain full
 request/receipt validation and consume no history; commit re-resolves the request.
 Frozen audio context schema 6 retains editorial edges; older frozen grammars
 reject their field presence, including explicitly empty values.
-See [the Trim contract](docs/SOURCE_TRIM.md). Native boundary comparison, waveform,
-audition and overwrite remain separate required work.
+See [the scalar Trim contract](docs/SOURCE_TRIM.md); the combined native draft uses
+one `ApplySourceTrim` command rather than a sequence of saved scalar commands.
 
 `RollSources` captures two literally adjacent admitted Source/Partition children
 and intersects their exact Out/In limits before one inward whole-frame clamp.
@@ -452,6 +453,30 @@ the changed seam. Detach/restore root sounds and routes exactly without a timing
 operation. Recheck both persisted receipts and Original ownership even for zero
 preview; consume at most one required crop wrapper. See [Roll](docs/SOURCE_ROLL.md).
 The scalar command does not implement the combined native Trim draft.
+
+Native `,v` and `:trim` capture one eligible direct Source/neutral unity Partition
+in the current ordinary Sequence, including the literal right sibling or its
+absence. Original, Sounds, composite targets and any Edit Visual range refuse
+entry. Retain session, revision, scope, both cursors and the entry target through
+all replies. Replay In/Out/Slip/Roll changes in order from the last accepted
+four-value tuple; clamp only the adjusted value, and preserve the tuple on a
+refused adjustment or policy toggle. Never sum nudges across a clamp.
+
+Before inspects the entry junction; Proposed inspects the final target junction.
+Present outgoing/incoming pictures atomically, including explicit exterior
+slots. Apply requires the fully acknowledged nonzero proposal and its exact
+Proposed pair submitted at the final viewer raster. The admitted Edit waveform
+measures that inspection's absolute 48 kHz context before limiting and monitor
+gain. Waveform or optional audition failure must not revoke valid picture/Apply
+authority. Audition moves only the draft's heard position; retain both editor
+cursors and the fixed pair. Zero intent has no proposal or history. Consume one
+retained command on Apply and preserve its durable receipt across refresh
+failure. Cancel revokes proposal/media work and restores valid entry context.
+See [combined Trim](docs/COMBINED_TRIM.md#native-trim),
+[Edit waveforms](docs/EDIT_WAVEFORMS.md#native-trim-consumer) and the
+[native qualification record](docs/qualification/native-trim-2026-10-01.md).
+Broader target admission and complete editor, physical-input, IME, accessibility
+and listening acceptance remain open; no requirement or gate is complete.
 
 Durable render jobs capture immutable project/revision/document/range/policy
 intent outside authored undo/redo. Require fresh attempt IDs and cancellation

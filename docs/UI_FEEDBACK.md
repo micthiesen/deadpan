@@ -11,6 +11,18 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+The [native Trim increment](COMBINED_TRIM.md#native-trim) adds ordered
+In/Out/Slip/Roll controls, Ripple/Overwrite policy, atomic Before/Proposed boundary
+pairs, an admitted Edit waveform and optional audition. Its `trim` replay uses
+production entry and input routes, real picture preparation/Metal and real
+waveform PCM. It covers captured target absence, ordered clamps/policy changes,
+native text/focus, delayed pair delivery, resize-time Apply refusal, cancellation,
+one commit and Undo. Playback delivery and IME events in replay are injected.
+The [native qualification record](qualification/native-trim-2026-10-01.md)
+records execution results and remaining native limits; scenario code alone
+establishes no pass count, latency, physical-input or listening result. Broader
+target admission and complete editor/accessibility acceptance remain open.
+
 The [native mark increment](qualification/native-marks-2026-10-01.md) adds visible
 pending letter prefixes, a keyboard-accessible Marks list and exact back/forward
 jumps. The focused rendered run passes 156 checks plus a 16,368-case Kestrel audit.
@@ -295,7 +307,8 @@ passing focused retry; its cause remains unestablished.
 
 The media fixture is `cfr-bframes.mp4`, a small 120-frame source. The large-project
 scenario adds 10,000 silent Background Holds. Playback service updates are
-explicitly injected: no PCM preparation or audio device is exercised. These
+explicitly injected and do not exercise an audio device. Gain and Trim waveform
+scenarios separately prepare real PCM for their measurements. These
 fixtures do not qualify full-size decode/playback, physical presentation, native
 accessibility or the complete editor.
 
@@ -414,6 +427,7 @@ the real app. The initial viewport is 1280×820 points at 1×. The code lives in
 | `sound-placement` | Imports measured catalog audio, places by pointer and `,s`, preserves picture duration and editor targets, checks exact sample entry and frame-nudge count equivalence, gain/edges, event selection, deletion and undo. Tests Original-to-Sounds keyboard/pointer focus, absent/stale command targets across held real writer completions, overflow, both window sizes and route-preserving gain with rejected movement. Compact-layout checks cover empty/placed/undo transitions and final-sized release-frame submissions for pane/tab entry and command-plus-resize. The final compact run passes 217 checks plus the audit on `78395620`. Does not start PCM preparation or a device. |
 | `room-tone` | Copies an Original range with v/motions/y, opens the captured Hold's source-range sheet, edits exact native samples, prepares and auditions without history, then explicitly applies or cancels. Checks silence/undo, missing and stale targets, superseded range preparation, native text/IME and minimum-size paint clips. AccessKit Focus reveals saved Hold gain controls; :gain/Tab/Escape preserve room tone and history. Compact assertions cover ≥140-point picture, complete control hits, stable overlay background, native scale/ID transitions and exact paused-sample resume. The final compact run passes 221 checks plus the audit on `78395620`. Source delivery is explicitly injected; no device or listening claim. |
 | `gain` | Counted/absolute beat gain and true mute, captured exact trim/envelope/key/mute fields, coalesced proposals, Before/Draft at retained samples, stale/faulted updates, Apply/undo, Cancel picture continuity and native text/IME. Real canonical PCM supplies the signed stereo overview; edits keep that measurement, explicit Retry re-admits sources, and stale errors cannot replace it. Full Tab/Shift+Tab circuits check paint/hit clips at both sizes; wide exact fields stay beside their curve. The final waveform run passes 291 checks and its captures were reviewed. Comparison delivery and a labelled failure are injected; no device or listening claim. |
+| `trim` | Enters through `,v` and captured `:trim`; checks target/scope/right absence, ordered In/Out/Slip/Roll values and clamps, policy toggles, native amount text/focus, mode exclusion, zero/no-op, Cancel, one Apply and Undo. Holds an actual pair reply to test complete Before/Proposed presentation, pending Apply refusal and stale cancellation; resize plus Enter must not save or trigger a later automatic Apply. Real PCM supplies the bounded waveform; injected delivery checks fixed pictures/cursors, exact pause/loop state and empty-context audition failure without blocking Apply. See [native qualification](qualification/native-trim-2026-10-01.md) for actual results; injected IME/delivery do not qualify physical input or listening. |
 | `retime` | Opens/cancels speed entry by pointer, checks the resolved-duration preview, creates a Preserve Retime by command, adjusts the same stage to tape pitch through ordinary text editing, explicitly nests another stage, undoes all three edits and confirms Original context stays unchanged. Uses real project history and picture preparation; it does not measure acoustic quality. |
 | `generated-picture` | Requires an explicit `--project /absolute/accepted.deadpan` exported by the real bundle integration test. Opens through the production project service and checks all 30 sampled frames, exact RGBA/PTS, retained framing, keyboard navigation, both viewport sizes, visible provider/duration and unobscured mode/focus. Release performance separately measures cold admission and 120 warm navigation inputs. The synthetic 4×2 compatibility fixture does not qualify full-size performance, app inference/acceptance, audio or export. Ordinary replay reports this scenario as skipped without the explicit fixture. |
 | `nested-pause` | Seeds two framed Sequence groups with typed store commands, reopens the actual project, navigates to frame 17 with keys, inserts `:hold 11f`, and checks the nested Hold, exact freeze, retained child crop, live ancestor scopes and cursor. Undo/redo compares nodes and audio bindings. Enter drills through breadcrumbs to the Hold; Inspector Enter changes its duration, history preserves scope, Camera commits only its framing, Backspace selects exited groups, and a group-edge pause fails without mutation. Minimum-size checks cover empty Sounds focus, strict parent-action text/hit clips and pointer/keyboard navigation preserving revision, scope, selection and both cursors. The final compact run passes 73 checks plus the audit on `78395620`. |

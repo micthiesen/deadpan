@@ -227,10 +227,10 @@ fn empty_and_huge_extents_have_bounded_geometry_without_eager_sample_work() {
     assert_eq!(empty.waveform.level_count(), 0);
     assert_eq!(empty.waveform.measured_end(), SignalSample(0));
     let huge = builder(i64::MAX, &memory);
-    assert_eq!(huge.data.levels[0].capacity, 4096);
-    assert_eq!(huge.data.level_count(), 13);
-    assert!(huge.data.peaks.len() < 8192);
-    assert!(huge.data.descriptor().leaf_stride.is_power_of_two());
+    assert_eq!(huge.peaks.data.levels[0].capacity, 4096);
+    assert_eq!(huge.peaks.data.level_count(), 13);
+    assert!(huge.peaks.data.peaks.len() < 8192);
+    assert!(huge.descriptor.value.leaf_stride.is_power_of_two());
     assert_eq!(huge.examined_samples(), 0);
     assert!(memory.resident_bytes() < MAX_WAVEFORM_BYTES);
 }

@@ -287,24 +287,20 @@ impl StereoExtrema {
     }
 }
 
-#[derive(Debug, Clone, Copy, Default)]
-struct Level {
-    offset: usize,
-    capacity: usize,
-    measured: usize,
-    stride: u64,
-}
+mod peaks;
+use peaks::{PeakAccumulator, PeakBuffer};
 
-/// Immutable, media-free display data for one admitted request. This is not a
-/// source-admission witness or an arbitrary cropped-range peak query.
+mod edit_window;
+pub(crate) use edit_window::EditWaveformBuilder;
+pub use edit_window::{
+    EditWaveform, EditWaveformDescriptor, EditWaveformMeasurement, EditWaveformStage,
+};
+
+/// Immutable, media-free display data for one admitted definition request.
 #[derive(Debug)]
 pub struct DefinitionWaveform {
     descriptor: Arc<DescriptorAllocation>,
-    levels: [Level; MAX_LEVELS],
-    level_count: usize,
-    measured_end: SignalSample,
-    peaks: Vec<StereoExtrema>,
-    _permit: MemoryPermit,
+    peaks: PeakBuffer,
 }
 
 impl DefinitionWaveform {
@@ -312,38 +308,21 @@ impl DefinitionWaveform {
         &self.descriptor.value
     }
     pub fn measured_end(&self) -> SignalSample {
-        self.measured_end
+        SignalSample(i64::try_from(self.peaks.measured_end()).expect("validated waveform extent"))
     }
     pub fn level_count(&self) -> usize {
-        self.level_count
+        self.peaks.level_count()
     }
-
-    /// Coarser levels contain only bins whose complete support was measured.
-    /// An unpaired prefix leaf is not promoted as a complete parent before EOF.
     pub fn level(&self, level: usize) -> Option<&[StereoExtrema]> {
-        let level = self
-            .levels
-            .get(level)
-            .filter(|_| level < self.level_count)?;
-        self.peaks
-            .get(level.offset..level.offset.checked_add(level.measured)?)
+        self.peaks.level(level)
     }
-
     pub fn bin_samples(&self, level: usize, index: usize) -> Option<Range<SignalSample>> {
-        let level = self
-            .levels
-            .get(level)
-            .filter(|_| level < self.level_count)?;
-        if index >= level.measured {
-            return None;
-        }
-        let start = u64::try_from(index).ok()?.checked_mul(level.stride)?;
-        let end = start
-            .checked_add(level.stride)?
-            .min(u64::try_from(self.descriptor().total_samples.0).ok()?);
-        Some(SignalSample(i64::try_from(start).ok()?)..SignalSample(i64::try_from(end).ok()?))
+        let range = self.peaks.bin_offsets(level, index)?;
+        Some(
+            SignalSample(i64::try_from(range.start).ok()?)
+                ..SignalSample(i64::try_from(range.end).ok()?),
+        )
     }
-
     /// PointCeil's terminal sample boundary can lie past the exact owner end.
     /// Clip only that display endpoint, never rescale the preceding sample grid.
     pub fn bin_owner_frames(
@@ -363,77 +342,12 @@ impl DefinitionWaveform {
         };
         Ok(start..end)
     }
-
-    fn allocate(
-        descriptor: Arc<DescriptorAllocation>,
-        memory: &WaveformMemory,
-    ) -> Result<Self, WaveformError> {
-        let count = u64::try_from(descriptor.value.total_samples.0)
-            .map_err(|_| WaveformError::InvalidGeometry)?;
-        let mut remaining = count.div_ceil(descriptor.value.leaf_stride);
-        let mut stride = descriptor.value.leaf_stride;
-        let mut levels = [Level::default(); MAX_LEVELS];
-        let mut level_count = 0;
-        let mut slots = 0_usize;
-        while remaining > 0 {
-            let capacity = usize::try_from(remaining).map_err(|_| WaveformError::Overflow)?;
-            let level = levels
-                .get_mut(level_count)
-                .ok_or(WaveformError::InvalidGeometry)?;
-            *level = Level {
-                offset: slots,
-                capacity,
-                measured: 0,
-                stride,
-            };
-            slots = slots.checked_add(capacity).ok_or(WaveformError::Overflow)?;
-            level_count += 1;
-            if remaining == 1 {
-                break;
-            }
-            remaining = remaining.div_ceil(2);
-            stride = stride.checked_mul(2).ok_or(WaveformError::Overflow)?;
-        }
-        let bytes = slots
-            .checked_mul(size_of::<StereoExtrema>())
-            .and_then(|bytes| bytes.checked_add(size_of::<Self>() + ARC_HEADER_BYTES))
-            .ok_or(WaveformError::Overflow)?;
-        let mut permit = memory.reserve(bytes)?;
-        let mut peaks = Vec::new();
-        peaks
-            .try_reserve_exact(slots)
-            .map_err(|_| WaveformError::Allocation)?;
-        // Charge the Vec's actual capacity, including any allocator over-allocation.
-        if peaks.capacity() > slots {
-            let extra = (peaks.capacity() - slots)
-                .checked_mul(size_of::<StereoExtrema>())
-                .ok_or(WaveformError::Overflow)?;
-            let mut extra_permit = memory.reserve(extra)?;
-            permit.bytes = permit
-                .bytes
-                .checked_add(extra)
-                .ok_or(WaveformError::Overflow)?;
-            extra_permit.bytes = 0;
-        }
-        peaks.resize(slots, StereoExtrema::sample([0.0; 2]));
-        Ok(Self {
-            descriptor,
-            levels,
-            level_count,
-            measured_end: SignalSample(0),
-            peaks,
-            _permit: permit,
-        })
-    }
 }
 
-/// Pure accumulator. It owns one final-result allocation from the start, so a
-/// retained progress snapshot cannot prevent terminal publication of its prefix.
+/// Pure definition accumulator. Finalization needs no additional peak storage.
 pub(crate) struct WaveformBuilder {
-    data: DefinitionWaveform,
-    examined: u64,
-    pending: Option<StereoExtrema>,
-    pending_samples: u64,
+    descriptor: Arc<DescriptorAllocation>,
+    peaks: PeakAccumulator,
 }
 
 impl WaveformBuilder {
@@ -454,126 +368,57 @@ impl WaveformBuilder {
         {
             return Err(WaveformError::InvalidGeometry);
         }
-        let mut stride = MIN_LEAF_STRIDE;
-        while total.div_ceil(stride) > u64::from(limits.maximum_leaves) {
-            stride = stride.checked_mul(2).ok_or(WaveformError::Overflow)?;
-        }
-        descriptor.leaf_stride = stride;
-        // Four identifier strings have validated lengths <= MAX_IDENTITY_BYTES.
-        // Charge their complete bounded capacity in addition to the Arc payload.
+        descriptor.leaf_stride = peaks::leaf_stride(total, limits)?;
         let bytes = size_of::<DescriptorAllocation>()
             + ARC_HEADER_BYTES
             + 4 * deadpan_core::MAX_IDENTITY_BYTES;
         let permit = memory.reserve(bytes)?;
-        let descriptor = Arc::new(DescriptorAllocation {
-            value: descriptor,
-            _permit: permit,
-        });
-        let data = DefinitionWaveform::allocate(descriptor, memory)?;
+        let peaks = PeakAccumulator::new(
+            total,
+            descriptor.leaf_stride,
+            size_of::<DefinitionWaveform>(),
+            memory,
+        )?;
         Ok(Self {
-            data,
-            examined: 0,
-            pending: None,
-            pending_samples: 0,
+            descriptor: Arc::new(DescriptorAllocation {
+                value: descriptor,
+                _permit: permit,
+            }),
+            peaks,
         })
     }
-
     pub(crate) fn examined_samples(&self) -> u64 {
-        self.examined
+        self.peaks.examined_samples()
     }
     pub(crate) fn measured_end(&self) -> SignalSample {
-        self.data.measured_end
+        SignalSample(i64::try_from(self.peaks.measured_end()).expect("validated waveform extent"))
     }
-
-    /// Validate the complete block before advancing either hidden partial state
-    /// or published coverage. No failed block can leave partly admitted extrema.
     pub(crate) fn push(
         &mut self,
         start: SignalSample,
         samples: &[[f32; 2]],
     ) -> Result<(), WaveformError> {
-        let frame_count =
-            u32::try_from(samples.len()).map_err(|_| WaveformError::InvalidSamples)?;
-        if frame_count == 0
-            || frame_count > crate::MAX_OUTPUT_FRAMES
-            || samples.iter().flatten().any(|sample| !sample.is_finite())
-        {
-            return Err(WaveformError::InvalidSamples);
-        }
-        let count = u64::from(frame_count);
-        let end = self
-            .examined
-            .checked_add(count)
-            .ok_or(WaveformError::Overflow)?;
-        let total = u64::try_from(self.data.descriptor().total_samples.0)
-            .map_err(|_| WaveformError::InvalidGeometry)?;
-        if u64::try_from(start.0).ok() != Some(self.examined) || end > total {
-            return Err(WaveformError::InvalidSequence);
-        }
-        for &sample in samples {
-            let next = StereoExtrema::sample(sample);
-            self.pending = Some(self.pending.map_or(next, |prior| prior.merge(next)));
-            self.pending_samples += 1;
-            self.examined += 1;
-            if self.pending_samples == self.data.descriptor().leaf_stride || self.examined == total
-            {
-                self.complete_leaf(self.examined == total)?;
-            }
-        }
-        Ok(())
+        let start = u64::try_from(start.0).map_err(|_| WaveformError::InvalidSequence)?;
+        self.peaks.push(start, samples)
     }
-
-    fn complete_leaf(&mut self, eof: bool) -> Result<(), WaveformError> {
-        let value = self.pending.take().ok_or(WaveformError::InvalidGeometry)?;
-        self.pending_samples = 0;
-        let leaf = &mut self.data.levels[0];
-        if leaf.measured >= leaf.capacity {
-            return Err(WaveformError::InvalidGeometry);
-        }
-        self.data.peaks[leaf.offset + leaf.measured] = value;
-        leaf.measured += 1;
-        self.data.measured_end =
-            SignalSample(i64::try_from(self.examined).map_err(|_| WaveformError::Overflow)?);
-        for index in 1..self.data.level_count {
-            let child = self.data.levels[index - 1];
-            if !child.measured.is_multiple_of(2) && !eof {
-                break;
-            }
-            let parent = &mut self.data.levels[index];
-            let start = parent.measured * 2;
-            if start >= child.measured {
-                break;
-            }
-            let mut value = self.data.peaks[child.offset + start];
-            if start + 1 < child.measured {
-                value = value.merge(self.data.peaks[child.offset + start + 1]);
-            }
-            self.data.peaks[parent.offset + parent.measured] = value;
-            parent.measured += 1;
-        }
-        Ok(())
-    }
-
     pub(crate) fn snapshot(
         &self,
         memory: &WaveformMemory,
     ) -> Result<Arc<DefinitionWaveform>, WaveformError> {
-        let mut copy = DefinitionWaveform::allocate(Arc::clone(&self.data.descriptor), memory)?;
-        copy.measured_end = self.data.measured_end;
-        for index in 0..self.data.level_count {
-            let level = self.data.levels[index];
-            copy.levels[index].measured = level.measured;
-            let range = level.offset..level.offset + level.measured;
-            copy.peaks[range.clone()].copy_from_slice(&self.data.peaks[range]);
-        }
-        Ok(Arc::new(copy))
+        Ok(Arc::new(DefinitionWaveform {
+            descriptor: self.descriptor.clone(),
+            peaks: self.peaks.snapshot(memory)?,
+        }))
     }
-
     pub(crate) fn finish(self, completion: WaveformCompletion) -> WaveformMeasurement {
+        let examined_samples = self.peaks.examined_samples();
         WaveformMeasurement {
-            waveform: Arc::new(self.data),
+            waveform: Arc::new(DefinitionWaveform {
+                descriptor: self.descriptor,
+                peaks: self.peaks.finish(),
+            }),
             completion,
-            examined_samples: self.examined,
+            examined_samples,
         }
     }
 }

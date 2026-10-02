@@ -1,4 +1,5 @@
 use std::cell::Cell;
+use std::collections::VecDeque;
 use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -44,6 +45,7 @@ mod slip;
 mod sound_events;
 mod splice;
 mod style;
+mod trim;
 
 const SEARCH_ID: &str = "source-search";
 const COMMAND_ID: &str = "command-input";
@@ -115,6 +117,8 @@ pub struct DeadpanApp {
     dialog_intent: Option<DialogIntent>,
     render_state: egui_wgpu::RenderState,
     renderer: PictureRenderer,
+    // Logical drafts borrow this owner; closing one never drops in-flight work.
+    junction_pictures: splice::JunctionDisplay,
     target: Option<RegisteredTarget>,
     workspace: Option<Arc<Workspace>>,
     import: Option<ImportStatus>,
@@ -134,6 +138,11 @@ pub struct DeadpanApp {
     slip: Option<slip::Draft>,
     slip_abandon: Option<crate::project::slip::ProposalId>,
     slip_picture_pending: bool,
+    trim: Option<trim::Draft>,
+    trim_command_target: Option<Result<trim::Capture, String>>,
+    trim_prefix_target: Option<Result<trim::Capture, String>>,
+    trim_abandon: VecDeque<crate::project::trim::ProposalId>,
+    trim_picture_pending: bool,
     splice: Option<splice::Draft>,
     splice_abandon: Option<crate::project::splice::ProposalId>,
     sound_cursor: u64,
@@ -211,6 +220,7 @@ impl DeadpanApp {
             .map_err(std::io::Error::other)?
         };
         let renderer = PictureRenderer::new(&render_state.device, &render_state.queue);
+        let junction_pictures = splice::JunctionDisplay::new(render_state.clone());
         let mut app = Self {
             #[cfg(feature = "ui-harness")]
             feedback: harness::Feedback::default(),
@@ -234,6 +244,7 @@ impl DeadpanApp {
             dialog_intent: None,
             render_state,
             renderer,
+            junction_pictures,
             target: None,
             workspace: None,
             import: None,
@@ -253,6 +264,11 @@ impl DeadpanApp {
             slip: None,
             slip_abandon: None,
             slip_picture_pending: false,
+            trim: None,
+            trim_command_target: None,
+            trim_prefix_target: None,
+            trim_abandon: VecDeque::new(),
+            trim_picture_pending: false,
             splice: None,
             splice_abandon: None,
             sound_cursor: 0,
@@ -434,6 +450,11 @@ impl DeadpanApp {
         transport: Option<deadpan_output::Generation>,
         picture: Option<u64>,
     ) {
+        // Trim's exact boundary pair stays fixed throughout audition, pause,
+        // and stop. Its endpoint worker owns both inspection pictures.
+        if self.trim.is_some() {
+            return;
+        }
         self.error = None;
         if clear {
             self.reset_picture();
@@ -550,6 +571,7 @@ impl DeadpanApp {
             {
                 update.committed = Some(receipt.committed.clone());
             }
+            self.finish_trim_update(&mut update);
             self.finish_slip_update(&mut update);
             self.finish_gain_commit(&update);
             self.receive_room_tone(update.room_tone, update.room_tone_error);
@@ -594,10 +616,13 @@ impl DeadpanApp {
             self.workspace = update.workspace;
             self.receive_splice(update.splice, update.splice_commit);
             self.receive_slip(update.slip);
+            self.receive_trim(update.trim);
             self.import = update.import;
             if old_session != new_session {
                 self.render_session_changed();
                 self.marks = marks::State::default();
+                self.trim_prefix_target = None;
+                self.trim_command_target = None;
             }
             let incoming_identity = update
                 .render
@@ -776,7 +801,10 @@ impl DeadpanApp {
                 self.reconcile_beat_selection();
             }
             if old_revision != new_revision || old_session != new_session || completed {
-                if self.slip.is_some() || self.slip_picture_pending {
+                if self.trim.is_some() || self.trim_picture_pending {
+                    // Restore the ordinary stopped picture only after Trim closes.
+                    self.trim_picture_pending = true;
+                } else if self.slip.is_some() || self.slip_picture_pending {
                     // Slip's final layout pass owns its next stopped picture.
                     self.slip_picture_pending = true;
                 } else {
@@ -799,17 +827,18 @@ impl DeadpanApp {
             // A service publication can replace the captured head before a
             // stopped decode is polled below. Revoke that proposal now, not
             // after receive returns or when final layout requests its successor.
+            self.reconcile_trim(context);
             self.reconcile_slip(context);
         }
         #[cfg(feature = "ui-harness")]
         let reply = self.feedback.take_reply(&self.worker);
         #[cfg(not(feature = "ui-harness"))]
         let reply = self.worker.take_reply();
-        let retain_slip_display = self.slip.is_some();
+        let retain_draft_display = self.slip.is_some() || self.trim.is_some();
         let result = reply.and_then(|reply| {
             #[cfg(feature = "ui-harness")]
             let (ticket, timing) = (reply.ticket, reply.timing);
-            let result = if retain_slip_display {
+            let result = if retain_draft_display {
                 self.presentation.receive_retaining_display(reply)
             } else {
                 self.presentation.receive(reply)
@@ -827,7 +856,7 @@ impl DeadpanApp {
                     }
                 }
                 Err(_) => {
-                    if !retain_slip_display {
+                    if !retain_draft_display {
                         self.forget_target();
                     }
                 }
@@ -1166,6 +1195,9 @@ impl DeadpanApp {
         self.delete_command_target = Some(self.capture_delete_target());
         self.gain_command_target = Some(self.capture_gain_target());
         self.slip_command_target = Some(self.capture_slip_target());
+        // Capture success or absence before pausing delivery or changing focus.
+        self.trim_command_target = Some(self.capture_trim_target());
+        self.trim_prefix_target = None;
         self.hold_command_target = Some(self.capture_hold_command());
         self.sound_command_target = self.capture_sound_command(&command);
         self.cancel_repeats("command entry was opened");
@@ -1312,6 +1344,10 @@ impl DeadpanApp {
     }
 
     fn action(&mut self, action: Action, context: &egui::Context) {
+        if self.trim.is_some() {
+            self.error = Some("Finish or cancel Trim before other editor commands.".into());
+            return;
+        }
         if self.slip.is_some() {
             self.error = Some("Finish or cancel Slip preview before other editor commands.".into());
             return;
@@ -1343,6 +1379,11 @@ impl DeadpanApp {
             || (matches!(action, Action::OfferInsert) && self.view == View::Sequence);
         if !repeat_input {
             self.cancel_repeats("another action was requested");
+        }
+        if action == Action::Trim {
+            let target = self.trim_prefix_target.take();
+            self.open_trim(target, navigation::trim::TrimInput::default(), context);
+            return;
         }
         if self.pane == Pane::Sounds || self.event_focused() {
             match action {
@@ -1394,6 +1435,9 @@ impl DeadpanApp {
         }
         match action {
             Action::Render => unreachable!("Render handles previews before ordinary actions"),
+            Action::Trim => {
+                unreachable!("Trim handles its captured target before ordinary actions")
+            }
             Action::SetMark(_) | Action::JumpMark(_) | Action::DeleteMark(_) => {
                 let captured = self.marks.prefix.take();
                 self.mark_action(action, captured);
@@ -1618,6 +1662,13 @@ impl DeadpanApp {
     }
 
     fn keyboard(&mut self, context: &egui::Context) -> Option<(TextAction, bool)> {
+        if !self.bindings.reuse_pending() {
+            self.trim_prefix_target = None;
+        }
+        if self.trim.is_some() {
+            self.trim_keyboard(context);
+            return None;
+        }
         if self.marks_keyboard(context) {
             return None;
         }
@@ -1795,21 +1846,36 @@ impl DeadpanApp {
                     continue;
                 }
                 let before = self.bindings.pending();
+                let reuse_pending = self.bindings.reuse_pending();
                 let mark_prefix = self.bindings.mark_prefix();
                 // Command mode remains text-only until the end-of-frame blur
                 // handling closes it, even if a click has already moved focus.
                 let selection = self.routed_edit_selection();
-                if let Some(action) = self.bindings.key_with_selection(
+                let action = self.bindings.key_with_selection(
                     key,
                     modifiers,
                     text_input_active(context, self.command_open),
                     ime,
                     selection,
-                ) {
+                );
+                if !reuse_pending && self.bindings.reuse_pending() {
+                    // The comma owns this immutable target, including absence.
+                    // A completion before v cannot supply a replacement target.
+                    self.trim_prefix_target = Some(self.capture_trim_target());
+                }
+                if let Some(action) = action {
                     self.action(action, context);
                     context.input_mut(|i| {
                         i.consume_key(modifiers, key);
                     });
+                    if self.trim.is_some() {
+                        // Route only the suffix after ,v through the new mode.
+                        // Earlier keys must not be replayed as Trim adjustments.
+                        context.input_mut(|input| input.events = events.as_slice().to_vec());
+                        context.memory_mut(|memory| memory.request_focus(pane_id(self.pane)));
+                        self.trim_keyboard(context);
+                        return text_result;
+                    }
                     if action == Action::Render {
                         break;
                     }
@@ -1817,6 +1883,9 @@ impl DeadpanApp {
                     context.input_mut(|i| {
                         i.consume_key(modifiers, key);
                     });
+                }
+                if !self.bindings.reuse_pending() {
+                    self.trim_prefix_target = None;
                 }
                 if mark_prefix.is_none() && self.bindings.mark_prefix().is_some() {
                     self.begin_mark_prefix();
@@ -1834,6 +1903,8 @@ impl DeadpanApp {
         let sound_target = self.sound_command_target.take();
         let gain_target = self.gain_command_target.take();
         let slip_target = self.slip_command_target.take();
+        let trim_target = self.trim_command_target.take();
+        self.trim_prefix_target = None;
         let placement_target = self.placement_command_target.take();
         let delete_target = self.delete_command_target.take();
         let mark_target = self.marks.command.take();
@@ -1904,6 +1975,9 @@ impl DeadpanApp {
             Ok(navigation::command::Entry::GainMute) => self.gain_mute(gain_target),
             Ok(navigation::command::Entry::Slip(amount)) => {
                 self.open_slip(slip_target, amount, context)
+            }
+            Ok(navigation::command::Entry::Trim(preset)) => {
+                self.open_trim(trim_target, preset, context)
             }
             Ok(navigation::command::Entry::RoomTone) => self.open_room_tone(hold_target, context),
             Ok(navigation::command::Entry::HoldSilence) => self.silence_hold(hold_target),
@@ -2117,7 +2191,10 @@ impl DeadpanApp {
                             if self.service.is_busy() || self.repeat_queue.active() {
                                 ui.spinner();
                                 ui.weak("Working");
-                            } else if self.camera.is_some() || self.slip.is_some() {
+                            } else if self.camera.is_some()
+                                || self.slip.is_some()
+                                || self.trim.is_some()
+                            {
                                 ui.colored_label(style::LAVENDER, "Draft preview");
                             } else if self.workspace.is_some() {
                                 ui.colored_label(style::SAVED, "Saved")
@@ -2236,6 +2313,7 @@ impl DeadpanApp {
                         style::key_hint(ui, "+ / −", "gain 3 dB");
                         style::key_hint(ui, ",h", "pause");
                         style::key_hint(ui, ",f", "camera");
+                        style::key_hint(ui, ",v", "Trim beat");
                         style::key_hint(ui, "rr", "repeat");
                         match self.edit_selection() {
                             navigation::EditSelection::Range => style::key_hint(ui, "d", "cut range"),
@@ -3116,11 +3194,15 @@ impl DeadpanApp {
                         (":hold-duration 11f", "Set a selected Hold to exactly 11 project frames."),
                         ("v / :select · y / :yank", "Start or finish a half-open time selection in Original or Your edit. h/l, counted motions and gg/G extend it; Edit j/k also extends to beat boundaries. A finished range stays fixed. y copies either range; without an Edit selection it copies the whole selected beat, including an empty group. Edit copies retain their captured revision through later edits and Undo. In Your edit, d cuts a selected range and p/P replaces it. Empty groups paste at explicit Sequence slots without adding time. Esc clears selection. Source and Edit ranges stay independent. Changing the Edit revision or group discards its selection."),
                         ("p / P · :paste / :paste-before", "In Your edit, a selected nonempty Edit range is replaced by the copied Original or Edit slice in one undoable transaction. Without an Edit range, p/P pastes after/before the selected beat in the displayed group. An empty group accepts a paste at its start. Command entry captures the exact range, including its absence; stale destinations fail."),
+                        (",v / :trim", "Open Trim for the selected Source beat or neutral Source fragment in an ordinary Sequence in Your edit. Clear any active or retained Visual range first. Original, catalog Sounds and Placed sounds cannot open Trim. Use ,v without a count; holding it does not reopen Trim. Bare :trim starts with four zero values and Ripple policy."),
+                        (":trim edge=out delta=-3f mode=ripple", "Set the initial In, Out, Slip or Roll amount. Supply edge=in|out|slip|roll, delta=<whole frames>f and mode=ripple|overwrite exactly once each, in any order. Other amounts start at zero. Examples: -3f, +5f, 7f. Missing, duplicate or unknown arguments are rejected."),
+                        ("Trim · Tab / h l / r / i o", "On the heading or background, Tab / Shift-Tab cycles In, Out, Slip and Roll while preserving all four values. h/l changes the active value by one project frame; Shift gives ten. Only h/l repeats while held. r toggles Ripple/Overwrite for the complete draft or reports why it cannot. i/o selects In/Out; within Slip it chooses the inspected edge without leaving Slip."),
+                        ("Trim · e / b / Space / Enter / Esc", "e focuses the native amount field. Enter there accepts the text; it never applies the edit on the same key. Native fields and buttons keep Tab and activation, and IME keeps Enter/Escape. b compares Before/Proposed. Space auditions, pauses or resumes; Shift-Space restarts a context loop. The outgoing/incoming pair stays fixed during audio. Enter applies one nonzero edit after all input is acknowledged and the current Proposed pair displays. Escape restores entry context before saving starts. Command, Control and Option chords stay reserved."),
                         (":slip +5f", "Preview linked media movement inside the selected Source beat while keeping its duration, Edit cursor and Original cursor. Clear Visual selection first. h/l adjusts project frames; Shift gives ten. i/o inspects first/last delivered pictures; arrows inspect inside the beat. b compares Before/Proposed. Enter applies once after the current Proposed picture displays; Escape cancels. Stopped pictures only."),
                         (":splice", "Preview a copied Original or Edit slice at the Edit cursor. Insert is the default. m toggles Move for a fresh Edit copy: one undoable edit relocates the linked slice and selects its full result. A copy from an older revision can still be inserted; yank again to move. With a captured Edit range, r toggles Replace selection and always uses Copy. Returning to Insert or Move restores the retained insertion destination. i/o refines source endpoints without changing the register; d selects destination and j/k chooses seams. In Move, s inspects removal and f insertion; h/l inspects nearby frames. b compares Before/Proposed at that join, Space auditions, and Shift+Space loops its local context. Enter commits once; Escape restores entry selection and cursors. Source/Hold/fragment endpoints and whole intervening beats work in ordinary Sequence scopes. Enter a group before opening placement to target it."),
                         (",i / :insert", "Reuse the full Original after the selected beat in the current group, or append to an empty group. Legacy projects insert their selected source."),
                         ("u / Ctrl R", "Undo / redo. Native ⌘Z / ⌘Shift Z also work."),
-                        ("⌘E / :render", "Render the saved full edit with automatic SDR output settings. For an unsaved Camera, Gain or Room tone preview, choose Commit preview and render, Discard preview and render, or Keep editing."),
+                        ("⌘E / :render", "Render the saved full edit with automatic SDR output settings. Finish or cancel Trim or Slip first. For an unsaved Camera, Gain or Room tone preview, choose Commit preview and render, Discard preview and render, or Keep editing."),
                         (":renders", "Browse saved renders and destinations. Save a retained movie again, render its saved edit again, or check its previous destination. Tab moves between controls; Escape returns to editing."),
                     ] { help_binding(ui, key, description); }
                     ui.separator();
@@ -3156,8 +3238,16 @@ impl eframe::App for DeadpanApp {
             self.reconcile_gain(&context);
             self.reconcile_splice(&context);
             self.reconcile_slip(&context);
+            self.reconcile_trim(&context);
             self.reconcile_render(&context);
             self.receive_gain_waveform();
+            self.receive_trim_media();
+            if self.close_pending {
+                self.junction_pictures.clear();
+            }
+            // This consumes no replies and starts no allocation/submission.
+            // Drain hidden drafts too, once per outer frame, never a retry.
+            self.junction_pictures.drain(&mut self.renderer, &context);
         }
         self.reconcile_sound_playback();
         if first_pass {
@@ -3166,6 +3256,7 @@ impl eframe::App for DeadpanApp {
         }
         self.ensure_visible_pane(&context);
         if self.close_pending {
+            self.invalidate_trim_media(true);
             self.stop_playback();
             self.cancel_gain_waveform();
             self.service.shutdown();
@@ -3238,9 +3329,10 @@ impl eframe::App for DeadpanApp {
             ui.disable();
             ui.set_opacity(1.0);
         }
-        ui.add_enabled_ui(self.splice.is_none() && self.slip.is_none(), |ui| {
-            self.header(ui)
-        });
+        ui.add_enabled_ui(
+            self.splice.is_none() && self.slip.is_none() && self.trim.is_none(),
+            |ui| self.header(ui),
+        );
         // A pointer activation can change views while the panes are painted.
         // Use one placement decision for Sounds throughout this pass.
         let compact_empty_sounds = self.compact_empty_sounds(&context);
@@ -3250,8 +3342,11 @@ impl eframe::App for DeadpanApp {
             self.gain.is_some(),
             self.splice.is_some(),
             self.slip.is_some(),
+            self.trim.is_some(),
         );
-        if self.slip.is_some() {
+        if self.trim.is_some() {
+            self.trim_workspace(ui);
+        } else if self.slip.is_some() {
             self.slip_workspace(ui);
         } else if self.splice.is_some() {
             self.splice_workspace(ui);
@@ -3274,12 +3369,14 @@ impl eframe::App for DeadpanApp {
             self.finish_camera_entry(&context);
         }
         self.reconcile_sound_playback();
-        self.help(&context);
-        if !self.render.blocking() {
-            self.room_tone_sheet(&context);
+        if self.trim.is_none() {
+            self.help(&context);
+            if !self.render.blocking() {
+                self.room_tone_sheet(&context);
+            }
+            self.render_windows(&context);
+            self.marks_window(&context);
         }
-        self.render_windows(&context);
-        self.marks_window(&context);
         if input_scope
             != (
                 self.pane,
@@ -3306,6 +3403,12 @@ impl eframe::App for DeadpanApp {
         if !self.command_focus_pending && close_command_on_blur(&context, &mut self.command_open) {
             self.bindings.clear();
         }
+        if !self.bindings.reuse_pending() {
+            self.trim_prefix_target = None;
+        }
+        if !self.command_open {
+            self.trim_command_target = None;
+        }
         if footer_mode
             != (
                 self.command_open,
@@ -3313,6 +3416,7 @@ impl eframe::App for DeadpanApp {
                 self.gain.is_some(),
                 self.splice.is_some(),
                 self.slip.is_some(),
+                self.trim.is_some(),
             )
         {
             context.request_discard("workspace footer mode changed after input");
@@ -3321,15 +3425,20 @@ impl eframe::App for DeadpanApp {
             context.request_discard("empty Sounds heading changed placement");
         }
         if !context.will_discard() {
-            if self.render.requested {
-                self.begin_render(&context);
+            if self.trim.is_none() {
+                if self.render.requested {
+                    self.begin_render(&context);
+                }
+                self.dispatch_render_history(&context);
             }
-            self.dispatch_render_history(&context);
             self.schedule_playback_picture();
             self.dispatch_waiting_repeat(&context);
             self.dispatch_gain_proposal(&context);
             self.dispatch_splice(&context);
             self.dispatch_slip(&context);
+            if !self.close_pending {
+                self.dispatch_trim(&context);
+            }
         }
         if first_pass && let Some(frames) = self.smoke_frames.as_mut() {
             *frames += 1;
@@ -3345,14 +3454,23 @@ impl eframe::App for DeadpanApp {
                 || self.gain.is_some()
                 || self.room_tone.is_some()
                 || self.splice.is_some()
-                || self.slip.is_some(),
+                || self.slip.is_some()
+                || self.trim.is_some(),
         );
     }
     fn on_exit(&mut self) {
+        self.invalidate_trim_media(true);
+        self.trim = None;
+        self.trim_command_target = None;
+        self.trim_prefix_target = None;
+        self.trim_abandon.clear();
         self.playback.shutdown();
         self.service.shutdown();
         self.worker.shutdown();
         self.endpoint_worker.shutdown();
+        // No GPU wait on the UI. Submitted targets keep their queue callback
+        // owner if shutdown ends the display before its final frame can drain.
+        self.junction_pictures.clear();
         self.splice = None;
         self.slip = None;
         self.forget_target();
@@ -3361,10 +3479,16 @@ impl eframe::App for DeadpanApp {
 }
 impl Drop for DeadpanApp {
     fn drop(&mut self) {
+        self.invalidate_trim_media(true);
+        self.trim = None;
+        self.trim_command_target = None;
+        self.trim_prefix_target = None;
+        self.trim_abandon.clear();
         self.playback.shutdown();
         self.service.shutdown();
         self.worker.shutdown();
         self.endpoint_worker.shutdown();
+        self.junction_pictures.clear();
         self.splice = None;
         self.slip = None;
         self.forget_target();

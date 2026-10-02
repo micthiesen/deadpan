@@ -545,3 +545,6 @@ fn proposed_snapshots_and_foreign_owners_fail_without_opening_output() {
     assert!(failure.error.is_some());
     assert!(devices.lock().unwrap().is_empty());
 }
+
+#[path = "waveform/edit.rs"]
+mod edit;

@@ -40,6 +40,7 @@ mod render_history;
 mod room_tone;
 mod slip;
 mod splice;
+mod trim;
 
 struct Pending {
     id: u64,
@@ -74,6 +75,12 @@ struct Service {
     slip_draft: Option<slip::Draft>,
     slip_seen: Option<super::slip::ProposalId>,
     slip_session: Option<(u64, ProjectId)>,
+    trim: Option<super::trim::ProposalUpdate>,
+    trim_commit: Option<super::trim::CommitUpdate>,
+    saved_trim: Option<super::trim::CommitReceipt>,
+    trim_draft: Option<trim::Draft>,
+    trim_seen: Option<super::trim::ProposalId>,
+    trim_session: Option<(u64, ProjectId)>,
     captured_slice: Option<super::slice::CaptureUpdate>,
     cut_slice: Option<super::slice::CutUpdate>,
     last_cut: Option<(super::slice::CaptureRequest, super::slice::CutReceipt)>,
@@ -129,6 +136,12 @@ pub(super) fn run(
         slip_draft: None,
         slip_seen: None,
         slip_session: None,
+        trim: None,
+        trim_commit: None,
+        saved_trim: None,
+        trim_draft: None,
+        trim_seen: None,
+        trim_session: None,
         captured_slice: None,
         cut_slice: None,
         last_cut: None,
@@ -164,6 +177,7 @@ pub(super) fn run(
         let changed = shutdown_changed | service.pump_render() | service.finish_session_change();
         if changed {
             service.reconcile_slip();
+            service.reconcile_trim();
             service.publish();
         }
         service.pump_host();
@@ -188,6 +202,7 @@ pub(super) fn run(
                 }
                 service.invalidate_changed_splice();
                 service.reconcile_slip();
+                service.reconcile_trim();
                 service.publish();
             }
             Err(RecvTimeoutError::Disconnected) => {
@@ -204,6 +219,7 @@ pub(super) fn run(
                 service.result(reply);
                 service.invalidate_changed_splice();
                 service.reconcile_slip();
+                service.reconcile_trim();
                 service.publish();
             }
             Err(TryRecvError::Disconnected)
@@ -271,6 +287,9 @@ impl Service {
             slip: self.slip.clone(),
             slip_commit: self.slip_commit.clone(),
             saved_slip: self.saved_slip.clone(),
+            trim: self.trim.clone(),
+            trim_commit: self.trim_commit.clone(),
+            saved_trim: self.saved_trim.clone(),
             captured_slice: self.captured_slice.clone(),
             cut_slice: self.cut_slice.clone(),
             saved_cut: self.last_cut.as_ref().map(|(_, receipt)| receipt.clone()),
@@ -298,6 +317,18 @@ impl Service {
             }
             ProjectRequest::CutEditSlice(request) => {
                 self.cut_edit_slice_command(request);
+                return Ok(());
+            }
+            ProjectRequest::PrepareTrim(proposal) => {
+                self.prepare_trim_command(proposal);
+                return Ok(());
+            }
+            ProjectRequest::CommitTrim(id) => {
+                self.commit_trim_command(id);
+                return Ok(());
+            }
+            ProjectRequest::AbandonTrim(id) => {
+                self.abandon_trim(&id);
                 return Ok(());
             }
             ProjectRequest::PrepareSlip(proposal) => {
@@ -410,6 +441,9 @@ impl Service {
             ProjectRequest::PrepareSplice(_)
             | ProjectRequest::CommitSplice(_)
             | ProjectRequest::AbandonSplice(_) => unreachable!("splice uses independent feedback"),
+            ProjectRequest::PrepareTrim(_)
+            | ProjectRequest::CommitTrim(_)
+            | ProjectRequest::AbandonTrim(_) => unreachable!("Trim uses independent feedback"),
             ProjectRequest::PrepareSlip(_)
             | ProjectRequest::CommitSlip(_)
             | ProjectRequest::AbandonSlip(_) => unreachable!("Slip uses independent feedback"),
@@ -1068,12 +1102,14 @@ impl Service {
         )?));
         self.invalidate_changed_splice();
         self.reconcile_slip();
+        self.reconcile_trim();
         Ok(())
     }
 
     fn cancel(&mut self) {
         self.invalidate_splice("Slice proposal was cancelled");
         self.invalidate_slip("Slip proposal was cancelled.");
+        self.invalidate_trim("Trim proposal was cancelled.");
         self.cancel_host_preparation();
         if let Some(active) = &self.active {
             active.cancelled.store(true, Ordering::Release);
