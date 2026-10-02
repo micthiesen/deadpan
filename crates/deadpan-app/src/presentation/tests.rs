@@ -583,6 +583,7 @@ fn copied_request(frame: i64, serial: u64, start: i64) -> RequestedPicture {
                     project: ProjectId::new("copied-presentation").unwrap(),
                     source_revision: RevisionId::new("historical-source").unwrap(),
                     request: 10,
+                    persisted_version: None,
                 },
                 parent: deadpan_core::NodeId::new("historical-owner").unwrap(),
                 range: deadpan_core::FrameRange::new(ProjectFrame(start), ProjectFrame(start + 3))

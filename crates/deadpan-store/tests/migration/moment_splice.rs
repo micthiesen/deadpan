@@ -147,6 +147,7 @@ fn schema26_rejects_new_source_splice_without_promoting_valid_modern_history() -
         [],
     )?;
     remove_empty_render_tables(&database)?;
+    development_break::remove_empty_register_tables(&database)?;
     database.pragma_update(None, "user_version", 32)?;
     for (_, wire) in docs(&database)? {
         legacy_v26::Document::from_json(&wire)?;

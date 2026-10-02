@@ -18,6 +18,7 @@ mod headless;
 mod marks;
 mod moment;
 mod pause;
+mod registers;
 mod render;
 mod render_history;
 mod retime;

@@ -658,6 +658,26 @@ fn close_retains_the_render_writer_until_checked_result_admission() {
     let path = scratch.path().join("render-close.deadpan");
     let harness = Harness::new();
     let initial = opened(&harness, &path);
+    let saved = command(
+        &harness.service,
+        ProjectRequest::CaptureEditSlice(crate::project::slice::CaptureRequest {
+            id: crate::project::slice::CopyId {
+                session: initial.session,
+                project: initial.document.project_id().clone(),
+                source_revision: initial.document.revision_id().clone(),
+                request: 1,
+                persisted_version: None,
+            },
+            register: Some('a'),
+            scope: SequenceScope::default(),
+            parent: initial.document.root().clone(),
+            selection: deadpan_core::SliceCaptureSelection::Range {
+                range: FrameRange::new(ProjectFrame(0), ProjectFrame(5)).unwrap(),
+            },
+        }),
+    );
+    assert!(saved.captured_slice.unwrap().result.is_ok());
+    let bank = saved.registers.unwrap();
     pause(&harness, true);
     request(
         &harness.service,
@@ -677,17 +697,23 @@ fn close_retains_the_render_writer_until_checked_result_admission() {
     });
     assert!(harness.service.is_busy());
     assert_eq!(closing.workspace.as_ref().unwrap().session, initial.session);
+    assert!(Arc::ptr_eq(closing.registers.as_ref().unwrap(), &bank));
     assert!(ProjectStore::open(&path, AccessMode::ReadWrite).is_err());
     pause(&harness, false);
     let closed = wait(&harness.service, |update| {
         update.workspace.is_none() && !harness.service.is_busy()
     });
+    assert!(closed.registers.is_none());
+    assert!(closed.captured_slice.is_none());
+    assert!(closed.captured_original.is_none());
+    assert_eq!(closed.marks, crate::project::marks::Update::default());
     assert_eq!(
         closed.render.unwrap().workflow.unwrap().status.outcome,
         Some(WorkflowOutcome::Cancelled)
     );
     let writer = ProjectStore::open(&path, AccessMode::ReadWrite).unwrap();
     assert_eq!(writer.snapshot().unwrap(), *initial.document);
+    assert_eq!(writer.registers().unwrap().entries.len(), 2);
 }
 
 #[test]

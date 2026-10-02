@@ -80,6 +80,7 @@ fn copied(
             project: slice.project_id().clone(),
             source_revision: slice.revision_id().clone(),
             request: 1,
+            persisted_version: None,
         },
         parent: slice.parent().clone(),
         range: slice.range(),

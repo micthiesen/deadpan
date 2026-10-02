@@ -1,4 +1,4 @@
-//! Session registers through production input and genuine capture service replies.
+//! Durable registers through production input and genuine capture service replies.
 //! Only delivery order is controlled; authored edits and captures remain real.
 
 use super::*;
@@ -30,8 +30,10 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     historical_edit(d, &baseline)?;
     historical_cut(d, &baseline)?;
     delayed_destination(d)?;
+    delayed_pending_command(d)?;
     delayed_empty_command(d)?;
     superseded_capture(d)?;
+    pending_original_placement(d)?;
     native_text_and_blur(d)?;
     command_blur(d)?;
     d.check(
@@ -59,6 +61,10 @@ fn original(
         d.command(&format!("register {name}"))?;
     }
     d.key(Key::Y)?;
+    d.wait_for(
+        "Named Original copy is saved by the project service",
+        |app| !app.service.is_busy() && !app.copied.is_pending(),
+    )?;
     d.check(
         "A named Original yank consumes its one-shot name and changes no revision",
         original_range(d, name) == Some(start..end)
@@ -366,7 +372,7 @@ fn delayed_destination(d: &mut Driver<'_>) -> Result<(), String> {
     d.key(Key::Escape)
 }
 
-fn delayed_empty_command(d: &mut Driver<'_>) -> Result<(), String> {
+fn delayed_pending_command(d: &mut Driver<'_>) -> Result<(), String> {
     select(d, 55, 61)?;
     choose(d, 'e', false)?;
     d.app_mut().feedback.hold_project_updates = true;
@@ -376,7 +382,7 @@ fn delayed_empty_command(d: &mut Driver<'_>) -> Result<(), String> {
     let revision = d.revision();
     d.key(Key::Colon)?;
     d.check(
-        "Command entry captures the absence of an empty named source before delayed copy delivery",
+        "Command entry captures the pending-copy refusal before delayed delivery",
         d.app().command_open && content(d, 'e').is_none() && d.app().copied.is_pending(),
         json!({"command_open":true,"e":"empty","capture_pending":true}),
         inventory(d),
@@ -392,7 +398,7 @@ fn delayed_empty_command(d: &mut Driver<'_>) -> Result<(), String> {
         ],
     )?;
     d.check(
-        "A captured empty register cannot acquire a late copy when :splice is submitted",
+        "A command opened while copying cannot acquire a placement target from its later success",
         d.app().splice.is_none()
             && d.revision() == revision
             && d.app().copied.selected().is_none()
@@ -400,11 +406,82 @@ fn delayed_empty_command(d: &mut Driver<'_>) -> Result<(), String> {
             && d.app()
                 .error
                 .as_deref()
-                .is_some_and(|error| error.contains("Register e is empty")),
-        json!({"splice":false,"revision":revision,"e_filled_but_entry_stays_empty":true}),
+                .is_some_and(|error| error.contains("Wait for the copy to finish saving")),
+        json!({"splice":false,"revision":revision,"e_filled_but_entry_stays_unavailable":true}),
         d.snapshot(),
     )?;
-    d.capture("Captured empty register refuses a late-arriving copy")?;
+    d.capture("Command opened during copying retains its waiting refusal")?;
+    d.key(Key::Escape)
+}
+
+fn delayed_empty_command(d: &mut Driver<'_>) -> Result<(), String> {
+    select(d, 75, 81)?;
+    choose(d, 'k', false)?;
+    let baseline = document(d)?.clone();
+    let workspace = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("Missing empty register workspace")?
+        .clone();
+    let request = crate::project::slice::CaptureRequest {
+        id: crate::project::slice::CopyId {
+            session: workspace.session,
+            project: workspace.document.project_id().clone(),
+            source_revision: workspace.document.revision_id().clone(),
+            request: d
+                .app_mut()
+                .next_serial()
+                .ok_or("No independent copy request identity")?,
+            persisted_version: None,
+        },
+        register: Some('k'),
+        scope: d.app().sequence_scope.clone(),
+        parent: d.app().sequence_scope.resolve(&workspace)?.owner.clone(),
+        selection: deadpan_core::SliceCaptureSelection::Range {
+            range: deadpan_core::FrameRange::new(ProjectFrame(75), ProjectFrame(81))
+                .map_err(|error| error.to_string())?,
+        },
+    };
+    let history = (workspace.can_undo, workspace.can_redo);
+    d.key(Key::Colon)?;
+    d.check(
+        "Command entry captures an empty named register before any write is submitted",
+        d.app().command_open && content(d, 'k').is_none() && !d.app().copied.is_pending(),
+        json!({"command_open":true,"k":"empty","pending":false}),
+        inventory(d),
+    )?;
+    // This independent request uses the real typed service and current revision.
+    // Only its delivery order is controlled; no bank or receipt is fabricated.
+    d.app_mut().feedback.hold_project_updates = true;
+    d.app()
+        .service
+        .submit(ProjectRequest::CaptureEditSlice(request))?;
+    let update = capture_update(d, 75, 81)?;
+    release(d, update)?;
+    let copied = edited(d, 'k')?;
+    d.events(
+        "Submit :splice after the independent durable k write arrives",
+        vec![
+            Event::Text("splice".into()),
+            key_event(Key::Enter, Modifiers::NONE, true),
+            key_event(Key::Enter, Modifiers::NONE, false),
+        ],
+    )?;
+    let current = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("Lost independent copy workspace")?;
+    d.check("An empty command-entry register cannot acquire a later independently saved copy",
+        d.app().splice.is_none() && document(d)? == &baseline
+            && (current.can_undo, current.can_redo) == history
+            && d.app().copied.selected().is_none() && same_edited(d, 'k', &copied)
+            && copied.slice().range().start() == ProjectFrame(75)
+            && copied.slice().range().end() == ProjectFrame(81)
+            && d.app().error.as_deref().is_some_and(|error| error.contains("Register k is empty")),
+        json!({"splice":false,"captured_empty":true,"k_saved":[75,81],"document_and_history_unchanged":true}), d.snapshot())?;
+    d.capture("Captured empty register refuses a later independent durable copy")?;
     d.key(Key::Escape)
 }
 
@@ -414,9 +491,22 @@ fn superseded_capture(d: &mut Driver<'_>) -> Result<(), String> {
     d.app_mut().feedback.hold_project_updates = true;
     d.key(Key::Y)?;
     let update = capture_update(d, 65, 70)?;
-    // This Original yank uses normal production input while the older service
-    // result is withheld. There is no fabricated register or capture capability.
-    original(d, 70, 74, 'a', false)?;
+    let historical = update
+        .captured_slice
+        .as_ref()
+        .ok_or("Missing saved h capture")?
+        .result
+        .as_ref()
+        .map_err(Clone::clone)?
+        .clone();
+    // Submit a newer real Original write while delivery of the old bank and its
+    // confirmation remains held. The newer bank must retain the saved h slot.
+    d.command("source")?;
+    select(d, 70, 74)?;
+    choose(d, 'a', false)?;
+    d.key(Key::Y)?;
+    let newer = original_update(d, 70, 74)?;
+    release(d, newer)?;
     let baseline = document(d)?.clone();
     let workspace = d
         .app()
@@ -445,13 +535,9 @@ fn superseded_capture(d: &mut Driver<'_>) -> Result<(), String> {
         .entries()
         .map(|(name, content)| (name, content.source()))
         .collect();
-    // A full genuine service update can carry an unrelated status such as
-    // "Undo saved". Exact local-message retention would test a broader status
-    // policy; reject stale copy confirmation while checking every register and
-    // authored state directly. The first failing replay remains evidence.
     d.check(
-        "A newer production write supersedes an older capture even when it used another register",
-        content(d, 'h').is_none()
+        "A newer durable write retains saved h while an older bank and confirmation cannot regress it",
+        same_edited(d, 'h', &historical)
             && original_range(d, 'a') == Some(70..74)
             && original_range(d, '"') == Some(70..74)
             && !d.app().copied.is_pending()
@@ -463,9 +549,57 @@ fn superseded_capture(d: &mut Driver<'_>) -> Result<(), String> {
             && current == slots
             && d.app().error.is_none()
             && !d.app().message.as_deref().is_some_and(|message| message.starts_with("Edit slice copied.")),
-        json!({"h":"empty","a":[70,74],"default":[70,74],"all_slots_and_selections_preserved":true,"history_and_revision_unchanged":true,"stale_copy_feedback":false}),
+        json!({"h":[65,70],"a":[70,74],"default":[70,74],"all_slots_and_selections_preserved":true,"history_and_revision_unchanged":true,"stale_copy_feedback":false}),
         json!({"registers":inventory(d),"state":d.snapshot()}),
     )
+}
+
+fn pending_original_placement(d: &mut Driver<'_>) -> Result<(), String> {
+    d.command("source")?;
+    select(d, 90, 94)?;
+    choose(d, 'j', false)?;
+    let baseline = document(d)?.clone();
+    let slots = inventory(d);
+    d.app_mut().feedback.hold_project_updates = true;
+    d.key(Key::Y)?;
+    let update = original_update(d, 90, 94)?;
+    d.command("sequence")?;
+    d.key(Key::P)?;
+    d.check(
+        "Paste cannot use the previous bank while a newer Original write awaits delivery",
+        !d.app().service.is_busy()
+            && d.app().copied.is_pending()
+            && document(d)? == &baseline
+            && inventory(d) == slots
+            && d.app()
+                .error
+                .as_deref()
+                .is_some_and(|error| error.contains("Wait for the copy to finish saving")),
+        json!({"service_idle":true,"confirmation_pending":true,"unchanged_document_and_bank":true}),
+        d.snapshot(),
+    )?;
+    release(d, update)?;
+    d.check(
+        "The withheld Original success installs its exact durable name",
+        original_range(d, 'j') == Some(90..94)
+            && !d.app().copied.is_pending()
+            && document(d)? == &baseline,
+        json!([90, 94]),
+        inventory(d),
+    )?;
+    goto(d, 0)?;
+    choose(d, 'j', false)?;
+    let revision = d.revision();
+    d.key_modified(Key::P, Modifiers::SHIFT)?;
+    d.changed(&revision)?;
+    d.check(
+        "After confirmation the named Original can be pasted normally",
+        d.app().sequence_length() == 124 && d.app().sequence_cursor == 0,
+        json!({"frames":124,"join":0}),
+        d.snapshot(),
+    )?;
+    picture(d, 90)?;
+    undo(d, &baseline)
 }
 
 fn native_text_and_blur(d: &mut Driver<'_>) -> Result<(), String> {
@@ -646,6 +780,8 @@ fn command_reopen(d: &mut Driver<'_>) -> Result<(), String> {
     let path = workspace.path.clone();
     let old_session = workspace.session;
     let history = (workspace.can_undo, workspace.can_redo);
+    let stored = bank_contents(d);
+    let old_edited = edited(d, 'c')?;
     d.key(Key::Colon)?;
     d.events(
         "Type named :yank before the project session closes",
@@ -657,7 +793,7 @@ fn command_reopen(d: &mut Driver<'_>) -> Result<(), String> {
         |app| app.workspace.is_none() && !app.service.is_busy(),
     )?;
     d.check(
-        "Closing the project clears every session register without reopening command entry",
+        "Closing the project clears runtime registers while preserving the open command entry",
         d.app().command_open
             && d.app().command == "yank"
             && d.app().copied.entries().next().is_none()
@@ -687,20 +823,93 @@ fn command_reopen(d: &mut Driver<'_>) -> Result<(), String> {
         .workspace
         .as_ref()
         .ok_or("Reopened command lost its workspace")?;
+    let new_session = workspace.session;
     d.check(
-        "A command captured before Close cannot revive its named slot in the reopened project",
+        "Reopen restores every durable slot while the old named command is rejected",
         d.app().error.as_deref().is_some_and(|error| error.contains("Register choice was cancelled"))
             && !d.app().command_open
-            && d.app().copied.entries().next().is_none()
+            && bank_contents(d) == stored
             && d.app().copied.selected().is_none()
             && d.app().splice.is_none()
             && workspace.session != old_session
             && document(d)? == &baseline
             && (workspace.can_undo, workspace.can_redo) == history,
-        json!({"explicit_cancellation":true,"registers":"empty","same_document_and_history":true,"fresh_session":true}),
+        json!({"explicit_cancellation":true,"registers":"restored exactly","same_document_and_history":true,"fresh_session":true}),
         json!({"state":d.snapshot(),"registers":inventory(d),"old_session":old_session,"new_session":workspace.session}),
     )?;
-    d.capture("Old named command rejected after the project reopens")
+    d.check(
+        "Restored Original copies bind to the newly opened project session",
+        matches!(content(d, 'a'), Some(Content::Original(copied))
+            if copied.identity.session == new_session && copied.identity.session != old_session
+                && copied.ordinals == (70..74)),
+        json!({"fresh_session":true,"a":[70,74]}),
+        inventory(d),
+    )?;
+    let restored = edited(d, 'c')?;
+    d.check(
+        "Restored Edited copies have fresh runtime identities and unchanged historical payloads",
+        restored.id().session != old_edited.id().session
+            && restored.id().persisted_version.is_some()
+            && restored.slice() == old_edited.slice()
+            && restored.scope() == old_edited.scope()
+            && restored.bounds() == old_edited.bounds()
+            && restored.source_path() == old_edited.source_path()
+            && restored.child_label() == old_edited.child_label(),
+        json!({"fresh_session":true,"persisted_namespace":true,"exact_historical_content":true}),
+        json!({"old":format!("{:?}",old_edited.id()),"new":format!("{:?}",restored.id())}),
+    )?;
+    d.capture("Durable Original and Edited registers restored after reopen")?;
+    d.key(Key::Escape)?;
+    let copy = edited(d, '"')?;
+    let request = crate::project::slice::CaptureRequest {
+        id: copy.id().clone(),
+        register: Some('z'),
+        scope: copy.scope().clone(),
+        parent: copy.slice().parent().clone(),
+        selection: copy.slice().selection().clone(),
+    };
+    d.app_mut().copied.expect(
+        request.clone(),
+        crate::preview::edit_range::Selection::default(),
+    );
+    d.app()
+        .service
+        .submit(ProjectRequest::CaptureEditSlice(request))?;
+    d.wait_for(
+        "A restored identity cannot become a fresh register write",
+        |app| !app.service.is_busy() && !app.copied.is_pending() && app.error.is_some(),
+    )?;
+    d.check(
+        "Re-capture with a restored identity refuses without changing any slot or authored field",
+        d.app()
+            .error
+            .as_deref()
+            .is_some_and(|error| error.contains("Restored copy identities"))
+            && bank_contents(d) == stored
+            && document(d)? == &baseline,
+        json!({"restored_capture_refused":true,"unchanged":true}),
+        d.snapshot(),
+    )?;
+    d.key(Key::Escape)?;
+    d.command("registers")?;
+    d.capture("Restored typed register inventory")?;
+    d.key(Key::Escape)?;
+    d.command("sequence")?;
+    for (name, frames, first_picture) in [('a', 4, 70), ('c', 17, 8)] {
+        goto(d, 0)?;
+        choose(d, name, false)?;
+        let revision = d.revision();
+        d.key_modified(Key::P, Modifiers::SHIFT)?;
+        d.changed(&revision)?;
+        d.check("A restored typed register pastes its exact historical contents in one edit",
+            d.app().sequence_length() == 120 + frames && d.app().sequence_cursor == 0
+                && bank_contents(d) == stored
+                && (name != 'c' || document(d)?.nodes().values().any(|beat| matches!(&beat.kind, NodeKind::Hold { recipe } if recipe.duration.frames() == 11))),
+            json!({"name":name,"added_frames":frames,"unchanged_registers":true}), d.snapshot())?;
+        picture(d, first_picture)?;
+        undo(d, &baseline)?;
+    }
+    Ok(())
 }
 
 fn choose(d: &mut Driver<'_>, name: char, uppercase: bool) -> Result<(), String> {
@@ -746,6 +955,16 @@ fn edited(d: &Driver<'_>, name: char) -> Result<Arc<Captured>, String> {
 
 fn same_edited(d: &Driver<'_>, name: char, expected: &Arc<Captured>) -> bool {
     matches!(content(d, name), Some(Content::Edited(actual)) if Arc::ptr_eq(actual, expected))
+}
+
+fn bank_contents(d: &Driver<'_>) -> Value {
+    json!(d.app().copied.entries().map(|(name, content)| {
+        let value = match content {
+            Content::Original(copied) => json!({"type":"original","asset":copied.identity.asset,"qualification":copied.identity.qualification,"ordinals":copied.ordinals}),
+            Content::Edited(copied) => json!({"type":"edited","slice":copied.slice(),"groups":copied.scope().groups(),"bounds":copied.bounds(),"path":copied.source_path(),"child":copied.child_label()}),
+        };
+        (name.to_string(), value)
+    }).collect::<std::collections::BTreeMap<_, _>>())
 }
 
 fn inventory(d: &Driver<'_>) -> Value {
@@ -800,6 +1019,43 @@ fn capture_update(d: &mut Driver<'_>, start: i64, end: i64) -> Result<ProjectUpd
         }
         d.step(
             "Withhold only delivery while the genuine register capture completes",
+            false,
+        )?;
+        d.wake
+            .wait_until((Instant::now() + Duration::from_millis(16)).min(deadline));
+    }
+}
+
+fn original_update(d: &mut Driver<'_>, start: u64, end: u64) -> Result<ProjectUpdate, String> {
+    let revision = d.revision();
+    let session = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("Missing Original capture workspace")?
+        .session;
+    let deadline = Instant::now() + Duration::from_secs(15);
+    loop {
+        if let Some(update) = d.app().service.take_update()
+            && let Some(capture) = update.captured_original.as_ref()
+            && capture.id.source_revision.as_str() == revision
+            && capture.id.session == session
+        {
+            capture.result.as_ref().map_err(Clone::clone)?;
+            let exact = update
+                .registers
+                .as_ref()
+                .and_then(|bank| bank.entries.get(&'"'));
+            if matches!(exact, Some(crate::project::registers::Value::Original { ordinals, .. }) if *ordinals == (start..end))
+            {
+                return Ok(update);
+            }
+        }
+        if Instant::now() >= deadline {
+            return Err("The genuine Original register reply did not arrive".into());
+        }
+        d.step(
+            "Withhold delivery while the durable Original copy completes",
             false,
         )?;
         d.wake

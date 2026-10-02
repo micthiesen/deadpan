@@ -155,6 +155,7 @@ fn refusals(d: &mut Driver<'_>) -> Result<(), String> {
         .captured_slice
         .as_ref()
         .ok_or("Missing held yank reply")?;
+    let saved_copy = capture.result.as_ref().map_err(Clone::clone)?.clone();
     d.check(
         "The held real yank succeeded for the exact source revision and selected interval",
         capture.id.source_revision == *baseline.revision_id()
@@ -175,9 +176,9 @@ fn refusals(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.key(Key::X)?;
     d.check(
-        "Refused Visual x immediately supersedes the older pending yank",
-        !d.app().copied.is_pending() && same_copy(d, &accepted),
-        json!("old copy retained; pending yank abandoned"),
+        "Refused Visual x supersedes confirmation while the accepted write remains unsettled",
+        d.app().copied.is_pending() && same_copy(d, &accepted),
+        json!("visible old bank retained until durable write acknowledgment"),
         d.snapshot(),
     )?;
     d.app_mut().feedback.release_project_update = Some(held);
@@ -185,11 +186,13 @@ fn refusals(d: &mut Driver<'_>) -> Result<(), String> {
     d.step("Deliver the real superseded yank reply", false)?;
     d.settled()?;
     d.check(
-        "A late yank cannot replace the register or consume selection after refused x",
-        *document(d)? == baseline && d.app().edit_range == selection && same_copy(d, &accepted),
-        json!("unchanged document, selection and accepted copy"),
+        "The saved yank installs its authoritative bank without consuming selection after refused x",
+        *document(d)? == baseline && d.app().edit_range == selection && same_copy(d, &saved_copy)
+            && !d.app().copied.is_pending(),
+        json!("unchanged document and selection; exact saved copy installed"),
         d.snapshot(),
     )?;
+    let accepted = saved_copy;
 
     at(d, 20)?;
     for modifiers in [
@@ -439,7 +442,10 @@ fn captured(d: &mut Driver<'_>) -> Result<(), String> {
         "Type frame cut while Original supplies no eligible target",
         vec![Event::Text("delete-frames 12f".into())],
     )?;
-    paint(d, "Return to Your edit")?;
+    paint(
+        d,
+        "Return to Your edit and focus Beats before cutting frames.",
+    )?;
     d.app_mut().feedback.hold_project_updates = false;
     d.changed(&revision)?;
     let saved = document(d)?.clone();

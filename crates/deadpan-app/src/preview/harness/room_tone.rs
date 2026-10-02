@@ -57,6 +57,10 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         Key::L,
         Key::Y,
     ])?;
+    d.wait_for(
+        "Original copy is durably saved before the next operation",
+        |app| !app.service.is_busy() && !app.copied.is_pending(),
+    )?;
     d.check(
         "Original v, counted motion and y capture a half-open source range without history",
         d.app()

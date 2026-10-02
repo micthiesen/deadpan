@@ -16,11 +16,15 @@ pub struct CopyId {
     pub project: ProjectId,
     pub source_revision: RevisionId,
     pub request: u64,
+    /// Restored entries use bounded slot ordinals in a durable bank version.
+    /// Interactive request serials occupy the separate None namespace.
+    pub persisted_version: Option<u64>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CaptureRequest {
     pub id: CopyId,
+    pub register: Option<char>,
     pub scope: SequenceScope,
     pub parent: NodeId,
     pub selection: SliceCaptureSelection,

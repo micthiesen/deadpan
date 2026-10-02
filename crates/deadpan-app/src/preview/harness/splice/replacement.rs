@@ -658,6 +658,10 @@ fn nested(d: &mut Driver<'_>) -> Result<(), String> {
         Key::L,
         Key::Y,
     ])?;
+    d.wait_for(
+        "Original copy is durably saved before the next operation",
+        |app| !app.service.is_busy() && !app.copied.is_pending(),
+    )?;
     d.command("sequence")?;
     d.chord(&[
         Key::G,

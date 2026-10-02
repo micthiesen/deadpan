@@ -123,6 +123,7 @@ fn new_session(
         .ok_or("Missing Move workspace")?
         .path
         .clone();
+    let prior_copy = accepted(d)?;
     d.app().service.submit(ProjectRequest::Close)?;
     d.wait_for(
         "Close the Move project before testing old-session replies",
@@ -135,10 +136,17 @@ fn new_session(
             .is_some_and(|workspace| workspace.session != old.id.session)
             && !app.service.is_busy()
     })?;
+    let restored_copy = accepted(d)?;
     d.check(
-        "A new project session clears the previous copied register",
-        d.app().copied.content().is_none(),
-        json!("register empty"),
+        "A new project session restores the historical copy with a fresh runtime identity",
+        restored_copy.slice() == prior_copy.slice()
+            && restored_copy.scope() == prior_copy.scope()
+            && restored_copy.bounds() == prior_copy.bounds()
+            && restored_copy.source_path() == prior_copy.source_path()
+            && restored_copy.child_label() == prior_copy.child_label()
+            && restored_copy.id().session != prior_copy.id().session
+            && restored_copy.id().persisted_version.is_some(),
+        json!({"exact_historical_copy":true,"fresh_session":true,"persisted_namespace":true}),
         d.snapshot(),
     )?;
     d.command("sequence")?;

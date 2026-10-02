@@ -80,10 +80,10 @@ fn assert_authored(actual: &ProjectDocument, expected: &ProjectDocument) -> Resu
 
 fn history(path: &Path) -> Result<Vec<CommandRequest>> {
     let database = Connection::open(path.join("project.sqlite"))?;
-    assert_eq!(DATABASE_SCHEMA_VERSION, 52);
+    assert_eq!(DATABASE_SCHEMA_VERSION, 53);
     assert_eq!(
         database.pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?,
-        52
+        53
     );
     let encoded = database
         .prepare("SELECT request FROM history ORDER BY id")?

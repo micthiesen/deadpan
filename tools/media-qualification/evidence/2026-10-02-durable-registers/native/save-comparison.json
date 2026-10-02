@@ -1,0 +1,26 @@
+{
+  "before_version": 12,
+  "after_version": 13,
+  "changed_tables": [
+    "register_contents",
+    "register_state",
+    "registers"
+  ],
+  "timeline_and_history_unchanged": true,
+  "other_named_slots_unchanged": true,
+  "default_alias_matches_z": true,
+  "z": {
+    "name": "z",
+    "revision": "bbd2c663-50ce-4c79-aaad-7ee112879b9f",
+    "value": {
+      "type": "original",
+      "revision": "bbd2c663-50ce-4c79-aaad-7ee112879b9f",
+      "asset": "b2868a97-5094-4eb8-9ccd-4a5c904983e0",
+      "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6",
+      "ordinals": {
+        "start": 0,
+        "end": 8
+      }
+    }
+  }
+}

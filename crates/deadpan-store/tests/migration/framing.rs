@@ -73,6 +73,7 @@ fn fixture(path: &Path) -> Result<ProjectDocument> {
         [],
     )?;
     remove_empty_render_tables(&db)?;
+    development_break::remove_empty_register_tables(&db)?;
     db.pragma_update(None, "user_version", 23)?;
     for (_, json) in docs(&db)? {
         legacy_v17::Document::from_json(&json)?;

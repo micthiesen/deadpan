@@ -44,6 +44,9 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         d.snapshot(),
     )?;
     d.key(Key::Y)?;
+    d.wait_for("Original yank is saved by the project service", |app| {
+        !app.service.is_busy() && !app.copied.is_pending()
+    })?;
     d.check(
         "Yank leaves a reusable range and exits Visual without history",
         d.app()
@@ -111,6 +114,10 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.click("Select moment  v")?;
     d.key(Key::H)?;
     d.click("Copy moment  y")?;
+    d.wait_for(
+        "Original copy is durably saved before the next operation",
+        |app| !app.service.is_busy() && !app.copied.is_pending(),
+    )?;
     d.check(
         "Pointer copy owns Inspector focus and changes no revision",
         d.app().pane == Pane::Inspector

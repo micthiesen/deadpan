@@ -46,6 +46,10 @@ fn fixture(d: &mut Driver<'_>) -> Result<(), String> {
         Key::Y,
         Key::Escape,
     ])?;
+    d.wait_for(
+        "Original copy is durably saved before the next operation",
+        |app| !app.service.is_busy() && !app.copied.is_pending(),
+    )?;
     d.check(
         "Trim fixture copies Original [10,24)",
         d.app()

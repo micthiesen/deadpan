@@ -1,0 +1,28 @@
+Independent store and service review, 2026-10-02
+
+Confirmed and fixed:
+- Hostile SQLite tables without uniqueness constraints could duplicate slot names and be silently collapsed by BTreeMap. Bounded preflight now rejects duplicate names/content IDs. A real corrupted-table test covers direct read, checkpoint and read-only reopen.
+- Original copy is asynchronous. Placement now refuses until the latest accepted typed write reply reaches the UI, even when a newer rejected intent supersedes its selection confirmation. This prevents fast copy/copy-rejected/paste using a prior bank.
+- Deferred Close during render drain now clears runtime bank, copy acknowledgments and marks after the writer can release. SQLite retains the bank.
+
+Refuted concern:
+Core capture_selection invokes source_splice_boundary(parent, 0), which rejects non-Sequence ancestors. A store-valid edited capture cannot require restoration through Repeat/Retime; native scope reconstruction matches that boundary.
+
+Root also reviewed full source changes and preserved independent bank snapshots versus operation receipts. No reviewer ran Cargo or native processes. Runtime results are retained separately.
+
+Final preflight correction:
+Duplicate grouping now follows field type/size rejection. This prevents a hostile oversized name/id from reaching SQLite grouping before its byte bound is checked.
+
+Build/test fixture corrections:
+The first recorded workspace build failed compiling a new negative test because SourceQualificationId::new requires a String containing exactly 64 lowercase hexadecimal characters. Replaced the fake q with a valid-shaped unavailable digest. Root then found the same error in the new source-registration integration fixture and stopped the second recorded build with SIGINT before changing it. Its report records exit -2 and unchanged source inventory. Corrected that fixture to another valid-shaped unavailable digest. Neither build is a passing test result. Earlier exploratory app compile also corrected u64 SQLite conversions and SHA-256 formatting.
+
+Full workspace result and scoped corrections:
+The complete no-fail-fast run covered 3,533 tests: 3,527 passed and six fixture assertions failed, with zero ignored. Doctor correctly emitted schema 53 while its test expected 52. Five synthetic legacy migration fixtures retained the newly introduced register tables and failed at table collision before their intended checks. Updated all eight modern-to-legacy fixture constructors, including three previously passing for that unintended early refusal, to remove only a verified-empty bank. Added one test with six authentic-v1 injected-register-table cases proving strict production refusal and retained backup/original cells. The complete affected targets then passed (22 CLI, 133 migration), bringing distinct covered default tests to 3,534. Production migration was not weakened. Doctor now reports persistent-copy-registers and the actual 39–51 development-format refusal range.
+
+Release replay selector correction:
+Full replay passed named-registers (170 checks) but delete-range stopped after 40 checks because its broad Return to Your edit paint matcher also matched a scrolled inspector paste instruction. Actual deletion footer bounds [13,615,607,627] were wholly inside clip [0,496,960,640] with no occluders. Independent reviewer inspected the report and delete-range-121.png and confirmed both deletion assertions should match the deletion-specific sentence, retaining all-part visibility checks. Nearby reopen assertions remain valid. No production code changed.
+
+The first focused rerun passed the range assertion and reached 234 checks, then exposed root using the range-specific sentence for frame cuts. Actual frame guidance says before cutting frames. Corrected that selector to its exact production wording; no production code or visibility predicate changed. Reviewer confirmed the distinction.
+
+Native feedback and final qualification:
+Native QA found one stale dd help sentence limiting retained copies to the session. Reworded it to include reopening. Final base/UI Clippy and focused rendered register replay pass. Native save advanced bank 12 to 13, changed only its three tables, then quit successfully. Reopen restored typed slots and z [0..8), showed both endpoint pictures and moved a cancelled proposal to Edit 12. Corrected help was confirmed in AX. Final process inventory empty, lock free, and every database table unchanged since save. CUA Page_Down did not establish help page-key behavior; j scrolling was observed.

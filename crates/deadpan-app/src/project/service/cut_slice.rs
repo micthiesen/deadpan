@@ -17,7 +17,7 @@ impl Service {
     }
 
     fn cut_edit_slice(&mut self, capture: &CaptureRequest) -> Result<CutReceipt> {
-        self.check_context(capture.id.session, &capture.id.source_revision)?;
+        self.check_register_request(&capture.id)?;
         // Historical capture resolves the full scope and exact child identity.
         // No register reply is emitted before the transaction succeeds.
         let copied = self.capture_edit_slice(capture)?;
@@ -76,7 +76,17 @@ impl Service {
             new_revision,
             command,
         };
-        let outcome = self.writer()?.commit(&request).map_err(display)?;
+        let name = super::registers::name(capture.register)?;
+        let mut bank = self.prepare_register_write(
+            name,
+            crate::project::registers::Value::Edited(copied.clone()),
+        )?;
+        let (outcome, saved) = self
+            .writer()?
+            .cut_to_register(&request, name, copied.slice().clone(), None)
+            .map_err(display)?;
+        bank.version = saved.version;
+        self.registers = Some(Arc::new(bank));
         let cursor = copied.slice().range().start();
         let mut receipt = CutReceipt {
             copied,

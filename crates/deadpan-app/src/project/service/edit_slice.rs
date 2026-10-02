@@ -21,6 +21,8 @@ pub(super) struct PreparedCopy {
 impl Service {
     pub(super) fn clear_copied_slice(&mut self) {
         self.captured_slice = None;
+        self.registers = None;
+        self.captured_original = None;
         self.cut_slice = None;
         self.last_cut = None;
         self.copied_view = None;
@@ -28,14 +30,14 @@ impl Service {
     }
 
     pub(super) fn capture_edit_slice_command(&mut self, request: CaptureRequest) {
-        let result = self.capture_edit_slice(&request);
+        let result = self.save_edit_slice(&request);
         self.captured_slice = Some(CaptureUpdate {
             id: request.id,
             result,
         });
     }
 
-    fn check_copy_context(&self, id: &CopyId) -> Result<()> {
+    pub(super) fn check_copy_context(&self, id: &CopyId) -> Result<()> {
         let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
         if id.session == 0 || id.request == 0 {
             return Err("Copy identities must be nonzero".into());

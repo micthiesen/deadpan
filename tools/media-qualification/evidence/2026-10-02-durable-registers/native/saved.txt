@@ -1,0 +1,11 @@
+The following is a diff from the previous accessibility tree for Window: "Deadpan" with ~ and + representing changed and added elements, respectively. Removed elements are summarized by ID range.
+Removed element IDs: 110
+~		108 text (settable) Moment copied and saved. Return to Your edit (:sequence): :splice previews placement; p/P replaces an Edit selection or pastes beside a beat.
+~		12 text (settable) NORMAL
+~		109 button Marks  m / '
+~		117 text (settable) select moment
+~		142 button Select moment  v
++		175 text (settable) Copied Original [0..8)
++		176 text (settable) Return to Your edit, choose a beat, then p after or P before. One paste, one undo.
++		177 button Your edit  :sequence
+The focused UI element is 162 image Showing source frame 9

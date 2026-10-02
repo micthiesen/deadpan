@@ -1,0 +1,2546 @@
+{
+  "database": "/tmp/deadpan-durable-registers-20261002/replay-full/projects/named-registers/Documents/Deadpan/cfr-bframes.deadpan/project.sqlite",
+  "version": 12,
+  "slots": [
+    {
+      "name": "\"",
+      "revision": "1b253125-e462-4cac-af80-f1dcc0a3938c",
+      "value": {
+        "type": "edited",
+        "slice": {
+          "project_id": "e6d1ba97-2db0-4119-9e5d-e4a4bef3e078",
+          "revision_id": "1b253125-e462-4cac-af80-f1dcc0a3938c",
+          "capture_timing": {
+            "allocation": "79b2c6eb-f220-4029-b223-29d1ae048633",
+            "ordinal": 0
+          },
+          "presentation_basis": {
+            "width": 320,
+            "height": 180,
+            "frame_rate": {
+              "numerator": 30000,
+              "denominator": 1001
+            },
+            "color_policy": "sdr_rec709"
+          },
+          "parent": "44425a05-dc69-45ff-aedd-26c2356c963a",
+          "range": {
+            "start": 0,
+            "end": 120
+          },
+          "selection": {
+            "type": "child",
+            "node": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+          },
+          "source_duration": 120,
+          "parts": [
+            {
+              "root": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88",
+              "mapping": {
+                "start": 0,
+                "end": 120
+              },
+              "source_start": 0
+            }
+          ],
+          "nodes": {
+            "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+              "label": "cfr-bframes.mp4",
+              "kind": {
+                "type": "source",
+                "source": {
+                  "duration": 120,
+                  "edit_window": {
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "end": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    }
+                  },
+                  "video": {
+                    "type": "stream",
+                    "asset": "b2868a97-5094-4eb8-9ccd-4a5c904983e0",
+                    "span": {
+                      "start": {
+                        "ticks": 0,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 30000
+                        }
+                      },
+                      "end": {
+                        "ticks": 120120,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 30000
+                        }
+                      }
+                    }
+                  },
+                  "video_mapping": {
+                    "type": "placement",
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "frames": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    },
+                    "endpoints": "hold_adjacent"
+                  },
+                  "audio": {
+                    "asset": "b2868a97-5094-4eb8-9ccd-4a5c904983e0",
+                    "span": {
+                      "start": {
+                        "ticks": 0,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 48000
+                        }
+                      },
+                      "end": {
+                        "ticks": 192192,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 48000
+                        }
+                      }
+                    }
+                  },
+                  "audio_mapping": {
+                    "type": "placement",
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "frames": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    }
+                  },
+                  "link": "linked",
+                  "audio_offset": 0
+                }
+              }
+            }
+          },
+          "assets": {
+            "b2868a97-5094-4eb8-9ccd-4a5c904983e0": {
+              "label": "cfr-bframes.mp4",
+              "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+              "video": {
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 30000
+                  }
+                },
+                "end": {
+                  "ticks": 120120,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 30000
+                  }
+                }
+              },
+              "audio": {
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                },
+                "end": {
+                  "ticks": 192192,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                }
+              },
+              "still_image": false,
+              "frame_count": 120,
+              "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+            }
+          },
+          "marks": {},
+          "overrides": {},
+          "gap_overrides": {},
+          "audio_lineage": {},
+          "audio_bindings": {
+            "timings": [
+              {
+                "id": {
+                  "allocation": "79b2c6eb-f220-4029-b223-29d1ae048633",
+                  "ordinal": 0
+                },
+                "layout": {
+                  "root": "44425a05-dc69-45ff-aedd-26c2356c963a",
+                  "rate": {
+                    "numerator": 30000,
+                    "denominator": 1001
+                  },
+                  "nodes": {
+                    "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+                      "duration": 120,
+                      "edges": {
+                        "node_start": "automatic",
+                        "node_end": "automatic",
+                        "source_placement_start": "automatic",
+                        "source_placement_end": "automatic",
+                        "repeat_gap_start": "automatic",
+                        "repeat_gap_end": "automatic"
+                      },
+                      "kind": {
+                        "type": "source",
+                        "placement": {
+                          "start": {
+                            "numerator": "0",
+                            "denominator": "1"
+                          },
+                          "end": {
+                            "numerator": "120",
+                            "denominator": "1"
+                          }
+                        }
+                      }
+                    },
+                    "44425a05-dc69-45ff-aedd-26c2356c963a": {
+                      "duration": 120,
+                      "edges": {
+                        "node_start": "automatic",
+                        "node_end": "automatic",
+                        "source_placement_start": "automatic",
+                        "source_placement_end": "automatic",
+                        "repeat_gap_start": "automatic",
+                        "repeat_gap_end": "automatic"
+                      },
+                      "kind": {
+                        "type": "sequence",
+                        "children": [
+                          "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                        ]
+                      }
+                    }
+                  },
+                  "overrides": {}
+                }
+              }
+            ],
+            "bindings": {
+              "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+                "lattice": {
+                  "reference": {
+                    "timing": {
+                      "allocation": "79b2c6eb-f220-4029-b223-29d1ae048633",
+                      "ordinal": 0
+                    },
+                    "root": {
+                      "type": "project_root_round_even"
+                    },
+                    "physical": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                  },
+                  "arguments": [],
+                  "births": []
+                },
+                "resume": null,
+                "reanchors": [
+                  {
+                    "placement": {
+                      "reference": {
+                        "timing": {
+                          "allocation": "79b2c6eb-f220-4029-b223-29d1ae048633",
+                          "ordinal": 0
+                        },
+                        "root": {
+                          "type": "project_root_round_even"
+                        },
+                        "physical": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                      },
+                      "arguments": [],
+                      "births": []
+                    },
+                    "window": {
+                      "start": {
+                        "numerator": "0",
+                        "denominator": "1"
+                      },
+                      "end": {
+                        "numerator": "120",
+                        "denominator": "1"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "a",
+      "revision": "ab2073bb-c82a-43c8-95aa-0dfa8f49275d",
+      "value": {
+        "type": "original",
+        "revision": "ab2073bb-c82a-43c8-95aa-0dfa8f49275d",
+        "asset": "b2868a97-5094-4eb8-9ccd-4a5c904983e0",
+        "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6",
+        "ordinals": {
+          "start": 70,
+          "end": 74
+        }
+      }
+    },
+    {
+      "name": "b",
+      "revision": "8eec44f6-1120-4904-8760-1f4ae33aa95c",
+      "value": {
+        "type": "original",
+        "revision": "8eec44f6-1120-4904-8760-1f4ae33aa95c",
+        "asset": "b2868a97-5094-4eb8-9ccd-4a5c904983e0",
+        "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6",
+        "ordinals": {
+          "start": 40,
+          "end": 43
+        }
+      }
+    },
+    {
+      "name": "c",
+      "revision": "ed903801-af9a-4875-a6d0-2ffb76eb830f",
+      "value": {
+        "type": "edited",
+        "slice": {
+          "project_id": "e6d1ba97-2db0-4119-9e5d-e4a4bef3e078",
+          "revision_id": "ed903801-af9a-4875-a6d0-2ffb76eb830f",
+          "capture_timing": {
+            "allocation": "1fc4c43f-6c56-4450-857a-0fb258ce2a86",
+            "ordinal": 0
+          },
+          "presentation_basis": {
+            "width": 320,
+            "height": 180,
+            "frame_rate": {
+              "numerator": 30000,
+              "denominator": 1001
+            },
+            "color_policy": "sdr_rec709"
+          },
+          "parent": "44425a05-dc69-45ff-aedd-26c2356c963a",
+          "range": {
+            "start": 8,
+            "end": 25
+          },
+          "source_duration": 131,
+          "parts": [
+            {
+              "root": "4de01272-0476-425e-9ba1-c63b46aa4012",
+              "mapping": {
+                "start": 8,
+                "end": 10
+              },
+              "source_start": 0
+            },
+            {
+              "root": "b0131c13-21a8-452e-80f8-03b53f60f52e",
+              "mapping": {
+                "start": 0,
+                "end": 11
+              },
+              "source_start": 10
+            },
+            {
+              "root": "6d77dc13-c463-476e-ad1c-948bf919538b",
+              "mapping": {
+                "start": 0,
+                "end": 4
+              },
+              "source_start": 21
+            }
+          ],
+          "nodes": {
+            "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+              "label": "cfr-bframes.mp4",
+              "kind": {
+                "type": "source",
+                "source": {
+                  "duration": 120,
+                  "edit_window": {
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "end": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    }
+                  },
+                  "video": {
+                    "type": "stream",
+                    "asset": "b2868a97-5094-4eb8-9ccd-4a5c904983e0",
+                    "span": {
+                      "start": {
+                        "ticks": 0,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 30000
+                        }
+                      },
+                      "end": {
+                        "ticks": 120120,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 30000
+                        }
+                      }
+                    }
+                  },
+                  "video_mapping": {
+                    "type": "placement",
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "frames": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    },
+                    "endpoints": "hold_adjacent"
+                  },
+                  "audio": {
+                    "asset": "b2868a97-5094-4eb8-9ccd-4a5c904983e0",
+                    "span": {
+                      "start": {
+                        "ticks": 0,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 48000
+                        }
+                      },
+                      "end": {
+                        "ticks": 192192,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 48000
+                        }
+                      }
+                    }
+                  },
+                  "audio_mapping": {
+                    "type": "placement",
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "frames": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    }
+                  },
+                  "link": "linked",
+                  "audio_offset": 0
+                }
+              }
+            },
+            "4de01272-0476-425e-9ba1-c63b46aa4012": {
+              "label": "cfr-bframes.mp4",
+              "kind": {
+                "type": "retime",
+                "child": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88",
+                "duration": 10,
+                "mapping": {
+                  "start": 0,
+                  "end": 10
+                },
+                "pitch": "preserve",
+                "purpose": "partition"
+              }
+            },
+            "6d77dc13-c463-476e-ad1c-948bf919538b": {
+              "label": "cfr-bframes.mp4",
+              "kind": {
+                "type": "retime",
+                "child": "73b09e6c-178d-48c1-9f43-54960c553afd",
+                "duration": 110,
+                "mapping": {
+                  "start": 10,
+                  "end": 120
+                },
+                "pitch": "preserve",
+                "purpose": "partition"
+              }
+            },
+            "73b09e6c-178d-48c1-9f43-54960c553afd": {
+              "label": "cfr-bframes.mp4",
+              "kind": {
+                "type": "source",
+                "source": {
+                  "duration": 120,
+                  "edit_window": {
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "end": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    }
+                  },
+                  "video": {
+                    "type": "stream",
+                    "asset": "b2868a97-5094-4eb8-9ccd-4a5c904983e0",
+                    "span": {
+                      "start": {
+                        "ticks": 0,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 30000
+                        }
+                      },
+                      "end": {
+                        "ticks": 120120,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 30000
+                        }
+                      }
+                    }
+                  },
+                  "video_mapping": {
+                    "type": "placement",
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "frames": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    },
+                    "endpoints": "hold_adjacent"
+                  },
+                  "audio": {
+                    "asset": "b2868a97-5094-4eb8-9ccd-4a5c904983e0",
+                    "span": {
+                      "start": {
+                        "ticks": 0,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 48000
+                        }
+                      },
+                      "end": {
+                        "ticks": 192192,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 48000
+                        }
+                      }
+                    }
+                  },
+                  "audio_mapping": {
+                    "type": "placement",
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "frames": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    }
+                  },
+                  "link": "linked",
+                  "audio_offset": 0
+                }
+              }
+            },
+            "b0131c13-21a8-452e-80f8-03b53f60f52e": {
+              "label": "Pause",
+              "kind": {
+                "type": "hold",
+                "recipe": {
+                  "picture_context": {
+                    "canvases": [
+                      {
+                        "width": 320,
+                        "height": 180,
+                        "fit": "fit",
+                        "layers": []
+                      }
+                    ]
+                  },
+                  "duration": 11,
+                  "video": {
+                    "type": "freeze",
+                    "asset": "b2868a97-5094-4eb8-9ccd-4a5c904983e0",
+                    "timestamp": {
+                      "ticks": 9009,
+                      "time_base": {
+                        "numerator": 1,
+                        "denominator": 30000
+                      }
+                    }
+                  },
+                  "audio": {
+                    "type": "silence"
+                  }
+                }
+              }
+            }
+          },
+          "assets": {
+            "b2868a97-5094-4eb8-9ccd-4a5c904983e0": {
+              "label": "cfr-bframes.mp4",
+              "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+              "video": {
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 30000
+                  }
+                },
+                "end": {
+                  "ticks": 120120,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 30000
+                  }
+                }
+              },
+              "audio": {
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                },
+                "end": {
+                  "ticks": 192192,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                }
+              },
+              "still_image": false,
+              "frame_count": 120,
+              "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+            }
+          },
+          "marks": {},
+          "overrides": {},
+          "gap_overrides": {},
+          "audio_lineage": {
+            "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+              "allocation": "ed903801-af9a-4875-a6d0-2ffb76eb830f",
+              "origin": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+            },
+            "73b09e6c-178d-48c1-9f43-54960c553afd": {
+              "allocation": "ed903801-af9a-4875-a6d0-2ffb76eb830f",
+              "origin": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+            }
+          },
+          "audio_bindings": {
+            "timings": [
+              {
+                "id": {
+                  "allocation": "1fc4c43f-6c56-4450-857a-0fb258ce2a86",
+                  "ordinal": 0
+                },
+                "layout": {
+                  "root": "44425a05-dc69-45ff-aedd-26c2356c963a",
+                  "rate": {
+                    "numerator": 30000,
+                    "denominator": 1001
+                  },
+                  "nodes": {
+                    "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+                      "duration": 120,
+                      "edges": {
+                        "node_start": "automatic",
+                        "node_end": "automatic",
+                        "source_placement_start": "automatic",
+                        "source_placement_end": "automatic",
+                        "repeat_gap_start": "automatic",
+                        "repeat_gap_end": "automatic"
+                      },
+                      "kind": {
+                        "type": "source",
+                        "placement": {
+                          "start": {
+                            "numerator": "0",
+                            "denominator": "1"
+                          },
+                          "end": {
+                            "numerator": "120",
+                            "denominator": "1"
+                          }
+                        }
+                      }
+                    },
+                    "44425a05-dc69-45ff-aedd-26c2356c963a": {
+                      "duration": 131,
+                      "edges": {
+                        "node_start": "automatic",
+                        "node_end": "automatic",
+                        "source_placement_start": "automatic",
+                        "source_placement_end": "automatic",
+                        "repeat_gap_start": "automatic",
+                        "repeat_gap_end": "automatic"
+                      },
+                      "kind": {
+                        "type": "sequence",
+                        "children": [
+                          "4de01272-0476-425e-9ba1-c63b46aa4012",
+                          "b0131c13-21a8-452e-80f8-03b53f60f52e",
+                          "6d77dc13-c463-476e-ad1c-948bf919538b"
+                        ]
+                      }
+                    },
+                    "4de01272-0476-425e-9ba1-c63b46aa4012": {
+                      "duration": 10,
+                      "edges": {
+                        "node_start": "automatic",
+                        "node_end": "automatic",
+                        "source_placement_start": "automatic",
+                        "source_placement_end": "automatic",
+                        "repeat_gap_start": "automatic",
+                        "repeat_gap_end": "automatic"
+                      },
+                      "kind": {
+                        "type": "retime",
+                        "child": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88",
+                        "mapping": {
+                          "start": 0,
+                          "end": 10
+                        },
+                        "pitch": "preserve",
+                        "purpose": "partition"
+                      }
+                    },
+                    "6d77dc13-c463-476e-ad1c-948bf919538b": {
+                      "duration": 110,
+                      "edges": {
+                        "node_start": "automatic",
+                        "node_end": "automatic",
+                        "source_placement_start": "automatic",
+                        "source_placement_end": "automatic",
+                        "repeat_gap_start": "automatic",
+                        "repeat_gap_end": "automatic"
+                      },
+                      "kind": {
+                        "type": "retime",
+                        "child": "73b09e6c-178d-48c1-9f43-54960c553afd",
+                        "mapping": {
+                          "start": 10,
+                          "end": 120
+                        },
+                        "pitch": "preserve",
+                        "purpose": "partition"
+                      }
+                    },
+                    "73b09e6c-178d-48c1-9f43-54960c553afd": {
+                      "duration": 120,
+                      "edges": {
+                        "node_start": "automatic",
+                        "node_end": "automatic",
+                        "source_placement_start": "automatic",
+                        "source_placement_end": "automatic",
+                        "repeat_gap_start": "automatic",
+                        "repeat_gap_end": "automatic"
+                      },
+                      "kind": {
+                        "type": "source",
+                        "placement": {
+                          "start": {
+                            "numerator": "0",
+                            "denominator": "1"
+                          },
+                          "end": {
+                            "numerator": "120",
+                            "denominator": "1"
+                          }
+                        }
+                      }
+                    },
+                    "b0131c13-21a8-452e-80f8-03b53f60f52e": {
+                      "duration": 11,
+                      "edges": {
+                        "node_start": "automatic",
+                        "node_end": "automatic",
+                        "source_placement_start": "automatic",
+                        "source_placement_end": "automatic",
+                        "repeat_gap_start": "automatic",
+                        "repeat_gap_end": "automatic"
+                      },
+                      "kind": {
+                        "type": "hold",
+                        "audio": {
+                          "type": "silence"
+                        }
+                      }
+                    }
+                  },
+                  "overrides": {},
+                  "audio_lineage": {
+                    "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+                      "allocation": "ed903801-af9a-4875-a6d0-2ffb76eb830f",
+                      "origin": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                    },
+                    "73b09e6c-178d-48c1-9f43-54960c553afd": {
+                      "allocation": "ed903801-af9a-4875-a6d0-2ffb76eb830f",
+                      "origin": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                    }
+                  }
+                }
+              },
+              {
+                "id": {
+                  "allocation": "ed903801-af9a-4875-a6d0-2ffb76eb830f",
+                  "ordinal": 0
+                },
+                "layout": {
+                  "root": "44425a05-dc69-45ff-aedd-26c2356c963a",
+                  "rate": {
+                    "numerator": 30000,
+                    "denominator": 1001
+                  },
+                  "nodes": {
+                    "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+                      "duration": 120,
+                      "edges": {
+                        "node_start": "automatic",
+                        "node_end": "automatic",
+                        "source_placement_start": "automatic",
+                        "source_placement_end": "automatic",
+                        "repeat_gap_start": "automatic",
+                        "repeat_gap_end": "automatic"
+                      },
+                      "kind": {
+                        "type": "source",
+                        "placement": {
+                          "start": {
+                            "numerator": "0",
+                            "denominator": "1"
+                          },
+                          "end": {
+                            "numerator": "120",
+                            "denominator": "1"
+                          }
+                        }
+                      }
+                    },
+                    "44425a05-dc69-45ff-aedd-26c2356c963a": {
+                      "duration": 120,
+                      "edges": {
+                        "node_start": "automatic",
+                        "node_end": "automatic",
+                        "source_placement_start": "automatic",
+                        "source_placement_end": "automatic",
+                        "repeat_gap_start": "automatic",
+                        "repeat_gap_end": "automatic"
+                      },
+                      "kind": {
+                        "type": "sequence",
+                        "children": [
+                          "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                        ]
+                      }
+                    }
+                  },
+                  "overrides": {}
+                }
+              }
+            ],
+            "bindings": {
+              "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+                "lattice": {
+                  "reference": {
+                    "timing": {
+                      "allocation": "ed903801-af9a-4875-a6d0-2ffb76eb830f",
+                      "ordinal": 0
+                    },
+                    "root": {
+                      "type": "project_root_round_even"
+                    },
+                    "physical": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                  },
+                  "arguments": [],
+                  "births": []
+                },
+                "resume": null,
+                "reanchors": [
+                  {
+                    "placement": {
+                      "reference": {
+                        "timing": {
+                          "allocation": "1fc4c43f-6c56-4450-857a-0fb258ce2a86",
+                          "ordinal": 0
+                        },
+                        "root": {
+                          "type": "project_root_round_even"
+                        },
+                        "physical": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                      },
+                      "arguments": [],
+                      "births": []
+                    },
+                    "window": {
+                      "start": {
+                        "numerator": "8",
+                        "denominator": "1"
+                      },
+                      "end": {
+                        "numerator": "25",
+                        "denominator": "1"
+                      }
+                    }
+                  }
+                ]
+              },
+              "73b09e6c-178d-48c1-9f43-54960c553afd": {
+                "lattice": {
+                  "reference": {
+                    "timing": {
+                      "allocation": "ed903801-af9a-4875-a6d0-2ffb76eb830f",
+                      "ordinal": 0
+                    },
+                    "root": {
+                      "type": "project_root_round_even"
+                    },
+                    "physical": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                  },
+                  "arguments": [],
+                  "births": []
+                },
+                "resume": {
+                  "local_boundary": {
+                    "numerator": "10",
+                    "denominator": "1"
+                  },
+                  "phase": {
+                    "constant": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "terms": [
+                      {
+                        "placement": {
+                          "reference": {
+                            "timing": {
+                              "allocation": "ed903801-af9a-4875-a6d0-2ffb76eb830f",
+                              "ordinal": 0
+                            },
+                            "root": {
+                              "type": "project_root_round_even"
+                            },
+                            "physical": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                          },
+                          "arguments": [],
+                          "births": []
+                        },
+                        "from_local": {
+                          "numerator": "0",
+                          "denominator": "1"
+                        },
+                        "to_local": {
+                          "numerator": "10",
+                          "denominator": "1"
+                        }
+                      }
+                    ]
+                  }
+                },
+                "reanchors": [
+                  {
+                    "placement": {
+                      "reference": {
+                        "timing": {
+                          "allocation": "1fc4c43f-6c56-4450-857a-0fb258ce2a86",
+                          "ordinal": 0
+                        },
+                        "root": {
+                          "type": "project_root_round_even"
+                        },
+                        "physical": "73b09e6c-178d-48c1-9f43-54960c553afd"
+                      },
+                      "arguments": [],
+                      "births": []
+                    },
+                    "window": {
+                      "start": {
+                        "numerator": "8",
+                        "denominator": "1"
+                      },
+                      "end": {
+                        "numerator": "25",
+                        "denominator": "1"
+                      }
+                    }
+                  }
+                ]
+              },
+              "b0131c13-21a8-452e-80f8-03b53f60f52e": {
+                "lattice": {
+                  "reference": {
+                    "timing": {
+                      "allocation": "1fc4c43f-6c56-4450-857a-0fb258ce2a86",
+                      "ordinal": 0
+                    },
+                    "root": {
+                      "type": "project_root_round_even"
+                    },
+                    "physical": "b0131c13-21a8-452e-80f8-03b53f60f52e"
+                  },
+                  "arguments": [],
+                  "births": []
+                },
+                "resume": null,
+                "reanchors": [
+                  {
+                    "placement": {
+                      "reference": {
+                        "timing": {
+                          "allocation": "1fc4c43f-6c56-4450-857a-0fb258ce2a86",
+                          "ordinal": 0
+                        },
+                        "root": {
+                          "type": "project_root_round_even"
+                        },
+                        "physical": "b0131c13-21a8-452e-80f8-03b53f60f52e"
+                      },
+                      "arguments": [],
+                      "births": []
+                    },
+                    "window": {
+                      "start": {
+                        "numerator": "8",
+                        "denominator": "1"
+                      },
+                      "end": {
+                        "numerator": "25",
+                        "denominator": "1"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "d",
+      "revision": "b5c2fe56-b4d6-42ce-9243-90a7976b1b46",
+      "value": {
+        "type": "edited",
+        "slice": {
+          "project_id": "e6d1ba97-2db0-4119-9e5d-e4a4bef3e078",
+          "revision_id": "b5c2fe56-b4d6-42ce-9243-90a7976b1b46",
+          "capture_timing": {
+            "allocation": "042f6ab8-938c-4857-9bf8-49206030d853",
+            "ordinal": 0
+          },
+          "presentation_basis": {
+            "width": 320,
+            "height": 180,
+            "frame_rate": {
+              "numerator": 30000,
+              "denominator": 1001
+            },
+            "color_policy": "sdr_rec709"
+          },
+          "parent": "44425a05-dc69-45ff-aedd-26c2356c963a",
+          "range": {
+            "start": 20,
+            "end": 30
+          },
+          "source_duration": 120,
+          "parts": [
+            {
+              "root": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88",
+              "mapping": {
+                "start": 20,
+                "end": 30
+              },
+              "source_start": 0
+            }
+          ],
+          "nodes": {
+            "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+              "label": "cfr-bframes.mp4",
+              "kind": {
+                "type": "source",
+                "source": {
+                  "duration": 120,
+                  "edit_window": {
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "end": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    }
+                  },
+                  "video": {
+                    "type": "stream",
+                    "asset": "b2868a97-5094-4eb8-9ccd-4a5c904983e0",
+                    "span": {
+                      "start": {
+                        "ticks": 0,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 30000
+                        }
+                      },
+                      "end": {
+                        "ticks": 120120,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 30000
+                        }
+                      }
+                    }
+                  },
+                  "video_mapping": {
+                    "type": "placement",
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "frames": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    },
+                    "endpoints": "hold_adjacent"
+                  },
+                  "audio": {
+                    "asset": "b2868a97-5094-4eb8-9ccd-4a5c904983e0",
+                    "span": {
+                      "start": {
+                        "ticks": 0,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 48000
+                        }
+                      },
+                      "end": {
+                        "ticks": 192192,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 48000
+                        }
+                      }
+                    }
+                  },
+                  "audio_mapping": {
+                    "type": "placement",
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "frames": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    }
+                  },
+                  "link": "linked",
+                  "audio_offset": 0
+                }
+              }
+            }
+          },
+          "assets": {
+            "b2868a97-5094-4eb8-9ccd-4a5c904983e0": {
+              "label": "cfr-bframes.mp4",
+              "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+              "video": {
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 30000
+                  }
+                },
+                "end": {
+                  "ticks": 120120,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 30000
+                  }
+                }
+              },
+              "audio": {
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                },
+                "end": {
+                  "ticks": 192192,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                }
+              },
+              "still_image": false,
+              "frame_count": 120,
+              "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+            }
+          },
+          "marks": {},
+          "overrides": {},
+          "gap_overrides": {},
+          "audio_lineage": {},
+          "audio_bindings": {
+            "timings": [
+              {
+                "id": {
+                  "allocation": "042f6ab8-938c-4857-9bf8-49206030d853",
+                  "ordinal": 0
+                },
+                "layout": {
+                  "root": "44425a05-dc69-45ff-aedd-26c2356c963a",
+                  "rate": {
+                    "numerator": 30000,
+                    "denominator": 1001
+                  },
+                  "nodes": {
+                    "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+                      "duration": 120,
+                      "edges": {
+                        "node_start": "automatic",
+                        "node_end": "automatic",
+                        "source_placement_start": "automatic",
+                        "source_placement_end": "automatic",
+                        "repeat_gap_start": "automatic",
+                        "repeat_gap_end": "automatic"
+                      },
+                      "kind": {
+                        "type": "source",
+                        "placement": {
+                          "start": {
+                            "numerator": "0",
+                            "denominator": "1"
+                          },
+                          "end": {
+                            "numerator": "120",
+                            "denominator": "1"
+                          }
+                        }
+                      }
+                    },
+                    "44425a05-dc69-45ff-aedd-26c2356c963a": {
+                      "duration": 120,
+                      "edges": {
+                        "node_start": "automatic",
+                        "node_end": "automatic",
+                        "source_placement_start": "automatic",
+                        "source_placement_end": "automatic",
+                        "repeat_gap_start": "automatic",
+                        "repeat_gap_end": "automatic"
+                      },
+                      "kind": {
+                        "type": "sequence",
+                        "children": [
+                          "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                        ]
+                      }
+                    }
+                  },
+                  "overrides": {}
+                }
+              }
+            ],
+            "bindings": {
+              "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+                "lattice": {
+                  "reference": {
+                    "timing": {
+                      "allocation": "042f6ab8-938c-4857-9bf8-49206030d853",
+                      "ordinal": 0
+                    },
+                    "root": {
+                      "type": "project_root_round_even"
+                    },
+                    "physical": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                  },
+                  "arguments": [],
+                  "births": []
+                },
+                "resume": null,
+                "reanchors": [
+                  {
+                    "placement": {
+                      "reference": {
+                        "timing": {
+                          "allocation": "042f6ab8-938c-4857-9bf8-49206030d853",
+                          "ordinal": 0
+                        },
+                        "root": {
+                          "type": "project_root_round_even"
+                        },
+                        "physical": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                      },
+                      "arguments": [],
+                      "births": []
+                    },
+                    "window": {
+                      "start": {
+                        "numerator": "20",
+                        "denominator": "1"
+                      },
+                      "end": {
+                        "numerator": "30",
+                        "denominator": "1"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "e",
+      "revision": "ab2073bb-c82a-43c8-95aa-0dfa8f49275d",
+      "value": {
+        "type": "edited",
+        "slice": {
+          "project_id": "e6d1ba97-2db0-4119-9e5d-e4a4bef3e078",
+          "revision_id": "ab2073bb-c82a-43c8-95aa-0dfa8f49275d",
+          "capture_timing": {
+            "allocation": "b4b0eb1e-fb16-4d33-9395-b05f81e28bb1",
+            "ordinal": 0
+          },
+          "presentation_basis": {
+            "width": 320,
+            "height": 180,
+            "frame_rate": {
+              "numerator": 30000,
+              "denominator": 1001
+            },
+            "color_policy": "sdr_rec709"
+          },
+          "parent": "44425a05-dc69-45ff-aedd-26c2356c963a",
+          "range": {
+            "start": 55,
+            "end": 61
+          },
+          "source_duration": 120,
+          "parts": [
+            {
+              "root": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88",
+              "mapping": {
+                "start": 55,
+                "end": 61
+              },
+              "source_start": 0
+            }
+          ],
+          "nodes": {
+            "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+              "label": "cfr-bframes.mp4",
+              "kind": {
+                "type": "source",
+                "source": {
+                  "duration": 120,
+                  "edit_window": {
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "end": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    }
+                  },
+                  "video": {
+                    "type": "stream",
+                    "asset": "b2868a97-5094-4eb8-9ccd-4a5c904983e0",
+                    "span": {
+                      "start": {
+                        "ticks": 0,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 30000
+                        }
+                      },
+                      "end": {
+                        "ticks": 120120,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 30000
+                        }
+                      }
+                    }
+                  },
+                  "video_mapping": {
+                    "type": "placement",
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "frames": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    },
+                    "endpoints": "hold_adjacent"
+                  },
+                  "audio": {
+                    "asset": "b2868a97-5094-4eb8-9ccd-4a5c904983e0",
+                    "span": {
+                      "start": {
+                        "ticks": 0,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 48000
+                        }
+                      },
+                      "end": {
+                        "ticks": 192192,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 48000
+                        }
+                      }
+                    }
+                  },
+                  "audio_mapping": {
+                    "type": "placement",
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "frames": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    }
+                  },
+                  "link": "linked",
+                  "audio_offset": 0
+                }
+              }
+            }
+          },
+          "assets": {
+            "b2868a97-5094-4eb8-9ccd-4a5c904983e0": {
+              "label": "cfr-bframes.mp4",
+              "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+              "video": {
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 30000
+                  }
+                },
+                "end": {
+                  "ticks": 120120,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 30000
+                  }
+                }
+              },
+              "audio": {
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                },
+                "end": {
+                  "ticks": 192192,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                }
+              },
+              "still_image": false,
+              "frame_count": 120,
+              "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+            }
+          },
+          "marks": {},
+          "overrides": {},
+          "gap_overrides": {},
+          "audio_lineage": {},
+          "audio_bindings": {
+            "timings": [
+              {
+                "id": {
+                  "allocation": "b4b0eb1e-fb16-4d33-9395-b05f81e28bb1",
+                  "ordinal": 0
+                },
+                "layout": {
+                  "root": "44425a05-dc69-45ff-aedd-26c2356c963a",
+                  "rate": {
+                    "numerator": 30000,
+                    "denominator": 1001
+                  },
+                  "nodes": {
+                    "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+                      "duration": 120,
+                      "edges": {
+                        "node_start": "automatic",
+                        "node_end": "automatic",
+                        "source_placement_start": "automatic",
+                        "source_placement_end": "automatic",
+                        "repeat_gap_start": "automatic",
+                        "repeat_gap_end": "automatic"
+                      },
+                      "kind": {
+                        "type": "source",
+                        "placement": {
+                          "start": {
+                            "numerator": "0",
+                            "denominator": "1"
+                          },
+                          "end": {
+                            "numerator": "120",
+                            "denominator": "1"
+                          }
+                        }
+                      }
+                    },
+                    "44425a05-dc69-45ff-aedd-26c2356c963a": {
+                      "duration": 120,
+                      "edges": {
+                        "node_start": "automatic",
+                        "node_end": "automatic",
+                        "source_placement_start": "automatic",
+                        "source_placement_end": "automatic",
+                        "repeat_gap_start": "automatic",
+                        "repeat_gap_end": "automatic"
+                      },
+                      "kind": {
+                        "type": "sequence",
+                        "children": [
+                          "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                        ]
+                      }
+                    }
+                  },
+                  "overrides": {}
+                }
+              }
+            ],
+            "bindings": {
+              "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+                "lattice": {
+                  "reference": {
+                    "timing": {
+                      "allocation": "b4b0eb1e-fb16-4d33-9395-b05f81e28bb1",
+                      "ordinal": 0
+                    },
+                    "root": {
+                      "type": "project_root_round_even"
+                    },
+                    "physical": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                  },
+                  "arguments": [],
+                  "births": []
+                },
+                "resume": null,
+                "reanchors": [
+                  {
+                    "placement": {
+                      "reference": {
+                        "timing": {
+                          "allocation": "b4b0eb1e-fb16-4d33-9395-b05f81e28bb1",
+                          "ordinal": 0
+                        },
+                        "root": {
+                          "type": "project_root_round_even"
+                        },
+                        "physical": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                      },
+                      "arguments": [],
+                      "births": []
+                    },
+                    "window": {
+                      "start": {
+                        "numerator": "55",
+                        "denominator": "1"
+                      },
+                      "end": {
+                        "numerator": "61",
+                        "denominator": "1"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "f",
+      "revision": "ab2073bb-c82a-43c8-95aa-0dfa8f49275d",
+      "value": {
+        "type": "edited",
+        "slice": {
+          "project_id": "e6d1ba97-2db0-4119-9e5d-e4a4bef3e078",
+          "revision_id": "ab2073bb-c82a-43c8-95aa-0dfa8f49275d",
+          "capture_timing": {
+            "allocation": "ceee903b-00d5-4df6-93b7-9d57cc0b733d",
+            "ordinal": 0
+          },
+          "presentation_basis": {
+            "width": 320,
+            "height": 180,
+            "frame_rate": {
+              "numerator": 30000,
+              "denominator": 1001
+            },
+            "color_policy": "sdr_rec709"
+          },
+          "parent": "44425a05-dc69-45ff-aedd-26c2356c963a",
+          "range": {
+            "start": 45,
+            "end": 51
+          },
+          "source_duration": 120,
+          "parts": [
+            {
+              "root": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88",
+              "mapping": {
+                "start": 45,
+                "end": 51
+              },
+              "source_start": 0
+            }
+          ],
+          "nodes": {
+            "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+              "label": "cfr-bframes.mp4",
+              "kind": {
+                "type": "source",
+                "source": {
+                  "duration": 120,
+                  "edit_window": {
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "end": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    }
+                  },
+                  "video": {
+                    "type": "stream",
+                    "asset": "b2868a97-5094-4eb8-9ccd-4a5c904983e0",
+                    "span": {
+                      "start": {
+                        "ticks": 0,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 30000
+                        }
+                      },
+                      "end": {
+                        "ticks": 120120,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 30000
+                        }
+                      }
+                    }
+                  },
+                  "video_mapping": {
+                    "type": "placement",
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "frames": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    },
+                    "endpoints": "hold_adjacent"
+                  },
+                  "audio": {
+                    "asset": "b2868a97-5094-4eb8-9ccd-4a5c904983e0",
+                    "span": {
+                      "start": {
+                        "ticks": 0,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 48000
+                        }
+                      },
+                      "end": {
+                        "ticks": 192192,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 48000
+                        }
+                      }
+                    }
+                  },
+                  "audio_mapping": {
+                    "type": "placement",
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "frames": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    }
+                  },
+                  "link": "linked",
+                  "audio_offset": 0
+                }
+              }
+            }
+          },
+          "assets": {
+            "b2868a97-5094-4eb8-9ccd-4a5c904983e0": {
+              "label": "cfr-bframes.mp4",
+              "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+              "video": {
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 30000
+                  }
+                },
+                "end": {
+                  "ticks": 120120,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 30000
+                  }
+                }
+              },
+              "audio": {
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                },
+                "end": {
+                  "ticks": 192192,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                }
+              },
+              "still_image": false,
+              "frame_count": 120,
+              "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+            }
+          },
+          "marks": {},
+          "overrides": {},
+          "gap_overrides": {},
+          "audio_lineage": {},
+          "audio_bindings": {
+            "timings": [
+              {
+                "id": {
+                  "allocation": "ceee903b-00d5-4df6-93b7-9d57cc0b733d",
+                  "ordinal": 0
+                },
+                "layout": {
+                  "root": "44425a05-dc69-45ff-aedd-26c2356c963a",
+                  "rate": {
+                    "numerator": 30000,
+                    "denominator": 1001
+                  },
+                  "nodes": {
+                    "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+                      "duration": 120,
+                      "edges": {
+                        "node_start": "automatic",
+                        "node_end": "automatic",
+                        "source_placement_start": "automatic",
+                        "source_placement_end": "automatic",
+                        "repeat_gap_start": "automatic",
+                        "repeat_gap_end": "automatic"
+                      },
+                      "kind": {
+                        "type": "source",
+                        "placement": {
+                          "start": {
+                            "numerator": "0",
+                            "denominator": "1"
+                          },
+                          "end": {
+                            "numerator": "120",
+                            "denominator": "1"
+                          }
+                        }
+                      }
+                    },
+                    "44425a05-dc69-45ff-aedd-26c2356c963a": {
+                      "duration": 120,
+                      "edges": {
+                        "node_start": "automatic",
+                        "node_end": "automatic",
+                        "source_placement_start": "automatic",
+                        "source_placement_end": "automatic",
+                        "repeat_gap_start": "automatic",
+                        "repeat_gap_end": "automatic"
+                      },
+                      "kind": {
+                        "type": "sequence",
+                        "children": [
+                          "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                        ]
+                      }
+                    }
+                  },
+                  "overrides": {}
+                }
+              }
+            ],
+            "bindings": {
+              "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+                "lattice": {
+                  "reference": {
+                    "timing": {
+                      "allocation": "ceee903b-00d5-4df6-93b7-9d57cc0b733d",
+                      "ordinal": 0
+                    },
+                    "root": {
+                      "type": "project_root_round_even"
+                    },
+                    "physical": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                  },
+                  "arguments": [],
+                  "births": []
+                },
+                "resume": null,
+                "reanchors": [
+                  {
+                    "placement": {
+                      "reference": {
+                        "timing": {
+                          "allocation": "ceee903b-00d5-4df6-93b7-9d57cc0b733d",
+                          "ordinal": 0
+                        },
+                        "root": {
+                          "type": "project_root_round_even"
+                        },
+                        "physical": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                      },
+                      "arguments": [],
+                      "births": []
+                    },
+                    "window": {
+                      "start": {
+                        "numerator": "45",
+                        "denominator": "1"
+                      },
+                      "end": {
+                        "numerator": "51",
+                        "denominator": "1"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "h",
+      "revision": "ab2073bb-c82a-43c8-95aa-0dfa8f49275d",
+      "value": {
+        "type": "edited",
+        "slice": {
+          "project_id": "e6d1ba97-2db0-4119-9e5d-e4a4bef3e078",
+          "revision_id": "ab2073bb-c82a-43c8-95aa-0dfa8f49275d",
+          "capture_timing": {
+            "allocation": "3a246480-e04b-434c-adb6-44f6814fa200",
+            "ordinal": 0
+          },
+          "presentation_basis": {
+            "width": 320,
+            "height": 180,
+            "frame_rate": {
+              "numerator": 30000,
+              "denominator": 1001
+            },
+            "color_policy": "sdr_rec709"
+          },
+          "parent": "44425a05-dc69-45ff-aedd-26c2356c963a",
+          "range": {
+            "start": 65,
+            "end": 70
+          },
+          "source_duration": 120,
+          "parts": [
+            {
+              "root": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88",
+              "mapping": {
+                "start": 65,
+                "end": 70
+              },
+              "source_start": 0
+            }
+          ],
+          "nodes": {
+            "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+              "label": "cfr-bframes.mp4",
+              "kind": {
+                "type": "source",
+                "source": {
+                  "duration": 120,
+                  "edit_window": {
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "end": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    }
+                  },
+                  "video": {
+                    "type": "stream",
+                    "asset": "b2868a97-5094-4eb8-9ccd-4a5c904983e0",
+                    "span": {
+                      "start": {
+                        "ticks": 0,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 30000
+                        }
+                      },
+                      "end": {
+                        "ticks": 120120,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 30000
+                        }
+                      }
+                    }
+                  },
+                  "video_mapping": {
+                    "type": "placement",
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "frames": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    },
+                    "endpoints": "hold_adjacent"
+                  },
+                  "audio": {
+                    "asset": "b2868a97-5094-4eb8-9ccd-4a5c904983e0",
+                    "span": {
+                      "start": {
+                        "ticks": 0,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 48000
+                        }
+                      },
+                      "end": {
+                        "ticks": 192192,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 48000
+                        }
+                      }
+                    }
+                  },
+                  "audio_mapping": {
+                    "type": "placement",
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "frames": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    }
+                  },
+                  "link": "linked",
+                  "audio_offset": 0
+                }
+              }
+            }
+          },
+          "assets": {
+            "b2868a97-5094-4eb8-9ccd-4a5c904983e0": {
+              "label": "cfr-bframes.mp4",
+              "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+              "video": {
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 30000
+                  }
+                },
+                "end": {
+                  "ticks": 120120,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 30000
+                  }
+                }
+              },
+              "audio": {
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                },
+                "end": {
+                  "ticks": 192192,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                }
+              },
+              "still_image": false,
+              "frame_count": 120,
+              "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+            }
+          },
+          "marks": {},
+          "overrides": {},
+          "gap_overrides": {},
+          "audio_lineage": {},
+          "audio_bindings": {
+            "timings": [
+              {
+                "id": {
+                  "allocation": "3a246480-e04b-434c-adb6-44f6814fa200",
+                  "ordinal": 0
+                },
+                "layout": {
+                  "root": "44425a05-dc69-45ff-aedd-26c2356c963a",
+                  "rate": {
+                    "numerator": 30000,
+                    "denominator": 1001
+                  },
+                  "nodes": {
+                    "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+                      "duration": 120,
+                      "edges": {
+                        "node_start": "automatic",
+                        "node_end": "automatic",
+                        "source_placement_start": "automatic",
+                        "source_placement_end": "automatic",
+                        "repeat_gap_start": "automatic",
+                        "repeat_gap_end": "automatic"
+                      },
+                      "kind": {
+                        "type": "source",
+                        "placement": {
+                          "start": {
+                            "numerator": "0",
+                            "denominator": "1"
+                          },
+                          "end": {
+                            "numerator": "120",
+                            "denominator": "1"
+                          }
+                        }
+                      }
+                    },
+                    "44425a05-dc69-45ff-aedd-26c2356c963a": {
+                      "duration": 120,
+                      "edges": {
+                        "node_start": "automatic",
+                        "node_end": "automatic",
+                        "source_placement_start": "automatic",
+                        "source_placement_end": "automatic",
+                        "repeat_gap_start": "automatic",
+                        "repeat_gap_end": "automatic"
+                      },
+                      "kind": {
+                        "type": "sequence",
+                        "children": [
+                          "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                        ]
+                      }
+                    }
+                  },
+                  "overrides": {}
+                }
+              }
+            ],
+            "bindings": {
+              "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+                "lattice": {
+                  "reference": {
+                    "timing": {
+                      "allocation": "3a246480-e04b-434c-adb6-44f6814fa200",
+                      "ordinal": 0
+                    },
+                    "root": {
+                      "type": "project_root_round_even"
+                    },
+                    "physical": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                  },
+                  "arguments": [],
+                  "births": []
+                },
+                "resume": null,
+                "reanchors": [
+                  {
+                    "placement": {
+                      "reference": {
+                        "timing": {
+                          "allocation": "3a246480-e04b-434c-adb6-44f6814fa200",
+                          "ordinal": 0
+                        },
+                        "root": {
+                          "type": "project_root_round_even"
+                        },
+                        "physical": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                      },
+                      "arguments": [],
+                      "births": []
+                    },
+                    "window": {
+                      "start": {
+                        "numerator": "65",
+                        "denominator": "1"
+                      },
+                      "end": {
+                        "numerator": "70",
+                        "denominator": "1"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "j",
+      "revision": "ab2073bb-c82a-43c8-95aa-0dfa8f49275d",
+      "value": {
+        "type": "original",
+        "revision": "ab2073bb-c82a-43c8-95aa-0dfa8f49275d",
+        "asset": "b2868a97-5094-4eb8-9ccd-4a5c904983e0",
+        "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6",
+        "ordinals": {
+          "start": 90,
+          "end": 94
+        }
+      }
+    },
+    {
+      "name": "k",
+      "revision": "ab2073bb-c82a-43c8-95aa-0dfa8f49275d",
+      "value": {
+        "type": "edited",
+        "slice": {
+          "project_id": "e6d1ba97-2db0-4119-9e5d-e4a4bef3e078",
+          "revision_id": "ab2073bb-c82a-43c8-95aa-0dfa8f49275d",
+          "capture_timing": {
+            "allocation": "8362d427-bb6b-4d5f-b40c-e00ad4c49ec6",
+            "ordinal": 0
+          },
+          "presentation_basis": {
+            "width": 320,
+            "height": 180,
+            "frame_rate": {
+              "numerator": 30000,
+              "denominator": 1001
+            },
+            "color_policy": "sdr_rec709"
+          },
+          "parent": "44425a05-dc69-45ff-aedd-26c2356c963a",
+          "range": {
+            "start": 75,
+            "end": 81
+          },
+          "source_duration": 120,
+          "parts": [
+            {
+              "root": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88",
+              "mapping": {
+                "start": 75,
+                "end": 81
+              },
+              "source_start": 0
+            }
+          ],
+          "nodes": {
+            "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+              "label": "cfr-bframes.mp4",
+              "kind": {
+                "type": "source",
+                "source": {
+                  "duration": 120,
+                  "edit_window": {
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "end": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    }
+                  },
+                  "video": {
+                    "type": "stream",
+                    "asset": "b2868a97-5094-4eb8-9ccd-4a5c904983e0",
+                    "span": {
+                      "start": {
+                        "ticks": 0,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 30000
+                        }
+                      },
+                      "end": {
+                        "ticks": 120120,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 30000
+                        }
+                      }
+                    }
+                  },
+                  "video_mapping": {
+                    "type": "placement",
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "frames": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    },
+                    "endpoints": "hold_adjacent"
+                  },
+                  "audio": {
+                    "asset": "b2868a97-5094-4eb8-9ccd-4a5c904983e0",
+                    "span": {
+                      "start": {
+                        "ticks": 0,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 48000
+                        }
+                      },
+                      "end": {
+                        "ticks": 192192,
+                        "time_base": {
+                          "numerator": 1,
+                          "denominator": 48000
+                        }
+                      }
+                    }
+                  },
+                  "audio_mapping": {
+                    "type": "placement",
+                    "start": {
+                      "numerator": "0",
+                      "denominator": "1"
+                    },
+                    "frames": {
+                      "numerator": "120",
+                      "denominator": "1"
+                    }
+                  },
+                  "link": "linked",
+                  "audio_offset": 0
+                }
+              }
+            }
+          },
+          "assets": {
+            "b2868a97-5094-4eb8-9ccd-4a5c904983e0": {
+              "label": "cfr-bframes.mp4",
+              "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+              "video": {
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 30000
+                  }
+                },
+                "end": {
+                  "ticks": 120120,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 30000
+                  }
+                }
+              },
+              "audio": {
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                },
+                "end": {
+                  "ticks": 192192,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                }
+              },
+              "still_image": false,
+              "frame_count": 120,
+              "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+            }
+          },
+          "marks": {},
+          "overrides": {},
+          "gap_overrides": {},
+          "audio_lineage": {},
+          "audio_bindings": {
+            "timings": [
+              {
+                "id": {
+                  "allocation": "8362d427-bb6b-4d5f-b40c-e00ad4c49ec6",
+                  "ordinal": 0
+                },
+                "layout": {
+                  "root": "44425a05-dc69-45ff-aedd-26c2356c963a",
+                  "rate": {
+                    "numerator": 30000,
+                    "denominator": 1001
+                  },
+                  "nodes": {
+                    "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+                      "duration": 120,
+                      "edges": {
+                        "node_start": "automatic",
+                        "node_end": "automatic",
+                        "source_placement_start": "automatic",
+                        "source_placement_end": "automatic",
+                        "repeat_gap_start": "automatic",
+                        "repeat_gap_end": "automatic"
+                      },
+                      "kind": {
+                        "type": "source",
+                        "placement": {
+                          "start": {
+                            "numerator": "0",
+                            "denominator": "1"
+                          },
+                          "end": {
+                            "numerator": "120",
+                            "denominator": "1"
+                          }
+                        }
+                      }
+                    },
+                    "44425a05-dc69-45ff-aedd-26c2356c963a": {
+                      "duration": 120,
+                      "edges": {
+                        "node_start": "automatic",
+                        "node_end": "automatic",
+                        "source_placement_start": "automatic",
+                        "source_placement_end": "automatic",
+                        "repeat_gap_start": "automatic",
+                        "repeat_gap_end": "automatic"
+                      },
+                      "kind": {
+                        "type": "sequence",
+                        "children": [
+                          "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                        ]
+                      }
+                    }
+                  },
+                  "overrides": {}
+                }
+              }
+            ],
+            "bindings": {
+              "2edb85c2-83ff-4e7d-894a-bbc001fa8f88": {
+                "lattice": {
+                  "reference": {
+                    "timing": {
+                      "allocation": "8362d427-bb6b-4d5f-b40c-e00ad4c49ec6",
+                      "ordinal": 0
+                    },
+                    "root": {
+                      "type": "project_root_round_even"
+                    },
+                    "physical": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                  },
+                  "arguments": [],
+                  "births": []
+                },
+                "resume": null,
+                "reanchors": [
+                  {
+                    "placement": {
+                      "reference": {
+                        "timing": {
+                          "allocation": "8362d427-bb6b-4d5f-b40c-e00ad4c49ec6",
+                          "ordinal": 0
+                        },
+                        "root": {
+                          "type": "project_root_round_even"
+                        },
+                        "physical": "2edb85c2-83ff-4e7d-894a-bbc001fa8f88"
+                      },
+                      "arguments": [],
+                      "births": []
+                    },
+                    "window": {
+                      "start": {
+                        "numerator": "75",
+                        "denominator": "1"
+                      },
+                      "end": {
+                        "numerator": "81",
+                        "denominator": "1"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "tables": {
+    "generation_attempt_heads": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "generation_attempts": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "generation_bundle_receipts": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "generation_candidate_receipts": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "generation_requests": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "history": {
+      "rows": 10,
+      "sha256": "f40e12a51029042a399b25e5aa64947098686c3c6053a557e6562c49605e3b2a"
+    },
+    "hold_request_clocks": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "original_media": {
+      "rows": 1,
+      "sha256": "cf48374632be4481a7fd4733c55fabdb43ab41613a6ab7248d644f28236ade4a"
+    },
+    "redo": {
+      "rows": 1,
+      "sha256": "17c4b27ce8d2e34e7cbde58d8666e8d9b9a3beb231cd8dc6441e79701f00d7a5"
+    },
+    "register_contents": {
+      "rows": 10,
+      "sha256": "7072c878f8cb4d41c9a420bc50bb0e4a0ab68d6d2068b4ed22f182cc6b67d4db"
+    },
+    "register_state": {
+      "rows": 1,
+      "sha256": "c02a9ff79b1273d85b1ac7d365c7fb9fd4ab963938d391ad62cb37e2ad284062"
+    },
+    "registers": {
+      "rows": 10,
+      "sha256": "b8b6257fc14e866b6a3f723b69d0ab459ea14ad8e6f7e8a3c3be0b19974a8c64"
+    },
+    "render_attempts": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "render_candidate_checkpoints": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "render_encoding_decisions": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "render_job_heads": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "render_jobs": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "render_publication_operations": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "render_publications": {
+      "rows": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "revisions": {
+      "rows": 20,
+      "sha256": "b07d29168e775a82184dac65259d07b5486a4f9ecc2a375e4ecc75a1ec9a862a"
+    },
+    "single_source": {
+      "rows": 1,
+      "sha256": "a6ce00b022019729a07a7aa36b4d81624163c32fdd707231fd295f4627fcecdb"
+    },
+    "source_qualifications": {
+      "rows": 1,
+      "sha256": "7aa5fd65f425327e1d9b63aa42bd6327927ebfdd48b39f96494b32b8da5ad244"
+    },
+    "state": {
+      "rows": 1,
+      "sha256": "da4d63078e3a0471b3b9c5a01bfad2752a7cc561c6643832a0665d58ca21627a"
+    }
+  },
+  "integrity": [
+    [
+      "ok"
+    ]
+  ],
+  "foreign_keys": []
+}

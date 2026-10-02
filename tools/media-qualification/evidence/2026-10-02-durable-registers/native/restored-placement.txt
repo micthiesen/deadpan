@@ -1,0 +1,37 @@
+The following is a diff from the previous accessibility tree for Window: "Deadpan" with ~ and + representing changed and added elements, respectively. Removed elements are summarized by ID range.
+Removed element IDs: 11-101
+~		3 button (disabled) File
+~		4 button (disabled) Render  ⌘E
+~		5 button (disabled) Renders
+~		7 button (disabled) Keys  ?
+~		8 button (disabled) Redo  Ctrl R
++		108 text (settable) Place slice
++		109 text (settable) UNSAVED · Insert · Linked picture + sound
++		110 button Place slice keyboard controls
++		111 toggle button (settable, boolean) In 0 · i, Value: off
++		112 toggle button (settable, boolean) Out 8 exclusive · o, Value: off
++		113 toggle button (settable, boolean) Destination Edit 0 · d, Value: on
++		114 toggle button (settable, boolean) Inspect picture · f, Value: off
++		115 button Previous seam · k
++		116 button Next seam · j
++		117 button −1 · h
++		118 button +1 · l
++		119 toggle button (settable, boolean) Proposed · b, Value: on
++		120 button Audition · Space
++		121 button Loop both joins · Shift Space
++		122 button Place slice · Enter
++		123 button Cancel · Esc
++		124 text (settable) h/l adjusts the selected control; counts work: 12l. Tab / Shift Tab selects buttons; Enter activates.
++		125 text (settable) ORIGINAL SLICE
++		126 text (settable) Boundaries [0..8) · 8 source frames
++		127 text (settable) First included · Original frame 1
++		128 image First included Original picture, frame 1
++		129 text (settable) Last included · Original frame 8
++		130 image Last included Original picture, frame 8
++		131 text (settable) PROPOSED · UNSAVED EDIT
++		132 image Showing proposed edit frame 1
++		133 text (settable) Showing proposed edit frame 1
++		134 text (settable) Requested Edit picture 1 · inside inserted slice
++		135 text (settable) Destination: Your edit · Edit boundary 0 · Sequence slot 1 of 2 · +8 project frames
++		136 text (settable) Provisional insertion at Edit 0, through exclusive 8, context 0 to 16
+The focused UI element is 110 button Place slice keyboard controls

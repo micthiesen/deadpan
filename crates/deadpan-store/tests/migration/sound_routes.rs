@@ -288,6 +288,7 @@ fn schema29_rejects_new_sound_bearing_split_even_without_new_route_fields() -> R
         [],
     )?;
     remove_empty_render_tables(&database)?;
+    development_break::remove_empty_register_tables(&database)?;
     database.pragma_update(None, "user_version", 35)?;
     for (_, wire) in docs(&database)? {
         legacy_v29::Document::from_json(&wire)?;

@@ -26,6 +26,8 @@ type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 mod edited_slice;
 #[path = "source_registration/hold_audio.rs"]
 mod hold_audio;
+#[path = "source_registration/registers.rs"]
+mod registers;
 #[path = "source_registration/roll.rs"]
 mod roll;
 

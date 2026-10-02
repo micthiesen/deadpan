@@ -99,10 +99,10 @@ fn schemas39_through51_fail_before_reading_document_or_acquiring_writer() -> Res
 }
 
 #[test]
-fn current_schema52_migration_is_read_only_and_needs_no_backup_or_writer() -> Result {
+fn current_schema53_migration_is_read_only_and_needs_no_backup_or_writer() -> Result {
     use deadpan_core::{ColorPolicy, FrameRate, PresentationBasis, ProjectId};
 
-    assert_eq!(DATABASE_SCHEMA_VERSION, 52);
+    assert_eq!(DATABASE_SCHEMA_VERSION, 53);
     let scratch = tempfile::tempdir()?;
     let package = scratch.path().join("current.deadpan");
     let document = ProjectDocument::new(
@@ -120,7 +120,7 @@ fn current_schema52_migration_is_read_only_and_needs_no_backup_or_writer() -> Re
     let database = Connection::open(package.join("project.sqlite"))?;
     let before = cells(&database)?;
     let outcome = ProjectStore::migrate(&package)?;
-    assert_eq!((outcome.from_schema, outcome.to_schema), (52, 52));
+    assert_eq!((outcome.from_schema, outcome.to_schema), (53, 53));
     assert!(outcome.backup.is_none());
     assert_eq!(cells(&database)?, before);
     assert_eq!(fs::read_dir(package.join("Snapshots"))?.count(), 0);
@@ -129,5 +129,71 @@ fn current_schema52_migration_is_read_only_and_needs_no_backup_or_writer() -> Re
     for mode in [AccessMode::ReadOnly, AccessMode::ReadWrite] {
         assert_eq!(ProjectStore::open(&package, mode)?.snapshot()?, document);
     }
+    Ok(())
+}
+
+#[test]
+fn schema52_additive_migration_preserves_history_and_creates_empty_register_bank() -> Result {
+    use deadpan_core::{ColorPolicy, FrameRate, PresentationBasis, ProjectId};
+    let scratch = tempfile::tempdir()?;
+    let package = scratch.path().join("register-upgrade.deadpan");
+    let document = ProjectDocument::new(
+        ProjectId::new("register-upgrade")?,
+        RevisionId::new("initial")?,
+        PresentationBasis {
+            width: 16,
+            height: 16,
+            frame_rate: FrameRate::new(30, 1)?,
+            color_policy: ColorPolicy::SdrRec709,
+        },
+        NodeId::new("root")?,
+    )?;
+    drop(ProjectStore::create(&package, &document)?);
+    let database = Connection::open(package.join("project.sqlite"))?;
+    database.execute_batch("DROP TABLE registers; DROP TABLE register_contents; DROP TABLE register_state; PRAGMA user_version=52;")?;
+    let before = cells(&database)?;
+    for mode in [AccessMode::ReadOnly, AccessMode::ReadWrite] {
+        assert!(matches!(
+            ProjectStore::open(&package, mode),
+            Err(StoreError::MigrationRequired(52))
+        ));
+        assert_eq!(cells(&database)?, before);
+    }
+    let migrated = ProjectStore::migrate(&package)?;
+    assert_eq!((migrated.from_schema, migrated.to_schema), (52, 53));
+    assert!(migrated.backup.as_ref().is_some_and(|path| path.is_file()));
+    let store = ProjectStore::open(&package, AccessMode::ReadOnly)?;
+    assert_eq!(store.snapshot()?, document);
+    assert_eq!(store.history_availability()?, (false, false));
+    assert_eq!(store.register_version()?, 0);
+    assert!(store.registers()?.entries.is_empty());
+    // Drop only the additive bank from a private backup of the migrated DB to
+    // compare every prior table, schema and row with the original schema 52.
+    let comparison_path = scratch.path().join("comparison.sqlite");
+    database.backup(rusqlite::MAIN_DB, &comparison_path, None)?;
+    let comparison = Connection::open(comparison_path)?;
+    comparison.execute_batch("DROP TABLE registers; DROP TABLE register_contents; DROP TABLE register_state; PRAGMA user_version=52;")?;
+    assert_eq!(cells(&comparison)?, before);
+    Ok(())
+}
+
+/// Synthetic legacy fixtures may remove only the newly created empty bank.
+/// Authentic older packages and deliberately injected collisions keep all cells.
+pub(super) fn remove_empty_register_tables(database: &Connection) -> Result {
+    for table in ["registers", "register_contents"] {
+        assert_eq!(
+            database.query_row(&format!("SELECT count(*) FROM {table}"), [], |row| row
+                .get::<_, i64>(0))?,
+            0
+        );
+    }
+    let states = database
+        .prepare("SELECT singleton,version FROM register_state ORDER BY singleton")?
+        .query_map([], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?)))?
+        .collect::<std::result::Result<Vec<_>, _>>()?;
+    assert_eq!(states, vec![(1, 0)]);
+    database.execute_batch(
+        "DROP TABLE registers; DROP TABLE register_contents; DROP TABLE register_state;",
+    )?;
     Ok(())
 }

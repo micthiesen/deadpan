@@ -31,7 +31,9 @@ fn capture_request(workspace: &Workspace, request: u64, range: FrameRange) -> Ca
             project: workspace.document.project_id().clone(),
             source_revision: workspace.document.revision_id().clone(),
             request,
+            persisted_version: None,
         },
+        register: None,
         scope: SequenceScope::default(),
         parent: workspace.document.root().clone(),
         selection: deadpan_core::SliceCaptureSelection::Range { range },
@@ -101,10 +103,23 @@ fn restored(actual: &ProjectDocument, expected: &ProjectDocument) {
 }
 
 #[test]
-fn capture_is_history_neutral_and_reads_the_named_revision_after_edit_delete_and_undo() {
+fn capture_is_history_neutral_rejects_stale_writes_and_survives_edit_delete_and_undo() {
     let scratch = tempfile::tempdir().unwrap();
     let (harness, initial) = setup(&scratch.path().join("capture.deadpan"));
     let requested = capture_request(&initial, 1, range(3, 16));
+    let before = counts(&initial.path);
+    let update = command(
+        &harness.service,
+        ProjectRequest::CaptureEditSlice(requested.clone()),
+    );
+    assert!(Arc::ptr_eq(update.workspace.as_ref().unwrap(), &initial));
+    let copied = update.captured_slice.unwrap().result.unwrap();
+    assert_eq!(copied.id(), &requested.id);
+    assert_eq!(copied.bounds(), range(0, 30));
+    assert_eq!(copied.slice().duration().frames(), 13);
+    assert_eq!(copied.slice().revision_id(), initial.document.revision_id());
+    assert_eq!(counts(&initial.path), before);
+    copied.slice().validate_capture(&initial.document).unwrap();
     let changed = edited(
         &harness.service,
         &initial,
@@ -122,13 +137,8 @@ fn capture_is_history_neutral_and_reads_the_named_revision_after_edit_delete_and
     );
     assert_eq!(update.committed, receipt);
     assert!(Arc::ptr_eq(update.workspace.as_ref().unwrap(), &changed));
-    let copied = update.captured_slice.unwrap().result.unwrap();
-    assert_eq!(copied.id(), &requested.id);
-    assert_eq!(copied.bounds(), range(0, 30));
-    assert_eq!(copied.slice().duration().frames(), 13);
-    assert_eq!(copied.slice().revision_id(), initial.document.revision_id());
+    assert!(update.captured_slice.unwrap().result.is_err());
     assert_eq!(counts(&initial.path), before);
-    copied.slice().validate_capture(&initial.document).unwrap();
     assert!(copied.slice().validate_capture(&changed.document).is_err());
 
     let removed = edited(
@@ -138,13 +148,17 @@ fn capture_is_history_neutral_and_reads_the_named_revision_after_edit_delete_and
     )
     .workspace
     .unwrap();
-    let old_again = capture(&harness.service, capture_request(&initial, 2, range(3, 16)));
-    assert_eq!(old_again.bounds(), copied.bounds());
-    assert_ne!(
-        old_again.slice(),
-        copied.slice(),
-        "fresh scratch timing identity"
+    let stale = command(
+        &harness.service,
+        ProjectRequest::CaptureEditSlice(capture_request(&initial, 2, range(3, 16))),
     );
+    assert!(stale.captured_slice.unwrap().result.is_err());
+    let crate::project::registers::Value::Edited(retained) =
+        &stale.registers.unwrap().entries[&'"']
+    else {
+        panic!("retained edited copy")
+    };
+    assert!(Arc::ptr_eq(retained, &copied));
     let undone = command(
         &harness.service,
         ProjectRequest::Undo {

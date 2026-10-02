@@ -41,6 +41,9 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         Key::L,
         Key::Y,
     ])?;
+    d.wait_for("Original slice copy is durable", |app| {
+        !app.service.is_busy() && !app.copied.is_pending()
+    })?;
     d.settled()?;
     d.check(
         "Production v and y copy the exact half-open Original range without an edit",

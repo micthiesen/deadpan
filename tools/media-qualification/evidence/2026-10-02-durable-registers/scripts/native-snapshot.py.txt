@@ -1,0 +1,31 @@
+import hashlib
+import json
+from pathlib import Path
+import sqlite3
+import sys
+
+database, destination = map(Path, sys.argv[1:])
+destination.parent.mkdir(parents=True, exist_ok=True)
+with sqlite3.connect(database.as_uri() + '?mode=ro', uri=True) as source:
+    with sqlite3.connect(':memory:') as snapshot:
+        source.backup(snapshot)
+        dump = '\n'.join(snapshot.iterdump()) + '\n'
+        destination.with_suffix('.sql').write_text(dump)
+        tables = {}
+        for (name,) in snapshot.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"):
+            quoted = '"' + name.replace('"', '""') + '"'
+            rows = list(snapshot.execute('SELECT * FROM ' + quoted))
+            encoded = sorted(json.dumps(row, default=lambda value: {'bytes': value.hex()}, separators=(',', ':')) for row in rows)
+            wire = '\n'.join(encoded).encode()
+            tables[name] = {'rows': len(rows), 'sha256': hashlib.sha256(wire).hexdigest()}
+        bank = list(snapshot.execute('SELECT r.name,c.capture_revision,c.value FROM registers r JOIN register_contents c ON r.content_id=c.id ORDER BY r.name'))
+        report = {
+            'database': str(database),
+            'version': snapshot.execute('SELECT version FROM register_state').fetchone()[0],
+            'slots': [{'name': row[0], 'revision': row[1], 'value': json.loads(row[2])} for row in bank],
+            'tables': tables,
+            'integrity': snapshot.execute('PRAGMA integrity_check').fetchall(),
+            'foreign_keys': snapshot.execute('PRAGMA foreign_key_check').fetchall(),
+        }
+        destination.with_suffix('.json').write_text(json.dumps(report, indent=2) + '\n')
+        print(json.dumps({'version': report['version'], 'names': [row['name'] for row in report['slots']], 'integrity': report['integrity'], 'foreign_keys': report['foreign_keys']}))

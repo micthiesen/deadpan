@@ -24,6 +24,7 @@ pub mod original_media;
 pub mod publication;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod publication_durability;
+pub mod registers;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod render_jobs;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -366,6 +367,7 @@ impl ProjectStore {
     pub fn validate(&self) -> Result<(), StoreError> {
         let transaction = self.connection.unchecked_transaction()?;
         validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
+        registers::check_stored_sizes(&transaction)?;
         generation::check_stored_sizes(&transaction)?;
         generation_attempts::check_stored_sizes(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -403,6 +405,7 @@ impl ProjectStore {
         source_registration::validate_store(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         single_source::validate_store(&transaction)?;
+        registers::validate_store(&transaction)?;
         Ok(())
     }
 
@@ -450,6 +453,10 @@ impl ProjectStore {
         let temporary = tempfile::NamedTempFile::new_in(&directory)?;
         self.connection
             .backup(rusqlite::MAIN_DB, temporary.path(), None)?;
+        let checkpoint = Connection::open_with_flags(temporary.path(), read_flags())?;
+        schema::configure(&checkpoint)?;
+        registers::validate_store(&checkpoint)?;
+        drop(checkpoint);
         temporary.as_file().sync_all()?;
         let (_, path) = temporary.keep().map_err(|error| error.error)?;
         File::open(&directory)?.sync_all()?;

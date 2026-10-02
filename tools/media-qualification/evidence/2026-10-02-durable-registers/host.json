@@ -1,0 +1,50 @@
+{
+  "utc": "2026-10-02T07:56:14.336548+00:00",
+  "machine": "arm64",
+  "commands": [
+    {
+      "argv": [
+        "sw_vers"
+      ],
+      "output": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84"
+    },
+    {
+      "argv": [
+        "sysctl",
+        "-n",
+        "machdep.cpu.brand_string"
+      ],
+      "output": "Apple M5 Max"
+    },
+    {
+      "argv": [
+        "sysctl",
+        "-n",
+        "hw.memsize"
+      ],
+      "output": "137438953472"
+    },
+    {
+      "argv": [
+        "rustc",
+        "--version"
+      ],
+      "output": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+    },
+    {
+      "argv": [
+        "cargo",
+        "--version"
+      ],
+      "output": "cargo 1.97.1 (c980f4866 2026-06-30)"
+    },
+    {
+      "argv": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "output": "e7d472be5a9433bb87ef16c4cdb2dc3c4c5edfd4"
+    }
+  ]
+}

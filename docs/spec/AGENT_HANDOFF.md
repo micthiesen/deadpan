@@ -21,18 +21,24 @@ app inventory confirmed no Deadpan app remained running.
 
 ## Configurable editor paths, current implementation
 
-The [named session register bank](../NAMED_REGISTERS.md) adds `"a` selection,
+The [project register bank](../NAMED_REGISTERS.md) adds `"a` selection,
 `:register a` and a live `:registers` inventory. Keep a single pending capture
 with its destination fixed at initiation. New name selection cannot retarget a
 completion. Commands capture names and paste content, including absence, on
-entry. Successful named writes update that slot and the default together; cut
-writes still wait for a durable receipt. Preserve all slots across edits and
-Undo, clear them on session close, and consume the chosen name on the next
-copy/picture-cut/paste/placement attempt. Persistent registers and macros remain
-required. Escape and blur cancel both live choice and an open named command;
+entry. Original and Edited copies save through the service without timeline
+revisions; cuts save deletion and registers atomically. SQLite schema 53 retains
+at most 64 MiB of unique canonical contents. Preserve all slots across edits,
+Undo and reopen; restore fresh runtime identities and revalidate historical
+provenance. Publish versioned bank snapshots independently of pending UI
+confirmation. Superseded successful saves remain durable, while only matching
+replies consume selection. Retain the latest accepted write until its reply,
+including after newer local refusal, and refuse new placement while unsettled.
+Consume the chosen name on the next copy/picture-cut/paste/placement attempt.
+Macro content/execution and semantic dot-repeat remain required.
+Escape and blur cancel both live choice and an open named command;
 project reopen cannot revive its captured name. See
-[qualification](../qualification/named-registers-2026-10-02.md) for native and
-rendered checks, source identities, retained failures and remaining limits.
+[persistent-register qualification](../qualification/durable-registers-2026-10-02.md)
+for current checks, source identities, retained failures and remaining limits.
 
 Normal/Visual bindings load once from the native user Application Support
 directory. Missing files use shipped keys; any read/schema/compile failure keeps
@@ -44,7 +50,8 @@ from the compiled map. Held motions retain their resolved action and cannot
 consume a new prefix. Command/Search entry retains the ordered native input
 suffix and suppresses only the held opener. See [the contract](../KEYMAP.md).
 Other mode maps, strict logical provenance, physical layout/IME qualification,
-persistent registers, semantic dot-repeat and macros remain required. No schema changes.
+semantic dot-repeat and macros remain required. The keymap increment made no
+schema changes; the register bank above adds schema 53.
 The [qualification](../qualification/configurable-bindings-2026-10-01.md) records
 custom/fallback replay, final checks and remaining verification limits.
 

@@ -275,6 +275,7 @@ fn valid_modern_interior_history_cannot_claim_schema30() -> Result {
             [],
         )?;
         remove_empty_render_tables(&database)?;
+        development_break::remove_empty_register_tables(&database)?;
         database.pragma_update(None, "user_version", 30)?;
         let edit = apply(&initial, &request)?;
         let edit_json = history_json(&database)?[0].1.clone();

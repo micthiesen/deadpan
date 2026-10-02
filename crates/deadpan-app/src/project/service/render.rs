@@ -20,6 +20,7 @@ pub(super) struct NativeRender {
 pub(super) struct PreparedOpen {
     pub store: ProjectStore,
     pub workspace: Workspace,
+    pub registers: Arc<super::super::registers::Bank>,
     pub message: String,
 }
 
@@ -36,6 +37,10 @@ impl Service {
     /// True completes the short user command; false retains its admission while
     /// a requested session replacement drains the old writer's render work.
     pub(super) fn dispatch_request(&mut self, request: ProjectRequest) -> bool {
+        if let ProjectRequest::CaptureOriginal(request) = request {
+            self.capture_original_command(request);
+            return true;
+        }
         if let ProjectRequest::CaptureEditSlice(request) = request {
             self.capture_edit_slice_command(request);
             return true;
@@ -481,6 +486,8 @@ impl Service {
                 self.store = None;
                 self.workspace = None;
                 self.cached = None;
+                self.clear_copied_slice();
+                self.clear_marks();
                 self.import = None;
                 self.message = Some("Project closed".into());
                 Ok(())

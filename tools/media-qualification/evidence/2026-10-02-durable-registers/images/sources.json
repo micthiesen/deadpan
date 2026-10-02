@@ -1,0 +1,26 @@
+[
+  {
+    "source": "/tmp/deadpan-durable-registers-20261002/replay-full/named-registers-052.png",
+    "caption": "Live register inventory at 960\u00d7640",
+    "inspected": true,
+    "sha256": "87d91c36a6c580b15ed4357f08a0952ecda224dc544b3da9247260f9279a539f"
+  },
+  {
+    "source": "/tmp/deadpan-durable-registers-20261002/replay-full/named-registers-057.png",
+    "caption": "Named Original selection at 1280\u00d7820",
+    "inspected": true,
+    "sha256": "403d0b1133929dfcfe612ab3eaafbe5b6f04a1a3a4e86f9dce9f89c43c106b75"
+  },
+  {
+    "source": "/tmp/deadpan-durable-registers-20261002/replay-full/named-registers-127.png",
+    "caption": "Restored typed inventory after explicit stale-identity refusal",
+    "inspected": true,
+    "sha256": "1d26c0304a09d102734eb72f6e1a93d4d5ea148aa41ae52dce749466d4d3b899"
+  },
+  {
+    "source": "/tmp/deadpan-durable-registers-20261002/replay-full/delete-range-121.png",
+    "caption": "Visible deletion footer; unrelated paste guidance is within a scrollable inspector",
+    "inspected": true,
+    "sha256": "63b345360f2882ddf6cbc27ea1ca22e4e80fe72f2f16ac44c9f3e2484ca0a79a"
+  }
+]

@@ -35,6 +35,7 @@ mod gain;
 mod headless;
 mod marks;
 mod moment;
+mod registers;
 mod render;
 mod render_history;
 mod room_tone;
@@ -82,6 +83,8 @@ struct Service {
     trim_seen: Option<super::trim::ProposalId>,
     trim_session: Option<(u64, ProjectId)>,
     captured_slice: Option<super::slice::CaptureUpdate>,
+    registers: Option<Arc<super::registers::Bank>>,
+    captured_original: Option<super::registers::OriginalUpdate>,
     cut_slice: Option<super::slice::CutUpdate>,
     last_cut: Option<(super::slice::CaptureRequest, super::slice::CutReceipt)>,
     marks: super::marks::Update,
@@ -143,6 +146,8 @@ pub(super) fn run(
         trim_seen: None,
         trim_session: None,
         captured_slice: None,
+        registers: None,
+        captured_original: None,
         cut_slice: None,
         last_cut: None,
         marks: super::marks::Update::default(),
@@ -291,6 +296,8 @@ impl Service {
             trim_commit: self.trim_commit.clone(),
             saved_trim: self.saved_trim.clone(),
             captured_slice: self.captured_slice.clone(),
+            registers: self.registers.clone(),
+            captured_original: self.captured_original.clone(),
             cut_slice: self.cut_slice.clone(),
             saved_cut: self.last_cut.as_ref().map(|(_, receipt)| receipt.clone()),
             marks: self.marks.clone(),
@@ -313,6 +320,10 @@ impl Service {
             }
             ProjectRequest::CaptureEditSlice(request) => {
                 self.capture_edit_slice_command(request);
+                return Ok(());
+            }
+            ProjectRequest::CaptureOriginal(request) => {
+                self.capture_original_command(request);
                 return Ok(());
             }
             ProjectRequest::CutEditSlice(request) => {
@@ -437,6 +448,7 @@ impl Service {
             ProjectRequest::PasteMoment(request) => self.paste_moment(request),
             ProjectRequest::PasteEditedSlice(request) => self.paste_edited_slice(request),
             ProjectRequest::CaptureEditSlice(_) => unreachable!("copy uses independent feedback"),
+            ProjectRequest::CaptureOriginal(_) => unreachable!("copy uses independent feedback"),
             ProjectRequest::CutEditSlice(_) => unreachable!("cut uses independent feedback"),
             ProjectRequest::PrepareSplice(_)
             | ProjectRequest::CommitSplice(_)
@@ -670,6 +682,7 @@ impl Service {
             .checked_add(1)
             .ok_or("Project session identities exhausted")?;
         let workspace = snapshot(&store, next, package.canonicalize().map_err(display)?, None)?;
+        let registers = registers::restore(&store, next)?;
         let host = headless::Host::bind(&mut store)?;
         self.cancel();
         self.host = Some(host);
@@ -678,6 +691,7 @@ impl Service {
         self.session = next;
         self.cached = None;
         self.clear_copied_slice();
+        self.registers = Some(registers);
         self.clear_marks();
         self.import = None;
         self.initialize_source(next, document.revision_id().clone(), path)
@@ -1053,6 +1067,7 @@ impl Service {
             .checked_add(1)
             .ok_or("Project session identities exhausted")?;
         let workspace = snapshot(&store, next, path.canonicalize().map_err(display)?, None)?;
+        let registers = registers::restore(&store, next)?;
         let message = match migration {
             Some(migration) if migration.backup.is_some() => format!(
                 "Project opened. Upgraded schema {} to {}; original database backup: {}",
@@ -1066,6 +1081,7 @@ impl Service {
         Ok(Some(render::PreparedOpen {
             store,
             workspace,
+            registers,
             message,
         }))
     }
@@ -1081,6 +1097,7 @@ impl Service {
         self.workspace = Some(Arc::new(prepared.workspace));
         self.cached = None;
         self.clear_copied_slice();
+        self.registers = Some(prepared.registers);
         self.import = None;
         self.message = Some(prepared.message);
         self.clear_marks();
@@ -1088,6 +1105,8 @@ impl Service {
     }
 
     fn refresh(&mut self) -> Result<()> {
+        // A history-neutral host write can update copies without a new revision.
+        self.refresh_registers()?;
         #[cfg(test)]
         if std::mem::take(&mut self.render_preview_refresh_failure) {
             return Err("Injected failure refreshing the committed preview".into());

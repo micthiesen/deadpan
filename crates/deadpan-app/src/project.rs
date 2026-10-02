@@ -21,6 +21,7 @@ use crate::library::ProjectLibrary;
 pub mod gain;
 pub mod marks;
 mod pause;
+pub mod registers;
 pub mod render_history;
 pub mod retime;
 mod scope;
@@ -147,6 +148,9 @@ pub struct ProjectUpdate {
     pub saved_trim: Option<trim::CommitReceipt>,
     /// History-neutral edited copies retain their source identity across replies.
     pub captured_slice: Option<slice::CaptureUpdate>,
+    /// Durable contents are independent of matching copy feedback or selection.
+    pub registers: Option<Arc<registers::Bank>>,
+    pub captured_original: Option<registers::OriginalUpdate>,
     pub cut_slice: Option<slice::CutUpdate>,
     /// Last durable cut remains visible even after a newer cut is rejected.
     pub saved_cut: Option<slice::CutReceipt>,
@@ -440,6 +444,7 @@ pub enum ProjectRequest {
         index: usize,
     },
     PasteMoment(MomentPaste),
+    CaptureOriginal(registers::OriginalRequest),
     CaptureEditSlice(slice::CaptureRequest),
     CutEditSlice(slice::CaptureRequest),
     PasteEditedSlice(slice::Paste),

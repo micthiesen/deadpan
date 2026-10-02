@@ -25,6 +25,39 @@ pub struct SequenceScopeView<'a> {
 }
 
 impl SequenceScope {
+    /// Recover a historical ordinary Sequence path from its authored owner.
+    /// Persisted labels and navigation paths never grant a scope.
+    pub(super) fn from_historical_parent(
+        document: &ProjectDocument,
+        plan: &RenderPlan,
+        parent: &NodeId,
+    ) -> Result<Self, String> {
+        let parents: std::collections::BTreeMap<_, _> = document
+            .nodes()
+            .keys()
+            .flat_map(|owner| document.children(owner).map(move |child| (child, owner)))
+            .collect();
+        let mut groups = Vec::new();
+        let mut current = parent;
+        while current != document.root() {
+            if groups.len() >= MAX_DOCUMENT_DEPTH {
+                return Err("Copied Sequence exceeds the document depth limit".into());
+            }
+            groups.push(current.clone());
+            current = parents
+                .get(current)
+                .copied()
+                .ok_or("Copied Sequence is outside its historical tree")?;
+        }
+        groups.reverse();
+        let scope = Self { groups };
+        let view = scope.resolve_document(document, plan)?;
+        if view.owner != parent {
+            return Err("Copied Sequence differs from its historical owner".into());
+        }
+        Ok(scope)
+    }
+
     /// Follow a retained host identity, including empty groups at shared
     /// boundaries. Composite ancestors stop native descent at their parent.
     pub(super) fn for_target(

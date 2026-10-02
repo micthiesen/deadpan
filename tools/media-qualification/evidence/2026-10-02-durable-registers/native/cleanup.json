@@ -1,0 +1,16 @@
+{
+  "processes": [],
+  "writer_lock_available": true,
+  "after_save_equals_after_reopen": true,
+  "register_version": 13,
+  "integrity": [
+    [
+      "ok"
+    ]
+  ],
+  "foreign_keys": [],
+  "corrected_help_observed": true,
+  "final_binary_sha256": "ec4448746e0fe788d15f9e8a5bb4693343118179ef8a768f36c1f025f8381630",
+  "native_save_exit": 0,
+  "native_reopen_exit": 0
+}

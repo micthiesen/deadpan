@@ -1,0 +1,205 @@
+Window: "Deadpan", App: Deadpan.
+0 standard window Deadpan, Secondary Actions: Raise
+	1 container
+		2 text (settable) DEADPAN
+		3 button File
+		4 button Render  ⌘E
+		5 button Renders
+		6 text (settable) cfr-bframes
+		7 button Keys  ?
+		8 button Redo  Ctrl R
+		9 button (disabled) Undo  u
+		10 text (settable) Saved
+		11 text (settable) Project opened
+		12 text (settable) NORMAL
+		13 text (settable) ORIGINAL
+		14 text (settable) Unchanged source
+		15 text (settable) Focus: Viewer
+		16 button Marks  m / '
+		17 text (settable) Original boundary 0/120
+		18 text (settable) h l
+		19 text (settable) frame
+		20 text (settable) j k
+		21 text (settable) edit beat
+		22 text (settable) v
+		23 text (settable) select moment
+		24 text (settable) y
+		25 text (settable) copy moment
+		26 text (settable) "
+		27 text (settable) register
+		28 text (settable) :sequence
+		29 text (settable) Your edit
+		30 text (settable) ,i
+		31 text (settable) reuse all
+		32 text (settable) Tab
+		33 text (settable) pane
+		34 text (settable) :
+		35 text (settable) command
+		36 text (settable) ?
+		37 text (settable) keys
+		38 text (settable) ORIGINAL
+		39 button Original and sounds pane
+		40 toggle button (settable, boolean) Original: cfr-bframes.mp4, 120 decoded video frames. Browse the unchanged original., Value: on
+		41 text (settable) ORIGINAL VIDEO
+		42 text (settable) cfr-bframes.mp4
+		43 text (settable) 120 decoded video frames
+		44 text (settable) Your starting point stays intact.
+		45 text (settable) Reuse from original
+		46 button Browse  :source
+		47 button Reuse full Original  ,i
+		48 text (settable) SOUND EFFECTS
+		49 text field (settable) Find sound  /
+		50 text (settable) No sounds added.
+		51 button Add sound…  ⌘I
+		52 button Sound import options
+		53 text (settable) ORIGINAL MOMENT
+		54 button Original moment inspector pane
+		55 text (settable) Select time. Reuse it.
+		56 text (settable) Press v, then move with h/l. Counts work: 24l selects 24 presentation frames.
+		57 button Select moment  v
+		58 button (disabled) Copy moment  y
+		59 button Cancel selection  Esc
+		60 text (settable) Copies are saved in this project. Copying does not change Your edit or its history.
+		61 text (settable) Copied Original [0..8)
+		62 text (settable) Return to Your edit, choose a beat, then p after or P before. One paste, one undo.
+		63 button Your edit  :sequence
+		64 text (settable) PLACED SOUNDS
+		65 text (settable) 0
+		66 button Placed sounds pane
+		67 text (settable) Choose a catalog sound, then place it with ,s. Picture length stays the same.
+		68 text (settable) BEATS
+		69 toggle button (disabled, settable, boolean) Your edit, Value: on
+		70 text (settable) 1 beats · 120 f
+		71 button Current group beat outline pane
+		72 toggle button (settable, boolean) Beat 1: cfr-bframes.mp4, Original, 120 frames, half-open frame boundaries 0 to 120, Value: on
+		73 text (settable) 1. cfr-bframes.mp4
+		74 text (settable) Original
+		75 text (settable) 120 f · 0–120
+		76 toggle button (settable, boolean) Original, Value: on
+		77 toggle button (settable, boolean) Your edit, Value: off
+		78 button Start  gg
+		79 button Previous  h
+		80 button Next  l
+		81 button End  G
+		82 image Showing source frame 1
+		83 text (settable) Showing source frame 1
+		84 text (settable) Full Original duration: 120 project frames
+		85 text (settable) Your edit duration: 120 project frames
+		86 text (settable) +0 f
+		87 text (settable) project clock · 30000/1001 fps
+		88 slider Original temporal range, cursor 0 of 120. Original time · v starts selection
+		89 text (settable) Original time · v starts selection
+		90 button Play Original  ·  Space
+		91 button (disabled) Loop selection  ·  Shift+Space
+		92 text (settable) Loop context  500ms / 750ms
+		93 slider (settable, float) Monitor · :monitor, Value: 0.125
+		94 text (settable) Monitor · :monitor
+		95 container Keys · reshape one Original (showing 0-100 of 163 items)
+			96 button Close window
+			97 unknown
+			98 text (settable) j/k · Up/Down scroll     PgUp/PgDn page     Home/End ends     Esc close
+			99 text (settable) Shipped editor keys · Logical keys · Optional settings: /Users/michael/Library/Application Support/Deadpan/keymap.json
+			100 text (settable) REGISTERS
+			101 text (settable) " + letter · :register a
+			102 text (settable) Choose a–z for the next copy, picture cut, paste or :splice. Uppercase chooses the same slot. Named writes also update the default copy. Esc cancels the choice.
+			103 text (settable) " + " · :register "
+			104 text (settable) Use the default copy. :registers opens this list. Registers are saved in this project and restored when you reopen it. Copying leaves edit history unchanged; cuts save the deletion and copy together.
+			105 text (settable) " + "
+			106 text (settable) Copied Original [0..8)
+			107 text (settable) " + a
+			108 text (settable) Copied Original [70..74)
+			109 text (settable) " + b
+			110 text (settable) Copied Original [40..43)
+			111 text (settable) " + c
+			112 text (settable) Copied Edit [8..25) · 17 frames
+			113 text (settable) " + d
+			114 text (settable) Copied Edit [20..30) · 10 frames
+			115 text (settable) " + e
+			116 text (settable) Copied Edit [55..61) · 6 frames
+			117 text (settable) " + f
+			118 text (settable) Copied Edit [45..51) · 6 frames
+			119 text (settable) " + h
+			120 text (settable) Copied Edit [65..70) · 5 frames
+			121 text (settable) " + j
+			122 text (settable) Copied Original [90..94)
+			123 text (settable) " + k
+			124 text (settable) Copied Edit [75..81) · 6 frames
+			125 text (settable) " + z
+			126 text (settable) Copied Original [0..8)
+			127 text (settable) New starts with your full video. Its Original stays intact while Your edit changes.
+			128 text (settable) START & MOVE
+			129 text (settable) ⌘N / ⌘O
+			130 text (settable) Choose one Original / open a project. New projects live in Documents/Deadpan.
+			131 text (settable) Space
+			132 text (settable) Play / pause the focused sound, Original, or Your edit. During preparation, Space cancels. Pause retains the exact heard sample; navigation stops playback.
+			133 text (settable) Shift+Space
+			134 text (settable) Loop the complete selected sound. In Original or Your edit, loop the selected moment, Edit range or beat with 500ms before and 750ms after, bounded by that domain. Space pauses and resumes the loop.
+			135 text (settable) :audition-context lead=500ms follow=750ms
+			136 text (settable) Set loop lead-in and follow-through. Use 0ms for an exact selection. Seconds, milliseconds and project frames are accepted.
+			137 text (settable) :monitor 25%
+			138 text (settable) Set monitor volume without changing the project or export gain. 0 mutes; 12.5% restores the initial level.
+			139 text (settable) h / ← · l / →
+			140 text (settable) Move one frame in the current clock. Prefix a count: 12l.
+			141 text (settable) j / ↓ k / ↑
+			142 text (settable) In the sound catalog, select the next / previous sound. Elsewhere select a beat at the current group depth and return to Your edit. In legacy Sources, choose a source.
+			143 text (settable) gg / Home / G / End
+			144 text (settable) First / final boundary of the current group or Original.
+			145 text (settable) m + letter · ' + letter
+			146 text (settable) Save an exact Original or Edit mark, then jump to it. Uppercase letters are separate. Edit marks follow their content through edits; deleted targets stay unresolved until Undo or an explicit new mark. Setting a mark is undoable and preserves both cursors and selection.
+			147 text (settable) Ctrl O / Ctrl I
+			148 text (settable) Back / forward through successful mark jumps. Original positions retain their qualified source clock. A changed Edit revision expires old history positions instead of seeking unrelated content; saved marks still follow structural edits.
+			149 text (settable) :marks · :mark a · :jump a · :unmark a
+			150 text (settable) Browse marks, save the captured position, jump to a saved letter, or remove it. Commands capture their project and target on entry.
+			151 text (settable) Enter / Backspace · :enter / :parent
+			152 text (settable) Open a selected Sequence group / return to its parent. The project cursor stays exact; breadcrumbs show the active group. Repeat plays and Retime descendants are not yet navigable.
+			153 text (settable) :source / :sequence
+			154 text (settable) Browse unchanged Original / work on Your edit.
+			155 text (settable) Tab / Shift+Tab
+			156 text (settable) Cycle Original, Viewer, visible Inspector, Beats, and Placed sounds focus.
+			157 text (settable) /
+			158 text (settable) Find a sound in V1, or a source in a legacy project.
+			159 text (settable) RESHAPE THE SELECTED BEAT
+			160 text (settable) s / :split
+			161 text (settable) Split linked picture and sound at the cursor inside the selected beat. The right fragment stays selected; duration and output stay unchanged.
+			162 text (settable) ,h / 3,h
+			163 text (settable) Insert a silent freeze at the cursor: 0.5 s per count. Keeps the following original speech. The cursor stays at the pause; Enter opens its enclosing group when needed. At a group edge, Backspace returns to the seam's owner. u undoes it.
+			164 text (settable) :hold 1.5s
+			165 text (settable) Choose an exact pause duration: 12f, 250ms, 1.5s, or 01:02.500. Seconds round once to project frames. Zero makes no edit. Source and pause fragments work inside Sequence groups; Repeat and Retime interiors remain unavailable.
+			166 text (settable) rr / 3rr
+			167 text (settable) Wrap the selected beat in two / three total plays. Rapid wraps wait in order, up to 16 pending; each has its own undo. Escape, navigation or another action cancels the waiting wraps.
+			168 text (settable) v · motions · d
+			169 text (settable) Cut the nonempty active or finished Edit range and close its time in one undo. Linked picture and sound stay together. Source/Hold/fragment endpoints and whole intervening beats work in an ordinary Sequence. Enter a group to cut inside it. Empty selections never cut a beat.
+			170 text (settable) dd / :delete
+			171 text (settable) Without a Visual selection, dd cuts one whole beat, including an empty group. :delete captures the exact range or beat when command entry opens; stale or missing targets fail. A saved cut replaces the copy register; p/P or :splice places that copy. Failure keeps the previous copy. The cursor stays at a range cut's join. Undo restores the removed content and retains the copy, including after reopening the project.
+			172 text (settable) x / 12x / :delete-frames 12f
+			173 text (settable) Cut one or a counted number of linked picture and sound frames beginning at the Edit cursor, stopping at this group's end. The command captures its cursor and group when entry opens. A Visual selection must be cleared with Esc first, or cut with d. At the group's end no edit is made. One Undo restores the cut; the exact removed slice remains available for paste.
+			174 text (settable) :repeat 3
+			175 text (settable) Set total plays on a Repeat; wrap a different selected beat.
+			176 text (settable) :wrap-repeat 3
+			177 text (settable) Always add an enclosing Repeat, including nesting.
+			178 text (settable) :retime 0.75 pitch=preserve
+			179 text (settable) Slow the selected beat to 0.75× input speed. Use pitch=tape to let pitch follow speed. Exact fractions such as 3/4 work too. The command shows its resolved duration before Enter; Escape cancels entry.
+			180 text (settable) :wrap-retime 2 pitch=tape
+			181 text (settable) Always add an enclosing speed stage. :retime instead updates an existing ordinary Retime, preserving its child and input range. Split fragments are wrapped without changing their retained clocks.
+			182 text (settable) Enter in Inspector
+			183 text (settable) Edit the selected Repeat count, Hold duration, Retime speed or placed sound's exact sample position.
+			184 text (settable) ,s / :sound-place
+			185 text (settable) Place the complete selected catalog sound at the edit cursor, without changing picture duration. A sound that ends beyond the edit is rejected; move the edit cursor earlier.
+			186 text (settable) :sounds · Tab
+			187 text (settable) Focus Placed sounds. j / ↓/k / ↑ selects an event; the retained beat and both editor cursors stay in place.
+			188 text (settable) Sound h / ←/l / → · Enter
+			189 text (settable) Move an uncut sound by exact project frames without accumulated rounding, or choose an exact sample onset with :sound-at 137. Escape cancels entry. Sounds with retained timeline cuts cannot be moved yet.
+			190 text (settable) Sound +/- · :sound-gain -3
+			191 text (settable) Change the selected sound's gain by 3 dB, or enter a value from -96 to 24 dB, to three decimal places. Counts repeat the gain step; Monitor and Original levels stay unchanged.
+			192 text (settable) Beat +/- · :gain -3
+			193 text (settable) Change the selected beat by 3 dB per count, or enter exact absolute trim. Existing envelopes stay intact. Placed sounds take precedence when focused; Original and catalog sound focus never change a retained beat.
+			194 text (settable) :gain · :gain-mute
+			195 text (settable) Open a reversible gain draft, or toggle true mute. The draft edits exact owner-output envelopes and mute ranges. Before/Draft compares the same full-mix loop at its heard sample. Tab moves through fields and buttons. Enter on the heading applies once; Escape cancels.
+	196 close button
+	197 full screen button Help: this button also has an action to zoom the window, Secondary Actions: zoom the window
+	198 minimize button
+	199 text Deadpan
+200 menu bar
+	201 Deadpan
+
+The focused UI element is 82 image Showing source frame 1

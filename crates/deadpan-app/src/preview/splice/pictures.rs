@@ -1284,6 +1284,7 @@ mod tests {
                     project,
                     source_revision: revision,
                     request: 3,
+                    persisted_version: None,
                 },
                 parent: NodeId::new("owner").unwrap(),
                 range: FrameRange::new(ProjectFrame(13), ProjectFrame(20)).unwrap(),

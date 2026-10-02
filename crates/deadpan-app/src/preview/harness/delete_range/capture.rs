@@ -19,6 +19,10 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     // A successful cut replaces the previous Original register only after save.
     d.command("source")?;
     d.chord(&[Key::G, Key::G, Key::V, Key::Num1, Key::Num0, Key::L, Key::Y])?;
+    d.wait_for(
+        "Original copy is durable before capturing deletion",
+        |app| !app.service.is_busy() && !app.copied.is_pending(),
+    )?;
     d.command("sequence")?;
     select(d, 20, 30, true)?;
     let revision = d.revision();
@@ -103,7 +107,10 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         "Type delete with no command-entry Edit target",
         vec![egui::Event::Text("delete".into())],
     )?;
-    paint_hint(d, "Return to Your edit")?;
+    paint_hint(
+        d,
+        "Return to Your edit and focus Beats before deleting picture time.",
+    )?;
     d.app_mut().feedback.hold_project_updates = false;
     d.wait_for("Late edit reply changes the visible context", |app| {
         app.view == View::Sequence && !app.service.is_busy()

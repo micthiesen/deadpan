@@ -107,8 +107,12 @@ fn retained_receipt(d: &mut Driver<'_>) -> Result<(), String> {
     })?;
     let repeated = receipt(&queried)?;
     d.check(
-        "A history-neutral capture query retains the exact successful cut receipt",
+        "A rejected stale capture write retains the exact successful cut receipt",
         repeated.request == cut.request
+            && queried
+                .captured_slice
+                .as_ref()
+                .is_some_and(|capture| capture.result.is_err())
             && repeated.result.as_ref().is_ok_and(|next| {
                 next.committed.revision == revision && Arc::ptr_eq(&next.copied, &saved.copied)
             })
@@ -125,11 +129,9 @@ fn retained_receipt(d: &mut Driver<'_>) -> Result<(), String> {
         false,
     )?;
     d.check(
-        "A cut receipt accepts its historical copy without consuming the old visible selection",
-        same_edited(d, &saved.copied)
-            && *document(d)? == baseline
-            && d.app().edit_range == selected,
-        json!({"copy_accepted":true,"old_document_and_selection_retained":true}),
+        "A cut receipt alone cannot replace the authoritative bank or consume stale selection",
+        is_original(d, 5) && *document(d)? == baseline && d.app().edit_range == selected,
+        json!({"bank_awaits_snapshot":true,"old_document_and_selection_retained":true}),
         d.snapshot(),
     )?;
     release(d, queried, baseline.revision_id().as_str())?;
@@ -168,23 +170,25 @@ fn stale_workspace_yank(d: &mut Driver<'_>) -> Result<(), String> {
     let selection = d.app().edit_range.clone();
     let cursor = d.app().sequence_cursor;
     // This newer production yank supersedes the pending Cut register intent.
-    // Its historical capture succeeds even though the writer has saved the cut.
+    // Its stale write must fail because the writer has already saved the cut.
     d.key(Key::Y)?;
     let queried = take_update(d, |update| {
         update.captured_slice.as_ref().is_some_and(|capture| {
             capture.id != cut.request.id && capture.id.source_revision == *baseline.revision_id()
         })
     })?;
-    let copied = queried
+    let rejected = queried
         .captured_slice
         .as_ref()
         .ok_or("Missing newer yank reply")?
         .result
         .as_ref()
-        .map_err(Clone::clone)?
+        .err()
+        .ok_or("A stale yank unexpectedly wrote the register")?
         .clone();
+    let copied = cut.result.as_ref().map_err(Clone::clone)?.copied.clone();
     let warning = "Cut saved and copied, but the preview could not refresh: simulated replay refresh failure. Reopen this project before editing or undoing.";
-    // The service receipt and yank capability are genuine. Only the stale
+    // The saved cut and rejected yank response are genuine. Only the stale
     // workspace delivery and refresh warning are injected here; service tests
     // exercise the actual refresh fault. No generic commit or Cut register
     // reply remains to protect the old selection on this delivery.
@@ -192,7 +196,7 @@ fn stale_workspace_yank(d: &mut Driver<'_>) -> Result<(), String> {
     stale.workspace = visible;
     stale.committed = None;
     stale.cut_slice = None;
-    stale.message = Some("Ordinary yank query completed".into());
+    stale.message = Some(format!("Stale yank refused: {rejected}"));
     stale
         .saved_cut
         .as_mut()
@@ -246,50 +250,64 @@ fn superseded_receipt(d: &mut Driver<'_>, rejected: bool) -> Result<(), String> 
     let baseline = document(d)?.clone();
     let held = cut_held(d)?;
     let cut = receipt(&held)?.clone();
-    let revision = cut
-        .result
-        .as_ref()
-        .map_err(Clone::clone)?
-        .committed
-        .revision
-        .clone();
-    if rejected {
-        d.command("source")?;
+    let saved = cut.result.as_ref().map_err(Clone::clone)?.clone();
+    d.command("source")?;
+    let delivery = if rejected {
         d.command("delete")?;
+        held
     } else {
-        original(d, 7)?;
-    }
-    let frames = if rejected { 5 } else { 7 };
+        d.key(Key::Escape)?;
+        d.chord(&[Key::G, Key::G, Key::V])?;
+        motion(d, 7, true)?;
+        d.key(Key::Y)?;
+        let update = take_update(d, |update| {
+            update
+                .captured_original
+                .as_ref()
+                .is_some_and(|capture| capture.id.source_revision == *baseline.revision_id())
+        })?;
+        d.check(
+            "Original yank against a withheld pre-cut revision is rejected by the writer",
+            update
+                .captured_original
+                .as_ref()
+                .is_some_and(|capture| capture.result.is_err()),
+            json!("stale write refused"),
+            json!(format!("{:?}", update.captured_original)),
+        )?;
+        update
+    };
     let error = d.app().error.clone();
     d.check(
-        "A newer Original yank or rejected cut supersedes pending register intent",
-        !d.app().copied.is_pending()
-            && is_original(d, frames)
+        "A newer input supersedes the old cut confirmation while its bank is still withheld",
+        is_original(d, 5)
+            && (rejected || d.app().copied.is_pending())
             && (!rejected
                 || error
                     .as_deref()
                     .is_some_and(|error| error.contains("Return to Your edit"))),
-        json!({"rejected_cut":rejected,"original":[0,frames],"pending":false}),
+        json!({"rejected_local_cut":rejected,"visible_original":[0,5]}),
         d.snapshot(),
     )?;
     d.app_mut().receive_cut(Some(cut));
     d.step(
-        "Deliver the exact old cut receipt after a newer register intent",
+        "Deliver the old cut receipt after a newer register intent",
         false,
     )?;
     d.check(
-        "The late successful cut cannot overwrite the newer accepted Original or rejection",
-        is_original(d, frames) && d.app().error == error,
-        json!({"original":[0,frames],"newer_error":error}),
+        "The old cut confirmation does not replace the bank or clear newer input feedback",
+        is_original(d, 5) && d.app().error == error,
+        json!({"visible_original":[0,5],"newer_error":error}),
         d.snapshot(),
     )?;
-    release(d, held, baseline.revision_id().as_str())?;
+    release(d, delivery, baseline.revision_id().as_str())?;
     d.check(
-        "Superseding register intent does not cancel the already queued authored cut",
-        document(d)?.revision_id() == &revision
+        "Failed newer input preserves the earlier durable cut and installs its saved bank",
+        document(d)?.revision_id() == &saved.committed.revision
             && d.app().sequence_length() == 110
-            && is_original(d, frames),
-        json!({"durable_revision":revision,"frames":110,"original":[0,frames]}),
+            && same_edited(d, &saved.copied)
+            && !d.app().copied.is_pending(),
+        json!({"durable_revision":saved.committed.revision,"frames":110,"copied_range":[40,50]}),
         d.snapshot(),
     )?;
     undo(d, &baseline)
@@ -391,7 +409,10 @@ fn original(d: &mut Driver<'_>, frames: u64) -> Result<(), String> {
     d.key(Key::Escape)?;
     d.chord(&[Key::G, Key::G, Key::V])?;
     motion(d, frames, true)?;
-    d.key(Key::Y)
+    d.key(Key::Y)?;
+    d.wait_for("Original copy is durable before the next cut", |app| {
+        !app.service.is_busy() && !app.copied.is_pending()
+    })
 }
 
 fn is_original(d: &Driver<'_>, frames: u64) -> bool {

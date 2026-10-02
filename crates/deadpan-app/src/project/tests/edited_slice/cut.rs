@@ -227,7 +227,12 @@ fn cut_failures_keep_history_and_saved_refresh_failure_keeps_copy_and_receipt() 
         &harness.service,
         ProjectRequest::CaptureEditSlice(capture_request(&before, 4, range(0, 10))),
     );
-    assert!(queried.captured_slice.unwrap().result.is_ok());
+    assert!(queried.captured_slice.unwrap().result.is_err());
+    let bank = queried.registers.unwrap();
+    let crate::project::registers::Value::Edited(retained_copy) = &bank.entries[&'"'] else {
+        panic!("saved cut must retain its durable copy")
+    };
+    assert!(Arc::ptr_eq(retained_copy, &receipt.copied));
     let rejected_undo = command(
         &harness.service,
         ProjectRequest::Undo {

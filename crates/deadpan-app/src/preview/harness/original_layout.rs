@@ -115,6 +115,9 @@ fn select_original(d: &mut Driver<'_>) -> Result<(), String> {
         Key::L,
         Key::Y,
     ])?;
+    d.wait_for("Original layout copy is durable", |app| {
+        !app.service.is_busy() && !app.copied.is_pending()
+    })?;
     d.settled()
 }
 

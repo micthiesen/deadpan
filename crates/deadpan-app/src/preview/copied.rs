@@ -1,7 +1,7 @@
 //! Copied contents survive navigation; pending yanks belong to one exact intent.
 
 use super::*;
-use crate::project::slice;
+use crate::project::{registers, slice};
 
 #[derive(Clone, Debug)]
 pub(super) enum Content {
@@ -10,6 +10,15 @@ pub(super) enum Content {
 }
 
 impl Content {
+    pub fn available_label(&self, workspace: Option<&Workspace>) -> String {
+        let label = self.label();
+        if workspace.is_none_or(|workspace| self.check(workspace).is_err()) {
+            format!("{label} · unavailable in this revision")
+        } else {
+            label
+        }
+    }
+
     pub fn label(&self) -> String {
         match self {
             Self::Original(copied) => format!(
@@ -81,12 +90,17 @@ impl Content {
 struct Pending {
     request: slice::CaptureRequest,
     intent: Intent,
-    destination: Option<char>,
 }
 
 enum Intent {
     Yank(edit_range::Selection),
     Cut,
+}
+
+enum Unsettled {
+    Original(slice::CopyId),
+    Edit(slice::CopyId),
+    Cut(slice::CaptureRequest),
 }
 
 #[derive(Default)]
@@ -95,7 +109,11 @@ pub(super) struct Register {
     named: std::collections::BTreeMap<char, Content>,
     selected: Option<char>,
     session: Option<(u64, deadpan_core::ProjectId)>,
+    version: Option<u64>,
     pending: Option<Pending>,
+    pending_original: Option<(slice::CopyId, moment::Selection)>,
+    // A rejected newer intent cannot cancel an already accepted durable write.
+    unsettled: Option<Unsettled>,
 }
 
 impl Register {
@@ -134,6 +152,7 @@ impl Register {
         self.selected.take()
     }
 
+    #[cfg(test)]
     fn store(&mut self, destination: Option<char>, content: Content) {
         if let Some(name) = destination {
             self.named.insert(name, content.clone());
@@ -153,54 +172,74 @@ impl Register {
     }
 
     pub fn is_pending(&self) -> bool {
-        self.pending.is_some()
+        self.unsettled.is_some()
     }
 
     /// Even a rejected newer yank must not be completed by an older reply.
     pub fn supersede(&mut self) {
         self.pending = None;
+        self.pending_original = None;
     }
 
     #[cfg(test)]
     pub fn original_copied(&mut self, copied: moment::Copied) {
         let destination = self.begin_write();
-        self.original_copied_to(destination, copied);
+        self.store(destination, Content::Original(copied));
+        self.unsettled = None;
     }
 
-    pub fn original_copied_to(&mut self, destination: Option<char>, copied: moment::Copied) {
-        self.store(destination, Content::Original(copied));
+    pub fn expect_original(&mut self, id: slice::CopyId, selection: moment::Selection) {
+        self.unsettled = Some(Unsettled::Original(id.clone()));
+        self.pending_original = Some((id, selection));
+    }
+
+    pub fn receive_original(
+        &mut self,
+        update: registers::OriginalUpdate,
+    ) -> Option<(moment::Selection, Result<(), String>)> {
+        if matches!(&self.unsettled, Some(Unsettled::Original(id)) if id == &update.id) {
+            self.unsettled = None;
+        }
+        if self
+            .pending_original
+            .as_ref()
+            .is_none_or(|(id, _)| id != &update.id)
+        {
+            return None;
+        }
+        let (_, selection) = self.pending_original.take().expect("matched Original copy");
+        Some((selection, update.result))
     }
 
     #[cfg(any(test, feature = "ui-harness"))]
     pub fn expect(&mut self, request: slice::CaptureRequest, selection: edit_range::Selection) {
         let destination = self.begin_write();
-        self.expect_to(destination, request, selection);
+        let mut request = request;
+        request.register = destination;
+        self.expect_to(request, selection);
     }
 
-    pub fn expect_to(
-        &mut self,
-        destination: Option<char>,
-        request: slice::CaptureRequest,
-        selection: edit_range::Selection,
-    ) {
+    pub fn expect_to(&mut self, request: slice::CaptureRequest, selection: edit_range::Selection) {
+        self.unsettled = Some(Unsettled::Edit(request.id.clone()));
         self.pending = Some(Pending {
             request,
             intent: Intent::Yank(selection),
-            destination,
         });
     }
 
     #[cfg(any(test, feature = "ui-harness"))]
     pub fn expect_cut(&mut self, request: slice::CaptureRequest) {
         let destination = self.begin_write();
-        self.expect_cut_to(destination, request);
+        let mut request = request;
+        request.register = destination;
+        self.expect_cut_to(request);
     }
 
-    pub fn expect_cut_to(&mut self, destination: Option<char>, request: slice::CaptureRequest) {
+    pub fn expect_cut_to(&mut self, request: slice::CaptureRequest) {
+        self.unsettled = Some(Unsettled::Cut(request.clone()));
         self.pending = Some(Pending {
             request,
             intent: Intent::Cut,
-            destination,
         });
     }
 
@@ -210,38 +249,51 @@ impl Register {
             *self = Self::default();
         }
         self.session = session;
-        self.named.retain(|_, content| match content {
-            Content::Original(_) => workspace.is_some_and(|value| content.check(value).is_ok()),
-            Content::Edited(copied) => workspace.is_some_and(|value| {
-                value.session == copied.id().session
-                    && value.document.project_id() == &copied.id().project
-            }),
-        });
-        if self.content.as_ref().is_some_and(|content| match content {
-            Content::Original(_) => {
-                workspace.is_none_or(|workspace| content.check(workspace).is_err())
+    }
+
+    /// Durable state is independent of pending UI confirmation. A superseded
+    /// successful copy still saved its named slot; only newer bank versions
+    /// may replace this snapshot. Missing current media does not erase a slot.
+    pub fn install_bank(&mut self, bank: &registers::Bank) {
+        if self.session.as_ref() != Some(&(bank.session, bank.project.clone()))
+            || self.version.is_some_and(|version| version >= bank.version)
+        {
+            return;
+        }
+        self.content = None;
+        self.named.clear();
+        for (&name, value) in &bank.entries {
+            let content = match value {
+                registers::Value::Original {
+                    asset,
+                    qualification,
+                    ordinals,
+                } => Content::Original(moment::Copied {
+                    identity: moment::Identity {
+                        session: bank.session,
+                        asset: asset.clone(),
+                        qualification: qualification.clone(),
+                    },
+                    ordinals: ordinals.clone(),
+                }),
+                registers::Value::Edited(copied) => Content::Edited(copied.clone()),
+            };
+            if name == '"' {
+                self.content = Some(content);
+            } else {
+                self.named.insert(name, content);
             }
-            Content::Edited(copied) => workspace.is_none_or(|workspace| {
-                workspace.session != copied.id().session
-                    || workspace.document.project_id() != &copied.id().project
-            }),
-        }) {
-            self.content = None;
         }
-        if self.pending.as_ref().is_some_and(|pending| {
-            workspace.is_none_or(|workspace| {
-                workspace.session != pending.request.id.session
-                    || workspace.document.project_id() != &pending.request.id.project
-            })
-        }) {
-            self.pending = None;
-        }
+        self.version = Some(bank.version);
     }
 
     pub fn receive(
         &mut self,
         update: slice::CaptureUpdate,
     ) -> Option<(edit_range::Selection, Result<(), String>)> {
+        if matches!(&self.unsettled, Some(Unsettled::Edit(id)) if id == &update.id) {
+            self.unsettled = None;
+        }
         if self.pending.as_ref().is_none_or(|pending| {
             pending.request.id != update.id || !matches!(pending.intent, Intent::Yank(_))
         }) {
@@ -250,7 +302,7 @@ impl Register {
         let pending = self.pending.take().expect("matched copy request");
         let result = update
             .result
-            .and_then(|copied| self.accept(pending.destination, &pending.request, copied));
+            .and_then(|copied| Self::accept(&pending.request, copied));
         let Intent::Yank(selection) = pending.intent else {
             unreachable!("matched yank intent")
         };
@@ -261,24 +313,22 @@ impl Register {
         &mut self,
         update: slice::CutUpdate,
     ) -> Option<Result<slice::CutReceipt, String>> {
+        if matches!(&self.unsettled, Some(Unsettled::Cut(request)) if request == &update.request) {
+            self.unsettled = None;
+        }
         if self.pending.as_ref().is_none_or(|pending| {
             pending.request != update.request || !matches!(pending.intent, Intent::Cut)
         }) {
             return None;
         }
-        let pending = self.pending.take().expect("matched cut request");
+        self.pending.take().expect("matched cut request");
         Some(update.result.and_then(|receipt| {
-            self.accept(pending.destination, &update.request, receipt.copied.clone())?;
+            Self::accept(&update.request, receipt.copied.clone())?;
             Ok(receipt)
         }))
     }
 
-    fn accept(
-        &mut self,
-        destination: Option<char>,
-        request: &slice::CaptureRequest,
-        copied: Arc<slice::Captured>,
-    ) -> Result<(), String> {
+    fn accept(request: &slice::CaptureRequest, copied: Arc<slice::Captured>) -> Result<(), String> {
         if copied.id() != &request.id
             || copied.scope() != &request.scope
             || copied.slice().project_id() != &request.id.project
@@ -290,7 +340,6 @@ impl Register {
         {
             return Err("Copy preparation returned a different Edit selection.".into());
         }
-        self.store(destination, Content::Edited(copied));
         Ok(())
     }
 
@@ -320,10 +369,10 @@ impl DeadpanApp {
         }
         match self.copied.select(name) {
             Ok(()) => {
-                let label = self
-                    .copied
-                    .selected_content()
-                    .map_or_else(|| "empty".into(), Content::label);
+                let label = self.copied.selected_content().map_or_else(
+                    || "empty".into(),
+                    |content| content.available_label(self.workspace.as_deref()),
+                );
                 self.error = None;
                 self.message = Some(match self.copied.selected() {
                     Some(name) => format!(
@@ -343,7 +392,15 @@ impl DeadpanApp {
             Some(Content::Edited(_)) => "Edit",
             None => "empty",
         };
-        Some(format!("Register {name} · {kind}"))
+        let unavailable = self.copied.selected_content().is_some_and(|content| {
+            self.workspace
+                .as_deref()
+                .is_none_or(|workspace| content.check(workspace).is_err())
+        });
+        Some(format!(
+            "Register {name} · {kind}{}",
+            if unavailable { " · unavailable" } else { "" }
+        ))
     }
 
     pub(super) fn copy_slice(&mut self) {
@@ -407,7 +464,9 @@ impl DeadpanApp {
                 project,
                 source_revision,
                 request,
+                persisted_version: None,
             },
+            register: destination,
             scope: self.sequence_scope.clone(),
             parent,
             selection,
@@ -417,8 +476,7 @@ impl DeadpanApp {
             .submit(ProjectRequest::CaptureEditSlice(request.clone()))
         {
             Ok(()) => {
-                self.copied
-                    .expect_to(destination, request, self.edit_range.clone());
+                self.copied.expect_to(request, self.edit_range.clone());
                 self.error = None;
                 self.message = Some("Copying the Edit selection…".into());
             }
@@ -498,7 +556,9 @@ mod tests {
                 project: ProjectId::new("copy-project").unwrap(),
                 source_revision: RevisionId::new("copy-revision").unwrap(),
                 request: serial,
+                persisted_version: None,
             },
+            register: None,
             scope: SequenceScope::default(),
             parent: NodeId::new("copy-root").unwrap(),
             selection: deadpan_core::SliceCaptureSelection::Range {
@@ -523,6 +583,105 @@ mod tests {
             id: request.id.clone(),
             result: Err("copy failed".into()),
         }
+    }
+
+    fn bank(version: u64, ordinals: std::ops::Range<u64>) -> registers::Bank {
+        registers::Bank {
+            session: 7,
+            project: ProjectId::new("copy-project").unwrap(),
+            version,
+            entries: ['"', 'a']
+                .into_iter()
+                .map(|name| {
+                    (
+                        name,
+                        registers::Value::Original {
+                            asset: original().identity.asset,
+                            qualification: original().identity.qualification,
+                            ordinals: ordinals.clone(),
+                        },
+                    )
+                })
+                .collect(),
+        }
+    }
+
+    #[test]
+    fn durable_snapshots_advance_independently_of_pending_confirmation() {
+        let mut register = Register {
+            session: Some((7, ProjectId::new("copy-project").unwrap())),
+            ..Register::default()
+        };
+        let first = request(1);
+        register.expect_original(first.id.clone(), moment::Selection::default());
+        register.select('b').unwrap();
+        register.install_bank(&bank(2, 12..18));
+        assert_eq!(register.original().unwrap().ordinals, 12..18);
+        assert_eq!(register.selected(), Some('b'));
+        assert!(register.is_pending());
+        register.install_bank(&bank(1, 2..8));
+        assert_eq!(register.original().unwrap().ordinals, 12..18);
+        assert!(
+            register
+                .receive_original(registers::OriginalUpdate {
+                    id: first.id,
+                    result: Ok(()),
+                })
+                .unwrap()
+                .1
+                .is_ok()
+        );
+        assert_eq!(register.original().unwrap().ordinals, 12..18);
+        assert_eq!(register.selected(), Some('b'));
+        assert!(!register.is_pending());
+        let mut stale_session = bank(3, 2..8);
+        stale_session.session = 8;
+        register.install_bank(&stale_session);
+        assert_eq!(register.original().unwrap().ordinals, 12..18);
+        register.reconcile(None);
+        register.install_bank(&bank(4, 2..8));
+        assert!(register.content().is_none());
+    }
+
+    #[test]
+    fn failed_newer_copy_keeps_earlier_durable_success_without_consuming_old_selection() {
+        let mut register = Register {
+            session: Some((7, ProjectId::new("copy-project").unwrap())),
+            ..Register::default()
+        };
+        let old = request(1);
+        register.expect_original(old.id.clone(), moment::Selection::default());
+        let next = request(2);
+        register.expect(next.clone(), edit_range::Selection::default());
+        register.install_bank(&bank(1, 2..8));
+        assert!(
+            register
+                .receive_original(registers::OriginalUpdate {
+                    id: old.id,
+                    result: Ok(())
+                })
+                .is_none()
+        );
+        assert!(register.is_pending());
+        assert!(register.receive(failure(&next)).unwrap().1.is_err());
+        assert_eq!(register.original().unwrap().ordinals, 2..8);
+        assert_eq!(register.entries().count(), 2);
+    }
+
+    #[test]
+    fn rejected_newer_intent_cannot_unblock_placement_before_older_save_reply() {
+        let mut register = Register::default();
+        let id = request(1).id;
+        register.expect_original(id.clone(), moment::Selection::default());
+        register.begin_write();
+        assert!(register.is_pending());
+        assert!(
+            register
+                .receive_original(registers::OriginalUpdate { id, result: Ok(()) })
+                .is_none(),
+            "superseded confirmation cannot consume a selection"
+        );
+        assert!(!register.is_pending());
     }
 
     #[test]

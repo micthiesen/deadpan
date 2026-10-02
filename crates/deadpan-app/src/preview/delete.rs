@@ -88,7 +88,9 @@ impl DeadpanApp {
                         project: target.base.document.project_id().clone(),
                         source_revision: target.base.document.revision_id().clone(),
                         request: 0,
+                        persisted_version: None,
                     },
+                    register: target.register,
                     scope: target.scope,
                     parent: target.parent,
                     selection,
@@ -96,13 +98,13 @@ impl DeadpanApp {
             ))
         });
         match result {
-            Ok((register, mut request)) => {
+            Ok((_, mut request)) => {
                 let Some(serial) = self.next_serial() else {
                     return;
                 };
                 request.id.request = serial;
                 if self.submit(ProjectRequest::CutEditSlice(request.clone())) {
-                    self.copied.expect_cut_to(register, request);
+                    self.copied.expect_cut_to(request);
                     self.message = Some("Saving cut and copy…".into());
                 }
             }

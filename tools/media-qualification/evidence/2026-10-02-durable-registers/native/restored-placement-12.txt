@@ -1,0 +1,8 @@
+The following is a diff from the previous accessibility tree for Window: "Deadpan" with ~ and + representing changed and added elements, respectively. Removed elements are summarized by ID range.
+~		113 toggle button (settable, boolean) Destination Edit 12 · d, Value: on
+~		132 image Showing proposed edit frame 13
+~		133 text (settable) Showing proposed edit frame 13
+~		134 text (settable) Requested Edit picture 13 · inside inserted slice
+~		135 text (settable) Destination: Your edit · Edit boundary 12 · Inside cfr-bframes.mp4 · local boundary 12 · +8 project frames
+~		136 text (settable) Provisional insertion at Edit 12, through exclusive 20, context 4 to 28
+The focused UI element is 110 button Place slice keyboard controls

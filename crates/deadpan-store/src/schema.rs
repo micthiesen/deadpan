@@ -3,7 +3,7 @@ use rusqlite::{Connection, limits::Limit};
 use crate::StoreError;
 
 // Storage has operational tables beyond the independently versioned core JSON.
-pub const VERSION: u32 = 52;
+pub const VERSION: u32 = 53;
 pub const APPLICATION_ID: u32 = 0x4450_4e31;
 pub const MAX_DOCUMENT_BYTES: usize = deadpan_core::MAX_DOCUMENT_JSON_BYTES;
 
@@ -18,7 +18,7 @@ pub fn configure(connection: &Connection) -> Result<(), StoreError> {
 
 pub fn check_version(connection: &Connection) -> Result<(), StoreError> {
     let version = read_version(connection)?;
-    if matches!(version, 1..=38) {
+    if matches!(version, 1..=38 | 52) {
         return Err(StoreError::MigrationRequired(version));
     }
     // Development schemas 39..=51 stored core schemas 33 through 42 without a frozen
@@ -71,6 +71,7 @@ pub fn create(connection: &mut Connection) -> Result<(), StoreError> {
         CREATE INDEX history_revision ON history(revision_id);",
     )?;
     crate::generation::create_tables(&transaction)?;
+    crate::registers::create_tables(&transaction)?;
     crate::generation_attempts::create_tables(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::render_jobs::create_tables(&transaction)?;

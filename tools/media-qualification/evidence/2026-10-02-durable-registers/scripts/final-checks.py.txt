@@ -1,0 +1,15 @@
+import os
+import subprocess
+import sys
+
+root = '/tmp/deadpan-durable-registers-20261002'
+recorder = '/tmp/deadpan-original-layout-20261002/run-check.py'
+checks = [
+    ['clippy-app-help', 'cargo', 'clippy', '-p', 'deadpan-app', '--all-targets', '--locked', '--', '-D', 'warnings'],
+    ['clippy-ui-help', 'cargo', 'clippy', '-p', 'deadpan-app', '--all-targets', '--features', 'ui-harness', '--locked', '--', '-D', 'warnings'],
+    ['release-build-help', 'cargo', 'build', '-p', 'deadpan-app', '--release', '--features', 'ui-harness', '--locked'],
+    ['replay-registers-help', 'target/release/deadpan-app', '--ui-check', '--output', root + '/replay-registers-help', '--scenario', 'named-registers', '--kestrel-source', '/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift', '--retain-projects'],
+    ['native-bundle-help', 'python3', 'tools/build-app.py', '--binary', 'target/release/deadpan-app', '--output', root + '/Deadpan-Cursor-QA-Help.app', '--bundle-id', 'dev.thiesen.deadpan.cursor-qa'],
+]
+for command in checks:
+    subprocess.run([sys.executable, recorder, *command], env=dict(os.environ, DEADPAN_CHECK_OUTPUT=root), check=True)

@@ -135,6 +135,7 @@ fn schema22_fixture(path: &Path) -> Result<ProjectDocument> {
         [],
     )?;
     remove_empty_render_tables(&database)?;
+    development_break::remove_empty_register_tables(&database)?;
     database.pragma_update(None, "user_version", 22)?;
     for (_, json) in docs(&database)? {
         legacy_v16::Document::from_json(&json)?;

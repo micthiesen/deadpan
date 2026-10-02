@@ -171,6 +171,10 @@ fn empty_seam_fixture(d: &mut Driver<'_>) -> Result<(), String> {
         Key::L,
         Key::Y,
     ])?;
+    d.wait_for(
+        "Original copy is durably saved before the next operation",
+        |app| !app.service.is_busy() && !app.copied.is_pending(),
+    )?;
     d.settled()?;
     d.check(
         "Reopened seam fixture copies the same qualified Original interval",

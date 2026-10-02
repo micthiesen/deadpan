@@ -47,7 +47,7 @@ impl ProjectStore {
         }
         // Schemas 39..=51 have no frozen core-33 through 42 adapter. Reject the unused
         // development format before acquiring a writer or creating a backup.
-        if !matches!(version, 1..=38) {
+        if !matches!(version, 1..=38 | 52) {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -167,7 +167,10 @@ fn migrate_candidate(
         crate::publication::create_tables(&transaction)?;
     }
     #[cfg(any(target_os = "macos", target_os = "linux"))]
-    crate::render_jobs::create_decision_table(&transaction)?;
+    if source_version < 52 {
+        crate::render_jobs::create_decision_table(&transaction)?;
+    }
+    crate::registers::create_tables(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::render_jobs::check_stored_sizes(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -176,9 +179,13 @@ fn migrate_candidate(
     // Check the frozen engineering grammar before the current parsers can see
     // either a top-level job or an intent nested in a publication journal.
     #[cfg(any(target_os = "macos", target_os = "linux"))]
-    crate::render_jobs::validate_legacy_intents(&transaction)?;
+    if source_version < 52 {
+        crate::render_jobs::validate_legacy_intents(&transaction)?;
+    }
     #[cfg(any(target_os = "macos", target_os = "linux"))]
-    crate::publication::validate_legacy_intents(&transaction)?;
+    if source_version < 52 {
+        crate::publication::validate_legacy_intents(&transaction)?;
+    }
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::source_registration::check_stored_sizes(&transaction)?;
     validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
@@ -266,7 +273,9 @@ fn migrate_candidate(
     // Schemas before 15 gain an explicit basis; schema 15 retains its policy.
     // Pre-16 audio edges gain Automatic without changing allocated time;
     // schemas 16 and 17 retain their authored edge choices.
-    validation::migrate_history(&transaction, source_version)?;
+    if source_version < 52 {
+        validation::migrate_history(&transaction, source_version)?;
+    }
     crate::generation::validate_store(&transaction)?;
     transaction.pragma_update(None, "user_version", schema::VERSION)?;
     validation::validate_history(&transaction)?;
@@ -282,6 +291,7 @@ fn migrate_candidate(
     crate::source_registration::validate_store(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::single_source::validate_store(&transaction)?;
+    crate::registers::validate_store(&transaction)?;
     transaction.commit()?;
     candidate_file.as_file().sync_all()?;
     // One step copies all pages in one destination transaction. SQLITE_BUSY

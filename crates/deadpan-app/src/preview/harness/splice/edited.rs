@@ -99,6 +99,7 @@ fn rejected_yank_supersedes(d: &mut Driver<'_>, copied: &Arc<Captured>) -> Resul
     d.app_mut().copied.expect(
         CaptureRequest {
             id: copied.id().clone(),
+            register: None,
             scope: copied.scope().clone(),
             parent: copied.slice().parent().clone(),
             selection: copied.slice().selection().clone(),
@@ -116,9 +117,9 @@ fn rejected_yank_supersedes(d: &mut Driver<'_>, copied: &Arc<Captured>) -> Resul
     d.key(Key::Y)?;
     let error = d.app().error.clone();
     d.check(
-        "A rejected production y in Sounds supersedes the older pending edited copy",
-        !d.app().copied.is_pending() && error.is_some(),
-        json!({"pending":false,"error":true}),
+        "A rejected production y in Sounds supersedes feedback while the accepted write remains unsettled",
+        d.app().copied.is_pending() && error.is_some(),
+        json!({"pending_write":true,"error":true}),
         d.snapshot(),
     )?;
     d.app_mut().receive_copied(
@@ -245,6 +246,7 @@ fn delayed_workspace_receipt(d: &mut Driver<'_>, copied: &Arc<Captured>) -> Resu
 pub(super) fn capture_request(copied: &Captured) -> CaptureRequest {
     CaptureRequest {
         id: copied.id().clone(),
+        register: None,
         scope: copied.scope().clone(),
         parent: copied.slice().parent().clone(),
         selection: copied.slice().selection().clone(),

@@ -36,7 +36,7 @@ pub(super) struct PlacementTarget {
     pub range: Option<deadpan_core::FrameRange>,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default, PartialEq, Eq)]
 pub(super) struct Selection {
     identity: Option<Identity>,
     bounds: Option<(u64, u64)>,
@@ -130,6 +130,9 @@ fn nearest_boundary(index: &deadpan_core::SourceFrameIndex, fraction: f64) -> u6
 
 impl DeadpanApp {
     pub(super) fn capture_placement_target(&self) -> Result<PlacementTarget, String> {
+        if self.copied.is_pending() {
+            return Err("Wait for the copy to finish saving before placing it.".into());
+        }
         if self.view != View::Sequence
             || self.sound_focused()
             || self.pane == Pane::Sounds
@@ -238,12 +241,68 @@ impl DeadpanApp {
             self.error = Some("Select and copy a moment in Original (:source)".into());
             return;
         }
-        match self.moment.copy() {
-            Ok(copied) => {
-                self.copied.original_copied_to(destination, copied);
+        let copied = match self.moment.clone().copy() {
+            Ok(copied) => copied,
+            Err(error) => {
+                self.error = Some(error);
+                return;
+            }
+        };
+        let Some(serial) = self.next_serial() else {
+            return;
+        };
+        let Some(workspace) = &self.workspace else {
+            self.error = Some("Open a project before copying.".into());
+            return;
+        };
+        let id = crate::project::slice::CopyId {
+            session: workspace.session,
+            project: workspace.document.project_id().clone(),
+            source_revision: workspace.document.revision_id().clone(),
+            request: serial,
+            persisted_version: None,
+        };
+        let request = crate::project::registers::OriginalRequest {
+            id: id.clone(),
+            register: destination,
+            asset: copied.identity.asset,
+            qualification: copied.identity.qualification,
+            ordinals: copied.ordinals,
+        };
+        match self
+            .service
+            .submit(ProjectRequest::CaptureOriginal(request))
+        {
+            Ok(()) => {
+                self.copied.expect_original(id, self.moment.clone());
+                self.error = None;
+                self.message = Some("Saving Original copy…".into());
+            }
+            Err(error) => self.error = Some(error),
+        }
+    }
+
+    pub(super) fn receive_original_copy(
+        &mut self,
+        update: Option<crate::project::registers::OriginalUpdate>,
+        unrefreshed_commit: bool,
+    ) {
+        let Some((selection, result)) =
+            update.and_then(|update| self.copied.receive_original(update))
+        else {
+            return;
+        };
+        match result {
+            Ok(()) => {
+                if unrefreshed_commit {
+                    return;
+                }
+                if self.moment == selection {
+                    self.moment.active = false;
+                }
                 self.error = None;
                 self.message = Some(format!(
-                    "Moment copied. Return to Your edit (:sequence): :splice previews placement; {} replaces an Edit selection or pastes beside a beat.",
+                    "Moment copied and saved. Return to Your edit (:sequence): :splice previews placement; {} replaces an Edit selection or pastes beside a beat.",
                     self.editor_pair(EditorKey::PasteAfter, EditorKey::PasteBefore, "/")
                 ));
             }
@@ -479,7 +538,7 @@ impl DeadpanApp {
                     if ui.add_enabled(self.moment.range().is_some(), egui::Button::new(format!("Copy moment  {}", self.editor_key(EditorKey::Copy))).wrap().fill(style::SELECTED)).clicked() { self.pane = Pane::Inspector; self.copy_slice(); }
                     if ui.add(egui::Button::new(format!("Cancel selection  {}", self.editor_key(EditorKey::Escape))).wrap()).clicked() { self.pane = Pane::Inspector; self.moment.cancel(); self.cancel_register_choice(); }
                     ui.separator();
-                    ui.weak("Your Original stays intact. Copying does not change the project.");
+                    ui.weak("Copies are saved in this project. Copying does not change Your edit or its history.");
                     if let Some(copied) = self.copied.selected_content() {
                         ui.colored_label(style::LAVENDER, copied.label());
                         ui.weak(format!("Return to Your edit, choose a beat, then {} after or {} before. One paste, one undo.", self.editor_key(EditorKey::PasteAfter), self.editor_key(EditorKey::PasteBefore)));

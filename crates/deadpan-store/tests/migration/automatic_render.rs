@@ -182,3 +182,31 @@ fn schema41_rejects_oversized_and_new_null_evidence_without_rewriting_cells() ->
     }
     Ok(())
 }
+
+#[test]
+fn authentic_old_database_rejects_injected_register_tables_without_losing_cells() -> Result {
+    for table in ["register_state", "register_contents", "registers"] {
+        for populated in [false, true] {
+            let scratch = tempfile::tempdir()?;
+            let package = fixture(scratch.path(), include_str!("../fixtures/v1-history.sql"))?;
+            let database = Connection::open(package.join("project.sqlite"))?;
+            database.execute_batch(&format!("CREATE TABLE {table}(foreign_value TEXT)"))?;
+            if populated {
+                database.execute_batch(&format!("INSERT INTO {table} VALUES('preserve')"))?;
+            }
+            let error = failed_without_promotion(&package, 1)?;
+            assert!(
+                error
+                    .to_string()
+                    .contains(&format!("table {table} already exists")),
+                "{error}"
+            );
+            assert_eq!(
+                database.query_row(&format!("SELECT count(*) FROM {table}"), [], |row| row
+                    .get::<_, i64>(0))?,
+                i64::from(populated)
+            );
+        }
+    }
+    Ok(())
+}

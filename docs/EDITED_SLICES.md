@@ -166,10 +166,11 @@ revision identities; they cannot make an old destination request current again.
 
 ## Native register and previews
 
-[Named session registers](NAMED_REGISTERS.md) extend the default copy with a–z
+[Project registers](NAMED_REGISTERS.md) extend the default copy with a–z
 slots. They use the same immutable captures, historical admission and saved-cut
 receipt path described below. A successful named write also updates the default
 copy; paste and placement retain the selected slot's exact content at entry.
+The bank is saved independently of timeline revisions and restored after reopen.
 
 ### Frame cuts at the cursor
 
@@ -188,22 +189,24 @@ actual frame count and any group-end clamp. A later reply cannot supply a missin
 target or retarget a stale command.
 
 The resolved interval uses the same `CutEditSlice` service as Visual deletion.
-Capture and deletion succeed together before the session register changes; one
+Capture, deletion and register persistence succeed together; one
 Undo restores the removed content. The saved receipt reports the actual interval
 and frame count. Unsupported partial composite endpoints reject the complete
 interval rather than shortening it to a convenient child boundary. Held `x`
 does not repeat edits, and native controls, text, IME and modified shortcuts
 retain input. A dialog opened earlier in the same input batch blocks the cut.
-This adds no schema or separate authored command.
+Frame cuts need no separate authored command. The shared project bank uses
+database schema 53.
 
 ### Whole beats and ranges
 
 In Your edit, `v`, motion and `y` capture the selected range on the project
-service. The ephemeral register retains the exact project session, request and
-source revision. Copying creates no history entry. Later edits and Undo preserve
-the accepted copy; closing the project clears it. A newer yank supersedes a
-pending copy even when its focused pane rejects copying. Late or duplicate
-replies cannot replace newer content or finish a newer selection.
+service. The durable capture retains its source revision; runtime copies receive
+fresh session/request identities on reopen. Copying creates no history entry.
+Later edits, Undo and reopening preserve the saved copy. A newer yank supersedes
+an older UI confirmation even when its focused pane rejects copying. It cannot
+cancel an accepted save. Versioned bank snapshots retain durable contents;
+late or duplicate confirmations cannot finish a newer selection.
 
 Without a Visual selection, `y` captures the complete selected child. An empty
 Visual selection remains an error and cannot fall back to a beat. `d` cuts a
@@ -213,9 +216,9 @@ target, commits one `DeleteRange` or `DeleteRipple`, and publishes the copy only
 after save. Capture, admission and commit failures keep the previous register.
 A saved cut retains both its copy and a dedicated receipt if refresh fails,
 with explicit reopening guidance. Exact successful retries return that receipt.
-New yank/cut intent supersedes an older pending register result without cancelling
+New yank/cut intent supersedes an older pending confirmation without cancelling
 an already queued authored cut. Undo restores removed content and retains the
-accepted copy. The register is session state; this does not make it crash-durable.
+saved copy. The deletion and register update share one SQLite transaction.
 
 Fast `p/P` inserts beside the selected beat or replaces the selected Edit range.
 `:splice` opens the same visible placement workflow used for Original slices.
@@ -257,8 +260,8 @@ ordinary Sequence scopes, preserving whole-unit identities. Native `:splice`
 provides explicit Move selection and local removal/insertion picture comparison
 and audition. Historical copies remain copyable but cannot authorize removal
 from a newer revision. See [native qualification](qualification/native-move-2026-09-30.md).
-Named register persistence, role-only placement,
-motion/text-object operators and nested occurrence interiors remain required.
+Role-only placement, motion/text-object operators and nested occurrence interiors
+remain required.
 These workflows remain open beyond the capture and placement commands described
 above. Native media, interaction and performance evidence is recorded separately
 from the core timing proofs.

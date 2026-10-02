@@ -55,6 +55,10 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     })?;
     d.command("source")?;
     d.chord(&[Key::G, Key::G, Key::V, Key::Num5, Key::L, Key::Y])?;
+    d.wait_for(
+        "Original copy is durably saved before the next operation",
+        |app| !app.service.is_busy() && !app.copied.is_pending(),
+    )?;
     let copied = d
         .app()
         .copied

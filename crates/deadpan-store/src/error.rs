@@ -2,6 +2,8 @@ use std::path::PathBuf;
 
 #[derive(Debug, thiserror::Error)]
 pub enum StoreError {
+    #[error("Project registers are invalid: {0}")]
+    Registers(String),
     #[error("Publication journal is invalid: {0}")]
     Publication(String),
     #[error("Render job metadata is invalid: {0}")]
@@ -110,6 +112,7 @@ impl StoreError {
     /// Stable protocol codes shared by GUI and headless callers.
     pub fn code(&self) -> &'static str {
         match self {
+            Self::Registers(_) => "RegistersInvalid",
             Self::Publication(_) => "PublicationInvalid",
             Self::RenderJob(_) => "RenderJobInvalid",
             #[cfg(any(target_os = "macos", target_os = "linux"))]

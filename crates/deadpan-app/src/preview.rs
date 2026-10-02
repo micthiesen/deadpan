@@ -639,6 +639,10 @@ impl DeadpanApp {
                             .is_some_and(|next| next.asset != i.asset)
                 });
             self.workspace = update.workspace;
+            self.copied.reconcile(self.workspace.as_deref());
+            if let Some(bank) = update.registers {
+                self.copied.install_bank(&bank);
+            }
             self.receive_splice(update.splice, update.splice_commit);
             self.receive_slip(update.slip);
             self.receive_trim(update.trim);
@@ -846,6 +850,7 @@ impl DeadpanApp {
             if let Some(bindings) = repeat_bindings {
                 self.bindings = bindings;
             }
+            self.receive_original_copy(update.captured_original, unrefreshed_commit);
             self.receive_copied(update.captured_slice, unrefreshed_commit);
             self.receive_cut(update.cut_slice);
             self.receive_marks(update.marks, context);
@@ -3462,13 +3467,13 @@ impl DeadpanApp {
         let registers: Vec<_> = self
             .copied
             .entries()
-            .map(|(name, content)| (name, content.label()))
+            .map(|(name, content)| (name, content.available_label(self.workspace.as_deref())))
             .collect();
         self.help_scroll.show(context, &mut self.help_open, |ui| {
                     ui.label(&keymap_status);
                     ui.label(egui::RichText::new("REGISTERS").strong().color(style::LAVENDER));
                     help_binding(ui, &format!("{} + letter · :register a", key(EditorKey::RegisterSelect)), "Choose a–z for the next copy, picture cut, paste or :splice. Uppercase chooses the same slot. Named writes also update the default copy. Esc cancels the choice.");
-                    help_binding(ui, &format!("{} + \" · :register \"", key(EditorKey::RegisterSelect)), "Use the default copy. :registers opens this list. Registers last for this open project session; closing the project clears them.");
+                    help_binding(ui, &format!("{} + \" · :register \"", key(EditorKey::RegisterSelect)), "Use the default copy. :registers opens this list. Registers are saved in this project and restored when you reopen it. Copying leaves edit history unchanged; cuts save the deletion and copy together.");
                     if registers.is_empty() {
                         ui.weak("All registers are empty.");
                     }
@@ -3503,7 +3508,7 @@ impl DeadpanApp {
                         (":hold 1.5s".to_owned(), "Choose an exact pause duration: 12f, 250ms, 1.5s, or 01:02.500. Seconds round once to project frames. Zero makes no edit. Source and pause fragments work inside Sequence groups; Repeat and Retime interiors remain unavailable.".to_owned()),
                         (format!("{} / {}", key(EditorKey::Repeat), bindings.counted_label(EditorKey::Repeat, 3)), "Wrap the selected beat in two / three total plays. Rapid wraps wait in order, up to 16 pending; each has its own undo. Escape, navigation or another action cancels the waiting wraps.".to_owned()),
                         (format!("{} · motions · {}", key(EditorKey::Visual), key(EditorKey::CutRange)), "Cut the nonempty active or finished Edit range and close its time in one undo. Linked picture and sound stay together. Source/Hold/fragment endpoints and whole intervening beats work in an ordinary Sequence. Enter a group to cut inside it. Empty selections never cut a beat.".to_owned()),
-                        (format!("{} / :delete", key(EditorKey::CutBeat)), format!("Without a Visual selection, {} cuts one whole beat, including an empty group. :delete captures the exact range or beat when command entry opens; stale or missing targets fail. A saved cut replaces the copy register; {} or :splice places that copy. Failure keeps the previous copy. The cursor stays at a range cut's join. Undo restores the removed content and retains the copy for this project session.", key(EditorKey::CutBeat), key_labels::aliases_pair(&bindings, EditorKey::PasteAfter, EditorKey::PasteBefore, "/"))),
+                        (format!("{} / :delete", key(EditorKey::CutBeat)), format!("Without a Visual selection, {} cuts one whole beat, including an empty group. :delete captures the exact range or beat when command entry opens; stale or missing targets fail. A saved cut replaces the copy register; {} or :splice places that copy. Failure keeps the previous copy. The cursor stays at a range cut's join. Undo restores the removed content and retains the copy, including after reopening the project.", key(EditorKey::CutBeat), key_labels::aliases_pair(&bindings, EditorKey::PasteAfter, EditorKey::PasteBefore, "/"))),
                         (format!("{} / {} / :delete-frames 12f", key(EditorKey::CutFrames), bindings.counted_label(EditorKey::CutFrames, 12)), format!("Cut one or a counted number of linked picture and sound frames beginning at the Edit cursor, stopping at this group's end. The command captures its cursor and group when entry opens. A Visual selection must be cleared with {} first, or cut with {}. At the group's end no edit is made. One Undo restores the cut; the exact removed slice remains available for paste.", key(EditorKey::Escape), key(EditorKey::CutRange))),
                         (":repeat 3".to_owned(), "Set total plays on a Repeat; wrap a different selected beat.".to_owned()),
                         (":wrap-repeat 3".to_owned(), "Always add an enclosing Repeat, including nesting.".to_owned()),
@@ -3548,7 +3553,7 @@ impl DeadpanApp {
                     ] { help_binding(ui, &key, &description); }
                     ui.separator();
                     ui.weak(format!("Original browsing never changes it. Your edit commands affect the selected beat in the displayed group and its linked picture and sound. Counts precede operators, such as {}; the visible PENDING badge waits without a timer.", bindings.counted_label(EditorKey::Repeat, 3)));
-                    ui.weak(format!("{} auditions the focused catalog sound, Original, or full edit. In the catalog, {} selects a sound and {} loops its complete measured audio. Catalog audition keeps the picture and both editor cursors in place. Leaving the catalog or choosing another sound stops it. Elsewhere {} loops the selected Original moment, Edit range or edited beat with context. Playback has edge fades and a safety limiter; pause before changing Monitor volume. Picture-only or sound-only range cuts and placement, persistent registers, Repeat/Retime descendant navigation and insertion, moving routed sounds, voice effects, the full mix, and AI generation in the app remain unavailable. Render supports the current SDR picture and audio path; unsupported content fails explicitly. Headless commands can use this open project. Use :renders for saved renders and recovery. HDR output and full mastering remain unavailable.", key(EditorKey::Playback), key_labels::aliases_pair(&bindings, EditorKey::BeatNext, EditorKey::BeatPrevious, "/"), key(EditorKey::Audition), key(EditorKey::Audition)));
+                    ui.weak(format!("{} auditions the focused catalog sound, Original, or full edit. In the catalog, {} selects a sound and {} loops its complete measured audio. Catalog audition keeps the picture and both editor cursors in place. Leaving the catalog or choosing another sound stops it. Elsewhere {} loops the selected Original moment, Edit range or edited beat with context. Playback has edge fades and a safety limiter; pause before changing Monitor volume. Picture-only or sound-only range cuts and placement, Repeat/Retime descendant navigation and insertion, moving routed sounds, voice effects, the full mix, and AI generation in the app remain unavailable. Render supports the current SDR picture and audio path; unsupported content fails explicitly. Headless commands can use this open project. Use :renders for saved renders and recovery. HDR output and full mastering remain unavailable.", key(EditorKey::Playback), key_labels::aliases_pair(&bindings, EditorKey::BeatNext, EditorKey::BeatPrevious, "/"), key(EditorKey::Audition), key(EditorKey::Audition)));
             });
     }
 }

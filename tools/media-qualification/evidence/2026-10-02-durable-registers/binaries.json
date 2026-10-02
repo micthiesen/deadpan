@@ -1,0 +1,6 @@
+{
+  "base_commit": "e7d472be5a9433bb87ef16c4cdb2dc3c4c5edfd4",
+  "final_source_manifest_sha256": "0edf23127768e2982a8cd33695be2ac207b92025426e1ace5150d96993720a40",
+  "final_binary_sha256": "ec4448746e0fe788d15f9e8a5bb4693343118179ef8a768f36c1f025f8381630",
+  "scope": "Project register persistence: SQLite schema 53; document schema 43 unchanged."
+}

@@ -1,0 +1,22 @@
+{
+  "command": [
+    "python3",
+    "tools/build-app.py",
+    "--binary",
+    "target/release/deadpan-app",
+    "--output",
+    "/tmp/deadpan-durable-registers-20261002/Deadpan-Cursor-QA.app",
+    "--bundle-id",
+    "dev.thiesen.deadpan.cursor-qa"
+  ],
+  "started": "2026-10-02T09:02:24.421001+00:00",
+  "base_commit": "e7d472be5a9433bb87ef16c4cdb2dc3c4c5edfd4",
+  "diff_sha256": "c2a9509848c76fced4775088badb6ceebf0b43797e7f6a87cb5a65033f8ce3da",
+  "source_manifest_sha256": "9d743fd6422333faf0604749aa72c1f40eb33ee9a6b82fc38abb1da23d8691ae",
+  "pid": 62023,
+  "exit_code": 0,
+  "seconds": 2.271473083179444,
+  "source_manifest_after_sha256": "9d743fd6422333faf0604749aa72c1f40eb33ee9a6b82fc38abb1da23d8691ae",
+  "source_unchanged": true,
+  "gate_exit_code": 0
+}
