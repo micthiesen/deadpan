@@ -1,0 +1,19 @@
+{
+  "debug": {
+    "path": "target/debug/deadpan-app",
+    "sha256": "086de5a18df69ae38f51bb689c076acc68e1cc961d1c9a7f2e36ad27784b7d1a"
+  },
+  "release": {
+    "path": "target/release/deadpan-app",
+    "sha256": "a22cb2eb8effcf9de13fe8f9eadb6ffe3fd2ffa00d4ba99233f1f14e826178f1"
+  },
+  "final_source_inventory": "79f3568cd19f1a3f644deb12fcd2163a03a47a9ee867c523050a5927f2efa5bd",
+  "full_workspace_source_inventory": "f640b47e47465e0d8591c11e101d3d7d3a03289c713e667ea4dcf35d85ab1b38",
+  "changed_after_workspace_run": [
+    "crates/deadpan-app/src/preview.rs",
+    "crates/deadpan-app/src/preview/harness/keymap.rs",
+    "crates/deadpan-app/src/preview/harness/nested_pause.rs",
+    "crates/deadpan-app/src/preview/trim/waveform.rs"
+  ],
+  "source_unchanged_at_collection": true
+}

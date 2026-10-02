@@ -361,6 +361,7 @@ mod tests {
                         &[],
                         beats.len(),
                         beats.len() as u64 * 120,
+                        &crate::navigation::Bindings::default(),
                     );
                     viewport = ui.available_rect_before_wrap();
                     strip(
@@ -540,6 +541,7 @@ mod tests {
                                 &[],
                                 beats.len(),
                                 beats.len() as u64 * 120,
+                                &crate::navigation::Bindings::default(),
                             );
                             strip(
                                 ui,
@@ -639,6 +641,7 @@ mod tests {
                                             &group_labels,
                                             count,
                                             count as u64 * 120,
+                                            &crate::navigation::Bindings::default(),
                                         )
                                         .0
                                         .rect;

@@ -11,6 +11,21 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+The [configurable keymap](KEYMAP.md) adds startup Normal/Visual overrides,
+logical/physical matching, dynamic key labels and persistent error fallback.
+The `keymap` replay uses a private file and real production input to exercise
+shared prefixes, held custom motions, Trim entry capture, native field suffixes,
+synthetic IME and minimum-window paint. `keymap-error` checks atomic fallback and
+the diagnostic after editing. Personal settings are never read by replay.
+The [qualification](qualification/configurable-bindings-2026-10-01.md) records
+actual results, review corrections and remaining physical-input limits. No native
+window is left running after testing.
+
+The final keymap images also expose an open minimum-window layout issue:
+Original's picture is only about 50 points high at 960×640 when its time strip
+and the empty Placed sounds pane are present. Preserve their keyboard controls
+while restoring picture priority before claiming complete workspace acceptance.
+
 The [native Trim increment](COMBINED_TRIM.md#native-trim) adds ordered
 In/Out/Slip/Roll controls, Ripple/Overwrite policy, atomic Before/Proposed boundary
 pairs, an admitted Edit waveform and optional audition. Its `trim` replay uses
@@ -410,7 +425,9 @@ the real app. The initial viewport is 1280×820 points at 1×. The code lives in
 
 | Name | Current replay and assertions |
 | --- | --- |
-| `kestrel-shortcuts` | Always runs. Checks evaluated global reservations against compiled Normal/Visual branches with absent, positive, zero and overflowing counts, plus Camera, text/IME, inspector and the remaining modal routers. The [declarative-map qualification](qualification/declarative-bindings-2026-10-01.md) passes 26,536 cases without live-source drift. The Ghostty-only Cmd-N reservation is excluded from Deadpan. Optional source digest checking detects drift; physical interception remains native work. |
+| `kestrel-shortcuts` | Always runs. Checks evaluated global reservations against compiled Normal/Visual branches with absent, positive, zero and overflowing counts, plus Camera, text/IME, inspector and remaining modal routers. It also pairs each physical reservation with differing logical identities. The [configuration qualification](qualification/configurable-bindings-2026-10-01.md) records the 130,696-case shipped-map audit and live-source digest. Ghostty-only Cmd-N is excluded. Event-level checks do not qualify physical system interception. |
+| `keymap` | Injects a private startup map with shared `q` branches, `ah` forward motion, `qb` Hold, `qc`/colon/F2 Command, `qs`/slash Search, Semicolon Help and `z` cut. Checks counts, held-action identity, release/focus cancellation, exact Hold/Undo, captured Trim absence, native controls, same-batch field input, literal punctuation/Unicode and synthetic IME. Shift changes cannot leak a held opener before or after field closure; text after Enter/Escape resumes in order. Minimum-window assertions inspect custom labels and keep the header compact through repeated field transitions. |
+| `keymap-error` | Loads a valid early override followed by an unknown action, requires complete shipped fallback, performs an edit/Undo and reopens the persistent error from the header. Checks the actual diagnostic paint after the help window's initial measurement frame. |
 | `workspace` | Pointer frame navigation, repeated `,i` Original reuse, selected-card visibility, resize transitions at 960×640/1×, 1492×929/2× and 1280×820/1×, and a real monitor-slider drag that must not create a revision. Checks actual picture mesh bounds against the fitted canvas and unclipped navigation text, including Original at the minimum size. |
 | `editing` | Held H across a comma prefix preserves the document and visible guidance; a fresh H inserts one silent half-second Hold and one Undo restores the baseline. Also covers counted Repeat, pointer opening of its setter, same-batch text submission, undo, exact pause insertion before a Repeat and before the Original, and Hold-duration editing. Checks duration and selection. Split, delete and redo have separate replays. |
 | `delete-range` | Cuts active and finished Visual selections in either direction, rejects empty selections, preserves whole-beat dd without a selection and captures independent :delete targets including absence. Checks exact decoded join pictures, one commit/Undo, stale revision/session/group refusal, native-control focus, synthetic IME, held/count/same-batch input and minimum-window text paint clips. Nested ordinary groups retain their owner; partial composite endpoints fail and whole composites can be removed. The frame-cut extension checks `x`/counts/`:delete-frames`, exact captured and clamped intervals, successful delayed-yank supersession, same-batch modal ownership, and focused-button mark names. See [current qualification](qualification/native-frame-cuts-2026-10-01.md) for counts and source identities. No device, acoustics or physical IME claim. |

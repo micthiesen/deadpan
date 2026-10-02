@@ -4,14 +4,12 @@
 //! registry check compares its source digest, failing closed on any drift; it
 //! never guesses at Swift syntax or runs source supplied to the Rust harness.
 
-use std::collections::BTreeSet;
-
 use eframe::egui::{Key, Modifiers};
 use sha2::{Digest, Sha256};
 
 use super::{Bindings, Pane, camera::CameraKey};
 
-const FIXTURE: &str = include_str!("kestrel-reserved.tsv");
+use super::keymap_config::reservations::{FIXTURE, Reservation, parse_fixture};
 
 #[derive(Debug)]
 pub struct ShortcutConflict {
@@ -39,15 +37,14 @@ impl ShortcutAudit {
     }
 }
 
-struct Reservation {
-    key: Key,
-    modifiers: Modifiers,
-    chord: String,
-}
-
 /// Check every global reservation against production routing, including pending
 /// operators and counts. App-scoped Kestrel entries for other apps are excluded.
 pub fn audit() -> Result<ShortcutAudit, String> {
+    audit_bindings(&Bindings::default())
+}
+
+/// Audit every structural branch of this complete immutable candidate.
+pub fn audit_bindings(template: &Bindings) -> Result<ShortcutAudit, String> {
     let (source_sha256, reservations) = parse_fixture(FIXTURE)?;
     let mut report = ShortcutAudit {
         reserved_bindings: reservations.len(),
@@ -57,13 +54,74 @@ pub fn audit() -> Result<ShortcutAudit, String> {
         live_source_sha256: None,
     };
     for reservation in reservations {
-        audit_reservation(
+        audit_reservation_for(
+            template,
             &reservation,
             &mut report,
             |bindings, key, modifiers, text, ime| bindings.key(key, modifiers, text, ime),
         );
+        audit_layout_reservation(template, &reservation, &mut report);
     }
     Ok(report)
+}
+
+/// Layout translation must never disguise a reserved physical chord as a
+/// logical punctuation key, native menu key, or mark-name completion.
+fn audit_layout_reservation(
+    template: &Bindings,
+    reservation: &Reservation,
+    report: &mut ShortcutAudit,
+) {
+    for prefix in audit_prefixes_for(template) {
+        for selection in [
+            super::EditSelection::None,
+            super::EditSelection::Empty,
+            super::EditSelection::Range,
+        ] {
+            for (text, ime) in [(false, false), (true, false), (false, true), (true, true)] {
+                for logical in [Key::Comma, Key::Colon, Key::N, Key::A, Key::Quote] {
+                    let mut bindings = template.clone();
+                    bindings.clear();
+                    for stroke in &prefix {
+                        bindings.key_with_selection(
+                            stroke.0,
+                            if stroke.1 {
+                                Modifiers::SHIFT
+                            } else {
+                                Modifiers::NONE
+                            },
+                            false,
+                            false,
+                            selection,
+                        );
+                    }
+                    let context = format!(
+                        "Layout physical={:?} logical={logical:?} selection={selection:?} prefix={:?} text={text} ime={ime}",
+                        reservation.key,
+                        bindings.pending()
+                    );
+                    let action = bindings.route_event(
+                        logical,
+                        Some(reservation.key),
+                        reservation.modifiers,
+                        text,
+                        ime,
+                        false,
+                        true,
+                        selection,
+                    );
+                    let pending = bindings.pending();
+                    record(
+                        report,
+                        reservation,
+                        context,
+                        (action.is_some() || !pending.is_empty())
+                            .then(|| format!("action={action:?}, pending={pending:?}")),
+                    );
+                }
+            }
+        }
+    }
 }
 
 /// Check a caller-read UTF-8 Shortcuts.swift against the qualified registry.
@@ -79,17 +137,28 @@ pub fn audit_with_kestrel_source(source: &str) -> Result<ShortcutAudit, String> 
     Ok(report)
 }
 
+#[cfg(test)]
 fn audit_reservation(
+    reservation: &Reservation,
+    report: &mut ShortcutAudit,
+    route: impl Fn(&mut Bindings, Key, Modifiers, bool, bool) -> Option<super::Action>,
+) {
+    audit_reservation_for(&Bindings::default(), reservation, report, route);
+}
+
+fn audit_reservation_for(
+    template: &Bindings,
     reservation: &Reservation,
     report: &mut ShortcutAudit,
     route: impl Fn(&mut Bindings, Key, Modifiers, bool, bool) -> Option<super::Action>,
 ) {
     // Derive every pending branch from the compiled production grammar, then
     // exercise absent, positive, zero and overflow counts before that branch.
-    let prefixes = audit_prefixes();
+    let prefixes = audit_prefixes_for(template);
     for (text, ime) in [(false, false), (true, false), (false, true), (true, true)] {
         for prefix in &prefixes {
-            let mut bindings = Bindings::default();
+            let mut bindings = template.clone();
+            bindings.clear();
             for stroke in prefix {
                 bindings.key(
                     stroke.0,
@@ -122,7 +191,8 @@ fn audit_reservation(
                     .then(|| format!("action={action:?}, pending={pending:?}")),
             );
             for selection in [super::EditSelection::Empty, super::EditSelection::Range] {
-                let mut bindings = Bindings::default();
+                let mut bindings = template.clone();
+                bindings.clear();
                 for stroke in prefix {
                     bindings.key_with_selection(
                         stroke.0,
@@ -265,7 +335,12 @@ fn audit_reservation(
     }
 }
 
+#[cfg(test)]
 fn audit_prefixes() -> Vec<Vec<super::editor_map::Stroke>> {
+    audit_prefixes_for(&Bindings::default())
+}
+
+fn audit_prefixes_for(template: &Bindings) -> Vec<Vec<super::editor_map::Stroke>> {
     use super::editor_map::Stroke;
     let counts = [
         Vec::new(),
@@ -274,7 +349,7 @@ fn audit_prefixes() -> Vec<Vec<super::editor_map::Stroke>> {
         vec![Stroke(Key::Num9, false); 11],
     ];
     let mut cases = Vec::new();
-    for prefix in super::editor_map::prefix_paths() {
+    for prefix in template.map.prefix_paths() {
         for count in &counts {
             let mut path = count.clone();
             path.extend_from_slice(&prefix);
@@ -300,137 +375,6 @@ fn record(
     }
 }
 
-fn parse_fixture(input: &str) -> Result<(String, Vec<Reservation>), String> {
-    let mut digest = None;
-    let mut reservations = Vec::new();
-    let mut seen = BTreeSet::new();
-    for (index, line) in input.lines().enumerate() {
-        if let Some(value) = line.strip_prefix("# source-sha256=") {
-            if digest.is_some()
-                || value.len() != 64
-                || !value.bytes().all(|byte| byte.is_ascii_hexdigit())
-            {
-                return Err("Kestrel fixture has an invalid or repeated source digest".into());
-            }
-            digest = Some(value.to_owned());
-            continue;
-        }
-        if line.is_empty() || line.starts_with('#') {
-            continue;
-        }
-        let fields: Vec<_> = line.split('\t').collect();
-        if fields.len() != 5 || fields.iter().any(|field| field.is_empty()) {
-            return Err(format!("Malformed Kestrel fixture line {}", index + 1));
-        }
-        let keycode: u16 = fields[0]
-            .parse()
-            .map_err(|_| format!("Invalid Kestrel keycode on line {}", index + 1))?;
-        let mask: u8 = fields[1]
-            .parse()
-            .map_err(|_| format!("Invalid Kestrel modifier mask on line {}", index + 1))?;
-        if mask > 15 || !seen.insert((keycode, mask, fields[2])) {
-            return Err(format!(
-                "Invalid or duplicate Kestrel binding on line {}",
-                index + 1
-            ));
-        }
-        // Kestrel's Ghostty-only Cmd+N is intentionally available to Deadpan.
-        // If Kestrel adds an app scope for Deadpan, this audit must learn its
-        // exact bundle ID rather than treating all scoped bindings as global.
-        if fields[2] != "*" {
-            if fields[2] != "com.mitchellh.ghostty" {
-                return Err(format!("Unqualified Kestrel app scope {:?}", fields[2]));
-            }
-            continue;
-        }
-        let key = ansi_key(keycode)
-            .ok_or_else(|| format!("Unqualified Kestrel physical keycode {keycode}"))?;
-        let modifiers = Modifiers {
-            ctrl: mask & 1 != 0,
-            alt: mask & 2 != 0,
-            shift: mask & 4 != 0,
-            mac_cmd: mask & 8 != 0,
-            command: mask & 8 != 0,
-        };
-        reservations.push(Reservation {
-            key,
-            modifiers,
-            chord: format!("{} [{key:?}, modifiers={mask}, {}]", fields[3], fields[4]),
-        });
-    }
-    if reservations.is_empty() {
-        return Err("Kestrel fixture contains no global bindings".into());
-    }
-    Ok((
-        digest.ok_or("Kestrel fixture has no source digest")?,
-        reservations,
-    ))
-}
-
-/// The qualified registry uses macOS physical ANSI positions. This maps those
-/// positions to egui logical keys for the audit, not for production routing.
-fn ansi_key(code: u16) -> Option<Key> {
-    Some(match code {
-        0 => Key::A,
-        1 => Key::S,
-        2 => Key::D,
-        3 => Key::F,
-        4 => Key::H,
-        5 => Key::G,
-        6 => Key::Z,
-        7 => Key::X,
-        8 => Key::C,
-        9 => Key::V,
-        11 => Key::B,
-        12 => Key::Q,
-        13 => Key::W,
-        14 => Key::E,
-        15 => Key::R,
-        16 => Key::Y,
-        17 => Key::T,
-        18 => Key::Num1,
-        19 => Key::Num2,
-        20 => Key::Num3,
-        21 => Key::Num4,
-        22 => Key::Num6,
-        23 => Key::Num5,
-        24 => Key::Equals,
-        25 => Key::Num9,
-        26 => Key::Num7,
-        27 => Key::Minus,
-        28 => Key::Num8,
-        29 => Key::Num0,
-        30 => Key::CloseBracket,
-        31 => Key::O,
-        32 => Key::U,
-        33 => Key::OpenBracket,
-        34 => Key::I,
-        35 => Key::P,
-        36 => Key::Enter,
-        37 => Key::L,
-        38 => Key::J,
-        39 => Key::Quote,
-        40 => Key::K,
-        41 => Key::Semicolon,
-        42 => Key::Backslash,
-        43 => Key::Comma,
-        44 => Key::Slash,
-        45 => Key::N,
-        46 => Key::M,
-        47 => Key::Period,
-        48 => Key::Tab,
-        49 => Key::Space,
-        50 => Key::Backtick,
-        51 => Key::Backspace,
-        53 => Key::Escape,
-        123 => Key::ArrowLeft,
-        124 => Key::ArrowRight,
-        125 => Key::ArrowDown,
-        126 => Key::ArrowUp,
-        _ => return None,
-    })
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -440,7 +384,7 @@ mod tests {
         let report = audit().unwrap();
         assert_eq!(report.reserved_bindings, 62);
         assert_eq!(audit_prefixes().len(), 28);
-        assert_eq!(report.routing_cases, 62 * 428);
+        assert_eq!(report.routing_cases, 62 * (428 + 28 * 3 * 4 * 5));
         assert!(report.passed(), "{report:#?}");
     }
 

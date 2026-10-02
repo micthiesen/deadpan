@@ -341,10 +341,12 @@ impl DeadpanApp {
                 );
             }
             let base = target.base.clone();
-            let copied = target
-                .copied
-                .as_ref()
-                .ok_or("Copy a range from Original or Your edit first: v, h/l, y.")?;
+            let copied = target.copied.as_ref().ok_or_else(|| {
+                format!(
+                    "Copy a range from Original or Your edit first: {}.",
+                    self.editor_copy_recipe()
+                )
+            })?;
             let view = target.scope.resolve(&base)?;
             let mut seams = Vec::with_capacity(view.children.len() + 1);
             let mut at = view.start;
@@ -912,8 +914,7 @@ impl DeadpanApp {
                 }
                 if draft.replacement.is_none() {
                     draft.error = Some(
-                        "Select an Edit range with v before opening Place slice to replace it."
-                            .into(),
+                        "Select an Edit range before opening Place slice to replace it.".into(),
                     );
                     return;
                 }

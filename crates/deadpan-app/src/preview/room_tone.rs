@@ -221,7 +221,7 @@ impl DeadpanApp {
             let captured = captured.ok_or("No pause was captured when command entry opened.")?;
             let target = captured.target?;
             self.check_hold_target(&target)?;
-            let selection = captured.selection.ok_or("Copy a quiet Original range first: :source, v, h/l, y. Return to Your edit and select a pause, then :room-tone.")?;
+            let selection = captured.selection.ok_or_else(|| format!("Copy a quiet Original range first: :source, {}. Return to Your edit and select a pause, then :room-tone.", self.editor_copy_recipe()))?;
             Ok::<_, String>((target, selection, captured.copied))
         })();
         let (target, selection, copied) = match result {
@@ -372,6 +372,7 @@ impl DeadpanApp {
         for event in events {
             let egui::Event::Key {
                 key,
+                physical_key,
                 modifiers,
                 pressed: true,
                 repeat: false,
@@ -381,7 +382,17 @@ impl DeadpanApp {
                 continue;
             };
             use navigation::room_tone::RoomToneKey;
-            if Bindings::default().key(key, modifiers, field, false) == Some(Action::Render) {
+            if self.bindings.clone().route_event(
+                key,
+                physical_key,
+                modifiers,
+                field,
+                false,
+                false,
+                true,
+                navigation::EditSelection::None,
+            ) == Some(Action::Render)
+            {
                 self.render.requested = true;
                 context.input_mut(|input| {
                     input.consume_key(modifiers, key);
@@ -641,7 +652,10 @@ impl DeadpanApp {
         {
             self.silence_hold(Some(self.capture_hold_command()));
         }
-        ui.weak("Copy a quiet Original range with v, h/l, y. Silence retains explicit sound permissions.");
+        ui.weak(format!(
+            "Copy a quiet Original range with {}. Silence retains explicit sound permissions.",
+            self.editor_copy_recipe()
+        ));
     }
 }
 

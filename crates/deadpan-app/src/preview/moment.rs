@@ -84,7 +84,7 @@ impl Selection {
             .ok_or("Choose a registered Original first")?;
         let ordinals = self
             .range()
-            .ok_or("Select a nonempty Original range: v, then h/l, then y")?;
+            .ok_or("Select a nonempty Original range before copying.")?;
         self.active = false;
         Ok(Copied { identity, ordinals })
     }
@@ -207,18 +207,26 @@ impl DeadpanApp {
         self.pause_playback();
         self.moment.toggle(self.source_cursor);
         self.error = None;
-        self.message = Some(
-            if self.moment.active {
-                "Move with h/l to select time. y copies; v finishes; Esc cancels."
-            } else {
-                if self.moment.range().is_some() {
-                    "Selection retained. y copies this moment."
-                } else {
-                    "Empty selection. Press v and move with h/l before copying."
-                }
-            }
-            .into(),
-        );
+        self.message = Some(if self.moment.active {
+            format!(
+                "Move with {} to select time. {} copies; {} finishes; {} cancels.",
+                self.editor_pair(EditorKey::FramePrevious, EditorKey::FrameNext, "/"),
+                self.editor_key(EditorKey::Copy),
+                self.editor_key(EditorKey::Visual),
+                self.editor_key(EditorKey::Escape)
+            )
+        } else if self.moment.range().is_some() {
+            format!(
+                "Selection retained. {} copies this moment.",
+                self.editor_key(EditorKey::Copy)
+            )
+        } else {
+            format!(
+                "Empty selection. Press {} and move with {} before copying.",
+                self.editor_key(EditorKey::Visual),
+                self.editor_pair(EditorKey::FramePrevious, EditorKey::FrameNext, "/")
+            )
+        });
     }
 
     pub(super) fn copy_moment(&mut self) {
@@ -233,7 +241,10 @@ impl DeadpanApp {
             Ok(copied) => {
                 self.copied.original_copied(copied);
                 self.error = None;
-                self.message = Some("Moment copied. Return to Your edit (:sequence): :splice previews placement; p/P replaces an Edit selection or pastes beside a beat.".into());
+                self.message = Some(format!(
+                    "Moment copied. Return to Your edit (:sequence): :splice previews placement; {} replaces an Edit selection or pastes beside a beat.",
+                    self.editor_pair(EditorKey::PasteAfter, EditorKey::PasteBefore, "/")
+                ));
             }
             Err(error) => self.error = Some(error),
         }
@@ -254,10 +265,12 @@ impl DeadpanApp {
         let result = (|| {
             let target = target?;
             self.check_placement_target(&target)?;
-            let copied = target
-                .copied
-                .as_ref()
-                .ok_or("Copy a range first: v, h/l, y in Original or Your edit.")?;
+            let copied = target.copied.as_ref().ok_or_else(|| {
+                format!(
+                    "Copy a range first: {} in Original or Your edit.",
+                    self.editor_copy_recipe()
+                )
+            })?;
             let destination = if let Some(range) = target.range {
                 crate::project::splice::Destination::Replace { range }
             } else {
@@ -352,7 +365,7 @@ impl DeadpanApp {
                         "Original temporal range, cursor {} of {}. {}",
                         self.source_cursor,
                         length,
-                        range_label(range.as_ref(), self.moment.active)
+                        range_label(range.as_ref(), self.moment.active, &self.bindings)
                     ),
                 )
             });
@@ -366,7 +379,7 @@ impl DeadpanApp {
                 ui.memory_mut(|memory| memory.request_focus(pane_id(Pane::Viewer)));
                 self.request_picture(false);
             }
-            let label = range_label(range.as_ref(), self.moment.active);
+            let label = range_label(range.as_ref(), self.moment.active, &self.bindings);
             ui.add(egui::Label::new(egui::RichText::new(&label).color(style::LAVENDER)).truncate())
                 .on_hover_text(label);
         } else if self.view == View::Sequence
@@ -388,11 +401,16 @@ impl DeadpanApp {
                 if ui
                     .add_enabled(
                         !self.service.is_busy(),
-                        egui::Button::new(if replacing {
-                            "Replace range  p"
-                        } else {
-                            "Paste after  p"
-                        }),
+                        egui::Button::new(format!(
+                            "{}  {}",
+                            if replacing {
+                                "Replace range"
+                            } else {
+                                "Paste after"
+                            },
+                            self.editor_key(EditorKey::PasteAfter)
+                        ))
+                        .wrap(),
                     )
                     .clicked()
                 {
@@ -402,11 +420,16 @@ impl DeadpanApp {
                 if ui
                     .add_enabled(
                         !self.service.is_busy(),
-                        egui::Button::new(if replacing {
-                            "Replace range  P"
-                        } else {
-                            "Paste before  P"
-                        }),
+                        egui::Button::new(format!(
+                            "{}  {}",
+                            if replacing {
+                                "Replace range"
+                            } else {
+                                "Paste before"
+                            },
+                            self.editor_key(EditorKey::PasteBefore)
+                        ))
+                        .wrap(),
                     )
                     .clicked()
                 {
@@ -439,20 +462,20 @@ impl DeadpanApp {
                         ui.weak("The Out boundary is excluded. Original frame count and project duration can differ.");
                     } else {
                         ui.weak(if self.moment.active {
-                            "Move with h/l to select a nonempty range. v finishes; Esc cancels."
+                            format!("Move with {} to select a nonempty range. {} finishes; {} cancels.", self.editor_pair(EditorKey::FramePrevious, EditorKey::FrameNext, "/"), self.editor_key(EditorKey::Visual), self.editor_key(EditorKey::Escape))
                         } else {
-                            "Press v, then move with h/l. Counts work: 24l selects 24 presentation frames."
+                            format!("Press {}, then move with {}. Counts work: {} selects 24 presentation frames.", self.editor_key(EditorKey::Visual), self.editor_pair(EditorKey::FramePrevious, EditorKey::FrameNext, "/"), self.editor_counted(EditorKey::FrameNext, 24))
                         });
                     }
                     ui.add_space(8.0);
-                    if ui.button(if self.moment.active { "Finish selection  v" } else { "Select moment  v" }).clicked() { self.pane = Pane::Inspector; self.visual_moment(); }
-                    if ui.add_enabled(self.moment.range().is_some(), egui::Button::new("Copy moment  y").fill(style::SELECTED)).clicked() { self.pane = Pane::Inspector; self.copy_moment(); }
-                    if ui.button("Cancel selection  Esc").clicked() { self.pane = Pane::Inspector; self.moment.cancel(); }
+                    if ui.add(egui::Button::new(format!("{}  {}", if self.moment.active { "Finish selection" } else { "Select moment" }, self.editor_key(EditorKey::Visual))).wrap()).clicked() { self.pane = Pane::Inspector; self.visual_moment(); }
+                    if ui.add_enabled(self.moment.range().is_some(), egui::Button::new(format!("Copy moment  {}", self.editor_key(EditorKey::Copy))).wrap().fill(style::SELECTED)).clicked() { self.pane = Pane::Inspector; self.copy_moment(); }
+                    if ui.add(egui::Button::new(format!("Cancel selection  {}", self.editor_key(EditorKey::Escape))).wrap()).clicked() { self.pane = Pane::Inspector; self.moment.cancel(); }
                     ui.separator();
                     ui.weak("Your Original stays intact. Copying does not change the project.");
                     if let Some(copied) = self.copied.content() {
                         ui.colored_label(style::LAVENDER, copied.label());
-                        ui.weak("Return to Your edit, choose a beat, then p after or P before. One paste, one undo.");
+                        ui.weak(format!("Return to Your edit, choose a beat, then {} after or {} before. One paste, one undo.", self.editor_key(EditorKey::PasteAfter), self.editor_key(EditorKey::PasteBefore)));
                         if ui.button("Your edit  :sequence").clicked() {
                             self.view.set(View::Sequence, &mut self.message);
                             self.pane = Pane::Sequence;
@@ -486,13 +509,24 @@ impl DeadpanApp {
     }
 }
 
-fn range_label(range: Option<&Range<u64>>, active: bool) -> String {
+fn range_label(range: Option<&Range<u64>>, active: bool, bindings: &Bindings) -> String {
     range.map_or_else(
         || {
             if active {
-                "Original time · h/l extends selection".into()
+                format!(
+                    "Original time · {} extends selection",
+                    key_labels::pair(
+                        bindings,
+                        EditorKey::FramePrevious,
+                        EditorKey::FrameNext,
+                        "/"
+                    )
+                )
             } else {
-                "Original time · v starts selection".into()
+                format!(
+                    "Original time · {} starts selection",
+                    bindings.key_label(EditorKey::Visual)
+                )
             }
         },
         |range| {

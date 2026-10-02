@@ -14,6 +14,7 @@ fn audit_enumerates_unannotated_intermediate_branches() {
                 count: CountPolicy::Ignore,
                 short: "start",
                 repeatable: false,
+                interrupt: false,
             },
         }],
         Vec::new(),
@@ -28,7 +29,7 @@ fn rejected_count_teaching_does_not_advertise_an_available_edit() {
         (
             "2",
             Key::D,
-            "dd deletes one selected beat. Counted deletion is not available.",
+            "Whole-beat cut deletes one selected beat. Counted deletion is not available.",
         ),
         (
             "0",
@@ -43,7 +44,7 @@ fn rejected_count_teaching_does_not_advertise_an_available_edit() {
     ] {
         let mut bindings = counted(digits);
         bindings.key(key, Modifiers::NONE, false, false);
-        assert_eq!(bindings.pending_hint(), Some(message));
+        assert_eq!(bindings.pending_hint(), Some(message.to_owned()));
         assert_eq!(
             bindings.key(key, Modifiers::NONE, false, false),
             Some(Action::Invalid(message))

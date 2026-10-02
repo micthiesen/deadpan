@@ -1,0 +1,11 @@
+{
+  "checked_at": "2026-10-02T05:26:59.370595+00:00",
+  "command": [
+    "ps",
+    "-axo",
+    "pid=,comm="
+  ],
+  "remaining_deadpan_processes": [],
+  "ordinary_native_window_opened": false,
+  "personal_keymap_read_or_written": false
+}

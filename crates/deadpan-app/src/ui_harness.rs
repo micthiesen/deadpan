@@ -17,6 +17,8 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "menus",
     "delayed-preview",
     "rapid-input",
+    "keymap",
+    "keymap-error",
     "playback-feedback",
     "large-project",
     "edit-latency",

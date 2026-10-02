@@ -130,6 +130,7 @@ impl DeadpanApp {
                 &self.scope_labels,
                 self.beat_rows.len(),
                 self.scope_end - self.scope_start,
+                &self.bindings,
             );
             if pane_focus(ui, Pane::Sounds, sounds.rect, "Placed sounds pane").has_focus()
                 && self.pane != Pane::Sounds
@@ -145,6 +146,7 @@ impl DeadpanApp {
                 &self.scope_labels,
                 self.beat_rows.len(),
                 self.scope_end - self.scope_start,
+                &self.bindings,
             )
         };
         if let Some(depth) = destination {
@@ -170,12 +172,16 @@ fn draw_compact_heading(
     labels: &[String],
     beats: usize,
     frames: u64,
+    bindings: &Bindings,
 ) -> (egui::Response, Option<usize>, egui::Response) {
-    let text = if sounds_focused {
-        "PLACED SOUNDS 0 · ,s place · FOCUS"
-    } else {
-        "PLACED SOUNDS 0 · ,s place"
-    };
+    let text = format!(
+        "PLACED SOUNDS 0 · {} place{}",
+        bindings.key_label(EditorKey::PlaceSound),
+        if sounds_focused { " · FOCUS" } else { "" }
+    );
+    // A long configured path may use several lines, but cannot take the
+    // breadcrumb's entire width or escape the viewport.
+    let available = ui.available_width().max(1.0);
     let sounds = egui::WidgetText::from(egui::RichText::new(text).size(11.0).strong().color(
         if sounds_focused {
             style::LAVENDER
@@ -185,32 +191,49 @@ fn draw_compact_heading(
     ))
     .into_galley(
         ui,
-        Some(egui::TextWrapMode::Extend),
-        f32::INFINITY,
+        Some(egui::TextWrapMode::Wrap),
+        (available * 0.55).max(1.0),
         egui::TextStyle::Body,
     );
     let gap = 8.0;
     let width = (ui.available_width() - sounds.size().x - gap).max(0.0);
-    // Measure the complete empty-state entry first. Only the breadcrumb strip
-    // scrolls; neither pane's focus target is covered by the other heading.
-    ui.horizontal(|ui| {
-        ui.spacing_mut().item_spacing.x = gap;
-        let (heading, destination) = ui
-            .allocate_ui_with_layout(
-                egui::vec2(width, ui.spacing().interact_size.y),
-                egui::Layout::top_down(egui::Align::Min),
-                |ui| {
-                    ui.set_max_width(width);
-                    draw_heading(ui, focused, true, labels, beats, frames)
-                },
-            )
-            .inner;
-        let sounds = ui.label(sounds).on_hover_text(
-            "Choose a catalog sound, then place it with ,s. Picture length stays the same.",
-        );
-        (heading, destination, sounds)
-    })
-    .inner
+    // Anchor both columns before drawing. A breadcrumb's minimum scroll width
+    // must not grow the left allocation and push the sound label off-screen.
+    let origin = ui.next_widget_position();
+    let left_rect =
+        egui::Rect::from_min_max(origin, egui::pos2(origin.x + width, ui.max_rect().bottom()));
+    let mut left = ui.new_child(
+        egui::UiBuilder::new()
+            .id_salt("compact-beat-heading")
+            .max_rect(left_rect)
+            .layout(egui::Layout::top_down(egui::Align::Min)),
+    );
+    left.set_clip_rect(ui.clip_rect().intersect(left_rect));
+    let (heading, destination) =
+        draw_heading(&mut left, focused, true, labels, beats, frames, bindings);
+    let height = left.min_rect().height().max(sounds.size().y);
+    let sounds_rect = egui::Rect::from_min_size(
+        egui::pos2(
+            origin.x + width + gap,
+            origin.y + (height - sounds.size().y) * 0.5,
+        ),
+        sounds.size(),
+    );
+    let mut right = ui.new_child(
+        egui::UiBuilder::new()
+            .id_salt("compact-sounds-heading")
+            .max_rect(sounds_rect)
+            .layout(egui::Layout::top_down(egui::Align::Min)),
+    );
+    let sounds = right.label(sounds).on_hover_text(format!(
+        "Choose a catalog sound, then place it with {}. Picture length stays the same.",
+        bindings.key_label(EditorKey::PlaceSound),
+    ));
+    ui.advance_cursor_after_rect(egui::Rect::from_min_size(
+        origin,
+        egui::vec2(available, height),
+    ));
+    (heading, destination, sounds)
 }
 
 /// Shared with CPU-only layout checks; the caller owns navigation and repaint.
@@ -221,11 +244,12 @@ pub(super) fn draw_heading(
     labels: &[String],
     beats: usize,
     frames: u64,
+    bindings: &Bindings,
 ) -> (egui::Response, Option<usize>) {
     let mut destination = None;
     let depth = labels.len();
     let heading = ui
-        .horizontal(|ui| {
+        .horizontal_wrapped(|ui| {
             ui.spacing_mut().item_spacing.x = 6.0;
             let heading = ui.label(egui::RichText::new("BEATS").size(13.0).strong());
             if focused {
@@ -237,7 +261,13 @@ pub(super) fn draw_heading(
             }
             if depth > 0
                 && ui
-                    .button("‹  Backspace")
+                    .add(
+                        egui::Button::new(format!(
+                            "‹  {}",
+                            bindings.key_label(EditorKey::LeaveGroup)
+                        ))
+                        .wrap(),
+                    )
                     .on_hover_text("Return to the parent group; keep the project cursor.")
                     .clicked()
             {
@@ -267,7 +297,9 @@ pub(super) fn draw_heading(
                                     egui::Button::new(label).selected(index == depth),
                                 )
                                 .on_hover_text(format!(
-                                    "View {label}. Enter opens a selected group; Backspace returns."
+                                    "View {label}. {} opens a selected group; {} returns.",
+                                    bindings.key_label(EditorKey::EnterGroup),
+                                    bindings.key_label(EditorKey::LeaveGroup)
                                 ))
                                 .clicked()
                                 && index != depth
@@ -287,6 +319,75 @@ pub(super) fn draw_heading(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn configured_paths_paint_fully_in_both_compact_heading_controls() {
+        let bindings = Bindings::from_json(
+            &serde_json::to_vec(&serde_json::json!({
+                "version": 1,
+                "key_mode": "logical",
+                "bindings": [
+                    { "action": "group.leave", "keys": [vec!["F11"; 16]] },
+                    { "action": "sound.place", "keys": [vec!["F12"; 16]] }
+                ]
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        let parent = format!("‹  {}", bindings.key_label(EditorKey::LeaveGroup));
+        let sounds = format!(
+            "PLACED SOUNDS 0 · {} place",
+            bindings.key_label(EditorKey::PlaceSound)
+        );
+        for width in [360.0, 600.0] {
+            let context = egui::Context::default();
+            style::apply(&context);
+            let viewport = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(width, 300.0));
+            let mut output = context.run_ui(
+                egui::RawInput {
+                    screen_rect: Some(viewport),
+                    ..Default::default()
+                },
+                |ui| {
+                    draw_compact_heading(
+                        ui,
+                        true,
+                        false,
+                        &["Nested group".into()],
+                        2,
+                        120,
+                        &bindings,
+                    );
+                },
+            );
+            output.textures_delta.clear();
+            for expected in [&parent, &sounds] {
+                let matching = output
+                    .shapes
+                    .iter()
+                    .filter_map(|clipped| {
+                        let egui::Shape::Text(text) = &clipped.shape else {
+                            return None;
+                        };
+                        (text.galley.text() == expected).then_some((clipped, text))
+                    })
+                    .collect::<Vec<_>>();
+                assert_eq!(matching.len(), 1, "Missing full key teaching: {expected}");
+                let (clipped, text) = matching[0];
+                assert!(
+                    clipped.clip_rect.contains_rect(text.visual_bounding_rect()),
+                    "{expected}: painted {:?}, clip {:?}, viewport {viewport:?}",
+                    text.visual_bounding_rect(),
+                    clipped.clip_rect
+                );
+                assert!(
+                    viewport.contains_rect(text.visual_bounding_rect()),
+                    "{expected}: painted {:?}, viewport {viewport:?}",
+                    text.visual_bounding_rect()
+                );
+            }
+        }
+    }
 
     #[test]
     fn compact_empty_sounds_stays_visible_beside_long_nested_breadcrumbs() {
@@ -312,6 +413,7 @@ mod tests {
                         &labels,
                         100_000,
                         u64::MAX,
+                        &Bindings::default(),
                     );
                     targets = Some((beats.rect, sounds.rect));
                 },
@@ -366,7 +468,7 @@ mod tests {
                 ..Default::default()
             },
             |ui| {
-                draw_compact_heading(ui, true, false, &labels, 2, 120);
+                draw_compact_heading(ui, true, false, &labels, 2, 120, &Bindings::default());
             },
         );
         output.textures_delta.clear();
@@ -403,7 +505,8 @@ mod tests {
                 ..Default::default()
             },
             |ui| {
-                let (_, next, sounds) = draw_compact_heading(ui, true, false, &labels, 2, 120);
+                let (_, next, sounds) =
+                    draw_compact_heading(ui, true, false, &labels, 2, 120, &Bindings::default());
                 let sounds = pane_focus(ui, Pane::Sounds, sounds.rect, "Placed sounds pane");
                 assert!(!sounds.clicked());
                 destination = next;

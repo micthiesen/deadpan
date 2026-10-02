@@ -794,11 +794,21 @@ menu ownership; the current-pass `Context::any_popup_open` is empty at that poin
 Help owns ordered input until Escape, including when it opens within one batch.
 Discard its pointer/IME prefix on closing, preserve the command suffix, and keep
 popup/dialog composition observation without consuming their input.
-Normal/Visual editor paths use the bounded declarative trie. Keep terminal
-actions separate from prefix capture notifications; derive teaching and audit
-branches from the declarations. Held events may execute only the current leaf's
-explicit repeat policy, never consume a pending edit/mark prefix. Preserve native
-control cut ownership by typed action. See [bindings](docs/KEYMAP.md).
+Normal/Visual editor paths load once from native user Application Support through
+the bounded declarative trie. Reject invalid candidate files atomically and keep
+a persistent diagnostic beside the shipped fallback. Keep terminal actions
+separate from prefix captures; derive teaching and audit branches from the map.
+Capture Trim at its first eligible ancestor and marks at their complete family
+prefix, including absent targets. Held motions retain the resolved action until
+release or context loss; they cannot consume a pending edit/mark prefix. Preserve
+physical Kestrel reservations before logical normalization and native control
+cut ownership by typed action. Command/Search receive only the ordered input
+suffix after their opener; consume its immediate printable companion and held
+physical key without discarding later text, paste or composition. Split native
+text at its admitted Enter/Escape, then resume the suffix in order on the next
+outer frame, never on a layout retry. Preserve whole-batch IME ownership.
+Headless/worker and replay paths never read personal keymaps.
+See [bindings](docs/KEYMAP.md).
 
 Native group navigation retains an ephemeral `SequenceScope` of direct ordinary
 Sequence children. Keep cursor/card positions on the absolute project clock and

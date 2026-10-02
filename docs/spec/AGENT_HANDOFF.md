@@ -19,19 +19,25 @@ test instances after testing instead of leaving them idle. The previously
 running `dev.thiesen.deadpan.cursor-qa` instance has been quit, and the native
 app inventory confirmed no Deadpan app remained running.
 
-## Declarative editor paths, current implementation
+## Configurable editor paths, current implementation
 
-The shipped Normal/Visual grammar uses one bounded compiler with separate
-terminal actions and prefix metadata. Preserve outer native shortcut/text/IME
-priority and semantic mark/Trim prefix captures. Hints derive valid continuations
-from declarations; every structural branch enters the Kestrel audit, including
-unannotated branches. Held input may execute only an explicitly repeatable leaf
-at the current position; it cannot consume a pending prefix or insert a Hold
-through comma-H. See [the contract and remaining work](../KEYMAP.md).
-User keymap loading, other mode maps, registers, semantic dot-repeat and macros
-remain required. No project schema changes.
-The [qualification](../qualification/declarative-bindings-2026-10-01.md) records
-the before/after held-key replay, final gates and remaining verification limits.
+Normal/Visual bindings load once from the native user Application Support
+directory. Missing files use shipped keys; any read/schema/compile failure keeps
+the complete shipped map with a persistent diagnostic. The bounded compiler
+separates actions from prefix metadata and supports one logical or physical mode
+per map. Preserve physical Kestrel reservations, native text/IME priority and
+semantic mark/Trim entry captures, including absence. Teaching and audits derive
+from the compiled map. Held motions retain their resolved action and cannot
+consume a new prefix. Command/Search entry retains the ordered native input
+suffix and suppresses only the held opener. See [the contract](../KEYMAP.md).
+Other mode maps, strict logical provenance, physical layout/IME qualification,
+registers, semantic dot-repeat and macros remain required. No schema changes.
+The [qualification](../qualification/configurable-bindings-2026-10-01.md) records
+custom/fallback replay, final checks and remaining verification limits.
+Its final release images expose an unresolved 960×640 Original layout issue:
+the picture gets only about 50 points of height beside its time strip and empty
+Placed sounds pane. Restore picture priority while retaining keyboard controls;
+the passing keymap replay does not settle this visual acceptance requirement.
 
 ## Native frame cuts, current implementation
 

@@ -160,21 +160,37 @@ impl DeadpanApp {
         self.pause_playback();
         self.edit_range.toggle(self.sequence_cursor);
         self.error = None;
-        self.message = Some(
-            if self.edit_range.active {
-                "h/l and j/k extend the Edit range; y copies; d cuts; v finishes; Esc clears."
-            } else if self.selected_edit_range().is_some() {
-                "Edit range retained. y copies; d cuts; :splice previews replacement; p/P replaces now."
-            } else {
-                "Empty Edit range. Press v and move to select time."
-            }
-            .into(),
-        );
+        self.message = Some(if self.edit_range.active {
+            format!(
+                "{} and {} extend the Edit range; {} copies; {} cuts; {} finishes; {} clears.",
+                self.editor_pair(EditorKey::FramePrevious, EditorKey::FrameNext, "/"),
+                self.editor_pair(EditorKey::BeatNext, EditorKey::BeatPrevious, "/"),
+                self.editor_key(EditorKey::Copy),
+                self.editor_key(EditorKey::CutRange),
+                self.editor_key(EditorKey::Visual),
+                self.editor_key(EditorKey::Escape)
+            )
+        } else if self.selected_edit_range().is_some() {
+            format!(
+                "Edit range retained. {} copies; {} cuts; :splice previews replacement; {} replaces now.",
+                self.editor_key(EditorKey::Copy),
+                self.editor_key(EditorKey::CutRange),
+                self.editor_pair(EditorKey::PasteAfter, EditorKey::PasteBefore, "/")
+            )
+        } else {
+            format!(
+                "Empty Edit range. Press {} and move to select time.",
+                self.editor_key(EditorKey::Visual)
+            )
+        });
     }
 
     pub(super) fn edit_range_label(&self) -> Option<String> {
         if self.edit_selection() == navigation::EditSelection::Empty {
-            return Some("Edit range empty · move to select time · Esc clears".into());
+            return Some(format!(
+                "Edit range empty · move to select time · {} clears",
+                self.editor_key(EditorKey::Escape)
+            ));
         }
         self.selected_edit_range().map(|range| {
             format!(
@@ -183,9 +199,9 @@ impl DeadpanApp {
                 range.end().0,
                 range.end().0 - range.start().0,
                 if self.edit_range.active {
-                    "extending · y copies · d cuts · v finishes"
+                    "extending"
                 } else {
-                    "selected · y copies · d cuts · Esc clears"
+                    "selected"
                 },
             )
         })

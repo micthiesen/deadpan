@@ -403,7 +403,7 @@ impl DeadpanApp {
                     self.focus_events(ui.ctx());
                 }
                 if sounds.is_empty() {
-                    ui.weak("Choose a catalog sound, then place it with ,s. Picture length stays the same.");
+                    ui.weak(format!("Choose a catalog sound, then place it with {}. Picture length stays the same.", self.editor_key(EditorKey::PlaceSound)));
                 } else {
                     let selected = self.selected_event.clone();
                     let reveal = std::mem::take(&mut self.reveal_event);
@@ -474,7 +474,7 @@ impl DeadpanApp {
                         self.open_sound_position(ui.ctx());
                     }
                     if routed { ui.small("Placement follows timeline cuts. Gain and edges retain those cuts; moving this sound is not available yet."); }
-                    if ui.add_enabled(ready, egui::Button::new("Change gain  ·  + / −").min_size(egui::vec2(ui.available_width(), 28.0))).clicked() {
+                    if ui.add_enabled(ready, egui::Button::new(format!("Change gain  ·  {}", self.editor_pair(EditorKey::GainUp, EditorKey::GainDown, " / "))).wrap().min_size(egui::vec2(ui.available_width(), 28.0))).clicked() {
                         self.pane = Pane::Inspector;
                         self.open_command(format!("sound-gain {}", gain_label(event.gain_millidecibels)), ui.ctx());
                     }
@@ -511,8 +511,8 @@ impl DeadpanApp {
                     }
                     ui.small("Move the Edit cursor to a pause to choose it. Only this sound's permission changes.");
                     ui.separator();
-                    if ui.add_enabled(ready, egui::Button::new("Remove sound  ·  dd")).clicked() { self.sound_action(SoundAction::Delete, ui.ctx()); }
-                    if ui.add_enabled(ready, egui::Button::new("Undo  ·  u")).clicked() { self.history(false); }
+                    if ui.add_enabled(ready, egui::Button::new(format!("Remove sound  ·  {}", self.editor_key(EditorKey::CutBeat))).wrap()).clicked() { self.sound_action(SoundAction::Delete, ui.ctx()); }
+                    if ui.add_enabled(ready, egui::Button::new(format!("Undo  ·  {}", self.editor_key(EditorKey::Undo))).wrap()).clicked() { self.history(false); }
                 });
             });
     }

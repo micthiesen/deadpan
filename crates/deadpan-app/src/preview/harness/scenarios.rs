@@ -618,7 +618,7 @@ fn held_motion_after_leader(d: &mut Driver<'_>) -> Result<(), String> {
         .bindings
         .pending_hint()
         .ok_or("Comma lost its teaching")?;
-    let paint = text_paint_visibility(d, hint);
+    let paint = text_paint_visibility(d, &hint);
     d.check(
         "Waiting comma guidance is fully painted after ignored repeats",
         !paint.is_empty() && paint.iter().all(|part| part["fully_visible"] == true),
@@ -1247,10 +1247,10 @@ fn visible_help_markers(d: &Driver<'_>) -> Vec<(String, [f32; 4])> {
         "RESHAPE THE SELECTED BEAT",
         "⌘N / ⌘O",
         ":monitor 25%",
-        "h l · Left Right",
+        "h / ← · l / →",
         "gg / G",
         ":source / :sequence",
-        "Tab / Shift Tab",
+        "Tab / Shift+Tab",
         "s / :split",
         ",h / 3,h",
         ":hold 1.5s",

@@ -1,0 +1,22 @@
+{
+  "command": [
+    "target/debug/deadpan-app",
+    "--ui-check",
+    "--output",
+    "/tmp/deadpan-keymap-config-20261001/keymap-error-replay-01",
+    "--scenario",
+    "keymap-error",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "started": "2026-10-02T04:27:36.656832+00:00",
+  "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+  "diff_sha256": "7dc6a462679f0482c1c42fffceb6d140fa5613ba01cd61a21b997a369163d884",
+  "source_manifest_sha256": "8be20e1d4b6cafcae21b50064e357d221e6c74fad2015791d992e513846f8283",
+  "pid": 11072,
+  "exit_code": 1,
+  "seconds": 3.1879248339682817,
+  "source_manifest_after_sha256": "8be20e1d4b6cafcae21b50064e357d221e6c74fad2015791d992e513846f8283",
+  "source_unchanged": true,
+  "gate_exit_code": 1
+}

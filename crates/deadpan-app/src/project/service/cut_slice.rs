@@ -108,7 +108,7 @@ impl Service {
                     receipt.committed.selected_node = self.cut_join_child(&capture.scope, cursor);
                 }
                 self.message = Some(
-                    "Cut saved and copied. p/P pastes; :splice previews placement. Undo with u."
+                    "Cut saved and copied. Paste or preview placement with :splice; Undo restores the cut."
                         .into(),
                 );
             }

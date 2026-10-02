@@ -1,6 +1,6 @@
-//! Shipped editor grammar. Routing and pending-key teaching share these rules.
+//! Immutable editor grammars shared by routing, labels, and shortcut auditing.
 
-use std::sync::LazyLock;
+use std::sync::{Arc, LazyLock};
 
 use super::binding_trie::{Binding, Prefix, Trie};
 use super::*;
@@ -13,7 +13,7 @@ impl Stroke {
         if let Some(letter) = mark_letter(self.0, self.1) {
             return letter.to_string();
         }
-        match self.0 {
+        let name = match self.0 {
             Key::Comma => ",",
             Key::Quote => "'",
             Key::ArrowLeft => "←",
@@ -25,27 +25,150 @@ impl Stroke {
             Key::Colon => ":",
             Key::Slash => "/",
             Key::Questionmark => "?",
+            Key::Escape => "Esc",
             _ => self.0.name(),
+        };
+        if self.1 {
+            format!("Shift+{name}")
+        } else {
+            name.into()
         }
-        .into()
     }
 }
 
+/// Stable semantic IDs. Configurations replace paths, never action policies.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) enum PrefixKind {
-    Start,
-    Leader,
+pub enum BindingId {
+    FramePrevious,
+    FrameNext,
+    BeatPrevious,
+    BeatNext,
+    First,
+    Last,
+    Undo,
+    Playback,
+    Audition,
+    EnterGroup,
+    LeaveGroup,
+    Visual,
+    Copy,
+    PasteAfter,
+    PasteBefore,
+    Split,
+    CutFrames,
+    CutBeat,
+    CutRange,
     Repeat,
-    Delete,
-    Mark(MarkPrefix),
+    Hold,
+    Insert,
+    PlaceSound,
+    GainUp,
+    GainDown,
+    Camera,
+    PunchIn,
+    Creep,
+    Trim,
+    MarkSet,
+    MarkJump,
+    Command,
+    Search,
+    Help,
+    PaneNext,
+    PanePrevious,
+    Escape,
 }
 
-pub(super) struct PrefixInfo {
-    pub kind: PrefixKind,
-    pub hint: String,
-    pub counted_hint: String,
-    pub offer_insert: bool,
-    pub invalid: Option<&'static str>,
+impl BindingId {
+    pub const ALL: [Self; 37] = [
+        Self::FramePrevious,
+        Self::FrameNext,
+        Self::BeatPrevious,
+        Self::BeatNext,
+        Self::First,
+        Self::Last,
+        Self::Undo,
+        Self::Playback,
+        Self::Audition,
+        Self::EnterGroup,
+        Self::LeaveGroup,
+        Self::Visual,
+        Self::Copy,
+        Self::PasteAfter,
+        Self::PasteBefore,
+        Self::Split,
+        Self::CutFrames,
+        Self::CutBeat,
+        Self::CutRange,
+        Self::Repeat,
+        Self::Hold,
+        Self::Insert,
+        Self::PlaceSound,
+        Self::GainUp,
+        Self::GainDown,
+        Self::Camera,
+        Self::PunchIn,
+        Self::Creep,
+        Self::Trim,
+        Self::MarkSet,
+        Self::MarkJump,
+        Self::Command,
+        Self::Search,
+        Self::Help,
+        Self::PaneNext,
+        Self::PanePrevious,
+        Self::Escape,
+    ];
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::FramePrevious => "frame.previous",
+            Self::FrameNext => "frame.next",
+            Self::BeatPrevious => "beat.previous",
+            Self::BeatNext => "beat.next",
+            Self::First => "first",
+            Self::Last => "last",
+            Self::Undo => "undo",
+            Self::Playback => "playback",
+            Self::Audition => "audition",
+            Self::EnterGroup => "group.enter",
+            Self::LeaveGroup => "group.leave",
+            Self::Visual => "visual",
+            Self::Copy => "copy",
+            Self::PasteAfter => "paste.after",
+            Self::PasteBefore => "paste.before",
+            Self::Split => "split",
+            Self::CutFrames => "cut.frames",
+            Self::CutBeat => "cut.beat",
+            Self::CutRange => "cut.range",
+            Self::Repeat => "repeat",
+            Self::Hold => "hold",
+            Self::Insert => "insert",
+            Self::PlaceSound => "sound.place",
+            Self::GainUp => "gain.up",
+            Self::GainDown => "gain.down",
+            Self::Camera => "camera",
+            Self::PunchIn => "punch_in",
+            Self::Creep => "creep",
+            Self::Trim => "trim",
+            Self::MarkSet => "mark.set",
+            Self::MarkJump => "mark.jump",
+            Self::Command => "command",
+            Self::Search => "search",
+            Self::Help => "help",
+            Self::PaneNext => "pane.next",
+            Self::PanePrevious => "pane.previous",
+            Self::Escape => "escape",
+        }
+    }
+    pub(super) fn fixed(self) -> bool {
+        matches!(self, Self::Escape | Self::PaneNext | Self::PanePrevious)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub(super) enum KeyMode {
+    Logical,
+    Physical,
 }
 
 #[derive(Clone, Copy)]
@@ -60,11 +183,13 @@ enum CountPolicy {
     Refuse(&'static str),
 }
 
+#[derive(Clone, Copy)]
 pub(super) struct Rule {
     action: Action,
     count: CountPolicy,
     short: &'static str,
     pub repeatable: bool,
+    pub interrupt: bool,
 }
 
 impl Rule {
@@ -94,7 +219,7 @@ impl Rule {
                 Some(0) => Action::Invalid("An edit count must be positive; no edit was made."),
                 None | Some(1) => self.action,
                 Some(_) => Action::Invalid(
-                    "dd deletes one selected beat. Counted deletion is not available.",
+                    "Whole-beat cut deletes one selected beat. Counted deletion is not available.",
                 ),
             },
             CountPolicy::Hold => Action::Edit(BeatEdit::InsertHold(
@@ -126,45 +251,419 @@ impl Rule {
             }
         }
     }
+}
 
-    fn accepts_leader_count(&self) -> bool {
-        matches!(self.count, CountPolicy::Hold)
+impl Rule {
+    pub fn id(&self) -> BindingId {
+        use BindingId as I;
+        match self.action {
+            Action::Step { forward: false, .. } => I::FramePrevious,
+            Action::Step { forward: true, .. } => I::FrameNext,
+            Action::Beat { forward: false, .. } => I::BeatPrevious,
+            Action::Beat { forward: true, .. } => I::BeatNext,
+            Action::First => I::First,
+            Action::Last => I::Last,
+            Action::Undo => I::Undo,
+            Action::Playback => I::Playback,
+            Action::Audition => I::Audition,
+            Action::EnterGroup => I::EnterGroup,
+            Action::LeaveGroup => I::LeaveGroup,
+            Action::VisualMoment => I::Visual,
+            Action::CopyMoment => I::Copy,
+            Action::PasteMoment { before: false } => I::PasteAfter,
+            Action::PasteMoment { before: true } => I::PasteBefore,
+            Action::Edit(BeatEdit::Split) => I::Split,
+            Action::DeleteFrames(_) => I::CutFrames,
+            Action::Edit(BeatEdit::Delete) => I::CutBeat,
+            Action::DeleteSelection => I::CutRange,
+            Action::Edit(BeatEdit::WrapRepeat(_)) => I::Repeat,
+            Action::Edit(BeatEdit::InsertHold(_)) => I::Hold,
+            Action::Insert => I::Insert,
+            Action::Sound(SoundAction::Place) => I::PlaceSound,
+            Action::GainStep(step) if step > 0 => I::GainUp,
+            Action::GainStep(_) => I::GainDown,
+            Action::Framing(FramingAction::EnterCamera) => I::Camera,
+            Action::Framing(FramingAction::PunchIn) => I::PunchIn,
+            Action::Framing(FramingAction::Creep) => I::Creep,
+            Action::Trim => I::Trim,
+            Action::SetMark(_) => I::MarkSet,
+            Action::JumpMark(_) => I::MarkJump,
+            Action::Command => I::Command,
+            Action::Search => I::Search,
+            Action::Help => I::Help,
+            Action::Pane { reverse: false } => I::PaneNext,
+            Action::Pane { reverse: true } => I::PanePrevious,
+            Action::Escape => I::Escape,
+            _ => unreachable!("editor grammar only declares configurable actions"),
+        }
     }
 }
 
-type EditorTrie = Trie<Stroke, Rule, PrefixInfo>;
+type EditorTrie = Trie<Stroke, Rule, MarkPrefix>;
 
-static NORMAL: LazyLock<EditorTrie> = LazyLock::new(|| compile(false));
-static VISUAL: LazyLock<EditorTrie> = LazyLock::new(|| compile(true));
+pub(super) struct Definition {
+    pub id: BindingId,
+    pub paths: Vec<Vec<Stroke>>,
+    rule: Rule,
+    overridden: bool,
+}
 
+pub(super) struct Compiled {
+    normal: EditorTrie,
+    visual: EditorTrie,
+    definitions: Vec<Definition>,
+    pub mode: KeyMode,
+}
+
+pub(super) static SHIPPED: LazyLock<Arc<Compiled>> = LazyLock::new(|| {
+    Arc::new(Compiled::compile(KeyMode::Logical, Vec::new()).expect("shipped grammar is valid"))
+});
+
+pub(super) fn path_label(path: &[Stroke]) -> String {
+    let labels: Vec<_> = path.iter().map(|stroke| stroke.label()).collect();
+    if labels.iter().all(|label| label.chars().count() == 1) {
+        labels.concat()
+    } else {
+        labels.join(" ")
+    }
+}
+
+impl Compiled {
+    pub fn compile(
+        mode: KeyMode,
+        overrides: Vec<(BindingId, Vec<Vec<Stroke>>)>,
+    ) -> Result<Self, String> {
+        keymap_config::reservations::validate()?;
+        let mut definitions: Vec<Definition> = Vec::new();
+        for binding in shipped(false).into_iter().chain(shipped(true)) {
+            let id = binding.value.id();
+            let mut path = binding.path;
+            if matches!(id, BindingId::MarkSet | BindingId::MarkJump) {
+                path.pop();
+            }
+            if mode == KeyMode::Physical {
+                for stroke in &mut path {
+                    *stroke = physical_default(*stroke);
+                }
+            }
+            if let Some(definition) = definitions
+                .iter_mut()
+                .find(|definition| definition.id == id)
+            {
+                if !definition.paths.contains(&path) {
+                    definition.paths.push(path);
+                }
+            } else {
+                definitions.push(Definition {
+                    id,
+                    paths: vec![path],
+                    rule: binding.value,
+                    overridden: false,
+                });
+            }
+        }
+        // The primary labels are the familiar editor paths, with native aliases following.
+        for definition in &mut definitions {
+            if definition.id == BindingId::First || definition.id == BindingId::Last {
+                definition.paths.reverse();
+            }
+        }
+        for (id, paths) in overrides {
+            let definition = definitions
+                .iter_mut()
+                .find(|definition| definition.id == id)
+                .expect("known ID");
+            if id.fixed() && definition.paths != paths {
+                return Err(format!("{} is a fixed native key", id.as_str()));
+            }
+            definition.paths = paths;
+            definition.overridden = true;
+        }
+        let normal = compile_mode(&definitions, false)?;
+        let visual = compile_mode(&definitions, true)?;
+        Ok(Self {
+            normal,
+            visual,
+            definitions,
+            mode,
+        })
+    }
+
+    pub fn map(&self, selection: EditSelection) -> &EditorTrie {
+        if selection == EditSelection::None {
+            &self.normal
+        } else {
+            &self.visual
+        }
+    }
+    pub fn rule(&self, path: &[Stroke], selection: EditSelection) -> Option<&Rule> {
+        self.map(selection)
+            .resolve(path)?
+            .terminal()
+            .map(|binding| &binding.value)
+    }
+    pub fn mark_prefix(&self, path: &[Stroke], selection: EditSelection) -> Option<MarkPrefix> {
+        self.map(selection)
+            .resolve(path)?
+            .prefix()
+            .map(|prefix| prefix.value)
+    }
+    pub fn has_descendant(&self, path: &[Stroke], selection: EditSelection, id: BindingId) -> bool {
+        if path.is_empty() {
+            return false;
+        }
+        self.definitions.iter().any(|definition| {
+            definition.id == id
+                && enabled(id, selection != EditSelection::None)
+                && definition
+                    .paths
+                    .iter()
+                    .any(|candidate| candidate.len() > path.len() && candidate.starts_with(path))
+        })
+    }
+    fn stroke_label(&self, stroke: Stroke) -> String {
+        if self.mode == KeyMode::Physical && stroke.0 == Key::Plus {
+            if stroke.1 {
+                "Shift+NumpadAdd".into()
+            } else {
+                "NumpadAdd".into()
+            }
+        } else {
+            stroke.label()
+        }
+    }
+    pub fn path_label(&self, path: &[Stroke]) -> String {
+        let labels: Vec<_> = path
+            .iter()
+            .map(|stroke| self.stroke_label(*stroke))
+            .collect();
+        if labels.iter().all(|label| label.chars().count() == 1) {
+            labels.concat()
+        } else {
+            labels.join(" ")
+        }
+    }
+    pub fn labels(&self, id: BindingId) -> Vec<String> {
+        self.definitions
+            .iter()
+            .find(|definition| definition.id == id)
+            .expect("complete map")
+            .paths
+            .iter()
+            .map(|path| self.path_label(path))
+            .collect()
+    }
+    pub fn hint(
+        &self,
+        path: &[Stroke],
+        selection: EditSelection,
+        count: Option<u32>,
+    ) -> Option<String> {
+        self.teaching(path, selection, count, false)
+    }
+    pub fn next_keys(
+        &self,
+        path: &[Stroke],
+        selection: EditSelection,
+        count: Option<u32>,
+    ) -> Option<String> {
+        self.teaching(path, selection, count, true)
+    }
+    fn teaching(
+        &self,
+        path: &[Stroke],
+        selection: EditSelection,
+        count: Option<u32>,
+        compact: bool,
+    ) -> Option<String> {
+        let node = self.map(selection).resolve(path)?;
+        if let Some(prefix) = node.prefix() {
+            if compact {
+                return Some("a–z / A–Z · Esc".into());
+            }
+            let verb = if prefix.value == MarkPrefix::Set {
+                "saves this position"
+            } else {
+                "jumps to that mark"
+            };
+            return Some(format!("a–z / A–Z {verb} · Esc cancels"));
+        }
+        let mut parts = Vec::new();
+        let mut refusal = None;
+        for (stroke, child) in node.children() {
+            let mut pending = vec![child];
+            let mut available = false;
+            while let Some(candidate) = pending.pop() {
+                if let Some(binding) = candidate.terminal() {
+                    match binding.value.resolve(count) {
+                        Action::Invalid(message) => {
+                            refusal = refusal.or(Some(message));
+                        }
+                        _ => available = true,
+                    }
+                }
+                pending.extend(candidate.children().map(|(_, next)| next));
+            }
+            if available {
+                let short = child.terminal().map_or("…", |binding| {
+                    if count.is_some() && binding.value.id() == BindingId::Hold {
+                        "inserts the counted pause"
+                    } else {
+                        binding.value.short
+                    }
+                });
+                parts.push(if compact {
+                    self.stroke_label(*stroke)
+                } else {
+                    format!("{} {short}", self.stroke_label(*stroke))
+                });
+            }
+        }
+        if parts.is_empty() {
+            return refusal.map(str::to_owned);
+        }
+        parts.push(if compact { "Esc" } else { "Esc cancels" }.into());
+        Some(parts.join(" · "))
+    }
+    #[cfg(any(test, feature = "ui-harness"))]
+    pub fn prefix_paths(&self) -> Vec<Vec<Stroke>> {
+        let mut prefixes = Vec::new();
+        for trie in [&self.normal, &self.visual] {
+            for path in branch_paths(trie) {
+                if !prefixes.contains(&path) {
+                    prefixes.push(path);
+                }
+            }
+        }
+        prefixes
+    }
+}
+
+fn enabled(id: BindingId, visual: bool) -> bool {
+    !matches!(
+        (id, visual),
+        (BindingId::CutBeat, true) | (BindingId::CutRange, false)
+    )
+}
+
+fn compile_mode(definitions: &[Definition], visual: bool) -> Result<EditorTrie, String> {
+    let mut bindings = Vec::new();
+    let mut prefixes = Vec::new();
+    for definition in definitions
+        .iter()
+        .filter(|definition| enabled(definition.id, visual))
+    {
+        for path in &definition.paths {
+            if matches!(definition.id, BindingId::MarkSet | BindingId::MarkJump) {
+                let kind = if definition.id == BindingId::MarkSet {
+                    MarkPrefix::Set
+                } else {
+                    MarkPrefix::Jump
+                };
+                prefixes.push(Prefix {
+                    path: path.clone(),
+                    label: path_label(path),
+                    value: kind,
+                });
+                for key in LETTERS {
+                    for shift in [false, true] {
+                        let letter = mark_letter(key, shift).expect("ASCII letter");
+                        let mut expanded = path.clone();
+                        expanded.push(Stroke(key, shift));
+                        let mut rule = definition.rule;
+                        rule.action = if kind == MarkPrefix::Set {
+                            Action::SetMark(letter)
+                        } else {
+                            Action::JumpMark(letter)
+                        };
+                        bindings.push(Binding {
+                            label: path_label(&expanded),
+                            path: expanded,
+                            value: rule,
+                        });
+                    }
+                }
+            } else {
+                let mut rule = definition.rule;
+                if definition.id == BindingId::Last {
+                    rule.interrupt =
+                        definition.overridden || path.as_slice() == [Stroke(Key::G, true)];
+                }
+                bindings.push(Binding {
+                    path: path.clone(),
+                    label: path_label(path),
+                    value: rule,
+                });
+            }
+        }
+    }
+    for binding in &bindings {
+        for stroke in &binding.path {
+            let modifiers = if stroke.1 {
+                Modifiers::SHIFT
+            } else {
+                Modifiers::NONE
+            };
+            if keymap_config::reservations::reserved(stroke.0, modifiers) {
+                return Err("A command path conflicts with a reserved Kestrel position".into());
+            }
+        }
+    }
+    // Bound structural branches as well as explicit mark-family annotations.
+    // This also bounds startup conflict auditing and generated pending hints.
+    let mut branches: Vec<Vec<Stroke>> = Vec::new();
+    for binding in &bindings {
+        for end in 1..binding.path.len() {
+            let branch = &binding.path[..end];
+            if !branches.iter().any(|prior| prior == branch) {
+                branches.push(branch.to_vec());
+            }
+            if branches.len() > super::binding_trie::MAX_PREFIXES {
+                return Err("Editor grammar exceeds 128 pending branches".into());
+            }
+        }
+    }
+    Trie::compile(bindings, prefixes).map_err(|error| error.to_string())
+}
+
+fn physical_default(stroke: Stroke) -> Stroke {
+    match stroke.0 {
+        Key::Colon => Stroke(Key::Semicolon, true),
+        Key::Questionmark => Stroke(Key::Slash, true),
+        Key::Plus => Stroke(Key::Equals, true),
+        _ => stroke,
+    }
+}
+
+#[cfg(test)]
 pub(super) fn map(selection: EditSelection) -> &'static EditorTrie {
-    match selection {
-        EditSelection::None => &NORMAL,
-        EditSelection::Empty | EditSelection::Range => &VISUAL,
-    }
+    SHIPPED.map(selection)
 }
-
+#[cfg(test)]
 pub(super) fn rule(path: &[Stroke], selection: EditSelection) -> Option<&'static Rule> {
-    map(selection)
-        .resolve(path)?
-        .terminal()
-        .map(|binding| &binding.value)
+    SHIPPED.rule(path, selection)
+}
+#[cfg(any(test, feature = "ui-harness"))]
+fn branch_paths(trie: &EditorTrie) -> Vec<Vec<Stroke>> {
+    let mut branches = Vec::new();
+    let mut pending = vec![Vec::new()];
+    while let Some(path) = pending.pop() {
+        let node = trie.resolve(&path).expect("path came from this trie");
+        if node.children().next().is_some() {
+            branches.push(path.clone());
+        }
+        for (stroke, _) in node.children() {
+            let mut child = path.clone();
+            child.push(*stroke);
+            pending.push(child);
+        }
+    }
+    branches
 }
 
-pub(super) fn prefix(path: &[Stroke]) -> Option<&'static PrefixInfo> {
-    map(EditSelection::None)
-        .resolve(path)?
-        .prefix()
-        .map(|prefix| &prefix.value)
-}
-
-pub(super) fn interrupt(key: Key, shift: bool) -> Action {
-    rule(&[Stroke(key, shift)], EditSelection::None)
-        .expect("interrupt keys are declared in the shipped grammar")
-        .resolve(None)
-}
-
-fn compile(visual: bool) -> EditorTrie {
+#[cfg(test)]
+mod tests;
+fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
     let mut bindings = Vec::new();
     let mut add = |path: &[Stroke], action, count, short, repeatable| {
         bindings.push(Binding {
@@ -175,6 +674,16 @@ fn compile(visual: bool) -> EditorTrie {
                 count,
                 short,
                 repeatable,
+                interrupt: matches!(
+                    action,
+                    Action::Playback
+                        | Action::Audition
+                        | Action::EnterGroup
+                        | Action::LeaveGroup
+                        | Action::Command
+                        | Action::Search
+                        | Action::Help
+                ),
             },
         });
     };
@@ -254,7 +763,7 @@ fn compile(visual: bool) -> EditorTrie {
         add(
             &[plain(Key::D)],
             Action::DeleteSelection,
-            C::Refuse("Delete the selected range once with d, without a count."),
+            C::Refuse("Cut the selected range once, without a count."),
             "cut selected range",
             false,
         );
@@ -283,7 +792,7 @@ fn compile(visual: bool) -> EditorTrie {
             &[plain(key)],
             action,
             C::Refuse(
-                "Use v, y, p or P without a count. Move the range boundary with counted h/l.",
+                "Use selection, copy and paste without a count. Counted motion moves the range boundary.",
             ),
             short,
             false,
@@ -292,16 +801,14 @@ fn compile(visual: bool) -> EditorTrie {
     add(
         &[Stroke(Key::P, true)],
         Action::PasteMoment { before: true },
-        C::Refuse("Paste once with p or P, without a count or operator."),
+        C::Refuse("Paste once, without a count or pending command."),
         "paste before",
         false,
     );
     add(
         &[plain(Key::S)],
         Action::Edit(BeatEdit::Split),
-        C::Refuse(
-            "Split uses the current boundary. Move with a count first, for example 12l then s.",
-        ),
+        C::Refuse("Split uses the current boundary. Move with a count first."),
         "split",
         false,
     );
@@ -318,13 +825,13 @@ fn compile(visual: bool) -> EditorTrie {
         (
             Key::I,
             Action::Insert,
-            C::Refuse("Reuse inserts once. Use ,i without a count."),
+            C::Refuse("Reuse inserts once, without a count."),
             "reuse Original",
         ),
         (
             Key::S,
             Action::Sound(SoundAction::Place),
-            C::Refuse("Place one sound with ,s, without a count."),
+            C::Refuse("Place one sound, without a count."),
             "place sound",
         ),
         (
@@ -338,25 +845,25 @@ fn compile(visual: bool) -> EditorTrie {
         (
             Key::F,
             Action::Framing(FramingAction::EnterCamera),
-            C::Refuse("Counts apply only to ,h. Use ,f, ,z, or ,c without a count."),
+            C::Refuse("Use framing actions without a count."),
             "Camera",
         ),
         (
             Key::V,
             Action::Trim,
-            C::Refuse("Open Trim once with ,v, without a count."),
+            C::Refuse("Open Trim once, without a count."),
             "Trim",
         ),
         (
             Key::Z,
             Action::Framing(FramingAction::PunchIn),
-            C::Refuse("Counts apply only to ,h. Use ,f, ,z, or ,c without a count."),
+            C::Refuse("Use framing actions without a count."),
             "punch in",
         ),
         (
             Key::C,
             Action::Framing(FramingAction::Creep),
-            C::Refuse("Counts apply only to ,h. Use ,f, ,z, or ,c without a count."),
+            C::Refuse("Use framing actions without a count."),
             "creep",
         ),
     ] {
@@ -379,7 +886,7 @@ fn compile(visual: bool) -> EditorTrie {
                 add(
                     &[plain(key), Stroke(letter_key, shift)],
                     action,
-                    C::Ignore,
+                    C::Refuse("Use mark commands without a count."),
                     "mark",
                     false,
                 );
@@ -387,146 +894,8 @@ fn compile(visual: bool) -> EditorTrie {
         }
     }
 
-    let mut prefixes = Vec::new();
-    for (key, kind, offer_insert, invalid) in [
-        (Key::G, PrefixKind::Start, false, None),
-        (
-            Key::Comma,
-            PrefixKind::Leader,
-            true,
-            Some(
-                "After comma, use i to reuse the Original, s to place a sound, h for a pause, f for Camera, v for Trim, z to punch in, or c to creep.",
-            ),
-        ),
-        (
-            Key::R,
-            PrefixKind::Repeat,
-            true,
-            Some(
-                "Use rr to repeat a beat, dd to delete a beat, or select time with v and cut it with d. Motion and text-object operators are not ready.",
-            ),
-        ),
-        (
-            Key::D,
-            PrefixKind::Delete,
-            true,
-            Some(
-                "Use rr to repeat a beat, dd to delete a beat, or select time with v and cut it with d. Motion and text-object operators are not ready.",
-            ),
-        ),
-        (
-            Key::M,
-            PrefixKind::Mark(MarkPrefix::Set),
-            false,
-            Some("A mark name must be one letter, a–z or A–Z; no mark action was taken."),
-        ),
-        (
-            Key::Quote,
-            PrefixKind::Mark(MarkPrefix::Jump),
-            false,
-            Some("A mark name must be one letter, a–z or A–Z; no mark action was taken."),
-        ),
-    ] {
-        if visual && kind == PrefixKind::Delete {
-            continue;
-        }
-        let path = vec![plain(key)];
-        let hint = match kind {
-            PrefixKind::Mark(MarkPrefix::Set) => {
-                "a–z / A–Z saves this position · Esc cancels".into()
-            }
-            PrefixKind::Mark(MarkPrefix::Jump) => {
-                "a–z / A–Z jumps to that mark · Esc cancels".into()
-            }
-            _ => teaching(&bindings, &path, false),
-        };
-        let counted_hint = if kind == PrefixKind::Leader {
-            teaching(&bindings, &path, true)
-        } else {
-            hint.clone()
-        };
-        prefixes.push(Prefix {
-            label: plain(key).label(),
-            path,
-            value: PrefixInfo {
-                kind,
-                hint,
-                counted_hint,
-                offer_insert,
-                invalid,
-            },
-        });
-    }
-    let trie =
-        Trie::compile(bindings, prefixes).expect("shipped editor grammar must be unambiguous");
-    // Root children are the actually reachable entries, not a separate list
-    // of advertised shortcuts. Compilation rejects terminal/prefix ambiguity.
-    assert!(
-        trie.resolve(&[])
-            .is_some_and(|root| root.children().next().is_some())
-    );
-    trie
+    bindings
 }
-
-fn teaching(bindings: &[Binding<Stroke, Rule>], prefix: &[Stroke], counted: bool) -> String {
-    let mut parts: Vec<_> = bindings
-        .iter()
-        .filter(|binding| {
-            binding.path.starts_with(prefix) && binding.path.len() == prefix.len() + 1
-        })
-        .filter(|binding| !counted || binding.value.accepts_leader_count())
-        .map(|binding| {
-            format!(
-                "{} {}",
-                binding.path[prefix.len()].label(),
-                if counted {
-                    "inserts the counted pause"
-                } else {
-                    binding.value.short
-                }
-            )
-        })
-        .collect();
-    parts.push("Esc cancels".into());
-    parts.join(" · ")
-}
-
-/// Enumerate the compiled branches for the Kestrel audit. New declarations
-/// cannot add an unaudited pending state by omitting a hand-maintained list.
-#[cfg(any(test, feature = "ui-harness"))]
-pub(super) fn prefix_paths() -> Vec<Vec<Stroke>> {
-    let mut prefixes = vec![Vec::new()];
-    for selection in [EditSelection::None, EditSelection::Range] {
-        for path in branch_paths(map(selection)) {
-            if !prefixes.contains(&path) {
-                prefixes.push(path);
-            }
-        }
-    }
-    prefixes
-}
-
-#[cfg(any(test, feature = "ui-harness"))]
-fn branch_paths(trie: &EditorTrie) -> Vec<Vec<Stroke>> {
-    let mut branches = Vec::new();
-    let mut pending = vec![Vec::new()];
-    while let Some(path) = pending.pop() {
-        let node = trie.resolve(&path).expect("path came from this trie");
-        if node.children().next().is_some() {
-            branches.push(path.clone());
-        }
-        for (stroke, _) in node.children() {
-            let mut child = path.clone();
-            child.push(*stroke);
-            pending.push(child);
-        }
-    }
-    branches
-}
-
-#[cfg(test)]
-mod tests;
-
 const LETTERS: [Key; 26] = [
     Key::A,
     Key::B,

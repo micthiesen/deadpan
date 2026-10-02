@@ -14,6 +14,7 @@ mod delete_range;
 mod edit_latency;
 mod gain;
 mod generated_picture;
+mod keymap;
 mod marks;
 mod moment;
 mod nested_pause;
@@ -197,6 +198,7 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
             } else {
                 scratch.as_ref().ok_or("Missing temporary replay root")?.path().join("Documents")
             };
+            let keymap = keymap::startup(name, &documents)?;
             let library = crate::library::ProjectLibrary::from_documents(documents)?;
             let mut construction_error = None;
             let wake = Arc::new(RepaintWake::default());
@@ -229,6 +231,7 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                             Rc::new(Cell::new(false)),
                             None,
                             None,
+                            keymap,
                         )
                         .map_err(|e| e.to_string())?;
                         let repaint = context.egui_ctx.clone();
@@ -303,7 +306,11 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                 driver.capture("Original ready")?;
                 driver.command("sequence")?;
                 driver.settled()?;
-                if name == "sound-placement" {
+                if name == "keymap" {
+                    keymap::run(&mut driver)
+                } else if name == "keymap-error" {
+                    keymap::error(&mut driver)
+                } else if name == "sound-placement" {
                     sound_placement::run(&mut driver)
                 } else if name == "room-tone" {
                     room_tone::run(&mut driver)

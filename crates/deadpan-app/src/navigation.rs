@@ -7,6 +7,8 @@ pub mod command;
 mod delete_range_tests;
 pub mod duration;
 mod editor_map;
+mod keymap_config;
+pub use editor_map::BindingId;
 pub mod gain;
 #[cfg(test)]
 mod mark_tests;
@@ -159,72 +161,142 @@ pub enum MarkPrefix {
     Jump,
 }
 
-#[derive(Clone, Default)]
+/// An immutable compiled map with independent pending-path and held-key state.
+#[derive(Clone)]
 pub struct Bindings {
+    map: std::sync::Arc<editor_map::Compiled>,
     count: Option<u32>,
     count_overflow: bool,
     path: Vec<editor_map::Stroke>,
+    selection: Option<EditSelection>,
+    held: Option<HeldBinding>,
+}
+
+#[derive(Clone, Copy)]
+struct HeldBinding {
+    identity: Key,
+    stroke: editor_map::Stroke,
+    action: Action,
+}
+
+impl Default for Bindings {
+    fn default() -> Self {
+        Self::with_map(std::sync::Arc::clone(&editor_map::SHIPPED))
+    }
 }
 
 impl Bindings {
-    pub fn clear(&mut self) {
+    fn with_map(map: std::sync::Arc<editor_map::Compiled>) -> Self {
+        Self {
+            map,
+            count: None,
+            count_overflow: false,
+            path: Vec::new(),
+            selection: None,
+            held: None,
+        }
+    }
+
+    pub fn from_json(bytes: &[u8]) -> Result<Self, String> {
+        keymap_config::parse(bytes).map(Self::with_map)
+    }
+
+    pub fn key_mode_label(&self) -> &'static str {
+        match self.map.mode {
+            editor_map::KeyMode::Logical => "Logical keys",
+            editor_map::KeyMode::Physical => "Physical positions",
+        }
+    }
+
+    pub fn key_label(&self, id: BindingId) -> String {
+        self.map.labels(id).remove(0)
+    }
+    pub fn key_labels(&self, id: BindingId) -> String {
+        self.map.labels(id).join(" / ")
+    }
+    pub fn counted_label(&self, id: BindingId, count: u32) -> String {
+        format!("{count}{}", self.key_label(id))
+    }
+
+    /// Cancel pending input while retaining a resolved motion's autorepeat latch.
+    /// Use only for synchronous motion-induced context updates.
+    pub fn clear_pending(&mut self) {
         self.count = None;
         self.count_overflow = false;
         self.path.clear();
+        self.selection = None;
+    }
+    /// Focus, pointer, mode, or external context changes also revoke held input.
+    pub fn clear(&mut self) {
+        self.clear_pending();
+        self.held = None;
     }
 
-    fn prefix(&self) -> Option<&'static editor_map::PrefixInfo> {
-        editor_map::prefix(&self.path)
+    fn active_selection(&self) -> EditSelection {
+        self.selection.unwrap_or(EditSelection::None)
     }
-
-    fn prefix_kind(&self) -> Option<editor_map::PrefixKind> {
-        self.prefix().map(|prefix| prefix.kind)
-    }
-
-    /// Prefix identity is semantic: the host captures its target on entry.
     pub fn mark_prefix(&self) -> Option<MarkPrefix> {
-        match self.prefix_kind() {
-            Some(editor_map::PrefixKind::Mark(mark)) => Some(mark),
-            _ => None,
-        }
+        self.map.mark_prefix(&self.path, self.active_selection())
+    }
+    pub fn trim_pending(&self) -> bool {
+        self.count.is_none()
+            && !self.count_overflow
+            && self
+                .map
+                .has_descendant(&self.path, self.active_selection(), BindingId::Trim)
+    }
+    #[cfg(test)]
+    pub fn reuse_pending(&self) -> bool {
+        self.count.is_none()
+            && !self.count_overflow
+            && self
+                .map
+                .has_descendant(&self.path, self.active_selection(), BindingId::Insert)
     }
 
-    /// Only a repeatable leaf at the current trie position can autorepeat.
-    /// A held motion key must not complete an edit or a mark prefix.
+    /// Compatibility probe. Event routing itself owns autorepeat admission.
+    #[cfg(test)]
     pub fn allows_key_repeat(&self, key: Key, modifiers: Modifiers) -> bool {
-        if self.path.is_empty() {
-            return allows_key_repeat(key, modifiers);
-        }
-        if modifiers != Modifiers::NONE {
+        let Some(stroke) = self.stroke(key, Some(key), modifiers) else {
             return false;
-        }
+        };
         let mut path = self.path.clone();
-        path.push(editor_map::Stroke(key, false));
-        editor_map::rule(&path, EditSelection::None).is_some_and(|rule| rule.repeatable)
+        path.push(stroke);
+        self.map
+            .rule(&path, self.active_selection())
+            .is_some_and(|rule| rule.repeatable)
     }
 
-    /// Keep native-control protection attached to the resolved cut, not the
-    /// physical key used to invoke it. Probing never mutates pending input.
+    #[cfg(test)]
     pub fn native_control_owns_cut(
         &self,
         key: Key,
         modifiers: Modifiers,
         selection: EditSelection,
     ) -> bool {
-        match self
-            .clone()
-            .key_with_selection(key, modifiers, false, false, selection)
-        {
+        self.native_control_owns_cut_event(key, Some(key), modifiers, selection)
+    }
+    pub fn native_control_owns_cut_event(
+        &self,
+        key: Key,
+        physical_key: Option<Key>,
+        modifiers: Modifiers,
+        selection: EditSelection,
+    ) -> bool {
+        match self.clone().route_event(
+            key,
+            physical_key,
+            modifiers,
+            false,
+            false,
+            false,
+            true,
+            selection,
+        ) {
             Some(Action::DeleteFrames(_) | Action::DeleteSelection) => true,
             Some(Action::Edit(BeatEdit::Delete)) => selection != EditSelection::None,
             _ => false,
         }
-    }
-
-    pub fn reuse_pending(&self) -> bool {
-        self.prefix_kind() == Some(editor_map::PrefixKind::Leader)
-            && self.count.is_none()
-            && !self.count_overflow
     }
 
     pub fn pending(&self) -> String {
@@ -236,94 +308,42 @@ impl Bindings {
                 self.count
                     .map_or_else(String::new, |count| count.to_string())
             },
-            self.path
-                .iter()
-                .map(|stroke| stroke.label())
-                .collect::<String>(),
+            self.map.path_label(&self.path)
         )
     }
-
-    pub fn pending_hint(&self) -> Option<&'static str> {
+    pub fn pending_next_keys(&self) -> Option<String> {
         if self.count_overflow {
-            return Some("Count is too large. Esc clears it.");
+            return Some("Count is too large. Esc clears it.".into());
         }
-        if let Some(prefix) = self.prefix() {
-            // A prefix that has no valid completion for this exact count must
-            // explain the refusal instead of teaching an unavailable edit.
-            if self.count.is_some()
-                && let Some(node) = editor_map::map(EditSelection::None).resolve(&self.path)
-            {
-                let mut refusal = None;
-                let mut available = false;
-                for (_, child) in node.children() {
-                    match child
-                        .terminal()
-                        .map(|binding| binding.value.resolve(self.count))
-                    {
-                        Some(Action::Invalid(message)) => refusal = refusal.or(Some(message)),
-                        _ => available = true,
-                    }
-                }
-                if !available && let Some(message) = refusal {
-                    return Some(message);
-                }
-            }
-            return Some(if self.count.is_some() {
-                &prefix.counted_hint
-            } else {
-                &prefix.hint
-            });
+        if self.path.is_empty() && self.count.is_none() {
+            return None;
         }
-        if self.count == Some(0) {
-            return Some("Zero count: h/l moves one frame; ,h requests zero time; Esc clears it.");
+        self.map
+            .next_keys(&self.path, self.active_selection(), self.count)
+    }
+    pub fn pending_hint(&self) -> Option<String> {
+        if self.count_overflow {
+            return Some("Count is too large. Esc clears it.".into());
         }
-        self.count.is_some().then_some(
-            "Then h/l to move, x to cut frames, rr to repeat, +/- for gain, or ,h to pause · Esc cancels",
-        )
+        if !self.path.is_empty() {
+            return self
+                .map
+                .hint(&self.path, self.active_selection(), self.count);
+        }
+        self.count.map(|count| {
+            if count == 0 { format!("Zero count: {}/{} moves one frame; {} requests zero time; Esc clears it.",
+                self.key_label(BindingId::FramePrevious), self.key_label(BindingId::FrameNext), self.key_label(BindingId::Hold)) }
+            else { format!("Then {}/{} to move, {} to cut frames, {} to repeat, {}/{} for gain, or {} to pause · Esc cancels",
+                self.key_label(BindingId::FramePrevious), self.key_label(BindingId::FrameNext), self.key_label(BindingId::CutFrames),
+                self.key_label(BindingId::Repeat), self.key_label(BindingId::GainUp), self.key_label(BindingId::GainDown), self.key_label(BindingId::Hold)) }
+        })
     }
 
-    fn gain_step(&mut self, key: Key) -> Action {
-        let action = if !self.path.is_empty() {
-            Action::Invalid("Use + or - for gain without an operator or comma prefix.")
-        } else if self.count_overflow {
-            Action::Invalid("Count exceeds 4294967295; no edit was made.")
-        } else {
-            editor_map::rule(&[editor_map::Stroke(key, false)], EditSelection::None)
-                .expect("gain keys are declared")
-                .resolve(self.count)
-        };
-        self.clear();
-        action
-    }
-
-    fn route(&mut self, stroke: editor_map::Stroke, selection: EditSelection) -> Option<Action> {
-        // A pending ordinary d remains its captured operator if a caller changes
-        // selection. The application separately gives captured Visual time priority.
-        let selection = if self.prefix_kind() == Some(editor_map::PrefixKind::Delete) {
-            EditSelection::None
-        } else {
-            selection
-        };
-        let invalid = self.prefix().and_then(|prefix| prefix.invalid);
-        self.path.push(stroke);
-        let Some(node) = editor_map::map(selection).resolve(&self.path) else {
-            self.clear();
-            return invalid.map(Action::Invalid);
-        };
-        if let Some(binding) = node.terminal() {
-            let action = binding.value.resolve(self.count);
-            self.clear();
-            Some(action)
-        } else {
-            node.prefix()
-                .and_then(|prefix| prefix.value.offer_insert.then_some(Action::OfferInsert))
-        }
-    }
-
+    #[cfg(any(test, feature = "ui-harness"))]
     pub fn key(&mut self, key: Key, modifiers: Modifiers, text: bool, ime: bool) -> Option<Action> {
         self.key_with_selection(key, modifiers, text, ime, EditSelection::None)
     }
-
+    #[cfg(any(test, feature = "ui-harness"))]
     pub fn key_with_selection(
         &mut self,
         key: Key,
@@ -332,11 +352,89 @@ impl Bindings {
         ime: bool,
         selection: EditSelection,
     ) -> Option<Action> {
-        use editor_map::{PrefixKind, Stroke};
+        self.route_event(key, Some(key), modifiers, text, ime, false, true, selection)
+    }
+
+    fn stroke(
+        &self,
+        key: Key,
+        physical_key: Option<Key>,
+        modifiers: Modifiers,
+    ) -> Option<editor_map::Stroke> {
+        use editor_map::{KeyMode, Stroke};
+        if modifiers.ctrl || modifiers.command || modifiers.mac_cmd {
+            return None;
+        }
+        let key = if self.map.mode == KeyMode::Physical {
+            physical_key?
+        } else {
+            key
+        };
+        // Logical mode follows egui's delivered identity, including its fallback
+        // to a physical identity when a layout cannot produce a named egui key.
+        // A physical map requires an actual physical key and never falls back.
+        if self.map.mode == KeyMode::Logical && keymap_config::logical_symbol(key) {
+            // Keep the shipped Option+Plus refusal. Every physical reservation
+            // has already been checked before interpreting a layout's symbol.
+            return (!(modifiers.alt && key == Key::Plus)).then_some(Stroke(key, false));
+        }
+        if modifiers.alt {
+            return None;
+        }
+        Some(Stroke(key, modifiers.shift))
+    }
+
+    /// Route both presses and releases. Count applies to the first execution;
+    /// subsequent repeats use the same resolved motion with a unit count. A
+    /// repeat can never enter, complete, or consume an unlatched pending path.
+    #[allow(clippy::too_many_arguments)]
+    pub fn route_event(
+        &mut self,
+        key: Key,
+        physical_key: Option<Key>,
+        modifiers: Modifiers,
+        text: bool,
+        ime: bool,
+        repeat: bool,
+        pressed: bool,
+        selection: EditSelection,
+    ) -> Option<Action> {
+        let identity = physical_key.unwrap_or(key);
+        if !pressed {
+            if self.held.is_some_and(|held| held.identity == identity) {
+                self.held = None;
+            }
+            return None;
+        }
         if ime {
             self.clear();
             return None;
         }
+        if keymap_config::modifier_key(key) {
+            if text {
+                self.clear();
+            }
+            return None;
+        }
+        // Kestrel owns physical positions even when a layout delivers a different
+        // logical symbol. Without a physical identity, the logical fallback is
+        // the strongest check the event provides; physical maps never use it.
+        if keymap_config::reservations::reserved(physical_key.unwrap_or(key), modifiers) {
+            self.clear();
+            return None;
+        }
+        if repeat {
+            if text {
+                self.clear();
+                return None;
+            }
+            let stroke = self.stroke(key, physical_key, modifiers);
+            return self
+                .held
+                .filter(|held| held.identity == identity && Some(held.stroke) == stroke)
+                .map(|held| held.action);
+        }
+        self.held = None;
         // Native application shortcuts have priority over the editor trie.
         // egui also carries `command` on Control outside macOS.
         if matches!(key, Key::O | Key::I)
@@ -378,104 +476,129 @@ impl Bindings {
             self.clear();
             return None;
         }
+
         if (key == Key::Escape && modifiers == Modifiers::NONE)
-            || (key == Key::Tab
-                && !modifiers.alt
-                && !modifiers.ctrl
-                && !modifiers.command
-                && !modifiers.mac_cmd)
+            || (key == Key::Tab && (modifiers == Modifiers::NONE || modifiers == Modifiers::SHIFT))
         {
             self.clear();
-            return Some(editor_map::interrupt(key, modifiers.shift));
-        }
-        // Mark-name leaves precede logical symbols and transport. Native
-        // modifiers never reach the trie as an unmodified mark name.
-        if self.mark_prefix().is_some() {
-            if modifiers != Modifiers::NONE && modifiers != Modifiers::SHIFT {
-                self.clear();
-                return None;
-            }
-            return self.route(Stroke(key, modifiers.shift), selection);
-        }
-        if (key == Key::M && modifiers == Modifiers::NONE)
-            || (key == Key::Quote && !modifiers.ctrl && !modifiers.command && !modifiers.mac_cmd)
-        {
-            if !self.pending().is_empty() {
-                self.clear();
-                return Some(Action::Invalid(
-                    "Use m or ' without a count or another prefix; no mark action was taken.",
-                ));
-            }
-            return self.route(Stroke(key, false), selection);
-        }
-        // Logical punctuation may require Shift/Option on a non-US layout.
-        // Preserve native modifier ownership before canonicalizing a symbol.
-        if !modifiers.ctrl && !modifiers.command && !modifiers.mac_cmd {
-            if key == Key::Comma && self.path.is_empty() {
-                return self.route(Stroke(key, false), selection);
-            }
-            if matches!(key, Key::Colon | Key::Slash | Key::Questionmark) {
-                self.clear();
-                return Some(editor_map::interrupt(key, false));
-            }
-            if !modifiers.alt && (key == Key::Plus || (key == Key::Minus && !modifiers.shift)) {
-                return Some(self.gain_step(key));
-            }
-            if !modifiers.alt
-                && self.prefix_kind() != Some(PrefixKind::Start)
-                && let Some((_, digit)) = DIGITS.iter().find(|(bound, _)| *bound == key)
-            {
-                if !self.path.is_empty() {
-                    self.clear();
-                    return Some(Action::Invalid(
-                        "Put one count before the operator, for example 3rr or 3,h.",
-                    ));
-                }
-                if let Some(count) = self
-                    .count
-                    .unwrap_or(0)
-                    .checked_mul(10)
-                    .and_then(|value| value.checked_add(*digit))
-                {
-                    self.count = Some(count);
-                } else {
-                    self.count_overflow = true;
-                }
-                return None;
-            }
-        }
-        if key == Key::G && modifiers == Modifiers::SHIFT {
-            self.clear();
-            return Some(editor_map::interrupt(key, true));
-        }
-        if key == Key::P && modifiers == Modifiers::SHIFT {
-            let standalone = self.pending().is_empty();
-            self.clear();
-            return Some(if standalone {
-                editor_map::interrupt(key, true)
+            return Some(if key == Key::Escape {
+                Action::Escape
             } else {
-                Action::Invalid("Paste once with p or P, without a count or operator.")
+                Action::Pane {
+                    reverse: modifiers.shift,
+                }
             });
         }
-        if key == Key::Space && modifiers == Modifiers::SHIFT {
-            self.clear();
-            return Some(editor_map::interrupt(key, true));
-        }
-        if modifiers != Modifiers::NONE {
+
+        if self.mark_prefix().is_some()
+            && modifiers != Modifiers::NONE
+            && modifiers != Modifiers::SHIFT
+        {
             self.clear();
             return None;
         }
-        if matches!(key, Key::Space | Key::Enter | Key::Backspace) {
+        let Some(stroke) = self.stroke(key, physical_key, modifiers) else {
             self.clear();
-            return Some(editor_map::interrupt(key, false));
+            return None;
+        };
+        if let Some((_, digit)) = DIGITS.iter().find(|(bound, _)| *bound == stroke.0) {
+            if !self.path.is_empty() {
+                let first_prefix =
+                    self.map
+                        .has_descendant(&self.path, self.active_selection(), BindingId::First);
+                self.clear();
+                return (!first_prefix)
+                    .then_some(Action::Invalid("Put one count before the command path."));
+            }
+            if let Some(count) = self
+                .count
+                .unwrap_or(0)
+                .checked_mul(10)
+                .and_then(|value| value.checked_add(*digit))
+            {
+                self.count = Some(count);
+            } else {
+                self.count_overflow = true;
+            }
+            return None;
         }
-        if self.count_overflow {
+        let selection = *self.selection.get_or_insert(selection);
+        let mut next = self.path.clone();
+        next.push(stroke);
+        let existing = self.map.map(selection).resolve(&next);
+        // Existing continuations always win. Semantic root interrupts retain
+        // their shipped cancellation behavior only when no continuation exists.
+        if existing.is_none()
+            && self.mark_prefix().is_none()
+            && let Some(rule) = self.map.rule(&[stroke], selection)
+            && rule.interrupt
+        {
+            let action = rule.resolve(None);
+            self.clear();
+            return Some(action);
+        }
+        let Some(node) = existing else {
+            let had_pending = !self.path.is_empty();
+            let start_only = self
+                .map
+                .has_descendant(&self.path, selection, BindingId::First);
+            let attempted_mark = self.map.mark_prefix(&[stroke], selection).is_some();
+            let root_id = self
+                .map
+                .rule(&[stroke], selection)
+                .map(editor_map::Rule::id);
+            let deliberate_refusal = attempted_mark
+                || matches!(
+                    root_id,
+                    Some(BindingId::GainUp | BindingId::GainDown | BindingId::PasteBefore)
+                );
+            let modified =
+                modifiers != Modifiers::NONE && !deliberate_refusal && self.mark_prefix().is_none();
+            self.clear();
+            return (had_pending && !modified && (!start_only || deliberate_refusal)).then_some(
+                Action::Invalid("Key does not continue the pending command; no action was taken."),
+            );
+        };
+        if node.prefix().is_some() && (self.count.is_some() || self.count_overflow) {
+            self.clear();
+            return Some(Action::Invalid("Use mark commands without a count."));
+        }
+        if let Some(binding) = node.terminal() {
+            // Root transport/group commands have always ignored pending counts,
+            // including an overflow. Their aliases inherit that semantic policy.
+            let ignores_overflow = binding.value.interrupt;
+            let action = if self.count_overflow && !ignores_overflow {
+                Action::Invalid("Count exceeds 4294967295; no edit was made.")
+            } else {
+                binding.value.resolve(self.count)
+            };
+            let held = binding.value.repeatable.then(|| HeldBinding {
+                identity,
+                stroke,
+                action: binding.value.resolve(None),
+            });
+            self.clear_pending();
+            if !matches!(action, Action::Invalid(_)) {
+                self.held = held;
+            }
+            return Some(action);
+        }
+        if self.count_overflow && !self.map.has_descendant(&next, selection, BindingId::Hold) {
             self.clear();
             return Some(Action::Invalid(
                 "Count exceeds 4294967295; no edit was made.",
             ));
         }
-        self.route(Stroke(key, false), selection)
+        self.path = next;
+        [
+            BindingId::Insert,
+            BindingId::Hold,
+            BindingId::Repeat,
+            BindingId::CutBeat,
+        ]
+        .into_iter()
+        .any(|id| self.map.has_descendant(&self.path, selection, id))
+        .then_some(Action::OfferInsert)
     }
 }
 
@@ -517,6 +640,7 @@ fn mark_letter(key: Key, uppercase: bool) -> Option<char> {
 }
 
 /// A held key may navigate, but cannot finish an operator or repeat an edit.
+#[cfg(test)]
 pub fn allows_key_repeat(key: Key, modifiers: Modifiers) -> bool {
     modifiers == Modifiers::NONE
         && editor_map::rule(&[editor_map::Stroke(key, false)], EditSelection::None)
@@ -771,7 +895,7 @@ mod tests {
         assert_eq!(bindings.pending(), "3,");
         assert_eq!(
             bindings.pending_hint(),
-            Some("h inserts the counted pause · Esc cancels")
+            Some("h inserts the counted pause · Esc cancels".into())
         );
         assert_eq!(
             bindings.key(Key::H, Modifiers::NONE, false, false),

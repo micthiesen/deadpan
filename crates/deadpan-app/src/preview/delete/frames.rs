@@ -76,9 +76,12 @@ impl DeadpanApp {
             return Err("Return to Your edit and focus Beats before cutting frames. Use :sound-delete for a placed sound.".into());
         }
         if self.edit_selection() != navigation::EditSelection::None {
-            return Err(
-                "Use d to cut the Edit selection, or Esc then x to cut at the cursor.".into(),
-            );
+            return Err(format!(
+                "Use {} to cut the Edit selection, or {} then {} to cut at the cursor.",
+                self.editor_key(EditorKey::CutRange),
+                self.editor_key(EditorKey::Escape),
+                self.editor_key(EditorKey::CutFrames)
+            ));
         }
         let base = self
             .workspace

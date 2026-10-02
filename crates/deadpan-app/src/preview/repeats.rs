@@ -84,7 +84,7 @@ impl DeadpanApp {
         self.feedback.record("repeat_dequeued");
         // This continuation is not new input. Keep an unfinished operator/count
         // typed while its preceding wrap committed; it resolves when completed.
-        let bindings = std::mem::take(&mut self.bindings);
+        let bindings = self.bindings.clone();
         if self.submit_now(target.request(plays)) {
             self.repeat_queue.started(target, plays);
         } else {

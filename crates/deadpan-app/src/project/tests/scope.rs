@@ -174,13 +174,13 @@ fn scope_resolves_absolute_edges_and_blocks_composite_descent_and_pause_seams() 
         inner
             .check_pause(&workspace, ProjectFrame(5))
             .unwrap_err()
-            .contains("Backspace")
+            .contains("leave this scope before inserting a pause")
     );
     assert!(
         inner
             .check_pause(&workspace, ProjectFrame(27))
             .unwrap_err()
-            .contains("Backspace")
+            .contains("leave this scope before inserting a pause")
     );
     // Ordinary Hold interiors and seams before a composite remain legal.
     outer.check_pause(&workspace, ProjectFrame(28)).unwrap();

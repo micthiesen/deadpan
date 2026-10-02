@@ -1,0 +1,8 @@
+{
+  "custom-prefix-minimum.png": "full-replay-verified/keymap-014.png",
+  "error-initial-measurement.png": "keymap-error-replay-01/keymap-error-017.png",
+  "header-overflow-before.png": "keymap-replay-final/keymap-055.png",
+  "held-opener-after-submit.png": "full-replay-verified/keymap-057.png",
+  "ordered-command.png": "full-replay-verified/keymap-062.png",
+  "persistent-error.png": "full-replay-verified/keymap-error-019.png"
+}

@@ -525,13 +525,13 @@ fn navigate_and_edit(
         .unwrap_or("")
         .to_owned();
     d.check(
-        "A group-endpoint pause is refused with Backspace guidance and no edit",
+        "A group-endpoint pause is refused with parent scope guidance and no edit",
         d.revision() == endpoint_revision
             && current == endpoint
             && d.app().sequence_scope.groups() == groups
             && d.app().sequence_cursor == 0
-            && guidance.contains("Backspace"),
-        json!({"revision": endpoint_revision, "document": "unchanged", "guidance": "Backspace"}),
+            && guidance.contains("leave this scope before inserting a pause"),
+        json!({"revision": endpoint_revision, "document": "unchanged", "guidance": "leave this scope before inserting a pause"}),
         json!({"revision": d.revision(), "document_unchanged": current == endpoint, "guidance": guidance}),
     )?;
     d.capture("Group endpoint refusal explains how to return")?;
@@ -539,7 +539,7 @@ fn navigate_and_edit(
     d.settled()?;
     check_scope(
         d,
-        "Backspace follows endpoint guidance into the parent scope",
+        "The shipped parent key follows endpoint guidance into the parent scope",
         std::slice::from_ref(outer),
         inner,
         0,

@@ -504,6 +504,7 @@ impl DeadpanApp {
         for event in events {
             let egui::Event::Key {
                 key,
+                physical_key,
                 modifiers,
                 pressed: true,
                 repeat,
@@ -544,11 +545,15 @@ impl DeadpanApp {
             if repeat {
                 continue;
             }
-            if Bindings::default().key(
+            if self.bindings.clone().route_event(
                 key,
+                physical_key,
                 modifiers,
                 controls::Controls::text_focused(context),
                 false,
+                false,
+                true,
+                navigation::EditSelection::None,
             ) == Some(Action::Render)
             {
                 self.render.requested = true;
@@ -872,11 +877,28 @@ impl DeadpanApp {
         });
         ui.weak("Placed sounds have their own gain.");
         ui.add_enabled_ui(ready && self.gain.is_none(), |ui| {
-            ui.horizontal(|ui| {
-                if ui.button("−  ·  -").reveal_on_focus().clicked() {
+            ui.horizontal_wrapped(|ui| {
+                if ui
+                    .add(
+                        egui::Button::new(format!(
+                            "−  ·  {}",
+                            self.editor_key(EditorKey::GainDown)
+                        ))
+                        .wrap(),
+                    )
+                    .reveal_on_focus()
+                    .clicked()
+                {
                     self.gain_step(-3000, ui.ctx());
                 }
-                if ui.button("+  ·  +").reveal_on_focus().clicked() {
+                if ui
+                    .add(
+                        egui::Button::new(format!("+  ·  {}", self.editor_key(EditorKey::GainUp)))
+                            .wrap(),
+                    )
+                    .reveal_on_focus()
+                    .clicked()
+                {
                     self.gain_step(3000, ui.ctx());
                 }
                 if ui

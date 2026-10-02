@@ -1,0 +1,40 @@
+import datetime
+import hashlib
+import json
+import subprocess
+from pathlib import Path
+
+root = Path('/tmp/deadpan-keymap-config-20261001')
+full = json.loads((root / 'full-replay-verified/report.json').read_text())
+assert not full['failed'], 'Full replay has findings'
+final = '79f3568cd19f1a3f644deb12fcd2163a03a47a9ee867c523050a5927f2efa5bd'
+workspace = 'f640b47e47465e0d8591c11e101d3d7d3a03289c713e667ea4dcf35d85ab1b38'
+a = json.loads((root / f'source-{workspace}.json').read_text())
+b = json.loads((root / f'source-{final}.json').read_text())
+changed = [name for name in sorted(set(a) | set(b)) if a.get(name) != b.get(name)]
+assert changed == [
+    'crates/deadpan-app/src/preview.rs',
+    'crates/deadpan-app/src/preview/harness/keymap.rs',
+    'crates/deadpan-app/src/preview/harness/nested_pause.rs',
+    'crates/deadpan-app/src/preview/trim/waveform.rs',
+]
+assert all(hashlib.sha256(Path(name).read_bytes()).hexdigest() == digest for name, digest in b.items())
+binary = {}
+for profile in ['debug', 'release']:
+    path = Path('target') / profile / 'deadpan-app'
+    binary[profile] = {'path':str(path), 'sha256':hashlib.sha256(path.read_bytes()).hexdigest()}
+assert full['metadata']['binary_sha256'] == binary['release']['sha256']
+binary.update(final_source_inventory=final, full_workspace_source_inventory=workspace,
+              changed_after_workspace_run=changed,
+              source_unchanged_at_collection=True)
+(root / 'binaries.json').write_text(json.dumps(binary, indent=2) + '\n')
+
+listing = subprocess.check_output(['ps', '-axo', 'pid=,comm='], text=True)
+remaining = [line.strip() for line in listing.splitlines() if 'deadpan' in line.lower()]
+cleanup = {'checked_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),
+           'command':['ps', '-axo', 'pid=,comm='], 'remaining_deadpan_processes':remaining,
+           'ordinary_native_window_opened':False,
+           'personal_keymap_read_or_written':False}
+(root / 'cleanup.json').write_text(json.dumps(cleanup, indent=2) + '\n')
+assert not remaining, remaining
+print(json.dumps({'source':final, 'binaries':binary, 'cleanup':cleanup}))

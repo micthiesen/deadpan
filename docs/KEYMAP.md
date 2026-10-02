@@ -1,4 +1,83 @@
-# Declarative editor bindings
+# Editor keymaps
+
+Deadpan reads an optional `Deadpan/keymap.json` from the macOS user Application
+Support directory before opening its native window. On an ordinary installation
+this is `~/Library/Application Support/Deadpan/keymap.json`; the app resolves it
+through `NSFileManager`, independently of the project and current directory.
+It does not create a file or directory. Restart Deadpan after editing the file.
+
+A missing file uses the shipped keys. A read, schema or binding error rejects the
+entire candidate. All shipped keys stay active, and the header's **Keymap error**
+control opens the persistent diagnostic in Keys. Ordinary edit messages cannot
+erase that diagnostic. Headless commands, worker processes, UI replay and the
+native lifecycle smoke test do not read personal settings.
+
+## Configuration
+
+```json
+{
+  "version": 1,
+  "key_mode": "logical",
+  "bindings": [
+    { "action": "frame.next", "keys": [["a", "h"], ["ArrowRight"]] },
+    { "action": "hold", "keys": [["q", "b"]] },
+    { "action": "command", "keys": [["q", "c"], [":"]] }
+  ]
+}
+```
+
+Each entry replaces every alias for one action; omitted actions retain their
+shipped paths. The example makes `ah` move forward and `qb` insert a pause.
+`3ah` moves three frames and `3qb` requests three half-seconds. Counts, authored
+commands and held-key policies belong to the action, not to configuration.
+Overrides are applied together, so two actions can exchange their paths.
+
+Paths contain 1 to 16 key tokens, with 1 to 8 aliases per action. Lowercase
+letters are unshifted; uppercase letters require Shift. Named keys include
+`ArrowLeft`, `Space`, `Home` and `F2`; `Shift+Space` is explicit. Punctuation
+can use its symbol. Digits belong to the count grammar and cannot be path steps.
+Control, Command and Option chords remain reserved. Escape, Tab and Shift+Tab
+keep their native editor roles. Actions cannot be unbound in this format.
+
+`mark.set` and `mark.jump` configure the prefix before a single `a–z` or `A–Z`
+argument. These families expand before ambiguity and resource checks, including
+the final argument's path length. No prefix timer executes a partial command.
+
+| Action IDs | Meaning |
+| --- | --- |
+| `frame.previous`, `frame.next` | Frame motion; sound nudges in Placed sounds |
+| `beat.previous`, `beat.next` | Beat or catalog/event selection |
+| `first`, `last` | Start and end |
+| `undo` | Undo; native undo/redo alternatives remain fixed |
+| `playback`, `audition` | Play/pause and selection loop |
+| `group.enter`, `group.leave` | Group navigation; exact event position in Placed sounds |
+| `visual`, `copy` | Select time and copy |
+| `paste.after`, `paste.before` | Paste, or replace a captured range |
+| `split`, `cut.frames`, `cut.beat`, `cut.range` | Structural edits; range cut is Visual, beat cut is Normal |
+| `repeat`, `hold` | Total plays and inserted pause |
+| `insert`, `sound.place` | Reuse the Original and place a catalog sound |
+| `gain.up`, `gain.down` | Gain steps |
+| `camera`, `punch_in`, `creep`, `trim` | Enter a draft or apply the framing action |
+| `mark.set`, `mark.jump` | Letter-mark prefix families |
+| `command`, `search`, `help` | Native command/search entry and Keys |
+| `pane.next`, `pane.previous`, `escape` | Fixed paths; included in the semantic catalog |
+
+## Logical and physical keys
+
+One `key_mode` applies to the complete map. `logical` follows the delivered egui
+key identity. The pinned egui-winit adapter falls back to a physical identity
+when a character or dead key has no named egui key. This is a known limit; it
+does not establish strict logical-key behavior for every layout.
+
+`physical` requires the native physical key field and never substitutes a
+logical key when it is absent. It names keyboard positions. Physical defaults
+use `Shift+Semicolon`, `Shift+Slash` and `Shift+Equals` for command, help and gain
+up. Use those positional forms in overrides. A map cannot mix logical and
+physical matchers, which could overlap on another layout. Physical `Plus` names
+the keypad Add key and is displayed as `NumpadAdd`. Native text editing,
+composition and menu shortcuts keep their own input semantics.
+
+## Shared grammar
 
 Normal and timeline Visual editor paths compile from
 [`editor_map.rs`](../crates/deadpan-app/src/navigation/editor_map.rs) through the
@@ -9,22 +88,35 @@ The native project service and authored commands are unchanged.
 
 ## Input ownership
 
-The host gives native controls, text and IME their existing priority before an
-editor command can run. Platform menu shortcuts and logical-symbol handling
-remain explicit in the outer router. Shift/Option needed to type punctuation
-never turns a reserved Control/Command chord into plain input. Camera, Trim,
+The host gives native controls, text and IME priority before an editor command
+can run. Platform menu shortcuts and logical-symbol handling remain explicit
+in the outer router. A physical Kestrel reservation is checked before logical
+normalization, even when the delivered logical key differs. Camera, Trim,
 Gain, room-tone and Place slice keep their own mode routers.
 
 Mark names resolve before ordinary editor actions. `mx`, `'d` and uppercase
 names remain marks. Escape, Tab and native menu actions retain their defined
-interrupt behavior. Transport and group navigation interrupt ordinary pending
-paths, while a pending mark requires a letter. Invalid suffixes clear their
+interrupt behavior. A valid continuation takes priority over a root action;
+otherwise transport and group navigation interrupt ordinary pending paths.
+A pending mark requires a letter. Invalid suffixes clear their
 prefix without executing the suffix as a new root command.
 
-The app observes semantic prefix transitions to capture exact mark and Trim
-targets, including absent targets. Compilation and help never capture a target
-or mutate a project. A delayed service reply cannot supply a target that was
-absent on entry. Prefixes have no timer.
+The app captures Trim's exact target at the first pending ancestor of a Trim
+path, or immediately before dispatch for a direct key. Mark capture starts
+when the complete letter-family prefix is entered. Captured absence is a real
+result: a delayed service reply cannot supply a target missing on entry.
+Choosing another branch discards that capture. Pending paths retain their
+entry Normal/Visual mode. Compilation and help never mutate a project.
+
+Entering Command or Search gives the new field only the ordered input suffix
+after its opener. The opener's immediate printable companion text is consumed;
+later text, paste, composition and key events remain native input. A held opener
+does not echo into the field before release, including when Shift changes its
+logical identity or the field closes first. Enter/Escape gives the closing field
+only its preceding input; the remaining events resume in order on the next outer
+frame. Layout retries cannot replay that suffix. Existing whole-batch IME priority
+remains conservative:
+any composition event prevents editor submit/cancel for that batch.
 
 ## Counts, repetition and teaching
 
@@ -33,11 +125,12 @@ one, a larger count and overflow. Motions, Repeat, frame cuts, whole-beat cuts,
 Holds and gain use their declared policies. A positive Repeat count still means
 total plays. A second count after an operator is rejected.
 
-Held events run only when the leaf at the current trie position explicitly
-allows repetition. Plain frame/beat motion may repeat. Held input cannot complete
-or consume a pending `g`, `r`, `d`, comma or mark prefix. In particular, holding
-`h` while pressing comma no longer inserts a Hold. Releasing it and pressing
-`h` explicitly completes the waiting `,h` once.
+After an explicit frame/beat motion, held events retain that resolved action
+until release, intervening input or context loss. The first execution uses its
+count; later repeats move one unit. Thus holding the final `h` in a custom `ah`
+forward motion keeps moving forward even when root `h` means backward. Held
+input cannot enter or consume a new pending path. Holding `h` while pressing
+comma cannot insert a Hold; release and a fresh press are required.
 
 Prefix hints derive their next keys and explanations from the declarations.
 Counted comma teaching exposes its valid Hold continuation. A count that leaves
@@ -53,7 +146,13 @@ also a prefix, in either declaration order. Prefix annotations must identify an
 existing proper branch, are unique and never create a hidden command. Errors
 identify both conflicting labels and complete typed key paths.
 
-Limits are 512 terminal definitions, 128 prefix annotations, 16 keys per path,
+The file reader opens nonblocking, then checks that the descriptor is a regular
+file. A 256 KiB limit applies both to metadata and actual bytes read. This is a
+size bound, not a filesystem deadline or coherent-snapshot guarantee. JSON
+keeps its recursion bound, rejects unknown/duplicate fields and bounds action
+and key tokens before constructing diagnostics.
+
+Compiler limits are 512 terminal definitions, 128 prefix annotations, 16 keys per path,
 4,096 distinct nodes including the root, and 256 UTF-8 bytes per label. Resource
 preflight runs before internal allocation or diagnostic key/label cloning.
 Shared prefixes count once. Flat indexed nodes avoid recursive ownership and
@@ -65,14 +164,16 @@ including branches without annotations. It tests each with absent, positive,
 zero and overflowing counts, alongside text, composition, Visual selection and
 the existing modal routers. The live registry digest remains a separate check.
 See [shortcut compatibility](KEYBINDING_COMPATIBILITY.md).
-The [qualification record](qualification/declarative-bindings-2026-10-01.md)
-retains the old-version regression, final checks and their limits.
+The [configuration qualification](qualification/configurable-bindings-2026-10-01.md)
+retains startup, custom-map and native-input checks and their limits. The earlier
+[compiler qualification](qualification/declarative-bindings-2026-10-01.md)
+retains the original held-key regression.
 
 ## Remaining work
 
-User keymap loading, configuration UI, dynamic keycaps throughout the workspace,
-and migration of the remaining mode routers are still required. A keymap loader
-must validate the entire candidate before installation, reject Kestrel/native
-conflicts, update teaching with execution, and cancel captured pending input on
-map changes. Keymaps belong outside project content. Named registers, semantic
-dot-repeat and atomic bounded macros remain separate DP-06 work.
+Current configuration covers Normal and timeline Visual paths and their teaching.
+The remaining mode routers, strict logical provenance and physical layout/IME
+qualification remain open. Settings are file-based and require a restart; a
+native settings editor and live map replacement are not implemented. Named
+registers, semantic dot-repeat and atomic bounded macros remain separate DP-06
+work. No requirement or product gate is complete on the basis of this increment.

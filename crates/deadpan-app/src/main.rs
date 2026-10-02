@@ -2,6 +2,8 @@
 
 mod dialogs;
 mod gain;
+mod keymap;
+mod keymap_file;
 mod library;
 mod navigation;
 mod presentation;
@@ -71,6 +73,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
+    // Admit the entire immutable map before the first native input batch. Replay
+    // and lifecycle qualification use explicit shipped maps, never personal files.
+    let keymap = if smoke_test {
+        keymap::Startup::shipped()
+    } else {
+        keymap::Startup::from_file(keymap_file::load())
+    };
     let exited = Rc::new(Cell::new(false));
     let exit_observer = Rc::clone(&exited);
     let options = eframe::NativeOptions {
@@ -108,6 +117,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 exit_observer,
                 preview_source,
                 project,
+                keymap,
             )?))
         }),
     )?;

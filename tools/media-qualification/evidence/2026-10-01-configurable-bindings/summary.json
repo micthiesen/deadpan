@@ -1,0 +1,5067 @@
+{
+  "commands": [
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--locked"
+      ],
+      "diff_sha256": "689340ee868337e96168231ed217d7b1d68c8db56fdddfe4bae4eb4627dd9e82",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "app-default-final",
+      "pid": 19060,
+      "seconds": 46.514496583957225,
+      "source_manifest_after_sha256": "8e33f625600d638f34a8e6c0966741c456ea1dfb77da6bc4ff0bdfe48b32e4dc",
+      "source_manifest_sha256": "8e33f625600d638f34a8e6c0966741c456ea1dfb77da6bc4ff0bdfe48b32e4dc",
+      "source_unchanged": true,
+      "started": "2026-10-02T04:58:53.428920+00:00",
+      "suites": [
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 579,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--locked"
+      ],
+      "diff_sha256": "a8051d3c581093e932e72cf2d120851eade229abb5df7caaa5e4d6077de502f8",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "app-default-header-final",
+      "pid": 20438,
+      "seconds": 46.3382311668247,
+      "source_manifest_after_sha256": "6fbfb9c762f48df0c5943bc20e07078ddb1c405c7ebbd4bccfafae14c995acb6",
+      "source_manifest_sha256": "6fbfb9c762f48df0c5943bc20e07078ddb1c405c7ebbd4bccfafae14c995acb6",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:05:52.636550+00:00",
+      "suites": [
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 579,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--locked"
+      ],
+      "diff_sha256": "5d4362e5549ef05e64738727d7d9a8f9a61949b58a62d12cc018ddec3a247022",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "app-default-release-fixes",
+      "pid": 23113,
+      "seconds": 46.67842662520707,
+      "source_manifest_after_sha256": "79f3568cd19f1a3f644deb12fcd2163a03a47a9ee867c523050a5927f2efa5bd",
+      "source_manifest_sha256": "79f3568cd19f1a3f644deb12fcd2163a03a47a9ee867c523050a5927f2efa5bd",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:19:13.807962+00:00",
+      "suites": [
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 579,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked"
+      ],
+      "diff_sha256": "b55acb97da595e5546a2bcb745b01ed323e61d0af2eb38ef4d3f3be4ca52c14c",
+      "exit_code": 101,
+      "gate_exit_code": 101,
+      "name": "app-tests-02",
+      "pid": 8918,
+      "seconds": 51.562705624848604,
+      "source_manifest_after_sha256": "bb9d5eb042d9d0106e84a5e22d79ced7d934416558a821858b1da4b0c975fe33",
+      "source_manifest_sha256": "bb9d5eb042d9d0106e84a5e22d79ced7d934416558a821858b1da4b0c975fe33",
+      "source_unchanged": true,
+      "started": "2026-10-02T04:22:08.029715+00:00",
+      "suites": [
+        {
+          "failed": 3,
+          "ignored": 0,
+          "passed": 610,
+          "status": "FAILED"
+        }
+      ]
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked"
+      ],
+      "diff_sha256": "710a7b261f9fd7d93f8a6d63c75b8c356939d91c8b47911a92f5b9d04af04ba4",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "app-tests-03",
+      "pid": 15578,
+      "seconds": 51.41332583408803,
+      "source_manifest_after_sha256": "f640b47e47465e0d8591c11e101d3d7d3a03289c713e667ea4dcf35d85ab1b38",
+      "source_manifest_sha256": "f640b47e47465e0d8591c11e101d3d7d3a03289c713e667ea4dcf35d85ab1b38",
+      "source_unchanged": true,
+      "started": "2026-10-02T04:45:25.096620+00:00",
+      "suites": [
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 615,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked"
+      ],
+      "diff_sha256": "ad3c29d5a74d105d8b03557b2fcc82c14744d22bd82364b9fb5f8fdd35d0a4fe",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "app-ui-final",
+      "pid": 19354,
+      "seconds": 46.65639858413488,
+      "source_manifest_after_sha256": "8e33f625600d638f34a8e6c0966741c456ea1dfb77da6bc4ff0bdfe48b32e4dc",
+      "source_manifest_sha256": "8e33f625600d638f34a8e6c0966741c456ea1dfb77da6bc4ff0bdfe48b32e4dc",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:00:01.241362+00:00",
+      "suites": [
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 615,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked"
+      ],
+      "diff_sha256": "a8051d3c581093e932e72cf2d120851eade229abb5df7caaa5e4d6077de502f8",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "app-ui-header-final",
+      "pid": 20622,
+      "seconds": 46.408573208376765,
+      "source_manifest_after_sha256": "6fbfb9c762f48df0c5943bc20e07078ddb1c405c7ebbd4bccfafae14c995acb6",
+      "source_manifest_sha256": "6fbfb9c762f48df0c5943bc20e07078ddb1c405c7ebbd4bccfafae14c995acb6",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:07:12.730136+00:00",
+      "suites": [
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 615,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked"
+      ],
+      "diff_sha256": "5d4362e5549ef05e64738727d7d9a8f9a61949b58a62d12cc018ddec3a247022",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "app-ui-release-fixes",
+      "pid": 22442,
+      "seconds": 46.76648391690105,
+      "source_manifest_after_sha256": "79f3568cd19f1a3f644deb12fcd2163a03a47a9ee867c523050a5927f2efa5bd",
+      "source_manifest_sha256": "79f3568cd19f1a3f644deb12fcd2163a03a47a9ee867c523050a5927f2efa5bd",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:17:17.823979+00:00",
+      "suites": [
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 615,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "diff_sha256": "b31e3f8277594fe74fc146cf76707dfff9fdc31d6e4d1aedf8708590459c1138",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "clippy-ui-01",
+      "pid": 11908,
+      "seconds": 24.40186391584575,
+      "source_manifest_after_sha256": "805bba416bfa8783454e65fbaeb4b1efb1f31a8679e1ede1bfc62cf524f8e7c4",
+      "source_manifest_sha256": "805bba416bfa8783454e65fbaeb4b1efb1f31a8679e1ede1bfc62cf524f8e7c4",
+      "source_unchanged": true,
+      "started": "2026-10-02T04:30:47.521258+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "diff_sha256": "ad3c29d5a74d105d8b03557b2fcc82c14744d22bd82364b9fb5f8fdd35d0a4fe",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "clippy-ui-final",
+      "pid": 19846,
+      "seconds": 17.73391049960628,
+      "source_manifest_after_sha256": "8e33f625600d638f34a8e6c0966741c456ea1dfb77da6bc4ff0bdfe48b32e4dc",
+      "source_manifest_sha256": "8e33f625600d638f34a8e6c0966741c456ea1dfb77da6bc4ff0bdfe48b32e4dc",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:02:34.296353+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "deadpan-app",
+        "--all-targets",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "diff_sha256": "5d4362e5549ef05e64738727d7d9a8f9a61949b58a62d12cc018ddec3a247022",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "clippy-ui-release-fixes",
+      "pid": 23459,
+      "seconds": 16.68297737510875,
+      "source_manifest_after_sha256": "79f3568cd19f1a3f644deb12fcd2163a03a47a9ee867c523050a5927f2efa5bd",
+      "source_manifest_sha256": "79f3568cd19f1a3f644deb12fcd2163a03a47a9ee867c523050a5927f2efa5bd",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:23:38.349583+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "clippy",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "diff_sha256": "a8051d3c581093e932e72cf2d120851eade229abb5df7caaa5e4d6077de502f8",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "clippy-ui-verified",
+      "pid": 20965,
+      "seconds": 16.680776875000447,
+      "source_manifest_after_sha256": "6fbfb9c762f48df0c5943bc20e07078ddb1c405c7ebbd4bccfafae14c995acb6",
+      "source_manifest_sha256": "6fbfb9c762f48df0c5943bc20e07078ddb1c405c7ebbd4bccfafae14c995acb6",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:09:25.258427+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "diff_sha256": "b6ef6a14fc3d8c56a8e0a1f2c1078d12ea915283e18781dfa81e54acc6a15507",
+      "exit_code": 101,
+      "gate_exit_code": 101,
+      "name": "clippy-workspace-01",
+      "pid": 11292,
+      "seconds": 22.540401624981314,
+      "source_manifest_after_sha256": "cbfcfead68371e0da58ab9bf562515095056b7abc91a5cf1a3e89ee09b567b52",
+      "source_manifest_sha256": "cbfcfead68371e0da58ab9bf562515095056b7abc91a5cf1a3e89ee09b567b52",
+      "source_unchanged": true,
+      "started": "2026-10-02T04:27:59.899373+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "diff_sha256": "b31e3f8277594fe74fc146cf76707dfff9fdc31d6e4d1aedf8708590459c1138",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "clippy-workspace-02",
+      "pid": 11763,
+      "seconds": 15.898967917077243,
+      "source_manifest_after_sha256": "805bba416bfa8783454e65fbaeb4b1efb1f31a8679e1ede1bfc62cf524f8e7c4",
+      "source_manifest_sha256": "805bba416bfa8783454e65fbaeb4b1efb1f31a8679e1ede1bfc62cf524f8e7c4",
+      "source_unchanged": true,
+      "started": "2026-10-02T04:30:09.314382+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "diff_sha256": "ad3c29d5a74d105d8b03557b2fcc82c14744d22bd82364b9fb5f8fdd35d0a4fe",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "clippy-workspace-final",
+      "pid": 19738,
+      "seconds": 16.400211958680302,
+      "source_manifest_after_sha256": "8e33f625600d638f34a8e6c0966741c456ea1dfb77da6bc4ff0bdfe48b32e4dc",
+      "source_manifest_sha256": "8e33f625600d638f34a8e6c0966741c456ea1dfb77da6bc4ff0bdfe48b32e4dc",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:02:01.381729+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "diff_sha256": "5d4362e5549ef05e64738727d7d9a8f9a61949b58a62d12cc018ddec3a247022",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "clippy-workspace-release-fixes",
+      "pid": 23356,
+      "seconds": 16.03421545913443,
+      "source_manifest_after_sha256": "79f3568cd19f1a3f644deb12fcd2163a03a47a9ee867c523050a5927f2efa5bd",
+      "source_manifest_sha256": "79f3568cd19f1a3f644deb12fcd2163a03a47a9ee867c523050a5927f2efa5bd",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:23:13.418001+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "diff_sha256": "a8051d3c581093e932e72cf2d120851eade229abb5df7caaa5e4d6077de502f8",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "clippy-workspace-verified",
+      "pid": 20853,
+      "seconds": 15.958898041862994,
+      "source_manifest_after_sha256": "6fbfb9c762f48df0c5943bc20e07078ddb1c405c7ebbd4bccfafae14c995acb6",
+      "source_manifest_sha256": "6fbfb9c762f48df0c5943bc20e07078ddb1c405c7ebbd4bccfafae14c995acb6",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:08:36.748754+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "diff_sha256": "b31e3f8277594fe74fc146cf76707dfff9fdc31d6e4d1aedf8708590459c1138",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "format-01",
+      "pid": 12074,
+      "seconds": 1.7126000421121716,
+      "source_manifest_after_sha256": "805bba416bfa8783454e65fbaeb4b1efb1f31a8679e1ede1bfc62cf524f8e7c4",
+      "source_manifest_sha256": "805bba416bfa8783454e65fbaeb4b1efb1f31a8679e1ede1bfc62cf524f8e7c4",
+      "source_unchanged": true,
+      "started": "2026-10-02T04:31:37.287343+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "diff_sha256": "ad3c29d5a74d105d8b03557b2fcc82c14744d22bd82364b9fb5f8fdd35d0a4fe",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "format-final",
+      "pid": 19940,
+      "seconds": 1.7248906251043081,
+      "source_manifest_after_sha256": "8e33f625600d638f34a8e6c0966741c456ea1dfb77da6bc4ff0bdfe48b32e4dc",
+      "source_manifest_sha256": "8e33f625600d638f34a8e6c0966741c456ea1dfb77da6bc4ff0bdfe48b32e4dc",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:03:19.361760+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "diff_sha256": "5d4362e5549ef05e64738727d7d9a8f9a61949b58a62d12cc018ddec3a247022",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "format-release-fixes",
+      "pid": 23523,
+      "seconds": 1.791686458978802,
+      "source_manifest_after_sha256": "79f3568cd19f1a3f644deb12fcd2163a03a47a9ee867c523050a5927f2efa5bd",
+      "source_manifest_sha256": "79f3568cd19f1a3f644deb12fcd2163a03a47a9ee867c523050a5927f2efa5bd",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:23:53.954308+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "diff_sha256": "a8051d3c581093e932e72cf2d120851eade229abb5df7caaa5e4d6077de502f8",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "format-verified",
+      "pid": 21021,
+      "seconds": 1.7216674168594182,
+      "source_manifest_after_sha256": "6fbfb9c762f48df0c5943bc20e07078ddb1c405c7ebbd4bccfafae14c995acb6",
+      "source_manifest_sha256": "6fbfb9c762f48df0c5943bc20e07078ddb1c405c7ebbd4bccfafae14c995acb6",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:09:46.650166+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "target/release/deadpan-app",
+        "--ui-check",
+        "--output",
+        "/tmp/deadpan-keymap-config-20261001/full-replay-verified",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "diff_sha256": "6009ffb38f05cc59b2284388e1baddcfddfd76ca90a238a1fa32a9a192930b50",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "full-replay-verified",
+      "pid": 23868,
+      "seconds": 37.395214416086674,
+      "source_manifest_after_sha256": "79f3568cd19f1a3f644deb12fcd2163a03a47a9ee867c523050a5927f2efa5bd",
+      "source_manifest_sha256": "79f3568cd19f1a3f644deb12fcd2163a03a47a9ee867c523050a5927f2efa5bd",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:26:11.544217+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "target/release/deadpan-app",
+        "--ui-check",
+        "--output",
+        "/tmp/deadpan-keymap-config-20261001/full-replay",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "diff_sha256": "061161f9901571834f9871fcc8509e8c705287e2aa9bf2a8c4e1343614264323",
+      "exit_code": 1,
+      "gate_exit_code": 1,
+      "name": "full-replay",
+      "pid": 21230,
+      "seconds": 36.112369041889906,
+      "source_manifest_after_sha256": "6fbfb9c762f48df0c5943bc20e07078ddb1c405c7ebbd4bccfafae14c995acb6",
+      "source_manifest_sha256": "6fbfb9c762f48df0c5943bc20e07078ddb1c405c7ebbd4bccfafae14c995acb6",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:11:49.918270+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "build",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked"
+      ],
+      "diff_sha256": "ad3c29d5a74d105d8b03557b2fcc82c14744d22bd82364b9fb5f8fdd35d0a4fe",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "header-red-build",
+      "pid": 20072,
+      "seconds": 13.14578020805493,
+      "source_manifest_after_sha256": "1018cadf8b4454a8339f28d565c3fd12c52a52c22678fe00ac1c53de8eff4ff5",
+      "source_manifest_sha256": "1018cadf8b4454a8339f28d565c3fd12c52a52c22678fe00ac1c53de8eff4ff5",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:04:24.238649+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "target/debug/deadpan-app",
+        "--ui-check",
+        "--output",
+        "/tmp/deadpan-keymap-config-20261001/header-red",
+        "--scenario",
+        "keymap",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "diff_sha256": "ad3c29d5a74d105d8b03557b2fcc82c14744d22bd82364b9fb5f8fdd35d0a4fe",
+      "exit_code": 1,
+      "gate_exit_code": 1,
+      "name": "header-red",
+      "pid": 20209,
+      "seconds": 6.776327833067626,
+      "source_manifest_after_sha256": "1018cadf8b4454a8339f28d565c3fd12c52a52c22678fe00ac1c53de8eff4ff5",
+      "source_manifest_sha256": "1018cadf8b4454a8339f28d565c3fd12c52a52c22678fe00ac1c53de8eff4ff5",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:04:55.501213+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked"
+      ],
+      "diff_sha256": "be6bc0e34fe97309d93c25fc24a8a939a34ed2be2d2e74a3158febd15d87c6b2",
+      "exit_code": 101,
+      "gate_exit_code": 101,
+      "name": "integration-app-tests",
+      "pid": 8312,
+      "seconds": 21.36586824990809,
+      "source_manifest_after_sha256": "f7795d690a7b33b0ae0b6aed25778deab51450a1a35c56762c00b3dd47d0ceb3",
+      "source_manifest_sha256": "f7795d690a7b33b0ae0b6aed25778deab51450a1a35c56762c00b3dd47d0ceb3",
+      "source_unchanged": true,
+      "started": "2026-10-02T04:19:18.637473+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "check",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked"
+      ],
+      "diff_sha256": "da87fd56fbe1df5360298e1adf82e3caa498af3624d256a9569d245450ff4357",
+      "exit_code": 101,
+      "gate_exit_code": 101,
+      "name": "integration-check",
+      "pid": 7891,
+      "seconds": 78.15922337491065,
+      "source_manifest_after_sha256": "de46137d2627bfc06ae1b840d7be2095acbd23272d84b7703237ccd66ba3b077",
+      "source_manifest_sha256": "629d6a15488c72a752d221cbd4dac108651368eed6a14dee7642b6eab1d0a45d",
+      "source_unchanged": false,
+      "started": "2026-10-02T04:16:02.987888+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "target/debug/deadpan-app",
+        "--ui-check",
+        "--output",
+        "/tmp/deadpan-keymap-config-20261001/keymap-error-replay-01",
+        "--scenario",
+        "keymap-error",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "diff_sha256": "7dc6a462679f0482c1c42fffceb6d140fa5613ba01cd61a21b997a369163d884",
+      "exit_code": 1,
+      "gate_exit_code": 1,
+      "name": "keymap-error-replay-01",
+      "pid": 11072,
+      "seconds": 3.1879248339682817,
+      "source_manifest_after_sha256": "8be20e1d4b6cafcae21b50064e357d221e6c74fad2015791d992e513846f8283",
+      "source_manifest_sha256": "8be20e1d4b6cafcae21b50064e357d221e6c74fad2015791d992e513846f8283",
+      "source_unchanged": true,
+      "started": "2026-10-02T04:27:36.656832+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "target/debug/deadpan-app",
+        "--ui-check",
+        "--output",
+        "/tmp/deadpan-keymap-config-20261001/keymap-error-replay-02",
+        "--scenario",
+        "keymap-error",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "diff_sha256": "9fb920365a0a9ffa6f8da04ea5cc13e982a674bc4e9a323ac88ac406a54fa867",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "keymap-error-replay-02",
+      "pid": 16000,
+      "seconds": 4.373361959122121,
+      "source_manifest_after_sha256": "f640b47e47465e0d8591c11e101d3d7d3a03289c713e667ea4dcf35d85ab1b38",
+      "source_manifest_sha256": "f640b47e47465e0d8591c11e101d3d7d3a03289c713e667ea4dcf35d85ab1b38",
+      "source_unchanged": true,
+      "started": "2026-10-02T04:46:49.854331+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "target/debug/deadpan-app",
+        "--ui-check",
+        "--output",
+        "/tmp/deadpan-keymap-config-20261001/keymap-error-replay-final",
+        "--scenario",
+        "keymap-error",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "diff_sha256": "ad3c29d5a74d105d8b03557b2fcc82c14744d22bd82364b9fb5f8fdd35d0a4fe",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "keymap-error-replay-final",
+      "pid": 19638,
+      "seconds": 4.306237041018903,
+      "source_manifest_after_sha256": "8e33f625600d638f34a8e6c0966741c456ea1dfb77da6bc4ff0bdfe48b32e4dc",
+      "source_manifest_sha256": "8e33f625600d638f34a8e6c0966741c456ea1dfb77da6bc4ff0bdfe48b32e4dc",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:01:47.662998+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "target/debug/deadpan-app",
+        "--ui-check",
+        "--output",
+        "/tmp/deadpan-keymap-config-20261001/keymap-replay-01",
+        "--scenario",
+        "keymap",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "diff_sha256": "7dc6a462679f0482c1c42fffceb6d140fa5613ba01cd61a21b997a369163d884",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "keymap-replay-01",
+      "pid": 10692,
+      "seconds": 6.954073958098888,
+      "source_manifest_after_sha256": "8be20e1d4b6cafcae21b50064e357d221e6c74fad2015791d992e513846f8283",
+      "source_manifest_sha256": "8be20e1d4b6cafcae21b50064e357d221e6c74fad2015791d992e513846f8283",
+      "source_unchanged": true,
+      "started": "2026-10-02T04:26:49.282252+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "target/debug/deadpan-app",
+        "--ui-check",
+        "--output",
+        "/tmp/deadpan-keymap-config-20261001/keymap-replay-02",
+        "--scenario",
+        "keymap",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "diff_sha256": "710a7b261f9fd7d93f8a6d63c75b8c356939d91c8b47911a92f5b9d04af04ba4",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "keymap-replay-02",
+      "pid": 15863,
+      "seconds": 7.610773499589413,
+      "source_manifest_after_sha256": "f640b47e47465e0d8591c11e101d3d7d3a03289c713e667ea4dcf35d85ab1b38",
+      "source_manifest_sha256": "f640b47e47465e0d8591c11e101d3d7d3a03289c713e667ea4dcf35d85ab1b38",
+      "source_unchanged": true,
+      "started": "2026-10-02T04:46:25.578938+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "target/debug/deadpan-app",
+        "--ui-check",
+        "--output",
+        "/tmp/deadpan-keymap-config-20261001/keymap-replay-final",
+        "--scenario",
+        "keymap",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "diff_sha256": "ad3c29d5a74d105d8b03557b2fcc82c14744d22bd82364b9fb5f8fdd35d0a4fe",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "keymap-replay-final",
+      "pid": 19537,
+      "seconds": 8.03659962490201,
+      "source_manifest_after_sha256": "8e33f625600d638f34a8e6c0966741c456ea1dfb77da6bc4ff0bdfe48b32e4dc",
+      "source_manifest_sha256": "8e33f625600d638f34a8e6c0966741c456ea1dfb77da6bc4ff0bdfe48b32e4dc",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:01:23.486197+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "target/debug/deadpan-app",
+        "--ui-check",
+        "--output",
+        "/tmp/deadpan-keymap-config-20261001/keymap-replay-verified",
+        "--scenario",
+        "keymap",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "diff_sha256": "a8051d3c581093e932e72cf2d120851eade229abb5df7caaa5e4d6077de502f8",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "keymap-replay-verified",
+      "pid": 20737,
+      "seconds": 8.127883541863412,
+      "source_manifest_after_sha256": "6fbfb9c762f48df0c5943bc20e07078ddb1c405c7ebbd4bccfafae14c995acb6",
+      "source_manifest_sha256": "6fbfb9c762f48df0c5943bc20e07078ddb1c405c7ebbd4bccfafae14c995acb6",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:08:26.450557+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "target/debug/deadpan-app",
+        "--ui-check",
+        "--output",
+        "/tmp/deadpan-keymap-config-20261001/nested-pause-verified",
+        "--scenario",
+        "nested-pause",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "diff_sha256": "5d4362e5549ef05e64738727d7d9a8f9a61949b58a62d12cc018ddec3a247022",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "nested-pause-verified",
+      "pid": 22774,
+      "seconds": 12.764434749726206,
+      "source_manifest_after_sha256": "79f3568cd19f1a3f644deb12fcd2163a03a47a9ee867c523050a5927f2efa5bd",
+      "source_manifest_sha256": "79f3568cd19f1a3f644deb12fcd2163a03a47a9ee867c523050a5927f2efa5bd",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:18:26.304214+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "build",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked"
+      ],
+      "diff_sha256": "335a3f1e16f8eaefc637d311572726d3db63d3da2b30cfa56df0113b2b14cb19",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "post-submit-red-build",
+      "pid": 18854,
+      "seconds": 12.871243374887854,
+      "source_manifest_after_sha256": "a44eccb56e24d4a8dbb7c9789b77d03ff21d1ddc96cd6659483befb057424560",
+      "source_manifest_sha256": "a44eccb56e24d4a8dbb7c9789b77d03ff21d1ddc96cd6659483befb057424560",
+      "source_unchanged": true,
+      "started": "2026-10-02T04:57:55.828193+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "target/debug/deadpan-app",
+        "--ui-check",
+        "--output",
+        "/tmp/deadpan-keymap-config-20261001/post-submit-red",
+        "--scenario",
+        "keymap",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "diff_sha256": "335a3f1e16f8eaefc637d311572726d3db63d3da2b30cfa56df0113b2b14cb19",
+      "exit_code": 1,
+      "gate_exit_code": 1,
+      "name": "post-submit-red",
+      "pid": 18919,
+      "seconds": 5.8753730417229235,
+      "source_manifest_after_sha256": "a44eccb56e24d4a8dbb7c9789b77d03ff21d1ddc96cd6659483befb057424560",
+      "source_manifest_sha256": "a44eccb56e24d4a8dbb7c9789b77d03ff21d1ddc96cd6659483befb057424560",
+      "source_unchanged": true,
+      "started": "2026-10-02T04:58:25.627899+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "target/debug/deadpan-app",
+        "--ui-check",
+        "--output",
+        "/tmp/deadpan-keymap-config-20261001/rapid-input-verified",
+        "--scenario",
+        "rapid-input",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "diff_sha256": "5d4362e5549ef05e64738727d7d9a8f9a61949b58a62d12cc018ddec3a247022",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "rapid-input-verified",
+      "pid": 22773,
+      "seconds": 15.910650958307087,
+      "source_manifest_after_sha256": "79f3568cd19f1a3f644deb12fcd2163a03a47a9ee867c523050a5927f2efa5bd",
+      "source_manifest_sha256": "79f3568cd19f1a3f644deb12fcd2163a03a47a9ee867c523050a5927f2efa5bd",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:18:26.306310+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "build",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--release",
+        "--locked"
+      ],
+      "diff_sha256": "5d4362e5549ef05e64738727d7d9a8f9a61949b58a62d12cc018ddec3a247022",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "release-build-verified",
+      "pid": 23585,
+      "seconds": 108.96008120896295,
+      "source_manifest_after_sha256": "79f3568cd19f1a3f644deb12fcd2163a03a47a9ee867c523050a5927f2efa5bd",
+      "source_manifest_sha256": "79f3568cd19f1a3f644deb12fcd2163a03a47a9ee867c523050a5927f2efa5bd",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:24:09.862628+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "build",
+        "-p",
+        "deadpan-app",
+        "--release",
+        "--features",
+        "ui-harness",
+        "--locked"
+      ],
+      "diff_sha256": "a8051d3c581093e932e72cf2d120851eade229abb5df7caaa5e4d6077de502f8",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "release-build",
+      "pid": 21047,
+      "seconds": 109.67009183391929,
+      "source_manifest_after_sha256": "6fbfb9c762f48df0c5943bc20e07078ddb1c405c7ebbd4bccfafae14c995acb6",
+      "source_manifest_sha256": "6fbfb9c762f48df0c5943bc20e07078ddb1c405c7ebbd4bccfafae14c995acb6",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:09:53.596533+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "preview::scope::tests",
+        "--",
+        "--nocapture"
+      ],
+      "diff_sha256": "7dc6a462679f0482c1c42fffceb6d140fa5613ba01cd61a21b997a369163d884",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "scope-layout-02",
+      "pid": 10513,
+      "seconds": 17.36284950003028,
+      "source_manifest_after_sha256": "8be20e1d4b6cafcae21b50064e357d221e6c74fad2015791d992e513846f8283",
+      "source_manifest_sha256": "8be20e1d4b6cafcae21b50064e357d221e6c74fad2015791d992e513846f8283",
+      "source_unchanged": true,
+      "started": "2026-10-02T04:26:06.031637+00:00",
+      "suites": [
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--features",
+        "ui-harness",
+        "--locked",
+        "configured_paths_paint_fully_in_both_compact_heading_controls",
+        "--",
+        "--nocapture"
+      ],
+      "diff_sha256": "a0b44c5e467363c73dc2731c0c87ee865d4b58e68b9dd7556e7cacb6f21fe168",
+      "exit_code": 101,
+      "gate_exit_code": 101,
+      "name": "scope-layout-diagnostic",
+      "pid": 9681,
+      "seconds": 16.978062875103205,
+      "source_manifest_after_sha256": "8b18078a77af9e58909d95416139c2b3fb39760c17ab18cf6bc08eed8f7dca3b",
+      "source_manifest_sha256": "8b18078a77af9e58909d95416139c2b3fb39760c17ab18cf6bc08eed8f7dca3b",
+      "source_unchanged": true,
+      "started": "2026-10-02T04:24:01.835201+00:00",
+      "suites": [
+        {
+          "failed": 1,
+          "ignored": 0,
+          "passed": 0,
+          "status": "FAILED"
+        }
+      ]
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "deadpan-app",
+        "--locked",
+        "shifted_opener_keeps_its_physical_identity_until_release"
+      ],
+      "diff_sha256": "fc267466d4f9fff10b8727681468e7841aaf6e3216a31d21f94807e21e38134d",
+      "exit_code": 101,
+      "gate_exit_code": 101,
+      "name": "shifted-opener-red",
+      "pid": 15308,
+      "seconds": 16.682384917046875,
+      "source_manifest_after_sha256": "a9577429e815feabd4ee4ec22452c8eee6bde5eb98a52671fd0cdcf6bdce0a65",
+      "source_manifest_sha256": "a9577429e815feabd4ee4ec22452c8eee6bde5eb98a52671fd0cdcf6bdce0a65",
+      "source_unchanged": true,
+      "started": "2026-10-02T04:43:03.126939+00:00",
+      "suites": [
+        {
+          "failed": 1,
+          "ignored": 0,
+          "passed": 0,
+          "status": "FAILED"
+        }
+      ]
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "target/debug/deadpan-app",
+        "--ui-check",
+        "--output",
+        "/tmp/deadpan-keymap-config-20261001/trim-verified",
+        "--scenario",
+        "trim",
+        "--kestrel-source",
+        "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+      ],
+      "diff_sha256": "5d4362e5549ef05e64738727d7d9a8f9a61949b58a62d12cc018ddec3a247022",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "trim-verified",
+      "pid": 22775,
+      "seconds": 17.07474000006914,
+      "source_manifest_after_sha256": "79f3568cd19f1a3f644deb12fcd2163a03a47a9ee867c523050a5927f2efa5bd",
+      "source_manifest_sha256": "79f3568cd19f1a3f644deb12fcd2163a03a47a9ee867c523050a5927f2efa5bd",
+      "source_unchanged": true,
+      "started": "2026-10-02T05:18:26.304164+00:00",
+      "suites": []
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "--no-fail-fast"
+      ],
+      "diff_sha256": "b31e3f8277594fe74fc146cf76707dfff9fdc31d6e4d1aedf8708590459c1138",
+      "exit_code": 101,
+      "gate_exit_code": 101,
+      "name": "workspace-tests-01",
+      "pid": 12105,
+      "seconds": 620.8722317079082,
+      "source_manifest_after_sha256": "805bba416bfa8783454e65fbaeb4b1efb1f31a8679e1ede1bfc62cf524f8e7c4",
+      "source_manifest_sha256": "805bba416bfa8783454e65fbaeb4b1efb1f31a8679e1ede1bfc62cf524f8e7c4",
+      "source_unchanged": true,
+      "started": "2026-10-02T04:31:56.589870+00:00",
+      "suites": [
+        {
+          "failed": 1,
+          "ignored": 0,
+          "passed": 576,
+          "status": "FAILED"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 91,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 53,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 12,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 67,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 12,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 71,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 226,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 18,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 21,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 22,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 15,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 113,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 36,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 61,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 15,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 14,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 15,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 17,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 31,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 18,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 68,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 32,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 21,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 66,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 15,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 32,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 32,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 18,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 12,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 20,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 15,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 12,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 19,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 22,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 11,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 11,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 14,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 19,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 13,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 18,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 11,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 28,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 15,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 11,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 17,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 20,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 25,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 15,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 12,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 15,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 26,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 28,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 16,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 22,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 18,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 17,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 12,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 13,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 32,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 18,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 17,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 14,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 69,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 31,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 49,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 13,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 14,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 57,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 17,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 11,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 18,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 11,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 131,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 19,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 23,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 28,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 33,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "status": "ok"
+        }
+      ]
+    },
+    {
+      "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "--no-fail-fast"
+      ],
+      "diff_sha256": "9fb920365a0a9ffa6f8da04ea5cc13e982a674bc4e9a323ac88ac406a54fa867",
+      "exit_code": 0,
+      "gate_exit_code": 0,
+      "name": "workspace-tests-02",
+      "pid": 16119,
+      "seconds": 614.8447527918033,
+      "source_manifest_after_sha256": "f640b47e47465e0d8591c11e101d3d7d3a03289c713e667ea4dcf35d85ab1b38",
+      "source_manifest_sha256": "f640b47e47465e0d8591c11e101d3d7d3a03289c713e667ea4dcf35d85ab1b38",
+      "source_unchanged": true,
+      "started": "2026-10-02T04:47:03.433773+00:00",
+      "suites": [
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 579,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 91,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 53,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 12,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 67,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 12,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 71,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 226,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 18,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 21,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 22,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 15,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 113,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 36,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 61,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 15,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 14,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 15,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 17,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 31,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 18,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 68,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 32,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 21,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 66,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 15,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 32,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 32,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 18,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 12,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 20,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 15,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 12,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 19,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 22,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 11,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 11,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 14,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 19,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 13,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 18,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 11,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 28,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 15,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 11,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 17,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 20,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 25,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 15,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 12,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 15,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 26,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 28,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 16,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 22,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 18,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 17,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 12,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 13,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 32,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 18,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 17,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 14,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 69,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 31,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 49,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 13,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 14,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 57,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 17,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 11,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 18,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 11,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 131,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 19,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 23,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 28,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 33,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "status": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "status": "ok"
+        }
+      ]
+    }
+  ],
+  "replays": [
+    {
+      "failed": true,
+      "metadata": {
+        "binary_sha256": "d9eff8f75a048005d0808d2b7575832519091410b1fc9dc3562de545d19c8ff1",
+        "build_profile": "release",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+        "git_status": "M AGENTS.md\n M crates/deadpan-app/Cargo.toml\n M crates/deadpan-app/src/main.rs\n M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/editor_map.rs\n M crates/deadpan-app/src/navigation/editor_map/tests.rs\n M crates/deadpan-app/src/navigation/shortcut_audit.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/cards.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete/frames.rs\n M crates/deadpan-app/src/preview/edit_range.rs\n M crates/deadpan-app/src/preview/gain.rs\n M crates/deadpan-app/src/preview/harness.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/harness/sound_placement.rs\n M crates/deadpan-app/src/preview/inspector.rs\n M crates/deadpan-app/src/preview/moment.rs\n M crates/deadpan-app/src/preview/playback.rs\n M crates/deadpan-app/src/preview/repeats.rs\n M crates/deadpan-app/src/preview/room_tone.rs\n M crates/deadpan-app/src/preview/scope.rs\n M crates/deadpan-app/src/preview/sound_events.rs\n M crates/deadpan-app/src/preview/splice.rs\n M crates/deadpan-app/src/project/scope.rs\n M crates/deadpan-app/src/project/service/cut_slice.rs\n M crates/deadpan-app/src/project/tests/scope.rs\n M crates/deadpan-app/src/ui_harness.rs\n M docs/KEYMAP.md\n M docs/REQUIREMENTS.md\n M docs/UI_FEEDBACK.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/keymap.rs\n?? crates/deadpan-app/src/keymap_file.rs\n?? crates/deadpan-app/src/keymap_file/\n?? crates/deadpan-app/src/navigation/keymap_config.rs\n?? crates/deadpan-app/src/navigation/keymap_config/\n?? crates/deadpan-app/src/preview/editor_input.rs\n?? crates/deadpan-app/src/preview/harness/keymap.rs\n?? crates/deadpan-app/src/preview/key_labels.rs\n?? docs/qualification/configurable-bindings-2026-10-01.md\n?? tools/media-qualification/evidence/2026-10-01-configurable-bindings/",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 34800.732125,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790917910064,
+        "tracked_diff_sha256_at_run": "34deb4631f0cfb1c2d43dc79ccada56b0677ba52e4c5034caa711b6874bfd9fb",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "name": "full-replay",
+      "scenarios": [
+        {
+          "checks": 1,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "kestrel-shortcuts",
+          "skipped": []
+        },
+        {
+          "checks": 80,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "workspace",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 40,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "editing",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 12,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "camera",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 37,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "menus",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 8,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "delayed-preview",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 46,
+          "failed": true,
+          "failed_checks": 1,
+          "findings": [
+            {
+              "message": "Check failed: Repeat status is fully painted: Working",
+              "severity": "failure"
+            }
+          ],
+          "name": "rapid-input",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 56,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "keymap",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 13,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "keymap-error",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 12,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "playback-feedback",
+          "skipped": [
+            "Playback service updates are explicitly simulated. This scenario qualifies UI feedback and picture routing, not PCM preparation, device timing or listening.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 235,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "large-project",
+          "skipped": [
+            "Large-project fixture: 10,000 root Background/Silence Holds in a real SQLite package. No source media, decoding, PCM or large asset inventory is stressed.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 26,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "edit-latency",
+          "skipped": [
+            "Edit timings measure the real committed revision through offscreen GPU completion. Physical display presentation and acoustic Hold silence are outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 67,
+          "failed": true,
+          "failed_checks": 1,
+          "findings": [
+            {
+              "message": "Check failed: A group-endpoint pause is refused with Backspace guidance and no edit",
+              "severity": "failure"
+            }
+          ],
+          "name": "nested-pause",
+          "skipped": [
+            "This replay enters Sequence groups. Repeat and Retime entry, occurrence isolation, and their pause insertion remain outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 16,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "original-moment",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 819,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "name": "place-slice",
+          "skipped": [
+            "Place slice covers linked Original and edited-slice copying, insertion, replacement and atomic Move in ordinary Sequence scopes. Separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.",
+            "The replay uses genuine source qualification, endpoint decoding, SDR GPU pictures, proposed documents and durable commands. Audio delivery and a concurrent service Undo are explicitly injected. It does not open an audio device or establish acoustic quality.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 308,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "name": "delete-range",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 155,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "name": "marks",
+          "skipped": [
+            "Marks use real project writes, anchor transforms and decoded pictures. Delayed service delivery and IME input are explicitly injected; physical key layouts, native IME and VoiceOver remain separate acceptance.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 18,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "original-playback",
+          "skipped": [
+            "Playback service updates are explicitly injected. This scenario exercises Original controls, clock admission, looping and picture routing, not PCM preparation, device timing or listening.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 38,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "sound-playback",
+          "skipped": [
+            "Sound registration and widgets use production services. Delivery reports are deterministic fakes, not real PCM playback, device timing, or listening evidence.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 216,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "name": "sound-placement",
+          "skipped": [
+            "Sound placement uses real source qualification and durable project commands. This scenario does not start audio output or establish PCM, device timing, or listening evidence.",
+            "Preparing/Playing at 960 pixels uses the real transport controls with simulated delivery reports only. It does not start a device or prepare PCM.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 220,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "name": "room-tone",
+          "skipped": [
+            "Source and committed Sequence audition use injected typed delivery updates, with real descriptor preparation and project writes. This replay does not prepare PCM, open an output device, establish acoustic quality or certify speech absence.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 290,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "name": "gain",
+          "skipped": [
+            "Gain uses real qualified source evidence, writer previews, durable commands and canonical PCM for measured waveforms. Comparison audio delivery and labelled waveform failure replies are injected; this replay does not open an audio device or establish acoustic quality. Canonical Before/Draft mix and scheduling qualification belong to playback tests.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 15,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "retime",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 66,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "name": "slip",
+          "skipped": [
+            "Slip uses the real qualified fixture, project service, decoder and offscreen Metal submissions. Controlled delivery delays retain actual service/decoder replies. Physical display presentation, OS IME delivery, audio audition and the remaining In/Out/Roll Trim operations are outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 49,
+          "failed": true,
+          "failed_checks": 1,
+          "findings": [
+            {
+              "message": "Check failed: Waveform channel and sample labels fit the actual graph paint clip",
+              "severity": "failure"
+            }
+          ],
+          "name": "trim",
+          "skipped": [
+            "Trim uses real qualified source receipts, ordered project-service proposals, endpoint decoding, offscreen Metal pair submission and measured waveform PCM. One real pair or service reply may be held for delivery-order checks. Audition delivery is explicitly injected; no output device, listening, physical display, OS IME or VoiceOver claim follows. Store grouping is fixture setup only; measured edits use production keyboard/pointer input.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 111,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "name": "render",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 0,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "generated-picture",
+          "skipped": [
+            "Requires explicit --scenario generated-picture --project and the real bundle qualification fixture; ordinary replay does not fabricate accepted evidence."
+          ]
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "metadata": {
+        "binary_sha256": "a22cb2eb8effcf9de13fe8f9eadb6ffe3fd2ffa00d4ba99233f1f14e826178f1",
+        "build_profile": "release",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+        "git_status": "M AGENTS.md\n M crates/deadpan-app/Cargo.toml\n M crates/deadpan-app/src/main.rs\n M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/editor_map.rs\n M crates/deadpan-app/src/navigation/editor_map/tests.rs\n M crates/deadpan-app/src/navigation/shortcut_audit.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/cards.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete/frames.rs\n M crates/deadpan-app/src/preview/edit_range.rs\n M crates/deadpan-app/src/preview/gain.rs\n M crates/deadpan-app/src/preview/harness.rs\n M crates/deadpan-app/src/preview/harness/nested_pause.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/harness/sound_placement.rs\n M crates/deadpan-app/src/preview/inspector.rs\n M crates/deadpan-app/src/preview/moment.rs\n M crates/deadpan-app/src/preview/playback.rs\n M crates/deadpan-app/src/preview/repeats.rs\n M crates/deadpan-app/src/preview/room_tone.rs\n M crates/deadpan-app/src/preview/scope.rs\n M crates/deadpan-app/src/preview/sound_events.rs\n M crates/deadpan-app/src/preview/splice.rs\n M crates/deadpan-app/src/preview/trim/waveform.rs\n M crates/deadpan-app/src/project/scope.rs\n M crates/deadpan-app/src/project/service/cut_slice.rs\n M crates/deadpan-app/src/project/tests/scope.rs\n M crates/deadpan-app/src/ui_harness.rs\n M docs/KEYMAP.md\n M docs/REQUIREMENTS.md\n M docs/UI_FEEDBACK.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/keymap.rs\n?? crates/deadpan-app/src/keymap_file.rs\n?? crates/deadpan-app/src/keymap_file/\n?? crates/deadpan-app/src/navigation/keymap_config.rs\n?? crates/deadpan-app/src/navigation/keymap_config/\n?? crates/deadpan-app/src/preview/editor_input.rs\n?? crates/deadpan-app/src/preview/harness/keymap.rs\n?? crates/deadpan-app/src/preview/key_labels.rs\n?? docs/qualification/configurable-bindings-2026-10-01.md\n?? tools/media-qualification/evidence/2026-10-01-configurable-bindings/",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 36029.848041,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790918771686,
+        "tracked_diff_sha256_at_run": "e2544eef7bb55d0d9c7e5ff7421c6f7760dc50b94595e1dd2236962df4838e8a",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "name": "full-replay-verified",
+      "scenarios": [
+        {
+          "checks": 1,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "kestrel-shortcuts",
+          "skipped": []
+        },
+        {
+          "checks": 80,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "workspace",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 40,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "editing",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 12,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "camera",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 37,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "menus",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 8,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "delayed-preview",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 60,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "rapid-input",
+          "skipped": [
+            "Repeat boundary checks delay delivery of real SQLite updates; the writer and production event router remain live. Physical key delivery is not exercised.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 56,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "keymap",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 13,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "keymap-error",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 12,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "playback-feedback",
+          "skipped": [
+            "Playback service updates are explicitly simulated. This scenario qualifies UI feedback and picture routing, not PCM preparation, device timing or listening.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 235,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "large-project",
+          "skipped": [
+            "Large-project fixture: 10,000 root Background/Silence Holds in a real SQLite package. No source media, decoding, PCM or large asset inventory is stressed.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 26,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "edit-latency",
+          "skipped": [
+            "Edit timings measure the real committed revision through offscreen GPU completion. Physical display presentation and acoustic Hold silence are outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 72,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "nested-pause",
+          "skipped": [
+            "This replay enters Sequence groups. Repeat and Retime entry, occurrence isolation, and their pause insertion remain outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 16,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "original-moment",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 819,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "name": "place-slice",
+          "skipped": [
+            "Place slice covers linked Original and edited-slice copying, insertion, replacement and atomic Move in ordinary Sequence scopes. Separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.",
+            "The replay uses genuine source qualification, endpoint decoding, SDR GPU pictures, proposed documents and durable commands. Audio delivery and a concurrent service Undo are explicitly injected. It does not open an audio device or establish acoustic quality.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 308,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "name": "delete-range",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 155,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "name": "marks",
+          "skipped": [
+            "Marks use real project writes, anchor transforms and decoded pictures. Delayed service delivery and IME input are explicitly injected; physical key layouts, native IME and VoiceOver remain separate acceptance.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 18,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "original-playback",
+          "skipped": [
+            "Playback service updates are explicitly injected. This scenario exercises Original controls, clock admission, looping and picture routing, not PCM preparation, device timing or listening.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 38,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "sound-playback",
+          "skipped": [
+            "Sound registration and widgets use production services. Delivery reports are deterministic fakes, not real PCM playback, device timing, or listening evidence.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 216,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "name": "sound-placement",
+          "skipped": [
+            "Sound placement uses real source qualification and durable project commands. This scenario does not start audio output or establish PCM, device timing, or listening evidence.",
+            "Preparing/Playing at 960 pixels uses the real transport controls with simulated delivery reports only. It does not start a device or prepare PCM.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 220,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "name": "room-tone",
+          "skipped": [
+            "Source and committed Sequence audition use injected typed delivery updates, with real descriptor preparation and project writes. This replay does not prepare PCM, open an output device, establish acoustic quality or certify speech absence.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 290,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "name": "gain",
+          "skipped": [
+            "Gain uses real qualified source evidence, writer previews, durable commands and canonical PCM for measured waveforms. Comparison audio delivery and labelled waveform failure replies are injected; this replay does not open an audio device or establish acoustic quality. Canonical Before/Draft mix and scheduling qualification belong to playback tests.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 15,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "retime",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 66,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "name": "slip",
+          "skipped": [
+            "Slip uses the real qualified fixture, project service, decoder and offscreen Metal submissions. Controlled delivery delays retain actual service/decoder replies. Physical display presentation, OS IME delivery, audio audition and the remaining In/Out/Roll Trim operations are outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 164,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "name": "trim",
+          "skipped": [
+            "Trim uses real qualified source receipts, ordered project-service proposals, endpoint decoding, offscreen Metal pair submission and measured waveform PCM. One real pair or service reply may be held for delivery-order checks. Audition delivery is explicitly injected; no output device, listening, physical display, OS IME or VoiceOver claim follows. Store grouping is fixture setup only; measured edits use production keyboard/pointer input.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 111,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "name": "render",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        },
+        {
+          "checks": 0,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "generated-picture",
+          "skipped": [
+            "Requires explicit --scenario generated-picture --project and the real bundle qualification fixture; ordinary replay does not fabricate accepted evidence."
+          ]
+        }
+      ]
+    },
+    {
+      "failed": true,
+      "metadata": {
+        "binary_sha256": "b8af083b1f1e2a938bd7a4c6cc9bc4ca0b2c426ffd728153358785bc09370e89",
+        "build_profile": "debug",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+        "git_status": "M AGENTS.md\n M crates/deadpan-app/Cargo.toml\n M crates/deadpan-app/src/main.rs\n M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/editor_map.rs\n M crates/deadpan-app/src/navigation/editor_map/tests.rs\n M crates/deadpan-app/src/navigation/shortcut_audit.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/cards.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete/frames.rs\n M crates/deadpan-app/src/preview/edit_range.rs\n M crates/deadpan-app/src/preview/gain.rs\n M crates/deadpan-app/src/preview/harness.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/harness/sound_placement.rs\n M crates/deadpan-app/src/preview/inspector.rs\n M crates/deadpan-app/src/preview/moment.rs\n M crates/deadpan-app/src/preview/playback.rs\n M crates/deadpan-app/src/preview/repeats.rs\n M crates/deadpan-app/src/preview/room_tone.rs\n M crates/deadpan-app/src/preview/scope.rs\n M crates/deadpan-app/src/preview/sound_events.rs\n M crates/deadpan-app/src/preview/splice.rs\n M crates/deadpan-app/src/project/scope.rs\n M crates/deadpan-app/src/project/service/cut_slice.rs\n M crates/deadpan-app/src/project/tests/scope.rs\n M crates/deadpan-app/src/ui_harness.rs\n M docs/KEYMAP.md\n M docs/REQUIREMENTS.md\n M docs/UI_FEEDBACK.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/keymap.rs\n?? crates/deadpan-app/src/keymap_file.rs\n?? crates/deadpan-app/src/keymap_file/\n?? crates/deadpan-app/src/navigation/keymap_config.rs\n?? crates/deadpan-app/src/navigation/keymap_config/\n?? crates/deadpan-app/src/preview/editor_input.rs\n?? crates/deadpan-app/src/preview/harness/keymap.rs\n?? crates/deadpan-app/src/preview/key_labels.rs\n?? docs/qualification/configurable-bindings-2026-10-01.md\n?? tools/media-qualification/evidence/2026-10-01-configurable-bindings/",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 5660.464667,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790917495663,
+        "tracked_diff_sha256_at_run": "e79eed1a255b4d4b8b973033a76418b85cb365466aae7d1726ac15796f42859f",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "name": "header-red",
+      "scenarios": [
+        {
+          "checks": 1,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "kestrel-shortcuts",
+          "skipped": []
+        },
+        {
+          "checks": 46,
+          "failed": true,
+          "failed_checks": 1,
+          "findings": [
+            {
+              "message": "Check failed: Short custom keys keep the header compact after repeated field transitions",
+              "severity": "failure"
+            }
+          ],
+          "name": "keymap",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ]
+    },
+    {
+      "failed": true,
+      "metadata": {
+        "binary_sha256": "5bb5a1604c311ab9ef75380a7cbc618187ff9174bd455a4285d9aa2600fc7da2",
+        "build_profile": "debug",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+        "git_status": "M crates/deadpan-app/Cargo.toml\n M crates/deadpan-app/src/main.rs\n M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/editor_map.rs\n M crates/deadpan-app/src/navigation/editor_map/tests.rs\n M crates/deadpan-app/src/navigation/shortcut_audit.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/cards.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete/frames.rs\n M crates/deadpan-app/src/preview/edit_range.rs\n M crates/deadpan-app/src/preview/gain.rs\n M crates/deadpan-app/src/preview/harness.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/harness/sound_placement.rs\n M crates/deadpan-app/src/preview/inspector.rs\n M crates/deadpan-app/src/preview/moment.rs\n M crates/deadpan-app/src/preview/playback.rs\n M crates/deadpan-app/src/preview/repeats.rs\n M crates/deadpan-app/src/preview/room_tone.rs\n M crates/deadpan-app/src/preview/scope.rs\n M crates/deadpan-app/src/preview/sound_events.rs\n M crates/deadpan-app/src/preview/splice.rs\n M crates/deadpan-app/src/project/scope.rs\n M crates/deadpan-app/src/project/service/cut_slice.rs\n M crates/deadpan-app/src/project/tests/scope.rs\n M crates/deadpan-app/src/ui_harness.rs\n M docs/KEYMAP.md\n?? crates/deadpan-app/src/keymap.rs\n?? crates/deadpan-app/src/keymap_file.rs\n?? crates/deadpan-app/src/keymap_file/\n?? crates/deadpan-app/src/navigation/keymap_config.rs\n?? crates/deadpan-app/src/navigation/keymap_config/\n?? crates/deadpan-app/src/preview/editor_input.rs\n?? crates/deadpan-app/src/preview/harness/keymap.rs\n?? crates/deadpan-app/src/preview/key_labels.rs",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 2317.196125,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790915256796,
+        "tracked_diff_sha256_at_run": "e6b29662099d9c1fdf6f038d0975bb3670ed9650c4263ab5318881feee0b71e8",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "name": "keymap-error-replay-01",
+      "scenarios": [
+        {
+          "checks": 1,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "kestrel-shortcuts",
+          "skipped": []
+        },
+        {
+          "checks": 8,
+          "failed": true,
+          "failed_checks": 1,
+          "findings": [
+            {
+              "message": "Check failed: Configured key guidance is actually painted within its clip and viewport",
+              "severity": "failure"
+            }
+          ],
+          "name": "keymap-error",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "metadata": {
+        "binary_sha256": "e472fe4ff465d89c4e382cbeadd5804baf9aebe0026b8930139d3530ad62078f",
+        "build_profile": "debug",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+        "git_status": "M AGENTS.md\n M crates/deadpan-app/Cargo.toml\n M crates/deadpan-app/src/main.rs\n M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/editor_map.rs\n M crates/deadpan-app/src/navigation/editor_map/tests.rs\n M crates/deadpan-app/src/navigation/shortcut_audit.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/cards.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete/frames.rs\n M crates/deadpan-app/src/preview/edit_range.rs\n M crates/deadpan-app/src/preview/gain.rs\n M crates/deadpan-app/src/preview/harness.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/harness/sound_placement.rs\n M crates/deadpan-app/src/preview/inspector.rs\n M crates/deadpan-app/src/preview/moment.rs\n M crates/deadpan-app/src/preview/playback.rs\n M crates/deadpan-app/src/preview/repeats.rs\n M crates/deadpan-app/src/preview/room_tone.rs\n M crates/deadpan-app/src/preview/scope.rs\n M crates/deadpan-app/src/preview/sound_events.rs\n M crates/deadpan-app/src/preview/splice.rs\n M crates/deadpan-app/src/project/scope.rs\n M crates/deadpan-app/src/project/service/cut_slice.rs\n M crates/deadpan-app/src/project/tests/scope.rs\n M crates/deadpan-app/src/ui_harness.rs\n M docs/KEYMAP.md\n M docs/REQUIREMENTS.md\n M docs/UI_FEEDBACK.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/keymap.rs\n?? crates/deadpan-app/src/keymap_file.rs\n?? crates/deadpan-app/src/keymap_file/\n?? crates/deadpan-app/src/navigation/keymap_config.rs\n?? crates/deadpan-app/src/navigation/keymap_config/\n?? crates/deadpan-app/src/preview/editor_input.rs\n?? crates/deadpan-app/src/preview/harness/keymap.rs\n?? crates/deadpan-app/src/preview/key_labels.rs",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 3444.102542,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790916409994,
+        "tracked_diff_sha256_at_run": "5dfb610ad101642327f35179ded6ab6ced42a46d03332c397c32cbcd7a4b03df",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "name": "keymap-error-replay-02",
+      "scenarios": [
+        {
+          "checks": 1,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "kestrel-shortcuts",
+          "skipped": []
+        },
+        {
+          "checks": 13,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "keymap-error",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "metadata": {
+        "binary_sha256": "1f9bcfcff0d21a08edd425ba3117aff8575e09f9d8ed247c85bcec2dad771213",
+        "build_profile": "debug",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+        "git_status": "M AGENTS.md\n M crates/deadpan-app/Cargo.toml\n M crates/deadpan-app/src/main.rs\n M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/editor_map.rs\n M crates/deadpan-app/src/navigation/editor_map/tests.rs\n M crates/deadpan-app/src/navigation/shortcut_audit.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/cards.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete/frames.rs\n M crates/deadpan-app/src/preview/edit_range.rs\n M crates/deadpan-app/src/preview/gain.rs\n M crates/deadpan-app/src/preview/harness.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/harness/sound_placement.rs\n M crates/deadpan-app/src/preview/inspector.rs\n M crates/deadpan-app/src/preview/moment.rs\n M crates/deadpan-app/src/preview/playback.rs\n M crates/deadpan-app/src/preview/repeats.rs\n M crates/deadpan-app/src/preview/room_tone.rs\n M crates/deadpan-app/src/preview/scope.rs\n M crates/deadpan-app/src/preview/sound_events.rs\n M crates/deadpan-app/src/preview/splice.rs\n M crates/deadpan-app/src/project/scope.rs\n M crates/deadpan-app/src/project/service/cut_slice.rs\n M crates/deadpan-app/src/project/tests/scope.rs\n M crates/deadpan-app/src/ui_harness.rs\n M docs/KEYMAP.md\n M docs/REQUIREMENTS.md\n M docs/UI_FEEDBACK.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/keymap.rs\n?? crates/deadpan-app/src/keymap_file.rs\n?? crates/deadpan-app/src/keymap_file/\n?? crates/deadpan-app/src/navigation/keymap_config.rs\n?? crates/deadpan-app/src/navigation/keymap_config/\n?? crates/deadpan-app/src/preview/editor_input.rs\n?? crates/deadpan-app/src/preview/harness/keymap.rs\n?? crates/deadpan-app/src/preview/key_labels.rs\n?? docs/qualification/configurable-bindings-2026-10-01.md\n?? tools/media-qualification/evidence/2026-10-01-configurable-bindings/",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 3383.386084,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790917307805,
+        "tracked_diff_sha256_at_run": "e79eed1a255b4d4b8b973033a76418b85cb365466aae7d1726ac15796f42859f",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "name": "keymap-error-replay-final",
+      "scenarios": [
+        {
+          "checks": 1,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "kestrel-shortcuts",
+          "skipped": []
+        },
+        {
+          "checks": 13,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "keymap-error",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "metadata": {
+        "binary_sha256": "5bb5a1604c311ab9ef75380a7cbc618187ff9174bd455a4285d9aa2600fc7da2",
+        "build_profile": "debug",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+        "git_status": "M crates/deadpan-app/Cargo.toml\n M crates/deadpan-app/src/main.rs\n M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/editor_map.rs\n M crates/deadpan-app/src/navigation/editor_map/tests.rs\n M crates/deadpan-app/src/navigation/shortcut_audit.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/cards.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete/frames.rs\n M crates/deadpan-app/src/preview/edit_range.rs\n M crates/deadpan-app/src/preview/gain.rs\n M crates/deadpan-app/src/preview/harness.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/harness/sound_placement.rs\n M crates/deadpan-app/src/preview/inspector.rs\n M crates/deadpan-app/src/preview/moment.rs\n M crates/deadpan-app/src/preview/playback.rs\n M crates/deadpan-app/src/preview/repeats.rs\n M crates/deadpan-app/src/preview/room_tone.rs\n M crates/deadpan-app/src/preview/scope.rs\n M crates/deadpan-app/src/preview/sound_events.rs\n M crates/deadpan-app/src/preview/splice.rs\n M crates/deadpan-app/src/project/scope.rs\n M crates/deadpan-app/src/project/service/cut_slice.rs\n M crates/deadpan-app/src/project/tests/scope.rs\n M crates/deadpan-app/src/ui_harness.rs\n M docs/KEYMAP.md\n?? crates/deadpan-app/src/keymap.rs\n?? crates/deadpan-app/src/keymap_file.rs\n?? crates/deadpan-app/src/keymap_file/\n?? crates/deadpan-app/src/navigation/keymap_config.rs\n?? crates/deadpan-app/src/navigation/keymap_config/\n?? crates/deadpan-app/src/preview/editor_input.rs\n?? crates/deadpan-app/src/preview/harness/keymap.rs\n?? crates/deadpan-app/src/preview/key_labels.rs",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 5839.180458,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790915209443,
+        "tracked_diff_sha256_at_run": "e6b29662099d9c1fdf6f038d0975bb3670ed9650c4263ab5318881feee0b71e8",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "name": "keymap-replay-01",
+      "scenarios": [
+        {
+          "checks": 1,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "kestrel-shortcuts",
+          "skipped": []
+        },
+        {
+          "checks": 44,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "keymap",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "metadata": {
+        "binary_sha256": "e472fe4ff465d89c4e382cbeadd5804baf9aebe0026b8930139d3530ad62078f",
+        "build_profile": "debug",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+        "git_status": "M AGENTS.md\n M crates/deadpan-app/Cargo.toml\n M crates/deadpan-app/src/main.rs\n M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/editor_map.rs\n M crates/deadpan-app/src/navigation/editor_map/tests.rs\n M crates/deadpan-app/src/navigation/shortcut_audit.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/cards.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete/frames.rs\n M crates/deadpan-app/src/preview/edit_range.rs\n M crates/deadpan-app/src/preview/gain.rs\n M crates/deadpan-app/src/preview/harness.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/harness/sound_placement.rs\n M crates/deadpan-app/src/preview/inspector.rs\n M crates/deadpan-app/src/preview/moment.rs\n M crates/deadpan-app/src/preview/playback.rs\n M crates/deadpan-app/src/preview/repeats.rs\n M crates/deadpan-app/src/preview/room_tone.rs\n M crates/deadpan-app/src/preview/scope.rs\n M crates/deadpan-app/src/preview/sound_events.rs\n M crates/deadpan-app/src/preview/splice.rs\n M crates/deadpan-app/src/project/scope.rs\n M crates/deadpan-app/src/project/service/cut_slice.rs\n M crates/deadpan-app/src/project/tests/scope.rs\n M crates/deadpan-app/src/ui_harness.rs\n M docs/KEYMAP.md\n M docs/REQUIREMENTS.md\n M docs/UI_FEEDBACK.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/keymap.rs\n?? crates/deadpan-app/src/keymap_file.rs\n?? crates/deadpan-app/src/keymap_file/\n?? crates/deadpan-app/src/navigation/keymap_config.rs\n?? crates/deadpan-app/src/navigation/keymap_config/\n?? crates/deadpan-app/src/preview/editor_input.rs\n?? crates/deadpan-app/src/preview/harness/keymap.rs\n?? crates/deadpan-app/src/preview/key_labels.rs",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 6468.739167,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790916385736,
+        "tracked_diff_sha256_at_run": "dd580aa81352581979204d4f551798232ee56b4b441659ec3d2095c14ea6aa55",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "name": "keymap-replay-02",
+      "scenarios": [
+        {
+          "checks": 1,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "kestrel-shortcuts",
+          "skipped": []
+        },
+        {
+          "checks": 52,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "keymap",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "metadata": {
+        "binary_sha256": "1f9bcfcff0d21a08edd425ba3117aff8575e09f9d8ed247c85bcec2dad771213",
+        "build_profile": "debug",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+        "git_status": "M AGENTS.md\n M crates/deadpan-app/Cargo.toml\n M crates/deadpan-app/src/main.rs\n M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/editor_map.rs\n M crates/deadpan-app/src/navigation/editor_map/tests.rs\n M crates/deadpan-app/src/navigation/shortcut_audit.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/cards.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete/frames.rs\n M crates/deadpan-app/src/preview/edit_range.rs\n M crates/deadpan-app/src/preview/gain.rs\n M crates/deadpan-app/src/preview/harness.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/harness/sound_placement.rs\n M crates/deadpan-app/src/preview/inspector.rs\n M crates/deadpan-app/src/preview/moment.rs\n M crates/deadpan-app/src/preview/playback.rs\n M crates/deadpan-app/src/preview/repeats.rs\n M crates/deadpan-app/src/preview/room_tone.rs\n M crates/deadpan-app/src/preview/scope.rs\n M crates/deadpan-app/src/preview/sound_events.rs\n M crates/deadpan-app/src/preview/splice.rs\n M crates/deadpan-app/src/project/scope.rs\n M crates/deadpan-app/src/project/service/cut_slice.rs\n M crates/deadpan-app/src/project/tests/scope.rs\n M crates/deadpan-app/src/ui_harness.rs\n M docs/KEYMAP.md\n M docs/REQUIREMENTS.md\n M docs/UI_FEEDBACK.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/keymap.rs\n?? crates/deadpan-app/src/keymap_file.rs\n?? crates/deadpan-app/src/keymap_file/\n?? crates/deadpan-app/src/navigation/keymap_config.rs\n?? crates/deadpan-app/src/navigation/keymap_config/\n?? crates/deadpan-app/src/preview/editor_input.rs\n?? crates/deadpan-app/src/preview/harness/keymap.rs\n?? crates/deadpan-app/src/preview/key_labels.rs\n?? docs/qualification/configurable-bindings-2026-10-01.md\n?? tools/media-qualification/evidence/2026-10-01-configurable-bindings/",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 6875.738083,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790917283642,
+        "tracked_diff_sha256_at_run": "e79eed1a255b4d4b8b973033a76418b85cb365466aae7d1726ac15796f42859f",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "name": "keymap-replay-final",
+      "scenarios": [
+        {
+          "checks": 1,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "kestrel-shortcuts",
+          "skipped": []
+        },
+        {
+          "checks": 55,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "keymap",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "metadata": {
+        "binary_sha256": "664c2c60154724f3d5351fe9b26d25049da7279d2020a50953e8aad7e50c9a26",
+        "build_profile": "debug",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+        "git_status": "M AGENTS.md\n M crates/deadpan-app/Cargo.toml\n M crates/deadpan-app/src/main.rs\n M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/editor_map.rs\n M crates/deadpan-app/src/navigation/editor_map/tests.rs\n M crates/deadpan-app/src/navigation/shortcut_audit.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/cards.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete/frames.rs\n M crates/deadpan-app/src/preview/edit_range.rs\n M crates/deadpan-app/src/preview/gain.rs\n M crates/deadpan-app/src/preview/harness.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/harness/sound_placement.rs\n M crates/deadpan-app/src/preview/inspector.rs\n M crates/deadpan-app/src/preview/moment.rs\n M crates/deadpan-app/src/preview/playback.rs\n M crates/deadpan-app/src/preview/repeats.rs\n M crates/deadpan-app/src/preview/room_tone.rs\n M crates/deadpan-app/src/preview/scope.rs\n M crates/deadpan-app/src/preview/sound_events.rs\n M crates/deadpan-app/src/preview/splice.rs\n M crates/deadpan-app/src/project/scope.rs\n M crates/deadpan-app/src/project/service/cut_slice.rs\n M crates/deadpan-app/src/project/tests/scope.rs\n M crates/deadpan-app/src/ui_harness.rs\n M docs/KEYMAP.md\n M docs/REQUIREMENTS.md\n M docs/UI_FEEDBACK.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/keymap.rs\n?? crates/deadpan-app/src/keymap_file.rs\n?? crates/deadpan-app/src/keymap_file/\n?? crates/deadpan-app/src/navigation/keymap_config.rs\n?? crates/deadpan-app/src/navigation/keymap_config/\n?? crates/deadpan-app/src/preview/editor_input.rs\n?? crates/deadpan-app/src/preview/harness/keymap.rs\n?? crates/deadpan-app/src/preview/key_labels.rs\n?? docs/qualification/configurable-bindings-2026-10-01.md\n?? tools/media-qualification/evidence/2026-10-01-configurable-bindings/",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 6964.8573750000005,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790917706609,
+        "tracked_diff_sha256_at_run": "c9b3ce6e1b6a230bb093d4022dd4bae98f5d76038619d0bdb2c9d5efa35d1826",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "name": "keymap-replay-verified",
+      "scenarios": [
+        {
+          "checks": 1,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "kestrel-shortcuts",
+          "skipped": []
+        },
+        {
+          "checks": 56,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "keymap",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "metadata": {
+        "binary_sha256": "96dd2386a5f83b2dc73386b8f227baeba1261378514ea869396a88c62cc0a3c8",
+        "build_profile": "debug",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+        "git_status": "M AGENTS.md\n M crates/deadpan-app/Cargo.toml\n M crates/deadpan-app/src/main.rs\n M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/editor_map.rs\n M crates/deadpan-app/src/navigation/editor_map/tests.rs\n M crates/deadpan-app/src/navigation/shortcut_audit.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/cards.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete/frames.rs\n M crates/deadpan-app/src/preview/edit_range.rs\n M crates/deadpan-app/src/preview/gain.rs\n M crates/deadpan-app/src/preview/harness.rs\n M crates/deadpan-app/src/preview/harness/nested_pause.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/harness/sound_placement.rs\n M crates/deadpan-app/src/preview/inspector.rs\n M crates/deadpan-app/src/preview/moment.rs\n M crates/deadpan-app/src/preview/playback.rs\n M crates/deadpan-app/src/preview/repeats.rs\n M crates/deadpan-app/src/preview/room_tone.rs\n M crates/deadpan-app/src/preview/scope.rs\n M crates/deadpan-app/src/preview/sound_events.rs\n M crates/deadpan-app/src/preview/splice.rs\n M crates/deadpan-app/src/preview/trim/waveform.rs\n M crates/deadpan-app/src/project/scope.rs\n M crates/deadpan-app/src/project/service/cut_slice.rs\n M crates/deadpan-app/src/project/tests/scope.rs\n M crates/deadpan-app/src/ui_harness.rs\n M docs/KEYMAP.md\n M docs/REQUIREMENTS.md\n M docs/UI_FEEDBACK.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/keymap.rs\n?? crates/deadpan-app/src/keymap_file.rs\n?? crates/deadpan-app/src/keymap_file/\n?? crates/deadpan-app/src/navigation/keymap_config.rs\n?? crates/deadpan-app/src/navigation/keymap_config/\n?? crates/deadpan-app/src/preview/editor_input.rs\n?? crates/deadpan-app/src/preview/harness/keymap.rs\n?? crates/deadpan-app/src/preview/key_labels.rs\n?? docs/qualification/configurable-bindings-2026-10-01.md\n?? tools/media-qualification/evidence/2026-10-01-configurable-bindings/",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 11385.61275,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790918306508,
+        "tracked_diff_sha256_at_run": "bb0499de9ccfe8d692cd5c2a258c1534e1885383ed21480668eeeb2b1c759157",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "name": "nested-pause-verified",
+      "scenarios": [
+        {
+          "checks": 1,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "kestrel-shortcuts",
+          "skipped": []
+        },
+        {
+          "checks": 72,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "nested-pause",
+          "skipped": [
+            "This replay enters Sequence groups. Repeat and Retime entry, occurrence isolation, and their pause insertion remain outside this scenario.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ]
+    },
+    {
+      "failed": true,
+      "metadata": {
+        "binary_sha256": "797a72eb55cecb539f42c40fee167c20c5654b11e7e2d4643798e53b12c46753",
+        "build_profile": "debug",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+        "git_status": "M AGENTS.md\n M crates/deadpan-app/Cargo.toml\n M crates/deadpan-app/src/main.rs\n M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/editor_map.rs\n M crates/deadpan-app/src/navigation/editor_map/tests.rs\n M crates/deadpan-app/src/navigation/shortcut_audit.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/cards.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete/frames.rs\n M crates/deadpan-app/src/preview/edit_range.rs\n M crates/deadpan-app/src/preview/gain.rs\n M crates/deadpan-app/src/preview/harness.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/harness/sound_placement.rs\n M crates/deadpan-app/src/preview/inspector.rs\n M crates/deadpan-app/src/preview/moment.rs\n M crates/deadpan-app/src/preview/playback.rs\n M crates/deadpan-app/src/preview/repeats.rs\n M crates/deadpan-app/src/preview/room_tone.rs\n M crates/deadpan-app/src/preview/scope.rs\n M crates/deadpan-app/src/preview/sound_events.rs\n M crates/deadpan-app/src/preview/splice.rs\n M crates/deadpan-app/src/project/scope.rs\n M crates/deadpan-app/src/project/service/cut_slice.rs\n M crates/deadpan-app/src/project/tests/scope.rs\n M crates/deadpan-app/src/ui_harness.rs\n M docs/KEYMAP.md\n M docs/REQUIREMENTS.md\n M docs/UI_FEEDBACK.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/keymap.rs\n?? crates/deadpan-app/src/keymap_file.rs\n?? crates/deadpan-app/src/keymap_file/\n?? crates/deadpan-app/src/navigation/keymap_config.rs\n?? crates/deadpan-app/src/navigation/keymap_config/\n?? crates/deadpan-app/src/preview/editor_input.rs\n?? crates/deadpan-app/src/preview/harness/keymap.rs\n?? crates/deadpan-app/src/preview/key_labels.rs",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 4812.216625,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790917105793,
+        "tracked_diff_sha256_at_run": "564645d3232b258cfcd7167bb07a519c7cd7beab023fd6546629eb90796e0418",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "name": "post-submit-red",
+      "scenarios": [
+        {
+          "checks": 1,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "kestrel-shortcuts",
+          "skipped": []
+        },
+        {
+          "checks": 37,
+          "failed": true,
+          "failed_checks": 1,
+          "findings": [
+            {
+              "message": "Check failed: The held opener cannot become the editor Semicolon Help binding after submit",
+              "severity": "failure"
+            }
+          ],
+          "name": "keymap",
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "metadata": {
+        "binary_sha256": "96dd2386a5f83b2dc73386b8f227baeba1261378514ea869396a88c62cc0a3c8",
+        "build_profile": "debug",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+        "git_status": "M AGENTS.md\n M crates/deadpan-app/Cargo.toml\n M crates/deadpan-app/src/main.rs\n M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/editor_map.rs\n M crates/deadpan-app/src/navigation/editor_map/tests.rs\n M crates/deadpan-app/src/navigation/shortcut_audit.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/cards.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete/frames.rs\n M crates/deadpan-app/src/preview/edit_range.rs\n M crates/deadpan-app/src/preview/gain.rs\n M crates/deadpan-app/src/preview/harness.rs\n M crates/deadpan-app/src/preview/harness/nested_pause.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/harness/sound_placement.rs\n M crates/deadpan-app/src/preview/inspector.rs\n M crates/deadpan-app/src/preview/moment.rs\n M crates/deadpan-app/src/preview/playback.rs\n M crates/deadpan-app/src/preview/repeats.rs\n M crates/deadpan-app/src/preview/room_tone.rs\n M crates/deadpan-app/src/preview/scope.rs\n M crates/deadpan-app/src/preview/sound_events.rs\n M crates/deadpan-app/src/preview/splice.rs\n M crates/deadpan-app/src/preview/trim/waveform.rs\n M crates/deadpan-app/src/project/scope.rs\n M crates/deadpan-app/src/project/service/cut_slice.rs\n M crates/deadpan-app/src/project/tests/scope.rs\n M crates/deadpan-app/src/ui_harness.rs\n M docs/KEYMAP.md\n M docs/REQUIREMENTS.md\n M docs/UI_FEEDBACK.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/keymap.rs\n?? crates/deadpan-app/src/keymap_file.rs\n?? crates/deadpan-app/src/keymap_file/\n?? crates/deadpan-app/src/navigation/keymap_config.rs\n?? crates/deadpan-app/src/navigation/keymap_config/\n?? crates/deadpan-app/src/preview/editor_input.rs\n?? crates/deadpan-app/src/preview/harness/keymap.rs\n?? crates/deadpan-app/src/preview/key_labels.rs\n?? docs/qualification/configurable-bindings-2026-10-01.md\n?? tools/media-qualification/evidence/2026-10-01-configurable-bindings/",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 14408.420709,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790918306508,
+        "tracked_diff_sha256_at_run": "bb0499de9ccfe8d692cd5c2a258c1534e1885383ed21480668eeeb2b1c759157",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "name": "rapid-input-verified",
+      "scenarios": [
+        {
+          "checks": 1,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "kestrel-shortcuts",
+          "skipped": []
+        },
+        {
+          "checks": 60,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "rapid-input",
+          "skipped": [
+            "Repeat boundary checks delay delivery of real SQLite updates; the writer and production event router remain live. Physical key delivery is not exercised.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ]
+    },
+    {
+      "failed": false,
+      "metadata": {
+        "binary_sha256": "96dd2386a5f83b2dc73386b8f227baeba1261378514ea869396a88c62cc0a3c8",
+        "build_profile": "debug",
+        "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+        "cargo_lock_sha256_at_run": "20fa405e01ff2846901034071a1171ae92a3c02b7703da8a2d2df9530a3076c4",
+        "fixture": "cfr-bframes.mp4",
+        "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+        "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+        "git_revision": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+        "git_status": "M AGENTS.md\n M crates/deadpan-app/Cargo.toml\n M crates/deadpan-app/src/main.rs\n M crates/deadpan-app/src/navigation.rs\n M crates/deadpan-app/src/navigation/editor_map.rs\n M crates/deadpan-app/src/navigation/editor_map/tests.rs\n M crates/deadpan-app/src/navigation/shortcut_audit.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/cards.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/delete/frames.rs\n M crates/deadpan-app/src/preview/edit_range.rs\n M crates/deadpan-app/src/preview/gain.rs\n M crates/deadpan-app/src/preview/harness.rs\n M crates/deadpan-app/src/preview/harness/nested_pause.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/harness/sound_placement.rs\n M crates/deadpan-app/src/preview/inspector.rs\n M crates/deadpan-app/src/preview/moment.rs\n M crates/deadpan-app/src/preview/playback.rs\n M crates/deadpan-app/src/preview/repeats.rs\n M crates/deadpan-app/src/preview/room_tone.rs\n M crates/deadpan-app/src/preview/scope.rs\n M crates/deadpan-app/src/preview/sound_events.rs\n M crates/deadpan-app/src/preview/splice.rs\n M crates/deadpan-app/src/preview/trim/waveform.rs\n M crates/deadpan-app/src/project/scope.rs\n M crates/deadpan-app/src/project/service/cut_slice.rs\n M crates/deadpan-app/src/project/tests/scope.rs\n M crates/deadpan-app/src/ui_harness.rs\n M docs/KEYMAP.md\n M docs/REQUIREMENTS.md\n M docs/UI_FEEDBACK.md\n M docs/spec/AGENT_HANDOFF.md\n?? crates/deadpan-app/src/keymap.rs\n?? crates/deadpan-app/src/keymap_file.rs\n?? crates/deadpan-app/src/keymap_file/\n?? crates/deadpan-app/src/navigation/keymap_config.rs\n?? crates/deadpan-app/src/navigation/keymap_config/\n?? crates/deadpan-app/src/preview/editor_input.rs\n?? crates/deadpan-app/src/preview/harness/keymap.rs\n?? crates/deadpan-app/src/preview/key_labels.rs\n?? docs/qualification/configurable-bindings-2026-10-01.md\n?? tools/media-qualification/evidence/2026-10-01-configurable-bindings/",
+        "gpu_readback_in_timing_run": false,
+        "hardware": "Apple M5 Max",
+        "os": "26.5.2",
+        "physical_display_measured": false,
+        "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+        "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+        "replay_hz": 60,
+        "replay_wall_ms": 15646.774542,
+        "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+        "started_unix_ms": 1790918306508,
+        "tracked_diff_sha256_at_run": "bb0499de9ccfe8d692cd5c2a258c1534e1885383ed21480668eeeb2b1c759157",
+        "viewport_points": [
+          1280,
+          820
+        ],
+        "wait_strategy": "egui_repaint_callback_v1"
+      },
+      "name": "trim-verified",
+      "scenarios": [
+        {
+          "checks": 1,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [],
+          "name": "kestrel-shortcuts",
+          "skipped": []
+        },
+        {
+          "checks": 164,
+          "failed": false,
+          "failed_checks": 0,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "name": "trim",
+          "skipped": [
+            "Trim uses real qualified source receipts, ordered project-service proposals, endpoint decoding, offscreen Metal pair submission and measured waveform PCM. One real pair or service reply may be held for delivery-order checks. Audition delivery is explicitly injected; no output device, listening, physical display, OS IME or VoiceOver claim follows. Store grouping is fixture setup only; measured edits use production keyboard/pointer input.",
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ]
+    }
+  ]
+}

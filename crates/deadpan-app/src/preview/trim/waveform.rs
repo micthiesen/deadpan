@@ -380,7 +380,9 @@ impl Display {
                 ),
             ] {
                 painter.text(
-                    egui::pos2(x, rect.bottom()),
+                    // Font placement snaps fractionally; keep the full glyph
+                    // inside the graph clip at either display scale.
+                    egui::pos2(x, rect.bottom() - 1.0),
                     align,
                     format!("{} samples", sample.0),
                     font.clone(),

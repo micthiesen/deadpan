@@ -1,0 +1,24 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "--locked",
+    "configured_paths_paint_fully_in_both_compact_heading_controls",
+    "--",
+    "--nocapture"
+  ],
+  "started": "2026-10-02T04:24:01.835201+00:00",
+  "base_commit": "df5e16d47f214c775cfa0df9e41ecec1fafeeee2",
+  "diff_sha256": "a0b44c5e467363c73dc2731c0c87ee865d4b58e68b9dd7556e7cacb6f21fe168",
+  "source_manifest_sha256": "8b18078a77af9e58909d95416139c2b3fb39760c17ab18cf6bc08eed8f7dca3b",
+  "pid": 9681,
+  "exit_code": 101,
+  "seconds": 16.978062875103205,
+  "source_manifest_after_sha256": "8b18078a77af9e58909d95416139c2b3fb39760c17ab18cf6bc08eed8f7dca3b",
+  "source_unchanged": true,
+  "gate_exit_code": 101
+}

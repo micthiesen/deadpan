@@ -318,10 +318,10 @@ impl DeadpanApp {
                     self.edit_range.active = false;
                 }
                 self.error = None;
-                self.message = Some(
-                    "Edit slice copied. :splice previews placement; p/P pastes or replaces an Edit selection."
-                        .into(),
-                );
+                self.message = Some(format!(
+                    "Edit slice copied. :splice previews placement; {} pastes or replaces an Edit selection.",
+                    self.editor_pair(EditorKey::PasteAfter, EditorKey::PasteBefore, "/")
+                ));
             }
             Err(error) => self.error = Some(error),
         }
@@ -343,10 +343,12 @@ impl DeadpanApp {
                 }) {
                     let range = receipt.copied.slice().range();
                     self.message = Some(format!(
-                        "Cut saved and copied: Edit [{}..{}) · {} f. p/P pastes; :splice previews placement. Undo with u.",
+                        "Cut saved and copied: Edit [{}..{}) · {} f. {} pastes; :splice previews placement. Undo with {}.",
                         range.start().0,
                         range.end().0,
                         range.duration().frames(),
+                        self.editor_pair(EditorKey::PasteAfter, EditorKey::PasteBefore, "/"),
+                        self.editor_key(EditorKey::Undo),
                     ));
                 }
             }

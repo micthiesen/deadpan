@@ -250,8 +250,7 @@ impl SequenceScope {
             .map_err(|error| error.to_string())?;
         if !sequence_descendant_or_self(&workspace.document, view.owner, &target.parent) {
             return Err(
-                "This is a Sequence edge; press Backspace to leave this scope before inserting a pause"
-                    .into(),
+                "This is a Sequence edge; leave this scope before inserting a pause".into(),
             );
         }
         Ok(())

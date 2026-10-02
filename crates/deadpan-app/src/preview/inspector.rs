@@ -116,7 +116,7 @@ impl Inspector {
                     "Sequence",
                     "≡",
                     None,
-                    "Enter opens this group's child beats. Backspace returns without changing the edit.",
+                    "Open this group's child beats, or return to its parent without changing the edit.",
                 )
             }
             NodeKind::Retime {

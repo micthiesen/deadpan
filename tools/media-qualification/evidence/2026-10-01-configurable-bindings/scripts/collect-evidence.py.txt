@@ -1,0 +1,90 @@
+import gzip
+import hashlib
+import json
+import re
+import shutil
+from pathlib import Path
+
+scratch = Path('/tmp/deadpan-keymap-config-20261001')
+destination = Path('tools/media-qualification/evidence/2026-10-01-configurable-bindings')
+destination.mkdir(parents=True, exist_ok=True)
+
+def write_json(path, value):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, indent=2, sort_keys=True) + '\n')
+
+def compress(source, target):
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(gzip.compress(source.read_bytes(), mtime=0))
+
+commands = []
+for source in sorted(scratch.glob('*.json')):
+    if source.name in {'binaries.json', 'cleanup.json'}:
+        continue
+    value = json.loads(source.read_text())
+    if source.name.startswith('source-'):
+        compress(source, destination / 'checks' / (source.name + '.gz'))
+        continue
+    if 'command' not in value:
+        continue
+    if 'gate_exit_code' not in value:
+        raise RuntimeError(f'Incomplete command record: {source.name}')
+    target = destination / 'checks' / source.name
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, target)
+    log = source.with_suffix('.log')
+    if log.exists():
+        compress(log, target.with_suffix('.log.gz'))
+    suites = [dict(status=status, passed=int(passed), failed=int(failed), ignored=int(ignored))
+              for status, passed, failed, ignored in re.findall(
+                  r'^test result: (\w+)\. (\d+) passed; (\d+) failed; (\d+) ignored;',
+                  log.read_text() if log.exists() else '', re.MULTILINE)]
+    commands.append(dict(name=source.stem, **value, suites=suites))
+
+replays = []
+for report_path in sorted(scratch.glob('*/report.json')):
+    name = report_path.parent.name
+    report = json.loads(report_path.read_text())
+    compress(report_path, destination / 'replays' / (name + '.json.gz'))
+    replays.append(dict(name=name, failed=report['failed'], metadata=report['metadata'],
+                       scenarios=[dict(name=s['name'], checks=len(s['checks']),
+                                       failed_checks=sum(not c['passed'] for c in s['checks']),
+                                       findings=s['findings'], skipped=s.get('skipped'),
+                                       failed=s['failed']) for s in report['scenarios']]))
+
+images = {
+    'header-overflow-before.png': 'keymap-replay-final/keymap-055.png',
+    'error-initial-measurement.png': 'keymap-error-replay-01/keymap-error-017.png',
+}
+full = json.loads((scratch / 'full-replay-verified' / 'report.json').read_text())
+for target, scenario, label in [
+    ('custom-prefix-minimum.png', 'keymap', 'Custom q prefix and exact continuations at 960 by 640'),
+    ('persistent-error.png', 'keymap-error', 'Keymap error reference initial measurement'),
+    ('held-opener-after-submit.png', 'keymap', 'Release Shift on the next frame while physical Semicolon remains held'),
+    ('ordered-command.png', 'keymap', 'Two ordered commands in one native input batch'),
+]:
+    steps = [step for item in full['scenarios'] if item['name'] == scenario
+             for step in item['steps'] if step['input'] == label]
+    if len(steps) != 1 or not steps[0]['screenshot']:
+        raise RuntimeError(f'Missing or ambiguous capture {label}')
+    images[target] = 'full-replay-verified/' + steps[0]['screenshot']
+for target, source in images.items():
+    (destination / 'images').mkdir(exist_ok=True)
+    shutil.copyfile(scratch / source, destination / 'images' / target)
+write_json(destination / 'images' / 'sources.json', images)
+
+for name in ['run-check.py', 'collect-evidence.py', 'finalize-evidence.py']:
+    (destination / 'scripts').mkdir(exist_ok=True)
+    shutil.copyfile(scratch / name, destination / 'scripts' / (name + '.txt'))
+
+for name in ['binaries.json', 'cleanup.json']:
+    shutil.copyfile(scratch / name, destination / name)
+write_json(destination / 'summary.json', dict(commands=commands, replays=replays))
+
+lines = []
+for path in sorted(destination.rglob('*')):
+    if path.is_file() and path.name != 'SHA256SUMS':
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        lines.append(f'{digest}  {path.relative_to(destination)}\n')
+(destination / 'SHA256SUMS').write_text(''.join(lines))
+print(json.dumps({'files':len(lines), 'summary':str(destination / 'summary.json')}))

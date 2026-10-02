@@ -259,10 +259,16 @@ impl DeadpanApp {
                 }
             };
             let (window, start) = if selected {
-                let range = self.selected_playback_range().ok_or(match self.view {
-                    View::Source => "Select an Original moment with v and h/l before looping.",
-                    View::Sequence => "Select a beat before looping.",
-                })?;
+                let range = self
+                    .selected_playback_range()
+                    .ok_or_else(|| match self.view {
+                        View::Source => format!(
+                            "Select an Original moment with {} and {} before looping.",
+                            self.editor_key(EditorKey::Visual),
+                            self.editor_pair(EditorKey::FramePrevious, EditorKey::FrameNext, "/")
+                        ),
+                        View::Sequence => "Select a beat before looping.".into(),
+                    })?;
                 let window = if domain.is_sound() {
                     Window::new(AudioSample(0), end, true).map_err(|e| e.to_string())?
                 } else {
@@ -539,11 +545,13 @@ impl DeadpanApp {
             let active = self.transport.is_some();
             let preparing = self.transport.as_ref().is_some_and(|run| run.phase == Phase::Preparing);
             let enabled = active || (!self.service.is_busy() && self.playback_domain().and_then(|domain| domain.end()).is_ok_and(|end| end.0 > 0));
-            let label = if preparing { "Cancel preparation  ·  Space" } else if active { "Pause  ·  Space" } else if self.resume.as_ref().is_some_and(|resume| resume.window().looping()) { "Resume loop  ·  Space" } else if self.sound_focused() { "Play sound  ·  Space" } else if self.view == View::Source { "Play Original  ·  Space" } else { "Play edit  ·  Space" };
-            if ui.add_enabled(enabled, egui::Button::new(label).fill(style::SELECTED)).clicked() { self.toggle_playback(); }
+            let action = if preparing { "Cancel preparation" } else if active { "Pause" } else if self.resume.as_ref().is_some_and(|resume| resume.window().looping()) { "Resume loop" } else if self.sound_focused() { "Play sound" } else if self.view == View::Source { "Play Original" } else { "Play edit" };
+            let label = format!("{action}  ·  {}", self.editor_key(EditorKey::Playback));
+            if ui.add_enabled(enabled, egui::Button::new(label).wrap().fill(style::SELECTED)).clicked() { self.toggle_playback(); }
             let looping = self.transport.as_ref().is_some_and(|run| run.window().looping());
-            let label = if looping { "Pause loop  ·  Shift+Space" } else if self.sound_focused() { "Loop sound  ·  Shift+Space" } else { "Loop selection  ·  Shift+Space" };
-            if ui.add_enabled(enabled && (looping || self.selected_playback_range().is_some()), egui::Button::new(label)).on_hover_text(format!("Loop the selected Original moment, Edit range or edited beat with {} lead-in and {} follow-through. Space pauses and resumes the exact heard position. Change context with :audition-context.", self.audition_context.lead_label(), self.audition_context.follow_label())).clicked() { self.audition_selection(); }
+            let action = if looping { "Pause loop" } else if self.sound_focused() { "Loop sound" } else { "Loop selection" };
+            let label = format!("{action}  ·  {}", self.editor_key(EditorKey::Audition));
+            if ui.add_enabled(enabled && (looping || self.selected_playback_range().is_some()), egui::Button::new(label).wrap()).on_hover_text(format!("Loop the selected Original moment, Edit range or edited beat with {} lead-in and {} follow-through. {} pauses and resumes the exact heard position. Change context with :audition-context.", self.audition_context.lead_label(), self.audition_context.follow_label(), self.editor_key(EditorKey::Playback))).clicked() { self.audition_selection(); }
             if let Some(run) = &self.transport {
                 let sample = run.content_sample().unwrap_or(run.sample).0;
                 let millis = sample / 48;
@@ -623,20 +631,26 @@ impl DeadpanApp {
                 .as_ref()
                 .is_some_and(|run| run.window().looping());
         let enabled = active || (!self.service.is_busy() && end > 0);
-        let label = if preparing {
-            "Cancel preparation  ·  Space"
+        let action = if preparing {
+            "Cancel preparation"
         } else if active {
-            "Pause sound  ·  Space"
+            "Pause sound"
         } else if paused {
-            "Resume sound  ·  Space"
+            "Resume sound"
         } else {
-            "Play sound  ·  Space"
+            "Play sound"
         };
-        let loop_label = if looping {
-            "Pause loop  ·  Shift+Space"
-        } else {
-            "Loop sound  ·  Shift+Space"
-        };
+        let label = format!("{action}  ·  {}", self.editor_key(EditorKey::Playback));
+        let loop_label = format!(
+            "{}  ·  {}",
+            if looping { "Pause loop" } else { "Loop sound" },
+            self.editor_key(EditorKey::Audition)
+        );
+        // Use this exact label for measurement, paint and accessibility.
+        let placement_label = format!(
+            "Place at edit cursor  ·  {}",
+            self.editor_key(EditorKey::PlaceSound)
+        );
         let frame = egui::Frame::new()
             .fill(style::PANEL)
             .stroke(egui::Stroke::new(1.0, style::BORDER))
@@ -704,7 +718,7 @@ impl DeadpanApp {
             (width - padding.x).max(1.0),
         );
         let placement_text = text(
-            egui::RichText::new("Place at edit cursor  ·  ,s"),
+            egui::RichText::new(&placement_label),
             egui::TextWrapMode::Wrap,
             (width - padding.x).max(1.0),
         );
@@ -750,7 +764,7 @@ impl DeadpanApp {
                 ui.memory_mut(|m| m.request_focus(pane_id(Pane::Sources)));
                 self.toggle_playback();
             }
-            if ui.add_enabled(enabled, egui::Button::new(egui::WidgetText::from(looping_text))).on_hover_text("Loop the complete measured sound. Space pauses and resumes its exact heard position.").clicked() {
+            if ui.add_enabled(enabled, egui::Button::new(egui::WidgetText::from(looping_text))).on_hover_text(format!("Loop the complete measured sound. {} pauses and resumes its exact heard position.", self.editor_key(EditorKey::Playback))).clicked() {
                 if !self.sound_focused() { self.stop_playback(); }
                 self.pane = Pane::Sources;
                 ui.memory_mut(|m| m.request_focus(pane_id(Pane::Sources)));
@@ -759,7 +773,7 @@ impl DeadpanApp {
             ui.add(egui::Label::new(note));
             let placement = ui.add_enabled(!self.service.is_busy(), egui::Button::new(egui::WidgetText::from(placement_text)).fill(style::SELECTED))
                 .on_hover_text("Place the complete catalog sound at the retained edit cursor. Picture duration stays unchanged; overflow is rejected.");
-            placement.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, placement.enabled(), "Place at edit cursor  ·  ,s"));
+            placement.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, placement.enabled(), &placement_label));
             if placement.clicked() {
                 self.sound_action(navigation::SoundAction::Place, ui.ctx());
             }

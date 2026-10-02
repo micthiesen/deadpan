@@ -412,8 +412,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         }
         reveal(d, "Fine position · 48 kHz samples", 240.0)?;
         visible(d, "Fine position · 48 kHz samples")?;
-        reveal(d, "Change gain  ·  + / −", -240.0)?;
-        visible(d, "Change gain  ·  + / −")?;
+        reveal(d, "Change gain  ·  + / -", -240.0)?;
+        visible(d, "Change gain  ·  + / -")?;
         reveal(d, "Remove sound  ·  dd", -240.0)?;
         visible(d, "Remove sound  ·  dd")?;
         d.capture(&format!("Sound removal is reachable at {width}x{height}"))?;
@@ -434,8 +434,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         d.command("sounds")?;
     }
     choose(d, &second)?;
-    reveal(d, "Change gain  ·  + / −", 240.0)?;
-    d.click("Change gain  ·  + / −")?;
+    reveal(d, "Change gain  ·  + / -", 240.0)?;
+    d.click("Change gain  ·  + / -")?;
     d.key(Key::Escape)?;
     d.check(
         "The sound inspector owns destructive shortcuts while the picture beat stays selected",
