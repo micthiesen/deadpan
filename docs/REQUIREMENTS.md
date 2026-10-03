@@ -2,6 +2,22 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+[Named groups](GROUP_EDITING.md) adds exact beat/range grouping, neutral
+Ungroup, captured names, recording and dot in ordinary Sequence scopes. Headless
+Macro results report complete final mark changes. This advances DP-05, DP-06
+and DP-21; framed/treated Ungroup, temporal occurrence editing, saved gag recipes
+and full slice placement acceptance remain open.
+[Qualification](qualification/group-editing-2026-10-03.md) records 747 default
+and 783 optional app tests, 1,416 rendered checks, strict lint, exact PCM/GPU
+comparisons and native register/macro/Undo verification. The full workspace run
+had five new assertion failures; all three affected targets pass in full after
+the documented test corrections. The native QA app exited cleanly.
+
+[Development formats](DEVELOPMENT_FORMATS.md) now retains current schema 55
+and the additive schema-52 upgrade, refusing retired development packages before
+writes. Current recovery and embedded audio-context codecs remain. Historical
+evidence below describes its recorded revision, not current format admission.
+
 [Scoped editing](SCOPED_EDITING.md) adds native navigation inside Repeat/Retime
 contents and explicit All plays/This play gain, Camera and Hold audio editing.
 Browsing is read-only; changed values isolate only selected shared ancestors
@@ -1440,7 +1456,7 @@ preview/export equivalence remain required; this does not complete DP-07 or DP-0
 
 | ID | Requirement | Status | Implementation / tests now | Required acceptance evidence still outstanding |
 | --- | --- | --- | --- | --- |
-| DP-01 | Documents library, one-Original initialization/baseline, reopen, autosave, undo/redo, migration, recovery. | Partial | [`deadpan-store`](../crates/deadpan-store/): durable packages/history, atomic mark transforms and generation relevance, writer ownership, WAL checkpoints, interrupted-attempt recovery, and [schema-1-through-25-to-26 migration tests](../crates/deadpan-store/tests/migration.rs) using old-binary-validated fixtures with requests, attempts, admission, source placements, branches and redo. [Schema-39-to-40 render migration](../crates/deadpan-store/tests/migration/render_jobs.rs) preserves every existing cell across three authentic qualified-media/history fixtures and adds empty operational render tables. | Native create/open/history now have [workspace evidence](qualification/native-workspace-2026-09-21.md); full media lifecycle, restore/recovery UI, history limits and full failure/chaos suite remain open. |
+| DP-01 | Documents library, one-Original initialization/baseline, reopen, autosave, undo/redo, migration, recovery. | Partial | [`deadpan-store`](../crates/deadpan-store/): durable packages/history, atomic mark transforms and generation relevance, writer ownership, WAL checkpoints and interrupted-attempt recovery. [Current development formats](DEVELOPMENT_FORMATS.md) retain the backed-up schema-52 upgrade and reject obsolete development formats before writes. [Migration and current-history tests](../crates/deadpan-store/tests/migration.rs) retain current authored behavior and backup/promotion checks. | Native create/open/history have [workspace evidence](qualification/native-workspace-2026-09-21.md); full media lifecycle, restore/recovery UI, history limits, release migration policy and full failure/chaos suite remain open. |
 | DP-02 | Exact frame/sample/source-time model including VFR. | Partial | Typed rational clocks, VFR intervals, [independent picture mappings](SOURCE_VIDEO_MAPPING.md) and explicit selected-span endpoints in core and plan. [Original moment candidates](SOURCE_MOMENTS.md) retain exact VFR and fractional-sample selection boundaries. [`SourceSession`](../crates/deadpan-media/src/source_session.rs) builds original-PTS indexes from private verified media and performs persistent exact seeks. [Registration](SOURCE_REGISTRATION.md) retains validated indexes and exact common origin by historical revision. [Native source evidence](qualification/source-preview-2026-09-21.md) retains measured VFR terminal-duration loss. | Complete source policies and actual shared playback/export, including 10,000 fractional-rate edits. |
 | DP-03 | Structural Source/Sequence/Hold/Repeat/Retime primitives. | Partial | Validated tree, reversible commands, and [`deadpan-plan`](../crates/deadpan-plan/) picture mapping and [bounded structural audio queries](AUDIO_PLAN.md) through nested primitives, sparse overrides and compact repeat indexes. Audio keeps absolute sample allocation, original source coordinates, pitch stages and distinct Hold policies. | Semantic range selectors, incremental fragment reuse, actual golden picture/audio renders, and full preview/export integration. |
 | DP-04 | Stable anchors, attachments, nested occurrences, single-play overrides. | Partial | Compact stable play IDs and exact revision-aware boundary/range queries. [`marks.rs`](../crates/deadpan-core/src/marks.rs) adds persistent marks, ownership/loss policies, biased structural transforms, and named-mark selection with [integration/property tests](../crates/deadpan-core/tests/marks.rs). [Sparse overrides](OVERRIDE_VERIFICATION.md) and [automatic nested occurrence edits](OCCURRENCE_VERIFICATION.md) preserve variable durations, owned marks, exact picture mappings, and atomic history. | Temporal attachments, partial-range and multi-target occurrence operations, explode/duplicate transforms, and complete structural edit property tests. |

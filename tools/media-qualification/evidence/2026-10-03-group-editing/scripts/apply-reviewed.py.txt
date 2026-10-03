@@ -1,0 +1,29 @@
+import hashlib
+import json
+import pathlib
+import subprocess
+import sys
+
+repo = pathlib.Path('/Users/michael/Code/deadpan')
+patch = pathlib.Path(sys.argv[1])
+manifest = json.loads(pathlib.Path(sys.argv[2]).read_text())
+expected_patch = sys.argv[3]
+digest = lambda data: hashlib.sha256(data).hexdigest()
+assert digest(patch.read_bytes()) == expected_patch, 'patch changed'
+entries = manifest.get('files', manifest) if isinstance(manifest, dict) else manifest
+if isinstance(entries, dict) and 'path' in entries:
+    entries = [entries]
+elif isinstance(entries, dict):
+    entries = [dict(path=path, **value) for path, value in entries.items()]
+
+def verify(stage):
+    for entry in entries:
+        path = repo / entry['path']
+        actual = digest(path.read_bytes()) if path.exists() else None
+        assert actual == entry[stage + '_sha256'], (stage, entry['path'], actual)
+
+verify('before')
+subprocess.run(['git', 'apply', '--check', str(patch)], cwd=repo, check=True)
+subprocess.run(['git', 'apply', str(patch)], cwd=repo, check=True)
+verify('after')
+print(json.dumps({'patch': str(patch), 'sha256': expected_patch, 'files': len(entries), 'verified': True}))

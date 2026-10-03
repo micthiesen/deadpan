@@ -1,0 +1,8 @@
+import os,subprocess,sys
+output='/tmp/deadpan-group-20261003'
+env=dict(os.environ,DEADPAN_CHECK_OUTPUT=output)
+for name,scenario in [('groups-visual-5','groups'),('dot-visual','dot-repeat'),('macros-visual','macros'),('repeat-visual','repeat-operator'),('keymap-visual','keymap')]:
+ command=['python3','/tmp/deadpan-original-layout-20261002/run-check.py',name,'/tmp/deadpan-group-20261003/deadpan-visual-final','--ui-check','--scenario',scenario,'--mode','visual','--output',output+'/'+name,'--kestrel-source','/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift']
+ if scenario=='groups': command.append('--retain-projects')
+ result=subprocess.run(command,env=env)
+ if result.returncode: sys.exit(result.returncode)

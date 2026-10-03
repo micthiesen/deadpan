@@ -67,13 +67,15 @@ or change undo history. It checks the same reducer, serialized size limits, and
 never-reused revision rule as commit. A stale expected
 revision fails with `RevisionConflict` and the current revision, without writing.
 
-Supported commands are `insert`, `insert_time`, `split`, `slip_source`, `trim_source`, `roll_sources`, `apply_source_trim`, `delete`, `delete_ripple`, `delete_range`, `move`, `move_range`, `group`,
+Supported commands are `insert`, `insert_time`, `split`, `slip_source`, `trim_source`, `roll_sources`, `apply_source_trim`, `delete`, `delete_ripple`, `delete_range`, `move`, `move_range`, `group`, `group_selection`,
 `ungroup`, `splice_source`, `splice_source_at`, `replace_source`, `splice_slice`, `splice_slice_at`, `replace_slice`, `wrap_repeat`, `set_repeat`, `wrap_retime`, `set_retime`, `insert_plays`, `move_plays`, `set_hold_duration`, `set_hold_provider`, `set_hold_picture_context`, `set_source_audio_mapping`, `set_source_video_mapping`,
 `rename`, `set_audio_edge`, `set_audio_treatments`, `set_hold_audio`, `set_framing`, `set_sound`, `replace_sound`, `delete_sound`, `set_sound_allowance`, `add_asset`, `set_canvas`, `set_mark`, `delete_mark`, `set_play_override`, `clear_play_override`, `set_gap_override`, `clear_gap_override`, `isolate_gap`, and `edit_occurrence`. Their exact typed parameters are defined in
 [`Command`](../crates/deadpan-core/src/command.rs). `set_repeat` changes an existing
 Repeat; `wrap_repeat` deliberately adds nesting. A three-play repeat includes
 three total plays and only two gaps. These are structural edits, not rendered
-media. The dedicated [Macro commands](SEMANTIC_MACROS.md#headless-inspection-save-and-run)
+media. [Named grouping](GROUP_EDITING.md) adds `group_selection` for exact child
+or half-open range grouping, with preflighted Split identities and retained owner
+clocks. The dedicated [Macro commands](SEMANTIC_MACROS.md#headless-inspection-save-and-run)
 inspect, save and run bounded motions, frame cuts, beat copies, register pastes
 and named calls. Broader
 range/text selectors, register management and effects remain required work.
@@ -1135,115 +1137,30 @@ the compact receipt with `host_reply_detail_omitted: true`.
 
 ## Schema migration
 
-Database schemas 1 through 38 return `MigrationRequired` when opened. Upgrade explicitly:
+Database schema 55 is current. Schema 52 returns `MigrationRequired` and has an
+explicit backed-up additive upgrade:
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
-For a current-schema package, this command validates through a read-only store
-and reports equal source/destination schemas with `backup: null`. That fast path
-also works beside a native writer without contacting its endpoint. Only an actual
-migration writer-lock conflict uses the IPC fallback, whose admitted native
-store can report its current schema. Closed legacy packages keep the migration
-behavior below; an open endpoint does not perform legacy migration.
+The upgrade adds empty register and Compound-step tables, validates all current
+history and operational state, and promotes a separate candidate through SQLite's
+backup API. Authored rows remain unchanged. The retained backup is named
+`Snapshots/before-schema-55-*.sqlite`. Native writable Open uses the same service
+path. A current-schema migration request validates read-only and returns equal
+schemas with `backup: null`, including alongside a native writer.
 
-Schemas 39 through 51 and 53 are unsupported development formats. The user authorized
-a format break for the unused project, so this build does not migrate them.
-Open and migration reject them before writer recovery, backups or database
-changes. Create a new project for this build; the old package stays intact.
+Schemas 1 through 51, 53 and 54 return `SchemaUnsupported` before writer locks,
+backups, recovery, authored JSON parsing or database writes. This uses the user's
+permission to retire unused development formats. Their packages remain intact.
+See [supported development formats](DEVELOPMENT_FORMATS.md) for the precise
+boundary and retained current recovery behavior. Historical qualification
+reports apply to their recorded revisions.
 
-Migration holds the project writer lock, keeps a consistent SQLite backup under
-`Snapshots/before-schema-54-*.sqlite`, named for the destination schema, and upgrades a separate candidate. It
-replays all commands, undo/redo revisions, and abandoned branches with their
-original revision IDs. Every snapshot and forward/inverse transaction is checked
-against its strict original schema meaning. Migration goes directly to database
-schema 54 and core document schema 43. Supported older schemas gain empty
-[render job tables](RENDER_JOBS.md), publication tables and automatic encoding
-decision tables. Migration invents no historical decisions. Existing frozen
-adapters retain strict replay.
-Database-38 replays frozen core 32,
-including direct/occurrence Hold audio setters, while rejecting modern node
-treatments and gain setters. Database-37 replays frozen core 31,
-retaining exact sound allowances in snapshots and both patch directions. It
-rejects direct and occurrence `set_hold_audio` requests, even when forged modern
-patches and snapshots agree. Database-36 replays frozen core 30,
-retaining sound routes and `replace_sound` with their original contextual
-command admission. It rejects `sound_allowances` in snapshots and patches,
-including empty or null maps, and rejects `set_sound_allowance`. Older snapshots
-gain empty allowance state. Database-35 replays frozen core 29,
-retaining qualified root events while rejecting route fields and `replace_sound`.
-It checks the old sound-bearing command restrictions before modern replay, even
-when a command's snapshots and patches would contain no route. Migration adds no
-journals to those old events. Database-34 replays frozen core 28,
-which retains Retime commands but rejects all sound state and commands,
-including empty or null sound maps. Database-33 replays frozen core 27,
-which admits SpliceSource but refuses the new Retime edit commands.
-Database-32 replays frozen core 26,
-retaining nested Sequence pause admission but rejecting `splice_source`. Database-31 histories retain root physical
-interiors through frozen core 25 but cannot acquire nested Sequence insertion.
-Database-30 histories retain composite
-root-seam edits through frozen core 24 but cannot acquire the new interior
-admission. Database-29 histories retain gap branches through frozen core 23.
-Every older InsertTime request also checks its historical Source/Hold suffix
-restriction before modern replay; neither broader admission can be backdated
-by supplying matching forged snapshots and patches.
-Database-28 histories replay through
-frozen core 22, retaining default-gap bindings while rejecting independent gap
-branches and detached gap-clock references. Database-27 histories replay through
-frozen core 21, retaining ordered reanchor steps while rejecting gap maps and
-nested gap clock/placement vocabulary. Database-26 histories replay through
-frozen core 20, retaining exact selected audio and old phase terms while rejecting
-chronological reanchor steps. Database-25 histories replay through
-frozen core 19, retaining captured Hold framing while rejecting selected audio
-placements. Database 24 retains authored framing through frozen core 18;
-database 23 retains InsertTime through frozen core 17; database 22 retains owned
-timing bindings through frozen core 16. Database 21 retains audio lineage through
-frozen core 15; database 20 retains Split through frozen core 14; database 19
-retains multiple logical mark bindings through frozen core 13.
-Database-16/17 histories replay through
-frozen core 11, retaining existing audio edges; older nodes gain automatic edges.
-Database-18 histories replay through frozen core 12, retaining Partition intent.
-Earlier Retimes gain ordinary `edit` purpose. All previous mark grammars reject
-`fragments`, including `[]` and `null`; old marks retain their one original binding.
-Database-17 workflow profiles and protected baselines are preserved; earlier
-projects remain generic, without an invented single-Original profile. Native writable Open
-performs this same backed-up migration on its service thread; headless opening
-remains explicit. Database-15 histories use frozen core 10 and retain their presentation
-basis policy, primary adoption and geometry commands. Database-14 histories use frozen core 9,
-retain qualified sources and their complete receipt inventory, and gain explicit
-basis state. All older projects also remain explicit, even when empty.
-Database-13 histories use the frozen core-8 adapter, retaining independent
-placements. Projects predating database 14 gain no qualification IDs and start
-with an empty source qualification table; a preexisting modern table in those
-schemas is rejected. Database-12 histories use the frozen core-7
-adapter, retaining independent picture/audio mappings. Database-11 histories use the frozen core-6
-adapter, retaining explicit audio mappings. Database-7/8/9/10 histories use the
-frozen core-5 adapter and retain prior audio duration mapping as `fit_beat`.
-Sources predating database 12 gain `video_mapping: fit_beat` to retain prior picture timing.
-New fields and commands are rejected in histories that predate their vocabulary.
-Schemas 1 through 3 gain
-empty override maps. Schema-1/2 histories also gain empty mark
-maps; schema-3 mark histories retain their exact ownership, bias, and loss states.
-Database schema-4/5/6 authored snapshots, commands, and patches are replayed through
-the frozen core schema-4 adapter. Schema-5/6 generation requests and clocks are
-validated and preserved; older databases gain empty request tables. Schema-6
-attempt, candidate-receipt, and selection rows remain unchanged; older databases
-gain empty tables. Pre-schema-8 requests have no bridge plan and remain legacy;
-their bundle receipt table starts empty. Existing schema-8 plans and receipt JSON
-remain unchanged; receipts gain no admission evidence. New admission vocabulary
-is rejected in pre-schema-9 receipts, even when null. Schema-9 admission receipts
-remain unchanged. Schemas 1 through 9 gain an empty original-media table;
-an unexpected preexisting modern table is rejected. Schema-10/11 original records
-are validated and retained. Fields or
-commands that did not exist in the old schema are rejected. SQLite atomically promotes the validated
-candidate through its backup API; the main file is never renamed around a live
-WAL. Existing read transactions keep their old snapshot. Failure before promotion
-leaves authored contents unchanged. A current-schema project is validated with
-no new backup. The result reports source/destination schemas and backup path.
-Failures after backup creation include `error.recovery_backup`. Semantic migration
-failures use `MigrationFailed`; disk, permission, and lock failures keep their
-actionable storage error codes and still identify the retained backup.
+Failures after backup creation include `error.recovery_backup`. Semantic
+migration failures use `MigrationFailed`; disk, permission and lock failures
+retain actionable storage error codes and identify the backup when present.
 
 Generated Hold acceptance/reversion semantics were introduced in core schema 5, but generic
 project commands and initial import reject newly introduced generated artifacts

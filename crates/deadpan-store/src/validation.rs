@@ -2,11 +2,7 @@
 //! their text; historical documents are replayed one at a time, not accumulated.
 
 use deadpan_core::{
-    CommandRequest, EditTransaction, MAX_IDENTITY_BYTES, ProjectDocument, RevisionId, legacy_v1,
-    legacy_v2, legacy_v3, legacy_v4, legacy_v5, legacy_v6, legacy_v7, legacy_v8, legacy_v9,
-    legacy_v10, legacy_v11, legacy_v12, legacy_v13, legacy_v14, legacy_v15, legacy_v16, legacy_v17,
-    legacy_v18, legacy_v19, legacy_v20, legacy_v21, legacy_v22, legacy_v23, legacy_v24, legacy_v25,
-    legacy_v26, legacy_v27, legacy_v28, legacy_v29, legacy_v30, legacy_v31, legacy_v32,
+    CommandRequest, EditTransaction, MAX_IDENTITY_BYTES, ProjectDocument, RevisionId,
 };
 use rusqlite::{Connection, params};
 
@@ -164,292 +160,21 @@ fn history_error(message: &str) -> StoreError {
 }
 
 pub(crate) fn validate_history(connection: &Connection) -> Result<(), StoreError> {
-    replay(connection, ReplaySchema::Current)
+    replay(connection)
 }
 
-/// Called only on an isolated, backed-up migration candidate inside a transaction.
-pub(crate) fn migrate_history(connection: &Connection, version: u32) -> Result<(), StoreError> {
-    let schema = match version {
-        1 => ReplaySchema::V1,
-        2 => ReplaySchema::V2,
-        3 => ReplaySchema::V3,
-        4..=6 => ReplaySchema::V4,
-        7..=10 => ReplaySchema::V5,
-        11 => ReplaySchema::V6,
-        12 => ReplaySchema::V7,
-        13 => ReplaySchema::V8,
-        14 => ReplaySchema::V9,
-        15 => ReplaySchema::V10,
-        16 | 17 => ReplaySchema::V11,
-        18 => ReplaySchema::V12,
-        19 => ReplaySchema::V13,
-        20 => ReplaySchema::V14,
-        21 => ReplaySchema::V15,
-        22 => ReplaySchema::V16,
-        23 => ReplaySchema::V17,
-        24 => ReplaySchema::V18,
-        25 => ReplaySchema::V19,
-        26 => ReplaySchema::V20,
-        27 => ReplaySchema::V21,
-        28 => ReplaySchema::V22,
-        29 => ReplaySchema::V23,
-        30 => ReplaySchema::V24,
-        31 => ReplaySchema::V25,
-        32 => ReplaySchema::V26,
-        33 => ReplaySchema::V27,
-        34 => ReplaySchema::V28,
-        35 => ReplaySchema::V29,
-        36 => ReplaySchema::V30,
-        37 => ReplaySchema::V31,
-        38 => ReplaySchema::V32,
-        _ => return Err(StoreError::UnsupportedSchema(version)),
-    };
-    replay(connection, schema)
-}
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-enum ReplaySchema {
-    Current,
-    V1,
-    V2,
-    V3,
-    V4,
-    V5,
-    V6,
-    V7,
-    V8,
-    V9,
-    V10,
-    V11,
-    V12,
-    V13,
-    V14,
-    V15,
-    V16,
-    V17,
-    V18,
-    V19,
-    V20,
-    V21,
-    V22,
-    V23,
-    V24,
-    V25,
-    V26,
-    V27,
-    V28,
-    V29,
-    V30,
-    V31,
-    V32,
-}
-
-enum StoredDocument {
-    Current(ProjectDocument),
-    V1(legacy_v1::Document),
-    V2(legacy_v2::Document),
-    V3(legacy_v3::Document),
-    V4(legacy_v4::Document),
-    V5(legacy_v5::Document),
-    V6(legacy_v6::Document),
-    V7(legacy_v7::Document),
-    V8(legacy_v8::Document),
-    V9(legacy_v9::Document),
-    V10(legacy_v10::Document),
-    V11(legacy_v11::Document),
-    V12(legacy_v12::Document),
-    V13(legacy_v13::Document),
-    V14(legacy_v14::Document),
-    V15(legacy_v15::Document),
-    V16(legacy_v16::Document),
-    V17(legacy_v17::Document),
-    V18(legacy_v18::Document),
-    V19(legacy_v19::Document),
-    V20(legacy_v20::Document),
-    V21(legacy_v21::Document),
-    V22(legacy_v22::Document),
-    V23(legacy_v23::Document),
-    V24(legacy_v24::Document),
-    V25(legacy_v25::Document),
-    V26(legacy_v26::Document),
-    V27(legacy_v27::Document),
-    V28(legacy_v28::Document),
-    V29(legacy_v29::Document),
-    V30(legacy_v30::Document),
-    V31(legacy_v31::Document),
-    V32(legacy_v32::Document),
-}
-impl StoredDocument {
-    fn revision_id(&self) -> &RevisionId {
-        match self {
-            Self::Current(doc) => doc.revision_id(),
-            Self::V1(doc) => doc.revision_id(),
-            Self::V2(doc) => doc.revision_id(),
-            Self::V3(doc) => doc.revision_id(),
-            Self::V4(doc) => doc.revision_id(),
-            Self::V5(doc) => doc.revision_id(),
-            Self::V6(doc) => doc.revision_id(),
-            Self::V7(doc) => doc.revision_id(),
-            Self::V8(doc) => doc.revision_id(),
-            Self::V9(doc) => doc.revision_id(),
-            Self::V10(doc) => doc.revision_id(),
-            Self::V11(doc) => doc.revision_id(),
-            Self::V12(doc) => doc.revision_id(),
-            Self::V13(doc) => doc.revision_id(),
-            Self::V14(doc) => doc.revision_id(),
-            Self::V15(doc) => doc.revision_id(),
-            Self::V16(doc) => doc.revision_id(),
-            Self::V17(doc) => doc.revision_id(),
-            Self::V18(doc) => doc.revision_id(),
-            Self::V19(doc) => doc.revision_id(),
-            Self::V20(doc) => doc.revision_id(),
-            Self::V21(doc) => doc.revision_id(),
-            Self::V22(doc) => doc.revision_id(),
-            Self::V23(doc) => doc.revision_id(),
-            Self::V24(doc) => doc.revision_id(),
-            Self::V25(doc) => doc.revision_id(),
-            Self::V26(doc) => doc.revision_id(),
-            Self::V27(doc) => doc.revision_id(),
-            Self::V28(doc) => doc.revision_id(),
-            Self::V29(doc) => doc.revision_id(),
-            Self::V30(doc) => doc.revision_id(),
-            Self::V31(doc) => doc.revision_id(),
-            Self::V32(doc) => doc.revision_id(),
-        }
-    }
-    fn initial(self) -> Result<ProjectDocument, StoreError> {
-        match self {
-            Self::Current(doc) => Ok(doc),
-            Self::V1(doc) => Ok(doc.upgrade()?),
-            Self::V2(doc) => Ok(doc.upgrade()?),
-            Self::V3(doc) => Ok(doc.upgrade()?),
-            Self::V4(doc) => Ok(doc.upgrade()?),
-            Self::V5(doc) => Ok(doc.upgrade()?),
-            Self::V6(doc) => Ok(doc.upgrade()?),
-            Self::V7(doc) => Ok(doc.upgrade()?),
-            Self::V8(doc) => Ok(doc.upgrade()?),
-            Self::V9(doc) => Ok(doc.upgrade()?),
-            Self::V10(doc) => Ok(doc.upgrade()?),
-            Self::V11(doc) => Ok(doc.upgrade()?),
-            Self::V12(doc) => Ok(doc.upgrade()?),
-            Self::V13(doc) => Ok(doc.upgrade()?),
-            Self::V14(doc) => Ok(doc.upgrade()?),
-            Self::V15(doc) => Ok(doc.upgrade()?),
-            Self::V16(doc) => Ok(doc.upgrade()?),
-            Self::V17(doc) => Ok(doc.upgrade()?),
-            Self::V18(doc) => Ok(doc.upgrade()?),
-            Self::V19(doc) => Ok(doc.upgrade()?),
-            Self::V20(doc) => Ok(doc.upgrade()?),
-            Self::V21(doc) => Ok(doc.upgrade()?),
-            Self::V22(doc) => Ok(doc.upgrade()?),
-            Self::V23(doc) => Ok(doc.upgrade()?),
-            Self::V24(doc) => Ok(doc.upgrade()?),
-            Self::V25(doc) => Ok(doc.upgrade()?),
-            Self::V26(doc) => Ok(doc.upgrade()?),
-            Self::V27(doc) => Ok(doc.upgrade()?),
-            Self::V28(doc) => Ok(doc.upgrade()?),
-            Self::V29(doc) => Ok(doc.upgrade()?),
-            Self::V30(doc) => Ok(doc.upgrade()?),
-            Self::V31(doc) => Ok(doc.upgrade()?),
-            Self::V32(doc) => Ok(doc.upgrade()?),
-        }
-    }
-    fn matches(&self, doc: &ProjectDocument) -> bool {
-        match self {
-            Self::Current(stored) => stored == doc,
-            Self::V1(stored) => stored.matches(doc),
-            Self::V2(stored) => stored.matches(doc),
-            Self::V3(stored) => stored.matches(doc),
-            Self::V4(stored) => stored.matches(doc),
-            Self::V5(stored) => stored.matches(doc),
-            Self::V6(stored) => stored.matches(doc),
-            Self::V7(stored) => stored.matches(doc),
-            Self::V8(stored) => stored.matches(doc),
-            Self::V9(stored) => stored.matches(doc),
-            Self::V10(stored) => stored.matches(doc),
-            Self::V11(stored) => stored.matches(doc),
-            Self::V12(stored) => stored.matches(doc),
-            Self::V13(stored) => stored.matches(doc),
-            Self::V14(stored) => stored.matches(doc),
-            Self::V15(stored) => stored.matches(doc),
-            Self::V16(stored) => stored.matches(doc),
-            Self::V17(stored) => stored.matches(doc),
-            Self::V18(stored) => stored.matches(doc),
-            Self::V19(stored) => stored.matches(doc),
-            Self::V20(stored) => stored.matches(doc),
-            Self::V21(stored) => stored.matches(doc),
-            Self::V22(stored) => stored.matches(doc),
-            Self::V23(stored) => stored.matches(doc),
-            Self::V24(stored) => stored.matches(doc),
-            Self::V25(stored) => stored.matches(doc),
-            Self::V26(stored) => stored.matches(doc),
-            Self::V27(stored) => stored.matches(doc),
-            Self::V28(stored) => stored.matches(doc),
-            Self::V29(stored) => stored.matches(doc),
-            Self::V30(stored) => stored.matches(doc),
-            Self::V31(stored) => stored.matches(doc),
-            Self::V32(stored) => stored.matches(doc),
-        }
-    }
-}
 fn read_replay_revision(
     connection: &Connection,
     id: &str,
-    schema: ReplaySchema,
-) -> Result<(Option<String>, String, StoredDocument), StoreError> {
+) -> Result<(Option<String>, String, ProjectDocument), StoreError> {
     let (parent, kind, json) =
         read_revision_json(connection, id, crate::schema::MAX_DOCUMENT_BYTES)?;
-    let document = match schema {
-        ReplaySchema::Current => StoredDocument::Current(ProjectDocument::from_json(&json)?),
-        ReplaySchema::V1 => StoredDocument::V1(legacy_v1::Document::from_json(&json)?),
-        ReplaySchema::V2 => StoredDocument::V2(legacy_v2::Document::from_json(&json)?),
-        ReplaySchema::V3 => StoredDocument::V3(legacy_v3::Document::from_json(&json)?),
-        ReplaySchema::V4 => StoredDocument::V4(legacy_v4::Document::from_json(&json)?),
-        ReplaySchema::V5 => StoredDocument::V5(legacy_v5::Document::from_json(&json)?),
-        ReplaySchema::V6 => StoredDocument::V6(legacy_v6::Document::from_json(&json)?),
-        ReplaySchema::V7 => StoredDocument::V7(legacy_v7::Document::from_json(&json)?),
-        ReplaySchema::V8 => StoredDocument::V8(legacy_v8::Document::from_json(&json)?),
-        ReplaySchema::V9 => StoredDocument::V9(legacy_v9::Document::from_json(&json)?),
-        ReplaySchema::V10 => StoredDocument::V10(legacy_v10::Document::from_json(&json)?),
-        ReplaySchema::V11 => StoredDocument::V11(legacy_v11::Document::from_json(&json)?),
-        ReplaySchema::V12 => StoredDocument::V12(legacy_v12::Document::from_json(&json)?),
-        ReplaySchema::V13 => StoredDocument::V13(legacy_v13::Document::from_json(&json)?),
-        ReplaySchema::V14 => StoredDocument::V14(legacy_v14::Document::from_json(&json)?),
-        ReplaySchema::V15 => StoredDocument::V15(legacy_v15::Document::from_json(&json)?),
-        ReplaySchema::V16 => StoredDocument::V16(legacy_v16::Document::from_json(&json)?),
-        ReplaySchema::V17 => StoredDocument::V17(legacy_v17::Document::from_json(&json)?),
-        ReplaySchema::V18 => StoredDocument::V18(legacy_v18::Document::from_json(&json)?),
-        ReplaySchema::V19 => StoredDocument::V19(legacy_v19::Document::from_json(&json)?),
-        ReplaySchema::V20 => StoredDocument::V20(legacy_v20::Document::from_json(&json)?),
-        ReplaySchema::V21 => StoredDocument::V21(legacy_v21::Document::from_json(&json)?),
-        ReplaySchema::V22 => StoredDocument::V22(legacy_v22::Document::from_json(&json)?),
-        ReplaySchema::V23 => StoredDocument::V23(legacy_v23::Document::from_json(&json)?),
-        ReplaySchema::V24 => StoredDocument::V24(legacy_v24::Document::from_json(&json)?),
-        ReplaySchema::V25 => StoredDocument::V25(legacy_v25::Document::from_json(&json)?),
-        ReplaySchema::V26 => StoredDocument::V26(legacy_v26::Document::from_json(&json)?),
-        ReplaySchema::V27 => StoredDocument::V27(legacy_v27::Document::from_json(&json)?),
-        ReplaySchema::V28 => StoredDocument::V28(legacy_v28::Document::from_json(&json)?),
-        ReplaySchema::V29 => StoredDocument::V29(legacy_v29::Document::from_json(&json)?),
-        ReplaySchema::V30 => StoredDocument::V30(legacy_v30::Document::from_json(&json)?),
-        ReplaySchema::V31 => StoredDocument::V31(legacy_v31::Document::from_json(&json)?),
-        ReplaySchema::V32 => StoredDocument::V32(legacy_v32::Document::from_json(&json)?),
-    };
+    let document = ProjectDocument::from_json(&json)?;
     if document.revision_id().as_str() != id {
         return Err(history_error("revision identity disagrees with document"));
     }
     Ok((parent, kind, document))
 }
-fn write_migrated_revision(
-    connection: &Connection,
-    document: &ProjectDocument,
-) -> Result<(), StoreError> {
-    connection.execute(
-        "UPDATE revisions SET document=?1 WHERE id=?2",
-        params![document.to_json()?, document.revision_id().as_str()],
-    )?;
-    Ok(())
-}
-
 pub(crate) fn read_initial_id(connection: &Connection) -> Result<String, StoreError> {
     let mut roots = connection.prepare("SELECT CASE WHEN typeof(id)='text' AND length(CAST(id AS BLOB)) BETWEEN 1 AND ?1 THEN id END FROM revisions WHERE parent_id IS NULL LIMIT 2")?;
     let mut rows = roots.query([MAX_IDENTITY_BYTES as i64])?;
@@ -464,16 +189,15 @@ pub(crate) fn read_initial_id(connection: &Connection) -> Result<String, StoreEr
     Ok(initial)
 }
 
-fn replay(connection: &Connection, schema: ReplaySchema) -> Result<(), StoreError> {
-    let migrate = schema != ReplaySchema::Current;
+fn replay(connection: &Connection) -> Result<(), StoreError> {
     let count: i64 =
         connection.query_row("SELECT COUNT(*) FROM revisions", [], |row| row.get(0))?;
     let initial = read_initial_id(connection)?;
-    let (_, kind, first) = read_replay_revision(connection, &initial, schema)?;
+    let (_, kind, first) = read_replay_revision(connection, &initial)?;
     if kind != "initial" {
         return Err(history_error("root revision is not initial"));
     }
-    let mut current = first.initial()?;
+    let mut current = first;
     crate::compound::validate_namespace(connection, &current)?;
     let mut admitted = std::collections::BTreeSet::from([current.revision_id().clone()]);
     let initial_allocations: std::collections::BTreeSet<_> = current
@@ -502,9 +226,6 @@ fn replay(connection: &Connection, schema: ReplaySchema) -> Result<(), StoreErro
                 .map(|allocation| allocation.as_str().to_owned()),
         )
         .collect();
-    if migrate {
-        write_migrated_revision(connection, &current)?;
-    }
     let mut cursor = None;
     // Retain identities, never historical documents. Admitted revision IDs
     // prevent future checkpoint references; the redo stack holds history IDs.
@@ -527,7 +248,7 @@ fn replay(connection: &Connection, schema: ReplaySchema) -> Result<(), StoreErro
         if rows.next()?.is_some() {
             return Err(history_error("revision chronology forks"));
         }
-        let (parent, kind, next) = read_replay_revision(connection, &id, schema)?;
+        let (parent, kind, next) = read_replay_revision(connection, &id)?;
         if parent.as_deref() != Some(current.revision_id().as_str()) {
             return Err(history_error("revision parent disagrees"));
         }
@@ -548,110 +269,15 @@ fn replay(connection: &Connection, schema: ReplaySchema) -> Result<(), StoreErro
                 if parent != cursor || revision != id {
                     return Err(history_error("history parent or revision disagrees"));
                 }
-                let request = match schema {
-                    ReplaySchema::Current => serde_json::from_str(&request_json)?,
-                    ReplaySchema::V1 => legacy_v1::upgrade_request(&request_json)?,
-                    ReplaySchema::V2 => legacy_v2::upgrade_request(&request_json)?,
-                    ReplaySchema::V3 => legacy_v3::upgrade_request(&request_json)?,
-                    ReplaySchema::V4 => legacy_v4::upgrade_request(&request_json)?,
-                    ReplaySchema::V5 => legacy_v5::upgrade_request(&request_json)?,
-                    ReplaySchema::V6 => legacy_v6::upgrade_request(&request_json)?,
-                    ReplaySchema::V7 => legacy_v7::upgrade_request(&request_json)?,
-                    ReplaySchema::V8 => legacy_v8::upgrade_request(&request_json)?,
-                    ReplaySchema::V9 => legacy_v9::upgrade_request(&request_json)?,
-                    ReplaySchema::V10 => legacy_v10::upgrade_request(&request_json)?,
-                    ReplaySchema::V11 => legacy_v11::upgrade_request(&request_json)?,
-                    ReplaySchema::V12 => legacy_v12::upgrade_request(&request_json)?,
-                    ReplaySchema::V13 => legacy_v13::upgrade_request(&request_json)?,
-                    ReplaySchema::V14 => legacy_v14::upgrade_request(&request_json)?,
-                    ReplaySchema::V15 => legacy_v15::upgrade_request(&request_json)?,
-                    ReplaySchema::V16 => legacy_v16::upgrade_request(&request_json)?,
-                    ReplaySchema::V17 => legacy_v17::upgrade_request(&request_json)?,
-                    ReplaySchema::V18 => legacy_v18::upgrade_request(&request_json)?,
-                    ReplaySchema::V19 => legacy_v19::upgrade_request(&request_json)?,
-                    ReplaySchema::V20 => legacy_v20::upgrade_request(&request_json)?,
-                    ReplaySchema::V21 => legacy_v21::upgrade_request(&request_json)?,
-                    ReplaySchema::V22 => legacy_v22::upgrade_request(&request_json)?,
-                    ReplaySchema::V23 => legacy_v23::upgrade_request(&request_json)?,
-                    ReplaySchema::V24 => legacy_v24::upgrade_request(&request_json)?,
-                    ReplaySchema::V25 => legacy_v25::upgrade_request(&request_json)?,
-                    ReplaySchema::V26 => legacy_v26::upgrade_request(&request_json)?,
-                    ReplaySchema::V27 => legacy_v27::upgrade_request(&request_json)?,
-                    ReplaySchema::V28 => legacy_v28::upgrade_request(&request_json)?,
-                    ReplaySchema::V29 => legacy_v29::upgrade_request(&request_json)?,
-                    ReplaySchema::V30 => legacy_v30::upgrade_request(&request_json)?,
-                    ReplaySchema::V31 => legacy_v31::upgrade_request(&request_json)?,
-                    ReplaySchema::V32 => legacy_v32::upgrade_request(&request_json)?,
-                };
-                if migrate {
-                    // An old command must have been admissible in its original
-                    // pre-edit context. Matching a newly supported operation's
-                    // patches cannot legitimize a forged legacy chronology.
-                    if schema == ReplaySchema::V32 {
-                        legacy_v32::validate_request_context(&current, &request)?;
-                    } else if schema == ReplaySchema::V31 {
-                        legacy_v31::validate_request_context(&current, &request)?;
-                    } else if schema == ReplaySchema::V30 {
-                        legacy_v30::validate_request_context(&current, &request)?;
-                    } else if schema == ReplaySchema::V29 {
-                        legacy_v29::validate_request_context(&current, &request)?;
-                    } else if schema == ReplaySchema::V28 {
-                        legacy_v28::validate_request_context(&current, &request)?;
-                    } else if schema == ReplaySchema::V27 {
-                        legacy_v27::validate_request_context(&current, &request)?;
-                    } else if schema == ReplaySchema::V26 {
-                        legacy_v26::validate_request_context(&current, &request)?;
-                    } else if schema == ReplaySchema::V25 {
-                        legacy_v25::validate_request_context(&current, &request)?;
-                    } else if schema == ReplaySchema::V24 {
-                        legacy_v24::validate_request_context(&current, &request)?;
-                    } else {
-                        legacy_v23::validate_request_context(&current, &request)?;
-                    }
-                }
+                let request: CommandRequest = serde_json::from_str(&request_json)?;
                 let calculated =
                     if matches!(request.command, deadpan_core::Command::Compound { .. }) {
                         crate::compound::replay(connection, &current, &request, &admitted)?
                     } else {
                         deadpan_core::apply(&current, &request)?
                     };
-                let matches_edit = match schema {
-                    ReplaySchema::Current => {
-                        calculated == serde_json::from_str::<EditTransaction>(&edit_json)?
-                    }
-                    ReplaySchema::V1 => legacy_v1::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V2 => legacy_v2::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V3 => legacy_v3::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V4 => legacy_v4::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V5 => legacy_v5::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V6 => legacy_v6::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V7 => legacy_v7::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V8 => legacy_v8::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V9 => legacy_v9::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V10 => legacy_v10::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V11 => legacy_v11::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V12 => legacy_v12::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V13 => legacy_v13::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V14 => legacy_v14::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V15 => legacy_v15::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V16 => legacy_v16::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V17 => legacy_v17::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V18 => legacy_v18::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V19 => legacy_v19::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V20 => legacy_v20::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V21 => legacy_v21::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V22 => legacy_v22::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V23 => legacy_v23::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V24 => legacy_v24::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V25 => legacy_v25::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V26 => legacy_v26::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V27 => legacy_v27::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V28 => legacy_v28::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V29 => legacy_v29::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V30 => legacy_v30::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V31 => legacy_v31::matches_edit(&edit_json, &calculated)?,
-                    ReplaySchema::V32 => legacy_v32::matches_edit(&edit_json, &calculated)?,
-                };
+                let matches_edit =
+                    calculated == serde_json::from_str::<EditTransaction>(&edit_json)?;
                 let next_document = calculated.forward.apply(&current)?;
                 if !matches!(request.command, deadpan_core::Command::Compound { .. }) {
                     crate::compound::validate_ordinary_history(
@@ -669,7 +295,7 @@ fn replay(connection: &Connection, schema: ReplaySchema) -> Result<(), StoreErro
                     &next_document,
                     &request,
                 )?;
-                if !matches_edit || !next.matches(&next_document) {
+                if !matches_edit || next != next_document {
                     return Err(history_error(
                         "stored command, patches, and revision disagree",
                     ));
@@ -678,16 +304,6 @@ fn replay(connection: &Connection, schema: ReplaySchema) -> Result<(), StoreErro
                     return Err(history_error(
                         "inverse does not restore the preceding revision",
                     ));
-                }
-                if migrate {
-                    let request = serde_json::to_string(&request)?;
-                    let edit = serde_json::to_string(&calculated)?;
-                    crate::check_document_size(&request)?;
-                    crate::check_document_size(&edit)?;
-                    connection.execute(
-                        "UPDATE history SET request=?1,edit=?2 WHERE id=?3",
-                        params![request, edit, entry],
-                    )?;
                 }
                 cursor = Some(entry);
                 redo.clear();
@@ -706,7 +322,7 @@ fn replay(connection: &Connection, schema: ReplaySchema) -> Result<(), StoreErro
                     cursor,
                     entry,
                 )?;
-                if !next.matches(&plan.next) {
+                if next != plan.next {
                     return Err(history_error(
                         "history navigation disagrees with its revision",
                     ));
@@ -721,9 +337,6 @@ fn replay(connection: &Connection, schema: ReplaySchema) -> Result<(), StoreErro
         };
         admitted.insert(next_document.revision_id().clone());
         current = next_document;
-        if migrate {
-            write_migrated_revision(connection, &current)?;
-        }
         visited += 1;
         if visited > count {
             return Err(history_error("revision chronology contains a cycle"));

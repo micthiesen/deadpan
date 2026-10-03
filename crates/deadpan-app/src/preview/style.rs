@@ -135,6 +135,31 @@ pub(super) fn key_hint(ui: &mut egui::Ui, key: &str, label: &str) {
     );
 }
 
+/// Reserve fallback glyphs' vertical overhang in a top-down text column.
+/// Label allocates the logical row box; its actual ink can extend beyond it.
+/// Reuse the measured galley so wrapping, selection and accessibility stay on
+/// the standard Label path, without enlarging the surrounding scroll clip.
+pub(super) fn ink_padded_label(
+    ui: &mut egui::Ui,
+    text: RichText,
+    wrap: Option<egui::TextWrapMode>,
+) -> egui::Response {
+    let galley = egui::WidgetText::from(text).into_galley(
+        ui,
+        wrap,
+        ui.available_width(),
+        egui::TextStyle::Body,
+    );
+    let top = (-galley.mesh_bounds.top()).max(0.0).ceil();
+    let bottom = (galley.mesh_bounds.bottom() - galley.rect.bottom())
+        .max(0.0)
+        .ceil();
+    ui.add_space(top);
+    let response = ui.label(galley);
+    ui.add_space(bottom);
+    response
+}
+
 #[derive(Clone, Copy)]
 pub(super) struct Layout {
     pub sources: f32,
@@ -174,6 +199,9 @@ impl Layout {
         }
     }
 }
+
+#[cfg(all(test, target_os = "macos"))]
+mod ink_tests;
 
 #[cfg(test)]
 mod tests {

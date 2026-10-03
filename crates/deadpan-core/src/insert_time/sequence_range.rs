@@ -54,6 +54,15 @@ pub(crate) fn preflight_repeat(
     preflight_with(document, parent, range, 2, EndpointMode::StructuralSplit)
 }
 
+/// Group adds one transparent Sequence around retained endpoint contexts.
+pub(crate) fn preflight_group(
+    document: &ProjectDocument,
+    parent: &NodeId,
+    range: FrameRange,
+) -> Result<SequenceRangeEdit, EditError> {
+    preflight_with(document, parent, range, 1, EndpointMode::StructuralSplit)
+}
+
 enum EndpointMode {
     Split,
     Capture,

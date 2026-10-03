@@ -9,6 +9,16 @@ The comma prefix remains usable while browsing the Original so `,i` can copy it
 into Your edit. Other edit operators keep the Original non-destructive. Native
 text editing retains its own selection, clipboard, undo, and redo behavior.
 
+Named Group uses `,g` (`group.create`) to open captured command entry.
+`group.ungroup` is configurable and has no default key path; `:ungroup` is its
+command alias. Neither accepts a count or held activation. The comma prefix
+teaches `g`, and the terminal key's native text companion is consumed before
+subsequent name text or IME reaches the field. Both actions retain native
+modifier reservations. The final Group and five adjacent replays each pass
+3,319,728 production-router cases against 62 live Kestrel bindings, with no
+conflict or fixture drift. See [named groups](GROUP_EDITING.md) and the
+[qualification record](qualification/group-editing-2026-10-03.md).
+
 Edit Repeat uses `repeat.operator` (`r` plus a configured motion), `repeat`
 (`rr`, explicit whole beat) and `repeat.range` (Visual `r`). A leading count is
 total plays; a motion suffix count is distance. Two explicit counts refuse at

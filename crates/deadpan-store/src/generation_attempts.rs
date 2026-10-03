@@ -631,21 +631,6 @@ pub(crate) fn create_tables(connection: &Connection) -> Result<(), StoreError> {
     Ok(())
 }
 
-pub(crate) fn add_schema8_tables(connection: &Connection) -> Result<(), StoreError> {
-    connection.execute_batch(
-        "CREATE TABLE generation_bundle_receipts (
-            request_id TEXT NOT NULL,
-            attempt_id TEXT NOT NULL,
-            bundle TEXT NOT NULL CHECK (json_valid(bundle)),
-            availability TEXT NOT NULL CHECK (availability IN ('present','evicted')),
-            PRIMARY KEY (request_id,attempt_id),
-            FOREIGN KEY (request_id,attempt_id)
-                REFERENCES generation_attempts(request_id,attempt_id)
-        ) STRICT;",
-    )?;
-    Ok(())
-}
-
 pub(crate) fn check_stored_sizes(connection: &Connection) -> Result<(), StoreError> {
     let invalid_attempts: i64 = connection.query_row(
         "SELECT COUNT(*) FROM generation_attempts WHERE

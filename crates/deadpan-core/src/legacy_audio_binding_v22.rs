@@ -12,14 +12,6 @@ use crate::{AudioBindingState, DocumentError, DocumentErrorCode, ValueChange};
 pub(crate) struct LegacyAudioBindingState(AudioBindingState);
 
 impl LegacyAudioBindingState {
-    pub(crate) fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-
-    pub(crate) fn upgrade(self) -> AudioBindingState {
-        self.0
-    }
-
     pub(crate) fn project(state: &AudioBindingState) -> Option<Self> {
         supports(state).then(|| Self(state.clone()))
     }

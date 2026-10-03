@@ -45,9 +45,9 @@ impl ProjectStore {
                 backup: None,
             });
         }
-        // Schemas 39..=51 have no frozen core-33 through 42 adapter. Reject the unused
-        // development format before acquiring a writer or creating a backup.
-        if !matches!(version, 1..=38 | 52) {
+        // Only schema 52 has a supported additive upgrade. Reject obsolete
+        // development formats before acquiring a writer or creating a backup.
+        if version != 52 {
             return Err(StoreError::UnsupportedSchema(version));
         }
         let lock = acquire_lock(&package)?;
@@ -83,7 +83,7 @@ impl ProjectStore {
         let (_, backup_path) = backup.keep().map_err(|error| error.error)?;
         let migration = (|| {
             File::open(&directory)?.sync_all()?;
-            migrate_candidate(&mut original, &directory, &backup_path, version)
+            migrate_candidate(&mut original, &directory, &backup_path)
         })();
         if let Err(source) = migration {
             return Err(StoreError::MigrationFailed {
@@ -103,7 +103,6 @@ fn migrate_candidate(
     original: &mut Connection,
     directory: &Path,
     backup_path: &Path,
-    source_version: u32,
 ) -> Result<(), StoreError> {
     let candidate_file = tempfile::Builder::new()
         .prefix("migration-")
@@ -129,165 +128,29 @@ fn migrate_candidate(
     if violations != 0 {
         return Err(StoreError::Integrity("foreign-key violation".into()));
     }
-    // Install only the schema-8 operational additions before parsing old
-    // request/attempt rows. ALTER/CREATE intentionally has no IF NOT EXISTS:
-    // a legacy database that already contains modern operational vocabulary is
-    // rejected instead of being silently reinterpreted.
-    if (5..8).contains(&source_version) {
-        crate::generation::add_schema8_columns(&transaction)?;
-    }
-    if (6..8).contains(&source_version) {
-        crate::generation_attempts::add_schema8_tables(&transaction)?;
-    }
-    if source_version < 5 {
-        crate::generation::create_tables(&transaction)?;
-    }
-    if source_version < 6 {
-        crate::generation_attempts::create_tables(&transaction)?;
-    }
-    #[cfg(any(target_os = "macos", target_os = "linux"))]
-    if source_version < 10 {
-        crate::original_media::create_tables(&transaction)?;
-    }
-    #[cfg(any(target_os = "macos", target_os = "linux"))]
-    if source_version < 14 {
-        crate::source_registration::create_tables(&transaction)?;
-    }
-    if source_version < 17 {
-        transaction.execute_batch("ALTER TABLE state ADD COLUMN workflow TEXT NOT NULL DEFAULT 'generic' CHECK(workflow IN ('generic','single_source_v1'));")?;
-        #[cfg(any(target_os = "macos", target_os = "linux"))]
-        crate::single_source::create_tables(&transaction)?;
-    }
-    #[cfg(any(target_os = "macos", target_os = "linux"))]
-    if source_version < 40 {
-        crate::render_jobs::create_tables(&transaction)?;
-    }
-    #[cfg(any(target_os = "macos", target_os = "linux"))]
-    if source_version < 41 {
-        crate::publication::create_tables(&transaction)?;
-    }
-    #[cfg(any(target_os = "macos", target_os = "linux"))]
-    if source_version < 52 {
-        crate::render_jobs::create_decision_table(&transaction)?;
-    }
+    // Schema 52 already has the current authored document and operational
+    // tables. Add only Compound checkpoints and the durable register bank.
+    // No IF NOT EXISTS: conflicting tables must fail without promotion.
     crate::compound::create_tables(&transaction)?;
     crate::registers::create_tables(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::render_jobs::check_stored_sizes(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::publication::check_stored_sizes(&transaction)?;
-    // Every source schema predates automatic intent and decision vocabulary.
-    // Check the frozen engineering grammar before the current parsers can see
-    // either a top-level job or an intent nested in a publication journal.
-    #[cfg(any(target_os = "macos", target_os = "linux"))]
-    if source_version < 52 {
-        crate::render_jobs::validate_legacy_intents(&transaction)?;
-    }
-    #[cfg(any(target_os = "macos", target_os = "linux"))]
-    if source_version < 52 {
-        crate::publication::validate_legacy_intents(&transaction)?;
-    }
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::source_registration::check_stored_sizes(&transaction)?;
     validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
-    if source_version == 52 {
-        let compound: bool = transaction.query_row(
-            "SELECT EXISTS(SELECT 1 FROM history WHERE json_extract(request,'$.command.command')='compound')",
-            [], |row| row.get(0),
-        )?;
-        if compound {
-            return Err(StoreError::History(
-                "schema 52 cannot contain compound commands".into(),
-            ));
-        }
+    let compound: bool = transaction.query_row(
+        "SELECT EXISTS(SELECT 1 FROM history WHERE json_extract(request,'$.command.command')='compound')",
+        [], |row| row.get(0),
+    )?;
+    if compound {
+        return Err(StoreError::History(
+            "schema 52 cannot contain compound commands".into(),
+        ));
     }
-    if source_version >= 5 {
-        crate::generation::check_stored_sizes(&transaction)?;
-    }
-    if source_version >= 6 {
-        crate::generation_attempts::check_stored_sizes(&transaction)?;
-    }
-    // Schema 8 receipts had no admission evidence. Reject new vocabulary even
-    // when set to null rather than interpreting it as an old qualified bundle.
-    // Valid old JSON is retained byte-for-byte, without fabricated evidence.
-    if source_version == 8 {
-        let modern: bool = transaction.query_row(
-            "SELECT EXISTS(SELECT 1 FROM generation_bundle_receipts
-             WHERE json_type(bundle, '$.admission') IS NOT NULL)",
-            [],
-            |row| row.get(0),
-        )?;
-        if modern {
-            return Err(StoreError::Integrity(
-                "schema-8 receipt contains schema-9 admission evidence".into(),
-            ));
-        }
-    }
-    // Database versions 4 through 6 share core schema 4, 7 through 10 share
-    // core schema 5, 11 uses core schema 6 with explicit audio mappings, and
-    // 12 uses core schema 7 with independent picture durations, and 13 uses
-    // core schema 8 with signed stream placements and no source qualification.
-    // Schema 14 uses core schema 9 with immutable source qualifications.
-    // Schema 15 uses core schema 10 with authored presentation basis policy.
-    // Schemas 16 and 17 use core schema 11 with authored audio edges. Their
-    // Retimes gain Edit purpose; no old crop becomes a transparent partition.
-    // Schema 18 uses core schema 12, including transparent partitions. Through
-    // schema 18, every mark retains one binding; old JSON cannot add fragments.
-    // Schema 19 uses core schema 13 with multiple bindings per logical mark;
-    // its frozen command grammar does not admit Split.
-    // Schema 20 uses core schema 14, including Split. Old initial snapshots gain
-    // no audio lineage. Replayed copies generate lineage in modern patches;
-    // frozen comparisons omit only that new metadata and retain old summaries.
-    // Schema 21 uses core schema 15 with audio lineage. Its closed snapshots
-    // and history cannot contain authored timing bindings, even empty fields.
-    // Schema 22 uses core schema 16 with owned timing bindings. It preserves
-    // those values exactly but does not admit the new InsertTime command.
-    // Schema 23 uses core schema 17, including InsertTime. It gains no framing,
-    // and its closed node and command vocabulary rejects the new effect fields.
-    // Schema 24 uses core schema 18, including authored framing. Its frozen
-    // recipes reject captured picture context, including an explicit null.
-    // Schema 25 uses core schema 19, including captured framing. Its frozen
-    // audio mappings reject selected placements and new fields, even null.
-    // Schema 26 uses core schema 20, including selected audio placements. Its
-    // frozen owned bindings reject reanchors, including empty or null fields;
-    // replay retains the old lattice and resume phase terms exactly.
-    // Schema 27 uses core schema 21, including chronological reanchors. Its
-    // complete frozen binding grammar rejects gap maps, recipe discriminators,
-    // own-gap arguments and gap-definition clocks in snapshots and both patches.
-    // Schema 28 uses core schema 22 and retains Repeat-gap bindings. Its frozen
-    // document, subtree, patch and timing-layout schemas reject gap overrides,
-    // even when the new map is explicitly empty.
-    // Schema 29 uses core schema 23 and retains sparse gap branches, including
-    // detached Holds that still reference the original default-gap clocks.
-    // Its InsertTime retains pre-edit physical-suffix admission. Schema 30 uses
-    // core schema 24 and additionally admits root seams before composites, but
-    // not an interior split before a composite suffix. Matching modern patches
-    // cannot authorize a formerly inadmissible legacy command.
-    // Schema 31 uses core schema 25 and admits root physical interiors;
-    // schema 32 uses core schema 26 and admits nested Sequence InsertTime.
-    // Schema 33 uses core schema 27, retaining SpliceSource while its closed
-    // commands reject WrapRetime and SetRetime, including occurrence edits.
-    // Schema 34 uses core schema 28, retaining Retime authoring while its
-    // closed documents, patches and commands reject authored sound events.
-    // Schema 35 uses core schema 29, retaining authored root sounds without
-    // chronological routes. Freeze its structural-command context admission;
-    // matching modern patches cannot authorize a formerly forbidden edit.
-    // Schema 36 uses core schema 30 and retains chronological root sound
-    // routes. Its closed vocabulary rejects Hold allowances in documents,
-    // requests and patches; its original root-ripple admission stays frozen.
-    // Schema 37 uses core schema 31, including concrete sound allowances.
-    // Its closed direct and occurrence grammars reject Hold audio setters;
-    // every allowance in snapshots and both patches is compared exactly.
-    // Schema 38 uses core schema 32, including direct and occurrence Hold
-    // audio setters. Its closed nodes, patches and commands reject gain.
-    // Replay all authored history, preserving operational rows and identities
-    // while assigning FitBeat only to mappings absent in that legacy schema.
-    // Schemas before 15 gain an explicit basis; schema 15 retains its policy.
-    // Pre-16 audio edges gain Automatic without changing allocated time;
-    // schemas 16 and 17 retain their authored edge choices.
-    if source_version < 52 {
-        validation::migrate_history(&transaction, source_version)?;
-    }
+    crate::generation::check_stored_sizes(&transaction)?;
+    crate::generation_attempts::check_stored_sizes(&transaction)?;
     crate::generation::validate_store(&transaction)?;
     transaction.pragma_update(None, "user_version", schema::VERSION)?;
     validation::validate_history(&transaction)?;

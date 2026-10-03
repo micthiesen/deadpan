@@ -18,12 +18,11 @@ pub fn configure(connection: &Connection) -> Result<(), StoreError> {
 
 pub fn check_version(connection: &Connection) -> Result<(), StoreError> {
     let version = read_version(connection)?;
-    if matches!(version, 1..=38 | 52) {
+    if version == 52 {
         return Err(StoreError::MigrationRequired(version));
     }
-    // Development schemas 39..=51 stored core schemas 33 through 42 without a frozen
-    // adapter. Schemas 53 and 54 are also unused development formats. These
-    // authorized format breaks reject them before writable open.
+    // Obsolete development formats are rejected before writable open. Only
+    // schema 52 retains its small additive migration; the current format is 55.
     if version != VERSION {
         return Err(StoreError::UnsupportedSchema(version));
     }

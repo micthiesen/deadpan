@@ -1,15 +1,22 @@
 use super::*;
 use deadpan_core::*;
-
 fn fixture(root: &Path) -> Result<PathBuf> {
-    let package = root.join("composition.deadpan");
-    fs::create_dir(&package)?;
-    fs::create_dir(package.join("Snapshots"))?;
-    let db = Connection::open(package.join("project.sqlite"))?;
-    db.pragma_update(None, "foreign_keys", false)?;
-    db.execute_batch(include_str!("../fixtures/v24-composition-history.sql"))?;
+    let package = current_fixture(
+        root,
+        include_str!("../fixtures/current-picture_context.json"),
+        None,
+    )?;
+    pending_rename(
+        &package,
+        ProjectStore::open(&package, AccessMode::ReadOnly)?
+            .snapshot()?
+            .root()
+            .clone(),
+        "Retained picture redo",
+    )?;
     Ok(package)
 }
+
 fn captured() -> CapturedFraming {
     CapturedFraming::capture(
         None,
@@ -24,54 +31,9 @@ fn captured() -> CapturedFraming {
 }
 
 #[test]
-fn actual_schema24_binary_fixture_preserves_every_snapshot_history_backup_and_redo() -> Result {
+fn captured_picture_context_survives_current_history_and_pending_redo() -> Result {
     let scratch = tempfile::tempdir()?;
     let package = fixture(scratch.path())?;
-    let db = Connection::open(package.join("project.sqlite"))?;
-    let before = contents(&db)?;
-    let old_docs = docs(&db)?;
-    let old_history = history_json(&db)?;
-    let old_metadata = metadata(&db)?;
-    let old_operational = operational_metadata(&db)?;
-    assert_eq!(old_docs.len(), 8);
-    assert_eq!(old_history.len(), 4);
-    assert!(matches!(
-        ProjectStore::open(&package, AccessMode::ReadOnly),
-        Err(StoreError::MigrationRequired(24))
-    ));
-    let outcome = ProjectStore::migrate(&package)?;
-    assert_eq!(
-        (outcome.from_schema, outcome.to_schema),
-        (24, DATABASE_SCHEMA_VERSION)
-    );
-    assert_eq!(
-        contents(&Connection::open(outcome.backup.unwrap())?)?,
-        before
-    );
-    assert_eq!(metadata(&db)?, old_metadata);
-    assert_eq!(operational_metadata(&db)?, old_operational);
-    for ((old_id, old), (new_id, new)) in old_docs.iter().zip(docs(&db)?) {
-        assert_eq!(old_id, &new_id);
-        let modern = ProjectDocument::from_json(&new)?;
-        let legacy = legacy_v18::Document::from_json(old)?;
-        assert!(legacy.matches(&modern));
-        assert_eq!(legacy.upgrade()?, modern);
-        let mut expected: serde_json::Value = serde_json::from_str(old)?;
-        expected["schema_version"] = serde_json::json!(DOCUMENT_SCHEMA_VERSION);
-        assert_eq!(serde_json::to_value(modern)?, expected);
-    }
-    for ((old_request, old_edit), (new_request, new_edit)) in
-        old_history.iter().zip(history_json(&db)?)
-    {
-        assert_eq!(
-            legacy_v18::upgrade_request(old_request)?,
-            serde_json::from_str::<CommandRequest>(&new_request)?
-        );
-        assert!(legacy_v18::matches_edit(
-            old_edit,
-            &serde_json::from_str::<EditTransaction>(&new_edit)?
-        )?);
-    }
     let mut store = ProjectStore::open(&package, AccessMode::ReadWrite)?;
     let head = store.snapshot()?;
     assert!(head.nodes().values().any(|node| node.framing.is_some()));
@@ -114,47 +76,6 @@ fn actual_schema24_binary_fixture_preserves_every_snapshot_history_backup_and_re
     assert_eq!(
         ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?,
         expected
-    );
-    Ok(())
-}
-
-#[test]
-fn schema24_rejects_injected_null_context_without_touching_original_or_backup() -> Result {
-    let scratch = tempfile::tempdir()?;
-    let package = fixture(scratch.path())?;
-    let db = Connection::open(package.join("project.sqlite"))?;
-    let (revision, json) = docs(&db)?
-        .into_iter()
-        .find(|(_, json)| {
-            let wire: serde_json::Value = serde_json::from_str(json).unwrap();
-            wire["nodes"]
-                .as_object()
-                .unwrap()
-                .values()
-                .any(|n| n["kind"]["type"] == "hold")
-        })
-        .unwrap();
-    let mut wire: serde_json::Value = serde_json::from_str(&json)?;
-    let node = wire["nodes"]
-        .as_object_mut()
-        .unwrap()
-        .values_mut()
-        .find(|n| n["kind"]["type"] == "hold")
-        .unwrap();
-    node["kind"]["recipe"]["picture_context"] = serde_json::Value::Null;
-    db.execute(
-        "UPDATE revisions SET document=?1 WHERE id=?2",
-        rusqlite::params![wire.to_string(), revision],
-    )?;
-    let before = contents(&db)?;
-    let Err(StoreError::MigrationFailed { backup, .. }) = ProjectStore::migrate(&package) else {
-        panic!("old recipe admitted new field")
-    };
-    assert_eq!(contents(&db)?, before);
-    assert_eq!(contents(&Connection::open(backup)?)?, before);
-    assert_eq!(
-        db.pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?,
-        24
     );
     Ok(())
 }

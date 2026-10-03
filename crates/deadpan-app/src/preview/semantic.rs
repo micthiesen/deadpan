@@ -68,6 +68,19 @@ fn repeat_instruction_hint(
             }
             (format!("repeat ×{plays}"), selector)
         }
+        RepeatableEdit::Group { selector, label } => {
+            if let Some(hint) = visual_hint(format!("group selection as {label:?}")) {
+                return hint;
+            }
+            (format!("group as {label:?}"), selector)
+        }
+        RepeatableEdit::Ungroup => {
+            return if selection != crate::navigation::EditSelection::None {
+                "repeat unavailable: clear Visual range".into()
+            } else {
+                "ungroup selected neutral Sequence".into()
+            };
+        }
         RepeatableEdit::SetRepeatPlays { plays } => {
             return if selection != crate::navigation::EditSelection::None {
                 "repeat unavailable: clear Visual range".into()
@@ -137,6 +150,37 @@ mod tests {
     use super::*;
     use crate::project::semantic::LastEdit;
     use deadpan_core::{FrameCut, RevisionId};
+
+    #[test]
+    fn group_repeat_teaches_retained_label_and_current_visual_scope() {
+        use crate::navigation::EditSelection;
+        let operation = RepeatableEdit::Group {
+            selector: SemanticSelector::VisualSelection,
+            label: "the answer".into(),
+        };
+        assert_eq!(
+            repeat_instruction_hint(&operation, EditSelection::None, false),
+            "select range to group as \"the answer\""
+        );
+        assert_eq!(
+            repeat_instruction_hint(&operation, EditSelection::Range, false),
+            "group selection as \"the answer\""
+        );
+        assert_eq!(
+            repeat_instruction_hint(&operation, EditSelection::Empty, false),
+            "repeat unavailable: empty range"
+        );
+        for selection in [EditSelection::Empty, EditSelection::Range] {
+            assert_eq!(
+                repeat_instruction_hint(&RepeatableEdit::Ungroup, selection, false),
+                "repeat unavailable: clear Visual range"
+            );
+        }
+        assert_eq!(
+            repeat_instruction_hint(&RepeatableEdit::Ungroup, EditSelection::None, false),
+            "ungroup selected neutral Sequence"
+        );
+    }
 
     #[test]
     fn repeat_count_hint_requires_an_explicit_repeat_and_no_visual_state() {

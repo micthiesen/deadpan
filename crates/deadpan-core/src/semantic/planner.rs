@@ -8,17 +8,18 @@ use std::{
 
 use crate::{
     AudioTimingId, CapturedEditSlice, Command, CommandRequest, EditError, EditErrorCode,
-    FrameRange, LeafEdit, MAX_COMPOUND_CAPTURE_BYTES, MAX_COMPOUND_DOCUMENT_BYTES,
-    MAX_COMPOUND_STEPS, MAX_DOCUMENT_JSON_BYTES, MarkId, NodeId, NodeKind, ProjectDocument,
-    ProjectFrame, RegisterName, RegisterValue, RepeatSelectionIdentities, ResolvedStep,
-    ResolvedTransaction, RevisionId, SemanticInstruction, SemanticMotion, SemanticProgram,
-    SemanticSelector, SliceCaptureSelection, SliceIdentityRequirements, SlicePasteIdentities,
-    SourceNode, SplitIdentities, compound::wire,
+    FrameRange, GroupSelectionIdentities, LeafEdit, MAX_COMPOUND_CAPTURE_BYTES,
+    MAX_COMPOUND_DOCUMENT_BYTES, MAX_COMPOUND_STEPS, MAX_DOCUMENT_JSON_BYTES, MarkId, NodeId,
+    NodeKind, ProjectDocument, ProjectFrame, RegisterName, RegisterValue,
+    RepeatSelectionIdentities, ResolvedStep, ResolvedTransaction, RevisionId, SemanticInstruction,
+    SemanticMotion, SemanticProgram, SemanticSelector, SliceCaptureSelection,
+    SliceIdentityRequirements, SlicePasteIdentities, SourceNode, SplitIdentities, compound::wire,
 };
 
 use super::{MAX_SEMANTIC_CALL_DEPTH, MAX_SEMANTIC_INSTRUCTION_FUEL};
 
 mod content;
+mod group;
 mod repeat;
 mod selection;
 
@@ -52,6 +53,13 @@ pub struct SemanticRegisterBank<'a> {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SemanticAllocationRequest {
+    Group {
+        step_index: usize,
+        required_split_ids: usize,
+    },
+    Ungroup {
+        step_index: usize,
+    },
     SetRepeatPlays {
         step_index: usize,
     },
@@ -80,6 +88,13 @@ pub enum SemanticAllocationRequest {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SemanticAllocation {
+    Group {
+        new_revision: RevisionId,
+        identities: GroupSelectionIdentities,
+    },
+    Ungroup {
+        new_revision: RevisionId,
+    },
     SetRepeatPlays {
         new_revision: RevisionId,
     },
@@ -335,6 +350,10 @@ where
                 SemanticInstruction::Cut { selector, register } => {
                     self.capture_selector(index, *register, *selector, true)?;
                 }
+                SemanticInstruction::Group { selector, label } => {
+                    self.group(index, *selector, label)?;
+                }
+                SemanticInstruction::Ungroup => self.ungroup(index)?,
                 SemanticInstruction::Repeat { selector, plays } => {
                     self.repeat(index, *selector, plays.get())?;
                 }
@@ -432,6 +451,8 @@ where
                         | SemanticInstruction::Cut { .. }
                         | SemanticInstruction::Repeat { .. }
                         | SemanticInstruction::SetRepeatPlays { .. }
+                        | SemanticInstruction::Group { .. }
+                        | SemanticInstruction::Ungroup
                         | SemanticInstruction::YankBeat { .. }
                         | SemanticInstruction::Paste { .. }
                         | SemanticInstruction::YankSelection { .. }

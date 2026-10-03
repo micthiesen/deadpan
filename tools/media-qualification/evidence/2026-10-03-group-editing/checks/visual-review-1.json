@@ -1,0 +1,29 @@
+{
+  "base": "5fd02ecc91822f3ea3469ee41959766c5f077705",
+  "binary": "65dcf7035366a236a51f1cad341fd7d42bd30eff0eeb5a15517974cb605eed99",
+  "checks": 328,
+  "capture_review": [
+    {
+      "file": "groups-041.png",
+      "observation": "Command prefill and same-frame suffix are intact. Japanese glyphs are missing; preserved text is exact."
+    },
+    {
+      "file": "groups-069.png",
+      "observation": "Named selected Sequence, exact7-frame range, dots and group shortcut visible at1280x820."
+    },
+    {
+      "file": "groups-093.png",
+      "observation": "Entered group at960x640; breadcrumb, selected Fragment, focused Beats and parent shortcut visible; picture approximately148points high."
+    },
+    {
+      "file": "groups-107.png",
+      "observation": "Scrolled help shows complete safe Ungroup restrictions; Group heading lies above current scroll position."
+    }
+  ],
+  "findings": [
+    {
+      "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+      "severity": "warning"
+    }
+  ]
+}

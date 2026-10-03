@@ -14,11 +14,11 @@ projects keep all their media, edits and history.
 
 ## Authoritative profile and baseline
 
-Database schema 17 introduced an optional strict SQLite
-single-source profile plus a workflow discriminator. Database 18 stores core 12
-and preserves that profile when replaying schema-17 history. Projects predating
-the profile migrate without one and remain generic. No JSON sidecar or global catalog becomes
-the authority for an Original's identity.
+The optional strict SQLite single-source profile and workflow discriminator
+were introduced in database schema 17. Current schema 55 preserves the profile;
+generic projects stay generic. The supported schema-52 upgrade adds no profile.
+See [development formats](DEVELOPMENT_FORMATS.md) for current admission.
+No JSON sidecar or global catalog becomes the authority for an Original's identity.
 
 `ProjectStore::create_single_source` requires an empty automatic project.
 `SingleSourceState::AwaitingSource` pins that initial revision without claiming

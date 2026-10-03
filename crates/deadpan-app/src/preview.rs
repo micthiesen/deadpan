@@ -30,7 +30,10 @@ mod copied;
 mod delete;
 mod edit_range;
 mod editor_input;
+#[cfg(target_os = "macos")]
+mod fonts;
 mod gain;
+mod groups;
 #[cfg(feature = "ui-harness")]
 pub(crate) mod harness;
 mod help_scroll;
@@ -223,6 +226,8 @@ impl DeadpanApp {
         initial_project: Option<String>,
         keymap: crate::keymap::Startup,
     ) -> Result<Self, std::io::Error> {
+        #[cfg(target_os = "macos")]
+        fonts::install(&context.egui_ctx);
         style::apply(&context.egui_ctx);
         let repaint = context.egui_ctx.clone();
         let service = ProjectService::new(Arc::new(move || repaint.request_repaint()))?;
@@ -1332,6 +1337,16 @@ impl DeadpanApp {
         self.bindings.clear();
         self.command_open = true;
         self.command = command;
+        // A new command is a fresh native text session. Retaining the previous
+        // field's selection puts same-batch typing inside a longer prefill,
+        // and retaining its undo history can restore an unrelated command.
+        let mut text_state = egui::text_edit::TextEditState::default();
+        text_state
+            .cursor
+            .set_char_range(Some(egui::text::CCursorRange::one(
+                egui::text::CCursor::new(self.command.chars().count()),
+            )));
+        text_state.store(context, egui::Id::new(COMMAND_ID));
         // Inspector actions run after the footer. Focusing its absent field
         // would publish an invalid accessibility tree for this frame.
         // Keep the real origin pane focused until the field is drawn, so later
@@ -1580,6 +1595,8 @@ impl DeadpanApp {
                 | Action::DeleteFrames(_)
                 | Action::Operator { .. }
                 | Action::Repeat { .. }
+                | Action::Group
+                | Action::Ungroup
                 | Action::RepeatLast
                 | Action::CopyMoment
                 | Action::PasteMoment { .. } => {
@@ -1649,6 +1666,8 @@ impl DeadpanApp {
             Action::Open => self.begin_dialog(DialogKind::OpenProject, context, false),
             Action::Import => self.begin_dialog(self.import_dialog_kind(), context, false),
             Action::Insert => self.insert(),
+            Action::Group => self.open_command("group name=".into(), context),
+            Action::Ungroup => self.group_command(Some(self.capture_macro_target()), None),
             Action::Undo => self.history(false),
             Action::Redo => self.history(true),
             Action::Playback => {
@@ -2201,7 +2220,8 @@ impl DeadpanApp {
                         self.bindings = bindings;
                         self.bindings.set_macro_recording(self.macros.recording());
                     }
-                    let entered_text = (action == Action::Command && self.command_open)
+                    let entered_text = (matches!(action, Action::Command | Action::Group)
+                        && self.command_open)
                         || (action == Action::Search
                             && context.memory(|m| m.has_focus(egui::Id::new(SEARCH_ID))));
                     if entered_text {
@@ -2367,6 +2387,12 @@ impl DeadpanApp {
             }
         }
         match command {
+            Ok(navigation::command::Entry::Group { label }) => {
+                self.group_command(macro_target, Some(label));
+            }
+            Ok(navigation::command::Entry::Action(Action::Ungroup)) => {
+                self.group_command(macro_target, None);
+            }
             Ok(navigation::command::Entry::Scope(choice)) => {
                 self.scoped_command(choice, scoped_target, context);
             }
@@ -2798,7 +2824,8 @@ impl DeadpanApp {
                 ui.horizontal_wrapped(|ui| {
                     style::key_hint(ui, "Enter", "apply command");
                     style::key_hint(ui, "Esc", "cancel entry");
-                    ui.weak(sound_events::command_hint(&self.command).unwrap_or("Whole project frames: 11f · repeat count: total plays"));
+                    let group_entry = self.command.trim_start().trim_start_matches(':').split_whitespace().next().is_some_and(|verb| verb.eq_ignore_ascii_case("group"));
+                    ui.weak(if group_entry { "Name the selection · use quotes, for example name=\"the answer\"" } else { sound_events::command_hint(&self.command).unwrap_or("Whole project frames: 11f · repeat count: total plays") });
                     if let (Ok(navigation::command::Entry::Action(Action::Edit(BeatEdit::InsertHold(input)))), Some(workspace)) = (navigation::command::parse(&self.command), &self.workspace)
                         && let Ok(duration) = input.resolve(workspace.document.presentation_basis().frame_rate)
                     {
@@ -2827,6 +2854,7 @@ impl DeadpanApp {
                         self.add_editor_hint(&mut hints, if visual { EditorKey::CutRange } else { EditorKey::CutFrames }, if visual { "cut range" } else { "cut frames" });
                         self.add_editor_hint(&mut hints, EditorKey::Copy, if visual { "copy range" } else { "copy beat" });
                         self.add_editor_hint(&mut hints, EditorKey::Repeat, if visual { "repeat range" } else { "repeat beat" });
+                        self.add_editor_hint(&mut hints, EditorKey::Group, "name group");
                         self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", if visual { "replace range" } else { "paste" });
                         self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: record call");
                         self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "save macro");
@@ -2879,6 +2907,7 @@ impl DeadpanApp {
                             }
                         };
                         if self.pane != Pane::Sources && let Some(label) = self.repeat_hint() { self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label); }
+                        self.add_editor_hint(&mut hints, EditorKey::Group, "name group");
                         if self.copied.selected_content().is_some() { self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", if self.selected_edit_range().is_some() { "replace range" } else { "paste after / before" }); }
                         self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
                     } else {
@@ -3356,9 +3385,10 @@ impl DeadpanApp {
                                     );
                                 });
                             ui.vertical(|ui| {
-                                ui.add(
-                                    egui::Label::new(egui::RichText::new(&data.label).size(17.0))
-                                        .truncate(),
+                                style::ink_padded_label(
+                                    ui,
+                                    egui::RichText::new(&data.label).size(17.0),
+                                    Some(egui::TextWrapMode::Truncate),
                                 )
                                 .on_hover_text(&data.label);
                                 ui.label(egui::RichText::new(data.kind).color(style::MUTED));
@@ -3780,7 +3810,7 @@ impl DeadpanApp {
                     }
                     ui.separator();
                     ui.label(egui::RichText::new("SEMANTIC MACROS").strong().color(style::LAVENDER));
-                    help_binding(ui, &format!("{} + letter · :record a", key(EditorKey::MacroRecord)), "Record frame and beat motions, group start/end, Visual selections, cuts, copies, Repeat wraps and count changes, register pastes and named calls in the current ordinary Sequence group. Existing Visual selections are retained. Instructions keep requested counts and resolve against the current cursor, beat and selection. Recording performs each action and adds it only after success.");
+                    help_binding(ui, &format!("{} + letter · :record a", key(EditorKey::MacroRecord)), "Record frame and beat motions, group start/end, Visual selections, cuts, copies, Repeat wraps and count changes, grouping, ungrouping, register pastes and named calls in the current ordinary Sequence group. Existing Visual selections are retained. Instructions keep requested counts and resolve against the current cursor, beat and selection. Recording performs each action and adds it only after success.");
                     help_binding(ui, &format!("{} · :record-stop", key(EditorKey::MacroRecord)), "While recording, save to that named Macro register. Saving adds no Undo and preserves the default copy. Esc clears and records an active or finished Visual selection; without a selection it cancels recording. :record-cancel always discards the draft. Cancellation keeps completed edits undoable; a pending authored action still finishes.");
                     help_binding(ui, &format!("{} + letter · :macro a 3", key(EditorKey::MacroExecute)), "Run a named Macro from the current cursor, beat and Visual selection, with an optional positive count before its binding. Authored edits share one Undo; copying alone changes registers, and navigation changes cursor and selection. Calls use Macro registers; paste uses Original or Edit copies. Visual copy retains its range; Visual cut and replacement clear it. Empty selections fail without falling back to a beat. A failed instruction rolls back the whole run, including registers. Recursive calls and oversized runs are refused.");
                     ui.separator();
@@ -3845,6 +3875,8 @@ impl DeadpanApp {
                         ("Trim · e / b / Space / Enter / Esc".to_owned(), "e focuses the native amount field. Enter there accepts the text; it never applies the edit on the same key. Native fields and buttons keep Tab and activation, and IME keeps Enter/Escape. b compares Before/Proposed. Space auditions, pauses or resumes; Shift-Space restarts a context loop. The outgoing/incoming pair stays fixed during audio. Enter applies one nonzero edit after all input is acknowledged and the current Proposed pair displays. Escape restores entry context before saving starts. Command, Control and Option chords stay reserved.".to_owned()),
                         (":slip +5f".to_owned(), "Preview linked media movement inside the selected Source beat while keeping its duration, Edit cursor and Original cursor. Clear Visual selection first. h/l adjusts project frames; Shift gives ten. i/o inspects first/last delivered pictures; arrows inspect inside the beat. b compares Before/Proposed. Enter applies once after the current Proposed picture displays; Escape cancels. Stopped pictures only.".to_owned()),
                         (":splice".to_owned(), "Preview a copied Original or Edit slice at the Edit cursor. Insert is the default. m toggles Move for a fresh Edit copy: one undoable edit relocates the linked slice and selects its full result. A copy from an older revision can still be inserted; yank again to move. With a captured Edit range, r toggles Replace selection and always uses Copy. Returning to Insert or Move restores the retained insertion destination. i/o refines source endpoints without changing the register; d selects destination and j/k chooses seams. In Move, s inspects removal and f insertion; h/l inspects nearby frames. b compares Before/Proposed at that join, Space auditions, and Shift+Space loops its local context. Enter commits once; Escape restores entry selection and cursors. Source/Hold/fragment endpoints and whole intervening beats work in ordinary Sequence scopes. Open the destination group before opening placement to target it.".to_owned()),
+                        (format!("{} / :group name=\"the uncomfortable answer\"", key(EditorKey::Group)), "Name the selected beat or nonempty Visual range. Put the name in double quotes; spaces and Unicode are preserved. Grouping keeps picture and sound unchanged, creates one Undo step, and keeps the chosen register. The command uses the selection captured when entry opened.".to_owned()),
+                        (if key(EditorKey::Ungroup).is_empty() { ":ungroup".to_owned() } else { format!("{} / :ungroup", key(EditorKey::Ungroup)) }, format!("Replace an explicit selected neutral Sequence with its children. Clear every Visual range first. Groups with framing, audio treatments, custom audio edges or editorial edges refuse because those effects cannot be discarded. {} / {} navigate groups without changing structure. Group and Ungroup can be recorded; dot resolves their saved intent at the new target.", key(EditorKey::EnterGroup), key(EditorKey::LeaveGroup))),
                         (format!("{} / :insert", key(EditorKey::Insert)), "Reuse the full Original after the selected beat in the current group, or append to an empty group. Legacy projects insert their selected source.".to_owned()),
                         (format!("{} / Ctrl R", key(EditorKey::Undo)), "Undo / redo. Native ⌘Z / ⌘Shift Z also work.".to_owned()),
                         ("⌘E / :render".to_owned(), "Render the saved full edit with automatic SDR output settings. Finish or cancel Trim or Slip first. For an unsaved Camera, Gain or Room tone preview, choose Commit preview and render, Discard preview and render, or Keep editing.".to_owned()),
@@ -3854,7 +3886,7 @@ impl DeadpanApp {
                     for (key, description) in [
                         ("⌘I".to_owned(), "Add an audio-only sound, or retry an incomplete Original. Audio selection is automatic; advanced stream choices are in import options.".to_owned()),
                         (format!("{} / Enter / Esc", key(EditorKey::Command)), "Enter a command / apply / cancel. Text fields keep native editing and IME.".to_owned()),
-                        (key(EditorKey::RepeatLast), "Repeat the last committed picture cut, Repeat wrap or play-count change. Cuts and wraps use the current Visual range or their retained selector at the new location. Count changes require a selected Repeat and no Visual range. Requested distances and total plays are retained. Cuts keep their register unless an explicit choice overrides it; Repeat edits preserve register intent. Undo/Redo, marks and copies preserve the last edit; unsupported edits clear it. No count or held repeat.".to_owned()),
+                        (key(EditorKey::RepeatLast), "Repeat the last committed picture cut, Repeat wrap or play-count change, Group or Ungroup. Cuts, wraps and Group use the current Visual range or their retained selector at the new location. Group retains its name. Count changes require a selected Repeat; Ungroup requires a neutral Sequence. Both refuse every Visual range. Requested distances and total plays are retained. Cuts keep their register unless an explicit choice overrides it; Repeat, Group and Ungroup preserve register intent. Undo/Redo, marks and copies preserve the last edit; unsupported edits clear it. No count or held repeat.".to_owned()),
                         (format!("{} / :help / Esc", key(EditorKey::Help)), "Open this reference / close it.".to_owned()),
                     ] { help_binding(ui, &key, &description); }
                     ui.separator();

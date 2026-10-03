@@ -1,0 +1,89 @@
+import gzip,hashlib,json,re,shutil,subprocess
+from pathlib import Path
+scratch=Path('/tmp/deadpan-group-20261003')
+dest=Path('tools/media-qualification/evidence/2026-10-03-group-editing')
+def read(name): return json.loads((scratch/name).read_text())
+def sha(path): return hashlib.sha256(path.read_bytes()).hexdigest()
+def run(*args): return subprocess.check_output(args,text=True).strip()
+def compressed(src,dst): dst.write_bytes(gzip.compress(src.read_bytes(),mtime=0))
+def counts(name):
+ s=(scratch/(name+'.log')).read_text()
+ results=re.findall(r'test result: (ok|FAILED)\. (\d+) passed; (\d+) failed; (\d+) ignored;',s)
+ return {'passed':sum(int(r[1]) for r in results),'failed':sum(int(r[2]) for r in results),'ignored':sum(int(r[3]) for r in results),'targets':len(results)}
+final_checks=['core-tests-4','cli-tests-4','migration-tests-4','app-default-tests-7','app-ui-tests-5','fmt-2','clippy-2','clippy-ui-2','build-ui-final-2','build-release','groups-visual-5','dot-visual','macros-visual','repeat-visual','keymap-visual','scoped-visual','groups-performance']
+source=read('app-ui-tests-5.json')['source_manifest_sha256']
+for name in final_checks:
+ check=read(name+'.json')
+ assert check['exit_code']==0 and check['source_unchanged'],name
+ if name in ['core-tests-4','cli-tests-4','migration-tests-4']:
+  earlier=read('source-'+check['source_manifest_sha256']+'.json')
+  final=read('source-'+source+'.json')
+  assert [p for p in sorted(earlier.keys()|final.keys()) if earlier.get(p)!=final.get(p)]==['crates/deadpan-app/src/preview.rs','crates/deadpan-app/src/preview/fonts/tests.rs','crates/deadpan-app/src/preview/scoped.rs','crates/deadpan-app/src/preview/style.rs','crates/deadpan-app/src/preview/style/ink_tests.rs'],name
+ else:
+  assert check['source_manifest_sha256']==source,name
+workspace=read('workspace-tests-3.json')
+assert workspace['exit_code']==101 and workspace['source_unchanged']
+old=read('source-'+workspace['source_manifest_sha256']+'.json')
+new=read('source-'+source+'.json')
+changes=sorted(k for k in old.keys()|new.keys() if old.get(k)!=new.get(k))
+expected=['Cargo.lock','crates/deadpan-app/Cargo.toml','crates/deadpan-app/src/preview.rs','crates/deadpan-app/src/preview/fonts.rs','crates/deadpan-app/src/preview/fonts/tests.rs','crates/deadpan-app/src/preview/harness/groups.rs','crates/deadpan-app/src/preview/scoped.rs','crates/deadpan-app/src/preview/style.rs','crates/deadpan-app/src/preview/style/ink_tests.rs','crates/deadpan-cli/tests/project_commands.rs','crates/deadpan-cli/tests/project_commands/macros/groups.rs','crates/deadpan-core/src/group_selection/tests.rs','crates/deadpan-store/tests/migration/development_break.rs']
+assert changes==sorted(expected),changes
+for directory in ['checks','replays','screenshots','scripts','native','review']:
+ (dest/directory).mkdir(parents=True,exist_ok=True)
+for path in sorted(scratch.glob('*.json')):
+ if path.name.startswith('source-'): compressed(path,dest/'checks'/(path.name+'.gz'))
+ else: shutil.copy2(path,dest/'checks'/path.name)
+for path in sorted(scratch.glob('*.log')): compressed(path,dest/'checks'/(path.name+'.gz'))
+replays=[]
+for name in ['groups-visual-1','groups-visual-2','groups-visual-3','groups-visual-4','groups-visual-5','dot-visual','macros-visual','repeat-visual','keymap-visual','scoped-visual','groups-performance']:
+ path=scratch/name/'report.json'; report=json.loads(path.read_text())
+ compressed(path,dest/'replays'/(name+'.json.gz'))
+ scenario=next(s for s in report['scenarios'] if s['name']!='kestrel-shortcuts')
+ if name in ['groups-visual-1','groups-visual-2','groups-visual-4']:
+  assert report['failed']
+ else:
+  assert not report['failed'] and all(c['passed'] for c in scenario['checks']),name
+  audit=next(s for s in report['scenarios'] if s['name']=='kestrel-shortcuts')['checks'][0]
+  assert audit['passed'] and not audit['actual']['conflicts'],name
+  replays.append({'run':name,'scenario':scenario['name'],'checks':len(scenario['checks']),'binary_sha256':report['metadata']['binary_sha256'],'findings':scenario['findings'],'skipped':scenario['skipped']})
+for src,dst in read('selected-captures.json').items(): shutil.copy2(scratch/src,dest/'screenshots'/dst)
+for path in sorted(scratch.glob('native-*.txt')): compressed(path,dest/'native'/(path.name+'.gz'))
+pruning=Path('/tmp/deadpan-legacy-prune-20261003')
+for directory,names in {
+ 'core':['README.md','manifest.json','removed-items.json','removed-tests.json','group-after-prune-manifest.json'],
+ 'store':['README.md','manifest.json','removed-test-inventory.json','fixture-provenance.json'],
+ 'native':['legacy-build-cost.md'],
+}.items():
+ for name in names:
+  compressed(pruning/directory/name,dest/'review'/(directory+'-'+name+'.gz'))
+for label,directory,names in [
+ ('core-test-fixes',scratch/'core-test-fixes',['diagnosis.md','manifest.json']),
+ ('inspector-ink',Path('/tmp/deadpan-font-fallback-20261003/inspector-ink'),['README.md','manifest.json']),
+ ('font',Path('/tmp/deadpan-font-fallback-20261003/patch'),['README.md','manifest.json']),
+ ('equivalence',scratch/'equivalence',['README.md','manifest.json']),
+]:
+ for name in names: compressed(directory/name,dest/'review'/(label+'-'+name+'.gz'))
+performance=read('groups-performance/report.json')
+assert performance['metadata']['binary_sha256']==sha(Path('target/release/deadpan-app'))
+test_counts={name:counts(name) for name in ['workspace-tests-3','core-tests-4','cli-tests-4','migration-tests-4','app-default-tests-7','app-ui-tests-5']}
+assert test_counts['workspace-tests-3']['failed']==5
+assert all(v['failed']==0 and v['ignored']==0 for k,v in test_counts.items() if k!='workspace-tests-3')
+metadata={
+ 'base_commit':run('git','rev-parse','HEAD'),'source_manifest_sha256':source,
+ 'workspace_source_manifest_sha256':workspace['source_manifest_sha256'],'workspace_to_final_changes':changes,
+ 'source_note':'The complete default workspace run had five new test failures. All three failed targets were rerun in full after test-only corrections. Subsequent production changes are confined to native app font setup, inspector title spacing and help; default and optional app tests, strict workspace and optional lint, and rendered/native checks use final source. Backend production sources are unchanged after the complete workspace run.',
+ 'test_counts':test_counts,'test_count_note':'Counts overlap across configurations and reruns. The failed full run is retained and is not described as a passing full-workspace gate.',
+ 'visual_binary_sha256':read('groups-visual-5/report.json')['metadata']['binary_sha256'],
+ 'release_binary_sha256':performance['metadata']['binary_sha256'],
+ 'workflow_checks':sum(r['checks'] for r in replays if r['run'] not in ['groups-visual-3','groups-performance']),
+ 'replays':replays,'kestrel':audit['actual'],
+ 'performance_timings':{t['name']:t['summary'] for s in performance['scenarios'] if s['name']=='groups' for t in s['timings']},
+ 'native':read('native-observations.json'),
+ 'machine':run('sysctl','-n','machdep.cpu.brand_string','hw.memsize').splitlines(),'system':run('sw_vers'),'rustc':run('rustc','--version'),'cargo':run('cargo','--version'),
+ 'limits':['Replay injects production keyboard/IME events; OS composition, physical delivery and VoiceOver remain unqualified.','Release replay is a small fixture with cold import and mixed interactions. It does not qualify full-size projects, acoustics, physical display latency or memory pressure.','Font input is bounded to 32 MiB; renderer copies and atlas memory are additional. Missing fonts keep builtins. Coverage is limited to the installed tested fonts.','The developer app uses external build-host libraries. Signing and standalone packaging remain open.','All product requirements and gates remain open or partial.'],
+}
+(dest/'metadata.json').write_text(json.dumps(metadata,indent=2)+'\n')
+for path in [Path('/tmp/deadpan-original-layout-20261002/run-check.py'),scratch/'run-final-checks.py',scratch/'run-final-replays.py',scratch/'apply-reviewed.py',Path(__file__)]:
+ shutil.copy2(path,dest/'scripts'/(path.name+'.txt'))
+(dest/'SHA256SUMS').write_text(''.join(sha(p)+'  '+str(p.relative_to(dest))+'\n' for p in sorted(dest.rglob('*')) if p.is_file() and p.name!='SHA256SUMS'))
+print(json.dumps({'source':source,'tests':test_counts,'workflow_checks':metadata['workflow_checks'],'performance':metadata['performance_timings']},indent=2))

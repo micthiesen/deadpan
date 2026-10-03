@@ -336,7 +336,7 @@ fn current_wire_defaults_an_absent_object_but_requires_complete_known_policies_w
 }
 
 #[test]
-fn migrating_automatic_edges_does_not_grow_legacy_document_request_or_patch_json() {
+fn automatic_edges_are_omitted_from_document_request_and_patch_json() {
     let initial = empty();
     let request = request(
         &initial,
@@ -370,28 +370,11 @@ fn migrating_automatic_edges_does_not_grow_legacy_document_request_or_patch_json
     for document in [&initial, &after] {
         let current_json = document.to_json().unwrap();
         assert!(!current_json.contains("audio_edges"));
-        let old_json = current_json.replacen(
-            &format!("\"schema_version\": {DOCUMENT_SCHEMA_VERSION}"),
-            "\"schema_version\": 10",
-            1,
-        );
-        assert_ne!(old_json, current_json);
-        let upgraded = legacy_v10::Document::from_json(&old_json)
-            .unwrap()
-            .upgrade()
-            .unwrap();
-        assert_eq!(&upgraded, document);
-        assert_eq!(upgraded.to_json().unwrap().len(), old_json.len());
     }
     let request_json = serde_json::to_string(&request).unwrap();
     assert!(!request_json.contains("audio_edges"));
-    assert_eq!(
-        serde_json::to_string(&legacy_v10::upgrade_request(&request_json).unwrap()).unwrap(),
-        request_json
-    );
     let edit_json = serde_json::to_string(&transaction).unwrap();
     assert!(!edit_json.contains("audio_edges"));
-    assert!(legacy_v10::matches_edit(&edit_json, &transaction).unwrap());
     // Explicit choices still retain the full object and round trip as authored.
     let hard = edit(
         &after,

@@ -45,12 +45,17 @@ pub enum RepeatableEdit {
     SetRepeatPlays {
         plays: NonZeroU32,
     },
+    Group {
+        selector: SemanticSelector,
+        label: String,
+    },
+    Ungroup,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LastEdit {
     pub operation: RepeatableEdit,
-    /// Only cuts use a register. Repeat edits preserve pending overrides.
+    /// Only cuts use a register. Other edits preserve pending overrides.
     pub register: Option<char>,
 }
 
@@ -85,10 +90,34 @@ impl LastEdit {
             RepeatableEdit::SetRepeatPlays { plays } => {
                 SemanticInstruction::SetRepeatPlays { plays: *plays }
             }
+            RepeatableEdit::Group { selector, label } => SemanticInstruction::Group {
+                selector: if context.visual_selection.is_some() {
+                    SemanticSelector::VisualSelection
+                } else {
+                    *selector
+                },
+                label: label.clone(),
+            },
+            RepeatableEdit::Ungroup => SemanticInstruction::Ungroup,
         }
     }
 
     pub fn from_instruction(instruction: &SemanticInstruction) -> Option<Self> {
+        if let SemanticInstruction::Group { selector, label } = instruction {
+            return Some(Self {
+                operation: RepeatableEdit::Group {
+                    selector: *selector,
+                    label: label.clone(),
+                },
+                register: None,
+            });
+        }
+        if let SemanticInstruction::Ungroup = instruction {
+            return Some(Self {
+                operation: RepeatableEdit::Ungroup,
+                register: None,
+            });
+        }
         if let SemanticInstruction::SetRepeatPlays { plays } = instruction {
             return Some(Self {
                 operation: RepeatableEdit::SetRepeatPlays { plays: *plays },
@@ -147,7 +176,7 @@ impl Snapshot {
             return Err("The saved project changed. Reopen it before repeating an edit.".into());
         }
         self.edit.as_ref().ok_or_else(|| {
-            "No repeatable edit is available. Cut content, wrap a Repeat or set its play count first.".into()
+            "No repeatable edit is available. Cut, group, ungroup, wrap a Repeat or set its play count first.".into()
         })
     }
 }

@@ -881,25 +881,9 @@ fn roll_transforms_marks_once_preserving_physical_bindings_and_seam_bias() {
 }
 
 #[test]
-fn historical_command_grammars_refuse_roll_and_current_wire_is_closed() {
+fn current_command_wire_round_trips() {
     let before = fixture(None, 0);
     let req = request(&before, roll(&before, "left", "right", 3));
     let json = serde_json::to_string(&req).unwrap();
-    macro_rules! closed { ($($module:ident),+ $(,)?) => { $(assert!($module::upgrade_request(&json).is_err(),stringify!($module));)+ }; }
-    closed!(
-        legacy_v1, legacy_v2, legacy_v3, legacy_v4, legacy_v5, legacy_v6, legacy_v7, legacy_v8,
-        legacy_v9, legacy_v10, legacy_v11, legacy_v12, legacy_v13, legacy_v14, legacy_v15,
-        legacy_v16, legacy_v17, legacy_v18, legacy_v19, legacy_v20, legacy_v21, legacy_v22,
-        legacy_v23, legacy_v24, legacy_v25, legacy_v26, legacy_v27, legacy_v28, legacy_v29,
-        legacy_v30, legacy_v31, legacy_v32
-    );
-    for validate in [
-        legacy_v29::validate_request_context,
-        legacy_v30::validate_request_context,
-        legacy_v31::validate_request_context,
-        legacy_v32::validate_request_context,
-    ] {
-        assert!(validate(&before, &req).is_err());
-    }
     assert_eq!(serde_json::from_str::<CommandRequest>(&json).unwrap(), req);
 }

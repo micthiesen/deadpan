@@ -19,6 +19,33 @@ test instances after testing instead of leaving them idle. The previously
 running `dev.thiesen.deadpan.cursor-qa` instance has been quit, and the native
 app inventory confirmed no Deadpan app remained running.
 
+## Named groups and development formats, 2026-10-03
+
+[Named groups](../GROUP_EDITING.md) adds captured `,g` / `:group name="…"`
+and safe `:ungroup` through semantic Apply, recording and dot. Group supports
+exact children, including empty structures, and nonempty Visual ranges in
+ordinary Sequences. Endpoint splits retain complete contexts and sample clocks;
+root sounds retain their timing. Ungroup refuses authored group effects and
+every Visual state. Removed group-host marks become explicitly unresolved;
+headless `mark_changes` reports complete entry/final logical mark differences.
+
+[Development formats](../DEVELOPMENT_FORMATS.md) now supports current database
+55 and the additive schema-52 upgrade. Schemas 1 through 51, 53 and 54 refuse
+before writer acquisition or backups. The obsolete document adapters are removed
+under the user's unused-project allowance. Current history, recovery and embedded
+audio-context codecs remain. Older entries below describe their own revision's
+behavior. Build-speed savings have not been measured in isolation.
+
+The [qualification record](../qualification/group-editing-2026-10-03.md) retains
+747 default and 783 optional app tests, strict lint, 1,416 rendered workflow
+checks, exact PCM/GPU comparisons and native register/macro/Undo verification.
+All three failed targets from the full workspace run pass after documented
+test-only corrections; the original failed run remains evidence. The native
+QA app was closed. The release Group replay also passes; its small-fixture
+input-to-commit median is 5.115 ms and p95 is 6.994 ms. It does not qualify
+large projects or physical display latency.
+All requirements and gates remain open or partial.
+
 ## Repeat selections, current implementation
 
 The newer [scoped editing boundary](../SCOPED_EDITING.md) adds Repeat/Retime
@@ -1861,8 +1888,9 @@ Deleting all current beats does not make another video eligible. Importing sound
 does not imply placing it, lengthening the edit or replacing original speech;
 sound-event overlay requires its actual authored and mixing path. Do not relabel
 a generic blank-picture audio beat as a placed effect. Maintain core structural
-capability and strict legacy migration while enforcing V1 through the optional
-profile and native workflow.
+capability and current recovery while enforcing V1 through the optional profile
+and native workflow. The current development-format policy above supersedes
+the older migration requirements for retired unused formats.
 
 ## Delivery
 

@@ -503,37 +503,3 @@ fn bounded_live_inventory_allows_replacement_and_rejects_unknown_wire_fields() {
     assert!(serde_json::from_value::<SoundEvent>(wire).is_err());
     assert!(serde_json::from_value::<SoundOverflowPolicy>(json!("trim")).is_err());
 }
-
-#[test]
-fn frozen_command_vocabularies_reject_sound_authoring() {
-    let document = fixture();
-    let request = serde_json::to_string(&request(
-        &document,
-        Command::SetSound {
-            id: sound(),
-            event: event(&document),
-        },
-    ))
-    .unwrap();
-    macro_rules! check {
-        ($($module:ident),+ $(,)?) => { $(assert!($module::upgrade_request(&request).is_err(), stringify!($module));)+ };
-    }
-    check!(
-        legacy_v1, legacy_v2, legacy_v3, legacy_v4, legacy_v5, legacy_v6, legacy_v7, legacy_v8,
-        legacy_v9, legacy_v10, legacy_v11, legacy_v12, legacy_v13, legacy_v14, legacy_v15,
-        legacy_v16, legacy_v17, legacy_v18, legacy_v19, legacy_v20, legacy_v21, legacy_v22,
-        legacy_v23, legacy_v24, legacy_v25, legacy_v26, legacy_v27
-    );
-    let mut wire = serde_json::to_value(&document).unwrap();
-    wire["schema_version"] = json!(27);
-    let old = legacy_v27::Document::from_json(&wire.to_string()).unwrap();
-    assert!(old.upgrade().unwrap().sounds().is_empty());
-    let (placed, transaction) = place(&document, event(&document));
-    wire = serde_json::to_value(&placed).unwrap();
-    wire["schema_version"] = json!(27);
-    assert!(legacy_v27::Document::from_json(&wire.to_string()).is_err());
-    assert!(
-        legacy_v27::matches_edit(&serde_json::to_string(&transaction).unwrap(), &transaction)
-            .is_err()
-    );
-}

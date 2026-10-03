@@ -517,69 +517,6 @@ fn trim_rejects_missing_extra_colliding_or_stale_command_metadata_atomically() {
 }
 
 #[test]
-fn frozen_command_grammars_reject_trim_including_escaped_variant() {
-    type Upgrade = fn(&str) -> Result<CommandRequest, DocumentError>;
-    let adapters: [Upgrade; 32] = [
-        legacy_v1::upgrade_request,
-        legacy_v2::upgrade_request,
-        legacy_v3::upgrade_request,
-        legacy_v4::upgrade_request,
-        legacy_v5::upgrade_request,
-        legacy_v6::upgrade_request,
-        legacy_v7::upgrade_request,
-        legacy_v8::upgrade_request,
-        legacy_v9::upgrade_request,
-        legacy_v10::upgrade_request,
-        legacy_v11::upgrade_request,
-        legacy_v12::upgrade_request,
-        legacy_v13::upgrade_request,
-        legacy_v14::upgrade_request,
-        legacy_v15::upgrade_request,
-        legacy_v16::upgrade_request,
-        legacy_v17::upgrade_request,
-        legacy_v18::upgrade_request,
-        legacy_v19::upgrade_request,
-        legacy_v20::upgrade_request,
-        legacy_v21::upgrade_request,
-        legacy_v22::upgrade_request,
-        legacy_v23::upgrade_request,
-        legacy_v24::upgrade_request,
-        legacy_v25::upgrade_request,
-        legacy_v26::upgrade_request,
-        legacy_v27::upgrade_request,
-        legacy_v28::upgrade_request,
-        legacy_v29::upgrade_request,
-        legacy_v30::upgrade_request,
-        legacy_v31::upgrade_request,
-        legacy_v32::upgrade_request,
-    ];
-    let document = fixture(None, 0);
-    let old = serde_json::to_string(&request(
-        &document,
-        Command::Rename {
-            node: id("source"),
-            label: "Old".into(),
-        },
-    ))
-    .unwrap();
-    let new = request(&document, trim(&document, "source", SourceTrimEdge::Out, 3));
-    let json = serde_json::to_string(&new).unwrap();
-    for (version, upgrade) in adapters.iter().enumerate() {
-        upgrade(&old).unwrap();
-        assert!(upgrade(&json).is_err(), "schema {}", version + 1);
-        assert!(upgrade(&json.replace("trim_source", "trim_\\u0073ource")).is_err());
-    }
-    for validate in [
-        legacy_v29::validate_request_context,
-        legacy_v30::validate_request_context,
-        legacy_v31::validate_request_context,
-        legacy_v32::validate_request_context,
-    ] {
-        assert!(validate(&document, &new).is_err());
-    }
-}
-
-#[test]
 fn trim_refuses_a_full_reanchor_budget_without_replacing_the_old_clock() {
     let base = fixture(Some((0, 147000)), 0);
     let captured = capture_unbound_audio_bindings(

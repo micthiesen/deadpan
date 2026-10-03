@@ -2,6 +2,9 @@ use super::*;
 use deadpan_cli::macros::{MAX_REQUEST_BYTES, Request};
 use deadpan_core::{RegisterName, RegisterValue, RevisionId};
 
+#[path = "macros/groups.rs"]
+mod groups;
+
 fn state(package: &Path) -> Result<Vec<String>> {
     let database = rusqlite::Connection::open(package.join("project.sqlite"))?;
     let mut rows = Vec::new();

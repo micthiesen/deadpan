@@ -1,0 +1,338 @@
+{
+  "schema_version": 43,
+  "project_id": "f1d983ad-470a-469a-b09f-924ecdf72fd5",
+  "revision_id": "5700ab26-76a7-4c9f-ae02-d6728f058aff",
+  "presentation_basis": {
+    "width": 16,
+    "height": 16,
+    "frame_rate": {
+      "numerator": 30000,
+      "denominator": 1001
+    },
+    "color_policy": "sdr_rec709"
+  },
+  "basis_state": {
+    "rate_origin": "explicit",
+    "geometry_origin": "explicit",
+    "primary": null
+  },
+  "root": "b5903f58-0249-4a89-8af8-ed3d8a5cfe1f",
+  "nodes": {
+    "b5903f58-0249-4a89-8af8-ed3d8a5cfe1f": {
+      "label": "Sequence",
+      "kind": {
+        "type": "sequence",
+        "children": [
+          "splice-copy-0",
+          "inserted",
+          "splice-copy-1"
+        ]
+      }
+    },
+    "hold": {
+      "label": "Pause",
+      "kind": {
+        "type": "hold",
+        "recipe": {
+          "duration": 8,
+          "video": {
+            "type": "background"
+          },
+          "audio": {
+            "type": "silence"
+          }
+        }
+      },
+      "framing": {
+        "value": {
+          "type": "envelope",
+          "envelope": {
+            "initial": {
+              "center_x": {
+                "numerator": "1",
+                "denominator": "2"
+              },
+              "center_y": {
+                "numerator": "1",
+                "denominator": "2"
+              },
+              "scale": {
+                "numerator": "1",
+                "denominator": "1"
+              }
+            },
+            "segments": [
+              {
+                "end": {
+                  "numerator": "1",
+                  "denominator": "1"
+                },
+                "pose": {
+                  "center_x": {
+                    "numerator": "1",
+                    "denominator": "2"
+                  },
+                  "center_y": {
+                    "numerator": "1",
+                    "denominator": "2"
+                  },
+                  "scale": {
+                    "numerator": "27",
+                    "denominator": "20"
+                  }
+                },
+                "curve": {
+                  "type": "smoothstep"
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "inserted": {
+      "label": "Pause",
+      "kind": {
+        "type": "hold",
+        "recipe": {
+          "duration": 2,
+          "video": {
+            "type": "background"
+          },
+          "audio": {
+            "type": "silence"
+          }
+        }
+      }
+    },
+    "splice-copy-0": {
+      "label": "Pause",
+      "kind": {
+        "type": "retime",
+        "child": "hold",
+        "duration": 3,
+        "mapping": {
+          "start": 0,
+          "end": 3
+        },
+        "pitch": "preserve",
+        "purpose": "partition"
+      }
+    },
+    "splice-copy-1": {
+      "label": "Pause",
+      "kind": {
+        "type": "retime",
+        "child": "splice-copy-2",
+        "duration": 5,
+        "mapping": {
+          "start": 3,
+          "end": 8
+        },
+        "pitch": "preserve",
+        "purpose": "partition"
+      }
+    },
+    "splice-copy-2": {
+      "label": "Pause",
+      "kind": {
+        "type": "hold",
+        "recipe": {
+          "duration": 8,
+          "video": {
+            "type": "background"
+          },
+          "audio": {
+            "type": "silence"
+          }
+        }
+      },
+      "framing": {
+        "value": {
+          "type": "envelope",
+          "envelope": {
+            "initial": {
+              "center_x": {
+                "numerator": "1",
+                "denominator": "2"
+              },
+              "center_y": {
+                "numerator": "1",
+                "denominator": "2"
+              },
+              "scale": {
+                "numerator": "1",
+                "denominator": "1"
+              }
+            },
+            "segments": [
+              {
+                "end": {
+                  "numerator": "1",
+                  "denominator": "1"
+                },
+                "pose": {
+                  "center_x": {
+                    "numerator": "1",
+                    "denominator": "2"
+                  },
+                  "center_y": {
+                    "numerator": "1",
+                    "denominator": "2"
+                  },
+                  "scale": {
+                    "numerator": "27",
+                    "denominator": "20"
+                  }
+                },
+                "curve": {
+                  "type": "smoothstep"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "assets": {},
+  "marks": {},
+  "overrides": {},
+  "audio_lineage": {
+    "hold": {
+      "allocation": "splice",
+      "origin": "hold"
+    },
+    "splice-copy-2": {
+      "allocation": "splice",
+      "origin": "hold"
+    }
+  },
+  "audio_bindings": {
+    "timings": [
+      {
+        "id": {
+          "allocation": "splice",
+          "ordinal": 0
+        },
+        "layout": {
+          "root": "b5903f58-0249-4a89-8af8-ed3d8a5cfe1f",
+          "rate": {
+            "numerator": 30000,
+            "denominator": 1001
+          },
+          "nodes": {
+            "b5903f58-0249-4a89-8af8-ed3d8a5cfe1f": {
+              "duration": 8,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "sequence",
+                "children": [
+                  "hold"
+                ]
+              }
+            },
+            "hold": {
+              "duration": 8,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "hold",
+                "audio": {
+                  "type": "silence"
+                }
+              }
+            }
+          },
+          "overrides": {}
+        }
+      }
+    ],
+    "bindings": {
+      "hold": {
+        "lattice": {
+          "reference": {
+            "timing": {
+              "allocation": "splice",
+              "ordinal": 0
+            },
+            "root": {
+              "type": "project_root_round_even"
+            },
+            "physical": "hold"
+          },
+          "arguments": [],
+          "births": []
+        },
+        "resume": null
+      },
+      "splice-copy-2": {
+        "lattice": {
+          "reference": {
+            "timing": {
+              "allocation": "splice",
+              "ordinal": 0
+            },
+            "root": {
+              "type": "project_root_round_even"
+            },
+            "physical": "hold"
+          },
+          "arguments": [],
+          "births": []
+        },
+        "resume": {
+          "local_boundary": {
+            "numerator": "3",
+            "denominator": "1"
+          },
+          "phase": {
+            "constant": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "terms": [
+              {
+                "placement": {
+                  "reference": {
+                    "timing": {
+                      "allocation": "splice",
+                      "ordinal": 0
+                    },
+                    "root": {
+                      "type": "project_root_round_even"
+                    },
+                    "physical": "hold"
+                  },
+                  "arguments": [],
+                  "births": []
+                },
+                "from_local": {
+                  "numerator": "0",
+                  "denominator": "1"
+                },
+                "to_local": {
+                  "numerator": "3",
+                  "denominator": "1"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

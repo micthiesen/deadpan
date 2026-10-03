@@ -570,17 +570,55 @@ fn stale_revision_is_checked_before_unavailable_original_bytes() -> Result {
 fn pending_generation_allows_preview_but_requires_real_relevance_on_commit() -> Result {
     let scratch = tempfile::tempdir()?;
     let package = scratch.path().join("generation.deadpan");
-    fs::create_dir(&package)?;
-    fs::create_dir(package.join("Snapshots"))?;
-    fs::create_dir_all(package.join("Media/Originals"))?;
-    fs::create_dir_all(package.join("Media/Generated"))?;
-    let database = Connection::open(package.join("project.sqlite"))?;
-    database.pragma_update(None, "foreign_keys", false)?;
-    database.execute_batch(include_str!(
-        "../../deadpan-store/tests/fixtures/v13-history.sql"
-    ))?;
-    drop(database);
-    ProjectStore::migrate(&package)?;
+    create(&package, "30000/1001")?;
+    let mut store = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let initial = store.snapshot()?;
+    let hold = NodeId::new("pending-hold")?;
+    store.commit(&deadpan_core::CommandRequest {
+        project_id: initial.project_id().clone(),
+        expected_revision: initial.revision_id().clone(),
+        new_revision: deadpan_core::RevisionId::new("insert-pending-hold")?,
+        command: deadpan_core::Command::Insert {
+            parent: initial.root().clone(),
+            index: 0,
+            subtree: deadpan_core::Subtree {
+                root: hold.clone(),
+                nodes: std::collections::BTreeMap::from([(
+                    hold.clone(),
+                    deadpan_core::BeatNode::hold(
+                        "Pending Hold",
+                        deadpan_core::HoldRecipe {
+                            picture_context: None,
+                            duration: deadpan_core::FrameDuration::new(12)?,
+                            video: deadpan_core::HoldVideo::Background,
+                            audio: deadpan_core::HoldAudio::Silence,
+                        },
+                    ),
+                )]),
+                overrides: Default::default(),
+                gap_overrides: Default::default(),
+            },
+        },
+    })?;
+    let before_generation = store.snapshot()?;
+    let generation = store.allocate_generation_request(
+        deadpan_store::generation::GenerationRequestInput {
+            request_id: serde_json::from_value(json!("pending-generation"))?,
+            expected_revision: before_generation.revision_id().clone(),
+            hold_id: hold,
+            context_sha256: serde_json::from_value(json!("a".repeat(64)))?,
+            constraints: serde_json::from_value(json!({
+                "video": {"frames": 12, "frame_rate": before_generation.presentation_basis().frame_rate,
+                          "width": 768, "height": 320},
+                "conditioning": "bridge", "motion": "still"
+            }))?,
+            provider: serde_json::from_value(json!({
+                "pack_id": "fixture", "pack_version": "1", "runtime_id": "fixture",
+                "runtime_version": "1", "seed": 7
+            }))?,
+        },
+    )?;
+    drop(store);
     let original = retain(
         &package,
         &scratch.path().join("source.mp4"),
@@ -605,6 +643,10 @@ fn pending_generation_allows_preview_but_requires_real_relevance_on_commit() -> 
     assert_eq!(
         ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?,
         before
+    );
+    assert_eq!(
+        ProjectStore::open(&package, AccessMode::ReadOnly)?.current_generation_requests()?,
+        vec![generation]
     );
     Ok(())
 }

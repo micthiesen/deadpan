@@ -236,6 +236,14 @@ define_commands! {
         id: NodeId,
         label: String,
     },
+    /// Group an exact ordinary Sequence child or range without changing clocks.
+    GroupSelection {
+        parent: NodeId,
+        selection: crate::SliceCaptureSelection,
+        label: String,
+        identities: crate::GroupSelectionIdentities,
+        timing: crate::AudioTimingId,
+    },
     Ungroup {
         node: NodeId,
     },
@@ -739,6 +747,9 @@ pub fn apply(
             crate::edit_slice::apply(input, &request.command, context)?
         }
         Command::MoveRange { .. } => crate::move_range::apply(input, &request.command, context)?,
+        Command::GroupSelection { .. } => {
+            crate::group_selection::apply(input, &request.command, context)?
+        }
         Command::RepeatSelection { .. } | Command::SetRepeatPlays { .. } => {
             crate::repeat_selection::apply(input, &request.command, context)?
         }
@@ -1117,6 +1128,7 @@ pub(crate) fn reduce(
         | Command::MoveRange { .. }
         | Command::RepeatSelection { .. }
         | Command::SetRepeatPlays { .. }
+        | Command::GroupSelection { .. }
         | Command::SpliceSourceAt { .. } => {
             return Err(EditError::new(
                 EditErrorCode::InvalidCommand,
@@ -2195,7 +2207,7 @@ fn description(command: &Command) -> &'static str {
         Command::DeleteRange { .. } => "Delete selected range",
         Command::MoveRange { .. } => "Move selected range",
         Command::Move { .. } => "Move beat",
-        Command::Group { .. } => "Group beats",
+        Command::Group { .. } | Command::GroupSelection { .. } => "Group beats",
         Command::Ungroup { .. } => "Ungroup beats",
         Command::WrapRepeat { .. } => "Wrap repeat",
         Command::SetRepeat { .. } => "Set repeat parameters",

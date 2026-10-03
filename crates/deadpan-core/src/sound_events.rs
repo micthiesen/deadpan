@@ -179,7 +179,10 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::AdoptPrimaryGeometry { .. }
         | Command::SetMark { .. }
         | Command::DeleteMark { .. }
-        | Command::EditScoped { .. } => true,
+        | Command::EditScoped { .. }
+        | Command::Group { .. }
+        | Command::GroupSelection { .. }
+        | Command::Ungroup { .. } => true,
         Command::ImportSource {
             insertion, primary, ..
         } => insertion.is_none() && primary.is_none(),
@@ -230,8 +233,6 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::Insert { .. }
         | Command::Delete { .. }
         | Command::Move { .. }
-        | Command::Group { .. }
-        | Command::Ungroup { .. }
         | Command::WrapRepeat { .. }
         | Command::SetRepeat { .. }
         | Command::RepeatSelection { .. }

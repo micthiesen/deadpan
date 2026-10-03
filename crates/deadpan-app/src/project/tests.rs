@@ -710,127 +710,102 @@ fn fixture(name: &str) -> PathBuf {
         .unwrap()
 }
 
-fn previous_native_project(path: &Path) -> rusqlite::Connection {
+fn unsupported_native_project(path: &Path, version: u32) -> Vec<u8> {
     std::fs::create_dir(path).unwrap();
     std::fs::create_dir(path.join("Snapshots")).unwrap();
     let connection = rusqlite::Connection::open(path.join("project.sqlite")).unwrap();
+    // Deliberately omit current tables and media directories. Version preflight
+    // must refuse this package before parsing, migrating or repairing its data.
     connection
-        .pragma_update(None, "foreign_keys", false)
-        .unwrap();
-    connection
-        .execute_batch(include_str!(
-            "../../../deadpan-store/tests/fixtures/v16-history.sql"
-        ))
-        .unwrap();
-    connection
-}
-
-fn schema_version(connection: &rusqlite::Connection) -> u32 {
-    connection
-        .pragma_query_value(None, "user_version", |row| row.get(0))
-        .unwrap()
-}
-
-#[test]
-fn native_open_migrates_authentic_schema16_with_a_backup_and_keeps_it_generic() {
-    let scratch = tempfile::tempdir().unwrap();
-    let path = scratch.path().join("previous-native.deadpan");
-    let database = previous_native_project(&path);
-    let original_json: String = database.query_row("SELECT document FROM revisions WHERE id=(SELECT head_revision FROM state WHERE singleton=1)", [], |row| row.get(0)).unwrap();
-    let original = deadpan_core::legacy_v11::Document::from_json(&original_json)
-        .unwrap()
-        .upgrade()
-        .unwrap();
-    let history_count: i64 = database
-        .query_row("SELECT count(*) FROM history", [], |row| row.get(0))
-        .unwrap();
-    assert_eq!(schema_version(&database), 16);
-    let service = ProjectService::new(Arc::new(|| {})).unwrap();
-    let opened = command(&service, ProjectRequest::Open(path.clone()));
-    assert!(opened.error.is_none(), "{:?}", opened.error);
-    assert!(opened.message.unwrap().contains("original database backup"));
-    let workspace = opened.workspace.unwrap();
-    assert_eq!(*workspace.document, original);
-    assert!(workspace.single_source.is_none());
-    assert!(workspace.original_duration.is_none());
-    assert_eq!(
-        schema_version(&database),
-        deadpan_store::DATABASE_SCHEMA_VERSION
-    );
-    let backups = std::fs::read_dir(path.join("Snapshots"))
-        .unwrap()
-        .map(|entry| entry.unwrap().path())
-        .collect::<Vec<_>>();
-    assert_eq!(backups.len(), 1);
-    let backup = rusqlite::Connection::open(&backups[0]).unwrap();
-    assert_eq!(schema_version(&backup), 16);
-    let saved_json: String = backup.query_row("SELECT document FROM revisions WHERE id=(SELECT head_revision FROM state WHERE singleton=1)", [], |row| row.get(0)).unwrap();
-    assert_eq!(saved_json, original_json);
-    assert_eq!(
-        database
-            .query_row("SELECT count(*) FROM history", [], |row| row
-                .get::<_, i64>(0))
-            .unwrap(),
-        history_count
-    );
-    command(&service, ProjectRequest::Close);
-    let reopened = command(&service, ProjectRequest::Open(path.clone()));
-    assert_eq!(reopened.message.as_deref(), Some("Project opened"));
-    assert_eq!(*reopened.workspace.unwrap().document, original);
-    assert_eq!(
-        std::fs::read_dir(path.join("Snapshots")).unwrap().count(),
-        1
-    );
-}
-
-#[test]
-fn failed_native_migration_retains_the_current_project_and_its_active_preparation() {
-    let scratch = tempfile::tempdir().unwrap();
-    let path = scratch.path().join("invalid-previous.deadpan");
-    let database = previous_native_project(&path);
-    database.execute("UPDATE history SET request=json_set(request,'$.command.type','unrecognized_command') WHERE id=(SELECT min(id) FROM history)", []).unwrap();
-    let invalid_request: String = database
-        .query_row(
-            "SELECT request FROM history ORDER BY id LIMIT 1",
-            [],
-            |row| row.get(0),
+        .execute_batch(
+            "PRAGMA application_id=1146113585;
+             CREATE TABLE untouched(value TEXT NOT NULL);
+             INSERT INTO untouched VALUES('unparsed development data');",
         )
         .unwrap();
+    connection
+        .pragma_update(None, "user_version", version)
+        .unwrap();
+    drop(connection);
+    std::fs::read(path.join("project.sqlite")).unwrap()
+}
+
+fn assert_unsupported_native_project_untouched(path: &Path, database: &[u8]) {
+    assert_eq!(
+        std::fs::read(path.join("project.sqlite")).unwrap(),
+        database
+    );
+    let mut entries = std::fs::read_dir(path)
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name())
+        .collect::<Vec<_>>();
+    entries.sort();
+    // Exact entries also rule out a writer lock, WAL/SHM/journal files and any
+    // repair-created media directories. No backup may be created either.
+    assert_eq!(
+        entries,
+        vec![
+            std::ffi::OsString::from("Snapshots"),
+            std::ffi::OsString::from("project.sqlite"),
+        ]
+    );
+    assert_eq!(
+        std::fs::read_dir(path.join("Snapshots")).unwrap().count(),
+        0
+    );
+}
+
+#[test]
+fn native_open_refuses_schemas1_through38_without_writes_or_backups() {
+    let scratch = tempfile::tempdir().unwrap();
+    let service = ProjectService::new(Arc::new(|| {})).unwrap();
+    for version in 1..=38 {
+        let path = scratch.path().join(format!("schema-{version}.deadpan"));
+        let database = unsupported_native_project(&path, version);
+        let opened = command(&service, ProjectRequest::Open(path.clone()));
+        assert_eq!(
+            opened.error,
+            Some(deadpan_store::StoreError::UnsupportedSchema(version).to_string())
+        );
+        assert!(opened.workspace.is_none());
+        assert!(opened.committed.is_none());
+        assert_unsupported_native_project_untouched(&path, &database);
+    }
+}
+
+#[test]
+fn unsupported_native_open_retains_the_current_project_and_its_active_preparation() {
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("unsupported-previous.deadpan");
+    let database = unsupported_native_project(&path, 16);
     let harness = Harness::new();
     let current = create(&harness.service, &scratch.path().join("current.deadpan"));
     import(&harness.service, "cfr-bframes.mp4");
     let active = harness.job();
     let failed = command(&harness.service, ProjectRequest::Open(path.clone()));
-    assert!(
-        failed
-            .error
-            .unwrap()
-            .contains("Migration failed; retained backup")
+    assert_eq!(
+        failed.error,
+        Some(deadpan_store::StoreError::UnsupportedSchema(16).to_string())
     );
+    assert!(failed.committed.is_none());
+    let preparation = failed.import.unwrap();
+    assert_eq!(preparation.stage, ImportStage::Retaining);
+    assert_eq!(preparation.path, fixture("cfr-bframes.mp4"));
+    assert!(preparation.error.is_none());
     let retained = failed.workspace.unwrap();
     assert_eq!(retained.session, current.session);
+    assert_eq!(retained.path, current.path);
     assert_eq!(*retained.document, *current.document);
     assert!(!active.cancelled.load(Ordering::Acquire));
-    assert_eq!(schema_version(&database), 16);
-    assert_eq!(
-        database
-            .query_row(
-                "SELECT request FROM history ORDER BY id LIMIT 1",
-                [],
-                |row| row.get::<_, String>(0)
-            )
-            .unwrap(),
-        invalid_request
-    );
-    assert_eq!(
-        std::fs::read_dir(path.join("Snapshots")).unwrap().count(),
-        1
-    );
+    assert_unsupported_native_project_untouched(&path, &database);
     harness.finish(active);
     harness.finish(harness.job());
     let ready = complete(&harness.service);
     assert_eq!(ready.session, current.session);
+    assert_eq!(ready.path, current.path);
+    assert_eq!(ready.document.project_id(), current.document.project_id());
     assert_eq!(ready.sources.len(), 1);
+    assert_unsupported_native_project_untouched(&path, &database);
 }
 
 fn wait(service: &ProjectService, predicate: impl Fn(&ProjectUpdate) -> bool) -> ProjectUpdate {

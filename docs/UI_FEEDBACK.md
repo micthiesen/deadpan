@@ -11,6 +11,16 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+Named groups have a new `groups` replay for captured text entry, partial
+Source/Repeat/Retime ranges, exact Undo/Redo, navigation, macros, dot and
+register preservation. It also compares displayed source identities and actual
+GPU composition at fixed Edit positions. The final run passes 329 checks;
+adjacent dot, macro, Repeat, keymap and scoped-editing replays bring the total
+to 1,416. Native input verified register preservation, Group/Ungroup, dot and
+Macro playback with one Undo. Image review found and corrected missing CJK
+glyphs and clipped inspector headings. See the
+[Group record](qualification/group-editing-2026-10-03.md) for evidence and limits.
+
 Repeat count changes now use semantic recording and dot. The `repeat-setters`
 replay covers recorded wrapping/count changes, one-step Macro Undo, a fresh
 selected Repeat, register preservation and explicit Visual refusal. See the
@@ -453,6 +463,7 @@ the real app. The initial viewport is 1280×820 points at 1×. The code lives in
 | `editing` | Held H across a comma prefix preserves the document and visible guidance; a fresh H inserts one silent half-second Hold and one Undo restores the baseline. Also covers counted Repeat, pointer opening of its setter, same-batch text submission, undo, exact pause insertion before a Repeat and before the Original, and Hold-duration editing. Checks duration and selection. Split, delete and redo have separate replays. |
 | `dot-repeat` | Replays the last committed frame-cut intent at a new cursor, retaining the requested length after a clamped first cut. Exercises named/default register destinations, one-step Undo, unsupported-edit invalidation, keyboard input ownership and minimum-size footer teaching. See [semantic repeat](SEMANTIC_REPEAT.md) for the contract and [qualification](qualification/semantic-repeat-2026-10-02.md) for the 159 passing checks and inspected captures. |
 | `repeat-setters` | Records wrapping and total-play setters, including an explicit same-count action; verifies saved instruction kinds, one-step Macro Undo, dot on a newly selected direct Repeat, exact Undo/Redo, unchanged register intent and bank, and empty/nonempty Visual refusal. Inspects the dot key and count hint's full paint at 960×640. See [qualification](qualification/repeat-count-2026-10-03.md). |
+| `groups` | Groups partial Source, Repeat and Retime ranges and explicitly selected empty children; checks Group/Ungroup, navigation, one-step Undo/Redo, recorded and counted macros, dot, unchanged registers, malformed names and captured stale/absent targets. Same-batch logical text and synthetic IME exercise command entry. Minimum/default paint checks cover names, breadcrumbs and help. Visual mode compares exact displayed source identities and fixed-raster GPU hashes; performance mode omits readback. See [qualification](qualification/group-editing-2026-10-03.md) for execution status and limits. |
 | `delete-range` | Cuts active and finished Visual selections in either direction, rejects empty selections, preserves whole-beat dd without a selection and captures independent :delete targets including absence. Checks exact decoded join pictures, one commit/Undo, stale revision/session/group refusal, native-control focus, synthetic IME, held/count/same-batch input and minimum-window text paint clips. Nested ordinary groups retain their owner; partial composite endpoints fail and whole composites can be removed. The frame-cut extension checks `x`/counts/`:delete-frames`, exact captured and clamped intervals, successful delayed-yank supersession, same-batch modal ownership, and focused-button mark names. See [current qualification](qualification/native-frame-cuts-2026-10-01.md) for counts and source identities. No device, acoustics or physical IME claim. |
 | `camera` | Pointer opening and numeric preview, Cancel, keyboard reopening/zoom and pointer Apply. Reach clipped inspector controls with real wheel input before clicking. Checks unchanged revision during preview, restoration of the submitted entry framing/source frame after Cancel, and authored framing after Apply. |
 | `menus` | File-menu ownership of edit keys, help opening, keyboard/wheel changes to scroll offset and painted content, text containing edit keys and punctuation, and cancellation back to the exact active pane's focus. |

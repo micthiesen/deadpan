@@ -177,6 +177,8 @@ impl Service {
                             SemanticInstruction::Paste { .. } => "Paste register",
                             SemanticInstruction::Repeat { .. } => "Wrap Repeat",
                             SemanticInstruction::SetRepeatPlays { .. } => "Set Repeat plays",
+                            SemanticInstruction::Group { .. } => "Group beats",
+                            SemanticInstruction::Ungroup => "Ungroup beats",
                             _ => "Recorded action",
                         }
                         .to_owned(),

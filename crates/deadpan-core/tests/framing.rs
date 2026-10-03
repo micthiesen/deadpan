@@ -584,7 +584,7 @@ fn explicit_pause_can_split_a_retained_framed_partition_without_losing_its_clock
 }
 
 #[test]
-fn hostile_envelopes_layers_and_legacy_wire_are_rejected() {
+fn hostile_envelopes_and_layers_are_rejected() {
     let initial = document();
     let mut long = match creep(FramingCurve::Linear).value {
         FramingValue::Envelope { envelope } => envelope,
@@ -593,32 +593,6 @@ fn hostile_envelopes_layers_and_legacy_wire_are_rejected() {
     long.segments = vec![long.segments[0].clone(); 65];
     assert!(
         serde_json::from_value::<FramingEnvelope>(serde_json::to_value(long).unwrap()).is_err()
-    );
-    let mut modern = serde_json::to_value(&initial).unwrap();
-    modern["schema_version"] = json!(17);
-    let old = legacy_v17::Document::from_json(&modern.to_string()).unwrap();
-    let framed = edit(
-        &initial,
-        Command::SetFraming {
-            node: id("hold"),
-            framing: Some(creep(FramingCurve::Linear)),
-        },
-    );
-    assert!(!old.matches(&framed));
-    modern["nodes"]["hold"]["framing"] = serde_json::Value::Null;
-    assert!(legacy_v17::Document::from_json(&modern.to_string()).is_err());
-    assert!(
-        legacy_v17::upgrade_request(
-            &serde_json::to_string(&request(
-                &initial,
-                Command::SetFraming {
-                    node: id("hold"),
-                    framing: None
-                }
-            ))
-            .unwrap()
-        )
-        .is_err()
     );
     let mut doc = initial;
     for n in 0..15 {

@@ -53,8 +53,8 @@ fn doctor_reports_hold_audio_document_and_migration_schemas() -> Result {
     assert_eq!(report["database_schema"], 55);
     let partial = report["partial"].as_array().unwrap();
     for capability in [
-        "schema-1-through-38-migration",
-        "schema-39-through-51-development-format-refusal",
+        "schema-52-additive-migration",
+        "schema-1-through-51-development-format-refusal",
         "schema-53-development-format-refusal",
         "schema-54-development-format-refusal",
         "persistent-copy-registers",
@@ -68,6 +68,7 @@ fn doctor_reports_hold_audio_document_and_migration_schemas() -> Result {
     ] {
         assert!(partial.contains(&json!(capability)), "{capability}");
     }
+    assert!(!partial.contains(&json!("schema-1-through-38-migration")));
     let unimplemented = report["unimplemented"].as_array().unwrap();
     assert!(!unimplemented.contains(&json!("original-view-playback")));
     assert!(unimplemented.contains(&json!("full-device-and-acoustic-qualification")));
@@ -245,18 +246,57 @@ fn headless_split_preview_commit_and_history_share_one_exact_command() -> Result
     Ok(())
 }
 
+fn schema52_repeat_fixture(root: &Path) -> Result<PathBuf> {
+    let package = create(root)?;
+    let mut store = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let initial = store.snapshot()?;
+    let hold = NodeId::new("hold")?;
+    let silent = |frames| -> Result<HoldRecipe> {
+        Ok(HoldRecipe {
+            picture_context: None,
+            duration: FrameDuration::new(frames)?,
+            video: HoldVideo::Background,
+            audio: HoldAudio::Silence,
+        })
+    };
+    store.commit(&deadpan_core::CommandRequest {
+        project_id: initial.project_id().clone(),
+        expected_revision: initial.revision_id().clone(),
+        new_revision: deadpan_core::RevisionId::new("fixture-insert")?,
+        command: Command::Insert {
+            parent: initial.root().clone(),
+            index: 0,
+            subtree: Subtree {
+                root: hold.clone(),
+                nodes: BTreeMap::from([(hold.clone(), BeatNode::hold("Silence", silent(12)?))]),
+                overrides: Default::default(),
+                gap_overrides: Default::default(),
+            },
+        },
+    })?;
+    let before = store.snapshot()?;
+    store.commit(&deadpan_core::CommandRequest {
+        project_id: before.project_id().clone(),
+        expected_revision: before.revision_id().clone(),
+        new_revision: deadpan_core::RevisionId::new("fixture-wrap")?,
+        command: Command::WrapRepeat {
+            node: hold,
+            id: NodeId::new("repeat")?,
+            plays: 2,
+            gap: Some(silent(2)?),
+            anchor_policy: Default::default(),
+        },
+    })?;
+    drop(store);
+    let connection = rusqlite::Connection::open(package.join("project.sqlite"))?;
+    connection.execute_batch("DROP TABLE registers; DROP TABLE register_contents; DROP TABLE register_state; DROP TABLE transaction_steps; PRAGMA user_version=52; PRAGMA journal_mode=DELETE;")?;
+    Ok(package)
+}
+
 #[test]
 fn headless_migration_and_plan_inspection_are_explicit_and_read_only() -> Result {
     let scratch = tempfile::tempdir()?;
-    let package = scratch.path().join("legacy.deadpan");
-    fs::create_dir(&package)?;
-    fs::create_dir(package.join("Snapshots"))?;
-    let connection = rusqlite::Connection::open(package.join("project.sqlite"))?;
-    connection.pragma_update(None, "foreign_keys", false)?;
-    connection.execute_batch(include_str!(
-        "../../deadpan-store/tests/fixtures/v1-history.sql"
-    ))?;
-    drop(connection);
+    let package = schema52_repeat_fixture(scratch.path())?;
     let path = package.to_str().unwrap();
     let old = cli(&["project", "validate", path])?;
     assert!(!old.status.success());
@@ -265,7 +305,7 @@ fn headless_migration_and_plan_inspection_are_explicit_and_read_only() -> Result
         "MigrationRequired"
     );
     let outcome = success(&["project", "migrate", path])?;
-    assert_eq!(outcome["migration"]["from_schema"], 1);
+    assert_eq!(outcome["migration"]["from_schema"], 52);
     assert_eq!(
         outcome["migration"]["to_schema"],
         deadpan_store::DATABASE_SCHEMA_VERSION
@@ -286,7 +326,7 @@ fn headless_migration_and_plan_inspection_are_explicit_and_read_only() -> Result
         0
     );
     let gap = success(&["inspect-plan", path, "--frame", "12"])?;
-    assert_eq!(gap["sample"]["gap_after"]["allocation"], "v1-wrap");
+    assert_eq!(gap["sample"]["gap_after"]["allocation"], "fixture-wrap");
     let second = success(&["inspect-plan", path, "--frame", "14"])?;
     assert_eq!(
         second["sample"]["instance"]["repeats"][0]["iteration"]["ordinal"],
@@ -316,7 +356,7 @@ fn headless_migration_and_plan_inspection_are_explicit_and_read_only() -> Result
     assert_eq!(spans[0]["samples"]["end"], mix_boundary(12));
     assert_eq!(spans[1]["samples"]["start"], mix_boundary(12));
     assert_eq!(spans[1]["samples"]["end"], mix_boundary(14));
-    assert_eq!(spans[1]["gap_after"]["allocation"], "v1-wrap");
+    assert_eq!(spans[1]["gap_after"]["allocation"], "fixture-wrap");
     assert_eq!(spans[2]["samples"]["end"], mix_boundary(26));
     assert_eq!(spans[0]["content"]["reason"], "silent_hold");
     for (start, end, code) in [
@@ -690,17 +730,11 @@ fn current_generation_requires_host_reconciliation_but_allows_cli_preview() -> R
 #[test]
 fn failed_migration_returns_retained_backup_and_preserves_original() -> Result {
     let scratch = tempfile::tempdir()?;
-    let package = scratch.path().join("damaged.deadpan");
-    fs::create_dir(&package)?;
-    fs::create_dir(package.join("Snapshots"))?;
+    let package = schema52_repeat_fixture(scratch.path())?;
     let database = package.join("project.sqlite");
     let connection = rusqlite::Connection::open(&database)?;
-    connection.pragma_update(None, "foreign_keys", false)?;
-    connection.execute_batch(include_str!(
-        "../../deadpan-store/tests/fixtures/v1-history.sql"
-    ))?;
     connection.execute_batch(
-        "UPDATE history SET edit=json_set(edit,'$.duration_delta',999) WHERE revision_id='v1-wrap'",
+        "UPDATE history SET edit=json_set(edit,'$.duration_delta',999) WHERE revision_id='fixture-wrap'",
     )?;
     drop(connection);
     let before = fs::read(&database)?;
@@ -715,7 +749,7 @@ fn failed_migration_returns_retained_backup_and_preserves_original() -> Result {
     assert_eq!(
         rusqlite::Connection::open(backup)?
             .pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?,
-        1
+        52
     );
     Ok(())
 }
@@ -1254,5 +1288,33 @@ fn nested_occurrence_command_is_atomic_and_uses_the_same_headless_plan() -> Resu
     let redone = snapshot()?;
     assert_eq!(redone.nodes(), after.nodes());
     assert_eq!(redone.overrides(), after.overrides());
+    Ok(())
+}
+
+#[test]
+fn obsolete_schema_cli_validation_and_migration_refuse_without_writes_or_backup() -> Result {
+    for version in [1, 38] {
+        let scratch = tempfile::tempdir()?;
+        let package = scratch.path().join("obsolete.deadpan");
+        fs::create_dir(&package)?;
+        fs::create_dir(package.join("Snapshots"))?;
+        let database_path = package.join("project.sqlite");
+        let connection = rusqlite::Connection::open(&database_path)?;
+        connection.execute_batch("PRAGMA application_id=1146113585; CREATE TABLE untouched(value); INSERT INTO untouched VALUES('unparsed old state');")?;
+        connection.pragma_update(None, "user_version", version)?;
+        drop(connection);
+        let before = fs::read(&database_path)?;
+        for verb in ["validate", "migrate"] {
+            let output = cli(&["project", verb, package.to_str().unwrap()])?;
+            assert!(!output.status.success());
+            assert!(output.stdout.is_empty());
+            let report: Value = serde_json::from_slice(&output.stderr)?;
+            assert_eq!(report["error"]["code"], "SchemaUnsupported");
+            assert!(report["error"]["recovery_backup"].is_null());
+            assert_eq!(fs::read(&database_path)?, before);
+            assert_eq!(fs::read_dir(package.join("Snapshots"))?.count(), 0);
+            assert_eq!(fs::read_dir(&package)?.count(), 2);
+        }
+    }
     Ok(())
 }

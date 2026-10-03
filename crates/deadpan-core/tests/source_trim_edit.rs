@@ -1119,7 +1119,7 @@ fn linked_dormant_support_can_activate_and_absent_audio_stays_absent() {
 }
 
 #[test]
-fn closed_resources_and_historical_commands_reject_new_vocabulary() {
+fn closed_resources_reject_new_vocabulary() {
     let before = wide(None);
     let current = request(
         &before,
@@ -1131,63 +1131,6 @@ fn closed_resources_and_historical_commands_reject_new_vocabulary() {
     let mut wire = serde_json::to_value(&current).unwrap();
     wire["command"]["resources"]["unexpected"] = json!(null);
     assert!(serde_json::from_value::<CommandRequest>(wire).is_err());
-    type Upgrade = fn(&str) -> Result<CommandRequest, DocumentError>;
-    let adapters: [Upgrade; 32] = [
-        legacy_v1::upgrade_request,
-        legacy_v2::upgrade_request,
-        legacy_v3::upgrade_request,
-        legacy_v4::upgrade_request,
-        legacy_v5::upgrade_request,
-        legacy_v6::upgrade_request,
-        legacy_v7::upgrade_request,
-        legacy_v8::upgrade_request,
-        legacy_v9::upgrade_request,
-        legacy_v10::upgrade_request,
-        legacy_v11::upgrade_request,
-        legacy_v12::upgrade_request,
-        legacy_v13::upgrade_request,
-        legacy_v14::upgrade_request,
-        legacy_v15::upgrade_request,
-        legacy_v16::upgrade_request,
-        legacy_v17::upgrade_request,
-        legacy_v18::upgrade_request,
-        legacy_v19::upgrade_request,
-        legacy_v20::upgrade_request,
-        legacy_v21::upgrade_request,
-        legacy_v22::upgrade_request,
-        legacy_v23::upgrade_request,
-        legacy_v24::upgrade_request,
-        legacy_v25::upgrade_request,
-        legacy_v26::upgrade_request,
-        legacy_v27::upgrade_request,
-        legacy_v28::upgrade_request,
-        legacy_v29::upgrade_request,
-        legacy_v30::upgrade_request,
-        legacy_v31::upgrade_request,
-        legacy_v32::upgrade_request,
-    ];
-    let old = serde_json::to_string(&request(
-        &before,
-        Command::Rename {
-            node: id("left"),
-            label: "old".into(),
-        },
-    ))
-    .unwrap();
-    let new = serde_json::to_string(&current).unwrap();
-    for upgrade in adapters {
-        assert!(upgrade(&old).is_ok());
-        assert!(upgrade(&new).is_err());
-        assert!(upgrade(&new.replace("apply_source_trim", "apply_source_tr\\u0069m")).is_err());
-    }
-    for validate in [
-        legacy_v29::validate_request_context,
-        legacy_v30::validate_request_context,
-        legacy_v31::validate_request_context,
-        legacy_v32::validate_request_context,
-    ] {
-        assert!(validate(&before, &current).is_err());
-    }
 }
 
 #[test]

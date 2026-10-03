@@ -1,0 +1,69 @@
+{
+  "base": "5fd02ecc91822f3ea3469ee41959766c5f077705",
+  "independent_reviews": [
+    {
+      "scope": "Group core",
+      "checks": [
+        "Exact selection and endpoint splitting",
+        "Owner clocks, marks and audio routes",
+        "Atomic inverse and allocation bounds"
+      ],
+      "open_findings": []
+    },
+    {
+      "scope": "Group host and native input",
+      "checks": [
+        "Receipt and retry proof",
+        "Bank preservation and complete final mark changes",
+        "Captured command selection, text/IME and caret initialization"
+      ],
+      "open_findings": []
+    },
+    {
+      "scope": "Development format pruning",
+      "checks": [
+        "Removed adapter dependency inventory",
+        "Retained current frozen audio-context codecs",
+        "Complete current history and supported schema-52 promotion",
+        "Early refusal and unchanged recovery boundaries"
+      ],
+      "open_findings": []
+    },
+    {
+      "scope": "Installed font fallback",
+      "checks": [
+        "Bounded nonblocking descriptor read and regular-file check",
+        "Same parser admission used by epaint",
+        "Built-in priority and before-first-frame installation",
+        "Real egui glyph lookup and failure tests"
+      ],
+      "open_findings": [],
+      "limits": [
+        "31.1 MB synchronous read and hash once at startup; latency not isolated",
+        "epaint copies owned font data; input byte cap is not total memory",
+        "Arbitrary corrupt-outline behavior and full Unicode shaping are not qualified"
+      ]
+    }
+  ],
+  "root_followup_fixes": [
+    "Corrected pinned SHA-256 output formatting before applying font patch",
+    "Font test frame explicitly consumes CPU-only atlas updates",
+    "Core tests compare authored Retimes and exact hidden-mark errors",
+    "CLI Visual head and public error spelling",
+    "Canonical macOS backup path assertion",
+    "Inspector title uses measured vertical glyph overhang with standard Label semantics",
+    "CPU title matrix provides native display scale instead of a pending zoom change",
+    "Strict Group hint trim-split-whitespace lint corrected"
+  ],
+  "root_reviews": [
+    {
+      "scope": "Inspector glyph overhang",
+      "checks": [
+        "Pinned egui Label allocation versus TextShape mesh bounds",
+        "Preserved ordinary/scoped font and wrap behavior",
+        "Regression reproduces old clipping and preserves ASCII geometry"
+      ],
+      "open_findings": []
+    }
+  ]
+}

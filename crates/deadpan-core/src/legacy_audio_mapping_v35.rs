@@ -87,6 +87,7 @@ impl AudioMapping {
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn project(mapping: SourceAudioMapping) -> Option<Self> {
         match mapping {
             SourceAudioMapping::FitBeat => Some(Self::FitBeat),

@@ -247,7 +247,7 @@ fn repeated_three_keep_maps_obey_existing_total_arena_budget() {
 }
 
 #[test]
-fn trim_wire_is_closed_and_frozen_routes_refuse_even_identity_trim() {
+fn trim_wire_is_closed_and_identity_trim_round_trips() {
     let original = fixture();
     let (_, mut transaction) = edit(&original, insert(&original, 35, "trim-equivalent"));
     for patch in [&mut transaction.forward, &mut transaction.inverse] {
@@ -263,34 +263,6 @@ fn trim_wire_is_closed_and_frozen_routes_refuse_even_identity_trim() {
         ProjectDocument::from_json(&after.to_json().unwrap()).unwrap(),
         after
     );
-    for operation in [trim(10, 35, 0, 1), trim(10, 35, 0, 0)] {
-        let mut wire = if matches!(operation, RootSoundOperation::Trim { out_frames: 1, .. }) {
-            json!(&after)
-        } else {
-            json!(&original)
-        };
-        wire["sound_routes"] = json!({"sound":RootSoundRoute {recipe_extent:frames(100),recipe_grid:RootSoundGrid::root(original.presentation_basis().frame_rate),edits:vec![RootSoundEdit {grid:RootSoundGrid::root(original.presentation_basis().frame_rate),operation,cuts:Default::default()}]}});
-        macro_rules! check {
-            ($version:literal,$adapter:ident) => {{
-                wire["schema_version"] = json!($version);
-                let plain = wire.to_string();
-                assert!($adapter::Document::from_json(&plain).is_err());
-                let escaped = plain.replace("\"type\":\"trim\"", "\"ty\\u0070e\":\"trim\"");
-                assert_ne!(plain, escaped);
-                assert!($adapter::Document::from_json(&escaped).is_err());
-                assert!(
-                    $adapter::matches_edit(
-                        &serde_json::to_string(&transaction).unwrap(),
-                        &transaction
-                    )
-                    .is_err()
-                );
-            }};
-        }
-        check!(30, legacy_v30);
-        check!(31, legacy_v31);
-        check!(32, legacy_v32);
-    }
     let value = json!(trim(10, 20, 2, 2));
     assert_eq!(
         serde_json::from_value::<RootSoundOperation>(value.clone()).unwrap(),

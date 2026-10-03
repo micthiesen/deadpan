@@ -61,6 +61,8 @@ pub enum BindingId {
     Audition,
     EnterGroup,
     LeaveGroup,
+    Group,
+    Ungroup,
     Visual,
     Copy,
     CopyBeat,
@@ -99,7 +101,7 @@ pub enum BindingId {
 }
 
 impl BindingId {
-    pub const ALL: [Self; 46] = [
+    pub const ALL: [Self; 48] = [
         Self::FramePrevious,
         Self::FrameNext,
         Self::BeatPrevious,
@@ -111,6 +113,8 @@ impl BindingId {
         Self::Audition,
         Self::EnterGroup,
         Self::LeaveGroup,
+        Self::Group,
+        Self::Ungroup,
         Self::Visual,
         Self::Copy,
         Self::CopyBeat,
@@ -159,6 +163,8 @@ impl BindingId {
             Self::Playback => "playback",
             Self::Audition => "audition",
             Self::EnterGroup => "group.enter",
+            Self::Group => "group.create",
+            Self::Ungroup => "group.ungroup",
             Self::LeaveGroup => "group.leave",
             Self::Visual => "visual",
             Self::Copy => "copy",
@@ -445,6 +451,8 @@ impl Rule {
             Action::Audition => I::Audition,
             Action::EnterGroup => I::EnterGroup,
             Action::LeaveGroup => I::LeaveGroup,
+            Action::Group => I::Group,
+            Action::Ungroup => I::Ungroup,
             Action::VisualMoment => I::Visual,
             Action::CopyMoment => I::Copy,
             Action::PasteMoment { before: false } => I::PasteAfter,
@@ -605,6 +613,20 @@ impl Compiled {
                 });
             }
         }
+        // Ungroup has a command alias and an optional configured path. No
+        // unmodified default is assigned by the product key vocabulary.
+        definitions.push(Definition {
+            id: BindingId::Ungroup,
+            paths: Vec::new(),
+            rule: Rule {
+                action: Action::Ungroup,
+                count: CountPolicy::Refuse("Ungroup once, without a count."),
+                short: "ungroup a neutral Sequence",
+                repeatable: false,
+                interrupt: false,
+            },
+            overridden: false,
+        });
         // The primary labels are the familiar editor paths, with native aliases following.
         for definition in &mut definitions {
             if definition.id == BindingId::First || definition.id == BindingId::Last {
@@ -1383,7 +1405,7 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
         C::Refuse(
             "Repeat the last edit once, without a count; its requested selector and parameters are retained.",
         ),
-        "repeat the last committed cut or Repeat against the current Visual range, beat or motion",
+        "repeat the last cut, Repeat or group edit at the current Visual range, beat or motion",
         false,
     );
     for (key, action, short) in [
@@ -1425,6 +1447,12 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
         );
     }
     for (key, action, count, short) in [
+        (
+            Key::G,
+            Action::Group,
+            C::Refuse("Name one group, without a count."),
+            "name a group",
+        ),
         (
             Key::I,
             Action::Insert,

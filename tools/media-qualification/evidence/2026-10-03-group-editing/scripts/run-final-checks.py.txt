@@ -1,0 +1,15 @@
+import os,subprocess,sys
+root='/tmp/deadpan-group-20261003'
+env=dict(os.environ,DEADPAN_CHECK_OUTPUT=root)
+checks=[
+ ('app-default-tests-7',['cargo','test','--locked','-p','deadpan-app']),
+ ('app-ui-tests-5',['cargo','test','--locked','-p','deadpan-app','--features','ui-harness']),
+ ('fmt-2',['cargo','fmt','--all','--','--check']),
+ ('clippy-2',['cargo','clippy','--workspace','--all-targets','--locked','--','-D','warnings']),
+ ('clippy-ui-2',['cargo','clippy','--locked','-p','deadpan-app','--all-targets','--features','ui-harness','--','-D','warnings']),
+ ('build-ui-final-2',['cargo','build','--locked','-p','deadpan-app','--features','ui-harness']),
+]
+for name,command in checks:
+ result=subprocess.run(['python3','/tmp/deadpan-original-layout-20261002/run-check.py',name,*command],env=env)
+ if result.returncode:
+  sys.exit(result.returncode)

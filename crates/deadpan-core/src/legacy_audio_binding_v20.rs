@@ -14,14 +14,6 @@ use crate::{AudioBindingState, DocumentError, DocumentErrorCode, ValueChange};
 pub(crate) struct LegacyAudioBindingState(AudioBindingState);
 
 impl LegacyAudioBindingState {
-    pub(crate) fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-
-    pub(crate) fn upgrade(self) -> AudioBindingState {
-        self.0
-    }
-
     pub(crate) fn project(state: &AudioBindingState) -> Option<Self> {
         (crate::legacy_audio_binding_v21::supports(state)
             && state
@@ -70,7 +62,6 @@ impl<'de> Deserialize<'de> for LegacyAudioBindingState {
 #[cfg(test)]
 mod tests {
     use crate::*;
-    use serde_json::{Value, json};
     use std::collections::BTreeMap;
 
     fn node(value: &str) -> NodeId {
@@ -132,129 +123,6 @@ mod tests {
         ProjectDocument::from_json(&wire.to_string()).unwrap()
     }
 
-    fn forbidden_fields(mut wire: Value, path: &str, reject: impl Fn(&str) -> bool) {
-        let binding = wire.pointer(path).unwrap().clone();
-        for value in [
-            Value::Null,
-            json!([]),
-            json!([{"placement":binding["lattice"]}]),
-        ] {
-            wire.pointer_mut(path).unwrap()["reanchors"] = value;
-            let encoded = wire.to_string();
-            assert!(reject(&encoded), "admitted reanchors at {path}");
-            assert!(
-                reject(&encoded.replace("\"reanchors\":", "\"reanc\\u0068ors\":")),
-                "admitted escaped reanchors at {path}"
-            );
-        }
-    }
-
-    fn forbidden_gap_fields(wire: &Value, path: &str, reject: impl Fn(&str) -> bool) {
-        let check = |parent: &str, field: &str, value: Value| {
-            let mut changed = wire.clone();
-            changed.pointer_mut(parent).unwrap()[field] = value;
-            let encoded = changed.to_string();
-            assert!(reject(&encoded), "admitted {field} at {parent}");
-            let escaped = format!("\\u{:04x}{}", u32::from(field.as_bytes()[0]), &field[1..]);
-            assert!(
-                reject(&encoded.replace(&format!("\"{field}\":"), &format!("\"{escaped}\":"))),
-                "admitted escaped {field} at {parent}"
-            );
-        };
-        for value in [Value::Null, json!({})] {
-            check(path, "gap_bindings", value);
-        }
-        for (owner, binding) in wire.pointer(path).unwrap()["bindings"].as_object().unwrap() {
-            let base = format!("{path}/bindings/{owner}");
-            let mut placements = vec![format!("{base}/lattice")];
-            if let Some(terms) = binding
-                .pointer("/resume/phase/terms")
-                .and_then(Value::as_array)
-            {
-                placements.extend(
-                    (0..terms.len()).map(|i| format!("{base}/resume/phase/terms/{i}/placement")),
-                );
-            }
-            if let Some(steps) = binding.get("reanchors").and_then(Value::as_array) {
-                placements
-                    .extend((0..steps.len()).map(|i| format!("{base}/reanchors/{i}/placement")));
-            }
-            for placement in placements {
-                for value in [Value::Null, json!({})] {
-                    check(&placement, "gap_after", value);
-                }
-                for value in [Value::Null, json!("node"), json!("repeat_gap")] {
-                    check(&format!("{placement}/reference"), "recipe", value);
-                }
-                check(
-                    &format!("{placement}/reference"),
-                    "root",
-                    json!({"type":"gap_definition_point_ceil", "repeat":owner}),
-                );
-            }
-        }
-    }
-
-    macro_rules! strict_gap_schema {
-        ($name:ident, $version:literal, $legacy:ident) => {
-            #[test]
-            fn $name() {
-                let mut document = bound_document();
-                if $version == 21 {
-                    for binding in document.audio_bindings.bindings.values_mut() {
-                        binding.reanchors.push(AudioReanchorStep {
-                            anchor: Default::default(),
-                            placement: binding.lattice.clone(),
-                            window: None,
-                        });
-                    }
-                }
-                let mut wire = serde_json::to_value(&document).unwrap();
-                wire["schema_version"] = json!($version);
-                let old = $legacy::Document::from_json(&wire.to_string()).unwrap();
-                assert!(old.matches(&document));
-                assert_eq!(old.upgrade().unwrap(), document);
-                forbidden_gap_fields(&wire, "/audio_bindings", |json| {
-                    $legacy::Document::from_json(json).is_err()
-                });
-                let edit = apply(
-                    &document,
-                    &CommandRequest {
-                        project_id: document.project_id().clone(),
-                        expected_revision: document.revision_id().clone(),
-                        new_revision: RevisionId::new("split-gap-boundary").unwrap(),
-                        command: Command::Split {
-                            node: node("hold"),
-                            at: FrameDuration::new(2).unwrap(),
-                            identities: SplitIdentities {
-                                nodes: vec![node("left"), node("right"), node("copy")],
-                            },
-                        },
-                    },
-                )
-                .unwrap();
-                let wire = serde_json::to_value(&edit).unwrap();
-                assert!($legacy::matches_edit(&wire.to_string(), &edit).unwrap());
-                for direction in ["forward", "inverse"] {
-                    for side in ["before", "after"] {
-                        forbidden_gap_fields(
-                            &wire,
-                            &format!("/{direction}/audio_bindings/{side}"),
-                            |json| $legacy::matches_edit(json, &edit).is_err(),
-                        );
-                    }
-                }
-            }
-        };
-    }
-
-    strict_gap_schema!(schema16_rejects_nested_gap_vocabulary, 16, legacy_v16);
-    strict_gap_schema!(schema17_rejects_nested_gap_vocabulary, 17, legacy_v17);
-    strict_gap_schema!(schema18_rejects_nested_gap_vocabulary, 18, legacy_v18);
-    strict_gap_schema!(schema19_rejects_nested_gap_vocabulary, 19, legacy_v19);
-    strict_gap_schema!(schema20_rejects_nested_gap_vocabulary, 20, legacy_v20);
-    strict_gap_schema!(schema21_rejects_nested_gap_vocabulary, 21, legacy_v21);
-
     #[test]
     fn projection_rejects_gap_intent_and_decoder_retains_duplicate_detection() {
         let document = bound_document();
@@ -303,75 +171,4 @@ mod tests {
             .is_err()
         );
     }
-
-    macro_rules! strict_schema {
-        ($name:ident, $version:literal, $legacy:ident) => {
-            #[test]
-            fn $name() {
-                let document = bound_document();
-                let mut wire = serde_json::to_value(&document).unwrap();
-                wire["schema_version"] = json!($version);
-                let old = $legacy::Document::from_json(&wire.to_string()).unwrap();
-                assert!(old.matches(&document));
-                assert_eq!(old.clone().upgrade().unwrap(), document);
-                forbidden_fields(wire, "/audio_bindings/bindings/hold", |json| {
-                    $legacy::Document::from_json(json).is_err()
-                });
-                let edit = apply(
-                    &document,
-                    &CommandRequest {
-                        project_id: document.project_id().clone(),
-                        expected_revision: document.revision_id().clone(),
-                        new_revision: RevisionId::new("split").unwrap(),
-                        command: Command::Split {
-                            node: node("hold"),
-                            at: FrameDuration::new(2).unwrap(),
-                            identities: SplitIdentities {
-                                nodes: vec![node("left"), node("right"), node("copy")],
-                            },
-                        },
-                    },
-                )
-                .unwrap();
-                let wire = serde_json::to_value(&edit).unwrap();
-                assert!($legacy::matches_edit(&wire.to_string(), &edit).unwrap());
-                for direction in ["forward", "inverse"] {
-                    for side in ["before", "after"] {
-                        let bindings = wire[direction]["audio_bindings"][side]["bindings"]
-                            .as_object()
-                            .unwrap();
-                        for owner in bindings.keys() {
-                            let path =
-                                format!("/{direction}/audio_bindings/{side}/bindings/{owner}");
-                            forbidden_fields(wire.clone(), &path, |json| {
-                                $legacy::matches_edit(json, &edit).is_err()
-                            });
-                        }
-                    }
-                }
-                let mut modern = document.clone();
-                let binding = modern
-                    .audio_bindings
-                    .bindings
-                    .get_mut(&node("hold"))
-                    .unwrap();
-                binding.reanchors.push(AudioReanchorStep {
-                    anchor: Default::default(),
-                    placement: binding.lattice.clone(),
-                    window: None,
-                });
-                modern.validate().unwrap();
-                assert!(!old.matches(&modern));
-                let mut edit = edit;
-                edit.forward.audio_bindings.as_mut().unwrap().before = Some(modern.audio_bindings);
-                assert!(!$legacy::matches_edit(&wire.to_string(), &edit).unwrap());
-            }
-        };
-    }
-
-    strict_schema!(schema16_rejects_new_binding_vocabulary, 16, legacy_v16);
-    strict_schema!(schema17_rejects_new_binding_vocabulary, 17, legacy_v17);
-    strict_schema!(schema18_rejects_new_binding_vocabulary, 18, legacy_v18);
-    strict_schema!(schema19_rejects_new_binding_vocabulary, 19, legacy_v19);
-    strict_schema!(schema20_rejects_new_binding_vocabulary, 20, legacy_v20);
 }

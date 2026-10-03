@@ -75,7 +75,10 @@ pub(crate) fn reconcile(
     if after.audio_lineage.is_empty()
         || matches!(
             command,
-            Command::Split { .. } | Command::Group { .. } | Command::Ungroup { .. }
+            Command::Split { .. }
+                | Command::Group { .. }
+                | Command::GroupSelection { .. }
+                | Command::Ungroup { .. }
         )
     {
         return Ok(());

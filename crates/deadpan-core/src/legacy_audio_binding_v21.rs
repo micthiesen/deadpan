@@ -4,32 +4,34 @@
 //! Frozen layouts already have a separate closed schema; their existing gap
 //! geometry is not authored gap-binding intent.
 
+#[cfg(test)]
 use std::{fmt, marker::PhantomData};
 
-use serde::de::{self, IgnoredAny, MapAccess, SeqAccess, Visitor};
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::Deserialize;
+use serde::de::IgnoredAny;
+#[cfg(test)]
+use serde::de::{self, MapAccess, SeqAccess, Visitor};
+#[cfg(test)]
+use serde::{Deserializer, Serialize};
+#[cfg(test)]
 use serde_json::value::RawValue;
 
+#[cfg(test)]
 use crate::{AudioBindingState, DocumentError, DocumentErrorCode, ValueChange};
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
 #[serde(transparent)]
+#[cfg(test)]
 pub(crate) struct LegacyAudioBindingState(AudioBindingState);
 
+#[cfg(test)]
 impl LegacyAudioBindingState {
-    pub(crate) fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-
-    pub(crate) fn upgrade(self) -> AudioBindingState {
-        self.0
-    }
-
     pub(crate) fn project(state: &AudioBindingState) -> Option<Self> {
         supports(state).then(|| Self(state.clone()))
     }
 }
 
+#[cfg(test)]
 pub(crate) fn supports(state: &AudioBindingState) -> bool {
     crate::legacy_audio_binding_v35::supports(state)
         && state
@@ -51,6 +53,7 @@ pub(crate) fn supports(state: &AudioBindingState) -> bool {
         })
 }
 
+#[cfg(test)]
 pub(crate) fn project_change(
     change: &Option<ValueChange<AudioBindingState>>,
 ) -> Option<Option<ValueChange<LegacyAudioBindingState>>> {
@@ -67,6 +70,7 @@ pub(crate) fn project_change(
     }))
 }
 
+#[cfg(test)]
 impl<'de> Deserialize<'de> for LegacyAudioBindingState {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let raw = Box::<RawValue>::deserialize(deserializer)?;
@@ -83,14 +87,17 @@ impl<'de> Deserialize<'de> for LegacyAudioBindingState {
     }
 }
 
+#[cfg(test)]
 pub(crate) fn validate_v20(json: &str) -> Result<(), serde_json::Error> {
     serde_json::from_str::<OldState<OldBinding20>>(json).map(|_| ())
 }
 
+#[cfg(test)]
 fn validate_v21(json: &str) -> Result<(), serde_json::Error> {
     serde_json::from_str::<OldState<OldBinding21>>(json).map(|_| ())
 }
 
+#[cfg(test)]
 pub(crate) fn validate_v22_layouts(json: &str) -> Result<(), serde_json::Error> {
     serde_json::from_str::<State22>(json).map(|_| ())
 }
@@ -103,6 +110,7 @@ pub(crate) fn validate_v22_layout(json: &str) -> Result<(), serde_json::Error> {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+#[cfg(test)]
 struct State22 {
     #[serde(rename = "timings")]
     _timings: Sequence<OldTiming>,
@@ -114,6 +122,7 @@ struct State22 {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+#[cfg(test)]
 struct OldState<B> {
     #[serde(rename = "timings")]
     _timings: Sequence<OldTiming>,
@@ -123,6 +132,7 @@ struct OldState<B> {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+#[cfg(test)]
 struct OldTiming {
     #[serde(rename = "id")]
     _id: IgnoredAny,
@@ -147,6 +157,7 @@ struct OldFrozenLayout {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+#[cfg(test)]
 struct OldBinding20 {
     #[serde(rename = "lattice")]
     _lattice: OldPlacement,
@@ -156,6 +167,7 @@ struct OldBinding20 {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+#[cfg(test)]
 struct OldBinding21 {
     #[serde(rename = "lattice")]
     _lattice: OldPlacement,
@@ -167,6 +179,7 @@ struct OldBinding21 {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+#[cfg(test)]
 struct OldResume {
     #[serde(rename = "local_boundary")]
     _local_boundary: IgnoredAny,
@@ -176,6 +189,7 @@ struct OldResume {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+#[cfg(test)]
 struct OldPhase {
     #[serde(rename = "constant")]
     _constant: IgnoredAny,
@@ -185,6 +199,7 @@ struct OldPhase {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+#[cfg(test)]
 struct OldTerm {
     #[serde(rename = "placement")]
     _placement: OldPlacement,
@@ -196,6 +211,7 @@ struct OldTerm {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+#[cfg(test)]
 struct OldStep {
     #[serde(rename = "placement")]
     _placement: OldPlacement,
@@ -205,6 +221,7 @@ struct OldStep {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+#[cfg(test)]
 struct OldPlacement {
     #[serde(rename = "reference")]
     _reference: OldReference,
@@ -216,6 +233,7 @@ struct OldPlacement {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+#[cfg(test)]
 struct OldReference {
     #[serde(rename = "timing")]
     _timing: crate::AudioTimingId,
@@ -227,6 +245,7 @@ struct OldReference {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+#[cfg(test)]
 struct OldArgument {
     #[serde(rename = "reference_repeat")]
     _reference_repeat: IgnoredAny,
@@ -236,6 +255,7 @@ struct OldArgument {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+#[cfg(test)]
 struct OldBirth {
     #[serde(rename = "repeat")]
     _repeat: IgnoredAny,
@@ -249,8 +269,10 @@ struct OldBirth {
 // closed tags instead, so hostile unknown values cannot allocate a JSON tree
 // before the shared collection preflight. The shared decoder checks each tag's
 // exact required fields, value types and duplicate fields afterwards.
+#[cfg(test)]
 struct OldChoice<const KIND: u8>;
 
+#[cfg(test)]
 impl<'de, const KIND: u8> Deserialize<'de> for OldChoice<KIND> {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         struct Choice<const KIND: u8>;
@@ -298,9 +320,12 @@ impl<'de, const KIND: u8> Deserialize<'de> for OldChoice<KIND> {
 
 // These visitors retain no entries. The modern decoder independently rejects
 // duplicate map keys and charges all aggregate collection work before allocation.
+#[cfg(test)]
 struct Map<T>(PhantomData<T>);
+#[cfg(test)]
 struct Sequence<T>(PhantomData<T>);
 
+#[cfg(test)]
 impl<'de, T: Deserialize<'de>> Deserialize<'de> for Map<T> {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         struct Entries<T>(PhantomData<T>);
@@ -318,6 +343,7 @@ impl<'de, T: Deserialize<'de>> Deserialize<'de> for Map<T> {
     }
 }
 
+#[cfg(test)]
 impl<'de, T: Deserialize<'de>> Deserialize<'de> for Sequence<T> {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         struct Entries<T>(PhantomData<T>);

@@ -261,8 +261,10 @@ impl DeadpanApp {
         if self.scoped.is_none() {
             return false;
         }
-        let blocked = matches!(command, Ok(Entry::Splice | Entry::Slip(_) | Entry::Trim(_)))
-            || matches!(command, Ok(Entry::Action(action)) if scoped_structural_action(*action));
+        let blocked = matches!(
+            command,
+            Ok(Entry::Splice | Entry::Slip(_) | Entry::Trim(_) | Entry::Group { .. })
+        ) || matches!(command, Ok(Entry::Action(action)) if scoped_structural_action(*action));
         if blocked {
             self.error = Some(STRUCTURE_UNAVAILABLE.into());
         }
@@ -512,7 +514,7 @@ impl DeadpanApp {
                 if pane_focus(ui, Pane::Inspector, heading.rect, "Nested beat inspector pane").has_focus() { self.pane = Pane::Inspector; }
                 ui.separator();
                 egui::ScrollArea::vertical().id_salt("scoped-inspector-details").show(ui, |ui| {
-                    ui.heading(label);
+                    style::ink_padded_label(ui, egui::RichText::new(label).heading(), None);
                     ui.colored_label(style::LAVENDER, scope);
                     if let Some(interval) = interval { ui.small(interval); }
                     ui.small("All plays changes the shared definition. Existing overrides keep their own changes.");
@@ -536,6 +538,8 @@ fn scoped_structural_action(action: Action) -> bool {
     matches!(
         action,
         Action::Insert
+            | Action::Group
+            | Action::Ungroup
             | Action::OfferInsert
             | Action::Edit(_)
             | Action::Trim

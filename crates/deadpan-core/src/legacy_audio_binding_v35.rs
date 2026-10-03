@@ -1,21 +1,18 @@
 //! Closed frozen-source support for bindings authored before core schema 36.
-use crate::{
-    AudioBindingState, DocumentError, DocumentErrorCode, FrozenAudioKind, FrozenAudioLayout,
-    ValueChange,
-};
+#[cfg(test)]
+use crate::{AudioBindingState, DocumentError, DocumentErrorCode, ValueChange};
+use crate::{FrozenAudioKind, FrozenAudioLayout};
+#[cfg(test)]
 use serde::{Deserialize, Deserializer, Serialize, de};
+#[cfg(test)]
 use serde_json::value::RawValue;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
 #[serde(transparent)]
+#[cfg(test)]
 pub(crate) struct LegacyAudioBindingState(AudioBindingState);
+#[cfg(test)]
 impl LegacyAudioBindingState {
-    pub(crate) fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-    pub(crate) fn upgrade(self) -> AudioBindingState {
-        self.0
-    }
     pub(crate) fn project(state: &AudioBindingState) -> Option<Self> {
         supports(state).then(|| Self(state.clone()))
     }
@@ -25,10 +22,12 @@ pub(crate) fn supports_layout(layout: &FrozenAudioLayout) -> bool {
         FrozenAudioKind::Source { placement: Some(placement) } if placement.start == placement.end
     ))
 }
+#[cfg(test)]
 pub(crate) fn supports(state: &AudioBindingState) -> bool {
     state.timings().values().all(supports_layout)
         && crate::legacy_audio_binding_v36::supports(state)
 }
+#[cfg(test)]
 pub(crate) fn from_json(json: &str) -> Result<AudioBindingState, DocumentError> {
     // Keep the bounded streaming decoder and duplicate-field validation.
     let state = AudioBindingState::from_json(json)?;
@@ -41,6 +40,7 @@ pub(crate) fn from_json(json: &str) -> Result<AudioBindingState, DocumentError> 
     }
     Ok(state)
 }
+#[cfg(test)]
 pub(crate) fn project_change(
     change: &Option<ValueChange<AudioBindingState>>,
 ) -> Option<Option<ValueChange<LegacyAudioBindingState>>> {
@@ -56,6 +56,7 @@ pub(crate) fn project_change(
         after: project(&change.after)?,
     }))
 }
+#[cfg(test)]
 impl<'de> Deserialize<'de> for LegacyAudioBindingState {
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let raw = Box::<RawValue>::deserialize(deserializer)?;

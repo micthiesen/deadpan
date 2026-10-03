@@ -106,6 +106,10 @@ fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mu
             nodes.push(id);
             nodes.extend(&identities.nodes);
         }
+        Command::GroupSelection { identities, .. } => {
+            nodes.push(&identities.group);
+            nodes.extend(&identities.split.nodes);
+        }
         Command::SpliceSource { id, .. }
         | Command::Group { id, .. }
         | Command::WrapRepeat { id, .. }

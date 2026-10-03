@@ -294,6 +294,20 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
             .collect::<Result<Vec<_>, _>>()
     };
     Ok(match request {
+        SemanticAllocationRequest::Group {
+            required_split_ids, ..
+        } => SemanticAllocation::Group {
+            new_revision: crate::new_revision()?,
+            identities: deadpan_core::GroupSelectionIdentities {
+                group: NodeId::new(uuid::Uuid::new_v4().to_string())?,
+                split: SplitIdentities {
+                    nodes: nodes(required_split_ids)?,
+                },
+            },
+        },
+        SemanticAllocationRequest::Ungroup { .. } => SemanticAllocation::Ungroup {
+            new_revision: crate::new_revision()?,
+        },
         SemanticAllocationRequest::SetRepeatPlays { .. } => SemanticAllocation::SetRepeatPlays {
             new_revision: crate::new_revision()?,
         },
@@ -505,6 +519,28 @@ impl Prepared {
                 output["operation"] = json!("run");
                 output["register"] = json!(register);
                 if let Some(plan) = &self.plan {
+                    // Final plan differences, including retained fragments and
+                    // unresolved reasons, not per-instruction loss claims.
+                    let mark_ids: std::collections::BTreeSet<_> = self
+                        .document
+                        .marks()
+                        .keys()
+                        .chain(plan.document.marks().keys())
+                        .collect();
+                    output["mark_changes"] = Value::Array(
+                        mark_ids
+                            .into_iter()
+                            .filter_map(|id| {
+                                let before = self.document.marks().get(id);
+                                let after = plan.document.marks().get(id);
+                                if before == after {
+                                    None
+                                } else {
+                                    Some(json!({"id":id,"before":before,"after":after}))
+                                }
+                            })
+                            .collect(),
+                    );
                     output["context"] = json!({"parent":plan.context.parent,"cursor":plan.context.cursor,
                         "selected_child":plan.selected_child,
                         "visual_selection":plan.context.visual_selection});

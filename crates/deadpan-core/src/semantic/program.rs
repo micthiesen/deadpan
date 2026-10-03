@@ -65,6 +65,12 @@ pub enum SemanticInstruction {
         selector: SemanticSelector,
         register: RegisterName,
     },
+    Group {
+        selector: SemanticSelector,
+        label: String,
+    },
+    #[serde(deserialize_with = "deserialize_empty")]
+    Ungroup,
     Repeat {
         selector: SemanticSelector,
         plays: NonZeroU32,
@@ -138,6 +144,9 @@ impl SemanticProgram {
             ));
         }
         for instruction in &self.instructions {
+            if let SemanticInstruction::Group { label, .. } = instruction {
+                crate::validate_group_label(label)?;
+            }
             if let SemanticInstruction::Call { register, .. } = instruction
                 && *register == RegisterName::unnamed()
             {

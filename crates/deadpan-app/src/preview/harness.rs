@@ -14,6 +14,8 @@ mod delete_range;
 mod edit_latency;
 mod gain;
 mod generated_picture;
+mod group_pixels;
+mod groups;
 mod keymap;
 mod macros;
 mod marks;

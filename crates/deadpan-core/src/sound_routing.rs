@@ -375,6 +375,12 @@ impl RootSoundEditCapture {
             };
         }
         let fixed_duration = match command {
+            Command::GroupSelection {
+                parent, selection, ..
+            } => {
+                document.group_selection(parent, selection)?;
+                true
+            }
             Command::MoveRange {
                 source_parent,
                 range,

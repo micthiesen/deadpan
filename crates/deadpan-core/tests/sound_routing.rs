@@ -293,26 +293,6 @@ fn sampleless_selection_survives_unrelated_replacement_and_disappears_when_repla
 }
 
 #[test]
-fn frozen_sound_route_schemas_reject_replacement_documents_and_patches() {
-    let original = fixture();
-    let (after, transaction) = edit(&original, replace_source(&original, "group", 5, 35, 12));
-    macro_rules! check {
-        ($version:literal,$adapter:ident) => {{
-            let mut wire = json!(&after);
-            wire["schema_version"] = json!($version);
-            assert!($adapter::Document::from_json(&wire.to_string()).is_err());
-            assert!(
-                $adapter::matches_edit(&serde_json::to_string(&transaction).unwrap(), &transaction)
-                    .is_err()
-            );
-        }};
-    }
-    check!(30, legacy_v30);
-    check!(31, legacy_v31);
-    check!(32, legacy_v32);
-}
-
-#[test]
 fn nested_pause_captures_once_and_more_than_twenty_one_edits_keep_the_recipe() {
     let original = fixture();
     let recipe = original.sounds()[&sound()].clone();
@@ -891,7 +871,7 @@ fn parameters_preserve_history_replacement_is_explicit_and_route_patches_are_gua
 }
 
 #[test]
-fn routed_wire_admission_checks_clocks_ownership_capacity_and_frozen_context() {
+fn routed_wire_admission_checks_clocks_ownership_and_capacity() {
     let original = fixture();
     let (doc, _) = edit(&original, insert(&original, 1, "pause"));
     for mutation in ["rate", "origin", "extent", "orphan"] {
@@ -927,33 +907,6 @@ fn routed_wire_admission_checks_clocks_ownership_capacity_and_frozen_context() {
     assert!(
         serde_json::from_value::<RootSoundRoute>(serde_json::to_value(journal).unwrap()).is_err()
     );
-
-    let mut old_wire = serde_json::to_value(&original).unwrap();
-    old_wire["schema_version"] = json!(29);
-    let old = legacy_v29::Document::from_json(&old_wire.to_string()).unwrap();
-    assert!(old.matches(&original));
-    for command in [
-        Command::Delete { node: node("a") },
-        insert(&original, 1, "injected"),
-        Command::Split {
-            node: node("a"),
-            at: frames(1),
-            identities: Default::default(),
-        },
-    ] {
-        let request = request(&original, command);
-        let upgraded =
-            legacy_v29::upgrade_request(&serde_json::to_string(&request).unwrap()).unwrap();
-        assert!(legacy_v29::validate_request_context(&original, &upgraded).is_err());
-    }
-    let replacement = request(
-        &original,
-        Command::ReplaceSound {
-            id: sound(),
-            event: original.sounds()[&sound()].clone(),
-        },
-    );
-    assert!(legacy_v29::upgrade_request(&serde_json::to_string(&replacement).unwrap()).is_err());
 }
 
 #[test]

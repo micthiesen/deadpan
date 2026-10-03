@@ -1,0 +1,471 @@
+{
+  "base_commit": "5fd02ecc91822f3ea3469ee41959766c5f077705",
+  "source_manifest_sha256": "5faa89bdb6432ebca0cc2cb0887ac1cfc9c6a8aa07eb1b4bfa8d1c15c1b81f8e",
+  "workspace_source_manifest_sha256": "9a1e3b27706a13724a7354eda00eaad8d830286251a003a6abb9b0823da27936",
+  "workspace_to_final_changes": [
+    "Cargo.lock",
+    "crates/deadpan-app/Cargo.toml",
+    "crates/deadpan-app/src/preview.rs",
+    "crates/deadpan-app/src/preview/fonts.rs",
+    "crates/deadpan-app/src/preview/fonts/tests.rs",
+    "crates/deadpan-app/src/preview/harness/groups.rs",
+    "crates/deadpan-app/src/preview/scoped.rs",
+    "crates/deadpan-app/src/preview/style.rs",
+    "crates/deadpan-app/src/preview/style/ink_tests.rs",
+    "crates/deadpan-cli/tests/project_commands.rs",
+    "crates/deadpan-cli/tests/project_commands/macros/groups.rs",
+    "crates/deadpan-core/src/group_selection/tests.rs",
+    "crates/deadpan-store/tests/migration/development_break.rs"
+  ],
+  "source_note": "The complete default workspace run had five new test failures. All three failed targets were rerun in full after test-only corrections. Subsequent production changes are confined to native app font setup, inspector title spacing and help; default and optional app tests, strict workspace and optional lint, and rendered/native checks use final source. Backend production sources are unchanged after the complete workspace run.",
+  "test_counts": {
+    "workspace-tests-3": {
+      "passed": 3438,
+      "failed": 5,
+      "ignored": 0,
+      "targets": 192
+    },
+    "core-tests-4": {
+      "passed": 193,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 1
+    },
+    "cli-tests-4": {
+      "passed": 35,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 1
+    },
+    "migration-tests-4": {
+      "passed": 30,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 1
+    },
+    "app-default-tests-7": {
+      "passed": 747,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 2
+    },
+    "app-ui-tests-5": {
+      "passed": 783,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 2
+    }
+  },
+  "test_count_note": "Counts overlap across configurations and reruns. The failed full run is retained and is not described as a passing full-workspace gate.",
+  "visual_binary_sha256": "539ec96129c9188a937c3a7771e9335705f5253fdd5d79f826bcbb034fe474d1",
+  "release_binary_sha256": "dcdd36b1b1e77666b253c8b07b9b25fa5d8c0f24392f6ca2020f0db1ff50839e",
+  "workflow_checks": 1416,
+  "replays": [
+    {
+      "run": "groups-visual-3",
+      "scenario": "groups",
+      "checks": 328,
+      "binary_sha256": "65dcf7035366a236a51f1cad341fd7d42bd30eff0eeb5a15517974cb605eed99",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "Keyboard and IME events are synthetic production event batches. Physical delivery and OS composition remain separate qualification. Composed pixel comparisons run only in visual mode; canonical PCM equivalence is covered by the separate core/audio tests.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "run": "groups-visual-5",
+      "scenario": "groups",
+      "checks": 329,
+      "binary_sha256": "539ec96129c9188a937c3a7771e9335705f5253fdd5d79f826bcbb034fe474d1",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "Keyboard and IME events are synthetic production event batches. Physical delivery and OS composition remain separate qualification. Composed pixel comparisons run only in visual mode; canonical PCM equivalence is covered by the separate core/audio tests.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "run": "dot-visual",
+      "scenario": "dot-repeat",
+      "checks": 381,
+      "binary_sha256": "539ec96129c9188a937c3a7771e9335705f5253fdd5d79f826bcbb034fe474d1",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "run": "macros-visual",
+      "scenario": "macros",
+      "checks": 372,
+      "binary_sha256": "539ec96129c9188a937c3a7771e9335705f5253fdd5d79f826bcbb034fe474d1",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "run": "repeat-visual",
+      "scenario": "repeat-operator",
+      "checks": 223,
+      "binary_sha256": "539ec96129c9188a937c3a7771e9335705f5253fdd5d79f826bcbb034fe474d1",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "This replay delays delivery of genuine project updates to exercise Repeat prefix ownership. Physical keyboard delivery and OS IME behavior are not exercised.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "run": "keymap-visual",
+      "scenario": "keymap",
+      "checks": 57,
+      "binary_sha256": "539ec96129c9188a937c3a7771e9335705f5253fdd5d79f826bcbb034fe474d1",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "run": "scoped-visual",
+      "scenario": "scoped-plays",
+      "checks": 54,
+      "binary_sha256": "539ec96129c9188a937c3a7771e9335705f5253fdd5d79f826bcbb034fe474d1",
+      "findings": [],
+      "skipped": [
+        "This replay uses real native widgets, project service and Metal with scripted keyboard delivery. Its final Escape check simulates playback preparation; physical keyboard/IME and acoustic playback are separate checks.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "run": "groups-performance",
+      "scenario": "groups",
+      "checks": 307,
+      "binary_sha256": "dcdd36b1b1e77666b253c8b07b9b25fa5d8c0f24392f6ca2020f0db1ff50839e",
+      "findings": [],
+      "skipped": [
+        "Keyboard and IME events are synthetic production event batches. Physical delivery and OS composition remain separate qualification. Composed pixel comparisons run only in visual mode; canonical PCM equivalence is covered by the separate core/audio tests.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    }
+  ],
+  "kestrel": {
+    "conflicts": [],
+    "live_source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2",
+    "reserved_bindings": 62,
+    "routing_cases": 3319728,
+    "source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2"
+  },
+  "performance_timings": {
+    "ui_frame_cpu_ms": {
+      "completed": {
+        "max_ms": 4.637666,
+        "n": 891,
+        "p50_ms": 0.219125,
+        "p95_ms": 0.685458,
+        "p99_ms": 0.849167
+      },
+      "failed": 0,
+      "samples": 891,
+      "timed_out": 0
+    },
+    "ui_composition_submit_cpu_ms": {
+      "completed": {
+        "max_ms": 0.743959,
+        "n": 891,
+        "p50_ms": 0.101583,
+        "p95_ms": 0.136166,
+        "p99_ms": 0.14941600000000002
+      },
+      "failed": 0,
+      "samples": 891,
+      "timed_out": 0
+    },
+    "ui_composition_complete_ms": {
+      "completed": {
+        "max_ms": 9.040792000000001,
+        "n": 891,
+        "p50_ms": 0.386875,
+        "p95_ms": 0.62125,
+        "p99_ms": 0.817458
+      },
+      "failed": 0,
+      "samples": 891,
+      "timed_out": 0
+    },
+    "input_to_state_ms": {
+      "completed": {
+        "max_ms": 4.637666,
+        "n": 359,
+        "p50_ms": 0.365292,
+        "p95_ms": 0.749875,
+        "p99_ms": 0.918875
+      },
+      "failed": 0,
+      "samples": 359,
+      "timed_out": 0
+    },
+    "input_to_commit_ms": {
+      "completed": {
+        "max_ms": 77.392333,
+        "n": 22,
+        "p50_ms": 5.115125,
+        "p95_ms": 6.993959,
+        "p99_ms": 77.392333
+      },
+      "failed": 0,
+      "samples": 22,
+      "timed_out": 0
+    },
+    "request_to_decode_delivery_ms": {
+      "completed": {
+        "max_ms": 4.893458,
+        "n": 127,
+        "p50_ms": 0.704042,
+        "p95_ms": 0.9902920000000001,
+        "p99_ms": 2.1970829999999997
+      },
+      "failed": 0,
+      "samples": 127,
+      "timed_out": 0
+    },
+    "request_to_worker_start_ms": {
+      "completed": {
+        "max_ms": 0.01025,
+        "n": 127,
+        "p50_ms": 0.006416,
+        "p95_ms": 0.007208,
+        "p99_ms": 0.009000000000000001
+      },
+      "failed": 0,
+      "samples": 127,
+      "timed_out": 0
+    },
+    "worker_execution_ms": {
+      "completed": {
+        "max_ms": 4.587125,
+        "n": 127,
+        "p50_ms": 0.179042,
+        "p95_ms": 0.5108750000000001,
+        "p99_ms": 0.5868340000000001
+      },
+      "failed": 0,
+      "samples": 127,
+      "timed_out": 0
+    },
+    "worker_publication_delay_ms": {
+      "completed": {
+        "max_ms": 0.00025,
+        "n": 127,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 0.000125,
+        "p99_ms": 0.000125
+      },
+      "failed": 0,
+      "samples": 127,
+      "timed_out": 0
+    },
+    "publication_to_decode_delivery_ms": {
+      "completed": {
+        "max_ms": 1.864708,
+        "n": 127,
+        "p50_ms": 0.526542,
+        "p95_ms": 0.884,
+        "p99_ms": 1.197167
+      },
+      "failed": 0,
+      "samples": 127,
+      "timed_out": 0
+    },
+    "request_to_picture_submission_ms": {
+      "completed": {
+        "max_ms": 5.352333,
+        "n": 97,
+        "p50_ms": 0.9287920000000001,
+        "p95_ms": 1.4033749999999998,
+        "p99_ms": 5.352333
+      },
+      "failed": 0,
+      "samples": 97,
+      "timed_out": 0
+    },
+    "request_to_picture_complete_ms": {
+      "completed": {
+        "max_ms": 6.124833,
+        "n": 97,
+        "p50_ms": 1.40675,
+        "p95_ms": 1.9647919999999999,
+        "p99_ms": 6.124833
+      },
+      "failed": 0,
+      "samples": 97,
+      "timed_out": 0
+    },
+    "input_to_picture_complete_ms": {
+      "completed": {
+        "max_ms": 83.52125000000001,
+        "n": 74,
+        "p50_ms": 1.61925,
+        "p95_ms": 7.076708,
+        "p99_ms": 83.52125000000001
+      },
+      "failed": 0,
+      "samples": 74,
+      "timed_out": 0
+    },
+    "Original initialized and displayed": {
+      "completed": {
+        "max_ms": 82.53679199999999,
+        "n": 1,
+        "p50_ms": 82.53679199999999,
+        "p95_ms": 82.53679199999999,
+        "p99_ms": 82.53679199999999
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    },
+    "Project and picture settled": {
+      "completed": {
+        "max_ms": 0.922333,
+        "n": 152,
+        "p50_ms": 0.631083,
+        "p95_ms": 0.8630829999999999,
+        "p99_ms": 0.914708
+      },
+      "failed": 0,
+      "samples": 152,
+      "timed_out": 0
+    },
+    "Group or macro receipt is fully admitted": {
+      "completed": {
+        "max_ms": 0.00020800000000000001,
+        "n": 55,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 0.000125,
+        "p99_ms": 0.00020800000000000001
+      },
+      "failed": 0,
+      "samples": 55,
+      "timed_out": 0
+    },
+    "Committed revision changed": {
+      "completed": {
+        "max_ms": 7.9977920000000005,
+        "n": 44,
+        "p50_ms": 4.425458,
+        "p95_ms": 5.424333,
+        "p99_ms": 7.9977920000000005
+      },
+      "failed": 0,
+      "samples": 44,
+      "timed_out": 0
+    },
+    "Group macro is durably saved": {
+      "completed": {
+        "max_ms": 3.601083,
+        "n": 1,
+        "p50_ms": 3.601083,
+        "p95_ms": 3.601083,
+        "p99_ms": 3.601083
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  "native": {
+    "binary_sha256": "539ec96129c9188a937c3a7771e9335705f5253fdd5d79f826bcbb034fe474d1",
+    "source_manifest_sha256": "5faa89bdb6432ebca0cc2cb0887ac1cfc9c6a8aa07eb1b4bfa8d1c15c1b81f8e",
+    "exit_code": 0,
+    "targeted_process_absent": true,
+    "final_revision": "9b00ddc3-a318-4844-b777-3a7a69735201",
+    "final_root_groups": [
+      "First \u7b54\u3048",
+      "First \u7b54\u3048"
+    ],
+    "saved_macro_z": {
+      "instructions": [
+        {
+          "type": "ungroup"
+        }
+      ]
+    },
+    "register_a": {
+      "capture_revision": "b7e69f9f-3565-4baf-bca7-ba10272b2368",
+      "parent": "cc6edad8-9f29-4f15-8621-32c991c725a3",
+      "register": "a",
+      "selection": {
+        "node": "a302ba30-2b61-4b24-b25f-3b594efba9fa",
+        "type": "child"
+      },
+      "type": "edited"
+    },
+    "observations": [
+      "Copied the complete120-frame beat into a; reselected a before Group. The copied-range display stayed [0..120) throughout.",
+      "Grouped [0..7) as First \u7b54\u3048; inspected actual native heading, beat card and footer at2x scale.",
+      "Enter opened the seven-frame group and Backspace returned to the parent.",
+      "Selected fresh [7..12) and dot grouped it with the retained label.",
+      "Ungroup promoted the second group; one Undo restored it. Dot ungrouped the newly selected first group; Undo restored it.",
+      "Started qz only after the Undo receipt, recorded :ungroup, saved q and verified one instruction.",
+      "Undo restored the first group; native @z removed it as one Undo. One Undo restored it, retaining register a.",
+      "Cmd-Q exited cleanly; closed reads retained both named groups, edited register a and Macro z."
+    ],
+    "limits": [
+      "CUA typeText delivered only the ASCII part of the initial name; exact Unicode was entered through native paste. This does not qualify physical keyboard or OS IME composition.",
+      "A batched Undo and recording start produced no retained recording after the revision change. The checked recording waited for the Undo receipt before qz.",
+      "Native QA overlapped automated compilation/checking. No native response-time measurement is claimed.",
+      "Developer bundle uses external build-host libraries; no signing or standalone packaging qualification."
+    ]
+  },
+  "machine": [
+    "Apple M5 Max",
+    "137438953472"
+  ],
+  "system": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+  "limits": [
+    "Replay injects production keyboard/IME events; OS composition, physical delivery and VoiceOver remain unqualified.",
+    "Release replay is a small fixture with cold import and mixed interactions. It does not qualify full-size projects, acoustics, physical display latency or memory pressure.",
+    "Font input is bounded to 32 MiB; renderer copies and atlas memory are additional. Missing fonts keep builtins. Coverage is limited to the installed tested fonts.",
+    "The developer app uses external build-host libraries. Signing and standalone packaging remain open.",
+    "All product requirements and gates remain open or partial."
+  ]
+}

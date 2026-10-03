@@ -1,0 +1,44 @@
+{
+  "binary_sha256": "539ec96129c9188a937c3a7771e9335705f5253fdd5d79f826bcbb034fe474d1",
+  "source_manifest_sha256": "5faa89bdb6432ebca0cc2cb0887ac1cfc9c6a8aa07eb1b4bfa8d1c15c1b81f8e",
+  "exit_code": 0,
+  "targeted_process_absent": true,
+  "final_revision": "9b00ddc3-a318-4844-b777-3a7a69735201",
+  "final_root_groups": [
+    "First \u7b54\u3048",
+    "First \u7b54\u3048"
+  ],
+  "saved_macro_z": {
+    "instructions": [
+      {
+        "type": "ungroup"
+      }
+    ]
+  },
+  "register_a": {
+    "capture_revision": "b7e69f9f-3565-4baf-bca7-ba10272b2368",
+    "parent": "cc6edad8-9f29-4f15-8621-32c991c725a3",
+    "register": "a",
+    "selection": {
+      "node": "a302ba30-2b61-4b24-b25f-3b594efba9fa",
+      "type": "child"
+    },
+    "type": "edited"
+  },
+  "observations": [
+    "Copied the complete120-frame beat into a; reselected a before Group. The copied-range display stayed [0..120) throughout.",
+    "Grouped [0..7) as First \u7b54\u3048; inspected actual native heading, beat card and footer at2x scale.",
+    "Enter opened the seven-frame group and Backspace returned to the parent.",
+    "Selected fresh [7..12) and dot grouped it with the retained label.",
+    "Ungroup promoted the second group; one Undo restored it. Dot ungrouped the newly selected first group; Undo restored it.",
+    "Started qz only after the Undo receipt, recorded :ungroup, saved q and verified one instruction.",
+    "Undo restored the first group; native @z removed it as one Undo. One Undo restored it, retaining register a.",
+    "Cmd-Q exited cleanly; closed reads retained both named groups, edited register a and Macro z."
+  ],
+  "limits": [
+    "CUA typeText delivered only the ASCII part of the initial name; exact Unicode was entered through native paste. This does not qualify physical keyboard or OS IME composition.",
+    "A batched Undo and recording start produced no retained recording after the revision change. The checked recording waited for the Undo receipt before qz.",
+    "Native QA overlapped automated compilation/checking. No native response-time measurement is claimed.",
+    "Developer bundle uses external build-host libraries; no signing or standalone packaging qualification."
+  ]
+}

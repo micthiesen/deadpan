@@ -10,8 +10,8 @@ Both binding families are configurable through `macro.record` and
 
 The current vocabulary includes relative frame and beat motion, group start/end,
 Visual selection begin/finish/clear, frame, beat or Visual cut, selected-beat or
-Visual yank, typed operator motions, Repeat wraps and count setters, register paste or Visual replacement, and
-named Macro call.
+Visual yank, typed operator motions, Repeat wraps and count setters, named Group,
+neutral Ungroup, register paste or Visual replacement, and named Macro call.
 Motions and cuts retain their requested counts, including when they
 clamp at a group boundary. Copy, cut and paste retain the selected register name.
 The planner resolves each instruction against the preceding staged edit in
@@ -22,6 +22,9 @@ See [Repeat selections](REPEAT_SELECTION.md) for total-play versus motion counts
 captured targets and structural range wrapping. `:repeat N` records a count setter
 for an existing Repeat and a selected-beat wrap for another kind. Setters require
 an explicit selected direct-child Repeat and no Visual selection on replay.
+[Named grouping](GROUP_EDITING.md) retains the exact name and selector. Ungroup
+requires a selected neutral Sequence with no Visual selection. Both preserve the
+copy bank and pending register choice, and use one atomic history entry per run.
 See [operator qualification](qualification/operator-motions-2026-10-02.md) for
 typed selectors, pending input, exact capture provenance and receipt ownership.
 See [Visual qualification](qualification/visual-macros-2026-10-02.md) for the
@@ -89,7 +92,11 @@ bank. `SemanticRegisterBank` keeps the entry map and its observed version
 together at that boundary. The planner applies each ordinary leaf once and
 returns a resolved `Compound`,
 final context, register writes and an entry trace. Navigation/selection-only programs return
-no authored request and add no history.
+no authored request and add no history. Headless Macro runs also return sorted
+`mark_changes`: full `before`/`after` logical mark records that differ between the
+entry document and final plan. Fragments and unresolved reasons are retained;
+intermediate instruction changes do not masquerade as final losses. Dry-run and
+commit share this comparison.
 
 `SemanticInstruction::Yank` and `Cut` carry a `SemanticSelector`: explicit
 selected beat, explicit Visual selection, or `SemanticMotion` (frames, beats,

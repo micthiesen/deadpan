@@ -109,7 +109,7 @@ impl Service {
         let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
         let edit = snapshot.edit_for(workspace)?;
         let submitted = LastEdit::from_instruction(instruction).ok_or(
-            "Only a supported cut, Repeat wrap or play count can repeat the last semantic edit",
+            "Only a supported cut, group, ungroup, Repeat wrap or play count can repeat the last semantic edit",
         )?;
         let register = super::registers::name(submitted.register)?;
         if snapshot.version != version || edit.instruction(context, register) != *instruction {

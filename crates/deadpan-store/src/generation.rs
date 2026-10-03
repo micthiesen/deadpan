@@ -89,15 +89,6 @@ pub(crate) fn create_tables(connection: &Connection) -> Result<(), StoreError> {
     Ok(())
 }
 
-pub(crate) fn add_schema8_columns(connection: &Connection) -> Result<(), StoreError> {
-    connection.execute(
-        "ALTER TABLE generation_requests ADD COLUMN bridge_plan TEXT
-         CHECK (bridge_plan IS NULL OR json_valid(bridge_plan))",
-        [],
-    )?;
-    Ok(())
-}
-
 pub(crate) fn check_stored_sizes(connection: &Connection) -> Result<(), StoreError> {
     let invalid_requests: i64 = connection.query_row(
         "SELECT COUNT(*) FROM generation_requests WHERE

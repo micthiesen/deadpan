@@ -10,9 +10,12 @@ pub enum ScopeChoice {
     Play(u32),
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Entry {
     Action(Action),
+    Group {
+        label: String,
+    },
     Source,
     Sequence,
     Help,
@@ -36,10 +39,14 @@ pub enum Entry {
 
 pub fn parse(input: &str) -> Result<Entry, String> {
     let input = input.trim();
-    let mut words = input.strip_prefix(':').unwrap_or(input).split_whitespace();
+    let input = input.strip_prefix(':').unwrap_or(input).trim_start();
+    let mut words = input.split_whitespace();
     let Some(verb) = words.next() else {
         return Ok(Entry::Empty);
     };
+    if verb.eq_ignore_ascii_case("group") {
+        return super::group::parse(&input[verb.len()..]);
+    }
     let verb = verb.to_ascii_lowercase();
     if verb == "scope" {
         let choice = match words.next() {
@@ -206,6 +213,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         "audition" => Action::Audition,
         "enter" => Action::EnterGroup,
         "parent" => Action::LeaveGroup,
+        "ungroup" => Action::Ungroup,
         "select" => Action::VisualMoment,
         "yank" => Action::CopyMoment,
         "paste" => Action::PasteMoment { before: false },
@@ -478,7 +486,7 @@ mod tests {
             ":audition-context lead=500ms follow=750ms",
             "AUDITION-CONTEXT follow=750ms lead=500ms",
         ] {
-            assert_eq!(parse(input), Ok(expected));
+            assert_eq!(parse(input), Ok(expected.clone()));
         }
         assert_eq!(
             parse("audition-context lead=0f follow=01:02.500"),

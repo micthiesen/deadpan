@@ -365,63 +365,6 @@ fn root_boundary(
     }
 }
 
-/// Core 24 added composite suffixes only at existing root seams. Keep this
-/// admission closed when replaying database 30, independently of modern apply.
-pub(crate) fn validate_v24_context(
-    document: &ProjectDocument,
-    at: ProjectFrame,
-) -> Result<(), EditError> {
-    match validate_legacy_context(document, at) {
-        Ok(()) => Ok(()),
-        Err(error) if error.code == EditErrorCode::InvalidCommand => {
-            let durations = document.durations()?;
-            let NodeKind::Sequence { children } = &document.nodes()[document.root()].kind else {
-                return Err(invalid("pause insertion requires a project-root Sequence"));
-            };
-            if root_boundary(children, &durations, at)?.interior.is_some() {
-                Err(invalid(
-                    "composite suffix insertion requires an existing root Sequence seam",
-                ))
-            } else {
-                Ok(())
-            }
-        }
-        Err(error) => Err(error),
-    }
-}
-
-/// Core 25 added physical interiors before arbitrary root suffixes. A nested
-/// Sequence interior was still refused even when a modern patch is valid.
-pub(crate) fn validate_v25_context(
-    document: &ProjectDocument,
-    at: ProjectFrame,
-) -> Result<(), EditError> {
-    let durations = document.durations()?;
-    let NodeKind::Sequence { children } = &document.nodes()[document.root()].kind else {
-        return Err(invalid("pause insertion requires a project-root Sequence"));
-    };
-    if let Some((target, _)) = root_boundary(children, &durations, at)?.interior {
-        physical(document, &target)?;
-    }
-    Ok(())
-}
-
-/// Contextual admission through core 23. A closed command wire alone cannot
-/// prove that a pre-existing history could have authored a composite suffix.
-pub(crate) fn validate_legacy_context(
-    document: &ProjectDocument,
-    at: ProjectFrame,
-) -> Result<(), EditError> {
-    let durations = document.durations()?;
-    if at.0 < 0 || at.0 > durations[document.root()].frames() {
-        return Err(invalid("pause boundary is outside the project"));
-    }
-    let NodeKind::Sequence { children } = &document.nodes()[document.root()].kind else {
-        return Err(invalid("pause insertion requires a project-root Sequence"));
-    };
-    resolve_legacy_suffix(document, children, &durations, at).map(|_| ())
-}
-
 fn resolve_legacy_suffix(
     document: &ProjectDocument,
     children: &[NodeId],

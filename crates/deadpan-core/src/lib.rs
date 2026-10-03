@@ -26,54 +26,18 @@ mod exact;
 mod framing;
 mod gap_override;
 mod generated;
+mod group_selection;
 mod insert_time;
-mod legacy_asset;
+#[cfg(test)]
 mod legacy_audio_binding_v20;
 mod legacy_audio_binding_v21;
+#[cfg(test)]
 mod legacy_audio_binding_v22;
 mod legacy_audio_binding_v35;
+#[cfg(test)]
 mod legacy_audio_binding_v36;
 mod legacy_audio_mapping_v19;
 mod legacy_audio_mapping_v35;
-mod legacy_framing_v37;
-mod legacy_hold_v18;
-mod legacy_mark;
-mod legacy_mark_v13;
-mod legacy_sound_routes;
-mod legacy_source_mapping;
-pub mod legacy_v1;
-pub mod legacy_v10;
-pub mod legacy_v11;
-pub mod legacy_v12;
-pub mod legacy_v13;
-pub mod legacy_v14;
-pub mod legacy_v15;
-pub mod legacy_v16;
-pub mod legacy_v17;
-pub mod legacy_v18;
-pub mod legacy_v19;
-pub mod legacy_v2;
-pub mod legacy_v20;
-pub mod legacy_v21;
-pub mod legacy_v22;
-pub mod legacy_v23;
-pub mod legacy_v24;
-pub mod legacy_v25;
-pub mod legacy_v26;
-pub mod legacy_v27;
-pub mod legacy_v28;
-pub mod legacy_v29;
-pub mod legacy_v3;
-pub mod legacy_v30;
-pub mod legacy_v31;
-pub mod legacy_v32;
-pub mod legacy_v4;
-pub mod legacy_v5;
-pub mod legacy_v6;
-pub mod legacy_v7;
-pub mod legacy_v8;
-pub mod legacy_v9;
-mod legacy_video_mapping_v34;
 mod marks;
 mod move_range;
 mod occurrence;
@@ -119,6 +83,7 @@ pub use edit_slice::{
 pub use exact::ExactRatio;
 pub use framing::*;
 pub use generated::*;
+pub use group_selection::{GroupSelectionIdentities, GroupSelectionPlan, validate_group_label};
 pub use insert_time::{
     InsertTimeSplit, InsertTimeTarget, SequenceRangeEdit, SourceReplacement, SourceSpliceInterior,
 };

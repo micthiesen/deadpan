@@ -22,26 +22,8 @@ fn fixture(root: &Path, sql: &str) -> Result<PathBuf> {
 }
 
 fn failed_without_promotion(package: &Path, version: u32) -> Result<StoreError> {
-    if (39..=42).contains(&version) {
-        development_break::assert_refused(package, version)?;
-        return Ok(StoreError::UnsupportedSchema(version));
-    }
-    let database = Connection::open(package.join("project.sqlite"))?;
-    let before = development_break::cells(&database)?;
-    let error = ProjectStore::migrate(package).unwrap_err();
-    let StoreError::MigrationFailed { backup, source } = error else {
-        panic!("expected a backed-up migration rejection: {error}");
-    };
-    assert_eq!(development_break::cells(&database)?, before);
-    assert_eq!(
-        development_break::cells(&Connection::open(backup)?)?,
-        before
-    );
-    assert_eq!(
-        database.pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?,
-        version
-    );
-    Ok(*source)
+    development_break::assert_refused(package, version)?;
+    Ok(StoreError::UnsupportedSchema(version))
 }
 
 #[test]
@@ -195,12 +177,7 @@ fn authentic_old_database_rejects_injected_register_tables_without_losing_cells(
                 database.execute_batch(&format!("INSERT INTO {table} VALUES('preserve')"))?;
             }
             let error = failed_without_promotion(&package, 1)?;
-            assert!(
-                error
-                    .to_string()
-                    .contains(&format!("table {table} already exists")),
-                "{error}"
-            );
+            assert!(matches!(error, StoreError::UnsupportedSchema(1)));
             assert_eq!(
                 database.query_row(&format!("SELECT count(*) FROM {table}"), [], |row| row
                     .get::<_, i64>(0))?,

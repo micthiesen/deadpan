@@ -40,15 +40,35 @@ Keycaps and their labels reserve their complete measured width together,
 so narrow layouts wrap the pair instead of clipping the last shortcuts.
 See the [footer qualification](qualification/footer-layout-2026-09-27.md).
 
+Each new command field starts with its caret at the prefilled text's end and
+fresh local editing state. A prior command's caret, selection and undo history
+cannot redirect an immediate text suffix. This also applies to inspector
+prefills and the captured Group name field.
+
+On macOS, the app appends installed Hiragino and Arial Unicode faces to both
+egui font families. Built-in fonts keep priority, preserving existing Latin
+text widths. Startup admits regular files through a bounded read, validates
+the selected face and required glyphs with epaint's parser, and retains local
+path, face, byte count and hash diagnostics. Missing or invalid fallbacks leave
+the built-in fonts available. The 32 MiB aggregate input limit does not bound
+the renderer's additional font copies or glyph atlas. This is coverage for the
+tested installed CJK fonts, not complete Unicode shaping or font discovery.
+Inspector titles measure the actual glyph mesh and reserve any vertical
+overhang before painting. Ordinary titles keep their size and truncation;
+scoped titles keep their heading style and wrapping. Neither changes the scroll
+clip or substitutes smaller text.
+
 ## Project and media ownership
 
 `project::ProjectService` owns one writable `ProjectStore` on its service thread.
 The UI uses a bounded command mailbox and takes immutable `Arc<Workspace>` updates
 without blocking on a mutex. Each workspace contains the committed document,
 compiled picture plan, qualified source catalog and history availability.
-Failed create/open operations preserve the prior project. Supported older schemas
-upgrade through the store's consistent-backup, validated migration on the service
-thread. Only a successfully opened and validated candidate replaces the current
+Failed create/open operations preserve the prior project. Schema 52 upgrades
+through the store's consistent-backup, validated migration on the service thread.
+Obsolete development formats refuse before writes; see
+[current format support](DEVELOPMENT_FORMATS.md).
+Only a successfully opened and validated candidate replaces the current
 session; failed migration retains the old active project and import. Generic
 projects stay generic and the original database backup remains available.
 Reopening the same

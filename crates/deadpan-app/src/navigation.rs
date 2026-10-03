@@ -10,6 +10,9 @@ mod editor_map;
 mod keymap_config;
 pub use editor_map::BindingId;
 pub mod gain;
+mod group;
+#[cfg(test)]
+mod group_tests;
 #[cfg(test)]
 mod macro_tests;
 #[cfg(test)]
@@ -113,6 +116,8 @@ pub enum Action {
     Audition,
     EnterGroup,
     LeaveGroup,
+    Group,
+    Ungroup,
     VisualMoment,
     DeleteSelection,
     DeleteFrames(u32),
@@ -306,7 +311,9 @@ impl Bindings {
     ) -> String {
         self.map
             .labels(Self::contextual_id(id, domain, selection))
-            .remove(0)
+            .into_iter()
+            .next()
+            .unwrap_or_default()
     }
 
     pub fn key_labels_in(
@@ -367,7 +374,7 @@ impl Bindings {
     }
 
     pub fn key_label(&self, id: BindingId) -> String {
-        self.map.labels(id).remove(0)
+        self.map.labels(id).into_iter().next().unwrap_or_default()
     }
     pub fn key_labels(&self, id: BindingId) -> String {
         self.map.labels(id).join(" / ")
@@ -505,6 +512,8 @@ impl Bindings {
                 | Action::DeleteSelection
                 | Action::RepeatLast
                 | Action::Repeat { .. }
+                | Action::Group
+                | Action::Ungroup
                 | Action::MacroExecute { .. },
             ) => true,
             Some(Action::Operator { cut: true, .. }) => true,

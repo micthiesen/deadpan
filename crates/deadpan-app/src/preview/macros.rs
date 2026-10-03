@@ -17,6 +17,18 @@ pub(super) struct Capture {
 }
 
 impl Capture {
+    pub(super) fn group_instruction(
+        &self,
+        label: Option<String>,
+    ) -> Result<SemanticInstruction, String> {
+        if self.scope.resolve(&self.base)?.owner != &self.context.parent {
+            return Err(
+                "The captured Group target differs from its ordinary Sequence scope.".into(),
+            );
+        }
+        groups::instruction(&self.base.document, &self.context, label)
+    }
+
     pub(super) fn repeat_count_instruction(
         &self,
         plays: NonZeroU32,
@@ -264,6 +276,8 @@ impl DeadpanApp {
                 | Action::DeleteFrames(_)
                 | Action::Operator { .. }
                 | Action::Repeat { .. }
+                | Action::Group
+                | Action::Ungroup
                 | Action::Edit(BeatEdit::WrapRepeat(_))
                 | Action::Edit(BeatEdit::Repeat(_))
                 | Action::CopyMoment
@@ -278,7 +292,7 @@ impl DeadpanApp {
                 | Action::Invalid(_)
                 | Action::OfferInsert
         ) {
-            self.error = Some("This action cannot be recorded yet. Macros support frame and beat motions, group boundaries, Visual selections, cuts, copies, Repeat wraps and count changes, register pastes and named calls. Save or cancel recording first.".into());
+            self.error = Some("This action cannot be recorded yet. Macros support frame and beat motions, group boundaries, Visual selections, cuts, copies, Repeat wraps and count changes, grouping, ungrouping, register pastes and named calls. Save or cancel recording first.".into());
             return false;
         }
         if matches!(
@@ -293,6 +307,8 @@ impl DeadpanApp {
                 | Action::DeleteFrames(_)
                 | Action::Operator { .. }
                 | Action::Repeat { .. }
+                | Action::Group
+                | Action::Ungroup
                 | Action::Edit(BeatEdit::WrapRepeat(_))
                 | Action::Edit(BeatEdit::Repeat(_))
                 | Action::CopyMoment
@@ -331,6 +347,9 @@ impl DeadpanApp {
             return false;
         }
         match command {
+            Ok(navigation::command::Entry::Group { .. }) => {
+                self.macro_action_allowed(Action::Group)
+            }
             Ok(navigation::command::Entry::Action(action)) => self.macro_action_allowed(*action),
             Ok(_) if self.macros.recording() || self.macros.is_pending() => {
                 self.error =
@@ -622,6 +641,13 @@ impl DeadpanApp {
             let edit = snapshot.edit_for(&captured.base)?;
             if matches!(
                 edit.operation,
+                crate::project::semantic::RepeatableEdit::Ungroup
+            ) && captured.context.visual_selection.is_some()
+            {
+                return Err("Clear the Visual range before repeating Ungroup.".into());
+            }
+            if matches!(
+                edit.operation,
                 crate::project::semantic::RepeatableEdit::SetRepeatPlays { .. }
             ) && captured.context.visual_selection.is_some()
             {
@@ -645,6 +671,9 @@ impl DeadpanApp {
                             deadpan_core::SemanticSelector::VisualSelection
                         )
                     ) | crate::project::semantic::RepeatableEdit::Repeat {
+                        selector: deadpan_core::SemanticSelector::VisualSelection,
+                        ..
+                    } | crate::project::semantic::RepeatableEdit::Group {
                         selector: deadpan_core::SemanticSelector::VisualSelection,
                         ..
                     }

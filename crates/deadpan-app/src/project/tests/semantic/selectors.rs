@@ -6,6 +6,7 @@ use deadpan_core::{
 };
 use std::num::NonZeroU32;
 
+mod groups;
 mod repeat_counts;
 mod repeats;
 

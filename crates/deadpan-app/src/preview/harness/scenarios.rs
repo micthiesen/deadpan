@@ -24,6 +24,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "dot-repeat" => super::semantic::run(d),
         "repeat-operator" => super::repeat_operator::run(d),
         "repeat-setters" => super::repeat_operator::run_setters(d),
+        "groups" => super::groups::run(d),
         "scoped-plays" => super::scoped_plays::run(d),
         "macros" => super::macros::run(d),
         "original-playback" => super::original_playback::run(d),

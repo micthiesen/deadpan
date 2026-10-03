@@ -1,5 +1,9 @@
 # Sequence group navigation
 
+Create a named group with `,g` or `:group name="the answer"`. `:ungroup` promotes
+a selected neutral group's children. Both support one Undo, recording and dot.
+See [named groups](GROUP_EDITING.md) for exact selection and refusal rules.
+
 `Enter` opens the selected ordinary Sequence group. `Backspace` returns to its
 parent and selects the group just left. The beat header shows clickable
 breadcrumbs, the parent key, focus, child count and group duration. `:enter` and

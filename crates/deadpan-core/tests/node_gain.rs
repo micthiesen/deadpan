@@ -3,9 +3,6 @@ use std::collections::BTreeMap;
 use deadpan_core::*;
 use serde_json::{Value, json};
 
-#[path = "node_gain/legacy.rs"]
-mod legacy;
-
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }

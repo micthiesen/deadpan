@@ -1,0 +1,24 @@
+{
+  "command": [
+    "target/release/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "groups",
+    "--mode",
+    "performance",
+    "--output",
+    "/tmp/deadpan-group-20261003/groups-performance",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "started": "2026-10-03T14:57:38.026413+00:00",
+  "base_commit": "5fd02ecc91822f3ea3469ee41959766c5f077705",
+  "diff_sha256": "c5de2c9ad63dcff0824c316ae1c2a67aed52e224f63e223a8c527f6f0793d5ff",
+  "source_manifest_sha256": "5faa89bdb6432ebca0cc2cb0887ac1cfc9c6a8aa07eb1b4bfa8d1c15c1b81f8e",
+  "pid": 92671,
+  "exit_code": 0,
+  "seconds": 2.8048983751796186,
+  "source_manifest_after_sha256": "5faa89bdb6432ebca0cc2cb0887ac1cfc9c6a8aa07eb1b4bfa8d1c15c1b81f8e",
+  "source_unchanged": true,
+  "gate_exit_code": 0
+}

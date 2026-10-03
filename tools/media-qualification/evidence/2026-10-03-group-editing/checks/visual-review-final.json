@@ -1,0 +1,19 @@
+{
+  "binary_sha256": "539ec96129c9188a937c3a7771e9335705f5253fdd5d79f826bcbb034fe474d1",
+  "captures": [
+    "groups-visual-5/groups-041.png",
+    "groups-visual-5/groups-069.png",
+    "groups-visual-5/groups-095.png",
+    "groups-visual-5/groups-111.png"
+  ],
+  "observations": [
+    "Exact quoted name and Japanese glyphs visible in command entry; selected [20..27) and register a remain shown.",
+    "Default named group, inspector heading and source picture20 are fully painted; fixed heading passes strict mesh clip assertions.",
+    "Minimum960x640 entered group shows actual Japanese breadcrumb, parent key, source picture20 and correct7-frame group clock. Picture is approximately148points high; full picture-dominance qualification remains open.",
+    "Minimum help shows complete Group and safe Ungroup guidance within the scrollable pane."
+  ],
+  "limits": [
+    "Intermediate screenshot allowance120 reached; all semantic checks and reserved named captures continue.",
+    "Native app was separately inspected at2x scale and closed; physical display latency, OS IME and VoiceOver are not qualified."
+  ]
+}

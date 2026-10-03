@@ -372,7 +372,7 @@ and workspace delivery order. Keep the first child's identity separate from the
 complete result interval. See
 [atomic moves](docs/ATOMIC_MOVES.md).
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 43 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings with exact picture selections and dormant linked audio, audio edge policies, transparent Retime partitions, owned timing bindings with exact local-origin translations, retained framing clocks and direct sound replacement maps, and binds qualified assets to immutable source receipts. Database schemas 1 through 38 replay the complete chronology directly into the current schema on a consistent copy, compare every legacy snapshot/transaction, and promote through SQLite's backup transaction only after validation. Strict legacy adapters freeze nested provider vocabulary and reject new fields, commands, and unexpected mark or override changes. Preserve the pre-migration backup.
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 43 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings with exact picture selections and dormant linked audio, audio edge policies, transparent Retime partitions, owned timing bindings with exact local-origin translations, retained framing clocks and direct sound replacement maps, and binds qualified assets to immutable source receipts. Only database schema 52 retains its additive upgrade to current schema 55. Refuse schemas 1 through 51, 53 and 54 before writer acquisition, backups, recovery or document parsing. The obsolete full-document adapters are removed; retain current history validation, checkpoints, accepted-media recovery and the frozen audio-context codecs still referenced by current documents. Historical qualification reports apply to their recorded revisions. See [development formats](docs/DEVELOPMENT_FORMATS.md).
 
 Audio placement offsets map current physical-local coordinates into retained
 historical-local coordinates. Rebase lattice, phase-term and reanchor templates
@@ -560,11 +560,11 @@ Database schema 55 stores core schema 43 and retains operational generation requ
 plus an optional validated single-Original workflow profile. Use the dedicated
 `create_single_source` / `initialize_prepared_source` path to bind the full measured
 Original, basis and protected baseline atomically. Undo never crosses that baseline;
-deleting all current beats does not unlock a replacement video. Generic migrations
-gain no profile. Native Open uses backed-up migration before replacing its current
-session. Under the user's development-format permission, databases 39 through
-51 and schema 53 are rejected without mutation or migration; existing frozen adapters for
-databases 1 through 38 remain. See [the single-Original contract](docs/SINGLE_ORIGINAL.md).
+deleting all current beats does not unlock a replacement video. Generic projects
+gain no invented profile. Native Open uses the supported schema-52 backed-up
+migration before replacing its current session. Obsolete formats refuse without
+writes under the current development-format policy. See
+[the single-Original contract](docs/SINGLE_ORIGINAL.md).
 
 Resolved compound transactions save one authored revision/history entry and one
 final register bank. Validate every staged leaf through ordinary media admission;
@@ -611,11 +611,9 @@ register target. Only supported Apply installs intent; named Run does not. See
 The database also retains operational generation
 attempts, validation receipts, and candidate selection. Modern bundle receipts add
 optional measured spans and retained-input admission evidence; legacy receipts
-gain none. Legacy requests retain no plan and remain protocol 1. Schema-7/8/9/10
-history uses the frozen core schema-5 adapter; schema-11 history uses core schema 6; schema-12 uses frozen core schema 7; schema-13 uses frozen core schema 8; schema-14 uses frozen core schema 9; schema-15 uses frozen core schema 10 and retains presentation policy. All older nodes gain automatic audio edges. Schema-16/17 history uses frozen core schema 11; only ordinary Edit purpose is admitted. Migration preserves schema-17 workflow profiles and adds no invented single-source profile to older projects.
-Migration upgrades authored
-JSON through strict replay, preserves existing operational rows and clocks, and
-adds only missing operational tables. Request versions belong
+gain none. Legacy requests retained in current packages keep no plan and remain
+protocol 1. The schema-52 upgrade validates current authored JSON and preserves
+operational rows, clocks and workflow profiles. Request versions belong
 to retained per-Hold clocks outside document history. Undo/redo must never restore
 request relevance or decrement a clock. Every document mutation with a current
 request requires complete revision-bound context observations and reconciles
@@ -923,6 +921,18 @@ workspace refresh and reply size. Remote motion-only runs never move the GUI
 cursor. Preserve unread native Macro/copy continuations before publishing
 remote changes; socket uncertainty never permits automatic replay.
 
+Named Group uses captured ordinary Sequence context through semantic Apply.
+Preserve exact labels and captured absence through text entry. Visual Group
+requires positive time; explicit child Group admits empty Sequences. Preflight
+exact wrapper/Split identities and preserve full endpoint contexts, old clocks,
+marks and root sounds without ripple. Ungroup requires an explicit neutral
+direct-child Sequence and refuses every Visual state or authored group effect.
+Group selects its wrapper; Ungroup selects its first promoted child, then a
+neighbor when empty, retaining the old start. Marks hosted by a removed group
+become explicitly unresolved. CLI `mark_changes` compares complete entry/final
+logical marks. Recording and dot retain Group labels/selectors and Ungroup intent
+without consuming register choices. See [named groups](docs/GROUP_EDITING.md).
+
 Native group navigation retains an ephemeral `SequenceScope` of direct ordinary
 Sequence children. Keep cursor/card positions on the absolute project clock and
 show the group-relative position separately. Restore captured scope before
@@ -1123,13 +1133,10 @@ logical ID; pure Split must retain its existing logical ID. Apply Partition seam
 bias before exact-coordinate deduplication. Named results retain every matching
 binding ordinal within the resolved revision; do not use the representative
 target to discard other attachment owners. See [mark bindings](docs/MARK_FRAGMENTS.md).
-Database-18 history uses frozen core 12; all earlier mark wires reject fragments,
-including empty arrays and null. Database 19 uses frozen core 13, including its
-multi-binding mark vocabulary but excluding Split. Database 20 uses frozen core 14
-including closed direct/occurrence Split identity pools. Database 21 uses frozen
-core 15. Database 22 uses frozen core 16, including closed binding vocabulary but excluding InsertTime. Database 23 uses frozen core 17, excluding framing. Database 24 uses frozen core 18, excluding captured Hold geometry and its setter. Database 25 uses frozen core 19, excluding selected audio placements. Database 26 uses frozen core 20, excluding chronological reanchor steps. Database 27 uses frozen core 21, excluding gap binding maps and nested gap clock/placement vocabulary. Database 28 uses frozen core 22, excluding sparse gap branches and detached gap-clock references. Database 29 uses frozen core 23. Database 30 uses frozen core 24, retaining composite root-seam InsertTime admission but rejecting interiors before composite suffixes. Earlier replays check the stricter physical-suffix admission before modern apply. Database 31 uses frozen core 25, retaining root physical interiors but refusing nested Sequence insertion. Database 32 uses frozen core 26, retaining nested Sequence pause admission while rejecting SpliceSource. Database 33 uses frozen core 27, retaining SpliceSource while rejecting new Retime edits. Database 34 uses frozen core 28, retaining Retime commands but rejecting sound state and commands. Database 35 uses frozen core 29, retaining sound recipes while rejecting routed state, ReplaceSound and formerly forbidden sound-bearing temporal commands. Database 36 uses frozen core 30, retaining sound routes and ReplaceSound with their original contextual admission while rejecting allowance state and commands. Database 37 uses frozen core 31, preserving exact allowances but rejecting direct and occurrence Hold audio setters. Database 38 uses frozen core 32, retaining Hold audio setters while rejecting node audio treatments and their commands. Historical database 39 stores core 33, schema 40 adds operational render jobs, schema 41 adds publication records, and schema 42 adds immutable automatic encoder decisions. Historical database 43 stores core 34 and its direct sound replacement maps; later development formats add exact Source selections and audio-origin translations. Current database 53 adds independent project registers to core 43 with retained framing clocks, exact editorial windows, atomic Source Slip, ripple Source edge Trim and adjacent Source Roll. Under the approved unused-project policy, schemas 39 through 51 are refused before writes or backups; the frozen 1 through 38 adapters remain supported. Legacy initial snapshots gain empty audio lineage; replayed copies may
-establish it. Compare every old projected patch and changed-ID summary exactly
-while retaining complete modern transactions for historical undo/redo.
+Current history replay checks every command, forward/inverse patch, snapshot,
+changed-ID summary and unique allocation. Preserve complete transactions for
+Undo/Redo. Retired development formats fail during schema preflight; the old
+full-document grammar matrix is no longer an implementation obligation.
 
 Owned audio bindings contain flat timing records and bounded phase expressions,
 not historical raw media bodies. Keep root round-even and selected-origin point
@@ -1595,7 +1602,7 @@ and clip physical allocations before narrowing. Event survival follows retained
 integral support; initially sampleless intent uses the exact logical fallback.
 SetSound parameters preserve a route; explicit
 ReplaceSound clears it atomically. Recheck unchanged recipes when their route
-changes. Freeze database-35/core-29 contextual admission before modern replay.
+changes. Preserve admission of current sound recipes and retained clocks.
 Nested ownership, send/tail allowances, treatments and remaining structural
 sound transforms remain required.
 
@@ -1609,8 +1616,8 @@ contribution's policy independent. Allowances neither bypass source admission or
 exhaustion nor create media in retained routing gaps. Recheck receipt/original
 metadata when only an allowance changes. Split and occurrence isolation preserve
 or remap exact issuers; prune removed sounds/issuers in the same reversible
-transaction. Freeze database-36/core-30 documents, patches, commands and contextual
-admission; older snapshots gain no allowances. The full voice graph remains open.
+transaction. Preserve exact allowance identities in current snapshots and both
+patch directions. The full voice graph remains open.
 
 `SetHoldAudio` changes only the selected Hold's audio policy. Preserve its exact
 duration, picture/provider, framing, marks and retained sample clocks; let raw
@@ -1620,8 +1627,8 @@ silence allowances in the same reversible patch. Explicit Silence does not
 recreate removed permissions. Admit RoomTone/Tail sources against the expected
 revision's qualified asset, stored receipt, Original binding and measured
 integer sample span. Stored admission is not fresh byte verification; playback
-uses verified snapshots. Keep unrelated legacy recipes valid and freeze core31
-history before modern replay. Native Repeat-gap/fragment controls and tail DSP
+uses verified snapshots. Keep unrelated retained recipes valid. Native
+Repeat-gap/fragment controls and tail DSP
 remain open. See [room-tone authoring](docs/ROOM_TONE_AUDIO.md).
 
 Gain preparation uses exact fixed owner-output coordinates and independent trim,

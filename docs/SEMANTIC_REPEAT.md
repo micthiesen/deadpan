@@ -1,7 +1,7 @@
 # Semantic edit repeat
 
-Plain `.` repeats the last committed picture cut, Repeat wrap or play-count setter against
-a new current target.
+Plain `.` repeats the last committed picture cut, Repeat wrap, play-count setter,
+Group or Ungroup against a new current target.
 `x`, counted `x`, `:delete-frames Nf`, `d` with a motion, `dd`, Visual `d` and
 `:delete` supply cut intent. Repeating a cut is one atomic edit with one Undo entry
 and a newly captured editable copy.
@@ -13,7 +13,12 @@ setter; dot applies that total to the newly selected direct-child Repeat. Any
 Visual selection refuses, and another beat kind cannot become a wrap. The count
 setter preserves pending register choices. See [Repeat selections](REPEAT_SELECTION.md).
 
-This covers picture cuts, Repeat wraps and count setters for DP-06.
+[Group](GROUP_EDITING.md) retains its exact name and selector, with a current
+Visual range taking precedence. A saved Visual selector needs a new nonempty
+range. Ungroup resolves a newly selected neutral Sequence and refuses every
+Visual state. Both operations preserve the copy bank and pending register choice.
+
+This covers picture cuts, Repeat wraps/count setters and Group/Ungroup for DP-06.
 [Semantic macros](SEMANTIC_MACROS.md) record the effective instruction, so a
 recorded dot does not depend on a
 later repeat candidate. Other edit kinds and semantic text/role/occurrence
@@ -57,7 +62,8 @@ cut updates the named and default copies atomically. Failed cut attempts preserv
 the previous saved intent and every register slot while consuming the attempted
 one-shot register choice. Keys owned by a text field or another mode do not
 start a cut attempt.
-Repeat wraps and count setters preserve one-shot register intent, including when they refuse.
+Repeat wraps/count setters and Group/Ungroup preserve one-shot register intent,
+including when they refuse.
 
 ## Durable success and asynchronous feedback
 
@@ -66,8 +72,9 @@ Before publishing, it reads the actual saved head through a bounded single-row
 query, without decoding a document. The visible workspace may still hold an
 older revision after a failed refresh.
 
-A supported direct cut, explicit Repeat wrap or semantic count setter records an exact before/after revision proof immediately
-after commit, before optional refresh. This includes a single Apply during
+A supported direct cut, explicit Repeat wrap, semantic count setter, Group or
+Ungroup records an exact before/after revision proof immediately after commit,
+before optional refresh. This includes a single Apply during
 recording. Named macro Run transitions remain unproved and clear the candidate
 when they change the document. Direct mark-only saves and Undo/Redo record
 preservation proofs. An observed head change applies a proof only when its

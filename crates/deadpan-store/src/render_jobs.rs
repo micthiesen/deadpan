@@ -480,18 +480,6 @@ pub(crate) fn read_job(
     Ok(intent)
 }
 
-/// All pre-42 jobs use the frozen engineering grammar. Run after SQL byte
-/// bounds and before current parsers during migration; never rewrite the JSON.
-pub(crate) fn validate_legacy_intents(connection: &Connection) -> Result<(), StoreError> {
-    let mut statement = connection.prepare("SELECT intent FROM render_jobs")?;
-    let mut rows = statement.query([])?;
-    while let Some(row) = rows.next()? {
-        let json: String = row.get(0)?;
-        render::parse_render_intent_v1(json.as_bytes()).map_err(pure)?;
-    }
-    Ok(())
-}
-
 fn required_text(value: Option<String>) -> Result<String, StoreError> {
     value.ok_or_else(|| invalid("targeted render metadata is oversized or has wrong type"))
 }

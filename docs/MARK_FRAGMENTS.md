@@ -84,7 +84,7 @@ retains Partition purpose, and earlier adapters continue to reject it.
 loss, promotion, unresolved state, copy subsets, independent ownership,
 serialization, inverse history, replacement and bounds. [Resolution tests](../crates/deadpan-core/tests/mark_resolution.rs)
 cover exact ambiguity, seam bias, original clocks, explicit scope and compact
-billion-play queries. [Legacy tests](../crates/deadpan-core/tests/legacy_marks.rs)
+billion-play queries. [Legacy tests](https://github.com/micthiesen/deadpan/blob/5fd02ecc91822f3ea3469ee41959766c5f077705/crates/deadpan-core/tests/legacy_marks.rs)
 exercise strict wire rejection and the 100,000-mark compatibility boundary.
 [Store tests](../crates/deadpan-store/tests/migration.rs) use authentic schema-18
 history and verify full replay, retained backups, pending redo and failed
