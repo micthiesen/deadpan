@@ -237,6 +237,12 @@ impl Service {
                 ProjectEdit::SetFraming { .. }
                     | ProjectEdit::SetAudioTreatments { .. }
                     | ProjectEdit::HoldAudio { .. }
+                    | ProjectEdit::Scoped {
+                        edit: deadpan_core::ScopedNodeEdit::SetFraming { .. }
+                            | deadpan_core::ScopedNodeEdit::SetAudioTreatments { .. }
+                            | deadpan_core::ScopedNodeEdit::SetHoldAudio { .. },
+                        ..
+                    }
             )
         {
             return Err(native_error(
@@ -245,7 +251,14 @@ impl Service {
             ));
         }
         let unchanged = match &request.operation {
-            ProjectRenderOperation::CommitAndStart { edit, .. } => match edit.as_ref() {
+            ProjectRenderOperation::CommitAndStart { edit, scope, cursor, request: start, .. } => match edit.as_ref() {
+                ProjectEdit::Scoped { target, edit } => {
+                    target.validate_request(workspace, request.context.session, &start.revision, scope, *cursor)
+                        .map_err(|error| native_error("RenderInvalidRequest", error))?;
+                    self.check_scoped_head(target).map_err(|error| native_error("RenderInvalidRequest", error))?;
+                    workspace.document.scoped_edit_requirements(&target.target, edit)
+                        .map_err(|error| native_error("RenderInvalidRequest", error.to_string()))?.unchanged
+                }
                 ProjectEdit::SetFraming { node, framing } => workspace.document.nodes()
                     .get(node).is_some_and(|beat| &beat.framing == framing),
                 ProjectEdit::SetAudioTreatments { node, treatments } => workspace.document.nodes()

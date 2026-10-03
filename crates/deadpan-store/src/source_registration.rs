@@ -1109,6 +1109,10 @@ pub(crate) fn validate_hold_audio_source(
         | Command::EditOccurrence {
             edit: deadpan_core::OccurrenceEdit::SetHoldAudio { audio },
             ..
+        }
+        | Command::EditScoped {
+            edit: deadpan_core::ScopedNodeEdit::SetHoldAudio { audio },
+            ..
         } => audio,
         _ => return Ok(()),
     };

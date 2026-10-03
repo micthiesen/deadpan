@@ -26,6 +26,7 @@ mod retime;
 mod room_tone;
 mod saved_receipts;
 mod scope;
+mod scoped;
 mod semantic;
 mod slip;
 mod sound;

@@ -1178,7 +1178,7 @@ pub fn validate_request_context(
 
 fn preserves_sound_clocks(command: &Command) -> bool {
     match command {
-        Command::Compound { .. } => false,
+        Command::Compound { .. } | Command::EditScoped { .. } => false,
         Command::SetSound { .. }
         | Command::DeleteSound { .. }
         | Command::SetSourceVideoMapping { .. }

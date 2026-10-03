@@ -40,6 +40,7 @@ mod registers;
 mod render;
 mod render_history;
 mod room_tone;
+mod scoped;
 mod semantic;
 mod slip;
 mod splice;
@@ -688,6 +689,7 @@ impl Service {
         // relevance guard in the writer transaction. Do not invent observations.
         let outcome = self.writer()?.commit(&request).map_err(display)?;
         self.committed = Some(CommittedEdit {
+            scoped: None,
             revision: outcome.revision_id,
             selected_node: None,
             preserve_cursor: true,
@@ -791,6 +793,16 @@ impl Service {
         if cursor.0 < 0 || cursor.0 > workspace.plan.duration().frames() {
             return Err("Edit cursor is outside the project".into());
         }
+        if let ProjectEdit::Scoped { target, edit } = edit {
+            target.validate_request(
+                workspace,
+                expected_session,
+                &expected_revision,
+                &scope,
+                cursor,
+            )?;
+            return self.edit_scoped(target, edit);
+        }
         if let ProjectEdit::DeleteRange { parent, range } = edit {
             return self.delete_range(expected_revision, scope, parent, range);
         }
@@ -807,6 +819,7 @@ impl Service {
             // real host relevance resolver. Never invent observations here.
             let outcome = self.writer()?.commit(&request).map_err(display)?;
             self.committed = Some(CommittedEdit {
+                scoped: None,
                 revision: outcome.revision_id,
                 selected_node: Some(id),
                 preserve_cursor: false,
@@ -824,7 +837,9 @@ impl Service {
             return Ok(());
         }
         let target = match &edit {
-            ProjectEdit::InsertTime { .. } | ProjectEdit::DeleteRange { .. } => {
+            ProjectEdit::Scoped { .. }
+            | ProjectEdit::InsertTime { .. }
+            | ProjectEdit::DeleteRange { .. } => {
                 unreachable!("range operation handled above")
             }
             ProjectEdit::Split { node, .. }
@@ -908,7 +923,9 @@ impl Service {
                 selected,
                 "Framing updated and saved",
             ),
-            ProjectEdit::InsertTime { .. } | ProjectEdit::DeleteRange { .. } => {
+            ProjectEdit::Scoped { .. }
+            | ProjectEdit::InsertTime { .. }
+            | ProjectEdit::DeleteRange { .. } => {
                 unreachable!("range operation handled above")
             }
             ProjectEdit::Split { node: target, at } => {
@@ -1060,6 +1077,7 @@ impl Service {
         // fails. Render continuation must report this commit independently of
         // its later admission result.
         self.committed = Some(CommittedEdit {
+            scoped: None,
             revision: outcome.revision_id,
             selected_node: selected_node.clone(),
             preserve_cursor,
@@ -1372,6 +1390,7 @@ impl Service {
                                 .insertion
                                 .as_ref()
                                 .map(|insertion| CommittedEdit {
+                                    scoped: None,
                                     revision: commit.revision_id,
                                     selected_node: Some(insertion.node.clone()),
                                     preserve_cursor: false,
@@ -1518,6 +1537,7 @@ impl Service {
                 .map_err(display)?;
             self.cached = Some((outcome.asset_id.clone(), prepared));
             self.committed = outcome.commit.map(|commit| CommittedEdit {
+                scoped: None,
                 revision: commit.revision_id,
                 selected_node: Some(initialization.node),
                 preserve_cursor: false,
@@ -1585,6 +1605,7 @@ impl Service {
         self.cached = Some((outcome.asset_id.clone(), prepared));
         if let (Some(insertion), Some(commit)) = (&registration.insertion, &outcome.commit) {
             self.committed = Some(CommittedEdit {
+                scoped: None,
                 revision: commit.revision_id.clone(),
                 selected_node: Some(insertion.node.clone()),
                 preserve_cursor: false,

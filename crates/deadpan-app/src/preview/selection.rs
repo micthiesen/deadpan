@@ -9,6 +9,11 @@ pub(super) fn commit_matches_visible(
     revision: &deadpan_core::RevisionId,
 ) -> bool {
     &commit.revision == revision
+        && commit.scoped.as_ref().is_none_or(|scoped| {
+            scoped.before.session == session
+                && &scoped.before.project == project
+                && &scoped.revision == revision
+        })
         && commit
             .range_selection
             .as_ref()
@@ -159,6 +164,7 @@ mod tests {
         let project = ProjectId::new("project").unwrap();
         let revision = RevisionId::new("saved").unwrap();
         let commit = CommittedEdit {
+            scoped: None,
             revision: revision.clone(),
             selected_node: Some(NodeId::new("first-moved-child").unwrap()),
             preserve_cursor: false,

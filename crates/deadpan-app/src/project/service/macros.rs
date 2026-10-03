@@ -266,6 +266,7 @@ impl Service {
                 // revision. Only the store's authored receipt grants a native
                 // edit continuation; never infer one from a Compound request.
                 let committed = outcome.committed.map(|saved| CommittedEdit {
+                    scoped: None,
                     revision: saved.revision_id,
                     selected_node: plan.selected_child.clone(),
                     preserve_cursor: false,

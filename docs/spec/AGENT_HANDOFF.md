@@ -21,6 +21,18 @@ app inventory confirmed no Deadpan app remained running.
 
 ## Repeat selections, current implementation
 
+The newer [scoped editing boundary](../SCOPED_EDITING.md) adds Repeat/Retime
+contents navigation with explicit All plays/This play value edits. Keep its
+authoring address separate from the concrete displayed occurrence and ordinary
+`SequenceScope`. The core command isolates only selected Play ancestors; Default
+ancestors remain literal shared definitions. Preview/commit/render carry the
+same captured address, and receipts cannot reclaim changed UI navigation.
+[Qualification](../qualification/scoped-plays-2026-10-03.md) records the
+3,780-test workspace gate, final app checks in both configurations, 1,083 rendered
+workflow checks and native verification. Exact mark-only receipts preserve the
+current play and navigation made after mark entry. Both QA apps were closed.
+Temporal edits and occurrence macros remain open.
+
 [Repeat selections](../REPEAT_SELECTION.md) adds `r` plus frame, beat or group
 motion, Visual `r`, and `rr` for an explicit child. Leading counts mean total
 plays; motion counts mean distance. Two explicit counts and empty selections

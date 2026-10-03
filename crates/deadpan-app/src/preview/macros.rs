@@ -145,6 +145,11 @@ impl State {
 
 impl DeadpanApp {
     pub(super) fn capture_macro_target(&self) -> Result<Capture, String> {
+        if self.scoped.is_some() {
+            return Err(
+                "Return to the parent before recording or applying structural edits.".into(),
+            );
+        }
         if let Some(error) = self.frame_delete_blocked() {
             return Err(error.into());
         }

@@ -108,6 +108,7 @@ pub(super) struct CameraPending {
     node: NodeId,
     cursor: u64,
     navigation_scope: SequenceScope,
+    scoped: Option<crate::project::scoped::Target>,
 }
 
 pub(super) struct CameraSession {
@@ -115,6 +116,7 @@ pub(super) struct CameraSession {
     revision: RevisionId,
     scope: InstancePath,
     navigation_scope: SequenceScope,
+    scoped: Option<crate::project::scoped::Target>,
     ticket: Ticket,
     cursor: u64,
     entry: Option<Framing>,
@@ -235,7 +237,11 @@ impl CameraSession {
             .framing
             .iter()
             .position(|layer| {
-                layer.instance.node == pending.node && layer.instance.repeats.is_empty()
+                layer.instance.node == pending.node
+                    && pending.scoped.as_ref().map_or_else(
+                        || layer.instance.repeats.is_empty(),
+                        |target| target.presentation.as_ref() == Some(&layer.instance),
+                    )
             })
             .ok_or("Move the cursor inside the selected beat to frame it.")?;
         let layer = &picture.framing[index];
@@ -275,6 +281,7 @@ impl CameraSession {
             revision: pending.revision,
             scope: layer.instance.clone(),
             navigation_scope: pending.navigation_scope,
+            scoped: pending.scoped,
             ticket,
             cursor: pending.cursor,
             entry: workspace.document.nodes()[&pending.node].framing.clone(),
@@ -303,6 +310,19 @@ impl CameraSession {
             reset,
         )
     }
+
+    fn edit(&self, framing: Option<Framing>) -> ProjectEdit {
+        match &self.scoped {
+            Some(target) => ProjectEdit::Scoped {
+                target: target.clone(),
+                edit: deadpan_core::ScopedNodeEdit::SetFraming { framing },
+            },
+            None => ProjectEdit::SetFraming {
+                node: self.scope.node.clone(),
+                framing,
+            },
+        }
+    }
 }
 
 impl DeadpanApp {
@@ -311,6 +331,9 @@ impl DeadpanApp {
             .camera
             .as_ref()
             .ok_or("Camera preview is no longer open.")?;
+        if !self.inspected_target_matches(&camera.scope.node, camera.scoped.as_ref()) {
+            return Err("Camera's captured beat or play changed. Open Camera again.".into());
+        }
         if camera.committing || !camera.fields.is_valid() || camera.field_error.is_some() {
             return Err(camera
                 .field_error
@@ -334,10 +357,7 @@ impl DeadpanApp {
                 i64::try_from(camera.cursor).map_err(|_| "Camera cursor is out of range.")?,
             ),
             scope: camera.navigation_scope.clone(),
-            edit: ProjectEdit::SetFraming {
-                node: camera.scope.node.clone(),
-                framing,
-            },
+            edit: camera.edit(framing),
         }))
     }
 
@@ -353,10 +373,30 @@ impl DeadpanApp {
         self.cancel_camera();
         self.pause_playback();
         self.bindings.clear();
+        let scoped = match self.scoped_target() {
+            Ok(target) => target,
+            Err(error) => {
+                self.error = Some(error);
+                return;
+            }
+        };
+        if scoped
+            .as_ref()
+            .is_some_and(|target| target.presentation.is_none())
+        {
+            self.error = Some(
+                "This definition has no visible play to frame. Choose a visible play first.".into(),
+            );
+            return;
+        }
         let Some(workspace) = &self.workspace else {
             return;
         };
-        let Some(node) = &self.selected_beat else {
+        let Some(node) = scoped
+            .as_ref()
+            .map(|target| &target.target.node)
+            .or(self.selected_beat.as_ref())
+        else {
             self.error = Some("Select a beat in the current group to frame.".into());
             return;
         };
@@ -368,6 +408,7 @@ impl DeadpanApp {
             node: node.clone(),
             cursor: self.sequence_cursor,
             navigation_scope: self.sequence_scope.clone(),
+            scoped,
         });
         self.finish_camera_entry(context);
     }
@@ -379,7 +420,7 @@ impl DeadpanApp {
         let valid = self.view == View::Sequence
             && self.sequence_scope == pending.navigation_scope
             && self.sequence_cursor == pending.cursor
-            && self.selected_beat.as_ref() == Some(&pending.node)
+            && self.inspected_target_matches(&pending.node, pending.scoped.as_ref())
             && self.workspace.as_ref().is_some_and(|workspace| {
                 workspace.session == pending.session
                     && workspace.document.revision_id() == &pending.revision
@@ -457,10 +498,7 @@ impl DeadpanApp {
             expected_revision: camera.revision.clone(),
             scope: camera.navigation_scope.clone(),
             cursor: ProjectFrame(camera.cursor as i64),
-            edit: ProjectEdit::SetFraming {
-                node: camera.scope.node.clone(),
-                framing,
-            },
+            edit: camera.edit(framing),
         })
     }
 
@@ -484,7 +522,7 @@ impl DeadpanApp {
         let valid = self.view == View::Sequence
             && self.sequence_scope == camera.navigation_scope
             && self.sequence_cursor == camera.cursor
-            && self.selected_beat.as_ref() == Some(&camera.scope.node)
+            && self.inspected_target_matches(&camera.scope.node, camera.scoped.as_ref())
             && self.workspace.as_ref().is_some_and(|workspace| {
                 workspace.session == camera.session
                     && workspace.document.revision_id() == &camera.revision

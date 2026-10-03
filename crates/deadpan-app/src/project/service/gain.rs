@@ -12,14 +12,33 @@ impl Service {
         if proposal.draft == 0 || proposal.change == 0 {
             return Err("Gain proposal identities must be nonzero.".into());
         }
-        let request = CommandRequest {
-            project_id: proposal.target.project.clone(),
-            expected_revision: proposal.target.revision.clone(),
-            new_revision: revision(),
-            command: Command::SetAudioTreatments {
-                node: proposal.target.node.clone(),
-                treatments: proposal.treatments.clone(),
-            },
+        if let Some(target) = &proposal.target.scoped {
+            self.check_scoped_head(target)?;
+        }
+        let request = if let Some(target) = &proposal.target.scoped
+            && proposal.treatments != proposal.target.entry
+        {
+            scoped::prepare(
+                workspace,
+                target,
+                &deadpan_core::ScopedNodeEdit::SetAudioTreatments {
+                    treatments: proposal.treatments.clone(),
+                },
+            )?
+            .request
+        } else {
+            // An unchanged proposal still needs a private preview revision,
+            // but must not isolate a play. This identical value command leaves
+            // every authored field intact and is never committed here.
+            CommandRequest {
+                project_id: proposal.target.project.clone(),
+                expected_revision: proposal.target.revision.clone(),
+                new_revision: revision(),
+                command: Command::SetAudioTreatments {
+                    node: proposal.target.node.clone(),
+                    treatments: proposal.treatments.clone(),
+                },
+            }
         };
         let edit = self
             .store

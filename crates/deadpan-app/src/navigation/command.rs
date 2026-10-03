@@ -5,6 +5,12 @@ use deadpan_core::FrameDuration;
 use super::{Action, BeatEdit, duration::DurationInput};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ScopeChoice {
+    All,
+    Play(u32),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Entry {
     Action(Action),
     Source,
@@ -18,6 +24,7 @@ pub enum Entry {
     HoldSilence,
     Gain(Option<deadpan_core::GainDb>),
     GainMute,
+    Scope(ScopeChoice),
     /// Tenths of one percent, independent of authored or export gain.
     Monitor(u16),
     AuditionContext {
@@ -34,6 +41,27 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         return Ok(Entry::Empty);
     };
     let verb = verb.to_ascii_lowercase();
+    if verb == "scope" {
+        let choice = match words.next() {
+            Some("all") => ScopeChoice::All,
+            Some("play") => {
+                let play = words
+                    .next()
+                    .filter(|value| {
+                        !value.is_empty() && value.bytes().all(|byte| byte.is_ascii_digit())
+                    })
+                    .and_then(|value| value.parse::<u32>().ok())
+                    .filter(|value| *value > 0)
+                    .ok_or("Use :scope play N with a positive one-based play number.")?;
+                ScopeChoice::Play(play)
+            }
+            _ => return Err("Use :scope all or :scope play N inside a Repeat.".into()),
+        };
+        if words.next().is_some() {
+            return Err("Extra arguments are not supported by this command.".into());
+        }
+        return Ok(Entry::Scope(choice));
+    }
     if verb == "audition-context" {
         return audition_context(words);
     }
@@ -269,6 +297,28 @@ fn monitor(argument: Option<&str>) -> Result<u16, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn scoped_play_commands_are_explicit_and_bounded() {
+        assert_eq!(parse(":scope all"), Ok(Entry::Scope(ScopeChoice::All)));
+        assert_eq!(
+            parse(":scope play 4294967295"),
+            Ok(Entry::Scope(ScopeChoice::Play(u32::MAX)))
+        );
+        for input in [
+            "scope",
+            "scope play",
+            "scope play 0",
+            "scope play -1",
+            "scope play 1.5",
+            "scope play 4294967296",
+            "scope all 1",
+            "scope play 2 extra",
+        ] {
+            assert!(parse(input).is_err(), "{input}");
+        }
+        assert_eq!(parse("play"), Ok(Entry::Action(Action::Playback)));
+    }
 
     #[test]
     fn macro_commands_require_named_registers_and_positive_bounded_counts() {

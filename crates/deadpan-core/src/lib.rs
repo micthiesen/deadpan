@@ -82,6 +82,7 @@ mod picture_context;
 mod register;
 mod repeat_layout;
 mod repeat_selection;
+mod scoped_edit;
 mod semantic;
 mod sound_allowance;
 mod sound_events;
@@ -129,6 +130,10 @@ pub use picture_context::*;
 pub use register::{RegisterName, RegisterValue};
 pub use repeat_layout::*;
 pub use repeat_selection::{RepeatSelectionIdentities, RepeatSelectionPlan};
+pub use scoped_edit::{
+    PreparedScopedEdit, RepeatEditBranch, RepeatEditStep, ScopedEditRequirements, ScopedNodeEdit,
+    ScopedNodeTarget, prepare_scoped_edit,
+};
 pub use semantic::*;
 pub use sound_allowance::*;
 pub use sound_events::*;

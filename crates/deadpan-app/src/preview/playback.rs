@@ -215,6 +215,13 @@ impl DeadpanApp {
     }
 
     fn selected_playback_range(&self) -> Option<std::ops::Range<u64>> {
+        if self.view == View::Sequence && self.scoped.is_some() && !self.sound_focused() {
+            return self
+                .scoped_presentation()
+                .ok()
+                .flatten()
+                .map(|presentation| presentation.frames);
+        }
         if self.sound_focused() {
             return self.selected_sound_descriptor().and_then(|sound| {
                 u64::try_from(sound.duration_samples().0)

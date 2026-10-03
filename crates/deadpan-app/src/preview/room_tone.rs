@@ -19,6 +19,22 @@ struct Target {
     cursor: ProjectFrame,
     label: String,
     frames: i64,
+    scoped: Option<crate::project::scoped::Target>,
+}
+
+impl Target {
+    fn edit(&self, audio: HoldAudio) -> ProjectEdit {
+        match &self.scoped {
+            Some(target) => ProjectEdit::Scoped {
+                target: target.clone(),
+                edit: deadpan_core::ScopedNodeEdit::SetHoldAudio { audio },
+            },
+            None => ProjectEdit::HoldAudio {
+                node: self.node.clone(),
+                audio,
+            },
+        }
+    }
 }
 
 pub(super) struct CommandTarget {
@@ -128,10 +144,7 @@ impl DeadpanApp {
             revision: draft.target.revision.clone(),
             cursor: draft.target.cursor,
             scope: draft.target.scope.clone(),
-            edit: ProjectEdit::HoldAudio {
-                node: draft.target.node.clone(),
-                audio,
-            },
+            edit: draft.target.edit(audio),
         }))
     }
 
@@ -144,12 +157,18 @@ impl DeadpanApp {
                 );
             }
             let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
-            let node = self.selected_beat.as_ref().ok_or("Select a pause first.")?;
-            if !self
-                .sequence_scope
-                .resolve(workspace)?
-                .children
-                .contains(node)
+            let scoped = self.scoped_target()?;
+            let node = scoped
+                .as_ref()
+                .map(|target| &target.target.node)
+                .or(self.selected_beat.as_ref())
+                .ok_or("Select a pause first.")?;
+            if scoped.is_none()
+                && !self
+                    .sequence_scope
+                    .resolve(workspace)?
+                    .children
+                    .contains(node)
             {
                 return Err("The selected pause is outside the displayed group.".into());
             }
@@ -171,6 +190,7 @@ impl DeadpanApp {
                 ),
                 label: beat.label.clone(),
                 frames: recipe.duration.frames(),
+                scoped,
             })
         })();
         let copied = self.copied.copied_audio_selection();
@@ -203,7 +223,7 @@ impl DeadpanApp {
             workspace.session != target.session
                 || workspace.document.revision_id() != &target.revision
         }) || self.sequence_scope != target.scope
-            || self.selected_beat.as_ref() != Some(&target.node)
+            || !self.inspected_target_matches(&target.node, target.scoped.as_ref())
             || i64::try_from(self.sequence_cursor).ok() != Some(target.cursor.0)
             || self.view != View::Sequence
         {
@@ -620,8 +640,7 @@ impl DeadpanApp {
         ui.add_space(8.0);
         if let Some(workspace) = &self.workspace
             && let Some(node) = self
-                .selected_beat
-                .as_ref()
+                .inspected_node()
                 .and_then(|id| workspace.document.nodes().get(id))
             && let NodeKind::Hold { recipe } = &node.kind
             && let HoldAudio::RoomTone { source } = &recipe.audio
@@ -660,15 +679,13 @@ impl DeadpanApp {
 }
 
 fn hold_request(target: Target, audio: HoldAudio) -> ProjectRequest {
+    let edit = target.edit(audio);
     ProjectRequest::Edit {
         expected_session: target.session,
         expected_revision: target.revision,
         cursor: target.cursor,
         scope: target.scope,
-        edit: ProjectEdit::HoldAudio {
-            node: target.node,
-            audio,
-        },
+        edit,
     }
 }
 
@@ -687,6 +704,7 @@ mod tests {
                 cursor: ProjectFrame(11),
                 label: "Pause".into(),
                 frames: 11,
+                scoped: None,
             },
             prepared: None,
             pending: Some(20),

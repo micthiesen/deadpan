@@ -4,7 +4,7 @@ use deadpan_core::AudioSample;
 
 use super::*;
 
-fn counts(path: &Path) -> (i64, i64) {
+pub(super) fn counts(path: &Path) -> (i64, i64) {
     rusqlite::Connection::open(path.join("project.sqlite"))
         .unwrap()
         .query_row(

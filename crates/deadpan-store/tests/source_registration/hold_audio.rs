@@ -70,6 +70,17 @@ fn setter(audio: HoldAudio, occurrence: bool) -> Result<Command> {
     })
 }
 
+fn scoped_setter(audio: HoldAudio) -> Result<Command> {
+    Ok(Command::EditScoped {
+        target: deadpan_core::ScopedNodeTarget {
+            node: NodeId::new("hold")?,
+            repeats: Vec::new(),
+        },
+        edit: deadpan_core::ScopedNodeEdit::SetHoldAudio { audio },
+        identities: OccurrenceIdentities::default(),
+    })
+}
+
 #[test]
 fn hold_audio_policy_history_is_atomic_durable_and_timing_neutral() -> Result {
     let scratch = tempfile::tempdir()?;
@@ -141,7 +152,7 @@ fn hold_audio_policy_history_is_atomic_durable_and_timing_neutral() -> Result {
 }
 
 #[test]
-fn direct_and_occurrence_policy_commands_recheck_receipt_and_original_binding() -> Result {
+fn direct_occurrence_and_scoped_policy_commands_recheck_receipt_and_original_binding() -> Result {
     let scratch = tempfile::tempdir()?;
     let (path, mut store) = project(scratch.path())?;
     let original = retain(&mut store, "offset-bframes.mp4")?;
@@ -157,7 +168,7 @@ fn direct_and_occurrence_policy_commands_recheck_receipt_and_original_binding() 
         [],
         |row| Ok((row.get(0)?, row.get(1)?)),
     )?;
-    for occurrence in [false, true] {
+    for mode in 0..3 {
         for audio in [
             HoldAudio::RoomTone {
                 source: source(&baseline)?,
@@ -167,7 +178,12 @@ fn direct_and_occurrence_policy_commands_recheck_receipt_and_original_binding() 
                 maximum: FrameDuration::new(1)?,
             },
         ] {
-            let request = edit(&baseline, "policy", setter(audio, occurrence)?);
+            let command = if mode == 2 {
+                scoped_setter(audio)?
+            } else {
+                setter(audio, mode == 1)?
+            };
+            let request = edit(&baseline, "policy", command);
             store.preview(&request)?;
             for tamper in [
                 "UPDATE source_qualifications SET snapshot=X'00'",
@@ -191,7 +207,23 @@ fn direct_and_occurrence_policy_commands_recheck_receipt_and_original_binding() 
             }
         }
     }
+    let request = edit(
+        &baseline,
+        "scoped-policy",
+        scoped_setter(HoldAudio::RoomTone {
+            source: source(&baseline)?,
+        })?,
+    );
+    let preview = store.preview(&request)?;
+    assert_eq!(store.commit(&request)?.edit, preview);
+    let saved = store.snapshot()?;
+    assert_eq!(saved.duration()?, baseline.duration()?);
+    assert_eq!(preview.inverse.apply(&saved)?, baseline);
     store.validate()?;
+    drop(store);
+    let reopened = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+    assert_eq!(reopened.snapshot()?, saved);
+    reopened.validate()?;
     Ok(())
 }
 
@@ -234,16 +266,18 @@ fn hold_audio_rejects_outside_and_fractional_source_sample_spans_without_history
             },
         )?,
     ] {
-        for occurrence in [false, true] {
-            let command = setter(
-                HoldAudio::RoomTone {
-                    source: SourceAudio {
-                        asset: id("camera"),
-                        span,
-                    },
+        for mode in 0..3 {
+            let audio = HoldAudio::RoomTone {
+                source: SourceAudio {
+                    asset: id("camera"),
+                    span,
                 },
-                occurrence,
-            )?;
+            };
+            let command = if mode == 2 {
+                scoped_setter(audio)?
+            } else {
+                setter(audio, mode == 1)?
+            };
             let request = edit(&before, "invalid-span", command);
             assert!(store.preview(&request).is_err());
             assert!(store.commit(&request).is_err());

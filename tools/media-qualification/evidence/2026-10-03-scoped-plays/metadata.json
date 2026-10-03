@@ -1,0 +1,456 @@
+{
+  "base_commit": "c2259d955808be0b6bf0b3ba9c3aa624216b5fe3",
+  "source_manifest_sha256": "99683b8b2797a6d369b547a672733b8f18ff77596c2cdf39ba4ac90c65dc9a8a",
+  "workspace_test_source_manifest_sha256": "eda7fe4c19c82c99f4b3a27529ee779bf7b49f7f6960a9961a90641717a352a1",
+  "workspace_test_to_final_changes": [
+    "crates/deadpan-app/src/preview.rs",
+    "crates/deadpan-app/src/preview/harness/scoped_plays.rs",
+    "crates/deadpan-app/src/preview/scoped.rs",
+    "crates/deadpan-app/src/preview/scoped/model.rs",
+    "crates/deadpan-app/src/preview/scoped/model/tests.rs"
+  ],
+  "visual_binary_sha256": "8e3fc4a241f92536e3870184c8c645e2092895e3df924acb23267e7097e5f7f4",
+  "performance_binary_sha256": "ec7059cb3c6dce19ce527271df78ec4b4b366b464911f5f8b36b2bcc013cc297",
+  "performance_timings": {
+    "ui_frame_cpu_ms": {
+      "completed": {
+        "max_ms": 3.424458,
+        "n": 255,
+        "p50_ms": 0.133416,
+        "p95_ms": 0.680583,
+        "p99_ms": 1.135166
+      },
+      "failed": 0,
+      "samples": 255,
+      "timed_out": 0
+    },
+    "ui_composition_submit_cpu_ms": {
+      "completed": {
+        "max_ms": 0.614542,
+        "n": 255,
+        "p50_ms": 0.085542,
+        "p95_ms": 0.12479200000000001,
+        "p99_ms": 0.188666
+      },
+      "failed": 0,
+      "samples": 255,
+      "timed_out": 0
+    },
+    "ui_composition_complete_ms": {
+      "completed": {
+        "max_ms": 8.828084,
+        "n": 255,
+        "p50_ms": 0.385708,
+        "p95_ms": 0.674041,
+        "p99_ms": 0.74575
+      },
+      "failed": 0,
+      "samples": 255,
+      "timed_out": 0
+    },
+    "input_to_state_ms": {
+      "completed": {
+        "max_ms": 1.4335,
+        "n": 58,
+        "p50_ms": 0.3665,
+        "p95_ms": 0.932834,
+        "p99_ms": 1.4335
+      },
+      "failed": 0,
+      "samples": 58,
+      "timed_out": 0
+    },
+    "input_to_commit_ms": {
+      "completed": {
+        "max_ms": 85.187042,
+        "n": 5,
+        "p50_ms": 4.791041,
+        "p95_ms": 85.187042,
+        "p99_ms": 85.187042
+      },
+      "failed": 0,
+      "samples": 5,
+      "timed_out": 0
+    },
+    "request_to_decode_delivery_ms": {
+      "completed": {
+        "max_ms": 4.8885,
+        "n": 23,
+        "p50_ms": 0.9093340000000001,
+        "p95_ms": 1.892708,
+        "p99_ms": 4.8885
+      },
+      "failed": 0,
+      "samples": 23,
+      "timed_out": 0
+    },
+    "request_to_worker_start_ms": {
+      "completed": {
+        "max_ms": 0.006917,
+        "n": 23,
+        "p50_ms": 0.006292,
+        "p95_ms": 0.006833,
+        "p99_ms": 0.006917
+      },
+      "failed": 0,
+      "samples": 23,
+      "timed_out": 0
+    },
+    "worker_execution_ms": {
+      "completed": {
+        "max_ms": 4.657667,
+        "n": 23,
+        "p50_ms": 0.06949999999999999,
+        "p95_ms": 0.21366700000000002,
+        "p99_ms": 4.657667
+      },
+      "failed": 0,
+      "samples": 23,
+      "timed_out": 0
+    },
+    "worker_publication_delay_ms": {
+      "completed": {
+        "max_ms": 0.000125,
+        "n": 23,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 8.4e-05,
+        "p99_ms": 0.000125
+      },
+      "failed": 0,
+      "samples": 23,
+      "timed_out": 0
+    },
+    "publication_to_decode_delivery_ms": {
+      "completed": {
+        "max_ms": 1.8117910000000002,
+        "n": 23,
+        "p50_ms": 0.790791,
+        "p95_ms": 1.5092079999999999,
+        "p99_ms": 1.8117910000000002
+      },
+      "failed": 0,
+      "samples": 23,
+      "timed_out": 0
+    },
+    "request_to_picture_submission_ms": {
+      "completed": {
+        "max_ms": 5.314875,
+        "n": 20,
+        "p50_ms": 1.114917,
+        "p95_ms": 2.198,
+        "p99_ms": 5.314875
+      },
+      "failed": 0,
+      "samples": 20,
+      "timed_out": 0
+    },
+    "request_to_picture_complete_ms": {
+      "completed": {
+        "max_ms": 6.092875,
+        "n": 20,
+        "p50_ms": 1.533833,
+        "p95_ms": 2.893208,
+        "p99_ms": 6.092875
+      },
+      "failed": 0,
+      "samples": 20,
+      "timed_out": 0
+    },
+    "input_to_picture_complete_ms": {
+      "completed": {
+        "max_ms": 91.287167,
+        "n": 14,
+        "p50_ms": 2.1005,
+        "p95_ms": 91.287167,
+        "p99_ms": 91.287167
+      },
+      "failed": 0,
+      "samples": 14,
+      "timed_out": 0
+    },
+    "Original initialized and displayed": {
+      "completed": {
+        "max_ms": 90.59608399999999,
+        "n": 1,
+        "p50_ms": 90.59608399999999,
+        "p95_ms": 90.59608399999999,
+        "p99_ms": 90.59608399999999
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    },
+    "Project and picture settled": {
+      "completed": {
+        "max_ms": 1.638125,
+        "n": 26,
+        "p50_ms": 0.565,
+        "p95_ms": 0.890583,
+        "p99_ms": 1.638125
+      },
+      "failed": 0,
+      "samples": 26,
+      "timed_out": 0
+    },
+    "Scoped edit receipt is admitted": {
+      "completed": {
+        "max_ms": 0.000125,
+        "n": 16,
+        "p50_ms": 0.0,
+        "p95_ms": 0.000125,
+        "p99_ms": 0.000125
+      },
+      "failed": 0,
+      "samples": 16,
+      "timed_out": 0
+    },
+    "Committed revision changed": {
+      "completed": {
+        "max_ms": 5.578334,
+        "n": 9,
+        "p50_ms": 4.5916250000000005,
+        "p95_ms": 5.578334,
+        "p99_ms": 5.578334
+      },
+      "failed": 0,
+      "samples": 9,
+      "timed_out": 0
+    },
+    "Unchanged scoped gain proposal is ready": {
+      "completed": {
+        "max_ms": 0.817708,
+        "n": 1,
+        "p50_ms": 0.817708,
+        "p95_ms": 0.817708,
+        "p99_ms": 0.817708
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    },
+    "Mark is saved while its UI receipt is withheld": {
+      "completed": {
+        "max_ms": 3.401917,
+        "n": 1,
+        "p50_ms": 3.401917,
+        "p95_ms": 3.401917,
+        "p99_ms": 3.401917
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    },
+    "Scoped Camera opens on the selected play picture": {
+      "completed": {
+        "max_ms": 4.2e-05,
+        "n": 1,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 4.2e-05,
+        "p99_ms": 4.2e-05
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    },
+    "Scoped edit is durable while its UI receipt is withheld": {
+      "completed": {
+        "max_ms": 3.399333,
+        "n": 1,
+        "p50_ms": 3.399333,
+        "p95_ms": 3.399333,
+        "p99_ms": 3.399333
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  "app_test_source_manifest_sha256": "8b24cb5f12afabcd6962efe140cf365fb68023bf30cbd3e2aa957d0718768495",
+  "packages_test_source_manifest_sha256": "323ff787439068e089477537db3fa188954bb26b74a649eb694b5226e2b8f68e",
+  "app_test_to_final_changes": [
+    "crates/deadpan-app/src/preview.rs",
+    "crates/deadpan-app/src/preview/harness/scoped_plays.rs",
+    "crates/deadpan-app/src/preview/scoped.rs",
+    "crates/deadpan-app/src/preview/scoped/model.rs",
+    "crates/deadpan-app/src/preview/scoped/model/tests.rs",
+    "crates/deadpan-core/src/scoped_edit/tests.rs"
+  ],
+  "packages_test_to_final_changes": [
+    "crates/deadpan-app/src/preview.rs",
+    "crates/deadpan-app/src/preview/harness/scoped_plays.rs",
+    "crates/deadpan-app/src/preview/scoped.rs",
+    "crates/deadpan-app/src/preview/scoped/model.rs",
+    "crates/deadpan-app/src/preview/scoped/model/tests.rs"
+  ],
+  "source_guard_note": "packages-final exited 0; its global source guard exited 1 because only two unrelated app layout/harness files changed. The later complete workspace gate passed on stable eda7fe4c. Only five app files changed afterward for the reproduced mark-navigation regression. Final-source normal and ui-harness app tests, strict default/UI lint, formatting, scoped/marks visual replay and release scoped replay cover that correction. Backend suites were not repeated after the app-only fix.",
+  "native_binary_sha256": {
+    "initial": "3b78ed5cdcc719c4a42df6eef7ac57ab004621ebcb3d1d8252b8a4568969a960",
+    "labels": "44cebabb7145eff5c535962cf0f1e573f7ac6943ce7dff518f1269c4e19f2e01"
+  },
+  "native_source_manifest_sha256": {
+    "initial": "4722ddfa6c0b7261ee45042e1ebe73037fc8d296e3bf530d7a7ce76cab4bb3d5",
+    "labels": "8b24cb5f12afabcd6962efe140cf365fb68023bf30cbd3e2aa957d0718768495"
+  },
+  "machine": [
+    "Apple M5 Max",
+    "137438953472"
+  ],
+  "system": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+  "test_counts": {
+    "app-final": 754,
+    "packages-final": 2573,
+    "workspace-final": 3780,
+    "mark-default-tests": 720,
+    "mark-ui-tests": 756
+  },
+  "test_count_note": "The full workspace gate and subsequent 720 normal / 756 ui-harness app checks overlap. Counts are reported separately rather than summed as distinct tests. Two new mark-only state tests are present in both final app configurations.",
+  "replays": [
+    {
+      "name": "scoped-plays",
+      "run": "mark-scoped-visual",
+      "checks": 54,
+      "binary_sha256": "8e3fc4a241f92536e3870184c8c645e2092895e3df924acb23267e7097e5f7f4",
+      "findings": [],
+      "skipped": [
+        "This replay uses real native widgets, project service and Metal with scripted keyboard delivery. Its final Escape check simulates playback preparation; physical keyboard/IME and acoustic playback are separate checks.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "name": "marks",
+      "run": "mark-marks-visual",
+      "checks": 155,
+      "binary_sha256": "8e3fc4a241f92536e3870184c8c645e2092895e3df924acb23267e7097e5f7f4",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "Marks use real project writes, anchor transforms and decoded pictures. Delayed service delivery and IME input are explicitly injected; physical key layouts, native IME and VoiceOver remain separate acceptance.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "name": "gain",
+      "run": "gain-visual",
+      "checks": 290,
+      "binary_sha256": "44cebabb7145eff5c535962cf0f1e573f7ac6943ce7dff518f1269c4e19f2e01",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "Gain uses real qualified source evidence, writer previews, durable commands and canonical PCM for measured waveforms. Comparison audio delivery and labelled waveform failure replies are injected; this replay does not open an audio device or establish acoustic quality. Canonical Before/Draft mix and scheduling qualification belong to playback tests.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "name": "camera",
+      "run": "camera-visual",
+      "checks": 12,
+      "binary_sha256": "44cebabb7145eff5c535962cf0f1e573f7ac6943ce7dff518f1269c4e19f2e01",
+      "findings": [],
+      "skipped": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "name": "room-tone",
+      "run": "room-tone-visual",
+      "checks": 220,
+      "binary_sha256": "44cebabb7145eff5c535962cf0f1e573f7ac6943ce7dff518f1269c4e19f2e01",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "Source and committed Sequence audition use injected typed delivery updates, with real descriptor preparation and project writes. This replay does not prepare PCM, open an output device, establish acoustic quality or certify speech absence.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "name": "nested-pause",
+      "run": "nested-pause-visual",
+      "checks": 72,
+      "binary_sha256": "44cebabb7145eff5c535962cf0f1e573f7ac6943ce7dff518f1269c4e19f2e01",
+      "findings": [],
+      "skipped": [
+        "This replay enters Sequence groups. Repeat and Retime entry, occurrence isolation, and their pause insertion remain outside this scenario.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "name": "keymap",
+      "run": "keymap-visual",
+      "checks": 57,
+      "binary_sha256": "73393228414abbcb1c170969f4a004bc79ccfbc1b44dcce2124106f12c5a5c5b",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "name": "repeat-operator",
+      "run": "repeat-visual",
+      "checks": 223,
+      "binary_sha256": "73393228414abbcb1c170969f4a004bc79ccfbc1b44dcce2124106f12c5a5c5b",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "This replay delays delivery of genuine project updates to exercise Repeat prefix ownership. Physical keyboard delivery and OS IME behavior are not exercised.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    }
+  ],
+  "workflow_checks": 1083,
+  "kestrel": {
+    "conflicts": [],
+    "live_source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2",
+    "reserved_bindings": 62,
+    "routing_cases": 3319728,
+    "source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2"
+  },
+  "targeted_native_processes_absent": true,
+  "native_observations": [
+    "Enter, scope play 2: Edit 120/360 with Original cursor 0. Minus changed only that play from -9 to -12 dB; All plays retained -3 dB.",
+    "One Undo closed stale contents; reopening play 2 restored -9 dB.",
+    "The unchanged Gain draft opened with a measured waveform, then was cancelled.",
+    "Play 3 at boundary 241: Camera + changed scale to 105%; Enter committed and retained play/cursor.",
+    "Follow-up label bundle showed Scope: Repeat \u00b7 play 3/3 in Camera and Repeat \u00b7 play 2/3 in the Gain draft footer, retaining 105% and -9 dB.",
+    "Both follow-up drafts were cancelled; its copied package retained 11 revisions and 8 history entries.",
+    "Both native bundles quit with exit 0 and targeted process lookup confirms absence."
+  ],
+  "limits": [
+    "Debug functional and visual checks do not qualify release performance.",
+    "Final compact layout verified by rendered replay; native follow-up used the preceding label/projection binary.",
+    "Release scoped replay is a tiny-fixture mixed workload, including cold import. Its input-to-picture p95 is not a qualified warm-seek or ordinary-edit budget.",
+    "No new physical display, VoiceOver, OS IME, acoustic or release packaging qualification.",
+    "Fast batched native input across Gain cancellation did not select play 3; an observed closed draft followed by command entry did.",
+    "The developer wrapper retains external host library dependencies."
+  ]
+}

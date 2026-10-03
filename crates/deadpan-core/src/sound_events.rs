@@ -178,7 +178,8 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::SetCanvas { .. }
         | Command::AdoptPrimaryGeometry { .. }
         | Command::SetMark { .. }
-        | Command::DeleteMark { .. } => true,
+        | Command::DeleteMark { .. }
+        | Command::EditScoped { .. } => true,
         Command::ImportSource {
             insertion, primary, ..
         } => insertion.is_none() && primary.is_none(),

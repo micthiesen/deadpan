@@ -284,6 +284,7 @@ impl Service {
         let outcome = self.writer()?.commit(&ready.request).map_err(display)?;
         Ok((
             CommittedEdit {
+                scoped: None,
                 revision: outcome.revision_id,
                 selected_node: Some(ready.prepared.result.target.clone()),
                 preserve_cursor: true,

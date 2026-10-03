@@ -11,6 +11,14 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+The [scoped Repeat inspector](SCOPED_EDITING.md) adds explicit All plays/This
+play navigation and gain, Camera and pause-audio edits. The `scoped-plays`
+replay exercises isolation, unchanged drafts, late replies, Undo, mark-only
+revision rebasing, focused sound navigation and minimum-window paint. Compact controls retain the breadcrumb
+and selected child above the footer; Gain uses a compact owner row. See the
+[qualification](qualification/scoped-plays-2026-10-03.md) for corrected clipping,
+native observations, exact binaries and remaining temporal-editing limits.
+
 The [configurable keymap](KEYMAP.md) adds startup Normal/Visual overrides,
 logical/physical matching, dynamic key labels and persistent error fallback.
 The `keymap` replay uses a private file and real production input to exercise

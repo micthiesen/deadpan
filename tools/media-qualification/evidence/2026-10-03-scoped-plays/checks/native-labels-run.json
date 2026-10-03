@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/tmp/deadpan-scoped-plays-20261003/Deadpan Scoped Labels QA.app/Contents/MacOS/deadpan-app",
+    "--project",
+    "/tmp/deadpan-scoped-plays-20261003/native-labels.deadpan"
+  ],
+  "started": "2026-10-03T10:23:32.363932+00:00",
+  "base_commit": "c2259d955808be0b6bf0b3ba9c3aa624216b5fe3",
+  "diff_sha256": "536f2f9f30d069604c0e9251c50fd7cfae23c0a2d63e0335a2714da90c513a0d",
+  "source_manifest_sha256": "d2f5ec938ebeef4a7224bc7b427a7b8595fc3fdc11b285eea7c3c17dd0e242ef",
+  "pid": 40291,
+  "exit_code": 0,
+  "seconds": 58.62252908293158,
+  "source_manifest_after_sha256": "d2f5ec938ebeef4a7224bc7b427a7b8595fc3fdc11b285eea7c3c17dd0e242ef",
+  "source_unchanged": true,
+  "gate_exit_code": 0
+}

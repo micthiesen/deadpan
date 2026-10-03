@@ -37,6 +37,7 @@ impl Service {
         };
         let outcome = self.writer()?.commit(&request).map_err(display)?;
         self.committed = Some(CommittedEdit {
+            scoped: None,
             revision: outcome.revision_id,
             selected_node: None,
             preserve_cursor: false,

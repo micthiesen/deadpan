@@ -543,6 +543,7 @@ fn history_rejects_stale_sessions_and_invalid_queries_without_erasing_receipts()
     }
     let proposal = crate::project::gain::Proposal {
         target: crate::project::gain::Target {
+            scoped: None,
             session: workspace.session,
             project: workspace.document.project_id().clone(),
             revision: workspace.document.revision_id().clone(),

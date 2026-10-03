@@ -179,6 +179,7 @@ impl Service {
         let outcome = self.writer()?.commit(&draft.request).map_err(display)?;
         let target = draft.proposal.target;
         Ok(CommittedEdit {
+            scoped: None,
             revision: outcome.revision_id,
             selected_node: Some(target.node),
             preserve_cursor: true,

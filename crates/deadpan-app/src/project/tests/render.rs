@@ -412,6 +412,141 @@ fn render_admission_failure_reports_and_preserves_the_preview_commit() {
 }
 
 #[test]
+fn scoped_render_preview_validates_captured_context_and_retains_mapped_commit_after_failure() {
+    use deadpan_core::{RepeatEditBranch, RepeatEditStep, ScopedNodeEdit, ScopedNodeTarget};
+
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("scoped-render.deadpan");
+    let mut store = seed_holds(&path, &["a"]);
+    seed_command(
+        &mut store,
+        Command::WrapRepeat {
+            node: node("a"),
+            id: node("repeat"),
+            plays: 2,
+            gap: None,
+            anchor_policy: Default::default(),
+        },
+        "repeat-plays",
+    );
+    drop(store);
+    let harness = Harness::new();
+    let initial = command(&harness.service, ProjectRequest::Open(path.clone()))
+        .workspace
+        .unwrap();
+    let target = crate::project::scoped::Target {
+        session: initial.session,
+        project: initial.document.project_id().clone(),
+        revision: initial.document.revision_id().clone(),
+        scope: SequenceScope::default(),
+        root: node("repeat"),
+        target: ScopedNodeTarget {
+            node: node("a"),
+            repeats: vec![RepeatEditStep {
+                repeat: node("repeat"),
+                branch: RepeatEditBranch::Play {
+                    iteration: deadpan_core::IterationId {
+                        allocation: RevisionId::new("repeat-plays").unwrap(),
+                        ordinal: 1,
+                    },
+                },
+            }],
+        },
+        presentation: None,
+        cursor: ProjectFrame(4),
+    };
+    let rows = saved_receipts::counts(&path);
+    for (ticket, mismatch) in [(1, false), (2, true)] {
+        let mut captured = commit_and_start(
+            &initial,
+            scratch.path(),
+            "scoped-unchanged",
+            ticket,
+            ProjectEdit::Scoped {
+                target: target.clone(),
+                edit: ScopedNodeEdit::SetFraming { framing: None },
+            },
+        );
+        if mismatch
+            && let ProjectRenderOperation::CommitAndStart { cursor, .. } = &mut captured.operation
+        {
+            *cursor = ProjectFrame(5);
+        }
+        let rejected = request(&harness.service, captured);
+        assert_eq!(
+            outcome(&rejected).result.as_ref().unwrap_err().code,
+            if mismatch {
+                "RenderInvalidRequest"
+            } else {
+                "RenderPreviewUnchanged"
+            }
+        );
+        assert!(outcome(&rejected).committed_revision.is_none());
+        assert!(rejected.committed.is_none());
+        assert_eq!(*rejected.workspace.unwrap().document, *initial.document);
+        assert_eq!(saved_receipts::counts(&path), rows);
+    }
+    let mut captured = commit_and_start(
+        &initial,
+        scratch.path(),
+        "scoped-bad-limits",
+        3,
+        ProjectEdit::Scoped {
+            target: target.clone(),
+            edit: ScopedNodeEdit::SetFraming {
+                framing: Some(
+                    deadpan_core::Framing::static_pose(deadpan_core::FramingPose::default())
+                        .unwrap(),
+                ),
+            },
+        },
+    );
+    if let ProjectRenderOperation::CommitAndStart { limits, .. } = &mut captured.operation {
+        limits.verification.maximum_packets = 0;
+    }
+    let rejected = request(&harness.service, captured);
+    assert_eq!(
+        outcome(&rejected).result.as_ref().unwrap_err().code,
+        "RenderInvalidRequest"
+    );
+    let receipt = rejected.committed.as_ref().unwrap();
+    assert_eq!(
+        outcome(&rejected).committed_revision.as_ref(),
+        Some(&receipt.revision)
+    );
+    assert_eq!(receipt.selected_node, Some(node("repeat")));
+    assert_eq!(receipt.cursor, Some(ProjectFrame(4)));
+    let scoped = receipt.scoped.as_ref().unwrap();
+    assert_eq!(scoped.before, target);
+    let saved = rejected.workspace.as_ref().unwrap();
+    assert_ne!(scoped.target.node, node("a"));
+    assert!(
+        saved.document.nodes()[&scoped.target.node]
+            .framing
+            .is_some()
+    );
+    assert!(saved.document.nodes()[&node("a")].framing.is_none());
+    assert_eq!(saved_receipts::counts(&path), (rows.0 + 1, rows.1 + 1));
+    assert_eq!(
+        ProjectStore::open(&path, AccessMode::ReadOnly)
+            .unwrap()
+            .snapshot()
+            .unwrap(),
+        *saved.document
+    );
+    let undone = command(
+        &harness.service,
+        ProjectRequest::Undo {
+            expected_revision: receipt.revision.clone(),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(undone.document.nodes(), initial.document.nodes());
+    assert_eq!(undone.document.overrides(), initial.document.overrides());
+}
+
+#[test]
 fn refresh_failure_keeps_the_durable_preview_receipt_without_starting_render() {
     let scratch = tempfile::tempdir().unwrap();
     let path = scratch.path().join("preview-refresh-failure.deadpan");
@@ -541,6 +676,7 @@ fn native_render_admission_preserves_proposals_and_rejects_stale_targets() {
     let initial = opened(&harness, &scratch.path().join("render-admission.deadpan"));
     let proposal = gain::Proposal {
         target: gain::Target {
+            scoped: None,
             session: initial.session,
             project: initial.document.project_id().clone(),
             revision: initial.document.revision_id().clone(),

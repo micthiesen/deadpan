@@ -160,6 +160,7 @@ impl Service {
         // the workspace fails, and never label a saved cold paste as a failed
         // import or invite an implicit second edit.
         self.committed = Some(CommittedEdit {
+            scoped: None,
             revision,
             selected_node: request.node().cloned(),
             preserve_cursor: false,

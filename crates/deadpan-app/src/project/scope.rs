@@ -112,7 +112,7 @@ impl SequenceScope {
 
     /// Historical capture resolves the same ordinary path without manufacturing
     /// a committed workspace or granting media access to its document.
-    pub(super) fn resolve_document<'a>(
+    pub(crate) fn resolve_document<'a>(
         &self,
         document: &'a ProjectDocument,
         plan: &RenderPlan,

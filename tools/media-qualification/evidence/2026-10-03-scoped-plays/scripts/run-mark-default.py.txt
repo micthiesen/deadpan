@@ -1,0 +1,37 @@
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+import sys
+
+repo = Path('/Users/michael/Code/deadpan')
+scratch = Path('/tmp/deadpan-scoped-plays-20261003')
+record = json.loads((scratch / 'mark-default-inventory.json').read_text())
+assert record['exit_code'] == 0 and record['source_unchanged']
+artifacts = []
+for line in (scratch / 'mark-default-inventory.log').read_text().splitlines():
+    if not line.startswith('{'):
+        continue
+    item = json.loads(line)
+    if (item.get('reason') == 'compiler-artifact'
+            and item['manifest_path'] == str(repo / 'crates/deadpan-app/Cargo.toml')
+            and item['profile']['test'] and item.get('executable')):
+        artifacts.append(item)
+assert sorted(item['target']['kind'] for item in artifacts) == [['bin'], ['test']]
+results = []
+for item in sorted(artifacts, key=lambda x: x['target']['kind']):
+    executable = Path(item['executable'])
+    result = {
+        'target': item['target'], 'features': item['features'],
+        'executable': str(executable),
+        'binary_sha256': hashlib.sha256(executable.read_bytes()).hexdigest(),
+        'cwd': str(repo / 'crates/deadpan-app'),
+    }
+    print(json.dumps(result), flush=True)
+    result['exit_code'] = subprocess.run([str(executable)], cwd=result['cwd']).returncode
+    results.append(result)
+(scratch / 'mark-default-targets.json').write_text(json.dumps({
+    'inventory_source_manifest_sha256': record['source_manifest_sha256'],
+    'targets': results,
+}, indent=2) + '\n')
+sys.exit(0 if all(item['exit_code'] == 0 for item in results) else 1)

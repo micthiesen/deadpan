@@ -1,0 +1,33 @@
+{
+  "command": [
+    "cargo",
+    "clippy",
+    "--locked",
+    "-p",
+    "deadpan-core",
+    "-p",
+    "deadpan-plan",
+    "-p",
+    "deadpan-audio",
+    "-p",
+    "deadpan-store",
+    "-p",
+    "deadpan-cli",
+    "-p",
+    "deadpan-app",
+    "--all-targets",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "started": "2026-10-03T10:11:24.971359+00:00",
+  "base_commit": "c2259d955808be0b6bf0b3ba9c3aa624216b5fe3",
+  "diff_sha256": "536f2f9f30d069604c0e9251c50fd7cfae23c0a2d63e0335a2714da90c513a0d",
+  "source_manifest_sha256": "8b24cb5f12afabcd6962efe140cf365fb68023bf30cbd3e2aa957d0718768495",
+  "pid": 37355,
+  "exit_code": 0,
+  "seconds": 908.2848934582435,
+  "source_manifest_after_sha256": "d2f5ec938ebeef4a7224bc7b427a7b8595fc3fdc11b285eea7c3c17dd0e242ef",
+  "source_unchanged": false,
+  "gate_exit_code": 1
+}

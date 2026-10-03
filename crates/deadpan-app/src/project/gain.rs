@@ -12,6 +12,7 @@ pub struct Target {
     pub project: ProjectId,
     pub revision: RevisionId,
     pub scope: SequenceScope,
+    pub scoped: Option<super::scoped::Target>,
     pub node: NodeId,
     pub cursor: ProjectFrame,
     pub entry: AudioTreatments,
@@ -28,7 +29,18 @@ impl Target {
         if self.cursor.0 < 0 || self.cursor.0 > workspace.plan.duration().frames() {
             return Err("Captured gain cursor is outside the project.".into());
         }
-        if !self.scope.resolve(workspace)?.children.contains(&self.node) {
+        if let Some(scoped) = &self.scoped {
+            if scoped.session != self.session
+                || scoped.project != self.project
+                || scoped.revision != self.revision
+                || scoped.scope != self.scope
+                || scoped.cursor != self.cursor
+                || scoped.target.node != self.node
+            {
+                return Err("Gain target differs from its captured scoped owner.".into());
+            }
+            scoped.validate(workspace)?;
+        } else if !self.scope.resolve(workspace)?.children.contains(&self.node) {
             return Err("Gain owner is not a direct child of the captured Sequence.".into());
         }
         let owner = workspace
@@ -40,6 +52,19 @@ impl Target {
             return Err("The captured gain recipe changed; reopen Gain.".into());
         }
         Ok(())
+    }
+
+    pub fn edit(&self, treatments: AudioTreatments) -> super::ProjectEdit {
+        match &self.scoped {
+            Some(target) => super::ProjectEdit::Scoped {
+                target: target.clone(),
+                edit: deadpan_core::ScopedNodeEdit::SetAudioTreatments { treatments },
+            },
+            None => super::ProjectEdit::SetAudioTreatments {
+                node: self.node.clone(),
+                treatments,
+            },
+        }
     }
 }
 

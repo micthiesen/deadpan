@@ -46,6 +46,7 @@ mod repeat_queue;
 mod repeats;
 mod room_tone;
 mod scope;
+mod scoped;
 mod selection;
 mod semantic;
 mod slip;
@@ -154,6 +155,8 @@ pub struct DeadpanApp {
     splice_abandon: Option<crate::project::splice::ProposalId>,
     sound_cursor: u64,
     selected_beat: Option<NodeId>,
+    scoped: Option<scoped::model::State>,
+    scoped_command_target: Option<Result<Option<crate::project::scoped::Target>, String>>,
     sequence_scope: SequenceScope,
     scope_start: u64,
     scope_end: u64,
@@ -294,6 +297,8 @@ impl DeadpanApp {
             splice_abandon: None,
             sound_cursor: 0,
             selected_beat: None,
+            scoped: None,
+            scoped_command_target: None,
             sequence_scope: SequenceScope::default(),
             scope_start: 0,
             scope_end: 0,
@@ -584,6 +589,18 @@ impl DeadpanApp {
         #[cfg(not(feature = "ui-harness"))]
         let update = self.service.take_update();
         if let Some(mut update) = update {
+            let scoped_before = self.scoped_target().ok().flatten();
+            let scoped_commit_selects = update
+                .committed
+                .as_ref()
+                .and_then(|commit| commit.scoped.as_ref())
+                .is_none_or(|receipt| {
+                    self.view == View::Sequence
+                        && !matches!(self.pane, Pane::Sources | Pane::Sounds)
+                        && !self.event_focused()
+                        && !self.sound_focused()
+                        && scoped_before.as_ref() == Some(&receipt.before)
+                });
             self.reconcile_repeat_prefix();
             self.prepare_macro_update(&mut update);
             if let Some(saved) = &update.marks.saved
@@ -660,6 +677,14 @@ impl DeadpanApp {
                             .is_some_and(|next| next.asset != i.asset)
                 });
             self.workspace = update.workspace;
+            self.reconcile_scoped(
+                scoped_before.as_ref(),
+                update
+                    .committed
+                    .as_ref()
+                    .and_then(|commit| commit.scoped.as_ref()),
+                update.marks.saved.as_ref(),
+            );
             self.semantic.receive(
                 update.semantic,
                 self.workspace
@@ -769,6 +794,7 @@ impl DeadpanApp {
             let mut restored_scope = false;
             if let Some(commit) = update.committed.as_ref()
                 && commit_matches_visible
+                && scoped_commit_selects
                 && self.last_committed.as_ref() != Some(&commit.revision)
                 && commit.sound.is_none()
                 && self.sequence_scope != commit.scope
@@ -791,6 +817,15 @@ impl DeadpanApp {
             let unrefreshed_commit =
                 unrefreshed_cut || (update.committed.is_some() && !commit_matches_visible);
             if completion == selection::Completion::Edit && unrefreshed_commit {
+                completion = selection::Completion::None;
+            }
+            if !scoped_commit_selects {
+                if commit_matches_visible {
+                    self.last_committed = update
+                        .committed
+                        .as_ref()
+                        .map(|commit| commit.revision.clone());
+                }
                 completion = selection::Completion::None;
             }
             let committed_selection = completion == selection::Completion::Edit;
@@ -1086,6 +1121,9 @@ impl DeadpanApp {
     }
 
     fn insert(&mut self) {
+        if self.refuse_scoped_structure() {
+            return;
+        }
         let Some(workspace) = &self.workspace else {
             self.message = Some("Choose a source to insert.".into());
             return;
@@ -1146,6 +1184,9 @@ impl DeadpanApp {
     }
 
     fn edit(&mut self, edit: BeatEdit) {
+        if self.refuse_scoped_structure() {
+            return;
+        }
         self.bindings.clear();
         if edit == BeatEdit::Delete {
             if !self.record_macro_delete(self.copied.selected(), None) {
@@ -1247,6 +1288,9 @@ impl DeadpanApp {
     }
 
     fn reconcile_beat_selection(&mut self) {
+        if self.scoped.is_some() {
+            return;
+        }
         let selected = selection::after_refresh(
             &self.beat_rows,
             self.selected_beat.as_ref(),
@@ -1262,6 +1306,7 @@ impl DeadpanApp {
     }
 
     fn open_command(&mut self, command: String, context: &egui::Context) {
+        self.scoped_command_target = Some(self.scoped_target());
         self.marks.command = Some(self.capture_mark());
         self.placement_command_target = Some(self.capture_placement_target());
         self.copy_command_register = self.copied.selected().and_then(|name| {
@@ -1426,6 +1471,9 @@ impl DeadpanApp {
     }
 
     fn action(&mut self, action: Action, context: &egui::Context) {
+        if self.scoped_action(action, context) {
+            return;
+        }
         if !self.macro_action_allowed(action) {
             if action == Action::RepeatLast && self.last_edit_uses_register() {
                 self.copied.begin_write();
@@ -2214,6 +2262,7 @@ impl DeadpanApp {
 
     fn run_command(&mut self, context: &egui::Context) {
         let command = navigation::command::parse(&self.command);
+        let scoped_target = self.scoped_command_target.take();
         let hold_target = self.hold_command_target.take();
         let sound_target = self.sound_command_target.take();
         let gain_target = self.gain_command_target.take();
@@ -2235,6 +2284,9 @@ impl DeadpanApp {
         self.bindings.clear();
         self.command_open = false;
         self.command_focus_pending = false;
+        if self.scoped_command_blocked(&command) {
+            return;
+        }
         if !self.macro_command_allowed(&command) {
             return;
         }
@@ -2315,6 +2367,9 @@ impl DeadpanApp {
             }
         }
         match command {
+            Ok(navigation::command::Entry::Scope(choice)) => {
+                self.scoped_command(choice, scoped_target, context);
+            }
             Ok(navigation::command::Entry::Action(Action::Edit(BeatEdit::WrapRepeat(plays)))) => {
                 self.repeat_command(macro_target, plays, false);
             }
@@ -2397,6 +2452,7 @@ impl DeadpanApp {
             }
             Ok(navigation::command::Entry::Action(action)) => self.action(action, context),
             Ok(navigation::command::Entry::Source) => {
+                self.scoped = None;
                 self.stop_playback();
                 let leaving_event = self.pane == Pane::Sounds || self.event_focused();
                 self.selected_sound = None;
@@ -2703,6 +2759,9 @@ impl DeadpanApp {
                 } else if self.view == View::Sequence {
                     if let Some(label) = self.edit_range_label() {
                         ui.colored_label(style::LAVENDER, label);
+                    } else if self.scoped.is_some() {
+                        let label = self.beat_scope_label();
+                        ui.add(egui::Label::new(&label).truncate()).on_hover_text(label);
                     } else if let Some(beat) = self.beat_rows.iter().find(|beat| Some(&beat.id) == self.selected_beat.as_ref()) {
                         ui.add(egui::Label::new(format!("{} · {}", beat.label, self.beat_scope_label())).truncate()).on_hover_text(format!("{} · {} · {} frames · {}", beat.label, beat.kind, beat.frames, self.beat_scope_label()));
                     } else { ui.weak("No beat selected"); }
@@ -2783,6 +2842,15 @@ impl DeadpanApp {
                         hints.push(("Enter".into(), "exact position".into()));
                         self.add_editor_pair_hint(&mut hints, EditorKey::GainUp, EditorKey::GainDown, " / ", "gain 3 dB");
                         self.add_editor_hint(&mut hints, EditorKey::CutBeat, "remove sound");
+                        self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
+                    } else if self.view == View::Sequence && self.scoped.is_some() {
+                        self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " / ", "picture frame");
+                        self.add_editor_pair_hint(&mut hints, EditorKey::BeatPrevious, EditorKey::BeatNext, " / ", "child");
+                        self.add_editor_hint(&mut hints, EditorKey::EnterGroup, "enter contents");
+                        self.add_editor_hint(&mut hints, EditorKey::LeaveGroup, "parent");
+                        self.add_editor_pair_hint(&mut hints, EditorKey::GainUp, EditorKey::GainDown, " / ", "gain 3 dB");
+                        self.add_editor_hint(&mut hints, EditorKey::Camera, "camera");
+                        hints.push((":scope".into(), "all / play N".into()));
                         self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
                     } else if self.view == View::Sequence {
                         self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " ", "frame");
@@ -3050,6 +3118,10 @@ impl DeadpanApp {
     }
 
     fn timeline(&mut self, ui: &mut egui::Ui, compact_sounds_heading: bool) {
+        if self.scoped.is_some() && self.view == View::Sequence {
+            self.scoped_timeline(ui);
+            return;
+        }
         let mut layout = self.workspace_layout(ui);
         if self.gain.is_some() {
             layout.beats = 42.0;
@@ -3208,6 +3280,9 @@ impl DeadpanApp {
         if self.open_sound_position(context) {
             return true;
         }
+        if self.scoped.is_some() && self.view == View::Sequence && !self.event_focused() {
+            return self.enter_scoped(context);
+        }
         let Some((_, command)) = self.inspector_description().and_then(|data| data.parameter)
         else {
             return false;
@@ -3223,6 +3298,10 @@ impl DeadpanApp {
         }
         if self.camera.is_some() {
             self.camera_inspector(ui);
+            return;
+        }
+        if self.scoped.is_some() && self.view == View::Sequence {
+            self.scoped_inspector(ui);
             return;
         }
         if self.view == View::Source && self.inspector_visible() {
@@ -3344,7 +3423,7 @@ impl DeadpanApp {
                         }
                         ui.add_space(8.0);
                         ui.separator();
-                        inspector_value(ui, "Scope", self.beat_scope_label());
+                        inspector_value(ui, "Scope", &self.beat_scope_label());
                         inspector_value(ui, "Boundaries", &data.range);
                         ui.label(
                             egui::RichText::new(format!("{} at {frame_rate}", data.duration))
@@ -3719,7 +3798,8 @@ impl DeadpanApp {
                         (format!("{} + letter · {} + letter", key(EditorKey::MarkSet), key(EditorKey::MarkJump)), "Save an exact Original or Edit mark, then jump to it. Uppercase letters are separate. Edit marks follow their content through edits; deleted targets stay unresolved until Undo or an explicit new mark. Setting a mark is undoable and preserves both cursors and selection.".to_owned()),
                         ("Ctrl O / Ctrl I".to_owned(), "Back / forward through successful mark jumps. Original positions retain their qualified source clock. A changed Edit revision expires old history positions instead of seeking unrelated content; saved marks still follow structural edits.".to_owned()),
                         (":marks · :mark a · :jump a · :unmark a".to_owned(), "Browse marks, save the captured position, jump to a saved letter, or remove it. Commands capture their project and target on entry.".to_owned()),
-                        (format!("{} · :enter / :parent", key_labels::aliases_pair(&bindings, EditorKey::EnterGroup, EditorKey::LeaveGroup, " / ")), "Open a selected Sequence group / return to its parent. The project cursor stays exact; breadcrumbs show the active group. Repeat plays and Retime descendants are not yet navigable.".to_owned()),
+                        (format!("{} · :enter / :parent", key_labels::aliases_pair(&bindings, EditorKey::EnterGroup, EditorKey::LeaveGroup, " / ")), "Open a selected Sequence, Repeat or Retime / return to its parent. Inside Repeat and Retime contents, navigate children and edit gain, Camera or pause audio. Timing edits and range copying still require an ordinary Sequence.".to_owned()),
+                        (":scope all / :scope play N".to_owned(), "Inside a Repeat, choose the shared definition or one stable play by its current one-based number. All plays preserves existing independent overrides. Browsing never creates an override; a changed value isolates only the selected play. Nested scope choices remain explicit.".to_owned()),
                         (":source / :sequence".to_owned(), "Browse unchanged Original / work on Your edit.".to_owned()),
                         (key_labels::aliases_pair(&bindings, EditorKey::PaneNext, EditorKey::PanePrevious, " / "), "Cycle Original, Viewer, visible Inspector, Beats, and Placed sounds focus.".to_owned()),
                         (key(EditorKey::Search), "Find a sound in V1, or a source in a legacy project.".to_owned()),

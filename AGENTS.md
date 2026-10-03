@@ -926,8 +926,26 @@ history to the nearest surviving path without moving the cursor to the selected
 beat. Root and scope-edge InsertTime still use core boundary ownership; refuse
 an insertion above the viewed scope and teach Backspace. Full-edit audition may
 leave the group: explicit pause/terminal completion follows its heard cursor,
-while command/inspector stops preserve their target. Repeat/Retime occurrence
-navigation remains open. See [group navigation](docs/GROUP_NAVIGATION.md).
+while command/inspector stops preserve their target. See
+[group navigation](docs/GROUP_NAVIGATION.md).
+
+Repeat/Retime contents use a separate scoped inspector. Keep every Repeat
+ancestor explicit as Default or stable Play in `ScopedNodeTarget`, independently
+of the concrete `InstancePath` used for presentation. Browsing creates no override.
+`EditScoped` isolates only selected shared Play ancestors and applies a safe
+value change atomically; unchanged values create no override or history. All
+plays retains existing independent overrides. Keep exact Retime clips and root
+frame centers in cached navigation; a bounded unsampled representative does not
+prove global inactivity. Gain, Camera, Hold audio and preview-commit Render keep
+the same capture. Retain mapped receipts before refresh and consume only against
+the exact visible revision without reclaiming a changed play, cursor or pane.
+An exact mark-only `Saved` receipt rebases the current inspector from its captured
+old revision to the saved revision, preserving navigation made after mark entry.
+Require matching session, project and both revisions; stale receipts cannot
+authorize an unrelated rebase. Mark jumps revoke scoped navigation after
+successful admission. Temporal edits, implicit gap recipes and occurrence macros
+remain open. See
+[scoped editing](docs/SCOPED_EDITING.md).
 
 ## Validation and delivery
 

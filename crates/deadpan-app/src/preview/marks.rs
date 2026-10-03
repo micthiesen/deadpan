@@ -452,6 +452,7 @@ impl DeadpanApp {
         }
         // Everything above is read-only. Failed admission must preserve both
         // cursors, selections, playback, scope and the complete history trail.
+        self.scoped = None;
         self.stop_playback();
         self.cancel_camera();
         self.bindings.clear();

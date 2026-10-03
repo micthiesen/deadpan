@@ -20,6 +20,7 @@ fn applied(committed: bool) -> protocol::Receipt {
             visual_selection: None,
             committed: committed.then(|| {
                 Box::new(CommittedEdit {
+                    scoped: None,
                     revision: RevisionId::new("pasted").unwrap(),
                     selected_node: selected,
                     preserve_cursor: false,

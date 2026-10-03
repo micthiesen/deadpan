@@ -1,0 +1,16 @@
+{
+  "command": [
+    "python3",
+    "/tmp/deadpan-scoped-plays-20261003/run-mark-default.py"
+  ],
+  "started": "2026-10-03T11:33:06.800540+00:00",
+  "base_commit": "c2259d955808be0b6bf0b3ba9c3aa624216b5fe3",
+  "diff_sha256": "d28ed7dbf10acd40fd5df3ce3dd27fe17ae7911132c9f1ac41ed637dfab6f4b8",
+  "source_manifest_sha256": "99683b8b2797a6d369b547a672733b8f18ff77596c2cdf39ba4ac90c65dc9a8a",
+  "pid": 50787,
+  "exit_code": 0,
+  "seconds": 55.507008915767074,
+  "source_manifest_after_sha256": "99683b8b2797a6d369b547a672733b8f18ff77596c2cdf39ba4ac90c65dc9a8a",
+  "source_unchanged": true,
+  "gate_exit_code": 0
+}

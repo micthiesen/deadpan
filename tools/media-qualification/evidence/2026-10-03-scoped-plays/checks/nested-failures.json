@@ -1,0 +1,17 @@
+{
+  "command": [
+    "target/debug/deps/deadpan_app-91edf54faebfe75c",
+    "preview::scoped::model::tests::nested_",
+    "--nocapture"
+  ],
+  "started": "2026-10-03T09:55:08.177655+00:00",
+  "base_commit": "c2259d955808be0b6bf0b3ba9c3aa624216b5fe3",
+  "diff_sha256": "7a99f53c995b0fbbdec6e99194e124424642bfd6dc0f74a5d54c2296c9103df8",
+  "source_manifest_sha256": "d319220730939b819c9dda6db5e6d6a0f84ad4f2f8f899bcabfef63de8a376fa",
+  "pid": 35051,
+  "exit_code": 101,
+  "seconds": 0.07521604234352708,
+  "source_manifest_after_sha256": "d319220730939b819c9dda6db5e6d6a0f84ad4f2f8f899bcabfef63de8a376fa",
+  "source_unchanged": true,
+  "gate_exit_code": 101
+}

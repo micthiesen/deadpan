@@ -121,6 +121,7 @@ impl Service {
         let mut receipt = CutReceipt {
             copied,
             committed: CommittedEdit {
+                scoped: None,
                 revision: outcome.revision_id,
                 selected_node,
                 preserve_cursor: false,

@@ -3,11 +3,14 @@
 use super::*;
 
 impl DeadpanApp {
-    pub(super) fn beat_scope_label(&self) -> &'static str {
+    pub(super) fn beat_scope_label(&self) -> String {
+        if let (Some(state), Some(workspace)) = (&self.scoped, &self.workspace) {
+            return state.scope_label(workspace).unwrap_or_else(|error| error);
+        }
         if self.sequence_scope.groups().is_empty() {
-            "Root beat"
+            "Root beat".into()
         } else {
-            "Group beat"
+            "Group beat".into()
         }
     }
 
@@ -17,13 +20,20 @@ impl DeadpanApp {
                 && self.workspace.as_ref().is_some_and(|workspace| {
                     matches!(
                         workspace.document.nodes().get(id).map(|node| &node.kind),
-                        Some(NodeKind::Sequence { .. })
+                        Some(
+                            NodeKind::Sequence { .. }
+                                | NodeKind::Repeat { .. }
+                                | NodeKind::Retime { .. }
+                        )
                     )
                 })
         })
     }
 
     pub(super) fn enter_group(&mut self, context: &egui::Context) {
+        if self.enter_scoped(context) {
+            return;
+        }
         self.bindings.clear();
         if self.view != View::Sequence {
             self.message = Some("Return to Your edit (:sequence) to enter a group.".into());
@@ -40,6 +50,10 @@ impl DeadpanApp {
     }
 
     pub(super) fn leave_group(&mut self, context: &egui::Context) {
+        if self.scoped.is_some() {
+            self.scoped_leave(context);
+            return;
+        }
         self.bindings.clear();
         if self.view != View::Sequence {
             self.message = Some("Return to Your edit (:sequence) to navigate groups.".into());
@@ -85,6 +99,9 @@ impl DeadpanApp {
     /// Explicit transport completion follows the heard cursor. Context-preserving
     /// stops (command entry, help, inspector actions) deliberately do not call this.
     pub(super) fn follow_playhead_scope(&mut self) {
+        if self.scoped.is_some() {
+            return;
+        }
         let Some(workspace) = &self.workspace else {
             return;
         };

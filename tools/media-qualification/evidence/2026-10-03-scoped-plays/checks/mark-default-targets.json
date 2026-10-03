@@ -1,0 +1,47 @@
+{
+  "inventory_source_manifest_sha256": "99683b8b2797a6d369b547a672733b8f18ff77596c2cdf39ba4ac90c65dc9a8a",
+  "targets": [
+    {
+      "target": {
+        "kind": [
+          "bin"
+        ],
+        "crate_types": [
+          "bin"
+        ],
+        "name": "deadpan-app",
+        "src_path": "/Users/michael/Code/deadpan/crates/deadpan-app/src/main.rs",
+        "edition": "2024",
+        "doc": true,
+        "doctest": false,
+        "test": true
+      },
+      "features": [],
+      "executable": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-9ddce6a675363c64",
+      "binary_sha256": "264e1e0876871876f6c081464719b5abf6099b0719a797749f77ada952d4a825",
+      "cwd": "/Users/michael/Code/deadpan/crates/deadpan-app",
+      "exit_code": 0
+    },
+    {
+      "target": {
+        "kind": [
+          "test"
+        ],
+        "crate_types": [
+          "bin"
+        ],
+        "name": "headless",
+        "src_path": "/Users/michael/Code/deadpan/crates/deadpan-app/tests/headless.rs",
+        "edition": "2024",
+        "doc": false,
+        "doctest": false,
+        "test": true
+      },
+      "features": [],
+      "executable": "/Users/michael/Code/deadpan/target/debug/deps/headless-83da85165e96b5d7",
+      "binary_sha256": "1c7cd373e4696c5743e84e3c85a8117a734051f758efd6798dfd004f7d1aa141",
+      "cwd": "/Users/michael/Code/deadpan/crates/deadpan-app",
+      "exit_code": 0
+    }
+  ]
+}

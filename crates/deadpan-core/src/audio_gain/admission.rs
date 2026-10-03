@@ -65,6 +65,10 @@ pub(crate) fn validate_document(
 pub(crate) fn validate_command(command: &Command) -> Result<(), DocumentError> {
     match command {
         Command::SetAudioTreatments { treatments, .. } => treatments.validate().map_err(invalid),
+        Command::EditScoped {
+            edit: crate::ScopedNodeEdit::SetAudioTreatments { treatments },
+            ..
+        } => treatments.validate().map_err(invalid),
         Command::Insert { subtree, .. }
         | Command::SetPlayOverride { subtree, .. }
         | Command::SetGapOverride { subtree, .. } => validate_subtree(subtree),

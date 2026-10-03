@@ -1085,7 +1085,7 @@ impl ProjectDocument {
         }
         Ok(())
     }
-    fn validate_hold(&self, recipe: &HoldRecipe) -> Result<(), DocumentError> {
+    pub(crate) fn validate_hold(&self, recipe: &HoldRecipe) -> Result<(), DocumentError> {
         positive(recipe.duration, "hold")?;
         if let Some(context) = &recipe.picture_context {
             context.validate()?;

@@ -26,6 +26,7 @@ pub mod registers;
 pub mod render_history;
 pub mod retime;
 mod scope;
+pub mod scoped;
 pub mod semantic;
 mod service;
 pub mod slice;
@@ -296,6 +297,8 @@ pub struct CommittedEdit {
     pub sound: Option<SoundCommit>,
     /// Exact result selection retained until its matching workspace is visible.
     pub range_selection: Option<CommittedRangeSelection>,
+    /// Exact branch identity before and after a scoped value edit.
+    pub scoped: Option<scoped::Commit>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -343,10 +346,15 @@ pub enum ProjectSoundEdit {
     },
 }
 
-/// Node-targeted operations edit direct children of the captured Sequence scope.
+/// Ordinary node operations edit direct children of the captured Sequence scope.
+/// Scoped value edits carry their independently validated branch target.
 /// InsertTime remains project-boundary based and resolves its actual owner.
 #[derive(Clone, Debug)]
 pub enum ProjectEdit {
+    Scoped {
+        target: scoped::Target,
+        edit: deadpan_core::ScopedNodeEdit,
+    },
     SetAudioTreatments {
         node: NodeId,
         treatments: deadpan_core::AudioTreatments,

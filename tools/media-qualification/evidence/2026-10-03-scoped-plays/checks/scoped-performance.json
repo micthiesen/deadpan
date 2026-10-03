@@ -1,0 +1,24 @@
+{
+  "command": [
+    "target/release/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "scoped-plays",
+    "--mode",
+    "performance",
+    "--output",
+    "/tmp/deadpan-scoped-plays-20261003/scoped-performance",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "started": "2026-10-03T11:40:27.609362+00:00",
+  "base_commit": "c2259d955808be0b6bf0b3ba9c3aa624216b5fe3",
+  "diff_sha256": "9345505c06977ec95ea7d9890e573c79296f9e58a935ab246358cdacc12496c1",
+  "source_manifest_sha256": "99683b8b2797a6d369b547a672733b8f18ff77596c2cdf39ba4ac90c65dc9a8a",
+  "pid": 52628,
+  "exit_code": 0,
+  "seconds": 1.7946947081945837,
+  "source_manifest_after_sha256": "99683b8b2797a6d369b547a672733b8f18ff77596c2cdf39ba4ac90c65dc9a8a",
+  "source_unchanged": true,
+  "gate_exit_code": 0
+}

@@ -1,0 +1,31 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-core",
+    "-p",
+    "deadpan-plan",
+    "-p",
+    "deadpan-audio",
+    "-p",
+    "deadpan-store",
+    "-p",
+    "deadpan-cli",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "deadpan-app/ui-harness"
+  ],
+  "started": "2026-10-03T09:28:54.761098+00:00",
+  "base_commit": "c2259d955808be0b6bf0b3ba9c3aa624216b5fe3",
+  "diff_sha256": "b5a3e89c2f0f8a0ccc7036a8284228a37c9caa74b2b025ef51d8c758dd466328",
+  "source_manifest_sha256": "0f4bf286f48d7afae64dc52d34fb31c251aa981f235e5e425cf96a421c518c98",
+  "pid": 30290,
+  "exit_code": 101,
+  "seconds": 36.914889958221465,
+  "source_manifest_after_sha256": "0f4bf286f48d7afae64dc52d34fb31c251aa981f235e5e425cf96a421c518c98",
+  "source_unchanged": true,
+  "gate_exit_code": 101
+}

@@ -415,6 +415,12 @@ define_commands! {
         edit: OccurrenceEdit,
         identities: OccurrenceIdentities,
     },
+    /// Value edit with explicit Default/Play choices at every Repeat ancestor.
+    EditScoped {
+        target: crate::ScopedNodeTarget,
+        edit: crate::ScopedNodeEdit,
+        identities: OccurrenceIdentities,
+    },
 
 }
 impl<'de> Deserialize<'de> for Command {
@@ -832,6 +838,11 @@ pub fn apply(
             edit,
             identities,
         } => crate::occurrence_edit::apply(input, instance, edit, identities, context)?,
+        Command::EditScoped {
+            target,
+            edit,
+            identities,
+        } => crate::scoped_edit::apply(input, target, edit, identities, context)?,
         command => {
             let mut result = input.clone();
             reduce(&mut result, command, &request.new_revision)?;
@@ -1118,7 +1129,7 @@ pub(crate) fn reduce(
                 "splits require the retained-context entrypoint",
             ));
         }
-        Command::EditOccurrence { .. } => {
+        Command::EditOccurrence { .. } | Command::EditScoped { .. } => {
             return Err(EditError::new(
                 EditErrorCode::InvalidCommand,
                 "occurrence edits require the isolation entrypoint",
@@ -2222,6 +2233,7 @@ fn description(command: &Command) -> &'static str {
         Command::IsolateGap { .. } => "Isolate repeat gap",
         Command::ClearGapOverride { .. } => "Clear gap override",
         Command::EditOccurrence { .. } => "Edit selected occurrence",
+        Command::EditScoped { .. } => "Edit scoped value",
     }
 }
 

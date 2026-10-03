@@ -2,12 +2,24 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+[Scoped editing](SCOPED_EDITING.md) adds native navigation inside Repeat/Retime
+contents and explicit All plays/This play gain, Camera and Hold audio editing.
+Browsing is read-only; changed values isolate only selected shared ancestors
+and retain mapped receipts. Cached projection preserves exact clips and sample
+centers through Retime. This advances DP-05, DP-06, DP-08 and DP-21.
+[Qualification](qualification/scoped-plays-2026-10-03.md) records the 3,780-test
+workspace gate, final app checks in both configurations, 1,083 rendered workflow
+checks, strict lint and native verification. Mark-only saves preserve the current
+play and any navigation made while the save is pending.
+Temporal occurrence editing, implicit gap recipes, complete
+definition previews and occurrence macros remain open, along with every gate.
+
 [Repeat selections](REPEAT_SELECTION.md) adds `r` with a motion, Visual `r`,
 whole-beat `rr`, captured command targets, semantic recording and dot for Repeat
 wraps. Range endpoints retain their composite contexts and one Undo restores the
 whole edit. Safe count changes preserve surviving plays, gaps and suffix clocks;
 independent root sounds move once. This advances DP-05, DP-06 and DP-21. Count
-setter recording, occurrence navigation, text/role selectors, the remaining
+setter recording, temporal occurrence edits, text/role selectors, the remaining
 editing surface and all product gates remain open.
 The [qualification](qualification/repeat-operator-2026-10-03.md) records 3,292
 passing tests, 1,094 rendered workflow checks and native keyboard verification.

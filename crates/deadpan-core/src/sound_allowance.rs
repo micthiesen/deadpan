@@ -284,6 +284,28 @@ impl SoundAllowanceEdit {
         Ok(())
     }
 
+    /// Default ancestors match every concrete use of the selected definition.
+    /// Physical ownership excludes overrides; no wildcard becomes a new grant.
+    pub(crate) fn isolate_scoped(
+        &mut self,
+        prefix: &[crate::RepeatEditStep],
+        mapping: &BTreeMap<NodeId, NodeId>,
+    ) -> Result<(), EditError> {
+        for allowances in self.values.values_mut() {
+            let mut values = allowances.0.clone();
+            for issuer in &mut values {
+                if crate::scoped_edit::matches_prefix(issuer.instance(), prefix)
+                    && mapping.contains_key(&issuer.instance().node)
+                {
+                    crate::occurrence_edit::remap_instance(issuer.instance_mut(), mapping);
+                }
+            }
+            *allowances = SoundHoldAllowances::try_from(values)?;
+        }
+        validate_limits(&self.values)?;
+        Ok(())
+    }
+
     /// Existing concrete permissions follow the original first play only.
     /// Ordinary Sequence ancestry has no enclosing Repeat path to prefix.
     pub(crate) fn wrap_repeat(

@@ -1,0 +1,192 @@
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import re
+import shutil
+import subprocess
+
+scratch = Path('/tmp/deadpan-scoped-plays-20261003')
+dest = Path('tools/media-qualification/evidence/2026-10-03-scoped-plays')
+final_source = '99683b8b2797a6d369b547a672733b8f18ff77596c2cdf39ba4ac90c65dc9a8a'
+workspace_source = 'eda7fe4c19c82c99f4b3a27529ee779bf7b49f7f6960a9961a90641717a352a1'
+app_source = '8b24cb5f12afabcd6962efe140cf365fb68023bf30cbd3e2aa957d0718768495'
+packages_source = '323ff787439068e089477537db3fa188954bb26b74a649eb694b5226e2b8f68e'
+for directory in ['checks', 'replays', 'native', 'screenshots', 'scripts']:
+    (dest / directory).mkdir(parents=True, exist_ok=True)
+
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+def compress(source, target):
+    target.write_bytes(gzip.compress(source.read_bytes(), mtime=0))
+
+def run(*args):
+    return subprocess.check_output(args, text=True).strip()
+
+def read(name):
+    return json.loads((scratch / name).read_text())
+
+def source_diff(first, last):
+    a = read('source-' + first + '.json')
+    b = read('source-' + last + '.json')
+    return sorted(k for k in a.keys() | b.keys() if a.get(k) != b.get(k))
+
+layout_files = [
+    'crates/deadpan-app/src/preview/harness/scoped_plays.rs',
+    'crates/deadpan-app/src/preview/scoped.rs',
+]
+assert source_diff(packages_source, workspace_source) == layout_files
+assert source_diff(app_source, workspace_source) == sorted(layout_files + [
+    'crates/deadpan-core/src/scoped_edit/tests.rs',
+])
+assert source_diff(workspace_source, final_source) == [
+    'crates/deadpan-app/src/preview.rs',
+    'crates/deadpan-app/src/preview/harness/scoped_plays.rs',
+    'crates/deadpan-app/src/preview/scoped.rs',
+    'crates/deadpan-app/src/preview/scoped/model.rs',
+    'crates/deadpan-app/src/preview/scoped/model/tests.rs',
+]
+for name in ['build-layout-3', 'fmt-final-3', 'clippy-final-3', 'scoped-layout-3',
+             'workspace-final', 'workspace-clippy-final', 'build-release-final']:
+    record = read(name + '.json')
+    assert record['exit_code'] == 0 and record['source_unchanged'], name
+    assert record['source_manifest_sha256'] == workspace_source, name
+for name in ['mark-default-inventory', 'mark-default-tests', 'mark-ui-tests',
+             'mark-fmt', 'mark-clippy-default', 'mark-clippy-ui',
+             'mark-scoped-visual', 'mark-marks-visual', 'mark-release-build',
+             'scoped-performance']:
+    record = read(name + '.json')
+    assert record['exit_code'] == 0 and record['source_unchanged'], name
+    assert record['source_manifest_sha256'] == final_source, name
+assert read('app-final.json')['source_unchanged']
+assert read('packages-final.json')['exit_code'] == 0
+regression = read('scoped-mark-regression.json')
+assert regression['exit_code'] == 1 and regression['source_unchanged']
+assert read('scoped-mark-regression/report.json')['failed']
+
+for path in sorted(scratch.glob('*.json')):
+    if path.name.startswith('source-'):
+        compress(path, dest / 'checks' / (path.name + '.gz'))
+    else:
+        shutil.copy2(path, dest / 'checks' / path.name)
+for path in sorted(scratch.glob('*.log')):
+    compress(path, dest / 'checks' / (path.name + '.gz'))
+for path in sorted(scratch.glob('native-*.txt')):
+    compress(path, dest / 'native' / (path.name + '.gz'))
+for name in ['native-gain.png', 'native-camera.png', 'native-labels-camera.png', 'native-labels-gain.png']:
+    shutil.copy2(scratch / name, dest / 'screenshots' / name)
+for source, name in [
+    ('scoped-final/scoped-plays-019.png', 'initial-clipped-minimum.png'),
+    ('scoped-layout/scoped-plays-019.png', 'remaining-child-clip.png'),
+    ('mark-scoped-visual/scoped-plays-019.png', 'minimum-scope.png'),
+    ('mark-scoped-visual/scoped-plays-023.png', 'minimum-gain.png'),
+    ('mark-scoped-visual/scoped-plays-040.png', 'pending-mark-keeps-new-play.png'),
+    ('mark-scoped-visual/scoped-plays-078.png', 'play-three-camera-committed.png'),
+    ('mark-marks-visual/marks-018.png', 'pending-mark-prefix.png'),
+    ('mark-marks-visual/marks-121.png', 'marks-last-row-minimum.png'),
+]:
+    shutil.copy2(scratch / source, dest / 'screenshots' / name)
+
+selected = ['mark-scoped-visual', 'mark-marks-visual', 'gain-visual', 'camera-visual',
+            'room-tone-visual', 'nested-pause-visual', 'keymap-visual', 'repeat-visual']
+replays = []
+for name in ['scoped-visual', 'scoped-final', 'scoped-layout', 'scoped-layout-2',
+             'scoped-layout-3', 'scoped-mark-regression', 'scoped-performance'] + selected:
+    source = scratch / name / 'report.json'
+    compress(source, dest / 'replays' / (name + '.json.gz'))
+    report = json.loads(source.read_text())
+    scenario = next(s for s in report['scenarios'] if s['name'] != 'kestrel-shortcuts')
+    if name in selected:
+        assert not report['failed'] and all(c['passed'] for c in scenario['checks'])
+        kestrel = next(s for s in report['scenarios'] if s['name'] == 'kestrel-shortcuts')['checks'][0]
+        assert kestrel['passed'] and kestrel['actual']['conflicts'] == []
+        replays.append({
+            'name': scenario['name'], 'run': name, 'checks': len(scenario['checks']),
+            'binary_sha256': report['metadata']['binary_sha256'],
+            'findings': scenario['findings'], 'skipped': scenario['skipped'],
+        })
+
+counts = {}
+for name in ['app-final', 'packages-final', 'workspace-final', 'mark-default-tests', 'mark-ui-tests']:
+    counts[name] = sum(int(n) for n in re.findall(
+        r'test result: ok\. (\d+) passed;', (scratch / (name + '.log')).read_text()))
+assert counts['app-final'] == 754 and counts['packages-final'] == 2573, counts
+assert counts['workspace-final'] == 3780, counts
+assert counts['mark-default-tests'] == 720 and counts['mark-ui-tests'] == 756, counts
+assert sum(r['checks'] for r in replays) == 1083
+visual_hash = read('mark-scoped-visual/report.json')['metadata']['binary_sha256']
+assert read('mark-marks-visual/report.json')['metadata']['binary_sha256'] == visual_hash
+performance = read('scoped-performance/report.json')
+assert not performance['failed']
+assert performance['metadata']['binary_sha256'] == sha(Path('target/release/deadpan-app'))
+native_hashes = {}
+for label, bundle in [('initial', 'Deadpan Scoped QA.app'), ('labels', 'Deadpan Scoped Labels QA.app')]:
+    native_hashes[label] = sha(scratch / bundle / 'Contents/MacOS/deadpan-app')
+    result = subprocess.run(['pgrep', '-fl', bundle + '/Contents/MacOS/deadpan-app'], capture_output=True, text=True)
+    assert result.returncode == 1 and not result.stdout
+assert native_hashes == {
+    'initial': '3b78ed5cdcc719c4a42df6eef7ac57ab004621ebcb3d1d8252b8a4568969a960',
+    'labels': '44cebabb7145eff5c535962cf0f1e573f7ac6943ce7dff518f1269c4e19f2e01',
+}, native_hashes
+for name in ['native-run', 'native-labels-run']:
+    assert read(name + '.json')['exit_code'] == 0
+
+metadata = {
+    'base_commit': run('git', 'rev-parse', 'HEAD'),
+    'source_manifest_sha256': final_source,
+    'workspace_test_source_manifest_sha256': workspace_source,
+    'workspace_test_to_final_changes': source_diff(workspace_source, final_source),
+    'visual_binary_sha256': visual_hash,
+    'performance_binary_sha256': performance['metadata']['binary_sha256'],
+    'performance_timings': {
+        timing['name']: timing['summary']
+        for scenario in performance['scenarios'] if scenario['name'] == 'scoped-plays'
+        for timing in scenario['timings']
+    },
+    'app_test_source_manifest_sha256': app_source,
+    'packages_test_source_manifest_sha256': packages_source,
+    'app_test_to_final_changes': source_diff(app_source, final_source),
+    'packages_test_to_final_changes': source_diff(packages_source, final_source),
+    'source_guard_note': 'packages-final exited 0; its global source guard exited 1 because only two unrelated app layout/harness files changed. The later complete workspace gate passed on stable eda7fe4c. Only five app files changed afterward for the reproduced mark-navigation regression. Final-source normal and ui-harness app tests, strict default/UI lint, formatting, scoped/marks visual replay and release scoped replay cover that correction. Backend suites were not repeated after the app-only fix.',
+    'native_binary_sha256': native_hashes,
+    'native_source_manifest_sha256': {
+        'initial': '4722ddfa6c0b7261ee45042e1ebe73037fc8d296e3bf530d7a7ce76cab4bb3d5',
+        'labels': app_source,
+    },
+    'machine': run('sysctl', '-n', 'machdep.cpu.brand_string', 'hw.memsize').splitlines(),
+    'system': run('sw_vers'),
+    'rustc': run('rustc', '--version'),
+    'cargo': run('cargo', '--version'),
+    'test_counts': counts,
+    'test_count_note': 'The full workspace gate and subsequent 720 normal / 756 ui-harness app checks overlap. Counts are reported separately rather than summed as distinct tests. Two new mark-only state tests are present in both final app configurations.',
+    'replays': replays,
+    'workflow_checks': sum(r['checks'] for r in replays),
+    'kestrel': kestrel['actual'],
+    'targeted_native_processes_absent': True,
+    'native_observations': [
+        'Enter, scope play 2: Edit 120/360 with Original cursor 0. Minus changed only that play from -9 to -12 dB; All plays retained -3 dB.',
+        'One Undo closed stale contents; reopening play 2 restored -9 dB.',
+        'The unchanged Gain draft opened with a measured waveform, then was cancelled.',
+        'Play 3 at boundary 241: Camera + changed scale to 105%; Enter committed and retained play/cursor.',
+        'Follow-up label bundle showed Scope: Repeat · play 3/3 in Camera and Repeat · play 2/3 in the Gain draft footer, retaining 105% and -9 dB.',
+        'Both follow-up drafts were cancelled; its copied package retained 11 revisions and 8 history entries.',
+        'Both native bundles quit with exit 0 and targeted process lookup confirms absence.',
+    ],
+    'limits': [
+        'Debug functional and visual checks do not qualify release performance.',
+        'Final compact layout verified by rendered replay; native follow-up used the preceding label/projection binary.',
+        'Release scoped replay is a tiny-fixture mixed workload, including cold import. Its input-to-picture p95 is not a qualified warm-seek or ordinary-edit budget.',
+        'No new physical display, VoiceOver, OS IME, acoustic or release packaging qualification.',
+        'Fast batched native input across Gain cancellation did not select play 3; an observed closed draft followed by command entry did.',
+        'The developer wrapper retains external host library dependencies.',
+    ],
+}
+(dest / 'metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
+for source in [Path('/tmp/deadpan-original-layout-20261002/run-check.py'), scratch / 'run-mark-default.py', Path(__file__)]:
+    shutil.copy2(source, dest / 'scripts' / (source.name + '.txt'))
+(dest / 'SHA256SUMS').write_text(''.join(
+    sha(path) + '  ' + str(path.relative_to(dest)) + '\n'
+    for path in sorted(dest.rglob('*')) if path.is_file() and path.name != 'SHA256SUMS'
+))
+print(json.dumps({'test_counts': counts, 'workflow_checks': metadata['workflow_checks'], 'destination': str(dest)}, indent=2))

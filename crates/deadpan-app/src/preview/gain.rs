@@ -165,10 +165,7 @@ impl DeadpanApp {
             revision: draft.target.revision.clone(),
             cursor: draft.target.cursor,
             scope: draft.target.scope.clone(),
-            edit: ProjectEdit::SetAudioTreatments {
-                node: draft.target.node.clone(),
-                treatments: draft.edit.recipe().clone(),
-            },
+            edit: draft.target.edit(draft.edit.recipe().clone()),
         }))
     }
 
@@ -181,7 +178,12 @@ impl DeadpanApp {
             return Err("Select a beat in Your edit before changing its gain. Placed sounds use :sound-gain.".into());
         }
         let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
-        let node = self.selected_beat.as_ref().ok_or("Select a beat first.")?;
+        let scoped = self.scoped_target()?;
+        let node = scoped
+            .as_ref()
+            .map(|target| &target.target.node)
+            .or(self.selected_beat.as_ref())
+            .ok_or("Select a beat first.")?;
         let owner = workspace
             .document
             .nodes()
@@ -195,14 +197,17 @@ impl DeadpanApp {
             node: node.clone(),
             cursor: ProjectFrame(i64::try_from(self.sequence_cursor).map_err(|e| e.to_string())?),
             entry: owner.audio_treatments.clone(),
+            scoped,
         };
-        target.validate(workspace)?;
+        if target.scoped.is_none() {
+            target.validate(workspace)?;
+        }
         Ok(target)
     }
 
     fn check_gain_target(&self, target: &Target) -> Result<(), String> {
         target.validate(self.workspace.as_ref().ok_or("The project was closed.")?)?;
-        if self.selected_beat.as_ref() != Some(&target.node)
+        if !self.inspected_target_matches(&target.node, target.scoped.as_ref())
             || self.sequence_scope != target.scope
             || self.view != View::Sequence
             || i64::try_from(self.sequence_cursor).ok() != Some(target.cursor.0)
@@ -227,15 +232,13 @@ impl DeadpanApp {
             return;
         }
         self.stop_playback();
+        let edit = target.edit(treatments);
         self.submit(ProjectRequest::Edit {
             expected_session: target.session,
             expected_revision: target.revision,
             cursor: target.cursor,
             scope: target.scope,
-            edit: ProjectEdit::SetAudioTreatments {
-                node: target.node,
-                treatments,
-            },
+            edit,
         });
     }
 
@@ -297,24 +300,26 @@ impl DeadpanApp {
         }
         let result = (|| {
             let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
-            let row = self
-                .beat_rows
-                .iter()
-                .find(|row| row.id == target.node)
-                .ok_or("Selected beat has no visible span.")?;
-            let end = row
-                .start
-                .checked_add(row.frames)
-                .ok_or("Gain audition range overflowed.")?;
+            let range = if target.scoped.is_some() {
+                self.scoped_presentation()?.ok_or("This definition has no visible play to audition. Use :gain with a value to change its gain.")?.frames
+            } else {
+                let row = self
+                    .beat_rows
+                    .iter()
+                    .find(|row| row.id == target.node)
+                    .ok_or("Selected beat has no visible span.")?;
+                row.start
+                    ..row
+                        .start
+                        .checked_add(row.frames)
+                        .ok_or("Gain audition range overflowed.")?
+            };
             let domain = Domain::Sequence {
                 rate: workspace.document.presentation_basis().frame_rate,
                 frames: workspace.plan.duration().frames(),
             };
-            let window = domain.selection_window(
-                row.start..end,
-                AudioSample(24_000),
-                AudioSample(36_000),
-            )?;
+            let window =
+                domain.selection_window(range, AudioSample(24_000), AudioSample(36_000))?;
             let owner_frames = workspace
                 .plan
                 .node_duration(&target.node)
@@ -325,7 +330,7 @@ impl DeadpanApp {
                 domain,
                 window,
                 owner_frames,
-                row.label.clone(),
+                workspace.document.nodes()[&target.node].label.clone(),
             ))
         })();
         let (base, domain, window, frames, label) = match result {
@@ -405,7 +410,16 @@ impl DeadpanApp {
         if update
             .committed
             .as_ref()
-            .is_some_and(|committed| committed.selected_node.as_ref() == Some(&draft.target.node))
+            .is_some_and(|committed| match &draft.target.scoped {
+                Some(target) => committed
+                    .scoped
+                    .as_ref()
+                    .is_some_and(|receipt| &receipt.before == target),
+                None => {
+                    committed.scoped.is_none()
+                        && committed.selected_node.as_ref() == Some(&draft.target.node)
+                }
+            })
         {
             draft.waveform.cancel(&self.playback);
             self.gain = None;
@@ -465,7 +479,13 @@ impl DeadpanApp {
         {
             self.source_cursor = draft.source_cursor;
             self.sequence_cursor = draft.target.cursor.0 as u64;
-            self.selected_beat = Some(draft.target.node);
+            self.selected_beat = Some(
+                draft
+                    .target
+                    .scoped
+                    .as_ref()
+                    .map_or(draft.target.node, |target| target.root.clone()),
+            );
             self.sequence_scope = draft.target.scope;
             self.view = View::Sequence;
             self.pane = draft.pane;
@@ -798,15 +818,13 @@ impl DeadpanApp {
                 self.message = Some("Gain unchanged. No edit was made.".into());
                 return;
             }
+            let edit = target.edit(recipe);
             if self.submit(ProjectRequest::Edit {
                 expected_session: target.session,
                 expected_revision: target.revision,
                 cursor: target.cursor,
                 scope: target.scope,
-                edit: ProjectEdit::SetAudioTreatments {
-                    node: target.node,
-                    treatments: recipe,
-                },
+                edit,
             }) && let Some(draft) = &mut self.gain
             {
                 draft.waveform.cancel(&self.playback);
@@ -960,6 +978,7 @@ mod tests {
                 node: document.root().clone(),
                 cursor: ProjectFrame(0),
                 entry: edit.recipe().clone(),
+                scoped: None,
             },
             base,
             token: 10,

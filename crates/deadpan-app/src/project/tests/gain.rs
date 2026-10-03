@@ -37,6 +37,7 @@ fn recipe(trim: i32) -> AudioTreatments {
 
 fn target(workspace: &Workspace) -> Target {
     Target {
+        scoped: None,
         session: workspace.session,
         project: workspace.document.project_id().clone(),
         revision: workspace.document.revision_id().clone(),

@@ -29,6 +29,7 @@ mod retime;
 mod room_tone;
 mod scale;
 mod scenarios;
+mod scoped_plays;
 mod semantic;
 mod slip;
 mod sound_placement;
@@ -592,6 +593,10 @@ impl Driver<'_> {
             "footer_bottom":app.feedback.footer_bottom,
             "footer_command_open":app.feedback.footer_command_open,
         });
+        snapshot["scoped"] = json!(app.scoped_target().ok().flatten().map(|target| json!({
+            "root":target.root,"target":target.target,"presentation":target.presentation,
+            "cursor":target.cursor,"revision":target.revision,
+        })));
         snapshot["edit_selection"] = json!(
             app.selected_edit_range()
                 .map(|range| [range.start().0, range.end().0])

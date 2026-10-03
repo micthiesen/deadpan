@@ -488,6 +488,7 @@ impl Service {
         self.cache_splice_source(draft.request.asset(), source);
         let commit = outcome.map_err(display)?;
         Ok(CommittedEdit {
+            scoped: None,
             revision: commit.revision_id,
             selected_node: Some(prepared.node.clone()),
             preserve_cursor: false,

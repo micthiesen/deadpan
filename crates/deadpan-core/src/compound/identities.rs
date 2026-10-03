@@ -149,6 +149,10 @@ fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mu
             marks.extend(&identities.marks);
             occurrence(edit, nodes);
         }
+        Command::EditScoped { identities, .. } => {
+            nodes.extend(&identities.nodes);
+            marks.extend(&identities.marks);
+        }
         Command::Compound { .. }
         | Command::SlipSource { .. }
         | Command::SetSound { .. }

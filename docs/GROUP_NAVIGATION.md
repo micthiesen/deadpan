@@ -29,6 +29,11 @@ and one Undo restores all authored state. Empty selections never delete a beat.
 `:delete` captures its range or beat when command entry opens and rejects stale
 scope/revision/session targets. See [range deletion](AUDIO_REANCHORS.md#selected-ranges).
 
+`Enter` also opens selected Repeat/Retime contents through a separate
+[scoped inspector](SCOPED_EDITING.md). It supports explicit All plays/This play
+gain, Camera and Hold audio edits. It does not turn `SequenceScope` into an
+occurrence timeline; temporal operations inside those contents remain open.
+
 ## Command ownership
 
 `SequenceScope` is an ephemeral path of direct Sequence children. It is not
@@ -63,9 +68,9 @@ at compact and large sizes, including a long path. The contributed
 [UI harness](UI_FEEDBACK.md) extends `nested-pause` through navigation, Hold
 duration, history, Camera and endpoint refusal using production inputs.
 
-Repeat plays, gaps and Retime descendants still require occurrence-aware
-navigation. Group creation/ungroup controls, role-only edits, semantic operators,
-edited-slice copy/move and the full editing workflow remain required. This
+Repeat/Retime contents now have scoped value navigation. Temporal occurrence
+editing, implicit gap controls, group creation/ungroup, role-only edits and
+the full editing workflow remain required. This
 increment does not make any full-product requirement or gate complete.
 The [qualification record](qualification/group-navigation-2026-09-26.md) separates
 completed checks from the environment's unavailable GPU replay.
