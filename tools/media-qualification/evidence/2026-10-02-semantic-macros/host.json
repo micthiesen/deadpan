@@ -1,0 +1,26 @@
+{
+  "os": {
+    "command": [
+      "sw_vers"
+    ],
+    "output": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n"
+  },
+  "rust": {
+    "command": [
+      "rustc",
+      "--version",
+      "--verbose"
+    ],
+    "output": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6\n"
+  },
+  "hardware": {
+    "command": [
+      "sysctl",
+      "-n",
+      "machdep.cpu.brand_string",
+      "hw.memsize"
+    ],
+    "output": "Apple M5 Max\n137438953472\n"
+  },
+  "ffmpeg_prefix": "/tmp/deadpan-ui-ffmpeg/prefix"
+}

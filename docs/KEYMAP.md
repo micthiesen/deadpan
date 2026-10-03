@@ -20,15 +20,15 @@ native lifecycle smoke test do not read personal settings.
   "key_mode": "logical",
   "bindings": [
     { "action": "frame.next", "keys": [["a", "h"], ["ArrowRight"]] },
-    { "action": "hold", "keys": [["q", "b"]] },
-    { "action": "command", "keys": [["q", "c"], [":"]] }
+    { "action": "hold", "keys": [["e", "b"]] },
+    { "action": "command", "keys": [["e", "c"], [":"]] }
   ]
 }
 ```
 
 Each entry replaces every alias for one action; omitted actions retain their
-shipped paths. The example makes `ah` move forward and `qb` insert a pause.
-`3ah` moves three frames and `3qb` requests three half-seconds. Counts, authored
+shipped paths. The example makes `ah` move forward and `eb` insert a pause.
+`3ah` moves three frames and `3eb` requests three half-seconds. Counts, authored
 commands and held-key policies belong to the action, not to configuration.
 Overrides are applied together, so two actions can exchange their paths.
 
@@ -122,11 +122,19 @@ entry Normal/Visual mode. Compilation and help never mutate a project.
 `"a` selects project register `a` for the next yank, picture cut, paste or
 `:splice`; `""` selects the unnamed register. `:register a` and `:register "`
 are command aliases, and `:registers` opens the register inventory in Keys.
-Selection is one-shot and Escape cancels it. A successful named write also
+Selection is one-shot and Escape cancels it. A successful named copy or cut also
 updates the unnamed copy. Register selection rejects all preceding counts;
 put a supported count after the name, such as `"a12x`. The project register bank
-persists across app launches; macro content and execution remain unimplemented.
+persists across app launches, including typed Macro contents.
 See [named registers](NAMED_REGISTERS.md) for durability and validation rules.
+
+`q` plus a letter starts recording, and `q` while recording saves to that named
+Macro. `@` plus a letter runs it; a positive preceding count repeats the call
+in one transaction. The configured `macro.record` prefix itself stops recording.
+Recordings support frame motions, frame cuts and named calls. Prefix and command
+entry capture the exact project, bank and cursor, including absence. Logical
+`@` requires the key's immediate `Text("@")` companion; physical mode binds
+Shift+2. See [semantic macros](SEMANTIC_MACROS.md) for limits and typed errors.
 
 Entering Command or Search gives the new field only the ordered input suffix
 after its opener. The opener's immediate printable companion text is consumed;
@@ -195,6 +203,7 @@ Current configuration covers Normal and timeline Visual paths and their teaching
 The remaining mode routers, strict logical provenance and physical layout/IME
 qualification remain open. Settings are file-based and require a restart; a
 native settings editor and live map replacement are not implemented. Semantic
-[dot-repeat supports frame cuts](SEMANTIC_REPEAT.md); other edit kinds and atomic
-bounded macros remain DP-06 work. No requirement
+[dot-repeat supports frame cuts](SEMANTIC_REPEAT.md); [macros](SEMANTIC_MACROS.md)
+support frame motions, cuts and named calls. Remaining edit kinds and selectors
+remain DP-06 work. No requirement
 or product gate is complete on the basis of this increment.

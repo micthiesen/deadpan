@@ -43,6 +43,50 @@ fn request(document: &ProjectDocument, transaction: ResolvedTransaction) -> Comm
 fn transaction(steps: Vec<ResolvedStep>) -> ResolvedTransaction {
     ResolvedTransaction::new(0, BTreeMap::new(), steps).unwrap()
 }
+
+#[test]
+fn macro_inputs_are_frozen_values_but_cannot_be_captured_or_pasted() {
+    let document = fixture();
+    let value = Arc::new(RegisterValue::Macro {
+        program: Arc::new(
+            SemanticProgram::new(vec![SemanticInstruction::MoveFrames {
+                forward: true,
+                count: std::num::NonZeroU32::new(1).unwrap(),
+            }])
+            .unwrap(),
+        ),
+    });
+    let inputs = BTreeMap::from([(name('a'), Some(value.clone()))]);
+    let allowed = ResolvedTransaction::new(
+        3,
+        inputs.clone(),
+        vec![ResolvedStep::Edit {
+            edit: rename("renamed"),
+        }],
+    )
+    .unwrap();
+    let encoded = serde_json::to_string(&allowed).unwrap();
+    assert_eq!(
+        serde_json::from_str::<ResolvedTransaction>(&encoded).unwrap(),
+        allowed
+    );
+    assert!(apply(&document, &request(&document, allowed)).is_ok());
+    for step in [
+        ResolvedStep::Yank {
+            name: name('a'),
+            value,
+        },
+        ResolvedStep::Paste {
+            name: name('a'),
+            edit: rename("pasted"),
+        },
+    ] {
+        let rejected = ResolvedTransaction::new(3, inputs.clone(), vec![step]).unwrap();
+        let error = apply(&document, &request(&document, rejected)).unwrap_err();
+        assert_eq!(error.code, EditErrorCode::InvalidCommand);
+        assert!(error.message.contains("a macro cannot"));
+    }
+}
 fn rename(id: &str) -> LeafEdit {
     leaf(
         id,

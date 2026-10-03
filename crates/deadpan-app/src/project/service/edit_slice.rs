@@ -20,6 +20,8 @@ pub(super) struct PreparedCopy {
 
 impl Service {
     pub(super) fn clear_copied_slice(&mut self) {
+        self.macros = None;
+        self.saved_macro = None;
         self.captured_slice = None;
         self.registers = None;
         self.captured_original = None;

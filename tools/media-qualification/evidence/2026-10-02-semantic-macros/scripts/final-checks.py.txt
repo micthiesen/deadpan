@@ -1,0 +1,30 @@
+import json
+import os
+from pathlib import Path
+import subprocess
+import time
+
+scratch = Path(__file__).parent
+workspace = scratch / "workspace-after-doctor.json"
+while True:
+    report = json.loads(workspace.read_text())
+    if "gate_exit_code" in report:
+        if report["gate_exit_code"]:
+            raise SystemExit("Workspace check failed; remaining checks not started")
+        break
+    time.sleep(2)
+
+commands = [
+    ("app-ui-final", ["cargo", "test", "--locked", "-p", "deadpan-app", "--features", "ui-harness"]),
+    ("clippy-final", ["cargo", "clippy", "--locked", "-p", "deadpan-core", "-p", "deadpan-store", "-p", "deadpan-cli", "-p", "deadpan-app", "--features", "deadpan-app/ui-harness", "--all-targets", "--", "-D", "warnings"]),
+    ("clippy-default-final", ["cargo", "clippy", "--locked", "-p", "deadpan-app", "--all-targets", "--", "-D", "warnings"]),
+    ("format-final", ["cargo", "fmt", "--all", "--", "--check"]),
+]
+for scenario in ["macros", "keymap", "dot-repeat", "named-registers", "delete-range"]:
+    name = "replay-" + scenario + "-final"
+    commands.append((name, ["target/debug/deadpan-app", "--ui-check", "--scenario", scenario, "--mode", "visual", "--output", str(scratch / name), "--kestrel-source", "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift", "--retain-projects"]))
+for name, command in commands:
+    print("START " + name, flush=True)
+    result = subprocess.run(["python3", "/tmp/deadpan-original-layout-20261002/run-check.py", name, *command], env=dict(os.environ, DEADPAN_CHECK_OUTPUT=str(scratch)))
+    if result.returncode:
+        raise SystemExit(result.returncode)

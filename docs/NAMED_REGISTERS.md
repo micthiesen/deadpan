@@ -86,7 +86,9 @@ the old next-action instruction in the status line.
 
 ## Remaining full-product work
 
-Macro content and atomic bounded macro execution, semantic dot-repeat and the
-rest of DP-06 remain required. Cross-project transfer and the full crash/recovery
+[Semantic macros](SEMANTIC_MACROS.md) add bounded frame motions, cuts and calls
+to schema 55. Macro saves use only a named slot and preserve the unnamed copy;
+Macro values have no media capture provenance. Broader semantic edits, selectors,
+dot-repeat and the rest of DP-06 remain required. Cross-project transfer and the full crash/recovery
 matrix are unqualified. Physical layout and native IME qualification remain
 separate from deterministic event replay.

@@ -575,3 +575,332 @@ fn malformed_row_types_and_excess_slot_counts_fail_before_loading_values() {
     let error = store.registers().unwrap_err();
     assert!(error.to_string().contains("row count"), "{error}");
 }
+
+fn macro_program() -> Arc<SemanticProgram> {
+    Arc::new(
+        SemanticProgram::new(vec![
+            SemanticInstruction::MoveFrames {
+                forward: true,
+                count: std::num::NonZeroU32::new(2).unwrap(),
+            },
+            SemanticInstruction::CutFrames {
+                operation: FrameCut::new(1).unwrap(),
+                register: name('b'),
+            },
+            SemanticInstruction::Call {
+                register: name('c'),
+                count: std::num::NonZeroU32::new(3).unwrap(),
+            },
+        ])
+        .unwrap(),
+    )
+}
+
+#[test]
+fn macro_save_reopens_and_checkpoints_exact_body_without_copy_alias_or_history_changes() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("macro.deadpan");
+    let initial = document();
+    let mut store = ProjectStore::create(&path, &initial).unwrap();
+    store.commit(&cut(&initial, "last", "edit")).unwrap();
+    store.undo(&revision("edit"), revision("undone")).unwrap();
+    let head = store.snapshot().unwrap();
+    let before = timeline(&store);
+    let program = macro_program();
+    let bank = store
+        .save_macro(
+            head.project_id(),
+            head.revision_id(),
+            0,
+            name('a'),
+            program.clone(),
+        )
+        .unwrap();
+    assert_eq!(bank.version, 1);
+    assert_eq!(bank.entries.len(), 1);
+    assert_eq!(
+        bank.entries[&name('a')].as_ref(),
+        &RegisterValue::Macro { program }
+    );
+    assert_eq!(bank.entries[&name('a')].capture_revision(), None);
+    let no_provenance: bool = store
+        .connection
+        .query_row(
+            "SELECT capture_revision IS NULL AND capture_step IS NULL FROM register_contents",
+            [],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert!(no_provenance);
+    assert_eq!(timeline(&store), before);
+    assert_eq!(store.history_availability().unwrap(), (false, true));
+    let checkpoint = store.checkpoint().unwrap();
+    assert_eq!(
+        read_bank(&Connection::open(checkpoint).unwrap()).unwrap(),
+        bank
+    );
+    drop(store);
+    let mut store = ProjectStore::open(&path, crate::AccessMode::ReadWrite).unwrap();
+    assert_eq!(store.registers().unwrap(), bank);
+    store.redo(&revision("undone"), revision("redone")).unwrap();
+    assert_eq!(store.registers().unwrap(), bank);
+}
+
+#[test]
+fn macro_and_copy_replace_named_type_both_ways_and_macro_never_changes_unnamed() {
+    let directory = tempfile::tempdir().unwrap();
+    let initial = document();
+    let path = directory.path().join("macro-types.deadpan");
+    let mut store = ProjectStore::create(&path, &initial).unwrap();
+    let copied = save(&mut store, 'a', capture(&initial, "first"));
+    let program = macro_program();
+    let macros = store
+        .save_register(
+            initial.project_id(),
+            initial.revision_id(),
+            name('a'),
+            RegisterValue::Macro {
+                program: program.clone(),
+            },
+        )
+        .unwrap();
+    assert_eq!(macros.entries[&name('"')], copied.entries[&name('"')]);
+    assert!(matches!(
+        macros.entries[&name('a')].as_ref(),
+        RegisterValue::Macro { .. }
+    ));
+    let macros = store
+        .save_macro(
+            initial.project_id(),
+            initial.revision_id(),
+            macros.version,
+            name('b'),
+            program,
+        )
+        .unwrap();
+    assert_eq!(macros.entries[&name('"')], copied.entries[&name('"')]);
+    let replaced = save(&mut store, 'a', capture(&initial, "last"));
+    assert!(matches!(
+        replaced.entries[&name('a')].as_ref(),
+        RegisterValue::Edited { .. }
+    ));
+    assert_eq!(replaced.entries[&name('a')], replaced.entries[&name('"')]);
+    assert_eq!(replaced.entries[&name('b')], macros.entries[&name('b')]);
+    store.validate().unwrap();
+    drop(store);
+    assert_eq!(
+        ProjectStore::open(&path, crate::AccessMode::ReadOnly)
+            .unwrap()
+            .registers()
+            .unwrap(),
+        replaced
+    );
+}
+
+#[test]
+fn macro_save_stale_workspace_bank_or_unnamed_target_changes_nothing() {
+    let directory = tempfile::tempdir().unwrap();
+    let initial = document();
+    let mut store =
+        ProjectStore::create(&directory.path().join("stale-macro.deadpan"), &initial).unwrap();
+    let bank = save(&mut store, 'a', capture(&initial, "first"));
+    let before = timeline(&store);
+    for (project, revision, version, slot) in [
+        (
+            ProjectId::new("other").unwrap(),
+            initial.revision_id().clone(),
+            bank.version,
+            'b',
+        ),
+        (
+            initial.project_id().clone(),
+            revision("stale"),
+            bank.version,
+            'b',
+        ),
+        (
+            initial.project_id().clone(),
+            initial.revision_id().clone(),
+            0,
+            'b',
+        ),
+        (
+            initial.project_id().clone(),
+            initial.revision_id().clone(),
+            bank.version,
+            '"',
+        ),
+    ] {
+        assert!(
+            store
+                .save_macro(&project, &revision, version, name(slot), macro_program())
+                .is_err()
+        );
+        assert_eq!(store.registers().unwrap(), bank);
+        assert_eq!(timeline(&store), before);
+    }
+    assert!(
+        store
+            .save_register(
+                initial.project_id(),
+                initial.revision_id(),
+                name('"'),
+                RegisterValue::Macro {
+                    program: macro_program()
+                },
+            )
+            .is_err()
+    );
+    assert_eq!(store.registers().unwrap(), bank);
+    assert_eq!(timeline(&store), before);
+}
+
+#[test]
+fn macro_provenance_unnamed_or_row_corruption_fails_read_checkpoint_and_reopen() {
+    for mutation in [
+        "UPDATE register_contents SET capture_revision='initial'",
+        "UPDATE register_contents SET capture_step='initial'",
+        "UPDATE register_contents SET capture_revision='missing'",
+        "UPDATE registers SET name='\"'",
+        "DELETE FROM registers",
+        "UPDATE register_contents SET id=lower(hex(randomblob(32)))",
+        "UPDATE register_state SET version=0",
+        "UPDATE register_contents SET value=json_set(value,'$.asset','forged')",
+    ] {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("corrupt-macro.deadpan");
+        let initial = document();
+        let mut store = ProjectStore::create(&path, &initial).unwrap();
+        store
+            .save_macro(
+                initial.project_id(),
+                initial.revision_id(),
+                0,
+                name('a'),
+                macro_program(),
+            )
+            .unwrap();
+        store
+            .connection
+            .pragma_update(None, "foreign_keys", false)
+            .unwrap();
+        store
+            .connection
+            .pragma_update(None, "ignore_check_constraints", true)
+            .unwrap();
+        store.connection.execute_batch(mutation).unwrap();
+        assert!(store.registers().is_err(), "{mutation}");
+        assert!(store.checkpoint().is_err(), "{mutation}");
+        drop(store);
+        for mode in [crate::AccessMode::ReadOnly, crate::AccessMode::ReadWrite] {
+            assert!(ProjectStore::open(&path, mode).is_err(), "{mutation}");
+        }
+    }
+}
+
+#[test]
+fn forged_macro_program_rejects_even_with_valid_canonical_hash_and_no_provenance() {
+    let valid = serde_json::to_value(RegisterValue::Macro {
+        program: macro_program(),
+    })
+    .unwrap();
+    let mut zero_count = valid.clone();
+    zero_count["program"]["instructions"][0]["count"] = 0.into();
+    let mut extra_field = valid.clone();
+    extra_field["program"]["asset"] = "forged-media".into();
+    let mut oversized_body = valid.clone();
+    oversized_body["program"]["instructions"] = serde_json::Value::Array(vec![
+        valid["program"]["instructions"][0].clone(); MAX_SEMANTIC_PROGRAM_INSTRUCTIONS + 1
+    ]);
+    let mut oversized_bytes = valid.clone();
+    oversized_bytes["program"]["padding"] = "x".repeat(MAX_MACRO_REGISTER_BYTES).into();
+    for (forged, expected_error) in [
+        (zero_count, None),
+        (extra_field, None),
+        (oversized_body, None),
+        (
+            oversized_bytes,
+            Some("register type and capture provenance disagree"),
+        ),
+    ] {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("forged-macro.deadpan");
+        let initial = document();
+        let mut store = ProjectStore::create(&path, &initial).unwrap();
+        store
+            .save_macro(
+                initial.project_id(),
+                initial.revision_id(),
+                0,
+                name('a'),
+                macro_program(),
+            )
+            .unwrap();
+        let json = serde_json::to_string(&forged).unwrap();
+        let id = digest(json.as_bytes());
+        store
+            .connection
+            .pragma_update(None, "foreign_keys", false)
+            .unwrap();
+        store
+            .connection
+            .execute(
+                "UPDATE register_contents SET id=?1,value=?2",
+                params![id, json],
+            )
+            .unwrap();
+        store
+            .connection
+            .execute("UPDATE registers SET content_id=?1", [id])
+            .unwrap();
+        let error = store.registers().unwrap_err();
+        if let Some(expected) = expected_error {
+            // Raw byte admission must reject before typed unknown-field decoding.
+            assert!(error.to_string().contains(expected), "{error}");
+        }
+        assert!(store.checkpoint().is_err());
+        drop(store);
+        assert!(ProjectStore::open(&path, crate::AccessMode::ReadOnly).is_err());
+    }
+}
+
+#[test]
+fn sql_enforces_macro_and_copy_provenance_and_raw_macro_types_are_checked() {
+    let directory = tempfile::tempdir().unwrap();
+    let initial = document();
+    let mut store =
+        ProjectStore::create(&directory.path().join("macro-sql.deadpan"), &initial).unwrap();
+    store
+        .save_macro(
+            initial.project_id(),
+            initial.revision_id(),
+            0,
+            name('a'),
+            macro_program(),
+        )
+        .unwrap();
+    assert!(
+        store
+            .connection
+            .execute(
+                "UPDATE register_contents SET capture_revision='initial'",
+                []
+            )
+            .is_err()
+    );
+    store.connection.execute_batch("PRAGMA foreign_keys=OFF;
+        CREATE TABLE contents_copy AS SELECT id,capture_revision,capture_step,CAST(value AS BLOB) AS value FROM register_contents;
+        DROP TABLE register_contents; ALTER TABLE contents_copy RENAME TO register_contents;").unwrap();
+    let error = store.registers().unwrap_err();
+    assert!(error.to_string().contains("field type or size"), "{error}");
+
+    let mut copy_store =
+        ProjectStore::create(&directory.path().join("copy-sql.deadpan"), &initial).unwrap();
+    save(&mut copy_store, 'a', capture(&initial, "first"));
+    assert!(
+        copy_store
+            .connection
+            .execute("UPDATE register_contents SET capture_revision=NULL", [])
+            .is_err()
+    );
+}

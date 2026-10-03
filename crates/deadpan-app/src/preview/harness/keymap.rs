@@ -8,12 +8,12 @@ use egui_kittest::kittest::Queryable as _;
 const VALID: &[u8] = br#"{
   "version":1,"key_mode":"logical","bindings":[
     {"action":"frame.next","keys":[["a","h"]]},
-    {"action":"hold","keys":[["q","b"]]},
-    {"action":"command","keys":[["q","c"],[":"],["F2"]]},
-    {"action":"search","keys":[["q","s"],["/"]]},
+    {"action":"hold","keys":[["e","b"]]},
+    {"action":"command","keys":[["e","c"],[":"],["F2"]]},
+    {"action":"search","keys":[["e","s"],["/"]]},
     {"action":"help","keys":[["?"],[";"]]},
     {"action":"cut.frames","keys":[["z"]]},
-    {"action":"trim","keys":[["q","t"]]}
+    {"action":"trim","keys":[["e","t"]]}
   ]
 }"#;
 
@@ -86,24 +86,24 @@ fn minimum_size(d: &mut Driver<'_>) -> Result<(), String> {
         .ok_or("Missing keymap replay viewport")?
         .inner_rect = Some(rect);
     d.step("Custom key hints at the minimum native window size", true)?;
-    for label in ["qb", "pause", "qc", "z"] {
+    for label in ["eb", "pause", "ec", "z"] {
         painted(d, label)?;
     }
     d.events(
         "Custom shared prefix with its native text echo",
-        stroke(Key::Q, "q"),
+        stroke(Key::E, "e"),
     )?;
     d.check(
         "An arbitrary shared prefix is visible and teaches its actual continuations",
-        d.app().bindings.pending() == "q" && !d.app().command_open,
-        json!("q"),
+        d.app().bindings.pending() == "e" && !d.app().command_open,
+        json!("e"),
         d.snapshot(),
     )?;
     // Independent literals, not labels produced by the map under test.
     for label in ["b pause", "c command", "s search", "t Trim"] {
         painted(d, label)?;
     }
-    d.capture("Custom q prefix and exact continuations at 960 by 640")?;
+    d.capture("Custom e prefix and exact continuations at 960 by 640")?;
     d.key(Key::Escape)
 }
 
@@ -196,9 +196,9 @@ fn held_motion(d: &mut Driver<'_>) -> Result<(), String> {
 fn custom_hold(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(), String> {
     d.chord(&[Key::G, Key::G])?;
     let before = d.revision();
-    let mut events = stroke(Key::Q, "q");
+    let mut events = stroke(Key::E, "e");
     events.extend(stroke(Key::B, "b"));
-    d.events("Insert one Hold through the configured qb path", events)?;
+    d.events("Insert one Hold through the configured eb path", events)?;
     d.changed(&before)?;
     let frames = navigation::duration::DurationInput::half_seconds(1)
         .resolve(baseline.presentation_basis().frame_rate)?
@@ -212,7 +212,7 @@ fn custom_hold(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(), Str
         })
         .collect();
     d.check(
-        "Custom qb creates exactly one half-second silent Hold and one history entry",
+        "Custom eb creates exactly one half-second silent Hold and one history entry",
         holds.len() == 1
             && holds[0].duration.frames() == frames
             && holds[0].audio == HoldAudio::Silence
@@ -245,7 +245,7 @@ fn custom_hold(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(), Str
 
 fn field_entry(d: &mut Driver<'_>) -> Result<(), String> {
     let revision = d.revision();
-    let mut events = stroke(Key::Q, "q");
+    let mut events = stroke(Key::E, "e");
     events.extend(stroke(Key::C, "c"));
     events.extend([
         Event::Text(":".into()),
@@ -259,7 +259,7 @@ fn field_entry(d: &mut Driver<'_>) -> Result<(), String> {
     command_text(d, ":/é")?;
     d.key(Key::Escape)?;
 
-    let mut events = stroke(Key::Q, "q");
+    let mut events = stroke(Key::E, "e");
     events.extend(stroke(Key::C, "c"));
     events.extend([
         Event::Text("source".into()),
@@ -267,7 +267,7 @@ fn field_entry(d: &mut Driver<'_>) -> Result<(), String> {
         up(Key::Enter),
     ]);
     d.events(
-        "Open qc, type the full command and submit in one native batch",
+        "Open ec, type the full command and submit in one native batch",
         events,
     )?;
     d.check(
@@ -294,7 +294,7 @@ fn field_entry(d: &mut Driver<'_>) -> Result<(), String> {
         d.snapshot(),
     )?;
 
-    let mut events = stroke(Key::Q, "q");
+    let mut events = stroke(Key::E, "e");
     events.extend([down(Key::C), Event::Text("c".into())]);
     d.events("Keep the custom Command opener physically held", events)?;
     command_text(d, "")?;
@@ -391,7 +391,7 @@ fn field_entry(d: &mut Driver<'_>) -> Result<(), String> {
     d.command("sequence")?;
     d.settled()?;
 
-    let mut events = stroke(Key::Q, "q");
+    let mut events = stroke(Key::E, "e");
     events.extend(stroke(Key::C, "c"));
     events.extend([
         Event::Text("source".into()),
@@ -400,7 +400,7 @@ fn field_entry(d: &mut Driver<'_>) -> Result<(), String> {
         Event::Text("post-submit text".into()),
     ]);
     // The later command must run in the context produced by the first one.
-    events.extend(stroke(Key::Q, "q"));
+    events.extend(stroke(Key::E, "e"));
     events.extend(stroke(Key::C, "c"));
     events.extend([
         Event::Text("sequence".into()),
@@ -429,7 +429,7 @@ fn field_entry(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.settled()?;
 
-    let mut events = stroke(Key::Q, "q");
+    let mut events = stroke(Key::E, "e");
     events.extend(stroke(Key::S, "s"));
     events.extend([
         Event::Text("/".into()),
@@ -516,14 +516,14 @@ fn native_ownership(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.command("sequence")?;
     d.key(Key::Colon)?;
-    let mut events = stroke(Key::Q, "q");
+    let mut events = stroke(Key::E, "e");
     events.extend(stroke(Key::B, "b"));
     events.extend(stroke(Key::Z, "z"));
     d.events(
         "Custom Hold and cut strings belong to the native command field",
         events,
     )?;
-    command_text(d, "qbz")?;
+    command_text(d, "ebz")?;
     d.check(
         "Native field text cannot author edits",
         *document(d)? == before,
@@ -569,20 +569,20 @@ fn native_ownership(d: &mut Driver<'_>) -> Result<(), String> {
 fn trim_absence(d: &mut Driver<'_>) -> Result<(), String> {
     let revision = d.revision();
     d.command("source")?;
-    d.key(Key::Q)?;
+    d.key(Key::E)?;
     d.check(
-        "Shared custom q prefix captures unavailable Trim target immediately",
+        "Shared custom e prefix captures unavailable Trim target immediately",
         d.app()
             .trim_prefix_target
             .as_ref()
             .is_some_and(Result::is_err)
-            && d.app().bindings.pending() == "q",
-        json!("Original target absence captured at q"),
+            && d.app().bindings.pending() == "e",
+        json!("Original target absence captured at e"),
         d.snapshot(),
     )?;
     d.key(Key::T)?;
     d.check(
-        "Custom qt preserves captured Original refusal",
+        "Custom et preserves captured Original refusal",
         d.app().trim.is_none()
             && d.revision() == revision
             && d.app()

@@ -340,7 +340,7 @@ fragments by exact boundary bias. Store admission must recapture the named immut
 revision before reusing historical media; clipboard data grants no qualification.
 Independent root sounds remain separate and transform once at insertion.
 Native `v`/motion/`y` captures an immutable edited range on the project service.
-Project registers hold either Original or edited content; accepted copies
+Project registers hold Original, edited or Macro content; accepted copies
 survive edits, Undo and reopen. Newer intent supersedes UI confirmation without
 cancelling queued writes. Clear runtime state on session change and restore the
 project's validated bank. Native `p/P` and `:splice` use the same atomic
@@ -352,7 +352,7 @@ opaque admission, complete catalog validation once per immutable view and live
 session checks on warm reuse. Preserve strict Original proposal validation and
 ordinary committed warm private PCM behavior. A saved receipt without refreshed
 workspace cannot consume the old visible selection or lose its reopening warning.
-Macro content/execution, semantic dot-repeat and the remaining grammar remain open. See
+Broader semantic edits, selectors, dot-repeat and the remaining grammar remain open. See
 [edited slices](docs/EDITED_SLICES.md).
 
 Core/headless `MoveRange` names the same current source/destination revision and
@@ -556,7 +556,7 @@ receipts are independent of authored revisions and survive compact replies,
 workspace refresh failure and final stdout failure. Terminal cancellation needs
 worker completion; a lost observer does not prove cancellation.
 
-Database schema 54 stores core schema 43 and retains operational generation requests,
+Database schema 55 stores core schema 43 and retains operational generation requests,
 plus an optional validated single-Original workflow profile. Use the dedicated
 `create_single_source` / `initialize_prepared_source` path to bind the full measured
 Original, basis and protected baseline atomically. Undo never crosses that baseline;
@@ -840,8 +840,8 @@ outer frame, never on a layout retry. Preserve whole-batch IME ownership.
 Headless/worker and replay paths never read personal keymaps.
 See [bindings](docs/KEYMAP.md).
 
-Project registers save Original descriptors and complete Edited captures in an
-independent SQLite bank, without timeline revisions. Named writes update the
+Project registers save Original descriptors, complete Edited captures and typed
+Macro programs in an independent SQLite bank, without timeline revisions. Named copies and cuts update the
 default alias atomically; cuts save deletion and registers in one transaction.
 Bound unique canonical contents at 64 MiB, validate historical provenance and
 restore fresh runtime identities on reopen. Keep versioned bank snapshots
@@ -852,8 +852,18 @@ refuse new placement while it remains unsettled. Capture names and paste content
 including absence, at command entry. Close clears runtime state; reopen restores
 the bank. Missing current Original qualifications leave visible unavailable
 slots. Keep saved-cut receipts independent of register intent. See
-[registers](docs/NAMED_REGISTERS.md); macro content/execution and semantic
-dot-repeat remain open.
+[registers](docs/NAMED_REGISTERS.md).
+
+Semantic macros record relative frame motions, frame cuts and named calls in an
+ordinary Sequence. Append asynchronous instructions only after their exact
+successful receipt; block further recording actions while one is pending. Keep
+requested counts after clamping, captured register names and prefix/command-entry
+absence. Saving a Macro preserves the unnamed copy and history. Plan against
+each preceding staged document and bank, freeze counted call bodies at entry,
+bound recursion/fuel/size and commit one Compound after complete admission.
+Prepare runtime copies before commit and retain durable success across refresh
+failure. Macro values carry no media provenance; copying and calling preserve
+their type distinctions. See [semantic macros](docs/SEMANTIC_MACROS.md).
 
 Native group navigation retains an ephemeral `SequenceScope` of direct ordinary
 Sequence children. Keep cursor/card positions on the absolute project clock and

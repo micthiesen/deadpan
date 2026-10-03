@@ -33,6 +33,7 @@ mod delete_range;
 pub(super) mod edit_slice;
 mod gain;
 mod headless;
+mod macros;
 mod marks;
 mod moment;
 mod registers;
@@ -65,6 +66,8 @@ struct Service {
     message: Option<String>,
     committed: Option<CommittedEdit>,
     semantic: semantic::State,
+    macros: Option<super::macros::Update>,
+    saved_macro: Option<(super::macros::Operation, super::macros::Receipt)>,
     room_tone: Option<PreparedRoomTone>,
     room_tone_error: Option<RoomToneFailure>,
     gain: Option<super::gain::ProposalUpdate>,
@@ -133,6 +136,8 @@ pub(super) fn run(
         message: None,
         committed: None,
         semantic: semantic::State::default(),
+        macros: None,
+        saved_macro: None,
         room_tone: None,
         room_tone_error: None,
         gain: None,
@@ -284,6 +289,11 @@ impl Service {
             message: self.message.clone(),
             committed: self.committed.clone(),
             semantic: self.semantic.snapshot(),
+            macros: self.macros.clone(),
+            saved_macro: self
+                .saved_macro
+                .as_ref()
+                .map(|(_, receipt)| receipt.clone()),
             room_tone: self
                 .room_tone
                 .as_ref()
@@ -344,6 +354,10 @@ impl Service {
             }
             ProjectRequest::CutFrames { capture, attempt } => {
                 self.cut_edit_slice_command(capture, Some(attempt));
+                return Ok(());
+            }
+            ProjectRequest::Macro(operation) => {
+                self.macro_command(operation);
                 return Ok(());
             }
             ProjectRequest::PrepareTrim(proposal) => {
@@ -467,6 +481,7 @@ impl Service {
             ProjectRequest::CaptureOriginal(_) => unreachable!("copy uses independent feedback"),
             ProjectRequest::CutEditSlice(_) => unreachable!("cut uses independent feedback"),
             ProjectRequest::CutFrames { .. } => unreachable!("frame cut uses independent feedback"),
+            ProjectRequest::Macro(_) => unreachable!("macro uses independent feedback"),
             ProjectRequest::PrepareSplice(_)
             | ProjectRequest::CommitSplice(_)
             | ProjectRequest::AbandonSplice(_) => unreachable!("splice uses independent feedback"),

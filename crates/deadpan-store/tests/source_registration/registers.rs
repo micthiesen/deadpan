@@ -192,7 +192,10 @@ fn compound_original_paste_checks_exact_ordinals_and_retains_intermediate_yank()
         panic!("expected Original Source")
     };
     assert_eq!(actual, &expected);
-    assert_eq!(saved_bank.entries[&b].revision(), &revision("paste-stage"));
+    assert_eq!(
+        saved_bank.entries[&b].capture_revision(),
+        Some(&revision("paste-stage"))
+    );
     assert!(store.snapshot_at(&revision("paste-stage")).is_err());
     assert_eq!(
         store

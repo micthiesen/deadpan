@@ -44,6 +44,28 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         return super::retime::parse(words, verb == "wrap-retime")
             .map(|input| Entry::Action(Action::Edit(BeatEdit::Retime(input))));
     }
+    if verb == "record" || verb == "macro" {
+        let register = words
+            .next()
+            .filter(|name| name.len() == 1 && name.as_bytes()[0].is_ascii_alphabetic())
+            .ok_or("A macro name must be exactly one ASCII letter, a–z or A–Z.")?;
+        let register = char::from(register.as_bytes()[0]).to_ascii_lowercase();
+        let action = if verb == "record" {
+            Action::MacroRecord(register)
+        } else {
+            let count = words.next().unwrap_or("1");
+            let count = (!count.is_empty() && count.bytes().all(|byte| byte.is_ascii_digit()))
+                .then(|| count.parse::<u32>().ok())
+                .flatten()
+                .filter(|count| *count > 0)
+                .ok_or("Use :macro a [count] with a positive count in 1..4294967295.")?;
+            Action::MacroExecute { register, count }
+        };
+        if words.next().is_some() {
+            return Err("Extra arguments are not supported by this command.".into());
+        }
+        return Ok(Entry::Action(action));
+    }
     if verb == "slip" {
         let amount = words
             .next()
@@ -84,6 +106,8 @@ pub fn parse(input: &str) -> Result<Entry, String> {
             }));
         }
         "marks" => Action::Marks,
+        "record-stop" => Action::MacroStop,
+        "record-cancel" => Action::MacroCancel,
         "delete-frames" => {
             let frames = argument.unwrap_or("1f")
                 .strip_suffix('f')
@@ -245,6 +269,60 @@ fn monitor(argument: Option<&str>) -> Result<u16, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn macro_commands_require_named_registers_and_positive_bounded_counts() {
+        for name in 'a'..='z' {
+            for entered in [name, name.to_ascii_uppercase()] {
+                assert_eq!(
+                    parse(&format!(":record {entered}")),
+                    Ok(Entry::Action(Action::MacroRecord(name)))
+                );
+                assert_eq!(
+                    parse(&format!(":macro {entered}")),
+                    Ok(Entry::Action(Action::MacroExecute {
+                        register: name,
+                        count: 1
+                    }))
+                );
+                assert_eq!(
+                    parse(&format!(":macro {entered} 4294967295")),
+                    Ok(Entry::Action(Action::MacroExecute {
+                        register: name,
+                        count: u32::MAX
+                    }))
+                );
+            }
+        }
+        assert_eq!(parse(":record-stop"), Ok(Entry::Action(Action::MacroStop)));
+        assert_eq!(
+            parse(":record-cancel"),
+            Ok(Entry::Action(Action::MacroCancel))
+        );
+        for input in [
+            "record",
+            "record ab",
+            "record a 1",
+            "record a a",
+            "record \"",
+            "record é",
+            "record 0",
+            "record-stop a",
+            "record-cancel a",
+            "macro",
+            "macro \"",
+            "macro ab",
+            "macro a 0",
+            "macro a -1",
+            "macro a +1",
+            "macro a 1.0",
+            "macro a 4294967296",
+            "macro a 1 2",
+            "macro é",
+        ] {
+            assert!(parse(input).is_err(), "{input}");
+        }
+    }
 
     #[test]
     fn register_commands_select_only_one_ascii_letter_or_the_unnamed_slot() {

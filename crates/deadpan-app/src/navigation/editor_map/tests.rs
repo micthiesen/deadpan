@@ -2,9 +2,9 @@ use super::*;
 
 #[test]
 fn audit_enumerates_unannotated_intermediate_branches() {
-    let a = Stroke(Key::A, false);
-    let b = Stroke(Key::B, false);
-    let c = Stroke(Key::C, false);
+    let a = Stroke::Key(Key::A, false);
+    let b = Stroke::Key(Key::B, false);
+    let c = Stroke::Key(Key::C, false);
     let trie = Trie::compile(
         vec![Binding {
             path: vec![a, b, c],
@@ -406,22 +406,14 @@ fn prefix_teaching_lists_reachable_declared_leaves_and_counted_leader_restricts_
                     })
                     .collect();
                 let branch = map(selection)
-                    .resolve(&[Stroke(key, false)])
+                    .resolve(&[Stroke::Key(key, false)])
                     .expect("declared prefix");
                 let mut reachable = Vec::new();
                 for (stroke, child) in branch.children() {
                     let leaf = child.terminal().expect("shipped prefix has direct leaves");
                     let expected = leaf.value.resolve(count);
                     let mut candidate = pending.clone();
-                    let modifiers = if stroke.1 {
-                        Modifiers::SHIFT
-                    } else {
-                        Modifiers::NONE
-                    };
-                    assert_eq!(
-                        candidate.key_with_selection(stroke.0, modifiers, false, false, selection),
-                        Some(expected)
-                    );
+                    assert_eq!(candidate.audit_stroke(*stroke, selection), Some(expected));
                     if !matches!(expected, Action::Invalid(_)) {
                         reachable.push(stroke.label());
                     }
@@ -436,7 +428,7 @@ fn prefix_teaching_lists_reachable_declared_leaves_and_counted_leader_restricts_
                     if count.is_some() {
                         "3,".to_owned()
                     } else {
-                        Stroke(key, false).label()
+                        Stroke::Key(key, false).label()
                     }
                 );
             }

@@ -19,6 +19,7 @@ use deadpan_store::source_registration::SourceQualificationReceipt;
 use crate::library::ProjectLibrary;
 
 pub mod gain;
+pub mod macros;
 pub mod marks;
 mod pause;
 pub mod registers;
@@ -127,6 +128,9 @@ pub struct ProjectUpdate {
     pub committed: Option<CommittedEdit>,
     /// Last semantic edit follows durable head transitions, including failed refreshes.
     pub semantic: Option<semantic::Snapshot>,
+    pub macros: Option<macros::Update>,
+    /// Successful macro receipt survives later queries and rejected attempts.
+    pub saved_macro: Option<macros::Receipt>,
     /// Read-only source-range preparation, bound to the captured request.
     /// Consumers must admit its ticket, session and revision before using it.
     pub room_tone: Option<PreparedRoomTone>,
@@ -454,6 +458,7 @@ pub enum ProjectRequest {
         capture: slice::CaptureRequest,
         attempt: semantic::CutAttempt,
     },
+    Macro(macros::Operation),
     PasteEditedSlice(slice::Paste),
     PrepareSplice(splice::Proposal),
     CommitSplice(splice::ProposalId),

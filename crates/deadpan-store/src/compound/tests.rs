@@ -552,3 +552,230 @@ fn future_checkpoint_dependency_is_rejected_before_history_can_launder_it() {
             .contains("earlier committed")
     );
 }
+
+#[test]
+fn planned_macro_multi_cut_has_one_undo_and_final_copy_survives_reopen_and_body_replacement() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("semantic-macro.deadpan");
+    let initial = document();
+    let mut store = ProjectStore::create(&path, &initial).unwrap();
+    let program = Arc::new(
+        SemanticProgram::new(vec![
+            SemanticInstruction::MoveFrames {
+                forward: true,
+                count: std::num::NonZeroU32::new(1).unwrap(),
+            },
+            SemanticInstruction::CutFrames {
+                operation: FrameCut::new(1).unwrap(),
+                register: name('b'),
+            },
+        ])
+        .unwrap(),
+    );
+    let bank = store
+        .save_macro(
+            initial.project_id(),
+            initial.revision_id(),
+            0,
+            name('a'),
+            program,
+        )
+        .unwrap();
+    let invocation = SemanticProgram::new(vec![SemanticInstruction::Call {
+        register: name('a'),
+        count: std::num::NonZeroU32::new(2).unwrap(),
+    }])
+    .unwrap();
+    let plan = plan_semantic(
+        &initial,
+        &SemanticContext {
+            parent: node("root"),
+            cursor: ProjectFrame(0),
+        },
+        &invocation,
+        &bank.entries,
+        bank.version,
+        revision("macro-run"),
+        |allocation| {
+            Ok(SemanticAllocation {
+                new_revision: revision(&format!("macro-step-{}", allocation.cut_index)),
+                capture_revision: revision(&format!("macro-capture-{}", allocation.cut_index)),
+                split_identities: SplitIdentities {
+                    nodes: (0..allocation.required_split_ids)
+                        .map(|index| node(&format!("macro-split-{}-{index}", allocation.cut_index)))
+                        .collect(),
+                },
+            })
+        },
+    )
+    .unwrap();
+    let request = plan.request.as_ref().unwrap();
+    let Command::Compound { transaction } = &request.command else {
+        unreachable!()
+    };
+    assert_eq!(
+        transaction.inputs()[&name('a')],
+        bank.entries.get(&name('a')).cloned()
+    );
+    let before = cells(&store);
+    let preview = store.preview_compound(request).unwrap();
+    assert_eq!(cells(&store), before);
+    let saved = store.commit_compound(request, None).unwrap();
+    let final_bank = saved.register_bank;
+    assert_eq!(final_bank, preview.register_bank);
+    assert_eq!(store.snapshot().unwrap(), plan.document);
+    assert_eq!(plan.document.duration().unwrap().frames(), 5);
+    assert_eq!(plan.context.cursor, ProjectFrame(2));
+    assert_eq!(final_bank.entries[&name('a')], bank.entries[&name('a')]);
+    assert_eq!(
+        final_bank.entries[&name('b')],
+        final_bank.entries[&name('"')]
+    );
+    assert_eq!(final_bank.version, 2);
+    let RegisterValue::Edited { slice } = final_bank.entries[&name('b')].as_ref() else {
+        unreachable!()
+    };
+    assert_eq!(slice.revision_id(), &revision("macro-step-0"));
+    assert_eq!(
+        store
+            .connection
+            .query_row("SELECT count(*) FROM history", [], |row| row
+                .get::<_, i64>(0))
+            .unwrap(),
+        1
+    );
+    assert_eq!(
+        store
+            .connection
+            .query_row("SELECT count(*) FROM transaction_steps", [], |row| row
+                .get::<_, i64>(0))
+            .unwrap(),
+        2
+    );
+    store
+        .undo(&revision("macro-run"), revision("macro-undo"))
+        .unwrap();
+    let mut expected_undo = serde_json::to_value(&initial).unwrap();
+    expected_undo["revision_id"] = "macro-undo".into();
+    assert_eq!(
+        serde_json::to_value(store.snapshot().unwrap()).unwrap(),
+        expected_undo
+    );
+    assert_eq!(store.registers().unwrap(), final_bank);
+    let checkpoint = store.checkpoint().unwrap();
+    assert_eq!(
+        crate::registers::read_bank(&Connection::open(checkpoint).unwrap()).unwrap(),
+        final_bank
+    );
+    drop(store);
+    let mut store = ProjectStore::open(&path, crate::AccessMode::ReadWrite).unwrap();
+    assert_eq!(store.registers().unwrap(), final_bank);
+    // History replays frozen input programs even after the named macro becomes
+    // an incompatible copy and its content-addressed row is collected.
+    let head = store.snapshot().unwrap();
+    store
+        .save_register(
+            head.project_id(),
+            head.revision_id(),
+            name('a'),
+            RegisterValue::Edited {
+                slice: capture(&head, "a"),
+            },
+        )
+        .unwrap();
+    store
+        .redo(head.revision_id(), revision("macro-redo"))
+        .unwrap();
+    let mut expected_redo = serde_json::to_value(&plan.document).unwrap();
+    expected_redo["revision_id"] = "macro-redo".into();
+    assert_eq!(
+        serde_json::to_value(store.snapshot().unwrap()).unwrap(),
+        expected_redo
+    );
+    assert_eq!(
+        store.registers().unwrap().entries[&name('b')],
+        final_bank.entries[&name('b')]
+    );
+    store.validate().unwrap();
+    drop(store);
+    ProjectStore::open(&path, crate::AccessMode::ReadOnly)
+        .unwrap()
+        .validate()
+        .unwrap();
+}
+
+#[test]
+fn compound_macro_inputs_are_frozen_and_invalid_programs_fail_historical_reopen() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("macro-input.deadpan");
+    let initial = document();
+    let mut store = ProjectStore::create(&path, &initial).unwrap();
+    let program = Arc::new(
+        SemanticProgram::new(vec![SemanticInstruction::MoveFrames {
+            forward: true,
+            count: std::num::NonZeroU32::new(1).unwrap(),
+        }])
+        .unwrap(),
+    );
+    let bank = store
+        .save_macro(
+            initial.project_id(),
+            initial.revision_id(),
+            0,
+            name('m'),
+            program.clone(),
+        )
+        .unwrap();
+    let steps = vec![ResolvedStep::Edit {
+        edit: LeafEdit::new(
+            revision("macro-leaf"),
+            Command::DeleteRipple {
+                node: node("b"),
+                timing: timing("macro-leaf"),
+            },
+        )
+        .unwrap(),
+    }];
+    let good = compound(
+        &initial,
+        "macro-outer",
+        bank.version,
+        BTreeMap::from([(name('m'), bank.entries.get(&name('m')).cloned())]),
+        steps.clone(),
+    );
+    let changed = Arc::new(RegisterValue::Macro {
+        program: Arc::new(
+            SemanticProgram::new(vec![SemanticInstruction::MoveFrames {
+                forward: false,
+                count: std::num::NonZeroU32::new(1).unwrap(),
+            }])
+            .unwrap(),
+        ),
+    });
+    let forged = compound(
+        &initial,
+        "forged-outer",
+        bank.version,
+        BTreeMap::from([(name('m'), Some(changed))]),
+        steps,
+    );
+    let before = cells(&store);
+    assert!(store.commit_compound(&forged, None).is_err());
+    assert_eq!(cells(&store), before);
+    store.commit_compound(&good, None).unwrap();
+    store.validate().unwrap();
+    let mut forged = serde_json::to_value(&good).unwrap();
+    forged["command"]["transaction"]["inputs"]["m"]["program"]["instructions"][0]["count"] =
+        0.into();
+    store
+        .connection
+        .execute(
+            "UPDATE history SET request=?1",
+            [serde_json::to_string(&forged).unwrap()],
+        )
+        .unwrap();
+    assert!(store.validate().is_err());
+    assert!(store.checkpoint().is_err());
+    drop(store);
+    assert!(ProjectStore::open(&path, crate::AccessMode::ReadOnly).is_err());
+}

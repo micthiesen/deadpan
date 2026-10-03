@@ -309,14 +309,26 @@ fn execute(
         return Err(invalid("expected compound"));
     };
     for value in transaction.inputs().values().flatten() {
-        let captured = read_capture_before(connection, value.revision(), admitted)?;
-        crate::registers::validate_value_at(connection, value, current.project_id(), &captured)?;
+        if let Some(revision) = value.capture_revision() {
+            let captured = read_capture_before(connection, revision, admitted)?;
+            crate::registers::validate_value_at(
+                connection,
+                value,
+                current.project_id(),
+                &captured,
+            )?;
+        } else {
+            crate::registers::validate_value(connection, value, current.project_id())?;
+        }
     }
     let mut capture_states = BTreeSet::new();
     for step in transaction.steps() {
         match step {
             ResolvedStep::Yank { value, .. } => {
-                capture_states.insert(value.revision().clone());
+                let revision = value
+                    .capture_revision()
+                    .ok_or_else(|| invalid("macros cannot be captured by Yank"))?;
+                capture_states.insert(revision.clone());
             }
             ResolvedStep::Cut { slice, .. } => {
                 capture_states.insert(slice.revision_id().clone());

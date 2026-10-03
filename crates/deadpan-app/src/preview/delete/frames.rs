@@ -51,7 +51,7 @@ impl FrameTarget {
 }
 
 impl DeadpanApp {
-    fn frame_delete_blocked(&self) -> Option<&'static str> {
+    pub(in crate::preview) fn frame_delete_blocked(&self) -> Option<&'static str> {
         if self.close_pending || self.dialogs.is_open() || self.render.blocking() || self.help_open
         {
             Some("Finish the current dialog or help before cutting frames.")

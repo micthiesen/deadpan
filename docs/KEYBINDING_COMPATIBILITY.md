@@ -71,6 +71,29 @@ The production audit enumerates the new family with the existing compiled paths.
 See [session register semantics](NAMED_REGISTERS.md). Strict logical provenance
 and physical layout/IME qualification remain open.
 
+## Semantic macros
+
+Normal mode adds configurable `macro.record` (`q` plus a letter) and
+`macro.execute` (`@` plus a letter). Recording accepts no count; execution
+accepts a positive count. While recording, the compiled record prefix stops
+and saves. Names are case-insensitive a–z. Native controls protect macro
+execution, while text and IME own all input before macro routing.
+
+Logical `@` is admitted only with the pressed key's immediate native text
+companion. Shift+2 alone does not prove `@` in logical mode. Physical mode
+explicitly uses that position. The expanded production audit covers both
+recording states and paired logical text, including translated identities,
+counts, Visual selection, text/IME and all existing modal routers. Live-layout
+qualification remains separate from event replay.
+
+The macro qualification passes 487,568 production routing cases against 62
+Kestrel globals, including both recording states. The live source and retained
+fixture digest match at
+`368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2`.
+Native Shift+2 delivery produced the visible logical `@` prefix and executed a
+saved Macro on the current macOS layout. See
+[evidence and limits](qualification/semantic-macros-2026-10-02.md).
+
 ## Frame cuts
 
 Plain `x` and a preceding positive count route one `DeleteFrames` intent.

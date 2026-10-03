@@ -36,6 +36,7 @@ pub(crate) mod harness;
 mod help_scroll;
 mod inspector;
 mod key_labels;
+mod macros;
 mod marks;
 mod moment;
 mod playback;
@@ -167,6 +168,9 @@ pub struct DeadpanApp {
     register_command_cancelled: bool,
     delete_command_target: Option<Result<delete::CommandTarget, String>>,
     frame_delete_command_target: Option<Result<delete::FrameTarget, String>>,
+    macros: macros::State,
+    macro_prefix_target: Option<Result<macros::Capture, String>>,
+    macro_command_target: Option<Result<macros::Capture, String>>,
     marks: marks::State,
     sequence_cursor: u64,
     source_search: String,
@@ -302,6 +306,9 @@ impl DeadpanApp {
             register_command_cancelled: false,
             delete_command_target: None,
             frame_delete_command_target: None,
+            macros: macros::State::default(),
+            macro_prefix_target: None,
+            macro_command_target: None,
             marks: marks::State::default(),
             sequence_cursor: 0,
             source_search: String::new(),
@@ -358,6 +365,9 @@ impl DeadpanApp {
     }
 
     fn submit_now(&mut self, request: ProjectRequest) -> bool {
+        if !self.macro_request_allowed(&request) {
+            return false;
+        }
         self.cancel_camera();
         self.stop_playback();
         self.bindings.clear();
@@ -569,6 +579,7 @@ impl DeadpanApp {
         #[cfg(not(feature = "ui-harness"))]
         let update = self.service.take_update();
         if let Some(mut update) = update {
+            self.prepare_macro_update(&mut update);
             if let Some(saved) = &update.marks.saved
                 && saved.needs_refresh(update.workspace.as_deref())
                 && let Some(warning) = &saved.refresh_error
@@ -658,6 +669,10 @@ impl DeadpanApp {
             self.import = update.import;
             if old_session != new_session {
                 self.render_session_changed();
+                self.macros = macros::State::default();
+                self.bindings.set_macro_recording(false);
+                self.macro_prefix_target = None;
+                self.macro_command_target = None;
                 self.marks = marks::State::default();
                 self.trim_prefix_target = None;
                 self.trim_command_target = None;
@@ -861,7 +876,9 @@ impl DeadpanApp {
             }
             self.receive_original_copy(update.captured_original, unrefreshed_commit);
             self.receive_copied(update.captured_slice, unrefreshed_commit);
+            self.receive_macro_cut(update.cut_slice.as_ref(), update.saved_cut.as_ref());
             self.receive_cut(update.cut_slice);
+            self.receive_macro(update.macros, update.saved_macro);
             self.receive_marks(update.marks, context);
             // A service publication can replace the captured head before a
             // stopped decode is polled below. Revoke that proposal now, not
@@ -1239,6 +1256,8 @@ impl DeadpanApp {
         self.register_command_cancelled = false;
         self.delete_command_target = Some(self.capture_delete_target());
         self.frame_delete_command_target = Some(self.capture_frame_delete_target());
+        self.macro_command_target = Some(self.capture_macro_target());
+        self.macro_prefix_target = None;
         self.gain_command_target = Some(self.capture_gain_target());
         self.slip_command_target = Some(self.capture_slip_target());
         // Capture success or absence before pausing delivery or changing focus.
@@ -1390,6 +1409,20 @@ impl DeadpanApp {
     }
 
     fn action(&mut self, action: Action, context: &egui::Context) {
+        if !self.macro_action_allowed(action) {
+            return;
+        }
+        if matches!(
+            action,
+            Action::MacroRecord(_)
+                | Action::MacroExecute { .. }
+                | Action::MacroStop
+                | Action::MacroCancel
+        ) {
+            let target = self.macro_prefix_target.take();
+            self.macro_action(action, target);
+            return;
+        }
         if self.trim.is_some() {
             self.error = Some("Finish or cancel Trim before other editor commands.".into());
             return;
@@ -1511,6 +1544,10 @@ impl DeadpanApp {
             self.cancel_camera();
         }
         match action {
+            Action::MacroRecord(_)
+            | Action::MacroExecute { .. }
+            | Action::MacroStop
+            | Action::MacroCancel => unreachable!("macros handle their captured targets first"),
             Action::Render => unreachable!("Render handles previews before ordinary actions"),
             Action::Trim => {
                 unreachable!("Trim handles its captured target before ordinary actions")
@@ -1604,6 +1641,7 @@ impl DeadpanApp {
                     self.select_at_cursor();
                 }
                 self.request_picture(false);
+                self.record_macro_motion(forward, count);
             }
             Action::First | Action::Last => {
                 let end = action == Action::Last;
@@ -1706,6 +1744,9 @@ impl DeadpanApp {
                 self.bindings.clear();
             }
             Action::Escape => {
+                if self.macros.recording() {
+                    self.cancel_macro_recording();
+                }
                 self.cancel_register_choice();
                 if !self.sound_focused() {
                     self.moment.cancel();
@@ -1730,6 +1771,8 @@ impl DeadpanApp {
     }
 
     fn keyboard(&mut self, context: &egui::Context) -> Option<(TextAction, bool)> {
+        self.reconcile_macro_recording();
+        self.bindings.set_macro_recording(self.macros.recording());
         // The field can close before its opener is released. Keep ownership
         // through that transition and filter before any modal early return.
         let mut events = self
@@ -1763,6 +1806,9 @@ impl DeadpanApp {
         context.input_mut(|input| input.events.clone_from(&events));
         if !self.bindings.trim_pending() {
             self.trim_prefix_target = None;
+        }
+        if !self.bindings.macro_pending() {
+            self.macro_prefix_target = None;
         }
         if self.trim.is_some() {
             self.trim_keyboard(context);
@@ -1852,6 +1898,7 @@ impl DeadpanApp {
                 self.cancel_register_choice();
                 self.bindings.clear();
                 self.trim_prefix_target = None;
+                self.macro_prefix_target = None;
                 self.marks.prefix = None;
                 continue;
             }
@@ -1880,6 +1927,9 @@ impl DeadpanApp {
                 }
                 let focused = text_input_active(context, self.command_open);
                 let ime = self.ime_composing || ime_event;
+                // egui has no Key::At. Only this key's immediate native text
+                // companion proves the logical character on the current layout.
+                let logical_text = matches!(events.as_slice().first(), Some(egui::Event::Text(text)) if text == "@").then_some("@");
                 if self.camera.is_some() && !self.sound_focused() {
                     match camera::dispatch_key(
                         key,
@@ -1952,12 +2002,15 @@ impl DeadpanApp {
                     continue; // Preserve egui/AccessKit activation of a focused control.
                 }
                 if native_control_focused(context)
-                    && self.bindings.native_control_owns_cut_event(
-                        key,
-                        physical_key,
-                        modifiers,
-                        self.routed_edit_selection(),
-                    )
+                    && self
+                        .bindings
+                        .native_control_owns_cut_event_with_logical_text(
+                            key,
+                            physical_key,
+                            modifiers,
+                            self.routed_edit_selection(),
+                            logical_text,
+                        )
                 {
                     self.bindings.clear();
                     continue;
@@ -1979,11 +2032,12 @@ impl DeadpanApp {
                 }
                 let before = self.bindings.pending();
                 let trim_pending = self.bindings.trim_pending();
+                let macro_pending = self.bindings.macro_pending();
                 let mark_prefix = self.bindings.mark_prefix();
                 // Command mode remains text-only until the end-of-frame blur
                 // handling closes it, even if a click has already moved focus.
                 let selection = self.routed_edit_selection();
-                let action = self.bindings.route_event(
+                let action = self.bindings.route_event_with_logical_text(
                     key,
                     physical_key,
                     modifiers,
@@ -1992,7 +2046,17 @@ impl DeadpanApp {
                     repeat,
                     true,
                     selection,
+                    logical_text,
                 );
+                if !macro_pending
+                    && (self.bindings.macro_pending()
+                        || matches!(
+                            action,
+                            Some(Action::MacroRecord(_) | Action::MacroExecute { .. })
+                        ))
+                {
+                    self.macro_prefix_target = Some(self.capture_macro_target());
+                }
                 if !trim_pending && (self.bindings.trim_pending() || action == Some(Action::Trim)) {
                     // Capture at the first Trim ancestor, or immediately before
                     // a direct binding. An absent target stays absent throughout
@@ -2016,6 +2080,7 @@ impl DeadpanApp {
                     self.action(action, context);
                     if let Some(bindings) = motion {
                         self.bindings = bindings;
+                        self.bindings.set_macro_recording(self.macros.recording());
                     }
                     let entered_text = (action == Action::Command && self.command_open)
                         || (action == Action::Search
@@ -2057,6 +2122,9 @@ impl DeadpanApp {
                 if !self.bindings.trim_pending() {
                     self.trim_prefix_target = None;
                 }
+                if !self.bindings.macro_pending() {
+                    self.macro_prefix_target = None;
+                }
                 if mark_prefix.is_none() && self.bindings.mark_prefix().is_some() {
                     self.begin_mark_prefix();
                 } else if self.bindings.mark_prefix().is_none() {
@@ -2085,10 +2153,14 @@ impl DeadpanApp {
             });
         let delete_target = self.delete_command_target.take();
         let frame_delete_target = self.frame_delete_command_target.take();
+        let macro_target = self.macro_command_target.take();
         let mark_target = self.marks.command.take();
         self.bindings.clear();
         self.command_open = false;
         self.command_focus_pending = false;
+        if !self.macro_command_allowed(&command) {
+            return;
+        }
         if register_cancelled
             && matches!(
                 command,
@@ -2166,6 +2238,12 @@ impl DeadpanApp {
             }
         }
         match command {
+            Ok(navigation::command::Entry::Action(
+                action @ (Action::MacroRecord(_)
+                | Action::MacroExecute { .. }
+                | Action::MacroStop
+                | Action::MacroCancel),
+            )) => self.macro_action(action, macro_target),
             Ok(navigation::command::Entry::Action(Action::CopyMoment)) => {
                 self.copied
                     .select(copy_register.map_or('"', |(_, name)| name))
@@ -2534,6 +2612,11 @@ impl DeadpanApp {
                 if let Some(label) = self.register_status() {
                     ui.colored_label(style::LAVENDER, label);
                 }
+                if let Some(label) = self.macros.label() {
+                    ui.colored_label(style::CURSOR, label);
+                    style::key_hint(ui, &self.editor_key(EditorKey::MacroRecord), "save macro");
+                    style::key_hint(ui, "Esc", "cancel recording");
+                }
                 if !self.command_open && !self.sound_focused() && self.pane != Pane::Sounds && !self.event_focused()
                     && ui.add(egui::Button::new(format!("Marks  {}", self.editor_pair(EditorKey::MarkSet, EditorKey::MarkJump, " / "))).small().wrap()).on_hover_text(format!("{} + letter saves this position; {} + letter returns. Browse with :marks.", self.editor_key(EditorKey::MarkSet), self.editor_key(EditorKey::MarkJump))).clicked()
                 {
@@ -2577,7 +2660,13 @@ impl DeadpanApp {
                     let clock = if self.sound_focused() { format!("Sound {}", playback::sound_time(self.sound_cursor)) } else if self.view == View::Source { format!("Original boundary {}/{}", self.source_cursor, self.source_length()) } else { self.scope_clock_label() };
                     ui.label(egui::RichText::new(clock).monospace().color(style::CURSOR));
                     let mut hints = key_labels::Hints::new();
-                    if self.sound_focused() {
+                    if self.macros.recording() {
+                        self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " / ", "record frame motion");
+                        self.add_editor_hint(&mut hints, EditorKey::CutFrames, "record frame cut");
+                        self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: record call");
+                        self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "save macro");
+                        hints.push(("Esc".into(), "cancel recording".into()));
+                    } else if self.sound_focused() {
                         self.add_editor_pair_hint(&mut hints, EditorKey::BeatNext, EditorKey::BeatPrevious, " ", "sound");
                         self.add_editor_hint(&mut hints, EditorKey::Playback, "play / pause");
                         self.add_editor_hint(&mut hints, EditorKey::Audition, "loop sound");
@@ -2607,6 +2696,10 @@ impl DeadpanApp {
                             navigation::EditSelection::Range => self.add_editor_hint(&mut hints, EditorKey::CutRange, "cut range"),
                             navigation::EditSelection::Empty => self.add_editor_hint(&mut hints, EditorKey::CutRange, "empty range"),
                             navigation::EditSelection::None => {
+                                if self.pane != Pane::Sources {
+                                    self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "+ letter: record macro");
+                                    self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: run macro");
+                                }
                                 if self.pane != Pane::Sources { self.add_editor_hint(&mut hints, EditorKey::CutFrames, "cut frame"); }
                                 if self.pane != Pane::Sources && let Some(label) = self.repeat_hint() { self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label); }
                                 self.add_editor_hint(&mut hints, EditorKey::CutBeat, "cut beat");
@@ -3492,7 +3585,7 @@ impl DeadpanApp {
         self.help_scroll.show(context, &mut self.help_open, |ui| {
                     ui.label(&keymap_status);
                     ui.label(egui::RichText::new("REGISTERS").strong().color(style::LAVENDER));
-                    help_binding(ui, &format!("{} + letter · :register a", key(EditorKey::RegisterSelect)), "Choose a–z for the next copy, picture cut, paste or :splice. Uppercase chooses the same slot. Named writes also update the default copy. Esc cancels the choice.");
+                    help_binding(ui, &format!("{} + letter · :register a", key(EditorKey::RegisterSelect)), "Choose a–z for the next copy, picture cut, paste or :splice. Uppercase chooses the same slot. Named copies and cuts also update the default copy. Saving a Macro preserves the default copy. Esc cancels the choice.");
                     help_binding(ui, &format!("{} + \" · :register \"", key(EditorKey::RegisterSelect)), "Use the default copy. :registers opens this list. Registers are saved in this project and restored when you reopen it. Copying leaves edit history unchanged; cuts save the deletion and copy together.");
                     if registers.is_empty() {
                         ui.weak("All registers are empty.");
@@ -3500,6 +3593,11 @@ impl DeadpanApp {
                     for (name, content) in &registers {
                         help_binding(ui, &format!("{} + {name}", key(EditorKey::RegisterSelect)), content);
                     }
+                    ui.separator();
+                    ui.label(egui::RichText::new("SEMANTIC MACROS").strong().color(style::LAVENDER));
+                    help_binding(ui, &format!("{} + letter · :record a", key(EditorKey::MacroRecord)), "Record frame motions, frame cuts and named macro calls in the current ordinary Sequence group. Instructions keep requested counts and resolve at each new cursor. Recording performs normal edits; unsupported actions are refused.");
+                    help_binding(ui, &format!("{} · :record-stop", key(EditorKey::MacroRecord)), "While recording, save to that named Macro register. Saving adds no Undo and preserves the default copy. Esc or :record-cancel discards the recording draft and keeps completed edits undoable.");
+                    help_binding(ui, &format!("{} + letter · :macro a 3", key(EditorKey::MacroExecute)), "Run a named Macro, with an optional positive count before its binding. The whole run is one Undo; motion-only runs change only the cursor. Calls use Macro registers; paste uses copies. A failed instruction rolls back the whole run, including register writes. Recursive calls and oversized runs are refused.");
                     ui.separator();
                     ui.label("New starts with your full video. Its Original stays intact while Your edit changes.");
                     ui.label(egui::RichText::new("START & MOVE").strong().color(style::LAVENDER));
@@ -3776,6 +3874,7 @@ impl eframe::App for DeadpanApp {
         if !self.command_focus_pending && close_command_on_blur(&context, &mut self.command_open) {
             self.bindings.clear();
         }
+        self.reconcile_macro_recording();
         if !self.bindings.trim_pending() {
             self.trim_prefix_target = None;
         }

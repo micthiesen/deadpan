@@ -6,17 +6,24 @@ use super::binding_trie::{Binding, Prefix, Trie};
 use super::*;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) struct Stroke(pub Key, pub bool);
+pub(super) enum Stroke {
+    Key(Key, bool),
+    /// Egui has no `@` key identity. Only paired native text proves this symbol.
+    At,
+}
 
 impl Stroke {
     pub fn label(self) -> String {
-        if self == Self(Key::Quote, true) {
+        let Self::Key(key, shift) = self else {
+            return "@".into();
+        };
+        if self == Self::Key(Key::Quote, true) {
             return "\"".into();
         }
-        if let Some(letter) = mark_letter(self.0, self.1) {
+        if let Some(letter) = mark_letter(key, shift) {
             return letter.to_string();
         }
-        let name = match self.0 {
+        let name = match key {
             Key::Comma => ",",
             Key::Period => ".",
             Key::Quote => "'",
@@ -30,9 +37,9 @@ impl Stroke {
             Key::Slash => "/",
             Key::Questionmark => "?",
             Key::Escape => "Esc",
-            _ => self.0.name(),
+            _ => key.name(),
         };
-        if self.1 {
+        if shift {
             format!("Shift+{name}")
         } else {
             name.into()
@@ -76,6 +83,8 @@ pub enum BindingId {
     MarkSet,
     MarkJump,
     RegisterSelect,
+    MacroRecord,
+    MacroExecute,
     Command,
     Search,
     Help,
@@ -85,7 +94,7 @@ pub enum BindingId {
 }
 
 impl BindingId {
-    pub const ALL: [Self; 39] = [
+    pub const ALL: [Self; 41] = [
         Self::FramePrevious,
         Self::FrameNext,
         Self::BeatPrevious,
@@ -119,6 +128,8 @@ impl BindingId {
         Self::MarkSet,
         Self::MarkJump,
         Self::RegisterSelect,
+        Self::MacroRecord,
+        Self::MacroExecute,
         Self::Command,
         Self::Search,
         Self::Help,
@@ -161,6 +172,8 @@ impl BindingId {
             Self::MarkSet => "mark.set",
             Self::MarkJump => "mark.jump",
             Self::RegisterSelect => "register.select",
+            Self::MacroRecord => "macro.record",
+            Self::MacroExecute => "macro.execute",
             Self::Command => "command",
             Self::Search => "search",
             Self::Help => "help",
@@ -190,6 +203,7 @@ enum CountPolicy {
     DeleteBeat,
     Hold,
     Gain,
+    Macro,
     Refuse(&'static str),
 }
 
@@ -220,6 +234,16 @@ impl Rule {
             CountPolicy::Frames => match count {
                 Some(0) => Action::Invalid("A frame cut count must be positive; no edit was made."),
                 value => Action::DeleteFrames(value.unwrap_or(1)),
+            },
+            CountPolicy::Macro => match (self.action, count) {
+                (_, Some(0)) => {
+                    Action::Invalid("A macro count must be positive; no edit was made.")
+                }
+                (Action::MacroExecute { register, .. }, count) => Action::MacroExecute {
+                    register,
+                    count: count.unwrap_or(1),
+                },
+                _ => unreachable!("macro declarations carry a macro execution"),
             },
             CountPolicy::Repeat => match count {
                 Some(0) => Action::Invalid("An edit count must be positive; no edit was made."),
@@ -300,6 +324,8 @@ impl Rule {
             Action::SetMark(_) => I::MarkSet,
             Action::JumpMark(_) => I::MarkJump,
             Action::SelectRegister(_) => I::RegisterSelect,
+            Action::MacroRecord(_) => I::MacroRecord,
+            Action::MacroExecute { .. } => I::MacroExecute,
             Action::Command => I::Command,
             Action::Search => I::Search,
             Action::Help => I::Help,
@@ -315,6 +341,8 @@ impl Rule {
 pub(super) enum PrefixKind {
     Mark(MarkPrefix),
     Register,
+    MacroRecord,
+    MacroExecute,
 }
 
 impl PrefixKind {
@@ -323,6 +351,8 @@ impl PrefixKind {
             BindingId::MarkSet => Some(Self::Mark(MarkPrefix::Set)),
             BindingId::MarkJump => Some(Self::Mark(MarkPrefix::Jump)),
             BindingId::RegisterSelect => Some(Self::Register),
+            BindingId::MacroRecord => Some(Self::MacroRecord),
+            BindingId::MacroExecute => Some(Self::MacroExecute),
             _ => None,
         }
     }
@@ -331,7 +361,13 @@ impl PrefixKind {
         match self {
             Self::Mark(_) => "Use mark commands without a count.",
             Self::Register => "Select a register without a count; put the count after its name.",
+            Self::MacroRecord => "Record a macro without a count.",
+            Self::MacroExecute => "A macro count must be positive; no edit was made.",
         }
+    }
+
+    pub fn allows_count(self, count: Option<u32>) -> bool {
+        self == Self::MacroExecute && count != Some(0)
     }
 
     fn letter_action(self, letter: char) -> Action {
@@ -339,6 +375,11 @@ impl PrefixKind {
             Self::Mark(MarkPrefix::Set) => Action::SetMark(letter),
             Self::Mark(MarkPrefix::Jump) => Action::JumpMark(letter),
             Self::Register => Action::SelectRegister(letter.to_ascii_lowercase()),
+            Self::MacroRecord => Action::MacroRecord(letter.to_ascii_lowercase()),
+            Self::MacroExecute => Action::MacroExecute {
+                register: letter.to_ascii_lowercase(),
+                count: 1,
+            },
         }
     }
 }
@@ -466,8 +507,10 @@ impl Compiled {
         })
     }
     fn stroke_label(&self, stroke: Stroke) -> String {
-        if self.mode == KeyMode::Physical && stroke.0 == Key::Plus {
-            if stroke.1 {
+        if self.mode == KeyMode::Physical
+            && let Stroke::Key(Key::Plus, shift) = stroke
+        {
+            if shift {
                 "Shift+NumpadAdd".into()
             } else {
                 "NumpadAdd".into()
@@ -502,16 +545,18 @@ impl Compiled {
         path: &[Stroke],
         selection: EditSelection,
         count: Option<u32>,
+        recording: bool,
     ) -> Option<String> {
-        self.teaching(path, selection, count, false)
+        self.teaching(path, selection, count, false, recording)
     }
     pub fn next_keys(
         &self,
         path: &[Stroke],
         selection: EditSelection,
         count: Option<u32>,
+        recording: bool,
     ) -> Option<String> {
-        self.teaching(path, selection, count, true)
+        self.teaching(path, selection, count, true, recording)
     }
     fn teaching(
         &self,
@@ -519,6 +564,7 @@ impl Compiled {
         selection: EditSelection,
         count: Option<u32>,
         compact: bool,
+        recording: bool,
     ) -> Option<String> {
         let node = self.map(selection).resolve(path)?;
         if let Some(prefix) = node.prefix() {
@@ -533,12 +579,19 @@ impl Compiled {
             if compact {
                 return Some("a–z / A–Z · Esc".into());
             }
-            let verb = if prefix.value == PrefixKind::Mark(MarkPrefix::Set) {
-                "saves this position"
-            } else {
-                "jumps to that mark"
+            let verb = match prefix.value {
+                PrefixKind::Mark(MarkPrefix::Set) => "saves this position",
+                PrefixKind::Mark(MarkPrefix::Jump) => "jumps to that mark",
+                PrefixKind::Register => unreachable!("register teaching handled above"),
+                PrefixKind::MacroRecord => "records a semantic macro in that named register",
+                PrefixKind::MacroExecute => "executes that named macro",
             };
-            return Some(format!("a–z / A–Z {verb} · Esc cancels"));
+            let repetitions = if prefix.value == PrefixKind::MacroExecute {
+                format!(" {} time(s)", count.unwrap_or(1))
+            } else {
+                String::new()
+            };
+            return Some(format!("a–z / A–Z {verb}{repetitions} · Esc cancels"));
         }
         let mut parts = Vec::new();
         let mut refusal = None;
@@ -557,13 +610,21 @@ impl Compiled {
                 pending.extend(candidate.children().map(|(_, next)| next));
             }
             if available {
-                let short = child.terminal().map_or("…", |binding| {
-                    if count.is_some() && binding.value.id() == BindingId::Hold {
-                        "inserts the counted pause"
-                    } else {
-                        binding.value.short
-                    }
-                });
+                let short = if recording
+                    && child
+                        .prefix()
+                        .is_some_and(|prefix| prefix.value == PrefixKind::MacroRecord)
+                {
+                    "stops macro recording"
+                } else {
+                    child.terminal().map_or("…", |binding| {
+                        if count.is_some() && binding.value.id() == BindingId::Hold {
+                            "inserts the counted pause"
+                        } else {
+                            binding.value.short
+                        }
+                    })
+                };
                 parts.push(if compact {
                     self.stroke_label(*stroke)
                 } else {
@@ -616,7 +677,7 @@ fn compile_mode(definitions: &[Definition], visual: bool) -> Result<EditorTrie, 
                     for shift in [false, true] {
                         let letter = mark_letter(key, shift).expect("ASCII letter");
                         let mut expanded = path.clone();
-                        expanded.push(Stroke(key, shift));
+                        expanded.push(Stroke::Key(key, shift));
                         let mut rule = definition.rule;
                         rule.action = kind.letter_action(letter);
                         bindings.push(Binding {
@@ -628,7 +689,7 @@ fn compile_mode(definitions: &[Definition], visual: bool) -> Result<EditorTrie, 
                 }
                 if kind == PrefixKind::Register {
                     let mut expanded = path.clone();
-                    expanded.push(Stroke(Key::Quote, true));
+                    expanded.push(Stroke::Key(Key::Quote, true));
                     let mut rule = definition.rule;
                     rule.action = Action::SelectRegister('"');
                     bindings.push(Binding {
@@ -641,7 +702,7 @@ fn compile_mode(definitions: &[Definition], visual: bool) -> Result<EditorTrie, 
                 let mut rule = definition.rule;
                 if definition.id == BindingId::Last {
                     rule.interrupt =
-                        definition.overridden || path.as_slice() == [Stroke(Key::G, true)];
+                        definition.overridden || path.as_slice() == [Stroke::Key(Key::G, true)];
                 }
                 bindings.push(Binding {
                     path: path.clone(),
@@ -653,12 +714,15 @@ fn compile_mode(definitions: &[Definition], visual: bool) -> Result<EditorTrie, 
     }
     for binding in &bindings {
         for stroke in &binding.path {
-            let modifiers = if stroke.1 {
+            let Stroke::Key(key, shift) = *stroke else {
+                continue;
+            };
+            let modifiers = if shift {
                 Modifiers::SHIFT
             } else {
                 Modifiers::NONE
             };
-            if keymap_config::reservations::reserved(stroke.0, modifiers) {
+            if keymap_config::reservations::reserved(key, modifiers) {
                 return Err("A command path conflicts with a reserved Kestrel position".into());
             }
         }
@@ -681,10 +745,11 @@ fn compile_mode(definitions: &[Definition], visual: bool) -> Result<EditorTrie, 
 }
 
 fn physical_default(stroke: Stroke) -> Stroke {
-    match stroke.0 {
-        Key::Colon => Stroke(Key::Semicolon, true),
-        Key::Questionmark => Stroke(Key::Slash, true),
-        Key::Plus => Stroke(Key::Equals, true),
+    match stroke {
+        Stroke::At => Stroke::Key(Key::Num2, true),
+        Stroke::Key(Key::Colon, _) => Stroke::Key(Key::Semicolon, true),
+        Stroke::Key(Key::Questionmark, _) => Stroke::Key(Key::Slash, true),
+        Stroke::Key(Key::Plus, _) => Stroke::Key(Key::Equals, true),
         _ => stroke,
     }
 }
@@ -742,7 +807,7 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
         });
     };
     use CountPolicy as C;
-    let plain = |key| Stroke(key, false);
+    let plain = |key| Stroke::Key(key, false);
     for (key, forward) in [
         (Key::H, false),
         (Key::ArrowLeft, false),
@@ -797,7 +862,7 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
         (Key::Slash, false, Action::Search, "search"),
         (Key::Questionmark, false, Action::Help, "keys"),
     ] {
-        add(&[Stroke(key, shift)], action, C::Ignore, short, false);
+        add(&[Stroke::Key(key, shift)], action, C::Ignore, short, false);
     }
     add(
         &[plain(Key::G), plain(Key::G)],
@@ -862,7 +927,7 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
         );
     }
     add(
-        &[Stroke(Key::P, true)],
+        &[Stroke::Key(Key::P, true)],
         Action::PasteMoment { before: true },
         C::Refuse("Paste once, without a count or pending command."),
         "paste before",
@@ -947,7 +1012,7 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
                     MarkPrefix::Jump => Action::JumpMark(letter),
                 };
                 add(
-                    &[plain(key), Stroke(letter_key, shift)],
+                    &[plain(key), Stroke::Key(letter_key, shift)],
                     action,
                     C::Refuse("Use mark commands without a count."),
                     "mark",
@@ -958,10 +1023,28 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
     }
 
     add(
-        &[Stroke(Key::Quote, true), plain(Key::A)],
+        &[Stroke::Key(Key::Quote, true), plain(Key::A)],
         Action::SelectRegister('a'),
         C::Refuse(PrefixKind::Register.count_refusal()),
         "select register",
+        false,
+    );
+
+    add(
+        &[plain(Key::Q), plain(Key::A)],
+        Action::MacroRecord('a'),
+        C::Refuse(PrefixKind::MacroRecord.count_refusal()),
+        "record semantic macro",
+        false,
+    );
+    add(
+        &[Stroke::At, plain(Key::A)],
+        Action::MacroExecute {
+            register: 'a',
+            count: 1,
+        },
+        C::Macro,
+        "execute semantic macro",
         false,
     );
 

@@ -25,6 +25,7 @@ pub enum Value {
         ordinals: Range<u64>,
     },
     Edited(Arc<slice::Captured>),
+    Macro(Arc<deadpan_core::SemanticProgram>),
 }
 
 #[derive(Clone, Debug)]

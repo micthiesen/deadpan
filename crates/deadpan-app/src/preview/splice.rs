@@ -370,7 +370,7 @@ impl DeadpanApp {
             }
             let parent = view.owner.clone();
             let children = view.children.to_vec();
-            let source = copied.source();
+            let source = copied.source()?;
             let range = source.boundaries()?;
             let source_bounds = match copied {
                 copied::Content::Original(copied) => {
@@ -387,6 +387,7 @@ impl DeadpanApp {
                         ..u64::try_from(copied.bounds().end().0)
                             .map_err(|_| "Negative source Out")?
                 }
+                copied::Content::Macro(_) => return Err(copied::MACRO_PASTE_ERROR.into()),
             };
             if (range.start >= range.end && !empty::is_structural(&source))
                 || range.start < source_bounds.start

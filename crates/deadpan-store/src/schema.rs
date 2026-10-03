@@ -3,7 +3,7 @@ use rusqlite::{Connection, limits::Limit};
 use crate::StoreError;
 
 // Storage has operational tables beyond the independently versioned core JSON.
-pub const VERSION: u32 = 54;
+pub const VERSION: u32 = 55;
 pub const APPLICATION_ID: u32 = 0x4450_4e31;
 pub const MAX_DOCUMENT_BYTES: usize = deadpan_core::MAX_DOCUMENT_JSON_BYTES;
 
@@ -22,7 +22,8 @@ pub fn check_version(connection: &Connection) -> Result<(), StoreError> {
         return Err(StoreError::MigrationRequired(version));
     }
     // Development schemas 39..=51 stored core schemas 33 through 42 without a frozen
-    // adapter. The authorized format break rejects them before writable open.
+    // adapter. Schemas 53 and 54 are also unused development formats. These
+    // authorized format breaks reject them before writable open.
     if version != VERSION {
         return Err(StoreError::UnsupportedSchema(version));
     }

@@ -105,6 +105,7 @@ impl DeadpanApp {
                     return;
                 };
                 request.id.request = serial;
+                let recorded_attempt = attempt.clone();
                 let command = match attempt {
                     Some(attempt) => ProjectRequest::CutFrames {
                         capture: request.clone(),
@@ -113,6 +114,7 @@ impl DeadpanApp {
                     None => ProjectRequest::CutEditSlice(request.clone()),
                 };
                 if self.submit(command) {
+                    self.record_macro_cut(&request, recorded_attempt.as_ref());
                     self.copied.expect_cut_to(request);
                     self.message = Some("Saving cut and copy…".into());
                 }

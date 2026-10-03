@@ -11,6 +11,8 @@ mod keymap_config;
 pub use editor_map::BindingId;
 pub mod gain;
 #[cfg(test)]
+mod macro_tests;
+#[cfg(test)]
 mod mark_tests;
 #[cfg(test)]
 mod register_tests;
@@ -105,6 +107,10 @@ pub enum Action {
     RepeatLast,
     CopyMoment,
     SelectRegister(char),
+    MacroRecord(char),
+    MacroStop,
+    MacroCancel,
+    MacroExecute { register: char, count: u32 },
     SetMark(char),
     JumpMark(char),
     DeleteMark(char),
@@ -176,6 +182,7 @@ pub struct Bindings {
     path: Vec<editor_map::Stroke>,
     selection: Option<EditSelection>,
     held: Option<HeldBinding>,
+    macro_recording: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -200,11 +207,35 @@ impl Bindings {
             path: Vec::new(),
             selection: None,
             held: None,
+            macro_recording: false,
         }
     }
 
     pub fn from_json(bytes: &[u8]) -> Result<Self, String> {
         keymap_config::parse(bytes).map(Self::with_map)
+    }
+
+    /// Synchronize native recording mode before routing, including immediately
+    /// after a start or stop in the same input batch.
+    pub fn set_macro_recording(&mut self, recording: bool) {
+        if self.macro_recording != recording {
+            self.clear();
+            self.macro_recording = recording;
+        }
+    }
+
+    /// Capture macro intent from the first configured ancestor, including the
+    /// complete family prefix. A delayed letter must not capture a newer target.
+    pub fn macro_pending(&self) -> bool {
+        matches!(
+            self.family_prefix(),
+            Some(editor_map::PrefixKind::MacroRecord | editor_map::PrefixKind::MacroExecute)
+        ) || [BindingId::MacroRecord, BindingId::MacroExecute]
+            .into_iter()
+            .any(|id| {
+                self.map
+                    .has_descendant(&self.path, self.active_selection(), id)
+            })
     }
 
     pub fn key_mode_label(&self) -> &'static str {
@@ -288,6 +319,7 @@ impl Bindings {
     ) -> bool {
         self.native_control_owns_cut_event(key, Some(key), modifiers, selection)
     }
+    #[cfg(test)]
     pub fn native_control_owns_cut_event(
         &self,
         key: Key,
@@ -295,7 +327,24 @@ impl Bindings {
         modifiers: Modifiers,
         selection: EditSelection,
     ) -> bool {
-        match self.clone().route_event(
+        self.native_control_owns_cut_event_with_logical_text(
+            key,
+            physical_key,
+            modifiers,
+            selection,
+            None,
+        )
+    }
+
+    pub fn native_control_owns_cut_event_with_logical_text(
+        &self,
+        key: Key,
+        physical_key: Option<Key>,
+        modifiers: Modifiers,
+        selection: EditSelection,
+        logical_text: Option<&str>,
+    ) -> bool {
+        match self.clone().route_event_with_logical_text(
             key,
             physical_key,
             modifiers,
@@ -304,8 +353,14 @@ impl Bindings {
             false,
             true,
             selection,
+            logical_text,
         ) {
-            Some(Action::DeleteFrames(_) | Action::DeleteSelection | Action::RepeatLast) => true,
+            Some(
+                Action::DeleteFrames(_)
+                | Action::DeleteSelection
+                | Action::RepeatLast
+                | Action::MacroExecute { .. },
+            ) => true,
             Some(Action::Edit(BeatEdit::Delete)) => selection != EditSelection::None,
             _ => false,
         }
@@ -330,24 +385,31 @@ impl Bindings {
         if self.path.is_empty() && self.count.is_none() {
             return None;
         }
-        self.map
-            .next_keys(&self.path, self.active_selection(), self.count)
+        self.map.next_keys(
+            &self.path,
+            self.active_selection(),
+            self.count,
+            self.macro_recording,
+        )
     }
     pub fn pending_hint(&self) -> Option<String> {
         if self.count_overflow {
             return Some("Count is too large. Esc clears it.".into());
         }
         if !self.path.is_empty() {
-            return self
-                .map
-                .hint(&self.path, self.active_selection(), self.count);
+            return self.map.hint(
+                &self.path,
+                self.active_selection(),
+                self.count,
+                self.macro_recording,
+            );
         }
         self.count.map(|count| {
             if count == 0 { format!("Zero count: {}/{} moves one frame; {} requests zero time; Esc clears it.",
                 self.key_label(BindingId::FramePrevious), self.key_label(BindingId::FrameNext), self.key_label(BindingId::Hold)) }
-            else { format!("Then {}/{} to move, {} to cut frames, {} to repeat, {}/{} for gain, or {} to pause · Esc cancels",
+            else { format!("Then {}/{} to move, {} to cut frames, {} to repeat, {}/{} for gain, {} to pause, or {} + name to execute a macro · Esc cancels",
                 self.key_label(BindingId::FramePrevious), self.key_label(BindingId::FrameNext), self.key_label(BindingId::CutFrames),
-                self.key_label(BindingId::Repeat), self.key_label(BindingId::GainUp), self.key_label(BindingId::GainDown), self.key_label(BindingId::Hold)) }
+                self.key_label(BindingId::Repeat), self.key_label(BindingId::GainUp), self.key_label(BindingId::GainDown), self.key_label(BindingId::Hold), self.key_label(BindingId::MacroExecute)) }
         })
     }
 
@@ -367,15 +429,60 @@ impl Bindings {
         self.route_event(key, Some(key), modifiers, text, ime, false, true, selection)
     }
 
+    #[cfg(test)]
     fn stroke(
         &self,
         key: Key,
         physical_key: Option<Key>,
         modifiers: Modifiers,
     ) -> Option<editor_map::Stroke> {
+        self.stroke_with_logical_text(key, physical_key, modifiers, None)
+    }
+
+    #[cfg(any(test, feature = "ui-harness"))]
+    fn audit_stroke(
+        &mut self,
+        stroke: editor_map::Stroke,
+        selection: EditSelection,
+    ) -> Option<Action> {
+        let (key, modifiers, text) = match stroke {
+            editor_map::Stroke::Key(key, shift) => (
+                key,
+                if shift {
+                    Modifiers::SHIFT
+                } else {
+                    Modifiers::NONE
+                },
+                None,
+            ),
+            editor_map::Stroke::At => (Key::Num2, Modifiers::SHIFT, Some("@")),
+        };
+        self.route_event_with_logical_text(
+            key,
+            Some(key),
+            modifiers,
+            false,
+            false,
+            false,
+            true,
+            selection,
+            text,
+        )
+    }
+
+    fn stroke_with_logical_text(
+        &self,
+        key: Key,
+        physical_key: Option<Key>,
+        modifiers: Modifiers,
+        logical_text: Option<&str>,
+    ) -> Option<editor_map::Stroke> {
         use editor_map::{KeyMode, Stroke};
         if modifiers.ctrl || modifiers.command || modifiers.mac_cmd {
             return None;
+        }
+        if self.map.mode == KeyMode::Logical && logical_text == Some("@") {
+            return Some(Stroke::At);
         }
         let key = if self.map.mode == KeyMode::Physical {
             physical_key?
@@ -388,12 +495,12 @@ impl Bindings {
         if self.map.mode == KeyMode::Logical && keymap_config::logical_symbol(key) {
             // Keep the shipped Option+Plus refusal. Every physical reservation
             // has already been checked before interpreting a layout's symbol.
-            return (!(modifiers.alt && key == Key::Plus)).then_some(Stroke(key, false));
+            return (!(modifiers.alt && key == Key::Plus)).then_some(Stroke::Key(key, false));
         }
         if modifiers.alt {
             return None;
         }
-        Some(Stroke(key, modifiers.shift))
+        Some(Stroke::Key(key, modifiers.shift))
     }
 
     /// Route both presses and releases. Count applies to the first execution;
@@ -410,6 +517,35 @@ impl Bindings {
         repeat: bool,
         pressed: bool,
         selection: EditSelection,
+    ) -> Option<Action> {
+        self.route_event_with_logical_text(
+            key,
+            physical_key,
+            modifiers,
+            text,
+            ime,
+            repeat,
+            pressed,
+            selection,
+            None,
+        )
+    }
+
+    /// `logical_text` must come from the immediate `Event::Text` companion of
+    /// this key event, never a later event, paste or IME commit. It only restores
+    /// egui's missing `@` identity; physical maps continue to use positions.
+    #[allow(clippy::too_many_arguments)]
+    pub fn route_event_with_logical_text(
+        &mut self,
+        key: Key,
+        physical_key: Option<Key>,
+        modifiers: Modifiers,
+        text: bool,
+        ime: bool,
+        repeat: bool,
+        pressed: bool,
+        selection: EditSelection,
+        logical_text: Option<&str>,
     ) -> Option<Action> {
         let identity = physical_key.unwrap_or(key);
         if !pressed {
@@ -440,7 +576,7 @@ impl Bindings {
                 self.clear();
                 return None;
             }
-            let stroke = self.stroke(key, physical_key, modifiers);
+            let stroke = self.stroke_with_logical_text(key, physical_key, modifiers, logical_text);
             return self
                 .held
                 .filter(|held| held.identity == identity && Some(held.stroke) == stroke)
@@ -509,11 +645,30 @@ impl Bindings {
             self.clear();
             return None;
         }
-        let Some(stroke) = self.stroke(key, physical_key, modifiers) else {
+        let Some(stroke) =
+            self.stroke_with_logical_text(key, physical_key, modifiers, logical_text)
+        else {
             self.clear();
             return None;
         };
-        if let Some((_, digit)) = DIGITS.iter().find(|(bound, _)| *bound == stroke.0) {
+        // A shifted physical digit can be a configured position (the shipped
+        // macro path uses Shift+2). Unbound positions retain count behavior.
+        let configured_shifted_digit = self.map.mode == editor_map::KeyMode::Physical
+            && matches!(stroke, editor_map::Stroke::Key(_, true))
+            && self
+                .map
+                .map(self.selection.unwrap_or(selection))
+                .resolve(&{
+                    let mut path = self.path.clone();
+                    path.push(stroke);
+                    path
+                })
+                .is_some();
+        if !configured_shifted_digit
+            && let Some((_, digit)) = DIGITS.iter().find(
+                |(bound, _)| matches!(stroke, editor_map::Stroke::Key(key, _) if key == *bound),
+            )
+        {
             if !self.path.is_empty() {
                 let first_prefix =
                     self.map
@@ -574,10 +729,19 @@ impl Bindings {
         };
         if let Some(prefix) = node.prefix()
             && (self.count.is_some() || self.count_overflow)
+            && !prefix.value.allows_count(self.count)
         {
             let message = prefix.value.count_refusal();
             self.clear();
             return Some(Action::Invalid(message));
+        }
+        if self.macro_recording
+            && node
+                .prefix()
+                .is_some_and(|prefix| prefix.value == editor_map::PrefixKind::MacroRecord)
+        {
+            self.clear();
+            return Some(Action::MacroStop);
         }
         if let Some(binding) = node.terminal() {
             // Root transport/group commands have always ignored pending counts,
@@ -659,7 +823,7 @@ fn mark_letter(key: Key, uppercase: bool) -> Option<char> {
 #[cfg(test)]
 pub fn allows_key_repeat(key: Key, modifiers: Modifiers) -> bool {
     modifiers == Modifiers::NONE
-        && editor_map::rule(&[editor_map::Stroke(key, false)], EditSelection::None)
+        && editor_map::rule(&[editor_map::Stroke::Key(key, false)], EditSelection::None)
             .is_some_and(|rule| rule.repeatable)
 }
 

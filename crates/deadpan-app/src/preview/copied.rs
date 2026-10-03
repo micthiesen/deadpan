@@ -7,11 +7,18 @@ use crate::project::{registers, slice};
 pub(super) enum Content {
     Original(moment::Copied),
     Edited(Arc<slice::Captured>),
+    Macro(Arc<deadpan_core::SemanticProgram>),
 }
+
+pub(super) const MACRO_PASTE_ERROR: &str =
+    "This register contains a macro, which cannot be pasted as copied content.";
 
 impl Content {
     pub fn available_label(&self, workspace: Option<&Workspace>) -> String {
         let label = self.label();
+        if matches!(self, Self::Macro(_)) {
+            return label;
+        }
         if workspace.is_none_or(|workspace| self.check(workspace).is_err()) {
             format!("{label} · unavailable in this revision")
         } else {
@@ -40,11 +47,18 @@ impl Content {
                     range.duration().frames()
                 )
             }
+            Self::Macro(program) => {
+                let count = program.instructions().len();
+                format!(
+                    "Macro · {count} instruction{}",
+                    if count == 1 { "" } else { "s" }
+                )
+            }
         }
     }
 
-    pub fn source(&self) -> crate::project::splice::Source {
-        match self {
+    pub fn source(&self) -> Result<crate::project::splice::Source, String> {
+        Ok(match self {
             Self::Original(copied) => crate::project::splice::Source::Original {
                 asset: copied.identity.asset.clone(),
                 qualification: copied.identity.qualification.clone(),
@@ -54,7 +68,8 @@ impl Content {
                 copied: copied.clone(),
                 range: copied.slice().range(),
             },
-        }
+            Self::Macro(_) => return Err(MACRO_PASTE_ERROR.into()),
+        })
     }
 
     pub fn check(&self, workspace: &Workspace) -> Result<(), String> {
@@ -82,6 +97,7 @@ impl Content {
                     );
                 }
             }
+            Self::Macro(_) => return Err(MACRO_PASTE_ERROR.into()),
         }
         Ok(())
     }
@@ -132,6 +148,10 @@ impl Register {
         self.selected
     }
 
+    pub fn bank_version(&self) -> Option<u64> {
+        self.version
+    }
+
     pub fn clear_selection(&mut self) {
         self.selected = None;
         self.selected_explicit = false;
@@ -176,7 +196,7 @@ impl Register {
     pub fn original(&self) -> Option<&moment::Copied> {
         match self.content.as_ref()? {
             Content::Original(copied) => Some(copied),
-            Content::Edited(_) => None,
+            Content::Edited(_) | Content::Macro(_) => None,
         }
     }
 
@@ -286,6 +306,7 @@ impl Register {
                     ordinals: ordinals.clone(),
                 }),
                 registers::Value::Edited(copied) => Content::Edited(copied.clone()),
+                registers::Value::Macro(program) => Content::Macro(program.clone()),
             };
             if name == '"' {
                 self.content = Some(content);
@@ -384,6 +405,14 @@ impl DeadpanApp {
                 );
                 self.error = None;
                 self.message = Some(match self.copied.selected() {
+                    Some(name)
+                        if matches!(self.copied.selected_content(), Some(Content::Macro(_))) =>
+                    {
+                        format!(
+                            "Register {name} · {label}. {} then {name} runs it. A copy or cut replaces it. Esc cancels.",
+                            self.editor_key(EditorKey::MacroExecute),
+                        )
+                    }
                     Some(name) => format!(
                         "Register {name} · {label}. Next copy, picture cut, paste or :splice uses it. Esc cancels."
                     ),
@@ -399,6 +428,9 @@ impl DeadpanApp {
         let kind = match self.copied.selected_content() {
             Some(Content::Original(_)) => "Original",
             Some(Content::Edited(_)) => "Edit",
+            Some(content @ Content::Macro(_)) => {
+                return Some(format!("Register {name} · {}", content.label()));
+            }
             None => "empty",
         };
         let unavailable = self.copied.selected_content().is_some_and(|content| {
@@ -613,6 +645,105 @@ mod tests {
                 })
                 .collect(),
         }
+    }
+
+    fn macro_program() -> Arc<deadpan_core::SemanticProgram> {
+        Arc::new(
+            deadpan_core::SemanticProgram::new(vec![
+                deadpan_core::SemanticInstruction::MoveFrames {
+                    forward: true,
+                    count: std::num::NonZeroU32::new(3).unwrap(),
+                },
+                deadpan_core::SemanticInstruction::CutFrames {
+                    operation: deadpan_core::FrameCut::new(2).unwrap(),
+                    register: deadpan_core::RegisterName::unnamed(),
+                },
+            ])
+            .unwrap(),
+        )
+    }
+
+    #[test]
+    fn macro_only_bank_has_no_copy_alias_or_media_provenance_and_cannot_be_pasted() {
+        let program = macro_program();
+        let bank = registers::Bank {
+            session: 7,
+            project: ProjectId::new("copy-project").unwrap(),
+            version: 4,
+            entries: std::collections::BTreeMap::from([(
+                'a',
+                registers::Value::Macro(program.clone()),
+            )]),
+        };
+        let mut register = Register {
+            session: Some((bank.session, bank.project.clone())),
+            ..Register::default()
+        };
+        assert_eq!(register.bank_version(), None);
+        register.install_bank(&bank);
+        assert_eq!(register.bank_version(), Some(4));
+        assert_eq!(register.entries().count(), 1);
+        assert!(register.content().is_none());
+        assert!(register.original().is_none());
+        register.select('a').unwrap();
+        let content = register.selected_content().unwrap();
+        assert!(matches!(content, Content::Macro(stored) if Arc::ptr_eq(stored, &program)));
+        assert_eq!(content.label(), "Macro · 2 instructions");
+        assert_eq!(content.available_label(None), "Macro · 2 instructions");
+        assert_eq!(content.source().unwrap_err(), MACRO_PASTE_ERROR);
+        register.reconcile(None);
+        assert_eq!(register.bank_version(), None);
+        assert_eq!(register.entries().count(), 0);
+    }
+
+    #[test]
+    fn macro_replaces_named_copy_without_changing_default_and_newer_copy_replaces_macro() {
+        let mut register = Register {
+            session: Some((7, ProjectId::new("copy-project").unwrap())),
+            ..Register::default()
+        };
+        register.install_bank(&bank(1, 2..8));
+        register.select('a').unwrap();
+        let mut macros = bank(2, 2..8);
+        macros
+            .entries
+            .insert('a', registers::Value::Macro(macro_program()));
+        register.install_bank(&macros);
+        assert_eq!(register.selected(), Some('a'));
+        assert_eq!(register.original().unwrap().ordinals, 2..8);
+        assert!(matches!(
+            register.selected_content(),
+            Some(Content::Macro(_))
+        ));
+        assert_eq!(register.bank_version(), Some(2));
+        register.install_bank(&bank(3, 12..18));
+        assert!(
+            matches!(register.selected_content(), Some(Content::Original(copied)) if copied.ordinals == (12..18))
+        );
+        assert_eq!(register.original().unwrap().ordinals, 12..18);
+        register.install_bank(&macros);
+        assert_eq!(register.bank_version(), Some(3));
+        assert!(matches!(
+            register.selected_content(),
+            Some(Content::Original(_))
+        ));
+    }
+
+    #[test]
+    fn typed_macro_is_never_returned_as_an_original_copy() {
+        let register = Register {
+            content: Some(Content::Macro(macro_program())),
+            ..Register::default()
+        };
+        assert!(register.original().is_none());
+        assert_eq!(
+            register.content().unwrap().source().unwrap_err(),
+            MACRO_PASTE_ERROR
+        );
+        let source = Content::Original(original()).source().unwrap();
+        assert!(
+            matches!(source, crate::project::splice::Source::Original { ordinals, .. } if ordinals == (2..8))
+        );
     }
 
     #[test]

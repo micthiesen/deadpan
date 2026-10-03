@@ -1,13 +1,14 @@
-//! Project-owned copies, independent of the timeline's undo cursor.
+//! Project-owned copies and macros, independent of the timeline's undo cursor.
 //!
-//! Slots refer to canonical, content-addressed values. A named write also writes
-//! the unnamed slot. A cut and both slot writes share the timeline transaction.
+//! Slots refer to canonical, content-addressed values. A named copy also writes
+//! the unnamed slot; macros replace only their named slot. A cut and both copy
+//! writes share the timeline transaction.
 
 use std::{collections::BTreeMap, io::Write, ops::Range, sync::Arc};
 
 use deadpan_core::{
     AssetId, CapturedEditSlice, Command, CommandRequest, ProjectDocument, ProjectId, RevisionId,
-    SliceCaptureSelection, SourceQualificationId,
+    SemanticProgram, SliceCaptureSelection, SourceQualificationId,
 };
 use rusqlite::{Connection, params};
 use serde::{Deserialize, Serialize};
@@ -18,6 +19,8 @@ use crate::{CommitOutcome, ProjectStore, StoreError, generation::RelevancePlan};
 /// Total canonical bytes retained by distinct register values, including metadata.
 pub const MAX_REGISTER_BYTES: usize = 64 * 1024 * 1024;
 const MAX_SLOTS: i64 = 27;
+// The fixed RegisterValue envelope adds fewer than 64 canonical bytes.
+const MAX_MACRO_REGISTER_BYTES: usize = deadpan_core::MAX_SEMANTIC_PROGRAM_BYTES + 64;
 
 pub use deadpan_core::{RegisterName, RegisterValue};
 
@@ -46,7 +49,8 @@ impl ProjectStore {
         read_bank(&transaction)
     }
 
-    /// Copy without creating a timeline revision or changing Undo/Redo.
+    /// Save a typed register without creating a timeline revision or changing Undo/Redo.
+    /// Copies update the unnamed alias; macros require a named slot and preserve it.
     pub fn save_register(
         &mut self,
         expected_project: &ProjectId,
@@ -71,6 +75,43 @@ impl ProjectStore {
         let bank = write_register(&transaction, name, value, current.project_id())?;
         transaction.commit()?;
         Ok(bank)
+    }
+
+    /// Replace only one named macro, binding the complete entry workspace and bank.
+    /// Saving a macro leaves copied contents, timeline history and Redo intact.
+    pub fn save_macro(
+        &mut self,
+        expected_project: &ProjectId,
+        expected_revision: &RevisionId,
+        expected_bank_version: u64,
+        name: RegisterName,
+        program: Arc<SemanticProgram>,
+    ) -> Result<RegisterBank, StoreError> {
+        self.require_writer()?;
+        let transaction = self
+            .connection
+            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        let current = crate::read_snapshot(&transaction)?;
+        if current.project_id() != expected_project {
+            return Err(invalid("macro belongs to another project"));
+        }
+        if current.revision_id() != expected_revision {
+            return Err(StoreError::RevisionConflict {
+                expected: expected_revision.as_str().into(),
+                current: current.revision_id().as_str().into(),
+            });
+        }
+        let prepared = prepare_bank(&transaction)?;
+        if prepared.bank.version != expected_bank_version {
+            return Err(invalid("register bank version changed"));
+        }
+        let prepared = prepare_writes_from(
+            prepared,
+            &BTreeMap::from([(name, Arc::new(RegisterValue::Macro { program }))]),
+        )?;
+        write_prepared_bank(&transaction, &prepared, current.project_id())?;
+        transaction.commit()?;
+        Ok(prepared.bank)
     }
 
     /// Commit exactly the captured range/child deletion and its durable copy.
@@ -128,7 +169,10 @@ pub(crate) fn create_tables(connection: &Connection) -> Result<(), StoreError> {
             capture_revision TEXT REFERENCES revisions(id),
             capture_step TEXT REFERENCES transaction_steps(step_revision),
             value TEXT NOT NULL CHECK(json_valid(value)),
-            CHECK ((capture_revision IS NULL) != (capture_step IS NULL))
+            CHECK (coalesce(
+                (json_extract(value,'$.type')='macro' AND capture_revision IS NULL AND capture_step IS NULL)
+                OR (json_extract(value,'$.type') IN ('original','edited') AND ((capture_revision IS NULL) != (capture_step IS NULL))),
+                0))
         ) STRICT;
         CREATE TABLE registers (
             name TEXT PRIMARY KEY CHECK(length(CAST(name AS BLOB))=1 AND (name='\"' OR name GLOB '[a-z]')),
@@ -154,7 +198,7 @@ pub(crate) fn check_stored_sizes(connection: &Connection) -> Result<(), StoreErr
             OR length(CAST(content_id AS BLOB))!=64 OR content_id GLOB '*[^0-9a-f]*')
         OR EXISTS(SELECT 1 FROM register_contents WHERE typeof(id)!='text' OR length(CAST(id AS BLOB))!=64
             OR id GLOB '*[^0-9a-f]*'
-            OR ((capture_revision IS NULL) = (capture_step IS NULL))
+            OR (capture_revision IS NOT NULL AND capture_step IS NOT NULL)
             OR (capture_revision IS NOT NULL AND (typeof(capture_revision)!='text'
                 OR length(CAST(capture_revision AS BLOB)) NOT BETWEEN 1 AND ?2))
             OR (capture_step IS NOT NULL AND (typeof(capture_step)!='text'
@@ -186,12 +230,24 @@ pub(crate) fn check_stored_sizes(connection: &Connection) -> Result<(), StoreErr
             "register contents exceed the aggregate 64 MiB limit",
         ));
     }
+    // Raw type and aggregate bounds precede JSON inspection, including hostile
+    // packages that replace STRICT tables or disable their constraints.
+    let malformed: bool = connection.query_row(
+        "SELECT EXISTS(SELECT 1 FROM register_contents WHERE NOT CASE WHEN json_valid(value) THEN
+            coalesce((json_extract(value,'$.type')='macro' AND capture_revision IS NULL AND capture_step IS NULL AND length(CAST(value AS BLOB))<=?1)
+            OR (json_extract(value,'$.type') IN ('original','edited') AND ((capture_revision IS NULL) != (capture_step IS NULL))),0)
+            ELSE 0 END)", [MAX_MACRO_REGISTER_BYTES as i64], |r| r.get(0),
+    )?;
+    if malformed {
+        return Err(invalid("register type and capture provenance disagree"));
+    }
     let inconsistent: bool = connection.query_row(
         "SELECT EXISTS(SELECT 1 FROM register_contents c WHERE NOT EXISTS(SELECT 1 FROM registers r WHERE r.content_id=c.id))
         OR EXISTS(SELECT 1 FROM registers r WHERE NOT EXISTS(SELECT 1 FROM register_contents c WHERE c.id=r.content_id))
         OR EXISTS(SELECT 1 FROM register_contents c WHERE c.capture_revision IS NOT NULL AND NOT EXISTS(SELECT 1 FROM revisions v WHERE v.id=c.capture_revision))
         OR EXISTS(SELECT 1 FROM register_contents c WHERE c.capture_step IS NOT NULL AND NOT EXISTS(SELECT 1 FROM transaction_steps s WHERE s.step_revision=c.capture_step AND s.document IS NOT NULL))
-        OR (EXISTS(SELECT 1 FROM registers) AND NOT EXISTS(SELECT 1 FROM registers WHERE name='\"'))
+        OR EXISTS(SELECT 1 FROM registers r JOIN register_contents c ON c.id=r.content_id WHERE r.name='\"' AND json_extract(c.value,'$.type')='macro')
+        OR (EXISTS(SELECT 1 FROM register_contents WHERE json_extract(value,'$.type')!='macro') AND NOT EXISTS(SELECT 1 FROM registers WHERE name='\"'))
         OR EXISTS(SELECT 1 FROM register_state WHERE (version=0)!=(NOT EXISTS(SELECT 1 FROM registers)))",
         [], |r| r.get(0),
     )?;
@@ -223,18 +279,21 @@ fn read_bank_contents(
     )?;
     let version = u64::try_from(version).map_err(|_| invalid("invalid register version"))?;
     let mut values = BTreeMap::new();
-    let mut statement = connection
-        .prepare("SELECT id,coalesce(capture_revision,capture_step),value FROM register_contents ORDER BY id")?;
+    let mut statement = connection.prepare(
+        "SELECT id,capture_revision,capture_step,value FROM register_contents ORDER BY id",
+    )?;
     let mut rows = statement.query([])?;
     while let Some(row) = rows.next()? {
         let id: String = row.get(0)?;
-        let revision: String = row.get(1)?;
-        let json: String = row.get(2)?;
+        let revision: Option<String> = row.get(1)?;
+        let step: Option<String> = row.get(2)?;
+        let json: String = row.get(3)?;
         if digest(json.as_bytes()) != id {
             return Err(invalid("register content hash disagrees with its bytes"));
         }
         let value: RegisterValue = serde_json::from_str(&json)?;
-        if value.revision().as_str() != revision || canonical(&value)? != json.as_bytes() {
+        let columns = capture_columns(connection, &value)?;
+        if columns != (revision, step) || canonical(&value)? != json.as_bytes() {
             return Err(invalid(
                 "register content is not canonical or names another capture revision",
             ));
@@ -274,8 +333,16 @@ pub(crate) fn validate_value(
     value: &RegisterValue,
     project: &ProjectId,
 ) -> Result<(), StoreError> {
-    let captured = crate::compound::read_capture(connection, value.revision())?;
-    validate_value_at(connection, value, project, &captured)
+    match value.capture_revision() {
+        Some(revision) => {
+            let captured = crate::compound::read_capture(connection, revision)?;
+            validate_value_at(connection, value, project, &captured)
+        }
+        None => match value {
+            RegisterValue::Macro { program } => Ok(program.validate()?),
+            _ => Err(invalid("copied register has no capture revision")),
+        },
+    }
 }
 
 pub(crate) fn validate_value_at(
@@ -284,7 +351,7 @@ pub(crate) fn validate_value_at(
     project: &ProjectId,
     captured: &ProjectDocument,
 ) -> Result<(), StoreError> {
-    if value.revision() != captured.revision_id() {
+    if value.capture_revision() != Some(captured.revision_id()) {
         return Err(invalid("register capture revision differs from its source"));
     }
     if captured.project_id() != project {
@@ -300,6 +367,7 @@ pub(crate) fn validate_value_at(
         } => {
             validate_original(connection, captured, asset, qualification, ordinals)?;
         }
+        RegisterValue::Macro { .. } => return Err(invalid("macros have no media capture")),
     }
     Ok(())
 }
@@ -374,7 +442,11 @@ fn write_register(
     project: &ProjectId,
 ) -> Result<RegisterBank, StoreError> {
     let value = Arc::new(value);
-    let writes = BTreeMap::from([(RegisterName::unnamed(), Arc::clone(&value)), (name, value)]);
+    let writes = if matches!(value.as_ref(), RegisterValue::Macro { .. }) {
+        BTreeMap::from([(name, value)])
+    } else {
+        BTreeMap::from([(RegisterName::unnamed(), Arc::clone(&value)), (name, value)])
+    };
     let prepared = prepare_writes(connection, &writes)?;
     write_prepared_bank(connection, &prepared, project)?;
     Ok(prepared.bank)
@@ -427,6 +499,12 @@ fn canonical_contents(
         .collect();
     let mut slots = BTreeMap::new();
     for (name, value) in &mut bank.entries {
+        if let RegisterValue::Macro { program } = value.as_ref() {
+            if *name == RegisterName::unnamed() {
+                return Err(invalid("macros require a named register a-z"));
+            }
+            program.validate()?;
+        }
         let id = if let Some((_, id)) = known.iter().find(|(seen, _)| Arc::ptr_eq(seen, value)) {
             id.clone()
         } else {
@@ -478,8 +556,7 @@ pub(crate) fn write_prepared_bank(
         if !content.validated {
             validate_value(connection, &content.value, project)?;
         }
-        let (revision, step) =
-            crate::compound::capture_columns(connection, content.value.revision())?;
+        let (revision, step) = capture_columns(connection, &content.value)?;
         connection.execute(
             "INSERT INTO register_contents(id,capture_revision,capture_step,value) VALUES(?1,?2,?3,?4) ON CONFLICT(id) DO NOTHING",
             params![id, revision, step, std::str::from_utf8(&content.json).map_err(|_| invalid("register JSON is not UTF-8"))?],
@@ -509,6 +586,16 @@ pub(crate) fn write_prepared_bank(
             .map_err(|_| invalid("register versions are exhausted"))?],
     )?;
     check_stored_sizes(connection)
+}
+
+fn capture_columns(
+    connection: &Connection,
+    value: &RegisterValue,
+) -> Result<(Option<String>, Option<String>), StoreError> {
+    match value.capture_revision() {
+        Some(revision) => crate::compound::capture_columns(connection, revision),
+        None => Ok((None, None)),
+    }
 }
 
 fn canonical(value: &RegisterValue) -> Result<Vec<u8>, StoreError> {

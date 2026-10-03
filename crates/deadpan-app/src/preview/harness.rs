@@ -15,6 +15,7 @@ mod edit_latency;
 mod gain;
 mod generated_picture;
 mod keymap;
+mod macros;
 mod marks;
 mod moment;
 mod nested_pause;

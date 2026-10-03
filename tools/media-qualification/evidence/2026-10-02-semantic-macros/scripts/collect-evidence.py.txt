@@ -1,0 +1,78 @@
+import datetime
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import re
+import shutil
+import subprocess
+
+scratch = Path(__file__).parent
+destination = Path("tools/media-qualification/evidence/2026-10-02-semantic-macros")
+final_runs = ["app-default-final", "app-ui-after-review", "core-store-macros-final", "core-wire-final", "clippy-boxed-final", "clippy-default-final", "format-final"]
+final_runs += ["replay-" + scenario + "-final" for scenario in ["macros", "keymap", "dot-repeat", "named-registers", "delete-range"]]
+reports = {name: json.loads((scratch / (name + ".json")).read_text()) for name in final_runs}
+assert all(r["gate_exit_code"] == 0 and r["source_unchanged"] for r in reports.values())
+identities = {r["source_manifest_sha256"] for r in reports.values()}
+assert len(identities) == 1
+final_source = next(iter(identities))
+workspace = json.loads((scratch / "workspace-after-doctor.json").read_text())
+assert workspace["gate_exit_code"] == 0 and workspace["source_unchanged"]
+workspace_sources = json.loads((scratch / ("source-" + workspace["source_manifest_sha256"] + ".json")).read_text())
+native = json.loads((scratch / "native-observations.json").read_text())
+native_sources = json.loads((scratch / ("source-" + native["source_manifest_sha256"] + ".json")).read_text())
+final_sources = json.loads((scratch / ("source-" + final_source + ".json")).read_text())
+changed_after_native = [name for name in sorted(set(native_sources) | set(final_sources)) if native_sources.get(name) != final_sources.get(name)]
+changed_after_workspace = [name for name in sorted(set(workspace_sources) | set(final_sources)) if workspace_sources.get(name) != final_sources.get(name)]
+assert changed_after_workspace == [
+    "crates/deadpan-app/src/project/macros.rs",
+    "crates/deadpan-app/src/project/service/macros.rs",
+    "crates/deadpan-app/src/project/tests/macros.rs",
+    "crates/deadpan-core/src/semantic/planner/tests.rs",
+    "crates/deadpan-store/src/compound/tests.rs",
+    "crates/deadpan-store/src/registers/tests.rs",
+]
+assert changed_after_native == sorted(changed_after_workspace + ["crates/deadpan-cli/src/doctor.rs", "crates/deadpan-cli/tests/project_commands.rs"])
+for folder in ["checks", "replays", "images", "scripts"]:
+    (destination / folder).mkdir(parents=True, exist_ok=True)
+for source in sorted(scratch.glob("*.json")):
+    if source.name.startswith("source-") or "command" in json.loads(source.read_text()):
+        shutil.copyfile(source, destination / "checks" / source.name)
+for source in sorted(scratch.glob("*.log")):
+    (destination / "checks" / (source.name + ".gz")).write_bytes(gzip.compress(source.read_bytes(), mtime=0))
+summary = {"final_source_manifest_sha256": final_source, "workspace_source_manifest_sha256": workspace["source_manifest_sha256"], "changes_after_workspace_check": changed_after_workspace, "changes_after_native_check": changed_after_native, "tests": {}, "replays": []}
+for source in sorted(scratch.glob("*.log")):
+    results = re.findall(r"test result: (\w+)\. (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out", source.read_text())
+    if results:
+        summary["tests"][source.stem] = [dict(zip(["result", "passed", "failed", "ignored", "measured", "filtered"], [row[0], *map(int, row[1:])])) for row in results]
+for source in sorted(scratch.glob("replay-*/report.json")):
+    report = json.loads(source.read_text())
+    assert not report["failed"]
+    name = source.parent.name
+    (destination / "replays" / (name + ".json.gz")).write_bytes(gzip.compress(source.read_bytes(), mtime=0))
+    summary["replays"].append({"name": name, "binary_sha256": report["metadata"]["binary_sha256"], "scenarios": [{"name": s["name"], "checks": len(s["checks"]), "failed_checks": sum(not c["passed"] for c in s["checks"]), "findings": s["findings"], "skipped": s["skipped"]} for s in report["scenarios"]]})
+images = []
+report = json.loads((scratch / "replay-macros-final/report.json").read_text())
+for caption in ["Recording a exposes its empty body and save/cancel keys at 960 by 640", "Recording a contains two frame motions and two completed cuts", "Counted macro a cuts eight frames in one saved edit"]:
+    step = next(s for scenario in report["scenarios"] for s in scenario["steps"] if s["input"] == caption and s.get("screenshot"))
+    name = step["screenshot"]
+    source = scratch / "replay-macros-final" / name
+    shutil.copyfile(source, destination / "images" / name)
+    images.append({"file": name, "caption": step["input"], "viewport_points": step["semantic"]["viewport_points"], "source_report": "replay-macros-final.json.gz", "sha256": hashlib.sha256(source.read_bytes()).hexdigest(), "review": "Root visually inspected the final capture for recording controls, picture, clocks, focus and footer clipping."})
+(destination / "images/sources.json").write_text(json.dumps(images, indent=2) + "\n")
+commands = {"os": ["sw_vers"], "rust": ["rustc", "--version", "--verbose"], "hardware": ["sysctl", "-n", "machdep.cpu.brand_string", "hw.memsize"]}
+host = {key: {"command": command, "output": subprocess.check_output(command, text=True)} for key, command in commands.items()}
+host["ffmpeg_prefix"] = "/tmp/deadpan-ui-ffmpeg/prefix"
+(destination / "host.json").write_text(json.dumps(host, indent=2) + "\n")
+inventory = subprocess.check_output(["ps", "-axo", "pid=,comm="], text=True)
+apps = [line.strip() for line in inventory.splitlines() if Path(line.strip().split(maxsplit=1)[-1]).name in {"deadpan-app", "Deadpan", "Deadpan Cursor QA"}]
+assert not apps, apps
+(destination / "cleanup.json").write_text(json.dumps({"observed_utc": datetime.datetime.now(datetime.timezone.utc).isoformat(), "command": ["ps", "-axo", "pid=,comm="], "matching_app_processes": apps, "ordinary_native_window_opened": True, "native_test_exited": True, "replays_exited": True}, indent=2) + "\n")
+shutil.copyfile(scratch / "native-observations.json", destination / "native-observations.json")
+(destination / "summary.json").write_text(json.dumps(summary, indent=2) + "\n")
+for source in [Path("/tmp/deadpan-original-layout-20261002/run-check.py"), scratch / "final-checks.py", scratch / "review-checks.py", Path(__file__)]:
+    shutil.copyfile(source, destination / "scripts" / (source.name + ".txt"))
+(destination / "review.txt").write_text("Peer review: semantic_macro_core reviewed native recording/receipt/cursor state and the separately authored service/store boundary. Found delayed cursor ownership could return after pointer navigation away and back. Root fixed sticky revocation at each observed context change and added a deferred-service replay witness. No remaining findings.\nPeer review: semantic_macro_store reviewed the separately authored core planner, staged bank reads, counted body freezing, recursion/depth/fuel, document/capture budgets, identities, Compound equivalence and typed decoding. No concrete findings. Historical identity and media admission remain host responsibilities.\nPeer review: semantic_macro_keys reviewed core/store/service tests it did not author. Root strengthened full-document Undo/Redo comparisons and size-limit-specific errors in response to its two coverage findings.\nFresh reviewer spawn attempts hit the harness thread limit; these were cross-layer peer reviews, not fresh-context full-branch reviews. Workers ran no Cargo or native processes. Root reviewed the complete diff, ran verification and inspected three final rendered images plus a native screenshot.\n")
+files = sorted(p for p in destination.rglob("*") if p.is_file() and p.name != "SHA256SUMS")
+(destination / "SHA256SUMS").write_text("".join(f"{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.relative_to(destination)}\n" for p in files))
+print(json.dumps({"destination": str(destination), "files": len(files), "bytes": sum(p.stat().st_size for p in files), "source": final_source}))

@@ -369,6 +369,7 @@ impl DeadpanApp {
                         destination,
                     })
                 }
+                copied::Content::Macro(_) => return Err(copied::MACRO_PASTE_ERROR.into()),
             })
         })();
         match result {
@@ -453,8 +454,16 @@ impl DeadpanApp {
         {
             let replacing = self.selected_edit_range().is_some();
             let label = copied.label();
+            let is_macro = matches!(copied, copied::Content::Macro(_));
             ui.horizontal_wrapped(|ui| {
                 ui.colored_label(style::LAVENDER, label);
+                if is_macro {
+                    ui.weak(format!(
+                        "Run with {} then the register name.",
+                        self.editor_key(EditorKey::MacroExecute)
+                    ));
+                    return;
+                }
                 if ui
                     .add_enabled(
                         !self.service.is_busy(),
@@ -541,7 +550,11 @@ impl DeadpanApp {
                     ui.weak("Copies are saved in this project. Copying does not change Your edit or its history.");
                     if let Some(copied) = self.copied.selected_content() {
                         ui.colored_label(style::LAVENDER, copied.label());
-                        ui.weak(format!("Return to Your edit, choose a beat, then {} after or {} before. One paste, one undo.", self.editor_key(EditorKey::PasteAfter), self.editor_key(EditorKey::PasteBefore)));
+                        if matches!(copied, copied::Content::Macro(_)) {
+                            ui.weak(format!("Return to Your edit, then {} and the register name to run the macro.", self.editor_key(EditorKey::MacroExecute)));
+                        } else {
+                            ui.weak(format!("Return to Your edit, choose a beat, then {} after or {} before. One paste, one undo.", self.editor_key(EditorKey::PasteAfter), self.editor_key(EditorKey::PasteBefore)));
+                        }
                         if ui.button("Your edit  :sequence").clicked() {
                             self.view.set(View::Sequence, &mut self.message);
                             self.pane = Pane::Sequence;

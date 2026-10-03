@@ -1,0 +1,26 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-core",
+    "-p",
+    "deadpan-store",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "deadpan-app/ui-harness",
+    "--no-run"
+  ],
+  "started": "2026-10-03T00:38:57.513296+00:00",
+  "base_commit": "1c1c09802d2f963e2edce18e74a33447fabb23c4",
+  "diff_sha256": "3152ccbd1a0bdcba55fb3468277ad371268c3f7134cb7292ca6cba7a2b5a174d",
+  "source_manifest_sha256": "3b3b96239e27c6848c630da05c2749eca543eb520f3df03a438c36a34ca7ad58",
+  "pid": 34700,
+  "exit_code": 101,
+  "seconds": 449.89332200028,
+  "source_manifest_after_sha256": "3b3b96239e27c6848c630da05c2749eca543eb520f3df03a438c36a34ca7ad58",
+  "source_unchanged": true,
+  "gate_exit_code": 101
+}

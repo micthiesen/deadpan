@@ -19,6 +19,30 @@ test instances after testing instead of leaving them idle. The previously
 running `dev.thiesen.deadpan.cursor-qa` instance has been quit, and the native
 app inventory confirmed no Deadpan app remained running.
 
+## Semantic macros, current implementation
+
+[Semantic macros](../SEMANTIC_MACROS.md) record frame motions, frame cuts and
+named calls with `q`/`@` and command aliases. Preserve requested counts and
+record asynchronous operations only after their exact successful receipt.
+Prefix and command entry capture session, revision, bank version, ordinary
+Sequence scope and cursor, including absence. Reject unsupported recording
+actions and stop drafts when their context changes.
+
+Schema 55 adds Macro contents without media capture provenance. Save named
+Macros without touching the unnamed copy, history or redo. A call freezes its
+body at entry; later calls see staged writes. Bound bodies, fuel, depth and
+intermediate document/capture work. Prepare all runtime register contents before
+one Compound commit. Motion-only runs have no authored revision. Retain saved
+receipts before refresh and keep stale views from consuming their cursor.
+Unused schema-54 packages require recreation. Core document schema remains 43.
+
+Additional editing instructions, semantic text/range selectors, temporal
+occurrence contexts, dedicated headless Macro commands and full physical
+layout/IME qualification remain open. Dot-repeat still supports frame cuts
+only, and a macro edit clears an older dot candidate.
+See [qualification and limits](../qualification/semantic-macros-2026-10-02.md)
+for native input observations, peer review, retained failures and final checks.
+
 ## Semantic frame-cut repeat, current implementation
 
 [Semantic repeat](../SEMANTIC_REPEAT.md) adds configurable `edit.repeat-last`,
@@ -33,14 +57,14 @@ cut or preserves it after direct marks and Undo/Redo. Unknown head changes,
 including headless saves with failed refreshes, clear it. Never infer semantic
 success from the visible workspace, pending UI copy or ordinary commit mailbox.
 Versioned snapshots prevent late feedback from restoring an older candidate.
-No schema changes. Macro recording, selectors, call expansion and dot-repeat
+The dot increment made no schema changes. Broader selectors and dot-repeat
 for the remaining edit kinds are still required.
 See [qualification and limits](../qualification/semantic-repeat-2026-10-02.md).
 
 ## Resolved transactions, current implementation
 
 [Compound transactions](../COMPOUND_TRANSACTIONS.md) provide the shared core and
-store execution boundary for future semantic macros. Resolve each leaf against
+store execution boundary used by semantic macros. Resolve each leaf against
 its preceding staged state, supply fresh allocation IDs and freeze chosen
 register inputs and their bank version. One compound saves one net edit and one
 final bank version. Bank-only programs use the dedicated store API and preserve
@@ -54,9 +78,8 @@ aggregate patch through deterministic replay. Undo and register replacement
 cannot discard capture checkpoints. Schema 53 development packages require
 recreation; no migrations are required during this unused development goal.
 
-Macro recording, semantic selector resolution, count/call expansion and
-dot-repeat beyond frame cuts remain required. Expose macro controls only when those layers and
-the native workflow exist.
+Broader semantic selector resolution and dot-repeat beyond frame cuts remain
+required. The Macro workflow above uses this resolved execution boundary.
 See [qualification and limits](../qualification/compound-transactions-2026-10-02.md).
 
 ## Configurable editor paths, current implementation
@@ -74,7 +97,7 @@ The [project register bank](../NAMED_REGISTERS.md) adds `"a` selection,
 with its destination fixed at initiation. New name selection cannot retarget a
 completion. Commands capture names and paste content, including absence, on
 entry. Original and Edited copies save through the service without timeline
-revisions; cuts save deletion and registers atomically. SQLite schema 54 retains
+revisions; cuts save deletion and registers atomically. SQLite schema 55 retains
 at most 64 MiB of unique canonical contents. Preserve all slots across edits,
 Undo and reopen; restore fresh runtime identities and revalidate historical
 provenance. Publish versioned bank snapshots independently of pending UI
@@ -82,7 +105,7 @@ confirmation. Superseded successful saves remain durable, while only matching
 replies consume selection. Retain the latest accepted write until its reply,
 including after newer local refusal, and refuse new placement while unsettled.
 Consume the chosen name on the next copy/picture-cut/paste/placement attempt.
-Macro content/execution and semantic dot-repeat beyond frame cuts remain required.
+Broader Macro instructions and semantic dot-repeat beyond frame cuts remain required.
 Escape and blur cancel both live choice and an open named command;
 project reopen cannot revive its captured name. See
 [persistent-register qualification](../qualification/durable-registers-2026-10-02.md)
@@ -98,7 +121,7 @@ from the compiled map. Held motions retain their resolved action and cannot
 consume a new prefix. Command/Search entry retains the ordered native input
 suffix and suppresses only the held opener. See [the contract](../KEYMAP.md).
 Other mode maps, strict logical provenance, physical layout/IME qualification,
-semantic dot-repeat beyond frame cuts and macros remain required. The keymap increment made no
+semantic dot-repeat beyond frame cuts and broader Macro instructions remain required. The keymap increment made no
 schema changes; registers were introduced in schema 53, followed by schema 54's
 compound step reservations and capture snapshots.
 The [qualification](../qualification/configurable-bindings-2026-10-01.md) records

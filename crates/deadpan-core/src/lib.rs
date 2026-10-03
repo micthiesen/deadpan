@@ -127,7 +127,7 @@ pub use occurrence_edit::{OccurrenceEdit, OccurrenceIdentities};
 pub use picture_context::*;
 pub use register::{RegisterName, RegisterValue};
 pub use repeat_layout::*;
-pub use semantic::FrameCut;
+pub use semantic::*;
 pub use sound_allowance::*;
 pub use sound_events::*;
 pub use sound_route::*;

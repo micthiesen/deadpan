@@ -47,14 +47,16 @@ fn success(arguments: &[&str]) -> Result<Value> {
 fn doctor_reports_hold_audio_document_and_migration_schemas() -> Result {
     let report = success(&["doctor"])?;
     assert_eq!(report["document_schema"], 43);
-    assert_eq!(report["database_schema"], 54);
+    assert_eq!(report["database_schema"], 55);
     let partial = report["partial"].as_array().unwrap();
     for capability in [
         "schema-1-through-38-migration",
         "schema-39-through-51-development-format-refusal",
         "schema-53-development-format-refusal",
+        "schema-54-development-format-refusal",
         "persistent-copy-registers",
         "resolved-compound-transactions",
+        "native-semantic-macros",
         "hold-audio-policy-commands",
         "native-original-audition",
         "selection-loop-audition",

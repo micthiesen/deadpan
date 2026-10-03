@@ -2,8 +2,9 @@
 
 This is the shared execution boundary for a sequence of resolved edits and
 register operations. It supplies atomic history for the semantic macro engine
-required by specification §§6 and 7.4. It does not implement macro recording,
-semantic selectors or count/call expansion. The first supported
+required by specification §§6 and 7.4. The separate [semantic planner and native
+recorder](SEMANTIC_MACROS.md) now supply frame motions, cuts and bounded calls.
+The first supported
 [semantic dot-repeat](SEMANTIC_REPEAT.md) repeats an ordinary frame cut through
 the existing atomic cut path.
 

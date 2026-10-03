@@ -1,5 +1,11 @@
 //! Reusable editing intent, resolved against the host's current selection.
 
+mod planner;
+mod program;
+
+pub use planner::*;
+pub use program::*;
+
 use std::num::NonZeroU32;
 
 use serde::{Deserialize, Serialize};

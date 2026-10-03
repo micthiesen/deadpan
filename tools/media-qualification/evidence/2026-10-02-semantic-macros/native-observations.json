@@ -1,0 +1,111 @@
+{
+  "observed_utc": "2026-10-03T01:09:44.599960+00:00",
+  "binary": "/tmp/deadpan-macros-20261002/Deadpan Macro QA.app/Contents/MacOS/deadpan-app",
+  "binary_sha256": "2e3d290e41a3a9e45bacdeca0750e9952c2efed1022e2c1e865d800016754f08",
+  "source_manifest_sha256": "fa46a2e4af9d5e490edf9e334aa360c2a1c18436e5a333a54536fc3df8c75445",
+  "package": "/tmp/deadpan-macros-20261002/replay-macros-initial/projects/macros/Documents/Deadpan/cfr-bframes.deadpan",
+  "database_schema": 55,
+  "native_input": "CUA App.pressKey on dev.thiesen.deadpan.cursor-qa; macOS native event delivery",
+  "observations": [
+    {
+      "input": [
+        "shift+2"
+      ],
+      "ax": [
+        "PENDING",
+        "@",
+        "a\u2013z / A\u2013Z executes that named macro 1 time(s) \u00b7 Esc cancels"
+      ]
+    },
+    {
+      "input": [
+        "a"
+      ],
+      "ax": [
+        "Ran Macro @a \u00d7 1 \u00b7 one Undo.",
+        "Edit boundary 1 / 116"
+      ]
+    },
+    {
+      "input": [
+        "u",
+        "q",
+        "shift+z",
+        "2",
+        "l"
+      ],
+      "ax": [
+        "RECORDING @z \u00b7 1 instructions",
+        "Edit boundary 3 / 120"
+      ]
+    },
+    {
+      "input": [
+        "x"
+      ],
+      "ax": [
+        "RECORDING @z \u00b7 2 instructions",
+        "Edit boundary 3 / 119",
+        "Cut saved and copied: Edit [3..4) \u00b7 1 f."
+      ]
+    },
+    {
+      "input": [
+        "q"
+      ],
+      "ax": [
+        "Saved Macro @z \u00b7 2 instructions. Use @z to run it."
+      ]
+    },
+    {
+      "input": [
+        "u",
+        "shift+2",
+        "z"
+      ],
+      "ax": [
+        "Ran Macro @z \u00d7 1 \u00b7 one Undo.",
+        "Edit boundary 5 / 119"
+      ]
+    },
+    {
+      "input": [
+        "u"
+      ],
+      "ax": [
+        "Undo saved",
+        "Edit boundary 5 / 120",
+        "Undo disabled"
+      ]
+    }
+  ],
+  "persisted_z": {
+    "type": "macro",
+    "program": {
+      "instructions": [
+        {
+          "type": "move_frames",
+          "forward": true,
+          "count": 2
+        },
+        {
+          "type": "cut_frames",
+          "operation": {
+            "count": 1
+          },
+          "register": "\""
+        }
+      ]
+    }
+  },
+  "macro_capture_columns": [
+    null,
+    null
+  ],
+  "visual_review": "Viewed native app screenshot after Undo: full timeline, exact picture 005, copy [5..6), footer controls and separate clocks visible. Actual scale: 2560x1704 screenshot.",
+  "cleanup": "Initial test process exited 0 via Cmd+Q. A subsequent bound AX observation relaunched an empty window; closed that window via Cmd+Q too. Process inventory had no deadpan-app and CUA filtered app inventory returned [].",
+  "limits": [
+    "This checks the current macOS keyboard delivery, not a full physical layout/IME matrix.",
+    "Workspace test binaries were compiling during native interaction; no latency or performance qualification is claimed."
+  ]
+}

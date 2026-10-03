@@ -6,9 +6,9 @@ Plain `.` repeats the last committed frame cut at the current Edit cursor.
 pressing `.` still requests seven frames. Each repeat is one ordinary atomic
 cut with one Undo entry and a newly captured editable copy.
 
-This is the first implemented semantic edit for DP-06. Other edit kinds,
-semantic text/range selectors, macro recording, Macro register contents and
-bounded macro call expansion remain required. The resolved
+This is the first implemented semantic edit for DP-06. [Semantic macros](SEMANTIC_MACROS.md)
+now record frame motions, frame cuts and named calls. Other edit kinds and
+semantic text/range selectors remain required. The resolved
 [compound transaction boundary](COMPOUND_TRANSACTIONS.md) is separate.
 
 ## Selection and registers

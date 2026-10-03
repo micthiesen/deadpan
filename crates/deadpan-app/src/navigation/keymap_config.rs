@@ -71,15 +71,16 @@ pub(super) fn parse(bytes: &[u8]) -> Result<Arc<Compiled>, String> {
             for token in path {
                 strokes.push(parse_stroke(&token, config.key_mode)?);
             }
-            if strokes
-                .iter()
-                .any(|stroke| DIGITS.iter().any(|(key, _)| *key == stroke.0))
-            {
-                return Err("Digits are reserved for the count grammar at every depth".into());
+            if strokes.iter().any(|stroke| {
+                matches!(stroke, Stroke::Key(key, shift)
+                    if DIGITS.iter().any(|(digit, _)| digit == key)
+                        && !(config.key_mode == KeyMode::Physical && *shift))
+            }) {
+                return Err("Digits are reserved for the count grammar; only shifted physical positions can be bound".into());
             }
             if strokes
                 .iter()
-                .any(|stroke| matches!(stroke.0, Key::Escape | Key::Tab))
+                .any(|stroke| matches!(stroke, Stroke::Key(Key::Escape | Key::Tab, _)))
                 && !id.fixed()
             {
                 return Err("Escape and Tab are fixed native keys at every depth".into());
@@ -99,7 +100,14 @@ fn parse_stroke(token: &str, mode: KeyMode) -> Result<Stroke, String> {
         return Err("Key tokens require 1 to 32 bytes".into());
     }
     if token == "\"" {
-        return Ok(Stroke(Key::Quote, true));
+        return Ok(Stroke::Key(Key::Quote, true));
+    }
+    if token == "@" {
+        return if mode == KeyMode::Logical {
+            Ok(Stroke::At)
+        } else {
+            Err("@ has no egui physical identity; use Shift+2 for that keyboard position".into())
+        };
     }
     let (name, mut shift) = token
         .strip_prefix("Shift+")
@@ -136,7 +144,7 @@ fn parse_stroke(token: &str, mode: KeyMode) -> Result<Stroke, String> {
                 .into(),
         );
     }
-    Ok(Stroke(key, shift))
+    Ok(Stroke::Key(key, shift))
 }
 
 /// These egui identities are symbols, independent of the Shift/Option keys a

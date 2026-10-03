@@ -27,7 +27,7 @@ impl io::Write for Count {
         Ok(())
     }
 }
-pub(super) fn size(value: &impl Serialize, maximum: usize) -> Result<usize, EditError> {
+pub(crate) fn size(value: &impl Serialize, maximum: usize) -> Result<usize, EditError> {
     let mut counter = Count { bytes: 0, maximum };
     serde_json::to_writer(&mut counter, value)
         .map_err(|_| limit("resolved transaction serialized byte limit"))?;
@@ -36,13 +36,14 @@ pub(super) fn size(value: &impl Serialize, maximum: usize) -> Result<usize, Edit
 struct Budget {
     bytes: usize,
     values: usize,
+    maximum: usize,
 }
 impl Budget {
     fn charge<E: Error>(&mut self, bytes: usize) -> Result<(), E> {
         self.bytes = self
             .bytes
             .checked_add(bytes)
-            .filter(|n| *n <= MAX_COMPOUND_WIRE_BYTES)
+            .filter(|n| *n <= self.maximum)
             .ok_or_else(|| E::custom("resolved transaction byte limit"))?;
         self.values = self
             .values
@@ -144,6 +145,7 @@ impl<'de> Visitor<'de> for Read<'_> {
                 collection_limit: match (self.transaction, key.as_str()) {
                     (true, "steps") => Some(super::MAX_COMPOUND_STEPS),
                     (true, "inputs") => Some(27),
+                    (_, "instructions") => Some(crate::MAX_SEMANTIC_PROGRAM_INSTRUCTIONS),
                     _ => None,
                 },
                 refuse: false,
@@ -184,20 +186,28 @@ impl Visitor<'_> for Key<'_> {
     }
 }
 pub(crate) fn read<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Value, D::Error> {
-    read_root(deserializer, false)
+    read_root(deserializer, false, MAX_COMPOUND_WIRE_BYTES)
+}
+pub(crate) fn read_bounded<'de, D: Deserializer<'de>>(
+    deserializer: D,
+    maximum: usize,
+) -> Result<Value, D::Error> {
+    read_root(deserializer, false, maximum)
 }
 pub(super) fn read_transaction<'de, D: Deserializer<'de>>(
     deserializer: D,
 ) -> Result<Value, D::Error> {
-    read_root(deserializer, true)
+    read_root(deserializer, true, MAX_COMPOUND_WIRE_BYTES)
 }
 fn read_root<'de, D: Deserializer<'de>>(
     deserializer: D,
     transaction: bool,
+    maximum: usize,
 ) -> Result<Value, D::Error> {
     let mut budget = Budget {
         bytes: 0,
         values: 0,
+        maximum,
     };
     let value = Read {
         budget: &mut budget,
@@ -207,6 +217,6 @@ fn read_root<'de, D: Deserializer<'de>>(
         transaction,
     }
     .deserialize(deserializer)?;
-    size(&value, MAX_COMPOUND_WIRE_BYTES).map_err(D::Error::custom)?;
+    size(&value, maximum).map_err(D::Error::custom)?;
     Ok(value)
 }

@@ -194,6 +194,7 @@ pub(super) fn restore(store: &ProjectStore, session: u64) -> Result<Arc<Bank>> {
                         child_label,
                     }))
                 }
+                RegisterValue::Macro { program } => Value::Macro(program.clone()),
             };
             restored.push((value, runtime.clone()));
             runtime

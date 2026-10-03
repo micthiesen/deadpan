@@ -5,7 +5,8 @@ use std::{ops::Range, sync::Arc};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    AssetId, CapturedEditSlice, EditError, EditErrorCode, RevisionId, SourceQualificationId,
+    AssetId, CapturedEditSlice, EditError, EditErrorCode, RevisionId, SemanticProgram,
+    SourceQualificationId,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
@@ -49,13 +50,18 @@ pub enum RegisterValue {
     Edited {
         slice: Arc<CapturedEditSlice>,
     },
+    Macro {
+        program: Arc<SemanticProgram>,
+    },
 }
 
 impl RegisterValue {
-    pub fn revision(&self) -> &RevisionId {
+    /// Authored copies retain capture provenance. A semantic program has none.
+    pub fn capture_revision(&self) -> Option<&RevisionId> {
         match self {
-            Self::Original { revision, .. } => revision,
-            Self::Edited { slice } => slice.revision_id(),
+            Self::Original { revision, .. } => Some(revision),
+            Self::Edited { slice } => Some(slice.revision_id()),
+            Self::Macro { .. } => None,
         }
     }
 }
