@@ -1,0 +1,363 @@
+{
+  "base_commit": "025c2a9433b345a3fc2b9d345ed3dfa1e1b35db6",
+  "source_manifest_sha256": "dac6e3c6478d86500322c6e8780e48b70b26bcf285cae3a73f0ae7f6950714d2",
+  "environment": {
+    "hardware": "Apple M5 Max",
+    "memory_bytes": 137438953472,
+    "macos": "26.5.2 (25F84)",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "ffmpeg_prefix": "/tmp/deadpan-ui-ffmpeg/prefix",
+    "dependencies": "locked"
+  },
+  "checks": [
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-10-03T23:41:19.236648+00:00",
+      "base_commit": "025c2a9433b345a3fc2b9d345ed3dfa1e1b35db6",
+      "diff_sha256": "be69fffc2e9041bfaf3e986d1f6e4ea2ac6fbe37ee9b33e5e6e8ebc69a7adb23",
+      "source_manifest_sha256": "dac6e3c6478d86500322c6e8780e48b70b26bcf285cae3a73f0ae7f6950714d2",
+      "pid": 87183,
+      "exit_code": 0,
+      "seconds": 581.5668996670283,
+      "source_manifest_after_sha256": "dac6e3c6478d86500322c6e8780e48b70b26bcf285cae3a73f0ae7f6950714d2",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "name": "clippy-final"
+    },
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "started": "2026-10-03T23:37:58.135303+00:00",
+      "base_commit": "025c2a9433b345a3fc2b9d345ed3dfa1e1b35db6",
+      "diff_sha256": "be69fffc2e9041bfaf3e986d1f6e4ea2ac6fbe37ee9b33e5e6e8ebc69a7adb23",
+      "source_manifest_sha256": "c98922927bd442fa3c09572cd80d8c07f5d57668cf24862b7964f6a3a670b3b4",
+      "pid": 86827,
+      "exit_code": 0,
+      "seconds": 1.9691189168952405,
+      "source_manifest_after_sha256": "c98922927bd442fa3c09572cd80d8c07f5d57668cf24862b7964f6a3a670b3b4",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "name": "format-02"
+    },
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "started": "2026-10-03T23:40:11.472987+00:00",
+      "base_commit": "025c2a9433b345a3fc2b9d345ed3dfa1e1b35db6",
+      "diff_sha256": "be69fffc2e9041bfaf3e986d1f6e4ea2ac6fbe37ee9b33e5e6e8ebc69a7adb23",
+      "source_manifest_sha256": "dac6e3c6478d86500322c6e8780e48b70b26bcf285cae3a73f0ae7f6950714d2",
+      "pid": 87044,
+      "exit_code": 0,
+      "seconds": 2.069872041698545,
+      "source_manifest_after_sha256": "dac6e3c6478d86500322c6e8780e48b70b26bcf285cae3a73f0ae7f6950714d2",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "name": "format-03"
+    },
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "started": "2026-10-03T23:31:57.996479+00:00",
+      "base_commit": "025c2a9433b345a3fc2b9d345ed3dfa1e1b35db6",
+      "diff_sha256": "be69fffc2e9041bfaf3e986d1f6e4ea2ac6fbe37ee9b33e5e6e8ebc69a7adb23",
+      "source_manifest_sha256": "27c9d936b67c762a47722e6cbac074ce99b5308fd4c7c57ed9dd217713ff25a7",
+      "pid": 86147,
+      "exit_code": 0,
+      "seconds": 2.2936756247654557,
+      "source_manifest_after_sha256": "27c9d936b67c762a47722e6cbac074ce99b5308fd4c7c57ed9dd217713ff25a7",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "name": "format-final"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-audio",
+        "--test",
+        "audio_definition",
+        "routed_occurrence"
+      ],
+      "started": "2026-10-03T23:21:24.365536+00:00",
+      "base_commit": "025c2a9433b345a3fc2b9d345ed3dfa1e1b35db6",
+      "diff_sha256": "0f6c570ddb15576cac480a8bb1914b8d16704905c00ef37d0418be671d65b5ff",
+      "source_manifest_sha256": "5b546269578a3a2a94945768e30ad82b5423e9b7f5c95926f11e2e72242db3ce",
+      "pid": 84593,
+      "exit_code": 101,
+      "seconds": 48.16753345914185,
+      "source_manifest_after_sha256": "5b546269578a3a2a94945768e30ad82b5423e9b7f5c95926f11e2e72242db3ce",
+      "source_unchanged": true,
+      "gate_exit_code": 101,
+      "test_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "name": "narrow-01"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-audio",
+        "--test",
+        "audio_definition",
+        "routed_occurrence"
+      ],
+      "started": "2026-10-03T23:23:02.316002+00:00",
+      "base_commit": "025c2a9433b345a3fc2b9d345ed3dfa1e1b35db6",
+      "diff_sha256": "0f6c570ddb15576cac480a8bb1914b8d16704905c00ef37d0418be671d65b5ff",
+      "source_manifest_sha256": "dca28e33c7f196f750e0d8060aa63c5d213353b2071c069095255a452d035066",
+      "pid": 84810,
+      "exit_code": 101,
+      "seconds": 17.06820487510413,
+      "source_manifest_after_sha256": "dca28e33c7f196f750e0d8060aa63c5d213353b2071c069095255a452d035066",
+      "source_unchanged": true,
+      "gate_exit_code": 101,
+      "test_totals": {
+        "passed": 2,
+        "failed": 2,
+        "ignored": 0
+      },
+      "name": "narrow-02"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-audio",
+        "--test",
+        "audio_definition",
+        "routed_occurrence"
+      ],
+      "started": "2026-10-03T23:27:48.802998+00:00",
+      "base_commit": "025c2a9433b345a3fc2b9d345ed3dfa1e1b35db6",
+      "diff_sha256": "dfbf432107d681073839a0ae3e2e4dcd4bd3d049e3429b390a58e490e37e733c",
+      "source_manifest_sha256": "0b0a615d08e3f468b3c868f4638f39147d9a6590ba12d2f5b97959550665092d",
+      "pid": 85198,
+      "exit_code": 101,
+      "seconds": 16.475452166981995,
+      "source_manifest_after_sha256": "0b0a615d08e3f468b3c868f4638f39147d9a6590ba12d2f5b97959550665092d",
+      "source_unchanged": true,
+      "gate_exit_code": 101,
+      "test_totals": {
+        "passed": 3,
+        "failed": 1,
+        "ignored": 0
+      },
+      "name": "narrow-03"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-audio",
+        "--test",
+        "audio_definition",
+        "routed_occurrence"
+      ],
+      "started": "2026-10-03T23:31:39.204802+00:00",
+      "base_commit": "025c2a9433b345a3fc2b9d345ed3dfa1e1b35db6",
+      "diff_sha256": "be69fffc2e9041bfaf3e986d1f6e4ea2ac6fbe37ee9b33e5e6e8ebc69a7adb23",
+      "source_manifest_sha256": "27c9d936b67c762a47722e6cbac074ce99b5308fd4c7c57ed9dd217713ff25a7",
+      "pid": 86050,
+      "exit_code": 101,
+      "seconds": 16.46417958289385,
+      "source_manifest_after_sha256": "27c9d936b67c762a47722e6cbac074ce99b5308fd4c7c57ed9dd217713ff25a7",
+      "source_unchanged": true,
+      "gate_exit_code": 101,
+      "test_totals": {
+        "passed": 3,
+        "failed": 1,
+        "ignored": 0
+      },
+      "name": "narrow-04"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-audio",
+        "--test",
+        "audio_definition",
+        "routed_occurrence"
+      ],
+      "started": "2026-10-03T23:37:40.077450+00:00",
+      "base_commit": "025c2a9433b345a3fc2b9d345ed3dfa1e1b35db6",
+      "diff_sha256": "be69fffc2e9041bfaf3e986d1f6e4ea2ac6fbe37ee9b33e5e6e8ebc69a7adb23",
+      "source_manifest_sha256": "c98922927bd442fa3c09572cd80d8c07f5d57668cf24862b7964f6a3a670b3b4",
+      "pid": 86769,
+      "exit_code": 101,
+      "seconds": 16.624393416568637,
+      "source_manifest_after_sha256": "c98922927bd442fa3c09572cd80d8c07f5d57668cf24862b7964f6a3a670b3b4",
+      "source_unchanged": true,
+      "gate_exit_code": 101,
+      "test_totals": {
+        "passed": 3,
+        "failed": 1,
+        "ignored": 0
+      },
+      "name": "narrow-05"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-audio",
+        "--test",
+        "audio_definition",
+        "routed_occurrence"
+      ],
+      "started": "2026-10-03T23:39:33.034932+00:00",
+      "base_commit": "025c2a9433b345a3fc2b9d345ed3dfa1e1b35db6",
+      "diff_sha256": "be69fffc2e9041bfaf3e986d1f6e4ea2ac6fbe37ee9b33e5e6e8ebc69a7adb23",
+      "source_manifest_sha256": "dac6e3c6478d86500322c6e8780e48b70b26bcf285cae3a73f0ae7f6950714d2",
+      "pid": 86978,
+      "exit_code": 0,
+      "seconds": 16.618090332951397,
+      "source_manifest_after_sha256": "dac6e3c6478d86500322c6e8780e48b70b26bcf285cae3a73f0ae7f6950714d2",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_totals": {
+        "passed": 4,
+        "failed": 0,
+        "ignored": 0
+      },
+      "name": "narrow-06"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-plan",
+        "-p",
+        "deadpan-audio",
+        "--lib",
+        "--tests",
+        "--no-fail-fast"
+      ],
+      "started": "2026-10-03T23:40:10.316251+00:00",
+      "base_commit": "025c2a9433b345a3fc2b9d345ed3dfa1e1b35db6",
+      "diff_sha256": "be69fffc2e9041bfaf3e986d1f6e4ea2ac6fbe37ee9b33e5e6e8ebc69a7adb23",
+      "source_manifest_sha256": "dac6e3c6478d86500322c6e8780e48b70b26bcf285cae3a73f0ae7f6950714d2",
+      "pid": 87022,
+      "exit_code": 0,
+      "seconds": 49.16238808259368,
+      "source_manifest_after_sha256": "dac6e3c6478d86500322c6e8780e48b70b26bcf285cae3a73f0ae7f6950714d2",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_totals": {
+        "passed": 756,
+        "failed": 0,
+        "ignored": 0
+      },
+      "name": "plan-audio-02"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-plan",
+        "-p",
+        "deadpan-audio",
+        "--lib",
+        "--tests",
+        "--no-fail-fast"
+      ],
+      "started": "2026-10-03T23:31:46.446990+00:00",
+      "base_commit": "025c2a9433b345a3fc2b9d345ed3dfa1e1b35db6",
+      "diff_sha256": "be69fffc2e9041bfaf3e986d1f6e4ea2ac6fbe37ee9b33e5e6e8ebc69a7adb23",
+      "source_manifest_sha256": "27c9d936b67c762a47722e6cbac074ce99b5308fd4c7c57ed9dd217713ff25a7",
+      "pid": 86098,
+      "exit_code": 101,
+      "seconds": 339.47940112510696,
+      "source_manifest_after_sha256": "27c9d936b67c762a47722e6cbac074ce99b5308fd4c7c57ed9dd217713ff25a7",
+      "source_unchanged": true,
+      "gate_exit_code": 101,
+      "test_totals": {
+        "passed": 755,
+        "failed": 1,
+        "ignored": 0
+      },
+      "name": "plan-audio"
+    }
+  ],
+  "review": {
+    "result": "Independent read-only review found no runtime defects. Added its requested exact RoundEven half-sample tie regression for both parity directions.",
+    "corrections": [
+      "narrow-01: cloned borrowed plan Arcs in new test fixtures to fix ownership compilation errors.",
+      "narrow-02: changed full-passage fixture reads to bounded chunks of at most 256 samples.",
+      "narrow-03: terminal sample witness was already outside the natural-rate source allocation.",
+      "narrow-04 and first plan/audio suite: extending natural-rate source support correctly rejected selection beyond the owner.",
+      "narrow-05: FitBeat correctly rejected the independent-source natural-rate contract. Final fixture retains the longer natural-rate recipe with an exact four-frame SelectedPlacement, keeping the nonzero terminal witness inside the owner."
+    ]
+  },
+  "limits": [
+    "Borrowed preparation API only; no persisted sound clocks or temporal-command guard changes.",
+    "Current consuming Hold gates, creative edges and gain apply outside this raw provider.",
+    "Preserve reference PCM uses the canonical DSP engine; it does not independently qualify that algorithm.",
+    "No full workspace test run, optional app tests, native GUI, acoustic, performance, or emitted-movie checks in this increment.",
+    "No full-product requirement or release gate is complete."
+  ]
+}

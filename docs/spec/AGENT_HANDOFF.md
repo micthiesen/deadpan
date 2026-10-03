@@ -2,6 +2,30 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Retained occurrence preparation, 2026-10-03
+
+`AudioRoutedRoot::occurrence` accepts one complete independent source occurrence
+and its exact normalized route. Match the extent, RoundEven grid with origin
+`-extent.start`, spacing and original allocation. Keep the borrowed plan and
+the full outermost Preserve projection, including nested history.
+
+The audio reader transports old integral labels through chronological route
+operations without resampling them. Intermediate clipping cannot be undone by
+later allocation growth. Preflight full history before media access, including
+wholly silent routes; use one budget across all spans and revalidate source
+dependencies on warm reads. Current Hold gates, creative edges and gain belong
+after this raw provider.
+
+This does not persist clocks or lift temporal guards. Next work needs an
+independent frozen processing definition, stable occurrence correspondence,
+per-sound chronological routes and complete timing/copy lifecycle. Preserve
+plan ownership rather than rebinding historical signal handles to current plans.
+See [owned sounds](../OWNED_SOUND_VOICES.md#retained-occurrence-sample-routing).
+The [qualification record](../qualification/routed-occurrence-pcm-2026-10-03.md)
+retains actual PCM comparisons, RoundEven tie coverage and review. All 756
+planner/audio tests, formatting and strict workspace lint pass on one unchanged
+source inventory. No native app was launched for this backend increment.
+
 ## Saved beat sounds, 2026-10-03
 
 Core 44/database 56 adds `beat_sounds: owner -> local SoundId -> BeatSound`,

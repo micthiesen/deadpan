@@ -1,0 +1,30 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-plan",
+    "-p",
+    "deadpan-audio",
+    "--lib",
+    "--tests",
+    "--no-fail-fast"
+  ],
+  "started": "2026-10-03T23:31:46.446990+00:00",
+  "base_commit": "025c2a9433b345a3fc2b9d345ed3dfa1e1b35db6",
+  "diff_sha256": "be69fffc2e9041bfaf3e986d1f6e4ea2ac6fbe37ee9b33e5e6e8ebc69a7adb23",
+  "source_manifest_sha256": "27c9d936b67c762a47722e6cbac074ce99b5308fd4c7c57ed9dd217713ff25a7",
+  "pid": 86098,
+  "exit_code": 101,
+  "seconds": 339.47940112510696,
+  "source_manifest_after_sha256": "27c9d936b67c762a47722e6cbac074ce99b5308fd4c7c57ed9dd217713ff25a7",
+  "source_unchanged": true,
+  "gate_exit_code": 101,
+  "test_totals": {
+    "passed": 755,
+    "failed": 1,
+    "ignored": 0
+  },
+  "name": "plan-audio"
+}

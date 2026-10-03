@@ -109,6 +109,30 @@ This remains raw preparation, without event gain, creative edges, allowances
 or authored bus placement.
 See the [batch qualification record](qualification/occurrence-batches-2026-10-03.md).
 
+## Retained occurrence sample routing
+
+`AudioRoutedRoot::occurrence` captures a complete checked independent occurrence,
+including its nested Preserve graph. Its route recipe uses frames relative to
+the occurrence's extent start, with a RoundEven grid origin at the negative of
+that start. Admission requires the exact extent, sample spacing, grid origin and
+complete old sample allocation. Equal sample counts alone do not prove a match.
+
+The routed reader copies old integral sample labels through each chronological
+edit. It does not reround an edit duration or derive fresh source phase from
+destination frame coordinates. Intermediate clipping remains part of the route;
+a later expansion cannot revive a sample removed by an earlier allocation.
+All queried spans share one preparation budget and complete processing history.
+Even an entirely silent route must pass depth, work, residency and source
+admission. Current consuming Hold gates, edges and gain apply separately after
+this raw retained input.
+
+This borrowed route does not persist a sound clock or lift a temporal command
+guard. The next integration must retain the sound's own processing definition,
+stable occurrence correspondence and chronological route in the document;
+Original audio bindings cannot substitute for those records.
+See the [routed occurrence qualification](qualification/routed-occurrence-pcm-2026-10-03.md)
+for sample comparisons, exact rounding checks, review and limits.
+
 ## Authored bus and remaining work
 
 The canonical authored bus prepares every saved event's bounded occurrences

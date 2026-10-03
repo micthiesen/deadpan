@@ -6,7 +6,8 @@ use deadpan_core::{AudioSample, ExactRatio, MIX_SAMPLE_RATE};
 
 use crate::{
     AudioBoundaryRule, AudioProjectedRoot, AudioRootSource, AudioSampleGrid, AudioSoundRoute,
-    AudioSourceVoice, AudioStageProjection, PlanError, RenderPlan, SignalSample,
+    AudioSourceOccurrence, AudioSourceVoice, AudioStageProjection, PlanError, RenderPlan,
+    SignalSample,
 };
 
 /// The closed set of complete intrinsic providers that can retain sampled
@@ -111,7 +112,7 @@ fn validate_signal_capture(
     Ok(())
 }
 
-/// A complete projected output captured on its original absolute RoundEven
+/// A complete source, projected output or occurrence captured on its original absolute RoundEven
 /// labels. The route's Recipe frames are relative to that output's start;
 /// the retained root supplies the original phase, support and policy.
 #[derive(Debug, Clone)]
@@ -124,9 +125,44 @@ pub struct AudioRoutedRoot<'plan> {
 pub enum AudioRoutedRootInput<'plan> {
     Source(Box<AudioRootSource<'plan>>),
     Projected(Box<AudioProjectedRoot<'plan>>),
+    Occurrence(Box<AudioSourceOccurrence<'plan>>),
 }
 
 impl<'plan> AudioRoutedRoot<'plan> {
+    /// Retain one complete current owner occurrence on its absolute root
+    /// RoundEven grid. The route's recipe coordinate is normalized to the
+    /// occurrence extent; its grid origin preserves the occurrence's old
+    /// integral sample labels exactly.
+    pub fn occurrence(
+        occurrence: AudioSourceOccurrence<'plan>,
+        route: AudioSoundRoute<AudioSample>,
+    ) -> Result<Self, PlanError> {
+        let extent = occurrence.extent();
+        let length = extent.end.checked_sub(extent.start)?;
+        let rate = occurrence.plan().metadata().presentation_basis.frame_rate;
+        let step = ExactRatio::new(
+            i128::from(rate.numerator()),
+            i128::from(MIX_SAMPLE_RATE) * i128::from(rate.denominator()),
+        )?;
+        let grid = AudioSampleGrid::new(
+            ExactRatio::ZERO.checked_sub(extent.start)?,
+            step,
+            AudioBoundaryRule::RoundEven,
+        )?;
+        if route.recipe_grid() != grid
+            || route.route().recipe_extent() != length
+            || route.recipe_samples() != occurrence.samples()
+        {
+            return Err(PlanError::InvalidPlan(
+                "sound route does not match its complete owner occurrence capture",
+            ));
+        }
+        Ok(Self {
+            input: AudioRoutedRootInput::Occurrence(Box::new(occurrence)),
+            route: Arc::new(route),
+        })
+    }
+
     pub fn new(
         root: AudioProjectedRoot<'plan>,
         route: AudioSoundRoute<AudioSample>,
@@ -179,7 +215,7 @@ impl<'plan> AudioRoutedRoot<'plan> {
     pub fn root(&self) -> Option<&AudioProjectedRoot<'plan>> {
         match &self.input {
             AudioRoutedRootInput::Projected(root) => Some(root),
-            AudioRoutedRootInput::Source(_) => None,
+            AudioRoutedRootInput::Source(_) | AudioRoutedRootInput::Occurrence(_) => None,
         }
     }
 
@@ -195,6 +231,7 @@ impl<'plan> AudioRoutedRoot<'plan> {
         match &self.input {
             AudioRoutedRootInput::Source(root) => root.plan(),
             AudioRoutedRootInput::Projected(root) => root.projection().stage().plan(),
+            AudioRoutedRootInput::Occurrence(occurrence) => occurrence.plan(),
         }
     }
 

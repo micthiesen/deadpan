@@ -1737,8 +1737,8 @@ disable valid gain Apply or Pause. See [waveform contracts](docs/WAVEFORMS.md).
 
 Bind retained sample routes only to checked complete providers. `AudioRoutedSignal`
 uses independent source input or an immutable Preserve projection on PointCeil;
-`AudioRoutedRoot` retains a complete projected output or checked raw
-`AudioRootSource` on RoundEven. Match the
+`AudioRoutedRoot` retains a complete projected output, checked raw
+`AudioRootSource` or complete independent `AudioSourceOccurrence` on RoundEven. Match the
 original Recipe extent, grid origin/spacing/rule and allocation. Reject cropped
 or resumed captures, then select output through the route. Root Recipe frames
 are relative to its original extent start but preserve absolute sample labels.
@@ -1746,4 +1746,9 @@ Resolve integral old sample labels and reuse the old provider's exact PCM under
 one preparation budget; never reconstruct phase from destination frame endpoints.
 Retain full filter/DSP support and admit dependencies even for a wholly masked
 query. Captured output policy follows its old samples; current consuming Hold
-gates, allowances and creative edges remain separate. See [routed preparation](docs/SOUND_EVENTS.md#routed-pcm-preparation).
+gates, allowances and creative edges remain separate. Occurrence captures retain
+the full nested Preserve projection even when the current route is wholly silent;
+prepare raw independent input before current gates, edges and gain. A borrowed
+route does not establish persisted sound clocks or enable temporal commands.
+See [routed preparation](docs/SOUND_EVENTS.md#routed-pcm-preparation) and
+[occurrence routes](docs/OWNED_SOUND_VOICES.md#retained-occurrence-sample-routing).

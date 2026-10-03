@@ -3,9 +3,10 @@ use std::{collections::BTreeMap, sync::Arc};
 use deadpan_core::*;
 use deadpan_plan::{
     AudioBoundaryRule, AudioDefinitionSelector, AudioProjectedRoot, AudioRootPlacement,
-    AudioRoutedRoot, AudioRoutedSignal, AudioRoutedSignalInput, AudioSampleGrid,
-    AudioSignalContent, AudioSignalTape, AudioSignalTapeRun, AudioSoundRoute, AudioSourceVoice,
-    AudioSourceVoiceRecipe, AudioStage, AudioStageProjection, RenderPlan, SignalSample,
+    AudioRoutedRoot, AudioRoutedRootInput, AudioRoutedSignal, AudioRoutedSignalInput,
+    AudioSampleGrid, AudioSignalContent, AudioSignalTape, AudioSignalTapeRun, AudioSoundRoute,
+    AudioSourceOccurrence, AudioSourceVoice, AudioSourceVoiceRecipe, AudioStage,
+    AudioStageProjection, RenderPlan, SignalSample,
 };
 
 fn q(n: i128, d: i128) -> ExactRatio {
@@ -21,6 +22,10 @@ fn definition(name: &str) -> AudioDefinitionSelector {
 }
 
 fn plan(rate: FrameRate) -> RenderPlan {
+    plan_with_prefix(rate, 0)
+}
+
+fn plan_with_prefix(rate: FrameRate, prefix_frames: i64) -> RenderPlan {
     let mut wire = serde_json::to_value(
         ProjectDocument::new(
             ProjectId::new("routed-voice").unwrap(),
@@ -36,8 +41,13 @@ fn plan(rate: FrameRate) -> RenderPlan {
         .unwrap(),
     )
     .unwrap();
-    wire["nodes"] = serde_json::to_value(BTreeMap::from([
-        (id("root"), BeatNode::sequence("Root", vec![id("repeat")])),
+    let mut children = Vec::new();
+    if prefix_frames > 0 {
+        children.push(id("prefix"));
+    }
+    children.push(id("repeat"));
+    let mut nodes = BTreeMap::from([
+        (id("root"), BeatNode::sequence("Root", children)),
         (
             id("repeat"),
             BeatNode {
@@ -82,8 +92,22 @@ fn plan(rate: FrameRate) -> RenderPlan {
                 },
             ),
         ),
-    ]))
-    .unwrap();
+    ]);
+    if prefix_frames > 0 {
+        nodes.insert(
+            id("prefix"),
+            BeatNode::hold(
+                "Prefix",
+                HoldRecipe {
+                    duration: FrameDuration::new(prefix_frames).unwrap(),
+                    video: HoldVideo::Background,
+                    picture_context: None,
+                    audio: HoldAudio::Silence,
+                },
+            ),
+        );
+    }
+    wire["nodes"] = serde_json::to_value(nodes).unwrap();
     wire["assets"] = serde_json::to_value(BTreeMap::from([(
         AssetId::new("sound").unwrap(),
         AssetRecord {
@@ -201,6 +225,48 @@ fn root_route(
     AudioSoundRoute::<AudioSample>::new(
         SoundRoute::identity(extent).unwrap(),
         vec![AudioSampleGrid::new(origin, step, AudioBoundaryRule::RoundEven).unwrap()],
+    )
+    .unwrap()
+}
+
+fn occurrence(plan: &RenderPlan, ordinal: u32) -> AudioSourceOccurrence<'_> {
+    let base = SourceTimeBase::new(1, 44_100).unwrap();
+    let source = SourceAudio {
+        asset: AssetId::new("sound").unwrap(),
+        span: SourceSpan::new(
+            SourceTimestamp {
+                ticks: 10,
+                time_base: base,
+            },
+            SourceTimestamp {
+                ticks: 8_830,
+                time_base: base,
+            },
+        )
+        .unwrap(),
+    };
+    let recipe = AudioSourceVoiceRecipe {
+        mapping: SourceAudioMapping::natural_rate(
+            source.span,
+            plan.metadata().presentation_basis.frame_rate,
+        )
+        .unwrap(),
+        source,
+        offset: AudioSample(0),
+    };
+    plan.source_voice_occurrence(
+        InstancePath {
+            node: id("input"),
+            repeats: vec![RepeatInstance {
+                node: id("repeat"),
+                iteration: IterationId {
+                    allocation: RevisionId::new("plays").unwrap(),
+                    ordinal,
+                },
+            }],
+        },
+        recipe,
+        Default::default(),
     )
     .unwrap()
 }
@@ -449,4 +515,92 @@ fn routed_handles_keep_pointceil_and_roundeven_old_labels_distinct() {
         .checked_div(root_grid.frames_per_sample())
         .unwrap();
     assert_eq!(old, q(3204, 1));
+}
+
+#[test]
+fn occurrence_route_keeps_complete_preserve_graph_and_absolute_ntsc_labels() {
+    let plan = plan(FrameRate::new(30_000, 1001).unwrap());
+    for ordinal in [0, 1] {
+        let occurrence = occurrence(&plan, ordinal);
+        let extent = occurrence.extent();
+        let length = extent.end.checked_sub(extent.start).unwrap();
+        let grid_origin = ExactRatio::ZERO.checked_sub(extent.start).unwrap();
+        let grid =
+            AudioSampleGrid::new(grid_origin, q(5, 8008), AudioBoundaryRule::RoundEven).unwrap();
+        let route =
+            AudioSoundRoute::<AudioSample>::new(SoundRoute::identity(length).unwrap(), vec![grid])
+                .unwrap();
+        let previous = occurrence
+            .processing_projection()
+            .expect("the owner occurrence is processed by Preserve")
+            .clone();
+        let retained = AudioRoutedRoot::occurrence(occurrence.clone(), route).unwrap();
+        let AudioRoutedRootInput::Occurrence(captured) = retained.input() else {
+            panic!("expected retained occurrence");
+        };
+        assert_eq!(retained.samples(), occurrence.samples());
+        assert_eq!(retained.route().recipe_samples(), occurrence.samples());
+        assert!(Arc::ptr_eq(
+            captured.processing_projection().unwrap(),
+            &previous
+        ));
+        assert!(retained.belongs_to(&plan));
+        assert!(!retained.belongs_to(&plan.clone()));
+    }
+}
+
+#[test]
+fn occurrence_route_rejects_wrong_extent_origin_spacing_and_allocation() {
+    let plan = plan(FrameRate::new(30_000, 1001).unwrap());
+    let occurrence = occurrence(&plan, 1);
+    let extent = occurrence.extent();
+    let length = extent.end.checked_sub(extent.start).unwrap();
+    let origin = ExactRatio::ZERO.checked_sub(extent.start).unwrap();
+    let valid_step = q(5, 8008);
+    let cases = [
+        root_route(length.checked_add(q(1, 4)).unwrap(), origin, valid_step),
+        root_route(length, origin.checked_add(q(1, 4)).unwrap(), valid_step),
+        root_route(length, origin, q(5, 8007)),
+    ];
+    for route in cases {
+        assert!(AudioRoutedRoot::occurrence(occurrence.clone(), route).is_err());
+    }
+}
+
+#[test]
+fn occurrence_route_normalizes_exact_round_even_half_sample_boundaries() {
+    // This rate gives exactly 1601.5 samples per project frame.
+    let rate = FrameRate::new(96_000, 3_203).unwrap();
+    let plan = plan_with_prefix(rate, 1);
+    let step = q(2, 3_203);
+    let expected = [
+        (0, 1, AudioSample(1_602), AudioSample(11_210)),
+        (1, 7, AudioSample(11_210), AudioSample(20_820)),
+    ];
+
+    for (ordinal, start_frame, expected_start, expected_end) in expected {
+        let occurrence = occurrence(&plan, ordinal);
+        let extent = occurrence.extent();
+        let length = extent.end.checked_sub(extent.start).unwrap();
+        assert_eq!(extent.start, ExactRatio::integer(start_frame));
+        assert_eq!(occurrence.samples(), expected_start..expected_end);
+
+        // At frame 1 the half tie rounds up; at frame 7 it rounds down.
+        let route_origin = ExactRatio::ZERO.checked_sub(extent.start).unwrap();
+        let route = root_route(length, route_origin, step);
+        let retained = AudioRoutedRoot::occurrence(occurrence, route).unwrap();
+        assert_eq!(retained.route().recipe_grid().frame_origin(), route_origin);
+        assert_eq!(
+            retained
+                .route()
+                .recipe_grid()
+                .boundary(ExactRatio::ZERO)
+                .unwrap(),
+            expected_start
+        );
+        assert_eq!(
+            retained.route().recipe_samples(),
+            expected_start..expected_end
+        );
+    }
 }

@@ -24,6 +24,16 @@ recorded 3,546 passes and four outdated format assertions. All four affected
 targets pass after test-only corrections; final formatting and strict lint pass.
 No requirement or gate is complete.
 
+The borrowed [occurrence route](OWNED_SOUND_VOICES.md#retained-occurrence-sample-routing)
+now transports a voice's old integral PCM labels through chronological edits,
+retaining its complete nested Preserve history and intermediate clipping.
+Current consuming gates, edges and gain remain outside this raw provider.
+This is preparation groundwork for DP-04 and DP-09; persisted independent
+clocks and temporal-command support remain open. The
+[qualification record](qualification/routed-occurrence-pcm-2026-10-03.md)
+records 756 passing planner/audio tests, formatting and strict workspace lint,
+with fixture corrections and source inventories retained.
+
 [Group objects](EDITED_SLICES.md#group-objects) add native `ig`/`ag` to
 copy/cut/Repeat operators and typed Visual selection in ordinary Sequence
 scopes. Registers, semantic recording and supported dot retain object intent;

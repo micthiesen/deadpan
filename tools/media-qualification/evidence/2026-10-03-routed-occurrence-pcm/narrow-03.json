@@ -1,0 +1,28 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-audio",
+    "--test",
+    "audio_definition",
+    "routed_occurrence"
+  ],
+  "started": "2026-10-03T23:27:48.802998+00:00",
+  "base_commit": "025c2a9433b345a3fc2b9d345ed3dfa1e1b35db6",
+  "diff_sha256": "dfbf432107d681073839a0ae3e2e4dcd4bd3d049e3429b390a58e490e37e733c",
+  "source_manifest_sha256": "0b0a615d08e3f468b3c868f4638f39147d9a6590ba12d2f5b97959550665092d",
+  "pid": 85198,
+  "exit_code": 101,
+  "seconds": 16.475452166981995,
+  "source_manifest_after_sha256": "0b0a615d08e3f468b3c868f4638f39147d9a6590ba12d2f5b97959550665092d",
+  "source_unchanged": true,
+  "gate_exit_code": 101,
+  "test_totals": {
+    "passed": 3,
+    "failed": 1,
+    "ignored": 0
+  },
+  "name": "narrow-03"
+}

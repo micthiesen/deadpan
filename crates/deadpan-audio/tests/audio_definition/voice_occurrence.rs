@@ -5,6 +5,9 @@ use deadpan_plan::{AudioQueryLimits, AudioSourceVoiceRecipe};
 #[path = "beat_sounds.rs"]
 mod beat_sounds;
 
+#[path = "routed_occurrence.rs"]
+mod routed_occurrence;
+
 fn occurrence_document() -> ProjectDocument {
     let rate = FrameRate::new(48_000, 1).unwrap();
     let plays = IterationOrder::new(RevisionId::new("voice-plays").unwrap(), 2).unwrap();

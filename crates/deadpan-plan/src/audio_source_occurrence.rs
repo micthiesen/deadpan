@@ -28,6 +28,7 @@ pub struct AudioSourceOccurrence<'plan> {
     extent: Range<ExactRatio>,
     audible_extent: Range<ExactRatio>,
     gain_owners: Vec<crate::AudioOwnerClock<'plan>>,
+    processing_projection: Option<Arc<AudioStageProjection<'plan>>>,
     inherited_hard_edges: (bool, bool),
     samples: Range<AudioSample>,
     grid: AudioSampleGrid<AudioSample>,
@@ -296,6 +297,10 @@ impl RenderPlan {
             step,
             AudioBoundaryRule::RoundEven,
         )?;
+        let processing_projection = match &provider {
+            Provider::Projected(projection) => Some(Arc::clone(projection)),
+            Provider::Source(_) => None,
+        };
         Ok(AudioSourceOccurrence {
             plan: self,
             instance,
@@ -303,6 +308,7 @@ impl RenderPlan {
             extent,
             audible_extent,
             gain_owners,
+            processing_projection,
             inherited_hard_edges,
             samples,
             grid,
@@ -657,6 +663,20 @@ impl<'plan> AudioSourceOccurrence<'plan> {
     /// sampling bindings cannot substitute their retained effect clocks here.
     pub fn gain_owners(&self) -> &[crate::AudioOwnerClock<'plan>] {
         &self.gain_owners
+    }
+
+    /// The outermost retained Preserve projection, including its complete
+    /// nested input graph, when this occurrence has any Preserve processing.
+    /// Hosts can preflight this history even when a later route has no audible
+    /// samples in the current query.
+    pub fn processing_projection(&self) -> Option<&Arc<AudioStageProjection<'plan>>> {
+        self.processing_projection.as_ref()
+    }
+
+    /// The immutable plan that owns this occurrence's signal and processing
+    /// graph. The handle cannot be rebound to another plan.
+    pub fn plan(&self) -> &'plan RenderPlan {
+        self.plan
     }
     pub fn gate_fades(
         &self,

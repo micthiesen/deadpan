@@ -222,6 +222,12 @@ impl StageAudio {
                 )?;
                 self.preflight_projected(root.projection(), control, 1)?;
             }
+            AudioRoutedRootInput::Occurrence(voice) => {
+                control.admit_dependency(&voice.source().asset)?;
+                if let Some(projection) = voice.processing_projection() {
+                    self.preflight_projected(projection, control, 1)?;
+                }
+            }
         }
         let grid = domain.route().recipe_grid();
         let retained = domain.route().recipe_samples();
@@ -267,6 +273,22 @@ impl StageAudio {
                     }
                     None
                 }
+                (AudioRoutedRootInput::Occurrence(voice), Some(old)) => {
+                    let query = voice.processing(
+                        AudioSample(old.start)..AudioSample(old.end),
+                        control.query_limits()?,
+                    )?;
+                    control.spend_plan_work(query.work)?;
+                    let queries = occurrence_raw_queries(query);
+                    self.preflight_root_queries(
+                        &queries,
+                        AudioSample(old.start),
+                        u32::try_from(old.end - old.start).map_err(|_| StageAudioError::Range)?,
+                        control,
+                        0,
+                    )?;
+                    Some(queries.processing)
+                }
                 (_, None) => None,
             };
             spans.push(PreparedRootSpan {
@@ -302,6 +324,16 @@ impl StageAudio {
                 let input = self.prepare_projected(root.projection(), provider, control, 1)?;
                 dependencies.extend(input.dependencies.clone());
                 relative_depth = 1 + input.relative_depth;
+            }
+            AudioRoutedRootInput::Occurrence(voice) => {
+                if let Some(projection) = voice.processing_projection() {
+                    let input = self.prepare_projected(projection, provider, control, 1)?;
+                    dependencies.extend(input.dependencies.clone());
+                    relative_depth = 1 + input.relative_depth;
+                }
+                let asset = &voice.source().asset;
+                let source = resolve_source(provider, &self.plan, asset, control.cancelled)?;
+                dependencies.insert(asset.clone(), control.observe(asset, source)?);
             }
         }
         let mut samples = Vec::with_capacity(prepared.frames as usize);
@@ -339,9 +371,21 @@ impl StageAudio {
                         exhausted: Vec::new(),
                     }
                 }
+                AudioRoutedRootInput::Occurrence(_) => self.read_queries(
+                    provider,
+                    AudioSample(old.start),
+                    count,
+                    control,
+                    0,
+                    occurrence_raw_queries(
+                        span.raw
+                            .ok_or(PlanError::InvalidPlan("missing retained occurrence query"))?,
+                    ),
+                )?,
             };
             samples.extend(block.samples);
             dependencies.extend(block.dependencies);
+            relative_depth = relative_depth.max(block.relative_depth);
             for range in block.suppressed {
                 suppressed.push(
                     AudioSample(shift_label(
@@ -457,6 +501,40 @@ impl StageAudio {
             suppressed,
             relative_depth: 1 + prepared.relative_depth,
         })
+    }
+}
+
+/// The retained voice supplies raw time-mapped input. Current consuming Holds,
+/// creative edges and gain belong after routing, not to the captured provider.
+fn occurrence_raw_queries(processing: AudioProcessingQuery<'_>) -> RootReadQueries<'_> {
+    let suppressed = processing
+        .spans
+        .iter()
+        .filter(|span| {
+            matches!(
+                &span.content,
+                AudioSignalContent::Leaf(AudioContent::Silence { .. })
+            )
+        })
+        .map(|span| span.samples.clone())
+        .collect();
+    RootReadQueries {
+        flattened: AudioQuery {
+            project_id: processing.project_id.clone(),
+            revision_id: processing.revision_id.clone(),
+            samples: processing.samples.clone(),
+            spans: Vec::new(),
+            lookup: Default::default(),
+            work: 0,
+        },
+        processing,
+        policy: AudioPolicyQuery {
+            suppressed,
+            contents: Vec::new(),
+            lookup: Default::default(),
+            work: 0,
+        },
+        fades: None,
     }
 }
 
