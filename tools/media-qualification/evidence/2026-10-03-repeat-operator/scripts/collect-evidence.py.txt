@@ -1,0 +1,89 @@
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import re
+import shutil
+import subprocess
+
+scratch = Path('/tmp/deadpan-repeat-operator-20261003')
+dest = Path('tools/media-qualification/evidence/2026-10-03-repeat-operator')
+for directory in ['checks', 'replays', 'native', 'screenshots', 'scripts']:
+    (dest / directory).mkdir(parents=True, exist_ok=True)
+
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+def compress(source, target):
+    target.write_bytes(gzip.compress(source.read_bytes(), mtime=0))
+
+def run(*args):
+    return subprocess.check_output(args, text=True).strip()
+
+for path in sorted(scratch.glob('*.json')):
+    if path.name.startswith('source-'):
+        compress(path, dest / 'checks' / (path.name + '.gz'))
+    else:
+        shutil.copy2(path, dest / 'checks' / path.name)
+for path in sorted(scratch.glob('*.log')):
+    compress(path, dest / 'checks' / (path.name + '.gz'))
+for path in sorted(scratch.glob('native-*.txt')):
+    compress(path, dest / 'native' / (path.name + '.gz'))
+for name in ['native-pending.png', 'native-visual.png']:
+    shutil.copy2(scratch / name, dest / 'screenshots' / name)
+shutil.copy2(scratch / 'repeat-visual/repeat-operator-121.png', dest / 'screenshots/macro-repeat.png')
+shutil.copy2(scratch / 'keymap-help-final/keymap-058.png', dest / 'screenshots/remapped-help.png')
+
+replays = []
+for name in ['repeat', 'rapid', 'macros', 'dot', 'keymap', 'keymap-help-final']:
+    source = scratch / (name if name == 'keymap-help-final' else name + '-visual') / 'report.json'
+    compress(source, dest / 'replays' / (name + '-report.json.gz'))
+    report = json.loads(source.read_text())
+    assert not report['failed']
+    scenario = next(item for item in report['scenarios'] if item['name'] != 'kestrel-shortcuts')
+    assert all(check['passed'] for check in scenario['checks'])
+    replays.append({'name': scenario['name'], 'run': name, 'checks': len(scenario['checks']), 'binary_sha256': report['metadata']['binary_sha256'], 'findings': scenario['findings'], 'skipped': scenario['skipped']})
+
+binary = Path('target/debug/deadpan-app')
+native_binary = scratch / 'Deadpan Repeat QA.app/Contents/MacOS/deadpan-app'
+assert sha(binary) == '989e1aa5786eb8d4be35c55de3d5ac0de0c1eb32cb2f4ac773e7170a3ead77c2'
+assert sha(native_binary) == 'd091476cb397a52d831d2bf8fb17b1e4b2c87fa9199100bb6d9a51f81ee11fef'
+native = json.loads((scratch / 'native-run.json').read_text())
+assert native['exit_code'] == 0 and native['source_unchanged']
+cleanup = subprocess.run(['pgrep', '-fl', 'Deadpan Repeat QA.app/Contents/MacOS/deadpan-app'], text=True, capture_output=True)
+assert cleanup.returncode == 1 and not cleanup.stdout
+metadata = {
+    'base_commit': run('git', 'rev-parse', 'HEAD'),
+    'source_manifest_sha256': 'b81fce1c2111c873ebb7f4a3bacbaeb6a8a7a1935d037f27c901446e782abcf6',
+    'native_source_manifest_sha256': '32bdffade83d9ed2d1cfbc7e2d3c6ee487e6205f9c29fe6b020562b84a88e805',
+    'binary_sha256': sha(binary),
+    'native_binary_sha256': sha(native_binary),
+    'machine': run('sysctl', '-n', 'machdep.cpu.brand_string', 'hw.memsize').splitlines(),
+    'system': run('sw_vers'),
+    'rustc': run('rustc', '--version'),
+    'cargo': run('cargo', '--version'),
+    'replays': replays,
+    'workflow_checks': sum(item['checks'] for item in replays if item['run'] != 'keymap'),
+    'native_exit_code': native['exit_code'],
+    'targeted_process_absent': True,
+    'native_observations': [
+        '20l then register a then r: pending next-key help remains visible above window bottom.',
+        'r3l at boundary 20: 120 -> 123 frames, Repeat spans 20..26, two total plays; register a remains selected and empty.',
+        'One Undo restores 120 frames and leaves register a selected.',
+        'gg40l then dot: Repeat spans 40..46, total 123 frames; retained selector resolves at the new cursor.',
+        'After Undo, gg50l v4l 3r: Repeat spans 50..62, three total plays, total 128 frames; register a remains selected.',
+        'One Undo restores 120 frames. Dot without a new Visual selection refuses, keeps 120 frames and register a.',
+        'Cmd-Q exits cleanly; targeted process lookup confirms absence.'
+    ],
+    'limits': ['Debug functional/visual checks, not release performance qualification.', 'No new physical layout, OS IME, VoiceOver or acoustic qualification.', 'One unexplained H.264 decode_slice_header diagnostic in dot replay; all its 381 checks passed.', 'Developer wrapper retains external host library dependencies.'],
+}
+(dest / 'metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
+for source in [Path('/tmp/deadpan-original-layout-20261002/run-check.py'), Path(__file__)]:
+    shutil.copy2(source, dest / 'scripts' / (source.name + '.txt'))
+
+counts = {}
+for name in ['initial-core-plan-audio', 'app-store-cli-final']:
+    matches = re.findall(r'test result: ok\. (\d+) passed;', (scratch / (name + '.log')).read_text())
+    counts[name] = sum(int(value) for value in matches)
+assert counts == {'initial-core-plan-audio': 1732, 'app-store-cli-final': 1560}, counts
+print(json.dumps({'test_counts': counts, 'workflow_checks': metadata['workflow_checks'], 'destination': str(dest)}, indent=2))

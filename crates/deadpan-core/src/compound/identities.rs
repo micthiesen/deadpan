@@ -80,6 +80,10 @@ impl Ledger {
 }
 fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mut Vec<&'a MarkId>) {
     match command {
+        Command::RepeatSelection { identities, .. } => {
+            nodes.push(&identities.repeat);
+            nodes.extend(identities.group.iter().chain(&identities.split.nodes));
+        }
         Command::ApplySourceTrim { resources, .. } => {
             nodes.extend(
                 resources
@@ -156,6 +160,7 @@ fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mu
         | Command::Move { .. }
         | Command::Ungroup { .. }
         | Command::SetRepeat { .. }
+        | Command::SetRepeatPlays { .. }
         | Command::SetRetime { .. }
         | Command::InsertPlays { .. }
         | Command::MovePlays { .. }

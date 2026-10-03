@@ -10,14 +10,16 @@ use crate::{
     AudioTimingId, CapturedEditSlice, Command, CommandRequest, EditError, EditErrorCode,
     FrameRange, LeafEdit, MAX_COMPOUND_CAPTURE_BYTES, MAX_COMPOUND_DOCUMENT_BYTES,
     MAX_COMPOUND_STEPS, MAX_DOCUMENT_JSON_BYTES, MarkId, NodeId, NodeKind, ProjectDocument,
-    ProjectFrame, RegisterName, RegisterValue, ResolvedStep, ResolvedTransaction, RevisionId,
-    SemanticInstruction, SemanticMotion, SemanticProgram, SemanticSelector, SliceCaptureSelection,
-    SliceIdentityRequirements, SlicePasteIdentities, SourceNode, SplitIdentities, compound::wire,
+    ProjectFrame, RegisterName, RegisterValue, RepeatSelectionIdentities, ResolvedStep,
+    ResolvedTransaction, RevisionId, SemanticInstruction, SemanticMotion, SemanticProgram,
+    SemanticSelector, SliceCaptureSelection, SliceIdentityRequirements, SlicePasteIdentities,
+    SourceNode, SplitIdentities, compound::wire,
 };
 
 use super::{MAX_SEMANTIC_CALL_DEPTH, MAX_SEMANTIC_INSTRUCTION_FUEL};
 
 mod content;
+mod repeat;
 mod selection;
 
 /// Oriented Edit boundaries. Equal endpoints are an explicit empty selection;
@@ -50,6 +52,11 @@ pub struct SemanticRegisterBank<'a> {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SemanticAllocationRequest {
+    Repeat {
+        step_index: usize,
+        required_split_ids: usize,
+        needs_group: bool,
+    },
     Cut {
         step_index: usize,
         required_split_ids: usize,
@@ -70,6 +77,10 @@ pub enum SemanticAllocationRequest {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SemanticAllocation {
+    Repeat {
+        new_revision: RevisionId,
+        identities: RepeatSelectionIdentities,
+    },
     Cut {
         new_revision: RevisionId,
         capture_revision: RevisionId,
@@ -318,6 +329,9 @@ where
                 SemanticInstruction::Cut { selector, register } => {
                     self.capture_selector(index, *register, *selector, true)?;
                 }
+                SemanticInstruction::Repeat { selector, plays } => {
+                    self.repeat(index, *selector, plays.get())?;
+                }
                 SemanticInstruction::CutFrames {
                     operation,
                     register,
@@ -407,6 +421,7 @@ where
                     SemanticInstruction::CutFrames { .. }
                         | SemanticInstruction::Yank { .. }
                         | SemanticInstruction::Cut { .. }
+                        | SemanticInstruction::Repeat { .. }
                         | SemanticInstruction::YankBeat { .. }
                         | SemanticInstruction::Paste { .. }
                         | SemanticInstruction::YankSelection { .. }

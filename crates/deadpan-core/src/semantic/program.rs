@@ -65,6 +65,10 @@ pub enum SemanticInstruction {
         selector: SemanticSelector,
         register: RegisterName,
     },
+    Repeat {
+        selector: SemanticSelector,
+        plays: NonZeroU32,
+    },
     CutFrames {
         operation: FrameCut,
         register: RegisterName,

@@ -30,6 +30,8 @@ mod delete_range;
 mod edited_slice;
 #[path = "composite_insert/nested_sequence.rs"]
 mod nested_sequence;
+#[path = "composite_insert/repeat_selection.rs"]
+mod repeat_selection;
 #[path = "composite_insert/source_replace.rs"]
 mod source_replace;
 #[path = "composite_insert/source_splice.rs"]

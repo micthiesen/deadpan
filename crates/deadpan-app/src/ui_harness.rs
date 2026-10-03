@@ -31,6 +31,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "marks",
     "named-registers",
     "dot-repeat",
+    "repeat-operator",
     "macros",
     "original-playback",
     "sound-playback",

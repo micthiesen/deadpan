@@ -1,7 +1,7 @@
 //! Capture privately, save one deletion, then publish the copied structure.
 
 use super::*;
-use crate::project::semantic::{CutAttempt, LastEdit, RepeatableCut};
+use crate::project::semantic::{CutAttempt, LastEdit, RepeatableCut, RepeatableEdit};
 use crate::project::slice::{CaptureRequest, CutReceipt, CutUpdate};
 use deadpan_core::{
     AudioTimingId, ProjectFrame, SemanticSelector, SliceCaptureSelection, SplitIdentities,
@@ -110,7 +110,7 @@ impl Service {
                 &capture.id.source_revision,
                 &outcome.revision_id,
                 semantic::Change::Replace(LastEdit {
-                    operation: attempt.operation.clone(),
+                    operation: RepeatableEdit::Cut(attempt.operation.clone()),
                     register: capture.register,
                 }),
             );
@@ -184,7 +184,8 @@ impl Service {
         }
         if let Some(version) = attempt.repeat_version
             && (snapshot.version != version
-                || snapshot.edit_for(workspace)?.operation != attempt.operation)
+                || snapshot.edit_for(workspace)?.operation
+                    != RepeatableEdit::Cut(attempt.operation.clone()))
         {
             return Err(
                 "The last semantic edit changed. Start the repeat again; no edit was made.".into(),

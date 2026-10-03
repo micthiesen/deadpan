@@ -1,6 +1,53 @@
 use super::*;
 
 #[test]
+fn distinct_operator_families_cannot_overlap_at_either_prefix_depth() {
+    let families = ["repeat.operator", "cut.operator", "yank.operator"];
+    for mode in ["logical", "physical"] {
+        for first in families {
+            for second in families {
+                if first == second {
+                    continue;
+                }
+                let bytes = serde_json::to_vec(&serde_json::json!({
+                    "version": 1, "key_mode": mode, "bindings": [
+                        {"action": first, "keys": [["e"]]},
+                        {"action": second, "keys": [["e", "b"]]}
+                    ]
+                }))
+                .unwrap();
+                let error = Bindings::from_json(&bytes)
+                    .err()
+                    .expect("overlapping operator families must reject");
+                assert!(error.contains("Operator prefixes"), "{error}");
+                assert!(error.contains("overlap"), "{error}");
+                assert!(error.contains("Repeat, Cut, and Yank"), "{error}");
+            }
+        }
+    }
+}
+
+#[test]
+fn operator_aliases_and_shared_nonoperator_ancestors_remain_configurable() {
+    for entries in [
+        serde_json::json!([
+            {"action": "repeat.operator", "keys": [["e"], ["e", "b"]]}
+        ]),
+        serde_json::json!([
+            {"action": "repeat.operator", "keys": [["e", "b"]]},
+            {"action": "cut.operator", "keys": [["e", "f"]]},
+            {"action": "hold", "keys": [["e", "n"]]}
+        ]),
+    ] {
+        let bytes = serde_json::to_vec(&serde_json::json!({
+            "version": 1, "key_mode": "logical", "bindings": entries
+        }))
+        .unwrap();
+        assert!(Bindings::from_json(&bytes).is_ok());
+    }
+}
+
+#[test]
 fn audit_enumerates_unannotated_intermediate_branches() {
     let a = Stroke::Key(Key::A, false);
     let b = Stroke::Key(Key::B, false);
@@ -102,6 +149,14 @@ fn transport_and_group_interrupts_clear_every_non_mark_prefix_even_overflow() {
                     selector: deadpan_core::SemanticSelector::Motion {
                         motion: deadpan_core::SemanticMotion::Scope { end: true },
                     },
+                }
+            } else if prefix.last() == Some(&Key::R) && key == Key::G {
+                Action::Repeat {
+                    selector: deadpan_core::SemanticSelector::Motion {
+                        motion: deadpan_core::SemanticMotion::Scope { end: true },
+                    },
+                    plays: std::num::NonZeroU32::new(if prefix.len() == 1 { 2 } else { 3 })
+                        .unwrap(),
                 }
             } else {
                 expected
@@ -221,7 +276,10 @@ fn count_policy_distinguishes_zero_absence_one_and_overflow() {
         bindings.key(Key::R, Modifiers::NONE, false, false);
         assert_eq!(
             bindings.key(Key::R, Modifiers::NONE, false, false),
-            Some(Action::Edit(BeatEdit::WrapRepeat(expected)))
+            Some(Action::Repeat {
+                selector: deadpan_core::SemanticSelector::SelectedBeat,
+                plays: std::num::NonZeroU32::new(expected).unwrap(),
+            })
         );
     }
     for (key, expected) in [
@@ -284,23 +342,16 @@ fn armed_delete_keeps_its_operator_when_visual_context_changes() {
 
 #[test]
 fn invalid_suffix_never_restarts_at_a_root_binding() {
-    for (prefix, invalid) in [(Key::G, false), (Key::R, true)] {
-        let mut bindings = enter(&[prefix]);
-        let result = bindings.key(Key::H, Modifiers::NONE, false, false);
-        if invalid {
-            assert!(matches!(result, Some(Action::Invalid(_))));
-        } else {
-            assert_eq!(result, None);
-        }
-        assert!(bindings.pending().is_empty());
-        assert_eq!(
-            bindings.key(Key::H, Modifiers::NONE, false, false),
-            Some(Action::Step {
-                forward: false,
-                count: 1
-            })
-        );
-    }
+    let mut bindings = enter(&[Key::G]);
+    assert_eq!(bindings.key(Key::H, Modifiers::NONE, false, false), None);
+    assert!(bindings.pending().is_empty());
+    assert_eq!(
+        bindings.key(Key::H, Modifiers::NONE, false, false),
+        Some(Action::Step {
+            forward: false,
+            count: 1
+        })
+    );
     let mut bindings = enter(&[Key::Comma]);
     assert!(matches!(
         bindings.key(Key::X, Modifiers::NONE, false, false),
@@ -392,7 +443,7 @@ fn prefix_teaching_lists_reachable_declared_leaves_and_counted_leader_restricts_
         EditSelection::Empty,
         EditSelection::Range,
     ] {
-        for key in [Key::G, Key::R, Key::Comma] {
+        for key in [Key::G, Key::Comma] {
             if key == Key::D && selection != EditSelection::None {
                 continue;
             }

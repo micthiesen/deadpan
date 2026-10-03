@@ -343,6 +343,19 @@ impl RootSoundEditCapture {
         if document.sounds.is_empty() {
             return Ok(None);
         }
+        if matches!(
+            command,
+            Command::RepeatSelection { .. } | Command::SetRepeatPlays { .. }
+        ) {
+            return match crate::repeat_selection::root_operation(document, command)? {
+                Some(operation) => Self::prepare_operation(document, operation).map(Some),
+                None => Ok(Some(Self {
+                    sounds: document.sounds.clone(),
+                    routes: document.sound_routes.clone(),
+                    output_frames: document.duration()?.frames(),
+                })),
+            };
+        }
         if let Command::ApplySourceTrim {
             parent,
             node,

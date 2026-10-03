@@ -358,7 +358,7 @@ where
         Ok(())
     }
 
-    fn charge_step(&mut self, capture: bool) -> Result<(), EditError> {
+    pub(super) fn charge_step(&mut self, capture: bool) -> Result<(), EditError> {
         if self.steps.len() == MAX_COMPOUND_STEPS {
             return Err(limit("macro exceeds 1024 resolved editing steps"));
         }
@@ -380,14 +380,14 @@ where
         Ok(())
     }
 
-    fn reserve_revision(&mut self, revision: &RevisionId) -> Result<(), EditError> {
+    pub(super) fn reserve_revision(&mut self, revision: &RevisionId) -> Result<(), EditError> {
         if !self.revisions.insert(revision.clone()) {
             return Err(identity("macro reuses a revision or capture allocation"));
         }
         Ok(())
     }
 
-    fn reserve_node(&mut self, node: &NodeId) -> Result<(), EditError> {
+    pub(super) fn reserve_node(&mut self, node: &NodeId) -> Result<(), EditError> {
         if !self.nodes.insert(node.clone()) {
             return Err(identity(
                 "macro reuses an authored or historical node identity",

@@ -148,6 +148,127 @@ fn repeat_cut_paste(doc: &ProjectDocument) -> (CommandRequest, Arc<CapturedEditS
     ];
     (compound(doc, "compound", 0, BTreeMap::new(), steps), slice)
 }
+
+#[test]
+fn range_repeat_and_count_setter_share_one_history_entry_without_register_writes() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("repeat-range.deadpan");
+    let initial = document();
+    let mut store = ProjectStore::create(&path, &initial).unwrap();
+    let selection = SliceCaptureSelection::Range {
+        range: FrameRange::new(ProjectFrame(1), ProjectFrame(6)).unwrap(),
+    };
+    let requirements = initial
+        .repeat_selection(&node("root"), &selection, 3)
+        .unwrap();
+    assert!(requirements.needs_group);
+    let repeat = LeafEdit::new(
+        revision("range-wrap"),
+        Command::RepeatSelection {
+            parent: node("root"),
+            selection,
+            plays: 3,
+            identities: RepeatSelectionIdentities {
+                repeat: node("range-repeat"),
+                group: Some(node("range-group")),
+                split: SplitIdentities {
+                    nodes: (0..requirements.required_split_ids)
+                        .map(|index| node(&format!("range-split-{index}")))
+                        .collect(),
+                },
+            },
+            timing: timing("range-wrap"),
+        },
+    )
+    .unwrap();
+    let command = compound(
+        &initial,
+        "repeat-outer",
+        0,
+        BTreeMap::new(),
+        vec![
+            ResolvedStep::Edit {
+                edit: repeat.clone(),
+            },
+            ResolvedStep::Edit {
+                edit: LeafEdit::new(
+                    revision("range-count"),
+                    Command::SetRepeatPlays {
+                        node: node("range-repeat"),
+                        plays: 4,
+                        timing: timing("range-count"),
+                    },
+                )
+                .unwrap(),
+            },
+        ],
+    );
+    let before = cells(&store);
+    let bank = store.registers().unwrap();
+    let preview = store.preview_compound(&command).unwrap();
+    assert_eq!(cells(&store), before);
+    assert_eq!(preview.register_bank, bank);
+    let invalid = compound(
+        &initial,
+        "failed-outer",
+        0,
+        BTreeMap::new(),
+        vec![
+            ResolvedStep::Edit { edit: repeat },
+            ResolvedStep::Edit {
+                edit: LeafEdit::new(
+                    revision("bad-count"),
+                    Command::SetRepeatPlays {
+                        node: node("range-repeat"),
+                        plays: 0,
+                        timing: timing("bad-count"),
+                    },
+                )
+                .unwrap(),
+            },
+        ],
+    );
+    assert!(store.commit_compound(&invalid, None).is_err());
+    assert_eq!(cells(&store), before);
+    let outcome = store.commit_compound(&command, None).unwrap();
+    assert!(outcome.committed.is_some());
+    assert_eq!(outcome.register_bank, bank);
+    let after = store.snapshot().unwrap();
+    assert_eq!(after.duration().unwrap().frames(), 22);
+    assert!(matches!(&after.nodes()[&node("range-repeat")].kind,
+        NodeKind::Repeat { child, iterations, gap: None }
+        if child == &node("range-group") && iterations.len() == 4));
+    assert_eq!(
+        store
+            .connection
+            .query_row("SELECT count(*) FROM history", [], |r| r.get::<_, i64>(0))
+            .unwrap(),
+        1
+    );
+    store
+        .undo(after.revision_id(), revision("repeat-undo"))
+        .unwrap();
+    let mut expected = serde_json::to_value(&initial).unwrap();
+    expected["revision_id"] = serde_json::json!("repeat-undo");
+    assert_eq!(
+        serde_json::to_value(store.snapshot().unwrap()).unwrap(),
+        expected
+    );
+    store.checkpoint().unwrap();
+    drop(store);
+    let mut store = ProjectStore::open(&path, crate::AccessMode::ReadWrite).unwrap();
+    store
+        .redo(&revision("repeat-undo"), revision("repeat-redo"))
+        .unwrap();
+    let mut expected = serde_json::to_value(after).unwrap();
+    expected["revision_id"] = serde_json::json!("repeat-redo");
+    assert_eq!(
+        serde_json::to_value(store.snapshot().unwrap()).unwrap(),
+        expected
+    );
+    assert_eq!(store.registers().unwrap(), bank);
+    store.validate().unwrap();
+}
 fn cells(store: &ProjectStore) -> Vec<String> {
     let mut result = Vec::new();
     for query in [

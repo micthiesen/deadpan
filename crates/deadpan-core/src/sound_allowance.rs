@@ -284,6 +284,53 @@ impl SoundAllowanceEdit {
         Ok(())
     }
 
+    /// Existing concrete permissions follow the original first play only.
+    /// Ordinary Sequence ancestry has no enclosing Repeat path to prefix.
+    pub(crate) fn wrap_repeat(
+        &mut self,
+        selected: &std::collections::BTreeSet<NodeId>,
+        repeat: &NodeId,
+        first: &IterationId,
+    ) -> Result<(), EditError> {
+        for allowances in self.values.values_mut() {
+            let mut values = allowances.0.clone();
+            for issuer in &mut values {
+                if selected.contains(&issuer.instance().node) {
+                    issuer.instance_mut().repeats.insert(
+                        0,
+                        RepeatInstance {
+                            node: repeat.clone(),
+                            iteration: first.clone(),
+                        },
+                    );
+                }
+            }
+            *allowances = SoundHoldAllowances::try_from(values)?;
+        }
+        validate_limits(&self.values)?;
+        Ok(())
+    }
+
+    /// Count changes remove only retired concrete plays and newly terminal gaps.
+    pub(crate) fn resize_repeat(
+        &mut self,
+        repeat: &NodeId,
+        iterations: &crate::IterationOrder,
+    ) -> Result<(), EditError> {
+        self.values.retain(|_, allowances| {
+            allowances.0.retain(|issuer| {
+                issuer.instance().repeats.iter().all(|step| {
+                    &step.node != repeat || iterations.position(&step.iteration).is_some()
+                }) && !matches!(issuer, SoundHoldIssuer::RepeatGap { instance, gap_after }
+                    if &instance.node == repeat
+                        && !iterations.position(gap_after).is_some_and(|position| position + 1 < iterations.len()))
+            });
+            !allowances.is_empty()
+        });
+        validate_limits(&self.values)?;
+        Ok(())
+    }
+
     pub(crate) fn restore(mut self, document: &mut ProjectDocument) -> Result<(), EditError> {
         self.values.retain(|sound, allowances| {
             if !document.sounds.contains_key(sound) {

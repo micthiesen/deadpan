@@ -11,6 +11,8 @@ mod delete_range;
 mod move_range;
 #[path = "edited_slice/placement.rs"]
 mod placement;
+#[path = "edited_slice/repeat_selection.rs"]
+mod repeat_selection;
 #[path = "edited_slice/structural_capture.rs"]
 mod structural_capture;
 

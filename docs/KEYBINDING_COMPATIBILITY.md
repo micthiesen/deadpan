@@ -9,6 +9,20 @@ The comma prefix remains usable while browsing the Original so `,i` can copy it
 into Your edit. Other edit operators keep the Original non-destructive. Native
 text editing retains its own selection, clipboard, undo, and redo behavior.
 
+Edit Repeat uses `repeat.operator` (`r` plus a configured motion), `repeat`
+(`rr`, explicit whole beat) and `repeat.range` (Visual `r`). A leading count is
+total plays; a motion suffix count is distance. Two explicit counts refuse at
+the terminal key. Original and Sound retain their legacy routing. The production
+audit includes Repeat ancestors, pending motion counts, group-motion prefixes
+and invalid dual-count states. No modified global shortcut is added.
+Distinct operator families cannot use overlapping ancestor prefixes. Aliases
+within one family remain supported; counts stay attached to the completed alias
+and cannot cross another alias on the way to a terminal key.
+The [Repeat qualification](qualification/repeat-operator-2026-10-03.md) passes
+3,319,728 production routing cases against 62 reserved bindings, with no live
+Kestrel source drift or conflicts. Rendered remap and native key checks are
+recorded separately from unqualified physical layouts and OS IME delivery.
+
 Catalog placement uses `,s` with no count or key-repeat activation. In Placed
 sounds and its inspector, `h/l`, `j/k`, Enter, `+/-` and `dd` act on the event.
 Logical Plus accepts no modifier or Shift; Minus accepts no modifier so the

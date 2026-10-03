@@ -17,6 +17,32 @@ pub(super) struct Capture {
 }
 
 impl Capture {
+    pub(super) fn repeat_selector(&self) -> deadpan_core::SemanticSelector {
+        if self.context.visual_selection.is_some() {
+            deadpan_core::SemanticSelector::VisualSelection
+        } else {
+            deadpan_core::SemanticSelector::SelectedBeat
+        }
+    }
+
+    pub(super) fn repeat_target(&self) -> Result<repeat_queue::Target, String> {
+        if self.context.visual_selection.is_some() {
+            return Err("Clear the Visual range before changing an existing Repeat count.".into());
+        }
+        Ok(repeat_queue::Target {
+            session: self.base.session,
+            revision: self.base.document.revision_id().clone(),
+            scope: self.scope.clone(),
+            node: self
+                .context
+                .selected_child
+                .clone()
+                .ok_or("Select a beat before repeating it.")?,
+            cursor: self.context.cursor,
+            pane: self.pane,
+        })
+    }
+
     pub(super) fn matches(&self, app: &DeadpanApp) -> bool {
         self.matches_without_selection(app) && app.selected_beat == self.context.selected_child
     }
@@ -220,6 +246,8 @@ impl DeadpanApp {
                 | Action::Edit(BeatEdit::Delete)
                 | Action::DeleteFrames(_)
                 | Action::Operator { .. }
+                | Action::Repeat { .. }
+                | Action::Edit(BeatEdit::WrapRepeat(_))
                 | Action::CopyMoment
                 | Action::PasteMoment { .. }
                 | Action::RepeatLast
@@ -232,7 +260,7 @@ impl DeadpanApp {
                 | Action::Invalid(_)
                 | Action::OfferInsert
         ) {
-            self.error = Some("This action cannot be recorded yet. Macros support frame and beat motions, group boundaries, Visual selections, cuts, copies, register pastes and named calls. Save or cancel recording first.".into());
+            self.error = Some("This action cannot be recorded yet. Macros support frame and beat motions, group boundaries, Visual selections, cuts, copies, Repeat wraps, register pastes and named calls. Save or cancel recording first.".into());
             return false;
         }
         if matches!(
@@ -246,6 +274,8 @@ impl DeadpanApp {
                 | Action::Edit(BeatEdit::Delete)
                 | Action::DeleteFrames(_)
                 | Action::Operator { .. }
+                | Action::Repeat { .. }
+                | Action::Edit(BeatEdit::WrapRepeat(_))
                 | Action::CopyMoment
                 | Action::PasteMoment { .. }
                 | Action::RepeatLast
@@ -563,28 +593,41 @@ impl DeadpanApp {
     }
 
     pub(super) fn repeat_last_edit(&mut self) {
+        let uses_register = self.last_edit_uses_register();
         let invocation = (|| {
             let captured = self.capture_macro_target()?;
             let snapshot = self
                 .semantic
                 .snapshot()
-                .ok_or("Make a picture cut before repeating an edit.")?;
+                .ok_or("Make a picture cut or Repeat before repeating an edit.")?;
             let edit = snapshot.edit_for(&captured.base)?;
             match &captured.context.visual_selection {
                 Some(selection) if selection.anchor == selection.head => {
-                    return Err(
+                    return Err(if edit.uses_register() {
                         "The Edit selection is empty. Move a boundary before repeating the cut."
-                            .into(),
-                    );
+                    } else {
+                        "The Edit selection is empty. Move a boundary before repeating the edit."
+                    }
+                    .into());
                 }
                 None if matches!(
                     edit.operation,
-                    crate::project::semantic::RepeatableCut::Selector(
-                        deadpan_core::SemanticSelector::VisualSelection
-                    )
+                    crate::project::semantic::RepeatableEdit::Cut(
+                        crate::project::semantic::RepeatableCut::Selector(
+                            deadpan_core::SemanticSelector::VisualSelection
+                        )
+                    ) | crate::project::semantic::RepeatableEdit::Repeat {
+                        selector: deadpan_core::SemanticSelector::VisualSelection,
+                        ..
+                    }
                 ) =>
                 {
-                    return Err("Select a new Visual range before repeating this cut.".into());
+                    return Err(if edit.uses_register() {
+                        "Select a new Visual range before repeating this cut."
+                    } else {
+                        "Select a new Visual range before repeating this edit."
+                    }
+                    .into());
                 }
                 _ => {}
             }
@@ -596,7 +639,9 @@ impl DeadpanApp {
         self.bindings.clear();
         // The override belongs to this attempt, including refusals. A saved
         // result still arrives through the immutable request and durable bank.
-        self.copied.begin_write();
+        if uses_register {
+            self.copied.begin_write();
+        }
         match invocation {
             Ok((capture, instruction, version)) => {
                 self.apply_semantic_instruction(Ok(capture), Ok(instruction), Some(version));

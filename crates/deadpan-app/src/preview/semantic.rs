@@ -1,9 +1,16 @@
 //! Admit monotonically newer repeat receipts only in the visible session.
 
-use crate::project::semantic::{RepeatableCut, Snapshot};
+use crate::project::semantic::{RepeatableCut, RepeatableEdit, Snapshot};
 use deadpan_core::{ProjectId, SemanticMotion, SemanticSelector};
 
 impl super::DeadpanApp {
+    pub(super) fn last_edit_uses_register(&self) -> bool {
+        self.semantic
+            .snapshot()
+            .and_then(|snapshot| snapshot.edit.as_ref())
+            .is_none_or(|edit| edit.uses_register())
+    }
+
     pub(super) fn repeat_hint(&self) -> Option<String> {
         let edit = self
             .semantic
@@ -12,31 +19,40 @@ impl super::DeadpanApp {
             .ok()?;
         match self.edit_selection() {
             crate::navigation::EditSelection::Range => {
-                return Some("repeat cut selection".into());
+                return Some(match &edit.operation {
+                    RepeatableEdit::Cut(_) => "repeat cut selection".into(),
+                    RepeatableEdit::Repeat { plays, .. } => format!("repeat selection ×{plays}"),
+                });
             }
             crate::navigation::EditSelection::Empty => {
                 return Some("repeat unavailable: empty range".into());
             }
             crate::navigation::EditSelection::None => {}
         }
-        Some(match &edit.operation {
-            RepeatableCut::Frames(operation) => format!("repeat cut {}f", operation.count()),
-            RepeatableCut::Selector(selector) => match selector {
-                SemanticSelector::SelectedBeat => "repeat cut beat".into(),
-                SemanticSelector::VisualSelection => "select range to repeat cut".into(),
-                SemanticSelector::Motion { motion } => match motion {
-                    SemanticMotion::Frames { forward, count } => format!(
-                        "repeat cut {count}f {}",
-                        if *forward { "forward" } else { "backward" }
-                    ),
-                    SemanticMotion::Beats { forward, count } => format!(
-                        "repeat cut {count} beats {}",
-                        if *forward { "forward" } else { "backward" }
-                    ),
-                    SemanticMotion::Scope { end } => {
-                        format!("repeat cut to group {}", if *end { "end" } else { "start" })
-                    }
-                },
+        let (action, selector) = match &edit.operation {
+            RepeatableEdit::Cut(RepeatableCut::Frames(operation)) => {
+                return Some(format!("repeat cut {}f", operation.count()));
+            }
+            RepeatableEdit::Cut(RepeatableCut::Selector(selector)) => {
+                ("repeat cut".to_owned(), selector)
+            }
+            RepeatableEdit::Repeat { selector, plays } => (format!("repeat ×{plays}"), selector),
+        };
+        Some(match selector {
+            SemanticSelector::SelectedBeat => format!("{action} beat"),
+            SemanticSelector::VisualSelection => format!("select range to {action}"),
+            SemanticSelector::Motion { motion } => match motion {
+                SemanticMotion::Frames { forward, count } => format!(
+                    "{action} {count}f {}",
+                    if *forward { "forward" } else { "backward" }
+                ),
+                SemanticMotion::Beats { forward, count } => format!(
+                    "{action} {count} beats {}",
+                    if *forward { "forward" } else { "backward" }
+                ),
+                SemanticMotion::Scope { end } => {
+                    format!("{action} to group {}", if *end { "end" } else { "start" })
+                }
             },
         })
     }
@@ -92,7 +108,7 @@ mod tests {
             version: 2,
             head: Some(RevisionId::new("cut").unwrap()),
             edit: Some(LastEdit {
-                operation: RepeatableCut::Frames(FrameCut::new(5).unwrap()),
+                operation: RepeatableEdit::Cut(RepeatableCut::Frames(FrameCut::new(5).unwrap())),
                 register: None,
             }),
             error: None,

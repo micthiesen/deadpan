@@ -58,7 +58,7 @@ fn selector_candidate(
     selector: SemanticSelector,
     register: Option<char>,
 ) -> Result<(), String> {
-    let expected = RepeatableCut::Selector(selector);
+    let expected = RepeatableEdit::Cut(RepeatableCut::Selector(selector));
     d.check(
         "Repeat retains only the requested selector and register at the current saved head",
         d.app().semantic.snapshot().is_some_and(|snapshot| {

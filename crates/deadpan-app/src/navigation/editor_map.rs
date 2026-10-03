@@ -74,6 +74,8 @@ pub enum BindingId {
     CutBeat,
     CutRange,
     Repeat,
+    RepeatOperator,
+    RepeatRange,
     Hold,
     Insert,
     PlaceSound,
@@ -97,7 +99,7 @@ pub enum BindingId {
 }
 
 impl BindingId {
-    pub const ALL: [Self; 44] = [
+    pub const ALL: [Self; 46] = [
         Self::FramePrevious,
         Self::FrameNext,
         Self::BeatPrevious,
@@ -122,6 +124,8 @@ impl BindingId {
         Self::CutBeat,
         Self::CutRange,
         Self::Repeat,
+        Self::RepeatOperator,
+        Self::RepeatRange,
         Self::Hold,
         Self::Insert,
         Self::PlaceSound,
@@ -169,6 +173,8 @@ impl BindingId {
             Self::CutBeat => "cut.beat",
             Self::CutRange => "cut.range",
             Self::Repeat => "repeat",
+            Self::RepeatOperator => "repeat.operator",
+            Self::RepeatRange => "repeat.range",
             Self::Hold => "hold",
             Self::Insert => "insert",
             Self::PlaceSound => "sound.place",
@@ -209,12 +215,19 @@ enum CountPolicy {
     Motion,
     Frames,
     Repeat,
+    LegacyRepeat,
     DeleteBeat,
     Operator,
     Hold,
     Gain,
     Macro,
     Refuse(&'static str),
+}
+
+#[derive(Clone, Copy, Default)]
+pub(super) struct Counts {
+    pub leading: Option<u32>,
+    pub motion: Option<u32>,
 }
 
 #[derive(Clone, Copy)]
@@ -228,7 +241,60 @@ pub(super) struct Rule {
 
 impl Rule {
     pub fn resolve(&self, count: Option<u32>) -> Action {
+        self.resolve_counts(Counts {
+            leading: count,
+            motion: None,
+        })
+    }
+
+    pub fn resolve_counts(&self, counts: Counts) -> Action {
+        if matches!(self.count, CountPolicy::Operator | CountPolicy::Repeat)
+            && counts.leading.is_some()
+            && counts.motion.is_some()
+        {
+            return Action::Invalid(
+                "Use one count before the operator or before its motion, not both.",
+            );
+        }
+        let count = counts.motion.or(counts.leading);
         match self.count {
+            CountPolicy::Repeat => {
+                let Action::Repeat { selector, .. } = self.action else {
+                    unreachable!()
+                };
+                use deadpan_core::{SemanticMotion as M, SemanticSelector as S};
+                let Some(plays) = std::num::NonZeroU32::new(counts.leading.unwrap_or(2)) else {
+                    return Action::Invalid("An edit count must be positive; no edit was made.");
+                };
+                let Some(distance) = std::num::NonZeroU32::new(counts.motion.unwrap_or(1)) else {
+                    return Action::Invalid("A motion count must be positive; no edit was made.");
+                };
+                let selector = match selector {
+                    S::Motion {
+                        motion: M::Frames { forward, .. },
+                    } => S::Motion {
+                        motion: M::Frames {
+                            forward,
+                            count: distance,
+                        },
+                    },
+                    S::Motion {
+                        motion: M::Beats { forward, .. },
+                    } => S::Motion {
+                        motion: M::Beats {
+                            forward,
+                            count: distance,
+                        },
+                    },
+                    _ if counts.motion.is_some() => {
+                        return Action::Invalid(
+                            "A motion count requires frame or beat motion; put total plays before Repeat.",
+                        );
+                    }
+                    selector => selector,
+                };
+                Action::Repeat { selector, plays }
+            }
             CountPolicy::Operator => {
                 let Action::Operator { cut, selector } = self.action else {
                     unreachable!()
@@ -301,7 +367,7 @@ impl Rule {
                 },
                 _ => unreachable!("macro declarations carry a macro execution"),
             },
-            CountPolicy::Repeat => match count {
+            CountPolicy::LegacyRepeat => match count {
                 Some(0) => Action::Invalid("An edit count must be positive; no edit was made."),
                 value => Action::Edit(BeatEdit::WrapRepeat(value.unwrap_or(2))),
             },
@@ -347,6 +413,11 @@ impl Rule {
     pub fn id(&self) -> BindingId {
         use BindingId as I;
         match self.action {
+            Action::Repeat { selector, .. } => match selector {
+                deadpan_core::SemanticSelector::SelectedBeat => I::Repeat,
+                deadpan_core::SemanticSelector::VisualSelection => I::RepeatRange,
+                deadpan_core::SemanticSelector::Motion { .. } => I::RepeatOperator,
+            },
             Action::Operator { cut, selector } => match selector {
                 deadpan_core::SemanticSelector::SelectedBeat => {
                     if cut {
@@ -412,6 +483,7 @@ impl Rule {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum PrefixKind {
     Operator { cut: bool },
+    Repeat,
     Mark(MarkPrefix),
     Register,
     MacroRecord,
@@ -423,6 +495,7 @@ impl PrefixKind {
         match id {
             BindingId::CutOperator => Some(Self::Operator { cut: true }),
             BindingId::YankOperator => Some(Self::Operator { cut: false }),
+            BindingId::RepeatOperator => Some(Self::Repeat),
             BindingId::MarkSet => Some(Self::Mark(MarkPrefix::Set)),
             BindingId::MarkJump => Some(Self::Mark(MarkPrefix::Jump)),
             BindingId::RegisterSelect => Some(Self::Register),
@@ -435,6 +508,7 @@ impl PrefixKind {
     pub fn count_refusal(self) -> &'static str {
         match self {
             Self::Operator { .. } => "An operator count must be positive; no action was taken.",
+            Self::Repeat => "A Repeat play count must be positive; no edit was made.",
             Self::Mark(_) => "Use mark commands without a count.",
             Self::Register => "Select a register without a count; put the count after its name.",
             Self::MacroRecord => "Record a macro without a count.",
@@ -443,12 +517,18 @@ impl PrefixKind {
     }
 
     pub fn allows_count(self, count: Option<u32>) -> bool {
-        (self == Self::MacroExecute || matches!(self, Self::Operator { .. })) && count != Some(0)
+        (self == Self::MacroExecute || self.is_operator()) && count != Some(0)
+    }
+
+    pub fn is_operator(self) -> bool {
+        matches!(self, Self::Operator { .. } | Self::Repeat)
     }
 
     fn letter_action(self, letter: char) -> Action {
         match self {
-            Self::Operator { .. } => unreachable!("operators compile selector paths"),
+            Self::Operator { .. } | Self::Repeat => {
+                unreachable!("operators compile selector paths")
+            }
             Self::Mark(MarkPrefix::Set) => Action::SetMark(letter),
             Self::Mark(MarkPrefix::Jump) => Action::JumpMark(letter),
             Self::Register => Action::SelectRegister(letter.to_ascii_lowercase()),
@@ -625,6 +705,37 @@ impl Compiled {
         }
         false
     }
+    pub fn repeat_pending_scope(
+        &self,
+        path: &[Stroke],
+        selection: EditSelection,
+        domain: RoutingDomain,
+    ) -> Option<RepeatPendingScope> {
+        let node = self.map(selection, domain).resolve(path)?;
+        let mut pending: Vec<_> = node.children().map(|(_, child)| child).collect();
+        let mut result = None;
+        while let Some(node) = pending.pop() {
+            if let Some(binding) = node.terminal()
+                && let Action::Repeat { selector, .. } = binding.value.action
+            {
+                let scope = match selector {
+                    deadpan_core::SemanticSelector::SelectedBeat => {
+                        RepeatPendingScope::SelectedBeat
+                    }
+                    deadpan_core::SemanticSelector::VisualSelection => {
+                        RepeatPendingScope::VisualSelection
+                    }
+                    deadpan_core::SemanticSelector::Motion { .. } => RepeatPendingScope::Motion,
+                };
+                match result {
+                    Some(previous) if previous != scope => return Some(RepeatPendingScope::Mixed),
+                    _ => result = Some(scope),
+                }
+            }
+            pending.extend(node.children().map(|(_, child)| child));
+        }
+        result
+    }
     fn stroke_label(&self, stroke: Stroke) -> String {
         if self.mode == KeyMode::Physical
             && let Stroke::Key(Key::Plus, shift) = stroke
@@ -663,36 +774,33 @@ impl Compiled {
         &self,
         path: &[Stroke],
         selection: EditSelection,
-        count: Option<u32>,
+        counts: Counts,
         recording: bool,
         domain: RoutingDomain,
     ) -> Option<String> {
-        self.teaching(path, selection, count, false, recording, domain)
+        self.teaching(path, selection, counts, false, recording, domain)
     }
     pub fn next_keys(
         &self,
         path: &[Stroke],
         selection: EditSelection,
-        count: Option<u32>,
+        counts: Counts,
         recording: bool,
         domain: RoutingDomain,
     ) -> Option<String> {
-        self.teaching(path, selection, count, true, recording, domain)
+        self.teaching(path, selection, counts, true, recording, domain)
     }
     fn teaching(
         &self,
         path: &[Stroke],
         selection: EditSelection,
-        count: Option<u32>,
+        counts: Counts,
         compact: bool,
         recording: bool,
         domain: RoutingDomain,
     ) -> Option<String> {
         let node = self.map(selection, domain).resolve(path)?;
-        if let Some(prefix) = node
-            .prefix()
-            .filter(|prefix| !matches!(prefix.value, PrefixKind::Operator { .. }))
-        {
+        if let Some(prefix) = node.prefix().filter(|prefix| !prefix.value.is_operator()) {
             if prefix.value == PrefixKind::Register {
                 return Some(if compact {
                     "a–z / A–Z · \" · Esc".into()
@@ -705,7 +813,9 @@ impl Compiled {
                 return Some("a–z / A–Z · Esc".into());
             }
             let verb = match prefix.value {
-                PrefixKind::Operator { .. } => unreachable!("operators use selector teaching"),
+                PrefixKind::Operator { .. } | PrefixKind::Repeat => {
+                    unreachable!("operators use selector teaching")
+                }
                 PrefixKind::Mark(MarkPrefix::Set) => "saves this position",
                 PrefixKind::Mark(MarkPrefix::Jump) => "jumps to that mark",
                 PrefixKind::Register => unreachable!("register teaching handled above"),
@@ -713,20 +823,35 @@ impl Compiled {
                 PrefixKind::MacroExecute => "executes that named macro",
             };
             let repetitions = if prefix.value == PrefixKind::MacroExecute {
-                format!(" {} time(s)", count.unwrap_or(1))
+                format!(" {} time(s)", counts.leading.unwrap_or(1))
             } else {
                 String::new()
             };
             return Some(format!("a–z / A–Z {verb}{repetitions} · Esc cancels"));
         }
         let mut parts = Vec::new();
+        if node
+            .prefix()
+            .is_some_and(|prefix| prefix.value == PrefixKind::Repeat)
+            && counts.leading.is_none()
+            && counts.motion.is_none()
+        {
+            parts.push(
+                if compact {
+                    "1–9"
+                } else {
+                    "1–9 starts a motion count"
+                }
+                .into(),
+            );
+        }
         let mut refusal = None;
         for (stroke, child) in node.children() {
             let mut pending = vec![child];
             let mut available = false;
             while let Some(candidate) = pending.pop() {
                 if let Some(binding) = candidate.terminal() {
-                    match binding.value.resolve(count) {
+                    match binding.value.resolve_counts(counts) {
                         Action::Invalid(message) => {
                             refusal = refusal.or(Some(message));
                         }
@@ -741,15 +866,22 @@ impl Compiled {
                         .prefix()
                         .is_some_and(|prefix| prefix.value == PrefixKind::MacroRecord)
                 {
-                    "stops macro recording"
+                    "stops macro recording".into()
                 } else {
-                    child.terminal().map_or("…", |binding| {
-                        if count.is_some() && binding.value.id() == BindingId::Hold {
-                            "inserts the counted pause"
-                        } else {
-                            binding.value.short
-                        }
-                    })
+                    child.terminal().map_or_else(
+                        || "…".into(),
+                        |binding| {
+                            if counts.leading.is_some() && binding.value.id() == BindingId::Hold {
+                                "inserts the counted pause".into()
+                            } else if let Action::Repeat { selector, plays } =
+                                binding.value.resolve_counts(counts)
+                            {
+                                repeat_description(selector, plays)
+                            } else {
+                                binding.value.short.into()
+                            }
+                        },
+                    )
                 };
                 parts.push(if compact {
                     self.stroke_label(*stroke)
@@ -778,19 +910,57 @@ impl Compiled {
     }
 }
 
+fn repeat_description(
+    selector: deadpan_core::SemanticSelector,
+    plays: std::num::NonZeroU32,
+) -> String {
+    use deadpan_core::{SemanticMotion as M, SemanticSelector as S};
+    let selected = match selector {
+        S::SelectedBeat => "this whole beat".into(),
+        S::VisualSelection => "the selected range".into(),
+        S::Motion {
+            motion: M::Scope { end },
+        } => if end {
+            "to the group end"
+        } else {
+            "to the group start"
+        }
+        .into(),
+        S::Motion {
+            motion: M::Frames { forward, count },
+        } => format!(
+            "{count} frame(s) {}",
+            if forward { "forward" } else { "backward" }
+        ),
+        S::Motion {
+            motion: M::Beats { forward, count },
+        } => format!(
+            "{count} beat boundary/boundaries {}",
+            if forward { "forward" } else { "backward" }
+        ),
+    };
+    format!("repeats {selected}, {plays} total plays")
+}
+
 fn enabled(id: BindingId, visual: bool, domain: RoutingDomain) -> bool {
     if matches!(
         id,
-        BindingId::CopyBeat | BindingId::CutOperator | BindingId::YankOperator
+        BindingId::CopyBeat
+            | BindingId::CutOperator
+            | BindingId::YankOperator
+            | BindingId::RepeatOperator
     ) {
         return domain == RoutingDomain::Edit && !visual;
     }
     if id == BindingId::Copy {
         return domain != RoutingDomain::Edit || visual;
     }
+    if id == BindingId::RepeatRange {
+        return domain == RoutingDomain::Edit && visual;
+    }
     !matches!(
         (id, visual),
-        (BindingId::CutBeat, true) | (BindingId::CutRange, false)
+        (BindingId::CutBeat | BindingId::Repeat, true) | (BindingId::CutRange, false)
     )
 }
 
@@ -812,7 +982,7 @@ fn compile_mode(
                     label: path_label(path),
                     value: kind,
                 });
-                if let PrefixKind::Operator { cut } = kind {
+                if kind.is_operator() {
                     for motion in definitions {
                         let selector = match motion.rule.action {
                             Action::Step { forward, .. } => deadpan_core::SemanticMotion::Frames {
@@ -834,14 +1004,33 @@ fn compile_mode(
                                 label: path_label(&expanded),
                                 path: expanded,
                                 value: Rule {
-                                    action: Action::Operator {
-                                        cut,
-                                        selector: deadpan_core::SemanticSelector::Motion {
-                                            motion: selector,
+                                    action: match kind {
+                                        PrefixKind::Operator { cut } => Action::Operator {
+                                            cut,
+                                            selector: deadpan_core::SemanticSelector::Motion {
+                                                motion: selector,
+                                            },
                                         },
+                                        PrefixKind::Repeat => Action::Repeat {
+                                            selector: deadpan_core::SemanticSelector::Motion {
+                                                motion: selector,
+                                            },
+                                            plays: std::num::NonZeroU32::new(2).unwrap(),
+                                        },
+                                        _ => unreachable!(),
                                     },
-                                    count: CountPolicy::Operator,
-                                    short: operator_description(cut, selector),
+                                    count: if kind == PrefixKind::Repeat {
+                                        CountPolicy::Repeat
+                                    } else {
+                                        CountPolicy::Operator
+                                    },
+                                    short: match kind {
+                                        PrefixKind::Operator { cut } => {
+                                            operator_description(cut, selector)
+                                        }
+                                        PrefixKind::Repeat => "repeat with a motion",
+                                        _ => unreachable!(),
+                                    },
                                     repeatable: false,
                                     interrupt: false,
                                 },
@@ -881,6 +1070,10 @@ fn compile_mode(
                     rule.action = Action::Edit(BeatEdit::Delete);
                     rule.count = CountPolicy::DeleteBeat;
                 }
+                if domain != RoutingDomain::Edit && definition.id == BindingId::Repeat {
+                    rule.action = Action::Edit(BeatEdit::WrapRepeat(2));
+                    rule.count = CountPolicy::LegacyRepeat;
+                }
                 if definition.id == BindingId::Last {
                     rule.interrupt =
                         definition.overridden || path.as_slice() == [Stroke::Key(Key::G, true)];
@@ -905,6 +1098,24 @@ fn compile_mode(
             };
             if keymap_config::reservations::reserved(key, modifiers) {
                 return Err("A command path conflicts with a reserved Kestrel position".into());
+            }
+        }
+    }
+    // One pending count cannot change meaning by entering another operator
+    // family. Shared unannotated ancestors and aliases of one family are fine.
+    for (index, prefix) in prefixes.iter().enumerate() {
+        if !prefix.value.is_operator() {
+            continue;
+        }
+        for prior in &prefixes[..index] {
+            if prior.value.is_operator()
+                && prior.value != prefix.value
+                && (prior.path.starts_with(&prefix.path) || prefix.path.starts_with(&prior.path))
+            {
+                return Err(format!(
+                    "Operator prefixes {} and {} overlap; use separate paths for Repeat, Cut, and Yank",
+                    prior.label, prefix.label,
+                ));
             }
         }
     }
@@ -1072,12 +1283,25 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
     );
     add(
         &[plain(Key::R), plain(Key::R)],
-        Action::Edit(BeatEdit::WrapRepeat(2)),
+        Action::Repeat {
+            selector: deadpan_core::SemanticSelector::SelectedBeat,
+            plays: std::num::NonZeroU32::new(2).unwrap(),
+        },
         C::Repeat,
         "completes the Repeat",
         false,
     );
     if visual {
+        add(
+            &[plain(Key::R)],
+            Action::Repeat {
+                selector: deadpan_core::SemanticSelector::VisualSelection,
+                plays: std::num::NonZeroU32::new(2).unwrap(),
+            },
+            C::Repeat,
+            "repeat selected range",
+            false,
+        );
         add(
             &[plain(Key::D)],
             Action::DeleteSelection,
@@ -1086,6 +1310,22 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
             false,
         );
     } else {
+        // Placeholder suffix is replaced by the configured motion paths.
+        add(
+            &[plain(Key::R), plain(Key::H)],
+            Action::Repeat {
+                selector: deadpan_core::SemanticSelector::Motion {
+                    motion: deadpan_core::SemanticMotion::Frames {
+                        forward: false,
+                        count: std::num::NonZeroU32::new(1).unwrap(),
+                    },
+                },
+                plays: std::num::NonZeroU32::new(2).unwrap(),
+            },
+            C::Repeat,
+            "repeat with a motion",
+            false,
+        );
         add(
             &[plain(Key::D), plain(Key::D)],
             Action::Operator {
@@ -1140,8 +1380,10 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
     add(
         &[plain(Key::Period)],
         Action::RepeatLast,
-        C::Refuse("Repeat the last cut once, without a count; its requested selector is retained."),
-        "repeat the last committed cut against the current Visual range, beat or motion; other edit kinds are not supported yet",
+        C::Refuse(
+            "Repeat the last edit once, without a count; its requested selector and parameters are retained.",
+        ),
+        "repeat the last committed cut or Repeat against the current Visual range, beat or motion",
         false,
     );
     for (key, action, short) in [

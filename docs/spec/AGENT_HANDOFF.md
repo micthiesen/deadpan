@@ -19,6 +19,28 @@ test instances after testing instead of leaving them idle. The previously
 running `dev.thiesen.deadpan.cursor-qa` instance has been quit, and the native
 app inventory confirmed no Deadpan app remained running.
 
+## Repeat selections, current implementation
+
+[Repeat selections](../REPEAT_SELECTION.md) adds `r` plus frame, beat or group
+motion, Visual `r`, and `rr` for an explicit child. Leading counts mean total
+plays; motion counts mean distance. Two explicit counts and empty selections
+refuse. Prefixes and commands retain their original captured targets. Only an
+explicit whole-beat terminal may continue onto its own checked queued wrapper;
+motion terminals cannot reuse that continuation. Registers and pending register
+choices survive wrapping and Repeat dot attempts.
+
+`RepeatSelection` preflights exact wrapper/group/Split identities and keeps
+partial composite contexts structural. It captures audio clocks before Split,
+retains old lattices, adds first-play mark/allowance paths and transforms root
+sounds once. `SetRepeatPlays` preserves surviving identities and gaps with exact
+suffix reanchors. Keep historical command variants unchanged. A single Apply or
+explicit native wrap proves dot intent before refresh; named Run and `:repeat`
+setters remain unproved. Count setter recording, occurrence contexts and full
+product acceptance remain open. No schema change.
+See [qualification and retained findings](../qualification/repeat-operator-2026-10-03.md)
+for 3,292 passing tests, 1,094 rendered workflow checks, strict lint and native
+keyboard verification. The native QA app was closed after testing.
+
 ## Cut selector repeat, current implementation
 
 [Semantic repeat](../SEMANTIC_REPEAT.md) now retains frame cuts, typed motion
@@ -36,7 +58,7 @@ the retained receipt without reinstalling an older candidate. Legacy cuts retain
 their independent saved-cut receipts and validate their selector/capture pairs.
 Recording dot stores its effective instruction; recording `:delete` distinguishes
 captured whole children from Visual ranges. No schema changes.
-Repeat for other editing operations and all product gates remain open.
+Repeat for remaining editing operations and all product gates remain open.
 See [qualification and limits](../qualification/selector-repeat-2026-10-03.md).
 
 ## Operator motions, current implementation
@@ -54,7 +76,7 @@ Copies preserve cursor/child; child cuts select the literal next sibling, range
 cuts the time join. One native operator uses the same Apply and saved-receipt
 path as recording. Escape revokes cursor ownership even outside a recording,
 while queued authored work remains durable. Text objects, analysis-dependent
-motions, range Repeat and dot-repeat for other edits remain required.
+motions and dot-repeat for remaining edits remain required.
 See [qualification and limits](../qualification/operator-motions-2026-10-02.md).
 
 ## Semantic macros, current implementation

@@ -2,7 +2,7 @@
 
 use super::*;
 use crate::preview::copied::Content;
-use crate::project::semantic::RepeatableCut;
+use crate::project::semantic::{RepeatableCut, RepeatableEdit};
 use crate::project::slice::Captured;
 use deadpan_core::{FrameRange, ProjectDocument};
 use deadpan_store::{AccessMode, ProjectStore};
@@ -458,7 +458,7 @@ fn candidate(
             && snapshot
                 .edit
                 .as_ref()
-                .is_some_and(|edit| matches!(&edit.operation, RepeatableCut::Frames(operation) if operation.count() == count) && edit.register == register)
+                .is_some_and(|edit| matches!(&edit.operation, RepeatableEdit::Cut(RepeatableCut::Frames(operation)) if operation.count() == count) && edit.register == register)
             && snapshot.error.is_none()
     });
     d.check(

@@ -2,6 +2,16 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+[Repeat selections](REPEAT_SELECTION.md) adds `r` with a motion, Visual `r`,
+whole-beat `rr`, captured command targets, semantic recording and dot for Repeat
+wraps. Range endpoints retain their composite contexts and one Undo restores the
+whole edit. Safe count changes preserve surviving plays, gaps and suffix clocks;
+independent root sounds move once. This advances DP-05, DP-06 and DP-21. Count
+setter recording, occurrence navigation, text/role selectors, the remaining
+editing surface and all product gates remain open.
+The [qualification](qualification/repeat-operator-2026-10-03.md) records 3,292
+passing tests, 1,094 rendered workflow checks and native keyboard verification.
+
 [Cut selector repeat](SEMANTIC_REPEAT.md) extends `.` to typed motion cuts,
 whole beats and Visual cuts. Current Visual ranges override retained selectors;
 empty ranges refuse, and saved Visual cuts require a new selection. The requested
@@ -18,7 +28,7 @@ The native router, CLI and macros share typed selectors and exact historical
 Child/Range captures. Copy-only operations preserve history; counted macros
 commit once. Prefixes retain their captured context, including absent targets,
 and stale completion cannot reclaim cursor ownership. This advances DP-05,
-DP-06 and DP-21. Text objects, analysis-dependent motions, range Repeat, broader
+DP-06 and DP-21. Text objects, analysis-dependent motions, broader
 dot-repeat and all product gates remain open.
 See [qualification and retained failures](qualification/operator-motions-2026-10-02.md).
 

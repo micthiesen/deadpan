@@ -6,6 +6,7 @@ use crate::{
 use std::num::NonZeroU32;
 
 mod content;
+mod repeat;
 mod selectors;
 mod visual;
 
@@ -89,6 +90,22 @@ fn macro_value(instructions: Vec<SemanticInstruction>) -> Arc<RegisterValue> {
 }
 fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, EditError> {
     Ok(match request {
+        SemanticAllocationRequest::Repeat {
+            step_index,
+            required_split_ids,
+            needs_group,
+        } => SemanticAllocation::Repeat {
+            new_revision: revision(&format!("leaf-{step_index}")),
+            identities: RepeatSelectionIdentities {
+                repeat: node(&format!("repeat-{step_index}")),
+                group: needs_group.then(|| node(&format!("group-{step_index}"))),
+                split: SplitIdentities {
+                    nodes: (0..required_split_ids)
+                        .map(|n| node(&format!("split-{step_index}-{n}")))
+                        .collect(),
+                },
+            },
+        },
         SemanticAllocationRequest::Cut {
             step_index,
             required_split_ids,

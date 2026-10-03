@@ -1,0 +1,25 @@
+{
+  "runtime_source_manifest_sha256": "b81fce1c2111c873ebb7f4a3bacbaeb6a8a7a1935d037f27c901446e782abcf6",
+  "current_source_matches_executed_build": true,
+  "post_native_help_changes": [
+    "crates/deadpan-app/src/preview.rs",
+    "crates/deadpan-app/src/preview/harness/keymap.rs"
+  ],
+  "changed_since_core_run": [
+    "crates/deadpan-app/src/navigation.rs",
+    "crates/deadpan-app/src/navigation/editor_map.rs",
+    "crates/deadpan-app/src/navigation/editor_map/tests.rs",
+    "crates/deadpan-app/src/navigation/repeat_last_tests.rs",
+    "crates/deadpan-app/src/navigation/repeat_operator_tests.rs",
+    "crates/deadpan-app/src/preview.rs",
+    "crates/deadpan-app/src/preview/harness.rs",
+    "crates/deadpan-app/src/preview/harness/keymap.rs",
+    "crates/deadpan-app/src/preview/harness/repeat_operator.rs",
+    "crates/deadpan-app/src/preview/harness/scenarios.rs",
+    "crates/deadpan-app/src/ui_harness.rs"
+  ],
+  "core_plan_audio_dependencies_unchanged": true,
+  "checked_document_links": 692,
+  "missing_links": [],
+  "git_diff_check_passed": true
+}

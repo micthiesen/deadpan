@@ -172,6 +172,7 @@ pub struct DeadpanApp {
     macros: macros::State,
     macro_prefix_target: Option<Result<macros::Capture, String>>,
     operator_target: Option<operators::Capture>,
+    repeat_prefix_target: Option<repeats::Capture>,
     macro_command_target: Option<Result<macros::Capture, String>>,
     marks: marks::State,
     sequence_cursor: u64,
@@ -311,6 +312,7 @@ impl DeadpanApp {
             macros: macros::State::default(),
             macro_prefix_target: None,
             operator_target: None,
+            repeat_prefix_target: None,
             macro_command_target: None,
             marks: marks::State::default(),
             sequence_cursor: 0,
@@ -582,6 +584,7 @@ impl DeadpanApp {
         #[cfg(not(feature = "ui-harness"))]
         let update = self.service.take_update();
         if let Some(mut update) = update {
+            self.reconcile_repeat_prefix();
             self.prepare_macro_update(&mut update);
             if let Some(saved) = &update.marks.saved
                 && saved.needs_refresh(update.workspace.as_deref())
@@ -634,6 +637,7 @@ impl DeadpanApp {
             // Preserve pending input without ever swapping the admitted map for
             // shipped defaults while the completion is reconciled.
             let repeat_bindings = repeat_completion.then(|| self.bindings.clone());
+            let repeat_continuation = repeat_completion && self.repeat_prefix_can_continue();
             let old_session = self.workspace.as_ref().map(|w| w.session);
             let old_revision = self
                 .workspace
@@ -676,6 +680,7 @@ impl DeadpanApp {
                 self.bindings.set_macro_recording(false);
                 self.macro_prefix_target = None;
                 self.operator_target = None;
+                self.repeat_prefix_target = None;
                 self.macro_command_target = None;
                 self.marks = marks::State::default();
                 self.trim_prefix_target = None;
@@ -878,6 +883,10 @@ impl DeadpanApp {
             if let Some(bindings) = repeat_bindings {
                 self.bindings = bindings;
             }
+            if repeat_continuation {
+                self.advance_repeat_prefix();
+            }
+            self.reconcile_repeat_prefix();
             self.receive_original_copy(update.captured_original, unrefreshed_commit);
             self.receive_copied(update.captured_slice, unrefreshed_commit);
             self.receive_macro_cut(update.cut_slice.as_ref(), update.saved_cut.as_ref());
@@ -1151,8 +1160,9 @@ impl DeadpanApp {
             self.offer_insert();
             return;
         }
-        if let BeatEdit::WrapRepeat(plays) = edit {
-            self.wrap_repeat(plays);
+        if let BeatEdit::WrapRepeat(plays) | BeatEdit::Repeat(plays) = edit {
+            let target = self.capture_macro_target();
+            self.repeat_command(Some(target), plays, matches!(edit, BeatEdit::Repeat(_)));
             return;
         }
         if let BeatEdit::InsertHold(input) = edit {
@@ -1417,7 +1427,7 @@ impl DeadpanApp {
 
     fn action(&mut self, action: Action, context: &egui::Context) {
         if !self.macro_action_allowed(action) {
-            if action == Action::RepeatLast {
+            if action == Action::RepeatLast && self.last_edit_uses_register() {
                 self.copied.begin_write();
             }
             return;
@@ -1453,10 +1463,10 @@ impl DeadpanApp {
                 | Action::Operator { .. }
                 | Action::DeleteSelection
                 | Action::DeleteFrames(_)
-                | Action::RepeatLast
-        ) || (action == Action::Edit(BeatEdit::Delete)
-            && self.pane != Pane::Sounds
-            && !self.event_focused())
+        ) || (action == Action::RepeatLast && self.last_edit_uses_register())
+            || (action == Action::Edit(BeatEdit::Delete)
+                && self.pane != Pane::Sounds
+                && !self.event_focused())
         {
             // A newer yank or picture cut owns register intent even when its
             // focused pane rejects it. Sound deletion is an independent action.
@@ -1471,6 +1481,13 @@ impl DeadpanApp {
         // OfferInsert also represents an unfinished operator (including the
         // first r of rr). In Sequence it is only a hint, not another action.
         let repeat_input = matches!(action, Action::Edit(BeatEdit::WrapRepeat(_)))
+            || matches!(
+                action,
+                Action::Repeat {
+                    selector: deadpan_core::SemanticSelector::SelectedBeat,
+                    ..
+                }
+            )
             || (matches!(action, Action::OfferInsert) && self.view == View::Sequence);
         if !repeat_input {
             self.cancel_repeats("another action was requested");
@@ -1514,6 +1531,7 @@ impl DeadpanApp {
                 | Action::DeleteSelection
                 | Action::DeleteFrames(_)
                 | Action::Operator { .. }
+                | Action::Repeat { .. }
                 | Action::RepeatLast
                 | Action::CopyMoment
                 | Action::PasteMoment { .. } => {
@@ -1523,9 +1541,9 @@ impl DeadpanApp {
                             | Action::Operator { .. }
                             | Action::DeleteSelection
                             | Action::DeleteFrames(_)
-                            | Action::RepeatLast
                             | Action::PasteMoment { .. }
-                    ) {
+                    ) || (action == Action::RepeatLast && self.last_edit_uses_register())
+                    {
                         self.copied.clear_selection();
                     }
                     self.bindings.clear();
@@ -1542,10 +1560,10 @@ impl DeadpanApp {
                     | Action::Operator { .. }
                     | Action::DeleteSelection
                     | Action::DeleteFrames(_)
-                    | Action::RepeatLast
                     | Action::PasteMoment { .. }
                     | Action::Edit(BeatEdit::Delete)
-            ) {
+            ) || (action == Action::RepeatLast && self.last_edit_uses_register())
+            {
                 self.copied.clear_selection();
             }
             self.bindings.clear();
@@ -1604,6 +1622,7 @@ impl DeadpanApp {
             }
             Action::CopyMoment => self.copy_slice(),
             Action::Operator { cut, selector } => self.operator_action(cut, selector),
+            Action::Repeat { selector, plays } => self.repeat_action(selector, plays),
             Action::SelectRegister(name) => self.select_register(name),
             Action::DeleteSelection => {
                 if !self.record_macro_delete(self.copied.selected(), None) {
@@ -1801,6 +1820,7 @@ impl DeadpanApp {
     fn keyboard(&mut self, context: &egui::Context) -> Option<(TextAction, bool)> {
         self.reconcile_macro_recording();
         self.reconcile_operator();
+        self.reconcile_repeat_prefix();
         self.bindings.set_routing_domain(self.routed_domain());
         self.bindings.set_macro_recording(self.macros.recording());
         // The field can close before its opener is released. Keep ownership
@@ -2065,6 +2085,7 @@ impl DeadpanApp {
                 let trim_pending = self.bindings.trim_pending();
                 let macro_pending = self.bindings.macro_pending();
                 let operator_pending = self.bindings.operator_pending();
+                let repeat_pending = self.bindings.repeat_pending();
                 let mark_prefix = self.bindings.mark_prefix();
                 // Command mode remains text-only until the end-of-frame blur
                 // handling closes it, even if a click has already moved focus.
@@ -2085,6 +2106,12 @@ impl DeadpanApp {
                         || matches!(action, Some(Action::Operator { .. })))
                 {
                     self.begin_operator();
+                }
+                if !repeat_pending
+                    && (self.bindings.repeat_pending()
+                        || matches!(action, Some(Action::Repeat { .. })))
+                {
+                    self.begin_repeat();
                 }
                 if operator_pending
                     && !self.bindings.operator_pending()
@@ -2171,6 +2198,9 @@ impl DeadpanApp {
                 }
                 if !self.bindings.operator_pending() {
                     self.operator_target = None;
+                }
+                if !self.bindings.repeat_pending() {
+                    self.repeat_prefix_target = None;
                 }
                 if mark_prefix.is_none() && self.bindings.mark_prefix().is_some() {
                     self.begin_mark_prefix();
@@ -2285,6 +2315,12 @@ impl DeadpanApp {
             }
         }
         match command {
+            Ok(navigation::command::Entry::Action(Action::Edit(BeatEdit::WrapRepeat(plays)))) => {
+                self.repeat_command(macro_target, plays, false);
+            }
+            Ok(navigation::command::Entry::Action(Action::Edit(BeatEdit::Repeat(plays)))) => {
+                self.repeat_command(macro_target, plays, true);
+            }
             Ok(navigation::command::Entry::Action(
                 action @ (Action::MacroRecord(_)
                 | Action::MacroExecute { .. }
@@ -2731,6 +2767,7 @@ impl DeadpanApp {
                         let visual = self.edit_selection() != navigation::EditSelection::None;
                         self.add_editor_hint(&mut hints, if visual { EditorKey::CutRange } else { EditorKey::CutFrames }, if visual { "cut range" } else { "cut frames" });
                         self.add_editor_hint(&mut hints, EditorKey::Copy, if visual { "copy range" } else { "copy beat" });
+                        self.add_editor_hint(&mut hints, EditorKey::Repeat, if visual { "repeat range" } else { "repeat beat" });
                         self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", if visual { "replace range" } else { "paste" });
                         self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: record call");
                         self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "save macro");
@@ -2760,7 +2797,7 @@ impl DeadpanApp {
                         self.add_editor_hint(&mut hints, EditorKey::Hold, "pause");
                         self.add_editor_hint(&mut hints, EditorKey::Camera, "camera");
                         self.add_editor_hint(&mut hints, EditorKey::Trim, "Trim beat");
-                        self.add_editor_hint(&mut hints, EditorKey::Repeat, "repeat");
+                        self.add_editor_hint(&mut hints, EditorKey::Repeat, if self.edit_selection() == navigation::EditSelection::None { "repeat beat" } else { "repeat range" });
                         match self.edit_selection() {
                             navigation::EditSelection::Range => self.add_editor_hint(&mut hints, EditorKey::CutRange, "cut range"),
                             navigation::EditSelection::Empty => self.add_editor_hint(&mut hints, EditorKey::CutRange, "empty range"),
@@ -3664,7 +3701,7 @@ impl DeadpanApp {
                     }
                     ui.separator();
                     ui.label(egui::RichText::new("SEMANTIC MACROS").strong().color(style::LAVENDER));
-                    help_binding(ui, &format!("{} + letter · :record a", key(EditorKey::MacroRecord)), "Record frame and beat motions, group start/end, Visual selections, cuts, copies, register pastes and named calls in the current ordinary Sequence group. Existing Visual selections are retained. Instructions keep requested counts and resolve against the current cursor, beat and selection. Recording performs each action and adds it only after success.");
+                    help_binding(ui, &format!("{} + letter · :record a", key(EditorKey::MacroRecord)), "Record frame and beat motions, group start/end, Visual selections, cuts, copies, Repeat wraps, register pastes and named calls in the current ordinary Sequence group. Existing Visual selections are retained. Instructions keep requested counts and resolve against the current cursor, beat and selection. Recording performs each action and adds it only after success.");
                     help_binding(ui, &format!("{} · :record-stop", key(EditorKey::MacroRecord)), "While recording, save to that named Macro register. Saving adds no Undo and preserves the default copy. Esc clears and records an active or finished Visual selection; without a selection it cancels recording. :record-cancel always discards the draft. Cancellation keeps completed edits undoable; a pending authored action still finishes.");
                     help_binding(ui, &format!("{} + letter · :macro a 3", key(EditorKey::MacroExecute)), "Run a named Macro from the current cursor, beat and Visual selection, with an optional positive count before its binding. Authored edits share one Undo; copying alone changes registers, and navigation changes cursor and selection. Calls use Macro registers; paste uses Original or Edit copies. Visual copy retains its range; Visual cut and replacement clear it. Empty selections fail without falling back to a beat. A failed instruction rolls back the whole run, including registers. Recursive calls and oversized runs are refused.");
                     ui.separator();
@@ -3694,11 +3731,12 @@ impl DeadpanApp {
                         (format!("{} / {}", key(EditorKey::Hold), bindings.counted_label(EditorKey::Hold, 3)), format!("Insert a silent freeze at the cursor: 0.5 s per count. Keeps the following original speech. The cursor stays at the pause; {} opens its enclosing group when needed. At a group edge, {} returns to the seam's owner. {} undoes it.", key(EditorKey::EnterGroup), key(EditorKey::LeaveGroup), key(EditorKey::Undo))),
                         (":hold 1.5s".to_owned(), "Choose an exact pause duration: 12f, 250ms, 1.5s, or 01:02.500. Seconds round once to project frames. Zero makes no edit. Source and pause fragments work inside Sequence groups; Repeat and Retime interiors remain unavailable.".to_owned()),
                         (format!("{} / {}", key(EditorKey::Repeat), bindings.counted_label(EditorKey::Repeat, 3)), "Wrap the selected beat in two / three total plays. Rapid wraps wait in order, up to 16 pending; each has its own undo. Escape, navigation or another action cancels the waiting wraps.".to_owned()),
+                        (format!("{} + motion · Visual {}", key(EditorKey::RepeatOperator), key(EditorKey::RepeatRange)), format!("Repeat a motion's half-open range, or the current Visual range, in one Undo. The result remains an editable Repeat. A leading count chooses total plays; a count after {} chooses motion distance: {}{} repeats one frame three times, {}3{} repeats three frames twice. Two explicit counts refuse. Empty ranges refuse. Registers are preserved.", key(EditorKey::RepeatOperator), bindings.counted_label(EditorKey::RepeatOperator, 3), bindings.key_label(EditorKey::FrameNext), bindings.key_label(EditorKey::RepeatOperator), bindings.key_label(EditorKey::FrameNext))),
                         (format!("{} · motions · {}", key(EditorKey::Visual), key(EditorKey::CutRange)), "Cut the nonempty active or finished Edit range and close its time in one undo. Linked picture and sound stay together. Source/Hold/fragment endpoints and whole intervening beats work in an ordinary Sequence. Enter a group to cut inside it. Empty selections never cut a beat.".to_owned()),
                         (format!("{} / :delete", key(EditorKey::CutBeat)), format!("Without a Visual selection, {} cuts one whole beat, including an empty group. :delete captures the exact range or beat when command entry opens; stale or missing targets fail. A saved cut replaces the copy register; {} or :splice places that copy. Failure keeps the previous copy. The cursor stays at a range cut's join. Undo restores the removed content and retains the copy, including after reopening the project.", key(EditorKey::CutBeat), key_labels::aliases_pair(&bindings, EditorKey::PasteAfter, EditorKey::PasteBefore, "/"))),
                         (format!("{} / {} / :delete-frames 12f", key(EditorKey::CutFrames), bindings.counted_label(EditorKey::CutFrames, 12)), format!("Cut one or a counted number of linked picture and sound frames beginning at the Edit cursor, stopping at this group's end. The command captures its cursor and group when entry opens. A Visual selection must be cleared with {} first, or cut with {}. At the group's end no edit is made. One Undo restores the cut; the exact removed slice remains available for paste.", key(EditorKey::Escape), key(EditorKey::CutRange))),
-                        (":repeat 3".to_owned(), "Set total plays on a Repeat; wrap a different selected beat.".to_owned()),
-                        (":wrap-repeat 3".to_owned(), "Always add an enclosing Repeat, including nesting.".to_owned()),
+                        (":repeat 3".to_owned(), "Set total plays on the captured Repeat, preserving its gaps and surviving plays; wrap a different selected beat. Clear Visual selection first. Count setters cannot be recorded or repeated with dot yet.".to_owned()),
+                        (":wrap-repeat 3".to_owned(), "Always add an enclosing Repeat around the captured Visual range or selected beat, including nesting. Command entry captures the target; stale or missing targets refuse.".to_owned()),
                         (":retime 0.75 pitch=preserve".to_owned(), "Slow the selected beat to 0.75× input speed. Use pitch=tape to let pitch follow speed. Exact fractions such as 3/4 work too. The command shows its resolved duration before Enter; Escape cancels entry.".to_owned()),
                         (":wrap-retime 2 pitch=tape".to_owned(), "Always add an enclosing speed stage. :retime instead updates an existing ordinary Retime, preserving its child and input range. Split fragments are wrapped without changing their retained clocks.".to_owned()),
                         ("Enter in Inspector".to_owned(), "Edit the selected Repeat count, Hold duration, Retime speed or placed sound's exact sample position.".to_owned()),
@@ -3736,7 +3774,7 @@ impl DeadpanApp {
                     for (key, description) in [
                         ("⌘I".to_owned(), "Add an audio-only sound, or retry an incomplete Original. Audio selection is automatic; advanced stream choices are in import options.".to_owned()),
                         (format!("{} / Enter / Esc", key(EditorKey::Command)), "Enter a command / apply / cancel. Text fields keep native editing and IME.".to_owned()),
-                        (key(EditorKey::RepeatLast), "Repeat the last committed picture cut using the current Visual range, or its retained motion/whole-beat selector at the new location. Empty ranges refuse; repeating a Visual cut requires a new selection. Requested motion counts and the register are retained; an explicit register choice overrides the destination. Undo/Redo, marks and copies preserve it; unsupported edits clear it. Other edit kinds cannot be repeated yet. No count or held repeat.".to_owned()),
+                        (key(EditorKey::RepeatLast), "Repeat the last committed picture cut or Repeat wrap using the current Visual range, or its retained motion/whole-beat selector at the new location. Empty ranges refuse; a Visual operation requires a new selection. Requested motion counts and total plays are retained. Cuts retain their register, with an explicit choice overriding it; Repeat wraps preserve register intent. Undo/Redo, marks and copies preserve the last edit; unsupported edits clear it. No count or held repeat.".to_owned()),
                         (format!("{} / :help / Esc", key(EditorKey::Help)), "Open this reference / close it.".to_owned()),
                     ] { help_binding(ui, &key, &description); }
                     ui.separator();
@@ -3947,8 +3985,12 @@ impl eframe::App for DeadpanApp {
         }
         self.reconcile_macro_recording();
         self.reconcile_operator();
+        self.reconcile_repeat_prefix();
         if !self.bindings.operator_pending() {
             self.operator_target = None;
+        }
+        if !self.bindings.repeat_pending() {
+            self.repeat_prefix_target = None;
         }
         if !self.bindings.trim_pending() {
             self.trim_prefix_target = None;

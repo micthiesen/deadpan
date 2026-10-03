@@ -1,12 +1,19 @@
-# Semantic cut repeat
+# Semantic edit repeat
 
-Plain `.` repeats the last committed picture cut against a new current target.
+Plain `.` repeats the last committed picture cut or explicit Repeat wrap against
+a new current target.
 `x`, counted `x`, `:delete-frames Nf`, `d` with a motion, `dd`, Visual `d` and
-`:delete` supply this intent. Each repeat is one atomic cut with one Undo entry
+`:delete` supply cut intent. Repeating a cut is one atomic edit with one Undo entry
 and a newly captured editable copy.
 
-This covers the implemented picture cuts for DP-06. [Semantic macros](SEMANTIC_MACROS.md)
-record the effective cut instruction, so a recorded dot does not depend on a
+`rr`, `r` with a motion, Visual `r` and `:wrap-repeat` supply Repeat intent.
+They retain their selector and total plays, preserve registers and leave an
+editable structural Repeat. The `:repeat` count setter remains unsupported for
+dot. See [Repeat selections](REPEAT_SELECTION.md).
+
+This covers picture cuts and Repeat wraps for DP-06.
+[Semantic macros](SEMANTIC_MACROS.md) record the effective instruction, so a
+recorded dot does not depend on a
 later repeat candidate. Other edit kinds and semantic text/role/occurrence
 selectors remain required. The resolved
 [compound transaction boundary](COMPOUND_TRANSACTIONS.md) is separate.
@@ -41,13 +48,14 @@ retain their existing independent cut receipts and validate their intent against
 the exact captured range or child. Legacy motion intents and selector repeats
 without the full semantic context refuse.
 
-The original destination register is retained. An explicit register choice
+For cuts, the original destination register is retained. An explicit register choice
 overrides it for the next repeat, including `""` for the default register.
 That successful repeat becomes the last edit with its new destination. A named
 cut updates the named and default copies atomically. Failed cut attempts preserve
 the previous saved intent and every register slot while consuming the attempted
 one-shot register choice. Keys owned by a text field or another mode do not
 start a cut attempt.
+Repeat wraps preserve one-shot register intent, including when they refuse.
 
 ## Durable success and asynchronous feedback
 
@@ -56,7 +64,7 @@ Before publishing, it reads the actual saved head through a bounded single-row
 query, without decoding a document. The visible workspace may still hold an
 older revision after a failed refresh.
 
-A supported direct cut records an exact before/after revision proof immediately
+A supported direct cut or explicit Repeat wrap records an exact before/after revision proof immediately
 after commit, before optional refresh. This includes a single Apply during
 recording. Named macro Run transitions remain unproved and clear the candidate
 when they change the document. Direct mark-only saves and Undo/Redo record
@@ -95,14 +103,14 @@ Native text, controls, IME and pending prefixes retain input ownership.
 
 Repeating requires Your edit with an eligible video pane. Original, Sources,
 Placed sounds and temporary previews refuse. Each invocation captures its new
-context once. An attempted dot also consumes a one-shot register override when
+context once. An attempted cut dot also consumes a one-shot register override when
 pending macro work or a full recording refuses it, without changing queued work.
 The keyboard
 compatibility audit and rendered `dot-repeat` replay exercise the production
 paths; physical layout and OS IME qualification remain separate obligations.
 
 No project schema changes are needed. SQLite remains at 55 and core documents
-at 43; history uses the existing resolved cut/Compound commands.
+at 43; history uses resolved cut, RepeatSelection and Compound commands.
 See the [frame-cut qualification](qualification/semantic-repeat-2026-10-02.md)
 for the original increment and the
 [selector-repeat qualification](qualification/selector-repeat-2026-10-03.md)

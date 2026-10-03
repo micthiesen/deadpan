@@ -589,6 +589,20 @@ unproved. Record dot's effective instruction. Preserve legacy cut receipts and
 validate their exact captured selector. See
 [semantic repeat](docs/SEMANTIC_REPEAT.md).
 
+Repeat wraps also supply dot intent, retaining the selector and total plays while
+preserving one-shot register choices, including on refusal. Normal `r` plus a
+motion, whole-beat `rr`, Visual `r` and `:wrap-repeat` use RepeatSelection. Capture
+prefix and command-entry targets, including absence. Only a completed whole-beat
+terminal may rebase onto its own checked queued wrapper; motion terminals retain
+the original revision and refuse if it changed. Leading counts mean total plays,
+motion counts mean distance, and two explicit counts refuse. Keep wrapper, group
+and Split pools disjoint; preserve partial composite contexts, established audio
+lattices, first-play marks/permissions and one root sound transform. SetRepeatPlays
+preserves surviving stable plays and gaps with exact suffix reanchors. Historical
+commands keep their previous behavior. Count setters remain unproved for dot and
+unrecordable; named Run does not install intent. See
+[Repeat selections](docs/REPEAT_SELECTION.md).
+
 The database also retains operational generation
 attempts, validation receipts, and candidate selection. Modern bundle receipts add
 optional measured spans and retained-input admission evidence; legacy receipts
@@ -861,7 +875,7 @@ slots. Keep saved-cut receipts independent of register intent. See
 [registers](docs/NAMED_REGISTERS.md).
 
 Semantic macros record frame/beat motions, group bounds, Visual begin/finish/clear,
-frame/range cuts, beat/range copies, register paste/replacement and named calls
+frame/range cuts, beat/range copies, Repeat wraps, register paste/replacement and named calls
 in an ordinary Sequence. Track the selected direct child and oriented Visual
 selection independently of the cursor, including absence, empty bounds and empty
 siblings. An extending head equals the cursor; finished endpoints remain fixed.

@@ -141,6 +141,8 @@ pub(crate) fn validate_command(
                 | Command::DeleteRipple { .. }
                 | Command::DeleteRange { .. }
                 | Command::MoveRange { .. }
+                | Command::RepeatSelection { .. }
+                | Command::SetRepeatPlays { .. }
                 | Command::Delete { .. }
         )
         || matches!(command, Command::Split { node, .. } if node != document.root())
@@ -231,6 +233,8 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::Ungroup { .. }
         | Command::WrapRepeat { .. }
         | Command::SetRepeat { .. }
+        | Command::RepeatSelection { .. }
+        | Command::SetRepeatPlays { .. }
         | Command::WrapRetime { .. }
         | Command::SetRetime { .. }
         | Command::InsertPlays { .. }

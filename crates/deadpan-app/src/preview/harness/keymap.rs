@@ -8,6 +8,7 @@ use egui_kittest::kittest::Queryable as _;
 const VALID: &[u8] = br#"{
   "version":1,"key_mode":"logical","bindings":[
     {"action":"frame.next","keys":[["a","h"]]},
+    {"action":"repeat.operator","keys":[["b"]]},
     {"action":"hold","keys":[["e","b"]]},
     {"action":"command","keys":[["e","c"],[":"],["F2"]]},
     {"action":"search","keys":[["e","s"],["/"]]},
@@ -63,6 +64,19 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     let baseline = document(d)?.clone();
     minimum_size(d)?;
+    d.command("help")?;
+    d.step("Measure remapped Repeat help", false)?;
+    let example = "3bah repeats one frame three times, b3ah repeats three frames twice";
+    for _ in 0..128 {
+        let paint = scenarios::text_paint_visibility(d, example);
+        if !paint.is_empty() && paint.iter().all(|part| part["fully_visible"] == true) {
+            break;
+        }
+        d.key(Key::J)?;
+    }
+    painted(d, example)?;
+    d.capture("Repeat examples use the configured operator and motion")?;
+    d.key(Key::Escape)?;
     held_motion(d)?;
     custom_hold(d, &baseline)?;
     field_entry(d)?;

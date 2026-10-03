@@ -10,7 +10,7 @@ Both binding families are configurable through `macro.record` and
 
 The current vocabulary includes relative frame and beat motion, group start/end,
 Visual selection begin/finish/clear, frame, beat or Visual cut, selected-beat or
-Visual yank, typed operator motions, register paste or Visual replacement, and
+Visual yank, typed operator motions, Repeat wraps, register paste or Visual replacement, and
 named Macro call.
 Motions and cuts retain their requested counts, including when they
 clamp at a group boundary. Copy, cut and paste retain the selected register name.
@@ -18,6 +18,8 @@ The planner resolves each instruction against the preceding staged edit in
 the same ordinary Sequence group. Temporal occurrence scopes, text objects,
 analysis-dependent motions, additional edits and broader semantic dot-repeat remain required.
 This is partial DP-06 implementation, not full macro acceptance.
+See [Repeat selections](REPEAT_SELECTION.md) for total-play versus motion counts,
+captured targets and structural range wrapping. Repeat count setters cannot be recorded yet.
 See [operator qualification](qualification/operator-motions-2026-10-02.md) for
 typed selectors, pending input, exact capture provenance and receipt ownership.
 See [Visual qualification](qualification/visual-macros-2026-10-02.md) for the
@@ -148,9 +150,9 @@ was pending is not retargeted by the delayed result.
 
 Native and headless execution use the shared core planner and store Compound
 entrypoint. An authored named Run clears the current dot-repeat candidate.
-A supported direct Apply cut establishes its effective selector and register
-after commit, including during recording. Recording `.` stores that effective
-cut instruction; later playback does not consult session repeat state. Bank-only
+A supported direct Apply cut or Repeat establishes its effective selector and
+parameters after commit, including during recording. Recording `.` stores that
+effective instruction; later playback does not consult session repeat state. Bank-only
 operations preserve the candidate. See [semantic repeat](SEMANTIC_REPEAT.md).
 
 ## Headless inspection, save and run

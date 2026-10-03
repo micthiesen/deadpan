@@ -44,10 +44,21 @@ pub(crate) fn preflight_deletion(
     preflight_with(document, parent, range, 0, EndpointMode::SliceSplit)
 }
 
+/// Repeat keeps each complete endpoint context, including composite output.
+/// Split's transparent Partitions retain its picture and audio owner clocks.
+pub(crate) fn preflight_repeat(
+    document: &ProjectDocument,
+    parent: &NodeId,
+    range: FrameRange,
+) -> Result<SequenceRangeEdit, EditError> {
+    preflight_with(document, parent, range, 2, EndpointMode::StructuralSplit)
+}
+
 enum EndpointMode {
     Split,
     Capture,
     SliceSplit,
+    StructuralSplit,
 }
 
 impl ProjectDocument {
@@ -107,14 +118,16 @@ fn preflight_with(
             let split_start = offset < range.start().0;
             let split_end = next > range.end().0;
             if split_start || split_end {
-                let endpoint = if matches!(mode, EndpointMode::Split) {
-                    super::physical(document, child)
-                } else {
-                    super::slice_physical(document, child)
-                };
-                endpoint.map_err(|error| {
-                    EditError::new(error.code, "Range endpoints require a Source, ordinary Hold or supported fragment; enter the intended group for other structures")
-                })?;
+                if !matches!(mode, EndpointMode::StructuralSplit) {
+                    let endpoint = if matches!(mode, EndpointMode::Split) {
+                        super::physical(document, child)
+                    } else {
+                        super::slice_physical(document, child)
+                    };
+                    endpoint.map_err(|error| {
+                        EditError::new(error.code, "Range endpoints require a Source, ordinary Hold or supported fragment; enter the intended group for other structures")
+                    })?;
+                }
                 if matches!(mode, EndpointMode::Capture) {
                     offset = next;
                     continue;

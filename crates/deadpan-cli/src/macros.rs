@@ -294,6 +294,22 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
             .collect::<Result<Vec<_>, _>>()
     };
     Ok(match request {
+        SemanticAllocationRequest::Repeat {
+            required_split_ids,
+            needs_group,
+            ..
+        } => SemanticAllocation::Repeat {
+            new_revision: crate::new_revision()?,
+            identities: deadpan_core::RepeatSelectionIdentities {
+                repeat: NodeId::new(uuid::Uuid::new_v4().to_string())?,
+                group: needs_group
+                    .then(|| NodeId::new(uuid::Uuid::new_v4().to_string()))
+                    .transpose()?,
+                split: SplitIdentities {
+                    nodes: nodes(required_split_ids)?,
+                },
+            },
+        },
         SemanticAllocationRequest::Cut {
             required_split_ids, ..
         } => SemanticAllocation::Cut {

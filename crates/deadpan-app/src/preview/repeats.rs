@@ -1,8 +1,165 @@
 use super::*;
+use deadpan_core::{SemanticInstruction, SemanticSelector};
+use std::num::NonZeroU32;
+
+/// Only an explicit whole-beat terminal may follow our own checked wrap onto
+/// its new wrapper. Motion terminals retain the original captured context.
+pub(super) struct Capture {
+    original: Result<macros::Capture, String>,
+    beat: Result<macros::Capture, String>,
+}
 
 impl DeadpanApp {
+    pub(super) fn begin_repeat(&mut self) {
+        let target = self.capture_macro_target();
+        self.repeat_prefix_target = Some(Capture {
+            original: target.clone(),
+            beat: target,
+        });
+    }
+
+    pub(super) fn reconcile_repeat_prefix(&mut self) {
+        let Some(capture) = self.repeat_prefix_target.as_ref() else {
+            return;
+        };
+        let original_stale = capture
+            .original
+            .as_ref()
+            .is_ok_and(|target| !target.matches(self));
+        let beat_stale = capture
+            .beat
+            .as_ref()
+            .is_ok_and(|target| !target.matches(self));
+        let capture = self.repeat_prefix_target.as_mut().expect("capture exists");
+        let error = || {
+            "The captured Repeat context changed. Enter the binding again; no edit was made."
+                .to_owned()
+        };
+        if original_stale {
+            capture.original = Err(error());
+        }
+        if beat_stale {
+            capture.beat = Err(error());
+        }
+    }
+
+    pub(super) fn repeat_prefix_can_continue(&self) -> bool {
+        matches!(
+            self.bindings.repeat_pending_scope(),
+            Some(
+                navigation::RepeatPendingScope::SelectedBeat
+                    | navigation::RepeatPendingScope::Mixed
+            )
+        ) && self.repeat_prefix_target.as_ref().is_some_and(|capture| {
+            capture
+                .beat
+                .as_ref()
+                .is_ok_and(|target| target.matches(self))
+        }) && self
+            .repeat_queue
+            .context_matches(self.repeat_target().as_ref())
+    }
+
+    pub(super) fn advance_repeat_prefix(&mut self) {
+        let next = self.capture_macro_target();
+        if let Some(capture) = &mut self.repeat_prefix_target {
+            capture.beat = next;
+        }
+    }
+
+    pub(super) fn repeat_action(&mut self, selector: SemanticSelector, plays: NonZeroU32) {
+        self.reconcile_repeat_prefix();
+        let target = self.repeat_prefix_target.take().map_or_else(
+            || Err("Enter the Repeat binding again to capture its target.".into()),
+            |capture| {
+                if selector == SemanticSelector::SelectedBeat {
+                    capture.beat
+                } else {
+                    capture.original
+                }
+            },
+        );
+        self.repeat_captured(target, selector, plays);
+    }
+
+    fn repeat_captured(
+        &mut self,
+        target: Result<macros::Capture, String>,
+        selector: SemanticSelector,
+        plays: NonZeroU32,
+    ) {
+        self.bindings.clear();
+        if selector == SemanticSelector::SelectedBeat && !self.macros.recording() {
+            let target = target.and_then(|capture| {
+                if !capture.matches(self) {
+                    return Err("The captured Repeat context changed. Start the command again; no edit was made.".into());
+                }
+                capture.repeat_target()
+            });
+            match target {
+                Ok(target) => self.wrap_repeat(target, plays.get()),
+                Err(error) => self.error = Some(error),
+            }
+        } else {
+            self.cancel_repeats("a Repeat selection was requested");
+            self.apply_recorded_instruction(
+                target,
+                Ok(SemanticInstruction::Repeat { selector, plays }),
+            );
+        }
+    }
+
+    pub(super) fn repeat_command(
+        &mut self,
+        target: Option<Result<macros::Capture, String>>,
+        plays: u32,
+        set: bool,
+    ) {
+        let target = target
+            .unwrap_or_else(|| Err("Open the Repeat command again to capture its target.".into()));
+        let Some(plays) = NonZeroU32::new(plays) else {
+            self.error = Some("Repeat needs at least one total play.".into());
+            return;
+        };
+        if !set {
+            let selector = target.as_ref().map_or(
+                SemanticSelector::SelectedBeat,
+                macros::Capture::repeat_selector,
+            );
+            self.repeat_captured(target, selector, plays);
+            return;
+        }
+        let target = target.and_then(|capture| {
+            if !capture.matches(self) {
+                return Err("The captured Repeat context changed. Start the command again; no edit was made.".into());
+            }
+            capture.repeat_target()
+        });
+        match target {
+            Ok(target) => {
+                self.cancel_repeats("the Repeat count was changed");
+                self.submit(ProjectRequest::Edit {
+                    expected_session: target.session,
+                    expected_revision: target.revision,
+                    scope: target.scope,
+                    cursor: target.cursor,
+                    edit: ProjectEdit::Repeat {
+                        node: target.node,
+                        plays: plays.get(),
+                    },
+                });
+            }
+            Err(error) => self.error = Some(error),
+        }
+    }
+
     pub(super) fn repeat_target(&self) -> Option<repeat_queue::Target> {
-        if self.view != View::Sequence || self.sound_focused() {
+        if self.view != View::Sequence
+            || self.sound_focused()
+            || self.event_focused()
+            || matches!(self.pane, Pane::Sources | Pane::Sounds)
+            || self.edit_selection() != navigation::EditSelection::None
+        {
             return None;
         }
         let workspace = self.workspace.as_ref()?;
@@ -49,11 +206,7 @@ impl DeadpanApp {
         }
     }
 
-    pub(super) fn wrap_repeat(&mut self, plays: u32) {
-        let Some(target) = self.repeat_target() else {
-            self.error = Some("Select a beat in Your edit before wrapping a Repeat.".into());
-            return;
-        };
+    fn wrap_repeat(&mut self, target: repeat_queue::Target, plays: u32) {
         if !self.repeat_queue.context_matches(Some(&target)) {
             self.cancel_repeats("editing context changed");
         }

@@ -22,6 +22,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "marks" => super::marks::run(d),
         "named-registers" => super::registers::run(d),
         "dot-repeat" => super::semantic::run(d),
+        "repeat-operator" => super::repeat_operator::run(d),
         "macros" => super::macros::run(d),
         "original-playback" => super::original_playback::run(d),
         "sound-playback" => super::sound_playback::run(d),

@@ -1,0 +1,55 @@
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import re
+import shutil
+import subprocess
+from urllib.parse import unquote
+
+dest = Path('tools/media-qualification/evidence/2026-10-03-repeat-operator')
+runtime = 'b81fce1c2111c873ebb7f4a3bacbaeb6a8a7a1935d037f27c901446e782abcf6'
+native_source = '32bdffade83d9ed2d1cfbc7e2d3c6ee487e6205f9c29fe6b020562b84a88e805'
+paths = subprocess.check_output(['git', '-c', 'core.fsmonitor=false', 'ls-files', '--cached', '--others', '--exclude-standard', '-z']).decode().split('\0')
+sources = {name: hashlib.sha256(Path(name).read_bytes()).hexdigest() for name in sorted(set(paths))
+           if name and Path(name).is_file() and (Path(name).suffix in ('.rs', '.toml', '.lock', '.cpp', '.h', '.hpp', '.c', '.m', '.py') or name.startswith(('.cargo/', 'crates/', 'native/')))}
+wire = json.dumps(sources, sort_keys=True, indent=2) + '\n'
+assert hashlib.sha256(wire.encode()).hexdigest() == runtime
+saved = json.loads(gzip.decompress((dest / 'checks' / ('source-' + runtime + '.json.gz')).read_bytes()))
+assert sources == saved
+before = json.loads(gzip.decompress((dest / 'checks/source-bcee0d30eca4ddb2382b7fc3902eb08d54ab22bcc69fa4df7da79aafb1a9e8e2.json.gz').read_bytes()))
+changed_since_core = sorted(path for path in sources.keys() | before.keys() if sources.get(path) != before.get(path))
+assert all(path.startswith('crates/deadpan-app/') for path in changed_since_core), changed_since_core
+for name in ['app-store-cli-final', 'clippy-default', 'clippy-ui', 'fmt-verified', 'build-ui', 'repeat-visual', 'rapid-visual', 'macros-visual', 'dot-visual', 'keymap-visual', 'native-run']:
+    report = json.loads((dest / 'checks' / (name + '.json')).read_text())
+    assert report['gate_exit_code'] == 0 and report['source_unchanged'], name
+    assert report['source_manifest_sha256'] == native_source, name
+for name in ['app-help-final', 'clippy-help-default', 'clippy-help-ui', 'fmt-help-final', 'build-help-final', 'keymap-help-final']:
+    report = json.loads((dest / 'checks' / (name + '.json')).read_text())
+    assert report['gate_exit_code'] == 0 and report['source_unchanged'], name
+    assert report['source_manifest_sha256'] == runtime, name
+native_manifest = json.loads(gzip.decompress((dest / 'checks' / ('source-' + native_source + '.json.gz')).read_bytes()))
+post_native_changes = sorted(path for path in sources.keys() | native_manifest.keys() if sources.get(path) != native_manifest.get(path))
+assert post_native_changes == ['crates/deadpan-app/src/preview.rs', 'crates/deadpan-app/src/preview/harness/keymap.rs'], post_native_changes
+assert json.loads((dest / 'checks/initial-core-plan-audio.json').read_text())['exit_code'] == 0
+assert json.loads((dest / 'checks/initial-core-plan-audio.json').read_text())['gate_exit_code'] == 1
+assert json.loads((dest / 'checks/app-store-cli.json').read_text())['exit_code'] != 0
+
+docs = [Path(path) for path in paths if path and Path(path).suffix == '.md' and (path in subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines() or path in ['docs/REPEAT_SELECTION.md', 'docs/qualification/repeat-operator-2026-10-03.md', str(dest / 'README.md')])]
+links = 0
+missing = []
+for path in docs:
+    for target in re.findall(r'\]\(([^)]+)\)', path.read_text()):
+        target = target.split('#', 1)[0]
+        if not target or '://' in target or target.startswith('mailto:'):
+            continue
+        links += 1
+        if not (path.parent / unquote(target)).exists():
+            missing.append([str(path), target])
+assert not missing, missing
+subprocess.run(['git', 'diff', '--check'], check=True)
+shutil.copy2(Path(__file__), dest / 'scripts/validate-evidence.py.txt')
+result = {'runtime_source_manifest_sha256': runtime, 'current_source_matches_executed_build': True, 'post_native_help_changes': post_native_changes, 'changed_since_core_run': changed_since_core, 'core_plan_audio_dependencies_unchanged': True, 'checked_document_links': links, 'missing_links': missing, 'git_diff_check_passed': True}
+(dest / 'checks/evidence-validation.json').write_text(json.dumps(result, indent=2) + '\n')
+(dest / 'SHA256SUMS').write_text(''.join(hashlib.sha256(path.read_bytes()).hexdigest() + '  ' + str(path.relative_to(dest)) + '\n' for path in sorted(dest.rglob('*')) if path.is_file() and path.name != 'SHA256SUMS'))
+print(json.dumps(result, indent=2))

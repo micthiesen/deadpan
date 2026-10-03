@@ -1,0 +1,122 @@
+{
+  "base_commit": "738f2dd337ba38e1548acc77eb86eacaa15f43f7",
+  "source_manifest_sha256": "b81fce1c2111c873ebb7f4a3bacbaeb6a8a7a1935d037f27c901446e782abcf6",
+  "native_source_manifest_sha256": "32bdffade83d9ed2d1cfbc7e2d3c6ee487e6205f9c29fe6b020562b84a88e805",
+  "binary_sha256": "989e1aa5786eb8d4be35c55de3d5ac0de0c1eb32cb2f4ac773e7170a3ead77c2",
+  "native_binary_sha256": "d091476cb397a52d831d2bf8fb17b1e4b2c87fa9199100bb6d9a51f81ee11fef",
+  "machine": [
+    "Apple M5 Max",
+    "137438953472"
+  ],
+  "system": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+  "replays": [
+    {
+      "name": "repeat-operator",
+      "run": "repeat",
+      "checks": 224,
+      "binary_sha256": "d091476cb397a52d831d2bf8fb17b1e4b2c87fa9199100bb6d9a51f81ee11fef",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "This replay delays delivery of genuine project updates to exercise Repeat prefix ownership. Physical keyboard delivery and OS IME behavior are not exercised.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "name": "rapid-input",
+      "run": "rapid",
+      "checks": 60,
+      "binary_sha256": "d091476cb397a52d831d2bf8fb17b1e4b2c87fa9199100bb6d9a51f81ee11fef",
+      "findings": [],
+      "skipped": [
+        "Repeat boundary checks delay delivery of real SQLite updates; the writer and production event router remain live. Physical key delivery is not exercised.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "name": "macros",
+      "run": "macros",
+      "checks": 372,
+      "binary_sha256": "d091476cb397a52d831d2bf8fb17b1e4b2c87fa9199100bb6d9a51f81ee11fef",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "name": "dot-repeat",
+      "run": "dot",
+      "checks": 381,
+      "binary_sha256": "d091476cb397a52d831d2bf8fb17b1e4b2c87fa9199100bb6d9a51f81ee11fef",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "name": "keymap",
+      "run": "keymap",
+      "checks": 56,
+      "binary_sha256": "d091476cb397a52d831d2bf8fb17b1e4b2c87fa9199100bb6d9a51f81ee11fef",
+      "findings": [],
+      "skipped": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "name": "keymap",
+      "run": "keymap-help-final",
+      "checks": 57,
+      "binary_sha256": "989e1aa5786eb8d4be35c55de3d5ac0de0c1eb32cb2f4ac773e7170a3ead77c2",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    }
+  ],
+  "workflow_checks": 1094,
+  "native_exit_code": 0,
+  "targeted_process_absent": true,
+  "native_observations": [
+    "20l then register a then r: pending next-key help remains visible above window bottom.",
+    "r3l at boundary 20: 120 -> 123 frames, Repeat spans 20..26, two total plays; register a remains selected and empty.",
+    "One Undo restores 120 frames and leaves register a selected.",
+    "gg40l then dot: Repeat spans 40..46, total 123 frames; retained selector resolves at the new cursor.",
+    "After Undo, gg50l v4l 3r: Repeat spans 50..62, three total plays, total 128 frames; register a remains selected.",
+    "One Undo restores 120 frames. Dot without a new Visual selection refuses, keeps 120 frames and register a.",
+    "Cmd-Q exits cleanly; targeted process lookup confirms absence."
+  ],
+  "limits": [
+    "Debug functional/visual checks, not release performance qualification.",
+    "No new physical layout, OS IME, VoiceOver or acoustic qualification.",
+    "One unexplained H.264 decode_slice_header diagnostic in dot replay; all its 381 checks passed.",
+    "Developer wrapper retains external host library dependencies."
+  ]
+}

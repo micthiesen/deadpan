@@ -158,9 +158,8 @@ fn configured_dot_path_retains_policy_and_teaches_its_supported_scope() {
     assert_eq!(press(&mut bindings, Key::Period), None);
     assert_eq!(press(&mut bindings, Key::A), None);
     let hint = bindings.pending_hint().unwrap();
-    assert!(hint.contains(". repeat the last committed cut"));
+    assert!(hint.contains(". repeat the last committed cut or Repeat"));
     assert!(hint.contains("current Visual range, beat or motion"));
-    assert!(hint.contains("other edit kinds are not supported yet"));
     assert!(bindings.native_control_owns_cut(Key::Period, Modifiers::NONE, EditSelection::None));
     assert_eq!(held(&mut bindings, Key::Period, EditSelection::None), None);
     assert_eq!(bindings.pending(), "a");

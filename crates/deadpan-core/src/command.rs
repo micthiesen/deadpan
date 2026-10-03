@@ -252,6 +252,22 @@ define_commands! {
         plays: u32,
         gap: Option<HoldRecipe>,
     },
+    /// Wrap an exact ordinary Sequence child or range, retaining its first play
+    /// and the sampled entry of following contents.
+    RepeatSelection {
+        parent: NodeId,
+        selection: crate::SliceCaptureSelection,
+        plays: u32,
+        identities: crate::RepeatSelectionIdentities,
+        timing: crate::AudioTimingId,
+    },
+    /// Change only total plays of an ordinary Sequence child. Preserve its gap,
+    /// surviving stable plays, and the suffix's retained sampling clocks.
+    SetRepeatPlays {
+        node: NodeId,
+        plays: u32,
+        timing: crate::AudioTimingId,
+    },
     /// Map the complete selected child's output into a new authored duration.
     WrapRetime {
         node: NodeId,
@@ -717,6 +733,9 @@ pub fn apply(
             crate::edit_slice::apply(input, &request.command, context)?
         }
         Command::MoveRange { .. } => crate::move_range::apply(input, &request.command, context)?,
+        Command::RepeatSelection { .. } | Command::SetRepeatPlays { .. } => {
+            crate::repeat_selection::apply(input, &request.command, context)?
+        }
         Command::ApplySourceTrim { .. } => {
             crate::source_trim_edit::apply(input, &request.command, context)?
         }
@@ -1085,6 +1104,8 @@ pub(crate) fn reduce(
         | Command::DeleteRipple { .. }
         | Command::DeleteRange { .. }
         | Command::MoveRange { .. }
+        | Command::RepeatSelection { .. }
+        | Command::SetRepeatPlays { .. }
         | Command::SpliceSourceAt { .. } => {
             return Err(EditError::new(
                 EditErrorCode::InvalidCommand,
@@ -2167,6 +2188,8 @@ fn description(command: &Command) -> &'static str {
         Command::Ungroup { .. } => "Ungroup beats",
         Command::WrapRepeat { .. } => "Wrap repeat",
         Command::SetRepeat { .. } => "Set repeat parameters",
+        Command::RepeatSelection { .. } => "Repeat selection",
+        Command::SetRepeatPlays { .. } => "Set repeat plays",
         Command::WrapRetime { .. } => "Wrap retime",
         Command::SetRetime { .. } => "Set retime parameters",
         Command::InsertPlays { .. } => "Insert repeat plays",

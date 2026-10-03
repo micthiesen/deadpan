@@ -4,6 +4,7 @@ use deadpan_core::{
     FrameCut, ProjectId, RegisterName, RevisionId, SemanticContext, SemanticInstruction,
     SemanticSelector,
 };
+use std::num::NonZeroU32;
 
 /// Unresolved cut intent. FrameCut retains its checked-add overflow behavior.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -35,12 +36,26 @@ pub struct CutAttempt {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub enum RepeatableEdit {
+    Cut(RepeatableCut),
+    Repeat {
+        selector: SemanticSelector,
+        plays: NonZeroU32,
+    },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LastEdit {
-    pub operation: RepeatableCut,
+    pub operation: RepeatableEdit,
+    /// Only cuts use a register. Repeat wrapping preserves pending overrides.
     pub register: Option<char>,
 }
 
 impl LastEdit {
+    pub fn uses_register(&self) -> bool {
+        matches!(self.operation, RepeatableEdit::Cut(_))
+    }
+
     /// Predict intent only. Core resolves and validates the new target, including
     /// refusing explicit empty Visual selections without falling back to a beat.
     pub fn instruction(
@@ -48,14 +63,35 @@ impl LastEdit {
         context: &SemanticContext,
         register: RegisterName,
     ) -> SemanticInstruction {
-        if context.visual_selection.is_some() {
-            RepeatableCut::Selector(SemanticSelector::VisualSelection).instruction(register)
-        } else {
-            self.operation.instruction(register)
+        match &self.operation {
+            RepeatableEdit::Cut(operation) => {
+                if context.visual_selection.is_some() {
+                    RepeatableCut::Selector(SemanticSelector::VisualSelection).instruction(register)
+                } else {
+                    operation.instruction(register)
+                }
+            }
+            RepeatableEdit::Repeat { selector, plays } => SemanticInstruction::Repeat {
+                selector: if context.visual_selection.is_some() {
+                    SemanticSelector::VisualSelection
+                } else {
+                    *selector
+                },
+                plays: *plays,
+            },
         }
     }
 
     pub fn from_instruction(instruction: &SemanticInstruction) -> Option<Self> {
+        if let SemanticInstruction::Repeat { selector, plays } = instruction {
+            return Some(Self {
+                operation: RepeatableEdit::Repeat {
+                    selector: *selector,
+                    plays: *plays,
+                },
+                register: None,
+            });
+        }
         let (operation, register) = match instruction {
             SemanticInstruction::Cut { selector, register } => {
                 (RepeatableCut::Selector(*selector), *register)
@@ -71,7 +107,7 @@ impl LastEdit {
             _ => return None,
         };
         Some(Self {
-            operation,
+            operation: RepeatableEdit::Cut(operation),
             register: (register != RegisterName::unnamed()).then_some(register.as_char()),
         })
     }
@@ -99,8 +135,7 @@ impl Snapshot {
             return Err("The saved project changed. Reopen it before repeating an edit.".into());
         }
         self.edit.as_ref().ok_or_else(|| {
-            "No repeatable edit is available. Cut content first; other edits cannot be repeated yet."
-                .into()
+            "No repeatable edit is available. Cut content or wrap a Repeat first.".into()
         })
     }
 }

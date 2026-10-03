@@ -91,6 +91,75 @@ fn same_document(actual: &ProjectDocument, expected: &ProjectDocument) -> Result
 }
 
 #[test]
+fn visual_repeat_dry_run_and_late_refusal_preserve_bank_and_exact_undo_redo() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = create(scratch.path())?;
+    let input = scratch.path().join("repeat-macro.json");
+    let initial = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    fs::write(&input, request(&initial)?.to_string())?;
+    success(&[
+        "command",
+        package.to_str().unwrap(),
+        "--json",
+        input.to_str().unwrap(),
+    ])?;
+    let before = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    let repeat = json!({"type":"repeat","selector":{"type":"visual_selection"},"plays":3});
+    invoke(
+        &package,
+        &input,
+        &save(&before, 0, "a", json!([repeat.clone()])),
+        false,
+    )?;
+    invoke(
+        &package,
+        &input,
+        &save(&before, 1, "b", json!([repeat.clone(), repeat])),
+        false,
+    )?;
+    let bank = ProjectStore::open(&package, AccessMode::ReadOnly)?.registers()?;
+    let mut invocation = run(&before, bank.version, "a", 4);
+    invocation["operation"]["visual_selection"] = json!({"anchor":18,"head":4,"extending":true});
+    let unchanged = state(&package)?;
+    let preview = invoke(&package, &input, &invocation, true)?;
+    assert_eq!(state(&package)?, unchanged);
+    assert!(preview["committed_revision"].is_null());
+    assert!(preview["committed_registers"].is_null());
+    assert!(preview["context"]["visual_selection"].is_null());
+    assert_eq!(preview["context"]["cursor"], 4);
+    let mut late_failure = invocation.clone();
+    late_failure["operation"]["register"] = json!("b");
+    reject(&package, &input, &late_failure)?;
+    assert_eq!(state(&package)?, unchanged);
+    let result = invoke(&package, &input, &invocation, false)?;
+    assert_eq!(result["committed_revision"], "macro-cut");
+    assert!(result["committed_registers"].is_null());
+    assert!(result["context"]["visual_selection"].is_null());
+    let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let after = writer.snapshot()?;
+    assert_eq!(after.duration()?.frames(), before.duration()?.frames() + 28);
+    assert_eq!(writer.registers()?, bank);
+    let selected: NodeId = serde_json::from_value(result["context"]["selected_child"].clone())?;
+    assert!(
+        matches!(&after.nodes()[&selected].kind, deadpan_core::NodeKind::Repeat { iterations, gap: None, .. } if iterations.len() == 3)
+    );
+    writer.undo(after.revision_id(), RevisionId::new("repeat-undo")?)?;
+    same_document(&writer.snapshot()?, &before)?;
+    assert_eq!(writer.registers()?, bank);
+    writer.checkpoint()?;
+    drop(writer);
+    let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    writer.redo(
+        &RevisionId::new("repeat-undo")?,
+        RevisionId::new("repeat-redo")?,
+    )?;
+    same_document(&writer.snapshot()?, &after)?;
+    assert_eq!(writer.registers()?, bank);
+    writer.validate()?;
+    Ok(())
+}
+
+#[test]
 fn oriented_range_yank_and_staged_replacement_keep_exact_history_and_captures() -> Result {
     let scratch = tempfile::tempdir()?;
     let package = create(scratch.path())?;

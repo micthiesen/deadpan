@@ -3,6 +3,130 @@ use deadpan_store::registers::{RegisterName, RegisterValue};
 use std::{collections::BTreeMap, sync::Arc};
 
 #[test]
+fn qualified_range_repeat_stages_exact_wrapper_capture_and_reopens_with_one_undo() -> Result {
+    use deadpan_core::{
+        ProjectFrame, RepeatSelectionIdentities, SemanticAllocation, SemanticAllocationRequest,
+        SemanticContext, SemanticInstruction, SemanticProgram, SemanticRegisterBank,
+        SemanticSelector, SemanticVisualSelection, SliceCaptureSelection, SplitIdentities,
+        plan_semantic,
+    };
+    use std::num::NonZeroU32;
+
+    let scratch = tempfile::tempdir()?;
+    let (path, mut store) = project(scratch.path())?;
+    let original = retain(&mut store, "offset-bframes.mp4")?;
+    let decoded = decode(&store, &original)?;
+    let registration = request(
+        &store,
+        &original,
+        "registered-repeat",
+        "camera",
+        Some("clip"),
+    )?;
+    store.register_source(&registration, &decoded, None, limits(), &active())?;
+    let before = store.snapshot()?;
+    let before_counts = counts(&path)?;
+    let bank = store.registers()?;
+    let body = SemanticProgram::new(vec![
+        SemanticInstruction::Repeat {
+            selector: SemanticSelector::VisualSelection,
+            plays: NonZeroU32::new(3).unwrap(),
+        },
+        SemanticInstruction::Yank {
+            selector: SemanticSelector::SelectedBeat,
+            register: RegisterName::new('a')?,
+        },
+    ])?;
+    let plan = plan_semantic(
+        &before,
+        &SemanticContext {
+            parent: before.root().clone(),
+            cursor: ProjectFrame(1),
+            selected_child: None,
+            visual_selection: Some(SemanticVisualSelection {
+                anchor: ProjectFrame(3),
+                head: ProjectFrame(1),
+                extending: true,
+            }),
+        },
+        &body,
+        SemanticRegisterBank {
+            entries: &bank.entries,
+            version: bank.version,
+        },
+        revision("repeat-capture-outer"),
+        |allocation| match allocation {
+            SemanticAllocationRequest::Repeat {
+                required_split_ids,
+                needs_group,
+                ..
+            } => {
+                assert!(needs_group);
+                assert!(required_split_ids > 0);
+                Ok(SemanticAllocation::Repeat {
+                    new_revision: revision("repeat-capture-stage"),
+                    identities: RepeatSelectionIdentities {
+                        repeat: NodeId::new("selected-repeat")?,
+                        group: Some(NodeId::new("selected-group")?),
+                        split: SplitIdentities {
+                            nodes: (0..required_split_ids)
+                                .map(|index| NodeId::new(format!("repeat-split-{index}")))
+                                .collect::<std::result::Result<_, _>>()?,
+                        },
+                    },
+                })
+            }
+            SemanticAllocationRequest::Yank { .. } => Ok(SemanticAllocation::Yank {
+                capture_revision: revision("repeat-copy"),
+            }),
+            _ => unreachable!("repeat then capture"),
+        },
+        |_, _| unreachable!("no Original paste"),
+    )?;
+    let preview = store.preview_compound(plan.request.as_ref().unwrap())?;
+    assert_eq!(store.snapshot()?, before);
+    assert_eq!(counts(&path)?, before_counts);
+    let result = store.commit_compound(plan.request.as_ref().unwrap(), None)?;
+    assert_eq!(result.register_bank, preview.register_bank);
+    let after = store.snapshot()?;
+    assert_eq!(after.duration()?.frames(), before.duration()?.frames() + 4);
+    assert_eq!(after.assets(), before.assets());
+    assert_eq!(counts(&path)?.1, before_counts.1 + 1);
+    let RegisterValue::Edited { slice } =
+        result.register_bank.entries[&RegisterName::new('a')?].as_ref()
+    else {
+        panic!("staged wrapper copy")
+    };
+    assert_eq!(
+        slice.selection(),
+        &SliceCaptureSelection::Child {
+            node: NodeId::new("selected-repeat")?
+        }
+    );
+    assert_eq!(slice.revision_id(), &revision("repeat-capture-stage"));
+    assert_eq!(slice.duration().frames(), 6);
+    slice.validate_capture(&store.capture_snapshot_at(slice.revision_id())?)?;
+    store.undo(after.revision_id(), revision("repeat-source-undo"))?;
+    let mut expected = serde_json::to_value(before)?;
+    expected["revision_id"] = serde_json::json!("repeat-source-undo");
+    assert_eq!(serde_json::to_value(store.snapshot()?)?, expected);
+    store.checkpoint()?;
+    drop(store);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    assert_eq!(store.registers()?, result.register_bank);
+    slice.validate_capture(&store.capture_snapshot_at(slice.revision_id())?)?;
+    store.redo(
+        &revision("repeat-source-undo"),
+        revision("repeat-source-redo"),
+    )?;
+    let mut expected = serde_json::to_value(after)?;
+    expected["revision_id"] = serde_json::json!("repeat-source-redo");
+    assert_eq!(serde_json::to_value(store.snapshot()?)?, expected);
+    store.validate()?;
+    Ok(())
+}
+
+#[test]
 fn original_register_keeps_qualified_identity_across_undo_reopen_and_checkpoint() -> Result {
     let scratch = tempfile::tempdir()?;
     let (path, mut store) = project(scratch.path())?;

@@ -1,0 +1,20 @@
+{
+  "changed_files": [
+    "crates/deadpan-app/src/navigation.rs",
+    "crates/deadpan-app/src/navigation/editor_map.rs",
+    "crates/deadpan-app/src/navigation/editor_map/tests.rs",
+    "crates/deadpan-app/src/navigation/repeat_operator_tests.rs",
+    "crates/deadpan-app/src/preview/harness.rs",
+    "crates/deadpan-app/src/preview/harness/repeat_operator.rs",
+    "crates/deadpan-app/src/preview/harness/scenarios.rs",
+    "crates/deadpan-app/src/ui_harness.rs"
+  ],
+  "all_changes_outside_tested_packages": true,
+  "scope": [
+    "deadpan-core",
+    "deadpan-plan",
+    "deadpan-audio"
+  ],
+  "test_exit_code": 0,
+  "note": "Global source guard rejected because independent app router and harness work continued. All changed source files are outside the tested packages and their dependencies."
+}

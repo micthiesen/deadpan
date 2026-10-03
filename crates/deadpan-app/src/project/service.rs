@@ -853,6 +853,44 @@ impl Service {
         );
         let mut retime_message = None;
         let new_revision = revision();
+        let repeat_intent = match &edit {
+            ProjectEdit::WrapRepeat { plays, .. } => Some(super::semantic::LastEdit {
+                operation: super::semantic::RepeatableEdit::Repeat {
+                    selector: deadpan_core::SemanticSelector::SelectedBeat,
+                    plays: std::num::NonZeroU32::new(*plays)
+                        .ok_or("A Repeat needs at least one total play")?,
+                },
+                register: None,
+            }),
+            _ => None,
+        };
+        let wrap_repeat = |target: NodeId, plays| {
+            let selection = deadpan_core::SliceCaptureSelection::Child { node: target };
+            let plan = document
+                .repeat_selection(view.owner, &selection, plays)
+                .map_err(display)?;
+            let id = node();
+            Ok::<_, String>((
+                Command::RepeatSelection {
+                    parent: view.owner.clone(),
+                    selection,
+                    plays,
+                    identities: deadpan_core::RepeatSelectionIdentities {
+                        repeat: id.clone(),
+                        group: plan.needs_group.then(node),
+                        split: deadpan_core::SplitIdentities {
+                            nodes: (0..plan.required_split_ids).map(|_| node()).collect(),
+                        },
+                    },
+                    timing: deadpan_core::AudioTimingId {
+                        allocation: new_revision.clone(),
+                        ordinal: 0,
+                    },
+                },
+                Some(id),
+                "Repeat created and saved",
+            ))
+        };
         let (command, selected_node, message) = match edit {
             ProjectEdit::SetAudioTreatments { node, treatments } => {
                 if document.nodes()[&node].audio_treatments == treatments {
@@ -899,48 +937,27 @@ impl Service {
                 node: target,
                 plays,
             } => {
-                if let NodeKind::Repeat { gap, .. } = &document.nodes()[&target].kind {
+                if let NodeKind::Repeat { .. } = &document.nodes()[&target].kind {
                     (
-                        Command::SetRepeat {
+                        Command::SetRepeatPlays {
                             node: target,
                             plays,
-                            gap: gap.clone(),
+                            timing: deadpan_core::AudioTimingId {
+                                allocation: new_revision.clone(),
+                                ordinal: 0,
+                            },
                         },
                         selected,
                         "Repeat updated and saved",
                     )
                 } else {
-                    let id = node();
-                    (
-                        Command::WrapRepeat {
-                            node: target,
-                            id: id.clone(),
-                            plays,
-                            gap: None,
-                            anchor_policy: Default::default(),
-                        },
-                        Some(id),
-                        "Repeat created and saved",
-                    )
+                    wrap_repeat(target, plays)?
                 }
             }
             ProjectEdit::WrapRepeat {
                 node: target,
                 plays,
-            } => {
-                let id = node();
-                (
-                    Command::WrapRepeat {
-                        node: target,
-                        id: id.clone(),
-                        plays,
-                        gap: None,
-                        anchor_policy: Default::default(),
-                    },
-                    Some(id),
-                    "Repeat created and saved",
-                )
-            }
+            } => wrap_repeat(target, plays)?,
             ProjectEdit::Retime {
                 node: target,
                 speed,
@@ -1030,6 +1047,15 @@ impl Service {
         // An unresolved active generation request must fail rather than receive
         // invented observations from a widget or this service.
         let outcome = self.writer()?.commit(&request).map_err(display)?;
+        if let Some(intent) = repeat_intent {
+            self.semantic.prove(
+                expected_session,
+                &request.project_id,
+                &request.expected_revision,
+                &outcome.revision_id,
+                semantic::Change::Replace(intent),
+            );
+        }
         // Retain the actual durable receipt even if rebuilding the workspace
         // fails. Render continuation must report this commit independently of
         // its later admission result.

@@ -6,6 +6,8 @@ use deadpan_core::{
 };
 use std::num::NonZeroU32;
 
+mod repeats;
+
 fn context(update: &ProjectUpdate, cursor: i64, selected: Option<&str>) -> SemanticContext {
     SemanticContext {
         parent: update.workspace.as_ref().unwrap().document.root().clone(),
@@ -131,7 +133,7 @@ fn visual_presence_overrides_every_saved_kind_without_erasing_empty_or_absent_di
         RepeatableCut::Selector(SemanticSelector::VisualSelection),
     ] {
         let last = LastEdit {
-            operation: operation.clone(),
+            operation: RepeatableEdit::Cut(operation.clone()),
             register: Some('a'),
         };
         context.visual_selection = None;
@@ -165,7 +167,9 @@ fn visual_presence_overrides_every_saved_kind_without_erasing_empty_or_absent_di
             assert_eq!(
                 LastEdit::from_instruction(&effective),
                 Some(LastEdit {
-                    operation: RepeatableCut::Selector(SemanticSelector::VisualSelection),
+                    operation: RepeatableEdit::Cut(RepeatableCut::Selector(
+                        SemanticSelector::VisualSelection
+                    )),
                     register: Some('z'),
                 })
             );
@@ -191,7 +195,7 @@ fn motion_repeat_retains_requested_count_and_register_override_with_full_history
     assert_eq!(
         snapshot(&first).edit,
         Some(LastEdit {
-            operation: RepeatableCut::Selector(motion(7)),
+            operation: RepeatableEdit::Cut(RepeatableCut::Selector(motion(7))),
             register: Some('a')
         })
     );
@@ -209,7 +213,7 @@ fn motion_repeat_retains_requested_count_and_register_override_with_full_history
     assert_eq!(
         snapshot(&second).edit,
         Some(LastEdit {
-            operation: RepeatableCut::Selector(motion(7)),
+            operation: RepeatableEdit::Cut(RepeatableCut::Selector(motion(7))),
             register: None
         })
     );
@@ -289,7 +293,7 @@ fn beat_motion_repeat_resolves_the_new_selected_child_instead_of_reusing_a_lengt
     );
     assert_eq!(
         snapshot(&second).edit.as_ref().unwrap().operation,
-        RepeatableCut::Selector(selector)
+        RepeatableEdit::Cut(RepeatableCut::Selector(selector))
     );
     assert_eq!(
         second.workspace.as_ref().unwrap().plan.duration().frames(),
@@ -364,7 +368,9 @@ fn legacy_cut_attempts_validate_explicit_selection_and_keep_their_own_receipts()
     assert_eq!(
         snapshot(&visual).edit,
         Some(LastEdit {
-            operation: RepeatableCut::Selector(SemanticSelector::VisualSelection),
+            operation: RepeatableEdit::Cut(RepeatableCut::Selector(
+                SemanticSelector::VisualSelection
+            )),
             register: Some('v')
         })
     );
@@ -384,7 +390,7 @@ fn legacy_cut_attempts_validate_explicit_selection_and_keep_their_own_receipts()
     assert_eq!(
         snapshot(&selected).edit,
         Some(LastEdit {
-            operation: RepeatableCut::Selector(SemanticSelector::SelectedBeat),
+            operation: RepeatableEdit::Cut(RepeatableCut::Selector(SemanticSelector::SelectedBeat)),
             register: Some('b')
         })
     );
@@ -467,7 +473,7 @@ fn selected_beat_repeat_removes_adjacent_empty_children_independently_of_cursor(
     assert_eq!(copy.slice().duration().frames(), 0);
     assert_eq!(
         snapshot(&second).edit.as_ref().unwrap().operation,
-        RepeatableCut::Selector(SemanticSelector::SelectedBeat)
+        RepeatableEdit::Cut(RepeatableCut::Selector(SemanticSelector::SelectedBeat))
     );
     refused(
         &harness.service,
@@ -520,7 +526,7 @@ fn successful_visual_override_becomes_intent_and_missing_or_empty_visual_never_f
     );
     assert_eq!(
         snapshot(&second).edit.as_ref().unwrap().operation,
-        RepeatableCut::Selector(SemanticSelector::VisualSelection)
+        RepeatableEdit::Cut(RepeatableCut::Selector(SemanticSelector::VisualSelection))
     );
     refused(
         &harness.service,
@@ -652,7 +658,7 @@ fn typed_cut_refresh_failure_keeps_proof_and_exact_retry_does_not_reprove_after_
     );
     assert_eq!(
         snapshot(&first).edit.as_ref().unwrap().operation,
-        RepeatableCut::Selector(motion(3))
+        RepeatableEdit::Cut(RepeatableCut::Selector(motion(3)))
     );
     assert!(
         snapshot(&first)

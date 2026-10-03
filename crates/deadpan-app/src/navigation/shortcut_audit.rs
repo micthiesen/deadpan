@@ -354,14 +354,15 @@ fn audit_prefixes_for(template: &Bindings) -> Vec<Vec<super::editor_map::Stroke>
             cases.push(path);
         }
         for depth in 1..=prefix.len() {
-            if !matches!(
-                template.map.prefix(
+            if !template
+                .map
+                .prefix(
                     &prefix[..depth],
                     super::EditSelection::None,
-                    super::RoutingDomain::Edit
-                ),
-                Some(super::editor_map::PrefixKind::Operator { .. })
-            ) {
+                    super::RoutingDomain::Edit,
+                )
+                .is_some_and(super::editor_map::PrefixKind::is_operator)
+            {
                 continue;
             }
             for count in &counts[1..] {
@@ -411,6 +412,10 @@ mod tests {
             vec![Key::D, Key::Num3],
             vec![Key::Y, Key::Num0, Key::G],
             vec![Key::Num3, Key::Y, Key::Num3],
+            vec![Key::R, Key::G],
+            vec![Key::R, Key::Num3],
+            vec![Key::R, Key::Num0, Key::G],
+            vec![Key::Num3, Key::R, Key::Num3],
         ] {
             assert!(
                 prefixes.contains(

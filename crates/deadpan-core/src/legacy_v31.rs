@@ -1311,6 +1311,8 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::Ungroup { .. }
         | Command::WrapRepeat { .. }
         | Command::SetRepeat { .. }
+        | Command::RepeatSelection { .. }
+        | Command::SetRepeatPlays { .. }
         | Command::WrapRetime { .. }
         | Command::SetRetime { .. }
         | Command::InsertPlays { .. }

@@ -24,6 +24,7 @@ mod original_playback;
 mod registers;
 mod render;
 mod repeat_input;
+mod repeat_operator;
 mod retime;
 mod room_tone;
 mod scale;
