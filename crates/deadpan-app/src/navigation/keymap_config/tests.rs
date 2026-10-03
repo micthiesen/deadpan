@@ -370,7 +370,14 @@ fn all_reviewed_physical_reservations_outrank_different_logical_symbols() {
         );
         let template = Bindings::from_json(bytes.as_bytes()).unwrap();
         for reservation in &reservations {
-            for logical in [Key::Comma, Key::Colon, Key::N, Key::A, Key::Quote] {
+            for logical in [
+                Key::Comma,
+                Key::Period,
+                Key::Colon,
+                Key::N,
+                Key::A,
+                Key::Quote,
+            ] {
                 for prefix in [vec![], vec![Key::Q], vec![Key::Q, Key::A], vec![Key::M]] {
                     let mut map = template.clone();
                     for key in prefix {

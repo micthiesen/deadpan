@@ -93,13 +93,26 @@ contextual help explains counts and group boundaries. See
 
 ## Declarative editor paths
 
+Plain `.` routes the configurable `edit.repeat-last` action. It repeats the
+last committed frame-cut intent at the current Edit cursor. Counts, held
+activation, native control/text focus and composition cannot invoke it.
+Pending mark/register prefixes retain their own suffix rules. Visual ranges,
+Original, Sources, Placed sounds and temporary previews refuse the edit.
+The footer shows the retained requested length. See
+[semantic repeat](SEMANTIC_REPEAT.md) for saved-revision and register behavior.
+The production audit enumerates Period alongside the other logical identities,
+and `dot-repeat` is the corresponding rendered replay. Its
+[qualification](qualification/semantic-repeat-2026-10-02.md) passes 159 rendered
+checks and the 172,360-case audit with matching live Kestrel source.
+
 The shipped Normal/Visual paths now use a [validated binding trie](KEYMAP.md).
 Prefix hints come from the same declarations, and the audit walks every
 structural branch rather than maintaining a separate list. Counted branches
 with no valid edit show the refusal. Held motion keys cannot consume or complete
 any pending prefix; this fixes held `h` becoming a comma-Hold edit. Native
 control protection follows the typed cut and preserves mark names.
-User keymap loading and the remaining mode-map migration are still open.
+User overrides now load through the compiled map; the remaining mode-map
+migration is still open.
 See [qualification and exact source identities](qualification/declarative-bindings-2026-10-01.md).
 
 ## Source Slip preview

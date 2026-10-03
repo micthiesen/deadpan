@@ -1,23 +1,39 @@
 //! Capture privately, save one deletion, then publish the copied structure.
 
 use super::*;
+use crate::project::semantic::{CutAttempt, LastEdit};
 use crate::project::slice::{CaptureRequest, CutReceipt, CutUpdate};
 use deadpan_core::{AudioTimingId, ProjectFrame, SliceCaptureSelection, SplitIdentities};
 
 impl Service {
-    pub(super) fn cut_edit_slice_command(&mut self, request: CaptureRequest) {
+    pub(super) fn cut_edit_slice_command(
+        &mut self,
+        request: CaptureRequest,
+        attempt: Option<CutAttempt>,
+    ) {
         let result = match self.last_cut.as_ref() {
-            Some((previous, receipt)) if previous == &request => Ok(receipt.clone()),
-            Some((previous, _)) if previous.id == request.id => {
+            Some((previous, saved_attempt, receipt))
+                if previous == &request && saved_attempt == &attempt =>
+            {
+                Ok(receipt.clone())
+            }
+            Some((previous, _, _)) if previous.id == request.id => {
                 Err("The cut identity was already used for a different selection".into())
             }
-            _ => self.cut_edit_slice(&request),
+            _ => self.cut_edit_slice(&request, attempt.as_ref()),
         };
         self.cut_slice = Some(CutUpdate { request, result });
     }
 
-    fn cut_edit_slice(&mut self, capture: &CaptureRequest) -> Result<CutReceipt> {
+    fn cut_edit_slice(
+        &mut self,
+        capture: &CaptureRequest,
+        attempt: Option<&CutAttempt>,
+    ) -> Result<CutReceipt> {
         self.check_register_request(&capture.id)?;
+        if let Some(attempt) = attempt {
+            self.check_frame_cut(capture, attempt)?;
+        }
         // Historical capture resolves the full scope and exact child identity.
         // No register reply is emitted before the transaction succeeds.
         let copied = self.capture_edit_slice(capture)?;
@@ -85,6 +101,18 @@ impl Service {
             .writer()?
             .cut_to_register(&request, name, copied.slice().clone(), None)
             .map_err(display)?;
+        if let Some(attempt) = attempt {
+            self.semantic.prove(
+                capture.id.session,
+                &capture.id.project,
+                &capture.id.source_revision,
+                &outcome.revision_id,
+                semantic::Change::Replace(LastEdit {
+                    operation: attempt.operation.clone(),
+                    register: capture.register,
+                }),
+            );
+        }
         bank.version = saved.version;
         self.registers = Some(Arc::new(bank));
         let cursor = copied.slice().range().start();
@@ -103,7 +131,7 @@ impl Service {
         };
         // Retain durable success before optional workspace preparation. A
         // saved cut remains pasteable even if the old view cannot refresh.
-        self.last_cut = Some((capture.clone(), receipt.clone()));
+        self.last_cut = Some((capture.clone(), attempt.cloned(), receipt.clone()));
         self.committed = Some(receipt.committed.clone());
         #[cfg(test)]
         {
@@ -132,8 +160,41 @@ impl Service {
         }
         self.error = None;
         self.committed = Some(receipt.committed.clone());
-        self.last_cut = Some((capture.clone(), receipt.clone()));
+        self.last_cut = Some((capture.clone(), attempt.cloned(), receipt.clone()));
         Ok(receipt)
+    }
+
+    fn check_frame_cut(&mut self, capture: &CaptureRequest, attempt: &CutAttempt) -> Result<()> {
+        self.observe_semantic();
+        self.check_context(capture.id.session, &capture.id.source_revision)?;
+        let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
+        let snapshot = self
+            .semantic
+            .snapshot()
+            .ok_or("Repeat state is unavailable")?;
+        if snapshot.head.as_ref() != Some(&capture.id.source_revision) {
+            return Err("The saved project changed. Reopen it before cutting frames.".into());
+        }
+        if let Some(version) = attempt.repeat_version
+            && (snapshot.version != version
+                || snapshot.edit_for(workspace)?.operation != attempt.operation)
+        {
+            return Err(
+                "The last semantic edit changed. Start the repeat again; no edit was made.".into(),
+            );
+        }
+        let SliceCaptureSelection::Range { range } = &capture.selection else {
+            return Err("A semantic frame cut requires an exact cursor range".into());
+        };
+        if attempt
+            .operation
+            .resolve(&workspace.document, &capture.parent, range.start())
+            .map_err(display)?
+            != *range
+        {
+            return Err("The frame cut differs from its requested count and current cursor".into());
+        }
+        Ok(())
     }
 
     fn cut_join_child(&self, scope: &SequenceScope, cursor: ProjectFrame) -> Option<NodeId> {

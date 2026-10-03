@@ -575,6 +575,14 @@ live expected revisions, playback and export remain timeline-only. Bank-only
 execution creates no edit receipt and preserves Undo/Redo. See
 [the compound contract](docs/COMPOUND_TRANSACTIONS.md).
 
+Frame-cut dot-repeat retains the requested count and destination register, never
+old cursor coordinates. Keep semantic intent in the project service, observing
+the actual saved head independently of preview refresh. Exact successful-cut
+proofs replace it; direct mark and Undo/Redo proofs preserve it. Any other head
+change clears it, including unrefreshed headless commits. Admit versioned UI
+snapshots and reject stale repeat requests before writing. See
+[semantic repeat](docs/SEMANTIC_REPEAT.md).
+
 The database also retains operational generation
 attempts, validation receipts, and candidate selection. Modern bundle receipts add
 optional measured spans and retained-input admission evidence; legacy receipts

@@ -1,0 +1,35 @@
+[
+  {
+    "file": "dot-repeat-020.png",
+    "caption": "Minimum workspace retains the requested seven-frame repeat after a two-frame cut",
+    "viewport_points": [
+      960.0,
+      640.0
+    ],
+    "source_report": "replay-dot-initial.json.gz",
+    "sha256": "2d59109496a03bed34d917e2fe646df3ebe6a2f0ba05c599f8995b7c8e417561",
+    "review": "Root visually inspected the full capture for picture, clocks, focus, footer and notice clipping."
+  },
+  {
+    "file": "dot-repeat-033.png",
+    "caption": "Dot at Edit 20 cuts seven frames and displays Original frame 27",
+    "viewport_points": [
+      960.0,
+      640.0
+    ],
+    "source_report": "replay-dot-initial.json.gz",
+    "sha256": "3da99e795436554f204bfee8cd373810b8a094dced823c252a4fde995fa3a6fb",
+    "review": "Root visually inspected the full capture for picture, clocks, focus, footer and notice clipping."
+  },
+  {
+    "file": "dot-repeat-121.png",
+    "caption": "The new command count replaces the old edit and held dot saves once",
+    "viewport_points": [
+      960.0,
+      640.0
+    ],
+    "source_report": "replay-dot-initial.json.gz",
+    "sha256": "ada905434a4ce3e9b2833db4c47d56f28885ffcb89ffa37b9be70eb0da26a877",
+    "review": "Root visually inspected the full capture for picture, clocks, focus, footer and notice clipping."
+  }
+]

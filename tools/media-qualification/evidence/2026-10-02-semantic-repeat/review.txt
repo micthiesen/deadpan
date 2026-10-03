@@ -1,0 +1,5 @@
+Independent read-only reviewer: dot_repeat_review
+Lens: saved-head authority, stale and asynchronous feedback, refresh failure, Undo/marks and unsupported transitions, fresh cursor resolution.
+Result: No actionable correctness issues found within the assigned lens.
+Mark-only Compound preservation was considered and remains intentionally unsupported; unknown Compound transitions clear repeat, as documented.
+Root also reviewed the complete source diff and three rendered repeat checkpoints.

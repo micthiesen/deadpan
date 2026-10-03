@@ -217,6 +217,24 @@ impl Service {
         let (output, committed_revision) = execute_short(store, project, command)?;
         let mut refresh_error = None;
         if let Some(revision) = &committed_revision {
+            use deadpan_cli::live_project::ShortOperation;
+            let preserved_from = match command {
+                ShortOperation::History {
+                    expected_revision, ..
+                } => Some(expected_revision),
+                ShortOperation::Edit { request, .. }
+                    if matches!(
+                        request.command,
+                        Command::SetMark { .. } | Command::DeleteMark { .. }
+                    ) =>
+                {
+                    Some(&request.expected_revision)
+                }
+                _ => None,
+            };
+            if let Some(before) = preserved_from {
+                self.preserve_semantic(before, revision);
+            }
             self.committed = None;
             self.room_tone = None;
             self.room_tone_error = None;

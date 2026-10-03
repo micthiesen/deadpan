@@ -57,6 +57,7 @@ command. The double quote token (`"\""` in JSON) and `Shift+Quote` are equivalen
 | `visual`, `copy` | Select time and copy |
 | `paste.after`, `paste.before` | Paste, or replace a captured range |
 | `split`, `cut.frames`, `cut.beat`, `cut.range` | Structural edits; range cut is Visual, beat cut is Normal |
+| `edit.repeat-last` | Repeat the last committed frame cut at the current cursor; default `.`, no count or held activation |
 | `repeat`, `hold` | Total plays and inserted pause |
 | `insert`, `sound.place` | Reuse the Original and place a catalog sound |
 | `gain.up`, `gain.down` | Gain steps |
@@ -194,5 +195,6 @@ Current configuration covers Normal and timeline Visual paths and their teaching
 The remaining mode routers, strict logical provenance and physical layout/IME
 qualification remain open. Settings are file-based and require a restart; a
 native settings editor and live map replacement are not implemented. Semantic
-dot-repeat and atomic bounded macros remain separate DP-06 work. No requirement
+[dot-repeat supports frame cuts](SEMANTIC_REPEAT.md); other edit kinds and atomic
+bounded macros remain DP-06 work. No requirement
 or product gate is complete on the basis of this increment.

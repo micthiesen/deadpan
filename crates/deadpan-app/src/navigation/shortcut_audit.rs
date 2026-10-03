@@ -79,7 +79,14 @@ fn audit_layout_reservation(
             super::EditSelection::Range,
         ] {
             for (text, ime) in [(false, false), (true, false), (false, true), (true, true)] {
-                for logical in [Key::Comma, Key::Colon, Key::N, Key::A, Key::Quote] {
+                for logical in [
+                    Key::Comma,
+                    Key::Period,
+                    Key::Colon,
+                    Key::N,
+                    Key::A,
+                    Key::Quote,
+                ] {
                     let mut bindings = template.clone();
                     bindings.clear();
                     for stroke in &prefix {
@@ -391,7 +398,7 @@ mod tests {
         // Five drafts × repeat/background, Camera × repeat, and native input,
         // each under all four text/IME combinations.
         let mode_cases = 4 * (5 * 2 * 2 + 2 + 1);
-        let layout_cases = prefix_cases * 3 * 4 * 5; // Five logical identities.
+        let layout_cases = prefix_cases * 3 * 4 * 6; // Six logical identities.
         assert_eq!(
             report.routing_cases,
             62 * (editor_cases + mode_cases + layout_cases)

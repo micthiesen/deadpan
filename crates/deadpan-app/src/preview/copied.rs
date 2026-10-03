@@ -108,6 +108,7 @@ pub(super) struct Register {
     content: Option<Content>,
     named: std::collections::BTreeMap<char, Content>,
     selected: Option<char>,
+    selected_explicit: bool,
     session: Option<(u64, deadpan_core::ProjectId)>,
     version: Option<u64>,
     pending: Option<Pending>,
@@ -123,6 +124,7 @@ impl Register {
             'a'..='z' | 'A'..='Z' => Some(name.to_ascii_lowercase()),
             _ => return Err("Choose a register from a–z, or \" for the default copy.".into()),
         };
+        self.selected_explicit = true;
         Ok(())
     }
 
@@ -132,6 +134,12 @@ impl Register {
 
     pub fn clear_selection(&mut self) {
         self.selected = None;
+        self.selected_explicit = false;
+    }
+
+    /// Distinguish an explicit default-register choice from no override for dot.
+    pub fn selected_override(&self) -> Option<Option<char>> {
+        self.selected_explicit.then_some(self.selected)
     }
 
     pub fn selected_content(&self) -> Option<&Content> {
@@ -149,6 +157,7 @@ impl Register {
     /// A failed new write consumes its one-shot name but preserves every slot.
     pub fn begin_write(&mut self) -> Option<char> {
         self.supersede();
+        self.selected_explicit = false;
         self.selected.take()
     }
 
@@ -641,6 +650,20 @@ mod tests {
         register.reconcile(None);
         register.install_bank(&bank(4, 2..8));
         assert!(register.content().is_none());
+    }
+
+    #[test]
+    fn explicit_default_register_overrides_repeat_and_is_consumed_once() {
+        let mut register = Register::default();
+        assert_eq!(register.selected_override(), None);
+        register.select('"').unwrap();
+        assert_eq!(register.selected_override(), Some(None));
+        assert_eq!(register.begin_write(), None);
+        assert_eq!(register.selected_override(), None);
+        register.select('b').unwrap();
+        assert_eq!(register.selected_override(), Some(Some('b')));
+        register.clear_selection();
+        assert_eq!(register.selected_override(), None);
     }
 
     #[test]

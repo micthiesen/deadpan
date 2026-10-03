@@ -39,6 +39,7 @@ mod registers;
 mod render;
 mod render_history;
 mod room_tone;
+mod semantic;
 mod slip;
 mod splice;
 mod trim;
@@ -63,6 +64,7 @@ struct Service {
     error: Option<String>,
     message: Option<String>,
     committed: Option<CommittedEdit>,
+    semantic: semantic::State,
     room_tone: Option<PreparedRoomTone>,
     room_tone_error: Option<RoomToneFailure>,
     gain: Option<super::gain::ProposalUpdate>,
@@ -86,7 +88,11 @@ struct Service {
     registers: Option<Arc<super::registers::Bank>>,
     captured_original: Option<super::registers::OriginalUpdate>,
     cut_slice: Option<super::slice::CutUpdate>,
-    last_cut: Option<(super::slice::CaptureRequest, super::slice::CutReceipt)>,
+    last_cut: Option<(
+        super::slice::CaptureRequest,
+        Option<super::semantic::CutAttempt>,
+        super::slice::CutReceipt,
+    )>,
     marks: super::marks::Update,
     marks_state: marks::State,
     copied_view: Option<edit_slice::PreparedCopy>,
@@ -126,6 +132,7 @@ pub(super) fn run(
         error: None,
         message: None,
         committed: None,
+        semantic: semantic::State::default(),
         room_tone: None,
         room_tone_error: None,
         gain: None,
@@ -268,13 +275,15 @@ pub(super) fn run(
 }
 
 impl Service {
-    fn publish(&self) {
+    fn publish(&mut self) {
+        self.observe_semantic();
         let update = ProjectUpdate {
             workspace: self.workspace.clone(),
             import: self.import.clone(),
             error: self.error.clone(),
             message: self.message.clone(),
             committed: self.committed.clone(),
+            semantic: self.semantic.snapshot(),
             room_tone: self
                 .room_tone
                 .as_ref()
@@ -299,7 +308,10 @@ impl Service {
             registers: self.registers.clone(),
             captured_original: self.captured_original.clone(),
             cut_slice: self.cut_slice.clone(),
-            saved_cut: self.last_cut.as_ref().map(|(_, receipt)| receipt.clone()),
+            saved_cut: self
+                .last_cut
+                .as_ref()
+                .map(|(_, _, receipt)| receipt.clone()),
             marks: self.marks.clone(),
             render: self.render_update.clone(),
             render_history: self.render_history.clone(),
@@ -327,7 +339,11 @@ impl Service {
                 return Ok(());
             }
             ProjectRequest::CutEditSlice(request) => {
-                self.cut_edit_slice_command(request);
+                self.cut_edit_slice_command(request, None);
+                return Ok(());
+            }
+            ProjectRequest::CutFrames { capture, attempt } => {
+                self.cut_edit_slice_command(capture, Some(attempt));
                 return Ok(());
             }
             ProjectRequest::PrepareTrim(proposal) => {
@@ -450,6 +466,7 @@ impl Service {
             ProjectRequest::CaptureEditSlice(_) => unreachable!("copy uses independent feedback"),
             ProjectRequest::CaptureOriginal(_) => unreachable!("copy uses independent feedback"),
             ProjectRequest::CutEditSlice(_) => unreachable!("cut uses independent feedback"),
+            ProjectRequest::CutFrames { .. } => unreachable!("frame cut uses independent feedback"),
             ProjectRequest::PrepareSplice(_)
             | ProjectRequest::CommitSplice(_)
             | ProjectRequest::AbandonSplice(_) => unreachable!("splice uses independent feedback"),
@@ -504,18 +521,22 @@ impl Service {
                 edit,
             } => self.sound_edit(expected_session, expected_revision, edit),
             ProjectRequest::Undo { expected_revision } => {
-                self.writer()?
+                let outcome = self
+                    .writer()?
                     .undo(&expected_revision, revision())
                     .map_err(display)?;
-                self.refresh()?;
+                self.preserve_semantic(&expected_revision, &outcome.revision_id);
+                self.refresh_saved("Undo saved")?;
                 self.message = Some("Undo saved".into());
                 Ok(())
             }
             ProjectRequest::Redo { expected_revision } => {
-                self.writer()?
+                let outcome = self
+                    .writer()?
                     .redo(&expected_revision, revision())
                     .map_err(display)?;
-                self.refresh()?;
+                self.preserve_semantic(&expected_revision, &outcome.revision_id);
+                self.refresh_saved("Redo saved")?;
                 self.message = Some("Redo saved".into());
                 Ok(())
             }

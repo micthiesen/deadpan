@@ -14,6 +14,8 @@ pub mod gain;
 mod mark_tests;
 #[cfg(test)]
 mod register_tests;
+#[cfg(test)]
+mod repeat_last_tests;
 pub mod retime;
 pub mod room_tone;
 pub mod slip;
@@ -100,6 +102,7 @@ pub enum Action {
     VisualMoment,
     DeleteSelection,
     DeleteFrames(u32),
+    RepeatLast,
     CopyMoment,
     SelectRegister(char),
     SetMark(char),
@@ -302,7 +305,7 @@ impl Bindings {
             true,
             selection,
         ) {
-            Some(Action::DeleteFrames(_) | Action::DeleteSelection) => true,
+            Some(Action::DeleteFrames(_) | Action::DeleteSelection | Action::RepeatLast) => true,
             Some(Action::Edit(BeatEdit::Delete)) => selection != EditSelection::None,
             _ => false,
         }

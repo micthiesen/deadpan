@@ -19,6 +19,24 @@ test instances after testing instead of leaving them idle. The previously
 running `dev.thiesen.deadpan.cursor-qa` instance has been quit, and the native
 app inventory confirmed no Deadpan app remained running.
 
+## Semantic frame-cut repeat, current implementation
+
+[Semantic repeat](../SEMANTIC_REPEAT.md) adds configurable `edit.repeat-last`,
+default `.`. Retain the requested count from `x` or `:delete-frames`, then
+resolve against the new current cursor and ordinary Sequence. Clamping the
+first cut must not shrink the stored count. Preserve its register unless the
+user supplies an explicit override, including the default register.
+
+The service observes the actual saved head before publishing and before repeat
+admission. A single exact transition proof replaces intent after a supported
+cut or preserves it after direct marks and Undo/Redo. Unknown head changes,
+including headless saves with failed refreshes, clear it. Never infer semantic
+success from the visible workspace, pending UI copy or ordinary commit mailbox.
+Versioned snapshots prevent late feedback from restoring an older candidate.
+No schema changes. Macro recording, selectors, call expansion and dot-repeat
+for the remaining edit kinds are still required.
+See [qualification and limits](../qualification/semantic-repeat-2026-10-02.md).
+
 ## Resolved transactions, current implementation
 
 [Compound transactions](../COMPOUND_TRANSACTIONS.md) provide the shared core and
@@ -37,7 +55,7 @@ cannot discard capture checkpoints. Schema 53 development packages require
 recreation; no migrations are required during this unused development goal.
 
 Macro recording, semantic selector resolution, count/call expansion and
-dot-repeat remain required. Expose macro controls only when those layers and
+dot-repeat beyond frame cuts remain required. Expose macro controls only when those layers and
 the native workflow exist.
 See [qualification and limits](../qualification/compound-transactions-2026-10-02.md).
 
@@ -64,7 +82,7 @@ confirmation. Superseded successful saves remain durable, while only matching
 replies consume selection. Retain the latest accepted write until its reply,
 including after newer local refusal, and refuse new placement while unsettled.
 Consume the chosen name on the next copy/picture-cut/paste/placement attempt.
-Macro content/execution and semantic dot-repeat remain required.
+Macro content/execution and semantic dot-repeat beyond frame cuts remain required.
 Escape and blur cancel both live choice and an open named command;
 project reopen cannot revive its captured name. See
 [persistent-register qualification](../qualification/durable-registers-2026-10-02.md)
@@ -80,7 +98,7 @@ from the compiled map. Held motions retain their resolved action and cannot
 consume a new prefix. Command/Search entry retains the ordered native input
 suffix and suppresses only the held opener. See [the contract](../KEYMAP.md).
 Other mode maps, strict logical provenance, physical layout/IME qualification,
-semantic dot-repeat and macros remain required. The keymap increment made no
+semantic dot-repeat beyond frame cuts and macros remain required. The keymap increment made no
 schema changes; registers were introduced in schema 53, followed by schema 54's
 compound step reservations and capture snapshots.
 The [qualification](../qualification/configurable-bindings-2026-10-01.md) records

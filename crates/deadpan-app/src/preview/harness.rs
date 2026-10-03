@@ -27,6 +27,7 @@ mod retime;
 mod room_tone;
 mod scale;
 mod scenarios;
+mod semantic;
 mod slip;
 mod sound_placement;
 mod sound_playback;

@@ -21,6 +21,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "delete-range" => super::delete_range::run(d),
         "marks" => super::marks::run(d),
         "named-registers" => super::registers::run(d),
+        "dot-repeat" => super::semantic::run(d),
         "original-playback" => super::original_playback::run(d),
         "sound-playback" => super::sound_playback::run(d),
         "retime" => super::retime::run(d),

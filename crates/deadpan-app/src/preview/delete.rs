@@ -12,6 +12,7 @@ pub(super) struct CommandTarget {
     parent: NodeId,
     edit: ProjectEdit,
     register: Option<char>,
+    attempt: Option<crate::project::semantic::CutAttempt>,
 }
 
 impl DeadpanApp {
@@ -49,6 +50,7 @@ impl DeadpanApp {
             parent,
             edit,
             register: self.copied.selected(),
+            attempt: None,
         })
     }
 
@@ -81,7 +83,7 @@ impl DeadpanApp {
                 _ => return Err("The captured command is not a picture cut.".into()),
             };
             Ok((
-                target.register,
+                target.attempt,
                 crate::project::slice::CaptureRequest {
                     id: crate::project::slice::CopyId {
                         session: target.base.session,
@@ -98,12 +100,19 @@ impl DeadpanApp {
             ))
         });
         match result {
-            Ok((_, mut request)) => {
+            Ok((attempt, mut request)) => {
                 let Some(serial) = self.next_serial() else {
                     return;
                 };
                 request.id.request = serial;
-                if self.submit(ProjectRequest::CutEditSlice(request.clone())) {
+                let command = match attempt {
+                    Some(attempt) => ProjectRequest::CutFrames {
+                        capture: request.clone(),
+                        attempt,
+                    },
+                    None => ProjectRequest::CutEditSlice(request.clone()),
+                };
+                if self.submit(command) {
                     self.copied.expect_cut_to(request);
                     self.message = Some("Saving cut and copy…".into());
                 }

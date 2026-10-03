@@ -1,0 +1,16 @@
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+os.environ["DEADPAN_CHECK_OUTPUT"] = str(Path(__file__).parent)
+recorder = "/tmp/deadpan-original-layout-20261002/run-check.py"
+checks = [
+    ("app-default-final", ["cargo", "test", "-p", "deadpan-app", "--locked"]),
+    ("clippy-final", ["cargo", "clippy", "-p", "deadpan-core", "-p", "deadpan-store", "-p", "deadpan-app", "--all-targets", "--features", "deadpan-app/ui-harness", "--locked", "--", "-D", "warnings"]),
+    ("format-final", ["cargo", "fmt", "--all", "--", "--check"]),
+]
+for name, args in checks:
+    result = subprocess.run(["python3", recorder, name, *args])
+    if result.returncode:
+        sys.exit(result.returncode)

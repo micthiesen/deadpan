@@ -1,0 +1,11 @@
+{
+  "observed_utc": "2026-10-03T00:05:17.588907+00:00",
+  "command": [
+    "ps",
+    "-axo",
+    "pid=,comm="
+  ],
+  "matching_app_processes": [],
+  "ordinary_native_window_opened": false,
+  "replays_exited": true
+}

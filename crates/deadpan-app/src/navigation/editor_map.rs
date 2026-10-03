@@ -18,6 +18,7 @@ impl Stroke {
         }
         let name = match self.0 {
             Key::Comma => ",",
+            Key::Period => ".",
             Key::Quote => "'",
             Key::ArrowLeft => "←",
             Key::ArrowRight => "→",
@@ -59,6 +60,7 @@ pub enum BindingId {
     PasteBefore,
     Split,
     CutFrames,
+    RepeatLast,
     CutBeat,
     CutRange,
     Repeat,
@@ -83,7 +85,7 @@ pub enum BindingId {
 }
 
 impl BindingId {
-    pub const ALL: [Self; 38] = [
+    pub const ALL: [Self; 39] = [
         Self::FramePrevious,
         Self::FrameNext,
         Self::BeatPrevious,
@@ -101,6 +103,7 @@ impl BindingId {
         Self::PasteBefore,
         Self::Split,
         Self::CutFrames,
+        Self::RepeatLast,
         Self::CutBeat,
         Self::CutRange,
         Self::Repeat,
@@ -142,6 +145,7 @@ impl BindingId {
             Self::PasteBefore => "paste.before",
             Self::Split => "split",
             Self::CutFrames => "cut.frames",
+            Self::RepeatLast => "edit.repeat-last",
             Self::CutBeat => "cut.beat",
             Self::CutRange => "cut.range",
             Self::Repeat => "repeat",
@@ -280,6 +284,7 @@ impl Rule {
             Action::PasteMoment { before: true } => I::PasteBefore,
             Action::Edit(BeatEdit::Split) => I::Split,
             Action::DeleteFrames(_) => I::CutFrames,
+            Action::RepeatLast => I::RepeatLast,
             Action::Edit(BeatEdit::Delete) => I::CutBeat,
             Action::DeleteSelection => I::CutRange,
             Action::Edit(BeatEdit::WrapRepeat(_)) => I::Repeat,
@@ -830,6 +835,15 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
         Action::DeleteFrames(1),
         C::Frames,
         "cut frames",
+        false,
+    );
+    add(
+        &[plain(Key::Period)],
+        Action::RepeatLast,
+        C::Refuse(
+            "Repeat the last frame cut once, without a count; its requested length is retained.",
+        ),
+        "repeat last committed frame cut at the current Edit cursor, keeping its requested length; other edits are not supported yet",
         false,
     );
     for (key, action, short) in [

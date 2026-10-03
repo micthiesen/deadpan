@@ -140,8 +140,8 @@ fn parse_stroke(token: &str, mode: KeyMode) -> Result<Stroke, String> {
 }
 
 /// These egui identities are symbols, independent of the Shift/Option keys a
-/// layout used to produce them. Minus and Quote stay modifier-sensitive: egui
-/// has no separate identities for underscore or double quote.
+/// layout used to produce them. Minus, Quote and Period stay modifier-sensitive:
+/// egui can use those identities for underscore, double quote and greater-than.
 pub(super) fn logical_symbol(key: Key) -> bool {
     matches!(
         key,

@@ -25,6 +25,7 @@ pub mod registers;
 pub mod render_history;
 pub mod retime;
 mod scope;
+pub mod semantic;
 mod service;
 pub mod slice;
 pub mod slip;
@@ -124,6 +125,8 @@ pub struct ProjectUpdate {
     /// Last selection-changing commit, retained through background progress.
     /// Cleared by the next user command; consumers deduplicate by revision.
     pub committed: Option<CommittedEdit>,
+    /// Last semantic edit follows durable head transitions, including failed refreshes.
+    pub semantic: Option<semantic::Snapshot>,
     /// Read-only source-range preparation, bound to the captured request.
     /// Consumers must admit its ticket, session and revision before using it.
     pub room_tone: Option<PreparedRoomTone>,
@@ -447,6 +450,10 @@ pub enum ProjectRequest {
     CaptureOriginal(registers::OriginalRequest),
     CaptureEditSlice(slice::CaptureRequest),
     CutEditSlice(slice::CaptureRequest),
+    CutFrames {
+        capture: slice::CaptureRequest,
+        attempt: semantic::CutAttempt,
+    },
     PasteEditedSlice(slice::Paste),
     PrepareSplice(splice::Proposal),
     CommitSplice(splice::ProposalId),

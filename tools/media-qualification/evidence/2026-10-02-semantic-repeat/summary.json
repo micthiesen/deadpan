@@ -1,0 +1,155 @@
+{
+  "final_source_manifest_sha256": "ab40b573bd77ff1e277ec11231e51751388d7b58e0204bc4301298bc91203037",
+  "tests": {
+    "app-default-final": [
+      {
+        "result": "ok",
+        "passed": 628,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "result": "ok",
+        "passed": 3,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ],
+    "app-ui-final": [
+      {
+        "result": "ok",
+        "passed": 664,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "result": "ok",
+        "passed": 3,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ],
+    "core-store-final": [
+      {
+        "result": "ok",
+        "passed": 133,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      },
+      {
+        "result": "ok",
+        "passed": 75,
+        "failed": 0,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 0
+      }
+    ],
+    "semantic-initial": [
+      {
+        "result": "FAILED",
+        "passed": 19,
+        "failed": 1,
+        "ignored": 0,
+        "measured": 0,
+        "filtered": 644
+      }
+    ]
+  },
+  "replays": [
+    {
+      "name": "replay-delete-range",
+      "binary_sha256": "9b0d6f50647b4223c9aa0806ad400c4b57cf6cc9179bb111f164e9bd99c8b18d",
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "checks": 1,
+          "failed_checks": 0,
+          "findings": [],
+          "skipped": []
+        },
+        {
+          "name": "delete-range",
+          "checks": 309,
+          "failed_checks": 0,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "replay-dot-initial",
+      "binary_sha256": "9b0d6f50647b4223c9aa0806ad400c4b57cf6cc9179bb111f164e9bd99c8b18d",
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "checks": 1,
+          "failed_checks": 0,
+          "findings": [],
+          "skipped": []
+        },
+        {
+          "name": "dot-repeat",
+          "checks": 159,
+          "failed_checks": 0,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "replay-named-registers",
+      "binary_sha256": "9b0d6f50647b4223c9aa0806ad400c4b57cf6cc9179bb111f164e9bd99c8b18d",
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "checks": 1,
+          "failed_checks": 0,
+          "findings": [],
+          "skipped": []
+        },
+        {
+          "name": "named-registers",
+          "checks": 169,
+          "failed_checks": 0,
+          "findings": [
+            {
+              "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+              "severity": "warning"
+            }
+          ],
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ]
+    }
+  ]
+}

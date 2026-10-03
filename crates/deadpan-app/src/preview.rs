@@ -45,6 +45,7 @@ mod repeats;
 mod room_tone;
 mod scope;
 mod selection;
+mod semantic;
 mod slip;
 mod sound_events;
 mod splice;
@@ -186,6 +187,7 @@ pub struct DeadpanApp {
     audio_import: bool,
     sound_stream: Option<u32>,
     last_committed: Option<deadpan_core::RevisionId>,
+    semantic: semantic::Mirror,
     beat_rows: Arc<Vec<BeatRow>>,
     source_rows: Arc<Vec<SourceRow>>,
     sound_rows: Arc<Vec<SourceRow>>,
@@ -320,6 +322,7 @@ impl DeadpanApp {
             audio_import: false,
             sound_stream: None,
             last_committed: None,
+            semantic: semantic::Mirror::default(),
             beat_rows: Arc::new(Vec::new()),
             source_rows: Arc::new(Vec::new()),
             sound_rows: Arc::new(Vec::new()),
@@ -639,6 +642,12 @@ impl DeadpanApp {
                             .is_some_and(|next| next.asset != i.asset)
                 });
             self.workspace = update.workspace;
+            self.semantic.receive(
+                update.semantic,
+                self.workspace
+                    .as_ref()
+                    .map(|workspace| (workspace.session, workspace.document.project_id())),
+            );
             self.copied.reconcile(self.workspace.as_deref());
             if let Some(bank) = update.registers {
                 self.copied.install_bank(&bank);
@@ -1397,7 +1406,10 @@ impl DeadpanApp {
         }
         if matches!(
             action,
-            Action::CopyMoment | Action::DeleteSelection | Action::DeleteFrames(_)
+            Action::CopyMoment
+                | Action::DeleteSelection
+                | Action::DeleteFrames(_)
+                | Action::RepeatLast
         ) || (action == Action::Edit(BeatEdit::Delete)
             && self.pane != Pane::Sounds
             && !self.event_focused())
@@ -1453,6 +1465,7 @@ impl DeadpanApp {
                 | Action::VisualMoment
                 | Action::DeleteSelection
                 | Action::DeleteFrames(_)
+                | Action::RepeatLast
                 | Action::CopyMoment
                 | Action::PasteMoment { .. } => {
                     if matches!(
@@ -1460,6 +1473,7 @@ impl DeadpanApp {
                         Action::CopyMoment
                             | Action::DeleteSelection
                             | Action::DeleteFrames(_)
+                            | Action::RepeatLast
                             | Action::PasteMoment { .. }
                     ) {
                         self.copied.clear_selection();
@@ -1477,6 +1491,7 @@ impl DeadpanApp {
                 Action::CopyMoment
                     | Action::DeleteSelection
                     | Action::DeleteFrames(_)
+                    | Action::RepeatLast
                     | Action::PasteMoment { .. }
                     | Action::Edit(BeatEdit::Delete)
             ) {
@@ -1489,7 +1504,10 @@ impl DeadpanApp {
             );
             return;
         }
-        if self.camera.is_some() && !self.sound_focused() && !matches!(action, Action::Framing(_)) {
+        if self.camera.is_some()
+            && !self.sound_focused()
+            && !matches!(action, Action::Framing(_) | Action::RepeatLast)
+        {
             self.cancel_camera();
         }
         match action {
@@ -1535,6 +1553,7 @@ impl DeadpanApp {
             Action::DeleteFrames(count) => {
                 self.delete_frames_captured(self.capture_frame_delete_target(), count)
             }
+            Action::RepeatLast => self.repeat_last_edit(),
             Action::PasteMoment { before } => self.paste_moment(before),
             Action::Edit(edit) => self.edit(edit),
             Action::Invalid(error) => self.error = Some(error.into()),
@@ -2589,6 +2608,7 @@ impl DeadpanApp {
                             navigation::EditSelection::Empty => self.add_editor_hint(&mut hints, EditorKey::CutRange, "empty range"),
                             navigation::EditSelection::None => {
                                 if self.pane != Pane::Sources { self.add_editor_hint(&mut hints, EditorKey::CutFrames, "cut frame"); }
+                                if self.pane != Pane::Sources && let Some(label) = self.repeat_hint() { self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label); }
                                 self.add_editor_hint(&mut hints, EditorKey::CutBeat, "cut beat");
                             }
                         };
@@ -3549,6 +3569,7 @@ impl DeadpanApp {
                     for (key, description) in [
                         ("⌘I".to_owned(), "Add an audio-only sound, or retry an incomplete Original. Audio selection is automatic; advanced stream choices are in import options.".to_owned()),
                         (format!("{} / Enter / Esc", key(EditorKey::Command)), "Enter a command / apply / cancel. Text fields keep native editing and IME.".to_owned()),
+                        (key(EditorKey::RepeatLast), "Repeat the last committed frame cut at the current Edit cursor, preserving its requested length and register. An explicit register choice overrides the destination for this repeat. Undo/Redo and marks preserve it; another edit clears it. Other edit kinds cannot be repeated yet. Clear Visual selection first. No count or held repeat.".to_owned()),
                         (format!("{} / :help / Esc", key(EditorKey::Help)), "Open this reference / close it.".to_owned()),
                     ] { help_binding(ui, &key, &description); }
                     ui.separator();
