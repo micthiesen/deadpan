@@ -1,0 +1,115 @@
+import gzip
+import hashlib
+import json
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+scratch = Path('/tmp/deadpan-objects-20261003')
+dest = Path('tools/media-qualification/evidence/2026-10-03-sibling-selections')
+checks = sys.argv[1:]
+assert checks
+
+def read(path):
+    return json.loads(path.read_text())
+
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+def compressed(src, dst):
+    dst.write_bytes(gzip.compress(src.read_bytes(), mtime=0))
+
+def command(*args):
+    return subprocess.check_output(args, text=True).strip()
+
+for folder in ['checks', 'review', 'replays', 'screenshots', 'scripts']:
+    (dest / folder).mkdir(parents=True, exist_ok=True)
+
+records = {name: read(scratch / (name + '.json')) for name in checks}
+for name, record in records.items():
+    assert record['exit_code'] == 0 and record['source_unchanged'], name
+source = records[checks[-1]]['source_manifest_sha256']
+final = read(scratch / ('source-' + source + '.json'))
+allowed = {
+    'crates/deadpan-audio/tests/composite_insert/delete_range/children.rs',
+    'crates/deadpan-app/src/project/tests/edited_slice/cut.rs',
+    'crates/deadpan-app/src/preview/harness/splice/structural_capture.rs',
+    'crates/deadpan-app/src/preview/harness/splice/structural_capture/forest.rs',
+}
+changes = {}
+counts = {}
+for name, record in records.items():
+    earlier = read(scratch / ('source-' + record['source_manifest_sha256'] + '.json'))
+    changed = sorted(p for p in earlier.keys() | final.keys() if earlier.get(p) != final.get(p))
+    assert set(changed) <= allowed, (name, changed)
+    changes[name] = changed
+    results = re.findall(r'test result: (ok|FAILED)\. (\d+) passed; (\d+) failed; (\d+) ignored;', (scratch / (name + '.log')).read_text())
+    if results:
+        counts[name] = {
+            'passed': sum(int(row[1]) for row in results),
+            'failed': sum(int(row[2]) for row in results),
+            'ignored': sum(int(row[3]) for row in results),
+            'targets': len(results),
+        }
+        assert counts[name]['failed'] == 0 and counts[name]['ignored'] == 0
+
+for path in sorted(scratch.glob('*.json')):
+    if path.name.startswith('source-'):
+        compressed(path, dest / 'checks' / (path.name + '.gz'))
+    else:
+        shutil.copy2(path, dest / 'checks' / path.name)
+for path in sorted(scratch.glob('*.log')):
+    compressed(path, dest / 'checks' / (path.name + '.gz'))
+for path in sorted(scratch.glob('*review.md')):
+    shutil.copy2(path, dest / 'review' / path.name)
+for folder in ['capture', 'forest-replay', 'forest-replay-fix']:
+    for name in ['README.md', 'REPORT.md', 'manifest.json']:
+        path = scratch / folder / name
+        if path.is_file():
+            shutil.copy2(path, dest / 'review' / (folder + '-' + name))
+
+replays = []
+for path in sorted(scratch.glob('splice-visual-*/report.json')):
+    report = read(path)
+    compressed(path, dest / 'replays' / (path.parent.name + '.json.gz'))
+    scenario = next(s for s in report['scenarios'] if s['name'] == 'place-slice')
+    replays.append({
+        'run': path.parent.name, 'failed': report['failed'],
+        'checks': len(scenario['checks']),
+        'passed': sum(bool(c['passed']) for c in scenario['checks']),
+        'binary_sha256': report['metadata']['binary_sha256'],
+        'findings': scenario['findings'], 'skipped': scenario['skipped'],
+    })
+assert replays and not replays[-1]['failed']
+audit = next(s for s in report['scenarios'] if s['name'] == 'kestrel-shortcuts')['checks'][0]
+assert audit['passed'] and not audit['actual']['conflicts']
+for src, name in read(scratch / 'selected-captures.json').items():
+    shutil.copy2(scratch / src, dest / 'screenshots' / name)
+metadata = {
+    'base_commit': command('git', 'rev-parse', 'HEAD'),
+    'source_manifest_sha256': source,
+    'final_checks': checks, 'test_counts': counts,
+    'earlier_check_source_changes': changes,
+    'source_note': 'Earlier inventories differ only in the listed test-fixture fixes and optional rendered replay. Production source is unchanged across the passing checks. Configurations overlap and are reported separately.',
+    'replays': replays,
+    'kestrel': audit['actual'],
+    'machine': command('sysctl', '-n', 'machdep.cpu.brand_string', 'hw.memsize').splitlines(),
+    'system': command('sw_vers'), 'rustc': command('rustc', '--version'),
+    'cargo': command('cargo', '--version'),
+    'limits': [
+        'Children captures are seeded through the public store API for the rendered replay; native text-object production is not implemented.',
+        'No native window, physical keyboard, OS IME, VoiceOver, acoustic delivery or large-project performance was qualified by this increment.',
+        'This is a scoped integration gate, not a rerun of the full workspace test suite.',
+        'All product requirements and release gates remain open or partial.',
+    ],
+}
+(dest / 'metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
+for path in [Path('/tmp/deadpan-original-layout-20261002/run-check.py'), Path(__file__)]:
+    shutil.copy2(path, dest / 'scripts' / (path.name + '.txt'))
+(dest / 'SHA256SUMS').write_text(''.join(
+    sha(path) + '  ' + str(path.relative_to(dest)) + '\n'
+    for path in sorted(dest.rglob('*')) if path.is_file() and path.name != 'SHA256SUMS'
+))
+print(json.dumps({'source': source, 'counts': counts, 'replays': replays}, indent=2))

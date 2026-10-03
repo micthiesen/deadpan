@@ -34,6 +34,100 @@ fn empty_setup(path: &Path) -> (Harness, Arc<Workspace>) {
 }
 
 #[test]
+fn exact_forest_cut_and_paste_preserve_empty_members_and_neighbor_selection() {
+    for (first, last, removed_frames, removed_nodes) in [
+        ("empty-left", "empty", 0, vec!["empty-left", "empty"]),
+        ("a", "empty", 10, vec!["a", "empty-left", "empty"]),
+    ] {
+        let scratch = tempfile::tempdir().unwrap();
+        let (harness, before) = empty_setup(&scratch.path().join("forest.deadpan"));
+        let mut capture = capture_request(&before, 1, range(0, 1));
+        capture.selection = SliceCaptureSelection::Children {
+            first: node(first),
+            last: node(last),
+        };
+        let initial_counts = counts(&before.path);
+        let saved = command(
+            &harness.service,
+            ProjectRequest::CutEditSlice(capture.clone()),
+        );
+        assert!(saved.error.is_none(), "{:?}", saved.error);
+        let receipt = saved.cut_slice.unwrap().result.unwrap();
+        assert_eq!(receipt.copied.slice().selection(), &capture.selection);
+        assert_eq!(receipt.copied.slice().duration().frames(), removed_frames);
+        assert_eq!(receipt.copied.child_label(), None);
+        assert_eq!(receipt.committed.selected_node, Some(node("empty-right")));
+        let after = saved.workspace.unwrap();
+        for name in &removed_nodes {
+            assert!(!after.document.nodes().contains_key(&node(name)));
+        }
+        assert_eq!(
+            after.plan.duration().frames(),
+            before.plan.duration().frames() - removed_frames
+        );
+        assert_eq!(
+            counts(&before.path),
+            (initial_counts.0 + 1, initial_counts.1 + 1)
+        );
+        let duplicate = command(&harness.service, ProjectRequest::CutEditSlice(capture));
+        assert_eq!(
+            duplicate.cut_slice.unwrap().result.unwrap().committed,
+            receipt.committed
+        );
+        assert_eq!(
+            counts(&before.path),
+            (initial_counts.0 + 1, initial_counts.1 + 1)
+        );
+        let ready = command(
+            &harness.service,
+            ProjectRequest::PrepareSplice(proposal(
+                &after,
+                receipt.copied.clone(),
+                1,
+                1,
+                Destination::Slot(0),
+            )),
+        );
+        ready
+            .splice
+            .unwrap()
+            .result
+            .unwrap()
+            .validate_result()
+            .unwrap();
+        let pasted = command(
+            &harness.service,
+            paste(&after, receipt.copied, Destination::Slot(0)),
+        );
+        assert!(pasted.error.is_none(), "{:?}", pasted.error);
+        let pasted = pasted.workspace.unwrap();
+        assert_eq!(pasted.plan.duration(), before.plan.duration());
+        let root_children: Vec<_> = pasted.document.children(pasted.document.root()).collect();
+        let selected_roots: Vec<_> = pasted.document.children(root_children[0]).collect();
+        assert_eq!(selected_roots.len(), removed_nodes.len());
+        assert_eq!(
+            selected_roots
+                .iter()
+                .map(|id| pasted.document.nodes()[*id].label.as_str())
+                .collect::<Vec<_>>(),
+            removed_nodes
+                .iter()
+                .map(|name| before.document.nodes()[&node(name)].label.as_str())
+                .collect::<Vec<_>>()
+        );
+        let undone = command(
+            &harness.service,
+            ProjectRequest::Undo {
+                expected_revision: pasted.document.revision_id().clone(),
+            },
+        )
+        .workspace
+        .unwrap();
+        restored(&undone.document, &after.document);
+    }
+}
+
+#[test]
 fn cut_range_publishes_one_saved_copy_and_retains_it_through_queries_and_undo() {
     let scratch = tempfile::tempdir().unwrap();
     let (harness, before) = setup(&scratch.path().join("cut.deadpan"));

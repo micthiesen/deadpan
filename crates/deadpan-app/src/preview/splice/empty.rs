@@ -4,11 +4,15 @@ use super::*;
 pub(super) const ENDPOINT_REASON: &str =
     "Empty groups contain no pictures or audio; In and Out cannot be adjusted.";
 pub(super) const PLACEMENT_REASON: &str = "Empty groups insert at Sequence seams only. Use j/k to choose a slot; Move, Replace and frame interiors are unavailable.";
+pub(super) fn is_forest(source: &Source) -> bool {
+    matches!(source, Source::Edited { copied, .. }
+        if matches!(copied.slice().selection(), deadpan_core::SliceCaptureSelection::Children { .. }))
+}
 pub(super) fn is_structural(source: &Source) -> bool {
     matches!(source, Source::Edited { copied, range }
         if range.duration().frames() == 0
             && *range == copied.slice().range()
-            && matches!(copied.slice().selection(), deadpan_core::SliceCaptureSelection::Child { .. }))
+            && matches!(copied.slice().selection(), deadpan_core::SliceCaptureSelection::Child { .. } | deadpan_core::SliceCaptureSelection::Children { .. }))
 }
 
 pub(super) fn initial_slot(
@@ -27,8 +31,13 @@ pub(super) fn source_card(ui: &mut egui::Ui, draft: &Draft) {
     let Source::Edited { copied, range } = &draft.proposal.source else {
         return;
     };
-    let name = copied.child_label().unwrap_or("Untitled");
-    ui.strong(format!("Empty group ‘{name}’"));
+    let forest = is_forest(&draft.proposal.source);
+    if forest {
+        ui.strong("Empty group contents");
+    } else {
+        let name = copied.child_label().unwrap_or("Untitled");
+        ui.strong(format!("Empty group ‘{name}’"));
+    }
     ui.label("0 frames · structure only");
     ui.label(format!(
         "{} · Edit boundary {}",
@@ -40,9 +49,13 @@ pub(super) fn source_card(ui: &mut egui::Ui, draft: &Draft) {
     if let Some(view) = &draft.source_view {
         let document = view.media().admitted().document();
         // The source-only view has a neutral project root and imported wrapper.
-        // Show only a bounded list of the captured group's direct descendants.
+        // Show the exact forest's roots, or the captured group's children.
         if let Some(wrapper) = document.children(document.root()).next()
-            && let Some(group) = document.children(wrapper).next()
+            && let Some(group) = if forest {
+                Some(wrapper)
+            } else {
+                document.children(wrapper).next()
+            }
         {
             let mut nested = document.children(group);
             let names: Vec<_> = nested

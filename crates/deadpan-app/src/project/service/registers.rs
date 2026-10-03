@@ -174,7 +174,8 @@ pub(super) fn restore(store: &ProjectStore, session: u64) -> Result<Arc<Bank>> {
                         )
                         .collect();
                     let child_label = match slice.selection() {
-                        SliceCaptureSelection::Range { .. } => None,
+                        SliceCaptureSelection::Range { .. }
+                        | SliceCaptureSelection::Children { .. } => None,
                         SliceCaptureSelection::Child { node } => {
                             Some(document.nodes()[node].label.clone())
                         }

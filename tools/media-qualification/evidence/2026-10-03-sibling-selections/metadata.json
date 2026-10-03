@@ -1,0 +1,142 @@
+{
+  "base_commit": "4deae8e54816d218e749d6d3397b156c381e6a83",
+  "source_manifest_sha256": "871d666c631572a2acdaa73067154188ce4e250e5d67a81289fe6a5429312f89",
+  "final_checks": [
+    "core-1",
+    "store-1",
+    "audio-2",
+    "app-2",
+    "app-ui-1",
+    "clippy-1",
+    "clippy-ui-1",
+    "fmt-1",
+    "build-ui-2",
+    "splice-visual-3"
+  ],
+  "test_counts": {
+    "core-1": {
+      "passed": 305,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 3
+    },
+    "store-1": {
+      "passed": 90,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 1
+    },
+    "audio-2": {
+      "passed": 73,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 1
+    },
+    "app-2": {
+      "passed": 748,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 2
+    },
+    "app-ui-1": {
+      "passed": 784,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 2
+    }
+  },
+  "earlier_check_source_changes": {
+    "core-1": [
+      "crates/deadpan-app/src/preview/harness/splice/structural_capture.rs",
+      "crates/deadpan-app/src/project/tests/edited_slice/cut.rs",
+      "crates/deadpan-audio/tests/composite_insert/delete_range/children.rs"
+    ],
+    "store-1": [
+      "crates/deadpan-app/src/preview/harness/splice/structural_capture.rs",
+      "crates/deadpan-app/src/project/tests/edited_slice/cut.rs",
+      "crates/deadpan-audio/tests/composite_insert/delete_range/children.rs"
+    ],
+    "audio-2": [
+      "crates/deadpan-app/src/preview/harness/splice/structural_capture.rs",
+      "crates/deadpan-app/src/project/tests/edited_slice/cut.rs"
+    ],
+    "app-2": [
+      "crates/deadpan-app/src/preview/harness/splice/structural_capture.rs"
+    ],
+    "app-ui-1": [
+      "crates/deadpan-app/src/preview/harness/splice/structural_capture.rs"
+    ],
+    "clippy-1": [
+      "crates/deadpan-app/src/preview/harness/splice/structural_capture.rs"
+    ],
+    "clippy-ui-1": [],
+    "fmt-1": [],
+    "build-ui-2": [],
+    "splice-visual-3": []
+  },
+  "source_note": "Earlier inventories differ only in the listed test-fixture fixes and optional rendered replay. Production source is unchanged across the passing checks. Configurations overlap and are reported separately.",
+  "replays": [
+    {
+      "run": "splice-visual-2",
+      "failed": true,
+      "checks": 837,
+      "passed": 836,
+      "binary_sha256": "026d9edf2eb5664f6e3f7727b3d55877a3d9b53d5174949b84c4430b0223deae",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        },
+        {
+          "message": "Check failed: The zero-time forest previews both roots at the selected same-time seam",
+          "severity": "failure"
+        }
+      ],
+      "skipped": [
+        "Place slice covers linked Original and edited-slice copying, insertion, replacement and atomic Move in ordinary Sequence scopes. Separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.",
+        "The replay uses genuine source qualification, endpoint decoding, SDR GPU pictures, proposed documents and durable commands. Audio delivery and a concurrent service Undo are explicitly injected. It does not open an audio device or establish acoustic quality.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "run": "splice-visual-3",
+      "failed": false,
+      "checks": 846,
+      "passed": 846,
+      "binary_sha256": "a64ede8b150c0f8d031c02bb90bbd6d9148b623edf607fdbb320ff3bebd8c3d5",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "Place slice covers linked Original and edited-slice copying, insertion, replacement and atomic Move in ordinary Sequence scopes. Separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.",
+        "The replay uses genuine source qualification, endpoint decoding, SDR GPU pictures, proposed documents and durable commands. Audio delivery and a concurrent service Undo are explicitly injected. It does not open an audio device or establish acoustic quality.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    }
+  ],
+  "kestrel": {
+    "conflicts": [],
+    "live_source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2",
+    "reserved_bindings": 62,
+    "routing_cases": 3319728,
+    "source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2"
+  },
+  "machine": [
+    "Apple M5 Max",
+    "137438953472"
+  ],
+  "system": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+  "limits": [
+    "Children captures are seeded through the public store API for the rendered replay; native text-object production is not implemented.",
+    "No native window, physical keyboard, OS IME, VoiceOver, acoustic delivery or large-project performance was qualified by this increment.",
+    "This is a scoped integration gate, not a rerun of the full workspace test suite.",
+    "All product requirements and release gates remain open or partial."
+  ]
+}

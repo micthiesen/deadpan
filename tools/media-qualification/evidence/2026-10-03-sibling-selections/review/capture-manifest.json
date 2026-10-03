@@ -1,0 +1,56 @@
+{
+  "patch_sha256": "ceb3fc9580a69b4542f3427d7ac85a86dbd8e4a3d99da1734f499a3d0f5ff05f",
+  "base_head_reported_by_parent": "4deae8e5",
+  "files": [
+    {
+      "path": "crates/deadpan-core/src/edit_slice/children.rs",
+      "before_sha256": null,
+      "after_sha256": "d9246cfe962633f8b9ca10ff5e8b6d500ba332b7d59a43616d34f779bf626ba4",
+      "checkout_sha256_at_packaging": null,
+      "baseline_matches_checkout": true
+    },
+    {
+      "path": "crates/deadpan-core/src/edit_slice.rs",
+      "before_sha256": "ec96bd423d65c5ec070450ba4ea707dd7d042fc32358f156f35fb4d1792cffa8",
+      "after_sha256": "9605d6e36a2b3ce88ef709f061761676699a142ae7b5415a5063d29948a4995e",
+      "checkout_sha256_at_packaging": "ec96bd423d65c5ec070450ba4ea707dd7d042fc32358f156f35fb4d1792cffa8",
+      "baseline_matches_checkout": true
+    },
+    {
+      "path": "crates/deadpan-core/src/lib.rs",
+      "before_sha256": "7c9c2c88f23bee779db26da56d751e0a40036f7258a1f83d601d49782b18df0f",
+      "after_sha256": "2d98646bf11f671ea26372bef044e60014e92f16f5927080800395cbcdc7bc38",
+      "checkout_sha256_at_packaging": "7c9c2c88f23bee779db26da56d751e0a40036f7258a1f83d601d49782b18df0f",
+      "baseline_matches_checkout": true
+    },
+    {
+      "path": "crates/deadpan-core/tests/edited_slice/children.rs",
+      "before_sha256": null,
+      "after_sha256": "615f14d4300f99b8aaf70292c7082f0e506fa3e7ee1f6c1c0345e5e5626ba759",
+      "checkout_sha256_at_packaging": null,
+      "baseline_matches_checkout": true
+    },
+    {
+      "path": "crates/deadpan-core/tests/edited_slice.rs",
+      "before_sha256": "02496759792048e034de4a540eed97ad3f018b24b8ba8af678e0ce117a324bda",
+      "after_sha256": "a3e9c0837e618b70fc10d760cca9b5ae40331e19fc74019e4674d579042888a8",
+      "checkout_sha256_at_packaging": "02496759792048e034de4a540eed97ad3f018b24b8ba8af678e0ce117a324bda",
+      "baseline_matches_checkout": true
+    }
+  ],
+  "checks_run": [
+    "scoped rustfmt on scratch",
+    "AST syntax scan for ERROR nodes",
+    "added-line whitespace check",
+    "before/after source review",
+    "baseline hash comparison",
+    "patch --dry-run against exact before tree"
+  ],
+  "checks_not_run": [
+    "Cargo",
+    "unit tests",
+    "Clippy",
+    "native app",
+    "Git operations"
+  ]
+}

@@ -1,6 +1,7 @@
 use super::*;
 use deadpan_core::*;
 
+mod children;
 mod macro_preview;
 
 fn node(value: &str) -> NodeId {

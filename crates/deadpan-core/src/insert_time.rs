@@ -13,12 +13,14 @@ use crate::{
 
 pub(crate) mod composite;
 mod delete;
+mod delete_children;
 mod delete_range;
 pub(crate) mod sequence_range;
 mod source_replace;
 mod source_splice;
 mod target;
 pub(crate) use delete::apply as delete;
+pub(crate) use delete_children::apply as delete_children;
 pub(crate) use delete_range::apply as delete_range;
 pub use sequence_range::SequenceRangeEdit;
 pub type SourceReplacement = SequenceRangeEdit;

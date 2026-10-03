@@ -1,0 +1,12 @@
+{
+  "reviewed": [
+    "splice-visual-3/place-slice-141.png",
+    "splice-visual-3/place-slice-142.png"
+  ],
+  "sha256": {
+    "splice-visual-3/place-slice-141.png": "ed1956c960cc618b03a66b8caa6c549f7ec6fffaddbe15d1dbc582e59c262fb6",
+    "splice-visual-3/place-slice-142.png": "3d31a97ca0611309f34dc7d8bc1c2babc8394db3b218e3a4861281d1c12bff9b"
+  },
+  "result": "Both final captures show complete empty-contents source cards, two exact root names, current destination picture, insertion slot and apply/cancel controls inside the viewport. No visible clipping or overlap found at 960x640 or 1280x820.",
+  "limits": "Offscreen production rendering, not native-window, physical display, VoiceOver or OS-input qualification."
+}

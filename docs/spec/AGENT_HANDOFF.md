@@ -19,6 +19,19 @@ test instances after testing instead of leaving them idle. The previously
 running `dev.thiesen.deadpan.cursor-qa` instance has been quit, and the native
 app inventory confirmed no Deadpan app remained running.
 
+## Exact sibling selections, 2026-10-03
+
+The newer [exact sibling boundary](../STRUCTURAL_SELECTIONS.md) adds
+`Children { first, last }` captures and exact forest Group/Repeat/DeleteChildren
+operations. Preserve empty endpoint identities, whole subtrees and historical
+recapture. [Qualification](../qualification/sibling-selections-2026-10-03.md)
+records 305 core, 90 store and 73 real-audio tests, 748 default and 784 optional
+app tests, 846 rendered placement checks and strict lint. This supports the
+next structural text-object work; native object grammar and richer Visual/scope
+semantics remain unimplemented. The current
+sound model has no separate beat-owned temporal interval attachments, so
+implement that ownership lifecycle before claiming the full `ib`/`ab` distinction.
+
 ## Named groups and development formats, 2026-10-03
 
 [Named groups](../GROUP_EDITING.md) adds captured `,g` / `:group name="…"`

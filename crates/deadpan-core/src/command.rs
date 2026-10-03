@@ -206,6 +206,14 @@ define_commands! {
         node: NodeId,
         timing: crate::AudioTimingId,
     },
+    /// Remove an inclusive contiguous sibling span, retaining empty endpoint
+    /// children which cannot be identified by a picture-time range alone.
+    DeleteChildren {
+        parent: NodeId,
+        first: NodeId,
+        last: NodeId,
+        timing: crate::AudioTimingId,
+    },
     /// Remove a nonempty, global half-open range from an ordinary Sequence.
     DeleteRange {
         parent: NodeId,
@@ -825,6 +833,19 @@ pub fn apply(
         Command::DeleteRipple { node, timing } => {
             crate::insert_time::delete(input, node, timing, &request.new_revision)?
         }
+        Command::DeleteChildren {
+            parent,
+            first,
+            last,
+            timing,
+        } => crate::insert_time::delete_children(
+            input,
+            parent,
+            first,
+            last,
+            timing,
+            &request.new_revision,
+        )?,
         Command::DeleteRange {
             parent,
             range,
@@ -1124,6 +1145,7 @@ pub(crate) fn reduce(
         | Command::ReplaceSlice { .. }
         | Command::ReplaceSource { .. }
         | Command::DeleteRipple { .. }
+        | Command::DeleteChildren { .. }
         | Command::DeleteRange { .. }
         | Command::MoveRange { .. }
         | Command::RepeatSelection { .. }
@@ -2204,6 +2226,7 @@ fn description(command: &Command) -> &'static str {
         Command::Insert { .. } => "Insert beats",
         Command::Delete { .. } => "Delete beat",
         Command::DeleteRipple { .. } => "Ripple-delete beat",
+        Command::DeleteChildren { .. } => "Delete selected children",
         Command::DeleteRange { .. } => "Delete selected range",
         Command::MoveRange { .. } => "Move selected range",
         Command::Move { .. } => "Move beat",

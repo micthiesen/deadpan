@@ -501,6 +501,11 @@ where
         )?;
         let child_slot = match selection {
             SliceCaptureSelection::Child { node } => Some(self.child_indices[node]),
+            SliceCaptureSelection::Children { first, last } => Some(
+                self.current
+                    .sequence_children(&self.context.parent, first, last)?
+                    .first,
+            ),
             SliceCaptureSelection::Range { .. } => None,
         };
         let required_split_ids = match selection {
@@ -509,7 +514,7 @@ where
                     .range_deletion(&self.context.parent, *range)?
                     .required_ids
             }
-            SliceCaptureSelection::Child { .. } => 0,
+            SliceCaptureSelection::Child { .. } | SliceCaptureSelection::Children { .. } => 0,
         };
         let allocation = (self.allocate)(SemanticAllocationRequest::Cut {
             step_index: self.steps.len(),
@@ -561,6 +566,12 @@ where
             },
             SliceCaptureSelection::Child { node } => Command::DeleteRipple {
                 node: node.clone(),
+                timing,
+            },
+            SliceCaptureSelection::Children { first, last } => Command::DeleteChildren {
+                parent: self.context.parent.clone(),
+                first: first.clone(),
+                last: last.clone(),
                 timing,
             },
         };

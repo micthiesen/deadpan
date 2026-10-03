@@ -78,7 +78,8 @@ pub use command::*;
 pub use compound::*;
 pub use document::*;
 pub use edit_slice::{
-    CapturedEditSlice, SliceCaptureSelection, SliceIdentityRequirements, SlicePasteIdentities,
+    CapturedEditSlice, SequenceChildrenPlan, SliceCaptureSelection, SliceIdentityRequirements,
+    SlicePasteIdentities,
 };
 pub use exact::ExactRatio;
 pub use framing::*;

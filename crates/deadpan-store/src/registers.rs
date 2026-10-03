@@ -159,6 +159,18 @@ impl ProjectStore {
                 Command::DeleteRipple { node, .. },
                 SliceCaptureSelection::Child { node: captured },
             ) => node == captured,
+            (
+                Command::DeleteChildren {
+                    parent,
+                    first,
+                    last,
+                    ..
+                },
+                SliceCaptureSelection::Children {
+                    first: captured_first,
+                    last: captured_last,
+                },
+            ) => parent == slice.parent() && first == captured_first && last == captured_last,
             _ => false,
         };
         if !matches {

@@ -110,6 +110,50 @@ fn children<'a>(document: &'a ProjectDocument, parent: &str) -> &'a [NodeId] {
 }
 
 #[test]
+fn exact_forest_groups_empty_endpoints_including_an_all_empty_span() {
+    for length in [0, 3] {
+        let before = tree(
+            &["outside-left", "left", "body", "right", "outside-right"],
+            vec![
+                ("outside-left", BeatNode::sequence("Outside", vec![])),
+                ("left", BeatNode::sequence("Left", vec![])),
+                (
+                    "body",
+                    if length == 0 {
+                        BeatNode::sequence("Body", vec![])
+                    } else {
+                        hold(length)
+                    },
+                ),
+                ("right", BeatNode::sequence("Right", vec![])),
+                ("outside-right", BeatNode::sequence("Outside", vec![])),
+            ],
+        );
+        let selection = SliceCaptureSelection::Children {
+            first: node("left"),
+            last: node("right"),
+        };
+        let after = edit(&before, command(&before, "root", selection));
+        assert_eq!(
+            children(&after, "root"),
+            [node("outside-left"), node("grouped"), node("outside-right")]
+        );
+        assert_eq!(
+            children(&after, "grouped"),
+            [node("left"), node("body"), node("right")]
+        );
+        assert_eq!(after.audio_bindings(), before.audio_bindings());
+        let ungrouped = edit(
+            &after,
+            Command::Ungroup {
+                node: node("grouped"),
+            },
+        );
+        assert_eq!(ungrouped.nodes(), before.nodes());
+    }
+}
+
+#[test]
 fn exact_child_and_range_include_empty_structure_only_when_selected() {
     let before = tree(
         &["left", "a", "middle", "b", "right"],

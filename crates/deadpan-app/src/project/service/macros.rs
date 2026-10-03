@@ -493,7 +493,9 @@ fn prepare_runtime_bank(
                 })
                 .ok_or("Macro copy has no matching staged capture provenance")?;
             let child_label = match selection {
-                SliceCaptureSelection::Range { .. } => None,
+                SliceCaptureSelection::Range { .. } | SliceCaptureSelection::Children { .. } => {
+                    None
+                }
                 SliceCaptureSelection::Child { .. } => Some(
                     trace
                         .captured_child_label

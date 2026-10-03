@@ -165,6 +165,7 @@ fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mu
         | Command::SetSoundAllowance { .. }
         | Command::Delete { .. }
         | Command::DeleteRipple { .. }
+        | Command::DeleteChildren { .. }
         | Command::Move { .. }
         | Command::Ungroup { .. }
         | Command::SetRepeat { .. }

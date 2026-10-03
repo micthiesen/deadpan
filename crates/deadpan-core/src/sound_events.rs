@@ -139,6 +139,7 @@ pub(crate) fn validate_command(
                 | Command::SpliceSourceAt { .. }
                 | Command::ReplaceSource { .. }
                 | Command::DeleteRipple { .. }
+                | Command::DeleteChildren { .. }
                 | Command::DeleteRange { .. }
                 | Command::MoveRange { .. }
                 | Command::RepeatSelection { .. }
@@ -227,6 +228,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::SpliceSourceAt { .. }
         | Command::ReplaceSource { .. }
         | Command::DeleteRipple { .. }
+        | Command::DeleteChildren { .. }
         | Command::DeleteRange { .. }
         | Command::MoveRange { .. }
         | Command::Split { .. }

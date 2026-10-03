@@ -87,6 +87,31 @@ impl Service {
                     selected,
                 )
             }
+            SliceCaptureSelection::Children { first, last } => {
+                let selected = workspace
+                    .document
+                    .sequence_children(&capture.parent, first, last)
+                    .map_err(display)?;
+                let next = view
+                    .children
+                    .get(selected.end)
+                    .or_else(|| {
+                        selected
+                            .first
+                            .checked_sub(1)
+                            .and_then(|slot| view.children.get(slot))
+                    })
+                    .cloned();
+                (
+                    Command::DeleteChildren {
+                        parent: capture.parent.clone(),
+                        first: first.clone(),
+                        last: last.clone(),
+                        timing,
+                    },
+                    next,
+                )
+            }
         };
         let request = CommandRequest {
             project_id: capture.id.project.clone(),

@@ -54,6 +54,13 @@ impl ProjectDocument {
                 let resolved = sequence_range::preflight_repeat(self, parent, *range)?;
                 (*range, resolved.required_ids, true)
             }
+            SliceCaptureSelection::Children { first, last } => {
+                let selected = self.sequence_children(parent, first, last)?;
+                if self.nodes().len().saturating_add(2) > MAX_DOCUMENT_NODES {
+                    return Err(limit("Repeat forest exceeds the document node limit"));
+                }
+                (selected.range, 0, true)
+            }
         };
         let output_duration = crate::repeat_duration(range.duration(), plays, FrameDuration::ZERO)
             .map_err(DocumentError::from)?;
@@ -251,6 +258,17 @@ fn wrap(
         SliceCaptureSelection::Range { .. } => {
             let selected = sequence_range::selected_children(&working, parent, plan.range)?;
             (selected.first, selected.end, selected.nodes)
+        }
+        SliceCaptureSelection::Children { first, last } => {
+            let selected = working.sequence_children(parent, first, last)?;
+            let NodeKind::Sequence { children } = &working.nodes()[parent].kind else {
+                unreachable!("exact child query admitted a Sequence")
+            };
+            (
+                selected.first,
+                selected.end,
+                children[selected.first..selected.end].to_vec(),
+            )
         }
     };
     if plays > 1 && plan.range.end().0 < document.duration()?.frames() {

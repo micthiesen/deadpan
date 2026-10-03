@@ -389,6 +389,18 @@ fn validate_cut(slice: &CapturedEditSlice, command: &Command) -> Result<(), Edit
             Command::DeleteRipple { node, .. },
             crate::SliceCaptureSelection::Child { node: captured },
         ) => node == captured,
+        (
+            Command::DeleteChildren {
+                parent,
+                first,
+                last,
+                ..
+            },
+            crate::SliceCaptureSelection::Children {
+                first: captured_first,
+                last: captured_last,
+            },
+        ) => parent == slice.parent() && first == captured_first && last == captured_last,
         _ => false,
     };
     if matches {

@@ -2,6 +2,15 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+[Exact sibling selections](STRUCTURAL_SELECTIONS.md) add identity-based
+capture, Group, Repeat and atomic deletion that retain empty children at both
+endpoints. This is a prerequisite for group text objects in DP-05, DP-06 and
+DP-21. [Qualification](qualification/sibling-selections-2026-10-03.md) records
+305 core, 90 store and 73 real-audio tests, 748 default and 784 optional app
+tests, 846 rendered placement checks and strict lint. Keyboard object grammar,
+Visual object state, semantic scope transitions and beat-owned temporal
+attachments remain required; this foundation does not complete those workflows.
+
 [Named groups](GROUP_EDITING.md) adds exact beat/range grouping, neutral
 Ungroup, captured names, recording and dot in ordinary Sequence scopes. Headless
 Macro results report complete final mark changes. This advances DP-05, DP-06

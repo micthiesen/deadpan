@@ -527,6 +527,20 @@ impl RootSoundEditCapture {
                 document.range_deletion(parent, *range)?;
                 RootSoundOperation::Delete { range: *range }
             }
+            Command::DeleteChildren {
+                parent,
+                first,
+                last,
+                ..
+            } => {
+                let selected = document.sequence_children(parent, first, last)?;
+                if selected.range.duration() == FrameDuration::ZERO {
+                    return Ok(None);
+                }
+                RootSoundOperation::Delete {
+                    range: selected.range,
+                }
+            }
             Command::ReplaceSource {
                 parent,
                 range,

@@ -1,0 +1,10 @@
+# Exact child-forest capture review
+
+No actionable defect confirmed in `edit_slice.rs`, `edit_slice/children.rs`, or `tests/edited_slice/children.rs`.
+
+Dismissed suspicions:
+
+- **Missing or reordered interior empty siblings in serialized payload.** `children::validate` checks whole, distinct parts with exact endpoints and contiguous time, but cannot reconstruct source sibling order from a self-contained slice. `CapturedEditSlice::validate_capture` recaptures the tagged `Children` selection from its immutable source revision and compares the complete payload (`edit_slice.rs:288-313`). The new historical-recapture test exercises both cases. This two-stage check is required before placement; local `from_json` alone is not provenance admission.
+- **Empty endpoint/root loss.** `sequence_children` resolves inclusive IDs to exact sibling slots; `capture_selection` includes every slot in that span, including zero-duration endpoints (`children.rs:18-63`; `edit_slice.rs:160-229`). A nonempty all-empty forest retains its parts and descendants, uses default audio bindings, and passes the explicit Sequence-only check. An empty parent without any child has no endpoint IDs and remains an explicit no-op at selector resolution.
+- **Parent ownership leakage.** The captured `selected` set starts at each selected child, while the synthetic capture parent is neutral. The original parent node and marks owned by it are excluded; marks owned by selected descendants remain eligible regardless of coordinate host (`edit_slice.rs:210-281`). The owned-effects/marks test checks this split.
+- **Unbounded or flattened hidden context.** `document.validate()` runs before capture, `sequence_children` walks bounded direct-child vectors, and subtree traversal uses `ProjectDocument::children`, which includes sparse override roots. Positive captures use the existing `capture_audio` path, which retains complete owner clocks and frozen timing context; zero-duration captures are admitted only as Sequence-only forests with no physical bindings (`edit_slice.rs:232-249,515-565`). I found no new bypass in the `Children` path.

@@ -15,12 +15,16 @@ or global Edit range, and a scratch `AudioTimingId`. It does not change the docu
 revision or write history. The captured revision records provenance. A later
 edit or deletion of the original beats cannot change the captured value.
 
-`capture_selection` accepts `SliceCaptureSelection::Range { range }` or
-`Child { node }`. Child identifies exactly one direct child, including an empty
-Sequence, and retains its complete subtree. Adjacent empty siblings at the same
+`capture_selection` accepts `SliceCaptureSelection::Range { range }`,
+`Child { node }`, or `Children { first, last }`. Child identifies exactly one
+direct child, including an empty Sequence, and retains its complete subtree.
+Adjacent empty siblings at the same
 frame are excluded. Historical admission recaptures the full selector and
 payload against the named revision. `capture` remains the nonempty Range entry.
-The derived global range alone cannot identify an empty child.
+The derived global range alone cannot identify an empty child. Children selects
+the inclusive exact sibling span and keeps empty children at both endpoints.
+See [structural selections](STRUCTURAL_SELECTIONS.md) for its capture,
+mutation and historical admission contract.
 
 Range serialization keeps its previous shape. A missing selector reads only as
 Range using the stored interval; it never infers Child from structure or labels.

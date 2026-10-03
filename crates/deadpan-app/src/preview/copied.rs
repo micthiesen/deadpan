@@ -35,6 +35,12 @@ impl Content {
             Self::Edited(copied) => {
                 let range = copied.slice().range();
                 if range.duration() == deadpan_core::FrameDuration::ZERO {
+                    if matches!(
+                        copied.slice().selection(),
+                        deadpan_core::SliceCaptureSelection::Children { .. }
+                    ) {
+                        return "Copied empty contents · 0 frames · structure only".into();
+                    }
                     return format!(
                         "Copied empty group ‘{}’ · 0 frames · structure only",
                         copied.child_label().unwrap_or("Group")

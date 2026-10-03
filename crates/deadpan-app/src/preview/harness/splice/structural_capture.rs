@@ -1,10 +1,12 @@
 //! Empty groups stay editable without inventing source pictures or audio.
 use super::*;
 use deadpan_core::{
-    BeatNode, Command, CommandRequest, NodeKind, RevisionId, SliceCaptureSelection, Subtree,
+    AudioTimingId, BeatNode, CapturedEditSlice, Command, CommandRequest, NodeKind, RegisterName,
+    RegisterValue, RevisionId, SliceCaptureSelection, Subtree,
 };
 use deadpan_store::{AccessMode, ProjectStore};
 use std::collections::BTreeMap;
+use std::path::Path;
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     whole_child_move_toggle(d)?;
@@ -59,7 +61,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
             .map_err(|error| error.to_string())?;
     }
     drop(store);
-    d.app().service.submit(ProjectRequest::Open(path))?;
+    d.app().service.submit(ProjectRequest::Open(path.clone()))?;
     d.wait_for(
         "Open three adjacent empty groups beside the qualified Original",
         |app| app.workspace.is_some() && !app.service.is_busy(),
@@ -173,6 +175,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     edited::undo(d, &saved)?;
     empty_destination(d, &saved, &middle)?;
+    empty_forest_replay(d, &path)?;
 
     // Restore the three fixture insertions. Copy history remains independent.
     for _ in 0..3 {
@@ -188,6 +191,247 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!("fixture fully undone"),
         d.snapshot(),
     )
+}
+
+fn empty_forest_replay(d: &mut Driver<'_>, path: &Path) -> Result<(), String> {
+    let before = document(d)?.clone();
+    let first = node("structural-left")?;
+    let last = node("structural-notes")?;
+    let selection = SliceCaptureSelection::Children {
+        first,
+        last: last.clone(),
+    };
+    let old_session = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("Forest replay has no open workspace")?
+        .session;
+    d.app().service.submit(ProjectRequest::Close)?;
+    d.wait_for(
+        "Release the writer before saving the exact empty forest",
+        |app| app.workspace.is_none() && !app.service.is_busy(),
+    )?;
+    let mut store =
+        ProjectStore::open(path, AccessMode::ReadWrite).map_err(|error| error.to_string())?;
+    let source = store.snapshot().map_err(|error| error.to_string())?;
+    let captured = Arc::new(
+        CapturedEditSlice::capture_selection(
+            &source,
+            source.root(),
+            &selection,
+            AudioTimingId {
+                allocation: RevisionId::new("structural-forest-capture")
+                    .map_err(|error| error.to_string())?,
+                ordinal: 0,
+            },
+        )
+        .map_err(|error| error.to_string())?,
+    );
+    if captured.duration().frames() != 0 || captured.selection() != &selection {
+        return Err("The fixture did not capture its exact zero-time forest".into());
+    }
+    let version = store
+        .save_register(
+            source.project_id(),
+            source.revision_id(),
+            RegisterName::new('f').map_err(|error| error.to_string())?,
+            RegisterValue::Edited {
+                slice: captured.clone(),
+            },
+        )
+        .map_err(|error| error.to_string())?
+        .version;
+    drop(store);
+    d.app()
+        .service
+        .submit(ProjectRequest::Open(path.to_path_buf()))?;
+    d.wait_for(
+        "Restore the persisted empty forest in a fresh project session",
+        |app| {
+            !app.service.is_busy()
+                && app
+                    .workspace
+                    .as_ref()
+                    .is_some_and(|workspace| workspace.session != old_session)
+        },
+    )?;
+    d.command("sequence")?;
+    edited::goto(d, 0)?;
+    select_child(d, &last)?;
+    let restored = edited::accepted(d)?;
+    let named = d
+        .app()
+        .copied
+        .entries()
+        .find_map(|(name, value)| (name == 'f').then_some(value));
+    d.check(
+        "Reopen retains the exact historical empty forest and a fresh runtime copy identity",
+        matches!(named, Some(crate::preview::copied::Content::Edited(copy)) if Arc::ptr_eq(copy, &restored))
+            && restored.id().session != old_session
+            && restored.id().persisted_version == Some(version)
+            && restored.slice().as_ref() == captured.as_ref()
+            && restored.slice().selection() == &selection
+            && restored.slice().parent() == source.root()
+            && restored.source_path().len() == 1
+            && restored.source_path()[0] == "Your edit"
+            && restored.child_label().is_none()
+            && document(d)?.nodes() == before.nodes(),
+        json!({"selection":"two exact empty siblings","persisted_version":version,"fresh_session":true}),
+        d.snapshot(),
+    )?;
+    d.command("register f")?;
+    d.check(
+        "Production register choice selects the restored forest",
+        d.app().copied.selected() == Some('f'),
+        json!({"register":"f"}),
+        d.snapshot(),
+    )?;
+    paint_text(d, "Copied empty contents · 0 frames · structure only")?;
+    let displayed = d.app().presentation.displayed_label();
+    let picture = d.app().presentation.displayed_source_frame();
+    d.command("splice")?;
+    wait_ready(d)?;
+    forest_layout(d)?;
+    let source = draft(d)?.proposal_for_check().source.clone();
+    let exact = prepared(d)?;
+    let imported: Vec<_> = exact.snapshot.document.children(&exact.node).collect();
+    let labels: Vec<_> = imported
+        .iter()
+        .map(|id| exact.snapshot.document.nodes()[*id].label.as_str())
+        .collect();
+    let checks = [
+        (
+            "edited source and exact selection",
+            matches!(&source, crate::project::splice::Source::Edited { copied, range }
+            if range.duration().frames() == 0
+                && *range == copied.slice().range()
+                && copied.slice().selection() == &selection),
+        ),
+        ("prepared empty slot", exact.empty_slot == Some(1)),
+        (
+            "proposal destination",
+            draft(d)?.proposal_for_check().destination == Destination::Slot(1),
+        ),
+        (
+            "prepared zero-time range",
+            exact.range == edited::range(0, 0)?,
+        ),
+        ("both copied roots", labels == ["Left empty group", "Notes"]),
+        (
+            "nested empty child",
+            imported
+                .get(1)
+                .is_some_and(|id| exact.snapshot.document.children(id).count() == 1),
+        ),
+        ("empty endpoints", draft(d)?.empty_endpoints_for_check()),
+        ("no endpoint widgets", !has_endpoint_widgets(d)),
+        (
+            "saved destination picture work",
+            matches!(d.app().splice_picture_work(None), Some(Work::Project { workspace, view })
+                if Arc::ptr_eq(&workspace, &exact.base)
+                    && view == ProjectView::Sequence { frame: ProjectFrame(0) }),
+        ),
+        ("no transport", d.app().transport.is_none()),
+        (
+            "displayed picture label preserved",
+            d.app().presentation.displayed_label() == displayed,
+        ),
+        (
+            "displayed source frame preserved",
+            d.app().presentation.displayed_source_frame() == picture,
+        ),
+        (
+            "source structure unchanged",
+            document(d)?.nodes() == before.nodes(),
+        ),
+    ];
+    let failures: Vec<_> = checks
+        .iter()
+        .filter_map(|(name, passed)| (!*passed).then_some(*name))
+        .collect();
+    d.check(
+        "The zero-time forest previews both roots at the selected same-time seam",
+        failures.is_empty(),
+        json!({"slot":1,"roots":["Left empty group","Notes"],"frames":0,"endpoints":false,"picture_work":"saved destination frame 0"}),
+        json!({
+            "failures": failures,
+            "actual_roots": labels,
+            "actual_slot": exact.empty_slot,
+            "actual_destination": format!("{:?}", draft(d)?.proposal_for_check().destination),
+            "captured_picture": {"label": displayed, "source_frame": format!("{picture:?}")},
+            "current_picture": {
+                "label": d.app().presentation.displayed_label(),
+                "source_frame": format!("{:?}", d.app().presentation.displayed_source_frame()),
+            },
+            "state": state(d),
+        }),
+    )?;
+    let revision = d.revision();
+    d.key(Key::Enter)?;
+    d.changed(&revision)?;
+    d.check(
+        "One forest placement selects its wrapper and retains both owned empty roots",
+        d.app().splice.is_none()
+            && document(d)? == exact.snapshot.document.as_ref()
+            && d.app().selected_beat.as_ref() == Some(&exact.node)
+            && document(d)?.children(&exact.node).count() == 2
+            && document(d)?.children(document(d)?.root()).nth(1) == Some(&exact.node)
+            && d.app().selected_edit_range().is_none()
+            && d.app().sequence_length() == 120,
+        json!({"slot":1,"roots":2,"duration":120,"visual":false}),
+        d.snapshot(),
+    )?;
+    edited::undo(d, &before)?;
+    d.check(
+        "Undo restores the source structure while the historical forest remains copied",
+        d.app().copied.content().is_some_and(|value| {
+            matches!(value, crate::preview::copied::Content::Edited(copy)
+                if copy.slice().as_ref() == captured.as_ref())
+        }) && document(d)?.nodes() == before.nodes(),
+        json!({"source_structure":"intact","forest_register":"retained"}),
+        d.snapshot(),
+    )
+}
+
+fn forest_layout(d: &mut Driver<'_>) -> Result<(), String> {
+    for (width, height) in [(960.0, 640.0), (1280.0, 820.0)] {
+        let viewport = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(width, height));
+        let input = d.harness.input_mut();
+        input.screen_rect = Some(viewport);
+        input
+            .viewports
+            .get_mut(&egui::ViewportId::ROOT)
+            .ok_or("Missing forest placement viewport")?
+            .inner_rect = Some(viewport);
+        d.step(
+            "Paint restored empty forest placement at the exact viewport",
+            true,
+        )?;
+        for label in [
+            "Empty group contents",
+            "UNSAVED · Insert empty contents · Structure only",
+            "Inside: Left empty group, Notes",
+            "No included pictures or audio.",
+            APPLY,
+            CANCEL,
+        ] {
+            paint_text(d, label)?;
+        }
+        d.check(
+            "The restored forest source card and controls fit with no endpoint widgets",
+            draft(d)?.empty_endpoints_for_check()
+                && !has_endpoint_widgets(d)
+                && d.rect(APPLY).is_ok(),
+            json!({"viewport":[width,height],"forest_card":"visible","endpoints":false}),
+            state(d),
+        )?;
+        viewer_painted(d)?;
+        d.capture(&format!(
+            "Restored empty forest placement at {width} by {height}"
+        ))?;
+    }
+    Ok(())
 }
 
 fn node(name: &str) -> Result<NodeId, String> {

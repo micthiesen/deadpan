@@ -38,7 +38,7 @@ where
     ) -> Result<(), EditError> {
         let label = match &selection {
             SliceCaptureSelection::Child { node } => Some(self.current.nodes()[node].label.clone()),
-            SliceCaptureSelection::Range { .. } => None,
+            SliceCaptureSelection::Range { .. } | SliceCaptureSelection::Children { .. } => None,
         };
         let range = if cut {
             self.cut(register, &selection)?

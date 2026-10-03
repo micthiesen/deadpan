@@ -8,6 +8,9 @@ mod placement;
 #[path = "edited_slice/child.rs"]
 mod child;
 
+#[path = "edited_slice/children.rs"]
+mod children;
+
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }

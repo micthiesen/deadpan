@@ -128,6 +128,46 @@ fn set(document: &ProjectDocument, plays: u32, allocation: &str) -> ProjectDocum
 fn child(value: &str) -> SliceCaptureSelection {
     SliceCaptureSelection::Child { node: node(value) }
 }
+
+#[test]
+fn exact_forest_repeat_retains_empty_endpoints_in_its_body() {
+    let before = tree(
+        &["prefix", "left", "body", "right", "suffix"],
+        vec![
+            ("prefix", hold(1)),
+            ("left", BeatNode::sequence("Left", vec![])),
+            ("body", hold(3)),
+            ("right", BeatNode::sequence("Right", vec![])),
+            ("suffix", hold(2)),
+        ],
+    );
+    let selection = SliceCaptureSelection::Children {
+        first: node("left"),
+        last: node("right"),
+    };
+    let plan = before
+        .repeat_selection(&node("root"), &selection, 3)
+        .unwrap();
+    assert!(plan.needs_group);
+    assert_eq!(plan.required_split_ids, 0);
+    // The fixture's body name is also the helper's fresh group name.
+    let mut command = wrapped(&before, "root", selection, 3);
+    let Command::RepeatSelection { identities, .. } = &mut command else {
+        panic!()
+    };
+    identities.group = Some(node("forest-body"));
+    let after = edit(&before, command);
+    let NodeKind::Sequence { children } = &after.nodes()[&node("forest-body")].kind else {
+        panic!()
+    };
+    assert_eq!(*children, [node("left"), node("body"), node("right")]);
+    assert_eq!(after.duration().unwrap(), frames(12));
+    let empty = SliceCaptureSelection::Children {
+        first: node("left"),
+        last: node("left"),
+    };
+    assert!(before.repeat_selection(&node("root"), &empty, 2).is_err());
+}
 fn selected(start: i64, end: i64) -> SliceCaptureSelection {
     SliceCaptureSelection::Range {
         range: range(start, end),

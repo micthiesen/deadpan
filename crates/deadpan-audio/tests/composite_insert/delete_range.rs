@@ -1,5 +1,7 @@
 use super::*;
 
+#[path = "delete_range/children.rs"]
+mod children;
 #[path = "delete_range/nested_partition.rs"]
 mod nested_partition;
 

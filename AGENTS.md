@@ -329,6 +329,15 @@ empty Sequence structures; zero-duration paste uses an explicit sibling slot,
 never a time-only guess, and allocates no timing. Empty placement schedules no
 source pictures or audio. See [edited slices](docs/EDITED_SLICES.md).
 
+Exact sibling forests use `SliceCaptureSelection::Children { first, last }`.
+Resolve inclusive direct-child identities in order, keeping empty endpoint
+children; never substitute the derived time range. Capture excludes the
+unselected parent's effects and marks. `DeleteChildren` removes the same span
+in one transaction and transforms root sounds once. Zero-time deletion and
+paste allocate no suffix clock. Store and Compound cuts compare the exact
+selector/command pair and recapture historical membership, including interior
+empty children. See [structural selections](docs/STRUCTURAL_SELECTIONS.md).
+
 Edited-content capture, seam/interior insertion and range replacement use
 `CapturedEditSlice`, `SpliceSlice`, `SpliceSliceAt` and `ReplaceSlice` through the
 core/headless path. Capture lattices before Split and suffix entries before

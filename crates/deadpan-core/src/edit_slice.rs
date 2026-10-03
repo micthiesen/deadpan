@@ -1,10 +1,12 @@
 //! Immutable, history-neutral copies of selected ordinary Sequence contents.
 //! Complete owners retain their recipe clocks; transparent windows select output.
 
+mod children;
 mod placement;
 mod rename;
 mod wire;
 
+pub use children::SequenceChildrenPlan;
 pub(crate) use placement::apply;
 
 use crate::*;
@@ -31,13 +33,14 @@ pub struct SliceIdentityRequirements {
     pub timings: usize,
 }
 
-/// A temporal interval or one exact direct child of an ordinary Sequence.
-/// Child identity distinguishes empty siblings at the same project boundary.
+/// A temporal interval, one exact child, or an inclusive direct-child span of
+/// an ordinary Sequence. Identities distinguish empty siblings at one boundary.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum SliceCaptureSelection {
     Range { range: FrameRange },
     Child { node: NodeId },
+    Children { first: NodeId, last: NodeId },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -138,8 +141,9 @@ impl CapturedEditSlice {
         )
     }
 
-    /// Capture a range or one whole direct child, including an empty Sequence
-    /// tree. The named parent and all its ancestors must be ordinary Sequences.
+    /// Capture a range, one whole direct child, or an inclusive sibling span,
+    /// including empty Sequence trees. The parent and all its ancestors must
+    /// be ordinary Sequences.
     pub fn capture_selection(
         document: &ProjectDocument,
         parent: &NodeId,
@@ -155,8 +159,17 @@ impl CapturedEditSlice {
         let NodeKind::Sequence { children } = &document.nodes()[parent].kind else {
             unreachable!()
         };
+        let child_span = match selection {
+            SliceCaptureSelection::Children { first, last } => {
+                Some(document.sequence_children(parent, first, last)?)
+            }
+            _ => None,
+        };
         let range = match selection {
             SliceCaptureSelection::Range { range } => *range,
+            SliceCaptureSelection::Children { .. } => {
+                child_span.expect("resolved sibling span").range
+            }
             SliceCaptureSelection::Child { node } => {
                 let index = children
                     .iter()
@@ -183,7 +196,7 @@ impl CapturedEditSlice {
         let mut offset = parent_start.0;
         let mut parts = Vec::new();
         let mut selected = BTreeSet::new();
-        for child in children {
+        for (index, child) in children.iter().enumerate() {
             let end = offset
                 .checked_add(durations[child].frames())
                 .ok_or_else(overflow)?;
@@ -195,6 +208,10 @@ impl CapturedEditSlice {
                         || (offset == end && offset > range.start().0 && offset < range.end().0)
                 }
                 SliceCaptureSelection::Child { node } => child == node,
+                SliceCaptureSelection::Children { .. } => {
+                    let span = child_span.expect("resolved sibling span");
+                    (span.first..span.end).contains(&index)
+                }
             };
             if included {
                 parts.push(SlicePart {
@@ -220,7 +237,7 @@ impl CapturedEditSlice {
                     || document.audio_bindings.gap_bindings.contains_key(id)
             }) {
                 return Err(invalid(
-                    "empty child capture requires a Sequence-only tree without physical audio bindings",
+                    "empty structural capture requires a Sequence-only forest without physical audio bindings",
                 ));
             }
             AudioBindingState::default()
@@ -456,6 +473,9 @@ impl CapturedEditSlice {
                         "empty child slice requires a Sequence-only tree without audio bindings",
                     ));
                 }
+            }
+            SliceCaptureSelection::Children { first, last } => {
+                children::validate(value, &durations, first, last)?;
             }
         }
         let mut boundary = value.range.start().0;

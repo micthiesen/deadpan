@@ -97,7 +97,8 @@ impl Service {
             )
             .collect();
         let child_label = match &request.selection {
-            deadpan_core::SliceCaptureSelection::Range { .. } => None,
+            deadpan_core::SliceCaptureSelection::Range { .. }
+            | deadpan_core::SliceCaptureSelection::Children { .. } => None,
             deadpan_core::SliceCaptureSelection::Child { node } => {
                 Some(document.nodes()[node].label.clone())
             }

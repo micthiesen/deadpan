@@ -1,0 +1,24 @@
+{
+  "command": [
+    "/tmp/deadpan-objects-20261003/deadpan-visual-final",
+    "--ui-check",
+    "--scenario",
+    "splice",
+    "--mode",
+    "visual",
+    "--output",
+    "/tmp/deadpan-objects-20261003/splice-visual-1",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "started": "2026-10-03T15:42:40.270375+00:00",
+  "base_commit": "4deae8e54816d218e749d6d3397b156c381e6a83",
+  "diff_sha256": "9f9e9a0a57e076697a744850dfaa700df34174f8f92d4683cf24637015621d6e",
+  "source_manifest_sha256": "31365ad42f4120cbe0b939094d72c7ff42a69f579c8c37bbcbc5c62c21b2f6e3",
+  "pid": 5263,
+  "exit_code": 1,
+  "seconds": 0.008843333926051855,
+  "source_manifest_after_sha256": "31365ad42f4120cbe0b939094d72c7ff42a69f579c8c37bbcbc5c62c21b2f6e3",
+  "source_unchanged": true,
+  "gate_exit_code": 1
+}

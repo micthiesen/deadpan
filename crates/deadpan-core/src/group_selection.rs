@@ -64,6 +64,19 @@ impl ProjectDocument {
                     required_split_ids: plan.required_ids,
                 })
             }
+            SliceCaptureSelection::Children { first, last } => {
+                let selected = self.sequence_children(parent, first, last)?;
+                if self.nodes().len() == MAX_DOCUMENT_NODES {
+                    return Err(EditError::new(
+                        EditErrorCode::LimitExceeded,
+                        "group exceeds the document node limit",
+                    ));
+                }
+                Ok(GroupSelectionPlan {
+                    range: selected.range,
+                    required_split_ids: 0,
+                })
+            }
         }
     }
 }
@@ -111,6 +124,17 @@ pub(crate) fn apply(
         SliceCaptureSelection::Range { .. } => {
             let selected = sequence_range::selected_children(&working, parent, plan.range)?;
             (selected.first, selected.end, selected.nodes)
+        }
+        SliceCaptureSelection::Children { first, last } => {
+            let selected = working.sequence_children(parent, first, last)?;
+            let NodeKind::Sequence { children } = &working.nodes()[parent].kind else {
+                unreachable!("exact child query admitted a Sequence")
+            };
+            (
+                selected.first,
+                selected.end,
+                children[selected.first..selected.end].to_vec(),
+            )
         }
     };
     // Split already transformed logical mark fragments. Use that complete

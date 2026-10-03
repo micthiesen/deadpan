@@ -82,7 +82,7 @@ impl DeadpanApp {
             let mut action = None;
             let heading = ui.horizontal_wrapped(|ui| {
                 let title = ui.heading("Place slice");
-                let operation = ui.colored_label(style::LAVENDER, if empty_structure { "UNSAVED · Insert empty group · Structure only" } else if draft.replacing { "UNSAVED · Replace · Linked picture + sound" } else if draft.proposal.operation == Operation::Move { "UNSAVED · Move · Linked picture + sound" } else { "UNSAVED · Insert · Linked picture + sound" });
+                let operation = ui.colored_label(style::LAVENDER, if empty_structure && empty::is_forest(&draft.proposal.source) { "UNSAVED · Insert empty contents · Structure only" } else if empty_structure { "UNSAVED · Insert empty group · Structure only" } else if draft.replacing { "UNSAVED · Replace · Linked picture + sound" } else if draft.proposal.operation == Operation::Move { "UNSAVED · Move · Linked picture + sound" } else { "UNSAVED · Insert · Linked picture + sound" });
                 let mut rect = title.rect.union(operation.rect);
                 if let Some(count) = draft.count { rect = rect.union(ui.monospace(format!("COUNT {count}")).rect); }
                 rect
@@ -303,7 +303,13 @@ impl Footer {
                     style::LAVENDER,
                 ));
             } else if prepared.empty_slot.is_some() {
-                text[0].0.push_str(" · empty group · duration unchanged");
+                text[0]
+                    .0
+                    .push_str(if empty::is_forest(&draft.proposal.source) {
+                        " · empty contents · duration unchanged"
+                    } else {
+                        " · empty group · duration unchanged"
+                    });
             } else {
                 text[0]
                     .0
