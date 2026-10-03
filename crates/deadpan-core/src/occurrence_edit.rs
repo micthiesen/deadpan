@@ -494,6 +494,9 @@ pub(crate) fn clone_nodes(
         // Fresh authored IDs separate copies; retaining the compact order keeps
         // every pre-isolation occurrence addressable during this transaction.
         document.nodes.insert(new.clone(), node);
+        if let Some(events) = document.beat_sounds.get(old).cloned() {
+            document.beat_sounds.insert(new.clone(), events);
+        }
         if let Some(entries) = document.overrides.get(old) {
             let copied: Vec<_> = entries
                 .iter()

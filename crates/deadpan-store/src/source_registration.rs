@@ -1137,12 +1137,14 @@ pub(crate) fn check_stored_sizes(connection: &Connection) -> Result<(), StoreErr
     Ok(())
 }
 
-/// Sound edits may use only source evidence already admitted in their expected
-/// revision. A caller-supplied qualification name is never registration.
+/// Sound edits use evidence already admitted in their expected revision, or in
+/// a historically validated captured owner. A qualification name supplied by
+/// the caller is never registration.
 pub(crate) fn validate_sound_sources(
     connection: &Connection,
     current: &ProjectDocument,
     next: &ProjectDocument,
+    captured: Option<&ProjectDocument>,
 ) -> Result<(), StoreError> {
     let assets = next
         .sounds()
@@ -1171,6 +1173,52 @@ pub(crate) fn validate_sound_sources(
         if receipt.asset_record(record.label.clone())? != *record {
             return Err(invalid(
                 "sound asset metadata disagrees with selected source qualification",
+            ));
+        }
+        check_original_binding(connection, &receipt)?;
+    }
+    // Compare addresses, not just local IDs: copying an owner creates a new
+    // event even when its local ID and source recipe are retained verbatim.
+    // This runs on every admitted transition, including every Compound leaf.
+    let assets = next
+        .beat_sounds()
+        .iter()
+        .flat_map(|(owner, events)| {
+            events
+                .iter()
+                .filter(move |(id, event)| {
+                    current
+                        .beat_sounds()
+                        .get(owner)
+                        .and_then(|local| local.get(*id))
+                        != Some(*event)
+                        || current.assets().get(&event.source.asset)
+                            != next.assets().get(&event.source.asset)
+                })
+                .map(|(_, event)| &event.source.asset)
+        })
+        .collect::<std::collections::BTreeSet<_>>();
+    for asset in assets {
+        let record = next
+            .assets()
+            .get(asset)
+            .ok_or_else(|| invalid("beat sound asset is absent from the proposed revision"))?;
+        if current.assets().get(asset) != Some(record)
+            && !captured.is_some_and(|document| document.assets().get(asset) == Some(record))
+        {
+            return Err(invalid(
+                "beat sound asset is not admitted in the selected or captured revision",
+            ));
+        }
+        let id = record
+            .source_qualification
+            .as_ref()
+            .ok_or_else(|| invalid("beat sound asset has no measured source qualification"))?;
+        let receipt = read_receipt(connection, id)?
+            .ok_or_else(|| invalid("beat sound source qualification is missing"))?;
+        if receipt.asset_record(record.label.clone())? != *record {
+            return Err(invalid(
+                "beat sound asset metadata disagrees with selected source qualification",
             ));
         }
         check_original_binding(connection, &receipt)?;

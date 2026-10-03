@@ -1,0 +1,25 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-core",
+    "-p",
+    "deadpan-plan",
+    "-p",
+    "deadpan-audio",
+    "--lib",
+    "--tests"
+  ],
+  "started": "2026-10-03T21:48:07.746692+00:00",
+  "base_commit": "5d2f9087505d750384b15d2bac731bb7abe13dc3",
+  "diff_sha256": "c39921055c175505657152abecdb6876286a220f75b7a19254fdb4221af27e59",
+  "source_manifest_sha256": "823f03b02d0bbc2033c09eaec9ed7402ab66404e2e83885421c20a383eec275d",
+  "pid": 69887,
+  "exit_code": 101,
+  "seconds": 399.7227220842615,
+  "source_manifest_after_sha256": "823f03b02d0bbc2033c09eaec9ed7402ab66404e2e83885421c20a383eec275d",
+  "source_unchanged": true,
+  "gate_exit_code": 101
+}

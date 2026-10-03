@@ -47,7 +47,7 @@ pub enum AudioOwnerClockOrigin {
 
 /// A checked owner borrowed from one immutable plan. There is intentionally no
 /// public constructor or deserializer for rebinding inspection data to a plan.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct AudioOwnerClock<'plan, S = AudioSample> {
     plan: &'plan RenderPlan,
     definition: Option<AudioDefinitionSelector>,
@@ -56,6 +56,24 @@ pub struct AudioOwnerClock<'plan, S = AudioSample> {
     gap_after: Option<IterationId>,
     sampling: AudioSampleMap<S>,
     origin: AudioOwnerClockOrigin,
+}
+
+impl<'plan> AudioOwnerClock<'plan> {
+    pub(in crate::plan) fn current(
+        plan: &'plan RenderPlan,
+        instance: InstancePath,
+        sampling: AudioSampleMap<AudioSample>,
+    ) -> Self {
+        Self {
+            plan,
+            definition: None,
+            instance,
+            kind: AudioOwnerKind::Node,
+            gap_after: None,
+            sampling,
+            origin: AudioOwnerClockOrigin::Current,
+        }
+    }
 }
 
 impl<S: Copy> AudioOwnerClock<'_, S> {

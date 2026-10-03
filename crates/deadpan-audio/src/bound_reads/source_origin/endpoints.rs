@@ -79,6 +79,7 @@ fn endpoint_patch(
         assets: BTreeMap::new(),
         marks: BTreeMap::new(),
         sounds: BTreeMap::new(),
+        beat_sounds: BTreeMap::new(),
         sound_routes: BTreeMap::new(),
         sound_allowances: BTreeMap::new(),
         overrides: BTreeMap::new(),

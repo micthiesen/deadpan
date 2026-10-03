@@ -72,6 +72,8 @@ struct SliceWire {
     parts: Vec<SlicePart>,
     #[serde(deserialize_with = "crate::audio_gain::node_map")]
     nodes: BTreeMap<NodeId, BeatNode>,
+    #[serde(default, deserialize_with = "crate::sound_events::beat_sounds_map")]
+    beat_sounds: BTreeMap<NodeId, BTreeMap<SoundId, BeatSound>>,
     #[serde(deserialize_with = "crate::document::unique_map")]
     assets: BTreeMap<AssetId, AssetRecord>,
     #[serde(deserialize_with = "crate::document::unique_map")]
@@ -252,6 +254,11 @@ impl CapturedEditSlice {
         for node in nodes.values() {
             node_assets(node, &mut assets);
         }
+        for owner in &selected {
+            if let Some(events) = document.beat_sounds().get(owner) {
+                assets.extend(events.values().map(|event| event.source.asset.clone()));
+            }
+        }
         for mark in marks.values() {
             for binding in mark.bindings() {
                 if let Anchor::Source { asset, .. } = binding.coordinate {
@@ -273,6 +280,12 @@ impl CapturedEditSlice {
             source_duration: document.duration()?,
             parts,
             nodes,
+            beat_sounds: document
+                .beat_sounds()
+                .iter()
+                .filter(|(owner, _)| selected.contains(*owner))
+                .map(|(owner, events)| (owner.clone(), events.clone()))
+                .collect(),
             assets: assets
                 .into_iter()
                 .map(|id| (id.clone(), document.assets()[&id].clone()))
@@ -434,6 +447,7 @@ impl CapturedEditSlice {
             ),
         );
         document.nodes.extend(value.nodes.clone());
+        document.beat_sounds = value.beat_sounds.clone();
         document.assets = value.assets.clone();
         document.overrides = value.overrides.clone();
         document.gap_overrides = value.gap_overrides.clone();

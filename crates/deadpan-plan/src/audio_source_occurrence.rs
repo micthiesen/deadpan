@@ -16,15 +16,19 @@ use crate::{
 /// intrinsic history independently of Original audio and every other voice.
 ///
 /// `processing` is raw input, including sound underneath silent Holds. `policy`
-/// and `hold_policy` expose current output gates separately. Gain, creative
-/// edges, allowances, tails and authored event persistence are not installed by
-/// this handle. The host must admit `source()` even for a wholly silent query.
+/// and `hold_policy` expose current output gates separately. `gain_owners` and
+/// `gate_fades` describe current ancestor gain clocks and per-occurrence edges.
+/// The handle grants no Hold allowance or retained history across future edits.
+/// The host must admit `source()` even for a wholly silent query.
 #[derive(Debug, Clone)]
 pub struct AudioSourceOccurrence<'plan> {
     plan: &'plan RenderPlan,
     instance: InstancePath,
     voice: AudioSourceVoice<'plan>,
     extent: Range<ExactRatio>,
+    audible_extent: Range<ExactRatio>,
+    gain_owners: Vec<crate::AudioOwnerClock<'plan>>,
+    inherited_hard_edges: (bool, bool),
     samples: Range<AudioSample>,
     grid: AudioSampleGrid<AudioSample>,
     // This private carrier is evaluated directly on RoundEven before any PCM
@@ -70,6 +74,7 @@ struct Edge {
     parent: usize,
     map: Placement,
     repeats: usize,
+    gap: Option<Range<ExactRatio>>,
 }
 
 struct BuildBudget {
@@ -154,8 +159,60 @@ impl RenderPlan {
         // complete processed output can survive an outer crop even when that
         // crop hides this owner's original geometric allocation.
         let rate = self.metadata.presentation_basis.frame_rate;
+        let step = ExactRatio::new(
+            i128::from(rate.numerator()),
+            i128::from(MIX_SAMPLE_RATE) * i128::from(rate.denominator()),
+        )?;
+        let mut gain_owners = Vec::with_capacity(edges.len() + 1);
+        let mut owner_edges = Vec::with_capacity(edges.len() + 1);
+        let mut current_map = Placement::IDENTITY;
+        for edge in &edges {
+            budget.spend(1 + edge.repeats)?;
+            owner_edges.push((
+                current_map.range(node_support(self, edge.parent))?,
+                self.nodes[edge.parent].audio_edges,
+            ));
+            if let Some(gap) = &edge.gap {
+                budget.spend(1)?;
+                let policies = self.nodes[edge.parent].audio_edges;
+                owner_edges.push((
+                    current_map.range(gap.clone())?,
+                    deadpan_core::AudioEdgePolicies {
+                        node_start: policies.repeat_gap_start,
+                        node_end: policies.repeat_gap_end,
+                        ..Default::default()
+                    },
+                ));
+            }
+            gain_owners.push(gain_owner(
+                self,
+                edge.parent,
+                &instance.repeats[..edge.repeats],
+                current_map,
+                step,
+            )?);
+            current_map = current_map.compose(edge.map)?;
+        }
+        budget.spend(1 + instance.repeats.len())?;
+        owner_edges.push((
+            current_map.range(host_support.clone())?,
+            self.nodes[host].audio_edges,
+        ));
+        gain_owners.push(gain_owner(
+            self,
+            host,
+            &instance.repeats,
+            current_map,
+            step,
+        )?);
         budget.spend(1 + instance.repeats.len())?;
         let owner = scoped_signal(self, host, instance.repeats.clone(), host_support.clone());
+        let selected = recipe.mapping.selection_frames_with_offset(
+            self.nodes[host].inspection.duration,
+            recipe.offset,
+            rate,
+        )?;
+        let mut audible = selected.start..selected.end;
         let voice = checked_voice(owner, recipe)?;
         let mut provider = Provider::Source(Box::new(voice.input_signal()));
         let mut support = host_support;
@@ -190,6 +247,9 @@ impl RenderPlan {
                     Provider::Projected(AudioStageProjection::new(stage, input, policy, duration)?);
                 placement = Placement::IDENTITY;
                 support = node_support(self, edge.parent);
+                // A processor may retain output throughout its full allocation,
+                // including decay outside the raw selected input interval.
+                audible = support.clone();
             } else {
                 budget.spend(1)?;
                 placement = edge.map.compose(placement)?;
@@ -206,15 +266,22 @@ impl RenderPlan {
             }
         }
         let extent = placement.range(support.clone())?;
+        let audible_extent = placement.range(intersect(audible, support.clone())?)?;
+        let inherited_hard_edges = (
+            owner_edges.iter().any(|(range, policy)| {
+                range.start == audible_extent.start
+                    && policy.node_start == deadpan_core::AudioEdgePolicy::Hard
+            }),
+            owner_edges.iter().any(|(range, policy)| {
+                range.end == audible_extent.end
+                    && policy.node_end == deadpan_core::AudioEdgePolicy::Hard
+            }),
+        );
         budget.runs(1 + provider.policy_runs())?;
         let input = AudioSignalTape::new(
             self,
             extent.clone(),
             vec![provider.run(extent.clone(), support)],
-        )?;
-        let step = ExactRatio::new(
-            i128::from(rate.numerator()),
-            i128::from(MIX_SAMPLE_RATE) * i128::from(rate.denominator()),
         )?;
         let grid = AudioSampleGrid::<AudioSample>::new(
             ExactRatio::ZERO,
@@ -234,6 +301,9 @@ impl RenderPlan {
             instance,
             voice,
             extent,
+            audible_extent,
+            gain_owners,
+            inherited_hard_edges,
             samples,
             grid,
             input,
@@ -313,6 +383,7 @@ fn resolve_edges(
         let parent = pair[0];
         let child = pair[1];
         let scope = repeats;
+        let mut gap = None;
         let map = match &plan.nodes[parent].kind {
             CompiledKind::Sequence { entries } => {
                 budget.spend(entries.len())?;
@@ -341,6 +412,16 @@ fn resolve_edges(
                         "source occurrence is not the selected Repeat branch",
                     ),
                 )?;
+                if play.gap_child.as_ref() == Some(&plan.nodes[child].inspection.id) {
+                    gap = Some(
+                        ExactRatio::integer(offset)
+                            ..ExactRatio::integer(
+                                offset
+                                    .checked_add(play.gap_after.frames())
+                                    .ok_or(PlanError::InvalidPlan("gap boundary overflow"))?,
+                            ),
+                    );
+                }
                 repeats += 1;
                 Placement {
                     origin: ExactRatio::integer(offset),
@@ -369,6 +450,7 @@ fn resolve_edges(
             parent,
             map,
             repeats: scope,
+            gap,
         });
     }
     if repeats != instance.repeats.len() {
@@ -381,6 +463,27 @@ fn resolve_edges(
 
 fn node_support(plan: &RenderPlan, node: usize) -> Range<ExactRatio> {
     ExactRatio::ZERO..ExactRatio::integer(plan.nodes[node].inspection.duration.frames())
+}
+
+fn gain_owner<'plan>(
+    plan: &'plan RenderPlan,
+    owner: usize,
+    repeats: &[RepeatInstance],
+    map: Placement,
+    step: ExactRatio,
+) -> Result<crate::AudioOwnerClock<'plan>, PlanError> {
+    Ok(crate::AudioOwnerClock::current(
+        plan,
+        InstancePath {
+            node: plan.nodes[owner].inspection.id.clone(),
+            repeats: repeats.to_vec(),
+        },
+        AudioSampleMap::new(
+            AudioSample(0),
+            map.local(ExactRatio::ZERO)?,
+            step.checked_div(map.scale)?,
+        )?,
+    ))
 }
 
 fn scoped_signal<'plan>(
@@ -544,6 +647,40 @@ impl<'plan> AudioSourceOccurrence<'plan> {
     }
     pub fn extent(&self) -> Range<ExactRatio> {
         self.extent.clone()
+    }
+    /// Final raw selection, or the complete enclosing processed allocation.
+    /// Current Hold gates and event edges are evaluated separately.
+    pub fn audible_extent(&self) -> Range<ExactRatio> {
+        self.audible_extent.clone()
+    }
+    /// Current owner and ancestor clocks for this independent voice. Original
+    /// sampling bindings cannot substitute their retained effect clocks here.
+    pub fn gain_owners(&self) -> &[crate::AudioOwnerClock<'plan>] {
+        &self.gain_owners
+    }
+    pub fn gate_fades(
+        &self,
+        start_edge: deadpan_core::AudioEdgePolicy,
+        end_edge: deadpan_core::AudioEdgePolicy,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+    ) -> Result<crate::AudioSoundGateQuery, PlanError> {
+        crate::audio_sound_event::occurrence_gate_fades(
+            self.plan,
+            self.audible_extent(),
+            if self.inherited_hard_edges.0 {
+                deadpan_core::AudioEdgePolicy::Hard
+            } else {
+                start_edge
+            },
+            if self.inherited_hard_edges.1 {
+                deadpan_core::AudioEdgePolicy::Hard
+            } else {
+                end_edge
+            },
+            samples,
+            limits,
+        )
     }
     pub fn samples(&self) -> Range<AudioSample> {
         self.samples.clone()

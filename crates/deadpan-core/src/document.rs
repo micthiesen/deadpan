@@ -9,7 +9,7 @@ use crate::{
     SourceVideoMapping, TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 43;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 44;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -431,6 +431,8 @@ pub struct ProjectDocument {
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub(crate) sounds: BTreeMap<SoundId, crate::SoundEvent>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub(crate) beat_sounds: BTreeMap<NodeId, BTreeMap<SoundId, crate::BeatSound>>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub(crate) sound_routes: BTreeMap<SoundId, crate::RootSoundRoute>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub(crate) sound_allowances: BTreeMap<SoundId, crate::SoundHoldAllowances>,
@@ -462,6 +464,8 @@ struct DocumentWire {
     marks: BTreeMap<MarkId, Mark>,
     #[serde(default, deserialize_with = "unique_map")]
     sounds: BTreeMap<SoundId, crate::SoundEvent>,
+    #[serde(default, deserialize_with = "crate::sound_events::beat_sounds_map")]
+    beat_sounds: BTreeMap<NodeId, BTreeMap<SoundId, crate::BeatSound>>,
     #[serde(default, deserialize_with = "unique_map")]
     sound_routes: BTreeMap<SoundId, crate::RootSoundRoute>,
     #[serde(default, deserialize_with = "unique_map")]
@@ -490,6 +494,7 @@ impl TryFrom<DocumentWire> for ProjectDocument {
             assets: value.assets,
             marks: value.marks,
             sounds: value.sounds,
+            beat_sounds: value.beat_sounds,
             sound_routes: value.sound_routes,
             sound_allowances: value.sound_allowances,
             overrides: value.overrides,
@@ -520,6 +525,7 @@ impl ProjectDocument {
             assets: BTreeMap::new(),
             marks: BTreeMap::new(),
             sounds: BTreeMap::new(),
+            beat_sounds: BTreeMap::new(),
             sound_routes: BTreeMap::new(),
             sound_allowances: BTreeMap::new(),
             overrides: BTreeMap::new(),
@@ -619,6 +625,9 @@ impl ProjectDocument {
 
     pub fn sounds(&self) -> &BTreeMap<SoundId, crate::SoundEvent> {
         &self.sounds
+    }
+    pub fn beat_sounds(&self) -> &BTreeMap<NodeId, BTreeMap<SoundId, crate::BeatSound>> {
+        &self.beat_sounds
     }
     pub fn sound_allowances(&self) -> &BTreeMap<SoundId, crate::SoundHoldAllowances> {
         &self.sound_allowances

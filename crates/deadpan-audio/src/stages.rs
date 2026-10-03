@@ -64,6 +64,9 @@ pub use voice_occurrence::SourceOccurrenceBlock;
 mod voice_occurrences;
 pub use voice_occurrences::SourceOccurrencesBlock;
 
+#[path = "beat_sounds.rs"]
+mod beat_sounds;
+
 #[path = "routed.rs"]
 mod routed;
 pub use routed::{RoutedRootBlock, RoutedSignalBlock};
@@ -671,8 +674,9 @@ impl StageAudio {
         }
         let suppressed = merged_suppression(suppressed);
         control.check()?;
-        let has_sounds =
-            !self.plan.sounds().is_empty() || (authored_gain && self.plan.has_audio_treatments());
+        let has_sounds = !self.plan.sounds().is_empty()
+            || !self.plan.beat_sounds().is_empty()
+            || (authored_gain && self.plan.has_audio_treatments());
         let block = EdgeFadedBlock {
             schema_version: 1,
             stage: if has_sounds {

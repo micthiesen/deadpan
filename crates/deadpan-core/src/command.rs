@@ -103,6 +103,16 @@ define_commands! {
         id: crate::SoundId,
         event: crate::SoundEvent,
     },
+    /// Add or replace one independent sound in a beat owner's local clock.
+    SetBeatSound {
+        owner: NodeId,
+        id: crate::SoundId,
+        event: crate::BeatSound,
+    },
+    DeleteBeatSound {
+        owner: NodeId,
+        id: crate::SoundId,
+    },
     /// Explicitly replace a sound recipe and discard its previous routing intent.
     ReplaceSound {
         id: crate::SoundId,
@@ -482,6 +492,41 @@ pub struct ValueChange<T> {
     pub after: Option<T>,
 }
 
+#[derive(Deserialize)]
+#[serde(transparent)]
+struct UniqueBeatSoundMap(
+    #[serde(deserialize_with = "unique_map")] BTreeMap<crate::SoundId, crate::BeatSound>,
+);
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct BeatSoundMapChangeWire {
+    before: Option<UniqueBeatSoundMap>,
+    after: Option<UniqueBeatSoundMap>,
+}
+
+type BeatSoundChanges = BTreeMap<NodeId, ValueChange<BTreeMap<crate::SoundId, crate::BeatSound>>>;
+
+fn unique_beat_sound_changes<'de, D>(deserializer: D) -> Result<BeatSoundChanges, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    unique_map::<D, NodeId, BeatSoundMapChangeWire>(deserializer).map(|changes| {
+        changes
+            .into_iter()
+            .map(|(owner, change)| {
+                (
+                    owner,
+                    ValueChange {
+                        before: change.before.map(|map| map.0),
+                        after: change.after.map(|map| map.0),
+                    },
+                )
+            })
+            .collect()
+    })
+}
+
 /// Granular authored changes, with before-values guarding patch preconditions.
 /// No media, undo stack, worker handle, or external resource is embedded here.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -504,6 +549,12 @@ pub struct DocumentPatch {
         deserialize_with = "unique_map"
     )]
     pub sounds: BTreeMap<crate::SoundId, ValueChange<crate::SoundEvent>>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "unique_beat_sound_changes"
+    )]
+    pub beat_sounds: BTreeMap<NodeId, ValueChange<BTreeMap<crate::SoundId, crate::BeatSound>>>,
     #[serde(
         default,
         skip_serializing_if = "BTreeMap::is_empty",
@@ -557,6 +608,7 @@ impl DocumentPatch {
             || self.assets.len() > MAX_DOCUMENT_NODES
             || self.marks.len() > MAX_DOCUMENT_MARKS
             || self.sounds.len() > 2 * crate::MAX_DOCUMENT_SOUNDS
+            || self.beat_sounds.len() > 2 * crate::MAX_DOCUMENT_SOUNDS
             || self.sound_routes.len() > 2 * crate::MAX_DOCUMENT_SOUNDS
             || self.sound_allowances.len() > 2 * crate::MAX_DOCUMENT_SOUNDS
             || self.overrides.len() > MAX_DOCUMENT_NODES
@@ -622,6 +674,7 @@ impl DocumentPatch {
             result.basis_state = change.after.state.clone();
         }
         apply_changes(&mut result.nodes, &self.nodes)?;
+        apply_changes(&mut result.beat_sounds, &self.beat_sounds)?;
         for change in self.assets.values() {
             if let (Some(before), Some(after)) = (&change.before, &change.after)
                 && before != after
@@ -673,6 +726,7 @@ impl DocumentPatch {
             assets: inverse_changes(&self.assets),
             marks: inverse_changes(&self.marks),
             sounds: inverse_changes(&self.sounds),
+            beat_sounds: inverse_changes(&self.beat_sounds),
             sound_routes: inverse_changes(&self.sound_routes),
             sound_allowances: inverse_changes(&self.sound_allowances),
             overrides: inverse_changes(&self.overrides),
@@ -972,6 +1026,7 @@ pub(crate) fn net_transaction(
         assets: diff(&document.assets, &result.assets),
         marks: diff(&document.marks, &result.marks),
         sounds: diff(&document.sounds, &result.sounds),
+        beat_sounds: diff(&document.beat_sounds, &result.beat_sounds),
         sound_routes: diff(&document.sound_routes, &result.sound_routes),
         sound_allowances: diff(&document.sound_allowances, &result.sound_allowances),
         overrides: diff(&document.overrides, &result.overrides),
@@ -991,6 +1046,7 @@ pub(crate) fn net_transaction(
             .chain(forward.overrides.keys())
             .chain(forward.gap_overrides.keys())
             .chain(forward.audio_lineage.keys())
+            .chain(forward.beat_sounds.keys())
             .chain(binding_changed_ids.iter())
             .chain(
                 forward
@@ -1149,9 +1205,13 @@ pub(crate) fn reduce(
                     "sound events currently require the root Sequence owner",
                 ));
             }
-            if !document.sounds.contains_key(id)
-                && document.sounds.len() >= crate::MAX_DOCUMENT_SOUNDS
-            {
+            let total_sounds = document.sounds.len()
+                + document
+                    .beat_sounds
+                    .values()
+                    .map(BTreeMap::len)
+                    .sum::<usize>();
+            if !document.sounds.contains_key(id) && total_sounds >= crate::MAX_DOCUMENT_SOUNDS {
                 return Err(EditError::new(
                     EditErrorCode::LimitExceeded,
                     "document exceeds 64 live sound events",
@@ -1161,6 +1221,52 @@ pub(crate) fn reduce(
                 document.sound_routes.remove(id);
             }
             document.sounds.insert(id.clone(), event.clone());
+        }
+        Command::SetBeatSound { owner, id, event } => {
+            if !document.nodes.contains_key(owner) {
+                return Err(EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    "beat sound owner is absent",
+                ));
+            }
+            let exists = document
+                .beat_sounds
+                .get(owner)
+                .is_some_and(|events| events.contains_key(id));
+            let total = document.sounds.len()
+                + document
+                    .beat_sounds
+                    .values()
+                    .map(BTreeMap::len)
+                    .sum::<usize>();
+            if !exists && total >= crate::MAX_DOCUMENT_SOUNDS {
+                return Err(EditError::new(
+                    EditErrorCode::LimitExceeded,
+                    "document exceeds 64 live sound events",
+                ));
+            }
+            document
+                .beat_sounds
+                .entry(owner.clone())
+                .or_default()
+                .insert(id.clone(), event.clone());
+        }
+        Command::DeleteBeatSound { owner, id } => {
+            let events = document.beat_sounds.get_mut(owner).ok_or_else(|| {
+                EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    "beat sound owner has no sounds",
+                )
+            })?;
+            if events.remove(id).is_none() {
+                return Err(EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    "beat sound event is absent",
+                ));
+            }
+            if events.is_empty() {
+                document.beat_sounds.remove(owner);
+            }
         }
         Command::DeleteSound { id } => {
             document.sound_routes.remove(id);
@@ -2260,6 +2366,8 @@ fn description(command: &Command) -> &'static str {
     match command {
         Command::Compound { .. } => "Apply resolved transaction",
         Command::SetSound { .. } => "Set sound event",
+        Command::SetBeatSound { .. } => "Set beat sound event",
+        Command::DeleteBeatSound { .. } => "Delete beat sound event",
         Command::ReplaceSound { .. } => "Replace sound recipe",
         Command::DeleteSound { .. } => "Delete sound event",
         Command::SetSoundAllowance { .. } => "Set sound Hold allowance",

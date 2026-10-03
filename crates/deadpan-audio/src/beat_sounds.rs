@@ -1,0 +1,189 @@
+//! Saved independent voices, instantiated from their current structural owners.
+
+use super::*;
+use deadpan_core::{AudioEdgePolicy, BeatSound};
+use deadpan_plan::{AudioSourceOccurrence, AudioSourceVoiceRecipe};
+
+pub(super) struct PreparedBeatSound<'plan> {
+    event: &'plan BeatSound,
+    occurrences: Vec<PreparedOccurrence<'plan>>,
+}
+
+struct PreparedOccurrence<'plan> {
+    voice: AudioSourceOccurrence<'plan>,
+    samples: Range<AudioSample>,
+    queries: RootReadQueries<'plan>,
+    fades: Vec<deadpan_plan::AudioSoundGateSpan>,
+}
+
+impl StageAudio {
+    pub(super) fn prepare_beat_sounds<'plan>(
+        &self,
+        plan: &'plan RenderPlan,
+        samples: Range<AudioSample>,
+        control: WorkControl<'_>,
+    ) -> Result<Vec<PreparedBeatSound<'plan>>, StageAudioError> {
+        let mut prepared = Vec::new();
+        for (owner, events) in plan.beat_sounds() {
+            for event in events.values() {
+                control.check()?;
+                control.admit_dependency(&event.source.asset)?;
+                let batch = plan.source_voice_occurrences(
+                    owner,
+                    AudioSourceVoiceRecipe {
+                        source: event.source.clone(),
+                        mapping: event.mapping,
+                        offset: event.offset,
+                    },
+                    samples.clone(),
+                    control.query_limits()?,
+                )?;
+                control.spend_plan_work(batch.construction_work())?;
+                let mut occurrences = Vec::with_capacity(batch.voices().len());
+                for voice in batch.voices() {
+                    control.check()?;
+                    let extent = voice.samples();
+                    let interval = samples.start.max(extent.start)..samples.end.min(extent.end);
+                    if interval.start >= interval.end {
+                        continue;
+                    }
+                    deadpan_core::validate_audio_treatment_layers(
+                        voice
+                            .gain_owners()
+                            .iter()
+                            .filter_map(|owner| owner.treatments()),
+                    )?;
+                    let queries =
+                        self.source_occurrence_queries(voice, interval.clone(), control)?;
+                    self.preflight_root_queries(
+                        &queries,
+                        interval.start,
+                        count(&interval)?,
+                        control,
+                        0,
+                    )?;
+                    let fades = voice.gate_fades(
+                        event.start_edge,
+                        event.end_edge,
+                        interval.clone(),
+                        control.query_limits()?,
+                    )?;
+                    control.spend_plan_work(fades.work)?;
+                    sound_events::validate_gate_envelopes(&fades.spans, interval.clone())?;
+                    occurrences.push(PreparedOccurrence {
+                        voice: voice.clone(),
+                        samples: interval,
+                        queries,
+                        fades: fades.spans,
+                    });
+                }
+                prepared.push(PreparedBeatSound { event, occurrences });
+            }
+        }
+        Ok(prepared)
+    }
+
+    pub(super) fn render_beat_sounds(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        original: &mut ReadBlock,
+        sum: &mut [[f64; 2]],
+        sounds: Vec<PreparedBeatSound<'_>>,
+        control: WorkControl<'_>,
+        authored_gain: bool,
+    ) -> Result<(), StageAudioError> {
+        let end = AudioSample(
+            original
+                .start
+                .0
+                .checked_add(
+                    i64::try_from(original.samples.len()).map_err(|_| StageAudioError::Range)?,
+                )
+                .ok_or(StageAudioError::Range)?,
+        );
+        for sound in sounds {
+            control.check()?;
+            for occurrence in sound.occurrences {
+                control.spend_plan_work(count(&occurrence.samples)? as usize)?;
+                let mut block = self.read_queries(
+                    provider,
+                    occurrence.samples.start,
+                    count(&occurrence.samples)?,
+                    control,
+                    0,
+                    occurrence.queries,
+                )?;
+                let offset = usize::try_from(occurrence.samples.start.0 - original.start.0)
+                    .map_err(|_| StageAudioError::Range)?;
+                let expected = count(&occurrence.samples)? as usize;
+                if block.samples.len() != expected {
+                    return Err(PlanError::InvalidPlan("incomplete beat sound PCM").into());
+                }
+                block.suppressed.extend(
+                    occurrence
+                        .fades
+                        .iter()
+                        .filter(|span| span.length == 0)
+                        .map(|span| span.samples.clone()),
+                );
+                if original.start < occurrence.samples.start {
+                    block
+                        .suppressed
+                        .push(original.start..occurrence.samples.start);
+                }
+                if occurrence.samples.end < end {
+                    block.suppressed.push(occurrence.samples.end..end);
+                }
+                block.suppressed = merged_suppression(block.suppressed);
+                let edges = occurrence.fades.into_iter().flat_map(|span| {
+                    (0..span.samples.end.0 - span.samples.start.0).map(move |index| {
+                        crate::edges::edge_gain(
+                            span.length,
+                            i128::from(span.progress_at_start) + i128::from(index),
+                            span.start_edge == AudioEdgePolicy::Automatic,
+                            span.end_edge == AudioEdgePolicy::Automatic,
+                        )
+                    })
+                });
+                for (index, ((total, sample), edge)) in sum[offset..offset + expected]
+                    .iter_mut()
+                    .zip(block.samples)
+                    .zip(edges)
+                    .enumerate()
+                {
+                    let at = AudioSample(
+                        occurrence
+                            .samples
+                            .start
+                            .0
+                            .checked_add(i64::try_from(index).map_err(|_| StageAudioError::Range)?)
+                            .ok_or(StageAudioError::Range)?,
+                    );
+                    let gain = authored_gain::beat_sound_gain(
+                        occurrence.voice.gain_owners(),
+                        at,
+                        sound.event.gain_millidecibels,
+                        control,
+                        authored_gain,
+                    )?;
+                    let gained = gain.apply(sample.map(|value| value * edge))?;
+                    for channel in 0..2 {
+                        total[channel] += gained[channel];
+                    }
+                }
+                original.suppressed =
+                    sound_events::intersect_suppression(&original.suppressed, &block.suppressed);
+                original.relative_depth = original.relative_depth.max(block.relative_depth);
+                original.dependencies.extend(block.dependencies);
+            }
+            // Missing occurrences and complete silence still depend on the
+            // recipe. A warm limiter block cannot hide a revoked source.
+            let asset = &sound.event.source.asset;
+            let source = resolve_source(provider, &self.plan, asset, control.cancelled)?;
+            original
+                .dependencies
+                .insert(asset.clone(), control.observe(asset, source)?);
+        }
+        Ok(())
+    }
+}

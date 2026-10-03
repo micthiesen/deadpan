@@ -1,9 +1,8 @@
 # Supported development project formats
 
-The current package uses SQLite schema 55 and core document schema 43. This
-development build opens schema 55 and can explicitly upgrade schema 52. It
-refuses schemas 1 through 51, 53 and 54 with the store's `UnsupportedSchema`
-error (`SchemaUnsupported` over the CLI) before obtaining
+The current package uses SQLite schema 56 and core document schema 44. This
+development build opens schema 56. It refuses schemas 1 through 55 with the
+store's `UnsupportedSchema` error (`SchemaUnsupported` over the CLI) before obtaining
 a writer lock, creating a backup, enabling WAL, repairing directories or parsing
 authored documents. The old package remains intact. Create a current project to
 continue using this build.
@@ -15,26 +14,23 @@ adapters avoids maintaining their closed command vocabulary with each new
 command. The adapters alone occupied 31,091 lines before this change. Build
 speed improvements have not been isolated or measured.
 
-## Retained schema-52 upgrade
+## Current validation and prior-format refusal
 
 ```sh
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
-Schema 52 already stores current authored documents. Its upgrade adds empty
-register and compound-step tables. It preserves original authored and
-operational rows and rejects preexisting Compound commands. Migration takes the
-writer lock, retains a consistent SQLite backup under
-`Snapshots/before-schema-55-*.sqlite`, validates an isolated candidate and
-promotes it through SQLite's backup API. It never renames a main database around
-a live WAL. Failure before promotion preserves the old authored state; failures
-after backup creation identify the retained backup.
+Core schema 44 adds beat-owned sound recipes, addressed by owner and local sound
+ID. Database 56 stores these documents and their reversible patches. Prior
+unused packages have no supported migration, including the former schema-52
+additive upgrade. Create a current package to continue; refusal never rewrites
+the old package or its media.
 
-Opening schema 52 through ordinary headless access returns `MigrationRequired`.
-Native writable Open uses the same backed-up upgrade on the project service.
-Calling `project migrate` on schema 55 performs read-only validation and reports
+Calling `project migrate` on schema 56 performs read-only validation and reports
 equal source/destination schemas with `backup: null`, including alongside a
-native writer. An open native endpoint does not migrate an older package.
+native writer. Calling it on an older package returns `SchemaUnsupported`
+before creating a backup or obtaining a writer. An open native endpoint only
+validates its already admitted current package.
 
 ## Current recovery remains required
 

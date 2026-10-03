@@ -591,6 +591,7 @@ pub(super) struct Imported {
     gap_overrides: BTreeMap<NodeId, PlayOverrides>,
     lineage: BTreeMap<NodeId, AudioLineageId>,
     bindings: AudioBindingState,
+    beat_sounds: BTreeMap<NodeId, BTreeMap<SoundId, BeatSound>>,
 }
 impl Imported {
     pub(super) fn install(self, document: &mut ProjectDocument) -> Result<(), EditError> {
@@ -602,6 +603,7 @@ impl Imported {
         bindings.to_json()?;
         document.audio_bindings = bindings;
         document.nodes.extend(self.nodes);
+        document.beat_sounds.extend(self.beat_sounds);
         document.assets.extend(self.assets);
         document.marks.extend(self.marks);
         document.overrides.extend(self.overrides);
@@ -618,7 +620,7 @@ pub(super) fn prepare(
 ) -> Result<Imported, EditError> {
     let inventory = Inventory::new(slice)?;
     let ranges = inventory.compact_ranges()?;
-    let nodes: BTreeMap<_, _> = slice
+    let node_ids: BTreeMap<_, _> = slice
         .nodes
         .keys()
         .cloned()
@@ -676,7 +678,7 @@ pub(super) fn prepare(
     let rename = Renamer {
         inventory,
         ranges,
-        nodes,
+        nodes: node_ids.clone(),
         aliases,
         lineages,
         timings,
@@ -767,6 +769,17 @@ pub(super) fn prepare(
         .iter()
         .map(|(id, layout)| Ok((rename.timings[id].clone(), rename.layout(id, layout)?)))
         .collect::<Result<_, EditError>>()?;
+    let beat_sounds = slice
+        .beat_sounds
+        .iter()
+        .map(|(owner, events)| {
+            let new_owner = node_ids
+                .get(owner)
+                .cloned()
+                .ok_or_else(|| invalid("beat sound owner is outside the captured slice"))?;
+            Ok((new_owner, events.clone()))
+        })
+        .collect::<Result<_, EditError>>()?;
     Ok(Imported {
         nodes,
         assets: slice.assets.clone(),
@@ -779,5 +792,6 @@ pub(super) fn prepare(
             bindings: rename.bindings(&slice.audio_bindings.bindings)?,
             gap_bindings: rename.bindings(&slice.audio_bindings.gap_bindings)?,
         },
+        beat_sounds,
     })
 }

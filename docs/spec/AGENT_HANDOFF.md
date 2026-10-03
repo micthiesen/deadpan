@@ -2,6 +2,33 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Saved beat sounds, 2026-10-03
+
+Core 44/database 56 adds `beat_sounds: owner -> local SoundId -> BeatSound`,
+separate from routed root sounds. Set/Delete commands share revision checks,
+atomic history and the combined 64-event limit. Whole-child capture retains
+qualified media and remaps owner IDs on import. The store recaptures historical
+revisions and checks changed owner/ID pairs against retained source receipts.
+Prior unused packages refuse before writes.
+
+Saved recipes now use bounded occurrence preparation in the canonical bus.
+Apply current Hold policy and complete-island edges after each independent
+Preserve chain, then event and ancestor gain. Mix all contributions in f64 and
+limit the common result. Current nominal owner clocks do not retain historical
+phase across later temporal changes. Empty occurrences still admit their source.
+
+Temporal commands are deliberately guarded while beat attachments exist.
+Whole-owner capture can paste into a document without existing attachments;
+partial captures, temporal edit transforms, independent retained clocks,
+allowances and native placement remain open. Keep these guards until actual
+clock transforms and PCM evidence support lifting each one. Do not enable
+`ib`/`ab` from this persistence increment alone.
+See [owned sounds](../OWNED_SOUND_VOICES.md) for the exact contract and the
+[qualification record](../qualification/saved-beat-sounds-2026-10-03.md) for
+checks and limits. Independent review is complete. The full workspace run
+recorded 3,546 passes and four outdated format assertions; all four affected
+targets pass after test-only corrections. Final formatting and strict lint pass.
+
 ## Bounded sound occurrence windows, 2026-10-03
 
 `RenderPlan::audio_owner_occurrences` traverses current structure independently

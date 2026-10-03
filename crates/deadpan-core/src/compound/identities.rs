@@ -165,6 +165,8 @@ fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mu
         Command::Compound { .. }
         | Command::SlipSource { .. }
         | Command::SetSound { .. }
+        | Command::SetBeatSound { .. }
+        | Command::DeleteBeatSound { .. }
         | Command::ReplaceSound { .. }
         | Command::DeleteSound { .. }
         | Command::SetSoundAllowance { .. }

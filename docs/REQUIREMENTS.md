@@ -9,12 +9,19 @@ current silent Holds gate the final root samples. Stable Repeat paths select
 actual plays and overrides without expanding unrelated plays. A bounded window
 query now finds all relevant current occurrences, including processed output
 retained by an outer crop, and the PCM adapter sums their independent histories
-under shared limits. This advances DP-04 and DP-09 groundwork. Persisted beat
-ownership, edit/copy transforms, authored bus integration and native placement
-remain required before `ib`/`ab` can include attached sounds. The
+under shared limits. Saved owner/local-ID recipes now use typed Set/Delete,
+source admission, reversible history and whole-owner copies. The authored bus
+applies per-occurrence processing, edges and gain before one common limiter.
+This advances DP-04 and DP-09 groundwork. Independent retained clocks,
+temporal edit/partial-copy transforms, allowances and native placement remain
+required before `ib`/`ab` can include attached sounds. The
 [single-occurrence record](qualification/owned-sound-voices-2026-10-03.md) and
 [batch record](qualification/occurrence-batches-2026-10-03.md) retain review,
 source inventories, checks and limits.
+The [saved-sound record](qualification/saved-beat-sounds-2026-10-03.md)
+tracks the persistence and authored-bus increment. The full workspace run
+recorded 3,546 passes and four outdated format assertions. All four affected
+targets pass after test-only corrections; final formatting and strict lint pass.
 No requirement or gate is complete.
 
 [Group objects](EDITED_SLICES.md#group-objects) add native `ig`/`ag` to
@@ -50,9 +57,9 @@ comparisons and native register/macro/Undo verification. The full workspace run
 had five new assertion failures; all three affected targets pass in full after
 the documented test corrections. The native QA app exited cleanly.
 
-[Development formats](DEVELOPMENT_FORMATS.md) now retains current schema 55
-and the additive schema-52 upgrade, refusing retired development packages before
-writes. Current recovery and embedded audio-context codecs remain. Historical
+[Development formats](DEVELOPMENT_FORMATS.md) now uses database 56/core 44,
+refusing earlier development packages before writes. Current recovery and
+embedded audio-context codecs remain. Historical
 evidence below describes its recorded revision, not current format admission.
 
 [Scoped editing](SCOPED_EDITING.md) adds native navigation inside Repeat/Retime

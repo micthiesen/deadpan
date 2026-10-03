@@ -1,4 +1,4 @@
-//! Current-format durability and supported additive migration checks.
+//! Current-format durability and obsolete-format refusal checks.
 //! Obsolete development formats are refused without opening a writer.
 use deadpan_core::{NodeId, ProjectDocument, RevisionId};
 use deadpan_store::{AccessMode, DATABASE_SCHEMA_VERSION, ProjectStore, StoreError};
@@ -95,7 +95,12 @@ fn contents(connection: &Connection) -> Result<String> {
 /// independently of obsolete history parsers. Qualified fixtures retain their
 /// measured receipt and original bytes; no qualification is invented here.
 fn current_fixture(root: &Path, json: &str, media_sql: Option<&str>) -> Result<PathBuf> {
-    let document = ProjectDocument::from_json(json)?;
+    // These frozen fixtures predate beat-owned sounds. Adapt only this private
+    // test input; production readers reject the obsolete document schema.
+    let mut wire: serde_json::Value = serde_json::from_str(json)?;
+    assert_eq!(wire["schema_version"], 43);
+    wire["schema_version"] = deadpan_core::DOCUMENT_SCHEMA_VERSION.into();
+    let document = ProjectDocument::from_json(&wire.to_string())?;
     let package = root.join("current.deadpan");
     if let Some(media_sql) = media_sql {
         let empty = ProjectDocument::new(

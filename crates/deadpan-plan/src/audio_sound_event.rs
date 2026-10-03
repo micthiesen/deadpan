@@ -265,6 +265,80 @@ impl<'plan> AudioRootSound<'plan> {
         samples: Range<AudioSample>,
         limits: AudioQueryLimits,
     ) -> Result<AudioSoundGateQuery, PlanError> {
+        if let Some(projection) = self.projection {
+            limits.validate()?;
+            let root_end = self.plan.audio_duration()?;
+            if samples.start.0 < 0 || samples.end < samples.start || samples.end > root_end {
+                return Err(PlanError::AudioRangeOutOfRange);
+            }
+            if samples.is_empty() {
+                return Ok(AudioSoundGateQuery {
+                    spans: Vec::new(),
+                    work: 0,
+                });
+            }
+            return self.routed_gate_fades(samples, limits, projection);
+        }
+        CurrentEnvelope {
+            plan: self.plan,
+            audible: self.audible.clone(),
+            selection: self.selection.clone(),
+            grid: self.grid,
+            start_edge: self.start_edge,
+            end_edge: self.end_edge,
+        }
+        .query(samples, limits, |span, work, maximum| {
+            self.allows_hold(span, work, maximum)
+        })
+    }
+}
+
+/// Shared current-clock envelope for an independently prepared occurrence.
+/// It has no persisted Hold allowance. Original source cuts do not create edges.
+pub(crate) fn occurrence_gate_fades(
+    plan: &RenderPlan,
+    selection: Range<ExactRatio>,
+    start_edge: AudioEdgePolicy,
+    end_edge: AudioEdgePolicy,
+    samples: Range<AudioSample>,
+    limits: AudioQueryLimits,
+) -> Result<AudioSoundGateQuery, PlanError> {
+    let rate = plan.metadata().presentation_basis.frame_rate;
+    let grid = AudioSampleGrid::<AudioSample>::new(
+        ExactRatio::ZERO,
+        ExactRatio::new(
+            i128::from(rate.numerator()),
+            i128::from(MIX_SAMPLE_RATE) * i128::from(rate.denominator()),
+        )?,
+        AudioBoundaryRule::RoundEven,
+    )?;
+    CurrentEnvelope {
+        plan,
+        audible: grid.boundary(selection.start)?..grid.boundary(selection.end)?,
+        selection,
+        grid,
+        start_edge,
+        end_edge,
+    }
+    .query(samples, limits, |_, _, _| Ok(false))
+}
+
+struct CurrentEnvelope<'plan> {
+    plan: &'plan RenderPlan,
+    audible: Range<AudioSample>,
+    selection: Range<ExactRatio>,
+    grid: AudioSampleGrid<AudioSample>,
+    start_edge: AudioEdgePolicy,
+    end_edge: AudioEdgePolicy,
+}
+
+impl CurrentEnvelope<'_> {
+    fn query(
+        &self,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+        mut allows_hold: impl FnMut(&AudioSpan, &mut usize, usize) -> Result<bool, PlanError>,
+    ) -> Result<AudioSoundGateQuery, PlanError> {
         limits.validate()?;
         let root_end = self.plan.audio_duration()?;
         if samples.start.0 < 0 || samples.end < samples.start || samples.end > root_end {
@@ -276,10 +350,10 @@ impl<'plan> AudioRootSound<'plan> {
                 work: 0,
             });
         }
-        if let Some(projection) = self.projection {
-            return self.routed_gate_fades(samples, limits, projection);
-        }
-        if self.audible.start >= samples.end || self.audible.end <= samples.start {
+        if self.audible.start >= self.audible.end
+            || self.audible.start >= samples.end
+            || self.audible.end <= samples.start
+        {
             return Ok(AudioSoundGateQuery {
                 spans: vec![silent(samples)],
                 work: 1,
@@ -336,7 +410,7 @@ impl<'plan> AudioRootSound<'plan> {
             ) {
                 continue;
             }
-            if self.allows_hold(&span, &mut work, limits.maximum_work)? {
+            if allows_hold(&span, &mut work, limits.maximum_work)? {
                 continue;
             }
             // Retained envelope provenance applies only at the same exact

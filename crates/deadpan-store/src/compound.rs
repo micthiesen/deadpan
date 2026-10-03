@@ -609,12 +609,24 @@ pub(crate) fn validate_ordinary_history(
     if extras {
         return Err(invalid("ordinary edit owns compound step reservations"));
     }
-    if let Some(slice) = slice(&request.command) {
+    let captured = if let Some(slice) = slice(&request.command) {
         let captured = read_capture_before(connection, slice.revision_id(), Some(admitted))?;
         slice.validate_capture(&captured)?;
         crate::ensure_source_admission(Some(current), next, None, Some(&captured))?;
         crate::ensure_generated_admission_with(Some(current), next, None, Some(&captured))?;
-    }
+        Some(captured)
+    } else {
+        None
+    };
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    crate::source_registration::validate_sound_sources(
+        connection,
+        current,
+        next,
+        captured.as_ref(),
+    )?;
+    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+    let _ = captured;
     Ok(())
 }
 

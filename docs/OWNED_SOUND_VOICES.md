@@ -1,10 +1,38 @@
 # Sound voices in structural occurrences
 
-Beat-owned sound needs the same structural time maps as its host, with an
-independent source recipe and processing history. This work adds the borrowed
-preparation boundary needed for that behavior. Persisted sounds remain limited
-to the root bus until their ownership, editing and copy lifecycle are implemented.
-It does not enable `ib`/`ab` or add a native placement control.
+Beat-owned sounds have independent source recipes and processing histories.
+The saved command path now connects those recipes to bounded occurrence
+preparation and the canonical authored bus. Temporal editing still needs
+independent retained clocks. This does not enable `ib`/`ab` or add a native
+placement control.
+
+## Saved attachment contract
+
+`ProjectDocument::beat_sounds` maps an owner NodeId to local SoundIds and
+`BeatSound` recipes. The pair identifies an attachment. Root-bus `SoundEvent`s
+remain separate, even when an attachment names the root as its owner.
+`SetBeatSound` explicitly authors or replaces a recipe; `DeleteBeatSound`
+removes it. Both use normal revision checks and reversible transactions.
+Root and beat maps share the 64-event limit. Empty owner maps are invalid.
+
+Recipes require a qualified source, an exact natural-rate mapping and a
+selected interval that fits the owner's output clock. Store admission rechecks
+changed owner/ID pairs against the selected or validated captured revision,
+the source receipt and its retained original. Copies rename owner IDs while
+retaining local SoundIds. Whole-child capture can carry those recipes into a
+destination with no existing beat attachments. Their placement uses the new
+current owner clock; this does not claim retained historical sample phase.
+
+Timing changes in a document containing beat sounds fail explicitly, including
+Split, Trim, Move, duration/Repeat/Retime changes, ripple deletion and paste.
+Identity-preserving metadata edits and sound Set/Delete remain available.
+Deleting an attachment before pasting a historical copy is an explicit change
+of authored intent. Existing root-only sound editing keeps its qualified routes.
+Partial-copy timing qualification and `ib`/`ab` await the full attachment
+transform lifecycle.
+
+Database 56 stores core schema 44. Earlier unused development packages refuse
+before writes; see [development formats](DEVELOPMENT_FORMATS.md).
 
 ## Ownership and clocks
 
@@ -50,8 +78,8 @@ picture/audio absence does not suppress an independent sound.
 and projected-stage readers. It retains their cancellation, deadline, work,
 dependency and PCM residency limits. A masked read still admits the sound's
 source. A foreign plan or invalid range refuses before media access. This is
-raw time-mapped preparation; event gain, creative edges, scoped allowances and
-mixing into the authored bus remain separate work.
+raw time-mapped preparation. The saved bus path below adds gain and edges;
+scoped beat-sound allowances and tails remain unimplemented.
 
 ## Bounded occurrence windows
 
@@ -81,21 +109,32 @@ This remains raw preparation, without event gain, creative edges, allowances
 or authored bus placement.
 See the [batch qualification record](qualification/occurrence-batches-2026-10-03.md).
 
-## Remaining authored integration
+## Authored bus and remaining work
+
+The canonical authored bus prepares every saved event's bounded occurrences
+before media work. Each retains its full independent Preserve history. Current
+Hold gates and whole-island edges apply after processing, followed by the event
+gain and owner-to-root treatments evaluated in their declared current clocks.
+Exactly coincident ancestor Hard boundaries override automatic edges. Query
+cuts do not create fades. Original audio, root sounds and beat occurrences sum
+in f64 before a checked f32 conversion and the existing common limiter.
+Even an event with no audible occurrence must admit its source; cached limited
+PCM cannot hide a revoked dependency.
 
 The final product still requires all of the following:
 
-- Persist beat-owned recipes and their independent retained clocks.
+- Persist independent retained sound clocks across temporal edits.
 - Preserve or transform sound intervals through Split, Trim, Move, Group,
   Repeat, Retime, occurrence isolation and deletion.
-- Copy owned sounds with fresh identities and retained media/processing
-  provenance; distinguish `ib` from `ab` without changing picture bounds.
-- Connect bounded occurrence preparation to persisted events, apply owned
-  treatments and allowances, and mix once before the shared limiter.
+- Extend whole-owner copying to partial captures and timing-preserving edits;
+  distinguish `ib` from `ab` without changing picture bounds.
+- Add scoped beat-sound allowances and permitted tails.
 - Expose captured native placement/editing through the common command path,
   then verify preview/export equivalence and audible behavior.
 
 Root sound editing and its guards remain described in [sound events](SOUND_EVENTS.md).
 The [qualification record](qualification/owned-sound-voices-2026-10-03.md)
-retains the measured checks and limits. No full-product requirement or release
+retains the initial preparation checks. The
+[saved-sound record](qualification/saved-beat-sounds-2026-10-03.md) covers
+persisted recipes and the authored bus. No full-product requirement or release
 gate is complete.

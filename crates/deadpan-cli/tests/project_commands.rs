@@ -47,16 +47,14 @@ fn success(arguments: &[&str]) -> Result<Value> {
 }
 
 #[test]
-fn doctor_reports_hold_audio_document_and_migration_schemas() -> Result {
+fn doctor_reports_sound_document_and_database_schemas() -> Result {
     let report = success(&["doctor"])?;
-    assert_eq!(report["document_schema"], 43);
-    assert_eq!(report["database_schema"], 55);
+    assert_eq!(report["document_schema"], 44);
+    assert_eq!(report["database_schema"], 56);
     let partial = report["partial"].as_array().unwrap();
     for capability in [
-        "schema-52-additive-migration",
-        "schema-1-through-51-development-format-refusal",
-        "schema-53-development-format-refusal",
-        "schema-54-development-format-refusal",
+        "schema-1-through-55-development-format-refusal",
+        "saved-beat-sound-commands",
         "persistent-copy-registers",
         "resolved-compound-transactions",
         "native-semantic-macros",
@@ -246,7 +244,7 @@ fn headless_split_preview_commit_and_history_share_one_exact_command() -> Result
     Ok(())
 }
 
-fn schema52_repeat_fixture(root: &Path) -> Result<PathBuf> {
+fn current_repeat_fixture(root: &Path) -> Result<PathBuf> {
     let package = create(root)?;
     let mut store = ProjectStore::open(&package, AccessMode::ReadWrite)?;
     let initial = store.snapshot()?;
@@ -288,29 +286,25 @@ fn schema52_repeat_fixture(root: &Path) -> Result<PathBuf> {
         },
     })?;
     drop(store);
-    let connection = rusqlite::Connection::open(package.join("project.sqlite"))?;
-    connection.execute_batch("DROP TABLE registers; DROP TABLE register_contents; DROP TABLE register_state; DROP TABLE transaction_steps; PRAGMA user_version=52; PRAGMA journal_mode=DELETE;")?;
     Ok(package)
 }
 
 #[test]
 fn headless_migration_and_plan_inspection_are_explicit_and_read_only() -> Result {
     let scratch = tempfile::tempdir()?;
-    let package = schema52_repeat_fixture(scratch.path())?;
+    let package = current_repeat_fixture(scratch.path())?;
     let path = package.to_str().unwrap();
-    let old = cli(&["project", "validate", path])?;
-    assert!(!old.status.success());
-    assert_eq!(
-        serde_json::from_slice::<Value>(&old.stderr)?["error"]["code"],
-        "MigrationRequired"
-    );
+    success(&["project", "validate", path])?;
     let outcome = success(&["project", "migrate", path])?;
-    assert_eq!(outcome["migration"]["from_schema"], 52);
+    assert_eq!(
+        outcome["migration"]["from_schema"],
+        deadpan_store::DATABASE_SCHEMA_VERSION
+    );
     assert_eq!(
         outcome["migration"]["to_schema"],
         deadpan_store::DATABASE_SCHEMA_VERSION
     );
-    assert!(Path::new(outcome["migration"]["backup"].as_str().unwrap()).is_file());
+    assert!(outcome["migration"]["backup"].is_null());
     let writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
     let before = writer.snapshot()?;
     let plan = success(&["inspect-plan", path])?;
@@ -728,9 +722,9 @@ fn current_generation_requires_host_reconciliation_but_allows_cli_preview() -> R
 }
 
 #[test]
-fn failed_migration_returns_retained_backup_and_preserves_original() -> Result {
+fn current_migration_rejects_bad_history_without_writes_or_backup() -> Result {
     let scratch = tempfile::tempdir()?;
-    let package = schema52_repeat_fixture(scratch.path())?;
+    let package = current_repeat_fixture(scratch.path())?;
     let database = package.join("project.sqlite");
     let connection = rusqlite::Connection::open(&database)?;
     connection.execute_batch(
@@ -742,15 +736,16 @@ fn failed_migration_returns_retained_backup_and_preserves_original() -> Result {
     assert!(!output.status.success());
     assert!(output.stdout.is_empty());
     let report: Value = serde_json::from_slice(&output.stderr)?;
-    assert_eq!(report["error"]["code"], "MigrationFailed");
-    let backup = Path::new(report["error"]["recovery_backup"].as_str().unwrap());
-    assert!(backup.is_file());
-    assert_eq!(fs::read(database)?, before);
-    assert_eq!(
-        rusqlite::Connection::open(backup)?
-            .pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?,
-        52
+    assert_eq!(report["error"]["code"], "ProjectFailure");
+    assert!(
+        report["error"]["message"]
+            .as_str()
+            .unwrap()
+            .contains("stored command, patches, and revision disagree")
     );
+    assert!(report["error"]["recovery_backup"].is_null());
+    assert_eq!(fs::read(database)?, before);
+    assert_eq!(fs::read_dir(package.join("Snapshots"))?.count(), 0);
     Ok(())
 }
 
@@ -1293,7 +1288,7 @@ fn nested_occurrence_command_is_atomic_and_uses_the_same_headless_plan() -> Resu
 
 #[test]
 fn obsolete_schema_cli_validation_and_migration_refuse_without_writes_or_backup() -> Result {
-    for version in [1, 38] {
+    for version in [1, 38, 52, 55] {
         let scratch = tempfile::tempdir()?;
         let package = scratch.path().join("obsolete.deadpan");
         fs::create_dir(&package)?;

@@ -151,6 +151,28 @@ pub(super) fn sound_gain(
     Ok(gain)
 }
 
+pub(super) fn beat_sound_gain(
+    owners: &[deadpan_plan::AudioOwnerClock<'_>],
+    at: AudioSample,
+    event_millidecibels: i32,
+    control: WorkControl<'_>,
+    authored: bool,
+) -> Result<GainSum, StageAudioError> {
+    let mut gain = GainSum::default();
+    gain.add(EvaluatedGain {
+        millidecibels: ExactRatio::integer(i64::from(event_millidecibels)),
+        muted: false,
+    })?;
+    if authored {
+        for owner in owners {
+            if let Some(treatment) = owner.treatments() {
+                gain.treatment(treatment, owner.sampling().local_at(at)?, control)?;
+            }
+        }
+    }
+    Ok(gain)
+}
+
 pub(super) fn write_finite_samples(
     output: &mut [[f32; 2]],
     samples: Vec<[f64; 2]>,

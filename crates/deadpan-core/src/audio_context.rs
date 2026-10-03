@@ -135,7 +135,7 @@ struct ContextWire<'a> {
 impl FrozenAudioContext {
     pub fn capture(document: &ProjectDocument) -> Result<Self, DocumentError> {
         document.validate()?;
-        if !document.sounds().is_empty() {
+        if !document.sounds().is_empty() || !document.beat_sounds().is_empty() {
             return Err(invalid(
                 "audio contexts cannot yet retain authored sound events",
             ));

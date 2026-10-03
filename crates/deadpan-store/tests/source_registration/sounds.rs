@@ -5,6 +5,8 @@ use deadpan_core::{
     SourceAudio, SourceAudioMapping, SourceSpan, SourceTimestamp, SplitIdentities,
 };
 
+#[path = "sounds/beat_sounds.rs"]
+mod beat_sounds;
 #[path = "sounds/move_range.rs"]
 mod move_range;
 

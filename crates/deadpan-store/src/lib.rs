@@ -759,7 +759,7 @@ fn validate_transition(
     ensure_generated_admission_with(Some(current), next, generated, captured)?;
     ensure_source_admission(Some(current), next, source, captured)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
-    source_registration::validate_sound_sources(connection, current, next)?;
+    source_registration::validate_sound_sources(connection, current, next, captured)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     source_registration::validate_hold_audio_source(connection, current, next, request)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]

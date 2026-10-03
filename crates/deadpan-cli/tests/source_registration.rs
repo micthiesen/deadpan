@@ -658,5 +658,7 @@ mod slip;
 #[path = "source_registration/trim.rs"]
 mod trim;
 
+#[path = "source_registration/beat_sounds.rs"]
+mod beat_sounds;
 #[path = "source_registration/combined_trim.rs"]
 mod combined_trim;

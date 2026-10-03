@@ -401,7 +401,7 @@ and workspace delivery order. Keep the first child's identity separate from the
 complete result interval. See
 [atomic moves](docs/ATOMIC_MOVES.md).
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 43 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings with exact picture selections and dormant linked audio, audio edge policies, transparent Retime partitions, owned timing bindings with exact local-origin translations, retained framing clocks and direct sound replacement maps, and binds qualified assets to immutable source receipts. Only database schema 52 retains its additive upgrade to current schema 55. Refuse schemas 1 through 51, 53 and 54 before writer acquisition, backups, recovery or document parsing. The obsolete full-document adapters are removed; retain current history validation, checkpoints, accepted-media recovery and the frozen audio-context codecs still referenced by current documents. Historical qualification reports apply to their recorded revisions. See [development formats](docs/DEVELOPMENT_FORMATS.md).
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 44 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings with exact picture selections and dormant linked audio, audio edge policies, transparent Retime partitions, owned timing bindings with exact local-origin translations, retained framing clocks, root sound routes and owner-local BeatSound maps, and binds qualified assets to immutable source receipts. Database schema 56 is current. Refuse schemas 1 through 55 before writer acquisition, backups, recovery or document parsing. Retain current history validation, checkpoints, accepted-media recovery and the frozen audio-context codecs still referenced by current documents. Historical qualification reports apply to their recorded revisions. See [development formats](docs/DEVELOPMENT_FORMATS.md).
 
 Audio placement offsets map current physical-local coordinates into retained
 historical-local coordinates. Rebase lattice, phase-term and reanchor templates
@@ -585,13 +585,13 @@ receipts are independent of authored revisions and survive compact replies,
 workspace refresh failure and final stdout failure. Terminal cancellation needs
 worker completion; a lost observer does not prove cancellation.
 
-Database schema 55 stores core schema 43 and retains operational generation requests,
+Database schema 56 stores core schema 44 and retains operational generation requests,
 plus an optional validated single-Original workflow profile. Use the dedicated
 `create_single_source` / `initialize_prepared_source` path to bind the full measured
 Original, basis and protected baseline atomically. Undo never crosses that baseline;
 deleting all current beats does not unlock a replacement video. Generic projects
-gain no invented profile. Native Open uses the supported schema-52 backed-up
-migration before replacing its current session. Obsolete formats refuse without
+gain no invented profile. Native Open validates the current package before
+replacing its current session. Obsolete formats refuse without
 writes under the current development-format policy. See
 [the single-Original contract](docs/SINGLE_ORIGINAL.md).
 
@@ -1628,6 +1628,20 @@ deadline, dependency budget and residency cap, then sum independent contribution
 without normalization. Reads with no contributing occurrences still admit the
 source. Retained graph identities do not establish a persistent PCM cache or
 authored attachment clocks.
+
+Saved `BeatSound` recipes live in a separate owner/local-SoundId map. Root and
+beat sounds share the 64-event limit; reject empty owner maps and duplicate
+addresses. Set/Delete and copied owner IDs pass through the same revision-bound
+store admission and reversible history as other edits. Slice import retains
+qualified media and renames owners without conflating local IDs. Copying current
+recipes does not establish retained phase through temporal edits. Keep the
+beat-sound timing guards until each independent clock transform is implemented.
+The authored bus prepares all bounded occurrence histories before media work,
+then applies current Hold gates, complete-island edges and event/ancestor gain.
+Include current Repeat-gap Hard choices on explicit gap branches, using exact
+boundary coincidence. Sum Original, root and beat voices in f64 before the common
+limiter. Silent/absent occurrences retain source admission on warm caches.
+Native beat placement, allowances, retained sound clocks and `ib`/`ab` remain open.
 
 Persisted root `SoundEvent` recipes use qualified natural-rate source mappings,
 exact selected intervals, independent sample offsets, owned gain and edges, and

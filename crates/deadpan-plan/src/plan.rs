@@ -121,6 +121,7 @@ pub struct RenderPlan {
     // These contracts still require explicit host admission.
     audio_assets: BTreeMap<AssetId, deadpan_core::AssetRecord>,
     sounds: BTreeMap<deadpan_core::SoundId, deadpan_core::SoundEvent>,
+    beat_sounds: BTreeMap<NodeId, BTreeMap<deadpan_core::SoundId, deadpan_core::BeatSound>>,
     sound_routes: BTreeMap<deadpan_core::SoundId, deadpan_core::RootSoundRoute>,
     sound_allowances: BTreeMap<deadpan_core::SoundId, deadpan_core::SoundHoldAllowances>,
     compiled_sounds: BTreeMap<deadpan_core::SoundId, crate::audio_sound_event::CompiledRootSound>,
@@ -483,6 +484,7 @@ impl RenderPlan {
             audio_bindings: document.audio_bindings().clone(),
             audio_assets: document.assets().clone(),
             sounds: document.sounds().clone(),
+            beat_sounds: document.beat_sounds().clone(),
             sound_routes: document.sound_routes().clone(),
             sound_allowances: document.sound_allowances().clone(),
             compiled_sounds: BTreeMap::new(),
@@ -506,6 +508,12 @@ impl RenderPlan {
 
     pub fn sounds(&self) -> &BTreeMap<deadpan_core::SoundId, deadpan_core::SoundEvent> {
         &self.sounds
+    }
+
+    pub fn beat_sounds(
+        &self,
+    ) -> &BTreeMap<NodeId, BTreeMap<deadpan_core::SoundId, deadpan_core::BeatSound>> {
+        &self.beat_sounds
     }
 
     pub fn sound_routes(&self) -> &BTreeMap<deadpan_core::SoundId, deadpan_core::RootSoundRoute> {

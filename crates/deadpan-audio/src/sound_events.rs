@@ -28,7 +28,7 @@ impl StageAudio {
         control: WorkControl<'_>,
         authored_gain: bool,
     ) -> Result<ReadBlock, StageAudioError> {
-        if self.plan.sounds().is_empty() {
+        if self.plan.sounds().is_empty() && self.plan.beat_sounds().is_empty() {
             if !authored_gain || !self.plan.has_audio_treatments() {
                 return self.read_controlled(provider, start, frames, control, true, 0);
             }
@@ -85,6 +85,7 @@ impl StageAudio {
                 fades: fades.spans,
             });
         }
+        let beat_voices = self.prepare_beat_sounds(&plan, start..AudioSample(end), control)?;
         // Reserve the retained Original, the f64 sum and the source reader's
         // two transient PCM buffers under the existing shared residency limit.
         let routed = voices
@@ -97,7 +98,14 @@ impl StageAudio {
             // All sound dependencies and static work are admitted first. The
             // Original's own preflight then sees the same cumulative budget.
             let original = self.read_controlled(provider, start, frames, control, true, 0)?;
-            self.render_root_sounds(provider, original, voices, control, authored_gain)
+            self.render_root_sounds(
+                provider,
+                original,
+                voices,
+                beat_voices,
+                control,
+                authored_gain,
+            )
         })();
         self.active_frames -= reservation;
         result
@@ -108,6 +116,7 @@ impl StageAudio {
         provider: &mut impl AudioSourceProvider,
         mut original: ReadBlock,
         voices: Vec<PreparedSoundQuery<'_>>,
+        beat_voices: Vec<super::beat_sounds::PreparedBeatSound<'_>>,
         control: WorkControl<'_>,
         authored_gain: bool,
     ) -> Result<ReadBlock, StageAudioError> {
@@ -196,6 +205,14 @@ impl StageAudio {
             original.suppressed = intersect_suppression(&original.suppressed, &block.suppressed);
             original.dependencies.extend(block.dependencies);
         }
+        self.render_beat_sounds(
+            provider,
+            &mut original,
+            &mut sum,
+            beat_voices,
+            control,
+            authored_gain,
+        )?;
         authored_gain::write_finite_samples(&mut original.samples, sum)?;
         // Exhaustion belongs to each contribution. There is no common source
         // endpoint mask after adding independent sound voices.
@@ -205,7 +222,7 @@ impl StageAudio {
     }
 }
 
-fn validate_gate_envelopes(
+pub(super) fn validate_gate_envelopes(
     spans: &[deadpan_plan::AudioSoundGateSpan],
     requested: Range<AudioSample>,
 ) -> Result<(), StageAudioError> {

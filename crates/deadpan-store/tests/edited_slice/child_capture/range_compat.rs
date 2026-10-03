@@ -75,9 +75,20 @@ fn literal_range_command_shapes_match_on_test_only_current_header_documents() ->
             range: slice.range()
         }
     );
-    assert_eq!(slice.to_json()?, text(&literal, "capture"));
+    // Current slices explicitly serialize the new empty attachment map. Keep
+    // the historical literal intact and adapt only this expected test value.
+    let mut expected_capture: Value = serde_json::from_str(text(&literal, "capture"))?;
+    assert!(expected_capture.get("beat_sounds").is_none());
+    expected_capture["beat_sounds"] = serde_json::json!({});
+    assert_eq!(
+        serde_json::from_str::<Value>(&slice.to_json()?)?,
+        expected_capture
+    );
     assert_eq!(capture(&original)?, slice);
-    assert_eq!(capture(&original)?.to_json()?, text(&literal, "capture"));
+    assert_eq!(
+        serde_json::from_str::<Value>(&capture(&original)?.to_json()?)?,
+        expected_capture
+    );
     assert!(serde_json::to_value(&slice)?.get("selection").is_none());
     let removal: CommandRequest = serde_json::from_str(text(&literal, "removal_request"))?;
     let removal_edit: EditTransaction =
@@ -114,7 +125,14 @@ fn literal_range_command_shapes_match_on_test_only_current_header_documents() ->
             _ => panic!("literal must cover each placement envelope"),
         };
         assert_eq!(embedded, &slice);
-        assert_eq!(serde_json::to_string(&command)?, text(case, "request"));
+        let mut expected_request: Value = serde_json::from_str(text(case, "request"))?;
+        assert!(
+            expected_request["command"]["slice"]
+                .get("beat_sounds")
+                .is_none()
+        );
+        expected_request["command"]["slice"]["beat_sounds"] = serde_json::json!({});
+        assert_eq!(serde_json::to_value(&command)?, expected_request);
         let actual = apply(&before, &command)?;
         assert_eq!(
             actual, expected,

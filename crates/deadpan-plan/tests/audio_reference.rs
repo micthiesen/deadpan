@@ -1912,6 +1912,7 @@ fn source_prefix_behind_partition_keeps_unbound_and_retained_source_phase() {
                 assets: BTreeMap::new(),
                 marks: BTreeMap::new(),
                 sounds: BTreeMap::new(),
+                beat_sounds: BTreeMap::new(),
                 sound_routes: BTreeMap::new(),
                 sound_allowances: BTreeMap::new(),
                 overrides: BTreeMap::new(),
