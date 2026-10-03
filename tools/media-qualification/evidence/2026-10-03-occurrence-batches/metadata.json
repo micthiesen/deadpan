@@ -1,0 +1,289 @@
+{
+  "base_commit": "f9682f73cadfbd78dd349692292393431ae7b9df",
+  "final_source_manifest_sha256": "a1bb11067b7195d4546ecea9c4c567e53f681f34862141e66e62a65cb40935d7",
+  "checks": {
+    "clippy-corrected": {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-10-03T20:37:47.531965+00:00",
+      "base_commit": "f9682f73cadfbd78dd349692292393431ae7b9df",
+      "diff_sha256": "fdc377fc85a7c086305c71eb7045d00d1e03810526a560320e3fdc126b0042f1",
+      "source_manifest_sha256": "a1bb11067b7195d4546ecea9c4c567e53f681f34862141e66e62a65cb40935d7",
+      "pid": 58961,
+      "exit_code": 0,
+      "seconds": 880.348785916809,
+      "source_manifest_after_sha256": "a1bb11067b7195d4546ecea9c4c567e53f681f34862141e66e62a65cb40935d7",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_counts": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "result_targets": 0
+    },
+    "clippy-final": {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-10-03T20:33:54.935514+00:00",
+      "base_commit": "f9682f73cadfbd78dd349692292393431ae7b9df",
+      "diff_sha256": "fdc377fc85a7c086305c71eb7045d00d1e03810526a560320e3fdc126b0042f1",
+      "source_manifest_sha256": "38cc200ca9cfab222c69487228c58b4f9bc8aed90c1600123267dea0ffa8fe24",
+      "pid": 58714,
+      "exit_code": 101,
+      "seconds": 223.18293400015682,
+      "source_manifest_after_sha256": "38cc200ca9cfab222c69487228c58b4f9bc8aed90c1600123267dea0ffa8fe24",
+      "source_unchanged": true,
+      "gate_exit_code": 101,
+      "test_counts": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "result_targets": 0
+    },
+    "fmt-corrected": {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "started": "2026-10-03T20:37:45.151562+00:00",
+      "base_commit": "f9682f73cadfbd78dd349692292393431ae7b9df",
+      "diff_sha256": "fdc377fc85a7c086305c71eb7045d00d1e03810526a560320e3fdc126b0042f1",
+      "source_manifest_sha256": "a1bb11067b7195d4546ecea9c4c567e53f681f34862141e66e62a65cb40935d7",
+      "pid": 58936,
+      "exit_code": 0,
+      "seconds": 1.9799977908842266,
+      "source_manifest_after_sha256": "a1bb11067b7195d4546ecea9c4c567e53f681f34862141e66e62a65cb40935d7",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_counts": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "result_targets": 0
+    },
+    "fmt-final": {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "started": "2026-10-03T20:33:52.277212+00:00",
+      "base_commit": "f9682f73cadfbd78dd349692292393431ae7b9df",
+      "diff_sha256": "fdc377fc85a7c086305c71eb7045d00d1e03810526a560320e3fdc126b0042f1",
+      "source_manifest_sha256": "38cc200ca9cfab222c69487228c58b4f9bc8aed90c1600123267dea0ffa8fe24",
+      "pid": 58677,
+      "exit_code": 0,
+      "seconds": 2.252634458243847,
+      "source_manifest_after_sha256": "38cc200ca9cfab222c69487228c58b4f9bc8aed90c1600123267dea0ffa8fe24",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_counts": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "result_targets": 0
+    },
+    "occurrence-final": {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "occurrence",
+        "--no-fail-fast"
+      ],
+      "started": "2026-10-03T20:25:26.037471+00:00",
+      "base_commit": "f9682f73cadfbd78dd349692292393431ae7b9df",
+      "diff_sha256": "fdc377fc85a7c086305c71eb7045d00d1e03810526a560320e3fdc126b0042f1",
+      "source_manifest_sha256": "38cc200ca9cfab222c69487228c58b4f9bc8aed90c1600123267dea0ffa8fe24",
+      "pid": 57677,
+      "exit_code": 0,
+      "seconds": 498.2303946656175,
+      "source_manifest_after_sha256": "38cc200ca9cfab222c69487228c58b4f9bc8aed90c1600123267dea0ffa8fe24",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_counts": {
+        "passed": 96,
+        "failed": 0,
+        "ignored": 0
+      },
+      "result_targets": 175
+    },
+    "occurrence-first": {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "occurrence",
+        "--no-fail-fast"
+      ],
+      "started": "2026-10-03T19:58:53.222832+00:00",
+      "base_commit": "f9682f73cadfbd78dd349692292393431ae7b9df",
+      "diff_sha256": "19a59f36a241b8a2fd0f2bcf77f882eb8ba33feaa0ba086a3d85302a4bf5672c",
+      "source_manifest_sha256": "004c5c44a89eb3d3e4db478a05592ee3dacf5a911a4b58485a044cdf3881ff00",
+      "pid": 54275,
+      "exit_code": 101,
+      "seconds": 20.570804875344038,
+      "source_manifest_after_sha256": "004c5c44a89eb3d3e4db478a05592ee3dacf5a911a4b58485a044cdf3881ff00",
+      "source_unchanged": true,
+      "gate_exit_code": 101,
+      "test_counts": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "result_targets": 0
+    },
+    "occurrence-fourth": {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "occurrence",
+        "--no-fail-fast"
+      ],
+      "started": "2026-10-03T20:08:20.940956+00:00",
+      "base_commit": "f9682f73cadfbd78dd349692292393431ae7b9df",
+      "diff_sha256": "fdc377fc85a7c086305c71eb7045d00d1e03810526a560320e3fdc126b0042f1",
+      "source_manifest_sha256": "e80e03fb08d25f3f3df2c35534efc335ca7df2c14e066b07ddce4349ebdd0da5",
+      "pid": 55679,
+      "exit_code": 101,
+      "seconds": 935.1353354998864,
+      "source_manifest_after_sha256": "e80e03fb08d25f3f3df2c35534efc335ca7df2c14e066b07ddce4349ebdd0da5",
+      "source_unchanged": true,
+      "gate_exit_code": 101,
+      "test_counts": {
+        "passed": 93,
+        "failed": 2,
+        "ignored": 0
+      },
+      "result_targets": 175
+    },
+    "occurrence-second": {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "occurrence",
+        "--no-fail-fast"
+      ],
+      "started": "2026-10-03T20:01:15.415352+00:00",
+      "base_commit": "f9682f73cadfbd78dd349692292393431ae7b9df",
+      "diff_sha256": "19a59f36a241b8a2fd0f2bcf77f882eb8ba33feaa0ba086a3d85302a4bf5672c",
+      "source_manifest_sha256": "12fb98d7705e3a08d1b05c19325026995c708b1fcb29ca41d2e1c2fb8f59e29c",
+      "pid": 54747,
+      "exit_code": 101,
+      "seconds": 19.98587570944801,
+      "source_manifest_after_sha256": "12fb98d7705e3a08d1b05c19325026995c708b1fcb29ca41d2e1c2fb8f59e29c",
+      "source_unchanged": true,
+      "gate_exit_code": 101,
+      "test_counts": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "result_targets": 0
+    },
+    "occurrence-third": {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "occurrence",
+        "--no-fail-fast"
+      ],
+      "started": "2026-10-03T20:03:33.024876+00:00",
+      "base_commit": "f9682f73cadfbd78dd349692292393431ae7b9df",
+      "diff_sha256": "6341c1f330f65d9c8ad58c5e5d6a433bc835a451699626f1ccb93f8a6cd0fa32",
+      "source_manifest_sha256": "db1d1d597c3aa20e9775bab7df24d49ba081cfb4adcc38b27c7dbf1c90b69522",
+      "pid": 55100,
+      "exit_code": 101,
+      "seconds": 227.1920420001261,
+      "source_manifest_after_sha256": "db1d1d597c3aa20e9775bab7df24d49ba081cfb4adcc38b27c7dbf1c90b69522",
+      "source_unchanged": true,
+      "gate_exit_code": 101,
+      "test_counts": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "result_targets": 0
+    },
+    "workspace-final": {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "--no-fail-fast"
+      ],
+      "started": "2026-10-03T20:52:30.831105+00:00",
+      "base_commit": "f9682f73cadfbd78dd349692292393431ae7b9df",
+      "diff_sha256": "1db6c62f52162ec9db3a2e2945e848e2e7240f7b98f788585619c4cc9789eed5",
+      "source_manifest_sha256": "a1bb11067b7195d4546ecea9c4c567e53f681f34862141e66e62a65cb40935d7",
+      "pid": 60439,
+      "exit_code": 0,
+      "seconds": 1453.3223179159686,
+      "source_manifest_after_sha256": "a1bb11067b7195d4546ecea9c4c567e53f681f34862141e66e62a65cb40935d7",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_counts": {
+        "passed": 3540,
+        "failed": 0,
+        "ignored": 0
+      },
+      "result_targets": 192
+    }
+  },
+  "test_count_note": "Filtered and full runs overlap; do not add their counts.",
+  "machine": [
+    "Apple M5 Max",
+    "137438953472"
+  ],
+  "system": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+  "ffmpeg_prefix": "/tmp/deadpan-ui-ffmpeg/prefix",
+  "review": [
+    "Independent adapter and traversal review found premature source observation before a projected reservation and rounded-empty Preserve input expansion.",
+    "Both findings were corrected and covered by focused regressions; final independent review found no remaining actionable defects.",
+    "Root integration also corrected hidden-owner processed output, duplicate traversal, compact-run skipping, rounding filters, compiler errors and invalid fixture wire keys.",
+    "PCM references reuse CanonicalStretch; they establish adapter equivalence, not independent DSP algorithm qualification."
+  ],
+  "limits": [
+    "Borrowed current-plan lookup/preparation only; persisted beat ownership, independent authored clocks, edit/copy lifecycle and native placement remain open.",
+    "Event treatments, allowances and authored bus integration remain open.",
+    "Graphs retain identities; projected PCM caching remains request-local. No acoustic or performance qualification.",
+    "No UI changes: optional app-feature tests and native GUI replay were not repeated.",
+    "All full-product requirements and release gates remain open or partial."
+  ]
+}

@@ -2,6 +2,33 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Bounded sound occurrence windows, 2026-10-03
+
+`RenderPlan::audio_owner_occurrences` traverses current structure independently
+of Original bindings. Keep exact geometry and processing influence separate.
+The outermost enclosing nonunity Preserve may retain an occurrence's output
+even when a later crop hides its picture allocation. Use absolute RoundEven
+sample overlap for final admission. Compact Repeat runs with unrelated branches
+can be skipped using `RepeatLocation::segment_end`; do not expand them or scan
+per sample. Relevant plays under Preserve remain individually bounded.
+
+`source_voice_occurrences` validates the recipe even for empty windows and
+bounds aggregate construction work and retained runs. Its borrowed handles keep
+complete processing graphs. `StageAudio::read_source_voice_occurrences` shares
+one deadline, dependency/work budget and residency cap, preflights static
+histories before media work, and sums finite contributions in f64. Suppression
+is the intersection of per-occurrence policy. Graph identity retention is not
+a persistent processed-PCM cache.
+See the [qualification record](../qualification/occurrence-batches-2026-10-03.md)
+for checks, retained evidence and limits.
+
+Next authored work still needs independent retained sound clocks and complete
+edit/copy ownership. The existing global root bus cannot simply accept nested
+owners: root ripple capture and slice capture currently detach that whole map.
+Owner-local attachment identities can copy with an owner, while temporal edits
+inside a surviving owner need their own retained route. Keep root sound guards
+until the supported ownership and timing lifecycle is implemented.
+
 ## Occurrence sound preparation, 2026-10-03
 
 `RenderPlan::source_voice_occurrence` resolves one explicit current
@@ -17,7 +44,7 @@ resampling and projected-stage readers. Final current Hold policy uses absolute
 RoundEven root samples; it never mutes intermediate raw input. Dependencies
 remain mandatory for fully silent reads. This is a borrowed preparation API,
 not persisted beat sound placement. Implement independent authored clocks,
-edit/copy lifecycles, treatments, allowances and bounded occurrence scheduling
+edit/copy lifecycles, treatments, allowances and authored occurrence scheduling
 before lifting root-only sound guards or enabling `ib`/`ab`.
 See [owned sound voices](../OWNED_SOUND_VOICES.md) and the
 [qualification record](../qualification/owned-sound-voices-2026-10-03.md).

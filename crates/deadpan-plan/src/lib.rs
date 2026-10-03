@@ -54,12 +54,14 @@ pub use plan::{
     AudioOwnerClock, AudioOwnerClockOrigin, AudioOwnerKind, AudioOwnerQuery, AudioOwnerSpan,
     AudioOwnerSupport,
 };
+pub use plan::{AudioOwnerOccurrence, AudioOwnerOccurrenceMap, AudioOwnerOccurrences};
 pub use plan::{
     AudioProcessingQuery, AudioProcessingSpan, AudioSignal, AudioSignalContent, AudioSignalQuery,
     AudioSignalSpan, AudioStage, AudioStageDescriptor, SignalSample, SignalTransform,
 };
 pub use plan::{
-    AudioSourceOccurrence, AudioSourceVoice, AudioSourceVoiceIdentity, AudioSourceVoiceRecipe,
+    AudioSourceOccurrence, AudioSourceOccurrences, AudioSourceVoice, AudioSourceVoiceIdentity,
+    AudioSourceVoiceRecipe,
 };
 
 use deadpan_core::{

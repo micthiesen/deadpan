@@ -58,25 +58,7 @@ impl StageAudio {
             work: &work,
         };
         control.admit_dependency(&voice.source().asset)?;
-        let processing = voice.processing(start..end, control.query_limits()?)?;
-        control.spend_plan_work(processing.work)?;
-        let policy = voice.policy(start..end, control.query_limits()?)?;
-        control.spend_plan_work(policy.work)?;
-        // There is no sequential Original contribution in this read. Its
-        // endpoint envelopes and exhaustion masks cannot gate a separate voice.
-        let queries = RootReadQueries {
-            flattened: AudioQuery {
-                project_id: self.plan.metadata().project_id.clone(),
-                revision_id: self.plan.metadata().revision_id.clone(),
-                samples: start..end,
-                spans: Vec::new(),
-                lookup: Default::default(),
-                work: 0,
-            },
-            processing,
-            policy,
-            fades: None,
-        };
+        let queries = self.source_occurrence_queries(voice, start..end, control)?;
         let mut block = self.read_queries(provider, start, frames, control, 0, queries)?;
         // A fully masked query still depends on this recipe. Observe its live
         // source even when the processing query contains only allocated silence.
@@ -96,6 +78,33 @@ impl StageAudio {
             start,
             samples: block.samples,
             suppressed: block.suppressed,
+        })
+    }
+
+    pub(super) fn source_occurrence_queries<'plan>(
+        &self,
+        voice: &AudioSourceOccurrence<'plan>,
+        samples: Range<AudioSample>,
+        control: WorkControl<'_>,
+    ) -> Result<RootReadQueries<'plan>, StageAudioError> {
+        let processing = voice.processing(samples.clone(), control.query_limits()?)?;
+        control.spend_plan_work(processing.work)?;
+        let policy = voice.policy(samples.clone(), control.query_limits()?)?;
+        control.spend_plan_work(policy.work)?;
+        // There is no sequential Original contribution in this read. Its
+        // endpoint envelopes and exhaustion masks cannot gate a separate voice.
+        Ok(RootReadQueries {
+            flattened: AudioQuery {
+                project_id: self.plan.metadata().project_id.clone(),
+                revision_id: self.plan.metadata().revision_id.clone(),
+                samples,
+                spans: Vec::new(),
+                lookup: Default::default(),
+                work: 0,
+            },
+            processing,
+            policy,
+            fades: None,
         })
     }
 }

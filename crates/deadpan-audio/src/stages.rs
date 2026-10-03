@@ -60,6 +60,10 @@ pub use projected_root::ProjectedRootBlock;
 mod voice_occurrence;
 pub use voice_occurrence::SourceOccurrenceBlock;
 
+#[path = "voice_occurrences.rs"]
+mod voice_occurrences;
+pub use voice_occurrences::SourceOccurrencesBlock;
+
 #[path = "routed.rs"]
 mod routed;
 pub use routed::{RoutedRootBlock, RoutedSignalBlock};
@@ -1325,6 +1329,41 @@ impl StageAudio {
         self.read_queries(provider, start, frames, control, depth, queries)
     }
 
+    fn preflight_root_queries(
+        &self,
+        queries: &RootReadQueries<'_>,
+        start: AudioSample,
+        frames: u32,
+        control: WorkControl<'_>,
+        depth: usize,
+    ) -> Result<(), StageAudioError> {
+        control.check()?;
+        if depth > self.limits.maximum_depth {
+            return Err(StageAudioError::Limit("nested stage depth"));
+        }
+        if let Some(fades) = &queries.fades {
+            crate::edges::validate_creative_fades(start, frames as usize, &fades.spans)?;
+        }
+        for span in &queries.flattened.spans {
+            control.preflight_content(&span.content, &self.plan)?;
+        }
+        for span in &queries.processing.spans {
+            match &span.content {
+                AudioSignalContent::Leaf(content) => {
+                    control.preflight_content(content, &self.plan)?
+                }
+                AudioSignalContent::ProjectedStage(stage) => {
+                    self.preflight_projected(stage, control, depth + 1)?;
+                }
+                AudioSignalContent::Stage(_) | AudioSignalContent::Bound(_) => {}
+            }
+        }
+        for content in &queries.policy.contents {
+            control.preflight_content(content, &self.plan)?;
+        }
+        Ok(())
+    }
+
     fn read_queries(
         &mut self,
         provider: &mut impl AudioSourceProvider,
@@ -1338,26 +1377,9 @@ impl StageAudio {
         if depth > self.limits.maximum_depth {
             return Err(StageAudioError::Limit("nested stage depth"));
         }
+        self.preflight_root_queries(&queries, start, frames, control, depth)?;
         let cancelled = control.cancelled;
         let plan = Arc::clone(&self.plan);
-        if let Some(fades) = &queries.fades {
-            crate::edges::validate_creative_fades(start, frames as usize, &fades.spans)?;
-        }
-        for span in &queries.flattened.spans {
-            control.preflight_content(&span.content, &plan)?;
-        }
-        for span in &queries.processing.spans {
-            match &span.content {
-                AudioSignalContent::Leaf(content) => control.preflight_content(content, &plan)?,
-                AudioSignalContent::ProjectedStage(stage) => {
-                    self.preflight_projected(stage, control, depth + 1)?;
-                }
-                AudioSignalContent::Stage(_) | AudioSignalContent::Bound(_) => {}
-            }
-        }
-        for content in &queries.policy.contents {
-            control.preflight_content(content, &plan)?;
-        }
         let mut samples = Vec::with_capacity(frames as usize);
         let mut dependencies = Dependencies::new();
         let mut relative_depth = 0;

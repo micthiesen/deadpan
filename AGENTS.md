@@ -1619,6 +1619,16 @@ only on the final consuming grid, and admit the source even for silent reads.
 This borrowed preparation boundary does not authorize persisted nested sounds
 or relax their structural edit guards. See [owned sound voices](docs/OWNED_SOUND_VOICES.md).
 
+Bounded sound occurrence windows follow current structure independently of
+Original bindings. Distinguish visible geometry from Preserve output influence;
+an outer crop can hide the owner while retaining its processed sound. Skip
+irrelevant compact Repeat runs and admit final intervals on absolute RoundEven
+samples. Batch construction bounds aggregate runs and work; PCM reads share one
+deadline, dependency budget and residency cap, then sum independent contributions
+without normalization. Reads with no contributing occurrences still admit the
+source. Retained graph identities do not establish a persistent PCM cache or
+authored attachment clocks.
+
 Persisted root `SoundEvent` recipes use qualified natural-rate source mappings,
 exact selected intervals, independent sample offsets, owned gain and edges, and
 explicit overflow rejection. `SetSound`/`DeleteSound` share reversible command

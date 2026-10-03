@@ -470,6 +470,11 @@ It builds independent Preserve inputs, retains full history and applies current
 Hold gates only at root output. The native authored lifecycle and root-only
 sound guards remain unchanged; nested persistence and edit/copy transforms
 still need implementation.
+The bounded window query also resolves current occurrences automatically and
+the PCM adapter sums their independent processing histories. Exact visible
+geometry is separate from Preserve influence, which can survive an outer crop.
+This remains preparation work; it does not attach sounds to beats or place them
+in the authored bus.
 
 ## Routed PCM preparation
 

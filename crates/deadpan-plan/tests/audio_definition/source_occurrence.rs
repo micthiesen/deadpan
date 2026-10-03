@@ -100,6 +100,66 @@ fn projected<'p>(voice: &AudioSourceOccurrence<'p>) -> Arc<deadpan_plan::AudioSt
 }
 
 #[test]
+fn source_voice_occurrences_validate_empty_windows_and_aggregate_construction_limits() {
+    let doc = catalog(document(
+        FrameRate::new(48_000, 1).unwrap(),
+        &["prefix", "owner"],
+        [("prefix", source(4)), ("owner", source(12))],
+        BTreeMap::new(),
+    ));
+    let plan = RenderPlan::compile(&doc).unwrap();
+    let empty = plan
+        .source_voice_occurrences(
+            &id("owner"),
+            recipe(&plan, q(0, 1), 4),
+            AudioSample(0)..AudioSample(4),
+            Default::default(),
+        )
+        .unwrap();
+    assert!(empty.voices().is_empty());
+    assert!(
+        plan.source_voice_occurrences(
+            &id("owner"),
+            recipe(&plan, q(11, 1), 4),
+            AudioSample(0)..AudioSample(4),
+            Default::default()
+        )
+        .is_err()
+    );
+    let mut missing = recipe(&plan, q(0, 1), 4);
+    missing.source.asset = AssetId::new("missing").unwrap();
+    assert!(
+        plan.source_voice_occurrences(
+            &id("owner"),
+            missing,
+            AudioSample(0)..AudioSample(4),
+            Default::default()
+        )
+        .is_err()
+    );
+    for limits in [
+        AudioQueryLimits {
+            maximum_spans: 1,
+            ..Default::default()
+        },
+        AudioQueryLimits {
+            maximum_work: 1,
+            ..Default::default()
+        },
+    ] {
+        assert!(matches!(
+            plan.source_voice_occurrences(
+                &id("owner"),
+                recipe(&plan, q(0, 1), 4),
+                AudioSample(4)..AudioSample(16),
+                limits
+            ),
+            Err(PlanError::AudioQueryLimit(_))
+        ));
+    }
+}
+
+#[test]
 fn stage_owned_voice_enters_after_processing_while_child_has_independent_input() {
     let doc = catalog(document(
         FrameRate::new(48_000, 1).unwrap(),

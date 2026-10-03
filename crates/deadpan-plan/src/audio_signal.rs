@@ -28,6 +28,10 @@ pub use source_voice::{AudioSourceVoice, AudioSourceVoiceIdentity, AudioSourceVo
 mod source_occurrence;
 pub use source_occurrence::AudioSourceOccurrence;
 
+#[path = "audio_source_occurrences.rs"]
+mod source_occurrences;
+pub use source_occurrences::AudioSourceOccurrences;
+
 #[derive(Debug, Clone)]
 enum SignalProvider<'plan> {
     Structural,

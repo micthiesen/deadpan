@@ -122,6 +122,10 @@ impl RepeatPlay {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RepeatLocation {
     pub play: RepeatPlay,
+    /// Exclusive end of the compact run containing this play. The run keeps
+    /// the same child and explicit gap branch, so bounded callers may skip it
+    /// when neither branch is relevant without expanding its remaining plays.
+    pub segment_end: i64,
     /// Child-local coordinate, or gap-local coordinate when `in_gap` is true.
     pub position: ExactRatio,
     pub in_gap: bool,
@@ -407,6 +411,7 @@ impl RepeatLayout {
         }
         Ok(RepeatLocation {
             play,
+            segment_end: segment.end,
             position,
             in_gap,
             comparisons,

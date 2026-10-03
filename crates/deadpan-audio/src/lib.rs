@@ -57,8 +57,8 @@ pub use signal_transfer::{
 pub use stages::{
     DefinitionAudioBlock, DomainAudioBlock, EdgeFadedBlock, MAX_EDGE_PREPARATION_FRAMES,
     PointDomainAudioBlock, ProjectedRootBlock, RoutedRootBlock, RoutedSignalBlock,
-    SourceOccurrenceBlock, StageAudio, StageAudioError, StageLimits, TapeAudioBlock,
-    TimeMappedBlock, TransferredDomainBlock, TransferredRootBlock,
+    SourceOccurrenceBlock, SourceOccurrencesBlock, StageAudio, StageAudioError, StageLimits,
+    TapeAudioBlock, TimeMappedBlock, TransferredDomainBlock, TransferredRootBlock,
 };
 pub use true_peak::{
     MAX_TRUE_PEAK_FRAMES, TRUE_PEAK_ID, TruePeakError, TruePeakMeter, TruePeakReport,

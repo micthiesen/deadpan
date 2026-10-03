@@ -53,6 +53,34 @@ source. A foreign plan or invalid range refuses before media access. This is
 raw time-mapped preparation; event gain, creative edges, scoped allowances and
 mixing into the authored bus remain separate work.
 
+## Bounded occurrence windows
+
+`RenderPlan::audio_owner_occurrences` finds the current concrete occurrences of
+one owner that can contribute to a root sample window. It follows compact
+Repeat identities and active overrides without expanding unrelated plays.
+Its geometric allocation and exact owner-to-root map are separate from its
+processing influence: a voice below Preserve may continue across that stage's
+whole output. The query ignores the Original's retained bindings and audio
+availability. Work or count exhaustion fails the entire query.
+
+`RenderPlan::source_voice_occurrences` validates an independent source recipe
+and retains the relevant occurrence handles for that window. Its aggregate work
+and retained-run bounds cover the whole batch. A window with no occurrences
+still validates the recipe. The handles retain processing graph identities
+across smaller reads; they do not establish a persistent processed-PCM cache.
+
+`StageAudio::read_source_voice_occurrences` reads a subwindow, checks static
+processing histories before opening media, and shares one deadline, work budget
+and PCM residency cap. Runtime reservations remain enforced throughout the read.
+Each occurrence keeps its own full Preserve input and current Hold gates.
+Contributions sum in f64 before checked f32 conversion.
+No normalization or source-endpoint mask is applied to the combined output.
+Only intervals suppressed in every contribution are reported as suppressed.
+A window with no contributing occurrences still revalidates the source.
+This remains raw preparation, without event gain, creative edges, allowances
+or authored bus placement.
+See the [batch qualification record](qualification/occurrence-batches-2026-10-03.md).
+
 ## Remaining authored integration
 
 The final product still requires all of the following:
@@ -62,7 +90,7 @@ The final product still requires all of the following:
   Repeat, Retime, occurrence isolation and deletion.
 - Copy owned sounds with fresh identities and retained media/processing
   provenance; distinguish `ib` from `ab` without changing picture bounds.
-- Schedule all active sound occurrences with bounded work, apply owned
+- Connect bounded occurrence preparation to persisted events, apply owned
   treatments and allowances, and mix once before the shared limiter.
 - Expose captured native placement/editing through the common command path,
   then verify preview/export equivalence and audible behavior.

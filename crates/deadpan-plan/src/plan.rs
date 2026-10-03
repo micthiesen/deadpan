@@ -50,6 +50,12 @@ pub use audio_owners::{
     AudioOwnerSupport,
 };
 
+#[path = "audio_owner_occurrences.rs"]
+mod audio_owner_occurrences;
+pub use audio_owner_occurrences::{
+    AudioOwnerOccurrence, AudioOwnerOccurrenceMap, AudioOwnerOccurrences,
+};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize)]
 pub struct StorageStats {
     pub authored_nodes: usize,

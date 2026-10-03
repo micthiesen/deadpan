@@ -92,6 +92,290 @@ fn raw_voice(length: u32) -> Vec<[f32; 2]> {
 }
 
 #[test]
+fn source_voice_occurrences_cross_repeat_seams_and_keep_query_cuts_exact() {
+    let document = occurrence_document();
+    let plan = compile(&document, false);
+    let batch = plan
+        .source_voice_occurrences(
+            &id("owner"),
+            voice_recipe(document.presentation_basis().frame_rate, 3840),
+            AudioSample(0)..AudioSample(2577),
+            Default::default(),
+        )
+        .unwrap();
+    assert_eq!(batch.voices().len(), 2);
+    let passage = stretch(&stretch(&raw_voice(3840), 2560, 3, 2), 1280, 2, 1);
+    let expected: Vec<_> = vec![[0.0; 2]; 17]
+        .into_iter()
+        .chain(passage.iter().copied())
+        .chain(passage.iter().copied())
+        .collect();
+    let mut renderer = StageAudio::new(plan.clone());
+    let mut provider = FixtureProvider::new();
+    for start in [1200, 0, 2321, 1297, 17, 1290] {
+        let block = renderer
+            .read_source_voice_occurrences(
+                &mut provider,
+                &batch,
+                AudioSample(start),
+                256,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .unwrap();
+        assert_eq!(
+            block.samples,
+            expected[start as usize..start as usize + 256]
+        );
+        let cut = renderer
+            .read_source_voice_occurrences(
+                &mut provider,
+                &batch,
+                AudioSample(start + 51),
+                103,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .unwrap();
+        assert_eq!(cut.samples, block.samples[51..154]);
+        if start == 0 {
+            assert_eq!(block.suppressed, vec![AudioSample(0)..AudioSample(17)]);
+        }
+    }
+}
+
+#[test]
+fn source_voice_occurrences_sum_complete_independent_preserve_histories() {
+    let mut wire = serde_json::to_value(occurrence_document()).unwrap();
+    wire["nodes"].as_object_mut().unwrap().remove("inner");
+    wire["nodes"]["repeat"]["kind"]["child"] = serde_json::json!("owner");
+    wire["nodes"]["outer"] =
+        serde_json::to_value(retime("repeat", 2560, 0..7680, PitchPolicy::Preserve)).unwrap();
+    wire["nodes"]["root"]["kind"]["children"] = serde_json::json!(["lead", "outer"]);
+    let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let plan = compile(&document, false);
+    let batch = plan
+        .source_voice_occurrences(
+            &id("owner"),
+            voice_recipe(document.presentation_basis().frame_rate, 3840),
+            AudioSample(17)..AudioSample(2577),
+            Default::default(),
+        )
+        .unwrap();
+    assert_eq!(batch.voices().len(), 2);
+    assert!(
+        batch
+            .voices()
+            .iter()
+            .all(|voice| voice.samples() == (AudioSample(17)..AudioSample(2577)))
+    );
+    let mut left = raw_voice(3840);
+    left.extend(vec![[0.0; 2]; 3840]);
+    let mut right = vec![[0.0; 2]; 3840];
+    right.extend(raw_voice(3840));
+    let left = stretch(&left, 2560, 3, 1);
+    let right = stretch(&right, 2560, 3, 1);
+    let expected: Vec<[f32; 2]> = left
+        .iter()
+        .zip(&right)
+        .map(|(a, b)| std::array::from_fn(|c| (f64::from(a[c]) + f64::from(b[c])) as f32))
+        .collect();
+    let mut renderer = StageAudio::new(plan.clone());
+    let mut provider = FixtureProvider::new();
+    for offset in [2000, 0, 1177, 1280, 256] {
+        let block = renderer
+            .read_source_voice_occurrences(
+                &mut provider,
+                &batch,
+                AudioSample(17 + offset),
+                256,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .unwrap();
+        assert_eq!(block.occurrences.len(), 2);
+        assert_eq!(
+            block.samples,
+            expected[offset as usize..offset as usize + 256]
+        );
+    }
+    // An outer crop hides the first play geometrically. Its already-processed
+    // output still belongs to the selected half of the Preserve stage.
+    let mut wire = serde_json::to_value(&document).unwrap();
+    wire["nodes"]["crop"] =
+        serde_json::to_value(retime("outer", 1280, 1280..2560, PitchPolicy::FollowSpeed)).unwrap();
+    wire["nodes"]["root"]["kind"]["children"] = serde_json::json!(["lead", "crop"]);
+    let cropped = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let plan = compile(&cropped, false);
+    let batch = plan
+        .source_voice_occurrences(
+            &id("owner"),
+            voice_recipe(cropped.presentation_basis().frame_rate, 3840),
+            AudioSample(17)..AudioSample(1297),
+            Default::default(),
+        )
+        .unwrap();
+    assert_eq!(batch.voices().len(), 2);
+    let mut renderer = StageAudio::new(plan.clone());
+    let block = renderer
+        .read_source_voice_occurrences(
+            &mut provider,
+            &batch,
+            AudioSample(17),
+            256,
+            TIMEOUT,
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+    assert_eq!(block.samples, expected[1280..1536]);
+}
+
+#[test]
+fn source_voice_occurrences_empty_window_still_checks_live_source() {
+    let document = occurrence_document();
+    let plan = compile(&document, false);
+    let batch = plan
+        .source_voice_occurrences(
+            &id("owner"),
+            voice_recipe(document.presentation_basis().frame_rate, 3840),
+            AudioSample(0)..AudioSample(17),
+            Default::default(),
+        )
+        .unwrap();
+    assert!(batch.voices().is_empty());
+    let mut renderer = StageAudio::new(plan.clone());
+    let mut provider = FixtureProvider::new();
+    let block = renderer
+        .read_source_voice_occurrences(
+            &mut provider,
+            &batch,
+            AudioSample(0),
+            17,
+            TIMEOUT,
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+    assert_eq!(block.samples, vec![[0.0; 2]; 17]);
+    assert_eq!(block.suppressed, vec![AudioSample(0)..AudioSample(17)]);
+    assert!(provider.calls > 0);
+    provider.unavailable = true;
+    assert!(
+        renderer
+            .read_source_voice_occurrences(
+                &mut provider,
+                &batch,
+                AudioSample(0),
+                17,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .is_err()
+    );
+}
+
+#[test]
+fn source_voice_occurrences_reject_invalid_foreign_cancelled_and_overflowing_reads_without_io() {
+    let document = occurrence_document();
+    let plan = compile(&document, false);
+    let recipe = voice_recipe(document.presentation_basis().frame_rate, 3840);
+    let batch = plan
+        .source_voice_occurrences(
+            &id("owner"),
+            recipe,
+            AudioSample(0)..AudioSample(2577),
+            Default::default(),
+        )
+        .unwrap();
+    let mut provider = FixtureProvider::new();
+    let mut foreign = StageAudio::new(Arc::new(plan.as_ref().clone()));
+    assert!(matches!(
+        foreign.read_source_voice_occurrences(
+            &mut provider,
+            &batch,
+            AudioSample(0),
+            1,
+            TIMEOUT,
+            &AtomicBool::new(false),
+        ),
+        Err(StageAudioError::ForeignDomain)
+    ));
+    let mut renderer = StageAudio::new(plan.clone());
+    for (start, frames) in [(-1, 1), (2577, 1), (0, 0), (0, 257), (i64::MAX, 2)] {
+        assert!(matches!(
+            renderer.read_source_voice_occurrences(
+                &mut provider,
+                &batch,
+                AudioSample(start),
+                frames,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            ),
+            Err(StageAudioError::Range)
+        ));
+    }
+    assert!(
+        renderer
+            .read_source_voice_occurrences(
+                &mut provider,
+                &batch,
+                AudioSample(0),
+                1,
+                TIMEOUT,
+                &AtomicBool::new(true),
+            )
+            .unwrap_err()
+            .is_cancelled()
+    );
+    assert_eq!(provider.calls, 0);
+}
+
+#[test]
+fn source_voice_occurrences_admit_all_histories_and_residency_before_media() {
+    let document = occurrence_document();
+    let plan = compile(&document, false);
+    let batch = plan
+        .source_voice_occurrences(
+            &id("owner"),
+            voice_recipe(document.presentation_basis().frame_rate, 3840),
+            AudioSample(0)..AudioSample(2577),
+            Default::default(),
+        )
+        .unwrap();
+    for limits in [
+        StageLimits {
+            maximum_prepared_stages: 3,
+            ..Default::default()
+        },
+        StageLimits {
+            maximum_resident_frames: 100,
+            ..Default::default()
+        },
+        StageLimits {
+            maximum_resident_frames: 2000,
+            ..Default::default()
+        },
+    ] {
+        let mut renderer = StageAudio::with_limits(plan.clone(), limits).unwrap();
+        let mut provider = FixtureProvider::new();
+        // This crosses two independently prepared, two-stage occurrences. The
+        // second history must fail admission before the first can open media.
+        assert!(matches!(
+            renderer.read_source_voice_occurrences(
+                &mut provider,
+                &batch,
+                AudioSample(1200),
+                256,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            ),
+            Err(StageAudioError::Limit(_))
+        ));
+        assert_eq!(provider.calls, 0);
+        assert_eq!(renderer.cached_stage_count(), 0);
+    }
+}
+
+#[test]
 fn source_voice_occurrence_keeps_ntsc_root_phase_and_sample_offset_independent() {
     let rate = FrameRate::new(30_000, 1001).unwrap();
     let document = document(

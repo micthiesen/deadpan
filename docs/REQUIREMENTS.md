@@ -6,12 +6,16 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 catalog recipe from a checked current beat occurrence through its enclosing
 time maps. Each Preserve stage retains that voice's complete processing history;
 current silent Holds gate the final root samples. Stable Repeat paths select
-actual plays and overrides without expanding them. This advances DP-04 and
-DP-09 groundwork. Persisted beat ownership, edit/copy transforms, active voice
-scheduling and native placement remain required before `ib`/`ab` can include
-attached sounds. The
-[qualification record](qualification/owned-sound-voices-2026-10-03.md) retains
-review, source inventories, checks and limits. No requirement or gate is complete.
+actual plays and overrides without expanding unrelated plays. A bounded window
+query now finds all relevant current occurrences, including processed output
+retained by an outer crop, and the PCM adapter sums their independent histories
+under shared limits. This advances DP-04 and DP-09 groundwork. Persisted beat
+ownership, edit/copy transforms, authored bus integration and native placement
+remain required before `ib`/`ab` can include attached sounds. The
+[single-occurrence record](qualification/owned-sound-voices-2026-10-03.md) and
+[batch record](qualification/occurrence-batches-2026-10-03.md) retain review,
+source inventories, checks and limits.
+No requirement or gate is complete.
 
 [Group objects](EDITED_SLICES.md#group-objects) add native `ig`/`ag` to
 copy/cut/Repeat operators and typed Visual selection in ordinary Sequence

@@ -238,7 +238,7 @@ fn validate_gate_envelopes(
     Ok(())
 }
 
-fn intersect_suppression(
+pub(super) fn intersect_suppression(
     left: &[Range<AudioSample>],
     right: &[Range<AudioSample>],
 ) -> Vec<Range<AudioSample>> {

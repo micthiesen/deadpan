@@ -31,6 +31,7 @@ pub struct AudioSourceOccurrence<'plan> {
     // exists. PointCeil preparation arrays are never relabeled as root output.
     input: AudioSignalTape<'plan>,
     construction_work: usize,
+    retained_runs: usize,
 }
 
 #[derive(Clone, Copy)]
@@ -110,7 +111,9 @@ impl RenderPlan {
     /// The complete selected recipe must fit its host; overflow is rejected.
     /// Ancestor Retime selections may crop its current allocation without
     /// changing source phase or restarting any retained processing history.
-    /// Empty and completely invisible hosts are rejected.
+    /// Empty hosts and occurrences with no contributing input are rejected.
+    /// An outer crop may hide the geometric owner while retaining its processed
+    /// output from an inner Preserve stage.
     ///
     /// Depth is bounded by MAX_DOCUMENT_DEPTH. Compact Repeat segments and
     /// Sequence entries are charged before lookup, never expanded into plays.
@@ -147,42 +150,13 @@ impl RenderPlan {
                 "source occurrence owner is empty",
             ));
         }
-        // Prove visibility before processing broadens a voice's physical output
-        // to the full enclosing stage for its continuous history and decay.
-        let mut visible = host_support.clone();
-        for edge in edges.iter().rev() {
-            visible = intersect(edge.map.range(visible)?, node_support(self, edge.parent))?;
-            if !positive_range(&visible)? {
-                return Err(PlanError::InvalidAudioSourceOccurrence(
-                    "source occurrence owner is not visible",
-                ));
-            }
-        }
+        // Visibility follows the preparation chain below. After Preserve, its
+        // complete processed output can survive an outer crop even when that
+        // crop hides this owner's original geometric allocation.
         let rate = self.metadata.presentation_basis.frame_rate;
-        let selected = recipe.mapping.selection_frames_with_offset(
-            self.nodes[host].inspection.duration,
-            recipe.offset,
-            rate,
-        )?;
-        if selected.start.compare_integer(0).is_lt()
-            || !selected
-                .end
-                .checked_sub(selected.start)?
-                .compare_integer(0)
-                .is_gt()
-            || selected
-                .end
-                .checked_sub(host_support.end)?
-                .compare_integer(0)
-                .is_gt()
-        {
-            return Err(PlanError::InvalidAudioSourceOccurrence(
-                "source occurrence selection exceeds its owner",
-            ));
-        }
         budget.spend(1 + instance.repeats.len())?;
         let owner = scoped_signal(self, host, instance.repeats.clone(), host_support.clone());
-        let voice = owner.source_voice(recipe)?;
+        let voice = checked_voice(owner, recipe)?;
         let mut provider = Provider::Source(Box::new(voice.input_signal()));
         let mut support = host_support;
         let mut placement = Placement::IDENTITY;
@@ -264,8 +238,53 @@ impl RenderPlan {
             grid,
             input,
             construction_work: budget.maximum - budget.remaining,
+            retained_runs: budget.runs,
         })
     }
+}
+
+/// Validate the independent recipe even when its owner has no active occurrence
+/// in the requested window. A silent query does not make malformed intent valid.
+pub(super) fn checked_owner_voice<'plan>(
+    plan: &'plan RenderPlan,
+    owner: &NodeId,
+    recipe: AudioSourceVoiceRecipe,
+) -> Result<AudioSourceVoice<'plan>, PlanError> {
+    let host = *plan
+        .by_id
+        .get(owner)
+        .ok_or(PlanError::InvalidAudioSourceOccurrence(
+            "source occurrence owner is absent",
+        ))?;
+    checked_voice(
+        scoped_signal(plan, host, Vec::new(), node_support(plan, host)),
+        recipe,
+    )
+}
+
+fn checked_voice(
+    owner: AudioSignal<'_>,
+    recipe: AudioSourceVoiceRecipe,
+) -> Result<AudioSourceVoice<'_>, PlanError> {
+    let duration = owner.plan.nodes[owner.root].inspection.duration;
+    let selected = recipe.mapping.selection_frames_with_offset(
+        duration,
+        recipe.offset,
+        owner.plan.metadata.presentation_basis.frame_rate,
+    )?;
+    if selected.start.compare_integer(0).is_lt()
+        || !selected
+            .end
+            .checked_sub(selected.start)?
+            .compare_integer(0)
+            .is_gt()
+        || selected.end.compare_integer(duration.frames()).is_gt()
+    {
+        return Err(PlanError::InvalidAudioSourceOccurrence(
+            "source occurrence selection exceeds its owner",
+        ));
+    }
+    owner.source_voice(recipe)
 }
 
 fn resolve_edges(
@@ -534,6 +553,10 @@ impl<'plan> AudioSourceOccurrence<'plan> {
     }
     pub fn construction_work(&self) -> usize {
         self.construction_work
+    }
+
+    pub(super) fn retained_runs(&self) -> usize {
+        self.retained_runs
     }
 
     fn check_range(&self, samples: &Range<AudioSample>) -> Result<(), PlanError> {
