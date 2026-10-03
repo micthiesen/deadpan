@@ -97,6 +97,7 @@ impl Service {
     }
 
     fn perform_macro(&mut self, operation: &Operation) -> Result<Receipt> {
+        self.observe_semantic();
         let id = operation.id();
         let (document, stored) = self.check_macro_context(id)?;
         match operation {
@@ -137,6 +138,14 @@ impl Service {
                 Ok(receipt)
             }
             Operation::Run { scope, context, .. } | Operation::Apply { scope, context, .. } => {
+                if let Operation::Apply {
+                    instruction,
+                    repeat_version: Some(version),
+                    ..
+                } = operation
+                {
+                    self.check_semantic_repeat(*version, context, instruction)?;
+                }
                 let (instruction, label) = match operation {
                     Operation::Run {
                         register, count, ..
@@ -156,7 +165,12 @@ impl Service {
                                 ..
                             } => "Copy beat",
                             SemanticInstruction::YankSelection { .. } => "Copy selection",
+                            SemanticInstruction::CutFrames { .. } => "Cut frames",
                             SemanticInstruction::CutSelection { .. } => "Cut selection",
+                            SemanticInstruction::Cut {
+                                selector: SemanticSelector::SelectedBeat,
+                                ..
+                            } => "Cut beat",
                             SemanticInstruction::Yank { .. } => "Copy selection",
                             SemanticInstruction::Cut { .. } => "Cut selection",
                             SemanticInstruction::ReplaceSelection { .. } => "Replace selection",
@@ -234,6 +248,19 @@ impl Service {
                     .writer()?
                     .commit_compound(request, None)
                     .map_err(display)?;
+                if let Some(saved) = &outcome.committed
+                    && let Operation::Apply { instruction, .. } = operation
+                    && let Some(edit) =
+                        crate::project::semantic::LastEdit::from_instruction(instruction)
+                {
+                    self.semantic.prove(
+                        id.session,
+                        &id.project,
+                        &id.revision,
+                        &saved.revision_id,
+                        semantic::Change::Replace(edit),
+                    );
+                }
                 // A yank-only program saves its bank without a new timeline
                 // revision. Only the store's authored receipt grants a native
                 // edit continuation; never infer one from a Compound request.

@@ -35,6 +35,8 @@ pub enum Operation {
     Apply {
         id: Id,
         instruction: SemanticInstruction,
+        /// Bind dot-repeat to the exact service-owned candidate at input time.
+        repeat_version: Option<u64>,
         scope: SequenceScope,
         context: SemanticContext,
     },

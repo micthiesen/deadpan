@@ -1,0 +1,37 @@
+Review scope: semantic picture-cut dot-repeat over existing frame, motion,
+selected-beat and Visual cuts; no core/CLI/schema changes.
+
+Independent design/UI reviewer: semantic_macro_core.
+Applied findings:
+- Keep exact idempotency cache before repeat-version admission and never reprove
+  an older successful cut when replaying its receipt.
+- Preserve legacy independent CutReceipt behavior and validate intent against
+  its captured Child/Range. Full-context selector repeats use Apply.
+- Recording :delete must distinguish captured Visual ranges from selected beats,
+  including absence and zero-duration children.
+- Paint dot hints outside the absent-selection branch. Show explicit empty and
+  missing Visual selection requirements.
+- Consume one-shot register override on routed dot refusal behind a pending
+  macro or at recording capacity, retaining queued work and receipt ownership.
+
+Final independent service review found no actionable issues in snapshot/head
+observation, complete instruction comparison, exact retry equality, legacy
+intent/capture pairing, successful proof timing, empty-child authored success,
+bank-only preservation, or unknown/named Run invalidation.
+
+Root review: integrated tracked diff and both new selector test modules;
+source checks and actual verification results are retained separately.
+
+Initial verification failures:
+- New rendered harness imported RegisterBank from deadpan_store's root; corrected
+  to deadpan_store::registers::RegisterBank. No product behavior change.
+- Existing configured-dot teaching test asserted frame-cut-only wording. Updated
+  it to assert the new Visual/beat/motion wording and remaining-edit limitation.
+  The same test retains custom-path, repeat/count policy and shortcut audit checks.
+
+Native review additionally found absent-Visual feedback exposed the shared
+planner's phrase 'using this macro instruction'. Dot now reports a direct
+missing/empty selection message after fresh capture and repeat-state validation.
+Service-side admission remains authoritative. The rendered replay checks the
+exact messages and unchanged document, registers and candidate. Direct frame
+and whole-beat Apply cuts also receive accurate history labels.

@@ -19,6 +19,26 @@ test instances after testing instead of leaving them idle. The previously
 running `dev.thiesen.deadpan.cursor-qa` instance has been quit, and the native
 app inventory confirmed no Deadpan app remained running.
 
+## Cut selector repeat, current implementation
+
+[Semantic repeat](../SEMANTIC_REPEAT.md) now retains frame cuts, typed motion
+cuts, explicit whole-beat cuts and Visual cuts. Dot resolves a fresh current
+context, with any current Visual selection taking precedence. Empty selections
+refuse; saved Visual cuts require a new selection. Preserve requested counts
+after clamping and explicit child identity at empty siblings. Retain the cut's
+register unless a one-shot override is supplied, and consume that override on
+failed attempts without changing the bank or queued work.
+
+Dot uses the shared Apply path with the captured service snapshot version.
+Single supported Apply cuts prove their effective intent after authored success
+and before refresh. Named Run transitions remain unproved. Exact retries return
+the retained receipt without reinstalling an older candidate. Legacy cuts retain
+their independent saved-cut receipts and validate their selector/capture pairs.
+Recording dot stores its effective instruction; recording `:delete` distinguishes
+captured whole children from Visual ranges. No schema changes.
+Repeat for other editing operations and all product gates remain open.
+See [qualification and limits](../qualification/selector-repeat-2026-10-03.md).
+
 ## Operator motions, current implementation
 
 Normal Edit `y`/`d` now accept frame, beat and group-boundary motions; `yy`/`dd`
@@ -34,7 +54,7 @@ Copies preserve cursor/child; child cuts select the literal next sibling, range
 cuts the time join. One native operator uses the same Apply and saved-receipt
 path as recording. Escape revokes cursor ownership even outside a recording,
 while queued authored work remains durable. Text objects, analysis-dependent
-motions, range Repeat and broader dot-repeat remain required.
+motions, range Repeat and dot-repeat for other edits remain required.
 See [qualification and limits](../qualification/operator-motions-2026-10-02.md).
 
 ## Semantic macros, current implementation
@@ -87,12 +107,12 @@ for command, actor, rendered replay and receipt-failure evidence.
 
 Additional editing instructions, semantic text/range selectors, temporal
 occurrence contexts and full physical layout/IME qualification remain open.
-Dot-repeat still supports frame cuts
-only, and a macro edit clears an older dot candidate.
+Dot-repeat supports the picture cuts described above; an authored named Run
+clears an older dot candidate.
 See [qualification and limits](../qualification/semantic-macros-2026-10-02.md)
 for native input observations, peer review, retained failures and final checks.
 
-## Semantic frame-cut repeat, current implementation
+## Semantic frame-cut repeat, original foundation
 
 [Semantic repeat](../SEMANTIC_REPEAT.md) adds configurable `edit.repeat-last`,
 default `.`. Retain the requested count from `x` or `:delete-frames`, then
@@ -106,8 +126,8 @@ cut or preserves it after direct marks and Undo/Redo. Unknown head changes,
 including headless saves with failed refreshes, clear it. Never infer semantic
 success from the visible workspace, pending UI copy or ordinary commit mailbox.
 Versioned snapshots prevent late feedback from restoring an older candidate.
-The dot increment made no schema changes. Broader selectors and dot-repeat
-for the remaining edit kinds are still required.
+The original dot increment made no schema changes. The selector extension is
+described above; dot-repeat for remaining edit kinds is still required.
 See [qualification and limits](../qualification/semantic-repeat-2026-10-02.md).
 
 ## Resolved transactions, current implementation
@@ -127,8 +147,8 @@ aggregate patch through deterministic replay. Undo and register replacement
 cannot discard capture checkpoints. Schema 53 development packages require
 recreation; no migrations are required during this unused development goal.
 
-Broader semantic selector resolution and dot-repeat beyond frame cuts remain
-required. The Macro workflow above uses this resolved execution boundary.
+Broader semantic text/role/occurrence resolution and dot-repeat for other edits
+remain required. The Macro workflow above uses this resolved execution boundary.
 See [qualification and limits](../qualification/compound-transactions-2026-10-02.md).
 
 ## Configurable editor paths, current implementation
@@ -154,7 +174,7 @@ confirmation. Superseded successful saves remain durable, while only matching
 replies consume selection. Retain the latest accepted write until its reply,
 including after newer local refusal, and refuse new placement while unsettled.
 Consume the chosen name on the next copy/picture-cut/paste/placement attempt.
-Broader Macro instructions and semantic dot-repeat beyond frame cuts remain required.
+Broader Macro instructions and dot-repeat for remaining editing operations are required.
 Escape and blur cancel both live choice and an open named command;
 project reopen cannot revive its captured name. See
 [persistent-register qualification](../qualification/durable-registers-2026-10-02.md)
@@ -170,7 +190,7 @@ from the compiled map. Held motions retain their resolved action and cannot
 consume a new prefix. Command/Search entry retains the ordered native input
 suffix and suppresses only the held opener. See [the contract](../KEYMAP.md).
 Other mode maps, strict logical provenance, physical layout/IME qualification,
-semantic dot-repeat beyond frame cuts and broader Macro instructions remain required. The keymap increment made no
+dot-repeat for other edits and broader Macro instructions remain required. The keymap increment made no
 schema changes; registers were introduced in schema 53, followed by schema 54's
 compound step reservations and capture snapshots.
 The [qualification](../qualification/configurable-bindings-2026-10-01.md) records

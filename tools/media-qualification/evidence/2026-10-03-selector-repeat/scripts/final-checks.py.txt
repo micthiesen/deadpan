@@ -1,0 +1,18 @@
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+scratch = Path(__file__).parent
+environment = dict(os.environ, DEADPAN_CHECK_OUTPUT=str(scratch))
+checks = [
+    ('clippy-default-feedback', ['cargo', 'clippy', '--locked', '-p', 'deadpan-app', '--all-targets', '--', '-D', 'warnings']),
+    ('clippy-ui-feedback', ['cargo', 'clippy', '--locked', '-p', 'deadpan-app', '--features', 'ui-harness', '--all-targets', '--', '-D', 'warnings']),
+    ('formatting-feedback', ['cargo', 'fmt', '--all', '--', '--check']),
+    ('build-ui-feedback', ['cargo', 'build', '--locked', '-p', 'deadpan-app', '--features', 'ui-harness']),
+    ('replay-dot-repeat-feedback', ['target/debug/deadpan-app', '--ui-check', '--scenario', 'dot-repeat', '--mode', 'visual', '--output', str(scratch / 'replay-dot-repeat-feedback'), '--kestrel-source', '/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift']),
+]
+for name, command in checks:
+    result = subprocess.run([sys.executable, '/tmp/deadpan-original-layout-20261002/run-check.py', name, *command], env=environment)
+    if result.returncode:
+        sys.exit(result.returncode)

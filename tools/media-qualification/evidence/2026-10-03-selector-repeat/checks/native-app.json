@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/tmp/deadpan-selector-repeat-20261002/Deadpan Repeat QA.app/Contents/MacOS/deadpan-app",
+    "--project",
+    "/tmp/deadpan-selector-repeat-20261002/native-project.deadpan"
+  ],
+  "started": "2026-10-03T07:07:36.707464+00:00",
+  "base_commit": "16da6ff6c0c6e1042103f5a77bef7af112367801",
+  "diff_sha256": "b8f5ede8b2ece7ff0751eb6c413c9a074e32d378f773f6539a77e4b3d65a1300",
+  "source_manifest_sha256": "400bcb7c30acb189082a1290b1c1b195244adb1bfca2a62dd9ec05211c8e6c76",
+  "pid": 4945,
+  "exit_code": 0,
+  "seconds": 103.28316787490621,
+  "source_manifest_after_sha256": "400bcb7c30acb189082a1290b1c1b195244adb1bfca2a62dd9ec05211c8e6c76",
+  "source_unchanged": true,
+  "gate_exit_code": 0
+}

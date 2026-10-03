@@ -38,7 +38,9 @@ impl FrameTarget {
             scope: self.scope,
             register: self.register,
             attempt: Some(crate::project::semantic::CutAttempt {
-                operation: deadpan_core::FrameCut::new(count).map_err(|error| error.to_string())?,
+                operation: crate::project::semantic::RepeatableCut::Frames(
+                    deadpan_core::FrameCut::new(count).map_err(|error| error.to_string())?,
+                ),
                 repeat_version,
             }),
             parent: self.parent.clone(),
@@ -124,33 +126,6 @@ impl DeadpanApp {
             None => target,
         };
         self.delete_captured(target.and_then(|target| target.command(count, None)));
-    }
-
-    pub(in crate::preview) fn repeat_last_edit(&mut self) {
-        let target = (|| {
-            let workspace = self
-                .workspace
-                .as_ref()
-                .ok_or("Open a project before repeating an edit.")?;
-            let snapshot = self
-                .semantic
-                .snapshot()
-                .ok_or("Cut frames first to make an edit available for repeat.")?;
-            let edit = snapshot.edit_for(workspace)?;
-            let mut target = self.capture_frame_delete_target()?;
-            target.register = self.copied.selected_override().unwrap_or(edit.register);
-            target.command(edit.operation.count(), Some(snapshot.version))
-        })();
-        self.delete_captured(target);
-    }
-
-    pub(in crate::preview) fn repeat_hint(&self) -> Option<String> {
-        let edit = self
-            .semantic
-            .snapshot()?
-            .edit_for(self.workspace.as_ref()?)
-            .ok()?;
-        Some(format!("repeat cut {}f", edit.operation.count()))
     }
 
     pub(in crate::preview) fn frame_delete_hint(&self) -> Option<String> {

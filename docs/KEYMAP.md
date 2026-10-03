@@ -59,7 +59,7 @@ The 16-key bound also applies to each composed operator-plus-motion path.
 | `copy.beat`, `yank.operator`, `cut.operator` | Whole-beat copy and typed motion prefixes in Normal Edit |
 | `paste.after`, `paste.before` | Paste, or replace a captured range |
 | `split`, `cut.frames`, `cut.beat`, `cut.range` | Structural edits; range cut is Visual, beat cut is Normal |
-| `edit.repeat-last` | Repeat the last committed frame cut at the current cursor; default `.`, no count or held activation |
+| `edit.repeat-last` | Repeat the last picture cut using the current Visual range or retained beat/motion selector; default `.`, no count or held activation |
 | `repeat`, `hold` | Total plays and inserted pause |
 | `insert`, `sound.place` | Reuse the Original and place a catalog sound |
 | `gain.up`, `gain.down` | Gain steps |
@@ -221,7 +221,8 @@ Current configuration covers Normal and timeline Visual paths and their teaching
 The remaining mode routers, strict logical provenance and physical layout/IME
 qualification remain open. Settings are file-based and require a restart; a
 native settings editor and live map replacement are not implemented. Semantic
-[dot-repeat supports frame cuts](SEMANTIC_REPEAT.md); [macros](SEMANTIC_MACROS.md)
-support frame motions, cuts and named calls. Remaining edit kinds and selectors
+[dot-repeat supports picture cuts](SEMANTIC_REPEAT.md); [macros](SEMANTIC_MACROS.md)
+support frame/beat/group motions, Visual selections, copies, cuts, pastes and
+named calls. Remaining edit kinds and selectors
 remain DP-06 work. No requirement
 or product gate is complete on the basis of this increment.

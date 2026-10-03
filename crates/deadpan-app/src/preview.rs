@@ -1139,7 +1139,7 @@ impl DeadpanApp {
     fn edit(&mut self, edit: BeatEdit) {
         self.bindings.clear();
         if edit == BeatEdit::Delete {
-            if !self.record_macro_selection_cut(self.copied.selected(), None) {
+            if !self.record_macro_delete(self.copied.selected(), None) {
                 self.delete_captured(self.capture_delete_target());
             }
             return;
@@ -1417,6 +1417,9 @@ impl DeadpanApp {
 
     fn action(&mut self, action: Action, context: &egui::Context) {
         if !self.macro_action_allowed(action) {
+            if action == Action::RepeatLast {
+                self.copied.begin_write();
+            }
             return;
         }
         if matches!(
@@ -1603,7 +1606,7 @@ impl DeadpanApp {
             Action::Operator { cut, selector } => self.operator_action(cut, selector),
             Action::SelectRegister(name) => self.select_register(name),
             Action::DeleteSelection => {
-                if !self.record_macro_selection_cut(self.copied.selected(), None) {
+                if !self.record_macro_delete(self.copied.selected(), None) {
                     self.delete_captured(self.capture_delete_target());
                 }
             }
@@ -2313,10 +2316,10 @@ impl DeadpanApp {
                 );
             }
             Ok(navigation::command::Entry::Action(Action::Edit(BeatEdit::Delete))) => {
-                if self.record_macro_selection_cut(
+                if self.record_macro_delete(
                     copy_register.map(|(_, name)| name),
                     Some(macro_target.unwrap_or_else(|| {
-                        Err("Open :delete again to capture its Visual selection.".into())
+                        Err("Open :delete again to capture its selection.".into())
                     })),
                 ) {
                     return;
@@ -2767,10 +2770,10 @@ impl DeadpanApp {
                                     self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: run macro");
                                 }
                                 if self.pane != Pane::Sources { self.add_editor_hint(&mut hints, EditorKey::CutFrames, "cut frame"); }
-                                if self.pane != Pane::Sources && let Some(label) = self.repeat_hint() { self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label); }
                                 self.add_editor_hint(&mut hints, EditorKey::CutBeat, "cut beat");
                             }
                         };
+                        if self.pane != Pane::Sources && let Some(label) = self.repeat_hint() { self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label); }
                         if self.copied.selected_content().is_some() { self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", if self.selected_edit_range().is_some() { "replace range" } else { "paste after / before" }); }
                         self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
                     } else {
@@ -3733,7 +3736,7 @@ impl DeadpanApp {
                     for (key, description) in [
                         ("⌘I".to_owned(), "Add an audio-only sound, or retry an incomplete Original. Audio selection is automatic; advanced stream choices are in import options.".to_owned()),
                         (format!("{} / Enter / Esc", key(EditorKey::Command)), "Enter a command / apply / cancel. Text fields keep native editing and IME.".to_owned()),
-                        (key(EditorKey::RepeatLast), "Repeat the last committed frame cut at the current Edit cursor, preserving its requested length and register. An explicit register choice overrides the destination for this repeat. Undo/Redo and marks preserve it; another edit clears it. Other edit kinds cannot be repeated yet. Clear Visual selection first. No count or held repeat.".to_owned()),
+                        (key(EditorKey::RepeatLast), "Repeat the last committed picture cut using the current Visual range, or its retained motion/whole-beat selector at the new location. Empty ranges refuse; repeating a Visual cut requires a new selection. Requested motion counts and the register are retained; an explicit register choice overrides the destination. Undo/Redo, marks and copies preserve it; unsupported edits clear it. Other edit kinds cannot be repeated yet. No count or held repeat.".to_owned()),
                         (format!("{} / :help / Esc", key(EditorKey::Help)), "Open this reference / close it.".to_owned()),
                     ] { help_binding(ui, &key, &description); }
                     ui.separator();

@@ -1140,10 +1140,8 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
     add(
         &[plain(Key::Period)],
         Action::RepeatLast,
-        C::Refuse(
-            "Repeat the last frame cut once, without a count; its requested length is retained.",
-        ),
-        "repeat last committed frame cut at the current Edit cursor, keeping its requested length; other edits are not supported yet",
+        C::Refuse("Repeat the last cut once, without a count; its requested selector is retained."),
+        "repeat the last committed cut against the current Visual range, beat or motion; other edit kinds are not supported yet",
         false,
     );
     for (key, action, short) in [

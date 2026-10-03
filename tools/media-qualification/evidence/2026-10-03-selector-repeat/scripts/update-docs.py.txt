@@ -1,0 +1,25 @@
+from pathlib import Path
+
+changes = {
+    "docs/REQUIREMENTS.md": [
+        ("[Semantic frame-cut repeat](SEMANTIC_REPEAT.md) re-resolves the requested count at the current cursor and follows durable saves through refresh failure.",
+         "[Semantic cut repeat](SEMANTIC_REPEAT.md) re-resolves frame, beat, motion or current Visual targets while retaining the requested count/direction and register; exact saved proofs survive refresh failure."),
+        ("boundary; broader semantic selectors and dot-repeat beyond frame cuts remain open.",
+         "boundary; semantic text/role/occurrence selectors and repeat for other edits remain open."),
+        ("Broader Macro instructions and semantic dot-repeat beyond frame cuts remain required for DP-06.",
+         "Broader Macro instructions and dot-repeat for remaining editing operations are required for DP-06."),
+    ],
+    "docs/spec/AGENT_HANDOFF.md": [
+        ("Broader Macro instructions and semantic dot-repeat beyond frame cuts remain required.",
+         "Broader Macro instructions and dot-repeat for remaining editing operations are required."),
+        ("semantic dot-repeat beyond frame cuts and broader Macro instructions remain required.",
+         "dot-repeat for other edits and broader Macro instructions remain required."),
+    ],
+}
+for name, pairs in changes.items():
+    path = Path(name)
+    source = path.read_text()
+    for before, after in pairs:
+        assert source.count(before) == 1, (name, before, source.count(before))
+        source = source.replace(before, after)
+    path.write_text(source)

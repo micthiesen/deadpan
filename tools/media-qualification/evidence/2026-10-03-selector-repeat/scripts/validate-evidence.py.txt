@@ -1,0 +1,40 @@
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import re
+import subprocess
+
+scratch = Path(__file__).parent
+root = Path.cwd()
+evidence = root / 'tools/media-qualification/evidence/2026-10-03-selector-repeat'
+digest = 'e78b89d445034b861df961f78db173acf91523407625af444af9b44857426282'
+manifest = json.loads((scratch / ('source-' + digest + '.json')).read_text())
+for name, expected in manifest.items():
+    assert hashlib.sha256((root / name).read_bytes()).hexdigest() == expected, name
+sums = (evidence / 'SHA256SUMS').read_text().splitlines()
+for line in sums:
+    expected, name = line.split('  ', 1)
+    assert hashlib.sha256((evidence / name).read_bytes()).hexdigest() == expected, name
+for path in evidence.rglob('*.json.gz'):
+    json.loads(gzip.decompress(path.read_bytes()))
+paths = subprocess.check_output(['git', 'diff', '--name-only'], text=True).splitlines()
+paths += ['docs/qualification/selector-repeat-2026-10-03.md']
+links = 0
+for name in paths:
+    path = root / name
+    if path.suffix != '.md':
+        continue
+    for target in re.findall(r'\]\(([^)]+)\)', path.read_text()):
+        target = target.strip('<>').split('#', 1)[0]
+        if not target or '://' in target or target.startswith('mailto:'):
+            continue
+        assert (path.parent / target).exists(), (name, target)
+        links += 1
+for name in ('app-ui-tests-feedback', 'clippy-default-feedback', 'clippy-ui-feedback', 'formatting-feedback', 'build-ui-feedback', 'replay-dot-repeat-feedback', 'native-app-final'):
+    report = json.loads((scratch / (name + '.json')).read_text())
+    assert report['gate_exit_code'] == 0 and report['source_unchanged'], name
+    assert report['source_manifest_sha256'] == digest, name
+result = {'source_manifest_sha256': digest, 'source_files_verified': len(manifest), 'evidence_files_verified': len(sums), 'local_markdown_links_verified': links, 'failures': []}
+(scratch / 'evidence-validation.json').write_text(json.dumps(result, indent=2) + '\n')
+print(json.dumps(result, indent=2))

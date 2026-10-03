@@ -489,7 +489,7 @@ impl DeadpanApp {
         true
     }
 
-    pub(super) fn record_macro_selection_cut(
+    pub(super) fn record_macro_delete(
         &mut self,
         destination: Option<char>,
         target: Option<Result<Capture, String>>,
@@ -499,8 +499,17 @@ impl DeadpanApp {
         }
         let target = target.unwrap_or_else(|| self.capture_macro_target());
         self.copied.begin_write();
-        let instruction = register_name(destination)
-            .map(|register| SemanticInstruction::CutSelection { register });
+        let instruction = target.as_ref().map_err(Clone::clone).and_then(|target| {
+            let register = register_name(destination)?;
+            Ok(if target.context.visual_selection.is_some() {
+                SemanticInstruction::CutSelection { register }
+            } else {
+                SemanticInstruction::Cut {
+                    selector: deadpan_core::SemanticSelector::SelectedBeat,
+                    register,
+                }
+            })
+        });
         self.apply_recorded_instruction(target, instruction);
         true
     }
@@ -550,6 +559,58 @@ impl DeadpanApp {
         target: Result<Capture, String>,
         instruction: Result<SemanticInstruction, String>,
     ) {
+        self.apply_semantic_instruction(target, instruction, None);
+    }
+
+    pub(super) fn repeat_last_edit(&mut self) {
+        let invocation = (|| {
+            let captured = self.capture_macro_target()?;
+            let snapshot = self
+                .semantic
+                .snapshot()
+                .ok_or("Make a picture cut before repeating an edit.")?;
+            let edit = snapshot.edit_for(&captured.base)?;
+            match &captured.context.visual_selection {
+                Some(selection) if selection.anchor == selection.head => {
+                    return Err(
+                        "The Edit selection is empty. Move a boundary before repeating the cut."
+                            .into(),
+                    );
+                }
+                None if matches!(
+                    edit.operation,
+                    crate::project::semantic::RepeatableCut::Selector(
+                        deadpan_core::SemanticSelector::VisualSelection
+                    )
+                ) =>
+                {
+                    return Err("Select a new Visual range before repeating this cut.".into());
+                }
+                _ => {}
+            }
+            let register = register_name(self.copied.selected_override().unwrap_or(edit.register))?;
+            let instruction = edit.instruction(&captured.context, register);
+            Ok((captured, instruction, snapshot.version))
+        })();
+        self.cancel_repeats("semantic repetition was requested");
+        self.bindings.clear();
+        // The override belongs to this attempt, including refusals. A saved
+        // result still arrives through the immutable request and durable bank.
+        self.copied.begin_write();
+        match invocation {
+            Ok((capture, instruction, version)) => {
+                self.apply_semantic_instruction(Ok(capture), Ok(instruction), Some(version));
+            }
+            Err(error) => self.error = Some(error),
+        }
+    }
+
+    fn apply_semantic_instruction(
+        &mut self,
+        target: Result<Capture, String>,
+        instruction: Result<SemanticInstruction, String>,
+        repeat_version: Option<u64>,
+    ) {
         let result = (|| {
             if self.macros.is_pending() || self.service.is_busy() || self.copied.is_pending() {
                 return Err("Wait for the pending project action before another edit.".into());
@@ -579,6 +640,7 @@ impl DeadpanApp {
                 instruction: instruction.clone(),
                 scope: captured.scope.clone(),
                 context: captured.context.clone(),
+                repeat_version,
             };
             self.stop_playback();
             if self.submit(ProjectRequest::Macro(operation.clone())) {
@@ -624,13 +686,7 @@ impl DeadpanApp {
                 .register
                 .map_or(Ok(RegisterName::unnamed()), RegisterName::new)
                 .expect("captured register was validated");
-            recording.cut = Some((
-                request.id.clone(),
-                SemanticInstruction::CutFrames {
-                    operation: attempt.operation.clone(),
-                    register,
-                },
-            ));
+            recording.cut = Some((request.id.clone(), attempt.operation.instruction(register)));
         }
     }
 

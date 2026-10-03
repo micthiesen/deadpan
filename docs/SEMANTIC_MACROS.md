@@ -147,7 +147,11 @@ while the old view cannot consume its cursor. A cursor moved while execution
 was pending is not retargeted by the delayed result.
 
 Native and headless execution use the shared core planner and store Compound
-entrypoint. A macro edit clears the current frame-cut-only dot-repeat candidate.
+entrypoint. An authored named Run clears the current dot-repeat candidate.
+A supported direct Apply cut establishes its effective selector and register
+after commit, including during recording. Recording `.` stores that effective
+cut instruction; later playback does not consult session repeat state. Bank-only
+operations preserve the candidate. See [semantic repeat](SEMANTIC_REPEAT.md).
 
 ## Headless inspection, save and run
 

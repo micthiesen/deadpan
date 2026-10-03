@@ -30,7 +30,8 @@ impl DeadpanApp {
             .ok_or("Open a project before deleting time.")?;
         let scope = self.sequence_scope.clone();
         let parent = scope.resolve(&base)?.owner.clone();
-        let edit = match self.edit_selection() {
+        let selection = self.edit_selection();
+        let edit = match selection {
             navigation::EditSelection::Empty => return Err("The Edit selection is empty. Move its boundary or press Esc before deleting a beat; no edit was made.".into()),
             navigation::EditSelection::Range => ProjectEdit::DeleteRange {
                 parent: parent.clone(),
@@ -50,7 +51,18 @@ impl DeadpanApp {
             parent,
             edit,
             register: self.copied.selected(),
-            attempt: None,
+            attempt: Some(crate::project::semantic::CutAttempt {
+                operation: crate::project::semantic::RepeatableCut::Selector(match selection {
+                    navigation::EditSelection::Range => {
+                        deadpan_core::SemanticSelector::VisualSelection
+                    }
+                    navigation::EditSelection::None => deadpan_core::SemanticSelector::SelectedBeat,
+                    navigation::EditSelection::Empty => {
+                        unreachable!("empty deletion rejected above")
+                    }
+                }),
+                repeat_version: None,
+            }),
         })
     }
 

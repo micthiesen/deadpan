@@ -95,6 +95,28 @@ impl State {
 }
 
 impl Service {
+    pub(super) fn check_semantic_repeat(
+        &mut self,
+        version: u64,
+        context: &deadpan_core::SemanticContext,
+        instruction: &deadpan_core::SemanticInstruction,
+    ) -> Result<()> {
+        self.observe_semantic();
+        let snapshot = self
+            .semantic
+            .snapshot()
+            .ok_or("Repeat state is unavailable")?;
+        let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
+        let edit = snapshot.edit_for(workspace)?;
+        let submitted = LastEdit::from_instruction(instruction)
+            .ok_or("Only a supported cut can repeat the last semantic edit")?;
+        let register = super::registers::name(submitted.register)?;
+        if snapshot.version != version || edit.instruction(context, register) != *instruction {
+            return Err("The last semantic edit changed or differs from this request. Start the repeat again; no edit was made.".into());
+        }
+        Ok(())
+    }
+
     pub(super) fn observe_semantic(&mut self) {
         match (self.workspace.as_ref(), self.store.as_ref()) {
             (Some(workspace), Some(store)) => self.semantic.observe(

@@ -3,11 +3,13 @@
 use super::*;
 use crate::project::marks;
 use crate::project::registers::{Bank, Value};
-use crate::project::semantic::{CutAttempt, LastEdit, Snapshot};
+use crate::project::semantic::{CutAttempt, LastEdit, RepeatableCut, Snapshot};
 use crate::project::slice::{CaptureRequest, Captured, CopyId};
 use deadpan_cli::host::Client;
 use deadpan_cli::live_project::{self, HistoryDirection, Operation, Reply, ShortOperation};
 use deadpan_core::{FrameCut, SliceCaptureSelection};
+
+mod selectors;
 
 fn setup(path: &Path) -> (Harness, ProjectUpdate) {
     drop(seed_holds(path, &["a", "b", "c"]));
@@ -61,7 +63,7 @@ fn frame_cut(
     ProjectRequest::CutFrames {
         capture: capture(workspace, ticket, register, range.start().0, range.end().0),
         attempt: CutAttempt {
-            operation,
+            operation: RepeatableCut::Frames(operation),
             repeat_version,
         },
     }
@@ -89,7 +91,7 @@ fn intent(update: &ProjectUpdate, count: u32, register: Option<char>) -> &Snapsh
     assert_eq!(
         snapshot.edit,
         Some(LastEdit {
-            operation: FrameCut::new(count).unwrap(),
+            operation: RepeatableCut::Frames(FrameCut::new(count).unwrap()),
             register
         })
     );
@@ -143,8 +145,8 @@ fn repeat_uses_the_new_cursor_and_original_count_with_one_undo_and_durable_copie
     let first_view = first.workspace.as_ref().unwrap();
     assert_eq!(first_view.plan.duration().frames(), 28);
     assert_eq!(
-        first_state.edit_for(first_view).unwrap().operation.count(),
-        7
+        first_state.edit_for(first_view).unwrap().operation,
+        RepeatableCut::Frames(FrameCut::new(7).unwrap())
     );
     assert_eq!(
         copied(first.registers.as_ref().unwrap(), 'a')
@@ -236,7 +238,7 @@ fn stale_repeat_versions_and_mismatched_operations_or_ranges_preserve_all_saved_
         ProjectRequest::CutFrames {
             capture: capture(view, 4, Some('b'), 5, 7),
             attempt: CutAttempt {
-                operation: FrameCut::new(3).unwrap(),
+                operation: RepeatableCut::Frames(FrameCut::new(3).unwrap()),
                 repeat_version: None,
             },
         },
@@ -244,7 +246,7 @@ fn stale_repeat_versions_and_mismatched_operations_or_ranges_preserve_all_saved_
         ProjectRequest::CutFrames {
             capture: original_capture.clone(),
             attempt: CutAttempt {
-                operation: FrameCut::new(4).unwrap(),
+                operation: RepeatableCut::Frames(FrameCut::new(4).unwrap()),
                 repeat_version: None,
             },
         },

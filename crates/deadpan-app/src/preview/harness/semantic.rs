@@ -1,11 +1,14 @@
-//! Semantic frame cuts through keyboard input, real commits and composed pictures.
+//! Semantic cuts through keyboard input, real commits and composed pictures.
 
 use super::*;
 use crate::preview::copied::Content;
+use crate::project::semantic::RepeatableCut;
 use crate::project::slice::Captured;
 use deadpan_core::{FrameRange, ProjectDocument};
 use deadpan_store::{AccessMode, ProjectStore};
 use egui::{Event, Key, Modifiers};
+
+mod selectors;
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     let rect = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(960.0, 640.0));
@@ -30,7 +33,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     marks(d, &baseline)?;
     guards(d)?;
     unsupported(d, &baseline)?;
-    fresh_count(d, &baseline)
+    fresh_count(d, &baseline)?;
+    selectors::run(d, &baseline)
 }
 
 fn clamped_then_retargeted(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(), String> {
@@ -198,30 +202,25 @@ fn guards(d: &mut Driver<'_>) -> Result<(), String> {
         unchanged(d, &saved, &accepted, "Modified Period makes no edit")?;
     }
     for finished in [false, true] {
-        for nonempty in [false, true] {
-            at(d, 20)?;
+        at(d, 20)?;
+        d.key(Key::V)?;
+        if finished {
             d.key(Key::V)?;
-            if nonempty {
-                d.events("Extend the Visual range", keys(&[Key::Num4, Key::L]))?;
-            }
-            if finished {
-                d.key(Key::V)?;
-            }
-            let selection = d.app().edit_range.clone();
-            d.key(Key::Period)?;
-            unchanged(
-                d,
-                &saved,
-                &accepted,
-                "Dot refuses empty and nonempty Visual selections",
-            )?;
-            d.check(
-                "A refused dot retains its active or finished Visual selection",
-                d.app().edit_range == selection,
-                json!({"finished":finished,"nonempty":nonempty,"selection_retained":true}),
-                state(d),
-            )?;
         }
+        let selection = d.app().edit_range.clone();
+        d.key(Key::Period)?;
+        unchanged(
+            d,
+            &saved,
+            &accepted,
+            "Dot refuses an explicit empty Visual selection",
+        )?;
+        d.check(
+            "A refused dot retains its active or finished Visual selection",
+            d.app().edit_range == selection,
+            json!({"finished":finished,"nonempty":false,"selection_retained":true}),
+            state(d),
+        )?;
     }
     at(d, 20)?;
     d.command("source")?;
@@ -459,7 +458,7 @@ fn candidate(
             && snapshot
                 .edit
                 .as_ref()
-                .is_some_and(|edit| edit.operation.count() == count && edit.register == register)
+                .is_some_and(|edit| matches!(&edit.operation, RepeatableCut::Frames(operation) if operation.count() == count) && edit.register == register)
             && snapshot.error.is_none()
     });
     d.check(
@@ -604,7 +603,7 @@ fn state(d: &Driver<'_>) -> Value {
     let mut state = d.snapshot();
     state["semantic_repeat"] = d.app().semantic.snapshot().map_or(Value::Null, |snapshot| json!({
         "session":snapshot.session,"version":snapshot.version,"head":snapshot.head,"error":snapshot.error,
-        "edit":snapshot.edit.as_ref().map(|edit| json!({"count":edit.operation.count(),"register":edit.register})),
+        "edit":snapshot.edit.as_ref().map(|edit| json!({"operation":format!("{:?}",edit.operation),"register":edit.register})),
     }));
     state
 }

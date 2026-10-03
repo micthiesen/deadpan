@@ -575,12 +575,18 @@ live expected revisions, playback and export remain timeline-only. Bank-only
 execution creates no edit receipt and preserves Undo/Redo. See
 [the compound contract](docs/COMPOUND_TRANSACTIONS.md).
 
-Frame-cut dot-repeat retains the requested count and destination register, never
-old cursor coordinates. Keep semantic intent in the project service, observing
+Cut dot-repeat retains the typed selector, requested count/direction and register,
+never old coordinates. A current Visual selection overrides the saved selector;
+empty selections refuse, and saved Visual cuts require a new selection. Resolve
+whole beats by explicit child identity, including empty siblings. Keep semantic
+intent in the project service, observing
 the actual saved head independently of preview refresh. Exact successful-cut
 proofs replace it; direct mark and Undo/Redo proofs preserve it. Any other head
 change clears it, including unrefreshed headless commits. Admit versioned UI
-snapshots and reject stale repeat requests before writing. See
+snapshots and reject stale repeat requests before writing. Single Apply cuts
+establish intent after commit and before refresh; named Run transitions remain
+unproved. Record dot's effective instruction. Preserve legacy cut receipts and
+validate their exact captured selector. See
 [semantic repeat](docs/SEMANTIC_REPEAT.md).
 
 The database also retains operational generation

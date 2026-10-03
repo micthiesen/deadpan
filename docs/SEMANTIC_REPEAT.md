@@ -1,14 +1,14 @@
-# Semantic frame-cut repeat
+# Semantic cut repeat
 
-Plain `.` repeats the last committed frame cut at the current Edit cursor.
-`x`, counted `x`, and `:delete-frames Nf` supply this intent. For example,
-`7x` near a group's end may remove only two frames. Moving elsewhere and
-pressing `.` still requests seven frames. Each repeat is one ordinary atomic
-cut with one Undo entry and a newly captured editable copy.
+Plain `.` repeats the last committed picture cut against a new current target.
+`x`, counted `x`, `:delete-frames Nf`, `d` with a motion, `dd`, Visual `d` and
+`:delete` supply this intent. Each repeat is one atomic cut with one Undo entry
+and a newly captured editable copy.
 
-This is the first implemented semantic edit for DP-06. [Semantic macros](SEMANTIC_MACROS.md)
-now record frame motions, frame cuts and named calls. Other edit kinds and
-semantic text/range selectors remain required. The resolved
+This covers the implemented picture cuts for DP-06. [Semantic macros](SEMANTIC_MACROS.md)
+record the effective cut instruction, so a recorded dot does not depend on a
+later repeat candidate. Other edit kinds and semantic text/role/occurrence
+selectors remain required. The resolved
 [compound transaction boundary](COMPOUND_TRANSACTIONS.md) is separate.
 
 ## Selection and registers
@@ -22,10 +22,24 @@ arithmetic. A missing/unsupported owner, cursor outside the group, cursor at
 its end, or unsupported partial endpoint refuses without a write. The host
 binds resolution to the captured project session and revision.
 
-The native request retains the count alongside its exact captured range. The
-project service resolves it again before committing and rejects any mismatch.
-Initial frame cuts and dot-repeat share that path; screen coordinates and
-previous timestamps are never recorded as repeat intent.
+For example, `7x` near a group's end may remove only two frames. Moving elsewhere
+and pressing `.` still requests seven frames. A motion cut such as `d5h` retains
+its five-frame backward motion. Beat and group-boundary motions also resolve
+again. `dd` targets the newly selected direct child, including an empty child;
+it does not infer that child from a shared time boundary.
+
+A current active or finished Visual selection overrides the retained selector.
+An explicit empty selection refuses without falling back to the cursor or beat.
+A saved Visual cut requires a new Visual selection; old endpoints are never
+reused. A successful override becomes the new repeat intent.
+
+Dot uses the shared semantic Apply planner. Its request captures the current
+session, revision, bank version, Sequence scope, cursor, selected child and
+oriented Visual selection, including absence. The service resolves the effective
+instruction against that exact context. Legacy frame and Visual/whole-beat cuts
+retain their existing independent cut receipts and validate their intent against
+the exact captured range or child. Legacy motion intents and selector repeats
+without the full semantic context refuse.
 
 The original destination register is retained. An explicit register choice
 overrides it for the next repeat, including `""` for the default register.
@@ -42,8 +56,10 @@ Before publishing, it reads the actual saved head through a bounded single-row
 query, without decoding a document. The visible workspace may still hold an
 older revision after a failed refresh.
 
-A supported cut records an exact before/after revision proof immediately after
-commit, before optional refresh. Direct mark-only saves and Undo/Redo record
+A supported direct cut records an exact before/after revision proof immediately
+after commit, before optional refresh. This includes a single Apply during
+recording. Named macro Run transitions remain unproved and clear the candidate
+when they change the document. Direct mark-only saves and Undo/Redo record
 preservation proofs. An observed head change applies a proof only when its
 session, project and both revisions match exactly. Any other head change clears
 the candidate. This covers unsupported native edits, prepared insertions and
@@ -72,17 +88,22 @@ copy confirmation cannot erase a successful cut's semantic intent.
 ## Native interaction
 
 The configurable binding ID is `edit.repeat-last`, default `.`. The footer
-shows the retained requested length when repeat is available. Searchable help
+shows the effective target, retained count/direction, or required Visual range.
+It identifies an empty current range as unavailable. Searchable help
 describes the current scope. Counts before `.` and held activation are refused.
 Native text, controls, IME and pending prefixes retain input ownership.
 
-Repeating requires Your edit with an eligible video pane and no active or
-retained Visual range. Original, Sources, Placed sounds and temporary previews
-refuse. Each invocation captures its new scope and cursor once. The keyboard
+Repeating requires Your edit with an eligible video pane. Original, Sources,
+Placed sounds and temporary previews refuse. Each invocation captures its new
+context once. An attempted dot also consumes a one-shot register override when
+pending macro work or a full recording refuses it, without changing queued work.
+The keyboard
 compatibility audit and rendered `dot-repeat` replay exercise the production
 paths; physical layout and OS IME qualification remain separate obligations.
 
-No project schema changes are needed. SQLite remains at 54 and core documents
-at 43; the resolved cut history uses the existing typed deletion command.
-See [qualification and limits](qualification/semantic-repeat-2026-10-02.md)
-for executed tests, rendered replay and source identities.
+No project schema changes are needed. SQLite remains at 55 and core documents
+at 43; history uses the existing resolved cut/Compound commands.
+See the [frame-cut qualification](qualification/semantic-repeat-2026-10-02.md)
+for the original increment and the
+[selector-repeat qualification](qualification/selector-repeat-2026-10-03.md)
+for service tests, keyboard replay, native feedback and remaining limits.

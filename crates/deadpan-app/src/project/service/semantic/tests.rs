@@ -1,4 +1,5 @@
 use super::*;
+use crate::project::semantic::RepeatableCut;
 use deadpan_core::FrameCut;
 
 fn project() -> ProjectId {
@@ -9,7 +10,7 @@ fn revision(id: &str) -> RevisionId {
 }
 fn edit(count: u32) -> LastEdit {
     LastEdit {
-        operation: FrameCut::new(count).unwrap(),
+        operation: RepeatableCut::Frames(FrameCut::new(count).unwrap()),
         register: Some('a'),
     }
 }

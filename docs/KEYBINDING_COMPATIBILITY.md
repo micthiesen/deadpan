@@ -134,16 +134,19 @@ contextual help explains counts and group boundaries. See
 ## Declarative editor paths
 
 Plain `.` routes the configurable `edit.repeat-last` action. It repeats the
-last committed frame-cut intent at the current Edit cursor. Counts, held
+last committed picture cut against the current Edit target. Counts, held
 activation, native control/text focus and composition cannot invoke it.
-Pending mark/register prefixes retain their own suffix rules. Visual ranges,
-Original, Sources, Placed sounds and temporary previews refuse the edit.
-The footer shows the retained requested length. See
+Pending mark/register prefixes retain their own suffix rules. A current Visual
+range overrides the retained frame, beat or motion selector; empty Visual ranges
+refuse. Original, Sources, Placed sounds and temporary previews refuse the edit.
+The footer shows the effective target or required selection. See
 [semantic repeat](SEMANTIC_REPEAT.md) for saved-revision and register behavior.
 The production audit enumerates Period alongside the other logical identities,
 and `dot-repeat` is the corresponding rendered replay. Its
-[qualification](qualification/semantic-repeat-2026-10-02.md) passes 159 rendered
+[initial frame-cut qualification](qualification/semantic-repeat-2026-10-02.md) passed 159 rendered
 checks and the 172,360-case audit with matching live Kestrel source.
+The [selector extension](qualification/selector-repeat-2026-10-03.md) records
+current Visual overrides, typed cuts and the expanded production audit.
 
 The shipped Normal/Visual paths now use a [validated binding trie](KEYMAP.md).
 Prefix hints come from the same declarations, and the audit walks every

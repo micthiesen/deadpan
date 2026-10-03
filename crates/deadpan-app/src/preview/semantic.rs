@@ -1,7 +1,46 @@
 //! Admit monotonically newer repeat receipts only in the visible session.
 
-use crate::project::semantic::Snapshot;
-use deadpan_core::ProjectId;
+use crate::project::semantic::{RepeatableCut, Snapshot};
+use deadpan_core::{ProjectId, SemanticMotion, SemanticSelector};
+
+impl super::DeadpanApp {
+    pub(super) fn repeat_hint(&self) -> Option<String> {
+        let edit = self
+            .semantic
+            .snapshot()?
+            .edit_for(self.workspace.as_ref()?)
+            .ok()?;
+        match self.edit_selection() {
+            crate::navigation::EditSelection::Range => {
+                return Some("repeat cut selection".into());
+            }
+            crate::navigation::EditSelection::Empty => {
+                return Some("repeat unavailable: empty range".into());
+            }
+            crate::navigation::EditSelection::None => {}
+        }
+        Some(match &edit.operation {
+            RepeatableCut::Frames(operation) => format!("repeat cut {}f", operation.count()),
+            RepeatableCut::Selector(selector) => match selector {
+                SemanticSelector::SelectedBeat => "repeat cut beat".into(),
+                SemanticSelector::VisualSelection => "select range to repeat cut".into(),
+                SemanticSelector::Motion { motion } => match motion {
+                    SemanticMotion::Frames { forward, count } => format!(
+                        "repeat cut {count}f {}",
+                        if *forward { "forward" } else { "backward" }
+                    ),
+                    SemanticMotion::Beats { forward, count } => format!(
+                        "repeat cut {count} beats {}",
+                        if *forward { "forward" } else { "backward" }
+                    ),
+                    SemanticMotion::Scope { end } => {
+                        format!("repeat cut to group {}", if *end { "end" } else { "start" })
+                    }
+                },
+            },
+        })
+    }
+}
 
 #[derive(Default)]
 pub(super) struct Mirror {
@@ -53,7 +92,7 @@ mod tests {
             version: 2,
             head: Some(RevisionId::new("cut").unwrap()),
             edit: Some(LastEdit {
-                operation: FrameCut::new(5).unwrap(),
+                operation: RepeatableCut::Frames(FrameCut::new(5).unwrap()),
                 register: None,
             }),
             error: None,

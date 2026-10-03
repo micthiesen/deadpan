@@ -152,6 +152,7 @@ fn oriented_visual_copy_keeps_redo_and_replacement_failure_retains_exact_selecti
         &harness.service,
         Operation::Apply {
             id: id(&undone, 1),
+            repeat_version: None,
             instruction: SemanticInstruction::Yank {
                 selector: SemanticSelector::VisualSelection,
                 register: RegisterName::new('b').unwrap(),
@@ -212,6 +213,7 @@ fn oriented_visual_copy_keeps_redo_and_replacement_failure_retains_exact_selecti
         .store(true, Ordering::Release);
     let operation = Operation::Apply {
         id: id(&redone, 2),
+        repeat_version: None,
         instruction: SemanticInstruction::ReplaceSelection {
             register: RegisterName::new('b').unwrap(),
         },
@@ -312,6 +314,7 @@ fn bank_only_yank_refresh_failure_retains_the_selected_child_copy_and_redo() {
     let before_rows = rows(&path);
     let operation = Operation::Apply {
         id: id(&undone, 1),
+        repeat_version: None,
         instruction: SemanticInstruction::YankBeat {
             register: RegisterName::new('b').unwrap(),
         },
@@ -559,6 +562,7 @@ fn empty_selected_beat_yanks_and_pastes_at_its_sibling_slot_without_cursor_infer
         &harness.service,
         Operation::Apply {
             id: id(&opened, 1),
+            repeat_version: None,
             instruction: SemanticInstruction::Yank {
                 selector: SemanticSelector::SelectedBeat,
                 register: RegisterName::new('c').unwrap(),
@@ -580,6 +584,7 @@ fn empty_selected_beat_yanks_and_pastes_at_its_sibling_slot_without_cursor_infer
         &harness.service,
         Operation::Apply {
             id: id(&copied_update, 2),
+            repeat_version: None,
             instruction: SemanticInstruction::Paste {
                 register: RegisterName::new('c').unwrap(),
                 before: false,

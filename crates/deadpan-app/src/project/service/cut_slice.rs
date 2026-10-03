@@ -1,9 +1,11 @@
 //! Capture privately, save one deletion, then publish the copied structure.
 
 use super::*;
-use crate::project::semantic::{CutAttempt, LastEdit};
+use crate::project::semantic::{CutAttempt, LastEdit, RepeatableCut};
 use crate::project::slice::{CaptureRequest, CutReceipt, CutUpdate};
-use deadpan_core::{AudioTimingId, ProjectFrame, SliceCaptureSelection, SplitIdentities};
+use deadpan_core::{
+    AudioTimingId, ProjectFrame, SemanticSelector, SliceCaptureSelection, SplitIdentities,
+};
 
 impl Service {
     pub(super) fn cut_edit_slice_command(
@@ -32,7 +34,7 @@ impl Service {
     ) -> Result<CutReceipt> {
         self.check_register_request(&capture.id)?;
         if let Some(attempt) = attempt {
-            self.check_frame_cut(capture, attempt)?;
+            self.check_cut_attempt(capture, attempt)?;
         }
         // Historical capture resolves the full scope and exact child identity.
         // No register reply is emitted before the transaction succeeds.
@@ -164,7 +166,12 @@ impl Service {
         Ok(receipt)
     }
 
-    fn check_frame_cut(&mut self, capture: &CaptureRequest, attempt: &CutAttempt) -> Result<()> {
+    fn check_cut_attempt(&mut self, capture: &CaptureRequest, attempt: &CutAttempt) -> Result<()> {
+        if attempt.repeat_version.is_some()
+            && !matches!(attempt.operation, RepeatableCut::Frames(_))
+        {
+            return Err("Repeating a selector requires its full semantic context".into());
+        }
         self.observe_semantic();
         self.check_context(capture.id.session, &capture.id.source_revision)?;
         let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
@@ -173,7 +180,7 @@ impl Service {
             .snapshot()
             .ok_or("Repeat state is unavailable")?;
         if snapshot.head.as_ref() != Some(&capture.id.source_revision) {
-            return Err("The saved project changed. Reopen it before cutting frames.".into());
+            return Err("The saved project changed. Reopen it before cutting content.".into());
         }
         if let Some(version) = attempt.repeat_version
             && (snapshot.version != version
@@ -183,16 +190,30 @@ impl Service {
                 "The last semantic edit changed. Start the repeat again; no edit was made.".into(),
             );
         }
-        let SliceCaptureSelection::Range { range } = &capture.selection else {
-            return Err("A semantic frame cut requires an exact cursor range".into());
-        };
-        if attempt
-            .operation
-            .resolve(&workspace.document, &capture.parent, range.start())
-            .map_err(display)?
-            != *range
-        {
-            return Err("The frame cut differs from its requested count and current cursor".into());
+        match (&attempt.operation, &capture.selection) {
+            (RepeatableCut::Frames(operation), SliceCaptureSelection::Range { range }) => {
+                if operation
+                    .resolve(&workspace.document, &capture.parent, range.start())
+                    .map_err(display)?
+                    != *range
+                {
+                    return Err(
+                        "The frame cut differs from its requested count and current cursor".into(),
+                    );
+                }
+            }
+            (
+                RepeatableCut::Selector(SemanticSelector::SelectedBeat),
+                SliceCaptureSelection::Child { .. },
+            ) => {}
+            (
+                RepeatableCut::Selector(SemanticSelector::VisualSelection),
+                SliceCaptureSelection::Range { range },
+            ) if range.start() < range.end() => {}
+            (RepeatableCut::Selector(SemanticSelector::Motion { .. }), _) => {
+                return Err("A motion cut requires its entry cursor and semantic context".into());
+            }
+            _ => return Err("The cut selection differs from its semantic intent".into()),
         }
         Ok(())
     }
