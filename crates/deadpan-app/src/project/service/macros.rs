@@ -176,6 +176,7 @@ impl Service {
                             SemanticInstruction::ReplaceSelection { .. } => "Replace selection",
                             SemanticInstruction::Paste { .. } => "Paste register",
                             SemanticInstruction::Repeat { .. } => "Wrap Repeat",
+                            SemanticInstruction::SetRepeatPlays { .. } => "Set Repeat plays",
                             _ => "Recorded action",
                         }
                         .to_owned(),

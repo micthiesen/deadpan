@@ -1,0 +1,49 @@
+{
+  "binary_sha256": "d09b3e5da01daa4b354474af8d0b127e6d91d87767d1cab7215d138231bbbe5e",
+  "source_manifest_sha256": "ee933f6c2f5e470b1d6c2ff2ff5f93824901e73539b3ab330a8f51402ca344d2",
+  "exit_code": 0,
+  "targeted_process_absent": true,
+  "final_root_repeat_counts": [
+    5,
+    5
+  ],
+  "final_revision": "a26da1b7-30f6-4637-b2ab-fa1c84a14272",
+  "saved_macro_z": {
+    "instructions": [
+      {
+        "plays": 6,
+        "type": "set_repeat_plays"
+      }
+    ]
+  },
+  "closed_read_commands": [
+    [
+      "target/debug/deadpan-app",
+      "--headless",
+      "project",
+      "dump",
+      "/tmp/deadpan-repeat-count-20261003/native-count.deadpan",
+      "--json"
+    ],
+    [
+      "target/debug/deadpan-app",
+      "--headless",
+      "macro",
+      "inspect",
+      "/tmp/deadpan-repeat-count-20261003/native-count.deadpan",
+      "--register",
+      "z"
+    ]
+  ],
+  "observations": [
+    ":repeat 5 sets the first Repeat: Edit 0/1080, selected duration 600 frames.",
+    "j, register a, dot sets the second Repeat: Edit 600/1200, both counts 5, register a retained.",
+    "qz, :repeat 6 records one setter: Edit 600/1320, selected duration 720 frames, register a retained.",
+    "q saves Macro z. One Undo restores Edit 600/1200 and count 5.",
+    ":macro z restores count 6 with one Undo. One Undo returns count 5 and keeps register a selected.",
+    "Cmd-Q exits cleanly. Closed headless reads retain two five-play root Repeats and Macro z with exactly one set_repeat_plays instruction for 6."
+  ],
+  "limits": [
+    "Developer wrapper uses external host libraries. No signing, packaging, VoiceOver, physical IME or acoustic qualification."
+  ]
+}

@@ -6,6 +6,7 @@ use deadpan_core::{
 };
 use std::num::NonZeroU32;
 
+mod repeat_counts;
 mod repeats;
 
 fn context(update: &ProjectUpdate, cursor: i64, selected: Option<&str>) -> SemanticContext {

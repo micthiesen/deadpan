@@ -8,6 +8,85 @@ where
     F: FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
     R: FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
 {
+    pub(super) fn set_repeat_plays(
+        &mut self,
+        trace_index: usize,
+        plays: u32,
+    ) -> Result<(), EditError> {
+        if self.context.visual_selection.is_some() {
+            return Err(invalid(
+                "clear the Visual selection before setting Repeat total plays",
+            ));
+        }
+        let selected = self.context.selected_child.clone().ok_or_else(|| {
+            EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "select an existing Repeat before setting total plays",
+            )
+        })?;
+        let slot = self.child_indices.get(&selected).copied().ok_or_else(|| {
+            EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "the selected Repeat must be a direct child of the current Sequence",
+            )
+        })?;
+        if !matches!(
+            self.current.nodes()[&selected].kind,
+            NodeKind::Repeat { .. }
+        ) {
+            return Err(EditError::new(
+                EditErrorCode::WrongNodeKind,
+                "set-repeat-plays requires an existing Repeat",
+            ));
+        }
+        let start = slot
+            .checked_sub(1)
+            .map_or(self.bounds.0, |previous| self.child_ends[previous].1);
+        let range =
+            FrameRange::new(start, self.child_ends[slot].1).map_err(crate::DocumentError::from)?;
+        self.charge_step(false)?;
+        let allocation = (self.allocate)(SemanticAllocationRequest::SetRepeatPlays {
+            step_index: self.steps.len(),
+        })?;
+        let SemanticAllocation::SetRepeatPlays { new_revision } = allocation else {
+            return Err(invalid(
+                "macro count setting requires a SetRepeatPlays allocation",
+            ));
+        };
+        self.reserve_revision(&new_revision)?;
+        let timing = AudioTimingId {
+            allocation: new_revision.clone(),
+            ordinal: 0,
+        };
+        // Even an unchanged count authors the supplied fresh revision, matching
+        // the ordinary setter. Existing Repeat identities and clocks survive.
+        let edit = LeafEdit::new(
+            new_revision,
+            Command::SetRepeatPlays {
+                node: selected.clone(),
+                plays,
+                timing,
+            },
+        )?;
+        let applied = crate::apply(&self.current, &edit.request(&self.current))?;
+        let next = applied.forward.apply(&self.current)?;
+        charge(
+            &mut self.document_bytes,
+            wire::size(&next, MAX_DOCUMENT_JSON_BYTES)?,
+            MAX_COMPOUND_DOCUMENT_BYTES,
+            "macro staged document byte limit",
+        )?;
+        self.current = next;
+        self.steps.push(ResolvedStep::Edit { edit });
+        self.context.cursor = start;
+        self.context.selected_child = Some(selected.clone());
+        self.refresh_children()?;
+        self.trace[trace_index].resolved_selection =
+            Some(SliceCaptureSelection::Child { node: selected });
+        self.trace[trace_index].resolved_range = Some(range);
+        Ok(())
+    }
+
     pub(super) fn repeat(
         &mut self,
         trace_index: usize,

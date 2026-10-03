@@ -17,44 +17,83 @@ impl super::DeadpanApp {
             .snapshot()?
             .edit_for(self.workspace.as_ref()?)
             .ok()?;
-        match self.edit_selection() {
-            crate::navigation::EditSelection::Range => {
-                return Some(match &edit.operation {
-                    RepeatableEdit::Cut(_) => "repeat cut selection".into(),
-                    RepeatableEdit::Repeat { plays, .. } => format!("repeat selection ×{plays}"),
-                });
-            }
-            crate::navigation::EditSelection::Empty => {
-                return Some("repeat unavailable: empty range".into());
-            }
-            crate::navigation::EditSelection::None => {}
+        let selected_repeat = matches!(edit.operation, RepeatableEdit::SetRepeatPlays { .. })
+            && self.workspace.as_ref().is_some_and(|workspace| {
+                self.selected_beat.as_ref().is_some_and(|selected| {
+                    self.sequence_scope
+                        .resolve(workspace)
+                        .is_ok_and(|scope| scope.children.contains(selected))
+                        && matches!(
+                            workspace
+                                .document
+                                .nodes()
+                                .get(selected)
+                                .map(|node| &node.kind),
+                            Some(deadpan_core::NodeKind::Repeat { .. })
+                        )
+                })
+            });
+        Some(repeat_instruction_hint(
+            &edit.operation,
+            self.edit_selection(),
+            selected_repeat,
+        ))
+    }
+}
+
+fn repeat_instruction_hint(
+    operation: &RepeatableEdit,
+    selection: crate::navigation::EditSelection,
+    selected_repeat: bool,
+) -> String {
+    let visual_hint = |range: String| match selection {
+        crate::navigation::EditSelection::Range => Some(range),
+        crate::navigation::EditSelection::Empty => Some("repeat unavailable: empty range".into()),
+        crate::navigation::EditSelection::None => None,
+    };
+    let (action, selector) = match operation {
+        RepeatableEdit::Cut(RepeatableCut::Frames(operation)) => {
+            return visual_hint("repeat cut selection".into())
+                .unwrap_or_else(|| format!("repeat cut {}f", operation.count()));
         }
-        let (action, selector) = match &edit.operation {
-            RepeatableEdit::Cut(RepeatableCut::Frames(operation)) => {
-                return Some(format!("repeat cut {}f", operation.count()));
+        RepeatableEdit::Cut(RepeatableCut::Selector(selector)) => {
+            if let Some(hint) = visual_hint("repeat cut selection".into()) {
+                return hint;
             }
-            RepeatableEdit::Cut(RepeatableCut::Selector(selector)) => {
-                ("repeat cut".to_owned(), selector)
+            ("repeat cut".to_owned(), selector)
+        }
+        RepeatableEdit::Repeat { selector, plays } => {
+            if let Some(hint) = visual_hint(format!("repeat selection ×{plays}")) {
+                return hint;
             }
-            RepeatableEdit::Repeat { selector, plays } => (format!("repeat ×{plays}"), selector),
-        };
-        Some(match selector {
-            SemanticSelector::SelectedBeat => format!("{action} beat"),
-            SemanticSelector::VisualSelection => format!("select range to {action}"),
-            SemanticSelector::Motion { motion } => match motion {
-                SemanticMotion::Frames { forward, count } => format!(
-                    "{action} {count}f {}",
-                    if *forward { "forward" } else { "backward" }
-                ),
-                SemanticMotion::Beats { forward, count } => format!(
-                    "{action} {count} beats {}",
-                    if *forward { "forward" } else { "backward" }
-                ),
-                SemanticMotion::Scope { end } => {
-                    format!("{action} to group {}", if *end { "end" } else { "start" })
-                }
-            },
-        })
+            (format!("repeat ×{plays}"), selector)
+        }
+        RepeatableEdit::SetRepeatPlays { plays } => {
+            return if selection != crate::navigation::EditSelection::None {
+                "repeat unavailable: clear Visual range".into()
+            } else if selected_repeat {
+                format!("set Repeat to {plays} plays")
+            } else {
+                format!("select Repeat to set {plays} plays")
+            };
+        }
+    };
+    match selector {
+        SemanticSelector::SelectedBeat => format!("{action} beat"),
+        SemanticSelector::VisualSelection => format!("select range to {action}"),
+        SemanticSelector::Motion { motion } => match motion {
+            SemanticMotion::Frames { forward, count } => format!(
+                "{action} {count}f {}",
+                if *forward { "forward" } else { "backward" }
+            ),
+            SemanticMotion::Beats { forward, count } => format!(
+                "{action} {count} beats {}",
+                if *forward { "forward" } else { "backward" }
+            ),
+            SemanticMotion::Scope { end } => {
+                format!("{action} to group {}", if *end { "end" } else { "start" })
+            }
+        },
     }
 }
 
@@ -98,6 +137,64 @@ mod tests {
     use super::*;
     use crate::project::semantic::LastEdit;
     use deadpan_core::{FrameCut, RevisionId};
+
+    #[test]
+    fn repeat_count_hint_requires_an_explicit_repeat_and_no_visual_state() {
+        use crate::navigation::EditSelection;
+        let operation = RepeatableEdit::SetRepeatPlays {
+            plays: std::num::NonZeroU32::new(3).unwrap(),
+        };
+        assert_eq!(
+            repeat_instruction_hint(&operation, EditSelection::None, true),
+            "set Repeat to 3 plays"
+        );
+        assert_eq!(
+            repeat_instruction_hint(&operation, EditSelection::None, false),
+            "select Repeat to set 3 plays"
+        );
+        for selection in [EditSelection::Empty, EditSelection::Range] {
+            for selected_repeat in [false, true] {
+                assert_eq!(
+                    repeat_instruction_hint(&operation, selection, selected_repeat),
+                    "repeat unavailable: clear Visual range"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn selector_and_frame_repeat_hints_keep_visual_override_teaching() {
+        use crate::navigation::EditSelection;
+        let cut = RepeatableEdit::Cut(RepeatableCut::Frames(FrameCut::new(5).unwrap()));
+        assert_eq!(
+            repeat_instruction_hint(&cut, EditSelection::None, false),
+            "repeat cut 5f"
+        );
+        assert_eq!(
+            repeat_instruction_hint(&cut, EditSelection::Range, false),
+            "repeat cut selection"
+        );
+        assert_eq!(
+            repeat_instruction_hint(&cut, EditSelection::Empty, false),
+            "repeat unavailable: empty range"
+        );
+        let wrapped = RepeatableEdit::Repeat {
+            selector: SemanticSelector::VisualSelection,
+            plays: std::num::NonZeroU32::new(3).unwrap(),
+        };
+        assert_eq!(
+            repeat_instruction_hint(&wrapped, EditSelection::None, true),
+            "select range to repeat ×3"
+        );
+        assert_eq!(
+            repeat_instruction_hint(&wrapped, EditSelection::Range, true),
+            "repeat selection ×3"
+        );
+        assert_eq!(
+            repeat_instruction_hint(&wrapped, EditSelection::Empty, true),
+            "repeat unavailable: empty range"
+        );
+    }
 
     #[test]
     fn late_snapshots_cannot_restore_cleared_edits_or_cross_sessions() {

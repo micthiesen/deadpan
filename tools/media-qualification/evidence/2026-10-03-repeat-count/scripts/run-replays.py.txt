@@ -1,0 +1,17 @@
+import os
+import subprocess
+import sys
+
+output = '/tmp/deadpan-repeat-count-20261003'
+environment = dict(os.environ, DEADPAN_CHECK_OUTPUT=output)
+for name, scenario in [('repeat-visual', 'repeat-operator'),
+                       ('dot-visual', 'dot-repeat'),
+                       ('macros-visual', 'macros')]:
+    command = ['python3', '/tmp/deadpan-original-layout-20261002/run-check.py',
+               name, 'target/debug/deadpan-app', '--ui-check', '--scenario',
+               scenario, '--mode', 'visual', '--output', output + '/' + name,
+               '--kestrel-source',
+               '/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift']
+    result = subprocess.run(command, env=environment)
+    if result.returncode:
+        sys.exit(result.returncode)

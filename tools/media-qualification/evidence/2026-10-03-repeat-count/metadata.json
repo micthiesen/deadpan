@@ -1,0 +1,379 @@
+{
+  "base_commit": "9870a4cbc706ad8cce8b59d4cb13ec5c2d3a9c33",
+  "source_manifest_sha256": "ee933f6c2f5e470b1d6c2ff2ff5f93824901e73539b3ab330a8f51402ca344d2",
+  "workspace_source_manifest_sha256": "dd00cc7eda98233c93012ab17c1ffa051322aea775145d4eaecbd8b7c62304cc",
+  "workspace_to_final_changes": [
+    "crates/deadpan-app/src/preview/harness/repeat_operator.rs"
+  ],
+  "source_note": "Only the optional UI replay fixture and minimum-window assertions changed after the full default workspace gate. Optional app tests, lint, builds and all rendered replays use the final source.",
+  "visual_binary_sha256": "d09b3e5da01daa4b354474af8d0b127e6d91d87767d1cab7215d138231bbbe5e",
+  "release_binary_sha256": "ef9921d7758ef3293c63b0f89cfebb43b5ea5c2e6bbc2a76df8175018ad022d1",
+  "test_counts": {
+    "workspace-tests-2": 3799,
+    "ui-tests": 764
+  },
+  "test_count_note": "The optional app configuration overlaps the full workspace run and is reported separately.",
+  "workflow_checks": 1043,
+  "replays": [
+    {
+      "run": "setter-visual",
+      "name": "repeat-setters",
+      "checks": 67,
+      "binary_sha256": "d09b3e5da01daa4b354474af8d0b127e6d91d87767d1cab7215d138231bbbe5e",
+      "findings": [],
+      "skipped": [
+        "Uses real typed commands, SQLite, keyboard routing and Metal. Physical key delivery, OS IME, acoustic output and full-size performance remain separate acceptance.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "run": "repeat-visual",
+      "name": "repeat-operator",
+      "checks": 223,
+      "binary_sha256": "d09b3e5da01daa4b354474af8d0b127e6d91d87767d1cab7215d138231bbbe5e",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "This replay delays delivery of genuine project updates to exercise Repeat prefix ownership. Physical keyboard delivery and OS IME behavior are not exercised.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "run": "dot-visual",
+      "name": "dot-repeat",
+      "checks": 381,
+      "binary_sha256": "d09b3e5da01daa4b354474af8d0b127e6d91d87767d1cab7215d138231bbbe5e",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "run": "macros-visual",
+      "name": "macros",
+      "checks": 372,
+      "binary_sha256": "d09b3e5da01daa4b354474af8d0b127e6d91d87767d1cab7215d138231bbbe5e",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    },
+    {
+      "run": "setter-performance",
+      "name": "repeat-setters",
+      "checks": 66,
+      "binary_sha256": "ef9921d7758ef3293c63b0f89cfebb43b5ea5c2e6bbc2a76df8175018ad022d1",
+      "findings": [],
+      "skipped": [
+        "Uses real typed commands, SQLite, keyboard routing and Metal. Physical key delivery, OS IME, acoustic output and full-size performance remain separate acceptance.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ]
+    }
+  ],
+  "kestrel": {
+    "conflicts": [],
+    "live_source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2",
+    "reserved_bindings": 62,
+    "routing_cases": 3319728,
+    "source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2"
+  },
+  "performance_timings": {
+    "ui_frame_cpu_ms": {
+      "completed": {
+        "max_ms": 3.517917,
+        "n": 302,
+        "p50_ms": 0.181333,
+        "p95_ms": 0.700708,
+        "p99_ms": 0.978708
+      },
+      "failed": 0,
+      "samples": 302,
+      "timed_out": 0
+    },
+    "ui_composition_submit_cpu_ms": {
+      "completed": {
+        "max_ms": 0.6455000000000001,
+        "n": 302,
+        "p50_ms": 0.09833399999999999,
+        "p95_ms": 0.133375,
+        "p99_ms": 0.183708
+      },
+      "failed": 0,
+      "samples": 302,
+      "timed_out": 0
+    },
+    "ui_composition_complete_ms": {
+      "completed": {
+        "max_ms": 9.885458,
+        "n": 302,
+        "p50_ms": 0.3975,
+        "p95_ms": 0.716166,
+        "p99_ms": 0.8
+      },
+      "failed": 0,
+      "samples": 302,
+      "timed_out": 0
+    },
+    "input_to_state_ms": {
+      "completed": {
+        "max_ms": 1.1020839999999998,
+        "n": 53,
+        "p50_ms": 0.42075,
+        "p95_ms": 0.881625,
+        "p99_ms": 1.1020839999999998
+      },
+      "failed": 0,
+      "samples": 53,
+      "timed_out": 0
+    },
+    "input_to_commit_ms": {
+      "completed": {
+        "max_ms": 82.95283400000001,
+        "n": 9,
+        "p50_ms": 6.2304580000000005,
+        "p95_ms": 82.95283400000001,
+        "p99_ms": 82.95283400000001
+      },
+      "failed": 0,
+      "samples": 9,
+      "timed_out": 0
+    },
+    "request_to_decode_delivery_ms": {
+      "completed": {
+        "max_ms": 4.437166,
+        "n": 21,
+        "p50_ms": 0.86175,
+        "p95_ms": 1.435875,
+        "p99_ms": 4.437166
+      },
+      "failed": 0,
+      "samples": 21,
+      "timed_out": 0
+    },
+    "request_to_worker_start_ms": {
+      "completed": {
+        "max_ms": 0.009833,
+        "n": 21,
+        "p50_ms": 0.006292,
+        "p95_ms": 0.008333,
+        "p99_ms": 0.009833
+      },
+      "failed": 0,
+      "samples": 21,
+      "timed_out": 0
+    },
+    "worker_execution_ms": {
+      "completed": {
+        "max_ms": 4.400458,
+        "n": 21,
+        "p50_ms": 0.070958,
+        "p95_ms": 0.14837499999999998,
+        "p99_ms": 4.400458
+      },
+      "failed": 0,
+      "samples": 21,
+      "timed_out": 0
+    },
+    "worker_publication_delay_ms": {
+      "completed": {
+        "max_ms": 0.00025,
+        "n": 21,
+        "p50_ms": 8.3e-05,
+        "p95_ms": 0.000167,
+        "p99_ms": 0.00025
+      },
+      "failed": 0,
+      "samples": 21,
+      "timed_out": 0
+    },
+    "publication_to_decode_delivery_ms": {
+      "completed": {
+        "max_ms": 1.3567500000000001,
+        "n": 21,
+        "p50_ms": 0.676084,
+        "p95_ms": 1.052875,
+        "p99_ms": 1.3567500000000001
+      },
+      "failed": 0,
+      "samples": 21,
+      "timed_out": 0
+    },
+    "request_to_picture_submission_ms": {
+      "completed": {
+        "max_ms": 4.927665999999999,
+        "n": 21,
+        "p50_ms": 1.072791,
+        "p95_ms": 1.6624999999999999,
+        "p99_ms": 4.927665999999999
+      },
+      "failed": 0,
+      "samples": 21,
+      "timed_out": 0
+    },
+    "request_to_picture_complete_ms": {
+      "completed": {
+        "max_ms": 5.666791,
+        "n": 21,
+        "p50_ms": 1.558834,
+        "p95_ms": 2.287375,
+        "p99_ms": 5.666791
+      },
+      "failed": 0,
+      "samples": 21,
+      "timed_out": 0
+    },
+    "input_to_picture_complete_ms": {
+      "completed": {
+        "max_ms": 88.625,
+        "n": 14,
+        "p50_ms": 6.4515839999999995,
+        "p95_ms": 88.625,
+        "p99_ms": 88.625
+      },
+      "failed": 0,
+      "samples": 14,
+      "timed_out": 0
+    },
+    "Original initialized and displayed": {
+      "completed": {
+        "max_ms": 87.668583,
+        "n": 1,
+        "p50_ms": 87.668583,
+        "p95_ms": 87.668583,
+        "p99_ms": 87.668583
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    },
+    "Project and picture settled": {
+      "completed": {
+        "max_ms": 0.886958,
+        "n": 41,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 0.844333,
+        "p99_ms": 0.886958
+      },
+      "failed": 0,
+      "samples": 41,
+      "timed_out": 0
+    },
+    "Repeat or macro receipt is fully admitted": {
+      "completed": {
+        "max_ms": 5.529625,
+        "n": 21,
+        "p50_ms": 4.2e-05,
+        "p95_ms": 5.218208000000001,
+        "p99_ms": 5.529625
+      },
+      "failed": 0,
+      "samples": 21,
+      "timed_out": 0
+    },
+    "Committed revision changed": {
+      "completed": {
+        "max_ms": 7.116708999999999,
+        "n": 14,
+        "p50_ms": 4.182334,
+        "p95_ms": 7.116708999999999,
+        "p99_ms": 7.116708999999999
+      },
+      "failed": 0,
+      "samples": 14,
+      "timed_out": 0
+    },
+    "Setter Macro y is saved": {
+      "completed": {
+        "max_ms": 4.680667000000001,
+        "n": 1,
+        "p50_ms": 4.680667000000001,
+        "p95_ms": 4.680667000000001,
+        "p99_ms": 4.680667000000001
+      },
+      "failed": 0,
+      "samples": 1,
+      "timed_out": 0
+    }
+  },
+  "machine": [
+    "Apple M5 Max",
+    "137438953472"
+  ],
+  "system": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+  "limits": [
+    "The dot replay emitted one h264 decode_slice_header error line while passing all assertions. Its cause is unqualified; complete stderr is retained.",
+    "Rendered replay uses production input routing with injected keyboard events; it does not establish physical delivery, OS IME or VoiceOver.",
+    "Release replay uses a tiny fixture and mixed interactions including cold import. It does not qualify full-size projects, physical display latency, acoustic output, memory pressure or the full performance gate.",
+    "All product gates remain open."
+  ],
+  "native": {
+    "binary_sha256": "d09b3e5da01daa4b354474af8d0b127e6d91d87767d1cab7215d138231bbbe5e",
+    "source_manifest_sha256": "ee933f6c2f5e470b1d6c2ff2ff5f93824901e73539b3ab330a8f51402ca344d2",
+    "exit_code": 0,
+    "targeted_process_absent": true,
+    "final_root_repeat_counts": [
+      5,
+      5
+    ],
+    "final_revision": "a26da1b7-30f6-4637-b2ab-fa1c84a14272",
+    "saved_macro_z": {
+      "instructions": [
+        {
+          "plays": 6,
+          "type": "set_repeat_plays"
+        }
+      ]
+    },
+    "closed_read_commands": [
+      [
+        "target/debug/deadpan-app",
+        "--headless",
+        "project",
+        "dump",
+        "/tmp/deadpan-repeat-count-20261003/native-count.deadpan",
+        "--json"
+      ],
+      [
+        "target/debug/deadpan-app",
+        "--headless",
+        "macro",
+        "inspect",
+        "/tmp/deadpan-repeat-count-20261003/native-count.deadpan",
+        "--register",
+        "z"
+      ]
+    ],
+    "observations": [
+      ":repeat 5 sets the first Repeat: Edit 0/1080, selected duration 600 frames.",
+      "j, register a, dot sets the second Repeat: Edit 600/1200, both counts 5, register a retained.",
+      "qz, :repeat 6 records one setter: Edit 600/1320, selected duration 720 frames, register a retained.",
+      "q saves Macro z. One Undo restores Edit 600/1200 and count 5.",
+      ":macro z restores count 6 with one Undo. One Undo returns count 5 and keeps register a selected.",
+      "Cmd-Q exits cleanly. Closed headless reads retain two five-play root Repeats and Macro z with exactly one set_repeat_plays instruction for 6."
+    ],
+    "limits": [
+      "Developer wrapper uses external host libraries. No signing, packaging, VoiceOver, physical IME or acoustic qualification."
+    ]
+  }
+}

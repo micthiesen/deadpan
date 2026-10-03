@@ -10,7 +10,7 @@ Both binding families are configurable through `macro.record` and
 
 The current vocabulary includes relative frame and beat motion, group start/end,
 Visual selection begin/finish/clear, frame, beat or Visual cut, selected-beat or
-Visual yank, typed operator motions, Repeat wraps, register paste or Visual replacement, and
+Visual yank, typed operator motions, Repeat wraps and count setters, register paste or Visual replacement, and
 named Macro call.
 Motions and cuts retain their requested counts, including when they
 clamp at a group boundary. Copy, cut and paste retain the selected register name.
@@ -19,7 +19,9 @@ the same ordinary Sequence group. Temporal occurrence scopes, text objects,
 analysis-dependent motions, additional edits and broader semantic dot-repeat remain required.
 This is partial DP-06 implementation, not full macro acceptance.
 See [Repeat selections](REPEAT_SELECTION.md) for total-play versus motion counts,
-captured targets and structural range wrapping. Repeat count setters cannot be recorded yet.
+captured targets and structural range wrapping. `:repeat N` records a count setter
+for an existing Repeat and a selected-beat wrap for another kind. Setters require
+an explicit selected direct-child Repeat and no Visual selection on replay.
 See [operator qualification](qualification/operator-motions-2026-10-02.md) for
 typed selectors, pending input, exact capture provenance and receipt ownership.
 See [Visual qualification](qualification/visual-macros-2026-10-02.md) for the
@@ -150,7 +152,7 @@ was pending is not retargeted by the delayed result.
 
 Native and headless execution use the shared core planner and store Compound
 entrypoint. An authored named Run clears the current dot-repeat candidate.
-A supported direct Apply cut or Repeat establishes its effective selector and
+A supported direct Apply cut, Repeat wrap or count setter establishes its effective selector and
 parameters after commit, including during recording. Recording `.` stores that
 effective instruction; later playback does not consult session repeat state. Bank-only
 operations preserve the candidate. See [semantic repeat](SEMANTIC_REPEAT.md).

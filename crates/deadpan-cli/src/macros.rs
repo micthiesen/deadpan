@@ -294,6 +294,9 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
             .collect::<Result<Vec<_>, _>>()
     };
     Ok(match request {
+        SemanticAllocationRequest::SetRepeatPlays { .. } => SemanticAllocation::SetRepeatPlays {
+            new_revision: crate::new_revision()?,
+        },
         SemanticAllocationRequest::Repeat {
             required_split_ids,
             needs_group,

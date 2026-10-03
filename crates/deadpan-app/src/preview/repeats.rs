@@ -1,5 +1,5 @@
 use super::*;
-use deadpan_core::{SemanticInstruction, SemanticSelector};
+use deadpan_core::{ProjectDocument, SemanticContext, SemanticInstruction, SemanticSelector};
 use std::num::NonZeroU32;
 
 /// Only an explicit whole-beat terminal may follow our own checked wrap onto
@@ -133,21 +133,13 @@ impl DeadpanApp {
             if !capture.matches(self) {
                 return Err("The captured Repeat context changed. Start the command again; no edit was made.".into());
             }
-            capture.repeat_target()
+            let instruction = capture.repeat_count_instruction(plays)?;
+            Ok((capture, instruction))
         });
         match target {
-            Ok(target) => {
+            Ok((capture, instruction)) => {
                 self.cancel_repeats("the Repeat count was changed");
-                self.submit(ProjectRequest::Edit {
-                    expected_session: target.session,
-                    expected_revision: target.revision,
-                    scope: target.scope,
-                    cursor: target.cursor,
-                    edit: ProjectEdit::Repeat {
-                        node: target.node,
-                        plays: plays.get(),
-                    },
-                });
+                self.apply_recorded_instruction(Ok(capture), Ok(instruction));
             }
             Err(error) => self.error = Some(error),
         }
@@ -246,3 +238,38 @@ impl DeadpanApp {
         self.bindings = bindings;
     }
 }
+
+/// Resolve command intent once from an already captured ordinary Sequence.
+/// Explicit absence and Visual state cannot become a cursor-selected beat.
+pub(super) fn repeat_count_instruction(
+    document: &ProjectDocument,
+    context: &SemanticContext,
+    plays: NonZeroU32,
+) -> Result<SemanticInstruction, String> {
+    if context.visual_selection.is_some() {
+        return Err("Clear the Visual range before changing an existing Repeat count.".into());
+    }
+    let selected = context
+        .selected_child
+        .as_ref()
+        .ok_or("Select a beat before repeating it.")?;
+    let Some(NodeKind::Sequence { children }) =
+        document.nodes().get(&context.parent).map(|node| &node.kind)
+    else {
+        return Err("Repeat commands need an ordinary Sequence scope.".into());
+    };
+    if !children.contains(selected) {
+        return Err("The captured Repeat target is not a direct child of this group.".into());
+    }
+    match document.nodes().get(selected).map(|node| &node.kind) {
+        Some(NodeKind::Repeat { .. }) => Ok(SemanticInstruction::SetRepeatPlays { plays }),
+        Some(_) => Ok(SemanticInstruction::Repeat {
+            selector: SemanticSelector::SelectedBeat,
+            plays,
+        }),
+        None => Err("The captured Repeat target is no longer available.".into()),
+    }
+}
+
+#[cfg(test)]
+mod tests;

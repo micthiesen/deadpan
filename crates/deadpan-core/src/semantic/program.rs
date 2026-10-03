@@ -69,6 +69,11 @@ pub enum SemanticInstruction {
         selector: SemanticSelector,
         plays: NonZeroU32,
     },
+    /// Set the selected direct-child Repeat's total count. Visual selection is
+    /// incompatible with this node parameter edit, including an empty range.
+    SetRepeatPlays {
+        plays: NonZeroU32,
+    },
     CutFrames {
         operation: FrameCut,
         register: RegisterName,

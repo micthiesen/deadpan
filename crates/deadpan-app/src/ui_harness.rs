@@ -32,6 +32,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "named-registers",
     "dot-repeat",
     "repeat-operator",
+    "repeat-setters",
     "scoped-plays",
     "macros",
     "original-playback",

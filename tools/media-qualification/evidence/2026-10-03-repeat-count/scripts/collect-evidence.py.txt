@@ -1,0 +1,116 @@
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import re
+import shutil
+import subprocess
+
+scratch = Path('/tmp/deadpan-repeat-count-20261003')
+dest = Path('tools/media-qualification/evidence/2026-10-03-repeat-count')
+
+def read(name):
+    return json.loads((scratch / name).read_text())
+
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+def compress(source, target):
+    target.write_bytes(gzip.compress(source.read_bytes(), mtime=0))
+
+def run(*args):
+    return subprocess.check_output(args, text=True).strip()
+
+checks = ['workspace-tests-2', 'ui-tests', 'fmt', 'clippy', 'clippy-ui',
+          'build-release', 'setter-visual', 'repeat-visual',
+          'dot-visual', 'macros-visual', 'setter-performance']
+workspace_source = read('workspace-tests-2.json')['source_manifest_sha256']
+source = read('ui-tests.json')['source_manifest_sha256']
+old_sources = read('source-' + workspace_source + '.json')
+final_sources = read('source-' + source + '.json')
+source_changes = sorted(path for path in old_sources.keys() | final_sources.keys()
+                        if old_sources.get(path) != final_sources.get(path))
+assert source_changes == ['crates/deadpan-app/src/preview/harness/repeat_operator.rs']
+for name in checks:
+    check = read(name + '.json')
+    assert check['exit_code'] == 0 and check['source_unchanged'], name
+    assert check['source_manifest_sha256'] == (workspace_source if name == 'workspace-tests-2' else source), name
+
+for directory in ['checks', 'replays', 'screenshots', 'scripts', 'native']:
+    (dest / directory).mkdir(parents=True, exist_ok=True)
+for path in sorted(scratch.glob('*.json')):
+    if path.name.startswith('source-'):
+        compress(path, dest / 'checks' / (path.name + '.gz'))
+    else:
+        shutil.copy2(path, dest / 'checks' / path.name)
+for path in sorted(scratch.glob('*.log')):
+    compress(path, dest / 'checks' / (path.name + '.gz'))
+
+counts = {}
+for name in ['workspace-tests-2', 'ui-tests']:
+    log = (scratch / (name + '.log')).read_text()
+    counts[name] = sum(int(n) for n in re.findall(r'test result: ok\. (\d+) passed;', log))
+    assert not re.search(r'test result: FAILED|[1-9]\d* ignored;', log), name
+
+replays = []
+for name in ['setter-regression', 'setter-visual', 'repeat-visual', 'dot-visual',
+             'macros-visual', 'setter-performance']:
+    path = scratch / name / 'report.json'
+    report = json.loads(path.read_text())
+    compress(path, dest / 'replays' / (name + '.json.gz'))
+    scenario = next(s for s in report['scenarios'] if s['name'] != 'kestrel-shortcuts')
+    if name == 'setter-regression':
+        assert report['failed'] and any(not c['passed'] for c in scenario['checks'])
+    else:
+        assert not report['failed'] and all(c['passed'] for c in scenario['checks']), name
+        kestrel = next(s for s in report['scenarios'] if s['name'] == 'kestrel-shortcuts')['checks'][0]
+        assert kestrel['passed'] and kestrel['actual']['conflicts'] == []
+        replays.append({'run': name, 'name': scenario['name'],
+                        'checks': len(scenario['checks']),
+                        'binary_sha256': report['metadata']['binary_sha256'],
+                        'findings': scenario['findings'], 'skipped': scenario['skipped']})
+
+captures = read('selected-captures.json')
+for source_name, destination_name in captures.items():
+    shutil.copy2(scratch / source_name, dest / 'screenshots' / destination_name)
+for path in sorted(scratch.glob('native-*.txt')):
+    compress(path, dest / 'native' / (path.name + '.gz'))
+performance = read('setter-performance/report.json')
+assert performance['metadata']['binary_sha256'] == sha(Path('target/release/deadpan-app'))
+metadata = {
+    'base_commit': run('git', 'rev-parse', 'HEAD'),
+    'source_manifest_sha256': source,
+    'workspace_source_manifest_sha256': workspace_source,
+    'workspace_to_final_changes': source_changes,
+    'source_note': 'Only the optional UI replay fixture and minimum-window assertions changed after the full default workspace gate. Optional app tests, lint, builds and all rendered replays use the final source.',
+    'visual_binary_sha256': read('setter-visual/report.json')['metadata']['binary_sha256'],
+    'release_binary_sha256': performance['metadata']['binary_sha256'],
+    'test_counts': counts,
+    'test_count_note': 'The optional app configuration overlaps the full workspace run and is reported separately.',
+    'workflow_checks': sum(s['checks'] for s in replays if s['run'] != 'setter-performance'),
+    'replays': replays,
+    'kestrel': kestrel['actual'],
+    'performance_timings': {t['name']: t['summary'] for s in performance['scenarios']
+                            if s['name'] == 'repeat-setters' for t in s['timings']},
+    'machine': run('sysctl', '-n', 'machdep.cpu.brand_string', 'hw.memsize').splitlines(),
+    'system': run('sw_vers'),
+    'rustc': run('rustc', '--version'),
+    'cargo': run('cargo', '--version'),
+    'limits': [
+        'The dot replay emitted one h264 decode_slice_header error line while passing all assertions. Its cause is unqualified; complete stderr is retained.',
+        'Rendered replay uses production input routing with injected keyboard events; it does not establish physical delivery, OS IME or VoiceOver.',
+        'Release replay uses a tiny fixture and mixed interactions including cold import. It does not qualify full-size projects, physical display latency, acoustic output, memory pressure or the full performance gate.',
+        'All product gates remain open.',
+    ],
+}
+if (scratch / 'native-observations.json').exists():
+    metadata['native'] = read('native-observations.json')
+(dest / 'metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
+for path in [Path('/tmp/deadpan-original-layout-20261002/run-check.py'), scratch / 'run-replays.py', Path(__file__)]:
+    shutil.copy2(path, dest / 'scripts' / (path.name + '.txt'))
+(dest / 'SHA256SUMS').write_text(''.join(
+    sha(path) + '  ' + str(path.relative_to(dest)) + '\n'
+    for path in sorted(dest.rglob('*')) if path.is_file() and path.name != 'SHA256SUMS'
+))
+print(json.dumps({'source': source, 'tests': counts, 'workflow_checks': metadata['workflow_checks'],
+                  'performance': metadata['performance_timings']}, indent=2))

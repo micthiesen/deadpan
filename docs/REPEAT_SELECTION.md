@@ -69,11 +69,28 @@ A committed explicit wrap or single Apply proves its effective intent before
 workspace refresh. Dot resolves that intent at a fresh context. A current Visual
 range takes precedence; empty ranges refuse, and a saved Visual selector needs a
 new range. Dot preserves register intent for Repeat. Exact retries retain their
-receipt without reinstalling an older candidate. Named Run and the `:repeat`
-setter do not install a repeatable edit. Count setters cannot be recorded yet.
+receipt without reinstalling an older candidate. Named Run does not install a
+repeatable edit.
 
-This does not implement temporal-occurrence navigation, text or role selectors,
+`SemanticInstruction::SetRepeatPlays { plays }` records a total-play setter.
+`:repeat N` resolves its captured child once: an existing Repeat produces this
+setter; another beat produces a SelectedBeat wrap. A setter targets the explicit
+selected direct-child Repeat on each invocation. Every Visual selection refuses,
+including an empty selection. It never wraps a different kind or infers a child
+from the cursor. Dot retains only the total count and resolves the newly selected
+Repeat, preserving the pending register choice and the complete bank.
+
+Each setter uses one fresh leaf revision and its timing allocation, with no new
+node, mark or Split identities. Setting the same count still authors a fresh
+revision and can be recorded. Multiple setters in a Macro commit together; a
+later failure saves none of them. The successful result selects the same Repeat
+at its absolute start. Saved intent is retained before workspace refresh; exact
+retries cannot reinstall an older candidate.
+
+This does not implement temporal edits inside occurrences, text or role selectors,
 all Section 8 operations, or the full product acceptance gates.
 
 See [qualification and retained evidence](qualification/repeat-operator-2026-10-03.md)
 for actual PCM, picture-plan, persistence, keyboard and native checks.
+The [count-setter qualification](qualification/repeat-count-2026-10-03.md)
+records the later semantic setter work.

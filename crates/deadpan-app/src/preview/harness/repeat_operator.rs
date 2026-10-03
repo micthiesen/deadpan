@@ -512,6 +512,255 @@ fn forward(count: u32) -> SemanticSelector {
     }
 }
 
+pub(super) fn run_setters(d: &mut Driver<'_>) -> Result<(), String> {
+    idle(d)?;
+    let baseline = document(d)?.clone();
+    at(d, 0)?;
+    d.events(
+        "Record a wrap followed by total-play setters",
+        keys(&[Key::Q, Key::Y]),
+    )?;
+    let before = d.revision();
+    d.command("wrap-repeat 2")?;
+    d.changed(&before)?;
+    idle(d)?;
+    let wrapped_once = document(d)?.clone();
+    let wrapper = d
+        .app()
+        .selected_beat
+        .clone()
+        .ok_or("Missing recorded Repeat")?;
+    let before = d.revision();
+    d.command("repeat 3")?;
+    idle(d)?;
+    d.check(
+        "Recording a total-play setter changes the existing Repeat and records its committed intent",
+        d.revision() != before
+            && setter_plays(d, &wrapper)? == 3
+            && d.app().macros.recording_name() == Some('y')
+            && d.app().macros.instruction_count() == 2,
+        json!({"plays":3,"recording":"y","instructions":2}),
+        state(d),
+    )?;
+    let first_set = document(d)?.clone();
+    let before = d.revision();
+    d.command("repeat 3")?;
+    d.changed(&before)?;
+    idle(d)?;
+    d.check(
+        "An explicit same-count setter retains authored identities and records a fresh committed action",
+        same_document(document(d)?, &first_set)?
+            && d.app().macros.instruction_count() == 3,
+        json!({"authored_fields":"unchanged","instructions":3,"revision":"fresh"}),
+        state(d),
+    )?;
+    d.capture("Recording includes a Repeat count change and an explicit same-count action")?;
+    d.key(Key::Q)?;
+    d.wait_for("Setter Macro y is saved", |app| {
+        !app.service.is_busy()
+            && !app.macros.recording()
+            && !app.macros.is_pending()
+            && app
+                .copied
+                .entries()
+                .any(|(name, value)| name == 'y' && matches!(value, Content::Macro(_)))
+    })?;
+    let saved = bank(d)?;
+    let name = RegisterName::new('y').map_err(|error| error.to_string())?;
+    let body = match saved.entries.get(&name).map(AsRef::as_ref) {
+        Some(RegisterValue::Macro { program }) => {
+            serde_json::to_value(program.instructions()).map_err(|error| error.to_string())?
+        }
+        _ => return Err("Saved setter Macro is missing".into()),
+    };
+    d.check(
+        "The saved program distinguishes wrapping from setting total plays",
+        body == json!([
+            {"type":"repeat","selector":{"type":"selected_beat"},"plays":2},
+            {"type":"set_repeat_plays","plays":3},
+            {"type":"set_repeat_plays","plays":3}
+        ]),
+        json!([
+            "Repeat selected beat twice",
+            "Set total plays to 3",
+            "Set total plays to 3"
+        ]),
+        body,
+    )?;
+    undo(d, &first_set)?;
+    undo(d, &wrapped_once)?;
+    undo(d, &baseline)?;
+    at(d, 0)?;
+    let before = d.revision();
+    d.command("macro y")?;
+    d.changed(&before)?;
+    idle(d)?;
+    wrapped(d, 3, 0, 120, 360)?;
+    d.check(
+        "Macro setters preserve the saved bank",
+        bank(d)? == saved,
+        json!(saved.version),
+        state(d),
+    )?;
+    undo(d, &baseline)?;
+    let before = d.revision();
+    d.key_modified(Key::R, Modifiers::CTRL)?;
+    d.changed(&before)?;
+    idle(d)?;
+    wrapped(d, 3, 0, 120, 360)?;
+
+    // Populate the copy bank, then create a second direct Repeat from the
+    // Original. A pasted slice has its own neutral Sequence owner, so it is
+    // deliberately not used as a direct Repeat target here.
+    let first = d
+        .app()
+        .selected_beat
+        .clone()
+        .ok_or("Missing first Repeat")?;
+    d.events(
+        "Retain a real historical Repeat copy in the register bank",
+        keys(&[Key::Y, Key::Y]),
+    )?;
+    idle(d)?;
+    let before = d.revision();
+    d.command("insert")?;
+    d.changed(&before)?;
+    idle(d)?;
+    let before = d.revision();
+    d.command("repeat 3")?;
+    d.changed(&before)?;
+    idle(d)?;
+    let second = d
+        .app()
+        .selected_beat
+        .clone()
+        .ok_or("Missing second Repeat")?;
+    d.check(
+        "The second direct Repeat is independent",
+        first != second && setter_plays(d, &second)? == 3 && d.app().sequence_length() == 720,
+        json!({"distinct_nodes":true,"frames":720}),
+        state(d),
+    )?;
+    let copied = bank(d)?;
+    choose_a(d)?;
+    let before = d.revision();
+    d.command("repeat 4")?;
+    d.changed(&before)?;
+    idle(d)?;
+    d.check(
+        "Setter changes only the selected Repeat and preserves register intent",
+        setter_plays(d, &first)? == 3
+            && setter_plays(d, &second)? == 4
+            && d.app().copied.selected_override() == Some(Some('a'))
+            && bank(d)? == copied,
+        json!({"first":3,"second":4,"override":"a","bank":"unchanged"}),
+        state(d),
+    )?;
+    let before_dot = document(d)?.clone();
+    d.key(Key::K)?;
+    choose_a(d)?;
+    let before = d.revision();
+    d.key(Key::Period)?;
+    d.changed(&before)?;
+    idle(d)?;
+    d.check(
+        "Dot resolves the newly selected Repeat and retains the independent register choice",
+        setter_plays(d, &first)? == 4
+            && setter_plays(d, &second)? == 4
+            && d.app().selected_beat.as_ref() == Some(&first)
+            && d.app().sequence_cursor == 0
+            && d.app().sequence_length() == 960
+            && d.app().copied.selected_override() == Some(Some('a'))
+            && bank(d)? == copied,
+        json!({"first":4,"second":4,"frames":960,"Edit":0,"override":"a","bank":"unchanged"}),
+        state(d),
+    )?;
+    d.capture("Dot sets the newly selected Repeat to four total plays")?;
+    let rect = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(960.0, 640.0));
+    let input = d.harness.input_mut();
+    input.screen_rect = Some(rect);
+    input
+        .viewports
+        .get_mut(&egui::ViewportId::ROOT)
+        .ok_or("Missing Repeat setter viewport")?
+        .inner_rect = Some(rect);
+    d.step("Paint Repeat count teaching at the minimum viewport", false)?;
+    d.settled()?;
+    let label = "set Repeat to 4 plays";
+    let paint = scenarios::text_paint_visibility(d, label);
+    let mut key = scenarios::text_paint_visibility(d, ".");
+    key.retain(|part| part["text"] == ".");
+    d.check(
+        "Minimum workspace fully paints the setter dot key and exact count",
+        d.harness.ctx.content_rect().size() == egui::vec2(960.0, 640.0)
+            && !paint.is_empty()
+            && !key.is_empty()
+            && paint
+                .iter()
+                .chain(&key)
+                .all(|part| part["fully_visible"] == true),
+        json!({"key":".","label":label,"viewport":[960,640]}),
+        json!({"key_paint":key,"label_paint":paint}),
+    )?;
+    scenarios::footer_anchored(d, "The count setter footer stays above notices")?;
+    d.capture("Minimum workspace teaches the saved Repeat count for dot")?;
+    let after_dot = document(d)?.clone();
+    undo(d, &before_dot)?;
+    let before = d.revision();
+    d.key_modified(Key::R, Modifiers::CTRL)?;
+    d.changed(&before)?;
+    idle(d)?;
+    d.check(
+        "Redo restores the exact setter result with a fresh revision",
+        same_document(document(d)?, &after_dot)?
+            && document(d)?.revision_id() != after_dot.revision_id(),
+        json!("complete authored fields restored"),
+        state(d),
+    )?;
+
+    at(d, 0)?;
+    choose_a(d)?;
+    visual(d, 0, false)?;
+    for extend in [false, true] {
+        if extend {
+            d.key(Key::L)?;
+        }
+        let before = document(d)?.clone();
+        let visual = d.app().edit_range.clone();
+        let cursor = d.app().sequence_cursor;
+        let selected = d.app().selected_beat.clone();
+        d.key(Key::Period)?;
+        unchanged(
+            d,
+            &before,
+            &copied,
+            "A setter dot refuses Visual selection without wrapping or changing registers",
+        )?;
+        d.check(
+            "Refused setter preserves the Visual selection and pending register",
+            d.app().edit_range == visual
+                && d.app().sequence_cursor == cursor
+                && d.app().selected_beat == selected
+                && d.app().copied.selected_override() == Some(Some('a'))
+                && d.app().error.as_deref()
+                    == Some("Clear the Visual range before repeating a Repeat count change."),
+            json!({"visual":"retained","override":"a","error":true}),
+            state(d),
+        )?;
+    }
+    d.capture("Visual selection receives an explicit setter refusal")?;
+    d.key(Key::Escape)?;
+    d.report.skipped.push("Uses real typed commands, SQLite, keyboard routing and Metal. Physical key delivery, OS IME, acoustic output and full-size performance remain separate acceptance.".into());
+    Ok(())
+}
+
+fn setter_plays(d: &Driver<'_>, id: &deadpan_core::NodeId) -> Result<u32, String> {
+    match document(d)?.nodes().get(id).map(|node| &node.kind) {
+        Some(NodeKind::Repeat { iterations, .. }) => Ok(iterations.len()),
+        _ => Err("Setter target is no longer a Repeat".into()),
+    }
+}
+
 fn candidate(d: &mut Driver<'_>, selector: SemanticSelector, plays: u32) -> Result<(), String> {
     let expected = RepeatableEdit::Repeat {
         selector,

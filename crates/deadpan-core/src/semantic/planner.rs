@@ -52,6 +52,9 @@ pub struct SemanticRegisterBank<'a> {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SemanticAllocationRequest {
+    SetRepeatPlays {
+        step_index: usize,
+    },
     Repeat {
         step_index: usize,
         required_split_ids: usize,
@@ -77,6 +80,9 @@ pub enum SemanticAllocationRequest {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SemanticAllocation {
+    SetRepeatPlays {
+        new_revision: RevisionId,
+    },
     Repeat {
         new_revision: RevisionId,
         identities: RepeatSelectionIdentities,
@@ -332,6 +338,9 @@ where
                 SemanticInstruction::Repeat { selector, plays } => {
                     self.repeat(index, *selector, plays.get())?;
                 }
+                SemanticInstruction::SetRepeatPlays { plays } => {
+                    self.set_repeat_plays(index, plays.get())?;
+                }
                 SemanticInstruction::CutFrames {
                     operation,
                     register,
@@ -422,6 +431,7 @@ where
                         | SemanticInstruction::Yank { .. }
                         | SemanticInstruction::Cut { .. }
                         | SemanticInstruction::Repeat { .. }
+                        | SemanticInstruction::SetRepeatPlays { .. }
                         | SemanticInstruction::YankBeat { .. }
                         | SemanticInstruction::Paste { .. }
                         | SemanticInstruction::YankSelection { .. }

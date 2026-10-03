@@ -18,11 +18,16 @@ definition previews and occurrence macros remain open, along with every gate.
 whole-beat `rr`, captured command targets, semantic recording and dot for Repeat
 wraps. Range endpoints retain their composite contexts and one Undo restores the
 whole edit. Safe count changes preserve surviving plays, gaps and suffix clocks;
-independent root sounds move once. This advances DP-05, DP-06 and DP-21. Count
-setter recording, temporal occurrence edits, text/role selectors, the remaining
+independent root sounds move once. This advances DP-05, DP-06 and DP-21. Total-play
+setters now share semantic recording and dot, retaining the requested count while
+resolving a new explicit selected Repeat. Temporal occurrence edits, text/role selectors, the remaining
 editing surface and all product gates remain open.
 The [qualification](qualification/repeat-operator-2026-10-03.md) records 3,292
 passing tests, 1,094 rendered workflow checks and native keyboard verification.
+The later [count-setter qualification](qualification/repeat-count-2026-10-03.md)
+records the 3,799-test workspace gate, 764 optional app tests, 1,043 rendered
+checks and native record/run/Undo verification. These overlapping configurations
+are reported separately. The QA app exited cleanly.
 
 [Cut selector repeat](SEMANTIC_REPEAT.md) extends `.` to typed motion cuts,
 whole beats and Visual cuts. Current Visual ranges override retained selectors;

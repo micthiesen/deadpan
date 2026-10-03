@@ -1,0 +1,21 @@
+{
+  "bank_version": 3,
+  "project_id": "1658234f-9d80-481b-8b4b-64485589d221",
+  "protocol": 1,
+  "registers": [
+    {
+      "instruction_count": 1,
+      "program": {
+        "instructions": [
+          {
+            "plays": 6,
+            "type": "set_repeat_plays"
+          }
+        ]
+      },
+      "register": "z",
+      "type": "macro"
+    }
+  ],
+  "revision_id": "a26da1b7-30f6-4637-b2ab-fa1c84a14272"
+}

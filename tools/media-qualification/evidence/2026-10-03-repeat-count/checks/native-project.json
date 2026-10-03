@@ -1,0 +1,904 @@
+{
+  "schema_version": 43,
+  "project_id": "1658234f-9d80-481b-8b4b-64485589d221",
+  "revision_id": "a26da1b7-30f6-4637-b2ab-fa1c84a14272",
+  "presentation_basis": {
+    "width": 320,
+    "height": 180,
+    "frame_rate": {
+      "numerator": 30000,
+      "denominator": 1001
+    },
+    "color_policy": "sdr_rec709"
+  },
+  "basis_state": {
+    "rate_origin": "primary_source",
+    "geometry_origin": "primary_source",
+    "primary": {
+      "asset": "277dc1bf-ee14-45a5-9139-5ab3f7687451",
+      "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+    }
+  },
+  "root": "7b410394-f04f-4295-b053-3f32aafd9f19",
+  "nodes": {
+    "379a9836-e4b2-4fbe-a922-82a47e784a13": {
+      "label": "Repeat",
+      "kind": {
+        "type": "repeat",
+        "child": "957eef0a-2541-4010-96c5-2f0b57bad17b",
+        "iterations": {
+          "runs": [
+            {
+              "allocation": "608693f5-3f22-47d2-b3d3-e287dc194669",
+              "first": 0,
+              "count": 2
+            },
+            {
+              "allocation": "5703ebf8-d36b-488b-b581-1314c07b8b7d",
+              "first": 0,
+              "count": 1
+            },
+            {
+              "allocation": "3b7d38f5-0daa-4f1f-ad32-e69f74a31cee",
+              "first": 0,
+              "count": 1
+            },
+            {
+              "allocation": "c4a9f50b-cbdd-4383-9639-1ff7dc449ce2",
+              "first": 0,
+              "count": 1
+            }
+          ]
+        },
+        "gap": null
+      }
+    },
+    "3fd8d583-e6b8-40ca-af4f-5a4f3c676113": {
+      "label": "cfr-bframes.mp4",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 120,
+          "edit_window": {
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "end": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "video": {
+            "type": "stream",
+            "asset": "277dc1bf-ee14-45a5-9139-5ab3f7687451",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              },
+              "end": {
+                "ticks": 120120,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": {
+            "asset": "277dc1bf-ee14-45a5-9139-5ab3f7687451",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "link": "linked",
+          "audio_offset": 0
+        }
+      }
+    },
+    "7b410394-f04f-4295-b053-3f32aafd9f19": {
+      "label": "Sequence",
+      "kind": {
+        "type": "sequence",
+        "children": [
+          "379a9836-e4b2-4fbe-a922-82a47e784a13",
+          "d0d6feae-8706-44ef-bdca-cadade625d9e"
+        ]
+      }
+    },
+    "957eef0a-2541-4010-96c5-2f0b57bad17b": {
+      "label": "cfr-bframes.mp4",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 120,
+          "edit_window": {
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "end": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "video": {
+            "type": "stream",
+            "asset": "277dc1bf-ee14-45a5-9139-5ab3f7687451",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              },
+              "end": {
+                "ticks": 120120,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": {
+            "asset": "277dc1bf-ee14-45a5-9139-5ab3f7687451",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "link": "linked",
+          "audio_offset": 0
+        }
+      }
+    },
+    "d0d6feae-8706-44ef-bdca-cadade625d9e": {
+      "label": "Repeat",
+      "kind": {
+        "type": "repeat",
+        "child": "3fd8d583-e6b8-40ca-af4f-5a4f3c676113",
+        "iterations": {
+          "runs": [
+            {
+              "allocation": "d2c8953e-3545-45ac-9e07-f703c836e729",
+              "first": 0,
+              "count": 3
+            },
+            {
+              "allocation": "e85d102b-818f-48af-bd39-9e4868f5618b",
+              "first": 0,
+              "count": 1
+            },
+            {
+              "allocation": "6f3947b9-9ad7-4dc5-aae4-7a360ff78e9e",
+              "first": 0,
+              "count": 1
+            }
+          ]
+        },
+        "gap": null
+      }
+    }
+  },
+  "assets": {
+    "277dc1bf-ee14-45a5-9139-5ab3f7687451": {
+      "label": "cfr-bframes.mp4",
+      "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "video": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        },
+        "end": {
+          "ticks": 120120,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        }
+      },
+      "audio": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        },
+        "end": {
+          "ticks": 192192,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        }
+      },
+      "still_image": false,
+      "frame_count": 120,
+      "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+    }
+  },
+  "marks": {},
+  "overrides": {},
+  "audio_bindings": {
+    "timings": [
+      {
+        "id": {
+          "allocation": "3b7d38f5-0daa-4f1f-ad32-e69f74a31cee",
+          "ordinal": 0
+        },
+        "layout": {
+          "root": "7b410394-f04f-4295-b053-3f32aafd9f19",
+          "rate": {
+            "numerator": 30000,
+            "denominator": 1001
+          },
+          "nodes": {
+            "379a9836-e4b2-4fbe-a922-82a47e784a13": {
+              "duration": 360,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "repeat",
+                "child": "957eef0a-2541-4010-96c5-2f0b57bad17b",
+                "iterations": {
+                  "runs": [
+                    {
+                      "allocation": "608693f5-3f22-47d2-b3d3-e287dc194669",
+                      "first": 0,
+                      "count": 2
+                    },
+                    {
+                      "allocation": "5703ebf8-d36b-488b-b581-1314c07b8b7d",
+                      "first": 0,
+                      "count": 1
+                    }
+                  ]
+                },
+                "gap_duration": 0,
+                "gap_audio": {
+                  "type": "silence"
+                }
+              }
+            },
+            "3fd8d583-e6b8-40ca-af4f-5a4f3c676113": {
+              "duration": 120,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "source",
+                "placement": {
+                  "start": {
+                    "numerator": "0",
+                    "denominator": "1"
+                  },
+                  "end": {
+                    "numerator": "120",
+                    "denominator": "1"
+                  }
+                }
+              }
+            },
+            "7b410394-f04f-4295-b053-3f32aafd9f19": {
+              "duration": 840,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "sequence",
+                "children": [
+                  "379a9836-e4b2-4fbe-a922-82a47e784a13",
+                  "d0d6feae-8706-44ef-bdca-cadade625d9e"
+                ]
+              }
+            },
+            "957eef0a-2541-4010-96c5-2f0b57bad17b": {
+              "duration": 120,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "source",
+                "placement": {
+                  "start": {
+                    "numerator": "0",
+                    "denominator": "1"
+                  },
+                  "end": {
+                    "numerator": "120",
+                    "denominator": "1"
+                  }
+                }
+              }
+            },
+            "d0d6feae-8706-44ef-bdca-cadade625d9e": {
+              "duration": 480,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "repeat",
+                "child": "3fd8d583-e6b8-40ca-af4f-5a4f3c676113",
+                "iterations": {
+                  "runs": [
+                    {
+                      "allocation": "d2c8953e-3545-45ac-9e07-f703c836e729",
+                      "first": 0,
+                      "count": 3
+                    },
+                    {
+                      "allocation": "e85d102b-818f-48af-bd39-9e4868f5618b",
+                      "first": 0,
+                      "count": 1
+                    }
+                  ]
+                },
+                "gap_duration": 0,
+                "gap_audio": {
+                  "type": "silence"
+                }
+              }
+            }
+          },
+          "overrides": {}
+        }
+      },
+      {
+        "id": {
+          "allocation": "608693f5-3f22-47d2-b3d3-e287dc194669",
+          "ordinal": 0
+        },
+        "layout": {
+          "root": "7b410394-f04f-4295-b053-3f32aafd9f19",
+          "rate": {
+            "numerator": 30000,
+            "denominator": 1001
+          },
+          "nodes": {
+            "7b410394-f04f-4295-b053-3f32aafd9f19": {
+              "duration": 120,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "sequence",
+                "children": [
+                  "957eef0a-2541-4010-96c5-2f0b57bad17b"
+                ]
+              }
+            },
+            "957eef0a-2541-4010-96c5-2f0b57bad17b": {
+              "duration": 120,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "source",
+                "placement": {
+                  "start": {
+                    "numerator": "0",
+                    "denominator": "1"
+                  },
+                  "end": {
+                    "numerator": "120",
+                    "denominator": "1"
+                  }
+                }
+              }
+            }
+          },
+          "overrides": {}
+        }
+      },
+      {
+        "id": {
+          "allocation": "c4a9f50b-cbdd-4383-9639-1ff7dc449ce2",
+          "ordinal": 0
+        },
+        "layout": {
+          "root": "7b410394-f04f-4295-b053-3f32aafd9f19",
+          "rate": {
+            "numerator": 30000,
+            "denominator": 1001
+          },
+          "nodes": {
+            "379a9836-e4b2-4fbe-a922-82a47e784a13": {
+              "duration": 480,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "repeat",
+                "child": "957eef0a-2541-4010-96c5-2f0b57bad17b",
+                "iterations": {
+                  "runs": [
+                    {
+                      "allocation": "608693f5-3f22-47d2-b3d3-e287dc194669",
+                      "first": 0,
+                      "count": 2
+                    },
+                    {
+                      "allocation": "5703ebf8-d36b-488b-b581-1314c07b8b7d",
+                      "first": 0,
+                      "count": 1
+                    },
+                    {
+                      "allocation": "3b7d38f5-0daa-4f1f-ad32-e69f74a31cee",
+                      "first": 0,
+                      "count": 1
+                    }
+                  ]
+                },
+                "gap_duration": 0,
+                "gap_audio": {
+                  "type": "silence"
+                }
+              }
+            },
+            "3fd8d583-e6b8-40ca-af4f-5a4f3c676113": {
+              "duration": 120,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "source",
+                "placement": {
+                  "start": {
+                    "numerator": "0",
+                    "denominator": "1"
+                  },
+                  "end": {
+                    "numerator": "120",
+                    "denominator": "1"
+                  }
+                }
+              }
+            },
+            "7b410394-f04f-4295-b053-3f32aafd9f19": {
+              "duration": 960,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "sequence",
+                "children": [
+                  "379a9836-e4b2-4fbe-a922-82a47e784a13",
+                  "d0d6feae-8706-44ef-bdca-cadade625d9e"
+                ]
+              }
+            },
+            "957eef0a-2541-4010-96c5-2f0b57bad17b": {
+              "duration": 120,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "source",
+                "placement": {
+                  "start": {
+                    "numerator": "0",
+                    "denominator": "1"
+                  },
+                  "end": {
+                    "numerator": "120",
+                    "denominator": "1"
+                  }
+                }
+              }
+            },
+            "d0d6feae-8706-44ef-bdca-cadade625d9e": {
+              "duration": 480,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "repeat",
+                "child": "3fd8d583-e6b8-40ca-af4f-5a4f3c676113",
+                "iterations": {
+                  "runs": [
+                    {
+                      "allocation": "d2c8953e-3545-45ac-9e07-f703c836e729",
+                      "first": 0,
+                      "count": 3
+                    },
+                    {
+                      "allocation": "e85d102b-818f-48af-bd39-9e4868f5618b",
+                      "first": 0,
+                      "count": 1
+                    }
+                  ]
+                },
+                "gap_duration": 0,
+                "gap_audio": {
+                  "type": "silence"
+                }
+              }
+            }
+          },
+          "overrides": {}
+        }
+      },
+      {
+        "id": {
+          "allocation": "d2c8953e-3545-45ac-9e07-f703c836e729",
+          "ordinal": 0
+        },
+        "layout": {
+          "root": "7b410394-f04f-4295-b053-3f32aafd9f19",
+          "rate": {
+            "numerator": 30000,
+            "denominator": 1001
+          },
+          "nodes": {
+            "379a9836-e4b2-4fbe-a922-82a47e784a13": {
+              "duration": 360,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "repeat",
+                "child": "957eef0a-2541-4010-96c5-2f0b57bad17b",
+                "iterations": {
+                  "runs": [
+                    {
+                      "allocation": "608693f5-3f22-47d2-b3d3-e287dc194669",
+                      "first": 0,
+                      "count": 2
+                    },
+                    {
+                      "allocation": "5703ebf8-d36b-488b-b581-1314c07b8b7d",
+                      "first": 0,
+                      "count": 1
+                    }
+                  ]
+                },
+                "gap_duration": 0,
+                "gap_audio": {
+                  "type": "silence"
+                }
+              }
+            },
+            "3fd8d583-e6b8-40ca-af4f-5a4f3c676113": {
+              "duration": 120,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "source",
+                "placement": {
+                  "start": {
+                    "numerator": "0",
+                    "denominator": "1"
+                  },
+                  "end": {
+                    "numerator": "120",
+                    "denominator": "1"
+                  }
+                }
+              }
+            },
+            "7b410394-f04f-4295-b053-3f32aafd9f19": {
+              "duration": 480,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "sequence",
+                "children": [
+                  "379a9836-e4b2-4fbe-a922-82a47e784a13",
+                  "3fd8d583-e6b8-40ca-af4f-5a4f3c676113"
+                ]
+              }
+            },
+            "957eef0a-2541-4010-96c5-2f0b57bad17b": {
+              "duration": 120,
+              "edges": {
+                "node_start": "automatic",
+                "node_end": "automatic",
+                "source_placement_start": "automatic",
+                "source_placement_end": "automatic",
+                "repeat_gap_start": "automatic",
+                "repeat_gap_end": "automatic"
+              },
+              "kind": {
+                "type": "source",
+                "placement": {
+                  "start": {
+                    "numerator": "0",
+                    "denominator": "1"
+                  },
+                  "end": {
+                    "numerator": "120",
+                    "denominator": "1"
+                  }
+                }
+              }
+            }
+          },
+          "overrides": {}
+        }
+      }
+    ],
+    "bindings": {
+      "3fd8d583-e6b8-40ca-af4f-5a4f3c676113": {
+        "lattice": {
+          "reference": {
+            "timing": {
+              "allocation": "d2c8953e-3545-45ac-9e07-f703c836e729",
+              "ordinal": 0
+            },
+            "root": {
+              "type": "project_root_round_even"
+            },
+            "physical": "3fd8d583-e6b8-40ca-af4f-5a4f3c676113"
+          },
+          "arguments": [],
+          "births": []
+        },
+        "resume": null,
+        "reanchors": [
+          {
+            "placement": {
+              "reference": {
+                "timing": {
+                  "allocation": "3b7d38f5-0daa-4f1f-ad32-e69f74a31cee",
+                  "ordinal": 0
+                },
+                "root": {
+                  "type": "project_root_round_even"
+                },
+                "physical": "3fd8d583-e6b8-40ca-af4f-5a4f3c676113"
+              },
+              "arguments": [
+                {
+                  "reference_repeat": "d0d6feae-8706-44ef-bdca-cadade625d9e",
+                  "value": {
+                    "type": "live",
+                    "repeat": "d0d6feae-8706-44ef-bdca-cadade625d9e"
+                  }
+                }
+              ],
+              "births": [
+                {
+                  "repeat": "d0d6feae-8706-44ef-bdca-cadade625d9e",
+                  "survivors": {
+                    "type": "captured_repeat",
+                    "repeat": "d0d6feae-8706-44ef-bdca-cadade625d9e"
+                  },
+                  "definition_root": "3fd8d583-e6b8-40ca-af4f-5a4f3c676113"
+                }
+              ]
+            },
+            "window": {
+              "start": {
+                "numerator": "360",
+                "denominator": "1"
+              },
+              "end": {
+                "numerator": "840",
+                "denominator": "1"
+              }
+            }
+          },
+          {
+            "placement": {
+              "reference": {
+                "timing": {
+                  "allocation": "c4a9f50b-cbdd-4383-9639-1ff7dc449ce2",
+                  "ordinal": 0
+                },
+                "root": {
+                  "type": "project_root_round_even"
+                },
+                "physical": "3fd8d583-e6b8-40ca-af4f-5a4f3c676113"
+              },
+              "arguments": [
+                {
+                  "reference_repeat": "d0d6feae-8706-44ef-bdca-cadade625d9e",
+                  "value": {
+                    "type": "live",
+                    "repeat": "d0d6feae-8706-44ef-bdca-cadade625d9e"
+                  }
+                }
+              ],
+              "births": [
+                {
+                  "repeat": "d0d6feae-8706-44ef-bdca-cadade625d9e",
+                  "survivors": {
+                    "type": "captured_repeat",
+                    "repeat": "d0d6feae-8706-44ef-bdca-cadade625d9e"
+                  },
+                  "definition_root": "3fd8d583-e6b8-40ca-af4f-5a4f3c676113"
+                }
+              ]
+            },
+            "window": {
+              "start": {
+                "numerator": "480",
+                "denominator": "1"
+              },
+              "end": {
+                "numerator": "960",
+                "denominator": "1"
+              }
+            }
+          }
+        ]
+      },
+      "957eef0a-2541-4010-96c5-2f0b57bad17b": {
+        "lattice": {
+          "reference": {
+            "timing": {
+              "allocation": "608693f5-3f22-47d2-b3d3-e287dc194669",
+              "ordinal": 0
+            },
+            "root": {
+              "type": "project_root_round_even"
+            },
+            "physical": "957eef0a-2541-4010-96c5-2f0b57bad17b"
+          },
+          "arguments": [],
+          "births": []
+        },
+        "resume": null
+      }
+    }
+  }
+}

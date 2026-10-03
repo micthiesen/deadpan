@@ -46,12 +46,21 @@ partial composite contexts structural. It captures audio clocks before Split,
 retains old lattices, adds first-play mark/allowance paths and transforms root
 sounds once. `SetRepeatPlays` preserves surviving identities and gaps with exact
 suffix reanchors. Keep historical command variants unchanged. A single Apply or
-explicit native wrap proves dot intent before refresh; named Run and `:repeat`
-setters remain unproved. Count setter recording, occurrence contexts and full
-product acceptance remain open. No schema change.
+explicit native wrap proves dot intent before refresh; named Run remains
+unproved. `:repeat N` now records either `SetRepeatPlays` for the captured Repeat
+or a SelectedBeat wrap for another kind. A setter dot keeps the count, resolves a
+new explicit selected Repeat and refuses every Visual selection. Same-count
+setters retain fresh authored revisions. Pending register choices and the bank
+stay independent. Occurrence contexts and full product acceptance remain open.
+No schema change.
 See [qualification and retained findings](../qualification/repeat-operator-2026-10-03.md)
 for 3,292 passing tests, 1,094 rendered workflow checks, strict lint and native
 keyboard verification. The native QA app was closed after testing.
+The later [count-setter qualification](../qualification/repeat-count-2026-10-03.md)
+records 3,799 full-workspace tests, 764 optional app tests and 1,043 rendered
+checks. Native input verified setting another Repeat with dot, recording/saving
+a setter Macro, running it and undoing it while retaining the selected register.
+Closed headless reads checked the saved instruction; the QA app exited cleanly.
 
 ## Cut selector repeat, current implementation
 

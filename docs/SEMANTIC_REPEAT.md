@@ -1,6 +1,6 @@
 # Semantic edit repeat
 
-Plain `.` repeats the last committed picture cut or explicit Repeat wrap against
+Plain `.` repeats the last committed picture cut, Repeat wrap or play-count setter against
 a new current target.
 `x`, counted `x`, `:delete-frames Nf`, `d` with a motion, `dd`, Visual `d` and
 `:delete` supply cut intent. Repeating a cut is one atomic edit with one Undo entry
@@ -8,10 +8,12 @@ and a newly captured editable copy.
 
 `rr`, `r` with a motion, Visual `r` and `:wrap-repeat` supply Repeat intent.
 They retain their selector and total plays, preserve registers and leave an
-editable structural Repeat. The `:repeat` count setter remains unsupported for
-dot. See [Repeat selections](REPEAT_SELECTION.md).
+editable structural Repeat. `:repeat N` on an existing Repeat supplies a count
+setter; dot applies that total to the newly selected direct-child Repeat. Any
+Visual selection refuses, and another beat kind cannot become a wrap. The count
+setter preserves pending register choices. See [Repeat selections](REPEAT_SELECTION.md).
 
-This covers picture cuts and Repeat wraps for DP-06.
+This covers picture cuts, Repeat wraps and count setters for DP-06.
 [Semantic macros](SEMANTIC_MACROS.md) record the effective instruction, so a
 recorded dot does not depend on a
 later repeat candidate. Other edit kinds and semantic text/role/occurrence
@@ -35,7 +37,7 @@ its five-frame backward motion. Beat and group-boundary motions also resolve
 again. `dd` targets the newly selected direct child, including an empty child;
 it does not infer that child from a shared time boundary.
 
-A current active or finished Visual selection overrides the retained selector.
+A current active or finished Visual selection overrides a retained cut or wrap selector.
 An explicit empty selection refuses without falling back to the cursor or beat.
 A saved Visual cut requires a new Visual selection; old endpoints are never
 reused. A successful override becomes the new repeat intent.
@@ -55,7 +57,7 @@ cut updates the named and default copies atomically. Failed cut attempts preserv
 the previous saved intent and every register slot while consuming the attempted
 one-shot register choice. Keys owned by a text field or another mode do not
 start a cut attempt.
-Repeat wraps preserve one-shot register intent, including when they refuse.
+Repeat wraps and count setters preserve one-shot register intent, including when they refuse.
 
 ## Durable success and asynchronous feedback
 
@@ -64,7 +66,7 @@ Before publishing, it reads the actual saved head through a bounded single-row
 query, without decoding a document. The visible workspace may still hold an
 older revision after a failed refresh.
 
-A supported direct cut or explicit Repeat wrap records an exact before/after revision proof immediately
+A supported direct cut, explicit Repeat wrap or semantic count setter records an exact before/after revision proof immediately
 after commit, before optional refresh. This includes a single Apply during
 recording. Named macro Run transitions remain unproved and clear the candidate
 when they change the document. Direct mark-only saves and Undo/Redo record

@@ -8,6 +8,7 @@ use std::num::NonZeroU32;
 mod content;
 mod repeat;
 mod selectors;
+mod set_repeat;
 mod visual;
 
 fn node(value: &str) -> NodeId {
@@ -90,6 +91,11 @@ fn macro_value(instructions: Vec<SemanticInstruction>) -> Arc<RegisterValue> {
 }
 fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, EditError> {
     Ok(match request {
+        SemanticAllocationRequest::SetRepeatPlays { step_index } => {
+            SemanticAllocation::SetRepeatPlays {
+                new_revision: revision(&format!("leaf-{step_index}")),
+            }
+        }
         SemanticAllocationRequest::Repeat {
             step_index,
             required_split_ids,

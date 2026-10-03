@@ -599,8 +599,13 @@ motion counts mean distance, and two explicit counts refuse. Keep wrapper, group
 and Split pools disjoint; preserve partial composite contexts, established audio
 lattices, first-play marks/permissions and one root sound transform. SetRepeatPlays
 preserves surviving stable plays and gaps with exact suffix reanchors. Historical
-commands keep their previous behavior. Count setters remain unproved for dot and
-unrecordable; named Run does not install intent. See
+commands keep their previous behavior. Semantic `SetRepeatPlays` targets only an
+explicit selected direct-child Repeat and rejects all Visual selections. Native
+`:repeat N` captures whether it is a setter or SelectedBeat wrap, then records
+that effective Apply instruction. Setters allocate only a fresh leaf revision
+and timing ordinal zero, including same-count actions; the result selects the
+same Repeat at its absolute start. Dot retains the total count without a node or
+register target. Only supported Apply installs intent; named Run does not. See
 [Repeat selections](docs/REPEAT_SELECTION.md).
 
 The database also retains operational generation
@@ -875,7 +880,7 @@ slots. Keep saved-cut receipts independent of register intent. See
 [registers](docs/NAMED_REGISTERS.md).
 
 Semantic macros record frame/beat motions, group bounds, Visual begin/finish/clear,
-frame/range cuts, beat/range copies, Repeat wraps, register paste/replacement and named calls
+frame/range cuts, beat/range copies, Repeat wraps and count setters, register paste/replacement and named calls
 in an ordinary Sequence. Track the selected direct child and oriented Visual
 selection independently of the cursor, including absence, empty bounds and empty
 siblings. An extending head equals the cursor; finished endpoints remain fixed.

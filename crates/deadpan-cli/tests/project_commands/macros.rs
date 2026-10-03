@@ -1106,3 +1106,131 @@ fn macro_cli_late_failures_guards_and_request_limits_leave_no_writes() -> Result
     );
     Ok(())
 }
+
+#[test]
+fn repeat_count_macro_dry_run_late_failure_and_counted_commit_keep_bank_and_exact_history() -> Result
+{
+    let scratch = tempfile::tempdir()?;
+    let package = create(scratch.path())?;
+    let input = scratch.path().join("repeat-count.json");
+    let initial = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    fs::write(&input, request(&initial)?.to_string())?;
+    success(&[
+        "command",
+        package.to_str().unwrap(),
+        "--json",
+        input.to_str().unwrap(),
+    ])?;
+    let before_wrap = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    fs::write(&input, json!({
+        "protocol":1,"project_id":before_wrap.project_id(),
+        "expected_revision":before_wrap.revision_id(),"new_revision":"count-fixture",
+        "command":Command::WrapRepeat {
+            node:NodeId::new("hold")?,id:NodeId::new("repeat")?,plays:2,
+            gap:Some(HoldRecipe { picture_context:None,duration:FrameDuration::new(3)?,video:HoldVideo::Background,audio:HoldAudio::Silence }),
+            anchor_policy:Default::default(),
+        },
+    }).to_string())?;
+    success(&[
+        "command",
+        package.to_str().unwrap(),
+        "--json",
+        input.to_str().unwrap(),
+    ])?;
+    let before = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    let setter = json!({"type":"set_repeat_plays","plays":4});
+    invoke(
+        &package,
+        &input,
+        &save(&before, 0, "a", json!([setter.clone()])),
+        false,
+    )?;
+    invoke(
+        &package,
+        &input,
+        &save(
+            &before,
+            1,
+            "b",
+            json!([
+                setter.clone(), {"type":"call","register":"z","count":1}
+            ]),
+        ),
+        false,
+    )?;
+    let bank = ProjectStore::open(&package, AccessMode::ReadOnly)?.registers()?;
+    let mut invocation = run(&before, bank.version, "a", 80);
+    invocation["operation"]["selected_child"] = json!("repeat");
+    invocation["operation"]["count"] = json!(2);
+    invocation["operation"]["new_revision"] = json!("count-commit");
+    let unchanged = state(&package)?;
+    let preview = invoke(&package, &input, &invocation, true)?;
+    assert_eq!(state(&package)?, unchanged);
+    assert!(preview["committed_revision"].is_null());
+    assert!(preview["committed_registers"].is_null());
+    assert_eq!(preview["context"]["selected_child"], "repeat");
+    assert_eq!(preview["context"]["cursor"], 0);
+    let setters: Vec<_> = preview["trace"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|row| row["instruction"]["type"] == "set_repeat_plays")
+        .collect();
+    assert_eq!(setters.len(), 2);
+    assert_eq!(setters[0]["before_cursor"], 80);
+    assert_eq!(setters[0]["before_selected_child"], "repeat");
+    assert_eq!(setters[1]["before_cursor"], 0);
+    assert_ne!(setters[0]["before_revision"], setters[1]["before_revision"]);
+    let mut rejected = invocation.clone();
+    rejected["operation"]["register"] = json!("b");
+    reject(&package, &input, &rejected)?;
+    for selected in [Value::Null, json!("hold")] {
+        let mut rejected = invocation.clone();
+        rejected["operation"]["selected_child"] = selected;
+        reject(&package, &input, &rejected)?;
+    }
+    for head in [0, 3] {
+        let mut rejected = invocation.clone();
+        rejected["operation"]["visual_selection"] =
+            json!({"anchor":0,"head":head,"extending":false});
+        reject(&package, &input, &rejected)?;
+    }
+    assert_eq!(state(&package)?, unchanged);
+    let result = invoke(&package, &input, &invocation, false)?;
+    assert_eq!(result["committed_revision"], "count-commit");
+    assert!(result["committed_registers"].is_null());
+    assert_eq!(result["register_writes"], json!([]));
+    let mut store = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let after = store.snapshot()?;
+    assert_eq!(after.duration()?.frames(), 4 * 45 + 3 * 3);
+    assert!(matches!(&after.nodes()[&NodeId::new("repeat")?].kind,
+        deadpan_core::NodeKind::Repeat {child, iterations, gap:Some(gap)}
+        if child == &NodeId::new("hold")? && iterations.len() == 4 && gap.duration.frames() == 3));
+    assert_eq!(store.registers()?, bank);
+    store.undo(after.revision_id(), RevisionId::new("count-undo")?)?;
+    same_document(&store.snapshot()?, &before)?;
+    store.checkpoint()?;
+    drop(store);
+    let mut store = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    store.redo(
+        &RevisionId::new("count-undo")?,
+        RevisionId::new("count-redo")?,
+    )?;
+    let redone = store.snapshot()?;
+    same_document(&redone, &after)?;
+    assert_eq!(store.registers()?, bank);
+    store.validate()?;
+    drop(store);
+    // Even setting the existing total authors a new revision, so a successful
+    // recorded instruction has the same durable boundary when played again.
+    let mut same = run(&redone, bank.version, "a", 180);
+    same["operation"]["selected_child"] = json!("repeat");
+    same["operation"]["new_revision"] = json!("count-same");
+    let result = invoke(&package, &input, &same, false)?;
+    assert_eq!(result["committed_revision"], "count-same");
+    assert!(result["committed_registers"].is_null());
+    let store = ProjectStore::open(&package, AccessMode::ReadOnly)?;
+    assert_eq!(store.snapshot()?.nodes(), redone.nodes());
+    assert_eq!(store.registers()?, bank);
+    Ok(())
+}

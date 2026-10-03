@@ -42,12 +42,15 @@ pub enum RepeatableEdit {
         selector: SemanticSelector,
         plays: NonZeroU32,
     },
+    SetRepeatPlays {
+        plays: NonZeroU32,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LastEdit {
     pub operation: RepeatableEdit,
-    /// Only cuts use a register. Repeat wrapping preserves pending overrides.
+    /// Only cuts use a register. Repeat edits preserve pending overrides.
     pub register: Option<char>,
 }
 
@@ -79,10 +82,19 @@ impl LastEdit {
                 },
                 plays: *plays,
             },
+            RepeatableEdit::SetRepeatPlays { plays } => {
+                SemanticInstruction::SetRepeatPlays { plays: *plays }
+            }
         }
     }
 
     pub fn from_instruction(instruction: &SemanticInstruction) -> Option<Self> {
+        if let SemanticInstruction::SetRepeatPlays { plays } = instruction {
+            return Some(Self {
+                operation: RepeatableEdit::SetRepeatPlays { plays: *plays },
+                register: None,
+            });
+        }
         if let SemanticInstruction::Repeat { selector, plays } = instruction {
             return Some(Self {
                 operation: RepeatableEdit::Repeat {
@@ -135,7 +147,7 @@ impl Snapshot {
             return Err("The saved project changed. Reopen it before repeating an edit.".into());
         }
         self.edit.as_ref().ok_or_else(|| {
-            "No repeatable edit is available. Cut content or wrap a Repeat first.".into()
+            "No repeatable edit is available. Cut content, wrap a Repeat or set its play count first.".into()
         })
     }
 }

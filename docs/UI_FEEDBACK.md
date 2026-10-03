@@ -11,6 +11,12 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+Repeat count changes now use semantic recording and dot. The `repeat-setters`
+replay covers recorded wrapping/count changes, one-step Macro Undo, a fresh
+selected Repeat, register preservation and explicit Visual refusal. See the
+[qualification record](qualification/repeat-count-2026-10-03.md) for results
+and remaining acceptance work.
+
 The [scoped Repeat inspector](SCOPED_EDITING.md) adds explicit All plays/This
 play navigation and gain, Camera and pause-audio edits. The `scoped-plays`
 replay exercises isolation, unchanged drafts, late replies, Undo, mark-only
@@ -446,6 +452,7 @@ the real app. The initial viewport is 1280×820 points at 1×. The code lives in
 | `original-layout` / `original-layout-long` | Uses distinct Original/Edit cursors, a selected/copied Original range and real empty/populated sound states. Checks minimum/default sizes, first resize frames, 1×/2× scale, actual fitted picture height, complete text/hit clips, pointer and reverse-Tab Sounds entry, and retained state/revision. Play by pointer, focused Enter and accessibility Click during scale changes may submit only final geometry. Injected Preparing/Playing and catalog focus preserve the picture and editor state; no device or physical input result is claimed. The long variant admits private six-key transport paths before startup. |
 | `editing` | Held H across a comma prefix preserves the document and visible guidance; a fresh H inserts one silent half-second Hold and one Undo restores the baseline. Also covers counted Repeat, pointer opening of its setter, same-batch text submission, undo, exact pause insertion before a Repeat and before the Original, and Hold-duration editing. Checks duration and selection. Split, delete and redo have separate replays. |
 | `dot-repeat` | Replays the last committed frame-cut intent at a new cursor, retaining the requested length after a clamped first cut. Exercises named/default register destinations, one-step Undo, unsupported-edit invalidation, keyboard input ownership and minimum-size footer teaching. See [semantic repeat](SEMANTIC_REPEAT.md) for the contract and [qualification](qualification/semantic-repeat-2026-10-02.md) for the 159 passing checks and inspected captures. |
+| `repeat-setters` | Records wrapping and total-play setters, including an explicit same-count action; verifies saved instruction kinds, one-step Macro Undo, dot on a newly selected direct Repeat, exact Undo/Redo, unchanged register intent and bank, and empty/nonempty Visual refusal. Inspects the dot key and count hint's full paint at 960×640. See [qualification](qualification/repeat-count-2026-10-03.md). |
 | `delete-range` | Cuts active and finished Visual selections in either direction, rejects empty selections, preserves whole-beat dd without a selection and captures independent :delete targets including absence. Checks exact decoded join pictures, one commit/Undo, stale revision/session/group refusal, native-control focus, synthetic IME, held/count/same-batch input and minimum-window text paint clips. Nested ordinary groups retain their owner; partial composite endpoints fail and whole composites can be removed. The frame-cut extension checks `x`/counts/`:delete-frames`, exact captured and clamped intervals, successful delayed-yank supersession, same-batch modal ownership, and focused-button mark names. See [current qualification](qualification/native-frame-cuts-2026-10-01.md) for counts and source identities. No device, acoustics or physical IME claim. |
 | `camera` | Pointer opening and numeric preview, Cancel, keyboard reopening/zoom and pointer Apply. Reach clipped inspector controls with real wheel input before clicking. Checks unchanged revision during preview, restoration of the submitted entry framing/source frame after Cancel, and authored framing after Apply. |
 | `menus` | File-menu ownership of edit keys, help opening, keyboard/wheel changes to scroll offset and painted content, text containing edit keys and punctuation, and cancellation back to the exact active pane's focus. |

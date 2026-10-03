@@ -17,6 +17,18 @@ pub(super) struct Capture {
 }
 
 impl Capture {
+    pub(super) fn repeat_count_instruction(
+        &self,
+        plays: NonZeroU32,
+    ) -> Result<SemanticInstruction, String> {
+        if self.scope.resolve(&self.base)?.owner != &self.context.parent {
+            return Err(
+                "The captured Repeat target differs from its ordinary Sequence scope.".into(),
+            );
+        }
+        repeats::repeat_count_instruction(&self.base.document, &self.context, plays)
+    }
+
     pub(super) fn repeat_selector(&self) -> deadpan_core::SemanticSelector {
         if self.context.visual_selection.is_some() {
             deadpan_core::SemanticSelector::VisualSelection
@@ -253,6 +265,7 @@ impl DeadpanApp {
                 | Action::Operator { .. }
                 | Action::Repeat { .. }
                 | Action::Edit(BeatEdit::WrapRepeat(_))
+                | Action::Edit(BeatEdit::Repeat(_))
                 | Action::CopyMoment
                 | Action::PasteMoment { .. }
                 | Action::RepeatLast
@@ -265,7 +278,7 @@ impl DeadpanApp {
                 | Action::Invalid(_)
                 | Action::OfferInsert
         ) {
-            self.error = Some("This action cannot be recorded yet. Macros support frame and beat motions, group boundaries, Visual selections, cuts, copies, Repeat wraps, register pastes and named calls. Save or cancel recording first.".into());
+            self.error = Some("This action cannot be recorded yet. Macros support frame and beat motions, group boundaries, Visual selections, cuts, copies, Repeat wraps and count changes, register pastes and named calls. Save or cancel recording first.".into());
             return false;
         }
         if matches!(
@@ -281,6 +294,7 @@ impl DeadpanApp {
                 | Action::Operator { .. }
                 | Action::Repeat { .. }
                 | Action::Edit(BeatEdit::WrapRepeat(_))
+                | Action::Edit(BeatEdit::Repeat(_))
                 | Action::CopyMoment
                 | Action::PasteMoment { .. }
                 | Action::RepeatLast
@@ -606,6 +620,15 @@ impl DeadpanApp {
                 .snapshot()
                 .ok_or("Make a picture cut or Repeat before repeating an edit.")?;
             let edit = snapshot.edit_for(&captured.base)?;
+            if matches!(
+                edit.operation,
+                crate::project::semantic::RepeatableEdit::SetRepeatPlays { .. }
+            ) && captured.context.visual_selection.is_some()
+            {
+                return Err(
+                    "Clear the Visual range before repeating a Repeat count change.".into(),
+                );
+            }
             match &captured.context.visual_selection {
                 Some(selection) if selection.anchor == selection.head => {
                     return Err(if edit.uses_register() {
