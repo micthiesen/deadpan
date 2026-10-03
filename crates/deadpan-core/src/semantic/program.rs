@@ -20,11 +20,33 @@ pub enum SemanticInstruction {
         forward: bool,
         count: NonZeroU32,
     },
+    MoveBeats {
+        forward: bool,
+        count: NonZeroU32,
+    },
+    MoveScope {
+        end: bool,
+    },
+    #[serde(deserialize_with = "deserialize_empty")]
+    BeginSelection,
+    #[serde(deserialize_with = "deserialize_empty")]
+    FinishSelection,
+    #[serde(deserialize_with = "deserialize_empty")]
+    ClearSelection,
     CutFrames {
         operation: FrameCut,
         register: RegisterName,
     },
     YankBeat {
+        register: RegisterName,
+    },
+    YankSelection {
+        register: RegisterName,
+    },
+    CutSelection {
+        register: RegisterName,
+    },
+    ReplaceSelection {
         register: RegisterName,
     },
     Paste {
@@ -35,6 +57,15 @@ pub enum SemanticInstruction {
         register: RegisterName,
         count: NonZeroU32,
     },
+}
+
+// Internally tagged unit variants otherwise ignore unknown fields in Serde.
+fn deserialize_empty<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<(), D::Error> {
+    #[derive(Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct Empty {}
+
+    Empty::deserialize(deserializer).map(|_| ())
 }
 
 /// Validated nonempty macro body. The immutable private body makes every

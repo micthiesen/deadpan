@@ -72,6 +72,7 @@ fn run(update: &ProjectUpdate, request: u64, register: char, count: u32, cursor:
             parent: update.workspace.as_ref().unwrap().document.root().clone(),
             cursor: ProjectFrame(cursor),
             selected_child: None,
+            visual_selection: None,
         },
     }
 }
@@ -124,6 +125,172 @@ fn capture(update: &ProjectUpdate, request: u64, register: char) -> ProjectReque
 }
 
 #[test]
+fn oriented_visual_copy_keeps_redo_and_replacement_failure_retains_exact_selection_receipt() {
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("visual-macro-receipt.deadpan");
+    let (harness, opened) = setup(&path);
+    let undone = command(
+        &harness.service,
+        ProjectRequest::Undo {
+            expected_revision: opened
+                .workspace
+                .as_ref()
+                .unwrap()
+                .document
+                .revision_id()
+                .clone(),
+        },
+    );
+    let before = undone.workspace.as_ref().unwrap().document.clone();
+    let before_rows = rows(&path);
+    let selection = deadpan_core::SemanticVisualSelection {
+        anchor: ProjectFrame(17),
+        head: ProjectFrame(4),
+        extending: false,
+    };
+    let copied_update = send(
+        &harness.service,
+        Operation::Apply {
+            id: id(&undone, 1),
+            instruction: SemanticInstruction::YankSelection {
+                register: RegisterName::new('b').unwrap(),
+            },
+            scope: SequenceScope::default(),
+            context: SemanticContext {
+                parent: node("root"),
+                cursor: ProjectFrame(12),
+                selected_child: Some(node("b")),
+                visual_selection: Some(selection.clone()),
+            },
+        },
+    );
+    assert!(receipt(&copied_update).committed().is_none());
+    let Outcome::Applied {
+        cursor,
+        selected,
+        visual_selection,
+        ..
+    } = &receipt(&copied_update).outcome
+    else {
+        panic!("range yank receipt")
+    };
+    assert_eq!(*cursor, ProjectFrame(12));
+    assert_eq!(selected.as_ref(), Some(&node("b")));
+    assert_eq!(visual_selection.as_ref(), Some(&selection));
+    let copy = copied(&copied_update, 'b').clone();
+    assert_eq!(copy.child_label(), None);
+    assert_eq!(
+        copy.slice().selection(),
+        &SliceCaptureSelection::Range {
+            range: FrameRange::new(ProjectFrame(4), ProjectFrame(17)).unwrap(),
+        }
+    );
+    assert_eq!(copy.id().source_revision, *before.revision_id());
+    copy.slice().validate_capture(&before).unwrap();
+    assert_eq!(rows(&path), before_rows);
+    let reader = ProjectStore::open(&path, AccessMode::ReadOnly).unwrap();
+    assert_eq!(reader.snapshot().unwrap(), *before);
+    assert!(reader.history_availability().unwrap().1);
+    drop(reader);
+    command(&harness.service, ProjectRequest::Close);
+    let reopened = command(&harness.service, ProjectRequest::Open(path.clone()));
+    assert_eq!(copied(&reopened, 'b').slice(), copy.slice());
+    assert_eq!(copied(&reopened, 'b').child_label(), None);
+    let redone = command(
+        &harness.service,
+        ProjectRequest::Redo {
+            expected_revision: before.revision_id().clone(),
+        },
+    );
+    let before_replace = redone.workspace.as_ref().unwrap().document.clone();
+    let before_rows = rows(&path);
+    harness
+        .service
+        .shared
+        .workspace_refresh_failure
+        .store(true, Ordering::Release);
+    let operation = Operation::Apply {
+        id: id(&redone, 2),
+        instruction: SemanticInstruction::ReplaceSelection {
+            register: RegisterName::new('b').unwrap(),
+        },
+        scope: SequenceScope::default(),
+        context: SemanticContext {
+            parent: node("root"),
+            cursor: ProjectFrame(25),
+            selected_child: Some(node("c")),
+            visual_selection: Some(deadpan_core::SemanticVisualSelection {
+                anchor: ProjectFrame(19),
+                head: ProjectFrame(17),
+                extending: false,
+            }),
+        },
+    };
+    let replaced = send(&harness.service, operation.clone());
+    let Outcome::Applied {
+        cursor,
+        visual_selection,
+        committed,
+        refresh_error,
+        ..
+    } = &receipt(&replaced).outcome
+    else {
+        panic!("range replacement receipt")
+    };
+    assert_eq!(*cursor, ProjectFrame(17));
+    assert!(visual_selection.is_none());
+    assert!(refresh_error.as_ref().unwrap().contains("Reopen"));
+    let committed = committed.as_ref().unwrap();
+    assert_eq!(committed.cursor, Some(ProjectFrame(17)));
+    assert!(committed.range_selection.is_none());
+    assert_eq!(
+        receipt(&replaced).bank_version,
+        receipt(&copied_update).bank_version
+    );
+    assert_eq!(
+        replaced.workspace.as_ref().unwrap().document,
+        before_replace
+    );
+    assert_eq!(
+        rows(&path),
+        (before_rows.0 + 1, before_rows.1 + 1, before_rows.2 + 1)
+    );
+    assert_eq!(copied(&replaced, 'b').slice(), copy.slice());
+    let duplicate = send(&harness.service, operation);
+    assert_eq!(receipt(&duplicate).committed(), Some(committed.as_ref()));
+    let reader = ProjectStore::open(&path, AccessMode::ReadOnly).unwrap();
+    let after = reader.snapshot().unwrap();
+    assert_eq!(after.duration().unwrap().frames(), 41);
+    assert!(
+        after
+            .nodes()
+            .contains_key(committed.selected_node.as_ref().unwrap())
+    );
+    reader.validate().unwrap();
+    drop(reader);
+    command(&harness.service, ProjectRequest::Close);
+    let reopened = command(&harness.service, ProjectRequest::Open(path));
+    assert_eq!(
+        reopened.workspace.as_ref().unwrap().document.as_ref(),
+        &after
+    );
+    let undone = command(
+        &harness.service,
+        ProjectRequest::Undo {
+            expected_revision: committed.revision.clone(),
+        },
+    );
+    let mut expected = serde_json::to_value(before_replace.as_ref()).unwrap();
+    expected["revision_id"] =
+        serde_json::to_value(undone.workspace.as_ref().unwrap().document.revision_id()).unwrap();
+    assert_eq!(
+        serde_json::to_value(undone.workspace.as_ref().unwrap().document.as_ref()).unwrap(),
+        expected
+    );
+    assert_eq!(copied(&undone, 'b').slice(), copy.slice());
+}
+
+#[test]
 fn bank_only_yank_refresh_failure_retains_the_selected_child_copy_and_redo() {
     let scratch = tempfile::tempdir().unwrap();
     let path = scratch.path().join("macro-yank-refresh.deadpan");
@@ -152,6 +319,7 @@ fn bank_only_yank_refresh_failure_retains_the_selected_child_copy_and_redo() {
             parent: node("root"),
             cursor: ProjectFrame(17),
             selected_child: Some(node("a")),
+            visual_selection: None,
         },
     };
     harness
@@ -397,6 +565,7 @@ fn empty_selected_beat_yanks_and_pastes_at_its_sibling_slot_without_cursor_infer
                 parent: node("root"),
                 cursor: ProjectFrame(3),
                 selected_child: Some(node("empty")),
+                visual_selection: None,
             },
         },
     );
@@ -417,6 +586,7 @@ fn empty_selected_beat_yanks_and_pastes_at_its_sibling_slot_without_cursor_infer
                 parent: node("root"),
                 cursor: ProjectFrame(3),
                 selected_child: Some(node("b")),
+                visual_selection: None,
             },
         },
     );
@@ -792,6 +962,7 @@ fn nested_macro_copies_keep_their_staged_absolute_bounds_and_original_group_labe
             parent: node("group"),
             cursor: ProjectFrame(12),
             selected_child: None,
+            visual_selection: None,
         },
     };
     let executed = send(&harness.service, operation);

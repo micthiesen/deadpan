@@ -320,6 +320,7 @@ fn yank_and_paste_require_matching_exact_fresh_allocations() {
                         return Ok(SemanticAllocation::PasteOriginal {
                             new_revision: revision("wrong"),
                             node: node("wrong"),
+                            split_identities: SplitIdentities::default(),
                         });
                     }
                     (SemanticAllocation::PasteEdited { identities, .. }, 2) => {
@@ -392,7 +393,7 @@ fn new_content_instructions_are_closed_and_round_trip() {
     }
 }
 
-fn original_fixture() -> (ProjectDocument, Arc<RegisterValue>, SourceNode) {
+pub(super) fn original_fixture() -> (ProjectDocument, Arc<RegisterValue>, SourceNode) {
     use crate::{
         AssetId, AssetRecord, AudioSample, LinkRelation, SourceAudioMapping, SourceQualificationId,
         SourceSpan, SourceTimeBase, SourceTimestamp, SourceVideo, SourceVideoMapping,

@@ -6,6 +6,7 @@ use crate::{
 use std::num::NonZeroU32;
 
 mod content;
+mod visual;
 
 fn node(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
@@ -56,6 +57,7 @@ fn context(parent: &str, cursor: i64) -> SemanticContext {
         parent: node(parent),
         cursor: ProjectFrame(cursor),
         selected_child: None,
+        visual_selection: None,
     }
 }
 fn cut(count: u32, register: char) -> SemanticInstruction {
@@ -104,6 +106,7 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
         SemanticAllocationRequest::PasteEdited {
             step_index,
             requirements,
+            required_split_ids,
         } => SemanticAllocation::PasteEdited {
             new_revision: revision(&format!("leaf-{step_index}")),
             identities: SlicePasteIdentities {
@@ -119,13 +122,24 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
                     .map(|n| node(&format!("alias-{step_index}-{n}")))
                     .collect(),
             },
+            split_identities: SplitIdentities {
+                nodes: (0..required_split_ids)
+                    .map(|n| node(&format!("paste-split-{step_index}-{n}")))
+                    .collect(),
+            },
         },
-        SemanticAllocationRequest::PasteOriginal { step_index } => {
-            SemanticAllocation::PasteOriginal {
-                new_revision: revision(&format!("leaf-{step_index}")),
-                node: node(&format!("original-{step_index}")),
-            }
-        }
+        SemanticAllocationRequest::PasteOriginal {
+            step_index,
+            required_split_ids,
+        } => SemanticAllocation::PasteOriginal {
+            new_revision: revision(&format!("leaf-{step_index}")),
+            node: node(&format!("original-{step_index}")),
+            split_identities: SplitIdentities {
+                nodes: (0..required_split_ids)
+                    .map(|n| node(&format!("original-split-{step_index}-{n}")))
+                    .collect(),
+            },
+        },
     })
 }
 fn no_original(_: &ProjectDocument, _: &RegisterValue) -> Result<SourceNode, EditError> {
@@ -668,6 +682,7 @@ fn cumulative_document_and_capture_budgets_refuse_before_another_leaf_allocation
             context: context("root", 0),
             bounds: (ProjectFrame(0), ProjectFrame(8)),
             child_ends: vec![(node("held"), ProjectFrame(8))],
+            child_indices: BTreeMap::from([(node("held"), 0)]),
             bank: &bank,
             inputs: BTreeMap::new(),
             writes: BTreeMap::new(),

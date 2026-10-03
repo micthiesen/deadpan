@@ -1,0 +1,27 @@
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+scratch = Path(__file__).parent
+recorder = Path('/tmp/deadpan-original-layout-20261002/run-check.py')
+environment = dict(os.environ, DEADPAN_CHECK_OUTPUT=str(scratch))
+commands = [
+    ('cli-tests', ['cargo', 'test', '--locked', '-p', 'deadpan-cli']),
+    ('app-ui-tests', ['cargo', 'test', '--locked', '-p', 'deadpan-app', '--features', 'ui-harness']),
+    ('clippy-default', ['cargo', 'clippy', '--locked', '-p', 'deadpan-core', '-p', 'deadpan-store', '-p', 'deadpan-cli', '-p', 'deadpan-app', '--all-targets', '--', '-D', 'warnings']),
+    ('clippy-ui', ['cargo', 'clippy', '--locked', '-p', 'deadpan-app', '--all-targets', '--features', 'ui-harness', '--', '-D', 'warnings']),
+    ('format-final', ['cargo', 'fmt', '--all', '--', '--check']),
+    ('build-ui', ['cargo', 'build', '--locked', '-p', 'deadpan-app', '--features', 'ui-harness']),
+    ('replay', ['target/debug/deadpan-app', '--ui-check', '--scenario', 'macros', '--mode', 'visual',
+                '--output', str(scratch / 'replay'), '--kestrel-source',
+                '/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift', '--retain-projects']),
+]
+for name, command in commands:
+    if (scratch / f'{name}.json').exists():
+        raise RuntimeError(f'Refusing to overwrite retained evidence: {name}')
+    print('START', name, flush=True)
+    result = subprocess.run([sys.executable, str(recorder), name, *command], env=environment)
+    if result.returncode:
+        sys.exit(result.returncode)
+print('ALL CHECKS PASSED', flush=True)

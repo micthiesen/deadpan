@@ -321,6 +321,7 @@ fn counted_semantic_original_paste_keeps_exact_mapping_through_undo_and_reopen()
             parent: before.root().clone(),
             cursor: ProjectFrame(0),
             selected_child: None,
+            visual_selection: None,
         },
         &program,
         SemanticRegisterBank {
@@ -329,12 +330,18 @@ fn counted_semantic_original_paste_keeps_exact_mapping_through_undo_and_reopen()
         },
         revision("semantic-original"),
         |request| {
-            let SemanticAllocationRequest::PasteOriginal { step_index } = request else {
+            let SemanticAllocationRequest::PasteOriginal {
+                step_index,
+                required_split_ids,
+            } = request
+            else {
                 unreachable!()
             };
+            assert_eq!(required_split_ids, 0);
             Ok(SemanticAllocation::PasteOriginal {
                 new_revision: revision(&format!("paste-{step_index}")),
                 node: NodeId::new(format!("pasted-{step_index}"))?,
+                split_identities: deadpan_core::SplitIdentities { nodes: vec![] },
             })
         },
         |document, value| {
@@ -375,6 +382,105 @@ fn counted_semantic_original_paste_keeps_exact_mapping_through_undo_and_reopen()
     )?;
     let mut expected_redo = serde_json::to_value(&after)?;
     expected_redo["revision_id"] = serde_json::json!("redo-semantic-original");
+    assert_eq!(serde_json::to_value(reopened.snapshot()?)?, expected_redo);
+    assert_eq!(reopened.registers()?, bank);
+    reopened.validate()?;
+    let before_replace = reopened.snapshot()?;
+    let program =
+        SemanticProgram::new(vec![SemanticInstruction::ReplaceSelection { register: a }])?;
+    let plan = plan_semantic(
+        &before_replace,
+        &SemanticContext {
+            parent: before_replace.root().clone(),
+            cursor: ProjectFrame(0),
+            selected_child: None,
+            visual_selection: Some(deadpan_core::SemanticVisualSelection {
+                anchor: ProjectFrame(2),
+                head: ProjectFrame(1),
+                extending: false,
+            }),
+        },
+        &program,
+        SemanticRegisterBank {
+            entries: &bank.entries,
+            version: bank.version,
+        },
+        revision("semantic-original-replacement"),
+        |allocation| {
+            let SemanticAllocationRequest::PasteOriginal {
+                required_split_ids, ..
+            } = allocation
+            else {
+                unreachable!()
+            };
+            assert!(
+                required_split_ids > 0,
+                "the qualified Source needs interior endpoint splits"
+            );
+            Ok(SemanticAllocation::PasteOriginal {
+                new_revision: revision("original-replacement-stage"),
+                node: NodeId::new("replacement-source")?,
+                split_identities: deadpan_core::SplitIdentities {
+                    nodes: (0..required_split_ids)
+                        .map(|index| NodeId::new(format!("replacement-split-{index}")))
+                        .collect::<std::result::Result<_, _>>()?,
+                },
+            })
+        },
+        |_, value| {
+            assert_eq!(value, &original);
+            Ok(expected.clone())
+        },
+    )?;
+    assert!(plan.context.visual_selection.is_none());
+    assert_eq!(plan.context.cursor, ProjectFrame(1));
+    assert_eq!(
+        plan.trace[0].removed_range,
+        Some(deadpan_core::FrameRange::new(
+            ProjectFrame(1),
+            ProjectFrame(2)
+        )?)
+    );
+    assert_eq!(
+        plan.trace[0].resolved_range,
+        Some(deadpan_core::FrameRange::new(
+            ProjectFrame(1),
+            ProjectFrame(1 + expected.duration.frames())
+        )?)
+    );
+    let request = plan.request.as_ref().unwrap();
+    let preview = reopened.preview_compound(request)?;
+    assert_eq!(reopened.snapshot()?, before_replace);
+    assert_eq!(preview.register_bank, bank);
+    let committed = reopened.commit_compound(request, None)?;
+    assert!(committed.committed.is_some());
+    assert_eq!(committed.register_bank, bank);
+    let replaced = reopened.snapshot()?;
+    assert_eq!(
+        replaced.duration()?.frames(),
+        before_replace.duration()?.frames() - 1 + expected.duration.frames()
+    );
+    let NodeKind::Source { source } = &replaced.nodes()[&NodeId::new("replacement-source")?].kind
+    else {
+        panic!("replacement must use the exact qualified Source")
+    };
+    assert_eq!(source, &expected);
+    reopened.undo(
+        replaced.revision_id(),
+        revision("undo-original-replacement"),
+    )?;
+    let mut expected_undo = serde_json::to_value(&before_replace)?;
+    expected_undo["revision_id"] = serde_json::json!("undo-original-replacement");
+    assert_eq!(serde_json::to_value(reopened.snapshot()?)?, expected_undo);
+    reopened.checkpoint()?;
+    drop(reopened);
+    let mut reopened = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    reopened.redo(
+        &revision("undo-original-replacement"),
+        revision("redo-original-replacement"),
+    )?;
+    let mut expected_redo = serde_json::to_value(&replaced)?;
+    expected_redo["revision_id"] = serde_json::json!("redo-original-replacement");
     assert_eq!(serde_json::to_value(reopened.snapshot()?)?, expected_redo);
     assert_eq!(reopened.registers()?, bank);
     reopened.validate()?;

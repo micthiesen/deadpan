@@ -31,7 +31,7 @@ impl Capture {
             && app.copied.bank_version() == Some(self.bank_version)
             && app.pane == self.pane
             && app.view == View::Sequence
-            && app.edit_selection() == navigation::EditSelection::None
+            && app.capture_visual_selection().as_ref() == Ok(&self.context.visual_selection)
             && !app.sound_focused()
             && !app.event_focused()
             && app.frame_delete_blocked().is_none()
@@ -122,11 +122,8 @@ impl DeadpanApp {
             || matches!(self.pane, Pane::Sources | Pane::Sounds)
             || self.sound_focused()
             || self.event_focused()
-            || self.edit_selection() != navigation::EditSelection::None
         {
-            return Err(
-                "Focus Your edit and clear the Visual selection before using a macro.".into(),
-            );
+            return Err("Focus Your edit before using a macro.".into());
         }
         let base = self
             .workspace
@@ -143,6 +140,7 @@ impl DeadpanApp {
                 i64::try_from(self.sequence_cursor).map_err(|error| error.to_string())?,
             ),
             selected_child: self.selected_beat.clone(),
+            visual_selection: self.capture_visual_selection()?,
         };
         Ok(Capture {
             base,
@@ -210,6 +208,12 @@ impl DeadpanApp {
         if !matches!(
             action,
             Action::Step { .. }
+                | Action::Beat { .. }
+                | Action::First
+                | Action::Last
+                | Action::VisualMoment
+                | Action::DeleteSelection
+                | Action::Edit(BeatEdit::Delete)
                 | Action::DeleteFrames(_)
                 | Action::CopyMoment
                 | Action::PasteMoment { .. }
@@ -223,19 +227,30 @@ impl DeadpanApp {
                 | Action::Invalid(_)
                 | Action::OfferInsert
         ) {
-            self.error = Some("This action cannot be recorded yet. Macros support frame motions, frame cuts, copying the selected beat, pasting registers and named macro calls. Save or cancel recording first.".into());
+            self.error = Some("This action cannot be recorded yet. Macros support frame and beat motions, group boundaries, Visual selections, cuts, copies, register pastes and named calls. Save or cancel recording first.".into());
             return false;
         }
         if matches!(
             action,
             Action::Step { .. }
+                | Action::Beat { .. }
+                | Action::First
+                | Action::Last
+                | Action::VisualMoment
+                | Action::DeleteSelection
+                | Action::Edit(BeatEdit::Delete)
                 | Action::DeleteFrames(_)
                 | Action::CopyMoment
                 | Action::PasteMoment { .. }
                 | Action::RepeatLast
                 | Action::MacroExecute { .. }
-        ) && self.macros.instruction_count() >= deadpan_core::MAX_SEMANTIC_PROGRAM_INSTRUCTIONS
+        ) || (action == Action::Escape
+            && !self.macros.is_pending()
+            && self.edit_selection() != navigation::EditSelection::None)
         {
+            if self.macros.instruction_count() < deadpan_core::MAX_SEMANTIC_PROGRAM_INSTRUCTIONS {
+                return true;
+            }
             self.error = Some(
                 "The macro has reached 1024 instructions. Save or cancel recording first.".into(),
             );
@@ -320,7 +335,7 @@ impl DeadpanApp {
                     });
                     self.bindings.set_macro_recording(true);
                     self.message = Some(format!(
-                        "Recording @{name}: frame motions, cuts, beat copies, register pastes and named calls. {} saves; Esc cancels.",
+                        "Recording @{name}: motions, Visual selections, cuts, copies, pastes and named calls. {} saves; Esc clears a selection, otherwise cancels.",
                         self.editor_key(EditorKey::MacroRecord)
                     ));
                 }
@@ -372,7 +387,7 @@ impl DeadpanApp {
                 return Err("The recording context changed. Cancel it and record again.".into());
             }
             if recording.instructions.is_empty() {
-                return Err("The recording is empty. Record a frame motion, cut, beat copy, paste or macro call before saving.".into());
+                return Err("The recording is empty. Record a motion, selection, cut, copy, paste or macro call before saving.".into());
             }
             let program = Arc::new(
                 SemanticProgram::new(recording.instructions.clone())
@@ -414,6 +429,29 @@ impl DeadpanApp {
         self.append_macro_instruction(SemanticInstruction::MoveFrames { forward, count });
     }
 
+    pub(super) fn record_macro_local(&mut self, instruction: SemanticInstruction) {
+        if self.macros.recording() {
+            self.append_macro_instruction(instruction);
+        }
+    }
+
+    pub(super) fn record_macro_escape(&mut self) {
+        if !self.macros.recording() {
+            return;
+        }
+        if !self.macros.is_pending() && self.edit_selection() != navigation::EditSelection::None {
+            self.edit_range.clear();
+            self.record_macro_local(SemanticInstruction::ClearSelection);
+            self.message =
+                Some("Visual selection cleared and recorded. Esc now cancels recording.".into());
+        } else {
+            self.cancel_macro_recording();
+            if let Some(pending) = &mut self.macros.pending {
+                pending.owns_cursor = false;
+            }
+        }
+    }
+
     /// Returns true when the recorder owns this copy, including a refused or
     /// still-pending request. Ordinary copies keep their existing route.
     pub(super) fn record_macro_yank(
@@ -430,8 +468,30 @@ impl DeadpanApp {
         }
         let target = target.unwrap_or_else(|| self.capture_macro_target());
         self.copied.begin_write();
-        let instruction =
-            register_name(destination).map(|register| SemanticInstruction::YankBeat { register });
+        let instruction = target.as_ref().map_err(Clone::clone).and_then(|target| {
+            let register = register_name(destination)?;
+            Ok(if target.context.visual_selection.is_some() {
+                SemanticInstruction::YankSelection { register }
+            } else {
+                SemanticInstruction::YankBeat { register }
+            })
+        });
+        self.apply_recorded_instruction(target, instruction);
+        true
+    }
+
+    pub(super) fn record_macro_selection_cut(
+        &mut self,
+        destination: Option<char>,
+        target: Option<Result<Capture, String>>,
+    ) -> bool {
+        if !self.macros.recording() && !self.macros.is_pending() {
+            return false;
+        }
+        let target = target.unwrap_or_else(|| self.capture_macro_target());
+        self.copied.begin_write();
+        let instruction = register_name(destination)
+            .map(|register| SemanticInstruction::CutSelection { register });
         self.apply_recorded_instruction(target, instruction);
         true
     }
@@ -454,6 +514,7 @@ impl DeadpanApp {
             .map_err(Clone::clone)
             .and_then(|target| target.macro_capture.clone());
         let instruction = target.as_ref().map_err(Clone::clone).and_then(|target| {
+            target.check_nonempty_selection()?;
             match &target.copied {
                 None => {
                     return Err(target.register.map_or_else(
@@ -464,9 +525,11 @@ impl DeadpanApp {
                 Some(copied::Content::Macro(_)) => return Err(copied::MACRO_PASTE_ERROR.into()),
                 Some(content) => content.check(&target.base)?,
             }
-            Ok(SemanticInstruction::Paste {
-                register: register_name(target.register)?,
-                before,
+            let register = register_name(target.register)?;
+            Ok(if target.selection.has_bounds() {
+                SemanticInstruction::ReplaceSelection { register }
+            } else {
+                SemanticInstruction::Paste { register, before }
             })
         });
         self.apply_recorded_instruction(captured, instruction);
@@ -719,16 +782,11 @@ impl DeadpanApp {
                         } else if receipt.bank_version != receipt.id.bank_version {
                             " · registers saved"
                         } else {
-                            " · cursor only"
+                            " · cursor and selection only"
                         },
                     ),
-                    protocol::Outcome::Applied { committed, .. } => format!(
-                        "{} saved{}.",
-                        if committed.is_some() {
-                            "Paste"
-                        } else {
-                            "Beat copy"
-                        },
+                    protocol::Outcome::Applied { .. } => format!(
+                        "Action completed{}.",
                         if self.macros.recording() {
                             " and recorded"
                         } else {
@@ -753,6 +811,7 @@ impl DeadpanApp {
                         scope,
                         cursor,
                         selected,
+                        visual_selection,
                         committed,
                         refresh_error,
                         ..
@@ -761,6 +820,7 @@ impl DeadpanApp {
                         scope,
                         cursor,
                         selected,
+                        visual_selection,
                         committed,
                         refresh_error,
                     } => {
@@ -771,25 +831,28 @@ impl DeadpanApp {
                         }
                         if !pending.owns_cursor {
                             self.cancel_macro_recording();
-                            self.message = Some("Macro completed after you moved the cursor. Its final cursor was not applied.".into());
+                            self.message = Some("Macro completed after the editing context changed. Its final cursor and selection were not applied.".into());
                             return;
                         }
                         // Ownership was captured before receive installed the bank.
                         // A successful yank changes that bank without a revision,
                         // so comparing against the entry bank here would reject it.
-                        if committed.is_none() {
-                            let cursor = u64::try_from(cursor.0)
-                                .expect("validated nonnegative macro cursor");
-                            let picture_changed =
-                                self.sequence_scope != scope || self.sequence_cursor != cursor;
-                            let selection_changed = self.selected_beat != selected;
-                            self.sequence_scope = scope;
-                            self.sequence_cursor = cursor;
-                            self.selected_beat = selected;
-                            self.reveal_beat |= selection_changed;
-                            if picture_changed {
-                                self.request_picture(false);
-                            }
+                        let cursor =
+                            u64::try_from(cursor.0).expect("validated nonnegative macro cursor");
+                        let picture_changed =
+                            self.sequence_scope != scope || self.sequence_cursor != cursor;
+                        let selection_changed = self.selected_beat != selected;
+                        self.sequence_scope = scope;
+                        self.sequence_cursor = cursor;
+                        self.selected_beat = selected;
+                        self.reveal_beat |= selection_changed;
+                        if let Err(error) = self.restore_macro_visual_selection(visual_selection) {
+                            self.cancel_macro_recording();
+                            self.error = Some(error);
+                            return;
+                        }
+                        if committed.is_none() && picture_changed {
+                            self.request_picture(false);
                         }
                         if let Some(instruction) = pending.instruction {
                             self.append_macro_instruction(instruction);

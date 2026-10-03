@@ -84,6 +84,7 @@ fn run(
             parent: node(parent),
             cursor: ProjectFrame(cursor),
             selected_child: None,
+            visual_selection: None,
             count: NonZeroU32::new(count).unwrap(),
             new_revision: revision.map(|revision| RevisionId::new(revision).unwrap()),
         },
@@ -151,6 +152,110 @@ fn same_document_except_revision(actual: &ProjectDocument, expected: &ProjectDoc
     let mut expected = serde_json::to_value(expected).unwrap();
     expected["revision_id"] = serde_json::to_value(actual.revision_id()).unwrap();
     assert_eq!(serde_json::to_value(actual).unwrap(), expected);
+}
+
+#[test]
+fn remote_visual_yank_previews_oriented_selection_and_keeps_bank_receipt_on_refresh_failure() {
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("remote-visual-yank.deadpan");
+    let (harness, opened) = setup(&path);
+    let mut client = client(&path);
+    live_project::request(
+        &mut client,
+        save(
+            &opened,
+            program(vec![
+                SemanticInstruction::MoveFrames {
+                    forward: false,
+                    count: NonZeroU32::new(3).unwrap(),
+                },
+                SemanticInstruction::YankSelection {
+                    register: RegisterName::new('b').unwrap(),
+                },
+            ]),
+            false,
+        ),
+    )
+    .unwrap();
+    let saved = remote_update(&harness);
+    let before = durable(&path);
+    let mut operation = run(&saved, 'a', "root", 1, 12, Some("visual-yank-unused"), true);
+    let Operation::Execute { command, .. } = &mut operation else {
+        unreachable!()
+    };
+    let ShortOperation::Macro { request } = command.as_mut() else {
+        unreachable!()
+    };
+    let MacroOperation::Run {
+        visual_selection, ..
+    } = &mut request.operation
+    else {
+        unreachable!()
+    };
+    *visual_selection = Some(deadpan_core::SemanticVisualSelection {
+        anchor: ProjectFrame(18),
+        head: ProjectFrame(12),
+        extending: true,
+    });
+    let Reply::Completed {
+        output,
+        committed_revision,
+        committed_registers,
+        ..
+    } = live_project::request(&mut client, operation.clone()).unwrap()
+    else {
+        panic!("range preview")
+    };
+    assert!(committed_revision.is_none() && committed_registers.is_none());
+    let selection = serde_json::json!({"anchor":18,"head":9,"extending":false});
+    assert_eq!(output["context"]["visual_selection"], selection);
+    assert_eq!(output["context"]["cursor"], 9);
+    assert_eq!(durable(&path), before);
+    assert!(harness.service.take_update().is_none());
+    let Operation::Execute { command, .. } = &mut operation else {
+        unreachable!()
+    };
+    let ShortOperation::Macro { request } = command.as_mut() else {
+        unreachable!()
+    };
+    request.dry_run = false;
+    harness
+        .service
+        .shared
+        .host_refresh_failure
+        .store(true, Ordering::Release);
+    let Reply::Completed {
+        output,
+        committed_revision,
+        committed_registers,
+        refresh_error,
+    } = live_project::request(&mut client, operation).unwrap()
+    else {
+        panic!("saved range receipt")
+    };
+    assert!(committed_revision.is_none());
+    let receipt = committed_registers.unwrap();
+    assert_eq!(receipt.revision_id, *before.0.revision_id());
+    assert_eq!(receipt.bank_version, before.1.version + 1);
+    assert!(refresh_error.unwrap().contains("Injected failure"));
+    assert_eq!(output["context"]["visual_selection"], selection);
+    let update = harness.service.take_update().unwrap();
+    assert!(update.error.is_some());
+    assert!(update.committed.is_none() && update.macros.is_none());
+    let copy = copied(&update, 'b');
+    assert_eq!(copy.child_label(), None);
+    assert_eq!(
+        copy.slice().selection(),
+        &SliceCaptureSelection::Range {
+            range: FrameRange::new(ProjectFrame(9), ProjectFrame(18)).unwrap(),
+        }
+    );
+    copy.slice().validate_capture(&before.0).unwrap();
+    assert_eq!(copy.id().persisted_version, Some(receipt.bank_version));
+    let after = durable(&path);
+    assert_eq!(after.0, before.0);
+    assert_eq!(after.2, before.2);
+    shutdown(&harness);
 }
 
 #[test]
@@ -729,6 +834,7 @@ fn unread_native_save_motion_and_copy_continuations_block_remote_mutation() {
                         parent: node("root"),
                         cursor: ProjectFrame(3),
                         selected_child: None,
+                        visual_selection: None,
                     },
                 })
             }

@@ -21,12 +21,13 @@ app inventory confirmed no Deadpan app remained running.
 
 ## Semantic macros, current implementation
 
-[Semantic macros](../SEMANTIC_MACROS.md) record frame motions, frame cuts,
-selected-beat copies, before/after register pastes and named calls with `q`/`@`
+[Semantic macros](../SEMANTIC_MACROS.md) record frame/beat motions, group bounds,
+Visual begin/finish/clear, frame/range cuts, beat/range copies, before/after
+register pastes, Visual replacements and named calls with `q`/`@`
 and command aliases. Preserve requested counts and
 record asynchronous operations only after their exact successful receipt.
 Prefix and command entry capture session, revision, bank version, ordinary
-Sequence scope and cursor, including absence. Reject unsupported recording
+Sequence scope, cursor, selected child and oriented Visual range, including absence. Reject unsupported recording
 actions and stop drafts when their context changes.
 
 Schema 55 adds Macro contents without media capture provenance. Save named
@@ -45,6 +46,15 @@ runtime copies from each staged trace's exact selection and child label. Origina
 paste mappings use the saved measured receipt and are independently admitted
 again at preview and commit. Keep derived mapping caches within one admission;
 every paste still compares its full source mapping.
+Keep empty selections distinct from absence and retain finished endpoints
+independently of the cursor. Visual yank finishes extension; authored cut/paste
+clears Visual state. Replace through one ordinary ReplaceSlice/ReplaceSource
+leaf with exact split pools. Restore final oriented selection only from an
+owned visible receipt. Escape clears and records an existing Visual selection;
+without one, or during pending work, it cancels the draft. Pending authored
+work still finishes without reclaiming abandoned cursor/selection state.
+See [Visual qualification](../qualification/visual-macros-2026-10-02.md) for
+current selection and replacement evidence.
 See [reuse qualification](../qualification/macro-reuse-2026-10-02.md) for core,
 store, native/headless, counted replay and corrected test-fixture evidence.
 

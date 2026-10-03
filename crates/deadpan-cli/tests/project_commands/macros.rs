@@ -46,6 +46,7 @@ fn run(document: &ProjectDocument, version: u64, register: &str, cursor: i64) ->
         version,
         json!({"type":"run","register":register,
         "parent":document.root(),"cursor":cursor,"selected_child":null,
+        "visual_selection":null,
         "count":1,"new_revision":"macro-cut"}),
     )
 }
@@ -86,6 +87,200 @@ fn same_document(actual: &ProjectDocument, expected: &ProjectDocument) -> Result
     let mut expected = serde_json::to_value(expected)?;
     expected["revision_id"] = json!(actual.revision_id());
     assert_eq!(serde_json::to_value(actual)?, expected);
+    Ok(())
+}
+
+#[test]
+fn oriented_range_yank_and_staged_replacement_keep_exact_history_and_captures() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = create(scratch.path())?;
+    let input = scratch.path().join("visual-macro.json");
+    let initial = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    fs::write(&input, request(&initial)?.to_string())?;
+    success(&[
+        "command",
+        package.to_str().unwrap(),
+        "--json",
+        input.to_str().unwrap(),
+    ])?;
+    let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let before = writer.snapshot()?;
+    writer.commit(&deadpan_core::CommandRequest {
+        project_id: before.project_id().clone(),
+        expected_revision: before.revision_id().clone(),
+        new_revision: RevisionId::new("renamed")?,
+        command: Command::Rename {
+            node: NodeId::new("hold")?,
+            label: "Renamed hold".into(),
+        },
+    })?;
+    writer.undo(
+        &RevisionId::new("renamed")?,
+        RevisionId::new("before-visual")?,
+    )?;
+    let before = writer.snapshot()?;
+    let history = writer.history_availability()?;
+    assert!(history.1);
+    drop(writer);
+    invoke(
+        &package,
+        &input,
+        &save(
+            &before,
+            0,
+            "a",
+            json!([
+                {"type":"yank_selection","register":"b"},
+            ]),
+        ),
+        false,
+    )?;
+    let mut yank = run(&before, 1, "a", 4);
+    yank["operation"]["visual_selection"] = json!({"anchor":18,"head":4,"extending":true});
+    let unchanged = state(&package)?;
+    let preview = invoke(&package, &input, &yank, true)?;
+    assert_eq!(state(&package)?, unchanged);
+    let finished = json!({"anchor":18,"head":4,"extending":false});
+    assert_eq!(preview["context"]["visual_selection"], finished);
+    let result = invoke(&package, &input, &yank, false)?;
+    assert!(result["committed_revision"].is_null());
+    assert_eq!(result["committed_registers"]["bank_version"], 2);
+    assert_eq!(result["context"]["visual_selection"], finished);
+    assert_eq!(result["context"]["cursor"], 4);
+    let writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    assert_eq!(writer.snapshot()?, before);
+    assert_eq!(writer.history_availability()?, history);
+    let bank = writer.registers()?;
+    let RegisterValue::Edited { slice } = bank.entries[&RegisterName::new('b')?].as_ref() else {
+        panic!("range copy")
+    };
+    assert_eq!(
+        slice.selection(),
+        &deadpan_core::SliceCaptureSelection::Range {
+            range: deadpan_core::FrameRange::new(
+                deadpan_core::ProjectFrame(4),
+                deadpan_core::ProjectFrame(18)
+            )?,
+        }
+    );
+    slice.validate_capture(&before)?;
+    writer.checkpoint()?;
+    drop(writer);
+    let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    assert_eq!(writer.registers()?, bank);
+    writer.redo(
+        before.revision_id(),
+        RevisionId::new("redo-before-range-edit")?,
+    )?;
+    assert_eq!(writer.registers()?, bank);
+    writer.undo(
+        &RevisionId::new("redo-before-range-edit")?,
+        RevisionId::new("range-edit-start")?,
+    )?;
+    let before = writer.snapshot()?;
+    drop(writer);
+    let body = json!([
+        {"type":"begin_selection"},
+        {"type":"move_frames","forward":false,"count":6},
+        {"type":"cut_selection","register":"b"},
+        {"type":"begin_selection"},
+        {"type":"move_frames","forward":true,"count":4},
+        {"type":"finish_selection"},
+        {"type":"replace_selection","register":"b"},
+        {"type":"begin_selection"},
+        {"type":"move_frames","forward":true,"count":6},
+        {"type":"yank_selection","register":"c"},
+    ]);
+    invoke(
+        &package,
+        &input,
+        &save(&before, 2, "a", body.clone()),
+        false,
+    )?;
+    let edit = run(&before, 3, "a", 20);
+    let unchanged = state(&package)?;
+    let preview = invoke(&package, &input, &edit, true)?;
+    assert_eq!(state(&package)?, unchanged);
+    assert_eq!(preview["edit"]["duration_delta"], -4);
+    assert_eq!(
+        preview["trace"][7]["removed_range"],
+        json!({"start":14,"end":18})
+    );
+    assert_eq!(
+        preview["trace"][7]["resolved_range"],
+        json!({"start":14,"end":20})
+    );
+    let result = invoke(&package, &input, &edit, false)?;
+    assert_eq!(
+        result["context"]["visual_selection"],
+        json!({"anchor":14,"head":20,"extending":false})
+    );
+    assert_eq!(result["context"]["cursor"], 20);
+    assert_eq!(result["committed_registers"]["bank_version"], 4);
+    let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let after = writer.snapshot()?;
+    assert_eq!(after.duration()?.frames(), 41);
+    let bank = writer.registers()?;
+    let RegisterValue::Edited { slice: cut } = bank.entries[&RegisterName::new('b')?].as_ref()
+    else {
+        panic!("range cut")
+    };
+    let RegisterValue::Edited { slice: staged } = bank.entries[&RegisterName::new('c')?].as_ref()
+    else {
+        panic!("staged range yank")
+    };
+    cut.validate_capture(&before)?;
+    assert_eq!(
+        cut.range(),
+        deadpan_core::FrameRange::new(
+            deadpan_core::ProjectFrame(14),
+            deadpan_core::ProjectFrame(20)
+        )?
+    );
+    assert_ne!(staged.revision_id(), before.revision_id());
+    assert_ne!(staged.revision_id(), after.revision_id());
+    assert_eq!(
+        staged.range(),
+        deadpan_core::FrameRange::new(
+            deadpan_core::ProjectFrame(14),
+            deadpan_core::ProjectFrame(20)
+        )?
+    );
+    staged.validate_capture(&writer.capture_snapshot_at(staged.revision_id())?)?;
+    assert_eq!(
+        bank.entries[&RegisterName::unnamed()],
+        bank.entries[&RegisterName::new('c')?]
+    );
+    writer.undo(after.revision_id(), RevisionId::new("undo-range-edit")?)?;
+    same_document(&writer.snapshot()?, &before)?;
+    writer.checkpoint()?;
+    drop(writer);
+    let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    writer.redo(
+        &RevisionId::new("undo-range-edit")?,
+        RevisionId::new("redo-range-edit")?,
+    )?;
+    same_document(&writer.snapshot()?, &after)?;
+    assert_eq!(writer.registers()?, bank);
+    writer.validate()?;
+    let after = writer.snapshot()?;
+    drop(writer);
+    let mut failing = body;
+    failing
+        .as_array_mut()
+        .unwrap()
+        .push(json!({"type":"call","register":"z","count":1}));
+    invoke(&package, &input, &save(&after, 4, "f", failing), false)?;
+    let mut failure = run(&after, 5, "f", 20);
+    failure["operation"]["new_revision"] = json!("failed-after-range-edit");
+    let failed = reject(&package, &input, &failure)?;
+    assert_eq!(failed["error"]["code"], "InvalidCommand");
+    assert!(
+        failed["error"]["message"]
+            .as_str()
+            .unwrap()
+            .contains("called macro register is empty")
+    );
     Ok(())
 }
 

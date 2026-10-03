@@ -1135,7 +1135,9 @@ impl DeadpanApp {
     fn edit(&mut self, edit: BeatEdit) {
         self.bindings.clear();
         if edit == BeatEdit::Delete {
-            self.delete_captured(self.capture_delete_target());
+            if !self.record_macro_selection_cut(self.copied.selected(), None) {
+                self.delete_captured(self.capture_delete_target());
+            }
             return;
         }
         if !matches!(edit, BeatEdit::WrapRepeat(_)) {
@@ -1587,7 +1589,11 @@ impl DeadpanApp {
             }
             Action::CopyMoment => self.copy_slice(),
             Action::SelectRegister(name) => self.select_register(name),
-            Action::DeleteSelection => self.delete_captured(self.capture_delete_target()),
+            Action::DeleteSelection => {
+                if !self.record_macro_selection_cut(self.copied.selected(), None) {
+                    self.delete_captured(self.capture_delete_target());
+                }
+            }
             Action::DeleteFrames(count) => {
                 self.delete_frames_captured(self.capture_frame_delete_target(), count)
             }
@@ -1664,6 +1670,7 @@ impl DeadpanApp {
                     self.select_at_cursor();
                 }
                 self.request_picture(false);
+                self.record_macro_local(deadpan_core::SemanticInstruction::MoveScope { end });
             }
             Action::Beat { forward, count } => {
                 if self.pane == Pane::Sources && self.focused_workflow() {
@@ -1722,6 +1729,12 @@ impl DeadpanApp {
                         self.reveal_beat = true;
                         self.request_picture(true);
                     }
+                    if let Some(count) = std::num::NonZeroU32::new(count) {
+                        self.record_macro_local(deadpan_core::SemanticInstruction::MoveBeats {
+                            forward,
+                            count,
+                        });
+                    }
                 }
             }
             Action::Search => {
@@ -1745,9 +1758,7 @@ impl DeadpanApp {
                 self.bindings.clear();
             }
             Action::Escape => {
-                if self.macros.recording() {
-                    self.cancel_macro_recording();
-                }
+                self.record_macro_escape();
                 self.cancel_register_choice();
                 if !self.sound_focused() {
                     self.moment.cancel();
@@ -2270,6 +2281,14 @@ impl DeadpanApp {
                 );
             }
             Ok(navigation::command::Entry::Action(Action::Edit(BeatEdit::Delete))) => {
+                if self.record_macro_selection_cut(
+                    copy_register.map(|(_, name)| name),
+                    Some(macro_target.unwrap_or_else(|| {
+                        Err("Open :delete again to capture its Visual selection.".into())
+                    })),
+                ) {
+                    return;
+                }
                 self.delete_captured(delete_target.unwrap_or_else(|| {
                     Err("Open :delete again to capture its target; no edit was made.".into())
                 }));
@@ -2624,7 +2643,7 @@ impl DeadpanApp {
                 if let Some(label) = self.macros.label() {
                     ui.colored_label(style::CURSOR, label);
                     style::key_hint(ui, &self.editor_key(EditorKey::MacroRecord), "save macro");
-                    style::key_hint(ui, "Esc", "cancel recording");
+                    style::key_hint(ui, "Esc", if self.edit_selection() == navigation::EditSelection::None || self.macros.is_pending() { "cancel recording" } else { "clear selection" });
                 }
                 if !self.command_open && !self.sound_focused() && self.pane != Pane::Sounds && !self.event_focused()
                     && ui.add(egui::Button::new(format!("Marks  {}", self.editor_pair(EditorKey::MarkSet, EditorKey::MarkJump, " / "))).small().wrap()).on_hover_text(format!("{} + letter saves this position; {} + letter returns. Browse with :marks.", self.editor_key(EditorKey::MarkSet), self.editor_key(EditorKey::MarkJump))).clicked()
@@ -2670,13 +2689,17 @@ impl DeadpanApp {
                     ui.label(egui::RichText::new(clock).monospace().color(style::CURSOR));
                     let mut hints = key_labels::Hints::new();
                     if self.macros.recording() {
-                        self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " / ", "record frame motion");
-                        self.add_editor_hint(&mut hints, EditorKey::CutFrames, "record frame cut");
-                        self.add_editor_hint(&mut hints, EditorKey::Copy, "record beat copy");
-                        self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", "record paste");
+                        self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " / ", "frame");
+                        self.add_editor_pair_hint(&mut hints, EditorKey::BeatNext, EditorKey::BeatPrevious, " / ", "beat");
+                        self.add_editor_pair_hint(&mut hints, EditorKey::First, EditorKey::Last, " / ", "group bounds");
+                        self.add_editor_hint(&mut hints, EditorKey::Visual, if self.edit_range.active { "finish range" } else { "start range" });
+                        let visual = self.edit_selection() != navigation::EditSelection::None;
+                        self.add_editor_hint(&mut hints, if visual { EditorKey::CutRange } else { EditorKey::CutFrames }, if visual { "cut range" } else { "cut frames" });
+                        self.add_editor_hint(&mut hints, EditorKey::Copy, if visual { "copy range" } else { "copy beat" });
+                        self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", if visual { "replace range" } else { "paste" });
                         self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: record call");
                         self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "save macro");
-                        hints.push(("Esc".into(), "cancel recording".into()));
+                        hints.push(("Esc".into(), if visual && !self.macros.is_pending() { "clear selection".into() } else { "cancel recording".into() }));
                     } else if self.sound_focused() {
                         self.add_editor_pair_hint(&mut hints, EditorKey::BeatNext, EditorKey::BeatPrevious, " ", "sound");
                         self.add_editor_hint(&mut hints, EditorKey::Playback, "play / pause");
@@ -3606,9 +3629,9 @@ impl DeadpanApp {
                     }
                     ui.separator();
                     ui.label(egui::RichText::new("SEMANTIC MACROS").strong().color(style::LAVENDER));
-                    help_binding(ui, &format!("{} + letter · :record a", key(EditorKey::MacroRecord)), "Record frame motions, frame cuts, copying the selected beat, register pastes and named macro calls in the current ordinary Sequence group. Instructions keep requested counts and resolve against the current cursor and selected beat. Clear Visual selection first. Recording performs each action and adds it only after success.");
-                    help_binding(ui, &format!("{} · :record-stop", key(EditorKey::MacroRecord)), "While recording, save to that named Macro register. Saving adds no Undo and preserves the default copy. Esc or :record-cancel discards the recording draft and keeps completed edits undoable.");
-                    help_binding(ui, &format!("{} + letter · :macro a 3", key(EditorKey::MacroExecute)), "Run a named Macro, with an optional positive count before its binding. Authored edits in a run share one Undo; copying alone changes only registers, and motions change only the cursor and selected beat. Calls use Macro registers; paste uses Original or Edit copies before or after the selected beat. A failed instruction rolls back the whole run, including register writes. Recursive calls and oversized runs are refused.");
+                    help_binding(ui, &format!("{} + letter · :record a", key(EditorKey::MacroRecord)), "Record frame and beat motions, group start/end, Visual selections, cuts, copies, register pastes and named calls in the current ordinary Sequence group. Existing Visual selections are retained. Instructions keep requested counts and resolve against the current cursor, beat and selection. Recording performs each action and adds it only after success.");
+                    help_binding(ui, &format!("{} · :record-stop", key(EditorKey::MacroRecord)), "While recording, save to that named Macro register. Saving adds no Undo and preserves the default copy. Esc clears and records an active or finished Visual selection; without a selection it cancels recording. :record-cancel always discards the draft. Cancellation keeps completed edits undoable; a pending authored action still finishes.");
+                    help_binding(ui, &format!("{} + letter · :macro a 3", key(EditorKey::MacroExecute)), "Run a named Macro from the current cursor, beat and Visual selection, with an optional positive count before its binding. Authored edits share one Undo; copying alone changes registers, and navigation changes cursor and selection. Calls use Macro registers; paste uses Original or Edit copies. Visual copy retains its range; Visual cut and replacement clear it. Empty selections fail without falling back to a beat. A failed instruction rolls back the whole run, including registers. Recursive calls and oversized runs are refused.");
                     ui.separator();
                     ui.label("New starts with your full video. Its Original stays intact while Your edit changes.");
                     ui.label(egui::RichText::new("START & MOVE").strong().color(style::LAVENDER));

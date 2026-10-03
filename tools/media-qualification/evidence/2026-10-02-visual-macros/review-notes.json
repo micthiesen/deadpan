@@ -1,0 +1,29 @@
+{
+  "scope": "Visual selections in semantic macros and empty Visual paste refusal",
+  "review_type": "Cross-layer peer review within the existing team; root integration and diff review",
+  "findings": [
+    {
+      "issue": "Serde internally tagged unit variants can ignore unknown fields despite deny_unknown_fields",
+      "resolution": "BeginSelection, FinishSelection and ClearSelection use the existing explicit deserialize_empty pattern; strict wire tests cover all three"
+    },
+    {
+      "issue": "Ordinary empty Visual paste could fall back to the selected beat's sibling slot",
+      "resolution": "Fast p/P and command aliases reject captured bounds without a nonempty range; the explicit :splice destination chooser remains available"
+    }
+  ],
+  "reviewed_boundaries": [
+    "CLI and native final Visual propagation",
+    "Range capture provenance at staged revisions",
+    "Bank-only and authored receipts through refresh failure",
+    "Prefix and command-entry capture including empty and absent targets",
+    "Delayed native receipt ownership and Visual-only changes",
+    "Local record/replay motion parity and empty sibling selection",
+    "Exact split/import allocation and atomic replacement",
+    "Rendered scenario instruction counts, range positions and expected source frames"
+  ],
+  "corrected_check_failures": [
+    "Initial affected-crate compilation found an ambiguous .into() error type, an unqualified json! in a headless test, and an unused test binding mut; fixed explicitly without broad suppressions",
+    "The CLI staged range test chose an endpoint at frame 16 inside a newly pasted Sequence spanning [14,20); use the complete wrapper boundary at20 and verify its retained range. The existing production endpoint restriction remains explicit"
+  ],
+  "limits": "Peer source reviews did not execute tests. Root owns recorded Cargo checks and rendered replay. Physical layouts, OS IME, VoiceOver and acoustic output are not qualified by this increment."
+}

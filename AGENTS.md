@@ -854,10 +854,17 @@ the bank. Missing current Original qualifications leave visible unavailable
 slots. Keep saved-cut receipts independent of register intent. See
 [registers](docs/NAMED_REGISTERS.md).
 
-Semantic macros record relative frame motions, frame cuts, selected-beat copies,
-before/after register pastes and named calls in an ordinary Sequence. Track the
-selected direct child independently of the cursor, including absence and empty
-siblings. Yank preserves context; paste selects its fresh imported root; motion
+Semantic macros record frame/beat motions, group bounds, Visual begin/finish/clear,
+frame/range cuts, beat/range copies, register paste/replacement and named calls
+in an ordinary Sequence. Track the selected direct child and oriented Visual
+selection independently of the cursor, including absence, empty bounds and empty
+siblings. An extending head equals the cursor; finished endpoints remain fixed.
+Visual yank finishes extension; cut/paste clears it. Empty Visual operations
+refuse without beat fallback. Replacement uses one ordinary ReplaceSlice or
+ReplaceSource leaf with exact disjoint split/import pools. Restore final Visual
+state only from an owned visible receipt. Escape clears and records an existing
+selection; otherwise it cancels the draft. Pending Escape relinquishes ownership
+without cancelling queued authored work. Paste selects its fresh imported root; motion
 uses the same right-biased selection as native navigation. Original pastes derive
 their exact mapping from the saved measured qualification and revalidate it at
 store admission. Yank-only programs save the bank without inventing a timeline

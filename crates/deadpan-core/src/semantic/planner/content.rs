@@ -3,6 +3,12 @@
 
 use super::*;
 
+#[derive(Clone, Copy)]
+enum Destination {
+    Seam { index: usize, cursor: ProjectFrame },
+    Replacement { range: FrameRange },
+}
+
 impl<F, R> Planner<'_, F, R>
 where
     F: FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
@@ -19,6 +25,16 @@ where
             )
         })?;
         validate_selection(&self.current, &self.context)?;
+        let label = self.current.nodes()[&selected].label.clone();
+        let range = self.capture(register, SliceCaptureSelection::Child { node: selected })?;
+        Ok((range, label))
+    }
+
+    pub(super) fn capture(
+        &mut self,
+        register: RegisterName,
+        selection: SliceCaptureSelection,
+    ) -> Result<FrameRange, EditError> {
         self.charge_step(true)?;
         let SemanticAllocation::Yank { capture_revision } =
             (self.allocate)(SemanticAllocationRequest::Yank {
@@ -28,11 +44,10 @@ where
             return Err(invalid("macro yank requires a Yank allocation"));
         };
         self.reserve_revision(&capture_revision)?;
-        let label = self.current.nodes()[&selected].label.clone();
         let slice = Arc::new(CapturedEditSlice::capture_selection(
             &self.current,
             &self.context.parent,
-            &SliceCaptureSelection::Child { node: selected },
+            &selection,
             AudioTimingId {
                 allocation: capture_revision,
                 ordinal: 0,
@@ -46,7 +61,7 @@ where
             name: register,
             value,
         });
-        Ok((range, label))
+        Ok(range)
     }
 
     pub(super) fn paste(
@@ -77,6 +92,26 @@ where
         let cursor = self
             .current
             .source_splice_boundary(&self.context.parent, index)?;
+        self.place(register, Destination::Seam { index, cursor })
+    }
+
+    pub(super) fn replace(
+        &mut self,
+        register: RegisterName,
+        range: FrameRange,
+    ) -> Result<FrameRange, EditError> {
+        self.place(register, Destination::Replacement { range })
+    }
+
+    fn place(
+        &mut self,
+        register: RegisterName,
+        destination: Destination,
+    ) -> Result<FrameRange, EditError> {
+        let cursor = match destination {
+            Destination::Seam { cursor, .. } => cursor,
+            Destination::Replacement { range } => range.start(),
+        };
         let value = if let Some(value) = self.writes.get(&register) {
             value.clone()
         } else {
@@ -97,6 +132,14 @@ where
         let (edit, selected, duration) = match value.as_ref() {
             RegisterValue::Edited { slice } => {
                 let requirements = slice.identity_requirements()?;
+                let required_split_ids = match destination {
+                    Destination::Seam { .. } => 0,
+                    Destination::Replacement { range } => {
+                        self.current
+                            .slice_replacement(&self.context.parent, range, slice)?
+                            .required_ids
+                    }
+                };
                 if self
                     .current
                     .nodes()
@@ -115,9 +158,11 @@ where
                 let SemanticAllocation::PasteEdited {
                     new_revision,
                     identities,
+                    split_identities,
                 } = (self.allocate)(SemanticAllocationRequest::PasteEdited {
                     step_index: self.steps.len(),
                     requirements,
+                    required_split_ids,
                 })?
                 else {
                     return Err(invalid(
@@ -133,6 +178,7 @@ where
                     ));
                 }
                 self.reserve_revision(&new_revision)?;
+                self.reserve_splits(&split_identities, required_split_ids)?;
                 for node in identities.authored.nodes.iter().chain(&identities.aliases) {
                     self.reserve_node(node)?;
                 }
@@ -147,14 +193,25 @@ where
                     .first()
                     .cloned()
                     .ok_or_else(|| invalid("macro pasted content has no imported root"))?;
-                let command = Command::SpliceSlice {
-                    parent: self.context.parent.clone(),
-                    index,
-                    slice: slice.as_ref().clone(),
-                    identities,
-                    timing: AudioTimingId {
-                        allocation: new_revision.clone(),
-                        ordinal: 0,
+                let timing = AudioTimingId {
+                    allocation: new_revision.clone(),
+                    ordinal: 0,
+                };
+                let command = match destination {
+                    Destination::Seam { index, .. } => Command::SpliceSlice {
+                        parent: self.context.parent.clone(),
+                        index,
+                        slice: slice.as_ref().clone(),
+                        identities,
+                        timing,
+                    },
+                    Destination::Replacement { range } => Command::ReplaceSlice {
+                        parent: self.context.parent.clone(),
+                        range,
+                        slice: slice.as_ref().clone(),
+                        identities,
+                        split_identities,
+                        timing,
                     },
                 };
                 (
@@ -166,6 +223,14 @@ where
             RegisterValue::Original {
                 asset, ordinals, ..
             } => {
+                let required_split_ids = match destination {
+                    Destination::Seam { .. } => 0,
+                    Destination::Replacement { range } => {
+                        self.current
+                            .source_replacement(&self.context.parent, range)?
+                            .required_ids
+                    }
+                };
                 if self.current.nodes().len() == crate::MAX_DOCUMENT_NODES {
                     return Err(limit(
                         "macro Original paste exceeds the document node limit",
@@ -182,26 +247,44 @@ where
                     })?
                     .label
                     .clone();
-                let SemanticAllocation::PasteOriginal { new_revision, node } =
-                    (self.allocate)(SemanticAllocationRequest::PasteOriginal {
-                        step_index: self.steps.len(),
-                    })?
+                let SemanticAllocation::PasteOriginal {
+                    new_revision,
+                    node,
+                    split_identities,
+                } = (self.allocate)(SemanticAllocationRequest::PasteOriginal {
+                    step_index: self.steps.len(),
+                    required_split_ids,
+                })?
                 else {
                     return Err(invalid(
                         "macro Original paste requires a PasteOriginal allocation",
                     ));
                 };
                 self.reserve_revision(&new_revision)?;
+                self.reserve_splits(&split_identities, required_split_ids)?;
                 self.reserve_node(&node)?;
-                let command = Command::SpliceSource {
-                    parent: self.context.parent.clone(),
-                    index,
-                    source,
-                    id: node.clone(),
-                    label: format!("{label} [{}..{})", ordinals.start, ordinals.end),
-                    timing: AudioTimingId {
-                        allocation: new_revision.clone(),
-                        ordinal: 0,
+                let label = format!("{label} [{}..{})", ordinals.start, ordinals.end);
+                let timing = AudioTimingId {
+                    allocation: new_revision.clone(),
+                    ordinal: 0,
+                };
+                let command = match destination {
+                    Destination::Seam { index, .. } => Command::SpliceSource {
+                        parent: self.context.parent.clone(),
+                        index,
+                        source,
+                        id: node.clone(),
+                        label,
+                        timing,
+                    },
+                    Destination::Replacement { range } => Command::ReplaceSource {
+                        parent: self.context.parent.clone(),
+                        range,
+                        source,
+                        id: node.clone(),
+                        label,
+                        identities: split_identities,
+                        timing,
                     },
                 };
                 (LeafEdit::new(new_revision, command)?, node, duration)
@@ -232,9 +315,25 @@ where
         });
         self.context.cursor = cursor;
         self.context.selected_child = Some(selected);
-        self.bounds = scope_bounds(&self.current, &self.context.parent)?;
-        self.child_ends = child_ends(&self.current, &self.context.parent, self.bounds)?;
+        self.context.visual_selection = None;
+        self.refresh_children()?;
         Ok(range)
+    }
+
+    fn reserve_splits(
+        &mut self,
+        identities: &SplitIdentities,
+        required: usize,
+    ) -> Result<(), EditError> {
+        if identities.nodes.len() != required {
+            return Err(invalid(
+                "macro paste requires exactly its preflight Split identities",
+            ));
+        }
+        for node in &identities.nodes {
+            self.reserve_node(node)?;
+        }
+        Ok(())
     }
 
     fn charge_step(&mut self, capture: bool) -> Result<(), EditError> {

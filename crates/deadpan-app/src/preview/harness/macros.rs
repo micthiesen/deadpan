@@ -8,6 +8,7 @@ use egui::{Event, Key, Modifiers};
 use egui_kittest::kittest::Queryable as _;
 
 mod reuse;
+mod visual;
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     resize(d, 960.0, 640.0)?;
@@ -28,6 +29,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     cancelled_recording(d)?;
     headless_macros(d, &baseline)?;
     reuse::run(d, &baseline)?;
+    visual::run(d, &baseline)?;
     reopen(d, &baseline)
 }
 
@@ -78,6 +80,7 @@ fn headless_macros(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(),
             parent: document(d)?.root().clone(),
             cursor: ProjectFrame(60),
             selected_child: selected.clone(),
+            visual_selection: None,
             count: NonZeroU32::new(2).unwrap(),
             new_revision: None,
         },
@@ -105,6 +108,7 @@ fn headless_macros(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(),
             parent: document(d)?.root().clone(),
             cursor: ProjectFrame(60),
             selected_child: selected.clone(),
+            visual_selection: None,
             count: NonZeroU32::new(1).unwrap(),
             new_revision: None,
         },
@@ -549,23 +553,26 @@ fn captured_context(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<()
             state(d),
         )?;
     }
-    at(d, 20)?;
     for finished in [false, true] {
+        at(d, 20)?;
         d.key(Key::V)?;
         if finished {
             d.key(Key::V)?;
         }
-        let selection = d.app().edit_range.clone();
+        let before = d.revision();
         execute(d, 'a', None)?;
+        d.changed(&before)?;
+        idle(d)?;
         d.check(
-            "Active and retained empty Visual selections remain explicit macro refusals",
+            "A macro can begin with an empty Visual selection and use its explicit frame-cut intent",
             !d.app().macros.is_pending()
-                && d.app().edit_range == selection
-                && same_document(document(d)?, baseline)?,
-            json!({"finished":finished,"selection_retained":true,"unchanged":true}),
+                && !d.app().edit_range.has_bounds()
+                && d.app().sequence_length() == 116
+                && d.app().sequence_cursor == 21,
+            json!({"finished":finished,"selection_cleared":true,"frames":116,"Edit":21}),
             state(d),
         )?;
-        d.key(Key::Escape)?;
+        undo(d, baseline)?;
     }
     at(d, 20)?;
     let before_bank = bank(d)?;

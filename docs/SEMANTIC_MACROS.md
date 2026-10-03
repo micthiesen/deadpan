@@ -1,20 +1,24 @@
 # Semantic macros
 
 `q` plus a letter records a Macro in a project register. While recording, `q`
-saves and Escape cancels the draft. `@` plus a letter runs a saved Macro;
+saves. Escape clears an existing Visual selection and records that action;
+without a selection it cancels the draft. `@` plus a letter runs a saved Macro;
 `3@a` runs `a` three times in one transaction. The command equivalents are
 `:record a`, `:record-stop`, `:record-cancel` and `:macro a 3`.
 Both binding families are configurable through `macro.record` and
 `macro.execute`. Names are case-insensitive a–z.
 
-The current vocabulary is relative frame motion, frame cut, selected-beat yank,
-register paste before or after the selected beat, and named Macro call.
+The current vocabulary includes relative frame and beat motion, group start/end,
+Visual selection begin/finish/clear, frame or Visual cut, selected-beat or Visual
+yank, register paste or Visual replacement, and named Macro call.
 Motions and cuts retain their requested counts, including when they
 clamp at a group boundary. Copy, cut and paste retain the selected register name.
 The planner resolves each instruction against the preceding staged edit in
-the same ordinary Sequence group. Temporal occurrence scopes, text/range
+the same ordinary Sequence group. Temporal occurrence scopes, semantic text/range
 selectors, additional edits and broader semantic dot-repeat remain required.
 This is partial DP-06 implementation, not full macro acceptance.
+See [Visual qualification](qualification/visual-macros-2026-10-02.md) for the
+selection, replacement, persistence and native receipt checks.
 See [copy/paste qualification](qualification/macro-reuse-2026-10-02.md) for
 checks, rendered captures, retained failures and remaining limits.
 
@@ -27,13 +31,25 @@ operations do not enter the body. Saving writes a named Macro without adding
 an Undo entry or replacing the default copy. Cancelling leaves completed
 edits undoable and preserves the previously saved Macro.
 
-While recording, `y` copies the selected beat and `p`/`P` paste after/before it.
+While recording, `v` begins or finishes a Visual selection. `h`/`l`, `j`/`k`
+and `gg`/`G` retain their frame, beat and group-boundary intent. `y` copies a
+nonempty Visual range and finishes its extension while retaining both endpoints;
+`d` cuts it, and `p`/`P` replaces it. Cuts and replacements clear the selection.
+Without Visual selection, `y` copies the selected beat and `p`/`P` paste after/before it.
 These actions use the same staged planner and receipts as replay. Both measured
 Original ranges and edited slices can be pasted. An absent selection is retained
 as absent; it never silently becomes the beat under the cursor. An empty group
 may be copied, and pasted copies receive fresh identities and become selected
 even when they add no picture time. An empty destination Sequence admits slot
 zero without a selected child.
+
+Recording and execution may start with an existing Visual selection. Such a
+program can depend on the invocation range, or begin a new range relative to
+the invocation cursor. Empty, absent, forward, backward, extending and finished
+selections remain distinct. An empty range refuses copy, cut or replacement;
+it never falls back to the selected beat. `:record-cancel` always discards the
+draft. Escape during pending work cancels the draft and relinquishes cursor
+ownership; already queued authored work still finishes.
 
 The footer shows the register, instruction count and save/cancel controls.
 Unsupported actions refuse explicitly. Changing the project, register bank,
@@ -42,7 +58,8 @@ the draft. A refresh failure after durable success retains that success and
 stops recording with reopening guidance.
 
 Prefix and command entry capture the project session, revision, bank version,
-group, cursor and selected child, including an absent eligible target. A late letter or command
+group, cursor, selected child and oriented Visual selection, including an absent
+eligible target. A late letter or command
 cannot replace that capture with a newly available context. Text, IME,
 focused native controls and Kestrel reservations retain priority. Since egui
 has no `Key::At`, logical `@` requires the pressed key's immediate native
@@ -57,14 +74,19 @@ incrementally executes its body against a private document and staged register
 bank. `SemanticRegisterBank` keeps the entry map and its observed version
 together at that boundary. The planner applies each ordinary leaf once and
 returns a resolved `Compound`,
-final context, register writes and an entry trace. Motion-only programs return
+final context, register writes and an entry trace. Navigation/selection-only programs return
 no authored request and add no history.
 
-Context tracks the selected direct child separately from the absolute cursor.
+Context tracks the selected direct child and Visual endpoints separately from
+the absolute cursor. An extending selection's head must equal the cursor;
+a finished selection remains independent of later navigation. Both endpoints
+must lie within the ordinary Sequence's absolute bounds.
 Frame motion selects the right-hand child, or the final child at the scope end,
 as native navigation does. Yank preserves both coordinates. Paste selects its
 new root and puts the cursor at the insertion boundary. Each later instruction
-uses that staged selection. Original source mappings come from the saved
+uses that staged selection. Visual replacement uses one ordinary `ReplaceSlice`
+or `ReplaceSource` leaf, with exact disjoint split and import identity pools.
+Its trace retains both the removed and inserted intervals. Original source mappings come from the saved
 qualification's measured index and are checked again at store admission.
 
 A call resolves a named Macro at call entry and freezes that body for all of
@@ -150,6 +172,7 @@ revision; omission allocates it on the host.
   "parent": "SEQUENCE_NODE_ID",
   "cursor": 20,
   "selected_child": "SELECTED_DIRECT_CHILD_ID",
+  "visual_selection": null,
   "count": 3
 }
 ```
@@ -157,7 +180,11 @@ revision; omission allocates it on the host.
 `selected_child` is independent of `cursor`. Omission or `null` means no selected
 beat. A motion may establish one; yank requires one, and paste requires one
 unless the destination Sequence is empty. A stale or non-direct child rejects
-the request. The trace includes before/after selection and Edit positions.
+the request. Optional `visual_selection` contains `anchor`, `head` and
+`extending`; omission or `null` means no Visual selection. For example,
+`{"anchor":30,"head":20,"extending":false}` is a finished backward range
+independent of the cursor. The trace includes before/after child, Visual
+selection and Edit positions, plus `removed_range` for replacements.
 
 For example, this body copies the selected beat to `b` and pastes it after that
 beat. Set `before` to `true` for a paste before the selected beat:
@@ -173,6 +200,28 @@ beat. Set `before` to `true` for a paste before the selected beat:
 
 A paste-only body may use a previously saved Original or Edited register.
 Each counted repetition selects its newly pasted root before the next begins.
+
+This body selects the next four frames and replaces them with register `b`:
+
+```json
+{
+  "instructions": [
+    { "type": "begin_selection" },
+    { "type": "move_frames", "forward": true, "count": 4 },
+    { "type": "replace_selection", "register": "b" }
+  ]
+}
+```
+
+`yank_selection` and `cut_selection` also take a register. `finish_selection`
+retains the endpoints and stops extending; `clear_selection` removes them.
+`move_beats` takes `forward` and a positive `count`; `move_scope` takes `end`.
+These instructions keep the same bounded work and atomic failure rules.
+
+The existing ordinary Sequence reducers still refuse range endpoints inside
+a composite child. Enter that group or select its complete boundaries. Visual
+macro support does not yet add partial Repeat/Retime occurrence editing or
+the full semantic text-object grammar.
 
 Save dry-run checks the same program, bank capacity, version and storage rules
 as save. It does not execute the body. Run dry-run resolves the whole program

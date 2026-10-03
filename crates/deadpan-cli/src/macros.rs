@@ -6,8 +6,8 @@ use deadpan_core::{
     AssetRecord, EditError, EditErrorCode, FrameRate, MarkId, NodeId, OccurrenceIdentities,
     ProjectDocument, ProjectFrame, ProjectId, RegisterName, RegisterValue, RevisionId,
     SemanticAllocation, SemanticAllocationRequest, SemanticContext, SemanticInstruction,
-    SemanticPlan, SemanticProgram, SemanticRegisterBank, SlicePasteIdentities, SourceNode,
-    SplitIdentities, plan_semantic,
+    SemanticPlan, SemanticProgram, SemanticRegisterBank, SemanticVisualSelection,
+    SlicePasteIdentities, SourceNode, SplitIdentities, plan_semantic,
 };
 use deadpan_store::{AccessMode, CompoundPreview, ProjectStore, registers::RegisterBank};
 use serde::{Deserialize, Serialize};
@@ -43,6 +43,8 @@ pub enum Operation {
         cursor: ProjectFrame,
         #[serde(default)]
         selected_child: Option<NodeId>,
+        #[serde(default)]
+        visual_selection: Option<SemanticVisualSelection>,
         count: NonZeroU32,
         #[serde(default)]
         new_revision: Option<RevisionId>,
@@ -181,6 +183,7 @@ pub fn prepare(store: &ProjectStore, request: &Request) -> Result<Prepared, Live
             parent,
             cursor,
             selected_child,
+            visual_selection,
             count,
             new_revision,
         } => {
@@ -202,6 +205,7 @@ pub fn prepare(store: &ProjectStore, request: &Request) -> Result<Prepared, Live
                     parent: parent.clone(),
                     cursor: *cursor,
                     selected_child: selected_child.clone(),
+                    visual_selection: visual_selection.clone(),
                 },
                 &program,
                 revision,
@@ -302,23 +306,33 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
         SemanticAllocationRequest::Yank { .. } => SemanticAllocation::Yank {
             capture_revision: crate::new_revision()?,
         },
-        SemanticAllocationRequest::PasteEdited { requirements, .. } => {
-            SemanticAllocation::PasteEdited {
-                new_revision: crate::new_revision()?,
-                identities: SlicePasteIdentities {
-                    authored: OccurrenceIdentities {
-                        nodes: nodes(requirements.nodes)?,
-                        marks: (0..requirements.marks)
-                            .map(|_| MarkId::new(uuid::Uuid::new_v4().to_string()))
-                            .collect::<Result<_, _>>()?,
-                    },
-                    aliases: nodes(requirements.aliases)?,
+        SemanticAllocationRequest::PasteEdited {
+            requirements,
+            required_split_ids,
+            ..
+        } => SemanticAllocation::PasteEdited {
+            new_revision: crate::new_revision()?,
+            identities: SlicePasteIdentities {
+                authored: OccurrenceIdentities {
+                    nodes: nodes(requirements.nodes)?,
+                    marks: (0..requirements.marks)
+                        .map(|_| MarkId::new(uuid::Uuid::new_v4().to_string()))
+                        .collect::<Result<_, _>>()?,
                 },
-            }
-        }
-        SemanticAllocationRequest::PasteOriginal { .. } => SemanticAllocation::PasteOriginal {
+                aliases: nodes(requirements.aliases)?,
+            },
+            split_identities: SplitIdentities {
+                nodes: nodes(required_split_ids)?,
+            },
+        },
+        SemanticAllocationRequest::PasteOriginal {
+            required_split_ids, ..
+        } => SemanticAllocation::PasteOriginal {
             new_revision: crate::new_revision()?,
             node: NodeId::new(uuid::Uuid::new_v4().to_string())?,
+            split_identities: SplitIdentities {
+                nodes: nodes(required_split_ids)?,
+            },
         },
     })
 }
@@ -473,15 +487,18 @@ impl Prepared {
                 output["register"] = json!(register);
                 if let Some(plan) = &self.plan {
                     output["context"] = json!({"parent":plan.context.parent,"cursor":plan.context.cursor,
-                        "selected_child":plan.selected_child});
+                        "selected_child":plan.selected_child,
+                        "visual_selection":plan.context.visual_selection});
                     output["trace"] = Value::Array(plan.trace.iter().map(|row| json!({
                         "instruction":row.instruction,"before_revision":row.before_revision,
                         "before_scope":row.before_scope,"parent":row.before.parent,
                         "before_cursor":row.before.cursor,"after_cursor":row.after.cursor,
                         "before_selected_child":row.before.selected_child,
                         "after_selected_child":row.after.selected_child,
+                        "before_visual_selection":row.before.visual_selection,
+                        "after_visual_selection":row.after.visual_selection,
                         "captured_child_label":row.captured_child_label,
-                        "resolved_range":row.resolved_range,"depth":row.depth,
+                        "resolved_range":row.resolved_range,"removed_range":row.removed_range,"depth":row.depth,
                     })).collect());
                     output["register_writes"] =
                         json!(plan.register_writes.keys().collect::<Vec<_>>());

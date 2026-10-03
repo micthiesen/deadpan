@@ -1,0 +1,49 @@
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+
+scratch = Path(__file__).parent
+destination = Path('tools/media-qualification/evidence/2026-10-02-visual-macros')
+for name in ('checks', 'scripts', 'screenshots', 'replays'):
+    (destination / name).mkdir(parents=True, exist_ok=True)
+for source in sorted(scratch.iterdir()):
+    if not source.is_file():
+        continue
+    if source.suffix == '.log' or source.name.startswith('source-'):
+        (destination / 'checks' / (source.name + '.gz')).write_bytes(gzip.compress(source.read_bytes(), mtime=0))
+    elif source.name == 'review-notes.json':
+        shutil.copyfile(source, destination / source.name)
+    elif source.suffix == '.json':
+        shutil.copyfile(source, destination / 'checks' / source.name)
+    elif source.suffix == '.py':
+        shutil.copyfile(source, destination / 'scripts' / (source.name + '.txt'))
+for directory in sorted(scratch.glob('replay*')):
+    if not directory.is_dir():
+        continue
+    for report in directory.glob('*.json'):
+        (destination / 'replays' / f'{directory.name}-{report.name}.gz').write_bytes(gzip.compress(report.read_bytes(), mtime=0))
+for argument in sys.argv[1:]:
+    source = Path(argument)
+    shutil.copyfile(source, destination / 'screenshots' / source.name)
+shutil.copyfile('/tmp/deadpan-original-layout-20261002/run-check.py', destination / 'scripts' / 'run-check.py.txt')
+binary = Path('target/debug/deadpan-app')
+metadata = {
+    'base_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
+    'binary_sha256': hashlib.sha256(binary.read_bytes()).hexdigest(),
+    'machine': subprocess.check_output(['sysctl', '-n', 'machdep.cpu.brand_string', 'hw.memsize'], text=True).strip().splitlines(),
+    'system': subprocess.check_output(['sw_vers'], text=True).strip(),
+    'rustc': subprocess.check_output(['rustc', '--version'], text=True).strip(),
+    'cargo': subprocess.check_output(['cargo', '--version'], text=True).strip(),
+}
+(destination / 'metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
+processes = subprocess.run(['pgrep', '-x', 'deadpan-app'], text=True, capture_output=True)
+(destination / 'cleanup.json').write_text(json.dumps({'command': ['pgrep', '-x', 'deadpan-app'], 'exit_code': processes.returncode, 'stdout': processes.stdout, 'stderr': processes.stderr}, indent=2) + '\n')
+if processes.returncode != 1:
+    raise RuntimeError('Deadpan process cleanup requires inspection')
+files = sorted(path for path in destination.rglob('*') if path.is_file() and path.name != 'SHA256SUMS')
+(destination / 'SHA256SUMS').write_text(''.join(f'{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.relative_to(destination)}\n' for path in files))
+print(json.dumps(metadata, indent=2))

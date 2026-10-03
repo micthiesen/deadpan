@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use deadpan_core::{
     NodeId, ProjectFrame, ProjectId, RevisionId, SemanticContext, SemanticInstruction,
-    SemanticProgram,
+    SemanticProgram, SemanticVisualSelection,
 };
 
 use super::{CommittedEdit, SequenceScope};
@@ -60,6 +60,7 @@ pub enum Outcome {
         scope: SequenceScope,
         cursor: ProjectFrame,
         selected: Option<NodeId>,
+        visual_selection: Option<SemanticVisualSelection>,
         committed: Option<Box<CommittedEdit>>,
         refresh_error: Option<String>,
     },
@@ -67,6 +68,7 @@ pub enum Outcome {
         scope: SequenceScope,
         cursor: ProjectFrame,
         selected: Option<NodeId>,
+        visual_selection: Option<SemanticVisualSelection>,
         committed: Option<Box<CommittedEdit>>,
         refresh_error: Option<String>,
     },

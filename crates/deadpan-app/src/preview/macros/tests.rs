@@ -17,6 +17,7 @@ fn applied(committed: bool) -> protocol::Receipt {
             scope: SequenceScope::default(),
             cursor: ProjectFrame(11),
             selected: selected.clone(),
+            visual_selection: None,
             committed: committed.then(|| {
                 Box::new(CommittedEdit {
                     revision: RevisionId::new("pasted").unwrap(),
@@ -88,12 +89,38 @@ fn a_bank_only_named_call_uses_the_same_receipt_admission_as_a_recorded_yank() {
         scope: SequenceScope::default(),
         cursor: ProjectFrame(11),
         selected: None,
+        visual_selection: None,
         committed: None,
         refresh_error: None,
     };
     let visible = Some((7, &receipt.id.project, &receipt.id.revision));
     assert!(completion_visible(&receipt, visible, Some(5)));
     assert!(!completion_visible(&receipt, visible, Some(4)));
+}
+
+#[test]
+fn selection_only_completion_requires_its_original_revision_and_bank() {
+    let mut receipt = applied(false);
+    receipt.bank_version = receipt.id.bank_version;
+    if let protocol::Outcome::Applied {
+        visual_selection, ..
+    } = &mut receipt.outcome
+    {
+        *visual_selection = Some(deadpan_core::SemanticVisualSelection {
+            anchor: ProjectFrame(11),
+            head: ProjectFrame(11),
+            extending: true,
+        });
+    }
+    let visible = Some((7, &receipt.id.project, &receipt.id.revision));
+    assert!(completion_visible(&receipt, visible, Some(4)));
+    assert!(!completion_visible(&receipt, visible, Some(5)));
+    assert!(!completion_visible(
+        &receipt,
+        Some((7, &receipt.id.project, &RevisionId::new("later").unwrap())),
+        Some(4)
+    ));
+    assert!(receipt.committed().is_none());
 }
 
 #[test]

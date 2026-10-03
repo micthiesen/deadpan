@@ -592,6 +592,7 @@ fn planned_macro_multi_cut_has_one_undo_and_final_copy_survives_reopen_and_body_
             parent: node("root"),
             cursor: ProjectFrame(0),
             selected_child: None,
+            visual_selection: None,
         },
         &invocation,
         SemanticRegisterBank {

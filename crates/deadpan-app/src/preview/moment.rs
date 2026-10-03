@@ -37,6 +37,17 @@ pub(super) struct PlacementTarget {
     pub macro_capture: Result<macros::Capture, String>,
 }
 
+impl PlacementTarget {
+    /// Fast paste treats an explicitly empty Visual target as an error. Place
+    /// slice has a separate destination chooser and does not use this guard.
+    pub(super) fn check_nonempty_selection(&self) -> Result<(), String> {
+        if self.selection.has_bounds() && self.range.is_none() {
+            return Err("The Edit selection is empty. Extend it or clear it before pasting; no edit was made.".into());
+        }
+        Ok(())
+    }
+}
+
 #[derive(Clone, Default, PartialEq, Eq)]
 pub(super) struct Selection {
     identity: Option<Identity>,
@@ -331,6 +342,7 @@ impl DeadpanApp {
         let result = (|| {
             let target = target?;
             self.check_placement_target(&target)?;
+            target.check_nonempty_selection()?;
             let copied = target.copied.as_ref().ok_or_else(|| {
                 if let Some(name) = target.register {
                     return format!(

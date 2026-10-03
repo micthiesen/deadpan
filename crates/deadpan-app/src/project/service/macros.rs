@@ -151,6 +151,9 @@ impl Service {
                         instruction.clone(),
                         match instruction {
                             SemanticInstruction::YankBeat { .. } => "Copy beat",
+                            SemanticInstruction::YankSelection { .. } => "Copy selection",
+                            SemanticInstruction::CutSelection { .. } => "Cut selection",
+                            SemanticInstruction::ReplaceSelection { .. } => "Replace selection",
                             SemanticInstruction::Paste { .. } => "Paste register",
                             _ => "Recorded action",
                         }
@@ -185,6 +188,7 @@ impl Service {
                             scope: scope.clone(),
                             cursor: plan.context.cursor,
                             selected: plan.selected_child.clone(),
+                            visual_selection: plan.context.visual_selection.clone(),
                             committed: None,
                             refresh_error: None,
                         },
@@ -192,6 +196,7 @@ impl Service {
                             scope: scope.clone(),
                             cursor: plan.context.cursor,
                             selected: plan.selected_child.clone(),
+                            visual_selection: plan.context.visual_selection.clone(),
                             committed: None,
                             refresh_error: None,
                         },
@@ -200,7 +205,7 @@ impl Service {
                 };
                 let Some(request) = &plan.request else {
                     self.saved_macro = Some((operation.clone(), receipt.clone()));
-                    self.message = Some(format!("{label} moved the Edit cursor"));
+                    self.message = Some(format!("{label} updated the Edit cursor and selection"));
                     self.error = None;
                     return Ok(receipt);
                 };
@@ -448,8 +453,12 @@ fn prepare_runtime_bank(
                         && &trace.before.parent == slice.parent()
                         && match selection {
                             SliceCaptureSelection::Range { range } => {
-                                matches!(trace.instruction, SemanticInstruction::CutFrames { .. })
-                                    && trace.resolved_range.as_ref() == Some(range)
+                                matches!(
+                                    trace.instruction,
+                                    SemanticInstruction::CutFrames { .. }
+                                        | SemanticInstruction::YankSelection { .. }
+                                        | SemanticInstruction::CutSelection { .. }
+                                ) && trace.resolved_range.as_ref() == Some(range)
                             }
                             SliceCaptureSelection::Child { node } => {
                                 matches!(trace.instruction, SemanticInstruction::YankBeat { .. })
