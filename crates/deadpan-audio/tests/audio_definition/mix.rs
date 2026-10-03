@@ -4,7 +4,7 @@ use deadpan_plan::{
     AudioMixGate, AudioSignalMix, AudioSignalTape, AudioSignalTapeRun, AudioStageProjection,
 };
 
-struct MixProvider {
+pub(super) struct MixProvider {
     stereo: FixtureProvider,
     mono: PreparedSource,
     mono_calls: usize,
@@ -12,7 +12,7 @@ struct MixProvider {
 }
 
 impl MixProvider {
-    fn new() -> Self {
+    pub(super) fn new() -> Self {
         let bytes = std::fs::read(
             PathBuf::from(env!("CARGO_MANIFEST_DIR"))
                 .join("../../native/deadpan-source/tests/audio-fixtures/pcm-mono-44100.wav"),

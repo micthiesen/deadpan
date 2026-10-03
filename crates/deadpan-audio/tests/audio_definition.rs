@@ -1490,3 +1490,5 @@ mod projection;
 mod tape;
 #[path = "audio_definition/tape_admission.rs"]
 mod tape_admission;
+#[path = "audio_definition/voice_occurrence.rs"]
+mod voice_occurrence;

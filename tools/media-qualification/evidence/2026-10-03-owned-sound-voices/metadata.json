@@ -1,0 +1,182 @@
+{
+  "base_commit": "8be96ad81e260684becde17f5ac43d3fbd73a291",
+  "final_source_manifest_sha256": "d9fe588eb5c0c648f05fd4f649aaa8062f56e7cf83b98e50ddc5577f946110ab",
+  "checks": {
+    "clippy-final": {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--locked",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-10-03T19:01:53.529296+00:00",
+      "base_commit": "8be96ad81e260684becde17f5ac43d3fbd73a291",
+      "diff_sha256": "a6e5b5dc4e442d4f3400ca90f0974e1df0bb478d6b96d2128159869d57a25297",
+      "source_manifest_sha256": "d9fe588eb5c0c648f05fd4f649aaa8062f56e7cf83b98e50ddc5577f946110ab",
+      "pid": 45256,
+      "exit_code": 0,
+      "seconds": 552.401377167087,
+      "source_manifest_after_sha256": "d9fe588eb5c0c648f05fd4f649aaa8062f56e7cf83b98e50ddc5577f946110ab",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_counts": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "result_targets": 0
+    },
+    "fmt-final": {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "started": "2026-10-03T19:01:41.822027+00:00",
+      "base_commit": "8be96ad81e260684becde17f5ac43d3fbd73a291",
+      "diff_sha256": "a6e5b5dc4e442d4f3400ca90f0974e1df0bb478d6b96d2128159869d57a25297",
+      "source_manifest_sha256": "d9fe588eb5c0c648f05fd4f649aaa8062f56e7cf83b98e50ddc5577f946110ab",
+      "pid": 45231,
+      "exit_code": 0,
+      "seconds": 1.9197555002756417,
+      "source_manifest_after_sha256": "d9fe588eb5c0c648f05fd4f649aaa8062f56e7cf83b98e50ddc5577f946110ab",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_counts": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "result_targets": 0
+    },
+    "occurrence-corrected": {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "occurrence",
+        "--no-fail-fast"
+      ],
+      "started": "2026-10-03T19:01:01.252642+00:00",
+      "base_commit": "8be96ad81e260684becde17f5ac43d3fbd73a291",
+      "diff_sha256": "a6e5b5dc4e442d4f3400ca90f0974e1df0bb478d6b96d2128159869d57a25297",
+      "source_manifest_sha256": "d9fe588eb5c0c648f05fd4f649aaa8062f56e7cf83b98e50ddc5577f946110ab",
+      "pid": 44941,
+      "exit_code": 0,
+      "seconds": 22.642959292046726,
+      "source_manifest_after_sha256": "d9fe588eb5c0c648f05fd4f649aaa8062f56e7cf83b98e50ddc5577f946110ab",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_counts": {
+        "passed": 79,
+        "failed": 0,
+        "ignored": 0
+      },
+      "result_targets": 175
+    },
+    "source-occurrence-focused-2": {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "occurrence",
+        "--no-fail-fast"
+      ],
+      "started": "2026-10-03T18:43:34.814274+00:00",
+      "base_commit": "8be96ad81e260684becde17f5ac43d3fbd73a291",
+      "diff_sha256": "e6028178aaee39b76ecccac5a5f9ee076c609761cbd03c1147db44e287f80d62",
+      "source_manifest_sha256": "eb49203ee7d2600c3a0281b8edf982781e6164bc2d49881aa1f91fe29cb30d53",
+      "pid": 42775,
+      "exit_code": 101,
+      "seconds": 992.9369556671008,
+      "source_manifest_after_sha256": "eb49203ee7d2600c3a0281b8edf982781e6164bc2d49881aa1f91fe29cb30d53",
+      "source_unchanged": true,
+      "gate_exit_code": 101,
+      "test_counts": {
+        "passed": 73,
+        "failed": 5,
+        "ignored": 0
+      },
+      "result_targets": 175
+    },
+    "source-occurrence-focused": {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "source_voice_occurrence",
+        "--no-fail-fast"
+      ],
+      "started": "2026-10-03T18:40:41.114363+00:00",
+      "base_commit": "8be96ad81e260684becde17f5ac43d3fbd73a291",
+      "diff_sha256": "35096e1686c1ada3467238417149f659713bef546cefaa10330cea0955fa740c",
+      "source_manifest_sha256": "a25eee4f8da0466fe40b958e8967e45d5391d5595b77862805aa20fe76aa8d19",
+      "pid": 41602,
+      "exit_code": 101,
+      "seconds": 130.65582087496296,
+      "source_manifest_after_sha256": "a25eee4f8da0466fe40b958e8967e45d5391d5595b77862805aa20fe76aa8d19",
+      "source_unchanged": true,
+      "gate_exit_code": 101,
+      "test_counts": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "result_targets": 0
+    },
+    "workspace-final": {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "--no-fail-fast"
+      ],
+      "started": "2026-10-03T19:11:06.438771+00:00",
+      "base_commit": "8be96ad81e260684becde17f5ac43d3fbd73a291",
+      "diff_sha256": "a6e5b5dc4e442d4f3400ca90f0974e1df0bb478d6b96d2128159869d57a25297",
+      "source_manifest_sha256": "d9fe588eb5c0c648f05fd4f649aaa8062f56e7cf83b98e50ddc5577f946110ab",
+      "pid": 45908,
+      "exit_code": 0,
+      "seconds": 883.0839066249318,
+      "source_manifest_after_sha256": "d9fe588eb5c0c648f05fd4f649aaa8062f56e7cf83b98e50ddc5577f946110ab",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_counts": {
+        "passed": 3523,
+        "failed": 0,
+        "ignored": 0
+      },
+      "result_targets": 192
+    }
+  },
+  "test_count_note": "Filtered and full runs overlap; do not add their counts.",
+  "machine": [
+    "Apple M5 Max",
+    "137438953472"
+  ],
+  "system": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+  "ffmpeg_prefix": "/tmp/deadpan-ui-ffmpeg/prefix",
+  "review": [
+    "Independent planner and adapter reviews found no concrete runtime defects.",
+    "Added combined nested Repeat override / Preserve coverage after review.",
+    "PCM references use the existing CanonicalStretch; these check structural adapter equivalence, not independent DSP correctness."
+  ],
+  "limits": [
+    "Borrowed current-occurrence preparation only; authored nested ownership, edit/copy lifecycle and native placement remain open.",
+    "Event treatments, allowances, active occurrence scheduling and final bus integration remain open.",
+    "No UI change: optional app-feature tests and native GUI replay were not repeated.",
+    "No acoustic, response-time or independent DSP algorithm qualification; all full-product requirements and gates remain open or partial."
+  ]
+}

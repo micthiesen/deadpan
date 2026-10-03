@@ -1608,6 +1608,17 @@ Preserve uses the existing checked descendant scope and independent output polic
 do not loosen those checks to fit a catalog asset. These borrowed operands do not
 persist sound events or fill the final bus.
 
+`AudioSourceOccurrence` resolves one explicit current `InstancePath` before
+projecting an independent catalog recipe to root. Check stable Repeat identity,
+effective branch and active explicit gaps without expanding plays. The owner's
+output bypasses its own stage; enclosing Preserve stages retain independent
+complete input history with neutral padding. Original bindings and endpoint
+masks cannot become this sound's history. Keep intrinsic PointCeil preparation
+separate from final absolute RoundEven allocation. Apply current Hold gates
+only on the final consuming grid, and admit the source even for silent reads.
+This borrowed preparation boundary does not authorize persisted nested sounds
+or relax their structural edit guards. See [owned sound voices](docs/OWNED_SOUND_VOICES.md).
+
 Persisted root `SoundEvent` recipes use qualified natural-rate source mappings,
 exact selected intervals, independent sample offsets, owned gain and edges, and
 explicit overflow rejection. `SetSound`/`DeleteSound` share reversible command

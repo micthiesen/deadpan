@@ -12,6 +12,8 @@ mod projected_root;
 mod projection;
 #[path = "audio_definition/repeat_gap.rs"]
 mod repeat_gap;
+#[path = "audio_definition/source_occurrence.rs"]
+mod source_occurrence;
 
 fn id(name: &str) -> NodeId {
     NodeId::new(name).unwrap()

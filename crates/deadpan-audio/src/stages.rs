@@ -56,6 +56,10 @@ mod edit_waveform;
 mod projected_root;
 pub use projected_root::ProjectedRootBlock;
 
+#[path = "voice_occurrence.rs"]
+mod voice_occurrence;
+pub use voice_occurrence::SourceOccurrenceBlock;
+
 #[path = "routed.rs"]
 mod routed;
 pub use routed::{RoutedRootBlock, RoutedSignalBlock};

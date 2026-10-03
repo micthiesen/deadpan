@@ -2,6 +2,26 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Occurrence sound preparation, 2026-10-03
+
+`RenderPlan::source_voice_occurrence` resolves one explicit current
+`InstancePath` and independent source recipe. It checks stable Repeat plays,
+effective overrides and active explicit gap branches before preparing bounded
+per-voice projections. The owner's output clock bypasses its own processor;
+descendant voices pass through each enclosing nonunity Preserve independently.
+Keep full stage inputs, neutral padding and exact source phase through crops.
+Do not inherit the Original's retained audio bindings or endpoint masks.
+
+`StageAudio::read_source_voice_occurrence` uses the existing qualified source,
+resampling and projected-stage readers. Final current Hold policy uses absolute
+RoundEven root samples; it never mutes intermediate raw input. Dependencies
+remain mandatory for fully silent reads. This is a borrowed preparation API,
+not persisted beat sound placement. Implement independent authored clocks,
+edit/copy lifecycles, treatments, allowances and bounded occurrence scheduling
+before lifting root-only sound guards or enabling `ib`/`ab`.
+See [owned sound voices](../OWNED_SOUND_VOICES.md) and the
+[qualification record](../qualification/owned-sound-voices-2026-10-03.md).
+
 ## Group objects, current implementation, 2026-10-03
 
 Native `ig` selects exact group contents; `ag` selects the group as an owned

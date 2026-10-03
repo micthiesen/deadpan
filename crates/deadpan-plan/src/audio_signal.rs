@@ -24,9 +24,15 @@ use crate::{AudioBoundaryRule, AudioSampleGrid, AudioSampleMap, PlanError};
 mod source_voice;
 pub use source_voice::{AudioSourceVoice, AudioSourceVoiceIdentity, AudioSourceVoiceRecipe};
 
+#[path = "audio_source_occurrence.rs"]
+mod source_occurrence;
+pub use source_occurrence::AudioSourceOccurrence;
+
 #[derive(Debug, Clone)]
 enum SignalProvider<'plan> {
     Structural,
+    /// Raw padding for an independent occurrence voice, with no Original input.
+    Silence,
     Projected(Arc<crate::AudioStageProjection<'plan>>),
     Source {
         recipe: Arc<source_voice::SourceVoiceProvider>,
@@ -593,7 +599,7 @@ impl<'plan> AudioSignal<'plan> {
         std::ptr::eq(self.plan, plan)
     }
     pub(super) fn has_audio_bindings(&self) -> bool {
-        !self.is_source_voice() && self.plan.has_audio_bindings()
+        matches!(self.provider, SignalProvider::Structural) && self.plan.has_audio_bindings()
     }
 
     pub fn support(&self) -> Range<ExactRatio> {
@@ -795,17 +801,22 @@ impl<'plan> AudioSignal<'plan> {
             if spans.len() == limits.maximum_spans {
                 return Err(PlanError::AudioQueryLimit("span count"));
             }
-            let mut span = if let SignalProvider::Source { recipe, .. } = &self.provider {
-                budget.spend(1)?;
-                self.source_voice_span(recipe, cursor, grid)?
-            } else {
-                self.span(
+            let mut span = match &self.provider {
+                SignalProvider::Source { recipe, .. } => {
+                    budget.spend(1)?;
+                    self.source_voice_span(recipe, cursor, grid)?
+                }
+                SignalProvider::Silence => {
+                    budget.spend(1)?;
+                    self.occurrence_silence_span(grid)?
+                }
+                _ => self.span(
                     cursor,
                     grid,
                     stop_at_preserve,
                     stop_at_bindings,
                     &mut budget,
-                )?
+                )?,
             };
             span.samples = cursor..span.allocated_samples.end.min(samples.end);
             cursor = span.samples.end;

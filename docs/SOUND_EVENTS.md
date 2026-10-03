@@ -464,6 +464,13 @@ The continuous Original reader remains separate and unchanged. See
 [source-voice qualification](qualification/source-voices-2026-09-27.md) for the
 measured fixture, verification results and remaining acceptance limits.
 
+The [occurrence preparation boundary](OWNED_SOUND_VOICES.md) now resolves one
+explicit current owner through its concrete Sequence, Repeat and Retime ancestry.
+It builds independent Preserve inputs, retains full history and applies current
+Hold gates only at root output. The native authored lifecycle and root-only
+sound guards remain unchanged; nested persistence and edit/copy transforms
+still need implementation.
+
 ## Routed PCM preparation
 
 `AudioRoutedSignal` binds a retained PointCeil sample route to either a complete

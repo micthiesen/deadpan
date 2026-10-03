@@ -56,9 +56,9 @@ pub use signal_transfer::{
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use stages::{
     DefinitionAudioBlock, DomainAudioBlock, EdgeFadedBlock, MAX_EDGE_PREPARATION_FRAMES,
-    PointDomainAudioBlock, ProjectedRootBlock, RoutedRootBlock, RoutedSignalBlock, StageAudio,
-    StageAudioError, StageLimits, TapeAudioBlock, TimeMappedBlock, TransferredDomainBlock,
-    TransferredRootBlock,
+    PointDomainAudioBlock, ProjectedRootBlock, RoutedRootBlock, RoutedSignalBlock,
+    SourceOccurrenceBlock, StageAudio, StageAudioError, StageLimits, TapeAudioBlock,
+    TimeMappedBlock, TransferredDomainBlock, TransferredRootBlock,
 };
 pub use true_peak::{
     MAX_TRUE_PEAK_FRAMES, TRUE_PEAK_ID, TruePeakError, TruePeakMeter, TruePeakReport,

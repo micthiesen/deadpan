@@ -58,7 +58,9 @@ pub use plan::{
     AudioProcessingQuery, AudioProcessingSpan, AudioSignal, AudioSignalContent, AudioSignalQuery,
     AudioSignalSpan, AudioStage, AudioStageDescriptor, SignalSample, SignalTransform,
 };
-pub use plan::{AudioSourceVoice, AudioSourceVoiceIdentity, AudioSourceVoiceRecipe};
+pub use plan::{
+    AudioSourceOccurrence, AudioSourceVoice, AudioSourceVoiceIdentity, AudioSourceVoiceRecipe,
+};
 
 use deadpan_core::{
     AssetId, DocumentError, FrameDuration, ProjectFrame, SourceFrameId, SourceTimeBase, TimeError,
@@ -90,6 +92,8 @@ pub enum PlanError {
     InvalidAudioLimits,
     #[error("audio definition selector does not name an available definition: {0:?}")]
     InvalidAudioDefinitionSelector(AudioDefinitionSelector),
+    #[error("invalid source voice occurrence: {0}")]
+    InvalidAudioSourceOccurrence(&'static str),
     #[error("invalid owned audio root placement: {0}")]
     InvalidAudioRootPlacement(&'static str),
     #[error("audio query exceeded its {0} budget")]

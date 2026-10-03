@@ -2,6 +2,17 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+[Occurrence sound preparation](OWNED_SOUND_VOICES.md) projects one independent
+catalog recipe from a checked current beat occurrence through its enclosing
+time maps. Each Preserve stage retains that voice's complete processing history;
+current silent Holds gate the final root samples. Stable Repeat paths select
+actual plays and overrides without expanding them. This advances DP-04 and
+DP-09 groundwork. Persisted beat ownership, edit/copy transforms, active voice
+scheduling and native placement remain required before `ib`/`ab` can include
+attached sounds. The
+[qualification record](qualification/owned-sound-voices-2026-10-03.md) retains
+review, source inventories, checks and limits. No requirement or gate is complete.
+
 [Group objects](EDITED_SLICES.md#group-objects) add native `ig`/`ag` to
 copy/cut/Repeat operators and typed Visual selection in ordinary Sequence
 scopes. Registers, semantic recording and supported dot retain object intent;
