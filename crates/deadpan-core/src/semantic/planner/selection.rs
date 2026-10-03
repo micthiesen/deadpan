@@ -1,8 +1,39 @@
-//! Oriented Visual selection and direct-child motions on the staged scope.
+//! Visual ownership, exact selector targets and motions on the staged scope.
 
 use super::*;
 
+pub(super) struct ResolvedTarget {
+    pub parent: NodeId,
+    pub selection: Option<SliceCaptureSelection>,
+    pub range: FrameRange,
+    navigation_parent: NodeId,
+    retained_group: Option<NodeId>,
+}
+
+impl ResolvedTarget {
+    pub(super) fn local(
+        parent: &NodeId,
+        selection: SliceCaptureSelection,
+        range: FrameRange,
+    ) -> Self {
+        Self {
+            parent: parent.clone(),
+            selection: Some(selection),
+            range,
+            navigation_parent: parent.clone(),
+            retained_group: None,
+        }
+    }
+
+    pub(super) fn selection(&self) -> Result<&SliceCaptureSelection, EditError> {
+        self.selection
+            .as_ref()
+            .ok_or_else(|| unavailable("the selected group has no child contents"))
+    }
+}
+
 pub(super) fn validate_context(
+    document: &ProjectDocument,
     context: &SemanticContext,
     bounds: (ProjectFrame, ProjectFrame),
 ) -> Result<(), EditError> {
@@ -12,17 +43,35 @@ pub(super) fn validate_context(
             "the macro cursor is outside its current Sequence",
         ));
     }
-    if let Some(selection) = &context.visual_selection {
-        if !inside(selection.anchor) || !inside(selection.head) {
-            return Err(unavailable(
-                "the macro Visual endpoints are outside their current Sequence",
-            ));
+    match &context.visual_selection {
+        Some(SemanticVisualSelection::Time {
+            anchor,
+            head,
+            extending,
+        }) => {
+            if !inside(*anchor) || !inside(*head) {
+                return Err(unavailable(
+                    "the macro Visual endpoints are outside their current Sequence",
+                ));
+            }
+            if *extending && *head != context.cursor {
+                return Err(unavailable(
+                    "an extending macro Visual selection must end at its cursor",
+                ));
+            }
         }
-        if selection.extending && selection.head != context.cursor {
-            return Err(unavailable(
-                "an extending macro Visual selection must end at its cursor",
-            ));
+        Some(SemanticVisualSelection::Object {
+            selection,
+            extending,
+        }) => {
+            let target = document.resolve_object_selection(&context.parent, selection)?;
+            if *extending && target.range.end() != context.cursor {
+                return Err(unavailable(
+                    "an extending group object must end at its cursor",
+                ));
+            }
         }
+        None => {}
     }
     Ok(())
 }
@@ -32,72 +81,188 @@ where
     F: FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
     R: FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
 {
-    pub(super) fn visual_range(&self) -> Result<FrameRange, EditError> {
-        let selection = self.context.visual_selection.as_ref().ok_or_else(|| {
-            unavailable("select a Visual range before using this macro instruction")
-        })?;
-        if selection.anchor == selection.head {
-            return Err(unavailable("the macro Visual selection is empty"));
-        }
-        FrameRange::new(
-            selection.anchor.min(selection.head),
-            selection.anchor.max(selection.head),
-        )
-        .map_err(crate::DocumentError::from)
-        .map_err(Into::into)
-    }
-
     pub(super) fn finish_selection(&mut self) -> Result<(), EditError> {
-        self.context
+        match self
+            .context
             .visual_selection
             .as_mut()
             .ok_or_else(|| unavailable("there is no macro Visual selection to finish"))?
-            .extending = false;
-        Ok(())
-    }
-
-    pub(super) fn extend_selection(&mut self) {
-        if let Some(selection) = &mut self.context.visual_selection
-            && selection.extending
         {
-            selection.head = self.context.cursor;
+            SemanticVisualSelection::Time { extending, .. }
+            | SemanticVisualSelection::Object { extending, .. } => *extending = false,
         }
+        Ok(())
     }
 
     pub(super) fn resolve_selector(
         &self,
         selector: SemanticSelector,
-    ) -> Result<SliceCaptureSelection, EditError> {
-        match selector {
+    ) -> Result<ResolvedTarget, EditError> {
+        let selection = match selector {
             SemanticSelector::SelectedBeat => {
                 let node =
                     self.context.selected_child.clone().ok_or_else(|| {
                         unavailable("select a beat before using this macro selector")
                     })?;
                 validate_selection(&self.current, &self.context)?;
-                Ok(SliceCaptureSelection::Child { node })
+                SliceCaptureSelection::Child { node }
             }
-            SemanticSelector::VisualSelection => Ok(SliceCaptureSelection::Range {
-                range: self.visual_range()?,
-            }),
+            SemanticSelector::TextObject { object } => {
+                let object = self.current.resolve_group_object(&self.context, object)?;
+                return self.object_target(&object);
+            }
+            SemanticSelector::VisualSelection => {
+                match self.context.visual_selection.as_ref().ok_or_else(|| {
+                    unavailable("select a Visual range before using this macro instruction")
+                })? {
+                    SemanticVisualSelection::Object { selection, .. } => {
+                        return self.object_target(selection);
+                    }
+                    SemanticVisualSelection::Time { anchor, head, .. } => {
+                        if anchor == head {
+                            return Err(unavailable("the macro Visual selection is empty"));
+                        }
+                        SliceCaptureSelection::Range {
+                            range: FrameRange::new((*anchor).min(*head), (*anchor).max(*head))
+                                .map_err(crate::DocumentError::from)?,
+                        }
+                    }
+                }
+            }
             SemanticSelector::Motion { motion } => {
                 let (destination, _) = self.motion_target(motion);
                 let cursor = self.context.cursor;
                 if destination == cursor {
                     return Err(unavailable("the macro motion selection is empty"));
                 }
-                let range = FrameRange::new(cursor.min(destination), cursor.max(destination))
-                    .map_err(crate::DocumentError::from)?;
-                Ok(SliceCaptureSelection::Range { range })
+                SliceCaptureSelection::Range {
+                    range: FrameRange::new(cursor.min(destination), cursor.max(destination))
+                        .map_err(crate::DocumentError::from)?,
+                }
             }
-        }
+        };
+        let range = match &selection {
+            SliceCaptureSelection::Child { node } => {
+                self.current
+                    .sequence_children(&self.context.parent, node, node)?
+                    .range
+            }
+            SliceCaptureSelection::Range { range } => *range,
+            SliceCaptureSelection::Children { .. } => {
+                unreachable!("children selectors are resolved as objects")
+            }
+        };
+        Ok(ResolvedTarget::local(
+            &self.context.parent,
+            selection,
+            range,
+        ))
     }
 
-    pub(super) fn move_context(&mut self, motion: SemanticMotion) {
+    fn object_target(&self, object: &SemanticObjectSelection) -> Result<ResolvedTarget, EditError> {
+        let SemanticObjectTarget {
+            parent,
+            selection,
+            range,
+        } = self
+            .current
+            .resolve_object_selection(&self.context.parent, object)?;
+        let outside_inner =
+            object.kind == SemanticTextObject::InnerGroup && object.group != self.context.parent;
+        Ok(ResolvedTarget {
+            navigation_parent: if outside_inner {
+                self.context.parent.clone()
+            } else {
+                parent.clone()
+            },
+            retained_group: outside_inner.then(|| object.group.clone()),
+            parent,
+            selection,
+            range,
+        })
+    }
+
+    pub(super) fn continue_target(
+        &mut self,
+        target: &ResolvedTarget,
+        cursor: ProjectFrame,
+        selected: Option<NodeId>,
+    ) -> Result<(), EditError> {
+        self.context.parent = target.navigation_parent.clone();
+        self.context.cursor = cursor;
+        self.context.selected_child = target.retained_group.clone().or(selected);
+        self.context.visual_selection = None;
+        self.refresh_children()?;
+        validate_context(&self.current, &self.context, self.bounds)?;
+        validate_selection(&self.current, &self.context)
+    }
+
+    pub(super) fn move_context(&mut self, motion: SemanticMotion) -> Result<(), EditError> {
+        let object_anchor = match &self.context.visual_selection {
+            Some(SemanticVisualSelection::Object {
+                selection,
+                extending: true,
+            }) => Some(
+                self.current
+                    .resolve_object_selection(&self.context.parent, selection)?
+                    .range
+                    .start(),
+            ),
+            _ => None,
+        };
         let (cursor, child) = self.motion_target(motion);
         self.context.cursor = cursor;
         self.context.selected_child = child;
-        self.extend_selection();
+        if let Some(anchor) = object_anchor {
+            self.context.visual_selection = Some(SemanticVisualSelection::Time {
+                anchor,
+                head: cursor,
+                extending: true,
+            });
+        } else if let Some(SemanticVisualSelection::Time {
+            head,
+            extending: true,
+            ..
+        }) = &mut self.context.visual_selection
+        {
+            *head = cursor;
+        }
+        Ok(())
+    }
+
+    pub(super) fn charge_resolution(&mut self) -> Result<(), EditError> {
+        charge(
+            &mut self.document_bytes,
+            wire::size(&self.current, MAX_DOCUMENT_JSON_BYTES)?,
+            MAX_COMPOUND_DOCUMENT_BYTES,
+            "macro object resolution byte limit",
+        )
+    }
+
+    pub(super) fn capture_scope(
+        &self,
+        parent: &NodeId,
+    ) -> Result<(FrameRange, Vec<NodeId>, Vec<String>), EditError> {
+        let (start, end) = scope_bounds(&self.current, parent)?;
+        let bounds = FrameRange::new(start, end).map_err(crate::DocumentError::from)?;
+        let mut scope = Vec::new();
+        let mut current = parent.clone();
+        while current != *self.current.root() {
+            if scope.len() == crate::MAX_DOCUMENT_DEPTH {
+                return Err(limit("macro capture scope depth limit"));
+            }
+            scope.push(current.clone());
+            current = self
+                .current
+                .parent_of(&current)
+                .ok_or_else(|| unavailable("macro capture parent is detached"))?;
+        }
+        scope.reverse();
+        let labels = scope
+            .iter()
+            .map(|node| self.current.nodes()[node].label.clone())
+            .collect();
+        Ok((bounds, scope, labels))
     }
 
     fn motion_target(&self, motion: SemanticMotion) -> (ProjectFrame, Option<NodeId>) {

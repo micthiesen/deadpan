@@ -106,6 +106,7 @@ fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mu
             nodes.push(id);
             nodes.extend(&identities.nodes);
         }
+        Command::ReplaceSourceChildren { id, .. } => nodes.push(id),
         Command::GroupSelection { identities, .. } => {
             nodes.push(&identities.group);
             nodes.extend(&identities.split.nodes);
@@ -137,6 +138,10 @@ fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mu
                     .chain(&identities.aliases)
                     .chain(&split_identities.nodes),
             );
+            marks.extend(&identities.authored.marks);
+        }
+        Command::ReplaceSliceChildren { identities, .. } => {
+            nodes.extend(identities.authored.nodes.iter().chain(&identities.aliases));
             marks.extend(&identities.authored.marks);
         }
         Command::Split { identities, .. }

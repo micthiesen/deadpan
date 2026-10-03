@@ -323,7 +323,7 @@ fn setter_refuses_visual_absence_wrong_kind_and_stale_selection_before_allocatio
     for (anchor, head, extending) in [(2, 2, true), (2, 7, true), (7, 2, false)] {
         invalid.push((
             SemanticContext {
-                visual_selection: Some(SemanticVisualSelection {
+                visual_selection: Some(SemanticVisualSelection::Time {
                     anchor: ProjectFrame(anchor),
                     head: ProjectFrame(head),
                     extending,

@@ -3,10 +3,20 @@
 
 use super::*;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 enum Destination {
-    Seam { index: usize, cursor: ProjectFrame },
-    Replacement { range: FrameRange },
+    Seam {
+        index: usize,
+        cursor: ProjectFrame,
+    },
+    Replacement {
+        range: FrameRange,
+    },
+    Children {
+        first: NodeId,
+        last: NodeId,
+        range: FrameRange,
+    },
 }
 
 impl<F, R> Planner<'_, F, R>
@@ -21,8 +31,8 @@ where
         selector: SemanticSelector,
         cut: bool,
     ) -> Result<(), EditError> {
-        let selection = self.resolve_selector(selector)?;
-        self.capture_instruction(trace_index, register, selection, cut)?;
+        let target = self.resolve_selector(selector)?;
+        self.capture_instruction(trace_index, register, target, cut)?;
         if !cut && selector == SemanticSelector::VisualSelection {
             self.finish_selection()?;
         }
@@ -33,30 +43,41 @@ where
         &mut self,
         trace_index: usize,
         register: RegisterName,
-        selection: SliceCaptureSelection,
+        target: selection::ResolvedTarget,
         cut: bool,
     ) -> Result<(), EditError> {
+        let selection = target.selection()?.clone();
         let label = match &selection {
             SliceCaptureSelection::Child { node } => Some(self.current.nodes()[node].label.clone()),
             SliceCaptureSelection::Range { .. } | SliceCaptureSelection::Children { .. } => None,
         };
-        let range = if cut {
-            self.cut(register, &selection)?
+        let (bounds, scope, scope_labels) = self.capture_scope(&target.parent)?;
+        let slice = if cut {
+            self.cut(register, &target)?
         } else {
-            self.capture(register, selection.clone())?
+            self.capture(register, &target.parent, selection.clone())?
         };
         let trace = &mut self.trace[trace_index];
-        trace.resolved_range = Some(range);
+        trace.resolved_parent = Some(target.parent.clone());
+        trace.resolved_range = Some(slice.range());
         trace.resolved_selection = Some(selection);
         trace.captured_child_label = label;
+        trace.capture = Some(SemanticCaptureProvenance {
+            timing: slice.capture_timing().clone(),
+            parent: target.parent,
+            bounds,
+            scope,
+            scope_labels,
+        });
         Ok(())
     }
 
     pub(super) fn capture(
         &mut self,
         register: RegisterName,
+        parent: &NodeId,
         selection: SliceCaptureSelection,
-    ) -> Result<FrameRange, EditError> {
+    ) -> Result<Arc<CapturedEditSlice>, EditError> {
         self.charge_step(true)?;
         let SemanticAllocation::Yank { capture_revision } =
             (self.allocate)(SemanticAllocationRequest::Yank {
@@ -68,22 +89,74 @@ where
         self.reserve_revision(&capture_revision)?;
         let slice = Arc::new(CapturedEditSlice::capture_selection(
             &self.current,
-            &self.context.parent,
+            parent,
             &selection,
             AudioTimingId {
                 allocation: capture_revision,
                 ordinal: 0,
             },
         )?);
-        let range = slice.range();
-        let value = Arc::new(RegisterValue::Edited { slice });
+        let value = Arc::new(RegisterValue::Edited {
+            slice: slice.clone(),
+        });
         self.writes.insert(register, value.clone());
         self.writes.insert(RegisterName::unnamed(), value.clone());
         self.steps.push(ResolvedStep::Yank {
             name: register,
             value,
         });
-        Ok(range)
+        Ok(slice)
+    }
+
+    pub(super) fn paste_instruction(
+        &mut self,
+        index: usize,
+        register: RegisterName,
+        before: bool,
+    ) -> Result<(), EditError> {
+        if matches!(
+            self.context.visual_selection,
+            Some(SemanticVisualSelection::Object { .. })
+        ) {
+            return self.replace_selection(index, register);
+        }
+        let parent = self.context.parent.clone();
+        self.trace[index].resolved_range = Some(self.paste(register, before)?);
+        self.trace[index].resolved_parent = Some(parent);
+        Ok(())
+    }
+
+    pub(super) fn replace_selection(
+        &mut self,
+        index: usize,
+        register: RegisterName,
+    ) -> Result<(), EditError> {
+        let target = self.resolve_selector(SemanticSelector::VisualSelection)?;
+        let destination = match &target.selection {
+            None => Destination::Seam {
+                index: 0,
+                cursor: target.range.start(),
+            },
+            Some(SliceCaptureSelection::Range { range }) => {
+                Destination::Replacement { range: *range }
+            }
+            Some(SliceCaptureSelection::Child { node }) => Destination::Children {
+                first: node.clone(),
+                last: node.clone(),
+                range: target.range,
+            },
+            Some(SliceCaptureSelection::Children { first, last }) => Destination::Children {
+                first: first.clone(),
+                last: last.clone(),
+                range: target.range,
+            },
+        };
+        let result = self.place(register, destination, &target)?;
+        self.trace[index].resolved_parent = Some(target.parent);
+        self.trace[index].resolved_selection = target.selection;
+        self.trace[index].removed_range = Some(target.range);
+        self.trace[index].resolved_range = Some(result);
+        Ok(())
     }
 
     pub(super) fn paste(
@@ -114,25 +187,27 @@ where
         let cursor = self
             .current
             .source_splice_boundary(&self.context.parent, index)?;
-        self.place(register, Destination::Seam { index, cursor })
-    }
-
-    pub(super) fn replace(
-        &mut self,
-        register: RegisterName,
-        range: FrameRange,
-    ) -> Result<FrameRange, EditError> {
-        self.place(register, Destination::Replacement { range })
+        let range = FrameRange::new(cursor, cursor).map_err(crate::DocumentError::from)?;
+        let target = selection::ResolvedTarget::local(
+            &self.context.parent,
+            SliceCaptureSelection::Range { range },
+            range,
+        );
+        self.place(register, Destination::Seam { index, cursor }, &target)
     }
 
     fn place(
         &mut self,
         register: RegisterName,
         destination: Destination,
+        target: &selection::ResolvedTarget,
     ) -> Result<FrameRange, EditError> {
-        let cursor = match destination {
-            Destination::Seam { cursor, .. } => cursor,
-            Destination::Replacement { range } => range.start(),
+        let parent = &target.parent;
+        let cursor = match &destination {
+            Destination::Seam { cursor, .. } => *cursor,
+            Destination::Replacement { range } | Destination::Children { range, .. } => {
+                range.start()
+            }
         };
         let value = if let Some(value) = self.writes.get(&register) {
             value.clone()
@@ -154,12 +229,17 @@ where
         let (edit, selected, duration) = match value.as_ref() {
             RegisterValue::Edited { slice } => {
                 let requirements = slice.identity_requirements()?;
-                let required_split_ids = match destination {
+                let required_split_ids = match &destination {
                     Destination::Seam { .. } => 0,
                     Destination::Replacement { range } => {
                         self.current
-                            .slice_replacement(&self.context.parent, range, slice)?
+                            .slice_replacement(parent, *range, slice)?
                             .required_ids
+                    }
+                    Destination::Children { first, last, .. } => {
+                        self.current
+                            .slice_children_replacement(parent, first, last, slice)?;
+                        0
                     }
                 };
                 if self
@@ -221,18 +301,26 @@ where
                 };
                 let command = match destination {
                     Destination::Seam { index, .. } => Command::SpliceSlice {
-                        parent: self.context.parent.clone(),
+                        parent: parent.clone(),
                         index,
                         slice: slice.as_ref().clone(),
                         identities,
                         timing,
                     },
                     Destination::Replacement { range } => Command::ReplaceSlice {
-                        parent: self.context.parent.clone(),
+                        parent: parent.clone(),
                         range,
                         slice: slice.as_ref().clone(),
                         identities,
                         split_identities,
+                        timing,
+                    },
+                    Destination::Children { first, last, .. } => Command::ReplaceSliceChildren {
+                        parent: parent.clone(),
+                        first,
+                        last,
+                        slice: slice.as_ref().clone(),
+                        identities,
                         timing,
                     },
                 };
@@ -245,15 +333,22 @@ where
             RegisterValue::Original {
                 asset, ordinals, ..
             } => {
-                let required_split_ids = match destination {
+                let required_split_ids = match &destination {
                     Destination::Seam { .. } => 0,
                     Destination::Replacement { range } => {
                         self.current
-                            .source_replacement(&self.context.parent, range)?
+                            .source_replacement(parent, *range)?
                             .required_ids
                     }
+                    Destination::Children { first, last, .. } => {
+                        self.current
+                            .source_children_replacement(parent, first, last)?;
+                        0
+                    }
                 };
-                if self.current.nodes().len() == crate::MAX_DOCUMENT_NODES {
+                if !matches!(&destination, Destination::Children { .. })
+                    && self.current.nodes().len() == crate::MAX_DOCUMENT_NODES
+                {
                     return Err(limit(
                         "macro Original paste exceeds the document node limit",
                     ));
@@ -292,7 +387,7 @@ where
                 };
                 let command = match destination {
                     Destination::Seam { index, .. } => Command::SpliceSource {
-                        parent: self.context.parent.clone(),
+                        parent: parent.clone(),
                         index,
                         source,
                         id: node.clone(),
@@ -300,12 +395,21 @@ where
                         timing,
                     },
                     Destination::Replacement { range } => Command::ReplaceSource {
-                        parent: self.context.parent.clone(),
+                        parent: parent.clone(),
                         range,
                         source,
                         id: node.clone(),
                         label,
                         identities: split_identities,
+                        timing,
+                    },
+                    Destination::Children { first, last, .. } => Command::ReplaceSourceChildren {
+                        parent: parent.clone(),
+                        first,
+                        last,
+                        source,
+                        id: node.clone(),
+                        label,
                         timing,
                     },
                 };
@@ -335,10 +439,7 @@ where
             name: register,
             edit,
         });
-        self.context.cursor = cursor;
-        self.context.selected_child = Some(selected);
-        self.context.visual_selection = None;
-        self.refresh_children()?;
+        self.continue_target(target, cursor, Some(selected))?;
         Ok(range)
     }
 

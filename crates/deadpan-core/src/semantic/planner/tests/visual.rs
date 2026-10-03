@@ -2,7 +2,7 @@ use super::*;
 use SemanticInstruction::{BeginSelection, ClearSelection, FinishSelection, MoveScope};
 
 fn visual(anchor: i64, head: i64, extending: bool) -> SemanticVisualSelection {
-    SemanticVisualSelection {
+    SemanticVisualSelection::Time {
         anchor: ProjectFrame(anchor),
         head: ProjectFrame(head),
         extending,

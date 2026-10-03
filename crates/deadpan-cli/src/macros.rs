@@ -547,6 +547,8 @@ impl Prepared {
                     output["trace"] = Value::Array(plan.trace.iter().map(|row| json!({
                         "instruction":row.instruction,"before_revision":row.before_revision,
                         "before_scope":row.before_scope,"parent":row.before.parent,
+                        "after_parent":row.after.parent,
+                        "resolved_parent":row.resolved_parent,"capture":row.capture,
                         "before_cursor":row.before.cursor,"after_cursor":row.after.cursor,
                         "before_selected_child":row.before.selected_child,
                         "after_selected_child":row.after.selected_child,

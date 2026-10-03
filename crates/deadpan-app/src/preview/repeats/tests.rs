@@ -144,7 +144,7 @@ fn repeat_command_refuses_active_finished_empty_and_reverse_visual_selections() 
         for (anchor, head, extending) in [(0, 0, true), (0, 0, false), (0, 1, true), (1, 0, false)]
         {
             let mut context = context(Some(selected));
-            context.visual_selection = Some(SemanticVisualSelection {
+            context.visual_selection = Some(SemanticVisualSelection::Time {
                 anchor: ProjectFrame(anchor),
                 head: ProjectFrame(head),
                 extending,

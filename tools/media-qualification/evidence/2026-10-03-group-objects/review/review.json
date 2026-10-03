@@ -1,0 +1,42 @@
+{
+  "scope": "Current uncommitted group-object increment against e848409f1c913bb47076d6d6810a1a822fa503dd",
+  "reviews": [
+    {
+      "agent": "compound_core_review",
+      "scope": "Exact replacement reducers, suffix timing, sound and mark transforms, compound admission, qualified Original wrapper",
+      "finding": "source_children_replacement unnecessarily required nodes.len()+1 before removing selected owners",
+      "resolution": "Removed growth guard; maximum-node-capacity replacement and inverse regression passes",
+      "remaining_findings": [],
+      "reviewer_ran_tests": false
+    },
+    {
+      "agent": "object_ownership",
+      "scope": "Independent review of semantic group selectors, Visual conversion, continuation, capture provenance, counted calls and exact paste",
+      "remaining_findings": [],
+      "reviewer_ran_tests": false
+    },
+    {
+      "agent": "automatic_workflow_review",
+      "scope": "Native and host Object routing, Visual transitions, captured errors, Place source/destination admission and continuation",
+      "finding": "Confirmed root's captured-context-error Object paste fallback finding",
+      "resolution": "Route using retained Object selection even when captured semantic context is Err; refuse without falling back to Time",
+      "remaining_findings": [],
+      "reviewer_ran_tests": false
+    },
+    {
+      "agent": "root and compound_core_review",
+      "scope": "Semantic Original replacement capacity admission",
+      "finding": "Planner retained the same unnecessary node-growth guard for exact Children replacement after reducer correction",
+      "resolution": "Skip the guard for Children only; new semantic test replaces an empty group at exactly 100,000 nodes",
+      "remaining_findings": [],
+      "reviewer_ran_tests": false
+    },
+    {
+      "agent": "automatic_workflow_review",
+      "scope": "Final boxed CapturedEdit TimeOrBeat and FrameTarget transfer",
+      "remaining_findings": [],
+      "reviewer_ran_tests": false
+    }
+  ],
+  "verification_owner": "Root owns all Cargo, replay and native verification; reviewer conclusions alone are not runtime evidence"
+}

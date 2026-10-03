@@ -251,7 +251,7 @@ fn repeat_configuration_composes_motion_paths_and_reports_exact_pending_scope() 
     press(&mut bindings, Key::E);
     assert_eq!(
         bindings.repeat_pending_scope(),
-        Some(RepeatPendingScope::Motion)
+        Some(RepeatPendingScope::Mixed)
     );
     press(&mut bindings, Key::B);
     digits(&mut bindings, "3");

@@ -47,7 +47,9 @@ fn repeat_instruction_hint(
     selected_repeat: bool,
 ) -> String {
     let visual_hint = |range: String| match selection {
-        crate::navigation::EditSelection::Range => Some(range),
+        crate::navigation::EditSelection::Range | crate::navigation::EditSelection::Object => {
+            Some(range)
+        }
         crate::navigation::EditSelection::Empty => Some("repeat unavailable: empty range".into()),
         crate::navigation::EditSelection::None => None,
     };
@@ -94,6 +96,13 @@ fn repeat_instruction_hint(
     match selector {
         SemanticSelector::SelectedBeat => format!("{action} beat"),
         SemanticSelector::VisualSelection => format!("select range to {action}"),
+        SemanticSelector::TextObject { object } => format!(
+            "{action} {}",
+            match object {
+                deadpan_core::SemanticTextObject::InnerGroup => "group contents",
+                deadpan_core::SemanticTextObject::AroundGroup => "whole group",
+            }
+        ),
         SemanticSelector::Motion { motion } => match motion {
             SemanticMotion::Frames { forward, count } => format!(
                 "{action} {count}f {}",

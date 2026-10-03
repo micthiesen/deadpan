@@ -188,6 +188,7 @@ fn placement_source_revision(command: &Command) -> Result<&RevisionId, StoreErro
         Command::SpliceSlice { slice, .. }
         | Command::SpliceSliceAt { slice, .. }
         | Command::ReplaceSlice { slice, .. } => Ok(slice.revision_id()),
+        Command::ReplaceSliceChildren { slice, .. } => Ok(slice.revision_id()),
         // prepare_command validates this current source revision, both scopes,
         // the complete identity pool and ordinary media authority. Unlike a
         // copied slice this branch grants no historical media exception.

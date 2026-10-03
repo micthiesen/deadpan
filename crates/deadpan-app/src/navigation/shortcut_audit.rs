@@ -89,6 +89,7 @@ fn audit_layout_reservation(
             super::EditSelection::None,
             super::EditSelection::Empty,
             super::EditSelection::Range,
+            super::EditSelection::Object,
         ] {
             for (text, ime) in [(false, false), (true, false), (false, true), (true, true)] {
                 for (logical, logical_text) in [
@@ -196,7 +197,11 @@ fn audit_reservation_for(
                 (action.is_some() || !pending.is_empty())
                     .then(|| format!("action={action:?}, pending={pending:?}")),
             );
-            for selection in [super::EditSelection::Empty, super::EditSelection::Range] {
+            for selection in [
+                super::EditSelection::Empty,
+                super::EditSelection::Range,
+                super::EditSelection::Object,
+            ] {
                 let mut bindings = template.clone();
                 bindings.clear();
                 for stroke in prefix {
@@ -426,11 +431,11 @@ mod tests {
                 )
             );
         }
-        let editor_cases = prefix_cases * 3 * 4; // Normal/Empty/Range × text/IME.
+        let editor_cases = prefix_cases * 4 * 4; // Normal/Empty/Range/Object × text/IME.
         // Five drafts × repeat/background, Camera × repeat, and native input,
         // each under all four text/IME combinations.
         let mode_cases = 4 * (5 * 2 * 2 + 2 + 1);
-        let layout_cases = prefix_cases * 3 * 4 * 7; // Includes paired logical @.
+        let layout_cases = prefix_cases * 4 * 4 * 7; // Includes paired logical @.
         assert_eq!(
             report.routing_cases,
             62 * 3 * 2 * (editor_cases + mode_cases + layout_cases)

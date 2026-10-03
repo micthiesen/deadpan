@@ -10,6 +10,8 @@ use deadpan_store::{AccessMode, ProjectStore, registers::RegisterBank};
 use egui::{Event, ImeEvent, Key, Modifiers};
 use std::num::NonZeroU32;
 
+mod objects;
+
 const NAME: &str = "l'été 答え \"oui\"";
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
@@ -47,6 +49,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     recorded(d, &baseline)?;
     refusals(d, &baseline)?;
     empty_child(d, &baseline)?;
+    objects::run(d, &baseline)?;
     d.report.skipped.push("Keyboard and IME events are synthetic production event batches. Physical delivery and OS composition remain separate qualification. Composed pixel comparisons run only in visual mode; canonical PCM equivalence is covered by the separate core/audio tests.".into());
     Ok(())
 }

@@ -2,6 +2,41 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Group objects, current implementation, 2026-10-03
+
+Native `ig` selects exact group contents; `ag` selects the group as an owned
+unit. Resolve the selected direct ordinary Sequence first, otherwise the
+containing non-root Sequence. Do not infer a group from a cursor or descend
+implicitly through Repeat/Retime. `yig`/`yag`, `dig`/`dag`, Repeat objects and
+`vig`/`vag` share typed semantic resolution. Group consumes the same Visual
+object. `ib`/`ab` remain separate work: primary picture bounds cannot express
+their required difference in beat-owned temporal attachments.
+
+Keep `SemanticVisualSelection::Object` distinct from `Time`. Finish retains
+the object; motion converts only an extending object to Time anchored at its
+start. A finished object survives cursor/child changes in its checked scope.
+A no-child `ig` is valid Visual state, not missing selection. Yank, Cut and
+Group refuse that empty contents target; Repeat refuses zero duration. Empty
+Sequence roots within a nonempty sibling forest remain real selected children.
+
+`p/P` and Place slice `r` replace exact object ownership with Original or Edited
+contents. Empty `ig` inserts at slot zero. Preserve the prepared continuation:
+inside `ag` resumes in the immediate outer scope, outside `ig` keeps its group
+selected, and inside `ig` stays inside. Place cancellation restores the captured
+Object state; commit and Undo use the exact prepared structural transaction.
+
+Record object kinds and relative intent, never resolved node IDs or input keys.
+Supported Cut/Repeat/Group dot resolves again with current Visual precedence.
+Yanks retain history; authored macros commit once. Runtime copied metadata must
+match the exact trace capture timing, revision, effective parent and selector,
+using its pre-edit bounds and staged scope labels. Navigation scope alone is
+not capture provenance. Store historical recapture remains authoritative.
+
+See [edited slices](../EDITED_SLICES.md#group-objects),
+[structural selections](../STRUCTURAL_SELECTIONS.md) and the
+[qualification record](../qualification/group-objects-2026-10-03.md) for checks
+and limits. No requirement or release gate is complete.
+
 ## Development format policy, 2026-09-30
 
 The user confirmed that Deadpan has no users and will remain unused throughout
@@ -26,10 +61,10 @@ The newer [exact sibling boundary](../STRUCTURAL_SELECTIONS.md) adds
 operations. Preserve empty endpoint identities, whole subtrees and historical
 recapture. [Qualification](../qualification/sibling-selections-2026-10-03.md)
 records 305 core, 90 store and 73 real-audio tests, 748 default and 784 optional
-app tests, 846 rendered placement checks and strict lint. This supports the
-next structural text-object work; native object grammar and richer Visual/scope
-semantics remain unimplemented. The current
-sound model has no separate beat-owned temporal interval attachments, so
+app tests, 846 rendered placement checks and strict lint at that checkpoint.
+The group-object section above describes its subsequent native grammar,
+Visual and scope integration. The current sound model has no separate
+beat-owned temporal interval attachments, so
 implement that ownership lifecycle before claiming the full `ib`/`ab` distinction.
 
 ## Named groups and development formats, 2026-10-03

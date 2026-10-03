@@ -84,6 +84,7 @@ where
         self.trace[trace_index].resolved_selection =
             Some(SliceCaptureSelection::Child { node: selected });
         self.trace[trace_index].resolved_range = Some(range);
+        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
         Ok(())
     }
 
@@ -94,10 +95,11 @@ where
         plays: u32,
     ) -> Result<(), EditError> {
         self.charge_step(false)?;
-        let selection = self.resolve_selector(selector)?;
+        let target = self.resolve_selector(selector)?;
+        let selection = target.selection()?.clone();
         let plan = self
             .current
-            .repeat_selection(&self.context.parent, &selection, plays)?;
+            .repeat_selection(&target.parent, &selection, plays)?;
         let allocation = (self.allocate)(SemanticAllocationRequest::Repeat {
             step_index: self.steps.len(),
             required_split_ids: plan.required_split_ids,
@@ -132,7 +134,7 @@ where
         let edit = LeafEdit::new(
             new_revision,
             Command::RepeatSelection {
-                parent: self.context.parent.clone(),
+                parent: target.parent.clone(),
                 selection: selection.clone(),
                 plays,
                 identities,
@@ -149,10 +151,8 @@ where
         )?;
         self.current = next;
         self.steps.push(ResolvedStep::Edit { edit });
-        self.context.cursor = plan.range.start();
-        self.context.selected_child = Some(selected);
-        self.context.visual_selection = None;
-        self.refresh_children()?;
+        self.continue_target(&target, plan.range.start(), Some(selected))?;
+        self.trace[trace_index].resolved_parent = Some(target.parent);
         self.trace[trace_index].resolved_selection = Some(selection);
         self.trace[trace_index].resolved_range = Some(plan.range);
         Ok(())

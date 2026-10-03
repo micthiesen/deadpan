@@ -107,7 +107,7 @@ fn selection_only_completion_requires_its_original_revision_and_bank() {
         visual_selection, ..
     } = &mut receipt.outcome
     {
-        *visual_selection = Some(deadpan_core::SemanticVisualSelection {
+        *visual_selection = Some(deadpan_core::SemanticVisualSelection::Time {
             anchor: ProjectFrame(11),
             head: ProjectFrame(11),
             extending: true,

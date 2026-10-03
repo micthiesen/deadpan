@@ -308,6 +308,13 @@ impl Service {
     ) -> Result<Arc<PreparedSplice>> {
         let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
         let plan = Arc::new(RenderPlan::compile(&snapshot.document).map_err(display)?);
+        let object = draft
+            .proposal
+            .destination
+            .object_target(&workspace.document, &draft.proposal.parent)?;
+        let result_parent = object
+            .as_ref()
+            .map_or(&draft.proposal.parent, |object| &object.parent);
         let duration = match draft.request.inserted_duration() {
             Some(duration) => duration,
             None => plan
@@ -325,28 +332,28 @@ impl Service {
             .checked_add(duration.frames())
             .ok_or("Slice range overflow")?;
         let range = FrameRange::new(draft.cursor, ProjectFrame(end)).map_err(display)?;
+        let result_slot = object.as_ref().map(|object| object.slot);
         let empty_slot = if duration == deadpan_core::FrameDuration::ZERO {
-            let crate::project::splice::Destination::Slot(index) = draft.proposal.destination
-            else {
-                return Err(
-                    "Empty groups can only be inserted at an explicit Sequence slot".into(),
-                );
-            };
-            Some(index)
+            match &draft.proposal.destination {
+                crate::project::splice::Destination::Slot(index) => Some(*index),
+                crate::project::splice::Destination::Object { .. } => result_slot,
+                _ => return Err("Empty groups need an exact Sequence slot or group object".into()),
+            }
         } else {
             None
         };
-        let node = if empty_slot.is_some() {
-            draft
-                .request
-                .node()
+        let node = if let Some(slot) = result_slot.or(empty_slot) {
+            snapshot
+                .document
+                .children(result_parent)
+                .nth(slot)
                 .cloned()
-                .ok_or("Empty slice request has no inserted root")?
+                .ok_or("Slice result slot has no inserted root")?
         } else {
             crate::project::splice::result_forest_first(
                 &snapshot.document,
                 &plan,
-                &draft.proposal.parent,
+                result_parent,
                 range,
             )?
         };
@@ -357,17 +364,36 @@ impl Service {
         {
             return Err("Slice preview changed its inserted root".into());
         }
+        let continuation_scope = if object.as_ref().is_some_and(|object| !object.inner_outside) {
+            SequenceScope::from_historical_parent(&snapshot.document, &plan, result_parent)?
+        } else {
+            draft.proposal.scope.clone()
+        };
+        let continuation_node = object
+            .as_ref()
+            .filter(|object| object.inner_outside)
+            .map_or_else(|| node.clone(), |object| object.selected_group.clone());
         let prepared = PreparedSplice {
             base: workspace.clone(),
+            navigation_parent: draft.proposal.parent.clone(),
             snapshot,
             media,
             plan,
             node,
-            parent: draft.proposal.parent.clone(),
+            parent: result_parent.clone(),
+            result_slot,
             range,
             empty_slot,
             removed: draft.request.removed(),
             movement: draft.request.movement().cloned(),
+            continuation_scope,
+            continuation_node,
+            object: match &draft.proposal.destination {
+                crate::project::splice::Destination::Object { selection } => {
+                    Some(selection.clone())
+                }
+                _ => None,
+            },
         };
         prepared.validate_result()?;
         Ok(Arc::new(prepared))
@@ -490,10 +516,10 @@ impl Service {
         Ok(CommittedEdit {
             scoped: None,
             revision: commit.revision_id,
-            selected_node: Some(prepared.node.clone()),
+            selected_node: Some(prepared.continuation_node.clone()),
             preserve_cursor: false,
             cursor: Some(draft.cursor),
-            scope: draft.proposal.scope,
+            scope: prepared.continuation_scope.clone(),
             sound: None,
             range_selection,
         })

@@ -8,8 +8,8 @@ use deadpan_core::{
     FrameRange, MoveRangeDestination, ProjectFrame, SplitIdentities,
 };
 use deadpan_store::source_registration::{
-    SourceMomentInsertionRequest, SourceMomentInteriorInsertionRequest,
-    SourceMomentReplacementRequest,
+    SourceMomentChildrenReplacementRequest, SourceMomentInsertionRequest,
+    SourceMomentInteriorInsertionRequest, SourceMomentReplacementRequest,
 };
 use deadpan_store::{CommitOutcome, ProjectStore, StoreError};
 
@@ -19,8 +19,16 @@ use crate::project::splice::{Destination, Movement};
 
 pub(in crate::project::service) enum Request {
     Slot(SourceMomentInsertionRequest),
+    ObjectInsertion {
+        request: SourceMomentInsertionRequest,
+        removed: FrameRange,
+    },
     Interior(SourceMomentInteriorInsertionRequest),
     Replace(SourceMomentReplacementRequest),
+    ObjectReplacement {
+        request: SourceMomentChildrenReplacementRequest,
+        removed: FrameRange,
+    },
     Edited {
         request: Box<CommandRequest>,
         node: NodeId,
@@ -64,6 +72,11 @@ impl Request {
             Destination::Replace { .. } => {
                 return Err(
                     "Move cannot replace a selection; choose an insertion destination".into(),
+                );
+            }
+            Destination::Object { .. } => {
+                return Err(
+                    "Move cannot replace a group object; choose an insertion destination".into(),
                 );
             }
         };
@@ -114,6 +127,7 @@ impl Request {
         destination: &Destination,
         slice: &CapturedEditSlice,
     ) -> Result<(Self, ProjectFrame)> {
+        let object = destination.object_target(&workspace.document, parent)?;
         let (cursor, required_ids) = match destination {
             Destination::Slot(index) => (
                 workspace
@@ -135,6 +149,23 @@ impl Request {
                     .slice_replacement(parent, *range, slice)
                     .map_err(display)?;
                 (target.range.start(), target.required_ids)
+            }
+            Destination::Object { .. } => {
+                let object = object
+                    .as_ref()
+                    .ok_or("Group object destination is missing")?;
+                if let Some((first, last)) = &object.endpoints {
+                    workspace
+                        .document
+                        .slice_children_replacement(&object.parent, first, last, slice)
+                        .map_err(display)?;
+                } else {
+                    workspace
+                        .document
+                        .source_splice_boundary(&object.parent, 0)
+                        .map_err(display)?;
+                }
+                (object.range.start(), 0)
             }
         };
         let identities = super::super::edit_slice::paste_identities(slice)?;
@@ -177,9 +208,33 @@ impl Request {
                 split_identities,
                 timing,
             },
+            Destination::Object { .. } => {
+                let object = object
+                    .as_ref()
+                    .ok_or("Group object destination is missing")?;
+                if let Some((first, last)) = &object.endpoints {
+                    Command::ReplaceSliceChildren {
+                        parent: object.parent.clone(),
+                        first: first.clone(),
+                        last: last.clone(),
+                        slice: slice.clone(),
+                        identities,
+                        timing,
+                    }
+                } else {
+                    Command::SpliceSlice {
+                        parent: object.parent.clone(),
+                        index: 0,
+                        slice: slice.clone(),
+                        identities,
+                        timing,
+                    }
+                }
+            }
         };
         let removed = match destination {
             Destination::Replace { range } => Some(*range),
+            Destination::Object { .. } => object.as_ref().map(|object| object.range),
             _ => None,
         };
         Ok((
@@ -209,6 +264,7 @@ impl Request {
         if ordinals.start >= ordinals.end {
             return Err("Select a nonempty Original slice".into());
         }
+        let object = destination.object_target(&workspace.document, parent)?;
         let (cursor, required_ids) = match destination {
             Destination::Slot(index) => (
                 workspace
@@ -230,6 +286,23 @@ impl Request {
                     .source_replacement(parent, *range)
                     .map_err(display)?;
                 (target.range.start(), target.required_ids)
+            }
+            Destination::Object { .. } => {
+                let object = object
+                    .as_ref()
+                    .ok_or("Group object destination is missing")?;
+                if let Some((first, last)) = &object.endpoints {
+                    workspace
+                        .document
+                        .source_children_replacement(&object.parent, first, last)
+                        .map_err(display)?;
+                } else {
+                    workspace
+                        .document
+                        .source_splice_boundary(&object.parent, 0)
+                        .map_err(display)?;
+                }
+                (object.range.start(), 0)
             }
         };
         let expected_revision = workspace.document.revision_id().clone();
@@ -282,6 +355,43 @@ impl Request {
                 timing,
                 ordinals,
             }),
+            Destination::Object { .. } => {
+                let object = object
+                    .as_ref()
+                    .ok_or("Group object destination is missing")?;
+                if let Some((first, last)) = &object.endpoints {
+                    Self::ObjectReplacement {
+                        request: SourceMomentChildrenReplacementRequest {
+                            expected_revision,
+                            new_revision,
+                            asset: asset.clone(),
+                            parent: object.parent.clone(),
+                            first: first.clone(),
+                            last: last.clone(),
+                            node,
+                            label,
+                            timing,
+                            ordinals,
+                        },
+                        removed: object.range,
+                    }
+                } else {
+                    Self::ObjectInsertion {
+                        request: SourceMomentInsertionRequest {
+                            expected_revision,
+                            new_revision,
+                            asset: asset.clone(),
+                            parent: object.parent.clone(),
+                            index: 0,
+                            node,
+                            label,
+                            timing,
+                            ordinals,
+                        },
+                        removed: object.range,
+                    }
+                }
+            }
         };
         Ok((request, cursor))
     }
@@ -289,8 +399,10 @@ impl Request {
     pub(in crate::project::service) fn node(&self) -> Option<&NodeId> {
         match self {
             Self::Slot(request) => Some(&request.node),
+            Self::ObjectInsertion { request, .. } => Some(&request.node),
             Self::Interior(request) => Some(&request.node),
             Self::Replace(request) => Some(&request.node),
+            Self::ObjectReplacement { request, .. } => Some(&request.node),
             Self::Edited { node, .. } => Some(node),
             Self::Move { .. } => None,
         }
@@ -299,8 +411,10 @@ impl Request {
     pub(in crate::project::service) fn asset(&self) -> Option<&AssetId> {
         match self {
             Self::Slot(request) => Some(&request.asset),
+            Self::ObjectInsertion { request, .. } => Some(&request.asset),
             Self::Interior(request) => Some(&request.asset),
             Self::Replace(request) => Some(&request.asset),
+            Self::ObjectReplacement { request, .. } => Some(&request.asset),
             Self::Edited { .. } | Self::Move { .. } => None,
         }
     }
@@ -323,6 +437,9 @@ impl Request {
     pub(super) fn removed(&self) -> Option<FrameRange> {
         match self {
             Self::Replace(request) => Some(request.range),
+            Self::ObjectInsertion { removed, .. } | Self::ObjectReplacement { removed, .. } => {
+                Some(*removed)
+            }
             Self::Slot(_) | Self::Interior(_) | Self::Move { .. } => None,
             Self::Edited { removed, .. } => *removed,
         }
@@ -343,11 +460,17 @@ impl Request {
     ) -> std::result::Result<EditTransaction, StoreError> {
         match self {
             Self::Slot(request) => store.preview_prepared_source_moment(request, source, cancelled),
+            Self::ObjectInsertion { request, .. } => {
+                store.preview_prepared_source_moment(request, source, cancelled)
+            }
             Self::Interior(request) => {
                 store.preview_prepared_source_moment_interior(request, source, cancelled)
             }
             Self::Replace(request) => {
                 store.preview_prepared_source_replacement(request, source, cancelled)
+            }
+            Self::ObjectReplacement { request, .. } => {
+                store.preview_prepared_source_children_replacement(request, source, cancelled)
             }
             Self::Edited { request, .. } | Self::Move { request, .. } => store.preview(request),
         }
@@ -366,6 +489,12 @@ impl Request {
                 None,
                 cancelled,
             ),
+            Self::ObjectInsertion { request, .. } => store.commit_prepared_source_moment(
+                request,
+                require_source(source)?,
+                None,
+                cancelled,
+            ),
             Self::Interior(request) => store.commit_prepared_source_moment_interior(
                 request,
                 require_source(source)?,
@@ -378,6 +507,13 @@ impl Request {
                 None,
                 cancelled,
             ),
+            Self::ObjectReplacement { request, .. } => store
+                .commit_prepared_source_children_replacement(
+                    request,
+                    require_source(source)?,
+                    None,
+                    cancelled,
+                ),
             Self::Edited { request, .. } | Self::Move { request, .. } => store.commit(request),
         }
     }

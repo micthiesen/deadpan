@@ -28,7 +28,8 @@ pub(super) fn instruction(
     if let Some(label) = label {
         deadpan_core::validate_group_label(&label).map_err(|error| error.to_string())?;
         let selector = if let Some(selection) = &context.visual_selection {
-            if selection.anchor == selection.head {
+            if matches!(selection, deadpan_core::SemanticVisualSelection::Time { anchor, head, .. } if anchor == head)
+            {
                 return Err("The Edit selection is empty. Move a boundary before grouping.".into());
             }
             SemanticSelector::VisualSelection

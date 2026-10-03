@@ -13,9 +13,9 @@ Sequence's children into its parent. Each operation has one Undo.
 ## Selection and keyboard behavior
 
 Group captures the current ordinary Sequence scope, selected direct child and
-oriented Visual range when command entry opens. A later reply or navigation
-cannot supply a missing target or change that captured selection. A nonempty
-Visual range takes precedence over the selected beat. An empty Visual range
+typed Visual selection when command entry opens. A later reply or navigation
+cannot supply a missing target or change that captured selection. A current
+Visual selection takes precedence over the selected beat. An empty Time range
 refuses instead of falling back to the beat.
 
 Without Visual selection, Group uses the explicitly selected child, including
@@ -35,6 +35,12 @@ audio treatments or authored edge policy rather than discarding that behavior.
 After success, the first promoted child is selected, including an empty child.
 For an empty group, selection goes to the following sibling, then the previous
 sibling if there is no following one. The cursor remains at the old group start.
+
+Group also accepts [Visual group objects](EDITED_SLICES.md#group-objects):
+`vig` retains exact child roots and `vag` retains the group as an owned unit.
+Empty endpoint children remain selected; no-child contents refuse grouping.
+The [group-object qualification record](qualification/group-objects-2026-10-03.md)
+tracks that later keyboard, register, semantic and Place integration.
 
 ## Exact structural edits
 
@@ -68,9 +74,9 @@ against each preceding staged result; a failure commits none of it. A complete
 run has one Undo.
 
 Dot retains a Group's label and selector, resolving them at the current target.
-A current Visual range overrides the retained selector. A saved Visual selector
-requires a new nonempty range. Ungroup dot resolves a new explicitly selected
-Sequence and refuses every Visual selection. Neither operation consumes the
+A current Visual selection overrides the retained selector. A saved Visual
+selector requires a new admissible Time or Object selection. Ungroup dot
+resolves a new explicitly selected Sequence and refuses every Visual selection. Neither operation consumes the
 pending register choice or changes the copy bank.
 
 A successful individual Apply proves dot intent before workspace refresh.

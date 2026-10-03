@@ -1,0 +1,91 @@
+import gzip
+import hashlib
+import json
+import re
+import shutil
+import subprocess
+from pathlib import Path
+
+scratch = Path("/tmp/deadpan-group-objects-20261003")
+checks = scratch / "checks"
+destination = Path("tools/media-qualification/evidence/2026-10-03-group-objects")
+plan = json.loads((scratch / "evidence-plan.json").read_text())
+
+def read(path):
+    return json.loads(path.read_text())
+
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+def run(*args):
+    return subprocess.check_output(args, text=True).strip()
+
+def compressed(source, target):
+    target.write_bytes(gzip.compress(source.read_bytes(), mtime=0))
+
+def test_counts(name):
+    results = re.findall(r"test result: (ok|FAILED)\. (\d+) passed; (\d+) failed; (\d+) ignored;", (checks / (name + ".log")).read_text())
+    return {"passed": sum(int(r[1]) for r in results), "failed": sum(int(r[2]) for r in results), "ignored": sum(int(r[3]) for r in results), "targets": len(results)}
+
+source = read(checks / (plan["source_check"] + ".json"))["source_manifest_sha256"]
+final_manifest = read(checks / ("source-" + source + ".json"))
+differences = {}
+for name in plan["final_checks"]:
+    check = read(checks / (name + ".json"))
+    assert check["gate_exit_code"] == 0 and check["source_unchanged"], name
+    earlier = read(checks / ("source-" + check["source_manifest_sha256"] + ".json"))
+    differences[name] = sorted(p for p in earlier.keys() | final_manifest.keys() if earlier.get(p) != final_manifest.get(p))
+
+for name in ["checks", "replays", "screenshots", "scripts", "review", "native"]:
+    (destination / name).mkdir(parents=True, exist_ok=True)
+for path in sorted(checks.glob("*.json")):
+    if path.name.startswith("source-"):
+        compressed(path, destination / "checks" / (path.name + ".gz"))
+    else:
+        shutil.copy2(path, destination / "checks" / path.name)
+for path in sorted(checks.glob("*.log")):
+    compressed(path, destination / "checks" / (path.name + ".gz"))
+
+replays = []
+for path in sorted(scratch.glob("*-visual-*/report.json")):
+    report = read(path)
+    name = path.parent.name
+    scenario = next(s for s in report["scenarios"] if s["name"] != "kestrel-shortcuts")
+    audit = next(s for s in report["scenarios"] if s["name"] == "kestrel-shortcuts")["checks"][0]
+    if name in plan["final_replays"]:
+        assert not report["failed"] and all(c["passed"] for c in scenario["checks"]), name
+        assert audit["passed"] and not audit["actual"]["conflicts"], name
+    compressed(path, destination / "replays" / (name + ".json.gz"))
+    replays.append({"run": name, "failed": report["failed"], "checks": len(scenario["checks"]), "passed": sum(c["passed"] for c in scenario["checks"]), "binary_sha256": report["metadata"]["binary_sha256"], "findings": scenario["findings"], "skipped": scenario["skipped"], "kestrel": audit["actual"]})
+for source_path, name in plan["screenshots"].items():
+    shutil.copy2(scratch / source_path, destination / "screenshots" / name)
+shutil.copy2(scratch / "review.json", destination / "review" / "review.json")
+for path in sorted(scratch.glob("native-*.json")):
+    shutil.copy2(path, destination / "native" / path.name)
+for path in sorted(scratch.glob("native-*.txt")):
+    compressed(path, destination / "native" / (path.name + ".gz"))
+
+metadata = {
+    "base_commit": run("git", "rev-parse", "HEAD"),
+    "source_manifest_sha256": source,
+    "final_checks": plan["final_checks"],
+    "test_counts": {name: test_counts(name) for name in plan["test_checks"]},
+    "test_count_note": "Configurations and reruns overlap. The failed optional run is paired with its corrected targeted case; it is not described as one passing full run.",
+    "earlier_check_source_changes": differences,
+    "source_note": plan["source_note"],
+    "final_replays": plan["final_replays"],
+    "workflow_checks": sum(r["checks"] for r in replays if r["run"] in plan["final_replays"]),
+    "replays": replays,
+    "native": read(scratch / "native-observations.json"),
+    "machine": run("sysctl", "-n", "machdep.cpu.brand_string", "hw.memsize").splitlines(),
+    "system": run("sw_vers"),
+    "rustc": run("rustc", "--version"),
+    "cargo": run("cargo", "--version"),
+    "limits": plan["limits"],
+}
+(destination / "metadata.json").write_text(json.dumps(metadata, indent=2) + "\n")
+for path in [Path("/tmp/deadpan-original-layout-20261002/run-check.py"), Path(__file__), scratch / "remaining-checks.py", scratch / "lint-checks.py", scratch / "run-replays.py", scratch / "update-tracker.py", scratch / "record-native.py", scratch / "final-checks.py", scratch / "caption-replays.py", scratch / "capacity-checks.py", scratch / "reviewed-replays.py", scratch / "reviewed-lint.py", scratch / "cleanup-checks.py", scratch / "cleanup-lint.py", scratch / "boxed-checks.py", scratch / "boxed-lint.py"]:
+    shutil.copy2(path, destination / "scripts" / (path.name + ".txt"))
+shutil.copy2(scratch / "evidence-plan.json", destination / "scripts" / "evidence-plan.json")
+(destination / "SHA256SUMS").write_text("".join(sha(p) + "  " + str(p.relative_to(destination)) + "\n" for p in sorted(destination.rglob("*")) if p.is_file() and p.name != "SHA256SUMS"))
+print(json.dumps({"source": source, "test_counts": metadata["test_counts"], "workflow_checks": metadata["workflow_checks"]}, indent=2))

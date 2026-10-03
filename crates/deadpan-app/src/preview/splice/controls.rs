@@ -82,7 +82,7 @@ impl DeadpanApp {
             let mut action = None;
             let heading = ui.horizontal_wrapped(|ui| {
                 let title = ui.heading("Place slice");
-                let operation = ui.colored_label(style::LAVENDER, if empty_structure && empty::is_forest(&draft.proposal.source) { "UNSAVED · Insert empty contents · Structure only" } else if empty_structure { "UNSAVED · Insert empty group · Structure only" } else if draft.replacing { "UNSAVED · Replace · Linked picture + sound" } else if draft.proposal.operation == Operation::Move { "UNSAVED · Move · Linked picture + sound" } else { "UNSAVED · Insert · Linked picture + sound" });
+                let operation = ui.colored_label(style::LAVENDER, if empty_structure && !draft.replacing && empty::is_forest(&draft.proposal.source) { "UNSAVED · Insert empty contents · Structure only" } else if empty_structure && !draft.replacing { "UNSAVED · Insert empty group · Structure only" } else if draft.replacing { "UNSAVED · Replace · Linked picture + sound" } else if draft.proposal.operation == Operation::Move { "UNSAVED · Move · Linked picture + sound" } else { "UNSAVED · Insert · Linked picture + sound" });
                 let mut rect = title.rect.union(operation.rect);
                 if let Some(count) = draft.count { rect = rect.union(ui.monospace(format!("COUNT {count}")).rect); }
                 rect
@@ -99,7 +99,7 @@ impl DeadpanApp {
             let source_range = draft.source_range();
             ui.horizontal_wrapped(|ui| {
                 if draft.edited_source() && ui.add_enabled(enabled && (draft.proposal.operation == Operation::Move || !empty_structure), egui::Button::new(if draft.proposal.operation == Operation::Move { "Copy instead · m" } else { "Move slice · m" }).selected(draft.proposal.operation == Operation::Move)).on_disabled_hover_text(empty::PLACEMENT_REASON).clicked() { action = Some(SpliceKey::Move); }
-                if draft.replacement.is_some() && ui.add_enabled(enabled && !empty_structure, egui::Button::new(if draft.replacing { "Insert instead · r" } else { "Replace selection · r" }).selected(draft.replacing)).on_disabled_hover_text(empty::PLACEMENT_REASON).clicked() { action = Some(SpliceKey::Replace); }
+                if draft.replacement.is_some() && ui.add_enabled(enabled && (!empty_structure || draft.replacement_object.is_some()), egui::Button::new(if draft.replacing { "Insert instead · r" } else { "Replace selection · r" }).selected(draft.replacing)).on_disabled_hover_text(empty::PLACEMENT_REASON).clicked() { action = Some(SpliceKey::Replace); }
                 for (label, selected, key) in [
                     (format!("In {} · i", source_range.start), draft.focus == Focus::In, SpliceKey::In),
                     (format!("Out {} exclusive · o", source_range.end), draft.focus == Focus::Out, SpliceKey::Out),
@@ -115,7 +115,7 @@ impl DeadpanApp {
                     if ui.add_enabled(enabled, egui::Button::new("Previous seam · k")).clicked() { action = Some(SpliceKey::Boundary(false)); }
                     if ui.add_enabled(enabled, egui::Button::new("Next seam · j")).clicked() { action = Some(SpliceKey::Boundary(true)); }
                 } else if draft.replacing && let Some(range) = draft.replacement {
-                    ui.label(format!("Fixed Edit [{}..{})", range.start().0, range.end().0));
+                    ui.label(format!("Fixed {} [{}..{})", if draft.replacement_object.is_some() { "group object" } else { "Edit" }, range.start().0, range.end().0));
                 }
             });
             ui.horizontal_wrapped(|ui| {
@@ -202,13 +202,36 @@ impl Footer {
         error: Option<&str>,
         context: playback::AuditionContext,
     ) -> Self {
-        let mut text = vec![(
+        let destination = if draft.replacing
+            && let (Some(selection), Some(range)) = (&draft.replacement_object, draft.replacement)
+        {
+            let path = if selection.group == draft.proposal.parent {
+                draft.scope_label.clone()
+            } else {
+                let label = draft
+                    .base
+                    .document
+                    .nodes()
+                    .get(&selection.group)
+                    .map_or("Group", |node| node.label.as_str());
+                format!("{} / {label}", draft.scope_label)
+            };
+            let kind = match selection.kind {
+                deadpan_core::SemanticTextObject::InnerGroup => "group contents",
+                deadpan_core::SemanticTextObject::AroundGroup => "whole group",
+            };
+            format!(
+                "Replace {kind}: {path} · Edit [{}..{})",
+                range.start().0,
+                range.end().0
+            )
+        } else {
             format!(
                 "Destination: {} · Edit boundary {}",
                 draft.scope_label, draft.destination
-            ),
-            style::TEXT,
-        )];
+            )
+        };
+        let mut text = vec![(destination, style::TEXT)];
         if let Destination::Interior { target, at } = &draft.proposal.destination {
             let label = draft
                 .base

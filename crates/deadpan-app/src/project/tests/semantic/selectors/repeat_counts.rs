@@ -228,7 +228,7 @@ fn count_repeat_rejects_visual_wrong_target_and_stale_intent_without_writes() {
     }
     for (ticket, head) in [(7, 0), (8, 3)] {
         let mut visual = context(&first, 0, Some("repeat-a"));
-        visual.visual_selection = Some(SemanticVisualSelection {
+        visual.visual_selection = Some(SemanticVisualSelection::Time {
             anchor: ProjectFrame(0),
             head: ProjectFrame(head),
             extending: false,

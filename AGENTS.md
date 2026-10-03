@@ -318,14 +318,15 @@ the exact join. A saved edit survives preview-refresh failure with its receipt
 and explicit reopen guidance; stale views cannot consume its cursor/selection.
 See [selected ranges](docs/AUDIO_REANCHORS.md#selected-ranges).
 
-Native cuts capture an exact range or direct child privately, commit one deletion
-and the durable register together, then publish its historical contents. Failed capture or
+Native cuts capture an exact range, direct child or sibling forest privately,
+commit one deletion and the durable register together, then publish its
+historical contents. Failed capture or
 commit preserves the previous copy. Keep the last durable cut receipt independent
 of the latest query or failed cut response, so saved refresh failures retain the
 copy and reopening warning. New register intent may supersede an old reply but
 cannot cancel queued authored work or consume selection in its stale workspace.
 Fresh Undo revisions must not revive that warning. Whole-child capture includes
-empty Sequence structures; zero-duration paste uses an explicit sibling slot,
+empty Sequence structures; zero-duration seam paste uses an explicit sibling slot,
 never a time-only guess, and allocates no timing. Empty placement schedules no
 source pictures or audio. See [edited slices](docs/EDITED_SLICES.md).
 
@@ -334,13 +335,32 @@ Resolve inclusive direct-child identities in order, keeping empty endpoint
 children; never substitute the derived time range. Capture excludes the
 unselected parent's effects and marks. `DeleteChildren` removes the same span
 in one transaction and transforms root sounds once. Zero-time deletion and
-paste allocate no suffix clock. Store and Compound cuts compare the exact
+seam insertion allocate no suffix clock. Store and Compound cuts compare the exact
 selector/command pair and recapture historical membership, including interior
 empty children. See [structural selections](docs/STRUCTURAL_SELECTIONS.md).
 
+Native `ig`/`ag` resolve an explicitly selected ordinary Sequence, otherwise
+the current containing non-root Sequence; never infer the whole project from the cursor.
+`ig` owns the exact children, including empty endpoints, while `ag` owns the
+group and its effects. Use the same typed selectors for `y`/`d`/`r`, Visual,
+Group, supported dot and semantic recording. Retain Object Visual separately
+from Time: `v` finishes it; an extending motion converts it to Time; a finished
+object survives cursor/child motion in its checked scope. `p/P` and Place slice `r` replace its
+exact ownership, with Original or Edited contents. Empty `ig` remains explicit:
+copy/cut/Group refuse when there are no child roots, Repeat refuses zero
+duration, and paste inserts at slot zero. Keep the effective edit parent separate from navigation;
+an authored inside `ag` edit returns to the outer scope, and outside `ig` keeps
+its group selected.
+Capture trace timing, parent, bounds and staged labels identify runtime copies.
+`ib`/`ab` still require the beat-owned temporal attachment lifecycle. See
+[edited slices](docs/EDITED_SLICES.md#group-objects) and the
+[group-object qualification record](docs/qualification/group-objects-2026-10-03.md).
+
 Edited-content capture, seam/interior insertion and range replacement use
 `CapturedEditSlice`, `SpliceSlice`, `SpliceSliceAt` and `ReplaceSlice` through the
-core/headless path. Capture lattices before Split and suffix entries before
+core/headless path. Exact object replacement uses `ReplaceSliceChildren` or
+`ReplaceSourceChildren` without reducing structural ownership to a time range.
+Capture lattices before Split and suffix entries before
 removing selected children. Keep Split and import identity pools disjoint and
 allocate only the destination clocks each new operation needs. Retain complete
 owner contexts behind neutral crop windows, old sample entries, scoped Repeat

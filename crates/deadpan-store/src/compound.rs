@@ -464,6 +464,7 @@ fn slice(command: &Command) -> Option<&deadpan_core::CapturedEditSlice> {
         Command::SpliceSlice { slice, .. }
         | Command::SpliceSliceAt { slice, .. }
         | Command::ReplaceSlice { slice, .. } => Some(slice),
+        Command::ReplaceSliceChildren { slice, .. } => Some(slice),
         _ => None,
     }
 }
@@ -523,6 +524,7 @@ fn validate_original_paste(
         Command::SpliceSource { source, .. }
         | Command::SpliceSourceAt { source, .. }
         | Command::ReplaceSource { source, .. } => source,
+        Command::ReplaceSourceChildren { source, .. } => source,
         _ => return Err(invalid("Original register requires an Original placement")),
     };
     if source != expected {

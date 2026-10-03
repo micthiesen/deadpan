@@ -12,8 +12,9 @@ use crate::{
     MAX_COMPOUND_DOCUMENT_BYTES, MAX_COMPOUND_STEPS, MAX_DOCUMENT_JSON_BYTES, MarkId, NodeId,
     NodeKind, ProjectDocument, ProjectFrame, RegisterName, RegisterValue,
     RepeatSelectionIdentities, ResolvedStep, ResolvedTransaction, RevisionId, SemanticInstruction,
-    SemanticMotion, SemanticProgram, SemanticSelector, SliceCaptureSelection,
-    SliceIdentityRequirements, SlicePasteIdentities, SourceNode, SplitIdentities, compound::wire,
+    SemanticMotion, SemanticObjectSelection, SemanticObjectTarget, SemanticProgram,
+    SemanticSelector, SemanticTextObject, SliceCaptureSelection, SliceIdentityRequirements,
+    SlicePasteIdentities, SourceNode, SplitIdentities, compound::wire,
 };
 
 use super::{MAX_SEMANTIC_CALL_DEPTH, MAX_SEMANTIC_INSTRUCTION_FUEL};
@@ -23,14 +24,32 @@ mod group;
 mod repeat;
 mod selection;
 
-/// Oriented Edit boundaries. Equal endpoints are an explicit empty selection;
-/// a finished selection remains independent of the cursor and selected child.
+/// Exact Visual ownership. Time preserves oriented boundaries, including empty
+/// intervals; Object retains its checked group identity. A finished selection
+/// remains independent of the cursor and selected child.
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct SemanticVisualSelection {
-    pub anchor: ProjectFrame,
-    pub head: ProjectFrame,
-    pub extending: bool,
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+pub enum SemanticVisualSelection {
+    Time {
+        anchor: ProjectFrame,
+        head: ProjectFrame,
+        extending: bool,
+    },
+    Object {
+        selection: SemanticObjectSelection,
+        extending: bool,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct SemanticCaptureProvenance {
+    pub timing: AudioTimingId,
+    pub parent: NodeId,
+    /// Absolute bounds of the effective parent at capture entry.
+    pub bounds: FrameRange,
+    /// Ordinary ancestor path, excluding root and including effective parent.
+    pub scope: Vec<NodeId>,
+    pub scope_labels: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -133,7 +152,9 @@ pub struct SemanticTrace {
     pub before: SemanticContext,
     pub after: SemanticContext,
     pub resolved_range: Option<FrameRange>,
-    /// Exact staged capture target for Yank or Cut. Together with `before.parent`
+    pub resolved_parent: Option<NodeId>,
+    pub capture: Option<SemanticCaptureProvenance>,
+    /// Exact staged capture target for Yank or Cut. Together with `resolved_parent`
     /// this distinguishes whole children, including empty ones, from ranges.
     pub resolved_selection: Option<SliceCaptureSelection>,
     /// The old interval removed by a replacement. `resolved_range` contains
@@ -179,9 +200,7 @@ pub fn plan_semantic(
         document.revision_id(),
         &new_revision,
     )?;
-    let bounds = scope_bounds(document, &context.parent)?;
-    validate_selection(document, context)?;
-    selection::validate_context(context, bounds)?;
+    let bounds = validate_context(document, context)?;
     let document_bytes = wire::size(document, MAX_DOCUMENT_JSON_BYTES)?;
     let mut revisions: BTreeSet<_> = document
         .audio_bindings()
@@ -310,6 +329,8 @@ where
                 before: self.context.clone(),
                 after: self.context.clone(),
                 resolved_range: None,
+                resolved_parent: None,
+                capture: None,
                 resolved_selection: None,
                 removed_range: None,
                 captured_child_label: None,
@@ -320,19 +341,29 @@ where
                     self.move_context(SemanticMotion::Frames {
                         forward: *forward,
                         count: *count,
-                    });
+                    })?;
                 }
                 SemanticInstruction::MoveBeats { forward, count } => {
                     self.move_context(SemanticMotion::Beats {
                         forward: *forward,
                         count: *count,
-                    });
+                    })?;
                 }
                 SemanticInstruction::MoveScope { end } => {
-                    self.move_context(SemanticMotion::Scope { end: *end });
+                    self.move_context(SemanticMotion::Scope { end: *end })?;
+                }
+                SemanticInstruction::SelectObject { object } => {
+                    self.charge_resolution()?;
+                    self.context = self
+                        .current
+                        .select_semantic_object(&self.context, *object)?;
+                    let target = self.resolve_selector(SemanticSelector::VisualSelection)?;
+                    self.trace[index].resolved_parent = Some(target.parent);
+                    self.trace[index].resolved_range = Some(target.range);
+                    self.trace[index].resolved_selection = target.selection;
                 }
                 SemanticInstruction::BeginSelection => {
-                    self.context.visual_selection = Some(SemanticVisualSelection {
+                    self.context.visual_selection = Some(SemanticVisualSelection::Time {
                         anchor: self.context.cursor,
                         head: self.context.cursor,
                         extending: true,
@@ -372,7 +403,11 @@ where
                     self.capture_instruction(
                         index,
                         *register,
-                        SliceCaptureSelection::Range { range },
+                        selection::ResolvedTarget::local(
+                            &self.context.parent,
+                            SliceCaptureSelection::Range { range },
+                            range,
+                        ),
                         true,
                     )?;
                 }
@@ -399,12 +434,10 @@ where
                     )?;
                 }
                 SemanticInstruction::ReplaceSelection { register } => {
-                    let removed = self.visual_range()?;
-                    self.trace[index].resolved_range = Some(self.replace(*register, removed)?);
-                    self.trace[index].removed_range = Some(removed);
+                    self.replace_selection(index, *register)?;
                 }
                 SemanticInstruction::Paste { register, before } => {
-                    self.trace[index].resolved_range = Some(self.paste(*register, *before)?);
+                    self.paste_instruction(index, *register, *before)?;
                 }
             }
             self.trace[index].after = self.context.clone();
@@ -481,8 +514,10 @@ where
     fn cut(
         &mut self,
         register: RegisterName,
-        selection: &SliceCaptureSelection,
-    ) -> Result<FrameRange, EditError> {
+        target: &selection::ResolvedTarget,
+    ) -> Result<Arc<CapturedEditSlice>, EditError> {
+        let selection = target.selection()?;
+        let parent = &target.parent;
         if self.steps.len() == MAX_COMPOUND_STEPS {
             return Err(limit("macro exceeds 1024 resolved editing steps"));
         }
@@ -500,19 +535,17 @@ where
             "macro captured document byte limit",
         )?;
         let child_slot = match selection {
-            SliceCaptureSelection::Child { node } => Some(self.child_indices[node]),
-            SliceCaptureSelection::Children { first, last } => Some(
-                self.current
-                    .sequence_children(&self.context.parent, first, last)?
-                    .first,
-            ),
+            SliceCaptureSelection::Child { node } => {
+                Some(self.current.sequence_children(parent, node, node)?.first)
+            }
+            SliceCaptureSelection::Children { first, last } => {
+                Some(self.current.sequence_children(parent, first, last)?.first)
+            }
             SliceCaptureSelection::Range { .. } => None,
         };
         let required_split_ids = match selection {
             SliceCaptureSelection::Range { range } => {
-                self.current
-                    .range_deletion(&self.context.parent, *range)?
-                    .required_ids
+                self.current.range_deletion(parent, *range)?.required_ids
             }
             SliceCaptureSelection::Child { .. } | SliceCaptureSelection::Children { .. } => 0,
         };
@@ -545,7 +578,7 @@ where
         }
         let slice = Arc::new(CapturedEditSlice::capture_selection(
             &self.current,
-            &self.context.parent,
+            parent,
             selection,
             AudioTimingId {
                 allocation: capture_revision,
@@ -559,7 +592,7 @@ where
         };
         let command = match selection {
             SliceCaptureSelection::Range { range } => Command::DeleteRange {
-                parent: self.context.parent.clone(),
+                parent: parent.clone(),
                 range: *range,
                 identities: split_identities,
                 timing,
@@ -569,7 +602,7 @@ where
                 timing,
             },
             SliceCaptureSelection::Children { first, last } => Command::DeleteChildren {
-                parent: self.context.parent.clone(),
+                parent: parent.clone(),
                 first: first.clone(),
                 last: last.clone(),
                 timing,
@@ -591,22 +624,21 @@ where
         self.writes.insert(RegisterName::unnamed(), value);
         self.steps.push(ResolvedStep::Cut {
             name: register,
-            slice,
+            slice: slice.clone(),
             delete,
         });
         self.current = next;
-        self.context.cursor = range.start();
-        self.context.visual_selection = None;
-        self.refresh_children()?;
-        self.context.selected_child = if let Some(slot) = child_slot {
-            self.child_ends
-                .get(slot)
-                .or_else(|| self.child_ends.last())
+        let bounds = scope_bounds(&self.current, parent)?;
+        let ends = child_ends(&self.current, parent, bounds)?;
+        let selected = if let Some(slot) = child_slot {
+            ends.get(slot)
+                .or_else(|| ends.last())
                 .map(|(node, _)| node.clone())
         } else {
-            selected_child(&self.child_ends, self.context.cursor, self.bounds)
+            selected_child(&ends, range.start(), bounds)
         };
-        Ok(range)
+        self.continue_target(target, range.start(), selected)?;
+        Ok(slice)
     }
 }
 
@@ -618,7 +650,7 @@ fn child_indices(children: &[(NodeId, ProjectFrame)]) -> BTreeMap<NodeId, usize>
         .collect()
 }
 
-fn scope_bounds(
+pub(super) fn scope_bounds(
     document: &ProjectDocument,
     parent: &NodeId,
 ) -> Result<(ProjectFrame, ProjectFrame), EditError> {
@@ -628,6 +660,16 @@ fn scope_bounds(
     };
     let end = document.source_splice_boundary(parent, children.len())?;
     Ok((start, end))
+}
+
+pub(super) fn validate_context(
+    document: &ProjectDocument,
+    context: &SemanticContext,
+) -> Result<(ProjectFrame, ProjectFrame), EditError> {
+    let bounds = scope_bounds(document, &context.parent)?;
+    validate_selection(document, context)?;
+    selection::validate_context(document, context, bounds)?;
+    Ok(bounds)
 }
 
 fn validate_selection(

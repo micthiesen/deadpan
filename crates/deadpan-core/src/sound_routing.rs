@@ -335,6 +335,29 @@ pub(crate) struct RootSoundEditCapture {
     output_frames: i64,
 }
 
+/// Map one old-to-final sibling replacement without constructing an invalid
+/// zero-sided Replace projection or rounding through a separate edit.
+fn exact_replacement_operation(
+    range: FrameRange,
+    inserted: FrameDuration,
+) -> Option<RootSoundOperation> {
+    match (
+        range.duration() == FrameDuration::ZERO,
+        inserted == FrameDuration::ZERO,
+    ) {
+        (true, true) => None,
+        (true, false) => Some(RootSoundOperation::Insert {
+            at: range.start(),
+            duration: inserted,
+        }),
+        (false, true) => Some(RootSoundOperation::Delete { range }),
+        (false, false) => Some(RootSoundOperation::Replace {
+            range,
+            duration: inserted,
+        }),
+    }
+}
+
 impl RootSoundEditCapture {
     pub(crate) fn prepare(
         document: &ProjectDocument,
@@ -481,6 +504,20 @@ impl RootSoundEditCapture {
                     duration: slice.duration(),
                 }
             }
+            Command::ReplaceSliceChildren {
+                parent,
+                first,
+                last,
+                slice,
+                ..
+            } => {
+                let selected = document.slice_children_replacement(parent, first, last, slice)?;
+                let Some(operation) = exact_replacement_operation(selected.range, slice.duration())
+                else {
+                    return Ok(None);
+                };
+                operation
+            }
             Command::SpliceSourceAt {
                 parent,
                 target,
@@ -552,6 +589,20 @@ impl RootSoundEditCapture {
                     range: *range,
                     duration: source.duration,
                 }
+            }
+            Command::ReplaceSourceChildren {
+                parent,
+                first,
+                last,
+                source,
+                ..
+            } => {
+                let selected = document.source_children_replacement(parent, first, last)?;
+                let Some(operation) = exact_replacement_operation(selected.range, source.duration)
+                else {
+                    return Ok(None);
+                };
+                operation
             }
             _ => return Ok(None),
         };

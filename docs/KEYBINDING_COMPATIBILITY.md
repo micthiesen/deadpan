@@ -97,6 +97,18 @@ and physical layout/IME qualification remain open.
 
 ## Yank and cut operators
 
+Group object suffixes use the configurable `object.inner_group` (`ig`) and
+`object.around_group` (`ag`) paths. They compose after Normal Edit `y`, `d` and
+`r`, and select an object directly in Visual Edit mode. Object paths are absent
+from Original and Sound routing. Yank and cut accept at most one object;
+Repeat's leading count still means total plays. A count after Repeat requires
+a frame/beat motion and cannot count objects. The production audit includes
+Object Visual state and all compiled pending object paths. The group-object
+build checks 7,652,784 routing cases against 62 live Kestrel reservations with
+no conflicts. See [group object semantics](STRUCTURAL_SELECTIONS.md#group-object-workflow)
+and [qualification](qualification/group-objects-2026-10-03.md). Historical counts
+below cover their recorded builds.
+
 Normal Edit `y` and `d` are persistent prefixes. Frame, beat and group-boundary
 continuations use the configured motion paths; `yy` copies the whole selected
 beat and `dd` cuts it. Visual `y`/`d`, Original `y`, and sound `dd` retain their

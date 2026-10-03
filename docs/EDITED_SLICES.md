@@ -1,18 +1,21 @@
 # Edited slice capture and insertion
 
 `CapturedEditSlice` holds an immutable, editable copy of a nonempty half-open
-range or one exact direct child from Your edit. `Command::SpliceSlice` inserts
-it at an ordinary Sequence seam, `SpliceSliceAt` inserts inside a named direct child, and `ReplaceSlice`
-replaces a nonempty range in that Sequence. Each is one reversible transaction.
+range, one exact direct child, or an inclusive sibling forest from Your edit.
+`Command::SpliceSlice` inserts it at an ordinary Sequence seam, `SpliceSliceAt`
+inserts inside a named direct child, and `ReplaceSlice` replaces a nonempty
+range. `ReplaceSliceChildren` replaces an exact sibling span, including empty
+children; `ReplaceSourceChildren` provides the Original counterpart. Each edit
+is one reversible transaction.
 The native [placement workflow](SLICE_PLACEMENT.md) uses these boundaries for
 linked Copy/Replace and the separate [MoveRange command](ATOMIC_MOVES.md) for
 current-source removal. Section 9.7 remains partial.
 
 ## Ownership and capture
 
-Capture takes a validated document, an ordinary Sequence parent, an exact child
-or global Edit range, and a scratch `AudioTimingId`. It does not change the document, create a
-revision or write history. The captured revision records provenance. A later
+Capture takes a validated document, an ordinary Sequence parent, an exact child,
+sibling span or global Edit range, and a scratch `AudioTimingId`. It does not
+change the document, create a revision or write history. The captured revision records provenance. A later
 edit or deletion of the original beats cannot change the captured value.
 
 `capture_selection` accepts `SliceCaptureSelection::Range { range }`,
@@ -29,9 +32,10 @@ mutation and historical admission contract.
 Range serialization keeps its previous shape. A missing selector reads only as
 Range using the stored interval; it never infers Child from structure or labels.
 Explicit null, unknown, duplicate or inconsistent selector fields fail. Child
-uses an explicit tagged selector. Core 34/database 43 remain unchanged, with
-literal pre-change commands, complete transactions and stored history as the
-compatibility witnesses.
+and Children use explicit tagged selectors. The current document schema is 43
+and database schema is 55. See [development formats](DEVELOPMENT_FORMATS.md)
+for the supported package versions; older qualification reports describe their
+recorded formats.
 
 The selection contains complete owned beat contexts and separate output windows:
 
@@ -57,9 +61,10 @@ occurrences and generated Hold interiors remain outside this boundary.
 ## Destination placement
 
 The destination parent and its ancestors must be ordinary Sequences. Interior
-insertion names a direct child and a strict local boundary inside it. Replacement
-names a nonempty global Edit interval within the parent. Source and ordinary
-Hold endpoints may sit behind bounded chains of unity Partition windows, so a
+insertion names a direct child and a strict local boundary inside it. Range
+replacement names a nonempty global Edit interval within the parent. Structural
+replacement names exact inclusive first/last direct children, even when their
+combined duration is zero. Source and ordinary Hold endpoints may sit behind bounded chains of unity Partition windows, so a
 pasted fragment remains eligible for later interior insertion or replacement.
 Whole intervening composites remain structural. These commands do not resolve
 Repeat or nonunity Retime occurrences implicitly.
@@ -69,6 +74,9 @@ number of Split node identities needed. Those identities are separate from
 `slice.identity_requirements()`. Validate both pools together, including unused
 supplied identities and historical aliases, before constructing a candidate.
 The temporary peak includes destination, split and imported nodes.
+`slice_children_replacement` and `source_children_replacement` preflight exact
+structural spans without a Split pool. They retain the explicit first slot;
+matching timestamps cannot substitute for child identities.
 
 Capture original sampling lattices before splitting endpoints. Prepare the
 destination suffix on the split, undeleted tree at the original insertion
@@ -78,13 +86,18 @@ marks and lineage reconcile against the final structure, imported marks finish
 separately, and the outer command transforms root sounds and allowances once.
 Copied Holds receive no new permission to play independent root sounds.
 
-An empty Child inserts only through `SpliceSlice` at an explicit sibling index.
-It keeps its labels, framing, treatments and owned marks under a fresh neutral
-wrapper without adding frames or samples. Existing bindings, timing records,
-lineage, marks, sound events, routes and allowances remain exactly unchanged.
-No suffix clock, root sound transform or unused timing ordinal is allocated.
-The insertion is still one authored revision with an exact inverse. Interior
-insertion, replacement and interval Move reject an empty source.
+An empty Child or Children capture can insert through `SpliceSlice` at an
+explicit sibling index. It keeps its labels, framing, treatments and owned marks
+under a fresh neutral wrapper without adding frames or samples. A seam insertion
+leaves existing bindings, timing records, lineage, marks, sound events, routes
+and allowances unchanged and allocates no suffix clock or root sound transform.
+It is still one authored revision with an exact inverse.
+
+Exact structural replacement also accepts an empty Edited source. It removes
+the named old owners, applies their mark loss policy and preserves surviving
+suffix clocks; replacing positive time transforms the root sound bus once.
+Zero-time replacement still removes the old identities. Interior insertion,
+time-range replacement and interval Move retain their empty-source refusals.
 
 ## Exact picture and audio clocks
 
@@ -155,8 +168,8 @@ mark, play and timing identities remain independent.
 
 The store reads the named immutable capture revision before admitting a
 slice placement and verifies the complete payload against a deterministic capture
-of that parent and range, using its retained scratch timing identity. This also
-rejects valid historical media from outside the declared selection. An exact
+of that parent and exact Range/Child/Children selector, using its retained
+scratch timing identity. This also rejects valid historical media from outside the declared selection. An exact
 qualified asset record or accepted generated artifact in that verified capture
 may be retained even after its last beat was deleted or a
 legacy source registration was undone. Current source-profile rules still
@@ -173,8 +186,9 @@ revision identities; they cannot make an old destination request current again.
 [Project registers](NAMED_REGISTERS.md) extend the default copy with a–z
 slots. They use the same immutable captures, historical admission and saved-cut
 receipt path described below. A successful named write also updates the default
-copy; paste and placement retain the selected slot's exact content at entry.
-The bank is saved independently of timeline revisions and restored after reopen.
+copy; saving a named Macro leaves the default copy unchanged. Paste and
+placement retain the selected slot's exact content at entry. The bank is saved
+independently of timeline revisions and restored after reopen.
 
 ### Frame cuts at the cursor
 
@@ -200,7 +214,7 @@ interval rather than shortening it to a convenient child boundary. Held `x`
 does not repeat edits, and native controls, text, IME and modified shortcuts
 retain input. A dialog opened earlier in the same input batch blocks the cut.
 Frame cuts need no separate authored command. The shared project bank uses
-database schema 53.
+database schema 55.
 
 ### Whole beats and ranges
 
@@ -213,11 +227,11 @@ cancel an accepted save. Versioned bank snapshots retain durable contents;
 late or duplicate confirmations cannot finish a newer selection.
 
 Without a Visual selection, `yy` captures the complete selected child. An empty
-Visual selection remains an error and cannot fall back to a beat. `d` cuts a
-nonempty Visual range; `dd` cuts the selected child. `:delete` retains its exact
-command-entry target, including absence. The service privately captures that
-target, commits one `DeleteRange` or `DeleteRipple`, and publishes the copy only
-after save. Capture, admission and commit failures keep the previous register.
+Time Visual selection remains an error and cannot fall back to a beat. `d` cuts
+a nonempty Time range or exact Object selection; `dd` cuts the selected child.
+`:delete` retains its exact command-entry target, including absence. The service privately captures that
+target, commits one `DeleteRange`, `DeleteRipple` or `DeleteChildren`, and
+publishes the copy only after save. Capture, admission and commit failures keep the previous register.
 A saved cut retains both its copy and a dedicated receipt if refresh fails,
 with explicit reopening guidance. Exact successful retries return that receipt.
 New yank/cut intent supersedes an older pending confirmation without cancelling
@@ -231,7 +245,41 @@ child; a cut selects the join. Empty motion intervals refuse. These
 [typed selectors](SEMANTIC_MACROS.md) use the same planner as macros and
 headless requests, retaining the exact historical capture for media admission.
 
-Fast `p/P` inserts beside the selected beat or replaces the selected Edit range.
+### Group objects
+
+In ordinary Sequence scopes, `ig` resolves the explicitly selected direct
+Sequence, otherwise the containing non-root Sequence. It selects
+all exact child roots, including empty endpoints, without the parent's effects
+or owned marks. `ag` selects that group as a whole Child under its immediate
+parent, retaining those authored choices. Neither object falls back to the root
+or infers a group from the cursor. Use `yig`/`yag`, `dig`/`dag`, or Repeat with
+an object; `vig`/`vag` installs the same ownership as Visual state. Group accepts
+that Visual object through its captured command target.
+
+`v` finishes an Object selection without losing its target. Moving while it is
+extending converts it to Time, anchored at the object's start. Motion after
+finishing preserves the object while the cursor and selected child move.
+An `ig` with no child roots is explicit empty contents: copy, cut and Group
+refuse; paste inserts at slot zero. An all-empty forest still has exact roots
+and can be copied, cut or grouped. Repeat requires positive selected duration.
+
+Named/default registers retain exact capture provenance. Semantic programs
+record object kinds and resolve them against each preceding staged document;
+supported Cut/Repeat/Group dot resolves the current object or current Visual
+selector anew. Captures carry their effective parent, complete bounds, staged
+scope labels and unique timing identity, independently of navigation scope.
+
+Fast `p/P` inserts beside the selected beat or replaces the selected Edit Time
+or Object selection. `:splice`, then `r`, previews the same exact Object
+replacement with Original or Edited content. Cancel restores the captured
+Object state. A successful inside `ag` edit continues in its outer Sequence;
+outside `ig` keeps the surviving group selected, while inside `ig` stays inside.
+A prepared receipt carries that continuation before commit. These object
+operations do not add beat-owned temporal attachment semantics; `ib`/`ab` remain
+required. See [qualification](qualification/group-objects-2026-10-03.md).
+
+### Placement and historical previews
+
 `:splice` opens the same visible placement workflow used for Original slices.
 In/Out refinement recaptures the historical source within its ordinary Sequence
 parent, leaving the register unchanged. Source endpoint pictures remain available
@@ -271,8 +319,9 @@ ordinary Sequence scopes, preserving whole-unit identities. Native `:splice`
 provides explicit Move selection and local removal/insertion picture comparison
 and audition. Historical copies remain copyable but cannot authorize removal
 from a newer revision. See [native qualification](qualification/native-move-2026-09-30.md).
-Role-only placement, text objects, analysis-dependent motions and nested
-occurrence interiors remain required.
+Role-only placement, beat objects `ib`/`ab` with their temporal attachment
+lifecycle, analysis-dependent objects/motions and nested occurrence interiors
+remain required. Group `ig`/`ag` does not complete those selectors.
 These workflows remain open beyond the capture and placement commands described
 above. Native media, interaction and performance evidence is recorded separately
 from the core timing proofs.

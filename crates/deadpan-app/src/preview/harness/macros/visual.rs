@@ -18,7 +18,7 @@ fn selection(d: &Driver<'_>) -> Result<Option<SemanticVisualSelection>, String> 
 }
 
 fn visual(anchor: i64, head: i64, extending: bool) -> Option<SemanticVisualSelection> {
-    Some(SemanticVisualSelection {
+    Some(SemanticVisualSelection::Time {
         anchor: ProjectFrame(anchor),
         head: ProjectFrame(head),
         extending,

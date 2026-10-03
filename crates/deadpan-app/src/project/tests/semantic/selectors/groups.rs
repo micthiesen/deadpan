@@ -115,7 +115,7 @@ fn group_dot_retains_label_and_exact_child_then_visual_override_becomes_intent()
         NodeKind::Sequence { children } if children == &[node("c")])
     );
     let mut visual = context(&second, 2, Some("a"));
-    visual.visual_selection = Some(SemanticVisualSelection {
+    visual.visual_selection = Some(SemanticVisualSelection::Time {
         anchor: ProjectFrame(7),
         head: ProjectFrame(2),
         extending: true,
@@ -163,7 +163,7 @@ fn group_dot_retains_label_and_exact_child_then_visual_override_becomes_intent()
         &third,
     );
     let empty = SemanticContext {
-        visual_selection: Some(SemanticVisualSelection {
+        visual_selection: Some(SemanticVisualSelection::Time {
             anchor: ProjectFrame(2),
             head: ProjectFrame(2),
             extending: false,
@@ -285,7 +285,7 @@ fn ungroup_dot_keeps_empty_promoted_child_and_refuses_visual_or_missing_targets(
     }
     for (ticket, head) in [(5, 10), (6, 12)] {
         let mut visual = context(&first, 10, Some("empty-group"));
-        visual.visual_selection = Some(SemanticVisualSelection {
+        visual.visual_selection = Some(SemanticVisualSelection::Time {
             anchor: ProjectFrame(10),
             head: ProjectFrame(head),
             extending: false,

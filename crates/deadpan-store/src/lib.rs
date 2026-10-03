@@ -809,6 +809,7 @@ fn slice_capture_revision(
         deadpan_core::Command::SpliceSlice { slice, .. }
         | deadpan_core::Command::SpliceSliceAt { slice, .. }
         | deadpan_core::Command::ReplaceSlice { slice, .. } => slice,
+        deadpan_core::Command::ReplaceSliceChildren { slice, .. } => slice,
         _ => return Ok(None),
     };
     let captured = compound::read_capture(connection, slice.revision_id())?;

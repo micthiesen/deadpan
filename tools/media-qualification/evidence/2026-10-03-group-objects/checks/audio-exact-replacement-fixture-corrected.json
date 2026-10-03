@@ -1,0 +1,22 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-audio",
+    "--test",
+    "composite_insert",
+    "replacement_children"
+  ],
+  "started": "2026-10-03T16:38:28.612557+00:00",
+  "base_commit": "e848409f1c913bb47076d6d6810a1a822fa503dd",
+  "diff_sha256": "0f3dfb4748c9e1e0b47e57421628aa18014f985cfabbaf5b5f109aa1026958ad",
+  "source_manifest_sha256": "6c72a9117c658ca5334a7c623638a7e49956841d3dbfc27998687e1286da5538",
+  "pid": 17281,
+  "exit_code": 0,
+  "seconds": 18.052743417210877,
+  "source_manifest_after_sha256": "6c72a9117c658ca5334a7c623638a7e49956841d3dbfc27998687e1286da5538",
+  "source_unchanged": true,
+  "gate_exit_code": 0
+}

@@ -25,6 +25,7 @@ pub(crate) use delete_range::apply as delete_range;
 pub use sequence_range::SequenceRangeEdit;
 pub type SourceReplacement = SequenceRangeEdit;
 pub(crate) use source_replace::apply as replace_source;
+pub(crate) use source_replace::apply_children as replace_source_children;
 pub use source_splice::SourceSpliceInterior;
 pub(crate) use source_splice::{
     InteriorInsertion as SourceSpliceInsertion, apply as splice_source,

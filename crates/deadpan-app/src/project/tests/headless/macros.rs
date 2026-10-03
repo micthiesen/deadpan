@@ -192,7 +192,7 @@ fn remote_visual_yank_previews_oriented_selection_and_keeps_bank_receipt_on_refr
     else {
         unreachable!()
     };
-    *visual_selection = Some(deadpan_core::SemanticVisualSelection {
+    *visual_selection = Some(deadpan_core::SemanticVisualSelection::Time {
         anchor: ProjectFrame(18),
         head: ProjectFrame(12),
         extending: true,
@@ -207,7 +207,7 @@ fn remote_visual_yank_previews_oriented_selection_and_keeps_bank_receipt_on_refr
         panic!("range preview")
     };
     assert!(committed_revision.is_none() && committed_registers.is_none());
-    let selection = serde_json::json!({"anchor":18,"head":9,"extending":false});
+    let selection = serde_json::json!({"type":"time","anchor":18,"head":9,"extending":false});
     assert_eq!(output["context"]["visual_selection"], selection);
     assert_eq!(output["context"]["cursor"], 9);
     assert_eq!(durable(&path), before);

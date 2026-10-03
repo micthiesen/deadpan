@@ -60,23 +60,9 @@ impl Service {
                     .insert(register.as_char(), Value::Macro(program.clone()));
                 bank
             }
-            RemoteOperation::Run { parent, .. } => {
+            RemoteOperation::Run { .. } => {
                 let plan = prepared.plan.as_ref().ok_or("Remote macro has no plan")?;
-                let picture_plan = RenderPlan::compile(&prepared.document).map_err(display)?;
-                let scope = SequenceScope::from_historical_parent(
-                    &prepared.document,
-                    &picture_plan,
-                    parent,
-                )?;
-                prepare_runtime_bank(
-                    &id,
-                    &scope,
-                    &prepared.document,
-                    runtime,
-                    &prepared.bank,
-                    &prepared.final_bank,
-                    plan,
-                )?
+                prepare_runtime_bank(&id, runtime, &prepared.bank, &prepared.final_bank, plan)?
             }
         };
         Ok(Some(Arc::new(bank)))
@@ -200,6 +186,12 @@ impl Service {
                     revision(),
                 )
                 .map_err(display)?;
+                let final_picture_plan = RenderPlan::compile(&plan.document).map_err(display)?;
+                let final_scope = SequenceScope::from_historical_parent(
+                    &plan.document,
+                    &final_picture_plan,
+                    &plan.context.parent,
+                )?;
                 let mut receipt = Receipt {
                     id: id.clone(),
                     bank_version: stored.version,
@@ -209,7 +201,7 @@ impl Service {
                         } => Outcome::Executed {
                             register: *register,
                             count: *count,
-                            scope: scope.clone(),
+                            scope: final_scope.clone(),
                             cursor: plan.context.cursor,
                             selected: plan.selected_child.clone(),
                             visual_selection: plan.context.visual_selection.clone(),
@@ -217,7 +209,7 @@ impl Service {
                             refresh_error: None,
                         },
                         Operation::Apply { .. } => Outcome::Applied {
-                            scope: scope.clone(),
+                            scope: final_scope.clone(),
                             cursor: plan.context.cursor,
                             selected: plan.selected_child.clone(),
                             visual_selection: plan.context.visual_selection.clone(),
@@ -241,8 +233,6 @@ impl Service {
                     .map_err(display)?;
                 let bank = prepare_runtime_bank(
                     id,
-                    scope,
-                    &document,
                     self.macro_runtime_bank(id)?,
                     &stored,
                     &preview.register_bank,
@@ -274,7 +264,7 @@ impl Service {
                     selected_node: plan.selected_child.clone(),
                     preserve_cursor: false,
                     cursor: Some(plan.context.cursor),
-                    scope: scope.clone(),
+                    scope: final_scope,
                     sound: None,
                     range_selection: None,
                 });
@@ -429,8 +419,6 @@ fn matches_runtime(value: &RegisterValue, runtime: &Value, id: &Id) -> bool {
 
 fn prepare_runtime_bank(
     id: &Id,
-    scope: &SequenceScope,
-    document: &ProjectDocument,
     runtime: &Bank,
     stored: &RegisterBank,
     preview: &RegisterBank,
@@ -446,14 +434,6 @@ fn prepare_runtime_bank(
     if preview.entries != expected || preview.version != expected_version {
         return Err("Macro preview register writes differ from the prepared semantic plan".into());
     }
-    let source_path: Vec<String> = std::iter::once("Your edit".to_owned())
-        .chain(
-            scope
-                .groups()
-                .iter()
-                .map(|node| document.nodes()[node].label.clone()),
-        )
-        .collect();
     let mut entries = BTreeMap::new();
     let mut prepared: Vec<(Arc<RegisterValue>, Value)> = Vec::new();
     for (name, value) in &preview.entries {
@@ -487,11 +467,22 @@ fn prepare_runtime_bank(
                 .trace
                 .iter()
                 .find(|trace| {
-                    &trace.before_revision == slice.revision_id()
-                        && &trace.before.parent == slice.parent()
+                    trace.capture.as_ref().is_some_and(|capture| {
+                        &capture.timing == slice.capture_timing()
+                            && &capture.parent == slice.parent()
+                    }) && &trace.before_revision == slice.revision_id()
+                        && trace.resolved_parent.as_ref() == Some(slice.parent())
                         && trace.resolved_selection.as_ref() == Some(selection)
                 })
                 .ok_or("Macro copy has no matching staged capture provenance")?;
+            let capture = trace
+                .capture
+                .as_ref()
+                .ok_or("Macro copy has no staged capture provenance")?;
+            let scope = SequenceScope::from_staged_capture(capture)?;
+            let source_path: Vec<String> = std::iter::once("Your edit".to_owned())
+                .chain(capture.scope_labels.iter().cloned())
+                .collect();
             let child_label = match selection {
                 SliceCaptureSelection::Range { .. } | SliceCaptureSelection::Children { .. } => {
                     None
@@ -515,10 +506,10 @@ fn prepare_runtime_bank(
                     request,
                     persisted_version: Some(preview.version),
                 },
-                scope: scope.clone(),
+                scope,
                 slice: slice.clone(),
-                bounds: trace.before_scope,
-                source_path: source_path.clone(),
+                bounds: capture.bounds,
+                source_path,
                 child_label,
             }))
         };

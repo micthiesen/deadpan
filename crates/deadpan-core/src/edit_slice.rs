@@ -336,6 +336,10 @@ impl CapturedEditSlice {
     pub fn revision_id(&self) -> &RevisionId {
         &self.0.revision_id
     }
+    /// Unique caller-supplied capture identity, separate from the source revision.
+    pub fn capture_timing(&self) -> &AudioTimingId {
+        &self.0.capture_timing
+    }
     pub fn presentation_basis(&self) -> &PresentationBasis {
         &self.0.presentation_basis
     }
@@ -514,6 +518,30 @@ impl CapturedEditSlice {
         crate::marks::validate_slice_marks(&context, &value.marks, value.source_duration)?;
         self.identity_requirements()?;
         Ok(())
+    }
+}
+
+impl ProjectDocument {
+    /// Preflight exact sibling replacement without collapsing equal-time owners
+    /// into a picture range. The new imported forest is the only peak growth.
+    pub fn slice_children_replacement(
+        &self,
+        parent: &NodeId,
+        first: &NodeId,
+        last: &NodeId,
+        slice: &CapturedEditSlice,
+    ) -> Result<SequenceChildrenPlan, EditError> {
+        slice.check_destination(self)?;
+        let selected = self.sequence_children(parent, first, last)?;
+        if self
+            .nodes()
+            .len()
+            .checked_add(slice.identity_requirements()?.nodes)
+            .is_none_or(|count| count > MAX_DOCUMENT_NODES)
+        {
+            return Err(limit("slice replacement exceeds the temporary node limit"));
+        }
+        Ok(selected)
     }
 }
 

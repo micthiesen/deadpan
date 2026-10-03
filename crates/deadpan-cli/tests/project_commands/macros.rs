@@ -122,7 +122,8 @@ fn visual_repeat_dry_run_and_late_refusal_preserve_bank_and_exact_undo_redo() ->
     )?;
     let bank = ProjectStore::open(&package, AccessMode::ReadOnly)?.registers()?;
     let mut invocation = run(&before, bank.version, "a", 4);
-    invocation["operation"]["visual_selection"] = json!({"anchor":18,"head":4,"extending":true});
+    invocation["operation"]["visual_selection"] =
+        json!({"type":"time","anchor":18,"head":4,"extending":true});
     let unchanged = state(&package)?;
     let preview = invoke(&package, &input, &invocation, true)?;
     assert_eq!(state(&package)?, unchanged);
@@ -208,11 +209,12 @@ fn oriented_range_yank_and_staged_replacement_keep_exact_history_and_captures() 
         false,
     )?;
     let mut yank = run(&before, 1, "a", 4);
-    yank["operation"]["visual_selection"] = json!({"anchor":18,"head":4,"extending":true});
+    yank["operation"]["visual_selection"] =
+        json!({"type":"time","anchor":18,"head":4,"extending":true});
     let unchanged = state(&package)?;
     let preview = invoke(&package, &input, &yank, true)?;
     assert_eq!(state(&package)?, unchanged);
-    let finished = json!({"anchor":18,"head":4,"extending":false});
+    let finished = json!({"type":"time","anchor":18,"head":4,"extending":false});
     assert_eq!(preview["context"]["visual_selection"], finished);
     let result = invoke(&package, &input, &yank, false)?;
     assert!(result["committed_revision"].is_null());
@@ -285,7 +287,7 @@ fn oriented_range_yank_and_staged_replacement_keep_exact_history_and_captures() 
     let result = invoke(&package, &input, &edit, false)?;
     assert_eq!(
         result["context"]["visual_selection"],
-        json!({"anchor":14,"head":20,"extending":false})
+        json!({"type":"time","anchor":14,"head":20,"extending":false})
     );
     assert_eq!(result["context"]["cursor"], 20);
     assert_eq!(result["committed_registers"]["bank_version"], 4);
@@ -636,7 +638,8 @@ fn typed_motion_copies_keep_context_and_refuse_missing_stale_or_empty_selectors(
     invoke(&package, &input, &save(&before, 0, "a", copies), false)?;
     let mut copy = run(&before, 1, "a", 7);
     copy["operation"]["selected_child"] = json!("hold");
-    copy["operation"]["visual_selection"] = json!({"anchor":2,"head":7,"extending":true});
+    copy["operation"]["visual_selection"] =
+        json!({"type":"time","anchor":2,"head":7,"extending":true});
     let unchanged = state(&package)?;
     let preview = invoke(&package, &input, &copy, true)?;
     assert_eq!(state(&package)?, unchanged);
@@ -683,7 +686,7 @@ fn typed_motion_copies_keep_context_and_refuse_missing_stale_or_empty_selectors(
         (
             json!({"type":"visual_selection"}),
             json!("hold"),
-            json!({"anchor":0,"head":0,"extending":false}),
+            json!({"type":"time","anchor":0,"head":0,"extending":false}),
         ),
         (
             json!({"type":"motion","motion":{"type":"frames","forward":false,"count":3}}),
@@ -1195,7 +1198,7 @@ fn repeat_count_macro_dry_run_late_failure_and_counted_commit_keep_bank_and_exac
     for head in [0, 3] {
         let mut rejected = invocation.clone();
         rejected["operation"]["visual_selection"] =
-            json!({"anchor":0,"head":head,"extending":false});
+            json!({"type":"time","anchor":0,"head":head,"extending":false});
         reject(&package, &input, &rejected)?;
     }
     assert_eq!(state(&package)?, unchanged);

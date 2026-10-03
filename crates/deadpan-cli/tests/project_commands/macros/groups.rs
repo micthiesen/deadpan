@@ -72,7 +72,8 @@ fn range_group_dry_run_late_failure_and_reopen_preserve_exact_bank_and_history()
         )?;
     }
     let mut invocation = run(&before, bank.version, "a", 3);
-    invocation["operation"]["visual_selection"] = json!({"anchor":18,"head":3,"extending":true});
+    invocation["operation"]["visual_selection"] =
+        json!({"type":"time","anchor":18,"head":3,"extending":true});
     let unchanged = state(&package)?;
     let preview = invoke(&package, &input, &invocation, true)?;
     assert_eq!(state(&package)?, unchanged);
@@ -189,7 +190,8 @@ fn counted_ungroup_reports_final_mark_losses_and_restores_all_bindings_on_undo()
     }
     for end in [0, 4] {
         let mut failed = invocation.clone();
-        failed["operation"]["visual_selection"] = json!({"anchor":0,"head":end,"extending":false});
+        failed["operation"]["visual_selection"] =
+            json!({"type":"time","anchor":0,"head":end,"extending":false});
         reject(&package, &input, &failed)?;
     }
     let mut late = invocation.clone();
@@ -248,5 +250,293 @@ fn counted_ungroup_reports_final_mark_losses_and_restores_all_bindings_on_undo()
     same_document(&writer.snapshot()?, &after)?;
     assert_eq!(writer.registers()?, bank);
     writer.validate()?;
+    Ok(())
+}
+
+#[test]
+fn object_visual_yank_and_exact_group_replacement_share_dry_run_and_commit() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let input = scratch.path().join("group-objects.json");
+    let package = seeded(scratch.path(), &input)?;
+    let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let root = writer.snapshot()?.root().clone();
+    seed(
+        &mut writer,
+        Command::Group {
+            parent: root.clone(),
+            start: 0,
+            end: 1,
+            id: NodeId::new("object-group")?,
+            label: "Object group".into(),
+        },
+        "seed-object-group",
+    )?;
+    let before = writer.snapshot()?;
+    drop(writer);
+    invoke(
+        &package,
+        &input,
+        &save(
+            &before,
+            0,
+            "a",
+            json!([
+                {"type":"select_object","object":{"type":"inner_group"}},
+                {"type":"yank","selector":{"type":"visual_selection"},"register":"b"},
+            ]),
+        ),
+        false,
+    )?;
+    let mut copy = run(&before, 1, "a", 0);
+    copy["operation"]["selected_child"] = json!("object-group");
+    let mut untagged = copy.clone();
+    untagged["operation"]["visual_selection"] = json!({"anchor":0,"head":1,"extending":false});
+    assert!(Request::from_json(untagged.to_string().as_bytes()).is_err());
+    let unchanged = state(&package)?;
+    let preview = invoke(&package, &input, &copy, true)?;
+    assert_eq!(state(&package)?, unchanged);
+    assert_eq!(preview["context"]["parent"], json!(root));
+    assert_eq!(
+        preview["context"]["visual_selection"],
+        json!({
+            "type":"object","selection":{
+                "kind":{"type":"inner_group"},"group":"object-group"
+            },"extending":false
+        })
+    );
+    assert_eq!(preview["trace"][2]["resolved_parent"], "object-group");
+    assert_eq!(
+        preview["trace"][2]["capture"]["scope"],
+        json!(["object-group"])
+    );
+    assert_eq!(
+        preview["trace"][2]["capture"]["scope_labels"],
+        json!(["Object group"])
+    );
+    let copied = invoke(&package, &input, &copy, false)?;
+    assert_eq!(copied["context"], preview["context"]);
+    assert!(copied["committed_revision"].is_null());
+    assert_eq!(copied["committed_registers"]["bank_version"], 2);
+    let reader = ProjectStore::open(&package, AccessMode::ReadOnly)?;
+    assert_eq!(reader.snapshot()?, before);
+    let bank = reader.registers()?;
+    let RegisterValue::Edited { slice } = bank.entries[&RegisterName::new('b')?].as_ref() else {
+        panic!("inner group object copy")
+    };
+    assert_eq!(slice.parent(), &NodeId::new("object-group")?);
+    assert_eq!(
+        slice.selection(),
+        &deadpan_core::SliceCaptureSelection::Children {
+            first: NodeId::new("hold")?,
+            last: NodeId::new("hold")?,
+        }
+    );
+    slice.validate_capture(&before)?;
+    drop(reader);
+
+    invoke(
+        &package,
+        &input,
+        &save(
+            &before,
+            2,
+            "c",
+            json!([
+                {"type":"select_object","object":{"type":"around_group"}},
+                {"type":"replace_selection","register":"b"},
+            ]),
+        ),
+        false,
+    )?;
+    let mut replace = run(&before, 3, "c", 0);
+    replace["operation"]["selected_child"] = json!("object-group");
+    replace["operation"]["new_revision"] = json!("replace-object-group");
+    let unchanged = state(&package)?;
+    let preview = invoke(&package, &input, &replace, true)?;
+    assert_eq!(state(&package)?, unchanged);
+    assert_eq!(preview["trace"][2]["resolved_parent"], json!(root));
+    assert_eq!(
+        preview["trace"][2]["resolved_selection"],
+        json!({"type":"child","node":"object-group"})
+    );
+    assert!(preview["context"]["visual_selection"].is_null());
+    assert_eq!(preview["context"]["parent"], json!(root));
+    let result = invoke(&package, &input, &replace, false)?;
+    // Separate dry-run and commit invocations allocate independent new owners.
+    for field in ["parent", "cursor", "visual_selection"] {
+        assert_eq!(result["context"][field], preview["context"][field]);
+    }
+    let preview_selected: NodeId =
+        serde_json::from_value(preview["context"]["selected_child"].clone())?;
+    assert!(!before.nodes().contains_key(&preview_selected));
+    assert!(
+        preview["edit"]["changed_ids"]
+            .as_array()
+            .unwrap()
+            .contains(&json!(preview_selected))
+    );
+    assert_eq!(result["committed_revision"], "replace-object-group");
+    let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let after = writer.snapshot()?;
+    let selected: NodeId = serde_json::from_value(result["context"]["selected_child"].clone())?;
+    assert!(!before.nodes().contains_key(&selected));
+    assert_eq!(after.children(&root).collect::<Vec<_>>(), vec![&selected]);
+    assert!(!after.nodes().contains_key(&NodeId::new("object-group")?));
+    assert_eq!(after.duration()?, before.duration()?);
+    assert_eq!(
+        writer.registers()?.entries[&RegisterName::new('b')?],
+        bank.entries[&RegisterName::new('b')?]
+    );
+    writer.undo(after.revision_id(), RevisionId::new("undo-object-replace")?)?;
+    same_document(&writer.snapshot()?, &before)?;
+    writer.validate()?;
+    Ok(())
+}
+
+#[test]
+fn around_group_cut_from_inside_returns_outer_context_and_durable_copy() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let input = scratch.path().join("around-cut.json");
+    let package = seeded(scratch.path(), &input)?;
+    let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let root = writer.snapshot()?.root().clone();
+    seed(
+        &mut writer,
+        Command::Group {
+            parent: root.clone(),
+            start: 0,
+            end: 1,
+            id: NodeId::new("object-group")?,
+            label: "Object group".into(),
+        },
+        "seed-around-cut",
+    )?;
+    let before = writer.snapshot()?;
+    drop(writer);
+    invoke(
+        &package,
+        &input,
+        &save(
+            &before,
+            0,
+            "a",
+            json!([
+                {"type":"cut","selector":{"type":"text_object","object":{"type":"around_group"}},"register":"b"}
+            ]),
+        ),
+        false,
+    )?;
+    let mut cut = run(&before, 1, "a", 0);
+    cut["operation"]["parent"] = json!("object-group");
+    cut["operation"]["selected_child"] = json!("hold");
+    let unchanged = state(&package)?;
+    let preview = invoke(&package, &input, &cut, true)?;
+    assert_eq!(state(&package)?, unchanged);
+    assert_eq!(preview["trace"][1]["parent"], "object-group");
+    assert_eq!(preview["trace"][1]["resolved_parent"], json!(root));
+    assert_eq!(preview["trace"][1]["capture"]["scope"], json!([]));
+    assert_eq!(preview["context"]["parent"], json!(root));
+    assert!(preview["context"]["selected_child"].is_null());
+    assert_eq!(preview["context"]["cursor"], 0);
+    let result = invoke(&package, &input, &cut, false)?;
+    assert_eq!(result["context"], preview["context"]);
+    assert_eq!(result["committed_revision"], "macro-cut");
+    assert_eq!(result["committed_registers"]["bank_version"], 2);
+    let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let after = writer.snapshot()?;
+    assert_eq!(after.duration()?.frames(), 0);
+    let bank = writer.registers()?;
+    let RegisterValue::Edited { slice } = bank.entries[&RegisterName::new('b')?].as_ref() else {
+        panic!("around group cut copy")
+    };
+    assert_eq!(slice.parent(), &root);
+    assert_eq!(
+        slice.selection(),
+        &deadpan_core::SliceCaptureSelection::Child {
+            node: NodeId::new("object-group")?,
+        }
+    );
+    slice.validate_capture(&before)?;
+    writer.undo(after.revision_id(), RevisionId::new("undo-around-cut")?)?;
+    same_document(&writer.snapshot()?, &before)?;
+    assert_eq!(writer.registers()?, bank);
+    writer.validate()?;
+    Ok(())
+}
+
+#[test]
+fn empty_inner_group_is_a_visual_object_but_cannot_be_yanked_as_an_empty_forest() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let input = scratch.path().join("empty-group-object.json");
+    let package = seeded(scratch.path(), &input)?;
+    let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let parent = writer.snapshot()?.root().clone();
+    seed(
+        &mut writer,
+        Command::Insert {
+            parent: parent.clone(),
+            index: 0,
+            subtree: Subtree {
+                root: NodeId::new("empty-object")?,
+                nodes: BTreeMap::from([(
+                    NodeId::new("empty-object")?,
+                    BeatNode::sequence("Empty object", vec![]),
+                )]),
+                overrides: Default::default(),
+                gap_overrides: Default::default(),
+            },
+        },
+        "seed-empty-object",
+    )?;
+    let before = writer.snapshot()?;
+    drop(writer);
+    invoke(
+        &package,
+        &input,
+        &save(
+            &before,
+            0,
+            "a",
+            json!([
+                {"type":"select_object","object":{"type":"inner_group"}}
+            ]),
+        ),
+        false,
+    )?;
+    let mut select = run(&before, 1, "a", 0);
+    select["operation"]["selected_child"] = json!("empty-object");
+    let unchanged = state(&package)?;
+    let selected = invoke(&package, &input, &select, false)?;
+    assert_eq!(state(&package)?, unchanged);
+    assert!(selected["committed_revision"].is_null());
+    assert!(selected["committed_registers"].is_null());
+    assert_eq!(selected["context"]["parent"], json!(parent));
+    assert_eq!(selected["context"]["cursor"], 0);
+    assert_eq!(
+        selected["context"]["visual_selection"],
+        json!({
+            "type":"object","selection":{
+                "kind":{"type":"inner_group"},"group":"empty-object"
+            },"extending":true
+        })
+    );
+    invoke(
+        &package,
+        &input,
+        &save(
+            &before,
+            1,
+            "b",
+            json!([
+                {"type":"select_object","object":{"type":"inner_group"}},
+                {"type":"yank","selector":{"type":"visual_selection"},"register":"c"}
+            ]),
+        ),
+        false,
+    )?;
+    let mut yank = run(&before, 2, "b", 0);
+    yank["operation"]["selected_child"] = json!("empty-object");
+    let failed = reject(&package, &input, &yank)?;
+    assert!(failed["error"].is_object());
     Ok(())
 }

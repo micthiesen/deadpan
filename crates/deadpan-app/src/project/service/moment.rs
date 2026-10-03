@@ -9,6 +9,8 @@ pub(super) struct PendingMoment {
     request: Request,
     qualification: SourceQualificationId,
     cursor: ProjectFrame,
+    continuation_scope: SequenceScope,
+    continuation_node: NodeId,
 }
 
 impl Service {
@@ -45,10 +47,17 @@ impl Service {
             ordinals,
             &source.label,
         )?;
+        let inserted = request
+            .node()
+            .ok_or("Original paste has no inserted root")?;
+        let (continuation_scope, continuation_node) =
+            destination.continuation(workspace, &scope, &parent, inserted)?;
         let moment = PendingMoment {
             request,
             qualification,
             cursor,
+            continuation_scope,
+            continuation_node,
         };
         if let Some((cached_asset, token)) = self.cached.take() {
             if cached_asset == asset {
@@ -59,7 +68,7 @@ impl Service {
                 match outcome {
                     Ok(commit) => {
                         self.cached = Some((cached_asset, token));
-                        self.complete_moment(&moment, scope, commit.revision_id);
+                        self.complete_moment(&moment, commit.revision_id);
                         return Ok(());
                     }
                     Err(StoreError::OriginalMedia(_) | StoreError::Io(_)) => {}
@@ -125,7 +134,7 @@ impl Service {
             .ok_or("Original paste has no asset")?
             .clone();
         self.cached = Some((asset.clone(), prepared));
-        self.complete_moment(&moment, active.scope, commit.revision_id);
+        self.complete_moment(&moment, commit.revision_id);
         if let Some(status) = &mut self.import {
             status.stage = ImportStage::Complete;
             status.asset = Some(asset);
@@ -133,16 +142,11 @@ impl Service {
         Ok(())
     }
 
-    fn complete_moment(
-        &mut self,
-        moment: &PendingMoment,
-        scope: SequenceScope,
-        revision: RevisionId,
-    ) {
+    fn complete_moment(&mut self, moment: &PendingMoment, revision: RevisionId) {
         self.complete_slice_placement(
-            &moment.request,
             moment.cursor,
-            scope,
+            moment.continuation_scope.clone(),
+            moment.continuation_node.clone(),
             revision,
             "Original moment",
         );
@@ -150,9 +154,9 @@ impl Service {
 
     pub(super) fn complete_slice_placement(
         &mut self,
-        request: &Request,
         cursor: ProjectFrame,
         scope: SequenceScope,
+        selected_node: NodeId,
         revision: RevisionId,
         label: &str,
     ) {
@@ -162,7 +166,7 @@ impl Service {
         self.committed = Some(CommittedEdit {
             scoped: None,
             revision,
-            selected_node: request.node().cloned(),
+            selected_node: Some(selected_node),
             preserve_cursor: false,
             cursor: Some(cursor),
             scope,

@@ -2,7 +2,7 @@
 
 use deadpan_core::{
     FrameDuration, MAX_DOCUMENT_DEPTH, MAX_DOCUMENT_NODES, NodeId, NodeKind, ProjectDocument,
-    ProjectFrame,
+    ProjectFrame, SemanticCaptureProvenance,
 };
 use deadpan_plan::RenderPlan;
 
@@ -25,6 +25,24 @@ pub struct SequenceScopeView<'a> {
 }
 
 impl SequenceScope {
+    /// The planner checked this path against its pre-edit staged document.
+    /// That staged revision may never be published, so runtime copy metadata
+    /// cannot recover the path from the current store snapshot.
+    pub(super) fn from_staged_capture(capture: &SemanticCaptureProvenance) -> Result<Self, String> {
+        if capture.scope.len() > MAX_DOCUMENT_DEPTH
+            || capture.scope.len() != capture.scope_labels.len()
+            || capture
+                .scope
+                .last()
+                .is_some_and(|last| last != &capture.parent)
+        {
+            return Err("Macro capture has an invalid staged Sequence path".into());
+        }
+        Ok(Self {
+            groups: capture.scope.clone(),
+        })
+    }
+
     /// Recover a historical ordinary Sequence path from its authored owner.
     /// Persisted labels and navigation paths never grant a scope.
     pub(super) fn from_historical_parent(

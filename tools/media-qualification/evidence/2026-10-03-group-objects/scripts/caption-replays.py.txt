@@ -1,0 +1,15 @@
+import os
+import subprocess
+import sys
+
+scratch = '/tmp/deadpan-group-objects-20261003'
+environment = dict(os.environ, DEADPAN_CHECK_OUTPUT=scratch + '/checks')
+for name, scenario in [('groups-visual-3', 'groups'), ('place-visual-2', 'place-slice')]:
+    command = [sys.executable, '/tmp/deadpan-original-layout-20261002/run-check.py', name,
+               scratch + '/deadpan-visual-caption', '--ui-check', '--scenario', scenario,
+               '--mode', 'visual', '--output', scratch + '/' + name,
+               '--kestrel-source', '/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift']
+    print('Starting ' + name, flush=True)
+    result = subprocess.run(command, env=environment)
+    if result.returncode:
+        sys.exit(result.returncode)

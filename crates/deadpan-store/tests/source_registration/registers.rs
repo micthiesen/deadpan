@@ -43,7 +43,7 @@ fn qualified_range_repeat_stages_exact_wrapper_capture_and_reopens_with_one_undo
             parent: before.root().clone(),
             cursor: ProjectFrame(1),
             selected_child: None,
-            visual_selection: Some(SemanticVisualSelection {
+            visual_selection: Some(SemanticVisualSelection::Time {
                 anchor: ProjectFrame(3),
                 head: ProjectFrame(1),
                 extending: true,
@@ -647,7 +647,7 @@ fn counted_semantic_original_paste_keeps_exact_mapping_through_undo_and_reopen()
             parent: before_replace.root().clone(),
             cursor: ProjectFrame(0),
             selected_child: None,
-            visual_selection: Some(deadpan_core::SemanticVisualSelection {
+            visual_selection: Some(deadpan_core::SemanticVisualSelection::Time {
                 anchor: ProjectFrame(2),
                 head: ProjectFrame(1),
                 extending: false,

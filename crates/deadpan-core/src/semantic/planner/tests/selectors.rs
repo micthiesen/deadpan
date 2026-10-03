@@ -108,7 +108,7 @@ fn motion_selectors_match_navigation_and_preserve_yank_context_in_nested_scopes(
     ] {
         let entry = SemanticContext {
             selected_child: selected.map(node),
-            visual_selection: Some(SemanticVisualSelection {
+            visual_selection: Some(SemanticVisualSelection::Time {
                 anchor: ProjectFrame(6),
                 head: ProjectFrame(cursor),
                 extending: true,
@@ -124,7 +124,10 @@ fn motion_selectors_match_navigation_and_preserve_yank_context_in_nested_scopes(
         .unwrap();
         assert_eq!(moved.context.cursor, ProjectFrame(destination));
         assert_eq!(
-            moved.context.visual_selection.as_ref().unwrap().head,
+            match moved.context.visual_selection.as_ref().unwrap() {
+                SemanticVisualSelection::Time { head, .. } => *head,
+                _ => panic!("expected Time Visual"),
+            },
             ProjectFrame(destination)
         );
         assert!(moved.request.is_none());
@@ -187,7 +190,7 @@ fn selected_child_cut_uses_exact_identity_and_zero_split_pool_even_for_empty_chi
     ] {
         let entry = SemanticContext {
             selected_child: Some(node(child)),
-            visual_selection: Some(SemanticVisualSelection {
+            visual_selection: Some(SemanticVisualSelection::Time {
                 anchor: ProjectFrame(1),
                 head: ProjectFrame(6),
                 extending: false,
@@ -296,7 +299,7 @@ fn empty_motion_and_absent_selectors_refuse_before_allocating_without_child_fall
         (
             3,
             Some("empty"),
-            Some(SemanticVisualSelection {
+            Some(SemanticVisualSelection::Time {
                 anchor: ProjectFrame(3),
                 head: ProjectFrame(3),
                 extending: false,
@@ -381,7 +384,7 @@ fn explicit_visual_yank_finishes_but_motion_yank_preserves_oriented_selection() 
     let document = fixture(10);
     let entry = SemanticContext {
         selected_child: Some(node("held")),
-        visual_selection: Some(SemanticVisualSelection {
+        visual_selection: Some(SemanticVisualSelection::Time {
             anchor: ProjectFrame(8),
             head: ProjectFrame(3),
             extending: true,
@@ -400,7 +403,11 @@ fn explicit_visual_yank_finishes_but_motion_yank_preserves_oriented_selection() 
     .unwrap();
     assert_eq!(planned.trace[0].after, entry);
     let mut finished = entry;
-    finished.visual_selection.as_mut().unwrap().extending = false;
+    let Some(SemanticVisualSelection::Time { extending, .. }) = &mut finished.visual_selection
+    else {
+        panic!("expected Time Visual")
+    };
+    *extending = false;
     assert_eq!(planned.context, finished);
     assert_eq!(copied(&planned, 'a').range(), range(3, 5));
     assert_eq!(copied(&planned, 'b').range(), range(3, 8));

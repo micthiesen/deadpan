@@ -1,0 +1,27 @@
+{
+  "binary_sha256": "6209f1dcc39dc0c3dd20a47c81d716938a24f5c0da2aa4a0666fea4fdf431c11",
+  "source_manifest_sha256": "8421eb07fe09c2d8c144b11873f32375f86bd6eb178694b578d6576e49963fa1",
+  "project": "/tmp/deadpan-group-objects-20261003/groups-visual-2/projects/groups/Documents/Deadpan/cfr-bframes.deadpan",
+  "input": "CUA native keyboard events with accessibility observations after each edit",
+  "observations": [
+    "Created Native object from the complete 120-frame Original through native command entry.",
+    "Copied group contents with named register a and yig; entering the group preserved the saved copy.",
+    "vag displayed Whole group [0..120), Object key hints and both Replace object controls in an inspected native 2x screenshot.",
+    "v then h retained the exact Object selection while moving the cursor to 119.",
+    "Place r showed exact source endpoints and an unsaved replacement; Escape restored the finished Object, group scope and cursor 119.",
+    "Fast p replaced the whole group and continued at root Edit 0 with 120 frames; one Undo restored Native object.",
+    "dig from inside retained an empty Native object and zero-frame scope; vig retained explicit empty contents; p inserted the copied 120 frames into that group.",
+    "One Undo restored empty contents; another restored the cut source in its original group.",
+    "Native vag, :splice, r and Return committed the prepared replacement in the outer scope; one Undo restored the group.",
+    "Cmd-Q exited with code 0. A targeted process lookup found no remaining native QA process.",
+    "Closed-project validation passed; exact Children capture in register a matches the restored named group and child identities."
+  ],
+  "project_revision": "bebbc828-b27c-4573-a88d-3d8392e58667",
+  "register_bank_version": 14,
+  "closed_project_verified": true,
+  "qa_app_exited": true,
+  "limits": [
+    "The initial Place destination caption still described the entry cursor; final caption correction is qualified separately by rendered checks.",
+    "Not physical keyboard, OS IME, VoiceOver, acoustic delivery, or response-time qualification. Native QA overlapped compiler work."
+  ]
+}

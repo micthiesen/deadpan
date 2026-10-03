@@ -7,6 +7,8 @@ use super::*;
 mod move_range;
 #[path = "edited_slice/placement.rs"]
 mod placement;
+#[path = "edited_slice/replacement_children.rs"]
+mod replacement_children;
 
 fn boundary(frame: i64) -> i64 {
     ntsc().audio_boundary(ProjectFrame(frame)).unwrap().0

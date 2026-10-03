@@ -163,6 +163,15 @@ define_commands! {
         split_identities: crate::SplitIdentities,
         timing: crate::AudioTimingId,
     },
+    /// Replace an inclusive direct-child span, including empty endpoint owners.
+    ReplaceSliceChildren {
+        parent: NodeId,
+        first: NodeId,
+        last: NodeId,
+        slice: crate::CapturedEditSlice,
+        identities: crate::SlicePasteIdentities,
+        timing: crate::AudioTimingId,
+    },
     /// Insert one Source strictly inside an explicitly named direct Sequence
     /// child, retaining both split contexts in one atomic edit.
     SpliceSourceAt {
@@ -184,6 +193,16 @@ define_commands! {
         id: NodeId,
         label: String,
         identities: crate::SplitIdentities,
+        timing: crate::AudioTimingId,
+    },
+    /// Replace an inclusive direct-child span with one linked Source.
+    ReplaceSourceChildren {
+        parent: NodeId,
+        first: NodeId,
+        last: NodeId,
+        source: SourceNode,
+        id: NodeId,
+        label: String,
         timing: crate::AudioTimingId,
     },
     /// Split an interior local output boundary without changing rendered time.
@@ -751,7 +770,8 @@ pub fn apply(
         )?,
         Command::SpliceSlice { .. }
         | Command::SpliceSliceAt { .. }
-        | Command::ReplaceSlice { .. } => {
+        | Command::ReplaceSlice { .. }
+        | Command::ReplaceSliceChildren { .. } => {
             crate::edit_slice::apply(input, &request.command, context)?
         }
         Command::MoveRange { .. } => crate::move_range::apply(input, &request.command, context)?,
@@ -828,6 +848,32 @@ pub fn apply(
                 identities,
                 timing,
             },
+            context,
+        )?,
+        Command::ReplaceSourceChildren {
+            parent,
+            first,
+            last,
+            source,
+            id,
+            label,
+            timing,
+        } => crate::insert_time::replace_source_children(
+            input,
+            parent,
+            (first, last),
+            BeatNode {
+                audio_treatments: Default::default(),
+                label: label.clone(),
+                framing: None,
+                audio_editorial_edges: Default::default(),
+                audio_edges: Default::default(),
+                kind: NodeKind::Source {
+                    source: source.clone(),
+                },
+            },
+            id,
+            timing,
             context,
         )?,
         Command::DeleteRipple { node, timing } => {
@@ -1143,7 +1189,9 @@ pub(crate) fn reduce(
         | Command::SpliceSlice { .. }
         | Command::SpliceSliceAt { .. }
         | Command::ReplaceSlice { .. }
+        | Command::ReplaceSliceChildren { .. }
         | Command::ReplaceSource { .. }
+        | Command::ReplaceSourceChildren { .. }
         | Command::DeleteRipple { .. }
         | Command::DeleteChildren { .. }
         | Command::DeleteRange { .. }
@@ -2220,8 +2268,10 @@ fn description(command: &Command) -> &'static str {
         Command::SpliceSlice { .. } => "Paste edited slice",
         Command::SpliceSliceAt { .. } => "Paste edited slice inside beat",
         Command::ReplaceSlice { .. } => "Replace with edited slice",
+        Command::ReplaceSliceChildren { .. } => "Replace selected children with edited slice",
         Command::SpliceSourceAt { .. } => "Splice source moment inside beat",
         Command::ReplaceSource { .. } => "Replace selection with source moment",
+        Command::ReplaceSourceChildren { .. } => "Replace selected children with source moment",
         Command::Split { .. } => "Split beat",
         Command::Insert { .. } => "Insert beats",
         Command::Delete { .. } => "Delete beat",

@@ -64,8 +64,9 @@ impl LastEdit {
         matches!(self.operation, RepeatableEdit::Cut(_))
     }
 
-    /// Predict intent only. Core resolves and validates the new target, including
-    /// refusing explicit empty Visual selections without falling back to a beat.
+    /// Predict intent only. A saved text-object selector stays unresolved until
+    /// core sees the current group; an active Object Visual overrides it through
+    /// the same typed Visual selector without becoming a time range.
     pub fn instruction(
         &self,
         context: &SemanticContext,

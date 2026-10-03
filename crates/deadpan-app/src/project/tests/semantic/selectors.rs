@@ -1,8 +1,8 @@
 use super::*;
 use crate::project::macros::{Id, Operation as MacroOperation};
 use deadpan_core::{
-    RegisterName, SemanticContext, SemanticInstruction, SemanticMotion, SemanticProgram,
-    SemanticSelector, SemanticVisualSelection,
+    RegisterName, SemanticContext, SemanticInstruction, SemanticMotion, SemanticObjectSelection,
+    SemanticProgram, SemanticSelector, SemanticTextObject, SemanticVisualSelection,
 };
 use std::num::NonZeroU32;
 
@@ -144,17 +144,17 @@ fn visual_presence_overrides_every_saved_kind_without_erasing_empty_or_absent_di
             operation.instruction(RegisterName::unnamed())
         );
         for selection in [
-            SemanticVisualSelection {
+            SemanticVisualSelection::Time {
                 anchor: ProjectFrame(12),
                 head: ProjectFrame(9),
                 extending: true,
             },
-            SemanticVisualSelection {
+            SemanticVisualSelection::Time {
                 anchor: ProjectFrame(2),
                 head: ProjectFrame(6),
                 extending: false,
             },
-            SemanticVisualSelection {
+            SemanticVisualSelection::Time {
                 anchor: ProjectFrame(9),
                 head: ProjectFrame(9),
                 extending: true,
@@ -501,7 +501,7 @@ fn successful_visual_override_becomes_intent_and_missing_or_empty_visual_never_f
         ),
     );
     let mut visual = context(&first, 17, Some("c"));
-    visual.visual_selection = Some(SemanticVisualSelection {
+    visual.visual_selection = Some(SemanticVisualSelection::Time {
         anchor: ProjectFrame(7),
         head: ProjectFrame(4),
         extending: false,
@@ -537,7 +537,7 @@ fn successful_visual_override_becomes_intent_and_missing_or_empty_visual_never_f
         &second,
     );
     let mut empty = context(&second, 4, Some("c"));
-    empty.visual_selection = Some(SemanticVisualSelection {
+    empty.visual_selection = Some(SemanticVisualSelection::Time {
         anchor: ProjectFrame(4),
         head: ProjectFrame(4),
         extending: true,
@@ -706,4 +706,61 @@ fn typed_cut_refresh_failure_keeps_proof_and_exact_retry_does_not_reprove_after_
     };
     *repeat_version = Some(snapshot(&changed_candidate).version);
     refused(&harness.service, &path, changed, &changed_candidate);
+}
+
+#[test]
+fn dot_keeps_group_object_intent_and_current_object_visual_override() {
+    let selector = SemanticSelector::TextObject {
+        object: SemanticTextObject::AroundGroup,
+    };
+    let edit = LastEdit::from_instruction(&SemanticInstruction::Group {
+        selector,
+        label: "Around".into(),
+    })
+    .unwrap();
+    let mut context = SemanticContext {
+        parent: node("root"),
+        cursor: ProjectFrame(8),
+        selected_child: Some(node("next-group")),
+        visual_selection: None,
+    };
+    assert_eq!(
+        edit.instruction(&context, RegisterName::unnamed()),
+        SemanticInstruction::Group {
+            selector,
+            label: "Around".into(),
+        }
+    );
+    context.visual_selection = Some(SemanticVisualSelection::Object {
+        selection: SemanticObjectSelection {
+            kind: SemanticTextObject::InnerGroup,
+            group: node("visual-group"),
+        },
+        extending: false,
+    });
+    assert_eq!(
+        edit.instruction(&context, RegisterName::unnamed()),
+        SemanticInstruction::Group {
+            selector: SemanticSelector::VisualSelection,
+            label: "Around".into(),
+        }
+    );
+    assert_eq!(
+        LastEdit::from_instruction(&SemanticInstruction::Cut {
+            selector,
+            register: RegisterName::new('a').unwrap(),
+        })
+        .unwrap()
+        .instruction(
+            &SemanticContext {
+                visual_selection: None,
+                ..context
+            },
+            RegisterName::new('z').unwrap()
+        ),
+        SemanticInstruction::Cut {
+            selector,
+            register: RegisterName::new('z').unwrap(),
+        }
+    );
 }

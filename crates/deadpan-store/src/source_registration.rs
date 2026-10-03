@@ -145,6 +145,23 @@ pub struct SourceMomentReplacementRequest {
     pub ordinals: Range<u64>,
 }
 
+/// Replace an inclusive exact sibling forest with one freshly admitted
+/// Original moment. Empty endpoint children remain selected owners.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SourceMomentChildrenReplacementRequest {
+    pub expected_revision: RevisionId,
+    pub new_revision: RevisionId,
+    pub asset: AssetId,
+    pub parent: NodeId,
+    pub first: NodeId,
+    pub last: NodeId,
+    pub node: NodeId,
+    pub label: String,
+    pub timing: AudioTimingId,
+    pub ordinals: Range<u64>,
+}
+
 #[derive(Debug, Serialize)]
 pub struct SourceRegistrationPreview {
     pub asset_id: AssetId,
@@ -366,6 +383,42 @@ impl ProjectStore {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let plan = prepare_source_replacement(&transaction, input, source)?;
+        let outcome = crate::write_command_plan(&transaction, plan, relevance)?;
+        source.original.recheck(cancelled)?;
+        transaction.commit()?;
+        Ok(outcome)
+    }
+
+    /// Preview one exact child-forest replacement against the live prepared
+    /// Original and current revision, without publishing a history entry.
+    pub fn preview_prepared_source_children_replacement(
+        &self,
+        input: &SourceMomentChildrenReplacementRequest,
+        source: &PreparedSourceRegistration,
+        cancelled: &AtomicBool,
+    ) -> Result<EditTransaction, StoreError> {
+        source.original.validate_for(self, cancelled)?;
+        let transaction = self.connection.unchecked_transaction()?;
+        let plan = prepare_source_children_replacement(&transaction, input, source)?;
+        source.original.recheck(cancelled)?;
+        Ok(plan.edit)
+    }
+
+    /// Commit the captured exact sibling removal and qualified moment as one
+    /// reversible command with one source admission and root sound transform.
+    pub fn commit_prepared_source_children_replacement(
+        &mut self,
+        input: &SourceMomentChildrenReplacementRequest,
+        source: &PreparedSourceRegistration,
+        relevance: Option<&RelevancePlan>,
+        cancelled: &AtomicBool,
+    ) -> Result<CommitOutcome, StoreError> {
+        self.require_writer()?;
+        source.original.validate_for(self, cancelled)?;
+        let transaction = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let plan = prepare_source_children_replacement(&transaction, input, source)?;
         let outcome = crate::write_command_plan(&transaction, plan, relevance)?;
         source.original.recheck(cancelled)?;
         transaction.commit()?;
@@ -651,6 +704,37 @@ fn prepare_source_replacement(
                 id: input.node.clone(),
                 label: input.label.clone(),
                 identities: input.identities.clone(),
+                timing: input.timing.clone(),
+            },
+        },
+    )
+}
+
+fn prepare_source_children_replacement(
+    connection: &Connection,
+    input: &SourceMomentChildrenReplacementRequest,
+    source: &PreparedSourceRegistration,
+) -> Result<CommandPlan, StoreError> {
+    let (current, moment) = prepared_moment_source(
+        connection,
+        &input.expected_revision,
+        &input.asset,
+        &input.ordinals,
+        source,
+    )?;
+    crate::prepare_command(
+        connection,
+        &CommandRequest {
+            project_id: current.project_id().clone(),
+            expected_revision: input.expected_revision.clone(),
+            new_revision: input.new_revision.clone(),
+            command: Command::ReplaceSourceChildren {
+                parent: input.parent.clone(),
+                first: input.first.clone(),
+                last: input.last.clone(),
+                source: moment,
+                id: input.node.clone(),
+                label: input.label.clone(),
                 timing: input.timing.clone(),
             },
         },

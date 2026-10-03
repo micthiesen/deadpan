@@ -1,6 +1,6 @@
 //! An Edit selection owns one exact revision and ordinary Sequence scope.
 
-use deadpan_core::{FrameRange, ProjectId, SemanticVisualSelection};
+use deadpan_core::{FrameRange, ProjectId, SemanticObjectSelection, SemanticVisualSelection};
 
 use super::*;
 
@@ -16,23 +16,50 @@ pub(super) struct Identity {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub(super) struct Selection {
     identity: Option<Identity>,
-    bounds: Option<(u64, u64)>,
+    kind: Option<SelectionKind>,
     pub active: bool,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum SelectionKind {
+    Time {
+        anchor: u64,
+        head: u64,
+    },
+    // Geometry is checked against the immutable workspace on capture/restore.
+    // Authored operations use the object identity, never this display range.
+    Object {
+        selection: SemanticObjectSelection,
+        range: FrameRange,
+    },
+}
+
 impl Selection {
+    pub(super) fn object(&self) -> Option<&SemanticObjectSelection> {
+        match &self.kind {
+            Some(SelectionKind::Object { selection, .. }) => Some(selection),
+            _ => None,
+        }
+    }
     pub(super) fn has_bounds(&self) -> bool {
-        self.bounds.is_some()
+        self.kind.is_some()
     }
 
     pub(super) fn semantic(&self) -> Result<Option<SemanticVisualSelection>, String> {
-        self.bounds
-            .map(|(anchor, head)| {
-                Ok(SemanticVisualSelection {
-                    anchor: ProjectFrame(i64::try_from(anchor).map_err(|error| error.to_string())?),
-                    head: ProjectFrame(i64::try_from(head).map_err(|error| error.to_string())?),
+        self.kind
+            .as_ref()
+            .map(|kind| match kind {
+                SelectionKind::Time { anchor, head } => Ok(SemanticVisualSelection::Time {
+                    anchor: ProjectFrame(
+                        i64::try_from(*anchor).map_err(|error| error.to_string())?,
+                    ),
+                    head: ProjectFrame(i64::try_from(*head).map_err(|error| error.to_string())?),
                     extending: self.active,
-                })
+                }),
+                SelectionKind::Object { selection, .. } => Ok(SemanticVisualSelection::Object {
+                    selection: selection.clone(),
+                    extending: self.active,
+                }),
             })
             .transpose()
     }
@@ -42,21 +69,43 @@ impl Selection {
         selection: Option<SemanticVisualSelection>,
         start: u64,
         end: u64,
+        object_range: Option<FrameRange>,
     ) -> Result<(), String> {
-        let bounds = selection
+        let restored = selection
             .as_ref()
-            .map(|selection| {
-                let anchor =
-                    u64::try_from(selection.anchor.0).map_err(|error| error.to_string())?;
-                let head = u64::try_from(selection.head.0).map_err(|error| error.to_string())?;
-                if !(start..=end).contains(&anchor) || !(start..=end).contains(&head) {
-                    return Err("The macro Visual selection is outside this group.".to_owned());
+            .map(|selection| match selection {
+                SemanticVisualSelection::Time {
+                    anchor,
+                    head,
+                    extending,
+                } => {
+                    let anchor = u64::try_from(anchor.0).map_err(|error| error.to_string())?;
+                    let head = u64::try_from(head.0).map_err(|error| error.to_string())?;
+                    if !(start..=end).contains(&anchor) || !(start..=end).contains(&head) {
+                        return Err("The macro Visual selection is outside this group.".to_owned());
+                    }
+                    Ok((SelectionKind::Time { anchor, head }, *extending))
                 }
-                Ok((anchor, head))
+                SemanticVisualSelection::Object {
+                    selection,
+                    extending,
+                } => {
+                    let range = object_range.ok_or("The selected group is no longer available.")?;
+                    if range.start().0 < start as i64 || range.end().0 > end as i64 {
+                        return Err("The selected object is outside this group.".into());
+                    }
+                    Ok((
+                        SelectionKind::Object {
+                            selection: selection.clone(),
+                            range,
+                        },
+                        *extending,
+                    ))
+                }
             })
             .transpose()?;
-        self.bounds = bounds;
-        self.active = selection.is_some_and(|selection| selection.extending);
+        self.active = restored.as_ref().is_some_and(|(_, active)| *active);
+        self.kind = restored.map(|(kind, _)| kind);
         Ok(())
     }
 
@@ -82,21 +131,35 @@ impl Selection {
         if self.active {
             self.active = false;
         } else {
-            self.bounds = Some((at, at));
+            self.kind = Some(SelectionKind::Time {
+                anchor: at,
+                head: at,
+            });
             self.active = true;
         }
     }
 
     pub fn move_to(&mut self, at: u64) {
-        if self.active
-            && let Some((_, head)) = &mut self.bounds
-        {
-            *head = at;
+        if self.active {
+            match &mut self.kind {
+                Some(SelectionKind::Time { head, .. }) => *head = at,
+                Some(SelectionKind::Object { range, .. }) => {
+                    self.kind = Some(SelectionKind::Time {
+                        anchor: range.start().0 as u64,
+                        head: at,
+                    });
+                }
+                None => {}
+            }
         }
     }
 
     fn range(&self) -> Option<FrameRange> {
-        let (anchor, head) = self.bounds?;
+        let (anchor, head) = match &self.kind {
+            Some(SelectionKind::Time { anchor, head }) => (*anchor, *head),
+            Some(SelectionKind::Object { range, .. }) => return Some(*range),
+            None => return None,
+        };
         if anchor == head {
             return None;
         }
@@ -109,7 +172,7 @@ impl Selection {
 
     pub fn clear(&mut self) {
         self.active = false;
-        self.bounds = None;
+        self.kind = None;
     }
 }
 
@@ -121,14 +184,30 @@ impl DeadpanApp {
             return Err("The Edit selection belongs to an earlier editing context.".into());
         }
         let selection = self.edit_range.semantic()?;
-        if selection.as_ref().is_some_and(|selection| {
-            selection.extending
-                && u64::try_from(selection.head.0).ok() != Some(self.sequence_cursor)
-        }) {
+        let object_range = self.object_range(selection.as_ref())?;
+        let extending_head = match &selection {
+            Some(SemanticVisualSelection::Time {
+                head,
+                extending: true,
+                ..
+            }) => Some(*head),
+            Some(SemanticVisualSelection::Object {
+                extending: true, ..
+            }) => object_range.map(|range| range.end()),
+            _ => None,
+        };
+        if extending_head
+            .is_some_and(|head| u64::try_from(head.0).ok() != Some(self.sequence_cursor))
+        {
             return Err("The extending Edit selection no longer ends at the cursor.".into());
         }
         let mut checked = Selection::default();
-        checked.restore_semantic(selection.clone(), self.scope_start, self.scope_end)?;
+        checked.restore_semantic(
+            selection.clone(),
+            self.scope_start,
+            self.scope_end,
+            object_range,
+        )?;
         Ok(selection)
     }
 
@@ -139,8 +218,14 @@ impl DeadpanApp {
         let identity = self
             .edit_range_identity()
             .ok_or("The macro edit is no longer visible.")?;
+        let workspace = self
+            .workspace
+            .as_ref()
+            .ok_or("The edit is no longer visible.")?;
+        let scope = self.sequence_scope.resolve(workspace)?;
         let mut restored = Selection::default();
-        restored.restore_semantic(selection, self.scope_start, self.scope_end)?;
+        let object_range = self.object_range(selection.as_ref())?;
+        restored.restore_semantic(selection, scope.start, scope.end, object_range)?;
         restored.identity = Some(identity);
         self.edit_range = restored;
         Ok(())
@@ -163,7 +248,10 @@ impl DeadpanApp {
             return;
         }
         self.edit_range.reconcile(Some(identity));
-        self.edit_range.bounds = Some((range.range.start().0 as u64, range.range.end().0 as u64));
+        self.edit_range.kind = Some(SelectionKind::Time {
+            anchor: range.range.start().0 as u64,
+            head: range.range.end().0 as u64,
+        });
         self.edit_range.active = false;
     }
 
@@ -193,11 +281,67 @@ impl DeadpanApp {
         self.edit_range.range()
     }
 
+    fn object_range(
+        &self,
+        selection: Option<&SemanticVisualSelection>,
+    ) -> Result<Option<FrameRange>, String> {
+        let Some(SemanticVisualSelection::Object { selection, .. }) = selection else {
+            return Ok(None);
+        };
+        let workspace = self
+            .workspace
+            .as_ref()
+            .ok_or("The selected group is no longer visible.")?;
+        let parent = self.sequence_scope.resolve(workspace)?.owner;
+        workspace
+            .document
+            .resolve_object_selection(parent, selection)
+            .map(|target| Some(target.range))
+            .map_err(|error| error.to_string())
+    }
+
+    pub(super) fn select_group_object(&mut self, object: deadpan_core::SemanticTextObject) {
+        if !self.macro_action_allowed(Action::SelectObject(object)) {
+            return;
+        }
+        self.bindings.clear();
+        let result = self
+            .capture_macro_target()
+            .and_then(|capture| capture.select_object(object));
+        match result {
+            Ok(context) => {
+                self.pause_playback();
+                let prior = self.sequence_cursor;
+                self.sequence_cursor = context.cursor.0 as u64;
+                if let Err(error) = self.restore_macro_visual_selection(context.visual_selection) {
+                    self.sequence_cursor = prior;
+                    self.error = Some(error);
+                    return;
+                }
+                self.record_macro_local(deadpan_core::SemanticInstruction::SelectObject { object });
+                self.error = None;
+                self.message = Some(format!(
+                    "Group object selected. {} copies; {} cuts; {} repeats; {} replaces. Motion changes this into a time range; {} retains the object.",
+                    self.editor_key(EditorKey::Copy),
+                    self.editor_key(EditorKey::CutRange),
+                    self.editor_key(EditorKey::Repeat),
+                    self.editor_pair(EditorKey::PasteAfter, EditorKey::PasteBefore, "/"),
+                    self.editor_key(EditorKey::Visual)
+                ));
+                if prior != self.sequence_cursor {
+                    self.request_picture(false);
+                }
+            }
+            Err(error) => self.error = Some(error),
+        }
+    }
+
     pub(super) fn edit_selection(&self) -> navigation::EditSelection {
-        if self.edit_range.identity != self.edit_range_identity()
-            || self.edit_range.bounds.is_none()
+        if self.edit_range.identity != self.edit_range_identity() || self.edit_range.kind.is_none()
         {
             navigation::EditSelection::None
+        } else if matches!(self.edit_range.kind, Some(SelectionKind::Object { .. })) {
+            navigation::EditSelection::Object
         } else if self.edit_range.range().is_some() {
             navigation::EditSelection::Range
         } else {
@@ -260,6 +404,13 @@ impl DeadpanApp {
                 self.editor_key(EditorKey::Visual),
                 self.editor_key(EditorKey::Escape)
             )
+        } else if self.edit_selection() == navigation::EditSelection::Object {
+            format!(
+                "Group object retained. {} copies; {} cuts; :splice previews replacement; {} replaces now.",
+                self.editor_key(EditorKey::Copy),
+                self.editor_key(EditorKey::CutRange),
+                self.editor_pair(EditorKey::PasteAfter, EditorKey::PasteBefore, "/")
+            )
         } else if self.selected_edit_range().is_some() {
             format!(
                 "Edit range retained. {} copies; {} cuts; :splice previews replacement; {} replaces now.",
@@ -276,6 +427,33 @@ impl DeadpanApp {
     }
 
     pub(super) fn edit_range_label(&self) -> Option<String> {
+        if self.edit_selection() == navigation::EditSelection::Object
+            && let Some(SelectionKind::Object { selection, range }) = &self.edit_range.kind
+        {
+            let label = self
+                .workspace
+                .as_ref()?
+                .document
+                .nodes()
+                .get(&selection.group)?
+                .label
+                .as_str();
+            let kind = match selection.kind {
+                deadpan_core::SemanticTextObject::InnerGroup => "Group contents",
+                deadpan_core::SemanticTextObject::AroundGroup => "Whole group",
+            };
+            return Some(format!(
+                "{kind}: {label} · [{}..{}) · {} f · {}",
+                range.start().0,
+                range.end().0,
+                range.duration().frames(),
+                if self.edit_range.active {
+                    "object selected · motion selects time"
+                } else {
+                    "object retained"
+                }
+            ));
+        }
         if self.edit_selection() == navigation::EditSelection::Empty {
             return Some(format!(
                 "Edit range empty · move to select time · {} clears",
@@ -332,37 +510,42 @@ mod tests {
     fn semantic_selection_round_trip_preserves_absence_empty_direction_and_extension() {
         for selection in [
             None,
-            Some(SemanticVisualSelection {
+            Some(SemanticVisualSelection::Time {
                 anchor: ProjectFrame(10),
                 head: ProjectFrame(10),
                 extending: true,
             }),
-            Some(SemanticVisualSelection {
+            Some(SemanticVisualSelection::Time {
                 anchor: ProjectFrame(10),
                 head: ProjectFrame(10),
                 extending: false,
             }),
-            Some(SemanticVisualSelection {
+            Some(SemanticVisualSelection::Time {
                 anchor: ProjectFrame(40),
                 head: ProjectFrame(10),
                 extending: true,
             }),
-            Some(SemanticVisualSelection {
+            Some(SemanticVisualSelection::Time {
                 anchor: ProjectFrame(40),
                 head: ProjectFrame(10),
                 extending: false,
             }),
         ] {
             let mut native = Selection::default();
-            native.restore_semantic(selection.clone(), 10, 40).unwrap();
+            native
+                .restore_semantic(selection.clone(), 10, 40, None)
+                .unwrap();
             assert_eq!(native.semantic().unwrap(), selection);
             assert_eq!(native.has_bounds(), selection.is_some());
             native.move_to(20);
             let mut expected = selection;
-            if let Some(selection) = &mut expected
-                && selection.extending
+            if let Some(SemanticVisualSelection::Time {
+                head,
+                extending: true,
+                ..
+            }) = &mut expected
             {
-                selection.head = ProjectFrame(20);
+                *head = ProjectFrame(20);
             }
             assert_eq!(native.semantic().unwrap(), expected);
         }
@@ -379,13 +562,14 @@ mod tests {
             assert!(
                 native
                     .restore_semantic(
-                        Some(SemanticVisualSelection {
+                        Some(SemanticVisualSelection::Time {
                             anchor: ProjectFrame(anchor),
                             head: ProjectFrame(head),
                             extending: true,
                         }),
                         10,
-                        40
+                        40,
+                        None
                     )
                     .is_err()
             );
@@ -425,6 +609,76 @@ mod tests {
             selection.reconcile(Some(changed));
             assert_eq!(selection.range(), None);
             assert!(!selection.active);
+        }
+    }
+
+    #[test]
+    fn object_identity_survives_finish_and_only_active_motion_becomes_time() {
+        for (start, end) in [(10, 10), (10, 40)] {
+            let object = SemanticObjectSelection {
+                kind: deadpan_core::SemanticTextObject::InnerGroup,
+                group: NodeId::new("group").unwrap(),
+            };
+            let range = FrameRange::new(ProjectFrame(start), ProjectFrame(end)).unwrap();
+            let mut selected = Selection::default();
+            selected
+                .restore_semantic(
+                    Some(SemanticVisualSelection::Object {
+                        selection: object.clone(),
+                        extending: true,
+                    }),
+                    0,
+                    50,
+                    Some(range),
+                )
+                .unwrap();
+            assert_eq!(selected.range(), Some(range));
+            let mut extending = selected.clone();
+            selected.toggle(end as u64);
+            selected.move_to(49);
+            assert_eq!(
+                selected.semantic().unwrap(),
+                Some(SemanticVisualSelection::Object {
+                    selection: object,
+                    extending: false,
+                })
+            );
+            extending.move_to(5);
+            assert_eq!(
+                extending.semantic().unwrap(),
+                Some(SemanticVisualSelection::Time {
+                    anchor: ProjectFrame(start),
+                    head: ProjectFrame(5),
+                    extending: true,
+                })
+            );
+        }
+    }
+
+    #[test]
+    fn object_restore_requires_checked_geometry_and_preserves_selection_on_error() {
+        let object = Some(SemanticVisualSelection::Object {
+            selection: SemanticObjectSelection {
+                kind: deadpan_core::SemanticTextObject::AroundGroup,
+                group: NodeId::new("group").unwrap(),
+            },
+            extending: true,
+        });
+        let mut selected = Selection::default();
+        selected.toggle(12);
+        selected.move_to(18);
+        let retained = selected.clone();
+        for range in [
+            None,
+            Some(FrameRange::new(ProjectFrame(9), ProjectFrame(20)).unwrap()),
+            Some(FrameRange::new(ProjectFrame(12), ProjectFrame(21)).unwrap()),
+        ] {
+            assert!(
+                selected
+                    .restore_semantic(object.clone(), 10, 20, range)
+                    .is_err()
+            );
+            assert_eq!(selected, retained);
         }
     }
 }

@@ -1,0 +1,14 @@
+import os
+import subprocess
+import sys
+
+environment = dict(os.environ, DEADPAN_CHECK_OUTPUT='/tmp/deadpan-group-objects-20261003/checks')
+recorder = '/tmp/deadpan-original-layout-20261002/run-check.py'
+for name, command in [
+    ('clippy-workspace-5', ['cargo', 'clippy', '--locked', '--workspace', '--all-targets', '--', '-D', 'warnings']),
+    ('clippy-ui-5', ['cargo', 'clippy', '--locked', '-p', 'deadpan-app', '--all-targets', '--features', 'ui-harness', '--', '-D', 'warnings']),
+]:
+    print('Starting ' + name, flush=True)
+    result = subprocess.run([sys.executable, recorder, name, *command], env=environment)
+    if result.returncode:
+        sys.exit(result.returncode)

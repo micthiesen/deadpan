@@ -1,8 +1,10 @@
 //! Reusable editing intent, resolved against the host's current selection.
 
+mod object;
 mod planner;
 mod program;
 
+pub use object::*;
 pub use planner::*;
 pub use program::*;
 

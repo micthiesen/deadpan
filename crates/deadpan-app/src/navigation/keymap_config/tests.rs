@@ -489,12 +489,12 @@ fn parse_errors_and_resource_limits_remain_bounded() {
 
 #[test]
 fn custom_last_alias_inherits_primary_semantic_interrupt_policy() {
-    let mut map = configured(serde_json::json!([{"action":"last","keys":[["a"]]}]));
+    let mut map = configured(serde_json::json!([{"action":"last","keys":[["e"]]}]));
     for _ in 0..11 {
         press(&mut map, Key::Num9);
     }
     press(&mut map, Key::Comma);
-    assert_eq!(press(&mut map, Key::A), Some(Action::Last));
+    assert_eq!(press(&mut map, Key::E), Some(Action::Last));
     assert!(map.pending().is_empty());
 }
 

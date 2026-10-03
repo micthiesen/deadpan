@@ -1591,6 +1591,7 @@ impl DeadpanApp {
                 | Action::Framing(_)
                 | Action::LeaveGroup
                 | Action::VisualMoment
+                | Action::SelectObject(_)
                 | Action::DeleteSelection
                 | Action::DeleteFrames(_)
                 | Action::Operator { .. }
@@ -1688,6 +1689,7 @@ impl DeadpanApp {
                 }
             }
             Action::CopyMoment => self.copy_slice(),
+            Action::SelectObject(object) => self.select_group_object(object),
             Action::Operator { cut, selector } => self.operator_action(cut, selector),
             Action::Repeat { selector, plays } => self.repeat_action(selector, plays),
             Action::SelectRegister(name) => self.select_register(name),
@@ -2883,8 +2885,8 @@ impl DeadpanApp {
                     } else if self.view == View::Sequence {
                         self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " ", "frame");
                         self.add_editor_pair_hint(&mut hints, EditorKey::BeatNext, EditorKey::BeatPrevious, " ", "beat");
-                        self.add_editor_hint(&mut hints, EditorKey::Visual, if self.edit_range.active { "finish range" } else { "select range" });
-                        self.add_editor_hint(&mut hints, EditorKey::Copy, if self.copied.is_pending() { "copy pending…" } else if self.edit_selection() == navigation::EditSelection::None { "copy beat" } else { "copy range" });
+                        self.add_editor_hint(&mut hints, EditorKey::Visual, if self.edit_selection() == navigation::EditSelection::Object { if self.edit_range.active { "retain object" } else { "select time" } } else if self.edit_range.active { "finish range" } else { "select range" });
+                        self.add_editor_hint(&mut hints, EditorKey::Copy, if self.copied.is_pending() { "copy pending…" } else if self.edit_selection() == navigation::EditSelection::None { "copy beat" } else if self.edit_selection() == navigation::EditSelection::Object { "copy object" } else { "copy range" });
                         self.add_editor_hint(&mut hints, EditorKey::RegisterSelect, "register");
                         if self.selected_group() { self.add_editor_hint(&mut hints, EditorKey::EnterGroup, "open group"); }
                         if !self.sequence_scope.groups().is_empty() { self.add_editor_hint(&mut hints, EditorKey::LeaveGroup, "parent"); }
@@ -2893,8 +2895,9 @@ impl DeadpanApp {
                         self.add_editor_hint(&mut hints, EditorKey::Hold, "pause");
                         self.add_editor_hint(&mut hints, EditorKey::Camera, "camera");
                         self.add_editor_hint(&mut hints, EditorKey::Trim, "Trim beat");
-                        self.add_editor_hint(&mut hints, EditorKey::Repeat, if self.edit_selection() == navigation::EditSelection::None { "repeat beat" } else { "repeat range" });
+                        self.add_editor_hint(&mut hints, EditorKey::Repeat, if self.edit_selection() == navigation::EditSelection::None { "repeat beat" } else if self.edit_selection() == navigation::EditSelection::Object { "repeat object" } else { "repeat range" });
                         match self.edit_selection() {
+                            navigation::EditSelection::Object => self.add_editor_hint(&mut hints, EditorKey::CutRange, "cut object"),
                             navigation::EditSelection::Range => self.add_editor_hint(&mut hints, EditorKey::CutRange, "cut range"),
                             navigation::EditSelection::Empty => self.add_editor_hint(&mut hints, EditorKey::CutRange, "empty range"),
                             navigation::EditSelection::None => {
@@ -2906,9 +2909,13 @@ impl DeadpanApp {
                                 self.add_editor_hint(&mut hints, EditorKey::CutBeat, "cut beat");
                             }
                         };
+                        if self.edit_selection() != navigation::EditSelection::None {
+                            self.add_editor_hint(&mut hints, EditorKey::InnerGroup, "group contents");
+                            self.add_editor_hint(&mut hints, EditorKey::AroundGroup, "whole group");
+                        }
                         if self.pane != Pane::Sources && let Some(label) = self.repeat_hint() { self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label); }
                         self.add_editor_hint(&mut hints, EditorKey::Group, "name group");
-                        if self.copied.selected_content().is_some() { self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", if self.selected_edit_range().is_some() { "replace range" } else { "paste after / before" }); }
+                        if self.copied.selected_content().is_some() { self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", if self.edit_selection() == navigation::EditSelection::Object { "replace object" } else if self.selected_edit_range().is_some() { "replace range" } else { "paste after / before" }); }
                         self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
                     } else {
                         self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " ", "frame");
@@ -3845,6 +3852,7 @@ impl DeadpanApp {
                         (format!("{} · motions · {}", key(EditorKey::Visual), key(EditorKey::CutRange)), "Cut the nonempty active or finished Edit range and close its time in one undo. Linked picture and sound stay together. Source/Hold/fragment endpoints and whole intervening beats work in an ordinary Sequence. Enter a group to cut inside it. Empty selections never cut a beat.".to_owned()),
                         (format!("{} / :delete", key(EditorKey::CutBeat)), format!("Without a Visual selection, {} cuts one whole beat, including an empty group. :delete captures the exact range or beat when command entry opens; stale or missing targets fail. A saved cut replaces the copy register; {} or :splice places that copy. Failure keeps the previous copy. The cursor stays at a range cut's join. Undo restores the removed content and retains the copy, including after reopening the project.", key(EditorKey::CutBeat), key_labels::aliases_pair(&bindings, EditorKey::PasteAfter, EditorKey::PasteBefore, "/"))),
                         (format!("{} / {} / :delete-frames 12f", key(EditorKey::CutFrames), bindings.counted_label(EditorKey::CutFrames, 12)), format!("Cut one or a counted number of linked picture and sound frames beginning at the Edit cursor, stopping at this group's end. The command captures its cursor and group when entry opens. A Visual selection must be cleared with {} first, or cut with {}. At the group's end no edit is made. One Undo restores the cut; the exact removed slice remains available for paste.", key(EditorKey::Escape), key(EditorKey::CutRange))),
+                        (format!("{} / {} · Visual or after {}/{}/{}", key(EditorKey::InnerGroup), key(EditorKey::AroundGroup), key(EditorKey::YankOperator), key(EditorKey::CutOperator), key(EditorKey::RepeatOperator)), "Select exact group contents or the whole group. An explicitly selected Sequence wins; otherwise use the containing nonroot group. Visual finish retains the object; moving while extending changes it into a time range. Whole-group edits return to the outer parent. Empty contents can receive a paste; an all-empty child forest still has exact owners. Macros and dot resolve the object in their current context.".to_owned()),
                         (":repeat 3".to_owned(), "Set total plays on the captured Repeat, preserving its gaps and surviving plays; wrap a different selected beat. Clear Visual selection first. Recording keeps the effective wrap or count-change instruction; dot reapplies a count change to the newly selected Repeat.".to_owned()),
                         (":wrap-repeat 3".to_owned(), "Always add an enclosing Repeat around the captured Visual range or selected beat, including nesting. Command entry captures the target; stale or missing targets refuse.".to_owned()),
                         (":retime 0.75 pitch=preserve".to_owned(), "Slow the selected beat to 0.75× input speed. Use pitch=tape to let pitch follow speed. Exact fractions such as 3/4 work too. The command shows its resolved duration before Enter; Escape cancels entry.".to_owned()),

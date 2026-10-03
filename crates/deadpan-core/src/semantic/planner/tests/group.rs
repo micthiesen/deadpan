@@ -69,7 +69,7 @@ fn visual_and_motion_group_resolve_staged_ranges_and_clear_selection() {
     let document = fixture(12);
     for (anchor, head, extending) in [(2, 9, true), (9, 2, true), (9, 2, false)] {
         let entry = SemanticContext {
-            visual_selection: Some(SemanticVisualSelection {
+            visual_selection: Some(SemanticVisualSelection::Time {
                 anchor: ProjectFrame(anchor),
                 head: ProjectFrame(head),
                 extending,
@@ -244,7 +244,7 @@ fn absent_wrong_kind_visual_and_stale_targets_refuse_without_fallback() {
             )
             .is_err()
         );
-        target.visual_selection = Some(SemanticVisualSelection {
+        target.visual_selection = Some(SemanticVisualSelection::Time {
             anchor: ProjectFrame(1),
             head: ProjectFrame(1),
             extending: false,
@@ -261,7 +261,7 @@ fn absent_wrong_kind_visual_and_stale_targets_refuse_without_fallback() {
     }
     for end in [1, 3] {
         let target = SemanticContext {
-            visual_selection: Some(SemanticVisualSelection {
+            visual_selection: Some(SemanticVisualSelection::Time {
                 anchor: ProjectFrame(1),
                 head: ProjectFrame(end),
                 extending: false,

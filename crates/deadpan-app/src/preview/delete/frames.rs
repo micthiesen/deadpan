@@ -44,10 +44,10 @@ impl FrameTarget {
                 repeat_version,
             }),
             parent: self.parent.clone(),
-            edit: ProjectEdit::DeleteRange {
+            edit: CapturedEdit::TimeOrBeat(Box::new(ProjectEdit::DeleteRange {
                 parent: self.parent,
                 range,
-            },
+            })),
         })
     }
 }

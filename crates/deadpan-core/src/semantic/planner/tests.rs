@@ -7,6 +7,7 @@ use std::num::NonZeroU32;
 
 mod content;
 mod group;
+mod objects;
 mod repeat;
 mod selectors;
 mod set_repeat;

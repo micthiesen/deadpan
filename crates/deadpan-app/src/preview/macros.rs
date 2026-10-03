@@ -17,6 +17,21 @@ pub(super) struct Capture {
 }
 
 impl Capture {
+    fn object_selected(&self) -> bool {
+        matches!(
+            self.context.visual_selection,
+            Some(deadpan_core::SemanticVisualSelection::Object { .. })
+        )
+    }
+    pub(super) fn select_object(
+        &self,
+        object: deadpan_core::SemanticTextObject,
+    ) -> Result<SemanticContext, String> {
+        self.base
+            .document
+            .select_semantic_object(&self.context, object)
+            .map_err(|error| error.to_string())
+    }
     pub(super) fn group_instruction(
         &self,
         label: Option<String>,
@@ -271,6 +286,7 @@ impl DeadpanApp {
                 | Action::First
                 | Action::Last
                 | Action::VisualMoment
+                | Action::SelectObject(_)
                 | Action::DeleteSelection
                 | Action::Edit(BeatEdit::Delete)
                 | Action::DeleteFrames(_)
@@ -302,6 +318,7 @@ impl DeadpanApp {
                 | Action::First
                 | Action::Last
                 | Action::VisualMoment
+                | Action::SelectObject(_)
                 | Action::DeleteSelection
                 | Action::Edit(BeatEdit::Delete)
                 | Action::DeleteFrames(_)
@@ -536,7 +553,11 @@ impl DeadpanApp {
         destination: Option<char>,
         target: Option<Result<Capture, String>>,
     ) -> bool {
-        if !self.macros.recording() && !self.macros.is_pending() {
+        let object = target.as_ref().map_or_else(
+            || self.edit_selection() == navigation::EditSelection::Object,
+            |target| target.as_ref().is_ok_and(Capture::object_selected),
+        );
+        if !self.macros.recording() && !self.macros.is_pending() && !object {
             return false;
         }
         if self.macros.is_pending() {
@@ -562,7 +583,11 @@ impl DeadpanApp {
         destination: Option<char>,
         target: Option<Result<Capture, String>>,
     ) -> bool {
-        if !self.macros.recording() && !self.macros.is_pending() {
+        let object = target.as_ref().map_or_else(
+            || self.edit_selection() == navigation::EditSelection::Object,
+            |target| target.as_ref().is_ok_and(Capture::object_selected),
+        );
+        if !self.macros.recording() && !self.macros.is_pending() && !object {
             return false;
         }
         let target = target.unwrap_or_else(|| self.capture_macro_target());
@@ -587,7 +612,12 @@ impl DeadpanApp {
         before: bool,
         target: &Result<moment::PlacementTarget, String>,
     ) -> bool {
-        if !self.macros.recording() && !self.macros.is_pending() {
+        // A captured context error must refuse an Object paste, never route its
+        // derived geometry through the ordinary time-range replacement path.
+        let object = target
+            .as_ref()
+            .is_ok_and(|target| target.selection.object().is_some());
+        if !self.macros.recording() && !self.macros.is_pending() && !object {
             return false;
         }
         if self.macros.is_pending() {
@@ -656,7 +686,9 @@ impl DeadpanApp {
                 );
             }
             match &captured.context.visual_selection {
-                Some(selection) if selection.anchor == selection.head => {
+                Some(deadpan_core::SemanticVisualSelection::Time { anchor, head, .. })
+                    if anchor == head =>
+                {
                     return Err(if edit.uses_register() {
                         "The Edit selection is empty. Move a boundary before repeating the cut."
                     } else {

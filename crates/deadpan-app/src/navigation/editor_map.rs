@@ -64,6 +64,8 @@ pub enum BindingId {
     Group,
     Ungroup,
     Visual,
+    InnerGroup,
+    AroundGroup,
     Copy,
     CopyBeat,
     CutOperator,
@@ -101,7 +103,7 @@ pub enum BindingId {
 }
 
 impl BindingId {
-    pub const ALL: [Self; 48] = [
+    pub const ALL: [Self; 50] = [
         Self::FramePrevious,
         Self::FrameNext,
         Self::BeatPrevious,
@@ -116,6 +118,8 @@ impl BindingId {
         Self::Group,
         Self::Ungroup,
         Self::Visual,
+        Self::InnerGroup,
+        Self::AroundGroup,
         Self::Copy,
         Self::CopyBeat,
         Self::CutOperator,
@@ -167,6 +171,8 @@ impl BindingId {
             Self::Ungroup => "group.ungroup",
             Self::LeaveGroup => "group.leave",
             Self::Visual => "visual",
+            Self::InnerGroup => "object.inner_group",
+            Self::AroundGroup => "object.around_group",
             Self::Copy => "copy",
             Self::CopyBeat => "copy.beat",
             Self::CutOperator => "cut.operator",
@@ -315,6 +321,11 @@ impl Rule {
                     value => value,
                 };
                 let selector = match selector {
+                    S::TextObject { .. } if count.is_some_and(|count| count > 1) => {
+                        return Action::Invalid(
+                            "A group object selects one group; larger counts are not supported.",
+                        );
+                    }
                     S::SelectedBeat if count.is_some_and(|count| count > 1) => {
                         return Action::Invalid(
                             "A whole-beat operator selects one beat; larger counts are not supported.",
@@ -422,7 +433,8 @@ impl Rule {
             Action::Repeat { selector, .. } => match selector {
                 deadpan_core::SemanticSelector::SelectedBeat => I::Repeat,
                 deadpan_core::SemanticSelector::VisualSelection => I::RepeatRange,
-                deadpan_core::SemanticSelector::Motion { .. } => I::RepeatOperator,
+                deadpan_core::SemanticSelector::Motion { .. }
+                | deadpan_core::SemanticSelector::TextObject { .. } => I::RepeatOperator,
             },
             Action::Operator { cut, selector } => match selector {
                 deadpan_core::SemanticSelector::SelectedBeat => {
@@ -454,6 +466,8 @@ impl Rule {
             Action::Group => I::Group,
             Action::Ungroup => I::Ungroup,
             Action::VisualMoment => I::Visual,
+            Action::SelectObject(deadpan_core::SemanticTextObject::InnerGroup) => I::InnerGroup,
+            Action::SelectObject(deadpan_core::SemanticTextObject::AroundGroup) => I::AroundGroup,
             Action::CopyMoment => I::Copy,
             Action::PasteMoment { before: false } => I::PasteAfter,
             Action::PasteMoment { before: true } => I::PasteBefore,
@@ -748,6 +762,9 @@ impl Compiled {
                         RepeatPendingScope::VisualSelection
                     }
                     deadpan_core::SemanticSelector::Motion { .. } => RepeatPendingScope::Motion,
+                    deadpan_core::SemanticSelector::TextObject { .. } => {
+                        RepeatPendingScope::TextObject
+                    }
                 };
                 match result {
                     Some(previous) if previous != scope => return Some(RepeatPendingScope::Mixed),
@@ -940,6 +957,12 @@ fn repeat_description(
     let selected = match selector {
         S::SelectedBeat => "this whole beat".into(),
         S::VisualSelection => "the selected range".into(),
+        S::TextObject {
+            object: deadpan_core::SemanticTextObject::InnerGroup,
+        } => "group contents".into(),
+        S::TextObject {
+            object: deadpan_core::SemanticTextObject::AroundGroup,
+        } => "the whole group".into(),
         S::Motion {
             motion: M::Scope { end },
         } => if end {
@@ -965,6 +988,9 @@ fn repeat_description(
 }
 
 fn enabled(id: BindingId, visual: bool, domain: RoutingDomain) -> bool {
+    if matches!(id, BindingId::InnerGroup | BindingId::AroundGroup) {
+        return domain == RoutingDomain::Edit && visual;
+    }
     if matches!(
         id,
         BindingId::CopyBeat
@@ -1007,16 +1033,31 @@ fn compile_mode(
                 if kind.is_operator() {
                     for motion in definitions {
                         let selector = match motion.rule.action {
-                            Action::Step { forward, .. } => deadpan_core::SemanticMotion::Frames {
-                                forward,
-                                count: std::num::NonZeroU32::new(1).unwrap(),
+                            Action::SelectObject(object) => {
+                                deadpan_core::SemanticSelector::TextObject { object }
+                            }
+                            Action::Step { forward, .. } => {
+                                deadpan_core::SemanticSelector::Motion {
+                                    motion: deadpan_core::SemanticMotion::Frames {
+                                        forward,
+                                        count: std::num::NonZeroU32::new(1).unwrap(),
+                                    },
+                                }
+                            }
+                            Action::Beat { forward, .. } => {
+                                deadpan_core::SemanticSelector::Motion {
+                                    motion: deadpan_core::SemanticMotion::Beats {
+                                        forward,
+                                        count: std::num::NonZeroU32::new(1).unwrap(),
+                                    },
+                                }
+                            }
+                            Action::First => deadpan_core::SemanticSelector::Motion {
+                                motion: deadpan_core::SemanticMotion::Scope { end: false },
                             },
-                            Action::Beat { forward, .. } => deadpan_core::SemanticMotion::Beats {
-                                forward,
-                                count: std::num::NonZeroU32::new(1).unwrap(),
+                            Action::Last => deadpan_core::SemanticSelector::Motion {
+                                motion: deadpan_core::SemanticMotion::Scope { end: true },
                             },
-                            Action::First => deadpan_core::SemanticMotion::Scope { end: false },
-                            Action::Last => deadpan_core::SemanticMotion::Scope { end: true },
                             _ => continue,
                         };
                         for suffix in &motion.paths {
@@ -1027,16 +1068,11 @@ fn compile_mode(
                                 path: expanded,
                                 value: Rule {
                                     action: match kind {
-                                        PrefixKind::Operator { cut } => Action::Operator {
-                                            cut,
-                                            selector: deadpan_core::SemanticSelector::Motion {
-                                                motion: selector,
-                                            },
-                                        },
+                                        PrefixKind::Operator { cut } => {
+                                            Action::Operator { cut, selector }
+                                        }
                                         PrefixKind::Repeat => Action::Repeat {
-                                            selector: deadpan_core::SemanticSelector::Motion {
-                                                motion: selector,
-                                            },
+                                            selector,
                                             plays: std::num::NonZeroU32::new(2).unwrap(),
                                         },
                                         _ => unreachable!(),
@@ -1047,9 +1083,32 @@ fn compile_mode(
                                         CountPolicy::Operator
                                     },
                                     short: match kind {
-                                        PrefixKind::Operator { cut } => {
-                                            operator_description(cut, selector)
-                                        }
+                                        PrefixKind::Operator { cut } => match selector {
+                                            deadpan_core::SemanticSelector::Motion { motion } => {
+                                                operator_description(cut, motion)
+                                            }
+                                            deadpan_core::SemanticSelector::TextObject {
+                                                object,
+                                            } => match (cut, object) {
+                                                (
+                                                    true,
+                                                    deadpan_core::SemanticTextObject::InnerGroup,
+                                                ) => "cuts group contents",
+                                                (
+                                                    false,
+                                                    deadpan_core::SemanticTextObject::InnerGroup,
+                                                ) => "copies group contents",
+                                                (
+                                                    true,
+                                                    deadpan_core::SemanticTextObject::AroundGroup,
+                                                ) => "cuts the whole group",
+                                                (
+                                                    false,
+                                                    deadpan_core::SemanticTextObject::AroundGroup,
+                                                ) => "copies the whole group",
+                                            },
+                                            _ => unreachable!(),
+                                        },
                                         PrefixKind::Repeat => "repeat with a motion",
                                         _ => unreachable!(),
                                     },
@@ -1240,6 +1299,26 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
     };
     use CountPolicy as C;
     let plain = |key| Stroke::Key(key, false);
+    for (key, object, short) in [
+        (
+            Key::I,
+            deadpan_core::SemanticTextObject::InnerGroup,
+            "selects group contents",
+        ),
+        (
+            Key::A,
+            deadpan_core::SemanticTextObject::AroundGroup,
+            "selects the whole group",
+        ),
+    ] {
+        add(
+            &[plain(key), plain(Key::G)],
+            Action::SelectObject(object),
+            C::Refuse("Select one group object without a count."),
+            short,
+            false,
+        );
+    }
     for (key, forward) in [
         (Key::H, false),
         (Key::ArrowLeft, false),

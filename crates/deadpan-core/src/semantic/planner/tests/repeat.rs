@@ -59,7 +59,7 @@ fn oriented_visual_and_motion_ranges_repeat_exact_staged_contents() {
     let document = fixture(10);
     for (anchor, head, extending) in [(2, 7, true), (7, 2, true), (7, 2, false)] {
         let entry = SemanticContext {
-            visual_selection: Some(SemanticVisualSelection {
+            visual_selection: Some(SemanticVisualSelection::Time {
                 anchor: ProjectFrame(anchor),
                 head: ProjectFrame(head),
                 extending,

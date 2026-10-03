@@ -257,13 +257,18 @@ impl Service {
             &paste.destination,
             paste.copied.slice(),
         )?;
+        let inserted = request.node().ok_or("Edited paste has no inserted root")?;
+        let (continuation_scope, continuation_node) =
+            paste
+                .destination
+                .continuation(workspace, &paste.scope, &paste.parent, inserted)?;
         let outcome = request
             .commit(self.writer()?, None, &AtomicBool::new(false))
             .map_err(display)?;
         self.complete_slice_placement(
-            &request,
             cursor,
-            paste.scope,
+            continuation_scope,
+            continuation_node,
             outcome.revision_id,
             "Edited slice",
         );

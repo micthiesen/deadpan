@@ -10,9 +10,18 @@ pub(super) struct CommandTarget {
     base: Arc<Workspace>,
     scope: SequenceScope,
     parent: NodeId,
-    edit: ProjectEdit,
+    edit: CapturedEdit,
     register: Option<char>,
     attempt: Option<crate::project::semantic::CutAttempt>,
+}
+
+#[derive(Clone)]
+enum CapturedEdit {
+    TimeOrBeat(Box<ProjectEdit>),
+    Object {
+        capture: macros::Capture,
+        label: String,
+    },
 }
 
 impl DeadpanApp {
@@ -31,7 +40,23 @@ impl DeadpanApp {
         let scope = self.sequence_scope.clone();
         let parent = scope.resolve(&base)?.owner.clone();
         let selection = self.edit_selection();
+        if selection == navigation::EditSelection::Object {
+            return Ok(CommandTarget {
+                base,
+                scope,
+                parent,
+                edit: CapturedEdit::Object {
+                    capture: self.capture_macro_target()?,
+                    label: self
+                        .edit_range_label()
+                        .ok_or("The group selection changed.")?,
+                },
+                register: self.copied.selected(),
+                attempt: None,
+            });
+        }
         let edit = match selection {
+            navigation::EditSelection::Object => unreachable!("object captured above"),
             navigation::EditSelection::Empty => return Err("The Edit selection is empty. Move its boundary or press Esc before deleting a beat; no edit was made.".into()),
             navigation::EditSelection::Range => ProjectEdit::DeleteRange {
                 parent: parent.clone(),
@@ -49,7 +74,7 @@ impl DeadpanApp {
             base,
             scope,
             parent,
-            edit,
+            edit: CapturedEdit::TimeOrBeat(Box::new(edit)),
             register: self.copied.selected(),
             attempt: Some(crate::project::semantic::CutAttempt {
                 operation: crate::project::semantic::RepeatableCut::Selector(match selection {
@@ -57,7 +82,7 @@ impl DeadpanApp {
                         deadpan_core::SemanticSelector::VisualSelection
                     }
                     navigation::EditSelection::None => deadpan_core::SemanticSelector::SelectedBeat,
-                    navigation::EditSelection::Empty => {
+                    navigation::EditSelection::Empty | navigation::EditSelection::Object => {
                         unreachable!("empty deletion rejected above")
                     }
                 }),
@@ -67,6 +92,25 @@ impl DeadpanApp {
     }
 
     pub(super) fn delete_captured(&mut self, captured: Result<CommandTarget, String>) {
+        let captured = match captured {
+            Ok(CommandTarget {
+                edit: CapturedEdit::Object { capture, .. },
+                register,
+                ..
+            }) => {
+                self.copied.begin_write();
+                let instruction = register
+                    .map_or(
+                        Ok(deadpan_core::RegisterName::unnamed()),
+                        deadpan_core::RegisterName::new,
+                    )
+                    .map(|register| deadpan_core::SemanticInstruction::CutSelection { register })
+                    .map_err(|error| error.to_string());
+                self.apply_recorded_instruction(Ok(capture), instruction);
+                return;
+            }
+            other => other,
+        };
         self.cancel_repeats("deletion was requested");
         self.bindings.clear();
         self.copied.supersede();
@@ -87,7 +131,10 @@ impl DeadpanApp {
                         .into(),
                 );
             }
-            let selection = match target.edit {
+            let CapturedEdit::TimeOrBeat(edit) = target.edit else {
+                return Err("The captured object needs a semantic cut.".into());
+            };
+            let selection = match *edit {
                 ProjectEdit::Delete { node } => deadpan_core::SliceCaptureSelection::Child { node },
                 ProjectEdit::DeleteRange { range, .. } => {
                     deadpan_core::SliceCaptureSelection::Range { range }
@@ -147,17 +194,22 @@ impl DeadpanApp {
         Some(match self.delete_command_target.as_ref()? {
             Err(error) => error.clone(),
             Ok(target) => match &target.edit {
-                ProjectEdit::DeleteRange { range, .. } => format!(
-                    "Cut captured Edit [{}..{}) · {} f · linked picture + sound · one undo",
-                    range.start().0,
-                    range.end().0,
-                    range.duration().frames()
-                ),
-                ProjectEdit::Delete { node } => format!(
-                    "Cut captured beat: {} · linked picture + sound · one undo",
-                    target.base.document.nodes()[node].label
-                ),
-                _ => unreachable!("deletion captures only deletion operations"),
+                CapturedEdit::TimeOrBeat(edit) => match edit.as_ref() {
+                    ProjectEdit::DeleteRange { range, .. } => format!(
+                        "Cut captured Edit [{}..{}) · {} f · linked picture + sound · one undo",
+                        range.start().0,
+                        range.end().0,
+                        range.duration().frames()
+                    ),
+                    ProjectEdit::Delete { node } => format!(
+                        "Cut captured beat: {} · linked picture + sound · one undo",
+                        target.base.document.nodes()[node].label
+                    ),
+                    _ => unreachable!("deletion captures only deletion operations"),
+                },
+                CapturedEdit::Object { label, .. } => {
+                    format!("Cut captured {label} · linked contents · one undo")
+                }
             },
         })
     }

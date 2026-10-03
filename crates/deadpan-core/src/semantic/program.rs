@@ -4,7 +4,7 @@ use std::num::NonZeroU32;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{EditError, EditErrorCode, FrameCut, RegisterName};
+use crate::{EditError, EditErrorCode, FrameCut, RegisterName, SemanticTextObject};
 
 pub const MAX_SEMANTIC_PROGRAM_INSTRUCTIONS: usize = 1024;
 pub const MAX_SEMANTIC_PROGRAM_BYTES: usize = 128 * 1024;
@@ -33,10 +33,13 @@ pub enum SemanticSelector {
     Motion {
         motion: SemanticMotion,
     },
+    TextObject {
+        object: SemanticTextObject,
+    },
 }
 
 /// The supported macro vocabulary. Selectors resolve against each preceding
-/// staged document, with the same ordinary Sequence scope throughout the run.
+/// staged document and its checked ordinary Sequence navigation context.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum SemanticInstruction {
@@ -50,6 +53,9 @@ pub enum SemanticInstruction {
     },
     MoveScope {
         end: bool,
+    },
+    SelectObject {
+        object: SemanticTextObject,
     },
     #[serde(deserialize_with = "deserialize_empty")]
     BeginSelection,
@@ -96,6 +102,9 @@ pub enum SemanticInstruction {
     ReplaceSelection {
         register: RegisterName,
     },
+    /// Explicit seam insertion for absent or Time Visual selection. An Object
+    /// Visual replaces its exact owned target; ReplaceSelection handles both
+    /// Visual kinds explicitly, including empty group contents at slot zero.
     Paste {
         register: RegisterName,
         before: bool,
@@ -107,7 +116,9 @@ pub enum SemanticInstruction {
 }
 
 // Internally tagged unit variants otherwise ignore unknown fields in Serde.
-fn deserialize_empty<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<(), D::Error> {
+pub(super) fn deserialize_empty<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<(), D::Error> {
     #[derive(Deserialize)]
     #[serde(deny_unknown_fields)]
     struct Empty {}

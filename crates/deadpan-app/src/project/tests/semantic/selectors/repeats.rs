@@ -95,7 +95,7 @@ fn repeat_wrap_retains_motion_count_and_plays_then_visual_override_becomes_saved
         );
     }
     let mut visual = context(&second, 26, None);
-    visual.visual_selection = Some(SemanticVisualSelection {
+    visual.visual_selection = Some(SemanticVisualSelection::Time {
         anchor: ProjectFrame(29),
         head: ProjectFrame(26),
         extending: true,
@@ -133,7 +133,7 @@ fn repeat_wrap_retains_motion_count_and_plays_then_visual_override_becomes_saved
         &third,
     );
     let empty = SemanticContext {
-        visual_selection: Some(SemanticVisualSelection {
+        visual_selection: Some(SemanticVisualSelection::Time {
             anchor: ProjectFrame(26),
             head: ProjectFrame(26),
             extending: false,

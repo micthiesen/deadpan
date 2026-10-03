@@ -1,0 +1,47 @@
+import hashlib
+import json
+from pathlib import Path
+
+root = Path("/tmp/deadpan-group-objects-20261003")
+document = json.loads((root / "native-project.txt").read_text())
+bank = json.loads((root / "native-register-a.txt").read_text())
+groups = [(key, node) for key, node in document["nodes"].items() if node["label"] == "Native object"]
+assert len(groups) == 1
+group, node = groups[0]
+assert document["nodes"][document["root"]]["kind"]["children"] == [group]
+children = node["kind"]["children"]
+assert len(children) == 1 and len(document["nodes"]) == 3
+copy = bank["registers"][0]
+assert copy["register"] == "a" and copy["type"] == "edited" and copy["parent"] == group
+assert copy["selection"] == {"type": "children", "first": children[0], "last": children[0]}
+session = json.loads((root / "checks/native-session.json").read_text())
+assert session["exit_code"] == 0 and session["source_unchanged"]
+result = {
+    "binary_sha256": hashlib.sha256((root / "Deadpan Object Final QA.app/Contents/MacOS/deadpan-app").read_bytes()).hexdigest(),
+    "source_manifest_sha256": session["source_manifest_sha256"],
+    "project": str(root / "groups-visual-2/projects/groups/Documents/Deadpan/cfr-bframes.deadpan"),
+    "input": "CUA native keyboard events with accessibility observations after each edit",
+    "observations": [
+        "Created Native object from the complete 120-frame Original through native command entry.",
+        "Copied group contents with named register a and yig; entering the group preserved the saved copy.",
+        "vag displayed Whole group [0..120), Object key hints and both Replace object controls in an inspected native 2x screenshot.",
+        "v then h retained the exact Object selection while moving the cursor to 119.",
+        "Place r showed exact source endpoints and an unsaved replacement; Escape restored the finished Object, group scope and cursor 119.",
+        "Fast p replaced the whole group and continued at root Edit 0 with 120 frames; one Undo restored Native object.",
+        "dig from inside retained an empty Native object and zero-frame scope; vig retained explicit empty contents; p inserted the copied 120 frames into that group.",
+        "One Undo restored empty contents; another restored the cut source in its original group.",
+        "Native vag, :splice, r and Return committed the prepared replacement in the outer scope; one Undo restored the group.",
+        "Cmd-Q exited with code 0. A targeted process lookup found no remaining native QA process.",
+        "Closed-project validation passed; exact Children capture in register a matches the restored named group and child identities."
+    ],
+    "project_revision": document["revision_id"],
+    "register_bank_version": bank["bank_version"],
+    "closed_project_verified": True,
+    "qa_app_exited": True,
+    "limits": [
+        "The initial Place destination caption still described the entry cursor; final caption correction is qualified separately by rendered checks.",
+        "Not physical keyboard, OS IME, VoiceOver, acoustic delivery, or response-time qualification. Native QA overlapped compiler work."
+    ]
+}
+(root / "native-observations.json").write_text(json.dumps(result, indent=2) + "\n")
+print(json.dumps({"restored_group": group, "child": children[0], "bank_version": bank["bank_version"], "native_exit": session["exit_code"]}))

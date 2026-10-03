@@ -1,0 +1,20 @@
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+
+scratch = Path('/tmp/deadpan-group-objects-20261003')
+environment = dict(os.environ, DEADPAN_CHECK_OUTPUT=str(scratch / 'checks'))
+recorder = '/tmp/deadpan-original-layout-20261002/run-check.py'
+checks = [
+    ('fmt-4', ['cargo', 'fmt', '--all', '--', '--check']),
+    ('core-semantic-final', ['cargo', 'test', '--locked', '-p', 'deadpan-core', '--lib', 'semantic::']),
+    ('app-ui-build-5', ['cargo', 'build', '--locked', '-p', 'deadpan-app', '--features', 'ui-harness']),
+]
+for name, command in checks:
+    print('Starting ' + name, flush=True)
+    result = subprocess.run([sys.executable, recorder, name, *command], env=environment)
+    if result.returncode:
+        sys.exit(result.returncode)
+shutil.copy2('target/debug/deadpan-app', scratch / 'deadpan-visual-reviewed')

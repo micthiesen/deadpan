@@ -143,7 +143,7 @@ fn oriented_visual_copy_keeps_redo_and_replacement_failure_retains_exact_selecti
     );
     let before = undone.workspace.as_ref().unwrap().document.clone();
     let before_rows = rows(&path);
-    let selection = deadpan_core::SemanticVisualSelection {
+    let selection = deadpan_core::SemanticVisualSelection::Time {
         anchor: ProjectFrame(17),
         head: ProjectFrame(4),
         extending: false,
@@ -222,7 +222,7 @@ fn oriented_visual_copy_keeps_redo_and_replacement_failure_retains_exact_selecti
             parent: node("root"),
             cursor: ProjectFrame(25),
             selected_child: Some(node("c")),
-            visual_selection: Some(deadpan_core::SemanticVisualSelection {
+            visual_selection: Some(deadpan_core::SemanticVisualSelection::Time {
                 anchor: ProjectFrame(19),
                 head: ProjectFrame(17),
                 extending: false,
@@ -1138,5 +1138,372 @@ fn nested_macro_copies_keep_their_staged_absolute_bounds_and_original_group_labe
     assert_eq!(
         copied.slice().range(),
         FrameRange::new(ProjectFrame(12), ProjectFrame(13)).unwrap()
+    );
+}
+
+#[test]
+fn group_objects_keep_capture_scope_separate_from_navigation_and_cut_receipt() {
+    use deadpan_core::SemanticTextObject;
+
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("group-object-host.deadpan");
+    let mut store = seed_holds(&path, &["a", "b", "c"]);
+    seed_command(
+        &mut store,
+        Command::Insert {
+            parent: node("root"),
+            index: 1,
+            subtree: Subtree {
+                root: node("group"),
+                nodes: BTreeMap::from([
+                    (
+                        node("group"),
+                        BeatNode::sequence("Named group", vec![node("nested"), node("empty")]),
+                    ),
+                    (node("nested"), BeatNode::hold("Nested", hold(10))),
+                    (node("empty"), BeatNode::sequence("Empty", vec![])),
+                ]),
+                overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
+            },
+        },
+        "insert-group-object-fixture",
+    );
+    drop(store);
+    let harness = Harness::new();
+    let opened = command(&harness.service, ProjectRequest::Open(path.clone()));
+    let inside = SequenceScope::default()
+        .descend(opened.workspace.as_ref().unwrap(), &node("group"))
+        .unwrap();
+    let inner_context = |_update: &ProjectUpdate| SemanticContext {
+        parent: node("group"),
+        cursor: ProjectFrame(10),
+        selected_child: Some(node("nested")),
+        visual_selection: None,
+    };
+    let apply_object = |update: &ProjectUpdate,
+                        request: u64,
+                        scope: SequenceScope,
+                        context: SemanticContext,
+                        object: SemanticTextObject,
+                        register: char,
+                        cut: bool| {
+        let selector = SemanticSelector::TextObject { object };
+        Operation::Apply {
+            id: id(update, request),
+            repeat_version: None,
+            instruction: if cut {
+                SemanticInstruction::Cut {
+                    selector,
+                    register: RegisterName::new(register).unwrap(),
+                }
+            } else {
+                SemanticInstruction::Yank {
+                    selector,
+                    register: RegisterName::new(register).unwrap(),
+                }
+            },
+            scope,
+            context,
+        }
+    };
+    let inner = send(
+        &harness.service,
+        apply_object(
+            &opened,
+            1,
+            inside.clone(),
+            inner_context(&opened),
+            SemanticTextObject::InnerGroup,
+            'i',
+            false,
+        ),
+    );
+    let Outcome::Applied {
+        scope,
+        cursor,
+        selected,
+        committed,
+        ..
+    } = &receipt(&inner).outcome
+    else {
+        panic!("inner group yank receipt")
+    };
+    assert_eq!(scope, &inside);
+    assert_eq!(*cursor, ProjectFrame(10));
+    assert_eq!(selected.as_ref(), Some(&node("nested")));
+    assert!(committed.is_none());
+    let contents = copied(&inner, 'i');
+    assert_eq!(contents.scope(), &inside);
+    assert_eq!(contents.slice().parent(), &node("group"));
+    assert_eq!(
+        contents.source_path(),
+        &["Your edit".to_string(), "Named group".to_string()]
+    );
+    assert_eq!(
+        contents.bounds(),
+        FrameRange::new(ProjectFrame(10), ProjectFrame(20)).unwrap()
+    );
+    assert_eq!(
+        contents.slice().selection(),
+        &SliceCaptureSelection::Children {
+            first: node("nested"),
+            last: node("empty"),
+        }
+    );
+
+    let outside_context = SemanticContext {
+        parent: node("root"),
+        cursor: ProjectFrame(10),
+        selected_child: Some(node("group")),
+        visual_selection: None,
+    };
+    let outside = send(
+        &harness.service,
+        apply_object(
+            &inner,
+            2,
+            SequenceScope::default(),
+            outside_context,
+            SemanticTextObject::InnerGroup,
+            'o',
+            false,
+        ),
+    );
+    let Outcome::Applied {
+        scope,
+        selected,
+        committed,
+        ..
+    } = &receipt(&outside).outcome
+    else {
+        panic!("outside inner group yank receipt")
+    };
+    assert_eq!(scope, &SequenceScope::default());
+    assert_eq!(selected.as_ref(), Some(&node("group")));
+    assert!(committed.is_none());
+    assert_eq!(
+        copied(&outside, 'o').source_path(),
+        &["Your edit".to_string(), "Named group".to_string()]
+    );
+    assert_eq!(
+        copied(&outside, 'o').slice().selection(),
+        contents.slice().selection()
+    );
+
+    let around = send(
+        &harness.service,
+        apply_object(
+            &outside,
+            3,
+            inside.clone(),
+            inner_context(&outside),
+            SemanticTextObject::AroundGroup,
+            'a',
+            false,
+        ),
+    );
+    let Outcome::Applied {
+        scope,
+        selected,
+        committed,
+        ..
+    } = &receipt(&around).outcome
+    else {
+        panic!("around group yank receipt")
+    };
+    assert_eq!(scope, &inside);
+    assert_eq!(selected.as_ref(), Some(&node("nested")));
+    assert!(committed.is_none());
+    let whole = copied(&around, 'a');
+    assert_eq!(whole.slice().parent(), &node("root"));
+    assert_eq!(
+        whole.slice().selection(),
+        &SliceCaptureSelection::Child {
+            node: node("group")
+        }
+    );
+    assert_eq!(whole.source_path(), &["Your edit".to_string()]);
+    assert_eq!(whole.child_label(), Some("Named group"));
+
+    let before = around.workspace.as_ref().unwrap().document.clone();
+    harness
+        .service
+        .shared
+        .workspace_refresh_failure
+        .store(true, Ordering::Release);
+    let operation = apply_object(
+        &around,
+        4,
+        inside,
+        inner_context(&around),
+        SemanticTextObject::AroundGroup,
+        'c',
+        true,
+    );
+    let cut = send(&harness.service, operation.clone());
+    let Outcome::Applied {
+        scope,
+        cursor,
+        selected,
+        visual_selection,
+        committed,
+        refresh_error,
+    } = &receipt(&cut).outcome
+    else {
+        panic!("around group cut receipt")
+    };
+    assert_eq!(scope, &SequenceScope::default());
+    assert_eq!(*cursor, ProjectFrame(10));
+    assert_eq!(selected.as_ref(), Some(&node("b")));
+    assert!(visual_selection.is_none());
+    assert_eq!(committed.as_ref().unwrap().scope, SequenceScope::default());
+    assert!(refresh_error.as_ref().unwrap().contains("Reopen"));
+    let rows_after = rows(&path);
+    let retry = send(&harness.service, operation);
+    assert_eq!(rows(&path), rows_after);
+    assert_eq!(receipt(&retry).committed(), receipt(&cut).committed());
+    assert_eq!(
+        copied(&retry, 'c').source_path(),
+        &["Your edit".to_string()]
+    );
+    let reader = ProjectStore::open(&path, AccessMode::ReadOnly).unwrap();
+    assert!(
+        !reader
+            .snapshot()
+            .unwrap()
+            .nodes()
+            .contains_key(&node("group"))
+    );
+    copied(&retry, 'c')
+        .slice()
+        .validate_capture(&before)
+        .unwrap();
+    drop(reader);
+    command(&harness.service, ProjectRequest::Close);
+    let reopened = command(&harness.service, ProjectRequest::Open(path));
+    assert_eq!(copied(&reopened, 'c').slice(), copied(&retry, 'c').slice());
+}
+
+#[test]
+fn counted_group_object_macro_uses_final_scope_and_unique_staged_capture_paths() {
+    use deadpan_core::SemanticTextObject;
+
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("group-object-counted.deadpan");
+    let mut store = seed_holds(&path, &["a", "b"]);
+    seed_command(
+        &mut store,
+        Command::Insert {
+            parent: node("root"),
+            index: 1,
+            subtree: Subtree {
+                root: node("group"),
+                nodes: BTreeMap::from([
+                    (
+                        node("group"),
+                        BeatNode::sequence("Original group", vec![node("nested")]),
+                    ),
+                    (node("nested"), BeatNode::hold("Nested", hold(10))),
+                ]),
+                overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
+            },
+        },
+        "insert-counted-group",
+    );
+    drop(store);
+    let harness = Harness::new();
+    let opened = command(&harness.service, ProjectRequest::Open(path.clone()));
+    let body = program(vec![
+        SemanticInstruction::Group {
+            selector: SemanticSelector::TextObject {
+                object: SemanticTextObject::AroundGroup,
+            },
+            label: "Wrapper".into(),
+        },
+        SemanticInstruction::Yank {
+            selector: SemanticSelector::TextObject {
+                object: SemanticTextObject::InnerGroup,
+            },
+            register: RegisterName::new('b').unwrap(),
+        },
+        SemanticInstruction::Yank {
+            selector: SemanticSelector::TextObject {
+                object: SemanticTextObject::InnerGroup,
+            },
+            register: RegisterName::new('c').unwrap(),
+        },
+    ]);
+    let saved = send(&harness.service, save(&opened, 1, 'm', body));
+    let inside = SequenceScope::default()
+        .descend(saved.workspace.as_ref().unwrap(), &node("group"))
+        .unwrap();
+    let result = send(
+        &harness.service,
+        Operation::Run {
+            id: id(&saved, 2),
+            register: 'm',
+            count: 2,
+            scope: inside,
+            context: SemanticContext {
+                parent: node("group"),
+                cursor: ProjectFrame(10),
+                selected_child: Some(node("nested")),
+                visual_selection: None,
+            },
+        },
+    );
+    let Outcome::Executed {
+        scope,
+        selected,
+        visual_selection,
+        committed,
+        ..
+    } = &receipt(&result).outcome
+    else {
+        panic!("counted group object macro receipt")
+    };
+    assert_eq!(scope, &SequenceScope::default());
+    assert!(visual_selection.is_none());
+    let wrapper = selected.as_ref().unwrap();
+    assert_eq!(committed.as_ref().unwrap().scope, SequenceScope::default());
+    assert_eq!(
+        committed.as_ref().unwrap().selected_node.as_ref(),
+        Some(wrapper)
+    );
+    let document = &result.workspace.as_ref().unwrap().document;
+    assert!(
+        matches!(&document.nodes()[wrapper].kind, NodeKind::Sequence { children }
+        if children.len() == 1 && matches!(&document.nodes()[&children[0]].kind, NodeKind::Sequence { .. }))
+    );
+    for register in ['b', 'c'] {
+        let capture = copied(&result, register);
+        assert_eq!(capture.slice().parent(), wrapper);
+        assert_eq!(capture.scope().groups(), std::slice::from_ref(wrapper));
+        assert_eq!(
+            capture.source_path(),
+            &["Your edit".to_string(), "Wrapper".to_string()]
+        );
+        assert_eq!(
+            capture.slice().selection(),
+            &SliceCaptureSelection::Children {
+                first: document.children(wrapper).next().unwrap().clone(),
+                last: document.children(wrapper).next().unwrap().clone(),
+            }
+        );
+        capture
+            .slice()
+            .validate_capture(
+                &ProjectStore::open(&path, AccessMode::ReadOnly)
+                    .unwrap()
+                    .capture_snapshot_at(capture.slice().revision_id())
+                    .unwrap(),
+            )
+            .unwrap();
+    }
+    assert_ne!(
+        copied(&result, 'b').slice().capture_timing(),
+        copied(&result, 'c').slice().capture_timing()
     );
 }

@@ -17,6 +17,9 @@ enum Destination<'a> {
         range: FrameRange,
         resolved: SequenceRangeEdit,
     },
+    Children {
+        resolved: SequenceChildrenPlan,
+    },
 }
 
 struct Placement<'a> {
@@ -86,6 +89,23 @@ impl<'a> Placement<'a> {
                     resolved: document.slice_replacement(parent, *range, slice)?,
                 },
             ),
+            Command::ReplaceSliceChildren {
+                parent,
+                first,
+                last,
+                slice,
+                identities,
+                timing,
+            } => (
+                parent,
+                slice,
+                identities,
+                timing,
+                None,
+                Destination::Children {
+                    resolved: document.slice_children_replacement(parent, first, last, slice)?,
+                },
+            ),
             _ => return Err(invalid("slice placement requires a slice command")),
         };
         slice.check_destination(document)?;
@@ -104,6 +124,7 @@ impl<'a> Placement<'a> {
             Destination::Seam { .. } => 0,
             Destination::Interior { resolved, .. } => resolved.required_ids,
             Destination::Replacement { resolved, .. } => resolved.required_ids,
+            Destination::Children { .. } => 0,
         }
     }
 }
@@ -123,11 +144,19 @@ impl Timings {
     ) -> Result<Self, EditError> {
         let splits = placement.split_count() != 0;
         // Seam paste retains its original reserved suffix slot, even at the end.
-        let suffix = placement.slice.duration() != FrameDuration::ZERO
-            && match placement.destination {
-                Destination::Replacement { range, .. } => range.end().0 < total,
-                _ => true,
-            };
+        let suffix = match &placement.destination {
+            Destination::Seam { .. } | Destination::Interior { .. } => {
+                placement.slice.duration() != FrameDuration::ZERO
+            }
+            Destination::Replacement { range, .. } => {
+                placement.slice.duration() != FrameDuration::ZERO && range.end().0 < total
+            }
+            Destination::Children { resolved } => {
+                resolved.range.end().0 < total
+                    && (resolved.range.duration() != FrameDuration::ZERO
+                        || placement.slice.duration() != FrameDuration::ZERO)
+            }
+        };
         let destination = u32::from(splits) + u32::from(suffix);
         let count = u32::try_from(imported)
             .ok()
@@ -178,8 +207,9 @@ pub(crate) fn apply(
         ));
     }
     let total = document.duration()?.frames();
-    let removed_duration = match placement.destination {
+    let removed_duration = match &placement.destination {
         Destination::Replacement { range, .. } => range.duration().frames(),
+        Destination::Children { resolved } => resolved.range.duration().frames(),
         _ => 0,
     };
     (total - removed_duration)
@@ -245,6 +275,17 @@ pub(crate) fn apply(
             )?;
             (selected.first, selected.end, selected.nodes, range.end())
         }
+        Destination::Children { resolved } => {
+            let NodeKind::Sequence { children } = &working.nodes()[placement.parent].kind else {
+                unreachable!("exact child query admitted a Sequence")
+            };
+            (
+                resolved.first,
+                resolved.end,
+                children[resolved.first..resolved.end].to_vec(),
+                resolved.range.end(),
+            )
+        }
     };
     if let Some(timing) = &timings.suffix {
         working = crate::insert_time::composite::prepare_suffix(
@@ -278,13 +319,17 @@ pub(crate) fn apply(
         .filter(|(id, _)| !working.nodes.contains_key(*id))
         .map(|(id, lineage)| (id.clone(), lineage.clone()))
         .collect();
-    if placement.slice.duration() != FrameDuration::ZERO {
+    if placement.slice.duration() != FrameDuration::ZERO
+        || matches!(&placement.destination, Destination::Children { .. })
+    {
         crate::audio_lineage::reconcile(&working, &mut result, command)?;
     }
     result.audio_lineage.extend(retained_lineage);
     let mut marks = std::mem::take(&mut result.marks);
     marks.retain(|id, _| !working.marks.contains_key(id));
-    result.marks = if placement.slice.duration() == FrameDuration::ZERO {
+    result.marks = if placement.slice.duration() == FrameDuration::ZERO
+        && !matches!(&placement.destination, Destination::Children { .. })
+    {
         working.marks.clone()
     } else {
         crate::marks::transform_marks(&working, &result, command)?

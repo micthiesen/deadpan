@@ -469,7 +469,13 @@ impl DeadpanApp {
         } else if self.view == View::Sequence
             && let Some(copied) = self.copied.selected_content()
         {
-            let replacing = self.selected_edit_range().is_some();
+            let replacement_label = self.selected_edit_range().map(|_| {
+                if self.edit_range.object().is_some() {
+                    "Replace object"
+                } else {
+                    "Replace range"
+                }
+            });
             let label = copied.label();
             let is_macro = matches!(copied, copied::Content::Macro(_));
             ui.horizontal_wrapped(|ui| {
@@ -495,11 +501,7 @@ impl DeadpanApp {
                         !self.service.is_busy(),
                         egui::Button::new(format!(
                             "{}  {}",
-                            if replacing {
-                                "Replace range"
-                            } else {
-                                "Paste after"
-                            },
+                            replacement_label.unwrap_or("Paste after"),
                             self.editor_key(EditorKey::PasteAfter)
                         ))
                         .wrap(),
@@ -514,11 +516,7 @@ impl DeadpanApp {
                         !self.service.is_busy(),
                         egui::Button::new(format!(
                             "{}  {}",
-                            if replacing {
-                                "Replace range"
-                            } else {
-                                "Paste before"
-                            },
+                            replacement_label.unwrap_or("Paste before"),
                             self.editor_key(EditorKey::PasteBefore)
                         ))
                         .wrap(),

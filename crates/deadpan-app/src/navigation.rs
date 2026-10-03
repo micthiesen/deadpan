@@ -18,6 +18,8 @@ mod macro_tests;
 #[cfg(test)]
 mod mark_tests;
 #[cfg(test)]
+mod object_tests;
+#[cfg(test)]
 mod operator_tests;
 #[cfg(test)]
 mod register_tests;
@@ -119,6 +121,7 @@ pub enum Action {
     Group,
     Ungroup,
     VisualMoment,
+    SelectObject(deadpan_core::SemanticTextObject),
     DeleteSelection,
     DeleteFrames(u32),
     RepeatLast,
@@ -173,6 +176,7 @@ pub enum EditSelection {
     None,
     Empty,
     Range,
+    Object,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -190,6 +194,7 @@ pub enum RepeatPendingScope {
     SelectedBeat,
     Motion,
     VisualSelection,
+    TextObject,
     Mixed,
 }
 
@@ -1580,7 +1585,7 @@ mod tests {
             vec![Key::Num0, Key::D, Key::D],
             vec![Key::Num2, Key::D, Key::D],
             vec![Key::Num3, Key::R, Key::Num2, Key::L],
-            vec![Key::R, Key::I],
+            vec![Key::R, Key::I, Key::B],
             vec![Key::D, Key::W],
             vec![Key::R, Key::D],
         ] {

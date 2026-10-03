@@ -472,6 +472,11 @@ impl DeadpanApp {
             let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
             let view = self.sequence_scope.resolve(workspace)?;
             let selection = match self.edit_selection() {
+                navigation::EditSelection::Object => {
+                    return Err(
+                        "Copy the selected group through its captured semantic context.".into(),
+                    );
+                }
                 navigation::EditSelection::Empty => {
                     return Err("The Edit selection is empty. Extend it before copying.".into());
                 }

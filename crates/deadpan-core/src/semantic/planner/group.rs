@@ -15,10 +15,9 @@ where
         label: &str,
     ) -> Result<(), EditError> {
         crate::validate_group_label(label)?;
-        let selection = self.resolve_selector(selector)?;
-        let plan = self
-            .current
-            .group_selection(&self.context.parent, &selection)?;
+        let target = self.resolve_selector(selector)?;
+        let selection = target.selection()?.clone();
+        let plan = self.current.group_selection(&target.parent, &selection)?;
         self.charge_step(false)?;
         let allocation = (self.allocate)(SemanticAllocationRequest::Group {
             step_index: self.steps.len(),
@@ -46,7 +45,7 @@ where
         let edit = LeafEdit::new(
             new_revision,
             Command::GroupSelection {
-                parent: self.context.parent.clone(),
+                parent: target.parent.clone(),
                 selection: selection.clone(),
                 label: label.into(),
                 identities,
@@ -54,9 +53,8 @@ where
             },
         )?;
         self.apply_group_step(edit)?;
-        self.context.cursor = plan.range.start();
-        self.context.selected_child = Some(selected);
-        self.context.visual_selection = None;
+        self.continue_target(&target, plan.range.start(), Some(selected))?;
+        self.trace[trace_index].resolved_parent = Some(target.parent);
         self.trace[trace_index].resolved_range = Some(plan.range);
         self.trace[trace_index].resolved_selection = Some(selection);
         Ok(())
@@ -100,6 +98,7 @@ where
             },
         )?;
         self.apply_group_step(edit)?;
+        self.refresh_children()?;
         // The same slot is the first promoted child, or the following sibling
         // for an empty group. Preserve independently visitable empty siblings.
         self.context.selected_child = self
@@ -109,6 +108,7 @@ where
             .map(|(node, _)| node.clone());
         self.context.cursor = range.start();
         self.trace[trace_index].resolved_range = Some(range);
+        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
         self.trace[trace_index].resolved_selection =
             Some(SliceCaptureSelection::Child { node: selected });
         Ok(())
@@ -125,7 +125,6 @@ where
         )?;
         self.current = next;
         self.steps.push(ResolvedStep::Edit { edit });
-        self.refresh_children()?;
         Ok(())
     }
 }

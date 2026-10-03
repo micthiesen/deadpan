@@ -1,0 +1,592 @@
+{
+  "base_commit": "e848409f1c913bb47076d6d6810a1a822fa503dd",
+  "source_manifest_sha256": "a717eef96493a7bda5d11c49831f1b78d2db855dfa71f9a659173cf53fc9005b",
+  "final_checks": [
+    "core-group-objects-initial",
+    "core-edited-slice-final",
+    "core-replacement-lint-refactor",
+    "core-semantic-final",
+    "store-unit-final",
+    "store-registration-final",
+    "audio-composite-final",
+    "cli-project-final",
+    "app-default-final",
+    "app-original-object-worker-corrected",
+    "app-optional-headless-final",
+    "app-object-final",
+    "fmt-6",
+    "app-ui-build-5",
+    "groups-visual-4",
+    "place-visual-2",
+    "macros-visual-1",
+    "clippy-workspace-5",
+    "clippy-ui-5",
+    "native-bundle-2",
+    "native-session",
+    "app-delete-boxed",
+    "app-ui-build-7",
+    "delete-visual-1"
+  ],
+  "test_counts": {
+    "core-group-objects-initial": {
+      "passed": 814,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 46
+    },
+    "core-edited-slice-final": {
+      "passed": 45,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 1
+    },
+    "core-replacement-lint-refactor": {
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 1
+    },
+    "core-semantic-final": {
+      "passed": 87,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 1
+    },
+    "store-unit-final": {
+      "passed": 90,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 1
+    },
+    "store-registration-final": {
+      "passed": 38,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 1
+    },
+    "audio-composite-final": {
+      "passed": 74,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 1
+    },
+    "cli-project-final": {
+      "passed": 38,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 1
+    },
+    "app-default-final": {
+      "passed": 761,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 2
+    },
+    "app-group-objects-corrected": {
+      "passed": 792,
+      "failed": 1,
+      "ignored": 0,
+      "targets": 1
+    },
+    "app-original-object-worker-corrected": {
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 2
+    },
+    "app-optional-headless-final": {
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 1
+    },
+    "app-object-final": {
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 2
+    },
+    "app-delete-boxed": {
+      "passed": 17,
+      "failed": 0,
+      "ignored": 0,
+      "targets": 2
+    }
+  },
+  "test_count_note": "Configurations and reruns overlap. The failed optional run is paired with its corrected targeted case; it is not described as one passing full run.",
+  "earlier_check_source_changes": {
+    "core-group-objects-initial": [
+      "crates/deadpan-app/src/navigation.rs",
+      "crates/deadpan-app/src/navigation/keymap_config/tests.rs",
+      "crates/deadpan-app/src/navigation/object_tests.rs",
+      "crates/deadpan-app/src/navigation/repeat_last_tests.rs",
+      "crates/deadpan-app/src/navigation/repeat_operator_tests.rs",
+      "crates/deadpan-app/src/navigation/shortcut_audit.rs",
+      "crates/deadpan-app/src/preview.rs",
+      "crates/deadpan-app/src/preview/delete.rs",
+      "crates/deadpan-app/src/preview/delete/frames.rs",
+      "crates/deadpan-app/src/preview/edit_range.rs",
+      "crates/deadpan-app/src/preview/harness/groups.rs",
+      "crates/deadpan-app/src/preview/harness/groups/objects.rs",
+      "crates/deadpan-app/src/preview/macros.rs",
+      "crates/deadpan-app/src/preview/moment.rs",
+      "crates/deadpan-app/src/preview/splice.rs",
+      "crates/deadpan-app/src/preview/splice/controls.rs",
+      "crates/deadpan-app/src/project/service/edit_slice.rs",
+      "crates/deadpan-app/src/project/service/moment.rs",
+      "crates/deadpan-app/src/project/service/splice.rs",
+      "crates/deadpan-app/src/project/service/splice/request.rs",
+      "crates/deadpan-app/src/project/splice.rs",
+      "crates/deadpan-app/src/project/tests/macros.rs",
+      "crates/deadpan-app/src/project/tests/splice/replacement.rs",
+      "crates/deadpan-cli/tests/project_commands/macros/groups.rs",
+      "crates/deadpan-core/src/command.rs",
+      "crates/deadpan-core/src/insert_time/source_replace.rs",
+      "crates/deadpan-core/src/semantic/planner/content.rs",
+      "crates/deadpan-core/src/semantic/planner/tests/objects.rs",
+      "crates/deadpan-core/tests/edited_slice/replacement_children.rs",
+      "crates/deadpan-store/tests/source_registration/registers.rs"
+    ],
+    "core-edited-slice-final": [
+      "crates/deadpan-app/src/preview/delete.rs",
+      "crates/deadpan-app/src/preview/delete/frames.rs",
+      "crates/deadpan-app/src/preview/harness/groups/objects.rs",
+      "crates/deadpan-app/src/preview/moment.rs",
+      "crates/deadpan-app/src/preview/splice/controls.rs",
+      "crates/deadpan-app/src/project/tests/macros.rs",
+      "crates/deadpan-cli/tests/project_commands/macros/groups.rs",
+      "crates/deadpan-core/src/command.rs",
+      "crates/deadpan-core/src/insert_time/source_replace.rs",
+      "crates/deadpan-core/src/semantic/planner/content.rs",
+      "crates/deadpan-core/src/semantic/planner/tests/objects.rs",
+      "crates/deadpan-store/tests/source_registration/registers.rs"
+    ],
+    "core-replacement-lint-refactor": [
+      "crates/deadpan-app/src/preview/delete.rs",
+      "crates/deadpan-app/src/preview/delete/frames.rs",
+      "crates/deadpan-app/src/preview/harness/groups/objects.rs",
+      "crates/deadpan-app/src/preview/moment.rs",
+      "crates/deadpan-app/src/preview/splice/controls.rs",
+      "crates/deadpan-app/src/project/tests/macros.rs",
+      "crates/deadpan-core/src/semantic/planner/content.rs",
+      "crates/deadpan-core/src/semantic/planner/tests/objects.rs",
+      "crates/deadpan-store/tests/source_registration/registers.rs"
+    ],
+    "core-semantic-final": [
+      "crates/deadpan-app/src/preview/delete.rs",
+      "crates/deadpan-app/src/preview/delete/frames.rs",
+      "crates/deadpan-app/src/project/tests/macros.rs"
+    ],
+    "store-unit-final": [
+      "crates/deadpan-app/src/preview/delete.rs",
+      "crates/deadpan-app/src/preview/delete/frames.rs",
+      "crates/deadpan-app/src/preview/harness/groups/objects.rs",
+      "crates/deadpan-app/src/preview/moment.rs",
+      "crates/deadpan-app/src/preview/splice/controls.rs",
+      "crates/deadpan-app/src/project/tests/macros.rs",
+      "crates/deadpan-cli/tests/project_commands/macros/groups.rs",
+      "crates/deadpan-core/src/command.rs",
+      "crates/deadpan-core/src/insert_time/source_replace.rs",
+      "crates/deadpan-core/src/semantic/planner/content.rs",
+      "crates/deadpan-core/src/semantic/planner/tests/objects.rs",
+      "crates/deadpan-store/tests/source_registration/registers.rs"
+    ],
+    "store-registration-final": [
+      "crates/deadpan-app/src/preview/delete.rs",
+      "crates/deadpan-app/src/preview/delete/frames.rs",
+      "crates/deadpan-app/src/preview/harness/groups/objects.rs",
+      "crates/deadpan-app/src/project/tests/macros.rs",
+      "crates/deadpan-core/src/semantic/planner/content.rs",
+      "crates/deadpan-core/src/semantic/planner/tests/objects.rs"
+    ],
+    "audio-composite-final": [
+      "crates/deadpan-app/src/preview/delete.rs",
+      "crates/deadpan-app/src/preview/delete/frames.rs",
+      "crates/deadpan-app/src/preview/harness/groups/objects.rs",
+      "crates/deadpan-app/src/preview/moment.rs",
+      "crates/deadpan-app/src/preview/splice/controls.rs",
+      "crates/deadpan-app/src/project/tests/macros.rs",
+      "crates/deadpan-core/src/command.rs",
+      "crates/deadpan-core/src/insert_time/source_replace.rs",
+      "crates/deadpan-core/src/semantic/planner/content.rs",
+      "crates/deadpan-core/src/semantic/planner/tests/objects.rs",
+      "crates/deadpan-store/tests/source_registration/registers.rs"
+    ],
+    "cli-project-final": [
+      "crates/deadpan-app/src/preview/delete.rs",
+      "crates/deadpan-app/src/preview/delete/frames.rs",
+      "crates/deadpan-app/src/preview/harness/groups/objects.rs",
+      "crates/deadpan-app/src/preview/moment.rs",
+      "crates/deadpan-app/src/preview/splice/controls.rs",
+      "crates/deadpan-app/src/project/tests/macros.rs",
+      "crates/deadpan-core/src/command.rs",
+      "crates/deadpan-core/src/insert_time/source_replace.rs",
+      "crates/deadpan-core/src/semantic/planner/content.rs",
+      "crates/deadpan-core/src/semantic/planner/tests/objects.rs",
+      "crates/deadpan-store/tests/source_registration/registers.rs"
+    ],
+    "app-default-final": [
+      "crates/deadpan-app/src/preview/delete.rs",
+      "crates/deadpan-app/src/preview/delete/frames.rs",
+      "crates/deadpan-app/src/preview/harness/groups/objects.rs",
+      "crates/deadpan-app/src/preview/moment.rs",
+      "crates/deadpan-app/src/preview/splice/controls.rs",
+      "crates/deadpan-app/src/project/tests/macros.rs",
+      "crates/deadpan-core/src/command.rs",
+      "crates/deadpan-core/src/insert_time/source_replace.rs",
+      "crates/deadpan-core/src/semantic/planner/content.rs",
+      "crates/deadpan-core/src/semantic/planner/tests/objects.rs",
+      "crates/deadpan-store/tests/source_registration/registers.rs"
+    ],
+    "app-original-object-worker-corrected": [
+      "crates/deadpan-app/src/preview/delete.rs",
+      "crates/deadpan-app/src/preview/delete/frames.rs",
+      "crates/deadpan-app/src/preview/harness/groups/objects.rs",
+      "crates/deadpan-app/src/preview/moment.rs",
+      "crates/deadpan-app/src/preview/splice/controls.rs",
+      "crates/deadpan-app/src/project/tests/macros.rs",
+      "crates/deadpan-cli/tests/project_commands/macros/groups.rs",
+      "crates/deadpan-core/src/command.rs",
+      "crates/deadpan-core/src/insert_time/source_replace.rs",
+      "crates/deadpan-core/src/semantic/planner/content.rs",
+      "crates/deadpan-core/src/semantic/planner/tests/objects.rs",
+      "crates/deadpan-store/tests/source_registration/registers.rs"
+    ],
+    "app-optional-headless-final": [
+      "crates/deadpan-app/src/preview/delete.rs",
+      "crates/deadpan-app/src/preview/delete/frames.rs",
+      "crates/deadpan-app/src/preview/harness/groups/objects.rs",
+      "crates/deadpan-app/src/preview/moment.rs",
+      "crates/deadpan-app/src/preview/splice/controls.rs",
+      "crates/deadpan-app/src/project/tests/macros.rs",
+      "crates/deadpan-core/src/command.rs",
+      "crates/deadpan-core/src/insert_time/source_replace.rs",
+      "crates/deadpan-core/src/semantic/planner/content.rs",
+      "crates/deadpan-core/src/semantic/planner/tests/objects.rs",
+      "crates/deadpan-store/tests/source_registration/registers.rs"
+    ],
+    "app-object-final": [
+      "crates/deadpan-app/src/preview/delete.rs",
+      "crates/deadpan-app/src/preview/delete/frames.rs",
+      "crates/deadpan-app/src/preview/harness/groups/objects.rs",
+      "crates/deadpan-app/src/preview/splice/controls.rs",
+      "crates/deadpan-app/src/project/tests/macros.rs",
+      "crates/deadpan-core/src/semantic/planner/content.rs",
+      "crates/deadpan-core/src/semantic/planner/tests/objects.rs",
+      "crates/deadpan-store/tests/source_registration/registers.rs"
+    ],
+    "fmt-6": [],
+    "app-ui-build-5": [
+      "crates/deadpan-app/src/preview/delete.rs",
+      "crates/deadpan-app/src/preview/delete/frames.rs",
+      "crates/deadpan-app/src/project/tests/macros.rs"
+    ],
+    "groups-visual-4": [
+      "crates/deadpan-app/src/preview/delete.rs",
+      "crates/deadpan-app/src/preview/delete/frames.rs",
+      "crates/deadpan-app/src/project/tests/macros.rs"
+    ],
+    "place-visual-2": [
+      "crates/deadpan-app/src/preview/delete.rs",
+      "crates/deadpan-app/src/preview/delete/frames.rs",
+      "crates/deadpan-app/src/project/tests/macros.rs"
+    ],
+    "macros-visual-1": [
+      "crates/deadpan-app/src/preview/delete.rs",
+      "crates/deadpan-app/src/preview/delete/frames.rs",
+      "crates/deadpan-app/src/preview/harness/groups/objects.rs",
+      "crates/deadpan-app/src/preview/splice/controls.rs",
+      "crates/deadpan-app/src/project/tests/macros.rs",
+      "crates/deadpan-core/src/semantic/planner/content.rs",
+      "crates/deadpan-core/src/semantic/planner/tests/objects.rs",
+      "crates/deadpan-store/tests/source_registration/registers.rs"
+    ],
+    "clippy-workspace-5": [],
+    "clippy-ui-5": [],
+    "native-bundle-2": [
+      "crates/deadpan-app/src/preview/delete.rs",
+      "crates/deadpan-app/src/preview/delete/frames.rs",
+      "crates/deadpan-app/src/preview/harness/groups/objects.rs",
+      "crates/deadpan-app/src/preview/splice/controls.rs",
+      "crates/deadpan-app/src/project/tests/macros.rs",
+      "crates/deadpan-core/src/semantic/planner/content.rs",
+      "crates/deadpan-core/src/semantic/planner/tests/objects.rs",
+      "crates/deadpan-store/tests/source_registration/registers.rs"
+    ],
+    "native-session": [
+      "crates/deadpan-app/src/preview/delete.rs",
+      "crates/deadpan-app/src/preview/delete/frames.rs",
+      "crates/deadpan-app/src/preview/harness/groups/objects.rs",
+      "crates/deadpan-app/src/preview/splice/controls.rs",
+      "crates/deadpan-app/src/project/tests/macros.rs",
+      "crates/deadpan-core/src/semantic/planner/content.rs",
+      "crates/deadpan-core/src/semantic/planner/tests/objects.rs",
+      "crates/deadpan-store/tests/source_registration/registers.rs"
+    ],
+    "app-delete-boxed": [],
+    "app-ui-build-7": [],
+    "delete-visual-1": []
+  },
+  "source_note": "Every retained completed command has a stable before/after source inventory. Check phases have different inventories: early full core tests precede the reducer and semantic node-capacity fixes; final edited-slice and semantic targets cover those fixes. Default app, audio and CLI tests precede the reducer argument tuple, Object button/footer captions, the semantic capacity exception and fixture corrections. The exact replacement, semantic, app Object, rendered Group/Place and real store registration targets cover those changes. Native QA and the passing Macro replay precede final footer and capacity corrections. The last lint cleanup boxes the existing captured-delete variant and removes a test clone. Final lint, build, focused app deletion tests and the rendered deletion replay use the final source inventory. Group/Place captures precede only that internal cleanup; their visible controls did not change. No single clean full optional app run or full workspace test run is claimed.",
+  "final_replays": [
+    "groups-visual-4",
+    "place-visual-2",
+    "macros-visual-1",
+    "delete-visual-1"
+  ],
+  "workflow_checks": 1955,
+  "replays": [
+    {
+      "run": "delete-visual-1",
+      "failed": false,
+      "checks": 309,
+      "passed": 309,
+      "binary_sha256": "cb10c558b066c531103dd6e38f005aaa2d54200608e125da7ffdf60fca8e9143",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "kestrel": {
+        "conflicts": [],
+        "live_source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2",
+        "reserved_bindings": 62,
+        "routing_cases": 7652784,
+        "source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2"
+      }
+    },
+    {
+      "run": "groups-visual-1",
+      "failed": true,
+      "checks": 359,
+      "passed": 358,
+      "binary_sha256": "22c82eb20b28e353082ed5dfea744de71a4a96b9da22589e1ca7737ceaf58376",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        },
+        {
+          "message": "Check failed: Settled picture matches the current session, revision, context and cursor",
+          "severity": "failure"
+        }
+      ],
+      "skipped": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "kestrel": {
+        "conflicts": [],
+        "live_source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2",
+        "reserved_bindings": 62,
+        "routing_cases": 7652784,
+        "source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2"
+      }
+    },
+    {
+      "run": "groups-visual-2",
+      "failed": false,
+      "checks": 425,
+      "passed": 425,
+      "binary_sha256": "6209f1dcc39dc0c3dd20a47c81d716938a24f5c0da2aa4a0666fea4fdf431c11",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "Keyboard and IME events are synthetic production event batches. Physical delivery and OS composition remain separate qualification. Composed pixel comparisons run only in visual mode; canonical PCM equivalence is covered by the separate core/audio tests.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "kestrel": {
+        "conflicts": [],
+        "live_source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2",
+        "reserved_bindings": 62,
+        "routing_cases": 7652784,
+        "source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2"
+      }
+    },
+    {
+      "run": "groups-visual-3",
+      "failed": true,
+      "checks": 363,
+      "passed": 362,
+      "binary_sha256": "2ebdf0fcd273d5abd30cc15aea43385d1efa2150f163f9fb0deab5b3a5a1598e",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        },
+        {
+          "message": "Check failed: Place names the exact group and range being replaced",
+          "severity": "failure"
+        }
+      ],
+      "skipped": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "kestrel": {
+        "conflicts": [],
+        "live_source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2",
+        "reserved_bindings": 62,
+        "routing_cases": 7652784,
+        "source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2"
+      }
+    },
+    {
+      "run": "groups-visual-4",
+      "failed": false,
+      "checks": 428,
+      "passed": 428,
+      "binary_sha256": "d87f817522e95e7bad1171701863b5b983bc2e84bee7b8212ce3ac31807af40a",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "Keyboard and IME events are synthetic production event batches. Physical delivery and OS composition remain separate qualification. Composed pixel comparisons run only in visual mode; canonical PCM equivalence is covered by the separate core/audio tests.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "kestrel": {
+        "conflicts": [],
+        "live_source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2",
+        "reserved_bindings": 62,
+        "routing_cases": 7652784,
+        "source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2"
+      }
+    },
+    {
+      "run": "macros-visual-1",
+      "failed": false,
+      "checks": 372,
+      "passed": 372,
+      "binary_sha256": "6209f1dcc39dc0c3dd20a47c81d716938a24f5c0da2aa4a0666fea4fdf431c11",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "kestrel": {
+        "conflicts": [],
+        "live_source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2",
+        "reserved_bindings": 62,
+        "routing_cases": 7652784,
+        "source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2"
+      }
+    },
+    {
+      "run": "place-visual-1",
+      "failed": true,
+      "checks": 295,
+      "passed": 294,
+      "binary_sha256": "6209f1dcc39dc0c3dd20a47c81d716938a24f5c0da2aa4a0666fea4fdf431c11",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        },
+        {
+          "message": "Check failed: Place slice text is actually painted inside its clip and viewport",
+          "severity": "failure"
+        }
+      ],
+      "skipped": [
+        "Place slice covers linked Original and edited-slice copying, insertion, replacement and atomic Move in ordinary Sequence scopes. Separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.",
+        "The replay uses genuine source qualification, endpoint decoding, SDR GPU pictures, proposed documents and durable commands. Audio delivery and a concurrent service Undo are explicitly injected. It does not open an audio device or establish acoustic quality.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "kestrel": {
+        "conflicts": [],
+        "live_source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2",
+        "reserved_bindings": 62,
+        "routing_cases": 7652784,
+        "source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2"
+      }
+    },
+    {
+      "run": "place-visual-2",
+      "failed": false,
+      "checks": 846,
+      "passed": 846,
+      "binary_sha256": "d87f817522e95e7bad1171701863b5b983bc2e84bee7b8212ce3ac31807af40a",
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        }
+      ],
+      "skipped": [
+        "Place slice covers linked Original and edited-slice copying, insertion, replacement and atomic Move in ordinary Sequence scopes. Separate picture/audio placement and Repeat/Retime occurrence targeting remain outside this increment.",
+        "The replay uses genuine source qualification, endpoint decoding, SDR GPU pictures, proposed documents and durable commands. Audio delivery and a concurrent service Undo are explicitly injected. It does not open an audio device or establish acoustic quality.",
+        "OS picker behavior: only its selected path is scripted",
+        "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+      ],
+      "kestrel": {
+        "conflicts": [],
+        "live_source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2",
+        "reserved_bindings": 62,
+        "routing_cases": 7652784,
+        "source_sha256": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2"
+      }
+    }
+  ],
+  "native": {
+    "binary_sha256": "6209f1dcc39dc0c3dd20a47c81d716938a24f5c0da2aa4a0666fea4fdf431c11",
+    "source_manifest_sha256": "8421eb07fe09c2d8c144b11873f32375f86bd6eb178694b578d6576e49963fa1",
+    "project": "/tmp/deadpan-group-objects-20261003/groups-visual-2/projects/groups/Documents/Deadpan/cfr-bframes.deadpan",
+    "input": "CUA native keyboard events with accessibility observations after each edit",
+    "observations": [
+      "Created Native object from the complete 120-frame Original through native command entry.",
+      "Copied group contents with named register a and yig; entering the group preserved the saved copy.",
+      "vag displayed Whole group [0..120), Object key hints and both Replace object controls in an inspected native 2x screenshot.",
+      "v then h retained the exact Object selection while moving the cursor to 119.",
+      "Place r showed exact source endpoints and an unsaved replacement; Escape restored the finished Object, group scope and cursor 119.",
+      "Fast p replaced the whole group and continued at root Edit 0 with 120 frames; one Undo restored Native object.",
+      "dig from inside retained an empty Native object and zero-frame scope; vig retained explicit empty contents; p inserted the copied 120 frames into that group.",
+      "One Undo restored empty contents; another restored the cut source in its original group.",
+      "Native vag, :splice, r and Return committed the prepared replacement in the outer scope; one Undo restored the group.",
+      "Cmd-Q exited with code 0. A targeted process lookup found no remaining native QA process.",
+      "Closed-project validation passed; exact Children capture in register a matches the restored named group and child identities."
+    ],
+    "project_revision": "bebbc828-b27c-4573-a88d-3d8392e58667",
+    "register_bank_version": 14,
+    "closed_project_verified": true,
+    "qa_app_exited": true,
+    "limits": [
+      "The initial Place destination caption still described the entry cursor; final caption correction is qualified separately by rendered checks.",
+      "Not physical keyboard, OS IME, VoiceOver, acoustic delivery, or response-time qualification. Native QA overlapped compiler work."
+    ]
+  },
+  "machine": [
+    "Apple M5 Max",
+    "137438953472"
+  ],
+  "system": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+  "limits": [
+    "All full-product requirements and Gates A through G remain open or partial; ib/ab and beat-owned temporal attachments are not implemented by this increment.",
+    "Unit and targeted test counts overlap. Optional app unit testing passed 792 cases with one manually scheduled fixture failure; the corrected case passed separately, as did the optional headless target.",
+    "Full workspace tests were not rerun. Strict Clippy covers all workspace targets and the optional UI harness configuration.",
+    "Native keyboard events, accessibility observations and an inspected 2x screenshot establish bounded behavior and appearance only. Not physical keyboard, OS IME, VoiceOver or acoustic qualification.",
+    "Native QA overlapped compilation and does not measure response time. Large-project performance and complete editorial workflow acceptance remain open.",
+    "The first CLI failure's full log was overwritten by the corrected run. A clearly labeled retained tool-output excerpt preserves that failure."
+  ]
+}

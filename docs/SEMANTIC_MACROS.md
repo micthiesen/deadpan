@@ -10,12 +10,13 @@ Both binding families are configurable through `macro.record` and
 
 The current vocabulary includes relative frame and beat motion, group start/end,
 Visual selection begin/finish/clear, frame, beat or Visual cut, selected-beat or
-Visual yank, typed operator motions, Repeat wraps and count setters, named Group,
+Visual yank, typed operator motions and group objects, Repeat wraps and count setters, named Group,
 neutral Ungroup, register paste or Visual replacement, and named Macro call.
 Motions and cuts retain their requested counts, including when they
 clamp at a group boundary. Copy, cut and paste retain the selected register name.
 The planner resolves each instruction against the preceding staged edit in
-the same ordinary Sequence group. Temporal occurrence scopes, text objects,
+its checked ordinary Sequence context, including the scope returned by `ig/ag`.
+Temporal occurrence scopes, beat and analysis text objects,
 analysis-dependent motions, additional edits and broader semantic dot-repeat remain required.
 This is partial DP-06 implementation, not full macro acceptance.
 See [Repeat selections](REPEAT_SELECTION.md) for total-play versus motion counts,
@@ -218,13 +219,19 @@ revision; omission allocates it on the host.
 ```
 
 `selected_child` is independent of `cursor`. Omission or `null` means no selected
-beat. A motion may establish one; yank requires one, and paste requires one
-unless the destination Sequence is empty. A stale or non-direct child rejects
-the request. Optional `visual_selection` contains `anchor`, `head` and
-`extending`; omission or `null` means no Visual selection. For example,
-`{"anchor":30,"head":20,"extending":false}` is a finished backward range
+beat. A motion may establish one. Whole-beat yank requires one; seam paste also
+requires one unless the destination Sequence is empty. Group objects can use
+the containing nonroot Sequence. A stale or non-direct child rejects
+the request. Optional `visual_selection` is tagged `time` or `object`;
+omission or `null` means no Visual selection. For example,
+`{"type":"time","anchor":30,"head":20,"extending":false}` is a finished backward range
 independent of the cursor. The trace includes before/after child, Visual
 selection and Edit positions, plus `removed_range` for replacements.
+Object Visual holds `selection: {kind: {type: "inner_group" | "around_group"},
+group: "NODE_ID"}` and `extending`. The group identity must belong to the current
+ordinary navigation context. Membership and geometry are derived from that
+revision. Capture traces also expose the effective `resolved_parent`, exact
+timing identity, staged scope labels and bounds.
 
 For example, this body copies the selected beat to `b` and pastes it after that
 beat. Set `before` to `true` for a paste before the selected beat:
@@ -257,6 +264,15 @@ This body selects the next four frames and replaces them with register `b`:
 retains the endpoints and stops extending; `clear_selection` removes them.
 `move_beats` takes `forward` and a positive `count`; `move_scope` takes `end`.
 These instructions keep the same bounded work and atomic failure rules.
+
+`select_object` takes `object: {type: "inner_group" | "around_group"}`. It
+resolves a fresh group and installs Object Visual state. Typed operators use
+`selector: {type: "text_object", object: {type: "inner_group" | "around_group"}}`.
+Each counted instruction resolves that intent from the preceding staged context.
+See [group objects](STRUCTURAL_SELECTIONS.md#group-object-workflow) for selection,
+empty contents and scope continuation. Native `p/P` records `replace_selection`
+for either Visual kind. Explicit semantic `paste` replaces Object Visual; with
+Time Visual it retains its existing seam-insertion behavior.
 
 The existing ordinary Sequence reducers still refuse range endpoints inside
 a composite child. Enter that group or select its complete boundaries. Visual

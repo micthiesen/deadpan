@@ -3,7 +3,7 @@ use super::*;
 
 pub(super) const ENDPOINT_REASON: &str =
     "Empty groups contain no pictures or audio; In and Out cannot be adjusted.";
-pub(super) const PLACEMENT_REASON: &str = "Empty groups insert at Sequence seams only. Use j/k to choose a slot; Move, Replace and frame interiors are unavailable.";
+pub(super) const PLACEMENT_REASON: &str = "Empty groups can insert at Sequence seams or replace a selected group object. Use j/k to choose a slot. Move, time-range replacement and frame interiors are unavailable.";
 pub(super) fn is_forest(source: &Source) -> bool {
     matches!(source, Source::Edited { copied, .. }
         if matches!(copied.slice().selection(), deadpan_core::SliceCaptureSelection::Children { .. }))

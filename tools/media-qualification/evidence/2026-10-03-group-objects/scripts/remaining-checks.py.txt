@@ -1,0 +1,18 @@
+import os
+import subprocess
+import sys
+
+recorder = "/tmp/deadpan-original-layout-20261002/run-check.py"
+environment = dict(os.environ, DEADPAN_CHECK_OUTPUT="/tmp/deadpan-group-objects-20261003/checks")
+checks = [
+    ("cli-project-final", ["cargo", "test", "--locked", "-p", "deadpan-cli", "--test", "project_commands"]),
+    ("audio-composite-final", ["cargo", "test", "--locked", "-p", "deadpan-audio", "--test", "composite_insert"]),
+    ("app-default-final", ["cargo", "test", "--locked", "-p", "deadpan-app"]),
+    ("app-optional-headless-final", ["cargo", "test", "--locked", "-p", "deadpan-app", "--features", "ui-harness", "--test", "headless"]),
+    ("app-ui-build-final", ["cargo", "build", "--locked", "-p", "deadpan-app", "--features", "ui-harness"]),
+]
+for name, command in checks:
+    print("Starting " + name, flush=True)
+    result = subprocess.run([sys.executable, recorder, name, *command], env=environment)
+    if result.returncode:
+        sys.exit(result.returncode)

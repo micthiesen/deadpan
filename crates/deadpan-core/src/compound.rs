@@ -420,7 +420,8 @@ pub(crate) fn validate_paste(
             RegisterValue::Edited { slice: selected },
             Command::SpliceSlice { slice, .. }
             | Command::SpliceSliceAt { slice, .. }
-            | Command::ReplaceSlice { slice, .. },
+            | Command::ReplaceSlice { slice, .. }
+            | Command::ReplaceSliceChildren { slice, .. },
         ) if selected.as_ref() == slice => Ok(()),
         (
             RegisterValue::Original {
@@ -431,7 +432,8 @@ pub(crate) fn validate_paste(
             },
             Command::SpliceSource { source, .. }
             | Command::SpliceSourceAt { source, .. }
-            | Command::ReplaceSource { source, .. },
+            | Command::ReplaceSource { source, .. }
+            | Command::ReplaceSourceChildren { source, .. },
         ) => {
             validate_original(document, asset, qualification, ordinals)?;
             let record = &document.assets()[asset];

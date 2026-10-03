@@ -1,0 +1,25 @@
+{
+  "command": [
+    "/tmp/deadpan-group-objects-20261003/deadpan-visual-final",
+    "--ui-check",
+    "--scenario",
+    "groups",
+    "--mode",
+    "visual",
+    "--output",
+    "/tmp/deadpan-group-objects-20261003/groups-visual-1",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+    "--retain-projects"
+  ],
+  "started": "2026-10-03T17:15:49.468929+00:00",
+  "base_commit": "e848409f1c913bb47076d6d6810a1a822fa503dd",
+  "diff_sha256": "66e27eb5c67ab132311fcb331cf3c011c29c6a6798d84096036a853f1b4680b2",
+  "source_manifest_sha256": "3d9ecd78e3046fc9ca4e41568ae697572b4ca6ab3ba486acd62a433c1f5551af",
+  "pid": 26794,
+  "exit_code": 1,
+  "seconds": 60.782766374759376,
+  "source_manifest_after_sha256": "3d9ecd78e3046fc9ca4e41568ae697572b4ca6ab3ba486acd62a433c1f5551af",
+  "source_unchanged": true,
+  "gate_exit_code": 1
+}

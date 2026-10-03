@@ -107,7 +107,7 @@ fn visual_group_takes_precedence_but_empty_visual_never_falls_back() {
     let document = fixture();
     for (anchor, head, extending) in [(0, 1, true), (1, 0, false), (0, 0, true), (0, 0, false)] {
         let mut context = context(Some("group"));
-        context.visual_selection = Some(SemanticVisualSelection {
+        context.visual_selection = Some(SemanticVisualSelection::Time {
             anchor: ProjectFrame(anchor),
             head: ProjectFrame(head),
             extending,

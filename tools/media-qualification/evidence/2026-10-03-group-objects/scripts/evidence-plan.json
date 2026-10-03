@@ -1,0 +1,65 @@
+{
+  "source_check": "clippy-ui-5",
+  "final_checks": [
+    "core-group-objects-initial",
+    "core-edited-slice-final",
+    "core-replacement-lint-refactor",
+    "core-semantic-final",
+    "store-unit-final",
+    "store-registration-final",
+    "audio-composite-final",
+    "cli-project-final",
+    "app-default-final",
+    "app-original-object-worker-corrected",
+    "app-optional-headless-final",
+    "app-object-final",
+    "fmt-6",
+    "app-ui-build-5",
+    "groups-visual-4",
+    "place-visual-2",
+    "macros-visual-1",
+    "clippy-workspace-5",
+    "clippy-ui-5",
+    "native-bundle-2",
+    "native-session",
+    "app-delete-boxed",
+    "app-ui-build-7",
+    "delete-visual-1"
+  ],
+  "test_checks": [
+    "core-group-objects-initial",
+    "core-edited-slice-final",
+    "core-replacement-lint-refactor",
+    "core-semantic-final",
+    "store-unit-final",
+    "store-registration-final",
+    "audio-composite-final",
+    "cli-project-final",
+    "app-default-final",
+    "app-group-objects-corrected",
+    "app-original-object-worker-corrected",
+    "app-optional-headless-final",
+    "app-object-final",
+    "app-delete-boxed"
+  ],
+  "final_replays": [
+    "groups-visual-4",
+    "place-visual-2",
+    "macros-visual-1",
+    "delete-visual-1"
+  ],
+  "screenshots": {
+    "groups-visual-4/groups-121.png": "group-object-selection.png",
+    "groups-visual-4/groups-122.png": "group-object-replacement.png",
+    "place-visual-2/place-slice-127.png": "range-replacement-minimum.png"
+  },
+  "source_note": "Every retained completed command has a stable before/after source inventory. Check phases have different inventories: early full core tests precede the reducer and semantic node-capacity fixes; final edited-slice and semantic targets cover those fixes. Default app, audio and CLI tests precede the reducer argument tuple, Object button/footer captions, the semantic capacity exception and fixture corrections. The exact replacement, semantic, app Object, rendered Group/Place and real store registration targets cover those changes. Native QA and the passing Macro replay precede final footer and capacity corrections. The last lint cleanup boxes the existing captured-delete variant and removes a test clone. Final lint, build, focused app deletion tests and the rendered deletion replay use the final source inventory. Group/Place captures precede only that internal cleanup; their visible controls did not change. No single clean full optional app run or full workspace test run is claimed.",
+  "limits": [
+    "All full-product requirements and Gates A through G remain open or partial; ib/ab and beat-owned temporal attachments are not implemented by this increment.",
+    "Unit and targeted test counts overlap. Optional app unit testing passed 792 cases with one manually scheduled fixture failure; the corrected case passed separately, as did the optional headless target.",
+    "Full workspace tests were not rerun. Strict Clippy covers all workspace targets and the optional UI harness configuration.",
+    "Native keyboard events, accessibility observations and an inspected 2x screenshot establish bounded behavior and appearance only. Not physical keyboard, OS IME, VoiceOver or acoustic qualification.",
+    "Native QA overlapped compilation and does not measure response time. Large-project performance and complete editorial workflow acceptance remain open.",
+    "The first CLI failure's full log was overwritten by the corrected run. A clearly labeled retained tool-output excerpt preserves that failure."
+  ]
+}

@@ -1,0 +1,14 @@
+from pathlib import Path
+
+path = Path("docs/REQUIREMENTS.md")
+text = path.read_text()
+replacements = [
+    ("typed `y`/`d` frame, beat and group-boundary selectors with `yy` whole-beat copy", "typed `y`/`d` frame, beat and group-boundary selectors with `yy` whole-beat copy and [group objects](STRUCTURAL_SELECTIONS.md#group-object-workflow) for `ig`/`ag` operators and Visual editing"),
+    ("beat/range copies, typed operator-motion selectors, Original or Edited paste/replacement", "beat/range/group copies, typed operator-motion and `ig`/`ag` selectors, Original or Edited paste/replacement"),
+    ("Remaining Macro editing instructions, semantic text/role selectors and temporal occurrence scopes;", "Remaining Macro editing instructions, beat/analysis/role selectors and temporal occurrence scopes;"),
+    ("explicit child selection and qualified register pastes;", "explicit Child/Time/Object selections and qualified register pastes;"),
+]
+for old, new in replacements:
+    assert text.count(old) == 1, old
+    text = text.replace(old, new)
+path.write_text(text)

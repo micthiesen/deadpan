@@ -46,6 +46,7 @@ pub(super) struct Draft {
     slot: Option<usize>,
     destination: u64,
     replacement: Option<FrameRange>,
+    replacement_object: Option<deadpan_core::SemanticObjectSelection>,
     replacing: bool,
     site: Site,
     comparison_note: Option<String>,
@@ -255,6 +256,57 @@ impl Draft {
         empty::is_structural(&self.proposal.source)
     }
 
+    fn result_destination(&self) -> Result<(NodeId, Option<usize>, Option<FrameRange>), String> {
+        if let Destination::Object { selection } = &self.proposal.destination {
+            let target = self
+                .base
+                .document
+                .resolve_object_selection(&self.proposal.parent, selection)
+                .map_err(|error| error.to_string())?;
+            let slot = if self.empty_structure() {
+                use deadpan_core::SliceCaptureSelection;
+                Some(match &target.selection {
+                    Some(SliceCaptureSelection::Child { node }) => {
+                        self.base
+                            .document
+                            .sequence_children(&target.parent, node, node)
+                            .map_err(|error| error.to_string())?
+                            .first
+                    }
+                    Some(SliceCaptureSelection::Children { first, last }) => {
+                        self.base
+                            .document
+                            .sequence_children(&target.parent, first, last)
+                            .map_err(|error| error.to_string())?
+                            .first
+                    }
+                    None => 0,
+                    Some(SliceCaptureSelection::Range { .. }) => {
+                        return Err("A group object cannot be a time-only replacement.".into());
+                    }
+                })
+            } else {
+                None
+            };
+            return Ok((target.parent, slot, Some(target.range)));
+        }
+        Ok((
+            self.proposal.parent.clone(),
+            if self.empty_structure() {
+                match self.proposal.destination {
+                    Destination::Slot(slot) => Some(slot),
+                    _ => None,
+                }
+            } else {
+                None
+            },
+            match self.proposal.destination {
+                Destination::Replace { range } => Some(range),
+                _ => None,
+            },
+        ))
+    }
+
     fn changed(&mut self, endpoints: bool) -> Result<(), String> {
         self.proposal.id.change = self
             .proposal
@@ -276,8 +328,14 @@ impl Draft {
         self.comparison_note = None;
         self.dirty = true;
         self.proposal.destination = if self.replacing {
-            Destination::Replace {
-                range: self.replacement.ok_or("No captured Edit selection")?,
+            if let Some(selection) = &self.replacement_object {
+                Destination::Object {
+                    selection: selection.clone(),
+                }
+            } else {
+                Destination::Replace {
+                    range: self.replacement.ok_or("No captured Edit selection")?,
+                }
             }
         } else {
             placement_at(&self.seams, &self.children, self.slot, self.destination)?
@@ -354,6 +412,17 @@ impl DeadpanApp {
                 )
             })?;
             let view = target.scope.resolve(&base)?;
+            if let Some(object) = target.selection.object() {
+                let resolved = base
+                    .document
+                    .resolve_object_selection(view.owner, object)
+                    .map_err(|error| error.to_string())?;
+                if Some(resolved.range) != target.range {
+                    return Err(
+                        "The selected group changed. Select it again before placement.".into(),
+                    );
+                }
+            }
             let mut seams = Vec::with_capacity(view.children.len() + 1);
             let mut at = view.start;
             seams.push(at);
@@ -455,6 +524,7 @@ impl DeadpanApp {
             slot,
             destination: target.cursor,
             replacement: target.range,
+            replacement_object: target.selection.object().cloned(),
             replacing: false,
             site: Site::Insertion,
             comparison_note: None,
@@ -586,26 +656,22 @@ impl DeadpanApp {
                             );
                         }
                     }
+                    let (expected_parent, expected_slot, expected_removed) =
+                        draft.result_destination()?;
                     if prepared.base.session != update.id.session
-                        || prepared.base.document.project_id() != &update.id.project
-                        || prepared.base.document.revision_id() != &update.id.base_revision
-                        || prepared.parent != draft.proposal.parent
-                        || prepared.empty_slot
-                            != if draft.empty_structure() {
-                                match draft.proposal.destination {
-                                    Destination::Slot(slot) => Some(slot),
-                                    _ => None,
-                                }
-                            } else {
-                                None
-                            }
-                        || prepared.movement.is_some()
-                            != (draft.proposal.operation == Operation::Move)
-                        || prepared.removed
-                            != match draft.proposal.destination {
-                                Destination::Replace { range } => Some(range),
+                        || prepared.navigation_parent != draft.proposal.parent
+                        || prepared.object.as_ref()
+                            != match &draft.proposal.destination {
+                                Destination::Object { selection } => Some(selection),
                                 _ => None,
                             }
+                        || prepared.base.document.project_id() != &update.id.project
+                        || prepared.base.document.revision_id() != &update.id.base_revision
+                        || prepared.parent != expected_parent
+                        || prepared.empty_slot != expected_slot
+                        || prepared.movement.is_some()
+                            != (draft.proposal.operation == Operation::Move)
+                        || prepared.removed != expected_removed
                     {
                         return Err(
                             "Slice preparation returned a different captured destination.".into(),
@@ -915,7 +981,7 @@ impl DeadpanApp {
                 changed = true;
             }
             SpliceKey::Replace => {
-                if draft.empty_structure() {
+                if draft.empty_structure() && draft.replacement_object.is_none() {
                     draft.error = Some(empty::PLACEMENT_REASON.into());
                     return;
                 }
