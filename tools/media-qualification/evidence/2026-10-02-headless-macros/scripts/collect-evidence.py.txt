@@ -1,0 +1,88 @@
+import datetime
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import sys
+
+root = Path('/Users/michael/Code/deadpan')
+scratch = Path(__file__).parent
+destination = root / 'tools/media-qualification/evidence/2026-10-02-headless-macros'
+required = ['affected-default', 'affected-final', 'clippy-final', 'app-ui-final',
+            'build-ui-final', 'clippy-default-final', 'format-final', 'replay-macros-final']
+for name in required:
+    report = json.loads((scratch / f'{name}.json').read_text())
+    assert report['gate_exit_code'] == 0, name
+
+def save(relative, data):
+    path = destination / relative
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(data)
+
+def compressed(relative, data):
+    save(relative, gzip.compress(data, mtime=0))
+
+checks = {}
+for path in sorted(scratch.glob('*.json')):
+    if path.name == 'review-notes.json':
+        save(path.name, path.read_bytes())
+    elif path.name.startswith('source-'):
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        assert path.stem == f'source-{digest}'
+        compressed('checks/' + path.name + '.gz', path.read_bytes())
+    else:
+        save('checks/' + path.name, path.read_bytes())
+        report = json.loads(path.read_text())
+        if 'command' in report:
+            checks[path.stem] = report
+
+for path in sorted(scratch.glob('*.log')):
+    compressed('checks/' + path.name + '.gz', path.read_bytes())
+
+for path in [Path('/tmp/deadpan-original-layout-20261002/run-check.py'),
+             scratch / 'verify-final.py', Path(__file__)]:
+    save('scripts/' + path.name + '.txt', path.read_bytes())
+
+test_totals = {}
+for name in ['affected-default', 'affected-final', 'app-ui-final']:
+    log = (scratch / f'{name}.log').read_text()
+    rows = re.findall(r'test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored', log)
+    test_totals[name] = {'suites': len(rows), 'passed': sum(int(x[0]) for x in rows),
+                         'failed': sum(int(x[1]) for x in rows), 'ignored': sum(int(x[2]) for x in rows)}
+
+binary = root / 'target/debug/deadpan-app'
+metadata = {
+    'recorded_utc': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    'base_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip(),
+    'hardware': {'cpu':'Apple M5 Max', 'memory_bytes':137438953472, 'architecture':'arm64'},
+    'os': {'name':'macOS', 'version':'26.5.2', 'build':'25F84'},
+    'rust':'1.97.1 (8bab26f4f)', 'cargo':'1.97.1 (c980f4866)',
+    'ffmpeg_prefix':'/tmp/deadpan-ui-ffmpeg/prefix',
+    'binary_sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),
+    'binary_features':['ui-harness'], 'test_totals':test_totals,
+    'final_source_manifest_sha256':checks['replay-macros-final']['source_manifest_sha256'],
+}
+save('metadata.json', (json.dumps(metadata, indent=2) + '\n').encode())
+
+processes = subprocess.check_output(['ps','-A','-o','pid=,comm='], text=True)
+remaining = [line.strip() for line in processes.splitlines() if Path(line.strip().split(maxsplit=1)[-1]).name == 'deadpan-app']
+assert not remaining, remaining
+save('cleanup.json', (json.dumps({'remaining_deadpan_app_processes':remaining}, indent=2)+'\n').encode())
+
+for name in sys.argv[1:]:
+    path = Path(name)
+    assert path.is_relative_to(scratch)
+    if path.suffix == '.png':
+        save('screenshots/' + path.name, path.read_bytes())
+    elif path.suffix == '.json':
+        compressed('replays/' + path.name + '.gz', path.read_bytes())
+    else:
+        raise ValueError(path)
+
+files = sorted(path for path in destination.rglob('*') if path.is_file() and path.name != 'SHA256SUMS')
+sums = ''.join(f'{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.relative_to(destination)}\n' for path in files)
+save('SHA256SUMS', sums.encode())
+print(json.dumps({'files':len(files)+1,'bytes':sum(path.stat().st_size for path in destination.rglob('*') if path.is_file()),**metadata},indent=2))

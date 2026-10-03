@@ -203,18 +203,49 @@ impl Service {
             let pending = self.shared.update.try_lock().map_err(|_| {
                 LiveError::new("HostBusy", "The native app is receiving an edit result")
             })?;
-            if pending
-                .as_ref()
-                .is_some_and(|update| update.committed.is_some())
-            {
+            if pending.as_ref().is_some_and(has_native_continuation) {
                 return Err(LiveError::new(
                     "HostBusy",
-                    "The native app has an unread edit receipt",
+                    "The native app has an unread edit or register receipt",
                 ));
             }
         }
-        let store = self.store.as_mut().ok_or_else(owner_changed)?;
-        let (output, committed_revision) = execute_short(store, project, command)?;
+        let execution = match command {
+            deadpan_cli::live_project::ShortOperation::Macro { request } => {
+                self.check_host_project(project)?;
+                if &request.project_id != project {
+                    return Err(LiveError::new(
+                        "HostProjectChanged",
+                        "Macro and host project identities differ",
+                    ));
+                }
+                let prepared = deadpan_cli::macros::prepare(
+                    self.store.as_ref().ok_or_else(owner_changed)?,
+                    request,
+                )?;
+                let bank = self
+                    .prepare_remote_macro_registers(&prepared)
+                    .map_err(|error| LiveError::new("HostMacroPreparationFailed", error))?;
+                let execution = deadpan_cli::macros::commit(
+                    self.store.as_mut().ok_or_else(owner_changed)?,
+                    &prepared,
+                )?;
+                if let Some(bank) = bank {
+                    self.registers = Some(bank);
+                }
+                execution
+            }
+            _ => execute_short(
+                self.store.as_mut().ok_or_else(owner_changed)?,
+                project,
+                command,
+            )?,
+        };
+        let deadpan_cli::macros::Execution {
+            output,
+            committed_revision,
+            committed_registers,
+        } = execution;
         let mut refresh_error = None;
         if let Some(revision) = &committed_revision {
             use deadpan_cli::live_project::ShortOperation;
@@ -239,6 +270,8 @@ impl Service {
             self.room_tone = None;
             self.room_tone_error = None;
             self.gain = None;
+        }
+        if committed_revision.is_some() || committed_registers.is_some() {
             #[cfg(test)]
             let inject_failure = self
                 .shared
@@ -252,7 +285,10 @@ impl Service {
                 self.refresh().err()
             };
             self.error = refresh_error.clone();
-            self.message = Some(format!("Headless edit saved at revision {revision}"));
+            self.message = Some(match &committed_revision {
+                Some(revision) => format!("Headless edit saved at revision {revision}"),
+                None => "Headless macro saved in the register bank".into(),
+            });
             self.publish();
         }
         // A failed workspace refresh cannot convert a successful transaction
@@ -260,6 +296,7 @@ impl Service {
         Ok(HostReply::Completed {
             output,
             committed_revision,
+            committed_registers,
             refresh_error,
         })
     }
@@ -459,6 +496,14 @@ impl Service {
     }
 }
 
+fn has_native_continuation(update: &ProjectUpdate) -> bool {
+    update.committed.is_some()
+        || update.macros.is_some()
+        || update.captured_slice.is_some()
+        || update.captured_original.is_some()
+        || update.cut_slice.is_some()
+}
+
 fn owner_changed() -> LiveError {
     LiveError::new(
         "HostOwnerChanged",
@@ -472,6 +517,7 @@ fn public_error(error: public_render::PublicRenderError) -> LiveError {
         message: error.message,
         current_revision: error.current_revision,
         committed_revision: None,
+        committed_registers: None,
     }
 }
 
@@ -522,15 +568,18 @@ fn reply_failure(reply: &HostReply) -> HostReply {
         }
         return HostReply::Failed { error };
     }
-    let committed_revision = match reply {
+    let (committed_revision, committed_registers) = match reply {
         HostReply::Completed {
-            committed_revision, ..
-        } => committed_revision.clone(),
-        _ => None,
+            committed_revision,
+            committed_registers,
+            ..
+        } => (committed_revision.clone(), committed_registers.clone()),
+        _ => (None, None),
     };
     HostReply::Failed {
         error: LiveError {
             committed_revision,
+            committed_registers: committed_registers.map(Box::new),
             ..LiveError::new(
                 "HostReplyLimit",
                 "The operation executed but its full reply exceeded transport capacity. Inspect the project before repeating a mutation.",
@@ -549,6 +598,7 @@ mod tests {
         let reply = HostReply::Completed {
             output: serde_json::json!({"committed":true,"outcome":{"large":"detail"}}),
             committed_revision: Some(revision.clone()),
+            committed_registers: None,
             refresh_error: Some("UI refresh failed".into()),
         };
         let HostReply::Failed { error } = reply_failure(&reply) else {
@@ -574,6 +624,43 @@ mod tests {
         assert_eq!(error.code, "RevisionConflict");
         assert_eq!(error.current_revision, Some(revision));
         assert!(error.committed_revision.is_none());
+    }
+
+    #[test]
+    fn compact_host_reply_preserves_exact_bank_only_and_authored_macro_receipts() {
+        use deadpan_cli::macros::RegisterReceipt;
+
+        for authored in [false, true] {
+            let bank = RegisterReceipt {
+                project_id: ProjectId::new("saved-macro-project").unwrap(),
+                revision_id: RevisionId::new("saved-macro-revision").unwrap(),
+                bank_version: 37,
+            };
+            let revision = authored.then(|| bank.revision_id.clone());
+            let reply = HostReply::Completed {
+                output: serde_json::json!({"large":"x".repeat(1_000_000)}),
+                committed_revision: revision.clone(),
+                committed_registers: Some(bank.clone()),
+                refresh_error: Some("Workspace refresh failed after saving".into()),
+            };
+            let compact = reply_failure(&reply);
+            assert!(serde_json::to_vec(&compact).unwrap().len() < 4096);
+            let HostReply::Failed { error } = compact else {
+                panic!("expected bounded receipt")
+            };
+            assert_eq!(error.code, "HostReplyLimit");
+            assert_eq!(error.committed_revision, revision);
+            assert_eq!(error.committed_registers.as_deref(), Some(&bank));
+            assert!(error.message.contains("Inspect the project"));
+            let repeated = reply_failure(&HostReply::Failed {
+                error: error.clone(),
+            });
+            let HostReply::Failed { error: repeated } = repeated else {
+                panic!("expected retained failure receipt")
+            };
+            assert_eq!(repeated.committed_registers, error.committed_registers);
+            assert_eq!(repeated.committed_revision, error.committed_revision);
+        }
     }
 
     #[test]

@@ -1,0 +1,18 @@
+{
+  "reviews": "Cross-layer peer review, not a fresh-context full-branch review",
+  "store_api": "Reviewed by root and semantic_macro_keys",
+  "native_service": "Reviewed by semantic_macro_store",
+  "cli_api": "Reviewed by root and semantic_macro_store",
+  "rendered_harness": "Reviewed by semantic_macro_keys",
+  "fixed_coverage_findings": [
+    "Rendered remote authored check now compares runtime copied slice, exact range and bank version with durable state",
+    "CLI history tests compare complete documents with only fresh revision normalized",
+    "Guard tests use a valid macro and assert the intended error code rather than an independently invalid body"
+  ],
+  "remaining_code_findings": [],
+  "limits": [
+    "Concurrent snapshot test is bounded smoke coverage; does not force every interleaving",
+    "Malformed Completed output and omitted output receipt branches were reviewed but not directly fault-injected",
+    "Review agents did not execute builds/tests; root owns all verification"
+  ]
+}

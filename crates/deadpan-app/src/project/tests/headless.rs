@@ -1,5 +1,6 @@
 //! Real authenticated socket requests against the native owning service.
 
+mod macros;
 mod preparation;
 
 use super::*;
@@ -47,6 +48,7 @@ fn committed(reply: Reply, expected: &str) -> Value {
         output,
         committed_revision,
         refresh_error,
+        ..
     } = reply
     else {
         panic!("expected a completed command receipt")
@@ -234,6 +236,7 @@ fn dry_run_and_malformed_requests_leave_native_state_unchanged() {
         output,
         committed_revision,
         refresh_error,
+        ..
     } = live_project::request(&mut client, preview).unwrap()
     else {
         panic!("preview reply")
@@ -475,6 +478,7 @@ fn committed_receipt_survives_native_workspace_refresh_failure() {
         output,
         committed_revision,
         refresh_error,
+        ..
     } = live_project::request(&mut client, change(&initial, "saved-before-refresh", 18)).unwrap()
     else {
         panic!("commit receipt lost")

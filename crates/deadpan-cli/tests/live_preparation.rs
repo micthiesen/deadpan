@@ -83,10 +83,15 @@ fn run(
                     project_id,
                     command,
                 } => {
-                    let (output, committed_revision) = execute_short(store, &project_id, &command)?;
+                    let deadpan_cli::macros::Execution {
+                        output,
+                        committed_revision,
+                        committed_registers,
+                    } = execute_short(store, &project_id, &command)?;
                     Reply::Completed {
                         output,
                         committed_revision,
+                        committed_registers,
                         refresh_error: None,
                     }
                 }

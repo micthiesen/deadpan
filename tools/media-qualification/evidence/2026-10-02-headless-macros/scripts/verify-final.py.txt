@@ -1,0 +1,26 @@
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+scratch = Path(__file__).parent
+recorder = Path('/tmp/deadpan-original-layout-20261002/run-check.py')
+environment = dict(os.environ, DEADPAN_CHECK_OUTPUT=str(scratch))
+commands = [
+    ('affected-final', ['cargo', 'test', '--locked', '-p', 'deadpan-cli', '-p', 'deadpan-app']),
+    ('app-ui-final', ['cargo', 'test', '--locked', '-p', 'deadpan-app', '--features', 'ui-harness']),
+    ('build-ui-final', ['cargo', 'build', '--locked', '-p', 'deadpan-app', '--features', 'ui-harness']),
+    ('clippy-default-final', ['cargo', 'clippy', '--locked', '-p', 'deadpan-app', '--all-targets', '--', '-D', 'warnings']),
+    ('format-final', ['cargo', 'fmt', '--all', '--', '--check']),
+    ('replay-macros-final', [
+        'target/debug/deadpan-app', '--ui-check', '--scenario', 'macros', '--mode', 'visual',
+        '--output', str(scratch / 'replay-macros-final'), '--kestrel-source',
+        '/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift', '--retain-projects',
+    ]),
+]
+for name, command in commands:
+    print('START', name, flush=True)
+    result = subprocess.run([sys.executable, str(recorder), name, *command], env=environment)
+    if result.returncode:
+        sys.exit(result.returncode)
+print('ALL FINAL CHECKS PASSED', flush=True)

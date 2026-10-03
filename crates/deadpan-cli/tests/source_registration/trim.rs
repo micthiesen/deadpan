@@ -139,7 +139,11 @@ fn headless_trim_reports_zero_and_one_commit_preview_consistently() -> Result {
         new_revision: RevisionId::new("trimmed")?,
         command: serde_json::from_value(envelope["command"].clone())?,
     };
-    let (hosted, revision) = deadpan_cli::live_project::execute_short(
+    let deadpan_cli::macros::Execution {
+        output: hosted,
+        committed_revision: revision,
+        ..
+    } = deadpan_cli::live_project::execute_short(
         &mut writer,
         before.project_id(),
         &deadpan_cli::live_project::ShortOperation::Edit {

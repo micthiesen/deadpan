@@ -125,14 +125,15 @@ pub(super) fn hosted(
 ) -> Result<(Value, Option<RevisionId>)> {
     let request = typed(request)?;
     let project = request.project_id.clone();
-    Ok(execute_short(
+    let result = execute_short(
         store,
         &project,
         &ShortOperation::Edit {
             request: Box::new(request),
             dry_run,
         },
-    )?)
+    )?;
+    Ok((result.output, result.committed_revision))
 }
 
 pub(super) fn same_content(actual: &ProjectDocument, expected: &ProjectDocument) -> Result {
@@ -251,7 +252,10 @@ fn headless_roll_cold_and_live_share_preview_one_commit_and_durable_history() ->
         same_content(&undone, &before)?;
         assert_ne!(undone.revision_id(), before.revision_id());
         let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
-        let (_, saved) = execute_short(
+        let deadpan_cli::macros::Execution {
+            committed_revision: saved,
+            ..
+        } = execute_short(
             &mut writer,
             undone.project_id(),
             &ShortOperation::History {

@@ -78,8 +78,73 @@ feedback. A committed macro remains successful if workspace refresh fails,
 while the old view cannot consume its cursor. A cursor moved while execution
 was pending is not retargeted by the delayed result.
 
-Native execution uses the shared core planner and store Compound entrypoint.
-Dedicated headless named-Macro management and execution commands remain open;
-the existing headless resolved-Compound interface is unchanged. A macro edit
-clears the current frame-cut-only dot-repeat candidate rather than leaving an
-older cut as the apparent last edit.
+Native and headless execution use the shared core planner and store Compound
+entrypoint. A macro edit clears the current frame-cut-only dot-repeat candidate.
+
+## Headless inspection, save and run
+
+The standalone CLI and `deadpan-app --headless` share these commands:
+
+```text
+macro inspect <project.deadpan> [--register a]
+macro <project.deadpan> --json <request.json> [--dry-run]
+```
+
+Inspection reads the project revision and bank version in one SQLite snapshot.
+It reports register types and saved Macro bodies without returning copied media
+payloads. JSON register names use lowercase a-z. Request files are limited to
+132 KiB, including the existing 128 KiB program bound. Use the inspected
+identities in a version-1 request:
+
+```json
+{
+  "protocol": 1,
+  "project_id": "PROJECT_ID_FROM_INSPECTION",
+  "expected_revision": "REVISION_ID_FROM_INSPECTION",
+  "expected_bank_version": 0,
+  "dry_run": false,
+  "operation": {
+    "type": "save",
+    "register": "a",
+    "program": {
+      "instructions": [
+        { "type": "move_frames", "forward": true, "count": 2 },
+        { "type": "cut_frames", "operation": { "count": 1 }, "register": "b" }
+      ]
+    }
+  }
+}
+```
+
+To run, replace `operation` with the following object and update the expected
+bank version after saving. `parent` is an ordinary Sequence node ID; `cursor`
+is an absolute Edit-frame boundary within it. A positive count repeats the
+whole Macro in one transaction. The optional `new_revision` names a fresh outer
+revision; omission allocates it on the host.
+
+```json
+{
+  "type": "run",
+  "register": "a",
+  "parent": "SEQUENCE_NODE_ID",
+  "cursor": 20,
+  "count": 3
+}
+```
+
+Save dry-run checks the same program, bank capacity, version and storage rules
+as save. It does not execute the body. Run dry-run resolves the whole program
+and admits its Compound without saving history, captures or registers.
+Motion-only runs return the resolved position without writing or moving the
+native cursor. The JSON request's `dry_run: true` remains effective when the
+command-line flag is absent.
+
+An open native project executes through its authenticated writer. The host
+prepares runtime copies before committing and publishes the saved bank even
+when workspace refresh fails. Successful bank writes retain
+`committed_registers` with project ID, revision ID and bank version, independently
+of detailed output; authored runs also retain `committed_revision`. A compact
+reply preserves both receipts if full detail exceeds transport capacity.
+Socket uncertainty never authorizes automatic replay. Remote operations wait
+for unread native edit, copy and Macro continuations and do not create their
+own native cursor continuation. See [live project access](LIVE_PROJECT.md).

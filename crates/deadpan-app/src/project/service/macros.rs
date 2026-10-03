@@ -15,6 +15,73 @@ use crate::project::registers::{Bank, Value};
 use crate::project::slice::{Captured, CopyId};
 
 impl Service {
+    /// Remote macros use explicit document coordinates. Build every runtime
+    /// copy before committing, without creating a native cursor continuation.
+    pub(super) fn prepare_remote_macro_registers(
+        &mut self,
+        prepared: &deadpan_cli::macros::Prepared,
+    ) -> Result<Option<Arc<Bank>>> {
+        use deadpan_cli::macros::Operation as RemoteOperation;
+
+        if prepared.request.dry_run
+            || prepared
+                .plan
+                .as_ref()
+                .is_some_and(|plan| plan.request.is_none())
+        {
+            return Ok(None);
+        }
+        self.refresh_registers()?;
+        let id = Id {
+            session: self.session,
+            project: prepared.request.project_id.clone(),
+            revision: prepared.request.expected_revision.clone(),
+            bank_version: prepared.bank.version,
+            // Used only to prepare persisted runtime copies. No native request
+            // or receipt is published for this remote operation.
+            request: 1,
+        };
+        let runtime = self.macro_runtime_bank(&id)?;
+        if runtime.entries.len() != prepared.bank.entries.len()
+            || prepared.bank.entries.iter().any(|(name, value)| {
+                runtime
+                    .entries
+                    .get(&name.as_char())
+                    .is_none_or(|runtime| !matches_runtime(value, runtime, &id))
+            })
+        {
+            return Err("Remote macro input differs from its runtime register content".into());
+        }
+        let bank = match &prepared.request.operation {
+            RemoteOperation::Save { register, program } => {
+                let mut bank = runtime.clone();
+                bank.version = prepared.final_bank.version;
+                bank.entries
+                    .insert(register.as_char(), Value::Macro(program.clone()));
+                bank
+            }
+            RemoteOperation::Run { parent, .. } => {
+                let plan = prepared.plan.as_ref().ok_or("Remote macro has no plan")?;
+                let picture_plan = RenderPlan::compile(&prepared.document).map_err(display)?;
+                let scope = SequenceScope::from_historical_parent(
+                    &prepared.document,
+                    &picture_plan,
+                    parent,
+                )?;
+                prepare_runtime_bank(
+                    &id,
+                    &scope,
+                    &prepared.document,
+                    runtime,
+                    &prepared.bank,
+                    &prepared.final_bank,
+                    plan,
+                )?
+            }
+        };
+        Ok(Some(Arc::new(bank)))
+    }
+
     pub(super) fn macro_command(&mut self, operation: Operation) {
         let result = match &self.saved_macro {
             Some((previous, receipt)) if previous == &operation => Ok(receipt.clone()),

@@ -22,6 +22,9 @@ mod delete;
 mod delete_range;
 #[path = "project_commands/edited_slice.rs"]
 mod edited_slice;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+#[path = "project_commands/macros.rs"]
+mod macros;
 #[path = "project_commands/move_range.rs"]
 mod move_range;
 #[path = "project_commands/nested_pause.rs"]
@@ -57,6 +60,7 @@ fn doctor_reports_hold_audio_document_and_migration_schemas() -> Result {
         "persistent-copy-registers",
         "resolved-compound-transactions",
         "native-semantic-macros",
+        "headless-semantic-macros",
         "hold-audio-policy-commands",
         "native-original-audition",
         "selection-loop-audition",

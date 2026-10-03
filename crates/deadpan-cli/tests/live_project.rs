@@ -232,8 +232,11 @@ fn shared_executor_matches_direct_store_preview_commit_undo_and_redo() -> Result
     let request = insert(&initial)?;
     let before = journal_state(&actual_path)?;
 
-    let (preview, receipt) =
-        execute_short(&mut actual, initial.project_id(), &edit(&request, true))?;
+    let deadpan_cli::macros::Execution {
+        output: preview,
+        committed_revision: receipt,
+        ..
+    } = execute_short(&mut actual, initial.project_id(), &edit(&request, true))?;
     assert_eq!(
         preview,
         json!({"protocol":1,"committed":false,"edit":direct.preview(&request)?})
@@ -243,8 +246,11 @@ fn shared_executor_matches_direct_store_preview_commit_undo_and_redo() -> Result
     assert_eq!(journal_state(&actual_path)?, before);
 
     let expected = direct.commit(&request)?;
-    let (committed, receipt) =
-        execute_short(&mut actual, initial.project_id(), &edit(&request, false))?;
+    let deadpan_cli::macros::Execution {
+        output: committed,
+        committed_revision: receipt,
+        ..
+    } = execute_short(&mut actual, initial.project_id(), &edit(&request, false))?;
     assert_eq!(
         committed,
         json!({"protocol":1,"committed":true,"outcome":expected})
@@ -269,8 +275,11 @@ fn shared_executor_matches_direct_store_preview_commit_undo_and_redo() -> Result
             HistoryDirection::Undo => direct.preview_undo(current.revision_id(), next.clone())?,
             HistoryDirection::Redo => direct.preview_redo(current.revision_id(), next.clone())?,
         };
-        let (preview, receipt) =
-            execute_short(&mut actual, initial.project_id(), &operation(true))?;
+        let deadpan_cli::macros::Execution {
+            output: preview,
+            committed_revision: receipt,
+            ..
+        } = execute_short(&mut actual, initial.project_id(), &operation(true))?;
         assert_eq!(
             preview,
             json!({"protocol":1,"committed":false,"outcome":expected})
@@ -282,8 +291,11 @@ fn shared_executor_matches_direct_store_preview_commit_undo_and_redo() -> Result
             HistoryDirection::Undo => direct.undo(current.revision_id(), next.clone())?,
             HistoryDirection::Redo => direct.redo(current.revision_id(), next.clone())?,
         };
-        let (committed, receipt) =
-            execute_short(&mut actual, initial.project_id(), &operation(false))?;
+        let deadpan_cli::macros::Execution {
+            output: committed,
+            committed_revision: receipt,
+            ..
+        } = execute_short(&mut actual, initial.project_id(), &operation(false))?;
         assert_eq!(
             committed,
             json!({"protocol":1,"committed":true,"outcome":expected})
@@ -385,7 +397,7 @@ fn closed_dispatch_matches_shared_execution_and_preview_keeps_writer_lock() -> R
     let request = insert(&initial)?;
     for dry_run in [true, false] {
         let expected =
-            execute_short(&mut direct, initial.project_id(), &edit(&request, dry_run))?.0;
+            execute_short(&mut direct, initial.project_id(), &edit(&request, dry_run))?.output;
         assert_eq!(
             dispatch_short(&path, None, edit(&request, dry_run))?,
             expected
@@ -407,7 +419,7 @@ fn closed_dispatch_matches_shared_execution_and_preview_keeps_writer_lock() -> R
                 new_revision: RevisionId::new(revision)?,
                 dry_run,
             };
-            let expected = execute_short(&mut direct, initial.project_id(), &operation)?.0;
+            let expected = execute_short(&mut direct, initial.project_id(), &operation)?.output;
             assert_eq!(
                 dispatch_short(&path, Some(initial.project_id().clone()), operation)?,
                 expected
@@ -491,9 +503,14 @@ fn remote_dispatch(
                     }) => {
                         received.execute += 1;
                         match execute_short(store, &project_id, &command) {
-                            Ok((output, committed_revision)) => Reply::Completed {
+                            Ok(deadpan_cli::macros::Execution {
                                 output,
                                 committed_revision,
+                                committed_registers,
+                            }) => Reply::Completed {
+                                output,
+                                committed_revision,
+                                committed_registers,
                                 refresh_error: refresh_error.map(str::to_owned),
                             },
                             Err(error) => Reply::Failed { error },
@@ -527,7 +544,7 @@ fn remote_dispatch_uses_the_same_commit_history_and_error_receipts() -> Result {
     let mut direct = ProjectStore::create(&scratch.path().join("direct.deadpan"), &initial)?;
     let mut endpoint = Endpoint::bind(&mut owner)?;
     let request = insert(&initial)?;
-    let expected = execute_short(&mut direct, initial.project_id(), &edit(&request, false))?.0;
+    let expected = execute_short(&mut direct, initial.project_id(), &edit(&request, false))?.output;
     let (actual, received) = remote_dispatch(
         &mut owner,
         &mut endpoint,
@@ -564,7 +581,7 @@ fn remote_dispatch_uses_the_same_commit_history_and_error_receipts() -> Result {
             new_revision: RevisionId::new(revision)?,
             dry_run: false,
         };
-        let expected = execute_short(&mut direct, initial.project_id(), &operation)?.0;
+        let expected = execute_short(&mut direct, initial.project_id(), &operation)?.output;
         let (actual, received) =
             remote_dispatch(&mut owner, &mut endpoint, &path, None, operation, None)?;
         assert_eq!(actual?, expected);
@@ -605,6 +622,113 @@ fn a_remote_commit_survives_refresh_failure_with_its_exact_revision_receipt() ->
     assert_eq!(received.execute, 1);
     assert_eq!(owner.snapshot()?.revision_id(), &request.new_revision);
     assert_eq!(journal_state(&path)?.0, 2);
+    Ok(())
+}
+
+#[test]
+fn remote_macro_save_retains_its_bank_receipt_without_an_authored_revision() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let initial = document()?;
+    let path = scratch.path().join("remote-macro.deadpan");
+    let mut owner = ProjectStore::create(&path, &initial)?;
+    let mut endpoint = Endpoint::bind(&mut owner)?;
+    let macro_request: deadpan_cli::macros::Request = serde_json::from_value(json!({
+        "protocol":1,"project_id":initial.project_id(),"expected_revision":initial.revision_id(),
+        "expected_bank_version":0,"operation":{"type":"save","register":"a",
+            "program":{"instructions":[{"type":"move_frames","forward":true,"count":3}]}}
+    }))?;
+    let before = journal_state(&path)?;
+    let (actual, received) = remote_dispatch(
+        &mut owner,
+        &mut endpoint,
+        &path,
+        Some(initial.project_id().clone()),
+        ShortOperation::Macro {
+            request: Box::new(macro_request.clone()),
+        },
+        Some("workspace refresh failed"),
+    )?;
+    let actual = actual?;
+    let receipt = json!({"project_id":initial.project_id(),"revision_id":initial.revision_id(),"bank_version":1});
+    assert_eq!(actual["committed"], true);
+    assert!(actual["committed_revision"].is_null());
+    assert_eq!(actual["committed_registers"], receipt);
+    assert_eq!(actual["host_refresh_error"], "workspace refresh failed");
+    assert_eq!(received.execute, 1);
+    assert_eq!(owner.snapshot()?, initial);
+    assert_eq!(owner.registers()?.version, 1);
+    assert_eq!(journal_state(&path)?, before);
+    let (stale, received) = remote_dispatch(
+        &mut owner,
+        &mut endpoint,
+        &path,
+        Some(initial.project_id().clone()),
+        ShortOperation::Macro {
+            request: Box::new(macro_request),
+        },
+        None,
+    )?;
+    assert!(stale.is_err());
+    assert_eq!(received.execute, 1);
+    assert_eq!(owner.registers()?.version, 1);
+    // Compact host errors can transport this receipt independently of output.
+    let compact = LiveError {
+        committed_registers: Some(serde_json::from_value(receipt.clone())?),
+        ..LiveError::new(
+            "HostResponseTooLarge",
+            "Saved macro response exceeds transport size",
+        )
+    };
+    let decoded: LiveError = serde_json::from_value(serde_json::to_value(compact)?)?;
+    assert_eq!(serde_json::to_value(decoded.committed_registers)?, receipt);
+    Ok(())
+}
+
+#[test]
+fn ipc_macro_requests_enforce_the_same_strict_program_and_envelope_contract() -> Result {
+    let initial = document()?;
+    let inner = json!({"protocol":1,"project_id":initial.project_id(),
+        "expected_revision":initial.revision_id(),"expected_bank_version":0,
+        "operation":{"type":"save","register":"a","program":{"instructions":[
+            {"type":"move_frames","forward":true,"count":1}]}}});
+    let wrap = |request: Value| {
+        json!({"schema_version":1,"operation":{
+        "operation":"execute","project_id":initial.project_id(),
+        "command":{"command":"macro","request":request}}})
+    };
+    assert!(Request::from_value(wrap(inner.clone())).is_ok());
+    for pointer in [
+        "/unexpected",
+        "/operation/unexpected",
+        "/operation/program/unexpected",
+        "/operation/program/instructions/0/unexpected",
+    ] {
+        let mut invalid = inner.clone();
+        let (parent, _) = pointer.rsplit_once('/').unwrap();
+        invalid
+            .pointer_mut(parent)
+            .unwrap()
+            .as_object_mut()
+            .unwrap()
+            .insert("unexpected".into(), json!(true));
+        assert!(Request::from_value(wrap(invalid)).is_err(), "{pointer}");
+    }
+    for (pointer, value) in [
+        ("/protocol", json!(2)),
+        ("/operation/register", json!("\"")),
+        ("/operation/program/instructions/0/count", json!(0)),
+        (
+            "/operation/program/instructions",
+            json!(vec![
+                json!({"type":"move_frames","forward":true,"count":1});
+                1025
+            ]),
+        ),
+    ] {
+        let mut invalid = inner.clone();
+        *invalid.pointer_mut(pointer).unwrap() = value;
+        assert!(Request::from_value(wrap(invalid)).is_err(), "{pointer}");
+    }
     Ok(())
 }
 

@@ -11,6 +11,7 @@ readers.
 | Operation | Open native project behavior |
 |---|---|
 | Structural `command` | Execute the submitted project, revision and typed command through the existing store transaction. |
+| Macro save and run | Check the explicit revision and bank version, prepare runtime copies, then save the named program or one resolved Compound. Runs use the submitted Sequence and cursor. |
 | Undo and redo | Use the explicit expected revision and a fresh revision allocated by the caller. |
 | Adopt primary geometry | Use the submitted revision and the store's existing qualified geometry boundary. |
 | Retain or relink an Original | Prepare complete-byte verification on the import worker, then commit the inventory change on its writer. Relinking retains the caller's expected location version. |
@@ -27,7 +28,8 @@ does not acquire a writer or contact the owner. The explicit IPC `Migrate`
 operation can report an admitted owner's current schema without releasing its
 writer; it does not migrate a legacy store. Older closed packages retain their
 existing explicit migration path. This boundary does not complete DP-21 or add
-CLI generation, analysis, macros or the remaining editor commands.
+CLI generation, analysis or the remaining editor commands. Named Macro access
+implements the current bounded motion/cut/call vocabulary only.
 
 ## Ownership and authentication
 
@@ -74,8 +76,11 @@ already admitted client.
 ## Receipts and failure
 
 A successful edit reply retains its durable revision even if refreshing the
-native workspace fails. If a detailed reply exceeds transport capacity, a small
-failure reply preserves `committed_revision`. Neither failure authorizes replay.
+native workspace fails. Macro bank saves additionally retain
+`committed_registers`, containing the exact project, revision and bank version.
+Bank-only saves have no authored revision. If a detailed reply exceeds transport
+capacity, a small failure reply preserves `committed_revision` and
+`committed_registers`. Neither failure authorizes replay.
 Socket loss after a request begins can instead produce `HostOutcomeUnknown`:
 the caller must inspect the project before repeating a mutation. Request UUIDs
 correlate messages; they do not promise deduplication or exactly-once execution.
@@ -85,8 +90,11 @@ mailbox. A remote edit publishes the resulting workspace. Generic operations
 take the same short admission slot as UI commands; status and exact cancellation
 remain available while that slot is busy. They cannot clear another command's
 admission flag.
-A remote short edit returns `HostBusy` while a native commit receipt remains
-unread by the UI, preserving that edit's cursor and selection continuation.
+A remote short edit returns `HostBusy` while a native edit, copy or Macro
+continuation remains unread by the UI, preserving its cursor and selection.
+Prepared background operations use the same publication guard. Motion-only
+remote Macros return their explicit resolved position without publishing a
+native cursor change or writing the project.
 
 ## Background preparation
 

@@ -12,6 +12,8 @@ pub mod host;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod live_project;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod macros;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 mod originals;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod picture;
@@ -58,6 +60,8 @@ const HELP: &str = "Deadpan headless commands:
   resolve-selection <project.deadpan> --json <selection.json>
   locate-boundary <project.deadpan> --json <boundary.json>
   command <project.deadpan> --json <request.json> [--dry-run]
+  macro inspect <project.deadpan> [--register a]
+  macro <project.deadpan> --json <request.json> [--dry-run]
   render <project.deadpan> --output <directory> [--name <movie.mp4>] [--expected <revision>]
   render <project.deadpan> --json <request.json>
   render retry <project.deadpan> --job <job> --checkpoint <encoding-attempt> --output <directory> [--name <movie.mp4>]
@@ -351,6 +355,12 @@ pub fn entry(arguments: impl IntoIterator<Item = String>) -> ExitCode {
             if let Some(revision) = error.committed_revision() {
                 report["error"]["committed_revision"] = serde_json::Value::String(revision.into());
             }
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            if let CliError::LiveProject(live) = &error
+                && let Some(registers) = &live.committed_registers
+            {
+                report["error"]["committed_registers"] = serde_json::json!(registers);
+            }
             let _ = writeln!(io::stderr().lock(), "{report}");
             ExitCode::FAILURE
         }
@@ -360,6 +370,8 @@ pub fn entry(arguments: impl IntoIterator<Item = String>) -> ExitCode {
 fn run(arguments: &[String]) -> Result<(), CliError> {
     let arguments: Vec<&str> = arguments.iter().map(String::as_str).collect();
     match arguments.as_slice() {
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["macro", rest @ ..] => macros::run(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["render", rest @ ..] => render::run(rest).map_err(CliError::Render),
         [] | ["--help"] | ["-h"] => {

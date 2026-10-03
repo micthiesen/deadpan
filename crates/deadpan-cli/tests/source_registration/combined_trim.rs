@@ -240,7 +240,10 @@ fn combined_trim_cold_and_live_match_exact_geometry_transaction_and_fresh_histor
             assert_ne!(undone.revision_id(), before.revision_id());
             assert_ne!(undone.revision_id(), after.revision_id());
             let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
-            let (_, saved) = execute_short(
+            let deadpan_cli::macros::Execution {
+                committed_revision: saved,
+                ..
+            } = execute_short(
                 &mut writer,
                 before.project_id(),
                 &ShortOperation::History {

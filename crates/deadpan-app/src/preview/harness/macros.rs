@@ -24,7 +24,141 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     native_ownership(d)?;
     captured_context(d, &baseline)?;
     cancelled_recording(d)?;
+    headless_macros(d, &baseline)?;
     reopen(d, &baseline)
+}
+
+fn headless_macros(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(), String> {
+    use deadpan_cli::macros::Operation;
+    use std::num::NonZeroU32;
+
+    at(d, 17)?;
+    let original_cursor = d.app().source_cursor;
+    let selected = d.app().selected_beat.clone();
+    let pane = d.app().pane;
+    let before = bank(d)?;
+    let before_history = history(d);
+    let movement = Arc::new(
+        deadpan_core::SemanticProgram::new(vec![SemanticInstruction::MoveFrames {
+            forward: true,
+            count: NonZeroU32::new(7).unwrap(),
+        }])
+        .map_err(|error| error.to_string())?,
+    );
+    let saved = remote_macro(
+        d,
+        Operation::Save {
+            register: register('h')?,
+            program: movement,
+        },
+    )?;
+    wait_saved(d, 'h')?;
+    d.check(
+        "Headless Macro save publishes the named bank without moving either cursor or native selection",
+        saved["committed_registers"]["bank_version"] == before.version + 1
+            && bank(d)?.version == before.version + 1
+            && bank(d)?.entries.get(&RegisterName::unnamed()) == before.entries.get(&RegisterName::unnamed())
+            && history(d) == before_history
+            && same_document(document(d)?, baseline)?
+            && d.app().source_cursor == original_cursor
+            && d.app().sequence_cursor == 17
+            && d.app().selected_beat == selected
+            && d.app().pane == pane,
+        json!({"bank_version":before.version + 1,"Edit":17,"Original":original_cursor,"selection_preserved":true}),
+        json!({"state":state(d),"receipt":saved}),
+    )?;
+    let before_motion = bank(d)?;
+    let moved = remote_macro(
+        d,
+        Operation::Run {
+            register: register('h')?,
+            parent: document(d)?.root().clone(),
+            cursor: ProjectFrame(60),
+            count: NonZeroU32::new(2).unwrap(),
+            new_revision: None,
+        },
+    )?;
+    idle(d)?;
+    d.check(
+        "A remote motion-only macro leaves the live UI, history and complete bank unchanged",
+        moved["context"]["cursor"] == 74
+            && moved["committed"] == false
+            && same_document(document(d)?, baseline)?
+            && bank(d)? == before_motion
+            && history(d) == before_history
+            && d.app().source_cursor == original_cursor
+            && d.app().sequence_cursor == 17
+            && d.app().selected_beat == selected
+            && d.app().pane == pane,
+        json!({"Edit":17,"Original":original_cursor,"bank_unchanged":true,"history_unchanged":true}),
+        json!({"state":state(d),"remote_result":moved}),
+    )?;
+    let before_revision = d.revision();
+    let executed = remote_macro(
+        d,
+        Operation::Run {
+            register: register('a')?,
+            parent: document(d)?.root().clone(),
+            cursor: ProjectFrame(60),
+            count: NonZeroU32::new(1).unwrap(),
+            new_revision: None,
+        },
+    )?;
+    d.changed(&before_revision)?;
+    idle(d)?;
+    let updated_bank = bank(d)?;
+    let runtime_copy_matches = matches!(
+        (d.app().copied.content(), updated_bank.entries.get(&RegisterName::unnamed())),
+        (Some(Content::Edited(copied)), Some(stored))
+            if matches!(stored.as_ref(), RegisterValue::Edited { slice } if slice == copied.slice())
+                && copied.slice().range().start() == ProjectFrame(61)
+                && copied.slice().range().end() == ProjectFrame(62)
+                && copied.id().persisted_version == Some(updated_bank.version)
+    );
+    d.check(
+        "Headless authored macro refreshes the edit and copies while retaining the independent native cursor",
+        executed["context"]["cursor"] == 61
+            && executed["committed"] == true
+            && d.app().sequence_length() == 116
+            && d.app().sequence_cursor == 17
+            && d.app().source_cursor == original_cursor
+            && d.app().pane == pane
+            && updated_bank.version == before_motion.version + 1
+            && d.app().copied.bank_version() == Some(updated_bank.version)
+            && runtime_copy_matches
+            && program(d, 'a').is_some_and(|program| program.instructions().len() == 4)
+            && program(d, 'h').is_some_and(|program| program.instructions().len() == 1)
+            && !d.app().macros.is_pending(),
+        json!({"frames":116,"Edit":17,"Original":original_cursor,"bank_version":before_motion.version + 1}),
+        json!({"state":state(d),"remote_result":executed}),
+    )?;
+    d.capture(
+        "A headless macro edits at its explicit position while the native cursor stays at frame 17",
+    )?;
+    undo(d, baseline)
+}
+
+fn remote_macro(
+    d: &Driver<'_>,
+    operation: deadpan_cli::macros::Operation,
+) -> Result<Value, String> {
+    let workspace = d.app().workspace.as_ref().ok_or("No macro workspace")?;
+    let request = deadpan_cli::macros::Request {
+        protocol: 1,
+        project_id: workspace.document.project_id().clone(),
+        expected_revision: workspace.document.revision_id().clone(),
+        expected_bank_version: bank(d)?.version,
+        dry_run: false,
+        operation,
+    };
+    deadpan_cli::live_project::dispatch_short(
+        &workspace.path,
+        Some(request.project_id.clone()),
+        deadpan_cli::live_project::ShortOperation::Macro {
+            request: Box::new(request),
+        },
+    )
+    .map_err(|error| error.to_string())
 }
 
 fn record_cuts(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(), String> {

@@ -36,9 +36,18 @@ one Compound commit. Motion-only runs have no authored revision. Retain saved
 receipts before refresh and keep stale views from consuming their cursor.
 Unused schema-54 packages require recreation. Core document schema remains 43.
 
+The [headless Macro surface](../SEMANTIC_MACROS.md#headless-inspection-save-and-run)
+inspects coherent document/bank snapshots and saves or runs from explicit
+revision, bank version and Sequence coordinates. Closed and live-owner paths
+share preparation and store admission; native runtime copies are prepared
+before commit. Preserve exact bank-only receipts through refresh/reply failures.
+Motion-only remote runs return their position without moving the GUI cursor.
+See [headless qualification](../qualification/headless-macros-2026-10-02.md)
+for command, actor, rendered replay and receipt-failure evidence.
+
 Additional editing instructions, semantic text/range selectors, temporal
-occurrence contexts, dedicated headless Macro commands and full physical
-layout/IME qualification remain open. Dot-repeat still supports frame cuts
+occurrence contexts and full physical layout/IME qualification remain open.
+Dot-repeat still supports frame cuts
 only, and a macro edit clears an older dot candidate.
 See [qualification and limits](../qualification/semantic-macros-2026-10-02.md)
 for native input observations, peer review, retained failures and final checks.

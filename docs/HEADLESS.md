@@ -73,8 +73,9 @@ Supported commands are `insert`, `insert_time`, `split`, `slip_source`, `trim_so
 [`Command`](../crates/deadpan-core/src/command.rs). `set_repeat` changes an existing
 Repeat; `wrap_repeat` deliberately adds nesting. A three-play repeat includes
 three total plays and only two gaps. These are structural edits, not rendered
-media. Editing through range/text selectors, registers, macros, and effects
-remain required future work.
+media. The dedicated [Macro commands](SEMANTIC_MACROS.md#headless-inspection-save-and-run)
+inspect, save and run the current bounded motion/cut/call vocabulary. Broader
+range/text selectors, register management and effects remain required work.
 
 `compound` executes a bounded `ResolvedTransaction` through the same preview
 and commit boundary. Its flat Edit/Yank/Cut/Paste steps carry exact resolved
@@ -86,6 +87,14 @@ See [compound transactions](COMPOUND_TRANSACTIONS.md) for identity, admission,
 recovery and size rules. This command does not parse semantic macros. Bank-only
 execution uses the dedicated store API; the generic headless edit command
 requires an authored leaf.
+
+`macro inspect <package> [--register a]` reads register types and Macro bodies
+with one consistent document revision and bank version. `macro <package>
+--json <request> [--dry-run]` saves or runs a named Macro. Requests bind both
+versions and supply an explicit Sequence parent and Edit cursor for execution.
+Dry-run uses complete store admission; a counted authored run saves one Undo.
+The same commands use the authenticated native owner when the project is open.
+See the [request examples and receipt contract](SEMANTIC_MACROS.md#headless-inspection-save-and-run).
 
 `delete` takes `node` and resolves to `DeleteRipple` before preview or dispatch,
 with timing allocation equal to the new revision and ordinal zero. Explicit

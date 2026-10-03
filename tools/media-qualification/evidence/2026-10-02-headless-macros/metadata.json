@@ -1,0 +1,42 @@
+{
+  "recorded_utc": "2026-10-03T02:47:48.840963+00:00",
+  "base_commit": "6a5719062d59f96eff936305139a2c6f1507cea0",
+  "hardware": {
+    "cpu": "Apple M5 Max",
+    "memory_bytes": 137438953472,
+    "architecture": "arm64"
+  },
+  "os": {
+    "name": "macOS",
+    "version": "26.5.2",
+    "build": "25F84"
+  },
+  "rust": "1.97.1 (8bab26f4f)",
+  "cargo": "1.97.1 (c980f4866)",
+  "ffmpeg_prefix": "/tmp/deadpan-ui-ffmpeg/prefix",
+  "binary_sha256": "f030217b15d0ada61a0af04128e882fb43f94ae4684c8bb2c4e4db52b8c65200",
+  "binary_features": [
+    "ui-harness"
+  ],
+  "test_totals": {
+    "affected-default": {
+      "suites": 46,
+      "passed": 1472,
+      "failed": 0,
+      "ignored": 0
+    },
+    "affected-final": {
+      "suites": 20,
+      "passed": 1011,
+      "failed": 0,
+      "ignored": 0
+    },
+    "app-ui-final": {
+      "suites": 2,
+      "passed": 691,
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  "final_source_manifest_sha256": "7682d1e2c6e05ce4ae0ecb6647dd12f384c1d4ae499f957d1282208e07e901cc"
+}

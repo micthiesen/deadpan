@@ -865,6 +865,15 @@ Prepare runtime copies before commit and retain durable success across refresh
 failure. Macro values carry no media provenance; copying and calling preserve
 their type distinctions. See [semantic macros](docs/SEMANTIC_MACROS.md).
 
+Headless Macro requests bind the committed revision and register-bank version.
+Inspect both in one SQLite snapshot; resolve runs from an explicit ordinary
+Sequence parent and absolute Edit cursor. Dry-run shares store admission and
+writes nothing. Prepare native runtime copies before committing through the
+live owner. Retain exact bank-only receipts independently of authored revisions,
+workspace refresh and reply size. Remote motion-only runs never move the GUI
+cursor. Preserve unread native Macro/copy continuations before publishing
+remote changes; socket uncertainty never permits automatic replay.
+
 Native group navigation retains an ephemeral `SequenceScope` of direct ordinary
 Sequence children. Keep cursor/card positions on the absolute project clock and
 show the group-relative position separately. Restore captured scope before

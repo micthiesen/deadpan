@@ -73,6 +73,9 @@ pub enum HistoryDirection {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
 pub enum ShortOperation {
+    Macro {
+        request: Box<crate::macros::Request>,
+    },
     Edit {
         request: Box<CommandRequest>,
         dry_run: bool,
@@ -93,12 +96,13 @@ pub enum ShortOperation {
 
 impl ShortOperation {
     pub fn is_preview(&self) -> bool {
-        matches!(
-            self,
-            Self::Edit { dry_run: true, .. }
-                | Self::History { dry_run: true, .. }
-                | Self::AdoptPrimaryGeometry { dry_run: true, .. }
-        )
+        matches!(self, Self::Macro { request } if request.dry_run)
+            || matches!(
+                self,
+                Self::Edit { dry_run: true, .. }
+                    | Self::History { dry_run: true, .. }
+                    | Self::AdoptPrimaryGeometry { dry_run: true, .. }
+            )
     }
 }
 
@@ -112,6 +116,8 @@ pub enum Reply {
     Completed {
         output: Value,
         committed_revision: Option<RevisionId>,
+        #[serde(default)]
+        committed_registers: Option<crate::macros::RegisterReceipt>,
         refresh_error: Option<String>,
     },
     Render {
@@ -148,6 +154,8 @@ pub struct LiveError {
     pub message: String,
     pub current_revision: Option<RevisionId>,
     pub committed_revision: Option<RevisionId>,
+    #[serde(default)]
+    pub committed_registers: Option<Box<crate::macros::RegisterReceipt>>,
 }
 
 impl LiveError {
@@ -157,6 +165,7 @@ impl LiveError {
             message: message.to_string(),
             current_revision: None,
             committed_revision: None,
+            committed_registers: None,
         }
     }
 
@@ -206,6 +215,11 @@ impl Request {
                 .map_err(|error| LiveError::new(&error.code, error.message))?;
         }
         match &request.operation {
+            Operation::Execute { command, .. } => {
+                if let ShortOperation::Macro { request } = command.as_ref() {
+                    request.validate()?;
+                }
+            }
             Operation::Prepare {
                 target, command, ..
             } => {
@@ -266,8 +280,7 @@ pub fn dispatch_short(
                     .project_id()
                     .clone(),
             };
-            let (output, _) = execute_short(&mut store, &project, &operation)?;
-            Ok(output)
+            Ok(execute_short(&mut store, &project, &operation)?.output)
         }
         Err(StoreError::AlreadyOpen) => {
             let mut client = Client::discover(package)?.ok_or_else(|| {
@@ -290,11 +303,14 @@ pub fn dispatch_short(
                 Reply::Completed {
                     mut output,
                     committed_revision,
+                    committed_registers,
                     refresh_error,
                 } => {
-                    if let Some(error) = refresh_error {
-                        let object = output.as_object_mut().ok_or_else(|| {
-                            LiveError::new(
+                    if refresh_error.is_some() || committed_registers.is_some() {
+                        let object = output.as_object_mut().ok_or_else(|| LiveError {
+                            committed_revision: committed_revision.clone(),
+                            committed_registers: committed_registers.clone().map(Box::new),
+                            ..LiveError::new(
                                 "HostProtocolInvalid",
                                 "Committed command reply is not an object",
                             )
@@ -303,7 +319,13 @@ pub fn dispatch_short(
                             "committed_revision".into(),
                             serde_json::to_value(committed_revision).map_err(LiveError::json)?,
                         );
-                        object.insert("host_refresh_error".into(), Value::String(error));
+                        object.insert(
+                            "committed_registers".into(),
+                            serde_json::to_value(committed_registers).map_err(LiveError::json)?,
+                        );
+                        if let Some(error) = refresh_error {
+                            object.insert("host_refresh_error".into(), Value::String(error));
+                        }
                     }
                     Ok(output)
                 }
@@ -323,7 +345,7 @@ pub fn execute_short(
     store: &mut ProjectStore,
     project: &ProjectId,
     operation: &ShortOperation,
-) -> Result<(Value, Option<RevisionId>), LiveError> {
+) -> Result<crate::macros::Execution, LiveError> {
     if store.snapshot().map_err(LiveError::store)?.project_id() != project {
         return Err(LiveError::new(
             "HostProjectChanged",
@@ -331,6 +353,16 @@ pub fn execute_short(
         ));
     }
     let (output, committed) = match operation {
+        ShortOperation::Macro { request } => {
+            if &request.project_id != project {
+                return Err(LiveError::new(
+                    "HostProjectChanged",
+                    "Macro and host project identities differ",
+                ));
+            }
+            let prepared = crate::macros::prepare(store, request)?;
+            return crate::macros::commit(store, &prepared);
+        }
         ShortOperation::Edit { request, dry_run } => {
             if &request.project_id != project {
                 return Err(LiveError::new(
@@ -438,5 +470,9 @@ pub fn execute_short(
             )
         }
     };
-    Ok((output, committed))
+    Ok(crate::macros::Execution {
+        output,
+        committed_revision: committed,
+        committed_registers: None,
+    })
 }

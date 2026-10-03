@@ -1,6 +1,8 @@
 use super::*;
 use deadpan_core::*;
 
+mod macro_preview;
+
 fn node(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }

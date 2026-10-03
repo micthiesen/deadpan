@@ -49,6 +49,15 @@ impl ProjectStore {
         read_bank(&transaction)
     }
 
+    /// Read the committed document and register bank from one pinned SQLite
+    /// snapshot. Available to read-only inspectors while another store writes.
+    pub fn snapshot_with_registers(&self) -> Result<(ProjectDocument, RegisterBank), StoreError> {
+        let transaction = self.connection.unchecked_transaction()?;
+        let document = crate::read_snapshot(&transaction)?;
+        let registers = read_bank(&transaction)?;
+        Ok((document, registers))
+    }
+
     /// Save a typed register without creating a timeline revision or changing Undo/Redo.
     /// Copies update the unnamed alias; macros require a named slot and preserve it.
     pub fn save_register(
@@ -91,27 +100,39 @@ impl ProjectStore {
         let transaction = self
             .connection
             .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
-        let current = crate::read_snapshot(&transaction)?;
-        if current.project_id() != expected_project {
-            return Err(invalid("macro belongs to another project"));
-        }
-        if current.revision_id() != expected_revision {
-            return Err(StoreError::RevisionConflict {
-                expected: expected_revision.as_str().into(),
-                current: current.revision_id().as_str().into(),
-            });
-        }
-        let prepared = prepare_bank(&transaction)?;
-        if prepared.bank.version != expected_bank_version {
-            return Err(invalid("register bank version changed"));
-        }
-        let prepared = prepare_writes_from(
-            prepared,
-            &BTreeMap::from([(name, Arc::new(RegisterValue::Macro { program }))]),
+        let prepared = prepare_macro(
+            &transaction,
+            expected_project,
+            expected_revision,
+            expected_bank_version,
+            name,
+            program,
         )?;
-        write_prepared_bank(&transaction, &prepared, current.project_id())?;
+        write_prepared_bank(&transaction, &prepared, expected_project)?;
         transaction.commit()?;
         Ok(prepared.bank)
+    }
+
+    /// Prepare the exact prospective macro bank without writing or reserving a
+    /// revision. Uses the save path's guards, validation and capacity checks.
+    pub fn preview_macro(
+        &self,
+        expected_project: &ProjectId,
+        expected_revision: &RevisionId,
+        expected_bank_version: u64,
+        name: RegisterName,
+        program: Arc<SemanticProgram>,
+    ) -> Result<RegisterBank, StoreError> {
+        let transaction = self.connection.unchecked_transaction()?;
+        Ok(prepare_macro(
+            &transaction,
+            expected_project,
+            expected_revision,
+            expected_bank_version,
+            name,
+            program,
+        )?
+        .bank)
     }
 
     /// Commit exactly the captured range/child deletion and its durable copy.
@@ -433,6 +454,34 @@ pub(crate) struct PreparedBank {
     pub bank: RegisterBank,
     contents: BTreeMap<String, CanonicalContent>,
     slots: BTreeMap<RegisterName, String>,
+}
+
+fn prepare_macro(
+    connection: &Connection,
+    expected_project: &ProjectId,
+    expected_revision: &RevisionId,
+    expected_bank_version: u64,
+    name: RegisterName,
+    program: Arc<SemanticProgram>,
+) -> Result<PreparedBank, StoreError> {
+    let current = crate::read_snapshot(connection)?;
+    if current.project_id() != expected_project {
+        return Err(invalid("macro belongs to another project"));
+    }
+    if current.revision_id() != expected_revision {
+        return Err(StoreError::RevisionConflict {
+            expected: expected_revision.as_str().into(),
+            current: current.revision_id().as_str().into(),
+        });
+    }
+    let prepared = prepare_bank(connection)?;
+    if prepared.bank.version != expected_bank_version {
+        return Err(invalid("register bank version changed"));
+    }
+    prepare_writes_from(
+        prepared,
+        &BTreeMap::from([(name, Arc::new(RegisterValue::Macro { program }))]),
+    )
 }
 
 fn write_register(
