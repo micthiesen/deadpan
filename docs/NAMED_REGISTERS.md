@@ -6,6 +6,11 @@ preview. The same names hold Original ranges and editable slices from Your edit,
 including complete empty groups. The footer identifies the selected register
 and its content type. `:registers` opens the live inventory in Keys.
 
+In Normal Edit, `"ayy` copies the selected beat to **a**, and `"ay5l` copies
+the next five frames without moving the cursor. `"ad5l` cuts that interval.
+With a Visual range selected, `"ay` copies it immediately. Original ranges
+also use immediate `y` after selection.
+
 ## Selection and lifetime
 
 - Names are **a–z**. Uppercase selects the same slot; it does not append content.

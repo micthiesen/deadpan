@@ -133,7 +133,10 @@ fn whole_beat_prefix_remains_distinct_from_visual_delete() {
     assert_eq!(bindings.pending(), "d");
     assert_eq!(
         bindings.key(Key::D, Modifiers::NONE, false, false),
-        Some(Action::Edit(BeatEdit::Delete))
+        Some(Action::Operator {
+            cut: true,
+            selector: deadpan_core::SemanticSelector::SelectedBeat
+        })
     );
     assert!(bindings.pending().is_empty());
     // A previously armed operator can resolve at most one action. The app's
@@ -141,7 +144,10 @@ fn whole_beat_prefix_remains_distinct_from_visual_delete() {
     bindings.key(Key::D, Modifiers::NONE, false, false);
     assert_eq!(
         bindings.key_with_selection(Key::D, Modifiers::NONE, false, false, EditSelection::Range),
-        Some(Action::Edit(BeatEdit::Delete))
+        Some(Action::Operator {
+            cut: true,
+            selector: deadpan_core::SemanticSelector::SelectedBeat
+        })
     );
     assert!(bindings.pending().is_empty());
 }

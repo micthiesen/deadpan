@@ -208,7 +208,7 @@ an older UI confirmation even when its focused pane rejects copying. It cannot
 cancel an accepted save. Versioned bank snapshots retain durable contents;
 late or duplicate confirmations cannot finish a newer selection.
 
-Without a Visual selection, `y` captures the complete selected child. An empty
+Without a Visual selection, `yy` captures the complete selected child. An empty
 Visual selection remains an error and cannot fall back to a beat. `d` cuts a
 nonempty Visual range; `dd` cuts the selected child. `:delete` retains its exact
 command-entry target, including absence. The service privately captures that
@@ -219,6 +219,13 @@ with explicit reopening guidance. Exact successful retries return that receipt.
 New yank/cut intent supersedes an older pending confirmation without cancelling
 an already queued authored cut. Undo restores removed content and retains the
 saved copy. The deletion and register update share one SQLite transaction.
+
+Normal Edit `y` or `d` followed by frame, beat or group-boundary motion copies
+or cuts from the retained cursor to that motion's destination. Use one positive
+distance count, such as `y5l` or `5dl`. A copy preserves the cursor and selected
+child; a cut selects the join. Empty motion intervals refuse. These
+[typed selectors](SEMANTIC_MACROS.md) use the same planner as macros and
+headless requests, retaining the exact historical capture for media admission.
 
 Fast `p/P` inserts beside the selected beat or replaces the selected Edit range.
 `:splice` opens the same visible placement workflow used for Original slices.
@@ -260,8 +267,8 @@ ordinary Sequence scopes, preserving whole-unit identities. Native `:splice`
 provides explicit Move selection and local removal/insertion picture comparison
 and audition. Historical copies remain copyable but cannot authorize removal
 from a newer revision. See [native qualification](qualification/native-move-2026-09-30.md).
-Role-only placement, motion/text-object operators and nested occurrence interiors
-remain required.
+Role-only placement, text objects, analysis-dependent motions and nested
+occurrence interiors remain required.
 These workflows remain open beyond the capture and placement commands described
 above. Native media, interaction and performance evidence is recorded separately
 from the core timing proofs.

@@ -251,8 +251,9 @@ details are intentionally not implementation instructions:
 - The moment-reuse board is the target for native Original selection and paste.
   Its temporal range, context/focus separation and visible paste destination
   extend the workspace rather than replacing it. Copy does not insert or change
-  history. `y` currently copies a ready Original range. The general Normal-mode yank
-  operator remains required; do not advertise it as implemented. `v` finishes a range without committing a sequence edit. `p` and
+  history. `y` copies a ready Original or Visual Edit range. Normal Edit supports
+  `yy` for the selected beat and `y` plus frame, beat or group-boundary motion.
+  Text objects and analysis-dependent motions remain required. `v` finishes a range without committing a sequence edit. `p` and
   `P` use the selected beat, while an explicit Visual replacement owns its range.
   The pictured 24 fps Original makes ordinal and project durations coincide;
   VFR media must use measured PTS and the actual project rate. At the Out boundary,
@@ -274,9 +275,9 @@ details are intentionally not implementation instructions:
   actual help. The product board's Original-view footer still includes `rr`/`dd`;
   the coded Original view must instead teach browsing, return to Your edit and
   explicit reuse. Structural edits never target the immutable Original.
-- The enlarged workspace's `y` reuse label describes future range copying.
-  Current whole-original reuse uses `,i`; no inactive range-copy control
-  should imply that `y` already works. New starts with the original already inserted.
+- The enlarged workspace's `y` reuse label applies to a selected Original
+  range. Whole-original reuse uses `,i`; Normal Edit whole-beat copy uses `yy`.
+  New starts with the original already inserted.
 - Thumbnails, filmstrips, waveform selection, recent projects, YouTube
   acquisition and advanced workflow actions require actual supporting data and
   behavior. Use truthful media-type tiles until a bounded thumbnail service exists.

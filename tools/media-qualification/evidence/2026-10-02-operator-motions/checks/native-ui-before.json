@@ -1,0 +1,46 @@
+{
+  "method": "cua native key delivery and AX/screenshot inspection",
+  "initial_binary_sha256": "34e705eb535ccd648724597a23d7a9b68b0e7df1c2512c0e8b33361474da171a",
+  "project": "isolated copy of closed retained macro project",
+  "keys": [
+    "20l",
+    "y",
+    "5l",
+    "d5h",
+    "u",
+    "Cmd+Q"
+  ],
+  "observed": {
+    "start": {
+      "cursor": 0,
+      "duration": 120
+    },
+    "pending_y": {
+      "cursor": 20,
+      "duration": 120,
+      "state": "PENDING",
+      "continuations": "whole beat, frame, beat and group-boundary motions"
+    },
+    "y5l": {
+      "cursor": 20,
+      "message": "Action completed."
+    },
+    "d5h": {
+      "cursor": 15,
+      "duration": 115,
+      "selected_fragment_frames": 100
+    },
+    "undo": {
+      "cursor": 15,
+      "duration": 120,
+      "message": "Undo saved"
+    }
+  },
+  "visual_issue": "Arrow hints appeared as missing-glyph squares; final labels changed to Left/Right/Up/Down. Original screenshot retained.",
+  "screenshot": "native-pending-before.png",
+  "closed": true,
+  "limits": [
+    "Automated native keyboard delivery, not a physical keyboard-layout matrix",
+    "No OS IME, VoiceOver or acoustic qualification"
+  ]
+}

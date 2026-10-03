@@ -1,0 +1,26 @@
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+scratch = Path(__file__).parent
+recorder = Path('/tmp/deadpan-original-layout-20261002/run-check.py')
+environment = dict(os.environ, DEADPAN_CHECK_OUTPUT=str(scratch))
+commands = [
+    ('app-tests-labels', ['cargo','test','--locked','-p','deadpan-app','--features','ui-harness']),
+    ('clippy-default-labels', ['cargo','clippy','--locked','-p','deadpan-app','--all-targets','--','-D','warnings']),
+    ('clippy-ui-labels', ['cargo','clippy','--locked','-p','deadpan-app','--all-targets','--features','ui-harness','--','-D','warnings']),
+    ('format-labels', ['cargo','fmt','--all','--','--check']),
+    ('build-ui-labels', ['cargo','build','--locked','-p','deadpan-app','--features','ui-harness']),
+    ('replay-macros-labels', ['target/debug/deadpan-app','--ui-check','--scenario','macros','--mode','visual','--output',str(scratch/'replay-macros-labels'),'--kestrel-source','/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift']),
+    ('replay-keymap-labels', ['target/debug/deadpan-app','--ui-check','--scenario','keymap','--mode','visual','--output',str(scratch/'replay-keymap-labels'),'--kestrel-source','/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift']),
+    ('native-bundle-labels', ['python3','tools/build-app.py','--binary','target/debug/deadpan-app','--output',str(scratch/'Deadpan Operator Final QA.app'),'--bundle-id','dev.thiesen.deadpan.cursor-qa']),
+]
+for name, command in commands:
+    if (scratch/(name+'.json')).exists():
+        raise RuntimeError('Refusing to overwrite retained evidence: '+name)
+    print('START',name,flush=True)
+    result=subprocess.run([sys.executable,str(recorder),name,*command],env=environment)
+    if result.returncode:
+        sys.exit(result.returncode)
+print('ALL LABEL CHECKS PASSED',flush=True)

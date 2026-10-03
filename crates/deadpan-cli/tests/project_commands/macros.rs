@@ -130,7 +130,7 @@ fn oriented_range_yank_and_staged_replacement_keep_exact_history_and_captures() 
             0,
             "a",
             json!([
-                {"type":"yank_selection","register":"b"},
+                {"type":"yank","selector":{"type":"visual_selection"},"register":"b"},
             ]),
         ),
         false,
@@ -182,7 +182,7 @@ fn oriented_range_yank_and_staged_replacement_keep_exact_history_and_captures() 
     let body = json!([
         {"type":"begin_selection"},
         {"type":"move_frames","forward":false,"count":6},
-        {"type":"cut_selection","register":"b"},
+        {"type":"cut","selector":{"type":"visual_selection"},"register":"b"},
         {"type":"begin_selection"},
         {"type":"move_frames","forward":true,"count":4},
         {"type":"finish_selection"},
@@ -347,7 +347,7 @@ fn macro_yank_of_selected_empty_child_preserves_redo_and_has_only_a_bank_receipt
             0,
             "a",
             json!([
-                {"type":"yank_beat","register":"b"},
+                {"type":"yank","selector":{"type":"selected_beat"},"register":"b"},
             ]),
         ),
         false,
@@ -368,6 +368,10 @@ fn macro_yank_of_selected_empty_child_preserves_redo_and_has_only_a_bank_receipt
     );
     assert_eq!(result["context"]["selected_child"], json!(empty));
     assert_eq!(result["context"]["cursor"], 12);
+    assert_eq!(
+        result["trace"][1]["resolved_selection"],
+        json!({"type":"child","node":empty})
+    );
     let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
     assert_eq!(writer.snapshot()?, before);
     assert_eq!(writer.history_availability()?, availability);
@@ -539,6 +543,132 @@ fn staged_paste_then_failed_call_and_missing_selection_leave_the_package_unchang
 }
 
 #[test]
+fn typed_motion_copies_keep_context_and_refuse_missing_stale_or_empty_selectors() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = create(scratch.path())?;
+    let input = scratch.path().join("typed-selector.json");
+    let initial = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    fs::write(&input, request(&initial)?.to_string())?;
+    success(&[
+        "command",
+        package.to_str().unwrap(),
+        "--json",
+        input.to_str().unwrap(),
+    ])?;
+    let before = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    let copies = json!([
+        {"type":"yank","selector":{"type":"motion","motion":{"type":"frames","forward":true,"count":2}},"register":"b"},
+        {"type":"yank","selector":{"type":"motion","motion":{"type":"beats","forward":false,"count":1}},"register":"c"},
+        {"type":"yank","selector":{"type":"motion","motion":{"type":"scope","end":true}},"register":"d"},
+    ]);
+    invoke(&package, &input, &save(&before, 0, "a", copies), false)?;
+    let mut copy = run(&before, 1, "a", 7);
+    copy["operation"]["selected_child"] = json!("hold");
+    copy["operation"]["visual_selection"] = json!({"anchor":2,"head":7,"extending":true});
+    let unchanged = state(&package)?;
+    let preview = invoke(&package, &input, &copy, true)?;
+    assert_eq!(state(&package)?, unchanged);
+    assert!(preview["edit"].is_null());
+    let result = invoke(&package, &input, &copy, false)?;
+    assert!(result["committed_revision"].is_null());
+    assert_eq!(result["committed_registers"]["bank_version"], 2);
+    assert_eq!(result["context"]["cursor"], 7);
+    assert_eq!(result["context"]["selected_child"], "hold");
+    assert_eq!(
+        result["context"]["visual_selection"],
+        copy["operation"]["visual_selection"]
+    );
+    for (index, start, end) in [(1, 7, 9), (2, 0, 7), (3, 7, 45)] {
+        assert_eq!(
+            result["trace"][index]["resolved_selection"],
+            json!({"type":"range","range":{"start":start,"end":end}})
+        );
+    }
+    let reader = ProjectStore::open(&package, AccessMode::ReadOnly)?;
+    assert_eq!(reader.snapshot()?, before);
+    let bank = reader.registers()?;
+    for name in ['b', 'c', 'd'] {
+        let RegisterValue::Edited { slice } = bank.entries[&RegisterName::new(name)?].as_ref()
+        else {
+            panic!("typed motion copy")
+        };
+        slice.validate_capture(&before)?;
+    }
+    drop(reader);
+
+    let invalid = [
+        (json!({"type":"selected_beat"}), Value::Null, Value::Null),
+        (
+            json!({"type":"selected_beat"}),
+            json!("missing-child"),
+            Value::Null,
+        ),
+        (
+            json!({"type":"visual_selection"}),
+            json!("hold"),
+            Value::Null,
+        ),
+        (
+            json!({"type":"visual_selection"}),
+            json!("hold"),
+            json!({"anchor":0,"head":0,"extending":false}),
+        ),
+        (
+            json!({"type":"motion","motion":{"type":"frames","forward":false,"count":3}}),
+            json!("hold"),
+            Value::Null,
+        ),
+        (
+            json!({"type":"motion","motion":{"type":"beats","forward":false,"count":1}}),
+            json!("hold"),
+            Value::Null,
+        ),
+        (
+            json!({"type":"motion","motion":{"type":"scope","end":false}}),
+            json!("hold"),
+            Value::Null,
+        ),
+    ];
+    let mut version = bank.version;
+    for (selector, selected, visual) in invalid {
+        invoke(
+            &package,
+            &input,
+            &save(
+                &before,
+                version,
+                "a",
+                json!([
+                    {"type":"cut","selector":selector,"register":"b"},
+                ]),
+            ),
+            false,
+        )?;
+        version += 1;
+        let mut operation = run(&before, version, "a", 0);
+        operation["operation"]["selected_child"] = selected;
+        operation["operation"]["visual_selection"] = visual;
+        assert_eq!(
+            reject(&package, &input, &operation)?["error"]["code"],
+            "SelectionUnavailable"
+        );
+    }
+    let mut stale = run(&before, version - 1, "a", 0);
+    stale["operation"]["selected_child"] = json!("hold");
+    assert_eq!(
+        reject(&package, &input, &stale)?["error"]["code"],
+        "RegisterInvalid"
+    );
+    stale["expected_bank_version"] = json!(version);
+    stale["expected_revision"] = json!("stale");
+    assert_eq!(
+        reject(&package, &input, &stale)?["error"]["code"],
+        "RevisionConflict"
+    );
+    Ok(())
+}
+
+#[test]
 fn macro_cli_saves_previews_moves_and_cuts_as_one_durable_undo() -> Result {
     let scratch = tempfile::tempdir()?;
     let package = create(scratch.path())?;
@@ -595,9 +725,9 @@ fn macro_cli_saves_previews_moves_and_cuts_as_one_durable_undo() -> Result {
         1,
         "a",
         json!([
-            {"type":"cut_frames","operation":{"count":5},"register":"b"},
+            {"type":"cut","selector":{"type":"motion","motion":{"type":"frames","forward":true,"count":5}},"register":"b"},
             {"type":"move_frames","forward":true,"count":2},
-            {"type":"cut_frames","operation":{"count":3},"register":"c"},
+            {"type":"cut","selector":{"type":"motion","motion":{"type":"frames","forward":true,"count":3}},"register":"c"},
         ]),
     );
     invoke(&package, &input, &cuts, false)?;
@@ -609,6 +739,10 @@ fn macro_cli_saves_previews_moves_and_cuts_as_one_durable_undo() -> Result {
     assert_eq!(
         preview["trace"][1]["resolved_range"],
         json!({"start":4,"end":9})
+    );
+    assert_eq!(
+        preview["trace"][1]["resolved_selection"],
+        json!({"type":"range","range":{"start":4,"end":9}})
     );
     assert_eq!(
         preview["trace"][3]["resolved_range"],

@@ -498,6 +498,7 @@ impl Prepared {
                         "before_visual_selection":row.before.visual_selection,
                         "after_visual_selection":row.after.visual_selection,
                         "captured_child_label":row.captured_child_label,
+                        "resolved_selection":row.resolved_selection,
                         "resolved_range":row.resolved_range,"removed_range":row.removed_range,"depth":row.depth,
                     })).collect());
                     output["register_writes"] =

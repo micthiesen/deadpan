@@ -54,16 +54,24 @@ pub fn audit_bindings(template: &Bindings) -> Result<ShortcutAudit, String> {
         live_source_sha256: None,
     };
     for reservation in reservations {
-        for recording in [false, true] {
-            let mut template = template.clone();
-            template.set_macro_recording(recording);
-            audit_reservation_for(
-                &template,
-                &reservation,
-                &mut report,
-                |bindings, key, modifiers, text, ime| bindings.key(key, modifiers, text, ime),
-            );
-            audit_layout_reservation(&template, &reservation, &mut report);
+        for domain in [
+            super::RoutingDomain::Edit,
+            super::RoutingDomain::Original,
+            super::RoutingDomain::Sound,
+        ] {
+            for recording in [false, true] {
+                let mut template = template.clone();
+                template.clear();
+                template.set_routing_domain(domain);
+                template.set_macro_recording(recording);
+                audit_reservation_for(
+                    &template,
+                    &reservation,
+                    &mut report,
+                    |bindings, key, modifiers, text, ime| bindings.key(key, modifiers, text, ime),
+                );
+                audit_layout_reservation(&template, &reservation, &mut report);
+            }
         }
     }
     Ok(report)
@@ -98,7 +106,8 @@ fn audit_layout_reservation(
                         bindings.audit_stroke(*stroke, selection);
                     }
                     let context = format!(
-                        "Layout physical={:?} logical={logical:?} logical_text={logical_text:?} recording={} selection={selection:?} prefix={:?} text={text} ime={ime}",
+                        "Layout domain={:?} physical={:?} logical={logical:?} logical_text={logical_text:?} recording={} selection={selection:?} prefix={:?} text={text} ime={ime}",
+                        template.domain,
                         reservation.key,
                         template.macro_recording,
                         bindings.pending()
@@ -167,7 +176,8 @@ fn audit_reservation_for(
                 bindings.audit_stroke(*stroke, super::EditSelection::None);
             }
             let context = format!(
-                "Normal recording={} prefix={:?} text={text} ime={ime}",
+                "Normal domain={:?} recording={} prefix={:?} text={text} ime={ime}",
+                template.domain,
                 template.macro_recording,
                 bindings.pending()
             );
@@ -193,7 +203,8 @@ fn audit_reservation_for(
                     bindings.audit_stroke(*stroke, selection);
                 }
                 let context = format!(
-                    "Edit recording={} selection={selection:?} prefix={:?} text={text} ime={ime}",
+                    "Visual domain={:?} recording={} selection={selection:?} prefix={:?} text={text} ime={ime}",
+                    template.domain,
                     template.macro_recording,
                     bindings.pending()
                 );
@@ -342,6 +353,27 @@ fn audit_prefixes_for(template: &Bindings) -> Vec<Vec<super::editor_map::Stroke>
             path.extend_from_slice(&prefix);
             cases.push(path);
         }
+        for depth in 1..=prefix.len() {
+            if !matches!(
+                template.map.prefix(
+                    &prefix[..depth],
+                    super::EditSelection::None,
+                    super::RoutingDomain::Edit
+                ),
+                Some(super::editor_map::PrefixKind::Operator { .. })
+            ) {
+                continue;
+            }
+            for count in &counts[1..] {
+                for outer in [&counts[0], &counts[1]] {
+                    let mut path = outer.clone();
+                    path.extend_from_slice(&prefix[..depth]);
+                    path.extend_from_slice(count);
+                    path.extend_from_slice(&prefix[depth..]);
+                    cases.push(path);
+                }
+            }
+        }
     }
     cases
 }
@@ -370,10 +402,25 @@ mod tests {
     fn shipped_routers_never_claim_a_kestrel_global_chord_or_prefix() {
         let report = audit().unwrap();
         assert_eq!(report.reserved_bindings, 62);
-        // Root plus comma, d, g, r, m, apostrophe, double quote, q and @, each with
-        // absent, positive, zero and overflowing counts.
-        let prefix_cases = 10 * 4;
-        assert_eq!(audit_prefixes().len(), prefix_cases);
+        let prefixes = audit_prefixes();
+        let prefix_cases = prefixes.len();
+        use super::super::editor_map::Stroke;
+        for keys in [
+            vec![Key::Y],
+            vec![Key::D, Key::G],
+            vec![Key::D, Key::Num3],
+            vec![Key::Y, Key::Num0, Key::G],
+            vec![Key::Num3, Key::Y, Key::Num3],
+        ] {
+            assert!(
+                prefixes.contains(
+                    &keys
+                        .into_iter()
+                        .map(|key| Stroke::Key(key, false))
+                        .collect()
+                )
+            );
+        }
         let editor_cases = prefix_cases * 3 * 4; // Normal/Empty/Range × text/IME.
         // Five drafts × repeat/background, Camera × repeat, and native input,
         // each under all four text/IME combinations.
@@ -381,7 +428,7 @@ mod tests {
         let layout_cases = prefix_cases * 3 * 4 * 7; // Includes paired logical @.
         assert_eq!(
             report.routing_cases,
-            62 * 2 * (editor_cases + mode_cases + layout_cases)
+            62 * 3 * 2 * (editor_cases + mode_cases + layout_cases)
         );
         assert!(report.passed(), "{report:#?}");
     }

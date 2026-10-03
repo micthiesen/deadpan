@@ -164,11 +164,13 @@ pub(super) fn aliases_pair(
 
 impl DeadpanApp {
     pub(super) fn editor_key(&self, id: EditorKey) -> String {
-        self.bindings.key_label(id)
+        self.bindings
+            .key_label_in(id, self.routed_domain(), self.routed_edit_selection())
     }
 
     pub(super) fn editor_keys(&self, id: EditorKey) -> String {
-        self.bindings.key_labels(id)
+        self.bindings
+            .key_labels_in(id, self.routed_domain(), self.routed_edit_selection())
     }
 
     pub(super) fn editor_pair(
@@ -189,7 +191,7 @@ impl DeadpanApp {
             "{}, {}, {}",
             self.editor_key(EditorKey::Visual),
             self.editor_pair(EditorKey::FramePrevious, EditorKey::FrameNext, "/"),
-            self.editor_key(EditorKey::Copy)
+            self.bindings.key_label(EditorKey::Copy)
         )
     }
 
@@ -245,7 +247,22 @@ mod tests {
             .iter()
             .zip('a'..='z')
             .map(|(action, suffix)| {
-                let mut path = vec!["Shift+F11".to_owned(); 15];
+                // Motion aliases also compose after the one-key operators.
+                // Keep their full generated paths at the same 16-key limit.
+                let repeats = if matches!(
+                    action,
+                    EditorKey::FramePrevious
+                        | EditorKey::FrameNext
+                        | EditorKey::BeatPrevious
+                        | EditorKey::BeatNext
+                        | EditorKey::First
+                        | EditorKey::Last
+                ) {
+                    14
+                } else {
+                    15
+                };
+                let mut path = vec!["Shift+F11".to_owned(); repeats];
                 path.push(suffix.to_string());
                 serde_json::json!({ "action": action.as_str(), "keys": [path] })
             })

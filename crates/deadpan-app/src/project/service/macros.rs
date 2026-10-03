@@ -5,7 +5,7 @@ use std::num::NonZeroU32;
 
 use deadpan_core::{
     RegisterName, RegisterValue, SemanticInstruction, SemanticPlan, SemanticProgram,
-    SliceCaptureSelection,
+    SemanticSelector, SliceCaptureSelection,
 };
 use deadpan_store::registers::RegisterBank;
 
@@ -151,8 +151,14 @@ impl Service {
                         instruction.clone(),
                         match instruction {
                             SemanticInstruction::YankBeat { .. } => "Copy beat",
+                            SemanticInstruction::Yank {
+                                selector: SemanticSelector::SelectedBeat,
+                                ..
+                            } => "Copy beat",
                             SemanticInstruction::YankSelection { .. } => "Copy selection",
                             SemanticInstruction::CutSelection { .. } => "Cut selection",
+                            SemanticInstruction::Yank { .. } => "Copy selection",
+                            SemanticInstruction::Cut { .. } => "Cut selection",
                             SemanticInstruction::ReplaceSelection { .. } => "Replace selection",
                             SemanticInstruction::Paste { .. } => "Paste register",
                             _ => "Recorded action",
@@ -451,20 +457,7 @@ fn prepare_runtime_bank(
                 .find(|trace| {
                     &trace.before_revision == slice.revision_id()
                         && &trace.before.parent == slice.parent()
-                        && match selection {
-                            SliceCaptureSelection::Range { range } => {
-                                matches!(
-                                    trace.instruction,
-                                    SemanticInstruction::CutFrames { .. }
-                                        | SemanticInstruction::YankSelection { .. }
-                                        | SemanticInstruction::CutSelection { .. }
-                                ) && trace.resolved_range.as_ref() == Some(range)
-                            }
-                            SliceCaptureSelection::Child { node } => {
-                                matches!(trace.instruction, SemanticInstruction::YankBeat { .. })
-                                    && trace.before.selected_child.as_ref() == Some(node)
-                            }
-                        }
+                        && trace.resolved_selection.as_ref() == Some(selection)
                 })
                 .ok_or("Macro copy has no matching staged capture provenance")?;
             let child_label = match selection {

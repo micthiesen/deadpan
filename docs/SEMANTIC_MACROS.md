@@ -9,14 +9,17 @@ Both binding families are configurable through `macro.record` and
 `macro.execute`. Names are case-insensitive a–z.
 
 The current vocabulary includes relative frame and beat motion, group start/end,
-Visual selection begin/finish/clear, frame or Visual cut, selected-beat or Visual
-yank, register paste or Visual replacement, and named Macro call.
+Visual selection begin/finish/clear, frame, beat or Visual cut, selected-beat or
+Visual yank, typed operator motions, register paste or Visual replacement, and
+named Macro call.
 Motions and cuts retain their requested counts, including when they
 clamp at a group boundary. Copy, cut and paste retain the selected register name.
 The planner resolves each instruction against the preceding staged edit in
-the same ordinary Sequence group. Temporal occurrence scopes, semantic text/range
-selectors, additional edits and broader semantic dot-repeat remain required.
+the same ordinary Sequence group. Temporal occurrence scopes, text objects,
+analysis-dependent motions, additional edits and broader semantic dot-repeat remain required.
 This is partial DP-06 implementation, not full macro acceptance.
+See [operator qualification](qualification/operator-motions-2026-10-02.md) for
+typed selectors, pending input, exact capture provenance and receipt ownership.
 See [Visual qualification](qualification/visual-macros-2026-10-02.md) for the
 selection, replacement, persistence and native receipt checks.
 See [copy/paste qualification](qualification/macro-reuse-2026-10-02.md) for
@@ -35,7 +38,14 @@ While recording, `v` begins or finishes a Visual selection. `h`/`l`, `j`/`k`
 and `gg`/`G` retain their frame, beat and group-boundary intent. `y` copies a
 nonempty Visual range and finishes its extension while retaining both endpoints;
 `d` cuts it, and `p`/`P` replaces it. Cuts and replacements clear the selection.
-Without Visual selection, `y` copies the selected beat and `p`/`P` paste after/before it.
+Without Visual selection, `yy` copies the selected beat, `dd` cuts it, and
+`p`/`P` paste after/before it. `y` or `d` followed by `h`/`l`, `j`/`k`, `gg`/`G`
+copies or cuts the exact half-open range from the entry cursor to that motion's
+destination. A yank leaves the cursor and selected child in place; a cut selects
+the join. Use one positive distance count before the operator or its frame/beat
+motion, such as `5dl` or `d5l`. Supplying both counts refuses. Whole-beat operators
+accept only no count or one; group-boundary motions do not accept counts.
+An empty motion interval refuses without falling back to a whole beat.
 These actions use the same staged planner and receipts as replay. Both measured
 Original ranges and edited slices can be pasted. An absent selection is retained
 as absent; it never silently becomes the beat under the cursor. An empty group
@@ -76,6 +86,21 @@ together at that boundary. The planner applies each ordinary leaf once and
 returns a resolved `Compound`,
 final context, register writes and an entry trace. Navigation/selection-only programs return
 no authored request and add no history.
+
+`SemanticInstruction::Yank` and `Cut` carry a `SemanticSelector`: explicit
+selected beat, explicit Visual selection, or `SemanticMotion` (frames, beats,
+group boundary). Motion resolution is shared with standalone semantic movement.
+The trace retains the exact `SliceCaptureSelection` and historical revision for
+media admission. A selected empty child stays a structural capture, and its cut
+uses `DeleteRipple` with no split IDs. Range cuts use one `DeleteRange` with its
+exact allocation requirements. A child cut chooses its literal following sibling
+even when adjacent empty children share the same time coordinate.
+
+Native operator prefixes capture session, revision, bank version, ordinary scope,
+cursor, selected child, Visual state, pane and chosen register. A changed context
+invalidates the capture permanently, including after returning to the same
+position. Single operations and recorded operations share `Operation::Apply` and
+the same saved-receipt handling. Original range `y` stays immediate and immutable.
 
 Context tracks the selected direct child and Visual endpoints separately from
 the absolute cursor. An extending selection's head must equal the cursor;

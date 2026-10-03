@@ -19,6 +19,24 @@ test instances after testing instead of leaving them idle. The previously
 running `dev.thiesen.deadpan.cursor-qa` instance has been quit, and the native
 app inventory confirmed no Deadpan app remained running.
 
+## Operator motions, current implementation
+
+Normal Edit `y`/`d` now accept frame, beat and group-boundary motions; `yy`/`dd`
+select the explicit whole beat. Original and Visual copies keep immediate `y`.
+The declarative trie composes operator and configured motion paths, teaches the
+complete pending path and refuses conflicting counts. Domain changes cannot
+retarget a pending copy. Native prefixes capture the register and complete
+editing context at entry; invalidation remains latched after returning to it.
+
+Typed Yank/Cut selectors share the staged semantic planner with macros and CLI.
+Keep exact resolved Child/Range provenance, including zero-duration children.
+Copies preserve cursor/child; child cuts select the literal next sibling, range
+cuts the time join. One native operator uses the same Apply and saved-receipt
+path as recording. Escape revokes cursor ownership even outside a recording,
+while queued authored work remains durable. Text objects, analysis-dependent
+motions, range Repeat and broader dot-repeat remain required.
+See [qualification and limits](../qualification/operator-motions-2026-10-02.md).
+
 ## Semantic macros, current implementation
 
 [Semantic macros](../SEMANTIC_MACROS.md) record frame/beat motions, group bounds,
@@ -816,7 +834,8 @@ without requiring a project migration. Empty insertion uses an explicit child
 slot, fresh imported identities and no timing allocation. Existing picture,
 audio, marks and sound clocks remain unchanged.
 
-Native `y` copies the selected child when no Visual range exists. Empty Visual
+Native whole-child copy now uses `yy` when no Visual range exists; this
+increment originally used `y` before operator motions were added. Empty Visual
 selection remains an error. Visual `d`, `dd` and captured `:delete` submit one
 typed cut request: capture privately from the pre-edit revision, commit one
 deletion, then publish the retained copy. Failed capture/commit preserves the

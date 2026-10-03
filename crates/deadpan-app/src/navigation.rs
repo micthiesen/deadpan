@@ -15,6 +15,8 @@ mod macro_tests;
 #[cfg(test)]
 mod mark_tests;
 #[cfg(test)]
+mod operator_tests;
+#[cfg(test)]
 mod register_tests;
 #[cfg(test)]
 mod repeat_last_tests;
@@ -89,6 +91,10 @@ impl Pane {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Action {
+    Operator {
+        cut: bool,
+        selector: deadpan_core::SemanticSelector,
+    },
     New,
     Open,
     Import,
@@ -110,18 +116,33 @@ pub enum Action {
     MacroRecord(char),
     MacroStop,
     MacroCancel,
-    MacroExecute { register: char, count: u32 },
+    MacroExecute {
+        register: char,
+        count: u32,
+    },
     SetMark(char),
     JumpMark(char),
     DeleteMark(char),
-    JumpHistory { forward: bool },
+    JumpHistory {
+        forward: bool,
+    },
     Marks,
-    PasteMoment { before: bool },
-    Step { forward: bool, count: u32 },
-    Beat { forward: bool, count: u32 },
+    PasteMoment {
+        before: bool,
+    },
+    Step {
+        forward: bool,
+        count: u32,
+    },
+    Beat {
+        forward: bool,
+        count: u32,
+    },
     First,
     Last,
-    Pane { reverse: bool },
+    Pane {
+        reverse: bool,
+    },
     Search,
     Command,
     Help,
@@ -141,6 +162,14 @@ pub enum EditSelection {
     None,
     Empty,
     Range,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum RoutingDomain {
+    #[default]
+    Edit,
+    Original,
+    Sound,
 }
 
 /// Framing actions owned by the selected edited beat.
@@ -183,6 +212,10 @@ pub struct Bindings {
     selection: Option<EditSelection>,
     held: Option<HeldBinding>,
     macro_recording: bool,
+    domain: RoutingDomain,
+    domain_interrupted: bool,
+    motion_count: Option<u32>,
+    operator_refusal: Option<&'static str>,
 }
 
 #[derive(Clone, Copy)]
@@ -208,11 +241,64 @@ impl Bindings {
             selection: None,
             held: None,
             macro_recording: false,
+            domain: RoutingDomain::Edit,
+            domain_interrupted: false,
+            motion_count: None,
+            operator_refusal: None,
         }
     }
 
     pub fn from_json(bytes: &[u8]) -> Result<Self, String> {
         keymap_config::parse(bytes).map(Self::with_map)
+    }
+
+    pub fn set_routing_domain(&mut self, domain: RoutingDomain) {
+        if self.domain != domain {
+            let interrupted = !self.path.is_empty();
+            self.clear();
+            self.domain = domain;
+            self.domain_interrupted = interrupted;
+        }
+    }
+
+    pub fn operator_pending(&self) -> bool {
+        !self.path.is_empty()
+            && self
+                .map
+                .operator_pending(&self.path, self.active_selection(), self.domain)
+    }
+
+    pub fn key_label_in(
+        &self,
+        id: BindingId,
+        domain: RoutingDomain,
+        selection: EditSelection,
+    ) -> String {
+        self.map
+            .labels(Self::contextual_id(id, domain, selection))
+            .remove(0)
+    }
+
+    pub fn key_labels_in(
+        &self,
+        id: BindingId,
+        domain: RoutingDomain,
+        selection: EditSelection,
+    ) -> String {
+        self.map
+            .labels(Self::contextual_id(id, domain, selection))
+            .join(" / ")
+    }
+
+    fn contextual_id(id: BindingId, domain: RoutingDomain, selection: EditSelection) -> BindingId {
+        if id == BindingId::Copy
+            && domain == RoutingDomain::Edit
+            && selection == EditSelection::None
+        {
+            BindingId::CopyBeat
+        } else {
+            id
+        }
     }
 
     /// Synchronize native recording mode before routing, including immediately
@@ -234,7 +320,7 @@ impl Bindings {
             .into_iter()
             .any(|id| {
                 self.map
-                    .has_descendant(&self.path, self.active_selection(), id)
+                    .has_descendant(&self.path, self.active_selection(), id, self.domain)
             })
     }
 
@@ -262,6 +348,9 @@ impl Bindings {
         self.count_overflow = false;
         self.path.clear();
         self.selection = None;
+        self.motion_count = None;
+        self.operator_refusal = None;
+        self.domain_interrupted = false;
     }
     /// Focus, pointer, mode, or external context changes also revoke held input.
     pub fn clear(&mut self) {
@@ -279,22 +368,37 @@ impl Bindings {
         }
     }
     fn family_prefix(&self) -> Option<editor_map::PrefixKind> {
-        self.map.prefix(&self.path, self.active_selection())
+        self.map
+            .prefix(&self.path, self.active_selection(), self.domain)
+    }
+    fn letter_family_pending(&self) -> bool {
+        self.family_prefix()
+            .is_some_and(|kind| !matches!(kind, editor_map::PrefixKind::Operator { .. }))
+    }
+
+    fn effective_count(&self) -> Option<u32> {
+        self.motion_count.or(self.count)
     }
     pub fn trim_pending(&self) -> bool {
         self.count.is_none()
             && !self.count_overflow
-            && self
-                .map
-                .has_descendant(&self.path, self.active_selection(), BindingId::Trim)
+            && self.map.has_descendant(
+                &self.path,
+                self.active_selection(),
+                BindingId::Trim,
+                self.domain,
+            )
     }
     #[cfg(test)]
     pub fn reuse_pending(&self) -> bool {
         self.count.is_none()
             && !self.count_overflow
-            && self
-                .map
-                .has_descendant(&self.path, self.active_selection(), BindingId::Insert)
+            && self.map.has_descendant(
+                &self.path,
+                self.active_selection(),
+                BindingId::Insert,
+                self.domain,
+            )
     }
 
     /// Compatibility probe. Event routing itself owns autorepeat admission.
@@ -306,7 +410,7 @@ impl Bindings {
         let mut path = self.path.clone();
         path.push(stroke);
         self.map
-            .rule(&path, self.active_selection())
+            .rule(&path, self.active_selection(), self.domain)
             .is_some_and(|rule| rule.repeatable)
     }
 
@@ -361,12 +465,36 @@ impl Bindings {
                 | Action::RepeatLast
                 | Action::MacroExecute { .. },
             ) => true,
+            Some(Action::Operator { cut: true, .. }) => true,
             Some(Action::Edit(BeatEdit::Delete)) => selection != EditSelection::None,
             _ => false,
         }
     }
 
     pub fn pending(&self) -> String {
+        if let Some(count) = self.motion_count {
+            let depth = (1..=self.path.len())
+                .find(|depth| {
+                    matches!(
+                        self.map
+                            .prefix(&self.path[..*depth], self.active_selection(), self.domain),
+                        Some(editor_map::PrefixKind::Operator { .. })
+                    )
+                })
+                .expect("motion counts require an operator prefix");
+            return format!(
+                "{}{}{}{}",
+                self.count
+                    .map_or_else(String::new, |count| count.to_string()),
+                self.map.path_label(&self.path[..depth]),
+                if self.count_overflow {
+                    "count overflow".into()
+                } else {
+                    count.to_string()
+                },
+                self.map.path_label(&self.path[depth..])
+            );
+        }
         format!(
             "{}{}",
             if self.count_overflow {
@@ -379,6 +507,9 @@ impl Bindings {
         )
     }
     pub fn pending_next_keys(&self) -> Option<String> {
+        if let Some(message) = self.operator_refusal {
+            return Some(message.into());
+        }
         if self.count_overflow {
             return Some("Count is too large. Esc clears it.".into());
         }
@@ -388,11 +519,15 @@ impl Bindings {
         self.map.next_keys(
             &self.path,
             self.active_selection(),
-            self.count,
+            self.effective_count(),
             self.macro_recording,
+            self.domain,
         )
     }
     pub fn pending_hint(&self) -> Option<String> {
+        if let Some(message) = self.operator_refusal {
+            return Some(message.into());
+        }
         if self.count_overflow {
             return Some("Count is too large. Esc clears it.".into());
         }
@@ -400,8 +535,9 @@ impl Bindings {
             return self.map.hint(
                 &self.path,
                 self.active_selection(),
-                self.count,
+                self.effective_count(),
                 self.macro_recording,
+                self.domain,
             );
         }
         self.count.map(|count| {
@@ -638,7 +774,14 @@ impl Bindings {
             });
         }
 
-        if self.family_prefix().is_some()
+        if self.domain_interrupted {
+            self.clear();
+            return Some(Action::Invalid(
+                "The editor context changed during the pending command; start it again.",
+            ));
+        }
+
+        if self.letter_family_pending()
             && modifiers != Modifiers::NONE
             && modifiers != Modifiers::SHIFT
         {
@@ -657,7 +800,7 @@ impl Bindings {
             && matches!(stroke, editor_map::Stroke::Key(_, true))
             && self
                 .map
-                .map(self.selection.unwrap_or(selection))
+                .map(self.selection.unwrap_or(selection), self.domain)
                 .resolve(&{
                     let mut path = self.path.clone();
                     path.push(stroke);
@@ -670,9 +813,38 @@ impl Bindings {
             )
         {
             if !self.path.is_empty() {
-                let first_prefix =
-                    self.map
-                        .has_descendant(&self.path, self.active_selection(), BindingId::First);
+                if matches!(
+                    self.family_prefix(),
+                    Some(editor_map::PrefixKind::Operator { .. })
+                ) {
+                    if self.count.is_some() {
+                        self.operator_refusal = Some(
+                            "Use one count before the operator or before its motion, not both.",
+                        );
+                    }
+                    if let Some(count) = self
+                        .motion_count
+                        .unwrap_or(0)
+                        .checked_mul(10)
+                        .and_then(|count| count.checked_add(*digit))
+                    {
+                        self.motion_count = Some(count);
+                    } else {
+                        self.count_overflow = true;
+                    }
+                    return None;
+                }
+                if self.operator_pending() {
+                    self.operator_refusal =
+                        Some("Put the motion count immediately after the operator prefix.");
+                    return None;
+                }
+                let first_prefix = self.map.has_descendant(
+                    &self.path,
+                    self.active_selection(),
+                    BindingId::First,
+                    self.domain,
+                );
                 self.clear();
                 return (!first_prefix)
                     .then_some(Action::Invalid("Put one count before the command path."));
@@ -692,12 +864,12 @@ impl Bindings {
         let selection = *self.selection.get_or_insert(selection);
         let mut next = self.path.clone();
         next.push(stroke);
-        let existing = self.map.map(selection).resolve(&next);
+        let existing = self.map.map(selection, self.domain).resolve(&next);
         // Existing continuations always win. Semantic root interrupts retain
         // their shipped cancellation behavior only when no continuation exists.
         if existing.is_none()
-            && self.family_prefix().is_none()
-            && let Some(rule) = self.map.rule(&[stroke], selection)
+            && !self.letter_family_pending()
+            && let Some(rule) = self.map.rule(&[stroke], selection, self.domain)
             && rule.interrupt
         {
             let action = rule.resolve(None);
@@ -706,13 +878,13 @@ impl Bindings {
         }
         let Some(node) = existing else {
             let had_pending = !self.path.is_empty();
-            let start_only = self
-                .map
-                .has_descendant(&self.path, selection, BindingId::First);
-            let attempted_family = self.map.prefix(&[stroke], selection).is_some();
+            let start_only =
+                self.map
+                    .has_descendant(&self.path, selection, BindingId::First, self.domain);
+            let attempted_family = self.map.prefix(&[stroke], selection, self.domain).is_some();
             let root_id = self
                 .map
-                .rule(&[stroke], selection)
+                .rule(&[stroke], selection, self.domain)
                 .map(editor_map::Rule::id);
             let deliberate_refusal = attempted_family
                 || matches!(
@@ -721,15 +893,16 @@ impl Bindings {
                 );
             let modified = modifiers != Modifiers::NONE
                 && !deliberate_refusal
-                && self.family_prefix().is_none();
+                && !self.letter_family_pending();
             self.clear();
             return (had_pending && !modified && (!start_only || deliberate_refusal)).then_some(
                 Action::Invalid("Key does not continue the pending command; no action was taken."),
             );
         };
         if let Some(prefix) = node.prefix()
-            && (self.count.is_some() || self.count_overflow)
-            && !prefix.value.allows_count(self.count)
+            && (self.effective_count().is_some() || self.count_overflow)
+            && !matches!(prefix.value, editor_map::PrefixKind::Operator { .. })
+            && !prefix.value.allows_count(self.effective_count())
         {
             let message = prefix.value.count_refusal();
             self.clear();
@@ -747,10 +920,12 @@ impl Bindings {
             // Root transport/group commands have always ignored pending counts,
             // including an overflow. Their aliases inherit that semantic policy.
             let ignores_overflow = binding.value.interrupt;
-            let action = if self.count_overflow && !ignores_overflow {
+            let action = if let Some(message) = self.operator_refusal {
+                Action::Invalid(message)
+            } else if self.count_overflow && !ignores_overflow {
                 Action::Invalid("Count exceeds 4294967295; no edit was made.")
             } else {
-                binding.value.resolve(self.count)
+                binding.value.resolve(self.effective_count())
             };
             let held = binding.value.repeatable.then(|| HeldBinding {
                 identity,
@@ -763,7 +938,12 @@ impl Bindings {
             }
             return Some(action);
         }
-        if self.count_overflow && !self.map.has_descendant(&next, selection, BindingId::Hold) {
+        if self.count_overflow
+            && !self
+                .map
+                .has_descendant(&next, selection, BindingId::Hold, self.domain)
+            && !self.map.operator_pending(&next, selection, self.domain)
+        {
             self.clear();
             return Some(Action::Invalid(
                 "Count exceeds 4294967295; no edit was made.",
@@ -775,9 +955,15 @@ impl Bindings {
             BindingId::Hold,
             BindingId::Repeat,
             BindingId::CutBeat,
+            BindingId::CopyBeat,
+            BindingId::CutOperator,
+            BindingId::YankOperator,
         ]
         .into_iter()
-        .any(|id| self.map.has_descendant(&self.path, selection, id))
+        .any(|id| {
+            self.map
+                .has_descendant(&self.path, selection, id, self.domain)
+        })
         .then_some(Action::OfferInsert)
     }
 }
@@ -927,14 +1113,14 @@ mod tests {
                 Action::PasteMoment { before: true },
             ),
         ] {
-            assert_eq!(
-                Bindings::default().key(key, modifiers, false, false),
-                Some(action)
-            );
+            let mut original = Bindings::default();
+            original.set_routing_domain(RoutingDomain::Original);
+            assert_eq!(original.key(key, modifiers, false, false), Some(action));
             assert_eq!(Bindings::default().key(key, modifiers, true, false), None);
             assert_eq!(Bindings::default().key(key, modifiers, false, true), None);
             assert!(!allows_key_repeat(key, modifiers));
             let mut pending = Bindings::default();
+            pending.set_routing_domain(RoutingDomain::Original);
             pending.key(Key::Num3, Modifiers::NONE, false, false);
             assert!(matches!(
                 pending.key(key, modifiers, false, false),
@@ -1261,11 +1447,33 @@ mod tests {
     #[test]
     fn repeat_and_delete_operators_keep_counts_and_wait_without_a_timeout() {
         for (prefix, pending, result) in [
-            (vec![Key::R], "r", BeatEdit::WrapRepeat(2)),
-            (vec![Key::Num1, Key::R], "1r", BeatEdit::WrapRepeat(1)),
-            (vec![Key::Num3, Key::R], "3r", BeatEdit::WrapRepeat(3)),
-            (vec![Key::D], "d", BeatEdit::Delete),
-            (vec![Key::Num1, Key::D], "1d", BeatEdit::Delete),
+            (vec![Key::R], "r", Action::Edit(BeatEdit::WrapRepeat(2))),
+            (
+                vec![Key::Num1, Key::R],
+                "1r",
+                Action::Edit(BeatEdit::WrapRepeat(1)),
+            ),
+            (
+                vec![Key::Num3, Key::R],
+                "3r",
+                Action::Edit(BeatEdit::WrapRepeat(3)),
+            ),
+            (
+                vec![Key::D],
+                "d",
+                Action::Operator {
+                    cut: true,
+                    selector: deadpan_core::SemanticSelector::SelectedBeat,
+                },
+            ),
+            (
+                vec![Key::Num1, Key::D],
+                "1d",
+                Action::Operator {
+                    cut: true,
+                    selector: deadpan_core::SemanticSelector::SelectedBeat,
+                },
+            ),
         ] {
             let mut bindings = Bindings::default();
             assert_eq!(keys(&mut bindings, &prefix), Some(Action::OfferInsert));
@@ -1274,7 +1482,7 @@ mod tests {
             }
             assert_eq!(
                 keys(&mut bindings, &[*prefix.last().unwrap()]),
-                Some(Action::Edit(result))
+                Some(result)
             );
             assert!(bindings.pending().is_empty());
         }

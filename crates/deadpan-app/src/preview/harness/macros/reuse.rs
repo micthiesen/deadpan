@@ -16,7 +16,7 @@ fn edited(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(), String> 
     let original_cursor = d.app().source_cursor;
     d.command("record e")?;
     d.command("register f")?;
-    d.key(Key::Y)?;
+    d.chord(&[Key::Y, Key::Y])?;
     idle(d)?;
     let copied = bank(d)?;
     d.check(
@@ -94,7 +94,7 @@ fn edited(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(), String> 
         "The saved reuse macro contains relative typed yank and paste intent",
         program(d, 'e').is_some_and(|program| {
             matches!(program.instructions(), [
-            SemanticInstruction::YankBeat { register: yank },
+            SemanticInstruction::Yank { selector: deadpan_core::SemanticSelector::SelectedBeat, register: yank },
             SemanticInstruction::Paste { register: after, before: false },
             SemanticInstruction::Paste { register: before, before: true },
         ] if yank.as_char() == 'f' && after == yank && before == yank)

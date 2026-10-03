@@ -263,6 +263,135 @@ fn compound_original_paste_checks_exact_ordinals_and_retains_intermediate_yank()
 }
 
 #[test]
+fn typed_selectors_capture_qualified_source_and_staged_range_with_one_history_entry() -> Result {
+    use deadpan_core::{
+        FrameRange, ProjectFrame, SemanticAllocation, SemanticAllocationRequest, SemanticContext,
+        SemanticInstruction, SemanticMotion, SemanticProgram, SemanticRegisterBank,
+        SemanticSelector, SliceCaptureSelection, SplitIdentities, plan_semantic,
+    };
+    use std::num::NonZeroU32;
+
+    let scratch = tempfile::tempdir()?;
+    let (path, mut store) = project(scratch.path())?;
+    let original = retain(&mut store, "offset-bframes.mp4")?;
+    let decoded = decode(&store, &original)?;
+    let registration = request(&store, &original, "registered", "camera", Some("clip"))?;
+    store.register_source(&registration, &decoded, None, limits(), &active())?;
+    let before = store.snapshot()?;
+    let counts_before = counts(&path)?;
+    let bank = store.registers()?;
+    let body = SemanticProgram::new(vec![
+        SemanticInstruction::Yank {
+            selector: SemanticSelector::SelectedBeat,
+            register: RegisterName::new('a')?,
+        },
+        SemanticInstruction::Cut {
+            selector: SemanticSelector::Motion {
+                motion: SemanticMotion::Frames {
+                    forward: true,
+                    count: NonZeroU32::new(2).unwrap(),
+                },
+            },
+            register: RegisterName::new('b')?,
+        },
+        SemanticInstruction::Yank {
+            selector: SemanticSelector::Motion {
+                motion: SemanticMotion::Scope { end: true },
+            },
+            register: RegisterName::new('c')?,
+        },
+    ])?;
+    let plan = plan_semantic(
+        &before,
+        &SemanticContext {
+            parent: before.root().clone(),
+            cursor: ProjectFrame(3),
+            selected_child: Some(NodeId::new("clip")?),
+            visual_selection: None,
+        },
+        &body,
+        SemanticRegisterBank {
+            entries: &bank.entries,
+            version: bank.version,
+        },
+        revision("typed-source"),
+        |allocation| match allocation {
+            SemanticAllocationRequest::Yank { step_index } => Ok(SemanticAllocation::Yank {
+                capture_revision: revision(&format!("typed-yank-{step_index}")),
+            }),
+            SemanticAllocationRequest::Cut {
+                step_index,
+                required_split_ids,
+            } => Ok(SemanticAllocation::Cut {
+                new_revision: revision(&format!("typed-cut-{step_index}")),
+                capture_revision: revision(&format!("typed-cut-capture-{step_index}")),
+                split_identities: SplitIdentities {
+                    nodes: (0..required_split_ids)
+                        .map(|index| NodeId::new(format!("typed-split-{index}")))
+                        .collect::<std::result::Result<_, _>>()?,
+                },
+            }),
+            _ => unreachable!("capture-only macro"),
+        },
+        |_, _| unreachable!("no Original paste"),
+    )?;
+    let request = plan.request.as_ref().unwrap();
+    let preview = store.preview_compound(request)?;
+    assert_eq!(store.snapshot()?, before);
+    assert_eq!(store.registers()?, bank);
+    assert_eq!(counts(&path)?, counts_before);
+    let result = store.commit_compound(request, None)?;
+    assert!(result.committed.is_some());
+    assert_eq!(result.register_bank, preview.register_bank);
+    let after = store.snapshot()?;
+    assert_eq!(after.duration()?.frames(), before.duration()?.frames() - 2);
+    assert_eq!(counts(&path)?.1, counts_before.1 + 1);
+    let bank = store.registers()?;
+    let RegisterValue::Edited { slice: child } = bank.entries[&RegisterName::new('a')?].as_ref()
+    else {
+        panic!("child capture")
+    };
+    assert_eq!(
+        child.selection(),
+        &SliceCaptureSelection::Child {
+            node: NodeId::new("clip")?
+        }
+    );
+    child.validate_capture(&before)?;
+    let RegisterValue::Edited { slice: staged } = bank.entries[&RegisterName::new('c')?].as_ref()
+    else {
+        panic!("staged motion capture")
+    };
+    assert_ne!(staged.revision_id(), before.revision_id());
+    assert_ne!(staged.revision_id(), after.revision_id());
+    assert_eq!(
+        staged.range(),
+        FrameRange::new(ProjectFrame(3), ProjectFrame(after.duration()?.frames()))?
+    );
+    let historical = store.capture_snapshot_at(staged.revision_id())?;
+    assert_eq!(historical.assets(), before.assets());
+    staged.validate_capture(&historical)?;
+    store.undo(after.revision_id(), revision("undo-typed-source"))?;
+    let mut expected = serde_json::to_value(&before)?;
+    expected["revision_id"] = serde_json::json!("undo-typed-source");
+    assert_eq!(serde_json::to_value(store.snapshot()?)?, expected);
+    store.checkpoint()?;
+    drop(store);
+    let mut reopened = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    assert_eq!(reopened.registers()?, bank);
+    reopened.redo(
+        &revision("undo-typed-source"),
+        revision("redo-typed-source"),
+    )?;
+    let mut expected = serde_json::to_value(&after)?;
+    expected["revision_id"] = serde_json::json!("redo-typed-source");
+    assert_eq!(serde_json::to_value(reopened.snapshot()?)?, expected);
+    assert_eq!(reopened.registers()?, bank);
+    reopened.validate()?;
+    Ok(())
+}
+
+#[test]
 fn counted_semantic_original_paste_keeps_exact_mapping_through_undo_and_reopen() -> Result {
     use deadpan_core::{
         ProjectFrame, SemanticAllocation, SemanticAllocationRequest, SemanticContext,

@@ -71,6 +71,23 @@ The production audit enumerates the new family with the existing compiled paths.
 See [session register semantics](NAMED_REGISTERS.md). Strict logical provenance
 and physical layout/IME qualification remain open.
 
+## Yank and cut operators
+
+Normal Edit `y` and `d` are persistent prefixes. Frame, beat and group-boundary
+continuations use the configured motion paths; `yy` copies the whole selected
+beat and `dd` cuts it. Visual `y`/`d`, Original `y`, and sound `dd` retain their
+contextual meanings. The host supplies an explicit Edit/Original/Sound domain.
+A changed pending domain refuses its continuation instead of dispatching a new
+root action. Key labels distinguish whole-beat `yy` from range `y`.
+
+Use one positive distance count before the operator or its frame/beat motion.
+Two counts, zero, overflow and counts on group-boundary motions refuse. Invalid
+counts remain attached to the pending path until its terminal arrives. No
+operator repeats while held. Native fields, IME, controls and physical Kestrel
+reservations retain priority. The production audit includes each domain and
+pending operator path. See [keymap contract](KEYMAP.md) and
+[semantic selectors](SEMANTIC_MACROS.md).
+
 ## Semantic macros
 
 Normal mode adds configurable `macro.record` (`q` plus a letter) and

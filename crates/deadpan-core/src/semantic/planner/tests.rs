@@ -6,6 +6,7 @@ use crate::{
 use std::num::NonZeroU32;
 
 mod content;
+mod selectors;
 mod visual;
 
 fn node(value: &str) -> NodeId {

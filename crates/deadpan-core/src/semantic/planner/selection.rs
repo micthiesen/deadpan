@@ -64,7 +64,78 @@ where
         }
     }
 
-    pub(super) fn move_beats(&mut self, forward: bool, count: u32) {
+    pub(super) fn resolve_selector(
+        &self,
+        selector: SemanticSelector,
+    ) -> Result<SliceCaptureSelection, EditError> {
+        match selector {
+            SemanticSelector::SelectedBeat => {
+                let node =
+                    self.context.selected_child.clone().ok_or_else(|| {
+                        unavailable("select a beat before using this macro selector")
+                    })?;
+                validate_selection(&self.current, &self.context)?;
+                Ok(SliceCaptureSelection::Child { node })
+            }
+            SemanticSelector::VisualSelection => Ok(SliceCaptureSelection::Range {
+                range: self.visual_range()?,
+            }),
+            SemanticSelector::Motion { motion } => {
+                let (destination, _) = self.motion_target(motion);
+                let cursor = self.context.cursor;
+                if destination == cursor {
+                    return Err(unavailable("the macro motion selection is empty"));
+                }
+                let range = FrameRange::new(cursor.min(destination), cursor.max(destination))
+                    .map_err(crate::DocumentError::from)?;
+                Ok(SliceCaptureSelection::Range { range })
+            }
+        }
+    }
+
+    pub(super) fn move_context(&mut self, motion: SemanticMotion) {
+        let (cursor, child) = self.motion_target(motion);
+        self.context.cursor = cursor;
+        self.context.selected_child = child;
+        self.extend_selection();
+    }
+
+    fn motion_target(&self, motion: SemanticMotion) -> (ProjectFrame, Option<NodeId>) {
+        let cursor = match motion {
+            SemanticMotion::Frames { forward, count } => {
+                // Clamp the distance before adding so large counts cannot
+                // overflow the absolute Edit boundary.
+                let cursor = self.context.cursor.0;
+                let distance = if forward {
+                    self.bounds.1.0 - cursor
+                } else {
+                    cursor - self.bounds.0.0
+                };
+                let amount = distance.min(i64::from(count.get()));
+                ProjectFrame(if forward {
+                    cursor + amount
+                } else {
+                    cursor - amount
+                })
+            }
+            SemanticMotion::Beats { forward, count } => {
+                return self.beat_target(forward, count.get());
+            }
+            SemanticMotion::Scope { end } => {
+                if end {
+                    self.bounds.1
+                } else {
+                    self.bounds.0
+                }
+            }
+        };
+        (
+            cursor,
+            selected_child(&self.child_ends, cursor, self.bounds),
+        )
+    }
+
+    fn beat_target(&self, forward: bool, count: u32) -> (ProjectFrame, Option<NodeId>) {
         let current = self.context.selected_child.as_ref().or_else(|| {
             let index = if self.context.cursor == self.bounds.1 {
                 self.child_ends.len().checked_sub(1)?
@@ -78,7 +149,7 @@ where
             .and_then(|node| self.child_indices.get(node))
             .copied()
         else {
-            return;
+            return (self.context.cursor, self.context.selected_child.clone());
         };
         let amount = usize::try_from(count).unwrap_or(usize::MAX);
         let next = if forward {
@@ -86,11 +157,10 @@ where
         } else {
             index.saturating_sub(amount)
         };
-        self.context.selected_child = Some(self.child_ends[next].0.clone());
-        self.context.cursor = next
+        let cursor = next
             .checked_sub(1)
             .map_or(self.bounds.0, |previous| self.child_ends[previous].1);
-        self.extend_selection();
+        (cursor, Some(self.child_ends[next].0.clone()))
     }
 
     pub(super) fn refresh_children(&mut self) -> Result<(), EditError> {

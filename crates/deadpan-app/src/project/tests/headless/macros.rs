@@ -5,7 +5,7 @@ use std::num::NonZeroU32;
 use deadpan_cli::macros::{Operation as MacroOperation, Request as MacroRequest};
 use deadpan_core::{
     FrameCut, RegisterName, SemanticContext, SemanticInstruction, SemanticProgram,
-    SliceCaptureSelection,
+    SemanticSelector, SliceCaptureSelection,
 };
 use deadpan_store::registers::RegisterBank;
 
@@ -268,7 +268,8 @@ fn remote_yank_retains_bank_only_receipt_and_runtime_copy_after_refresh_failure(
         &mut client,
         save(
             &opened,
-            program(vec![SemanticInstruction::YankBeat {
+            program(vec![SemanticInstruction::Yank {
+                selector: SemanticSelector::SelectedBeat,
                 register: RegisterName::new('b').unwrap(),
             }]),
             false,

@@ -68,8 +68,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     edited::goto(d, 0)?;
     select_child(d, &middle)?;
     let saved = document(d)?.clone();
-    d.key(Key::Y)?;
-    d.wait_for("Capture the exact middle empty child through production y", |app| {
+    d.chord(&[Key::Y, Key::Y])?;
+    d.wait_for("Capture the exact middle empty child through production yy", |app| {
         !app.service.is_busy() && !app.copied.is_pending()
             && matches!(app.copied.content(), Some(crate::preview::copied::Content::Edited(copied))
                 if copied.slice().selection() == &(SliceCaptureSelection::Child { node: middle.clone() }))
@@ -208,7 +208,7 @@ fn whole_child_move_toggle(d: &mut Driver<'_>) -> Result<(), String> {
         .position(|node| node == &source)
         .ok_or("Whole-child Move fixture lost its Source slot")?;
     select_child(d, &source)?;
-    d.key(Key::Y)?;
+    d.chord(&[Key::Y, Key::Y])?;
     d.wait_for("Copy a positive whole child for refinement and Move recovery", |app| {
         !app.service.is_busy() && !app.copied.is_pending()
             && matches!(app.copied.content(), Some(crate::preview::copied::Content::Edited(copied))
@@ -305,7 +305,7 @@ fn empty_destination(
     d.changed(&revision)?;
     let empty = document(d)?.clone();
     select_child(d, middle)?;
-    d.key(Key::Y)?;
+    d.chord(&[Key::Y, Key::Y])?;
     d.wait_for("Copy an empty child in a completely zero-time edit", |app| {
         !app.service.is_busy() && !app.copied.is_pending()
             && matches!(app.copied.content(), Some(crate::preview::copied::Content::Edited(copied))

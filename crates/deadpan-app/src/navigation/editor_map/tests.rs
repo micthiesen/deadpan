@@ -27,11 +27,6 @@ fn audit_enumerates_unannotated_intermediate_branches() {
 fn rejected_count_teaching_does_not_advertise_an_available_edit() {
     for (digits, key, message) in [
         (
-            "2",
-            Key::D,
-            "Whole-beat cut deletes one selected beat. Counted deletion is not available.",
-        ),
-        (
             "0",
             Key::R,
             "An edit count must be positive; no edit was made.",
@@ -39,7 +34,7 @@ fn rejected_count_teaching_does_not_advertise_an_available_edit() {
         (
             "0",
             Key::D,
-            "An edit count must be positive; no edit was made.",
+            "An operator count must be positive; no action was taken.",
         ),
     ] {
         let mut bindings = counted(digits);
@@ -101,6 +96,16 @@ fn transport_and_group_interrupts_clear_every_non_mark_prefix_even_overflow() {
                 Action::Command,
             ),
         ] {
+            let expected = if prefix == &[Key::D] && key == Key::G {
+                Action::Operator {
+                    cut: true,
+                    selector: deadpan_core::SemanticSelector::Motion {
+                        motion: deadpan_core::SemanticMotion::Scope { end: true },
+                    },
+                }
+            } else {
+                expected
+            };
             let mut bindings = enter(prefix);
             assert_eq!(
                 bindings.key(key, modifiers, false, false),
@@ -205,7 +210,7 @@ fn count_policy_distinguishes_zero_absence_one_and_overflow() {
             Some(Action::Invalid(_))
         ));
     }
-    for key in [Key::V, Key::Y, Key::P, Key::S] {
+    for key in [Key::V, Key::P, Key::S] {
         assert!(matches!(
             counted("1").key(key, Modifiers::NONE, false, false),
             Some(Action::Invalid(_))
@@ -254,7 +259,10 @@ fn armed_delete_keeps_its_operator_when_visual_context_changes() {
         assert_eq!(bindings.pending(), "1d");
         assert_eq!(
             bindings.key_with_selection(Key::D, Modifiers::NONE, false, false, selection),
-            Some(Action::Edit(BeatEdit::Delete))
+            Some(Action::Operator {
+                cut: true,
+                selector: deadpan_core::SemanticSelector::SelectedBeat
+            })
         );
         assert!(bindings.pending().is_empty());
         assert!(matches!(
@@ -276,7 +284,7 @@ fn armed_delete_keeps_its_operator_when_visual_context_changes() {
 
 #[test]
 fn invalid_suffix_never_restarts_at_a_root_binding() {
-    for (prefix, invalid) in [(Key::G, false), (Key::R, true), (Key::D, true)] {
+    for (prefix, invalid) in [(Key::G, false), (Key::R, true)] {
         let mut bindings = enter(&[prefix]);
         let result = bindings.key(Key::H, Modifiers::NONE, false, false);
         if invalid {
@@ -384,7 +392,7 @@ fn prefix_teaching_lists_reachable_declared_leaves_and_counted_leader_restricts_
         EditSelection::Empty,
         EditSelection::Range,
     ] {
-        for key in [Key::G, Key::R, Key::D, Key::Comma] {
+        for key in [Key::G, Key::R, Key::Comma] {
             if key == Key::D && selection != EditSelection::None {
                 continue;
             }

@@ -11,8 +11,8 @@ use crate::{
     FrameRange, LeafEdit, MAX_COMPOUND_CAPTURE_BYTES, MAX_COMPOUND_DOCUMENT_BYTES,
     MAX_COMPOUND_STEPS, MAX_DOCUMENT_JSON_BYTES, MarkId, NodeId, NodeKind, ProjectDocument,
     ProjectFrame, RegisterName, RegisterValue, ResolvedStep, ResolvedTransaction, RevisionId,
-    SemanticInstruction, SemanticProgram, SliceCaptureSelection, SliceIdentityRequirements,
-    SlicePasteIdentities, SourceNode, SplitIdentities, compound::wire,
+    SemanticInstruction, SemanticMotion, SemanticProgram, SemanticSelector, SliceCaptureSelection,
+    SliceIdentityRequirements, SlicePasteIdentities, SourceNode, SplitIdentities, compound::wire,
 };
 
 use super::{MAX_SEMANTIC_CALL_DEPTH, MAX_SEMANTIC_INSTRUCTION_FUEL};
@@ -101,10 +101,13 @@ pub struct SemanticTrace {
     pub before: SemanticContext,
     pub after: SemanticContext,
     pub resolved_range: Option<FrameRange>,
+    /// Exact staged capture target for Yank or Cut. Together with `before.parent`
+    /// this distinguishes whole children, including empty ones, from ranges.
+    pub resolved_selection: Option<SliceCaptureSelection>,
     /// The old interval removed by a replacement. `resolved_range` contains
     /// the imported interval in the resulting document.
     pub removed_range: Option<FrameRange>,
-    /// Exact staged direct-child label for a YankBeat capture.
+    /// Exact staged direct-child label for a whole-child Yank or Cut capture.
     pub captured_child_label: Option<String>,
     pub depth: usize,
 }
@@ -275,38 +278,26 @@ where
                 before: self.context.clone(),
                 after: self.context.clone(),
                 resolved_range: None,
+                resolved_selection: None,
                 removed_range: None,
                 captured_child_label: None,
                 depth: self.calls.len(),
             });
             match instruction {
                 SemanticInstruction::MoveFrames { forward, count } => {
-                    // Compute distance to the bound first so a huge motion can
-                    // clamp safely without overflowing the absolute frame clock.
-                    let cursor = self.context.cursor.0;
-                    let distance = if *forward {
-                        self.bounds.1.0 - cursor
-                    } else {
-                        cursor - self.bounds.0.0
-                    };
-                    let amount = distance.min(i64::from(count.get()));
-                    self.context.cursor = ProjectFrame(if *forward {
-                        cursor + amount
-                    } else {
-                        cursor - amount
+                    self.move_context(SemanticMotion::Frames {
+                        forward: *forward,
+                        count: *count,
                     });
-                    self.context.selected_child =
-                        selected_child(&self.child_ends, self.context.cursor, self.bounds);
-                    self.extend_selection();
                 }
                 SemanticInstruction::MoveBeats { forward, count } => {
-                    self.move_beats(*forward, count.get());
+                    self.move_context(SemanticMotion::Beats {
+                        forward: *forward,
+                        count: *count,
+                    });
                 }
                 SemanticInstruction::MoveScope { end } => {
-                    self.context.cursor = if *end { self.bounds.1 } else { self.bounds.0 };
-                    self.context.selected_child =
-                        selected_child(&self.child_ends, self.context.cursor, self.bounds);
-                    self.extend_selection();
+                    self.move_context(SemanticMotion::Scope { end: *end });
                 }
                 SemanticInstruction::BeginSelection => {
                     self.context.visual_selection = Some(SemanticVisualSelection {
@@ -321,6 +312,12 @@ where
                 SemanticInstruction::ClearSelection => {
                     self.context.visual_selection = None;
                 }
+                SemanticInstruction::Yank { selector, register } => {
+                    self.capture_selector(index, *register, *selector, false)?;
+                }
+                SemanticInstruction::Cut { selector, register } => {
+                    self.capture_selector(index, *register, *selector, true)?;
+                }
                 SemanticInstruction::CutFrames {
                     operation,
                     register,
@@ -330,27 +327,34 @@ where
                         &self.context.parent,
                         self.context.cursor,
                     )?;
-                    self.cut(*register, range)?;
-                    self.trace[index].resolved_range = Some(range);
+                    self.capture_instruction(
+                        index,
+                        *register,
+                        SliceCaptureSelection::Range { range },
+                        true,
+                    )?;
                 }
                 SemanticInstruction::Call { register, count } => {
                     self.call(*register, count.get())?;
                 }
                 SemanticInstruction::YankBeat { register } => {
-                    let (range, label) = self.yank(*register)?;
-                    self.trace[index].resolved_range = Some(range);
-                    self.trace[index].captured_child_label = Some(label);
+                    self.capture_selector(index, *register, SemanticSelector::SelectedBeat, false)?;
                 }
                 SemanticInstruction::YankSelection { register } => {
-                    let range = self.visual_range()?;
-                    self.capture(*register, SliceCaptureSelection::Range { range })?;
-                    self.finish_selection()?;
-                    self.trace[index].resolved_range = Some(range);
+                    self.capture_selector(
+                        index,
+                        *register,
+                        SemanticSelector::VisualSelection,
+                        false,
+                    )?;
                 }
                 SemanticInstruction::CutSelection { register } => {
-                    let range = self.visual_range()?;
-                    self.cut(*register, range)?;
-                    self.trace[index].resolved_range = Some(range);
+                    self.capture_selector(
+                        index,
+                        *register,
+                        SemanticSelector::VisualSelection,
+                        true,
+                    )?;
                 }
                 SemanticInstruction::ReplaceSelection { register } => {
                     let removed = self.visual_range()?;
@@ -401,6 +405,8 @@ where
                 matches!(
                     instruction,
                     SemanticInstruction::CutFrames { .. }
+                        | SemanticInstruction::Yank { .. }
+                        | SemanticInstruction::Cut { .. }
                         | SemanticInstruction::YankBeat { .. }
                         | SemanticInstruction::Paste { .. }
                         | SemanticInstruction::YankSelection { .. }
@@ -426,7 +432,11 @@ where
         Ok(())
     }
 
-    fn cut(&mut self, register: RegisterName, range: FrameRange) -> Result<(), EditError> {
+    fn cut(
+        &mut self,
+        register: RegisterName,
+        selection: &SliceCaptureSelection,
+    ) -> Result<FrameRange, EditError> {
         if self.steps.len() == MAX_COMPOUND_STEPS {
             return Err(limit("macro exceeds 1024 resolved editing steps"));
         }
@@ -443,10 +453,21 @@ where
             MAX_COMPOUND_CAPTURE_BYTES,
             "macro captured document byte limit",
         )?;
-        let preflight = self.current.range_deletion(&self.context.parent, range)?;
+        let child_slot = match selection {
+            SliceCaptureSelection::Child { node } => Some(self.child_indices[node]),
+            SliceCaptureSelection::Range { .. } => None,
+        };
+        let required_split_ids = match selection {
+            SliceCaptureSelection::Range { range } => {
+                self.current
+                    .range_deletion(&self.context.parent, *range)?
+                    .required_ids
+            }
+            SliceCaptureSelection::Child { .. } => 0,
+        };
         let allocation = (self.allocate)(SemanticAllocationRequest::Cut {
             step_index: self.steps.len(),
-            required_split_ids: preflight.required_ids,
+            required_split_ids,
         })?;
         let SemanticAllocation::Cut {
             new_revision,
@@ -456,7 +477,7 @@ where
         else {
             return Err(invalid("macro cut requires a Cut allocation"));
         };
-        if split_identities.nodes.len() != preflight.required_ids {
+        if split_identities.nodes.len() != required_split_ids {
             return Err(invalid(
                 "macro cut requires exactly its preflight Split identities",
             ));
@@ -471,27 +492,33 @@ where
                 return Err(identity("macro reuses a Split node identity"));
             }
         }
-        let slice = Arc::new(CapturedEditSlice::capture(
+        let slice = Arc::new(CapturedEditSlice::capture_selection(
             &self.current,
             &self.context.parent,
-            range,
+            selection,
             AudioTimingId {
                 allocation: capture_revision,
                 ordinal: 0,
             },
         )?);
-        let delete = LeafEdit::new(
-            new_revision.clone(),
-            Command::DeleteRange {
+        let range = slice.range();
+        let timing = AudioTimingId {
+            allocation: new_revision.clone(),
+            ordinal: 0,
+        };
+        let command = match selection {
+            SliceCaptureSelection::Range { range } => Command::DeleteRange {
                 parent: self.context.parent.clone(),
-                range,
+                range: *range,
                 identities: split_identities,
-                timing: AudioTimingId {
-                    allocation: new_revision,
-                    ordinal: 0,
-                },
+                timing,
             },
-        )?;
+            SliceCaptureSelection::Child { node } => Command::DeleteRipple {
+                node: node.clone(),
+                timing,
+            },
+        };
+        let delete = LeafEdit::new(new_revision, command)?;
         let applied = crate::apply(&self.current, &delete.request(&self.current))?;
         let next = applied.forward.apply(&self.current)?;
         charge(
@@ -514,9 +541,15 @@ where
         self.context.cursor = range.start();
         self.context.visual_selection = None;
         self.refresh_children()?;
-        self.context.selected_child =
-            selected_child(&self.child_ends, self.context.cursor, self.bounds);
-        Ok(())
+        self.context.selected_child = if let Some(slot) = child_slot {
+            self.child_ends
+                .get(slot)
+                .or_else(|| self.child_ends.last())
+                .map(|(node, _)| node.clone())
+        } else {
+            selected_child(&self.child_ends, self.context.cursor, self.bounds)
+        };
+        Ok(range)
     }
 }
 

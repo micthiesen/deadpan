@@ -4,7 +4,7 @@ use std::num::NonZeroU32;
 
 use deadpan_core::{
     FrameCut, RegisterName, SemanticContext, SemanticInstruction, SemanticProgram,
-    SliceCaptureSelection,
+    SemanticSelector, SliceCaptureSelection,
 };
 
 use super::*;
@@ -152,7 +152,8 @@ fn oriented_visual_copy_keeps_redo_and_replacement_failure_retains_exact_selecti
         &harness.service,
         Operation::Apply {
             id: id(&undone, 1),
-            instruction: SemanticInstruction::YankSelection {
+            instruction: SemanticInstruction::Yank {
+                selector: SemanticSelector::VisualSelection,
                 register: RegisterName::new('b').unwrap(),
             },
             scope: SequenceScope::default(),
@@ -395,7 +396,8 @@ fn counted_yank_paste_prepares_intermediate_runtime_copy_and_full_undo_redo() {
             1,
             'a',
             program(vec![
-                SemanticInstruction::YankBeat {
+                SemanticInstruction::Yank {
+                    selector: SemanticSelector::SelectedBeat,
                     register: RegisterName::new('b').unwrap(),
                 },
                 SemanticInstruction::Paste {
@@ -557,7 +559,8 @@ fn empty_selected_beat_yanks_and_pastes_at_its_sibling_slot_without_cursor_infer
         &harness.service,
         Operation::Apply {
             id: id(&opened, 1),
-            instruction: SemanticInstruction::YankBeat {
+            instruction: SemanticInstruction::Yank {
+                selector: SemanticSelector::SelectedBeat,
                 register: RegisterName::new('c').unwrap(),
             },
             scope: SequenceScope::default(),
@@ -628,6 +631,157 @@ fn empty_selected_beat_yanks_and_pastes_at_its_sibling_slot_without_cursor_infer
     assert_eq!(
         copied(&pasted, 'c').slice(),
         copied(&copied_update, 'c').slice()
+    );
+    ProjectStore::open(&path, AccessMode::ReadOnly)
+        .unwrap()
+        .validate()
+        .unwrap();
+}
+
+#[test]
+fn typed_selected_cuts_keep_empty_child_and_staged_labels_through_one_undo() {
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("typed-selected-cuts.deadpan");
+    let mut store = seed_holds(&path, &["a", "b"]);
+    seed_command(
+        &mut store,
+        Command::Insert {
+            parent: node("root"),
+            index: 1,
+            subtree: Subtree {
+                root: node("empty"),
+                nodes: BTreeMap::from([(node("empty"), BeatNode::sequence("Empty beat", vec![]))]),
+                overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
+            },
+        },
+        "with-empty",
+    );
+    drop(store);
+    let harness = Harness::new();
+    let opened = command(&harness.service, ProjectRequest::Open(path.clone()));
+    let saved = send(
+        &harness.service,
+        save(
+            &opened,
+            1,
+            'm',
+            program(vec![
+                SemanticInstruction::Cut {
+                    selector: SemanticSelector::SelectedBeat,
+                    register: RegisterName::new('c').unwrap(),
+                },
+                SemanticInstruction::Yank {
+                    selector: SemanticSelector::SelectedBeat,
+                    register: RegisterName::new('d').unwrap(),
+                },
+                SemanticInstruction::Cut {
+                    selector: SemanticSelector::SelectedBeat,
+                    register: RegisterName::new('e').unwrap(),
+                },
+            ]),
+        ),
+    );
+    let before = saved.workspace.as_ref().unwrap().document.clone();
+    let before_rows = rows(&path);
+    let mut operation = run(&saved, 2, 'm', 1, 3);
+    let Operation::Run { context, .. } = &mut operation else {
+        unreachable!()
+    };
+    context.selected_child = Some(node("empty"));
+    let executed = send(&harness.service, operation);
+    let after = executed.workspace.as_ref().unwrap().document.clone();
+    assert_eq!(after.duration().unwrap().frames(), 10);
+    assert!(!after.nodes().contains_key(&node("empty")));
+    assert!(!after.nodes().contains_key(&node("b")));
+    assert_eq!(
+        rows(&path),
+        (before_rows.0 + 1, before_rows.1 + 1, before_rows.2 + 2)
+    );
+    let empty = copied(&executed, 'c').clone();
+    assert_eq!(empty.child_label(), Some("Empty beat"));
+    assert_eq!(empty.slice().duration().frames(), 0);
+    assert_eq!(
+        empty.slice().selection(),
+        &SliceCaptureSelection::Child {
+            node: node("empty")
+        }
+    );
+    assert_eq!(&empty.id().source_revision, before.revision_id());
+    empty.slice().validate_capture(&before).unwrap();
+    let staged = copied(&executed, 'd').clone();
+    assert_eq!(staged.child_label(), Some("b"));
+    assert_eq!(
+        staged.slice().selection(),
+        &SliceCaptureSelection::Child { node: node("b") }
+    );
+    assert_ne!(&staged.id().source_revision, before.revision_id());
+    assert_ne!(&staged.id().source_revision, after.revision_id());
+    assert_eq!(
+        staged.id().persisted_version,
+        Some(receipt(&executed).bank_version)
+    );
+    assert_eq!(
+        copied(&executed, 'e').slice().selection(),
+        staged.slice().selection()
+    );
+    assert_eq!(
+        copied(&executed, 'e').slice().range(),
+        staged.slice().range()
+    );
+    assert_eq!(
+        copied(&executed, 'e').id().source_revision,
+        staged.id().source_revision
+    );
+    assert_eq!(copied(&executed, 'e').child_label(), Some("b"));
+    let reader = ProjectStore::open(&path, AccessMode::ReadOnly).unwrap();
+    let historical = reader
+        .capture_snapshot_at(&staged.id().source_revision)
+        .unwrap();
+    assert!(!historical.nodes().contains_key(&node("empty")));
+    staged.slice().validate_capture(&historical).unwrap();
+    copied(&executed, 'e')
+        .slice()
+        .validate_capture(&historical)
+        .unwrap();
+    drop(reader);
+    let undone = command(
+        &harness.service,
+        ProjectRequest::Undo {
+            expected_revision: after.revision_id().clone(),
+        },
+    );
+    let mut expected = serde_json::to_value(before.as_ref()).unwrap();
+    expected["revision_id"] =
+        serde_json::to_value(undone.workspace.as_ref().unwrap().document.revision_id()).unwrap();
+    assert_eq!(
+        serde_json::to_value(undone.workspace.as_ref().unwrap().document.as_ref()).unwrap(),
+        expected
+    );
+    command(&harness.service, ProjectRequest::Close);
+    let reopened = command(&harness.service, ProjectRequest::Open(path.clone()));
+    assert_eq!(copied(&reopened, 'c').slice(), empty.slice());
+    assert_eq!(copied(&reopened, 'c').child_label(), Some("Empty beat"));
+    assert_eq!(copied(&reopened, 'd').slice(), staged.slice());
+    assert_eq!(copied(&reopened, 'd').child_label(), Some("b"));
+    let redone = command(
+        &harness.service,
+        ProjectRequest::Redo {
+            expected_revision: reopened
+                .workspace
+                .as_ref()
+                .unwrap()
+                .document
+                .revision_id()
+                .clone(),
+        },
+    );
+    let mut expected = serde_json::to_value(after.as_ref()).unwrap();
+    expected["revision_id"] =
+        serde_json::to_value(redone.workspace.as_ref().unwrap().document.revision_id()).unwrap();
+    assert_eq!(
+        serde_json::to_value(redone.workspace.as_ref().unwrap().document.as_ref()).unwrap(),
+        expected
     );
     ProjectStore::open(&path, AccessMode::ReadOnly)
         .unwrap()

@@ -11,6 +11,30 @@ pub const MAX_SEMANTIC_PROGRAM_BYTES: usize = 128 * 1024;
 pub const MAX_SEMANTIC_INSTRUCTION_FUEL: usize = 4096;
 pub const MAX_SEMANTIC_CALL_DEPTH: usize = 16;
 
+/// A relative destination in the current ordinary Sequence. Beat motions use
+/// the explicit selected child when present, independently of the cursor.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+pub enum SemanticMotion {
+    Frames { forward: bool, count: NonZeroU32 },
+    Beats { forward: bool, count: NonZeroU32 },
+    Scope { end: bool },
+}
+
+/// Select copied or deleted content without moving the context. Motion ranges
+/// run from the entry cursor to the same destination as ordinary navigation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+pub enum SemanticSelector {
+    #[serde(deserialize_with = "deserialize_empty")]
+    SelectedBeat,
+    #[serde(deserialize_with = "deserialize_empty")]
+    VisualSelection,
+    Motion {
+        motion: SemanticMotion,
+    },
+}
+
 /// The supported macro vocabulary. Selectors resolve against each preceding
 /// staged document, with the same ordinary Sequence scope throughout the run.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -33,6 +57,14 @@ pub enum SemanticInstruction {
     FinishSelection,
     #[serde(deserialize_with = "deserialize_empty")]
     ClearSelection,
+    Yank {
+        selector: SemanticSelector,
+        register: RegisterName,
+    },
+    Cut {
+        selector: SemanticSelector,
+        register: RegisterName,
+    },
     CutFrames {
         operation: FrameCut,
         register: RegisterName,

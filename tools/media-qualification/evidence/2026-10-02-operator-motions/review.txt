@@ -1,0 +1,88 @@
+Independent source reviews
+
+semantic_macro_store reviewed the core selector integration and native Apply
+lifecycle. Found two native issues, both fixed by root:
+1. Escape outside recording left pending Apply cursor ownership intact. The
+   shared Escape path now revokes ownership, and escaped_pending withholds a
+   genuine saved cut before Escape and releases it afterward.
+2. Generic workspace refresh inferred a selected child when the captured child
+   was absent. A saved refresh failure now restores captured absence only when
+   the exact old context is visible and ownership remains held. The reviewer
+   checked the predicate; refresh_failure_absence combines a genuine saved copy
+   and bank with an injected refresh failure observation. Service tests exercise
+   durable refresh failures independently.
+The reviewer found no other actionable core or receipt-lifecycle issue.
+
+semantic_macro_core independently reviewed generated operator paths, configured
+motion composition, domain maps, counts, prefix capture, stale-context latching,
+register capture, delayed ownership, and native/semantic motion correspondence.
+No actionable findings. Static review does not establish physical keyboard/IME
+behavior or rendered execution.
+
+Root review found that a child cut initially used a time-only successor query,
+which skipped adjacent zero-duration siblings. Core now retains the literal
+child slot and selects its following sibling or the final remaining sibling.
+A focused adjacent-empty-child test covers this correction.
+
+All reviewers shared the checkout and preserved concurrent changes. Root owns
+Cargo, runtime testing, evidence, commit and push.
+
+semantic_macro_keys independently reviewed final core selector semantics:
+motion parity with native selection::step/at_boundary, explicit empty-child
+identity, absent selection at interior/terminal boundaries, exact split pools,
+Child DeleteRipple versus range DeleteRange, literal next-child selection,
+staged capture provenance, inverse restoration and identity rejection. No
+actionable findings. This was source review only.
+
+Initial affected test run: 705 native tests passed; one footer layout fixture
+failed before rendering because its configured 16-key motion became a 17-key
+operator-plus-motion path. Corrected only that fixture's motion paths to 15 keys,
+retaining 16-key non-motion paths and the production 16-key bound. The original
+failed log and source inventory remain retained. No core/store/CLI test results
+are attributed to this early-stopped run.
+
+Second affected test run: native 706 unit and four headless tests passed, and
+all CLI suites passed. The core suite then failed one new inverse helper: it
+compared the supplied generic replay revision against bank-only planning's
+intentionally unchanged authored revision. The helper now first asserts that
+the bank-only planned document is unchanged, then normalizes only the replay
+revision when every resolved step has edit() == None. Exact register writes
+and complete inverse equality remain asserted. Every authored cut, including
+an empty-child cut, has an edit and cannot use the branch. semantic_macro_core
+independently confirmed this correction does not mask an authored operation.
+No production source changed for this correction. The final core/store run
+covers the corrected helper; already-passed native and CLI results remain
+attributed to their original source inventory.
+
+Rendered macro replay passed 373 checks across 1,789 steps. Its Kestrel audit
+covered 2,748,336 cases and 62 reserved bindings, with no conflict or live-source
+drift. The subsequent smoke command incorrectly named a nonexistent release
+scenario and exited before creating a project. The invalid invocation and
+receipt are retained. Explicit editing, keymap, place-slice, delete-range and
+named-registers scenarios replace it; no product source changed.
+
+Root inspected macros-132, macros-133 and macros-134 captures. Pending input,
+copy/cut intervals, both clocks, beat selection and one-Undo feedback are visible.
+macros-132 includes egui's debug request_discard warning after three immediately
+consecutive layout transitions (register command entry/submit then y). The
+capture itself uses one layout pass; adjacent settled frames also use one.
+This is retained as an observed debug overlay, not hidden or counted as a
+physical presentation/performance qualification.
+
+Native CUA delivery verified pending y, y5l at Edit 20, d5h to Edit 15 with
+115 total frames, and one Undo back to 120 frames. Cmd+Q closed the instance
+cleanly. Native visual inspection exposed missing arrow glyphs in continuation
+hints. Replaced only the four Stroke labels with Left/Right/Up/Down. This keeps
+input identities and routing unchanged. Final app checks and rendered/native
+label verification cover that display correction; prior evidence is retained.
+
+Final source inventory ab0f81bbbd48485425a209082aabc4db8486e0b2fce93973578352d68392482d
+changes only the four Stroke arrow labels from the prior passing core/store and
+smoke-run inventory. Final app tests passed 706 unit and four headless tests;
+both strict app Clippy configurations, format and build passed. Final Macro
+replay passed 372 checks and keymap 56. The initial Macro replay's extra check
+only verified --retain-projects, omitted from the final temporary-project run.
+The final native window visibly renders Left/Right/Up/Down, and native y5l,
+d5h, Undo and yy complete correctly. Both native sessions exited zero; final
+pgrep found no deadpan-app process. No physical keyboard/IME/VoiceOver or release
+packaging claim is made.

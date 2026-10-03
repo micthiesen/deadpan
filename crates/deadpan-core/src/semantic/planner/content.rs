@@ -14,20 +14,42 @@ where
     F: FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
     R: FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
 {
-    pub(super) fn yank(
+    pub(super) fn capture_selector(
         &mut self,
+        trace_index: usize,
         register: RegisterName,
-    ) -> Result<(FrameRange, String), EditError> {
-        let selected = self.context.selected_child.clone().ok_or_else(|| {
-            EditError::new(
-                EditErrorCode::SelectionUnavailable,
-                "select a beat before yanking",
-            )
-        })?;
-        validate_selection(&self.current, &self.context)?;
-        let label = self.current.nodes()[&selected].label.clone();
-        let range = self.capture(register, SliceCaptureSelection::Child { node: selected })?;
-        Ok((range, label))
+        selector: SemanticSelector,
+        cut: bool,
+    ) -> Result<(), EditError> {
+        let selection = self.resolve_selector(selector)?;
+        self.capture_instruction(trace_index, register, selection, cut)?;
+        if !cut && selector == SemanticSelector::VisualSelection {
+            self.finish_selection()?;
+        }
+        Ok(())
+    }
+
+    pub(super) fn capture_instruction(
+        &mut self,
+        trace_index: usize,
+        register: RegisterName,
+        selection: SliceCaptureSelection,
+        cut: bool,
+    ) -> Result<(), EditError> {
+        let label = match &selection {
+            SliceCaptureSelection::Child { node } => Some(self.current.nodes()[node].label.clone()),
+            SliceCaptureSelection::Range { .. } => None,
+        };
+        let range = if cut {
+            self.cut(register, &selection)?
+        } else {
+            self.capture(register, selection.clone())?
+        };
+        let trace = &mut self.trace[trace_index];
+        trace.resolved_range = Some(range);
+        trace.resolved_selection = Some(selection);
+        trace.captured_child_label = label;
+        Ok(())
     }
 
     pub(super) fn capture(

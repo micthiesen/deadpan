@@ -7,6 +7,7 @@ use deadpan_store::{AccessMode, ProjectStore, registers::RegisterBank};
 use egui::{Event, Key, Modifiers};
 use egui_kittest::kittest::Queryable as _;
 
+mod operators;
 mod reuse;
 mod visual;
 
@@ -30,6 +31,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     headless_macros(d, &baseline)?;
     reuse::run(d, &baseline)?;
     visual::run(d, &baseline)?;
+    operators::run(d, &baseline)?;
     reopen(d, &baseline)
 }
 
@@ -434,7 +436,7 @@ fn motion_and_call(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(),
 fn type_errors(d: &mut Driver<'_>) -> Result<(), String> {
     at(d, 20)?;
     d.command("register d")?;
-    d.key(Key::Y)?;
+    d.chord(&[Key::Y, Key::Y])?;
     d.wait_for("A real copied beat occupies named register d", |app| {
         !app.service.is_busy()
             && !app.copied.is_pending()

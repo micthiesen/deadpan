@@ -217,6 +217,16 @@ impl DeadpanApp {
         }
     }
 
+    pub(super) fn routed_domain(&self) -> navigation::RoutingDomain {
+        if self.sound_focused() || self.pane == Pane::Sounds || self.event_focused() {
+            navigation::RoutingDomain::Sound
+        } else if self.view == View::Source {
+            navigation::RoutingDomain::Original
+        } else {
+            navigation::RoutingDomain::Edit
+        }
+    }
+
     pub(super) fn visual_edit_range(&mut self) {
         if !self.macro_action_allowed(Action::VisualMoment) {
             return;

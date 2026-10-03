@@ -1,0 +1,44 @@
+{
+  "method": "CUA native key delivery, accessibility state and full-window screenshots",
+  "binary_sha256": "30a57f907c33544b3cfa2c839b59f230b0e59aa56f0e5c2519edf1ea7225d585",
+  "keys": [
+    "20l",
+    "y",
+    "5l",
+    "d5h",
+    "u",
+    "yy",
+    "Cmd+Q"
+  ],
+  "observed": {
+    "pending": [
+      "Left",
+      "Right",
+      "Up",
+      "Down"
+    ],
+    "copy_cursor": 20,
+    "cut_cursor": 15,
+    "cut_duration": 115,
+    "cut_picture_original_frame": 20,
+    "undo_duration": 120,
+    "whole_beat_copy": "Action completed."
+  },
+  "screenshots": [
+    "native-pending-final.png",
+    "native-cut-final.png"
+  ],
+  "closed": true,
+  "process_check": {
+    "command": [
+      "pgrep",
+      "-x",
+      "deadpan-app"
+    ],
+    "exit_code": 1
+  },
+  "limits": [
+    "Automated native delivery, not physical keyboard-layout qualification",
+    "No OS IME, VoiceOver or acoustic output qualification"
+  ]
+}

@@ -878,6 +878,17 @@ Prepare runtime copies before commit and retain durable success across refresh
 failure. Macro values carry no media provenance; copying and calling preserve
 their type distinctions. See [semantic macros](docs/SEMANTIC_MACROS.md).
 
+Normal Edit `y`/`d` motion prefixes and `yy`/`dd` use typed semantic selectors;
+Original and Visual `y` stay immediate. Capture context and register at the first
+operator ancestor, including absence, and latch invalidation across movement
+away and back. One distance count may precede the operator or its motion; never
+multiply two counts or reinterpret a refused suffix as new navigation. Motions
+resolve against the staged scope without moving a yank's cursor or selection.
+Keep exact Child versus Range capture provenance. Empty motion ranges refuse;
+empty children remain copyable/cuttable structures, and child cuts choose the
+literal following sibling. Non-recording operators share Apply receipt handling;
+Escape relinquishes pending cursor ownership while queued authored work finishes.
+
 Headless Macro requests bind the committed revision and register-bank version.
 Inspect both in one SQLite snapshot; resolve runs from an explicit ordinary
 Sequence parent and absolute Edit cursor. Dry-run shares store admission and

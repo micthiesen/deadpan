@@ -1,0 +1,11 @@
+{
+  "base_commit": "3a011e7bab8ebf7093886d2e9b909f61954ba290",
+  "binary_sha256": "30a57f907c33544b3cfa2c839b59f230b0e59aa56f0e5c2519edf1ea7225d585",
+  "machine": [
+    "Apple M5 Max",
+    "137438953472"
+  ],
+  "system": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)"
+}

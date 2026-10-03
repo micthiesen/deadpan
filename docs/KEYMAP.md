@@ -45,6 +45,7 @@ slot, and a double quote selects the unnamed register. Marks keep distinct
 `a–z` and `A–Z` names. These families expand before ambiguity and resource checks,
 including the final argument's path length. No prefix timer executes a partial
 command. The double quote token (`"\""` in JSON) and `Shift+Quote` are equivalent.
+The 16-key bound also applies to each composed operator-plus-motion path.
 
 | Action IDs | Meaning |
 | --- | --- |
@@ -54,7 +55,8 @@ command. The double quote token (`"\""` in JSON) and `Shift+Quote` are equivalen
 | `undo` | Undo; native undo/redo alternatives remain fixed |
 | `playback`, `audition` | Play/pause and selection loop |
 | `group.enter`, `group.leave` | Group navigation; exact event position in Placed sounds |
-| `visual`, `copy` | Select time and copy |
+| `visual`, `copy` | Select time; immediate Original or Visual copy |
+| `copy.beat`, `yank.operator`, `cut.operator` | Whole-beat copy and typed motion prefixes in Normal Edit |
 | `paste.after`, `paste.before` | Paste, or replace a captured range |
 | `split`, `cut.frames`, `cut.beat`, `cut.range` | Structural edits; range cut is Visual, beat cut is Normal |
 | `edit.repeat-last` | Repeat the last committed frame cut at the current cursor; default `.`, no count or held activation |
@@ -94,7 +96,8 @@ Normal and timeline Visual editor paths compile from
 bounded [`binding_trie.rs`](../crates/deadpan-app/src/navigation/binding_trie.rs).
 Each terminal carries a typed action, count policy, short explanation and held-key
 policy. Proper prefixes carry separate notifications and semantic capture roles.
-The native project service and authored commands are unchanged.
+Normal Edit operator terminals resolve typed selectors through the shared
+semantic planner and native project service.
 
 ## Input ownership
 
@@ -131,7 +134,8 @@ See [named registers](NAMED_REGISTERS.md) for durability and validation rules.
 `q` plus a letter starts recording, and `q` while recording saves to that named
 Macro. `@` plus a letter runs it; a positive preceding count repeats the call
 in one transaction. The configured `macro.record` prefix itself stops recording.
-Recordings support frame motions, frame cuts and named calls. Prefix and command
+Recordings support frame/beat motions, Visual selections, typed copy/cut selectors,
+register pastes/replacements and named calls. Prefix and command
 entry capture the exact project, bank and cursor, including absence. Logical
 `@` requires the key's immediate `Text("@")` companion; physical mode binds
 Shift+2. See [semantic macros](SEMANTIC_MACROS.md) for limits and typed errors.
@@ -151,7 +155,10 @@ any composition event prevents editor submit/cancel for that batch.
 Count policies preserve the existing distinctions between absent count, zero,
 one, a larger count and overflow. Motions, Repeat, frame cuts, whole-beat cuts,
 Holds and gain use their declared policies. A positive Repeat count still means
-total plays. A second count after an operator is rejected.
+total plays. Yank/cut distance counts may appear before the operator or after its
+complete prefix, immediately before the motion. Supplying both rejects rather
+than multiplying. `yy`/`dd` accept only no count or one, and `gg`/`G` operator
+motions reject counts. Other operators retain their own count policies.
 
 After an explicit frame/beat motion, held events retain that resolved action
 until release, intervening input or context loss. The first execution uses its
@@ -162,10 +169,21 @@ comma cannot insert a Hold; release and a fresh press are required.
 
 Prefix hints derive their next keys and explanations from the declarations.
 Counted comma teaching exposes its valid Hold continuation. A count that leaves
-no valid completion, such as `2d` or `0r`, displays the actual refusal instead of
+no valid completion, such as `0d` or `0r`, displays the actual refusal instead of
 advertising an edit. The root zero-count hint explains its unusual motion and
 zero-time semantics. Native-control cut protection probes the typed action
 without consuming pending input, preserving mark-name authority.
+
+In Normal Edit, `y` and `d` are pending operators. `yy` copies the selected beat
+with owned attachments; `dd` cuts it. Their frame, beat and group-boundary
+continuations compose with the configured motion paths. `copy.beat` and
+`cut.beat` remain independently configurable terminals; `yank.operator` and
+`cut.operator` configure the motion prefixes. The same trie rejects conflicts
+between generated continuations and explicit paths. Visual `y`/`d` and Original
+`y` retain immediate behavior. Sounds retain their own copy refusal and `dd`
+removal. A pending domain change refuses the next continuation, so it cannot
+become a copy in a newly active pane. Visible copy teaching chooses the complete
+`yy` or `y` path for the actual domain and selection.
 
 ## Compiler and audit
 

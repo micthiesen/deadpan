@@ -1,0 +1,20 @@
+import os
+from pathlib import Path
+import subprocess
+import sys
+
+scratch = Path(__file__).parent
+recorder = Path('/tmp/deadpan-original-layout-20261002/run-check.py')
+environment = dict(os.environ, DEADPAN_CHECK_OUTPUT=str(scratch))
+for scenario in ('editing', 'keymap', 'place-slice', 'delete-range', 'named-registers'):
+    name = 'replay-' + scenario
+    if (scratch / (name + '.json')).exists():
+        raise RuntimeError('Refusing to overwrite retained evidence: ' + name)
+    command = ['target/debug/deadpan-app', '--ui-check', '--scenario', scenario,
+               '--mode', 'visual', '--output', str(scratch / name),
+               '--kestrel-source', '/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift']
+    print('START', name, flush=True)
+    result = subprocess.run([sys.executable, str(recorder), name, *command], env=environment)
+    if result.returncode:
+        sys.exit(result.returncode)
+print('ALL REPLAYS PASSED', flush=True)

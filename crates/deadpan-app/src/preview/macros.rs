@@ -17,18 +17,22 @@ pub(super) struct Capture {
 }
 
 impl Capture {
-    fn matches(&self, app: &DeadpanApp) -> bool {
+    pub(super) fn matches(&self, app: &DeadpanApp) -> bool {
         self.matches_without_selection(app) && app.selected_beat == self.context.selected_child
     }
 
     fn matches_without_selection(&self, app: &DeadpanApp) -> bool {
+        app.copied.bank_version() == Some(self.bank_version)
+            && self.matches_without_bank_or_selection(app)
+    }
+
+    fn matches_without_bank_or_selection(&self, app: &DeadpanApp) -> bool {
         app.workspace.as_ref().is_some_and(|workspace| {
             workspace.session == self.base.session
                 && workspace.document.project_id() == self.base.document.project_id()
                 && workspace.document.revision_id() == self.base.document.revision_id()
         }) && app.sequence_scope == self.scope
             && i64::try_from(app.sequence_cursor).ok() == Some(self.context.cursor.0)
-            && app.copied.bank_version() == Some(self.bank_version)
             && app.pane == self.pane
             && app.view == View::Sequence
             && app.capture_visual_selection().as_ref() == Ok(&self.context.visual_selection)
@@ -123,12 +127,12 @@ impl DeadpanApp {
             || self.sound_focused()
             || self.event_focused()
         {
-            return Err("Focus Your edit before using a macro.".into());
+            return Err("Focus Your edit before using this action.".into());
         }
         let base = self
             .workspace
             .clone()
-            .ok_or("Open a project before using a macro.")?;
+            .ok_or("Open a project before using this action.")?;
         let scope = self.sequence_scope.clone();
         let owner = scope.resolve(&base)?;
         if !(owner.start..=owner.end).contains(&self.sequence_cursor) {
@@ -215,6 +219,7 @@ impl DeadpanApp {
                 | Action::DeleteSelection
                 | Action::Edit(BeatEdit::Delete)
                 | Action::DeleteFrames(_)
+                | Action::Operator { .. }
                 | Action::CopyMoment
                 | Action::PasteMoment { .. }
                 | Action::RepeatLast
@@ -240,6 +245,7 @@ impl DeadpanApp {
                 | Action::DeleteSelection
                 | Action::Edit(BeatEdit::Delete)
                 | Action::DeleteFrames(_)
+                | Action::Operator { .. }
                 | Action::CopyMoment
                 | Action::PasteMoment { .. }
                 | Action::RepeatLast
@@ -437,6 +443,9 @@ impl DeadpanApp {
 
     pub(super) fn record_macro_escape(&mut self) {
         if !self.macros.recording() {
+            if let Some(pending) = &mut self.macros.pending {
+                pending.owns_cursor = false;
+            }
             return;
         }
         if !self.macros.is_pending() && self.edit_selection() != navigation::EditSelection::None {
@@ -536,28 +545,27 @@ impl DeadpanApp {
         true
     }
 
-    fn apply_recorded_instruction(
+    pub(super) fn apply_recorded_instruction(
         &mut self,
         target: Result<Capture, String>,
         instruction: Result<SemanticInstruction, String>,
     ) {
         let result = (|| {
             if self.macros.is_pending() || self.service.is_busy() || self.copied.is_pending() {
-                return Err(
-                    "Wait for the pending project action before recording another edit.".into(),
-                );
+                return Err("Wait for the pending project action before another edit.".into());
             }
             let captured = target?;
             let instruction = instruction?;
-            let recording = self
-                .macros
-                .recording
-                .as_ref()
-                .ok_or("No macro is being recorded.")?;
-            if !captured.matches(self) || !recording.expected.matches(self) {
-                return Err("The captured recording context changed. Start the command again; no edit was made.".into());
+            if !captured.matches(self)
+                || self
+                    .macros
+                    .recording
+                    .as_ref()
+                    .is_some_and(|recording| !recording.expected.matches(self))
+            {
+                return Err("The captured editing context changed. Start the command again; no edit was made.".into());
             }
-            if recording.instructions.len() >= deadpan_core::MAX_SEMANTIC_PROGRAM_INSTRUCTIONS {
+            if self.macros.instruction_count() >= deadpan_core::MAX_SEMANTIC_PROGRAM_INSTRUCTIONS {
                 return Err(
                     "The macro has reached 1024 instructions. Save or cancel recording first."
                         .into(),
@@ -577,10 +585,10 @@ impl DeadpanApp {
                 self.macros.pending = Some(Pending {
                     operation,
                     capture: captured,
-                    instruction: Some(instruction),
+                    instruction: self.macros.recording().then_some(instruction),
                     owns_cursor: true,
                 });
-                self.message = Some("Saving recorded action…".into());
+                self.message = Some("Saving action…".into());
             }
             Ok(())
         })();
@@ -825,13 +833,18 @@ impl DeadpanApp {
                         refresh_error,
                     } => {
                         if refresh_error.is_some() || !visible {
+                            if pending.owns_cursor
+                                && pending.capture.matches_without_bank_or_selection(self)
+                            {
+                                self.selected_beat = pending.capture.context.selected_child.clone();
+                            }
                             self.cancel_macro_recording();
-                            self.message = refresh_error.or_else(|| Some("The macro completed, but its edit is no longer visible. Recording was stopped.".into()));
+                            self.message = refresh_error.or_else(|| Some("The action completed, but its edit is no longer visible. Recording was stopped.".into()));
                             return;
                         }
                         if !pending.owns_cursor {
                             self.cancel_macro_recording();
-                            self.message = Some("Macro completed after the editing context changed. Its final cursor and selection were not applied.".into());
+                            self.message = Some("Action completed after the editing context changed. Its final cursor and selection were not applied.".into());
                             return;
                         }
                         // Ownership was captured before receive installed the bank.

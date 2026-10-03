@@ -131,7 +131,10 @@ fn mode_is_pinned_for_the_whole_pending_path() {
     press(&mut map, Key::A);
     assert_eq!(
         map.key_with_selection(Key::B, Modifiers::NONE, false, false, EditSelection::Range),
-        Some(Action::Edit(BeatEdit::Delete))
+        Some(Action::Operator {
+            cut: true,
+            selector: deadpan_core::SemanticSelector::SelectedBeat
+        })
     );
     map.key_with_selection(Key::A, Modifiers::NONE, false, false, EditSelection::Range);
     assert_eq!(press(&mut map, Key::C), Some(Action::DeleteSelection));

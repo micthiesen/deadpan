@@ -6,7 +6,7 @@ Your edit. To replace time, select an Edit range with `v`, motion and `v`,
 open `:splice`, then choose **Replace selection · r**. Fast `p/P` replaces a
 selected Edit range immediately; without one it inserts at a Sequence slot.
 
-Without an Edit range, `y` copies the selected whole beat. A saved `d`/`dd` or
+Without an Edit range, `yy` copies the selected whole beat. A saved `d`/`dd` or
 `:delete` cut also supplies the register. Empty groups retain their complete
 structure and historical label, and insert only at explicit Sequence slots.
 Their source card has no picture or audio endpoints; In/Out, Replace and Move
