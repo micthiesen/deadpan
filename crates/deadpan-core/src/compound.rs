@@ -397,7 +397,7 @@ fn validate_cut(slice: &CapturedEditSlice, command: &Command) -> Result<(), Edit
         Err(invalid("cut must delete exactly its captured selection"))
     }
 }
-fn validate_paste(
+pub(crate) fn validate_paste(
     document: &ProjectDocument,
     value: &RegisterValue,
     command: &Command,

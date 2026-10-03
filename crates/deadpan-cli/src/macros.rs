@@ -3,9 +3,11 @@
 use std::{fs::File, io::Read, num::NonZeroU32, path::Path, sync::Arc};
 
 use deadpan_core::{
-    EditError, NodeId, ProjectDocument, ProjectFrame, ProjectId, RegisterName, RegisterValue,
-    RevisionId, SemanticAllocation, SemanticContext, SemanticInstruction, SemanticPlan,
-    SemanticProgram, SplitIdentities, plan_semantic,
+    AssetRecord, EditError, EditErrorCode, FrameRate, MarkId, NodeId, OccurrenceIdentities,
+    ProjectDocument, ProjectFrame, ProjectId, RegisterName, RegisterValue, RevisionId,
+    SemanticAllocation, SemanticAllocationRequest, SemanticContext, SemanticInstruction,
+    SemanticPlan, SemanticProgram, SemanticRegisterBank, SlicePasteIdentities, SourceNode,
+    SplitIdentities, plan_semantic,
 };
 use deadpan_store::{AccessMode, CompoundPreview, ProjectStore, registers::RegisterBank};
 use serde::{Deserialize, Serialize};
@@ -39,6 +41,8 @@ pub enum Operation {
         register: RegisterName,
         parent: NodeId,
         cursor: ProjectFrame,
+        #[serde(default)]
+        selected_child: Option<NodeId>,
         count: NonZeroU32,
         #[serde(default)]
         new_revision: Option<RevisionId>,
@@ -176,6 +180,7 @@ pub fn prepare(store: &ProjectStore, request: &Request) -> Result<Prepared, Live
             register,
             parent,
             cursor,
+            selected_child,
             count,
             new_revision,
         } => {
@@ -189,29 +194,18 @@ pub fn prepare(store: &ProjectStore, request: &Request) -> Result<Prepared, Live
                 .map(Ok)
                 .unwrap_or_else(crate::new_revision)
                 .map_err(|error| edit_error(error.into()))?;
-            let plan = plan_semantic(
+            let plan = plan_program(
+                store,
                 &document,
+                &bank,
                 &SemanticContext {
                     parent: parent.clone(),
                     cursor: *cursor,
+                    selected_child: selected_child.clone(),
                 },
                 &program,
-                &bank.entries,
-                bank.version,
                 revision,
-                |allocation| {
-                    Ok(SemanticAllocation {
-                        new_revision: crate::new_revision()?,
-                        capture_revision: crate::new_revision()?,
-                        split_identities: SplitIdentities {
-                            nodes: (0..allocation.required_split_ids)
-                                .map(|_| NodeId::new(uuid::Uuid::new_v4().to_string()))
-                                .collect::<Result<_, _>>()?,
-                        },
-                    })
-                },
-            )
-            .map_err(edit_error)?;
+            )?;
             let preview = plan
                 .request
                 .as_ref()
@@ -232,6 +226,163 @@ pub fn prepare(store: &ProjectStore, request: &Request) -> Result<Prepared, Live
         plan,
         preview,
     })
+}
+
+/// Shared host preparation for named calls and single recorded actions. The
+/// core resolves each step against its staged document; this host supplies
+/// fresh identities and measured Original mappings, never authored writes.
+pub fn plan_program(
+    store: &ProjectStore,
+    document: &ProjectDocument,
+    bank: &RegisterBank,
+    context: &SemanticContext,
+    program: &SemanticProgram,
+    new_revision: RevisionId,
+) -> Result<SemanticPlan, LiveError> {
+    let mut source_error = None;
+    // Keep only derived mappings, not large qualification indexes. Repeated
+    // pastes of one frozen Original value need one receipt read in this plan;
+    // store preview and commit each perform their own independent admission.
+    let mut originals: Vec<(RegisterValue, AssetRecord, FrameRate, SourceNode)> = Vec::new();
+    let result = plan_semantic(
+        document,
+        context,
+        program,
+        SemanticRegisterBank {
+            entries: &bank.entries,
+            version: bank.version,
+        },
+        new_revision,
+        allocate,
+        |staged, value| {
+            let record = match value {
+                RegisterValue::Original { asset, .. } => staged.assets().get(asset),
+                _ => None,
+            };
+            let rate = staged.presentation_basis().frame_rate;
+            if let Some((_, _, _, source)) = originals.iter().find(|(previous, asset, fps, _)| {
+                previous == value && Some(asset) == record && *fps == rate
+            }) {
+                return Ok(source.clone());
+            }
+            let source = original_source(store, staged, value).map_err(|error| {
+                let message = error.to_string();
+                source_error = Some(error);
+                EditError {
+                    code: EditErrorCode::InvalidCommand,
+                    message,
+                    current_revision: None,
+                }
+            })?;
+            if let Some(record) = record {
+                originals.push((value.clone(), record.clone(), rate, source.clone()));
+            }
+            Ok(source)
+        },
+    );
+    result.map_err(|error| source_error.unwrap_or_else(|| edit_error(error)))
+}
+
+fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, EditError> {
+    let nodes = |count| {
+        (0..count)
+            .map(|_| NodeId::new(uuid::Uuid::new_v4().to_string()))
+            .collect::<Result<Vec<_>, _>>()
+    };
+    Ok(match request {
+        SemanticAllocationRequest::Cut {
+            required_split_ids, ..
+        } => SemanticAllocation::Cut {
+            new_revision: crate::new_revision()?,
+            capture_revision: crate::new_revision()?,
+            split_identities: SplitIdentities {
+                nodes: nodes(required_split_ids)?,
+            },
+        },
+        SemanticAllocationRequest::Yank { .. } => SemanticAllocation::Yank {
+            capture_revision: crate::new_revision()?,
+        },
+        SemanticAllocationRequest::PasteEdited { requirements, .. } => {
+            SemanticAllocation::PasteEdited {
+                new_revision: crate::new_revision()?,
+                identities: SlicePasteIdentities {
+                    authored: OccurrenceIdentities {
+                        nodes: nodes(requirements.nodes)?,
+                        marks: (0..requirements.marks)
+                            .map(|_| MarkId::new(uuid::Uuid::new_v4().to_string()))
+                            .collect::<Result<_, _>>()?,
+                    },
+                    aliases: nodes(requirements.aliases)?,
+                },
+            }
+        }
+        SemanticAllocationRequest::PasteOriginal { .. } => SemanticAllocation::PasteOriginal {
+            new_revision: crate::new_revision()?,
+            node: NodeId::new(uuid::Uuid::new_v4().to_string())?,
+        },
+    })
+}
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+fn original_source(
+    store: &ProjectStore,
+    document: &ProjectDocument,
+    value: &RegisterValue,
+) -> Result<SourceNode, LiveError> {
+    let RegisterValue::Original {
+        asset,
+        qualification,
+        ordinals,
+        ..
+    } = value
+    else {
+        return Err(LiveError::new(
+            "RegisterInvalid",
+            "Expected an Original register",
+        ));
+    };
+    let record = document.assets().get(asset).ok_or_else(|| {
+        LiveError::new(
+            "RegisterInvalid",
+            "Original asset is absent from the staged edit",
+        )
+    })?;
+    let receipt = store
+        .source_qualification(qualification)
+        .map_err(LiveError::store)?;
+    if receipt
+        .asset_record(record.label.clone())
+        .map_err(LiveError::store)?
+        != *record
+    {
+        return Err(LiveError::new(
+            "RegisterInvalid",
+            "Original differs from its saved qualification",
+        ));
+    }
+    let video = receipt.snapshot().video().ok_or_else(|| {
+        LiveError::new("RegisterInvalid", "Original has no qualified picture index")
+    })?;
+    deadpan_media::source_import_timing::derive_source_moment(
+        video.index(),
+        receipt.snapshot().audio(),
+        ordinals.clone(),
+        document.presentation_basis().frame_rate,
+    )
+    .map(|moment| moment.source_node(asset.clone()))
+    .map_err(|error| LiveError::new("SourceRegistration", error))
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux")))]
+fn original_source(
+    _: &ProjectStore,
+    _: &ProjectDocument,
+    _: &RegisterValue,
+) -> Result<SourceNode, LiveError> {
+    Err(LiveError::new(
+        "SourceAdmissionUnavailable",
+        "Original paste is unavailable on this platform",
+    ))
 }
 
 pub fn commit(store: &mut ProjectStore, prepared: &Prepared) -> Result<Execution, LiveError> {
@@ -275,14 +426,17 @@ pub fn commit(store: &mut ProjectStore, prepared: &Prepared) -> Result<Execution
                     .commit_compound(command, None)
                     .map_err(LiveError::store)?;
                 let revision = result.committed.map(|outcome| outcome.revision_id);
-                let registers = RegisterReceipt {
-                    project_id: prepared.request.project_id.clone(),
-                    revision_id: revision
-                        .clone()
-                        .unwrap_or_else(|| prepared.request.expected_revision.clone()),
-                    bank_version: result.register_bank.version,
-                };
-                (revision, Some(registers))
+                let registers =
+                    (result.register_bank.version != prepared.bank.version).then(|| {
+                        RegisterReceipt {
+                            project_id: prepared.request.project_id.clone(),
+                            revision_id: revision
+                                .clone()
+                                .unwrap_or_else(|| prepared.request.expected_revision.clone()),
+                            bank_version: result.register_bank.version,
+                        }
+                    });
+                (revision, registers)
             } else {
                 let (document, bank) = store.snapshot_with_registers().map_err(LiveError::store)?;
                 check_context(&prepared.request, &document, &bank)?;
@@ -324,6 +478,9 @@ impl Prepared {
                         "instruction":row.instruction,"before_revision":row.before_revision,
                         "before_scope":row.before_scope,"parent":row.before.parent,
                         "before_cursor":row.before.cursor,"after_cursor":row.after.cursor,
+                        "before_selected_child":row.before.selected_child,
+                        "after_selected_child":row.after.selected_child,
+                        "captured_child_label":row.captured_child_label,
                         "resolved_range":row.resolved_range,"depth":row.depth,
                     })).collect());
                     output["register_writes"] =

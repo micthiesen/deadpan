@@ -21,8 +21,9 @@ app inventory confirmed no Deadpan app remained running.
 
 ## Semantic macros, current implementation
 
-[Semantic macros](../SEMANTIC_MACROS.md) record frame motions, frame cuts and
-named calls with `q`/`@` and command aliases. Preserve requested counts and
+[Semantic macros](../SEMANTIC_MACROS.md) record frame motions, frame cuts,
+selected-beat copies, before/after register pastes and named calls with `q`/`@`
+and command aliases. Preserve requested counts and
 record asynchronous operations only after their exact successful receipt.
 Prefix and command entry capture session, revision, bank version, ordinary
 Sequence scope and cursor, including absence. Reject unsupported recording
@@ -35,6 +36,17 @@ intermediate document/capture work. Prepare all runtime register contents before
 one Compound commit. Motion-only runs have no authored revision. Retain saved
 receipts before refresh and keep stale views from consuming their cursor.
 Unused schema-54 packages require recreation. Core document schema remains 43.
+
+Keep the selected direct child separate from the cursor, including absence and
+zero-duration siblings. Copy-only programs save their bank without history;
+authored runs use the store's actual optional commit receipt. Recording copy and
+paste uses a single-instruction Apply request through the same planner. Prepare
+runtime copies from each staged trace's exact selection and child label. Original
+paste mappings use the saved measured receipt and are independently admitted
+again at preview and commit. Keep derived mapping caches within one admission;
+every paste still compares its full source mapping.
+See [reuse qualification](../qualification/macro-reuse-2026-10-02.md) for core,
+store, native/headless, counted replay and corrected test-fixture evidence.
 
 The [headless Macro surface](../SEMANTIC_MACROS.md#headless-inspection-save-and-run)
 inspects coherent document/bank snapshots and saves or runs from explicit

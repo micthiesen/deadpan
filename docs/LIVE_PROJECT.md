@@ -29,7 +29,7 @@ operation can report an admitted owner's current schema without releasing its
 writer; it does not migrate a legacy store. Older closed packages retain their
 existing explicit migration path. This boundary does not complete DP-21 or add
 CLI generation, analysis or the remaining editor commands. Named Macro access
-implements the current bounded motion/cut/call vocabulary only.
+implements bounded motions, frame cuts, beat copies, register pastes and calls.
 
 ## Ownership and authentication
 
@@ -81,6 +81,9 @@ native workspace fails. Macro bank saves additionally retain
 Bank-only saves have no authored revision. If a detailed reply exceeds transport
 capacity, a small failure reply preserves `committed_revision` and
 `committed_registers`. Neither failure authorizes replay.
+Yank-only runs also retain a bank receipt without inventing an authored revision
+or clearing Redo. Original pastes resolve against the stored measured source
+qualification and are independently checked at preview and commit.
 Socket loss after a request begins can instead produce `HostOutcomeUnknown`:
 the caller must inspect the project before repeating a mutation. Request UUIDs
 correlate messages; they do not promise deduplication or exactly-once execution.

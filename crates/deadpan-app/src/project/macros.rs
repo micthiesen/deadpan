@@ -2,7 +2,10 @@
 
 use std::sync::Arc;
 
-use deadpan_core::{NodeId, ProjectFrame, ProjectId, RevisionId, SemanticContext, SemanticProgram};
+use deadpan_core::{
+    NodeId, ProjectFrame, ProjectId, RevisionId, SemanticContext, SemanticInstruction,
+    SemanticProgram,
+};
 
 use super::{CommittedEdit, SequenceScope};
 
@@ -29,12 +32,18 @@ pub enum Operation {
         scope: SequenceScope,
         context: SemanticContext,
     },
+    Apply {
+        id: Id,
+        instruction: SemanticInstruction,
+        scope: SequenceScope,
+        context: SemanticContext,
+    },
 }
 
 impl Operation {
     pub fn id(&self) -> &Id {
         match self {
-            Self::Save { id, .. } | Self::Run { id, .. } => id,
+            Self::Save { id, .. } | Self::Run { id, .. } | Self::Apply { id, .. } => id,
         }
     }
 }
@@ -54,6 +63,13 @@ pub enum Outcome {
         committed: Option<Box<CommittedEdit>>,
         refresh_error: Option<String>,
     },
+    Applied {
+        scope: SequenceScope,
+        cursor: ProjectFrame,
+        selected: Option<NodeId>,
+        committed: Option<Box<CommittedEdit>>,
+        refresh_error: Option<String>,
+    },
 }
 
 #[derive(Clone, Debug)]
@@ -66,7 +82,9 @@ pub struct Receipt {
 impl Receipt {
     pub fn committed(&self) -> Option<&CommittedEdit> {
         match &self.outcome {
-            Outcome::Executed { committed, .. } => committed.as_deref(),
+            Outcome::Executed { committed, .. } | Outcome::Applied { committed, .. } => {
+                committed.as_deref()
+            }
             Outcome::Saved { .. } => None,
         }
     }

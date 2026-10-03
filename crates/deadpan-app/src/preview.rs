@@ -669,7 +669,7 @@ impl DeadpanApp {
             self.import = update.import;
             if old_session != new_session {
                 self.render_session_changed();
-                self.macros = macros::State::default();
+                self.macros.session_changed();
                 self.bindings.set_macro_recording(false);
                 self.macro_prefix_target = None;
                 self.macro_command_target = None;
@@ -1257,6 +1257,7 @@ impl DeadpanApp {
         self.delete_command_target = Some(self.capture_delete_target());
         self.frame_delete_command_target = Some(self.capture_frame_delete_target());
         self.macro_command_target = Some(self.capture_macro_target());
+        self.macros.capture_command();
         self.macro_prefix_target = None;
         self.gain_command_target = Some(self.capture_gain_target());
         self.slip_command_target = Some(self.capture_slip_target());
@@ -2245,6 +2246,14 @@ impl DeadpanApp {
                 | Action::MacroCancel),
             )) => self.macro_action(action, macro_target),
             Ok(navigation::command::Entry::Action(Action::CopyMoment)) => {
+                if self.record_macro_yank(
+                    copy_register.map(|(_, name)| name),
+                    Some(macro_target.unwrap_or_else(|| {
+                        Err("Open the copy command again to capture its selected beat.".into())
+                    })),
+                ) {
+                    return;
+                }
                 self.copied
                     .select(copy_register.map_or('"', |(_, name)| name))
                     .expect("captured register is validated");
@@ -2663,6 +2672,8 @@ impl DeadpanApp {
                     if self.macros.recording() {
                         self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " / ", "record frame motion");
                         self.add_editor_hint(&mut hints, EditorKey::CutFrames, "record frame cut");
+                        self.add_editor_hint(&mut hints, EditorKey::Copy, "record beat copy");
+                        self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", "record paste");
                         self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: record call");
                         self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "save macro");
                         hints.push(("Esc".into(), "cancel recording".into()));
@@ -3595,9 +3606,9 @@ impl DeadpanApp {
                     }
                     ui.separator();
                     ui.label(egui::RichText::new("SEMANTIC MACROS").strong().color(style::LAVENDER));
-                    help_binding(ui, &format!("{} + letter · :record a", key(EditorKey::MacroRecord)), "Record frame motions, frame cuts and named macro calls in the current ordinary Sequence group. Instructions keep requested counts and resolve at each new cursor. Recording performs normal edits; unsupported actions are refused.");
+                    help_binding(ui, &format!("{} + letter · :record a", key(EditorKey::MacroRecord)), "Record frame motions, frame cuts, copying the selected beat, register pastes and named macro calls in the current ordinary Sequence group. Instructions keep requested counts and resolve against the current cursor and selected beat. Clear Visual selection first. Recording performs each action and adds it only after success.");
                     help_binding(ui, &format!("{} · :record-stop", key(EditorKey::MacroRecord)), "While recording, save to that named Macro register. Saving adds no Undo and preserves the default copy. Esc or :record-cancel discards the recording draft and keeps completed edits undoable.");
-                    help_binding(ui, &format!("{} + letter · :macro a 3", key(EditorKey::MacroExecute)), "Run a named Macro, with an optional positive count before its binding. The whole run is one Undo; motion-only runs change only the cursor. Calls use Macro registers; paste uses copies. A failed instruction rolls back the whole run, including register writes. Recursive calls and oversized runs are refused.");
+                    help_binding(ui, &format!("{} + letter · :macro a 3", key(EditorKey::MacroExecute)), "Run a named Macro, with an optional positive count before its binding. Authored edits in a run share one Undo; copying alone changes only registers, and motions change only the cursor and selected beat. Calls use Macro registers; paste uses Original or Edit copies before or after the selected beat. A failed instruction rolls back the whole run, including register writes. Recursive calls and oversized runs are refused.");
                     ui.separator();
                     ui.label("New starts with your full video. Its Original stays intact while Your edit changes.");
                     ui.label(egui::RichText::new("START & MOVE").strong().color(style::LAVENDER));

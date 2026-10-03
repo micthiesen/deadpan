@@ -449,6 +449,9 @@ impl DeadpanApp {
     }
 
     pub(super) fn copy_slice_to(&mut self, destination: Option<char>) {
+        if self.record_macro_yank(destination, None) {
+            return;
+        }
         self.copied.begin_write();
         if self.view == View::Source {
             self.copy_moment(destination);

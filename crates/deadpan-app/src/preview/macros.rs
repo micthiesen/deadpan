@@ -18,6 +18,10 @@ pub(super) struct Capture {
 
 impl Capture {
     fn matches(&self, app: &DeadpanApp) -> bool {
+        self.matches_without_selection(app) && app.selected_beat == self.context.selected_child
+    }
+
+    fn matches_without_selection(&self, app: &DeadpanApp) -> bool {
         app.workspace.as_ref().is_some_and(|workspace| {
             workspace.session == self.base.session
                 && workspace.document.project_id() == self.base.document.project_id()
@@ -62,6 +66,7 @@ struct Pending {
 pub(super) struct State {
     recording: Option<Recording>,
     pending: Option<Pending>,
+    command_recording: bool,
 }
 
 impl State {
@@ -79,6 +84,17 @@ impl State {
 
     pub fn recording_name(&self) -> Option<char> {
         self.recording.as_ref().map(|recording| recording.name)
+    }
+
+    pub fn capture_command(&mut self) {
+        self.command_recording = self.recording();
+    }
+
+    pub fn session_changed(&mut self) {
+        // Command text can outlive an asynchronous project switch. Retain its
+        // recording ownership so submission refuses instead of targeting it anew.
+        self.recording = None;
+        self.pending = None;
     }
 
     pub fn instruction_count(&self) -> usize {
@@ -126,6 +142,7 @@ impl DeadpanApp {
             cursor: ProjectFrame(
                 i64::try_from(self.sequence_cursor).map_err(|error| error.to_string())?,
             ),
+            selected_child: self.selected_beat.clone(),
         };
         Ok(Capture {
             base,
@@ -194,6 +211,8 @@ impl DeadpanApp {
             action,
             Action::Step { .. }
                 | Action::DeleteFrames(_)
+                | Action::CopyMoment
+                | Action::PasteMoment { .. }
                 | Action::RepeatLast
                 | Action::MacroExecute { .. }
                 | Action::MacroStop
@@ -204,13 +223,15 @@ impl DeadpanApp {
                 | Action::Invalid(_)
                 | Action::OfferInsert
         ) {
-            self.error = Some("This action cannot be recorded yet. Macros support frame motions, frame cuts and named macro calls. Save or cancel recording first.".into());
+            self.error = Some("This action cannot be recorded yet. Macros support frame motions, frame cuts, copying the selected beat, pasting registers and named macro calls. Save or cancel recording first.".into());
             return false;
         }
         if matches!(
             action,
             Action::Step { .. }
                 | Action::DeleteFrames(_)
+                | Action::CopyMoment
+                | Action::PasteMoment { .. }
                 | Action::RepeatLast
                 | Action::MacroExecute { .. }
         ) && self.macros.instruction_count() >= deadpan_core::MAX_SEMANTIC_PROGRAM_INSTRUCTIONS
@@ -227,6 +248,18 @@ impl DeadpanApp {
         &mut self,
         command: &Result<navigation::command::Entry, String>,
     ) -> bool {
+        let was_recording = std::mem::take(&mut self.macros.command_recording);
+        self.reconcile_macro_recording();
+        if was_recording
+            && !self.macros.recording()
+            && !matches!(
+                command,
+                Ok(navigation::command::Entry::Action(Action::MacroCancel))
+            )
+        {
+            self.error = Some("Recording stopped because its context changed. Start the command again; no action was performed.".into());
+            return false;
+        }
         match command {
             Ok(navigation::command::Entry::Action(action)) => self.macro_action_allowed(*action),
             Ok(_) if self.macros.recording() || self.macros.is_pending() => {
@@ -287,7 +320,7 @@ impl DeadpanApp {
                     });
                     self.bindings.set_macro_recording(true);
                     self.message = Some(format!(
-                        "Recording @{name}: frame motions, frame cuts and named calls. {} saves; Esc cancels.",
+                        "Recording @{name}: frame motions, cuts, beat copies, register pastes and named calls. {} saves; Esc cancels.",
                         self.editor_key(EditorKey::MacroRecord)
                     ));
                 }
@@ -339,7 +372,7 @@ impl DeadpanApp {
                 return Err("The recording context changed. Cancel it and record again.".into());
             }
             if recording.instructions.is_empty() {
-                return Err("The recording is empty. Record a frame motion, cut or macro call before saving.".into());
+                return Err("The recording is empty. Record a frame motion, cut, beat copy, paste or macro call before saving.".into());
             }
             let program = Arc::new(
                 SemanticProgram::new(recording.instructions.clone())
@@ -379,6 +412,118 @@ impl DeadpanApp {
             return;
         };
         self.append_macro_instruction(SemanticInstruction::MoveFrames { forward, count });
+    }
+
+    /// Returns true when the recorder owns this copy, including a refused or
+    /// still-pending request. Ordinary copies keep their existing route.
+    pub(super) fn record_macro_yank(
+        &mut self,
+        destination: Option<char>,
+        target: Option<Result<Capture, String>>,
+    ) -> bool {
+        if !self.macros.recording() && !self.macros.is_pending() {
+            return false;
+        }
+        if self.macros.is_pending() {
+            self.error = Some("Wait for the pending macro action to finish.".into());
+            return true;
+        }
+        let target = target.unwrap_or_else(|| self.capture_macro_target());
+        self.copied.begin_write();
+        let instruction =
+            register_name(destination).map(|register| SemanticInstruction::YankBeat { register });
+        self.apply_recorded_instruction(target, instruction);
+        true
+    }
+
+    pub(super) fn record_macro_paste(
+        &mut self,
+        before: bool,
+        target: &Result<moment::PlacementTarget, String>,
+    ) -> bool {
+        if !self.macros.recording() && !self.macros.is_pending() {
+            return false;
+        }
+        if self.macros.is_pending() {
+            self.error = Some("Wait for the pending macro action to finish.".into());
+            return true;
+        }
+        self.copied.clear_selection();
+        let captured = target
+            .as_ref()
+            .map_err(Clone::clone)
+            .and_then(|target| target.macro_capture.clone());
+        let instruction = target.as_ref().map_err(Clone::clone).and_then(|target| {
+            match &target.copied {
+                None => {
+                    return Err(target.register.map_or_else(
+                        || "Copy a beat or Original range before recording a paste.".into(),
+                        |name| format!("Register {name} is empty. Copy or cut into it first; no edit was made."),
+                    ));
+                }
+                Some(copied::Content::Macro(_)) => return Err(copied::MACRO_PASTE_ERROR.into()),
+                Some(content) => content.check(&target.base)?,
+            }
+            Ok(SemanticInstruction::Paste {
+                register: register_name(target.register)?,
+                before,
+            })
+        });
+        self.apply_recorded_instruction(captured, instruction);
+        true
+    }
+
+    fn apply_recorded_instruction(
+        &mut self,
+        target: Result<Capture, String>,
+        instruction: Result<SemanticInstruction, String>,
+    ) {
+        let result = (|| {
+            if self.macros.is_pending() || self.service.is_busy() || self.copied.is_pending() {
+                return Err(
+                    "Wait for the pending project action before recording another edit.".into(),
+                );
+            }
+            let captured = target?;
+            let instruction = instruction?;
+            let recording = self
+                .macros
+                .recording
+                .as_ref()
+                .ok_or("No macro is being recorded.")?;
+            if !captured.matches(self) || !recording.expected.matches(self) {
+                return Err("The captured recording context changed. Start the command again; no edit was made.".into());
+            }
+            if recording.instructions.len() >= deadpan_core::MAX_SEMANTIC_PROGRAM_INSTRUCTIONS {
+                return Err(
+                    "The macro has reached 1024 instructions. Save or cancel recording first."
+                        .into(),
+                );
+            }
+            let Some(serial) = self.next_serial() else {
+                return Ok(());
+            };
+            let operation = protocol::Operation::Apply {
+                id: captured.id(serial),
+                instruction: instruction.clone(),
+                scope: captured.scope.clone(),
+                context: captured.context.clone(),
+            };
+            self.stop_playback();
+            if self.submit(ProjectRequest::Macro(operation.clone())) {
+                self.macros.pending = Some(Pending {
+                    operation,
+                    capture: captured,
+                    instruction: Some(instruction),
+                    owns_cursor: true,
+                });
+                self.message = Some("Saving recorded action…".into());
+            }
+            Ok(())
+        })();
+        if let Err(error) = result {
+            self.error = Some(error);
+        }
     }
 
     fn append_macro_instruction(&mut self, instruction: SemanticInstruction) {
@@ -454,6 +599,10 @@ impl DeadpanApp {
                 }
             }
             if let protocol::Outcome::Executed {
+                refresh_error: Some(error),
+                ..
+            }
+            | protocol::Outcome::Applied {
                 refresh_error: Some(error),
                 ..
             } = &receipt.outcome
@@ -537,68 +686,143 @@ impl DeadpanApp {
         };
         let pending = self.macros.pending.take().expect("matched pending macro");
         match result {
-            Err(error) => self.error = Some(error),
-            Ok(receipt) => match receipt.outcome {
-                protocol::Outcome::Saved {
-                    register,
-                    instructions,
-                } => {
-                    self.macros.recording = None;
-                    self.bindings.set_macro_recording(false);
-                    self.message = Some(format!(
-                        "Saved Macro @{register} · {instructions} instructions. Use {}{register} to run it.",
-                        self.editor_key(EditorKey::MacroExecute)
-                    ));
+            Err(error) => {
+                // An ordinary refresh may fill an absent selection from the
+                // cursor. A refused owned action preserves its captured absence.
+                if pending.owns_cursor && pending.capture.matches_without_selection(self) {
+                    self.selected_beat = pending.capture.context.selected_child.clone();
                 }
-                protocol::Outcome::Executed {
-                    register,
-                    count,
-                    scope,
-                    cursor,
-                    selected,
-                    committed,
-                    refresh_error,
-                    ..
-                } => {
-                    let revision = committed
-                        .as_ref()
-                        .map_or(&receipt.id.revision, |commit| &commit.revision);
-                    let visible = self.workspace.as_ref().is_some_and(|workspace| {
-                        workspace.session == receipt.id.session
-                            && workspace.document.project_id() == &receipt.id.project
-                            && workspace.document.revision_id() == revision
-                    });
-                    if refresh_error.is_some() || !visible {
-                        self.cancel_macro_recording();
-                        self.message = refresh_error.or_else(|| Some("The macro completed, but its edit is no longer visible. Recording was stopped.".into()));
-                        return;
-                    }
-                    if !pending.owns_cursor {
-                        self.cancel_macro_recording();
-                        self.message = Some("Macro completed after you moved the cursor. Its final cursor was not applied.".into());
-                        return;
-                    }
-                    if committed.is_none() && pending.capture.matches(self) {
-                        self.sequence_scope = scope;
-                        self.sequence_cursor =
-                            u64::try_from(cursor.0).expect("validated nonnegative macro cursor");
-                        self.selected_beat = selected;
-                        self.reveal_beat = true;
-                        self.request_picture(false);
-                    }
-                    if let Some(instruction) = pending.instruction {
-                        self.append_macro_instruction(instruction);
-                    }
-                    self.message = Some(format!(
+                self.error = Some(error);
+            }
+            Ok(receipt) => {
+                let visible = completion_visible(
+                    &receipt,
+                    self.workspace.as_ref().map(|workspace| {
+                        (
+                            workspace.session,
+                            workspace.document.project_id(),
+                            workspace.document.revision_id(),
+                        )
+                    }),
+                    self.copied.bank_version(),
+                );
+                let completed_message = match &receipt.outcome {
+                    protocol::Outcome::Executed {
+                        register,
+                        count,
+                        committed,
+                        ..
+                    } => format!(
                         "Ran Macro @{register} × {count}{}.",
                         if committed.is_some() {
                             " · one Undo"
+                        } else if receipt.bank_version != receipt.id.bank_version {
+                            " · registers saved"
                         } else {
                             " · cursor only"
+                        },
+                    ),
+                    protocol::Outcome::Applied { committed, .. } => format!(
+                        "{} saved{}.",
+                        if committed.is_some() {
+                            "Paste"
+                        } else {
+                            "Beat copy"
+                        },
+                        if self.macros.recording() {
+                            " and recorded"
+                        } else {
+                            ""
+                        },
+                    ),
+                    protocol::Outcome::Saved { .. } => String::new(),
+                };
+                match receipt.outcome {
+                    protocol::Outcome::Saved {
+                        register,
+                        instructions,
+                    } => {
+                        self.macros.recording = None;
+                        self.bindings.set_macro_recording(false);
+                        self.message = Some(format!(
+                            "Saved Macro @{register} · {instructions} instructions. Use {}{register} to run it.",
+                            self.editor_key(EditorKey::MacroExecute)
+                        ));
+                    }
+                    protocol::Outcome::Executed {
+                        scope,
+                        cursor,
+                        selected,
+                        committed,
+                        refresh_error,
+                        ..
+                    }
+                    | protocol::Outcome::Applied {
+                        scope,
+                        cursor,
+                        selected,
+                        committed,
+                        refresh_error,
+                    } => {
+                        if refresh_error.is_some() || !visible {
+                            self.cancel_macro_recording();
+                            self.message = refresh_error.or_else(|| Some("The macro completed, but its edit is no longer visible. Recording was stopped.".into()));
+                            return;
                         }
-                    ));
+                        if !pending.owns_cursor {
+                            self.cancel_macro_recording();
+                            self.message = Some("Macro completed after you moved the cursor. Its final cursor was not applied.".into());
+                            return;
+                        }
+                        // Ownership was captured before receive installed the bank.
+                        // A successful yank changes that bank without a revision,
+                        // so comparing against the entry bank here would reject it.
+                        if committed.is_none() {
+                            let cursor = u64::try_from(cursor.0)
+                                .expect("validated nonnegative macro cursor");
+                            let picture_changed =
+                                self.sequence_scope != scope || self.sequence_cursor != cursor;
+                            let selection_changed = self.selected_beat != selected;
+                            self.sequence_scope = scope;
+                            self.sequence_cursor = cursor;
+                            self.selected_beat = selected;
+                            self.reveal_beat |= selection_changed;
+                            if picture_changed {
+                                self.request_picture(false);
+                            }
+                        }
+                        if let Some(instruction) = pending.instruction {
+                            self.append_macro_instruction(instruction);
+                        }
+                        self.message = Some(completed_message);
+                    }
                 }
-            },
+            }
         }
     }
 }
+
+fn register_name(register: Option<char>) -> Result<RegisterName, String> {
+    register.map_or(Ok(RegisterName::unnamed()), |name| {
+        RegisterName::new(name).map_err(|error| error.to_string())
+    })
+}
+
+fn completion_visible(
+    receipt: &protocol::Receipt,
+    workspace: Option<(u64, &deadpan_core::ProjectId, &RevisionId)>,
+    bank_version: Option<u64>,
+) -> bool {
+    let revision = receipt
+        .committed()
+        .map_or(&receipt.id.revision, |commit| &commit.revision);
+    workspace.is_some_and(|(session, project, visible_revision)| {
+        session == receipt.id.session
+            && project == &receipt.id.project
+            && visible_revision == revision
+            && bank_version == Some(receipt.bank_version)
+    })
+}
+
+#[cfg(test)]
+mod tests;

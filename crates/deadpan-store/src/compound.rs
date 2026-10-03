@@ -27,6 +27,22 @@ pub(crate) struct Prepared {
     pub writes: bool,
 }
 
+/// Only tiny derived mappings live for this one preview, commit or replay.
+/// The existing Compound step bound also bounds the number of cache entries.
+#[derive(Default)]
+struct OriginalPasteMappings {
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    entries: Vec<OriginalPasteMapping>,
+}
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+struct OriginalPasteMapping {
+    value: RegisterValue,
+    asset: Option<deadpan_core::AssetRecord>,
+    frame_rate: deadpan_core::FrameRate,
+    source: deadpan_core::SourceNode,
+}
+
 #[derive(Debug, Serialize)]
 pub struct CompoundCommitOutcome {
     pub committed: Option<CommitOutcome>,
@@ -345,6 +361,7 @@ fn execute(
     let mut steps: Vec<StepRecord> = Vec::new();
     let mut checkpoint_bytes = 0_usize;
     let mut processed_bytes = current.to_json()?.len();
+    let mut original_pastes = OriginalPasteMappings::default();
     let outcome =
         deadpan_core::replay_compound(current, request, |visit| -> Result<(), StoreError> {
             if matches!(
@@ -411,6 +428,7 @@ fn execute(
                         visit
                             .value
                             .ok_or_else(|| invalid("paste has no register value"))?,
+                        &mut original_pastes,
                     )?;
                 }
                 let json = visit.after.to_json()?;
@@ -456,6 +474,7 @@ fn validate_original_paste(
     current: &ProjectDocument,
     request: &CommandRequest,
     value: &RegisterValue,
+    mappings: &mut OriginalPasteMappings,
 ) -> Result<(), StoreError> {
     let RegisterValue::Original {
         asset,
@@ -466,27 +485,47 @@ fn validate_original_paste(
     else {
         return Ok(());
     };
-    let receipt = crate::source_registration::read_receipt(connection, qualification)?
-        .ok_or_else(|| invalid("Original paste qualification is missing"))?;
-    let video = receipt
-        .snapshot()
-        .video()
-        .ok_or_else(|| invalid("Original paste has no picture index"))?;
-    let expected = deadpan_media::source_import_timing::derive_source_moment(
-        video.index(),
-        receipt.snapshot().audio(),
-        ordinals.clone(),
-        current.presentation_basis().frame_rate,
-    )
-    .map_err(deadpan_media::source_qualification::SourceQualificationError::from)?
-    .source_node(asset.clone());
+    let record = current.assets().get(asset);
+    let frame_rate = current.presentation_basis().frame_rate;
+    let cached = mappings.entries.iter().position(|mapping| {
+        &mapping.value == value
+            && mapping.asset.as_ref() == record
+            && mapping.frame_rate == frame_rate
+    });
+    let index = match cached {
+        Some(index) => index,
+        None => {
+            let receipt = crate::source_registration::read_receipt(connection, qualification)?
+                .ok_or_else(|| invalid("Original paste qualification is missing"))?;
+            let video = receipt
+                .snapshot()
+                .video()
+                .ok_or_else(|| invalid("Original paste has no picture index"))?;
+            let source = deadpan_media::source_import_timing::derive_source_moment(
+                video.index(),
+                receipt.snapshot().audio(),
+                ordinals.clone(),
+                frame_rate,
+            )
+            .map_err(deadpan_media::source_qualification::SourceQualificationError::from)?
+            .source_node(asset.clone());
+            mappings.entries.push(OriginalPasteMapping {
+                value: value.clone(),
+                asset: record.cloned(),
+                frame_rate,
+                source,
+            });
+            mappings.entries.len() - 1
+        }
+    };
+    let expected = &mappings.entries[index].source;
     let source = match &request.command {
         Command::SpliceSource { source, .. }
         | Command::SpliceSourceAt { source, .. }
         | Command::ReplaceSource { source, .. } => source,
         _ => return Err(invalid("Original register requires an Original placement")),
     };
-    if source != &expected {
+    if source != expected {
         return Err(invalid(
             "Original paste differs from its qualified register ordinals",
         ));
@@ -500,6 +539,7 @@ fn validate_original_paste(
     _: &ProjectDocument,
     _: &CommandRequest,
     value: &RegisterValue,
+    _: &mut OriginalPasteMappings,
 ) -> Result<(), StoreError> {
     if matches!(value, RegisterValue::Original { .. }) {
         Err(StoreError::SourceAdmissionUnavailable)

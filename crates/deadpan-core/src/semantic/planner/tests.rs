@@ -5,6 +5,8 @@ use crate::{
 };
 use std::num::NonZeroU32;
 
+mod content;
+
 fn node(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }
@@ -53,6 +55,7 @@ fn context(parent: &str, cursor: i64) -> SemanticContext {
     SemanticContext {
         parent: node(parent),
         cursor: ProjectFrame(cursor),
+        selected_child: None,
     }
 }
 fn cut(count: u32, register: char) -> SemanticInstruction {
@@ -82,15 +85,51 @@ fn macro_value(instructions: Vec<SemanticInstruction>) -> Arc<RegisterValue> {
     })
 }
 fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, EditError> {
-    Ok(SemanticAllocation {
-        new_revision: revision(&format!("leaf-{}", request.cut_index)),
-        capture_revision: revision(&format!("capture-{}", request.cut_index)),
-        split_identities: SplitIdentities {
-            nodes: (0..request.required_split_ids)
-                .map(|n| node(&format!("split-{}-{n}", request.cut_index)))
-                .collect(),
+    Ok(match request {
+        SemanticAllocationRequest::Cut {
+            step_index,
+            required_split_ids,
+        } => SemanticAllocation::Cut {
+            new_revision: revision(&format!("leaf-{step_index}")),
+            capture_revision: revision(&format!("capture-{step_index}")),
+            split_identities: SplitIdentities {
+                nodes: (0..required_split_ids)
+                    .map(|n| node(&format!("split-{step_index}-{n}")))
+                    .collect(),
+            },
         },
+        SemanticAllocationRequest::Yank { step_index } => SemanticAllocation::Yank {
+            capture_revision: revision(&format!("capture-{step_index}")),
+        },
+        SemanticAllocationRequest::PasteEdited {
+            step_index,
+            requirements,
+        } => SemanticAllocation::PasteEdited {
+            new_revision: revision(&format!("leaf-{step_index}")),
+            identities: SlicePasteIdentities {
+                authored: crate::OccurrenceIdentities {
+                    nodes: (0..requirements.nodes)
+                        .map(|n| node(&format!("paste-{step_index}-{n}")))
+                        .collect(),
+                    marks: (0..requirements.marks)
+                        .map(|n| MarkId::new(format!("mark-{step_index}-{n}")).unwrap())
+                        .collect(),
+                },
+                aliases: (0..requirements.aliases)
+                    .map(|n| node(&format!("alias-{step_index}-{n}")))
+                    .collect(),
+            },
+        },
+        SemanticAllocationRequest::PasteOriginal { step_index } => {
+            SemanticAllocation::PasteOriginal {
+                new_revision: revision(&format!("leaf-{step_index}")),
+                node: node(&format!("original-{step_index}")),
+            }
+        }
     })
+}
+fn no_original(_: &ProjectDocument, _: &RegisterValue) -> Result<SourceNode, EditError> {
+    panic!("fixture must not resolve Original media")
 }
 fn plan(
     document: &ProjectDocument,
@@ -102,10 +141,13 @@ fn plan(
         document,
         &context,
         &program(instructions),
-        bank,
-        7,
+        SemanticRegisterBank {
+            entries: bank,
+            version: 7,
+        },
         revision("outer"),
         allocate,
+        no_original,
     )
 }
 
@@ -213,7 +255,8 @@ fn nested_scope_clamps_absolute_motion_and_preserves_outside_siblings() {
     assert_eq!(planned.trace[1].resolved_range, Some(range(3, 6)));
     assert_eq!(planned.trace[1].before_scope, range(3, 11));
     assert_eq!(planned.trace[2].before_scope, range(3, 8));
-    assert_eq!(planned.context, context("group", 8));
+    assert_eq!(planned.context.parent, node("group"));
+    assert_eq!(planned.context.cursor, ProjectFrame(8));
     assert_eq!(
         planned.document.nodes()[&node("prefix")],
         document.nodes()[&node("prefix")]
@@ -383,13 +426,16 @@ fn fuel_charges_calls_and_clamped_motions_and_rejects_huge_counts_without_alloca
             &document,
             &context("root", 0),
             &program(vec![call('a', count)]),
-            &bank,
-            0,
+            SemanticRegisterBank {
+                entries: &bank,
+                version: 0,
+            },
             revision("outer"),
             |request| {
                 allocations += 1;
                 allocate(request)
             },
+            no_original,
         )
         .unwrap_err();
         assert_eq!(error.code, EditErrorCode::LimitExceeded);
@@ -420,10 +466,13 @@ fn motion_only_handles_empty_scope_and_right_bias_without_allocations() {
             &document,
             &context("root", 0),
             &program(vec![motion(true, 2)]),
-            &BTreeMap::new(),
-            0,
+            SemanticRegisterBank {
+                entries: &BTreeMap::new(),
+                version: 0,
+            },
             revision("unused"),
             |_| panic!("motion allocated"),
+            no_original,
         )
         .unwrap();
         assert!(planned.request.is_none());
@@ -456,16 +505,25 @@ fn fresh_identity_contract_rejects_revision_capture_and_split_reuse() {
             &document,
             &context("root", 1),
             &program(vec![cut(1, 'a'), cut(1, 'a')]),
-            &BTreeMap::new(),
-            0,
+            SemanticRegisterBank {
+                entries: &BTreeMap::new(),
+                version: 0,
+            },
             revision("outer"),
             |request| {
                 let mut allocation = allocate(request)?;
-                if request.cut_index == 1 {
-                    allocation.capture_revision = revision(duplicate);
+                if matches!(
+                    request,
+                    SemanticAllocationRequest::Cut { step_index: 1, .. }
+                ) && let SemanticAllocation::Cut {
+                    capture_revision, ..
+                } = &mut allocation
+                {
+                    *capture_revision = revision(duplicate);
                 }
                 Ok(allocation)
             },
+            no_original,
         )
         .unwrap_err();
         assert_eq!(error.code, EditErrorCode::IdentityConflict, "{duplicate}");
@@ -475,16 +533,25 @@ fn fresh_identity_contract_rejects_revision_capture_and_split_reuse() {
             &document,
             &context("root", 1),
             &program(vec![cut(1, 'a'), cut(1, 'a')]),
-            &BTreeMap::new(),
-            0,
+            SemanticRegisterBank {
+                entries: &BTreeMap::new(),
+                version: 0,
+            },
             revision("outer"),
             |request| {
                 let mut allocation = allocate(request)?;
-                if request.cut_index == 1 {
-                    allocation.split_identities.nodes[0] = node(duplicate);
+                if matches!(
+                    request,
+                    SemanticAllocationRequest::Cut { step_index: 1, .. }
+                ) && let SemanticAllocation::Cut {
+                    split_identities, ..
+                } = &mut allocation
+                {
+                    split_identities.nodes[0] = node(duplicate);
                 }
                 Ok(allocation)
             },
+            no_original,
         )
         .unwrap_err();
         assert_eq!(error.code, EditErrorCode::IdentityConflict, "{duplicate}");
@@ -493,14 +560,22 @@ fn fresh_identity_contract_rejects_revision_capture_and_split_reuse() {
         &document,
         &context("root", 0),
         &program(vec![cut(1, 'a')]),
-        &BTreeMap::new(),
-        0,
+        SemanticRegisterBank {
+            entries: &BTreeMap::new(),
+            version: 0,
+        },
         revision("outer"),
         |request| {
             let mut allocation = allocate(request)?;
-            allocation.split_identities.nodes.push(node("extra"));
+            if let SemanticAllocation::Cut {
+                split_identities, ..
+            } = &mut allocation
+            {
+                split_identities.nodes.push(node("extra"));
+            }
             Ok(allocation)
         },
+        no_original,
     )
     .unwrap_err();
     assert_eq!(error.code, EditErrorCode::InvalidCommand);
@@ -592,6 +667,7 @@ fn cumulative_document_and_capture_budgets_refuse_before_another_leaf_allocation
             current: document.clone(),
             context: context("root", 0),
             bounds: (ProjectFrame(0), ProjectFrame(8)),
+            child_ends: vec![(node("held"), ProjectFrame(8))],
             bank: &bank,
             inputs: BTreeMap::new(),
             writes: BTreeMap::new(),
@@ -599,12 +675,14 @@ fn cumulative_document_and_capture_budgets_refuse_before_another_leaf_allocation
             trace: Vec::new(),
             calls: Vec::new(),
             nodes: document.nodes().keys().cloned().collect(),
+            marks: BTreeSet::new(),
             revisions: BTreeSet::from([revision("base"), revision("outer")]),
             document_bytes,
             captured_bytes,
             allocate: |_: SemanticAllocationRequest| -> Result<SemanticAllocation, EditError> {
                 panic!("exhausted work budget reached the leaf allocator")
             },
+            resolve_original: no_original,
         };
         let error = planner.execute(&program(vec![cut(1, 'a')])).unwrap_err();
         assert_eq!(error.code, EditErrorCode::LimitExceeded);
@@ -623,13 +701,16 @@ fn resolved_edit_limit_is_separate_from_instruction_fuel() {
         &document,
         &context("root", 0),
         &program(vec![call('a', 1025)]),
-        &bank,
-        0,
+        SemanticRegisterBank {
+            entries: &bank,
+            version: 0,
+        },
         revision("outer"),
         |request| {
             allocations += 1;
             allocate(request)
         },
+        no_original,
     )
     .unwrap_err();
     assert_eq!(error.code, EditErrorCode::LimitExceeded);

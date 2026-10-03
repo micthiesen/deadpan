@@ -854,8 +854,14 @@ the bank. Missing current Original qualifications leave visible unavailable
 slots. Keep saved-cut receipts independent of register intent. See
 [registers](docs/NAMED_REGISTERS.md).
 
-Semantic macros record relative frame motions, frame cuts and named calls in an
-ordinary Sequence. Append asynchronous instructions only after their exact
+Semantic macros record relative frame motions, frame cuts, selected-beat copies,
+before/after register pastes and named calls in an ordinary Sequence. Track the
+selected direct child independently of the cursor, including absence and empty
+siblings. Yank preserves context; paste selects its fresh imported root; motion
+uses the same right-biased selection as native navigation. Original pastes derive
+their exact mapping from the saved measured qualification and revalidate it at
+store admission. Yank-only programs save the bank without inventing a timeline
+revision or clearing Redo. Append asynchronous instructions only after their exact
 successful receipt; block further recording actions while one is pending. Keep
 requested counts after clamping, captured register names and prefix/command-entry
 absence. Saving a Macro preserves the unnamed copy and history. Plan against

@@ -7,6 +7,8 @@ use deadpan_store::{AccessMode, ProjectStore, registers::RegisterBank};
 use egui::{Event, Key, Modifiers};
 use egui_kittest::kittest::Queryable as _;
 
+mod reuse;
+
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     resize(d, 960.0, 640.0)?;
     let baseline = document(d)?.clone();
@@ -25,6 +27,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     captured_context(d, &baseline)?;
     cancelled_recording(d)?;
     headless_macros(d, &baseline)?;
+    reuse::run(d, &baseline)?;
     reopen(d, &baseline)
 }
 
@@ -74,6 +77,7 @@ fn headless_macros(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(),
             register: register('h')?,
             parent: document(d)?.root().clone(),
             cursor: ProjectFrame(60),
+            selected_child: selected.clone(),
             count: NonZeroU32::new(2).unwrap(),
             new_revision: None,
         },
@@ -100,6 +104,7 @@ fn headless_macros(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(),
             register: register('a')?,
             parent: document(d)?.root().clone(),
             cursor: ProjectFrame(60),
+            selected_child: selected.clone(),
             count: NonZeroU32::new(1).unwrap(),
             new_revision: None,
         },

@@ -4,8 +4,8 @@
 use std::num::NonZeroU32;
 
 use deadpan_core::{
-    RegisterName, RegisterValue, SemanticAllocation, SemanticInstruction, SemanticPlan,
-    SemanticProgram, SliceCaptureSelection, SplitIdentities, plan_semantic,
+    RegisterName, RegisterValue, SemanticInstruction, SemanticPlan, SemanticProgram,
+    SliceCaptureSelection,
 };
 use deadpan_store::registers::RegisterBank;
 
@@ -136,59 +136,71 @@ impl Service {
                 self.error = None;
                 Ok(receipt)
             }
-            Operation::Run {
-                register,
-                count,
-                scope,
-                context,
-                ..
-            } => {
-                let register_name = macro_name(*register)?;
-                let count_value = NonZeroU32::new(*count).ok_or("Macro count must be positive")?;
+            Operation::Run { scope, context, .. } | Operation::Apply { scope, context, .. } => {
+                let (instruction, label) = match operation {
+                    Operation::Run {
+                        register, count, ..
+                    } => (
+                        SemanticInstruction::Call {
+                            register: macro_name(*register)?,
+                            count: NonZeroU32::new(*count).ok_or("Macro count must be positive")?,
+                        },
+                        format!("Macro {register}"),
+                    ),
+                    Operation::Apply { instruction, .. } => (
+                        instruction.clone(),
+                        match instruction {
+                            SemanticInstruction::YankBeat { .. } => "Copy beat",
+                            SemanticInstruction::Paste { .. } => "Paste register",
+                            _ => "Recorded action",
+                        }
+                        .to_owned(),
+                    ),
+                    Operation::Save { .. } => unreachable!("save handled separately"),
+                };
                 let picture_plan = RenderPlan::compile(&document).map_err(display)?;
                 let owner = scope.resolve_document(&document, &picture_plan)?;
                 if owner.owner != &context.parent {
                     return Err("Macro target differs from the captured Sequence scope".into());
                 }
-                let invocation = SemanticProgram::new(vec![SemanticInstruction::Call {
-                    register: register_name,
-                    count: count_value,
-                }])
-                .map_err(display)?;
-                let plan = plan_semantic(
+                let invocation = SemanticProgram::new(vec![instruction]).map_err(display)?;
+                let plan = deadpan_cli::macros::plan_program(
+                    self.store.as_ref().ok_or("Open a project first")?,
                     &document,
+                    &stored,
                     context,
                     &invocation,
-                    &stored.entries,
-                    stored.version,
                     revision(),
-                    |allocation| {
-                        Ok(SemanticAllocation {
-                            new_revision: revision(),
-                            capture_revision: revision(),
-                            split_identities: SplitIdentities {
-                                nodes: (0..allocation.required_split_ids).map(|_| node()).collect(),
-                            },
-                        })
-                    },
                 )
                 .map_err(display)?;
                 let mut receipt = Receipt {
                     id: id.clone(),
                     bank_version: stored.version,
-                    outcome: Outcome::Executed {
-                        register: *register,
-                        count: *count,
-                        scope: scope.clone(),
-                        cursor: plan.context.cursor,
-                        selected: plan.selected_child.clone(),
-                        committed: None,
-                        refresh_error: None,
+                    outcome: match operation {
+                        Operation::Run {
+                            register, count, ..
+                        } => Outcome::Executed {
+                            register: *register,
+                            count: *count,
+                            scope: scope.clone(),
+                            cursor: plan.context.cursor,
+                            selected: plan.selected_child.clone(),
+                            committed: None,
+                            refresh_error: None,
+                        },
+                        Operation::Apply { .. } => Outcome::Applied {
+                            scope: scope.clone(),
+                            cursor: plan.context.cursor,
+                            selected: plan.selected_child.clone(),
+                            committed: None,
+                            refresh_error: None,
+                        },
+                        Operation::Save { .. } => unreachable!("save handled separately"),
                     },
                 };
                 let Some(request) = &plan.request else {
                     self.saved_macro = Some((operation.clone(), receipt.clone()));
-                    self.message = Some(format!("Macro {register} moved the Edit cursor"));
+                    self.message = Some(format!("{label} moved the Edit cursor"));
                     self.error = None;
                     return Ok(receipt);
                 };
@@ -211,26 +223,32 @@ impl Service {
                     .writer()?
                     .commit_compound(request, None)
                     .map_err(display)?;
-                // The request has authored leaves; commit_compound's contract
-                // supplies the exact outer revision here, already prepared.
-                let committed = CommittedEdit {
-                    revision: request.new_revision.clone(),
+                // A yank-only program saves its bank without a new timeline
+                // revision. Only the store's authored receipt grants a native
+                // edit continuation; never infer one from a Compound request.
+                let committed = outcome.committed.map(|saved| CommittedEdit {
+                    revision: saved.revision_id,
                     selected_node: plan.selected_child.clone(),
                     preserve_cursor: false,
                     cursor: Some(plan.context.cursor),
                     scope: scope.clone(),
                     sound: None,
                     range_selection: None,
-                };
+                });
                 receipt.bank_version = outcome.register_bank.version;
                 if let Outcome::Executed {
                     committed: result, ..
+                }
+                | Outcome::Applied {
+                    committed: result, ..
                 } = &mut receipt.outcome
                 {
-                    *result = Some(Box::new(committed.clone()));
+                    *result = committed.clone().map(Box::new);
                 }
                 self.registers = Some(Arc::new(bank));
-                self.committed = Some(committed);
+                if let Some(committed) = &committed {
+                    self.committed = Some(committed.clone());
+                }
                 self.saved_macro = Some((operation.clone(), receipt.clone()));
                 #[cfg(test)]
                 {
@@ -241,15 +259,19 @@ impl Service {
                 }
                 match self.refresh() {
                     Ok(()) => {
-                        self.message = Some(format!(
-                            "Macro {register} saved as one edit; Undo restores it"
-                        ))
+                        self.message = Some(if committed.is_some() {
+                            format!("{label} saved as one edit; Undo restores it")
+                        } else {
+                            format!("{label} saved to registers; timeline history is unchanged")
+                        })
                     }
                     Err(error) => {
                         let message = format!(
-                            "Macro {register} saved, but the preview could not refresh: {error}. Reopen this project before editing or undoing."
+                            "{label} saved, but the preview could not refresh: {error}. Reopen this project before editing or undoing."
                         );
-                        if let Outcome::Executed { refresh_error, .. } = &mut receipt.outcome {
+                        if let Outcome::Executed { refresh_error, .. }
+                        | Outcome::Applied { refresh_error, .. } = &mut receipt.outcome
+                        {
                             *refresh_error = Some(message.clone());
                         }
                         self.message = Some(message);
@@ -417,19 +439,34 @@ fn prepare_runtime_bank(
             let RegisterValue::Edited { slice } = value.as_ref() else {
                 return Err("Macro plan introduced an unexpected register content type".into());
             };
-            let SliceCaptureSelection::Range { range } = slice.selection() else {
-                return Err("Macro frame cuts require an exact captured range".into());
-            };
+            let selection = slice.selection();
             let trace = plan
                 .trace
                 .iter()
                 .find(|trace| {
-                    matches!(trace.instruction, SemanticInstruction::CutFrames { .. })
-                        && &trace.before_revision == slice.revision_id()
+                    &trace.before_revision == slice.revision_id()
                         && &trace.before.parent == slice.parent()
-                        && trace.resolved_range.as_ref() == Some(range)
+                        && match selection {
+                            SliceCaptureSelection::Range { range } => {
+                                matches!(trace.instruction, SemanticInstruction::CutFrames { .. })
+                                    && trace.resolved_range.as_ref() == Some(range)
+                            }
+                            SliceCaptureSelection::Child { node } => {
+                                matches!(trace.instruction, SemanticInstruction::YankBeat { .. })
+                                    && trace.before.selected_child.as_ref() == Some(node)
+                            }
+                        }
                 })
                 .ok_or("Macro copy has no matching staged capture provenance")?;
+            let child_label = match selection {
+                SliceCaptureSelection::Range { .. } => None,
+                SliceCaptureSelection::Child { .. } => Some(
+                    trace
+                        .captured_child_label
+                        .clone()
+                        .ok_or("Macro beat copy has no staged child label")?,
+                ),
+            };
             let request = u64::try_from(prepared.len())
                 .map_err(display)?
                 .checked_add(1)
@@ -446,7 +483,7 @@ fn prepare_runtime_bank(
                 slice: slice.clone(),
                 bounds: trace.before_scope,
                 source_path: source_path.clone(),
-                child_label: None,
+                child_label,
             }))
         };
         prepared.push((value.clone(), entry.clone()));

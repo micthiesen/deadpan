@@ -1,0 +1,27 @@
+{
+  "review_kind": "Cross-layer peer review within the existing team; not a fresh-context full-branch review",
+  "reviews": [
+    {"reviewer": "semantic_macro_core", "scope": "Root CLI planner/Original cache and native protocol/service/runtime captures", "finding": "Pure Paste must not report a bank-write receipt when the bank is unchanged", "resolution": "Root gates committed_registers on actual bank version change; CLI and live-owner tests assert the distinction"},
+    {"reviewer": "semantic_macro_store", "scope": "Root native service and rendered reuse workflow", "finding": null},
+    {"reviewer": "semantic_macro_keys", "scope": "Core selected-child cache, Yank/Paste staged provenance, identity pools and limits", "finding": null},
+    {"reviewer": "semantic_macro_core", "scope": "Store admission-local Original mapping cache and forged second-paste regression", "finding": null}
+  ],
+  "coverage_limits": [
+    "New Yank/Paste tests cover fuel/step/identity limits; document/capture byte-budget refusal retains prior Cut coverage and source review"
+  ],
+  "verification_corrections": [
+    "Initial affected run: 657 app unit tests passed and two new assertions failed. Both expected the inner copied beat where paste intentionally selects a fresh Copied contents Sequence root. Corrected tests assert the exact wrapper, descendant graph, historical selection, fresh identities and preserved empty beat instead.",
+    "Before strict lint, grouped the coherent register entry map and version in SemanticRegisterBank, leaving seven planner arguments. Updated all callers and added direct terminal/all-empty selection regression.",
+    "UI-feature run: 694 app unit tests passed; interrupted_initialization_is_recoverable_and_never_overlaps_after_project_switch received error=None. Its generic helper accepted any publication after busy cleared, including the cancelled worker's unrelated publication. The guard rejects the stale session before work. Test-only correction waits for the reopened session/revision's exact rejection and confirms no new worker job before retry.",
+    "initialization-retry selected zero tests because --exact was given a short name; it is not verification. initialization-exact used the fully qualified name and passed the one test before the synchronization correction.",
+    "The first rendered replay expected register z to be empty, but an earlier scenario had saved a one-frame Edited slice there. Deadpan correctly pasted it. The replay now explicitly asserts unused register w is empty before checking refusal. Only the replay fixture changed; strict UI lint, formatting, build and the rendered workflow are repeated."
+  ],
+  "development_compile_failure": {
+    "provenance": "Transcribed from the tool output, before final recorded checks",
+    "command": ["cargo", "check", "--locked", "-p", "deadpan-cli", "-p", "deadpan-app", "--features", "deadpan-app/ui-harness"],
+    "code": "E0624",
+    "diagnostic": "EditError::new is private",
+    "resolution": "Construct the existing public EditError fields; no visibility change",
+    "corrected_check": "Passed before the later selection-cache/test changes"
+  }
+}

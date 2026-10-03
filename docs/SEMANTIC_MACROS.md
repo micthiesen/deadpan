@@ -7,22 +7,33 @@ saves and Escape cancels the draft. `@` plus a letter runs a saved Macro;
 Both binding families are configurable through `macro.record` and
 `macro.execute`. Names are case-insensitive a–z.
 
-The current vocabulary is relative frame motion, frame cut and named Macro
-call. Motions and cuts retain their requested counts, including when they
-clamp at a group boundary. A cut also retains its selected copy register.
+The current vocabulary is relative frame motion, frame cut, selected-beat yank,
+register paste before or after the selected beat, and named Macro call.
+Motions and cuts retain their requested counts, including when they
+clamp at a group boundary. Copy, cut and paste retain the selected register name.
 The planner resolves each instruction against the preceding staged edit in
 the same ordinary Sequence group. Temporal occurrence scopes, text/range
 selectors, additional edits and broader semantic dot-repeat remain required.
 This is partial DP-06 implementation, not full macro acceptance.
+See [copy/paste qualification](qualification/macro-reuse-2026-10-02.md) for
+checks, rendered captures, retained failures and remaining limits.
 
 ## Recording and input ownership
 
 Recording performs normal edits. A motion enters the body when dispatched;
-a cut or call enters only after its matching successful receipt. A pending
+a copy, cut, paste or call enters only after its matching successful receipt. A pending
 operation blocks the next recorded action until that result arrives. Failed
 operations do not enter the body. Saving writes a named Macro without adding
 an Undo entry or replacing the default copy. Cancelling leaves completed
 edits undoable and preserves the previously saved Macro.
+
+While recording, `y` copies the selected beat and `p`/`P` paste after/before it.
+These actions use the same staged planner and receipts as replay. Both measured
+Original ranges and edited slices can be pasted. An absent selection is retained
+as absent; it never silently becomes the beat under the cursor. An empty group
+may be copied, and pasted copies receive fresh identities and become selected
+even when they add no picture time. An empty destination Sequence admits slot
+zero without a selected child.
 
 The footer shows the register, instruction count and save/cancel controls.
 Unsupported actions refuse explicitly. Changing the project, register bank,
@@ -31,7 +42,7 @@ the draft. A refresh failure after durable success retains that success and
 stops recording with reopening guidance.
 
 Prefix and command entry capture the project session, revision, bank version,
-group and cursor, including an absent eligible target. A late letter or command
+group, cursor and selected child, including an absent eligible target. A late letter or command
 cannot replace that capture with a newly available context. Text, IME,
 focused native controls and Kestrel reservations retain priority. Since egui
 has no `Key::At`, logical `@` requires the pressed key's immediate native
@@ -43,9 +54,18 @@ across real keyboard layouts still requires qualification.
 `SemanticProgram` contains typed instructions, never raw keys, process hooks,
 stored cursor timestamps or preselected node identities. `plan_semantic`
 incrementally executes its body against a private document and staged register
-bank. It applies each ordinary leaf once and returns a resolved `Compound`,
+bank. `SemanticRegisterBank` keeps the entry map and its observed version
+together at that boundary. The planner applies each ordinary leaf once and
+returns a resolved `Compound`,
 final context, register writes and an entry trace. Motion-only programs return
 no authored request and add no history.
+
+Context tracks the selected direct child separately from the absolute cursor.
+Frame motion selects the right-hand child, or the final child at the scope end,
+as native navigation does. Yank preserves both coordinates. Paste selects its
+new root and puts the cursor at the insertion boundary. Each later instruction
+uses that staged selection. Original source mappings come from the saved
+qualification's measured index and are checked again at store admission.
 
 A call resolves a named Macro at call entry and freezes that body for all of
 its counted repetitions. Later calls see earlier staged register writes.
@@ -57,9 +77,10 @@ consume fuel. Existing Compound step, document and capture limits also apply.
 
 The service binds the actual saved head and bank version, previews the whole
 Compound with ordinary media admission, and prepares its final runtime bank
-before committing. Every leaf and capture allocation is fresh. One run saves
-one reversible history entry and one final bank result. A later failure saves
-neither. Undo/Redo replays frozen resolved instructions and never rereads a
+before committing. Every leaf and capture allocation is fresh. A run with edits
+saves one reversible history entry and one final bank result. A yank-only run
+saves its copies without changing the document, Undo or Redo. A later failure
+saves neither. Undo/Redo replays frozen resolved instructions and never rereads a
 mutable Macro body. Register contents survive Undo.
 
 ## Persistence and feedback
@@ -128,9 +149,30 @@ revision; omission allocates it on the host.
   "register": "a",
   "parent": "SEQUENCE_NODE_ID",
   "cursor": 20,
+  "selected_child": "SELECTED_DIRECT_CHILD_ID",
   "count": 3
 }
 ```
+
+`selected_child` is independent of `cursor`. Omission or `null` means no selected
+beat. A motion may establish one; yank requires one, and paste requires one
+unless the destination Sequence is empty. A stale or non-direct child rejects
+the request. The trace includes before/after selection and Edit positions.
+
+For example, this body copies the selected beat to `b` and pastes it after that
+beat. Set `before` to `true` for a paste before the selected beat:
+
+```json
+{
+  "instructions": [
+    { "type": "yank_beat", "register": "b" },
+    { "type": "paste", "register": "b", "before": false }
+  ]
+}
+```
+
+A paste-only body may use a previously saved Original or Edited register.
+Each counted repetition selects its newly pasted root before the next begins.
 
 Save dry-run checks the same program, bank capacity, version and storage rules
 as save. It does not execute the body. Run dry-run resolves the whole program

@@ -74,7 +74,8 @@ Supported commands are `insert`, `insert_time`, `split`, `slip_source`, `trim_so
 Repeat; `wrap_repeat` deliberately adds nesting. A three-play repeat includes
 three total plays and only two gaps. These are structural edits, not rendered
 media. The dedicated [Macro commands](SEMANTIC_MACROS.md#headless-inspection-save-and-run)
-inspect, save and run the current bounded motion/cut/call vocabulary. Broader
+inspect, save and run bounded motions, frame cuts, beat copies, register pastes
+and named calls. Broader
 range/text selectors, register management and effects remain required work.
 
 `compound` executes a bounded `ResolvedTransaction` through the same preview
@@ -92,6 +93,7 @@ requires an authored leaf.
 with one consistent document revision and bank version. `macro <package>
 --json <request> [--dry-run]` saves or runs a named Macro. Requests bind both
 versions and supply an explicit Sequence parent and Edit cursor for execution.
+The selected direct child is separate from that cursor; absence remains explicit.
 Dry-run uses complete store admission; a counted authored run saves one Undo.
 The same commands use the authenticated native owner when the project is open.
 See the [request examples and receipt contract](SEMANTIC_MACROS.md#headless-inspection-save-and-run).

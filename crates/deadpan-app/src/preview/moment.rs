@@ -34,6 +34,7 @@ pub(super) struct PlacementTarget {
     pub register: Option<char>,
     pub selection: edit_range::Selection,
     pub range: Option<deadpan_core::FrameRange>,
+    pub macro_capture: Result<macros::Capture, String>,
 }
 
 #[derive(Clone, Default, PartialEq, Eq)]
@@ -154,6 +155,7 @@ impl DeadpanApp {
             register: self.copied.selected(),
             selection: self.edit_range.clone(),
             range: self.selected_edit_range(),
+            macro_capture: self.capture_macro_target(),
         })
     }
 
@@ -322,6 +324,9 @@ impl DeadpanApp {
         before: bool,
         target: Result<PlacementTarget, String>,
     ) {
+        if self.record_macro_paste(before, &target) {
+            return;
+        }
         self.copied.clear_selection();
         let result = (|| {
             let target = target?;

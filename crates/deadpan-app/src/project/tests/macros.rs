@@ -71,6 +71,7 @@ fn run(update: &ProjectUpdate, request: u64, register: char, count: u32, cursor:
         context: SemanticContext {
             parent: update.workspace.as_ref().unwrap().document.root().clone(),
             cursor: ProjectFrame(cursor),
+            selected_child: None,
         },
     }
 }
@@ -120,6 +121,348 @@ fn capture(update: &ProjectUpdate, request: u64, register: char) -> ProjectReque
             range: FrameRange::new(ProjectFrame(1), ProjectFrame(4)).unwrap(),
         },
     })
+}
+
+#[test]
+fn bank_only_yank_refresh_failure_retains_the_selected_child_copy_and_redo() {
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("macro-yank-refresh.deadpan");
+    let (harness, opened) = setup(&path);
+    let undone = command(
+        &harness.service,
+        ProjectRequest::Undo {
+            expected_revision: opened
+                .workspace
+                .as_ref()
+                .unwrap()
+                .document
+                .revision_id()
+                .clone(),
+        },
+    );
+    let before = undone.workspace.as_ref().unwrap().document.clone();
+    let before_rows = rows(&path);
+    let operation = Operation::Apply {
+        id: id(&undone, 1),
+        instruction: SemanticInstruction::YankBeat {
+            register: RegisterName::new('b').unwrap(),
+        },
+        scope: SequenceScope::default(),
+        context: SemanticContext {
+            parent: node("root"),
+            cursor: ProjectFrame(17),
+            selected_child: Some(node("a")),
+        },
+    };
+    harness
+        .service
+        .shared
+        .workspace_refresh_failure
+        .store(true, Ordering::Release);
+    let copied_update = send(&harness.service, operation.clone());
+    let saved = receipt(&copied_update);
+    assert!(saved.committed().is_none());
+    assert_eq!(saved.bank_version, 1);
+    let Outcome::Applied {
+        cursor,
+        selected,
+        refresh_error,
+        ..
+    } = &saved.outcome
+    else {
+        panic!("direct yank receipt")
+    };
+    assert_eq!(*cursor, ProjectFrame(17));
+    assert_eq!(selected.as_ref(), Some(&node("a")));
+    assert!(refresh_error.as_ref().unwrap().contains("Reopen"));
+    let copy = copied(&copied_update, 'b').clone();
+    assert_eq!(copy.child_label(), Some("a"));
+    assert_eq!(copy.source_path(), &["Your edit".to_owned()]);
+    assert_eq!(
+        copy.slice().selection(),
+        &SliceCaptureSelection::Child { node: node("a") }
+    );
+    assert_eq!(
+        copy.slice().range(),
+        FrameRange::new(ProjectFrame(0), ProjectFrame(10)).unwrap()
+    );
+    assert_eq!(&copy.id().source_revision, before.revision_id());
+    assert_eq!(copy.id().persisted_version, Some(saved.bank_version));
+    assert!(Arc::ptr_eq(&copy, copied(&copied_update, '"')));
+    assert_eq!(rows(&path), before_rows);
+    let reader = ProjectStore::open(&path, AccessMode::ReadOnly).unwrap();
+    assert_eq!(&reader.snapshot().unwrap(), before.as_ref());
+    assert!(reader.history_availability().unwrap().1);
+    drop(reader);
+    let duplicate = send(&harness.service, operation);
+    assert_eq!(receipt(&duplicate).bank_version, saved.bank_version);
+    assert_eq!(rows(&path), before_rows);
+    command(&harness.service, ProjectRequest::Close);
+    let reopened = command(&harness.service, ProjectRequest::Open(path));
+    assert_eq!(copied(&reopened, 'b').slice(), copy.slice());
+    assert_eq!(copied(&reopened, 'b').child_label(), Some("a"));
+    let redone = command(
+        &harness.service,
+        ProjectRequest::Redo {
+            expected_revision: before.revision_id().clone(),
+        },
+    );
+    assert!(redone.error.is_none(), "{:?}", redone.error);
+    assert_eq!(
+        redone.workspace.as_ref().unwrap().plan.duration().frames(),
+        30
+    );
+    assert_eq!(copied(&redone, 'b').slice(), copy.slice());
+}
+
+#[test]
+fn counted_yank_paste_prepares_intermediate_runtime_copy_and_full_undo_redo() {
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("macro-yank-paste.deadpan");
+    let (harness, opened) = setup(&path);
+    let saved = send(
+        &harness.service,
+        save(
+            &opened,
+            1,
+            'a',
+            program(vec![
+                SemanticInstruction::YankBeat {
+                    register: RegisterName::new('b').unwrap(),
+                },
+                SemanticInstruction::Paste {
+                    register: RegisterName::new('b').unwrap(),
+                    before: true,
+                },
+            ]),
+        ),
+    );
+    let before = saved.workspace.as_ref().unwrap().document.clone();
+    let before_rows = rows(&path);
+    let mut operation = run(&saved, 2, 'a', 2, 24);
+    let Operation::Run { context, .. } = &mut operation else {
+        unreachable!()
+    };
+    context.selected_child = Some(node("a"));
+    let executed = send(&harness.service, operation);
+    let after = executed.workspace.as_ref().unwrap().document.clone();
+    assert_eq!(after.duration().unwrap().frames(), 50);
+    assert_eq!(
+        rows(&path),
+        (before_rows.0 + 1, before_rows.1 + 1, before_rows.2 + 2)
+    );
+    let copy = copied(&executed, 'b').clone();
+    assert_eq!(copy.child_label(), Some("Copied contents"));
+    assert_eq!(
+        copy.bounds(),
+        FrameRange::new(ProjectFrame(0), ProjectFrame(40)).unwrap()
+    );
+    assert_ne!(&copy.id().source_revision, before.revision_id());
+    assert_eq!(
+        copy.id().persisted_version,
+        Some(receipt(&executed).bank_version)
+    );
+    let reader = ProjectStore::open(&path, AccessMode::ReadOnly).unwrap();
+    let captured = reader
+        .capture_snapshot_at(&copy.id().source_revision)
+        .unwrap();
+    copy.slice().validate_capture(&captured).unwrap();
+    let SliceCaptureSelection::Child { node: copied_root } = copy.slice().selection() else {
+        panic!("second yank must capture the first paste's selected wrapper")
+    };
+    assert_eq!(
+        copy.child_label(),
+        Some(captured.nodes()[copied_root].label.as_str())
+    );
+    let deadpan_core::NodeKind::Sequence {
+        children: copied_children,
+    } = &captured.nodes()[copied_root].kind
+    else {
+        panic!("pasted wrapper")
+    };
+    assert_eq!(copied_children.len(), 1);
+    assert_ne!(copied_children[0], node("a"));
+    assert_eq!(
+        captured.nodes()[&copied_children[0]],
+        before.nodes()[&node("a")]
+    );
+    drop(reader);
+    let committed = receipt(&executed).committed().unwrap();
+    assert_eq!(committed.cursor, Some(ProjectFrame(0)));
+    let selected = committed.selected_node.as_ref().unwrap();
+    assert_ne!(selected, copied_root);
+    let deadpan_core::NodeKind::Sequence { children } = &after.nodes()[after.root()].kind else {
+        unreachable!()
+    };
+    assert_eq!(
+        children,
+        &[
+            selected.clone(),
+            copied_root.clone(),
+            node("a"),
+            node("b"),
+            node("c")
+        ]
+    );
+    let deadpan_core::NodeKind::Sequence {
+        children: pasted_children,
+    } = &after.nodes()[selected].kind
+    else {
+        panic!("second paste wrapper")
+    };
+    assert_eq!(pasted_children.len(), 1);
+    assert_ne!(&pasted_children[0], copied_root);
+    assert_eq!(after.nodes()[&pasted_children[0]].label, "Copied contents");
+    let deadpan_core::NodeKind::Sequence {
+        children: nested_children,
+    } = &after.nodes()[&pasted_children[0]].kind
+    else {
+        panic!("copied first paste wrapper")
+    };
+    assert_eq!(nested_children.len(), 1);
+    assert_eq!(
+        after.nodes()[&nested_children[0]],
+        before.nodes()[&node("a")]
+    );
+    let undone = command(
+        &harness.service,
+        ProjectRequest::Undo {
+            expected_revision: committed.revision.clone(),
+        },
+    );
+    let mut expected = serde_json::to_value(before.as_ref()).unwrap();
+    expected["revision_id"] =
+        serde_json::to_value(undone.workspace.as_ref().unwrap().document.revision_id()).unwrap();
+    assert_eq!(
+        serde_json::to_value(undone.workspace.as_ref().unwrap().document.as_ref()).unwrap(),
+        expected
+    );
+    command(&harness.service, ProjectRequest::Close);
+    let reopened = command(&harness.service, ProjectRequest::Open(path));
+    assert_eq!(copied(&reopened, 'b').slice(), copy.slice());
+    assert_eq!(copied(&reopened, 'b').child_label(), copy.child_label());
+    let redone = command(
+        &harness.service,
+        ProjectRequest::Redo {
+            expected_revision: reopened
+                .workspace
+                .as_ref()
+                .unwrap()
+                .document
+                .revision_id()
+                .clone(),
+        },
+    );
+    let mut expected = serde_json::to_value(after.as_ref()).unwrap();
+    expected["revision_id"] =
+        serde_json::to_value(redone.workspace.as_ref().unwrap().document.revision_id()).unwrap();
+    assert_eq!(
+        serde_json::to_value(redone.workspace.as_ref().unwrap().document.as_ref()).unwrap(),
+        expected
+    );
+    assert_eq!(copied(&redone, 'b').slice(), copy.slice());
+}
+
+#[test]
+fn empty_selected_beat_yanks_and_pastes_at_its_sibling_slot_without_cursor_inference() {
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("macro-empty-paste.deadpan");
+    let mut store = seed_holds(&path, &["a", "b"]);
+    seed_command(
+        &mut store,
+        Command::Insert {
+            parent: node("root"),
+            index: 1,
+            subtree: Subtree {
+                root: node("empty"),
+                nodes: BTreeMap::from([(node("empty"), BeatNode::sequence("Empty beat", vec![]))]),
+                overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
+            },
+        },
+        "with-empty",
+    );
+    drop(store);
+    let harness = Harness::new();
+    let opened = command(&harness.service, ProjectRequest::Open(path.clone()));
+    let copied_update = send(
+        &harness.service,
+        Operation::Apply {
+            id: id(&opened, 1),
+            instruction: SemanticInstruction::YankBeat {
+                register: RegisterName::new('c').unwrap(),
+            },
+            scope: SequenceScope::default(),
+            context: SemanticContext {
+                parent: node("root"),
+                cursor: ProjectFrame(3),
+                selected_child: Some(node("empty")),
+            },
+        },
+    );
+    assert_eq!(
+        copied(&copied_update, 'c').child_label(),
+        Some("Empty beat")
+    );
+    let pasted = send(
+        &harness.service,
+        Operation::Apply {
+            id: id(&copied_update, 2),
+            instruction: SemanticInstruction::Paste {
+                register: RegisterName::new('c').unwrap(),
+                before: false,
+            },
+            scope: SequenceScope::default(),
+            context: SemanticContext {
+                parent: node("root"),
+                cursor: ProjectFrame(3),
+                selected_child: Some(node("b")),
+            },
+        },
+    );
+    let committed = receipt(&pasted).committed().unwrap();
+    assert_eq!(committed.cursor, Some(ProjectFrame(20)));
+    let selected = committed.selected_node.as_ref().unwrap();
+    let document = &pasted.workspace.as_ref().unwrap().document;
+    assert_eq!(document.duration().unwrap().frames(), 20);
+    let deadpan_core::NodeKind::Sequence { children } = &document.nodes()[&node("root")].kind
+    else {
+        unreachable!()
+    };
+    assert_eq!(
+        children,
+        &[node("a"), node("empty"), node("b"), selected.clone()]
+    );
+    assert_eq!(document.nodes()[selected].label, "Copied contents");
+    let deadpan_core::NodeKind::Sequence { children: imported } = &document.nodes()[selected].kind
+    else {
+        panic!("selected imported wrapper")
+    };
+    assert_eq!(imported.len(), 1);
+    assert_ne!(imported[0], node("empty"));
+    assert_eq!(
+        document.nodes()[&imported[0]],
+        document.nodes()[&node("empty")]
+    );
+    assert_eq!(
+        document.nodes().len(),
+        opened.workspace.as_ref().unwrap().document.nodes().len() + 2
+    );
+    assert_eq!(copied(&pasted, 'c').slice().duration().frames(), 0);
+    assert_eq!(
+        copied(&pasted, 'c').slice().selection(),
+        &SliceCaptureSelection::Child {
+            node: node("empty")
+        }
+    );
+    assert_eq!(
+        copied(&pasted, 'c').slice(),
+        copied(&copied_update, 'c').slice()
+    );
+    ProjectStore::open(&path, AccessMode::ReadOnly)
+        .unwrap()
+        .validate()
+        .unwrap();
 }
 
 #[test]
@@ -448,6 +791,7 @@ fn nested_macro_copies_keep_their_staged_absolute_bounds_and_original_group_labe
         context: SemanticContext {
             parent: node("group"),
             cursor: ProjectFrame(12),
+            selected_child: None,
         },
     };
     let executed = send(&harness.service, operation);

@@ -83,6 +83,7 @@ fn run(
             register: RegisterName::new(register).unwrap(),
             parent: node(parent),
             cursor: ProjectFrame(cursor),
+            selected_child: None,
             count: NonZeroU32::new(count).unwrap(),
             new_revision: revision.map(|revision| RevisionId::new(revision).unwrap()),
         },
@@ -150,6 +151,133 @@ fn same_document_except_revision(actual: &ProjectDocument, expected: &ProjectDoc
     let mut expected = serde_json::to_value(expected).unwrap();
     expected["revision_id"] = serde_json::to_value(actual.revision_id()).unwrap();
     assert_eq!(serde_json::to_value(actual).unwrap(), expected);
+}
+
+#[test]
+fn remote_yank_retains_bank_only_receipt_and_runtime_copy_after_refresh_failure() {
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("remote-yank-refresh.deadpan");
+    let (harness, opened) = setup(&path);
+    let mut client = client(&path);
+    live_project::request(
+        &mut client,
+        save(
+            &opened,
+            program(vec![SemanticInstruction::YankBeat {
+                register: RegisterName::new('b').unwrap(),
+            }]),
+            false,
+        ),
+    )
+    .unwrap();
+    let saved = remote_update(&harness);
+    let before = durable(&path);
+    let mut operation = run(
+        &saved,
+        'a',
+        "root",
+        1,
+        1,
+        Some("unused-yank-revision"),
+        false,
+    );
+    let Operation::Execute { command, .. } = &mut operation else {
+        unreachable!()
+    };
+    let ShortOperation::Macro { request } = command.as_mut() else {
+        unreachable!()
+    };
+    let MacroOperation::Run { selected_child, .. } = &mut request.operation else {
+        unreachable!()
+    };
+    *selected_child = Some(node("b"));
+    harness
+        .service
+        .shared
+        .host_refresh_failure
+        .store(true, Ordering::Release);
+    let Reply::Completed {
+        output,
+        committed_revision,
+        committed_registers,
+        refresh_error,
+    } = live_project::request(&mut client, operation.clone()).unwrap()
+    else {
+        panic!("bank-only receipt")
+    };
+    assert!(committed_revision.is_none());
+    assert!(refresh_error.unwrap().contains("Injected failure"));
+    let receipt = committed_registers.unwrap();
+    assert_eq!(receipt.revision_id, *before.0.revision_id());
+    assert_eq!(receipt.bank_version, before.1.version + 1);
+    assert_eq!(output["context"]["cursor"], 1);
+    assert_eq!(output["context"]["selected_child"], "b");
+    let update = harness.service.take_update().unwrap();
+    assert!(update.error.is_some());
+    assert!(update.committed.is_none() && update.macros.is_none() && update.saved_macro.is_none());
+    let copy = copied(&update, 'b');
+    assert_eq!(copy.child_label(), Some("b"));
+    assert_eq!(
+        copy.slice().range(),
+        FrameRange::new(ProjectFrame(10), ProjectFrame(20)).unwrap()
+    );
+    assert_eq!(copy.id().persisted_version, Some(receipt.bank_version));
+    assert_eq!(&copy.id().source_revision, before.0.revision_id());
+    let after = durable(&path);
+    assert_eq!(after.0, before.0);
+    assert_eq!(after.2, before.2);
+    let error = live_project::request(&mut client, operation).unwrap_err();
+    assert_eq!(error.code, "RegisterInvalid");
+    assert!(error.committed_registers.is_none());
+    assert_eq!(durable(&path), after);
+    live_project::request(
+        &mut client,
+        save(
+            &update,
+            program(vec![SemanticInstruction::Paste {
+                register: RegisterName::new('b').unwrap(),
+                before: true,
+            }]),
+            false,
+        ),
+    )
+    .unwrap();
+    let saved = remote_update(&harness);
+    let before_paste = durable(&path);
+    let mut operation = run(&saved, 'a', "root", 1, 29, Some("remote-paste-only"), false);
+    let Operation::Execute { command, .. } = &mut operation else {
+        unreachable!()
+    };
+    let ShortOperation::Macro { request } = command.as_mut() else {
+        unreachable!()
+    };
+    let MacroOperation::Run { selected_child, .. } = &mut request.operation else {
+        unreachable!()
+    };
+    *selected_child = Some(node("a"));
+    let Reply::Completed {
+        output,
+        committed_revision,
+        committed_registers,
+        refresh_error,
+    } = live_project::request(&mut client, operation).unwrap()
+    else {
+        panic!("paste receipt")
+    };
+    assert_eq!(
+        committed_revision,
+        Some(RevisionId::new("remote-paste-only").unwrap())
+    );
+    assert!(committed_registers.is_none() && refresh_error.is_none());
+    assert!(output["committed_registers"].is_null());
+    let pasted = remote_update(&harness);
+    assert_eq!(durable(&path).1, before_paste.1);
+    assert_eq!(
+        pasted.workspace.as_ref().unwrap().plan.duration().frames(),
+        40
+    );
+    assert_eq!(output["context"]["cursor"], 0);
+    shutdown(&harness);
 }
 
 #[test]
@@ -600,6 +728,7 @@ fn unread_native_save_motion_and_copy_continuations_block_remote_mutation() {
                     context: SemanticContext {
                         parent: node("root"),
                         cursor: ProjectFrame(3),
+                        selected_child: None,
                     },
                 })
             }

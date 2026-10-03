@@ -9,32 +9,69 @@ use std::{
 use crate::{
     AudioTimingId, CapturedEditSlice, Command, CommandRequest, EditError, EditErrorCode,
     FrameRange, LeafEdit, MAX_COMPOUND_CAPTURE_BYTES, MAX_COMPOUND_DOCUMENT_BYTES,
-    MAX_COMPOUND_STEPS, MAX_DOCUMENT_JSON_BYTES, NodeId, NodeKind, ProjectDocument, ProjectFrame,
-    RegisterName, RegisterValue, ResolvedStep, ResolvedTransaction, RevisionId,
-    SemanticInstruction, SemanticProgram, SplitIdentities, compound::wire,
+    MAX_COMPOUND_STEPS, MAX_DOCUMENT_JSON_BYTES, MarkId, NodeId, NodeKind, ProjectDocument,
+    ProjectFrame, RegisterName, RegisterValue, ResolvedStep, ResolvedTransaction, RevisionId,
+    SemanticInstruction, SemanticProgram, SliceCaptureSelection, SliceIdentityRequirements,
+    SlicePasteIdentities, SourceNode, SplitIdentities, compound::wire,
 };
 
 use super::{MAX_SEMANTIC_CALL_DEPTH, MAX_SEMANTIC_INSTRUCTION_FUEL};
+
+mod content;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SemanticContext {
     pub parent: NodeId,
     /// Absolute Edit boundary, including either endpoint of the ordinary scope.
     pub cursor: ProjectFrame,
+    /// Explicit direct-child selection, independent of the cursor. None means
+    /// no selected beat, including when nonempty children surround the cursor.
+    pub selected_child: Option<NodeId>,
+}
+
+/// Frozen register contents and the version the host must admit at commit.
+#[derive(Debug, Clone, Copy)]
+pub struct SemanticRegisterBank<'a> {
+    pub entries: &'a BTreeMap<RegisterName, Arc<RegisterValue>>,
+    pub version: u64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct SemanticAllocationRequest {
-    pub cut_index: usize,
-    pub required_split_ids: usize,
+pub enum SemanticAllocationRequest {
+    Cut {
+        step_index: usize,
+        required_split_ids: usize,
+    },
+    Yank {
+        step_index: usize,
+    },
+    PasteEdited {
+        step_index: usize,
+        requirements: SliceIdentityRequirements,
+    },
+    PasteOriginal {
+        step_index: usize,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SemanticAllocation {
-    pub new_revision: RevisionId,
-    /// Scratch capture timing allocation, distinct from all editing allocations.
-    pub capture_revision: RevisionId,
-    pub split_identities: SplitIdentities,
+pub enum SemanticAllocation {
+    Cut {
+        new_revision: RevisionId,
+        capture_revision: RevisionId,
+        split_identities: SplitIdentities,
+    },
+    Yank {
+        capture_revision: RevisionId,
+    },
+    PasteEdited {
+        new_revision: RevisionId,
+        identities: SlicePasteIdentities,
+    },
+    PasteOriginal {
+        new_revision: RevisionId,
+        node: NodeId,
+    },
 }
 
 /// Ordered instruction-entry trace. Call rows precede their expanded bodies and
@@ -48,16 +85,19 @@ pub struct SemanticTrace {
     pub before: SemanticContext,
     pub after: SemanticContext,
     pub resolved_range: Option<FrameRange>,
+    /// Exact staged direct-child label for a YankBeat capture.
+    pub captured_child_label: Option<String>,
     pub depth: usize,
 }
 
 #[derive(Debug)]
 pub struct SemanticPlan {
-    /// Motion-only programs produce no authored request or revision change.
+    /// Motion-only programs produce no request. A Yank-only request updates the
+    /// bank without changing `document`'s revision or creating authored history.
     pub request: Option<CommandRequest>,
     pub document: ProjectDocument,
     pub context: SemanticContext,
-    /// Right-hand direct child, or the final child at the scope's end.
+    /// Final explicit selection, also retained in `context.selected_child`.
     pub selected_child: Option<NodeId>,
     /// Final writes only, including the unnamed alias of each named cut.
     pub register_writes: BTreeMap<RegisterName, Arc<RegisterValue>>,
@@ -72,10 +112,10 @@ pub fn plan_semantic(
     document: &ProjectDocument,
     context: &SemanticContext,
     program: &SemanticProgram,
-    bank: &BTreeMap<RegisterName, Arc<RegisterValue>>,
-    expected_bank_version: u64,
+    registers: SemanticRegisterBank<'_>,
     new_revision: RevisionId,
     allocate: impl FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
+    resolve_original: impl FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
 ) -> Result<SemanticPlan, EditError> {
     program.validate()?;
     document.validate()?;
@@ -86,6 +126,7 @@ pub fn plan_semantic(
         &new_revision,
     )?;
     let bounds = scope_bounds(document, &context.parent)?;
+    validate_selection(document, context)?;
     if context.cursor < bounds.0 || context.cursor > bounds.1 {
         return Err(EditError::new(
             EditErrorCode::SelectionUnavailable,
@@ -124,37 +165,42 @@ pub fn plan_semantic(
         current: document.clone(),
         context: context.clone(),
         bounds,
-        bank,
+        child_ends: child_ends(document, &context.parent, bounds)?,
+        bank: registers.entries,
         inputs: BTreeMap::new(),
         writes: BTreeMap::new(),
         steps: Vec::new(),
         trace: Vec::new(),
         calls: Vec::new(),
-        nodes: document.nodes().keys().cloned().collect(),
+        nodes: occupied_nodes(document),
+        marks: document.marks().keys().cloned().collect(),
         revisions,
         document_bytes,
         captured_bytes: 0,
         allocate,
+        resolve_original,
     };
     planner.execute(program)?;
-    let selected_child = selected_child(&planner.current, &planner.context, planner.bounds)?;
+    let selected_child = planner.context.selected_child.clone();
     let request = if planner.steps.is_empty() {
         None
     } else {
-        planner.current.revision_id = new_revision.clone();
-        charge(
-            &mut planner.document_bytes,
-            wire::size(&planner.current, MAX_DOCUMENT_JSON_BYTES)?,
-            MAX_COMPOUND_DOCUMENT_BYTES,
-            "macro staged document byte limit",
-        )?;
+        if planner.steps.iter().any(|step| step.edit().is_some()) {
+            planner.current.revision_id = new_revision.clone();
+            charge(
+                &mut planner.document_bytes,
+                wire::size(&planner.current, MAX_DOCUMENT_JSON_BYTES)?,
+                MAX_COMPOUND_DOCUMENT_BYTES,
+                "macro staged document byte limit",
+            )?;
+        }
         Some(CommandRequest {
             project_id: document.project_id().clone(),
             expected_revision: document.revision_id().clone(),
             new_revision,
             command: Command::Compound {
                 transaction: ResolvedTransaction::new(
-                    expected_bank_version,
+                    registers.version,
                     planner.inputs,
                     planner.steps,
                 )?,
@@ -171,10 +217,13 @@ pub fn plan_semantic(
     })
 }
 
-struct Planner<'a, F> {
+struct Planner<'a, F, R> {
     current: ProjectDocument,
     context: SemanticContext,
     bounds: (ProjectFrame, ProjectFrame),
+    /// Updated only after an authored leaf. Frame motions use a binary search
+    /// instead of walking the entire staged document for every instruction.
+    child_ends: Vec<(NodeId, ProjectFrame)>,
     bank: &'a BTreeMap<RegisterName, Arc<RegisterValue>>,
     inputs: BTreeMap<RegisterName, Option<Arc<RegisterValue>>>,
     writes: BTreeMap<RegisterName, Arc<RegisterValue>>,
@@ -182,15 +231,18 @@ struct Planner<'a, F> {
     trace: Vec<SemanticTrace>,
     calls: Vec<RegisterName>,
     nodes: BTreeSet<NodeId>,
+    marks: BTreeSet<MarkId>,
     revisions: BTreeSet<RevisionId>,
     document_bytes: usize,
     captured_bytes: usize,
     allocate: F,
+    resolve_original: R,
 }
 
-impl<F> Planner<'_, F>
+impl<F, R> Planner<'_, F, R>
 where
     F: FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
+    R: FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
 {
     fn execute(&mut self, program: &SemanticProgram) -> Result<(), EditError> {
         for instruction in program.instructions() {
@@ -206,6 +258,7 @@ where
                 before: self.context.clone(),
                 after: self.context.clone(),
                 resolved_range: None,
+                captured_child_label: None,
                 depth: self.calls.len(),
             });
             match instruction {
@@ -224,6 +277,8 @@ where
                     } else {
                         cursor - amount
                     });
+                    self.context.selected_child =
+                        selected_child(&self.child_ends, self.context.cursor, self.bounds);
                 }
                 SemanticInstruction::CutFrames {
                     operation,
@@ -239,6 +294,14 @@ where
                 }
                 SemanticInstruction::Call { register, count } => {
                     self.call(*register, count.get())?;
+                }
+                SemanticInstruction::YankBeat { register } => {
+                    let (range, label) = self.yank(*register)?;
+                    self.trace[index].resolved_range = Some(range);
+                    self.trace[index].captured_child_label = Some(label);
+                }
+                SemanticInstruction::Paste { register, before } => {
+                    self.trace[index].resolved_range = Some(self.paste(*register, *before)?);
                 }
             }
             self.trace[index].after = self.context.clone();
@@ -274,16 +337,23 @@ where
         if minimum > MAX_SEMANTIC_INSTRUCTION_FUEL - self.trace.len() {
             return Err(limit("macro count exceeds remaining instruction fuel"));
         }
-        let direct_cuts = program
+        let direct_steps = program
             .instructions()
             .iter()
-            .filter(|instruction| matches!(instruction, SemanticInstruction::CutFrames { .. }))
+            .filter(|instruction| {
+                matches!(
+                    instruction,
+                    SemanticInstruction::CutFrames { .. }
+                        | SemanticInstruction::YankBeat { .. }
+                        | SemanticInstruction::Paste { .. }
+                )
+            })
             .count();
-        let minimum_cuts = usize::try_from(count)
+        let minimum_steps = usize::try_from(count)
             .ok()
-            .and_then(|count| count.checked_mul(direct_cuts))
+            .and_then(|count| count.checked_mul(direct_steps))
             .ok_or_else(|| limit("macro count exceeds resolved editing steps"))?;
-        if minimum_cuts > MAX_COMPOUND_STEPS - self.steps.len() {
+        if minimum_steps > MAX_COMPOUND_STEPS - self.steps.len() {
             return Err(limit("macro count exceeds 1024 resolved editing steps"));
         }
         // The selected Arc stays frozen for every counted repetition, even if
@@ -314,21 +384,29 @@ where
             "macro captured document byte limit",
         )?;
         let preflight = self.current.range_deletion(&self.context.parent, range)?;
-        let allocation = (self.allocate)(SemanticAllocationRequest {
-            cut_index: self.steps.len(),
+        let allocation = (self.allocate)(SemanticAllocationRequest::Cut {
+            step_index: self.steps.len(),
             required_split_ids: preflight.required_ids,
         })?;
-        if allocation.split_identities.nodes.len() != preflight.required_ids {
+        let SemanticAllocation::Cut {
+            new_revision,
+            capture_revision,
+            split_identities,
+        } = allocation
+        else {
+            return Err(invalid("macro cut requires a Cut allocation"));
+        };
+        if split_identities.nodes.len() != preflight.required_ids {
             return Err(invalid(
                 "macro cut requires exactly its preflight Split identities",
             ));
         }
-        for revision in [&allocation.new_revision, &allocation.capture_revision] {
+        for revision in [&new_revision, &capture_revision] {
             if !self.revisions.insert(revision.clone()) {
                 return Err(identity("macro reuses a revision or capture allocation"));
             }
         }
-        for node in &allocation.split_identities.nodes {
+        for node in &split_identities.nodes {
             if !self.nodes.insert(node.clone()) {
                 return Err(identity("macro reuses a Split node identity"));
             }
@@ -338,18 +416,18 @@ where
             &self.context.parent,
             range,
             AudioTimingId {
-                allocation: allocation.capture_revision,
+                allocation: capture_revision,
                 ordinal: 0,
             },
         )?);
         let delete = LeafEdit::new(
-            allocation.new_revision.clone(),
+            new_revision.clone(),
             Command::DeleteRange {
                 parent: self.context.parent.clone(),
                 range,
-                identities: allocation.split_identities,
+                identities: split_identities,
                 timing: AudioTimingId {
-                    allocation: allocation.new_revision,
+                    allocation: new_revision,
                     ordinal: 0,
                 },
             },
@@ -375,6 +453,9 @@ where
         self.current = next;
         self.context.cursor = range.start();
         self.bounds = scope_bounds(&self.current, &self.context.parent)?;
+        self.child_ends = child_ends(&self.current, &self.context.parent, self.bounds)?;
+        self.context.selected_child =
+            selected_child(&self.child_ends, self.context.cursor, self.bounds);
         Ok(())
     }
 }
@@ -391,19 +472,57 @@ fn scope_bounds(
     Ok((start, end))
 }
 
-fn selected_child(
+fn validate_selection(
     document: &ProjectDocument,
     context: &SemanticContext,
-    bounds: (ProjectFrame, ProjectFrame),
-) -> Result<Option<NodeId>, EditError> {
+) -> Result<(), EditError> {
     let NodeKind::Sequence { children } = &document.nodes()[&context.parent].kind else {
+        unreachable!("scope_bounds admitted an ordinary Sequence")
+    };
+    if context
+        .selected_child
+        .as_ref()
+        .is_some_and(|selected| !children.contains(selected))
+    {
+        return Err(EditError::new(
+            EditErrorCode::SelectionUnavailable,
+            "the selected macro beat is not a direct child of its Sequence",
+        ));
+    }
+    Ok(())
+}
+
+fn occupied_nodes(document: &ProjectDocument) -> BTreeSet<NodeId> {
+    let mut nodes: BTreeSet<_> = document.nodes().keys().cloned().collect();
+    nodes.extend(
+        document
+            .audio_lineage()
+            .values()
+            .map(|lineage| lineage.origin.clone()),
+    );
+    for layout in document.audio_bindings().timings.values() {
+        nodes.extend(layout.nodes().keys().cloned());
+        nodes.extend(
+            layout
+                .audio_lineage()
+                .values()
+                .map(|lineage| lineage.origin.clone()),
+        );
+    }
+    nodes
+}
+
+fn child_ends(
+    document: &ProjectDocument,
+    parent: &NodeId,
+    bounds: (ProjectFrame, ProjectFrame),
+) -> Result<Vec<(NodeId, ProjectFrame)>, EditError> {
+    let NodeKind::Sequence { children } = &document.nodes()[parent].kind else {
         unreachable!("the ordinary Sequence scope was already admitted")
     };
-    if context.cursor == bounds.1 {
-        return Ok(children.last().cloned());
-    }
     let durations = document.durations()?;
     let mut start = bounds.0.0;
+    let mut result = Vec::with_capacity(children.len());
     for child in children {
         let end = start
             .checked_add(durations[child].frames())
@@ -413,12 +532,23 @@ fn selected_child(
                     "macro child boundary overflow",
                 )
             })?;
-        if start <= context.cursor.0 && context.cursor.0 < end {
-            return Ok(Some(child.clone()));
-        }
+        result.push((child.clone(), ProjectFrame(end)));
         start = end;
     }
-    Ok(None)
+    Ok(result)
+}
+
+fn selected_child(
+    child_ends: &[(NodeId, ProjectFrame)],
+    cursor: ProjectFrame,
+    bounds: (ProjectFrame, ProjectFrame),
+) -> Option<NodeId> {
+    if cursor == bounds.1 {
+        return child_ends.last().map(|(node, _)| node.clone());
+    }
+    child_ends
+        .get(child_ends.partition_point(|(_, end)| *end <= cursor))
+        .map(|(node, _)| node.clone())
 }
 
 fn charge(

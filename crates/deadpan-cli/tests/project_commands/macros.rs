@@ -45,7 +45,8 @@ fn run(document: &ProjectDocument, version: u64, register: &str, cursor: i64) ->
         document,
         version,
         json!({"type":"run","register":register,
-        "parent":document.root(),"cursor":cursor,"count":1,"new_revision":"macro-cut"}),
+        "parent":document.root(),"cursor":cursor,"selected_child":null,
+        "count":1,"new_revision":"macro-cut"}),
     )
 }
 
@@ -85,6 +86,260 @@ fn same_document(actual: &ProjectDocument, expected: &ProjectDocument) -> Result
     let mut expected = serde_json::to_value(expected)?;
     expected["revision_id"] = json!(actual.revision_id());
     assert_eq!(serde_json::to_value(actual)?, expected);
+    Ok(())
+}
+
+#[test]
+fn macro_yank_of_selected_empty_child_preserves_redo_and_has_only_a_bank_receipt() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = create(scratch.path())?;
+    let input = scratch.path().join("macro.json");
+    let initial = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    fs::write(&input, request(&initial)?.to_string())?;
+    success(&[
+        "command",
+        package.to_str().unwrap(),
+        "--json",
+        input.to_str().unwrap(),
+    ])?;
+    let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let before = writer.snapshot()?;
+    let empty = NodeId::new("empty")?;
+    writer.commit(&deadpan_core::CommandRequest {
+        project_id: before.project_id().clone(),
+        expected_revision: before.revision_id().clone(),
+        new_revision: RevisionId::new("with-empty")?,
+        command: Command::Insert {
+            parent: before.root().clone(),
+            index: 1,
+            subtree: Subtree {
+                root: empty.clone(),
+                nodes: BTreeMap::from([(
+                    empty.clone(),
+                    BeatNode::sequence("Empty selected beat", vec![]),
+                )]),
+                overrides: Default::default(),
+                gap_overrides: Default::default(),
+            },
+        },
+    })?;
+    let with_empty = writer.snapshot()?;
+    writer.commit(&deadpan_core::CommandRequest {
+        project_id: with_empty.project_id().clone(),
+        expected_revision: with_empty.revision_id().clone(),
+        new_revision: RevisionId::new("remove-empty")?,
+        command: Command::DeleteRipple {
+            node: empty.clone(),
+            timing: deadpan_core::AudioTimingId {
+                allocation: RevisionId::new("remove-empty")?,
+                ordinal: 0,
+            },
+        },
+    })?;
+    writer.undo(
+        &RevisionId::new("remove-empty")?,
+        RevisionId::new("restore-empty")?,
+    )?;
+    let before = writer.snapshot()?;
+    let availability = writer.history_availability()?;
+    assert!(availability.1);
+    drop(writer);
+    invoke(
+        &package,
+        &input,
+        &save(
+            &before,
+            0,
+            "a",
+            json!([
+                {"type":"yank_beat","register":"b"},
+            ]),
+        ),
+        false,
+    )?;
+    let mut yank = run(&before, 1, "a", 12);
+    yank["operation"]["selected_child"] = json!(empty);
+    let unchanged = state(&package)?;
+    let preview = invoke(&package, &input, &yank, true)?;
+    assert!(preview["edit"].is_null());
+    assert_eq!(state(&package)?, unchanged);
+    let result = invoke(&package, &input, &yank, false)?;
+    assert_eq!(result["committed"], true);
+    assert!(result["committed_revision"].is_null());
+    assert_eq!(result["committed_registers"]["bank_version"], 2);
+    assert_eq!(
+        result["committed_registers"]["revision_id"],
+        json!(before.revision_id())
+    );
+    assert_eq!(result["context"]["selected_child"], json!(empty));
+    assert_eq!(result["context"]["cursor"], 12);
+    let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    assert_eq!(writer.snapshot()?, before);
+    assert_eq!(writer.history_availability()?, availability);
+    let bank = writer.registers()?;
+    let RegisterValue::Edited { slice } = bank.entries[&RegisterName::new('b')?].as_ref() else {
+        panic!("selected empty beat was not copied")
+    };
+    assert_eq!(
+        slice.selection(),
+        &deadpan_core::SliceCaptureSelection::Child { node: empty }
+    );
+    assert_eq!(slice.duration().frames(), 0);
+    assert_eq!(slice.revision_id(), before.revision_id());
+    writer.redo(before.revision_id(), RevisionId::new("redo-empty-removal")?)?;
+    assert_eq!(writer.registers()?, bank);
+    writer.checkpoint()?;
+    drop(writer);
+    let reopened = ProjectStore::open(&package, AccessMode::ReadOnly)?;
+    assert_eq!(reopened.registers()?, bank);
+    reopened.validate()?;
+    Ok(())
+}
+
+#[test]
+fn counted_yank_paste_uses_staged_captures_and_round_trips_one_undo() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = create(scratch.path())?;
+    let input = scratch.path().join("macro.json");
+    let initial = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    fs::write(&input, request(&initial)?.to_string())?;
+    success(&[
+        "command",
+        package.to_str().unwrap(),
+        "--json",
+        input.to_str().unwrap(),
+    ])?;
+    let before = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    invoke(
+        &package,
+        &input,
+        &save(
+            &before,
+            0,
+            "a",
+            json!([
+                {"type":"yank_beat","register":"b"},
+                {"type":"paste","register":"b","before":true},
+            ]),
+        ),
+        false,
+    )?;
+    let mut operation = run(&before, 1, "a", 31);
+    operation["operation"]["selected_child"] = json!("hold");
+    operation["operation"]["count"] = json!(2);
+    let unchanged = state(&package)?;
+    let preview = invoke(&package, &input, &operation, true)?;
+    assert_eq!(preview["edit"]["duration_delta"], 90);
+    assert_eq!(preview["context"]["cursor"], 0);
+    assert_eq!(state(&package)?, unchanged);
+    let result = invoke(&package, &input, &operation, false)?;
+    assert_eq!(result["edit"]["duration_delta"], 90);
+    assert_eq!(result["committed_registers"]["bank_version"], 2);
+    let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    let after = writer.snapshot()?;
+    assert_eq!(after.duration()?.frames(), 135);
+    let bank = writer.registers()?;
+    let RegisterValue::Edited { slice } = bank.entries[&RegisterName::new('b')?].as_ref() else {
+        panic!("yank copy missing")
+    };
+    assert_ne!(slice.revision_id(), before.revision_id());
+    slice.validate_capture(&writer.capture_snapshot_at(slice.revision_id())?)?;
+    let database = rusqlite::Connection::open(package.join("project.sqlite"))?;
+    assert_eq!(
+        database.query_row("SELECT count(*) FROM history", [], |r| r.get::<_, i64>(0))?,
+        2
+    );
+    writer.undo(after.revision_id(), RevisionId::new("undo-yank-paste")?)?;
+    same_document(&writer.snapshot()?, &before)?;
+    assert_eq!(writer.registers()?, bank);
+    writer.checkpoint()?;
+    drop(writer);
+    let mut writer = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    writer.redo(
+        &RevisionId::new("undo-yank-paste")?,
+        RevisionId::new("redo-yank-paste")?,
+    )?;
+    same_document(&writer.snapshot()?, &after)?;
+    assert_eq!(writer.registers()?, bank);
+    writer.validate()?;
+    let before_paste = writer.snapshot()?;
+    let deadpan_core::NodeKind::Sequence { children } =
+        &before_paste.nodes()[before_paste.root()].kind
+    else {
+        unreachable!()
+    };
+    let selected = children[0].clone();
+    drop(writer);
+    invoke(
+        &package,
+        &input,
+        &save(
+            &before_paste,
+            bank.version,
+            "p",
+            json!([
+                {"type":"paste","register":"b","before":false},
+            ]),
+        ),
+        false,
+    )?;
+    let bank = ProjectStore::open(&package, AccessMode::ReadOnly)?.registers()?;
+    let mut paste = run(&before_paste, bank.version, "p", 131);
+    paste["operation"]["selected_child"] = json!(selected);
+    paste["operation"]["new_revision"] = json!("paste-only");
+    let result = invoke(&package, &input, &paste, false)?;
+    assert_eq!(result["committed_revision"], "paste-only");
+    assert!(result["committed_registers"].is_null());
+    let reader = ProjectStore::open(&package, AccessMode::ReadOnly)?;
+    assert_eq!(reader.registers()?, bank);
+    assert_eq!(reader.snapshot()?.duration()?.frames(), 180);
+    Ok(())
+}
+
+#[test]
+fn staged_paste_then_failed_call_and_missing_selection_leave_the_package_unchanged() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = create(scratch.path())?;
+    let input = scratch.path().join("macro.json");
+    let initial = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    fs::write(&input, request(&initial)?.to_string())?;
+    success(&[
+        "command",
+        package.to_str().unwrap(),
+        "--json",
+        input.to_str().unwrap(),
+    ])?;
+    let before = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    for (version, body) in [
+        (
+            0,
+            json!([{"type":"yank_beat","register":"b"},
+            {"type":"paste","register":"b","before":false},
+            {"type":"call","register":"z","count":1}]),
+        ),
+        (1, json!([{"type":"paste","register":"a","before":true}])),
+    ] {
+        invoke(&package, &input, &save(&before, version, "a", body), false)?;
+        let mut operation = run(&before, version + 1, "a", 22);
+        operation["operation"]["selected_child"] = json!("hold");
+        let error = reject(&package, &input, &operation)?;
+        assert_eq!(error["error"]["code"], "InvalidCommand");
+    }
+    invoke(
+        &package,
+        &input,
+        &save(
+            &before,
+            2,
+            "a",
+            json!([
+                {"type":"yank_beat","register":"b"},
+            ]),
+        ),
+        false,
+    )?;
+    let error = reject(&package, &input, &run(&before, 3, "a", 22))?;
+    assert_eq!(error["error"]["code"], "SelectionUnavailable");
     Ok(())
 }
 

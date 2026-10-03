@@ -24,6 +24,13 @@ pub enum SemanticInstruction {
         operation: FrameCut,
         register: RegisterName,
     },
+    YankBeat {
+        register: RegisterName,
+    },
+    Paste {
+        register: RegisterName,
+        before: bool,
+    },
     Call {
         register: RegisterName,
         count: NonZeroU32,

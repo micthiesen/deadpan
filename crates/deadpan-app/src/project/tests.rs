@@ -1119,15 +1119,32 @@ fn interrupted_initialization_is_recoverable_and_never_overlaps_after_project_sw
         reopened.single_source,
         Some(SingleSourceState::AwaitingSource { .. })
     ));
-    let stale = command(
-        &harness.service,
-        ProjectRequest::InitializeSource {
+    harness
+        .service
+        .submit(ProjectRequest::InitializeSource {
             expected_session: created.session,
             expected_revision: created.document.revision_id().clone(),
             path: fixture("cfr-bframes.mp4"),
-        },
-    );
+        })
+        .unwrap();
+    // The cancelled worker can republish after Open. Idle alone does not bind
+    // that publication to this request because busy clears before publication.
+    let stale = wait(&harness.service, |update| {
+        !harness.service.is_busy()
+            && update.workspace.as_ref().is_some_and(|workspace| {
+                workspace.session == reopened.session
+                    && workspace.document.revision_id() == reopened.document.revision_id()
+            })
+            && update
+                .error
+                .as_deref()
+                .is_some_and(|error| error.contains("session changed"))
+    });
     assert!(stale.error.unwrap().contains("session changed"));
+    assert!(matches!(
+        harness.jobs.try_recv(),
+        Err(std::sync::mpsc::TryRecvError::Empty)
+    ));
     let retry = command(
         &harness.service,
         ProjectRequest::InitializeSource {

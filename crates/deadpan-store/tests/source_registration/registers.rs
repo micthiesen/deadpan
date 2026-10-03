@@ -181,6 +181,50 @@ fn compound_original_paste_checks_exact_ordinals_and_retains_intermediate_yank()
     );
     drop(db);
 
+    // A cached qualified mapping remains an equality check on every paste.
+    // The second leaf uses the same register and duration with different PTS.
+    let mut repeated = make(expected.clone())?;
+    let Command::Compound { transaction } = &repeated.command else {
+        unreachable!()
+    };
+    let second = ResolvedStep::Paste {
+        name: a,
+        edit: LeafEdit::new(
+            revision("second-paste-stage"),
+            Command::SpliceSource {
+                parent: before.root().clone(),
+                index: 1,
+                source: source(4..10)?,
+                id: NodeId::new("second-pasted")?,
+                label: "Wrong repeated mapping".into(),
+                timing: AudioTimingId {
+                    allocation: revision("second-paste-stage"),
+                    ordinal: 0,
+                },
+            },
+        )?,
+    };
+    repeated.command = Command::Compound {
+        transaction: ResolvedTransaction::new(
+            bank.version,
+            transaction.inputs().clone(),
+            vec![transaction.steps()[0].clone(), second],
+        )?,
+    };
+    deadpan_core::apply(&before, &repeated)?;
+    for error in [
+        store.preview_compound(&repeated).unwrap_err(),
+        store.commit_compound(&repeated, None).unwrap_err(),
+    ] {
+        assert!(
+            error.to_string().contains("qualified register ordinals"),
+            "{error}"
+        );
+    }
+    assert_eq!(store.snapshot()?, before);
+    assert_eq!(store.registers()?, bank);
+    assert_eq!(counts(&path)?, counts_before);
+
     let good = make(expected.clone())?;
     let preview = store.preview_compound(&good)?;
     let saved = store.commit(&good)?;
@@ -215,5 +259,124 @@ fn compound_original_paste_checks_exact_ordinals_and_retains_intermediate_yank()
             .assets(),
         before.assets()
     );
+    Ok(())
+}
+
+#[test]
+fn counted_semantic_original_paste_keeps_exact_mapping_through_undo_and_reopen() -> Result {
+    use deadpan_core::{
+        ProjectFrame, SemanticAllocation, SemanticAllocationRequest, SemanticContext,
+        SemanticInstruction, SemanticProgram, SemanticRegisterBank, plan_semantic,
+    };
+    use deadpan_media::source_import_timing::derive_source_moment;
+    use std::num::NonZeroU32;
+
+    let scratch = tempfile::tempdir()?;
+    let (path, mut store) = project(scratch.path())?;
+    let original = retain(&mut store, "offset-bframes.mp4")?;
+    let decoded = decode(&store, &original)?;
+    let register = request(&store, &original, "register", "camera", None)?;
+    let registered = store.register_source(&register, &decoded, None, limits(), &active())?;
+    let before = store.snapshot()?;
+    let a = RegisterName::new('a')?;
+    let b = RegisterName::new('b')?;
+    let original = RegisterValue::Original {
+        revision: before.revision_id().clone(),
+        asset: id("camera"),
+        qualification: registered.qualification.clone(),
+        ordinals: 3..9,
+    };
+    let bank = store.save_register(
+        before.project_id(),
+        before.revision_id(),
+        a,
+        original.clone(),
+    )?;
+    let body = Arc::new(SemanticProgram::new(vec![SemanticInstruction::Paste {
+        register: a,
+        before: false,
+    }])?);
+    let bank = store.save_macro(
+        before.project_id(),
+        before.revision_id(),
+        bank.version,
+        b,
+        body,
+    )?;
+    let receipt = store.source_qualification(&registered.qualification)?;
+    let expected = derive_source_moment(
+        receipt.snapshot().video().unwrap().index(),
+        receipt.snapshot().audio(),
+        3..9,
+        before.presentation_basis().frame_rate,
+    )?
+    .source_node(id("camera"));
+    let program = SemanticProgram::new(vec![SemanticInstruction::Call {
+        register: b,
+        count: NonZeroU32::new(2).unwrap(),
+    }])?;
+    let plan = plan_semantic(
+        &before,
+        &SemanticContext {
+            parent: before.root().clone(),
+            cursor: ProjectFrame(0),
+            selected_child: None,
+        },
+        &program,
+        SemanticRegisterBank {
+            entries: &bank.entries,
+            version: bank.version,
+        },
+        revision("semantic-original"),
+        |request| {
+            let SemanticAllocationRequest::PasteOriginal { step_index } = request else {
+                unreachable!()
+            };
+            Ok(SemanticAllocation::PasteOriginal {
+                new_revision: revision(&format!("paste-{step_index}")),
+                node: NodeId::new(format!("pasted-{step_index}"))?,
+            })
+        },
+        |document, value| {
+            assert_eq!(value, &original);
+            assert_eq!(document.presentation_basis(), before.presentation_basis());
+            Ok(expected.clone())
+        },
+    )?;
+    let request = plan.request.as_ref().unwrap();
+    let preview = store.preview_compound(request)?;
+    assert_eq!(preview.register_bank, bank);
+    let saved = store.commit_compound(request, None)?;
+    assert!(saved.committed.is_some());
+    assert_eq!(saved.register_bank, bank);
+    let after = store.snapshot()?;
+    assert_eq!(after.duration()?.frames(), expected.duration.frames() * 2);
+    let NodeKind::Sequence { children } = &after.nodes()[after.root()].kind else {
+        unreachable!()
+    };
+    assert_eq!(children.len(), 2);
+    for child in children {
+        let NodeKind::Source { source } = &after.nodes()[child].kind else {
+            panic!("Original Source")
+        };
+        assert_eq!(source, &expected);
+    }
+    store.undo(after.revision_id(), revision("undo-semantic-original"))?;
+    let mut expected_undo = serde_json::to_value(&before)?;
+    expected_undo["revision_id"] = serde_json::json!("undo-semantic-original");
+    assert_eq!(serde_json::to_value(store.snapshot()?)?, expected_undo);
+    assert_eq!(store.registers()?, bank);
+    store.checkpoint()?;
+    drop(store);
+    let mut reopened = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    reopened.redo(
+        &revision("undo-semantic-original"),
+        revision("redo-semantic-original"),
+    )?;
+    let mut expected_redo = serde_json::to_value(&after)?;
+    expected_redo["revision_id"] = serde_json::json!("redo-semantic-original");
+    assert_eq!(serde_json::to_value(reopened.snapshot()?)?, expected_redo);
+    assert_eq!(reopened.registers()?, bank);
+    reopened.validate()?;
     Ok(())
 }

@@ -1,0 +1,115 @@
+import gzip
+import hashlib
+import json
+from pathlib import Path
+import re
+
+root = Path('/Users/michael/Code/deadpan')
+scratch = Path(__file__).parent
+evidence = root / 'tools/media-qualification/evidence/2026-10-02-macro-reuse'
+metadata = json.loads((evidence / 'metadata.json').read_text())
+report = json.loads((scratch / 'replay-corrected/report.json').read_text())
+assert not report['failed']
+macro = next(s for s in report['scenarios'] if s['name'] == 'macros')
+assert len(macro['checks']) == 188 and all(c['passed'] for c in macro['checks'])
+audit = next(s for s in report['scenarios'] if s['name'] == 'kestrel-shortcuts')['checks'][0]['actual']
+
+old = json.loads((scratch / 'source-0292077b245bb0613ea4991cf63e448762657dbeda7e352512b6713c902d866a.json').read_text())
+current = json.loads((scratch / f'source-{metadata["final_source_manifest_sha256"]}.json').read_text())
+changed = [p for p in sorted(old.keys() | current.keys()) if old.get(p) != current.get(p)]
+assert changed == ['crates/deadpan-app/src/preview/harness/macros/reuse.rs', 'crates/deadpan-app/src/project/tests.rs'], changed
+(evidence / 'source-scope.json').write_text(json.dumps({'changed_after_full_test_run': changed, 'production_source_unchanged': True}, indent=2)+'\n')
+
+checks = '''| Check | Result |
+| --- | --- |
+| Core, store, CLI and default-feature app tests | 2,481 passed across 101 suites; none failed or ignored |
+| Final default-feature app checks after test synchronization fix | 659 unit and 4 headless tests passed |
+| Final app checks with `ui-harness` after test synchronization fix | 695 unit and 4 headless tests passed |
+| Strict all-target Clippy across affected crates | Passed |
+| Final app Clippy with default and UI features | Passed |
+| Workspace formatting and final `ui-harness` build | Passed |
+| Rendered Macro workflow | 188 checks passed across 721 steps |
+| Production Kestrel compatibility audit | 487,568 routing cases, 62 reserved bindings, no conflicts or source drift |
+
+The Kestrel audit compared live source SHA-256
+`368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2`.
+The replay used the qualified `cfr-bframes.mp4` fixture and real Metal pipeline.'''
+
+visuals = '''The main agent inspected these 960 by 640 captures:
+
+- [Recording copy and both paste directions](../../tools/media-qualification/evidence/2026-10-02-macro-reuse/screenshots/macros-124.png):
+  three instructions are recorded, the new group is selected at Edit 120 and
+  the picture shows Original frame 0. Recording controls and footer are visible.
+- [Counted Edited reuse](../../tools/media-qualification/evidence/2026-10-02-macro-reuse/screenshots/macros-125.png):
+  five editable beats span 600 frames, the new group is selected at Edit 240,
+  and completion reports one Undo.
+- [Counted Original reuse](../../tools/media-qualification/evidence/2026-10-02-macro-reuse/screenshots/macros-126.png):
+  three three-frame copies follow the baseline. The final selected copy starts
+  at Edit 126 and displays Original frame 10; both clocks remain labelled.
+- [Reopened inventory](../../tools/media-qualification/evidence/2026-10-02-macro-reuse/screenshots/macros-127.png):
+  the saved `e` and `o` Macros retain three and one instructions respectively.
+
+The replay reached its intermediate screenshot allowance; semantic checks and
+named captures continued. Debug linking reported the existing `__eh_frame`
+size warning. Neither warning was suppressed. No release-build or performance
+claim follows from this run. The final process check found no `deadpan-app`
+process running.'''
+
+text = (scratch / 'qualification.md').read_text()
+for key, value in {'SOURCE_HASH': metadata['final_source_manifest_sha256'], 'BINARY_HASH': metadata['binary_sha256'], 'CHECK_RESULTS': checks, 'VISUAL_RESULTS': visuals}.items():
+    assert text.count(key) == 1, key
+    text = text.replace(key, value)
+qualification = root / 'docs/qualification/macro-reuse-2026-10-02.md'
+qualification.write_text(text)
+
+def replace(path, old, new):
+    p = root / path
+    value = p.read_text()
+    assert value.count(old) == 1, (path, old)
+    p.write_text(value.replace(old, new))
+
+replace('docs/REQUIREMENTS.md',
+        'editing instructions and the complete product acceptance remain open.\n',
+        'editing instructions and the complete product acceptance remain open.\nSee [qualification and retained failures](qualification/macro-reuse-2026-10-02.md).\n')
+replace('docs/spec/AGENT_HANDOFF.md',
+        'every paste still compares its full source mapping.\n',
+        'every paste still compares its full source mapping.\nSee [reuse qualification](../qualification/macro-reuse-2026-10-02.md) for core,\nstore, native/headless, counted replay and corrected test-fixture evidence.\n')
+replace('docs/SEMANTIC_MACROS.md',
+        'This is partial DP-06 implementation, not full macro acceptance.\n',
+        'This is partial DP-06 implementation, not full macro acceptance.\nSee [copy/paste qualification](qualification/macro-reuse-2026-10-02.md) for\nchecks, rendered captures, retained failures and remaining limits.\n')
+
+(evidence / 'README.md').write_text('''# Macro copy and paste evidence
+
+See [qualification and limits](../../../../docs/qualification/macro-reuse-2026-10-02.md).
+
+This directory retains complete compressed check logs, command metadata,
+before/after source inventories, peer review notes, failed and corrected rendered
+reports, and four inspected final captures. `metadata.json` identifies the
+hardware, toolchain, final binary and passing test totals. `source-scope.json`
+records the test-only changes after the full affected-crate run.
+
+The first affected run, UI initialization-test race, empty-register replay
+fixture error, and zero-test diagnostic retry are retained and explained in the
+qualification record. They are not represented as passing verification.
+
+Scripts are retained as `.py.txt` to avoid changing the checked source inventory.
+Scratch projects, original media and authenticated discovery secrets are excluded.
+`cleanup.json` records no running Deadpan app. `SHA256SUMS` covers every retained
+file except itself.
+''')
+(evidence / 'scripts/finalize-docs.py.txt').write_bytes(Path(__file__).read_bytes())
+
+paths = [root / p for p in ['AGENTS.md', 'docs/HEADLESS.md', 'docs/LIVE_PROJECT.md', 'docs/REQUIREMENTS.md', 'docs/SEMANTIC_MACROS.md', 'docs/spec/AGENT_HANDOFF.md']]
+paths += [qualification, evidence / 'README.md']
+checked = 0
+for p in paths:
+    for target in re.findall(r'\]\(([^)]+)\)', p.read_text()):
+        if '://' in target or target.startswith('#'):
+            continue
+        target = target.split('#',1)[0]
+        assert (p.parent / target).exists(), (str(p), target)
+        checked += 1
+(evidence / 'documentation.json').write_text(json.dumps({'files': len(paths), 'local_link_targets_checked': checked, 'missing': []}, indent=2)+'\n')
+files = sorted(p for p in evidence.rglob('*') if p.is_file() and p.name != 'SHA256SUMS')
+(evidence / 'SHA256SUMS').write_text(''.join(f'{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.relative_to(evidence)}\n' for p in files))
+print(json.dumps({'qualification': str(qualification), 'evidence_files': len(files)+1, 'local_links_checked': checked, 'audit': audit},indent=2))

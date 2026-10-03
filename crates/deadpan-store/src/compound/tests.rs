@@ -591,22 +591,33 @@ fn planned_macro_multi_cut_has_one_undo_and_final_copy_survives_reopen_and_body_
         &SemanticContext {
             parent: node("root"),
             cursor: ProjectFrame(0),
+            selected_child: None,
         },
         &invocation,
-        &bank.entries,
-        bank.version,
+        SemanticRegisterBank {
+            entries: &bank.entries,
+            version: bank.version,
+        },
         revision("macro-run"),
         |allocation| {
-            Ok(SemanticAllocation {
-                new_revision: revision(&format!("macro-step-{}", allocation.cut_index)),
-                capture_revision: revision(&format!("macro-capture-{}", allocation.cut_index)),
+            let SemanticAllocationRequest::Cut {
+                step_index,
+                required_split_ids,
+            } = allocation
+            else {
+                unreachable!()
+            };
+            Ok(SemanticAllocation::Cut {
+                new_revision: revision(&format!("macro-step-{step_index}")),
+                capture_revision: revision(&format!("macro-capture-{step_index}")),
                 split_identities: SplitIdentities {
-                    nodes: (0..allocation.required_split_ids)
-                        .map(|index| node(&format!("macro-split-{}-{index}", allocation.cut_index)))
+                    nodes: (0..required_split_ids)
+                        .map(|index| node(&format!("macro-split-{step_index}-{index}")))
                         .collect(),
                 },
             })
         },
+        |_, _| unreachable!("this macro has no Original paste"),
     )
     .unwrap();
     let request = plan.request.as_ref().unwrap();
