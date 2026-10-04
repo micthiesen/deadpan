@@ -13,6 +13,8 @@ use std::fs::{File, OpenOptions};
 use std::io::{self, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc;
+use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 use sha2::Digest;
@@ -53,6 +55,8 @@ pub enum PackError {
     Verification { file: String, reason: &'static str },
     #[error("model pack installation was cancelled")]
     Cancelled,
+    #[error("another installation of this model pack is running")]
+    Busy,
     #[error(transparent)]
     Io(#[from] io::Error),
     #[error(transparent)]
@@ -222,6 +226,8 @@ pub struct InstallProgress {
 pub struct StagedPack {
     manifest: PackManifest,
     directory: PathBuf,
+    /// Exclusive install lock, held until activation or discard.
+    _lock: File,
 }
 
 impl StagedPack {
@@ -289,6 +295,26 @@ impl PackStore {
             .join(&manifest.pack_version)
     }
 
+    /// Serialize installers of one pack version across processes. The lock
+    /// lives beside staging, so it never moves into an installed pack.
+    fn lock(&self, manifest: &PackManifest) -> Result<File, PackError> {
+        let directory = self.root.join(".staging");
+        std::fs::create_dir_all(&directory)?;
+        let file = OpenOptions::new()
+            .create(true)
+            .truncate(false)
+            .write(true)
+            .open(directory.join(format!(
+                "{}-{}.lock",
+                manifest.pack_id, manifest.pack_version
+            )))?;
+        match rustix::fs::flock(&file, rustix::fs::FlockOperation::NonBlockingLockExclusive) {
+            Ok(()) => Ok(file),
+            Err(rustix::io::Errno::WOULDBLOCK) => Err(PackError::Busy),
+            Err(error) => Err(io::Error::from(error).into()),
+        }
+    }
+
     fn staging(&self, manifest: &PackManifest) -> PathBuf {
         self.root
             .join(".staging")
@@ -337,6 +363,7 @@ impl PackStore {
         mut progress: impl FnMut(InstallProgress),
     ) -> Result<StagedPack, PackError> {
         manifest.validate()?;
+        let lock = self.lock(manifest)?;
         let staging = self.staging(manifest);
         std::fs::create_dir_all(&staging)?;
         let downloaded: u64 = manifest
@@ -360,7 +387,11 @@ impl PackStore {
         let mut completed = 0;
         for file in &manifest.files {
             let finished = staging.join(&file.name);
-            if std::fs::metadata(&finished).is_ok_and(|metadata| metadata.len() == file.bytes) {
+            // A finished file may come from an earlier manifest with the same
+            // name and size; reuse it only after its hash matches.
+            if std::fs::metadata(&finished).is_ok_and(|metadata| metadata.len() == file.bytes)
+                && verify_file(file, &finished, cancelled).is_ok()
+            {
                 completed += file.bytes;
                 progress(InstallProgress {
                     completed_bytes: completed,
@@ -391,6 +422,7 @@ impl PackStore {
         Ok(StagedPack {
             manifest: manifest.clone(),
             directory: staging,
+            _lock: lock,
         })
     }
 
@@ -468,43 +500,52 @@ fn download_file(
     if offset == file.bytes {
         return Ok(());
     }
-    let mut download = transport.fetch(&file.url, offset)?;
+    let download = transport.fetch(&file.url, offset)?;
     if download.offset != offset {
-        if download.offset != 0 {
-            return Err(PackError::Transport(
-                "server resumed from an unexpected offset".into(),
-            ));
-        }
+        // A full response restarts here; any other offset restarts next time.
         output.set_len(0)?;
         offset = 0;
+        if download.offset != 0 {
+            return Err(PackError::Transport(
+                "server resumed from an unexpected offset; the download will restart".into(),
+            ));
+        }
     }
     output.seek(SeekFrom::Start(offset))?;
-    let mut buffer = vec![0_u8; 1 << 20];
+    let chunks = read_in_background(download.body);
+    let mut last_data = Instant::now();
     loop {
         if cancelled.load(Ordering::Acquire) {
             output.sync_all()?;
             return Err(PackError::Cancelled);
         }
-        let read = match download.body.read(&mut buffer) {
-            Ok(read) => read,
-            Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
-            Err(error) => {
+        let chunk = match chunks.recv_timeout(POLL) {
+            Ok(Ok(chunk)) => chunk,
+            Ok(Err(error)) => {
                 output.sync_all()?;
                 return Err(PackError::Transport(error.to_string()));
             }
+            Err(mpsc::RecvTimeoutError::Timeout) => {
+                if last_data.elapsed() >= STALL {
+                    output.sync_all()?;
+                    return Err(PackError::Transport(
+                        "the download stalled; it will resume".into(),
+                    ));
+                }
+                continue;
+            }
+            Err(mpsc::RecvTimeoutError::Disconnected) => break,
         };
-        if read == 0 {
-            break;
-        }
-        if offset + read as u64 > file.bytes {
+        last_data = Instant::now();
+        if offset + chunk.len() as u64 > file.bytes {
             output.set_len(0)?;
             return Err(PackError::Verification {
                 file: file.name.clone(),
                 reason: "download is longer than its manifest",
             });
         }
-        output.write_all(&buffer[..read])?;
-        offset += read as u64;
+        output.write_all(&chunk)?;
+        offset += chunk.len() as u64;
         progress(offset);
     }
     output.sync_all()?;
@@ -515,6 +556,37 @@ fn download_file(
         )));
     }
     Ok(())
+}
+
+/// How often a download checks for cancellation while waiting for data.
+const POLL: Duration = Duration::from_millis(200);
+/// A body that delivers nothing for this long is abandoned and resumed later.
+const STALL: Duration = Duration::from_secs(60);
+
+/// Read a response body on its own thread, so cancellation and stall
+/// detection never wait on a blocked socket read. An abandoned reader ends
+/// when its read returns and the receiver is gone.
+fn read_in_background(mut body: Box<dyn Read + Send>) -> mpsc::Receiver<io::Result<Vec<u8>>> {
+    let (sender, receiver) = mpsc::sync_channel(4);
+    std::thread::spawn(move || {
+        loop {
+            let mut buffer = vec![0_u8; 1 << 20];
+            let result = match body.read(&mut buffer) {
+                Ok(0) => return,
+                Ok(read) => {
+                    buffer.truncate(read);
+                    Ok(buffer)
+                }
+                Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
+                Err(error) => Err(error),
+            };
+            let failed = result.is_err();
+            if sender.send(result).is_err() || failed {
+                return;
+            }
+        }
+    });
+    receiver
 }
 
 fn verify_file(file: &PackFile, path: &Path, cancelled: &AtomicBool) -> Result<(), PackError> {

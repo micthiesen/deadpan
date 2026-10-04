@@ -122,6 +122,26 @@ Replay uses an empty model directory, so it never downloads or uses an
 installed model; the `transcript` scenario saves a synthetic transcript through
 the real service and checks display, search, current word and exact jumps.
 
+## Failure handling
+
+A finished transcript is submitted to the project service without the side
+effects of a user command (playback, repeats and pending keys are untouched);
+a busy service is retried on a later frame. The service reports each save by
+session and attempt, so a rejected or failed save shows as a failure with Try
+again. A stored transcript that fails validation is skipped on open, and the
+app transcribes again and replaces it. The worker treats end of input from its
+host as cancellation, and the app cancels and briefly joins its job thread on
+quit, so recognition never continues unowned. An unrequested `cancelled` reply
+is a protocol failure.
+
+Known limits: the host and worker each hold analysis PCM twice while
+transferring it (about 1.4 GB at the three-hour cap); the worker hashes the
+model and whisper.cpp then opens it by path; a script without spaces between
+words (for example CJK with a multilingual model, reachable only through the
+CLI) can exceed the word length and fail the whole transcript; preparation of
+very long Originals is unmeasured and reports no progress; search normalizes
+every word per query.
+
 ## Remaining
 
 Transcript display through Your edit, keyboard word motions and `/`

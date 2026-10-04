@@ -135,5 +135,10 @@ fn tampered_stored_transcripts_fail_on_read_and_validation() -> Result {
     let reader = ProjectStore::open(&path, AccessMode::ReadOnly)?;
     assert!(reader.transcript(&key("en")).is_err());
     assert!(reader.transcripts_for_content("blake3:original").is_err());
+    // Keys list without parsing, so a caller can skip the unreadable row.
+    assert_eq!(
+        reader.transcript_keys_for_content("blake3:original")?,
+        [key("en")]
+    );
     Ok(())
 }

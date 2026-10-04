@@ -317,3 +317,118 @@ fn content_ranges_parse_their_first_byte_and_space_is_measurable() {
     let directory = tempfile::tempdir().unwrap();
     assert!(available_space(directory.path()).unwrap() > 0);
 }
+
+/// Serves the first bytes, then blocks like a stalled socket until dropped.
+struct Stalling(Vec<u8>);
+
+struct Blocking {
+    first: Option<Vec<u8>>,
+}
+
+impl Read for Blocking {
+    fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+        if let Some(first) = self.first.take() {
+            buffer[..first.len()].copy_from_slice(&first);
+            return Ok(first.len());
+        }
+        // Park until the test process ends; the download must not wait here.
+        loop {
+            std::thread::park();
+        }
+    }
+}
+
+impl Transport for Stalling {
+    fn fetch(&self, _url: &str, _offset: u64) -> Result<Download, PackError> {
+        Ok(Download {
+            offset: 0,
+            body: Box::new(Blocking {
+                first: Some(self.0[..1000].to_vec()),
+            }),
+        })
+    }
+}
+
+#[test]
+fn cancelling_a_stalled_download_returns_promptly_and_keeps_its_bytes() {
+    let root = tempfile::tempdir().unwrap();
+    let store = PackStore::new(root.path().to_path_buf());
+    let bytes = payload();
+    let manifest = manifest(&bytes);
+    let cancelled = std::sync::Arc::new(AtomicBool::new(false));
+    let setter = std::sync::Arc::clone(&cancelled);
+    std::thread::spawn(move || {
+        std::thread::sleep(Duration::from_millis(300));
+        setter.store(true, Ordering::Release);
+    });
+    let started = Instant::now();
+    let error = store
+        .stage(&manifest, &Stalling(bytes), plenty, &cancelled, |_| {})
+        .unwrap_err();
+    assert!(matches!(error, PackError::Cancelled), "{error}");
+    assert!(started.elapsed() < Duration::from_secs(5));
+    let partial = store.staging(&manifest).join("model.bin.part");
+    assert_eq!(std::fs::metadata(partial).unwrap().len(), 1000);
+}
+
+#[test]
+fn unexpected_resume_offsets_restart_and_installs_are_exclusive() {
+    struct Shifted(Vec<u8>, Mutex<Vec<u64>>);
+    impl Transport for Shifted {
+        fn fetch(&self, _url: &str, offset: u64) -> Result<Download, PackError> {
+            self.1.lock().unwrap().push(offset);
+            // Answers a resume from the wrong place, and a fresh start fully.
+            let start = if offset > 0 { offset / 2 } else { 0 };
+            Ok(Download {
+                offset: start,
+                body: Box::new(io::Cursor::new(self.0[start as usize..].to_vec())),
+            })
+        }
+    }
+    let root = tempfile::tempdir().unwrap();
+    let store = PackStore::new(root.path().to_path_buf());
+    let bytes = payload();
+    let manifest = manifest(&bytes);
+    let staging = store.staging(&manifest);
+    std::fs::create_dir_all(&staging).unwrap();
+    std::fs::write(staging.join("model.bin.part"), &bytes[..1_000_000]).unwrap();
+    let transport = Shifted(bytes.clone(), Mutex::new(Vec::new()));
+    let error = store
+        .stage(
+            &manifest,
+            &transport,
+            plenty,
+            &AtomicBool::new(false),
+            |_| {},
+        )
+        .unwrap_err();
+    assert!(matches!(error, PackError::Transport(_)), "{error}");
+    assert_eq!(
+        std::fs::metadata(staging.join("model.bin.part"))
+            .unwrap()
+            .len(),
+        0
+    );
+    let staged = store
+        .stage(
+            &manifest,
+            &transport,
+            plenty,
+            &AtomicBool::new(false),
+            |_| {},
+        )
+        .unwrap();
+    assert_eq!(*transport.1.lock().unwrap(), [1_000_000, 0]);
+
+    // The staged pack holds the install lock until it is activated.
+    let second = store.stage(
+        &manifest,
+        &Memory::new(bytes.clone()),
+        plenty,
+        &AtomicBool::new(false),
+        |_| {},
+    );
+    assert!(matches!(second, Err(PackError::Busy)));
+    store.activate(staged).unwrap();
+    assert!(store.installed(&manifest).unwrap().is_some());
+}

@@ -8,6 +8,7 @@ impl Service {
     pub(super) fn save_transcript_command(
         &mut self,
         expected_session: u64,
+        attempt: u64,
         key: deadpan_store::TranscriptKey,
         transcript: Arc<deadpan_analysis::Transcript>,
     ) {
@@ -25,9 +26,17 @@ impl Service {
                 },
             ))))
         })();
-        match result {
-            Ok(workspace) => self.workspace = Some(workspace),
-            Err(error) => self.error = Some(format!("Transcript not saved: {error}")),
-        }
+        let error = match result {
+            Ok(workspace) => {
+                self.workspace = Some(workspace);
+                None
+            }
+            Err(error) => Some(error.to_string()),
+        };
+        self.transcript_save = Some(crate::project::TranscriptSave {
+            session: expected_session,
+            attempt,
+            error,
+        });
     }
 }

@@ -226,7 +226,12 @@ pub fn transcribe(
                             TranscriptionError::Worker(diagnostic.as_str().to_owned())
                         });
                     }
-                    WorkerMessage::Cancelled { .. } => was_cancelled = true,
+                    WorkerMessage::Cancelled { .. } if was_cancelled => {}
+                    WorkerMessage::Cancelled { .. } => {
+                        failure.get_or_insert_with(|| {
+                            TranscriptionError::Protocol("unrequested cancellation".into())
+                        });
+                    }
                 },
                 ProcessEvent::Fault(reason) => {
                     failure.get_or_insert(TranscriptionError::Worker(reason));
@@ -556,13 +561,16 @@ pub fn run_transcribe(arguments: &[&str]) -> Result<(), crate::CliError> {
         ))?,
         _ => return Err(usage()),
     };
-    let store = deadpan_store::ProjectStore::open(
+    // Read-only while preparing and recognizing, which can take hours, so
+    // the app can keep editing the project; the writer is taken only to save.
+    let reader = deadpan_store::ProjectStore::open(
         std::path::Path::new(path),
-        deadpan_store::AccessMode::ReadWrite,
+        deadpan_store::AccessMode::ReadOnly,
     )?;
     let cancelled = AtomicBool::new(false);
     let deadline = Instant::now() + Duration::from_secs(6 * 60 * 60);
-    let analysis = prepare_original_audio(&store, asset.as_ref(), &cancelled, deadline)?;
+    let analysis = prepare_original_audio(&reader, asset.as_ref(), &cancelled, deadline)?;
+    drop(reader);
     let attempt = uuid::Uuid::new_v4().simple().to_string();
     let language_label: String = language.clone().into();
     let result = transcribe(
@@ -582,7 +590,11 @@ pub fn run_transcribe(arguments: &[&str]) -> Result<(), crate::CliError> {
         language: language_label,
         engine: result.runtime.engine.clone(),
     };
-    store.save_transcript(&key, &result.transcript)?;
+    deadpan_store::ProjectStore::open(
+        std::path::Path::new(path),
+        deadpan_store::AccessMode::ReadWrite,
+    )?
+    .save_transcript(&key, &result.transcript)?;
     let words = result.transcript.words();
     crate::write_json(&serde_json::json!({
         "protocol": 1,

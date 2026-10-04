@@ -26,6 +26,7 @@ enum Event {
     Installing(InstallProgress),
     Installed,
     InstallFailed(String),
+    InstallCancelled,
     Progress(u8),
     Transcribed(Result<(TranscriptKey, Transcript), String>),
 }
@@ -41,7 +42,8 @@ enum Status {
     },
     Preparing,
     Transcribing(u8),
-    Saving,
+    /// Waiting for the service to store this attempt.
+    Saving(u64),
     Failed(String),
     Ready,
 }
@@ -56,6 +58,17 @@ pub(super) struct Transcription {
     current_match: Option<usize>,
     /// Model storage; None is the global Application Support directory.
     models_root: Option<std::path::PathBuf>,
+    /// A finished transcript not yet admitted by a busy project service.
+    unsaved: Option<(TranscriptKey, Arc<Transcript>)>,
+    attempts: u64,
+    /// A word chosen by click or search and the Original picture it moved to.
+    /// While the cursor stays there, that word is current even when a later
+    /// word also begins in the same picture.
+    chosen: Option<(usize, u64)>,
+    /// Enter (true) or Shift+Enter (false) pressed in Find words this frame.
+    step: Option<bool>,
+    /// The background thread, joined briefly at exit so its worker is reaped.
+    thread: Option<std::thread::JoinHandle<()>>,
 }
 
 impl Default for Transcription {
@@ -69,18 +82,48 @@ impl Default for Transcription {
             matches: Vec::new(),
             current_match: None,
             models_root: None,
+            unsaved: None,
+            chosen: None,
+            step: None,
+            attempts: 0,
+            thread: None,
         }
     }
 }
 
 impl Transcription {
+    /// A new project session cancels its transcription. A model install
+    /// belongs to every project, so it continues and reports here.
     fn reset(&mut self, session: Option<u64>) {
-        self.cancel.store(true, Ordering::Release);
+        let installing = matches!(self.status, Status::Installing { .. });
+        if !installing {
+            self.cancel.store(true, Ordering::Release);
+        }
+        let previous = std::mem::take(self);
         *self = Self {
             session,
-            models_root: self.models_root.take(),
+            models_root: previous.models_root,
+            attempts: previous.attempts,
             ..Self::default()
         };
+        if installing {
+            self.status = previous.status;
+            self.events = previous.events;
+            self.cancel = previous.cancel;
+            self.thread = previous.thread;
+        }
+    }
+
+    pub(super) fn receive_save(&mut self, save: Option<crate::project::TranscriptSave>) {
+        let Some(save) = save else {
+            return;
+        };
+        if self.session != Some(save.session) || self.status != Status::Saving(save.attempt) {
+            return;
+        }
+        if let Some(error) = save.error {
+            self.status = Status::Failed(format!("the transcript was not saved: {error}"));
+        }
     }
 
     /// Use a private model directory, for example an empty one in replay.
@@ -96,8 +139,29 @@ impl Transcription {
             .map(PackStore::new)
     }
 
+    /// Cancel and wait briefly, so the supervised worker is stopped and its
+    /// scratch directory removed before the process exits.
     pub(super) fn shutdown(&mut self) {
         self.cancel.store(true, Ordering::Release);
+        let Some(thread) = self.thread.take() else {
+            return;
+        };
+        let deadline = std::time::Instant::now() + Duration::from_secs(3);
+        while !thread.is_finished() && std::time::Instant::now() < deadline {
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        if thread.is_finished() {
+            let _ = thread.join();
+        }
+    }
+
+    pub(super) fn request_step(&mut self, forward: bool) {
+        self.step = Some(forward);
+    }
+
+    #[cfg(feature = "ui-harness")]
+    pub(super) fn search_text(&self) -> &str {
+        &self.search
     }
 
     /// Replay-visible status name.
@@ -109,7 +173,7 @@ impl Transcription {
             Status::Installing { .. } => "installing",
             Status::Preparing => "preparing",
             Status::Transcribing(_) => "transcribing",
-            Status::Saving => "saving",
+            Status::Saving(_) => "saving",
             Status::Failed(_) => "failed",
             Status::Ready => "ready",
         }
@@ -146,6 +210,10 @@ impl DeadpanApp {
                     self.transcription.events = None;
                     self.transcription.status = Status::Unchecked;
                 }
+                Event::InstallCancelled => {
+                    self.transcription.events = None;
+                    self.transcription.status = Status::NeedsModel;
+                }
                 Event::InstallFailed(error) => {
                     self.transcription.events = None;
                     self.transcription.status = Status::Failed(error);
@@ -157,14 +225,7 @@ impl DeadpanApp {
                     self.transcription.events = None;
                     match result {
                         Ok((key, transcript)) => {
-                            if let Some(session) = session {
-                                self.submit(ProjectRequest::SaveTranscript {
-                                    expected_session: session,
-                                    key,
-                                    transcript: Arc::new(transcript),
-                                });
-                                self.transcription.status = Status::Saving;
-                            }
+                            self.transcription.unsaved = Some((key, Arc::new(transcript)));
                         }
                         Err(error) => self.transcription.status = Status::Failed(error),
                     }
@@ -172,6 +233,7 @@ impl DeadpanApp {
             }
             context.request_repaint();
         }
+        self.save_transcript(session, context);
         let Some(workspace) = self.workspace.as_ref() else {
             return;
         };
@@ -201,6 +263,46 @@ impl DeadpanApp {
             Ok(Some(installed)) => self.start_transcription(context, &pack, &installed),
             Ok(None) => self.transcription.status = Status::NeedsModel,
             Err(error) => self.transcription.status = Status::Failed(error.to_string()),
+        }
+    }
+
+    /// Submit a finished transcript without the side effects of a user
+    /// command: playback, repeats and pending keys are left alone. A busy
+    /// service is retried on a later frame.
+    fn save_transcript(&mut self, session: Option<u64>, context: &egui::Context) {
+        let Some(session) = session else {
+            self.transcription.unsaved = None;
+            return;
+        };
+        let Some((key, transcript)) = self.transcription.unsaved.as_ref() else {
+            return;
+        };
+        if self.service.is_busy() {
+            context.request_repaint_after(Duration::from_millis(100));
+            return;
+        }
+        self.transcription.attempts += 1;
+        let attempt = self.transcription.attempts;
+        let request = ProjectRequest::SaveTranscript {
+            expected_session: session,
+            attempt,
+            key: key.clone(),
+            transcript: Arc::clone(transcript),
+        };
+        match self.service.submit(request) {
+            Ok(()) => {
+                self.transcription.unsaved = None;
+                self.transcription.status = Status::Saving(attempt);
+            }
+            // Lost a race with a user command; try again shortly.
+            Err(_) if self.service.is_busy() => {
+                context.request_repaint_after(Duration::from_millis(100));
+            }
+            Err(error) => {
+                self.transcription.unsaved = None;
+                self.transcription.status =
+                    Status::Failed(format!("the transcript was not saved: {error}"));
+            }
         }
     }
 
@@ -245,9 +347,12 @@ impl DeadpanApp {
                 let _ = sender.send(Event::Transcribed(result));
                 repaint.request_repaint();
             });
-        if let Err(error) = spawned {
-            self.transcription.events = None;
-            self.transcription.status = Status::Failed(error.to_string());
+        match spawned {
+            Ok(thread) => self.transcription.thread = Some(thread),
+            Err(error) => {
+                self.transcription.events = None;
+                self.transcription.status = Status::Failed(error.to_string());
+            }
         }
     }
 
@@ -278,13 +383,17 @@ impl DeadpanApp {
                     });
                 let _ = sender.send(match result {
                     Ok(_) => Event::Installed,
+                    Err(_) if cancel.load(Ordering::Acquire) => Event::InstallCancelled,
                     Err(error) => Event::InstallFailed(error.to_string()),
                 });
                 repaint.request_repaint();
             });
-        if let Err(error) = spawned {
-            self.transcription.events = None;
-            self.transcription.status = Status::Failed(error.to_string());
+        match spawned {
+            Ok(thread) => self.transcription.thread = Some(thread),
+            Err(error) => {
+                self.transcription.events = None;
+                self.transcription.status = Status::Failed(error.to_string());
+            }
         }
     }
 
@@ -313,8 +422,14 @@ impl DeadpanApp {
         };
         let frame = workspace.sources.get(&asset).and_then(|source| {
             let video = source.receipt.snapshot().video()?;
+            let index = video.index().index();
             let seconds = transcript.transcript.seconds(start).ok()?;
-            picture_at(video.index().index(), seconds)
+            // Speech can begin before the first picture; show that picture.
+            picture_at(index, seconds).or_else(|| {
+                picture_seconds(index, 0)
+                    .filter(|first| seconds.compare(*first).is_lt())
+                    .map(|_| 0)
+            })
         });
         let Some(frame) = frame else {
             self.message = Some("That word is outside the Original picture.".into());
@@ -322,6 +437,7 @@ impl DeadpanApp {
         };
         self.select_source(asset);
         self.source_cursor = frame as u64;
+        self.transcription.chosen = Some((word, self.source_cursor));
         self.request_picture(false);
     }
 
@@ -331,6 +447,12 @@ impl DeadpanApp {
     pub(super) fn current_word(&self) -> Option<usize> {
         let workspace = self.workspace.as_ref()?;
         let transcript = workspace.transcript.as_ref()?;
+        if let Some((word, frame)) = self.transcription.chosen
+            && frame == self.source_cursor
+            && word < transcript.transcript.words().len()
+        {
+            return Some(word);
+        }
         let asset = original_asset(workspace)?;
         let index = workspace
             .sources
@@ -441,7 +563,7 @@ impl DeadpanApp {
                         .text(format!("Transcribing · {percent}%")),
                 );
             }
-            Status::Saving => {
+            Status::Saving(_) => {
                 ui.weak("Saving transcript…");
             }
             Status::Failed(error) => {
@@ -472,7 +594,7 @@ impl DeadpanApp {
         }
         let search = ui.add(
             egui::TextEdit::singleline(&mut self.transcription.search)
-                .id(egui::Id::new("transcript-search"))
+                .id(egui::Id::new(TRANSCRIPT_SEARCH_ID))
                 .hint_text("Find words")
                 .desired_width(f32::INFINITY),
         );
@@ -482,10 +604,8 @@ impl DeadpanApp {
         if search.has_focus() {
             self.pane = Pane::Sources;
         }
-        if search.lost_focus() && ui.input(|input| input.key_pressed(egui::Key::Enter)) {
-            let back = ui.input(|input| input.modifiers.shift);
-            self.step_transcript_match(!back);
-            search.request_focus();
+        if let Some(forward) = self.transcription.step.take() {
+            self.step_transcript_match(forward);
         }
         if !self.transcription.search.trim().is_empty() {
             let count = self.transcription.matches.len();

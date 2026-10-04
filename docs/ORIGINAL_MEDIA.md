@@ -110,7 +110,11 @@ sync manages as a File Provider domain on many Macs. The system adds extended
 attributes to new and selected files at any time, changing ctime but not
 content. Stability checks around hashing and guarded rechecks therefore compare
 device, inode, mode, owner, link count, size and modification time, not ctime;
-every object is still hashed against its identity. A 2026-10-04 native run
+every object is still hashed against its identity when it is copied,
+promoted or cloned. Guarded rechecks of retained objects (`recheck_guard`) do
+not rehash, so they no longer detect an in-place write to a read-only package
+object that also restores its mode and modification time; that requires a
+deliberate local actor with write access to the package. A 2026-10-04 native run
 failed the first import before this change. The same domains can evict files to
 cloud-only storage ("Optimize Mac Storage"); offline guarantees for evicted
 project media are not yet addressed.

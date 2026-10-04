@@ -62,6 +62,9 @@ mod trim;
 
 const SEARCH_ID: &str = "source-search";
 const COMMAND_ID: &str = "command-input";
+const TRANSCRIPT_SEARCH_ID: &str = "transcript-search";
+/// Focused text fields that own keyboard input instead of editor bindings.
+const TEXT_INPUT_IDS: [&str; 3] = [SEARCH_ID, COMMAND_ID, TRANSCRIPT_SEARCH_ID];
 const MAX_TARGET_PIXELS: f64 = 1920.0 * 1080.0;
 const SOURCE_INSERT_HINT: &str = "The Original stays intact. Switch to Your edit (:sequence) to reshape it, or reuse the full Original with :insert.";
 
@@ -950,6 +953,7 @@ impl DeadpanApp {
             self.receive_cut(update.cut_slice);
             self.receive_macro(update.macros, update.saved_macro);
             self.receive_marks(update.marks, context);
+            self.transcription.receive_save(update.transcript_save);
             // A service publication can replace the captured head before a
             // stopped decode is polled below. Revoke that proposal now, not
             // after receive returns or when final layout requests its successor.
@@ -2117,6 +2121,19 @@ impl DeadpanApp {
                 {
                     self.bindings.clear();
                     continue; // The focused volume slider owns its arrows.
+                }
+                // Find words behaves as a find bar: Enter and Shift+Enter step
+                // through matches and keep the field focused.
+                if key == egui::Key::Enter
+                    && !ime
+                    && (modifiers == egui::Modifiers::NONE || modifiers == egui::Modifiers::SHIFT)
+                    && context.memory(|m| m.has_focus(egui::Id::new(TRANSCRIPT_SEARCH_ID)))
+                {
+                    self.transcription.request_step(!modifiers.shift);
+                    context.input_mut(|input| {
+                        input.consume_key(modifiers, key);
+                    });
+                    continue;
                 }
                 if let Some(text_action) = navigation::text_action(key, modifiers, focused, ime) {
                     text_result = Some((text_action, self.command_open));
@@ -4290,7 +4307,9 @@ impl eframe::App for DeadpanApp {
                 self.selected_sound.clone(),
             )
             || context.memory(|m| {
-                m.has_focus(egui::Id::new(SEARCH_ID)) || m.has_focus(egui::Id::new(COMMAND_ID))
+                TEXT_INPUT_IDS
+                    .iter()
+                    .any(|id| m.has_focus(egui::Id::new(id)))
             })
         {
             self.bindings.clear();
@@ -4650,7 +4669,9 @@ fn native_control_focused(context: &egui::Context) -> bool {
 fn text_input_active(context: &egui::Context, command_open: bool) -> bool {
     command_open
         || context.memory(|m| {
-            m.has_focus(egui::Id::new(SEARCH_ID)) || m.has_focus(egui::Id::new(COMMAND_ID))
+            TEXT_INPUT_IDS
+                .iter()
+                .any(|id| m.has_focus(egui::Id::new(id)))
         })
 }
 fn pointer_focus_transition(events: &[egui::Event]) -> bool {

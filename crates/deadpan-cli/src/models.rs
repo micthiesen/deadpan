@@ -18,11 +18,23 @@ use deadpan_models::packs::{
 use crate::CliError;
 use crate::transcription::{AnalysisInput, TranscriptionRuntime, transcribe};
 
-/// `~/Library/Application Support/Deadpan/Models`, shared by every project.
+/// The per-user model directory shared by every project:
+/// `~/Library/Application Support/Deadpan/Models` on macOS and
+/// `$XDG_DATA_HOME/deadpan/models` (default `~/.local/share`) on Linux.
 pub fn default_root() -> Result<PathBuf, CliError> {
-    let home = std::env::var_os("HOME")
-        .ok_or_else(|| CliError::Usage("HOME is not set; pass --root".into()))?;
-    Ok(PathBuf::from(home).join("Library/Application Support/Deadpan/Models"))
+    let home = || {
+        std::env::var_os("HOME")
+            .map(PathBuf::from)
+            .ok_or_else(|| CliError::Usage("HOME is not set; pass --root".into()))
+    };
+    if cfg!(target_os = "macos") {
+        return Ok(home()?.join("Library/Application Support/Deadpan/Models"));
+    }
+    let data = match std::env::var_os("XDG_DATA_HOME").map(PathBuf::from) {
+        Some(data) if data.is_absolute() => data,
+        _ => home()?.join(".local/share"),
+    };
+    Ok(data.join("deadpan/models"))
 }
 
 fn usage() -> CliError {
@@ -37,10 +49,6 @@ fn pack(id: &str) -> Result<PackManifest, CliError> {
         .into_iter()
         .find(|pack| pack.pack_id == id)
         .ok_or_else(|| CliError::Usage(format!("no approved model pack named {id}")))
-}
-
-fn models_error(error: deadpan_models::packs::PackError) -> CliError {
-    CliError::Usage(error.to_string())
 }
 
 pub fn run(arguments: &[&str]) -> Result<(), CliError> {
@@ -64,10 +72,7 @@ pub fn run(arguments: &[&str]) -> Result<(), CliError> {
             let packs = approved_packs()
                 .into_iter()
                 .map(|manifest| {
-                    let installed = store
-                        .installed(&manifest)
-                        .map_err(models_error)?
-                        .map(|pack| pack.directory);
+                    let installed = store.installed(&manifest)?.map(|pack| pack.directory);
                     Ok(serde_json::json!({
                         "pack_id": manifest.pack_id,
                         "pack_version": manifest.pack_version,
@@ -84,7 +89,7 @@ pub fn run(arguments: &[&str]) -> Result<(), CliError> {
         ("install", Some(id)) => install(&store, &pack(id)?),
         ("remove", Some(id)) => {
             let manifest = pack(id)?;
-            store.remove(&manifest).map_err(models_error)?;
+            store.remove(&manifest)?;
             crate::write_json(&serde_json::json!({ "protocol": 1, "removed": manifest.pack_id }))
         }
         _ => Err(usage()),
@@ -92,7 +97,7 @@ pub fn run(arguments: &[&str]) -> Result<(), CliError> {
 }
 
 fn install(store: &PackStore, manifest: &PackManifest) -> Result<(), CliError> {
-    if let Some(installed) = store.installed(manifest).map_err(models_error)? {
+    if let Some(installed) = store.installed(manifest)? {
         return crate::write_json(&serde_json::json!({
             "protocol": 1, "installed": installed.directory, "already_installed": true
         }));
@@ -127,27 +132,23 @@ fn install(store: &PackStore, manifest: &PackManifest) -> Result<(), CliError> {
 }
 
 /// Download, verify, smoke-test and activate one approved pack. A failed
-/// smoke test discards the staged copy and leaves installed versions intact.
+/// smoke test leaves installed versions intact and keeps the hash-verified
+/// staged copy, so a retry after fixing the cause repeats only the test.
 pub fn install_pack(
     store: &PackStore,
     manifest: &PackManifest,
     cancelled: &AtomicBool,
     progress: impl FnMut(InstallProgress),
 ) -> Result<InstalledPack, CliError> {
-    let staged = store
-        .stage(
-            manifest,
-            &HttpsTransport::default(),
-            available_space,
-            cancelled,
-            progress,
-        )
-        .map_err(models_error)?;
-    if let Err(error) = smoke_test(&staged) {
-        store.discard(staged).map_err(models_error)?;
-        return Err(error);
-    }
-    store.activate(staged).map_err(models_error)
+    let staged = store.stage(
+        manifest,
+        &HttpsTransport::default(),
+        available_space,
+        cancelled,
+        progress,
+    )?;
+    smoke_test(&staged, cancelled)?;
+    Ok(store.activate(staged)?)
 }
 
 /// One complete JSON object per stdout line, as `render` reports progress.
@@ -161,7 +162,7 @@ fn emit(value: &serde_json::Value) -> Result<(), CliError> {
 
 /// Load the staged model in the real runtime and recognize one second of
 /// silence. A pack that cannot do this never replaces a known-good one.
-fn smoke_test(staged: &StagedPack) -> Result<(), CliError> {
+fn smoke_test(staged: &StagedPack, cancelled: &AtomicBool) -> Result<(), CliError> {
     let manifest = staged.manifest();
     if !manifest.operations.contains(&Operation::Transcribe) {
         return Ok(());
@@ -185,7 +186,7 @@ fn smoke_test(staged: &StagedPack) -> Result<(), CliError> {
         },
         Language::Automatic,
         "pack-smoke",
-        &AtomicBool::new(false),
+        cancelled,
         Instant::now() + Duration::from_secs(300),
         |_| {},
     )?;
@@ -199,7 +200,7 @@ pub fn installed_transcription_model(root: &Path) -> Result<Option<ModelInput>, 
         if !manifest.operations.contains(&Operation::Transcribe) {
             continue;
         }
-        if let Some(installed) = store.installed(&manifest).map_err(models_error)? {
+        if let Some(installed) = store.installed(&manifest)? {
             let file = &manifest.files[0];
             let path = installed
                 .file(&file.name)

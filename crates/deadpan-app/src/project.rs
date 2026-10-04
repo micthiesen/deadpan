@@ -59,6 +59,14 @@ pub struct OriginalTranscript {
     pub transcript: deadpan_analysis::Transcript,
 }
 
+/// The outcome of one background transcript save, matched by attempt.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TranscriptSave {
+    pub session: u64,
+    pub attempt: u64,
+    pub error: Option<String>,
+}
+
 pub struct Workspace {
     pub session: u64,
     pub path: PathBuf,
@@ -82,18 +90,33 @@ pub struct Workspace {
 impl Workspace {
     /// The same committed workspace with a newly saved transcript.
     pub fn with_transcript(&self, transcript: Arc<OriginalTranscript>) -> Self {
+        // Exhaustive destructuring: a new field must be carried here explicitly.
+        let Self {
+            session,
+            path,
+            document,
+            plan,
+            sources,
+            originals,
+            generated,
+            can_undo,
+            can_redo,
+            single_source,
+            original_duration,
+            transcript: _,
+        } = self;
         Self {
-            session: self.session,
-            path: self.path.clone(),
-            document: Arc::clone(&self.document),
-            plan: Arc::clone(&self.plan),
-            sources: self.sources.clone(),
-            originals: self.originals.clone(),
-            generated: self.generated.clone(),
-            can_undo: self.can_undo,
-            can_redo: self.can_redo,
-            single_source: self.single_source.clone(),
-            original_duration: self.original_duration,
+            session: *session,
+            path: path.clone(),
+            document: Arc::clone(document),
+            plan: Arc::clone(plan),
+            sources: sources.clone(),
+            originals: originals.clone(),
+            generated: generated.clone(),
+            can_undo: *can_undo,
+            can_redo: *can_redo,
+            single_source: single_source.clone(),
+            original_duration: *original_duration,
             transcript: Some(transcript),
         }
     }
@@ -197,6 +220,9 @@ pub struct ProjectUpdate {
     /// Bounded history replies retain their exact query and session independently
     /// of authored commits and live render progress.
     pub render_history: Option<render_history::Update>,
+    /// Background transcript saves report here, never through the editor's
+    /// command error, which the next dispatch clears.
+    pub transcript_save: Option<TranscriptSave>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -447,6 +473,7 @@ pub enum ProjectRequest {
     /// Store a validated transcript of the Original; never an edit.
     SaveTranscript {
         expected_session: u64,
+        attempt: u64,
         key: deadpan_store::TranscriptKey,
         transcript: Arc<deadpan_analysis::Transcript>,
     },

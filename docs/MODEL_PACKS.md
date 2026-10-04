@@ -25,14 +25,25 @@ committed.
 
 1. Show the pack's size and license before downloading.
 2. Check free space for the remaining bytes plus 256 MiB.
-3. Download each file into `.staging/<pack>-<version>/<file>.part`, resuming
-   with an HTTP range request; a server that ignores the range restarts that
-   file from zero, and any other offset fails.
-4. Verify exact size and SHA-256. A mismatched file is deleted, because it
-   cannot be resumed into a valid one.
-5. Write a receipt and keep the pack staged until the host's smoke test passes
+3. Take the pack version's exclusive lock (`.staging/<pack>-<version>.lock`,
+   `flock`), so the app and the CLI never write the same staging files; a
+   second installer gets `ModelPackBusy`.
+4. Download each file into `.staging/<pack>-<version>/<file>.part`, resuming
+   with an HTTP range request. A server that ignores the range restarts that
+   file from zero; any other offset truncates the partial file so the next
+   attempt restarts. The body is read on its own thread: cancellation is
+   observed within 200 ms and a body that delivers nothing for 60 s is
+   abandoned with its bytes kept for resume.
+5. Verify exact size and SHA-256. A mismatched file is deleted, because it
+   cannot be resumed into a valid one. A finished staged file is reused only
+   after its hash matches.
+6. Write a receipt and keep the pack staged until the host's smoke test passes
    (transcription packs recognize one second of silence in the real worker).
-6. Activate by renaming the complete version directory to `<pack>/<version>`.
+   A failed or cancelled smoke test keeps the verified staged copy, so a retry
+   repeats only the test.
+7. Activate by renaming the complete version directory to `<pack>/<version>`.
+   Activation runs only when `installed` refused that version, so anything it
+   replaces is already an incomplete copy.
    Other versions stay installed as known-good fallbacks until removed.
 
 `installed` accepts a pack only when its receipt matches the approved manifest
@@ -44,16 +55,26 @@ plain HTTP including redirects, follows at most five redirects and identifies as
 `Deadpan/<version>`. Hash verification covers every byte regardless of the
 serving host.
 
+## In the app
+
+The Original rail's TRANSCRIPT section offers Install model… with the pack's
+size and license when no transcription pack is installed. Installation runs on
+a background thread with progress and Cancel install; cancelling returns to the
+offer, and a model install continues when the project changes because packs
+belong to every project. Quitting cancels and waits up to three seconds for the
+job thread.
+
 ## Commands
 
 `models list`, `models install <pack>` and `models remove <pack>` take an
-optional `--root`. Install reports JSON lines (`installing`, bounded
+optional `--root` (default `~/Library/Application Support/Deadpan/Models` on
+macOS, `$XDG_DATA_HOME/deadpan/models` on Linux). Failures use the codes
+`ModelPackCancelled`, `ModelPackBusy`, `ModelPackSpace` and `ModelPackFailed`. Install reports JSON lines (`installing`, bounded
 `progress`, `smoke_test`) and ends with the installed directory.
 `transcribe` uses the installed transcription pack when no explicit model is
 given.
 
 ## Remaining
 
-The in-app manager, resumable downloads across application restarts with
-user-visible cancel, the offline full distribution with packs as data, gated
+The offline full distribution with packs as data, gated
 weights, signed update manifests and pack qualification beyond transcription.

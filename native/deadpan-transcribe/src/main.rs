@@ -54,7 +54,9 @@ fn main() -> ExitCode {
     };
     let cancelled = Arc::new(AtomicBool::new(false));
     {
-        // Later host messages can only cancel this attempt.
+        // Later host messages can only cancel this attempt. The host holds
+        // stdin open for the whole job, so end of input or a read error means
+        // it is gone, and recognition stops instead of running unowned.
         let cancelled = Arc::clone(&cancelled);
         let token = cancellation_token.clone();
         std::thread::spawn(move || {
@@ -64,9 +66,10 @@ fn main() -> ExitCode {
                 } = message
                     && cancellation_token == token
                 {
-                    cancelled.store(true, Ordering::Release);
+                    break;
                 }
             }
+            cancelled.store(true, Ordering::Release);
         });
     }
     let job = Job {

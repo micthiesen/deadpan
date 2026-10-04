@@ -26,6 +26,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     let session = d.app().workspace.as_ref().ok_or("No project")?.session;
     let submitted = d.app_mut().submit(ProjectRequest::SaveTranscript {
         expected_session: session,
+        attempt: 0,
         key,
         transcript: Arc::new(transcript.clone()),
     });
@@ -70,9 +71,40 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         .or(search)
         .ok_or("Missing transcript search field")?;
     d.click_at("Transcript search field", field.center())?;
-    d.events(
-        "Type a transcript search",
-        vec![egui::Event::Text("gam".into())],
+    // Real key presses with their text: editor bindings such as `g` must
+    // not see keys typed into the field.
+    let cursor = d.app().source_cursor;
+    let typed = ["g", "a", "m"]
+        .into_iter()
+        .zip([Key::G, Key::A, Key::M])
+        .flat_map(|(text, key)| {
+            [
+                egui::Event::Key {
+                    key,
+                    physical_key: Some(key),
+                    pressed: true,
+                    repeat: false,
+                    modifiers: egui::Modifiers::NONE,
+                },
+                egui::Event::Text(text.into()),
+                egui::Event::Key {
+                    key,
+                    physical_key: Some(key),
+                    pressed: false,
+                    repeat: false,
+                    modifiers: egui::Modifiers::NONE,
+                },
+            ]
+        })
+        .collect();
+    d.events("Type a transcript search", typed)?;
+    d.check(
+        "Keys typed into Find words reach the field, not editor bindings",
+        d.app().transcription.search_text() == "gam"
+            && d.app().bindings.pending().is_empty()
+            && d.app().source_cursor == cursor,
+        json!({"search":"gam","pending":"","source_cursor":cursor}),
+        json!({"search":d.app().transcription.search_text(),"pending":format!("{:?}",d.app().bindings.pending()),"source_cursor":d.app().source_cursor}),
     )?;
     d.key(Key::Enter)?;
     d.settled()?;

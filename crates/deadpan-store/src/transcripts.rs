@@ -126,6 +126,33 @@ impl ProjectStore {
         value.map(|value| parse(&value)).transpose()
     }
 
+    /// The keys stored for one Original, ordered, without parsing transcripts.
+    pub fn transcript_keys_for_content(
+        &self,
+        content: &str,
+    ) -> Result<Vec<TranscriptKey>, StoreError> {
+        let mut statement = self.connection.prepare(
+            "SELECT content,audio_stream,model_sha256,language,engine FROM transcripts
+                WHERE content=?1 ORDER BY audio_stream,model_sha256,language,engine",
+        )?;
+        let rows = statement.query_map(params![content], |row| {
+            Ok(TranscriptKey {
+                content: row.get(0)?,
+                audio_stream: row.get(1)?,
+                model_sha256: row.get(2)?,
+                language: row.get(3)?,
+                engine: row.get(4)?,
+            })
+        })?;
+        let mut keys = Vec::new();
+        for row in rows {
+            let key = row?;
+            key.validate()?;
+            keys.push(key);
+        }
+        Ok(keys)
+    }
+
     /// Every stored transcript of one Original, ordered by key.
     pub fn transcripts_for_content(
         &self,

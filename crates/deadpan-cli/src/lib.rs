@@ -132,6 +132,9 @@ pub enum CliError {
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[error(transparent)]
     Transcription(#[from] transcription::TranscriptionError),
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[error(transparent)]
+    ModelPack(#[from] deadpan_models::packs::PackError),
 }
 
 impl CliError {
@@ -174,6 +177,14 @@ impl CliError {
             }
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::Transcription(_) => "TranscriptionFailed",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::ModelPack(deadpan_models::packs::PackError::Cancelled) => "ModelPackCancelled",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::ModelPack(deadpan_models::packs::PackError::Busy) => "ModelPackBusy",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::ModelPack(deadpan_models::packs::PackError::Space { .. }) => "ModelPackSpace",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::ModelPack(_) => "ModelPackFailed",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::ProjectAudio(error) => match error {
                 audio::ProjectAudioError::Store(error) => error.code(),

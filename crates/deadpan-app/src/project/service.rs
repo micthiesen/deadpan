@@ -73,6 +73,7 @@ struct Service {
     room_tone: Option<PreparedRoomTone>,
     room_tone_error: Option<RoomToneFailure>,
     gain: Option<super::gain::ProposalUpdate>,
+    transcript_save: Option<super::TranscriptSave>,
     splice: Option<super::splice::ProposalUpdate>,
     splice_commit: Option<super::splice::SpliceCommitUpdate>,
     splice_draft: Option<splice::Draft>,
@@ -143,6 +144,7 @@ pub(super) fn run(
         room_tone: None,
         room_tone_error: None,
         gain: None,
+        transcript_save: None,
         splice: None,
         splice_commit: None,
         splice_draft: None,
@@ -327,6 +329,7 @@ impl Service {
             marks: self.marks.clone(),
             render: self.render_update.clone(),
             render_history: self.render_history.clone(),
+            transcript_save: self.transcript_save.clone(),
         };
         *self
             .shared
@@ -344,10 +347,11 @@ impl Service {
             }
             ProjectRequest::SaveTranscript {
                 expected_session,
+                attempt,
                 key,
                 transcript,
             } => {
-                self.save_transcript_command(expected_session, key, transcript);
+                self.save_transcript_command(expected_session, attempt, key, transcript);
                 return Ok(());
             }
             ProjectRequest::CaptureEditSlice(request) => {
@@ -1720,7 +1724,7 @@ fn snapshot(
     };
     let transcript = match previous {
         Some(previous) => previous.transcript.clone(),
-        None => original_transcript(store, single_source.as_ref(), &sources)?,
+        None => original_transcript(store, single_source.as_ref(), &sources),
     };
     Ok(Workspace {
         session,
@@ -1740,28 +1744,30 @@ fn snapshot(
 
 /// The Original's stored transcript, preferring the installed transcription
 /// pack's model. A damaged stored transcript is reported, not hidden.
+/// The best stored transcript of the ready Original: an approved model's
+/// English transcript first. Transcripts are rebuildable annotations, so an
+/// unreadable one is skipped rather than preventing the project from opening;
+/// without any, the app transcribes again and replaces the bad row.
 fn original_transcript(
     store: &ProjectStore,
     single_source: Option<&SingleSourceState>,
     sources: &BTreeMap<AssetId, Arc<RegisteredSource>>,
-) -> Result<Option<Arc<super::OriginalTranscript>>> {
+) -> Option<Arc<super::OriginalTranscript>> {
     let Some(SingleSourceState::Ready { asset, .. }) = single_source else {
-        return Ok(None);
+        return None;
     };
-    let Some(source) = sources.get(asset) else {
-        return Ok(None);
-    };
+    let source = sources.get(asset)?;
     let content = source.receipt.original().content().to_string();
-    let mut transcripts = store.transcripts_for_content(&content).map_err(display)?;
-    let preferred = deadpan_models::packs::approved_packs()
+    let mut keys = store.transcript_keys_for_content(&content).ok()?;
+    let approved = deadpan_models::packs::approved_packs()
         .into_iter()
         .flat_map(|pack| pack.files.into_iter().map(|file| file.sha256))
         .collect::<Vec<_>>();
-    transcripts.sort_by_key(|(key, _)| !preferred.contains(&key.model_sha256));
-    Ok(transcripts
-        .into_iter()
-        .next()
-        .map(|(key, transcript)| Arc::new(super::OriginalTranscript { key, transcript })))
+    keys.sort_by_key(|key| (!approved.contains(&key.model_sha256), key.language != "en"));
+    keys.into_iter().find_map(|key| {
+        let transcript = store.transcript(&key).ok()??;
+        Some(Arc::new(super::OriginalTranscript { key, transcript }))
+    })
 }
 
 fn registered_source(
