@@ -35,8 +35,12 @@ target point is carried outward through every inner posed layer, innermost
 first (`p' = (p - center) * scale + 1/2`), so an outer follow sees the subject
 where inner framing put it. Resolved poses are quantized to the framing grid.
 The fallback applies where the picture is not the target's asset, lies outside
-its span, or the centered pose is out of range; evaluated on its own, a follow
-is its fallback.
+its span, or the centered pose is out of range (including arithmetic overflow);
+evaluated on its own, a follow is its fallback. An endpoint-held Source picture
+uses its selection's last moment. Under a pause with captured geometry, follows
+keep their fallback until that geometry is mapped too. Copies of a followed beat
+carry the target and its asset; a paste adds the target only where the
+destination lacks it, so the destination's current target wins.
 
 A document refuses framing that follows a missing target, so `DeleteTarget`
 refuses while framing still follows it. Camera on a follow layer changes its
