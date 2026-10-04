@@ -95,7 +95,12 @@ impl ProjectStore {
             }
             None
         } else {
-            Some(crate::write_command_plan(&transaction, plan, relevance)?)
+            Some(crate::write_command_plan(
+                &transaction,
+                plan,
+                relevance,
+                self.context_resolver.as_deref(),
+            )?)
         };
         transaction.commit()?;
         Ok(CompoundCommitOutcome {

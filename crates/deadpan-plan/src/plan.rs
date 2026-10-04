@@ -862,6 +862,32 @@ impl RenderPlan {
             .map(|index| self.nodes[*index].inspection.duration)
     }
 
+    /// The project frames of a node that appears exactly once, reached only
+    /// through ordinary Sequences; `None` under a Repeat, a Retime or an
+    /// override, where a node has several or remapped occurrences.
+    pub fn single_occurrence_range(&self, id: &NodeId) -> Option<deadpan_core::FrameRange> {
+        let mut current = *self.by_id.get(id)?;
+        let mut start = 0_i64;
+        while let Some(parent) = self.parents[current] {
+            let CompiledKind::Sequence { entries } = &self.nodes[parent].kind else {
+                return None;
+            };
+            let entry = entries.iter().find(|entry| entry.child == current)?;
+            start = start.checked_add(entry.start)?;
+            current = parent;
+        }
+        if current != self.root {
+            return None;
+        }
+        let end = start.checked_add(
+            self.nodes[*self.by_id.get(id)?]
+                .inspection
+                .duration
+                .frames(),
+        )?;
+        deadpan_core::FrameRange::new(ProjectFrame(start), ProjectFrame(end)).ok()
+    }
+
     pub(crate) fn root_audio_edges(&self) -> deadpan_core::AudioEdgePolicies {
         self.nodes[self.root].audio_edges
     }

@@ -311,7 +311,12 @@ impl ProjectStore {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let plan = prepare_source_moment(&transaction, input, source)?;
-        let outcome = crate::write_command_plan(&transaction, plan, relevance)?;
+        let outcome = crate::write_command_plan(
+            &transaction,
+            plan,
+            relevance,
+            self.context_resolver.as_deref(),
+        )?;
         source.original.recheck(cancelled)?;
         transaction.commit()?;
         Ok(outcome)
@@ -347,7 +352,12 @@ impl ProjectStore {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let plan = prepare_source_moment_interior(&transaction, input, source)?;
-        let outcome = crate::write_command_plan(&transaction, plan, relevance)?;
+        let outcome = crate::write_command_plan(
+            &transaction,
+            plan,
+            relevance,
+            self.context_resolver.as_deref(),
+        )?;
         source.original.recheck(cancelled)?;
         transaction.commit()?;
         Ok(outcome)
@@ -383,7 +393,12 @@ impl ProjectStore {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let plan = prepare_source_replacement(&transaction, input, source)?;
-        let outcome = crate::write_command_plan(&transaction, plan, relevance)?;
+        let outcome = crate::write_command_plan(
+            &transaction,
+            plan,
+            relevance,
+            self.context_resolver.as_deref(),
+        )?;
         source.original.recheck(cancelled)?;
         transaction.commit()?;
         Ok(outcome)
@@ -419,7 +434,12 @@ impl ProjectStore {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let plan = prepare_source_children_replacement(&transaction, input, source)?;
-        let outcome = crate::write_command_plan(&transaction, plan, relevance)?;
+        let outcome = crate::write_command_plan(
+            &transaction,
+            plan,
+            relevance,
+            self.context_resolver.as_deref(),
+        )?;
         source.original.recheck(cancelled)?;
         transaction.commit()?;
         Ok(outcome)
@@ -445,7 +465,12 @@ impl ProjectStore {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         let plan = prepare_primary_geometry(&transaction, input)?;
-        let outcome = crate::write_command_plan(&transaction, plan, relevance)?;
+        let outcome = crate::write_command_plan(
+            &transaction,
+            plan,
+            relevance,
+            self.context_resolver.as_deref(),
+        )?;
         transaction.commit()?;
         Ok(outcome)
     }
@@ -606,7 +631,14 @@ impl ProjectStore {
         write_receipt(&transaction, &source.receipt, &source.bytes)?;
         let commit = prepared
             .plan
-            .map(|plan| crate::write_command_plan(&transaction, plan, relevance))
+            .map(|plan| {
+                crate::write_command_plan(
+                    &transaction,
+                    plan,
+                    relevance,
+                    self.context_resolver.as_deref(),
+                )
+            })
             .transpose()?;
         if initialize {
             crate::single_source::finish_initialization(&transaction, input, &source.receipt)?;

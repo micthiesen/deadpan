@@ -101,3 +101,24 @@ The schema-5 request implementation passed formatting, workspace Clippy with war
 The audio and model qualification suites also pass 20 and 47 Python tests.
 The current diagnostics distinguish database schema 9 from core document schema 5
 and continue to report application AI generation as unimplemented.
+
+
+## Host resolver for ordinary writes
+
+A writer can install a `GenerationContextResolver`
+(`ProjectStore::set_generation_context_resolver`). When a write supplies no
+explicit relevance plan and a request is current, the store asks the resolver
+about every current request, giving it the request's origin document and the
+proposed one, and applies the resulting plan in the same transaction. Without
+a resolver such writes still refuse with `GenerationRelevanceRequired`.
+
+The app and CLI writers install
+[`BoundaryContextResolver`](../crates/deadpan-cli/src/generation_context.rs).
+It compares the Hold's context identity in both documents without decoding:
+duration, project rate and canvas, and the boundary pictures on each side
+(exact Original picture or freeze, captured geometry and every framing pose).
+Equal identity keeps the request current with its own hash, so unrelated
+edits, and edits that only move the Hold in time, never stale it; any change
+to the boundary pictures or duration, or a Hold without a single plain
+occurrence, makes it stale. `RenderPlan::single_occurrence_range` locates the
+Hold.

@@ -9,6 +9,7 @@ mod doctor;
 pub mod encoded_render;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod export_picture;
+pub mod generation_context;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod host;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -866,6 +867,9 @@ fn history(package: &Path, action: &str, expected: &str, preview: bool) -> Resul
                 AccessMode::ReadWrite
             },
         )?;
+        store.set_generation_context_resolver(std::sync::Arc::new(
+            generation_context::BoundaryContextResolver::default(),
+        ));
         let expected = RevisionId::new(expected)?;
         let next = new_revision()?;
         let outcome = match (action, preview) {
@@ -989,6 +993,9 @@ fn command(package: &Path, request: &Path, dry_run: bool) -> Result<(), CliError
                 AccessMode::ReadWrite
             },
         )?;
+        store.set_generation_context_resolver(std::sync::Arc::new(
+            generation_context::BoundaryContextResolver::default(),
+        ));
         if preview {
             write_json(
                 &serde_json::json!({ "protocol": 1, "committed": false, "edit": store.preview(&request)? }),

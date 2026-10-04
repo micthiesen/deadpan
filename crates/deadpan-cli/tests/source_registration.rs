@@ -567,7 +567,7 @@ fn stale_revision_is_checked_before_unavailable_original_bytes() -> Result {
 }
 
 #[test]
-fn pending_generation_allows_preview_but_requires_real_relevance_on_commit() -> Result {
+fn pending_generation_is_reconciled_by_the_boundary_resolver_on_commit() -> Result {
     let scratch = tempfile::tempdir()?;
     let package = scratch.path().join("generation.deadpan");
     create(&package, "30000/1001")?;
@@ -635,18 +635,28 @@ fn pending_generation_allows_preview_but_requires_real_relevance_on_commit() -> 
     let before = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
     let before_counts = counts(&package)?;
     assert!(registration(&package, &path, true, true)?["preview"]["edit"].is_object());
+    assert_eq!(counts(&package)?, before_counts, "a preview writes nothing");
+    // The CLI writer reconciles the pending request through the boundary
+    // context resolver instead of refusing the registration.
+    let committed = registration(&package, &path, false, true)?;
+    assert!(committed.get("error").is_none(), "{committed}");
+    let reader = ProjectStore::open(&package, AccessMode::ReadOnly)?;
+    assert_ne!(reader.snapshot()?, before);
+    let after = reader.generation_request(&generation.request_id)?.unwrap();
+    let unchanged =
+        deadpan_cli::generation_context::context_identity(&before, &generation.binding.hold_id)
+            == deadpan_cli::generation_context::context_identity(
+                &reader.snapshot()?,
+                &generation.binding.hold_id,
+            );
     assert_eq!(
-        registration(&package, &path, false, false)?["error"]["code"],
-        "GenerationRelevanceRequired"
-    );
-    assert_eq!(counts(&package)?, before_counts);
-    assert_eq!(
-        ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?,
-        before
-    );
-    assert_eq!(
-        ProjectStore::open(&package, AccessMode::ReadOnly)?.current_generation_requests()?,
-        vec![generation]
+        after.relevance,
+        if unchanged {
+            deadpan_jobs::Relevance::Current
+        } else {
+            deadpan_jobs::Relevance::Stale
+        },
+        "relevance follows the Hold's boundary context"
     );
     Ok(())
 }

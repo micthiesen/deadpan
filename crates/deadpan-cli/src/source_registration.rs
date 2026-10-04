@@ -76,6 +76,9 @@ pub(super) fn run(package: &Path, request: &Path, dry_run: bool) -> Result<(), C
         }
         Err(error) => return Err(error.into()),
     };
+    store.set_generation_context_resolver(std::sync::Arc::new(
+        crate::generation_context::BoundaryContextResolver::default(),
+    ));
     let current = store.snapshot()?;
     if current.revision_id() != &input.expected_revision {
         return Err(StoreError::RevisionConflict {

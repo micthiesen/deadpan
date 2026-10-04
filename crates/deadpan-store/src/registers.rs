@@ -184,7 +184,12 @@ impl ProjectStore {
             RegisterValue::Edited { slice },
             plan.current.project_id(),
         )?;
-        let outcome = crate::write_command_plan(&transaction, plan, relevance)?;
+        let outcome = crate::write_command_plan(
+            &transaction,
+            plan,
+            relevance,
+            self.context_resolver.as_deref(),
+        )?;
         transaction.commit()?;
         Ok((outcome, bank))
     }

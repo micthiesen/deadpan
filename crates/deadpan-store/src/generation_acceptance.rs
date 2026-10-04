@@ -72,7 +72,7 @@ impl ProjectStore {
                 "acceptance must preserve the selected request's resolved context",
             ));
         }
-        let outcome = write_command_plan(&transaction, plan, Some(relevance))?;
+        let outcome = write_command_plan(&transaction, plan, Some(relevance), None)?;
         transaction.commit()?;
         Ok(outcome)
     }

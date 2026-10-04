@@ -100,19 +100,18 @@ impl ProjectStore {
         relevance: Option<&generation::RelevancePlan>,
     ) -> Result<CommitOutcome, StoreError> {
         self.require_writer()?;
+        let resolver = self.context_resolver.clone();
         let transaction = self
             .connection
             .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
         let plan = prepare_navigation(&transaction, expected, next_revision, redo)?;
-        match relevance {
-            Some(relevance) => generation::apply_relevance_plan(
-                &transaction,
-                &plan.current,
-                &plan.next,
-                relevance,
-            )?,
-            None => generation::ensure_no_current(&transaction)?,
-        }
+        generation::reconcile(
+            &transaction,
+            &plan.current,
+            &plan.next,
+            relevance,
+            resolver.as_deref(),
+        )?;
         insert_revision(
             &transaction,
             &plan.current,

@@ -77,6 +77,8 @@ pub enum AccessMode {
 
 pub struct ProjectStore {
     connection: Connection,
+    /// Host resolver for generation request relevance on ordinary writes.
+    context_resolver: Option<Arc<dyn generation::GenerationContextResolver>>,
     package: PathBuf,
     mode: AccessMode,
     #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -236,6 +238,7 @@ impl ProjectStore {
         )?);
         Ok(Self {
             connection,
+            context_resolver: None,
             package,
             mode: AccessMode::ReadWrite,
             #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -330,6 +333,7 @@ impl ProjectStore {
         .map_err(render_media::RenderMediaError::from)?;
         let mut store = Self {
             connection,
+            context_resolver: None,
             package,
             mode,
             #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -367,6 +371,15 @@ impl ProjectStore {
             publication::recover_nonterminal(&mut store.connection)?;
         }
         Ok(store)
+    }
+
+    /// Install the host's resolver so ordinary writes keep current
+    /// generation requests reconciled instead of refusing.
+    pub fn set_generation_context_resolver(
+        &mut self,
+        resolver: Arc<dyn generation::GenerationContextResolver>,
+    ) {
+        self.context_resolver = Some(resolver);
     }
 
     pub fn snapshot(&self) -> Result<ProjectDocument, StoreError> {
@@ -471,7 +484,12 @@ impl ProjectStore {
             .connection
             .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
         let plan = prepare_command(&transaction, request)?;
-        let outcome = write_command_plan(&transaction, plan, relevance)?;
+        let outcome = write_command_plan(
+            &transaction,
+            plan,
+            relevance,
+            self.context_resolver.as_deref(),
+        )?;
         transaction.commit()?;
         Ok(outcome)
     }
@@ -856,14 +874,10 @@ fn write_command_plan(
     connection: &Connection,
     plan: CommandPlan,
     relevance: Option<&generation::RelevancePlan>,
+    resolver: Option<&dyn generation::GenerationContextResolver>,
 ) -> Result<CommitOutcome, StoreError> {
     compound::require_authored(&plan)?;
-    match relevance {
-        Some(relevance) => {
-            generation::apply_relevance_plan(connection, &plan.current, &plan.next, relevance)?
-        }
-        None => generation::ensure_no_current(connection)?,
-    }
+    generation::reconcile(connection, &plan.current, &plan.next, relevance, resolver)?;
     insert_revision(connection, &plan.current, &plan.next, "edit")?;
     let register_bank = match &plan.compound {
         Some(prepared) => {

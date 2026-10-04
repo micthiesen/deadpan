@@ -652,7 +652,7 @@ fn independent_stream_mappings_use_headless_commands_and_durable_undo() -> Resul
 }
 
 #[test]
-fn current_generation_requires_host_reconciliation_but_allows_cli_preview() -> Result {
+fn current_generation_is_reconciled_by_cli_writes_and_preview_writes_nothing() -> Result {
     use deadpan_store::generation::GenerationRequestInput;
 
     let scratch = tempfile::tempdir()?;
@@ -699,25 +699,11 @@ fn current_generation_requires_host_reconciliation_but_allows_cli_preview() -> R
         ])?["committed"],
         false
     );
-    for arguments in [
-        vec!["command", path, "--json", input.to_str().unwrap()],
-        vec![
-            "project",
-            "undo",
-            path,
-            "--expected",
-            before.revision_id().as_str(),
-        ],
-    ] {
-        let output = cli(&arguments)?;
-        assert!(!output.status.success());
-        assert_eq!(
-            serde_json::from_slice::<Value>(&output.stderr)?["error"]["code"],
-            "GenerationRelevanceRequired"
-        );
-    }
+    // A rename leaves the Hold's boundary context unchanged, so the CLI
+    // writer keeps the request current through commit and undo.
+    success(&["command", path, "--json", input.to_str().unwrap()])?;
+    success(&["project", "undo", path, "--expected", "renamed"])?;
     let reader = ProjectStore::open(&package, AccessMode::ReadOnly)?;
-    assert_eq!(reader.snapshot()?, before);
     assert_eq!(reader.current_generation_requests()?, vec![generation]);
     Ok(())
 }

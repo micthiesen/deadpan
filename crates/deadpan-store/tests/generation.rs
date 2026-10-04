@@ -719,3 +719,65 @@ fn validation_rechecks_the_request_against_its_origin_revision() -> Result {
     ));
     Ok(())
 }
+
+/// Keeps every request current unless its Hold is `stale`.
+struct Resolver {
+    stale: &'static str,
+}
+
+impl deadpan_store::generation::GenerationContextResolver for Resolver {
+    fn observe(
+        &self,
+        origin: &ProjectDocument,
+        after: &ProjectDocument,
+        request: &StoredGenerationRequest,
+    ) -> ContextObservation {
+        assert_eq!(origin.revision_id(), &request.origin_revision);
+        assert!(
+            after.nodes().contains_key(&request.binding.hold_id)
+                || request.binding.hold_id.as_str() == self.stale
+        );
+        if request.binding.hold_id.as_str() == self.stale {
+            ContextObservation::Unresolved
+        } else {
+            ContextObservation::Resolved(request.binding.context_sha256.clone())
+        }
+    }
+}
+
+#[test]
+fn an_installed_resolver_reconciles_ordinary_writes_and_history() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let path = scratch.path().join("resolver.deadpan");
+    let mut store = ProjectStore::create(&path, &document(&[("a", 12), ("b", 8)])?)?;
+    let a = allocate(&mut store, "a-1", "a", 12, 'a')?;
+    let b = allocate(&mut store, "b-1", "b", 8, 'b')?;
+    let rename = edit(
+        &store,
+        "rename-b",
+        Command::Rename {
+            node: NodeId::new("b")?,
+            label: "renamed".into(),
+        },
+    )?;
+    assert!(matches!(
+        store.commit(&rename),
+        Err(StoreError::GenerationRelevanceRequired)
+    ));
+    store.set_generation_context_resolver(std::sync::Arc::new(Resolver { stale: "a" }));
+    store.commit(&rename)?;
+    assert_eq!(
+        store.generation_request(&a.request_id)?.unwrap().relevance,
+        Relevance::Stale
+    );
+    assert_eq!(
+        store.generation_request(&b.request_id)?.unwrap().relevance,
+        Relevance::Current
+    );
+    store.undo(&rename.new_revision, RevisionId::new("undo-rename")?)?;
+    assert_eq!(
+        store.generation_request(&b.request_id)?.unwrap().relevance,
+        Relevance::Current
+    );
+    Ok(())
+}

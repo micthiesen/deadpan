@@ -1242,6 +1242,11 @@ impl Service {
             }
         }
         .map_err(display)?;
+        let mut store = store;
+        // Edits keep pending AI requests reconciled instead of refusing.
+        store.set_generation_context_resolver(std::sync::Arc::new(
+            deadpan_cli::generation_context::BoundaryContextResolver::default(),
+        ));
         let next = self
             .session
             .checked_add(1)

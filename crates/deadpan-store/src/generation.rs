@@ -380,6 +380,63 @@ impl ProjectStore {
     }
 }
 
+/// A host's view of whether a current generation request still describes
+/// the same context after a document change. The store asks it for every
+/// current request when a write supplies no explicit relevance plan.
+pub trait GenerationContextResolver: Send + Sync {
+    /// The context of `request`'s Hold in `after`, given `origin`, the
+    /// document the request was made against. `Resolved` with the request's
+    /// own hash keeps it current; anything else makes it stale.
+    fn observe(
+        &self,
+        origin: &ProjectDocument,
+        after: &ProjectDocument,
+        request: &StoredGenerationRequest,
+    ) -> ContextObservation;
+}
+
+/// Reconcile current requests for one document transition: an explicit plan,
+/// else the installed resolver, else refuse while any request is current.
+pub(crate) fn reconcile(
+    connection: &Connection,
+    before: &ProjectDocument,
+    after: &ProjectDocument,
+    explicit: Option<&RelevancePlan>,
+    resolver: Option<&dyn GenerationContextResolver>,
+) -> Result<(), StoreError> {
+    match (explicit, resolver) {
+        (Some(plan), _) => apply_relevance_plan(connection, before, after, plan),
+        (None, Some(resolver)) => {
+            let current = read_current_requests(connection)?;
+            if current.is_empty() {
+                return Ok(());
+            }
+            let mut observations = Vec::with_capacity(current.len());
+            for request in current {
+                let origin =
+                    validation::read_revision(connection, request.origin_revision.as_str())?
+                        .document;
+                observations.push(RelevanceObservation {
+                    request_id: request.request_id.clone(),
+                    binding: request.binding.clone(),
+                    after_context: resolver.observe(&origin, after, &request),
+                });
+            }
+            apply_relevance_plan(
+                connection,
+                before,
+                after,
+                &RelevancePlan {
+                    from_revision: before.revision_id().clone(),
+                    to_revision: after.revision_id().clone(),
+                    observations,
+                },
+            )
+        }
+        (None, None) => ensure_no_current(connection),
+    }
+}
+
 pub(crate) fn ensure_no_current(connection: &Connection) -> Result<(), StoreError> {
     let current: Option<i64> = connection
         .query_row(

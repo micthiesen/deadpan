@@ -272,6 +272,9 @@ pub fn dispatch_short(
     };
     match ProjectStore::open(package, mode) {
         Ok(mut store) => {
+            store.set_generation_context_resolver(std::sync::Arc::new(
+                crate::generation_context::BoundaryContextResolver::default(),
+            ));
             let project = match project {
                 Some(project) => project,
                 None => store
