@@ -14,7 +14,8 @@ use crate::{
     RepeatSelectionIdentities, ResolvedStep, ResolvedTransaction, RevisionId, SemanticInstruction,
     SemanticMotion, SemanticObjectSelection, SemanticObjectTarget, SemanticProgram,
     SemanticSelector, SemanticTextObject, SliceCaptureSelection, SliceIdentityRequirements,
-    SlicePasteIdentities, SourceNode, SplitIdentities, compound::wire,
+    SlicePasteIdentities, SourceNode, SpeechMotion, SpeechTimeline, SplitIdentities,
+    compound::wire,
 };
 
 use super::{MAX_SEMANTIC_CALL_DEPTH, MAX_SEMANTIC_INSTRUCTION_FUEL};
@@ -183,6 +184,7 @@ pub struct SemanticPlan {
 /// The allocator supplies identities only; it must not publish authored state.
 /// On any error the input document and bank remain untouched. The host retains
 /// responsibility for historical identity uniqueness and measured media admission.
+/// Word and sentence selectors are unavailable; see [`plan_semantic_with_speech`].
 pub fn plan_semantic(
     document: &ProjectDocument,
     context: &SemanticContext,
@@ -191,6 +193,40 @@ pub fn plan_semantic(
     new_revision: RevisionId,
     allocate: impl FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
     resolve_original: impl FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
+) -> Result<SemanticPlan, EditError> {
+    plan_semantic_with_speech(
+        document,
+        context,
+        program,
+        registers,
+        new_revision,
+        allocate,
+        resolve_original,
+        |_| Err(speech_unavailable()),
+    )
+}
+
+/// The error for word and sentence selectors without a transcript.
+pub fn speech_unavailable() -> EditError {
+    EditError::new(
+        EditErrorCode::SelectionUnavailable,
+        "words are not ready: the Original has no transcript yet",
+    )
+}
+
+/// [`plan_semantic`] with recognized speech. `resolve_speech` projects the
+/// transcript through a staged document onto the Edit clock; it is called at
+/// most once per staged document, only when an instruction needs speech.
+#[allow(clippy::too_many_arguments)]
+pub fn plan_semantic_with_speech(
+    document: &ProjectDocument,
+    context: &SemanticContext,
+    program: &SemanticProgram,
+    registers: SemanticRegisterBank<'_>,
+    new_revision: RevisionId,
+    allocate: impl FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
+    resolve_original: impl FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
+    resolve_speech: impl FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
 ) -> Result<SemanticPlan, EditError> {
     program.validate()?;
     document.validate()?;
@@ -249,6 +285,8 @@ pub fn plan_semantic(
         captured_bytes: 0,
         allocate,
         resolve_original,
+        resolve_speech,
+        speech: None,
     };
     planner.execute(program)?;
     let selected_child = planner.context.selected_child.clone();
@@ -287,7 +325,7 @@ pub fn plan_semantic(
     })
 }
 
-struct Planner<'a, F, R> {
+struct Planner<'a, F, R, S> {
     current: ProjectDocument,
     context: SemanticContext,
     bounds: (ProjectFrame, ProjectFrame),
@@ -308,13 +346,39 @@ struct Planner<'a, F, R> {
     captured_bytes: usize,
     allocate: F,
     resolve_original: R,
+    resolve_speech: S,
+    /// Speech for the staged document after this many resolved steps.
+    speech: Option<(usize, Arc<SpeechTimeline>)>,
 }
 
-impl<F, R> Planner<'_, F, R>
+impl<F, R, S> Planner<'_, F, R, S>
 where
     F: FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
     R: FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
+    S: FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
 {
+    /// Project speech through the current staged document once per change.
+    fn ensure_speech(&mut self) -> Result<(), EditError> {
+        if self
+            .speech
+            .as_ref()
+            .is_some_and(|(steps, _)| *steps == self.steps.len())
+        {
+            return Ok(());
+        }
+        let speech = (self.resolve_speech)(&self.current)?;
+        self.speech = Some((self.steps.len(), speech));
+        Ok(())
+    }
+
+    fn speech(&self) -> Result<&SpeechTimeline, EditError> {
+        self.speech
+            .as_ref()
+            .filter(|(steps, _)| *steps == self.steps.len())
+            .map(|(_, speech)| speech.as_ref())
+            .ok_or_else(speech_unavailable)
+    }
+
     fn execute(&mut self, program: &SemanticProgram) -> Result<(), EditError> {
         for instruction in program.instructions() {
             if self.trace.len() == MAX_SEMANTIC_INSTRUCTION_FUEL {
@@ -336,6 +400,9 @@ where
                 captured_child_label: None,
                 depth: self.calls.len(),
             });
+            if instruction.uses_speech() {
+                self.ensure_speech()?;
+            }
             match instruction {
                 SemanticInstruction::MoveFrames { forward, count } => {
                     self.move_context(SemanticMotion::Frames {
@@ -351,6 +418,35 @@ where
                 }
                 SemanticInstruction::MoveScope { end } => {
                     self.move_context(SemanticMotion::Scope { end: *end })?;
+                }
+                SemanticInstruction::MoveWords {
+                    forward,
+                    count,
+                    end,
+                } => {
+                    self.move_context(SemanticMotion::Words {
+                        forward: *forward,
+                        count: *count,
+                        end: *end,
+                    })?;
+                }
+                SemanticInstruction::MoveSentences { forward, count } => {
+                    self.move_context(SemanticMotion::Sentences {
+                        forward: *forward,
+                        count: *count,
+                    })?;
+                }
+                SemanticInstruction::SelectSpeech { object } => {
+                    self.context = self.speech()?.select_object(
+                        &self.context,
+                        self.bounds,
+                        *object,
+                        self.current.presentation_basis().frame_rate,
+                    )?;
+                    let target = self.resolve_selector(SemanticSelector::VisualSelection)?;
+                    self.trace[index].resolved_parent = Some(target.parent);
+                    self.trace[index].resolved_range = Some(target.range);
+                    self.trace[index].resolved_selection = target.selection;
                 }
                 SemanticInstruction::SelectObject { object } => {
                     self.charge_resolution()?;

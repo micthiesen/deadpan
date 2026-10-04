@@ -122,6 +122,52 @@ Replay uses an empty model directory, so it never downloads or uses an
 installed model; the `transcript` scenario saves a synthetic transcript through
 the real service and checks display, search, current word and exact jumps.
 
+## Words as motions and objects
+
+`w`, `b` and `e` move to the next word start, the previous word start and the
+next word end; `W` and `B` move between sentences (transcript segments). In
+Your edit, `iw`, `aw`, `is` and `as` select a word or sentence in Visual mode,
+and every motion and object composes after `d`, `y` and `r` (`dw`, `d3e`,
+`diw`, `3riw`, `yas`). Counts on motions move further; a count before `r` is
+total plays. Macros and dot-repeat record the motions and objects, which
+resolve anew against each staged document.
+
+Words reach the Edit clock by projection, never by stored edit positions. The
+host compiles the render plan of the document being edited and assigns each
+project frame that presents an Original picture the word being spoken during
+that picture: the latest word that begins before the picture ends and has not
+ended when it starts. Consecutive frames of one word in one occurrence form a
+run; a sentence occurrence is consecutive runs of one segment whose words
+advance, so a replayed sentence is a second occurrence. Freezes, generated
+pictures, stills and gaps carry no words. Speech follows the picture mapping of
+linked beats, so a picture-only cutaway reports the cutaway's words.
+
+The core planner (`plan_semantic_with_speech`) asks for this projection at most
+once per staged document and only when an instruction needs words, so a macro
+that cuts a word and then moves by words sees the edited arrangement. The
+around objects add half of each adjoining pause, at most 80 ms per side
+(rounded down to whole project frames) and never reaching neighboring speech.
+`iw` in a pause reports that the cursor is not on a word. Without a transcript,
+word keys explain why words are not ready (model missing, transcribing, failed)
+and frame and beat editing continue.
+
+Runs continue across beat boundaries while the source picture does not go
+back, so splitting or cutting inside a word keeps one occurrence and a replayed
+word starts another. As in Vim, a motion past the last word clamps to the
+group edge, so `dw` on the last word cuts to the end of the group, and a
+sentence object spans whatever lies between its words, including an inserted
+cutaway. `iw` and the other objects replace a Visual range rather than extend
+it.
+
+Projection samples one picture per project frame. In a release build on
+2026-10-04 it cost 0.5 µs per frame on the 595-frame interview project (about
+54 ms for an hour at 30 fps), paid once per revision at the first word key and
+once per staged document in a plan. Deep arrangements cost more per picture.
+
+In Original, `w`, `b`, `e`, `W` and `B` move the Original cursor over the
+Original's own pictures with the same rule. Original operators with motions
+are not yet available; `v` with word motions selects a moment to copy.
+
 ## Failure handling
 
 A finished transcript is submitted to the project service without the side
@@ -144,7 +190,7 @@ every word per query.
 
 ## Remaining
 
-Transcript display through Your edit, keyboard word motions and `/`
-search integration, background
-scheduling by visible range, VAD and refinement, manual correction, sentence
-objects, accuracy measurement on real speech, and the model manager.
+Transcript display through Your edit, `/` and `n`/`N` search integration,
+Original operators with word motions, background scheduling by visible range,
+VAD and refinement, manual correction, accuracy measurement on real speech, and
+a manager listing every pack.

@@ -11,6 +11,7 @@ mod objects;
 mod repeat;
 mod selectors;
 mod set_repeat;
+mod speech;
 mod visual;
 
 fn node(value: &str) -> NodeId {
@@ -741,6 +742,8 @@ fn cumulative_document_and_capture_budgets_refuse_before_another_leaf_allocation
                 panic!("exhausted work budget reached the leaf allocator")
             },
             resolve_original: no_original,
+            resolve_speech: |_: &ProjectDocument| Err(speech_unavailable()),
+            speech: None,
         };
         let error = planner.execute(&program(vec![cut(1, 'a')])).unwrap_err();
         assert_eq!(error.code, EditErrorCode::LimitExceeded);

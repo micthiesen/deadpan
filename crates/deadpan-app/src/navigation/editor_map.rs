@@ -54,6 +54,11 @@ pub enum BindingId {
     FrameNext,
     BeatPrevious,
     BeatNext,
+    WordNext,
+    WordPrevious,
+    WordEnd,
+    SentenceNext,
+    SentencePrevious,
     First,
     Last,
     Undo,
@@ -66,6 +71,10 @@ pub enum BindingId {
     Visual,
     InnerGroup,
     AroundGroup,
+    InnerWord,
+    AroundWord,
+    InnerSentence,
+    AroundSentence,
     Copy,
     CopyBeat,
     CutOperator,
@@ -103,11 +112,16 @@ pub enum BindingId {
 }
 
 impl BindingId {
-    pub const ALL: [Self; 50] = [
+    pub const ALL: [Self; 59] = [
         Self::FramePrevious,
         Self::FrameNext,
         Self::BeatPrevious,
         Self::BeatNext,
+        Self::WordNext,
+        Self::WordPrevious,
+        Self::WordEnd,
+        Self::SentenceNext,
+        Self::SentencePrevious,
         Self::First,
         Self::Last,
         Self::Undo,
@@ -120,6 +134,10 @@ impl BindingId {
         Self::Visual,
         Self::InnerGroup,
         Self::AroundGroup,
+        Self::InnerWord,
+        Self::AroundWord,
+        Self::InnerSentence,
+        Self::AroundSentence,
         Self::Copy,
         Self::CopyBeat,
         Self::CutOperator,
@@ -161,6 +179,11 @@ impl BindingId {
             Self::FrameNext => "frame.next",
             Self::BeatPrevious => "beat.previous",
             Self::BeatNext => "beat.next",
+            Self::WordNext => "word.next",
+            Self::WordPrevious => "word.previous",
+            Self::WordEnd => "word.end",
+            Self::SentenceNext => "sentence.next",
+            Self::SentencePrevious => "sentence.previous",
             Self::First => "first",
             Self::Last => "last",
             Self::Undo => "undo",
@@ -173,6 +196,10 @@ impl BindingId {
             Self::Visual => "visual",
             Self::InnerGroup => "object.inner_group",
             Self::AroundGroup => "object.around_group",
+            Self::InnerWord => "object.inner_word",
+            Self::AroundWord => "object.around_word",
+            Self::InnerSentence => "object.inner_sentence",
+            Self::AroundSentence => "object.around_sentence",
             Self::Copy => "copy",
             Self::CopyBeat => "copy.beat",
             Self::CutOperator => "cut.operator",
@@ -298,9 +325,26 @@ impl Rule {
                             count: distance,
                         },
                     },
+                    S::Motion {
+                        motion: M::Words { forward, end, .. },
+                    } => S::Motion {
+                        motion: M::Words {
+                            forward,
+                            count: distance,
+                            end,
+                        },
+                    },
+                    S::Motion {
+                        motion: M::Sentences { forward, .. },
+                    } => S::Motion {
+                        motion: M::Sentences {
+                            forward,
+                            count: distance,
+                        },
+                    },
                     _ if counts.motion.is_some() => {
                         return Action::Invalid(
-                            "A motion count requires frame or beat motion; put total plays before Repeat.",
+                            "A motion count requires frame, beat, word or sentence motion; put total plays before Repeat.",
                         );
                     }
                     selector => selector,
@@ -324,6 +368,11 @@ impl Rule {
                     S::TextObject { .. } if count.is_some_and(|count| count > 1) => {
                         return Action::Invalid(
                             "A group object selects one group; larger counts are not supported.",
+                        );
+                    }
+                    S::Speech { .. } if count.is_some_and(|count| count > 1) => {
+                        return Action::Invalid(
+                            "A word or sentence object selects one; use a motion such as d3w for more.",
                         );
                     }
                     S::SelectedBeat if count.is_some_and(|count| count > 1) => {
@@ -354,6 +403,23 @@ impl Rule {
                             count: std::num::NonZeroU32::new(count.unwrap_or(1)).unwrap(),
                         },
                     },
+                    S::Motion {
+                        motion: M::Words { forward, end, .. },
+                    } => S::Motion {
+                        motion: M::Words {
+                            forward,
+                            count: std::num::NonZeroU32::new(count.unwrap_or(1)).unwrap(),
+                            end,
+                        },
+                    },
+                    S::Motion {
+                        motion: M::Sentences { forward, .. },
+                    } => S::Motion {
+                        motion: M::Sentences {
+                            forward,
+                            count: std::num::NonZeroU32::new(count.unwrap_or(1)).unwrap(),
+                        },
+                    },
                     selector => selector,
                 };
                 Action::Operator { cut, selector }
@@ -365,6 +431,15 @@ impl Rule {
                     count: count.unwrap_or(1).max(1),
                 },
                 Action::Beat { forward, .. } => Action::Beat {
+                    forward,
+                    count: count.unwrap_or(1).max(1),
+                },
+                Action::Word { forward, end, .. } => Action::Word {
+                    forward,
+                    end,
+                    count: count.unwrap_or(1).max(1),
+                },
+                Action::Sentence { forward, .. } => Action::Sentence {
                     forward,
                     count: count.unwrap_or(1).max(1),
                 },
@@ -434,7 +509,8 @@ impl Rule {
                 deadpan_core::SemanticSelector::SelectedBeat => I::Repeat,
                 deadpan_core::SemanticSelector::VisualSelection => I::RepeatRange,
                 deadpan_core::SemanticSelector::Motion { .. }
-                | deadpan_core::SemanticSelector::TextObject { .. } => I::RepeatOperator,
+                | deadpan_core::SemanticSelector::TextObject { .. }
+                | deadpan_core::SemanticSelector::Speech { .. } => I::RepeatOperator,
             },
             Action::Operator { cut, selector } => match selector {
                 deadpan_core::SemanticSelector::SelectedBeat => {
@@ -456,6 +532,19 @@ impl Rule {
             Action::Step { forward: true, .. } => I::FrameNext,
             Action::Beat { forward: false, .. } => I::BeatPrevious,
             Action::Beat { forward: true, .. } => I::BeatNext,
+            Action::Word {
+                forward: true,
+                end: false,
+                ..
+            } => I::WordNext,
+            Action::Word { forward: false, .. } => I::WordPrevious,
+            Action::Word { end: true, .. } => I::WordEnd,
+            Action::Sentence { forward: true, .. } => I::SentenceNext,
+            Action::Sentence { forward: false, .. } => I::SentencePrevious,
+            Action::SelectSpeech(deadpan_core::SpeechObject::InnerWord) => I::InnerWord,
+            Action::SelectSpeech(deadpan_core::SpeechObject::AroundWord) => I::AroundWord,
+            Action::SelectSpeech(deadpan_core::SpeechObject::InnerSentence) => I::InnerSentence,
+            Action::SelectSpeech(deadpan_core::SpeechObject::AroundSentence) => I::AroundSentence,
             Action::First => I::First,
             Action::Last => I::Last,
             Action::Undo => I::Undo,
@@ -762,7 +851,8 @@ impl Compiled {
                         RepeatPendingScope::VisualSelection
                     }
                     deadpan_core::SemanticSelector::Motion { .. } => RepeatPendingScope::Motion,
-                    deadpan_core::SemanticSelector::TextObject { .. } => {
+                    deadpan_core::SemanticSelector::TextObject { .. }
+                    | deadpan_core::SemanticSelector::Speech { .. } => {
                         RepeatPendingScope::TextObject
                     }
                 };
@@ -983,12 +1073,48 @@ fn repeat_description(
             "{count} beat boundary/boundaries {}",
             if forward { "forward" } else { "backward" }
         ),
+        S::Motion {
+            motion:
+                M::Words {
+                    forward,
+                    count,
+                    end,
+                },
+        } => match (forward, end) {
+            (true, true) => format!("to the end of {count} word(s)"),
+            (true, false) => format!("{count} word(s) forward"),
+            (false, _) => format!("{count} word(s) backward"),
+        },
+        S::Motion {
+            motion: M::Sentences { forward, count },
+        } => format!(
+            "{count} sentence(s) {}",
+            if forward { "forward" } else { "backward" }
+        ),
+        S::Speech { object } => speech_object_text(object).into(),
     };
     format!("repeats {selected}, {plays} total plays")
 }
 
+fn speech_object_text(object: deadpan_core::SpeechObject) -> &'static str {
+    match object {
+        deadpan_core::SpeechObject::InnerWord => "the word",
+        deadpan_core::SpeechObject::AroundWord => "the word with its pauses",
+        deadpan_core::SpeechObject::InnerSentence => "the sentence",
+        deadpan_core::SpeechObject::AroundSentence => "the sentence with its pauses",
+    }
+}
+
 fn enabled(id: BindingId, visual: bool, domain: RoutingDomain) -> bool {
-    if matches!(id, BindingId::InnerGroup | BindingId::AroundGroup) {
+    if matches!(
+        id,
+        BindingId::InnerGroup
+            | BindingId::AroundGroup
+            | BindingId::InnerWord
+            | BindingId::AroundWord
+            | BindingId::InnerSentence
+            | BindingId::AroundSentence
+    ) {
         return domain == RoutingDomain::Edit && visual;
     }
     if matches!(
@@ -1035,6 +1161,26 @@ fn compile_mode(
                         let selector = match motion.rule.action {
                             Action::SelectObject(object) => {
                                 deadpan_core::SemanticSelector::TextObject { object }
+                            }
+                            Action::SelectSpeech(object) => {
+                                deadpan_core::SemanticSelector::Speech { object }
+                            }
+                            Action::Word { forward, end, .. } => {
+                                deadpan_core::SemanticSelector::Motion {
+                                    motion: deadpan_core::SemanticMotion::Words {
+                                        forward,
+                                        count: std::num::NonZeroU32::new(1).unwrap(),
+                                        end,
+                                    },
+                                }
+                            }
+                            Action::Sentence { forward, .. } => {
+                                deadpan_core::SemanticSelector::Motion {
+                                    motion: deadpan_core::SemanticMotion::Sentences {
+                                        forward,
+                                        count: std::num::NonZeroU32::new(1).unwrap(),
+                                    },
+                                }
                             }
                             Action::Step { forward, .. } => {
                                 deadpan_core::SemanticSelector::Motion {
@@ -1107,6 +1253,9 @@ fn compile_mode(
                                                     deadpan_core::SemanticTextObject::AroundGroup,
                                                 ) => "copies the whole group",
                                             },
+                                            deadpan_core::SemanticSelector::Speech { object } => {
+                                                speech_operator_description(cut, object)
+                                            }
                                             _ => unreachable!(),
                                         },
                                         PrefixKind::Repeat => "repeat with a motion",
@@ -1217,6 +1366,20 @@ fn compile_mode(
     Trie::compile(bindings, prefixes).map_err(|error| error.to_string())
 }
 
+fn speech_operator_description(cut: bool, object: deadpan_core::SpeechObject) -> &'static str {
+    use deadpan_core::SpeechObject as O;
+    match (cut, object) {
+        (true, O::InnerWord) => "cuts the word",
+        (false, O::InnerWord) => "copies the word",
+        (true, O::AroundWord) => "cuts the word with its pauses",
+        (false, O::AroundWord) => "copies the word with its pauses",
+        (true, O::InnerSentence) => "cuts the sentence",
+        (false, O::InnerSentence) => "copies the sentence",
+        (true, O::AroundSentence) => "cuts the sentence with its pauses",
+        (false, O::AroundSentence) => "copies the sentence with its pauses",
+    }
+}
+
 fn operator_description(cut: bool, motion: deadpan_core::SemanticMotion) -> &'static str {
     use deadpan_core::SemanticMotion as M;
     match (cut, motion) {
@@ -1232,6 +1395,16 @@ fn operator_description(cut: bool, motion: deadpan_core::SemanticMotion) -> &'st
         (true, M::Scope { end: true }) => "cuts to group end",
         (false, M::Scope { end: false }) => "copies to group start",
         (false, M::Scope { end: true }) => "copies to group end",
+        (true, M::Words { end: true, .. }) => "cuts to the word end",
+        (false, M::Words { end: true, .. }) => "copies to the word end",
+        (true, M::Words { forward: true, .. }) => "cuts to the next word",
+        (false, M::Words { forward: true, .. }) => "copies to the next word",
+        (true, M::Words { forward: false, .. }) => "cuts back to a word start",
+        (false, M::Words { forward: false, .. }) => "copies back to a word start",
+        (true, M::Sentences { forward: true, .. }) => "cuts to the next sentence",
+        (false, M::Sentences { forward: true, .. }) => "copies to the next sentence",
+        (true, M::Sentences { forward: false, .. }) => "cuts back to a sentence start",
+        (false, M::Sentences { forward: false, .. }) => "copies back to a sentence start",
     }
 }
 
@@ -1273,6 +1446,15 @@ fn branch_paths(trie: &EditorTrie) -> Vec<Vec<Stroke>> {
 
 #[cfg(test)]
 mod tests;
+fn speech_select_text(object: deadpan_core::SpeechObject) -> &'static str {
+    match object {
+        deadpan_core::SpeechObject::InnerWord => "selects the word",
+        deadpan_core::SpeechObject::AroundWord => "selects the word with its pauses",
+        deadpan_core::SpeechObject::InnerSentence => "selects the sentence",
+        deadpan_core::SpeechObject::AroundSentence => "selects the sentence with its pauses",
+    }
+}
+
 fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
     let mut bindings = Vec::new();
     let mut add = |path: &[Stroke], action, count, short, repeatable| {
@@ -1332,6 +1514,69 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
             "move by frames",
             true,
         );
+    }
+    for (key, object, short) in [
+        (Key::I, Key::W, deadpan_core::SpeechObject::InnerWord),
+        (Key::A, Key::W, deadpan_core::SpeechObject::AroundWord),
+        (Key::I, Key::S, deadpan_core::SpeechObject::InnerSentence),
+        (Key::A, Key::S, deadpan_core::SpeechObject::AroundSentence),
+    ]
+    .map(|(prefix, key, object)| ([prefix, key], object, speech_select_text(object)))
+    {
+        add(
+            &[plain(key[0]), plain(key[1])],
+            Action::SelectSpeech(object),
+            C::Refuse("Select one word or sentence object without a count."),
+            short,
+            false,
+        );
+    }
+    for (stroke, action, short) in [
+        (
+            plain(Key::W),
+            Action::Word {
+                forward: true,
+                end: false,
+                count: 1,
+            },
+            "next word",
+        ),
+        (
+            plain(Key::B),
+            Action::Word {
+                forward: false,
+                end: false,
+                count: 1,
+            },
+            "previous word",
+        ),
+        (
+            plain(Key::E),
+            Action::Word {
+                forward: true,
+                end: true,
+                count: 1,
+            },
+            "word end",
+        ),
+        (
+            Stroke::Key(Key::W, true),
+            Action::Sentence {
+                forward: true,
+                count: 1,
+            },
+            "next sentence",
+        ),
+        (
+            Stroke::Key(Key::B, true),
+            Action::Sentence {
+                forward: false,
+                count: 1,
+            },
+            "previous sentence",
+        ),
+    ] {
+        add(&[stroke], action, C::Motion, short, true);
     }
     for (key, forward) in [
         (Key::J, true),

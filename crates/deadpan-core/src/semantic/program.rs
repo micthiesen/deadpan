@@ -16,9 +16,35 @@ pub const MAX_SEMANTIC_CALL_DEPTH: usize = 16;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum SemanticMotion {
-    Frames { forward: bool, count: NonZeroU32 },
-    Beats { forward: bool, count: NonZeroU32 },
-    Scope { end: bool },
+    Frames {
+        forward: bool,
+        count: NonZeroU32,
+    },
+    Beats {
+        forward: bool,
+        count: NonZeroU32,
+    },
+    Scope {
+        end: bool,
+    },
+    /// `w`, `b` and `e`: recognized word starts, or ends when `end` is set.
+    /// Backward word ends are not part of the vocabulary.
+    Words {
+        forward: bool,
+        count: NonZeroU32,
+        end: bool,
+    },
+    /// `W` and `B`: recognized sentence starts.
+    Sentences {
+        forward: bool,
+        count: NonZeroU32,
+    },
+}
+
+impl SemanticMotion {
+    pub const fn uses_speech(self) -> bool {
+        matches!(self, Self::Words { .. } | Self::Sentences { .. })
+    }
 }
 
 /// Select copied or deleted content without moving the context. Motion ranges
@@ -36,6 +62,20 @@ pub enum SemanticSelector {
     TextObject {
         object: SemanticTextObject,
     },
+    /// `iw`, `aw`, `is` and `as` against recognized speech at the cursor.
+    Speech {
+        object: super::SpeechObject,
+    },
+}
+
+impl SemanticSelector {
+    pub const fn uses_speech(self) -> bool {
+        match self {
+            Self::Motion { motion } => motion.uses_speech(),
+            Self::Speech { .. } => true,
+            Self::SelectedBeat | Self::VisualSelection | Self::TextObject { .. } => false,
+        }
+    }
 }
 
 /// The supported macro vocabulary. Selectors resolve against each preceding
@@ -53,6 +93,19 @@ pub enum SemanticInstruction {
     },
     MoveScope {
         end: bool,
+    },
+    MoveWords {
+        forward: bool,
+        count: NonZeroU32,
+        end: bool,
+    },
+    MoveSentences {
+        forward: bool,
+        count: NonZeroU32,
+    },
+    /// Select a word or sentence object as an extending Visual time range.
+    SelectSpeech {
+        object: super::SpeechObject,
     },
     SelectObject {
         object: SemanticTextObject,
@@ -115,6 +168,47 @@ pub enum SemanticInstruction {
     },
 }
 
+impl SemanticInstruction {
+    /// True when resolving this instruction needs recognized speech.
+    pub fn uses_speech(&self) -> bool {
+        match self {
+            Self::MoveWords { .. } | Self::MoveSentences { .. } | Self::SelectSpeech { .. } => true,
+            Self::Yank { selector, .. }
+            | Self::Cut { selector, .. }
+            | Self::Group { selector, .. }
+            | Self::Repeat { selector, .. } => selector.uses_speech(),
+            _ => false,
+        }
+    }
+
+    fn backward_word_end(&self) -> bool {
+        let backward_end = |motion: &SemanticMotion| {
+            matches!(
+                motion,
+                SemanticMotion::Words {
+                    forward: false,
+                    end: true,
+                    ..
+                }
+            )
+        };
+        match self {
+            Self::MoveWords {
+                forward: false,
+                end: true,
+                ..
+            } => true,
+            Self::Yank { selector, .. }
+            | Self::Cut { selector, .. }
+            | Self::Group { selector, .. }
+            | Self::Repeat { selector, .. } => {
+                matches!(selector, SemanticSelector::Motion { motion } if backward_end(motion))
+            }
+            _ => false,
+        }
+    }
+}
+
 // Internally tagged unit variants otherwise ignore unknown fields in Serde.
 pub(super) fn deserialize_empty<'de, D: serde::Deserializer<'de>>(
     deserializer: D,
@@ -155,6 +249,12 @@ impl SemanticProgram {
             ));
         }
         for instruction in &self.instructions {
+            if instruction.backward_word_end() {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "word-end motions move forward only",
+                ));
+            }
             if let SemanticInstruction::Group { label, .. } = instruction {
                 crate::validate_group_label(label)?;
             }

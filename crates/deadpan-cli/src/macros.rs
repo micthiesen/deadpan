@@ -7,7 +7,7 @@ use deadpan_core::{
     ProjectDocument, ProjectFrame, ProjectId, RegisterName, RegisterValue, RevisionId,
     SemanticAllocation, SemanticAllocationRequest, SemanticContext, SemanticInstruction,
     SemanticPlan, SemanticProgram, SemanticRegisterBank, SemanticVisualSelection,
-    SlicePasteIdentities, SourceNode, SplitIdentities, plan_semantic,
+    SlicePasteIdentities, SourceNode, SplitIdentities,
 };
 use deadpan_store::{AccessMode, CompoundPreview, ProjectStore, registers::RegisterBank};
 use serde::{Deserialize, Serialize};
@@ -248,7 +248,9 @@ pub fn plan_program(
     // pastes of one frozen Original value need one receipt read in this plan;
     // store preview and commit each perform their own independent admission.
     let mut originals: Vec<(RegisterValue, AssetRecord, FrameRate, SourceNode)> = Vec::new();
-    let result = plan_semantic(
+    // Loaded only when an instruction needs words.
+    let mut speech: Option<Result<crate::speech::StoredSpeech, EditError>> = None;
+    let result = deadpan_core::plan_semantic_with_speech(
         document,
         context,
         program,
@@ -282,6 +284,13 @@ pub fn plan_program(
                 originals.push((value.clone(), record.clone(), rate, source.clone()));
             }
             Ok(source)
+        },
+        |staged| {
+            speech
+                .get_or_insert_with(|| crate::speech::StoredSpeech::load(store))
+                .as_ref()
+                .map_err(Clone::clone)?
+                .project(staged)
         },
     );
     result.map_err(|error| source_error.unwrap_or_else(|| edit_error(error)))

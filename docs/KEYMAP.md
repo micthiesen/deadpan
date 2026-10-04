@@ -51,6 +51,9 @@ The 16-key bound also applies to each composed operator-plus-motion path.
 | --- | --- |
 | `frame.previous`, `frame.next` | Frame motion; sound nudges in Placed sounds |
 | `beat.previous`, `beat.next` | Beat or catalog/event selection |
+| `word.next`, `word.previous`, `word.end` | `w` / `b` / `e`: recognized word starts and the next word end, in Original and Your edit; counts move further and compose after `y`, `d`, `r` |
+| `sentence.next`, `sentence.previous` | `W` / `B`: recognized sentence starts |
+| `object.inner_word`, `object.around_word`, `object.inner_sentence`, `object.around_sentence` | `iw` / `aw` / `is` / `as`: Visual word or sentence at the Edit cursor, with up to 80 ms pause handles for `a`; also compose after `y`, `d`, `r` |
 | `first`, `last` | Start and end |
 | `undo` | Undo; native undo/redo alternatives remain fixed |
 | `playback`, `audition` | Play/pause and selection loop |

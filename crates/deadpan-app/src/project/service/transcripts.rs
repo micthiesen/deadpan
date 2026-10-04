@@ -19,11 +19,12 @@ impl Service {
             }
             let store = self.store.as_ref().ok_or("Open a project first")?;
             store.save_transcript(&key, &transcript).map_err(display)?;
+            // Publish the preferred stored transcript, the same one operators
+            // and macros read, so motions and edits never use different words.
+            let (key, transcript) = deadpan_cli::speech::stored_transcript(store, &key.content)
+                .unwrap_or_else(|| (key, (*transcript).clone()));
             Ok(Arc::new(workspace.with_transcript(Arc::new(
-                crate::project::OriginalTranscript {
-                    key,
-                    transcript: (*transcript).clone(),
-                },
+                crate::project::OriginalTranscript { key, transcript },
             ))))
         })();
         let error = match result {

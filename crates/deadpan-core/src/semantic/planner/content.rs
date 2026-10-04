@@ -19,10 +19,11 @@ enum Destination {
     },
 }
 
-impl<F, R> Planner<'_, F, R>
+impl<F, R, S> Planner<'_, F, R, S>
 where
     F: FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
     R: FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
+    S: FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
 {
     pub(super) fn capture_selector(
         &mut self,

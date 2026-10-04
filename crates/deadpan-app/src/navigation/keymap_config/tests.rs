@@ -108,10 +108,10 @@ fn multi_key_motion_latches_its_action_and_count_is_initial_only() {
 
 #[test]
 fn held_non_motion_never_reopens_an_action_or_consumes_a_prefix() {
-    let mut map = configured(serde_json::json!([{"action":"hold","keys":[["e","b"]]}]));
-    press(&mut map, Key::E);
+    let mut map = configured(serde_json::json!([{"action":"hold","keys":[["o","b"]]}]));
+    press(&mut map, Key::O);
     assert_eq!(repeated(&mut map, Key::B), None);
-    assert_eq!(map.pending(), "e");
+    assert_eq!(map.pending(), "o");
     assert!(matches!(
         press(&mut map, Key::B),
         Some(Action::Edit(BeatEdit::InsertHold(_)))
@@ -143,11 +143,11 @@ fn mode_is_pinned_for_the_whole_pending_path() {
 #[test]
 fn capture_families_are_semantic_and_independent() {
     let mut map = configured(serde_json::json!([
-        {"action":"trim","keys":[["e","t","v"],["F2"]]},
+        {"action":"trim","keys":[["o","t","v"],["F2"]]},
         {"action":"insert","keys":[["a","i"]]},
-        {"action":"mark.set","keys":[["e","m"]]}
+        {"action":"mark.set","keys":[["o","m"]]}
     ]));
-    press(&mut map, Key::E);
+    press(&mut map, Key::O);
     assert!(map.trim_pending());
     assert!(!map.reuse_pending());
     assert_eq!(map.mark_prefix(), None);
@@ -156,7 +156,7 @@ fn capture_families_are_semantic_and_independent() {
     assert_eq!(press(&mut map, Key::V), Some(Action::Trim));
     assert!(!map.trim_pending());
     assert_eq!(press(&mut map, Key::F2), Some(Action::Trim));
-    press(&mut map, Key::E);
+    press(&mut map, Key::O);
     press(&mut map, Key::M);
     assert!(!map.trim_pending());
     assert_eq!(map.mark_prefix(), Some(MarkPrefix::Set));
@@ -193,8 +193,8 @@ fn expanded_mark_paths_reject_collisions_and_excess_length() {
 fn register_family_expands_custom_paths_and_keeps_mark_capture_separate() {
     let mut map = configured(serde_json::json!([
         {"action":"register.select","keys":[["F2","F3","F4","F5","F6","F7"]]},
-        {"action":"mark.set","keys":[["e","m"]]},
-        {"action":"hold","keys":[["e","b"]]}
+        {"action":"mark.set","keys":[["o","m"]]},
+        {"action":"hold","keys":[["o","b"]]}
     ]));
     let path = [Key::F2, Key::F3, Key::F4, Key::F5, Key::F6, Key::F7];
     for (index, key) in path.into_iter().enumerate() {
@@ -227,11 +227,11 @@ fn register_family_expands_custom_paths_and_keeps_mark_capture_separate() {
         map.pending().is_empty(),
         "replacement removes the shipped prefix"
     );
-    press(&mut map, Key::E);
+    press(&mut map, Key::O);
     press(&mut map, Key::M);
     assert_eq!(map.mark_prefix(), Some(MarkPrefix::Set));
     assert_eq!(press(&mut map, Key::A), Some(Action::SetMark('a')));
-    press(&mut map, Key::E);
+    press(&mut map, Key::O);
     assert!(matches!(
         press(&mut map, Key::B),
         Some(Action::Edit(BeatEdit::InsertHold(_)))
@@ -369,7 +369,7 @@ fn all_reviewed_physical_reservations_outrank_different_logical_symbols() {
     let (_, reservations) = reservations::parse_fixture(reservations::FIXTURE).unwrap();
     for mode in ["logical", "physical"] {
         let bytes = format!(
-            r#"{{"version":1,"key_mode":"{mode}","bindings":[{{"action":"trim","keys":[["e","a","v"]]}}]}}"#
+            r#"{{"version":1,"key_mode":"{mode}","bindings":[{{"action":"trim","keys":[["o","a","v"]]}}]}}"#
         );
         let template = Bindings::from_json(bytes.as_bytes()).unwrap();
         for reservation in &reservations {
@@ -381,7 +381,7 @@ fn all_reviewed_physical_reservations_outrank_different_logical_symbols() {
                 Key::A,
                 Key::Quote,
             ] {
-                for prefix in [vec![], vec![Key::E], vec![Key::E, Key::A], vec![Key::M]] {
+                for prefix in [vec![], vec![Key::O], vec![Key::O, Key::A], vec![Key::M]] {
                     let mut map = template.clone();
                     for key in prefix {
                         press(&mut map, key);
@@ -489,12 +489,12 @@ fn parse_errors_and_resource_limits_remain_bounded() {
 
 #[test]
 fn custom_last_alias_inherits_primary_semantic_interrupt_policy() {
-    let mut map = configured(serde_json::json!([{"action":"last","keys":[["e"]]}]));
+    let mut map = configured(serde_json::json!([{"action":"last","keys":[["o"]]}]));
     for _ in 0..11 {
         press(&mut map, Key::Num9);
     }
     press(&mut map, Key::Comma);
-    assert_eq!(press(&mut map, Key::E), Some(Action::Last));
+    assert_eq!(press(&mut map, Key::O), Some(Action::Last));
     assert!(map.pending().is_empty());
 }
 
@@ -630,11 +630,11 @@ fn physical_numpad_add_is_named_separately_from_shift_equals() {
 #[test]
 fn compact_next_keys_share_count_and_nonterminal_filtering() {
     let mut map = configured(serde_json::json!([
-        {"action":"hold","keys":[["e","a","h"]]},
-        {"action":"trim","keys":[["e","t"]]}
+        {"action":"hold","keys":[["o","a","h"]]},
+        {"action":"trim","keys":[["o","t"]]}
     ]));
     press(&mut map, Key::Num3);
-    press(&mut map, Key::E);
+    press(&mut map, Key::O);
     assert_eq!(map.pending_next_keys().as_deref(), Some("a · Esc"));
     assert_eq!(map.pending_hint().as_deref(), Some("a … · Esc cancels"));
     map.clear();

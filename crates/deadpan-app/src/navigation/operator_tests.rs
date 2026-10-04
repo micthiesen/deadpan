@@ -234,12 +234,12 @@ fn original_visual_and_sound_preserve_their_immediate_copy_and_delete_routes() {
 #[test]
 fn configured_operator_ancestors_compose_motion_paths_and_teach_them() {
     let mut bindings = configured(serde_json::json!([
-        {"action":"cut.operator", "keys":[["e","b"]]},
-        {"action":"yank.operator", "keys":[["e","c"]]},
+        {"action":"cut.operator", "keys":[["o","b"]]},
+        {"action":"yank.operator", "keys":[["o","c"]]},
         {"action":"frame.next", "keys":[["a","l"]]}
     ]))
     .unwrap();
-    press(&mut bindings, Key::E);
+    press(&mut bindings, Key::O);
     assert!(bindings.operator_pending());
     assert!(bindings.pending_next_keys().unwrap().contains('b'));
     press(&mut bindings, Key::B);
@@ -248,7 +248,7 @@ fn configured_operator_ancestors_compose_motion_paths_and_teach_them() {
     press(&mut bindings, Key::A);
     assert!(bindings.operator_pending());
     assert_eq!(press(&mut bindings, Key::L), Some(frames(true, true, 3)));
-    press(&mut bindings, Key::E);
+    press(&mut bindings, Key::O);
     press(&mut bindings, Key::C);
     press(&mut bindings, Key::A);
     assert_eq!(press(&mut bindings, Key::L), Some(frames(false, true, 1)));

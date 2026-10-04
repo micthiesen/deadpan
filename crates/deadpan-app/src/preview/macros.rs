@@ -32,6 +32,22 @@ impl Capture {
             .select_semantic_object(&self.context, object)
             .map_err(|error| error.to_string())
     }
+    /// A word or sentence object at the captured cursor, as a Visual range.
+    pub(super) fn select_speech(
+        &self,
+        speech: &deadpan_core::SpeechTimeline,
+        bounds: (deadpan_core::ProjectFrame, deadpan_core::ProjectFrame),
+        object: deadpan_core::SpeechObject,
+    ) -> Result<SemanticContext, String> {
+        speech
+            .select_object(
+                &self.context,
+                bounds,
+                object,
+                self.base.document.presentation_basis().frame_rate,
+            )
+            .map_err(|error| error.message)
+    }
     pub(super) fn group_instruction(
         &self,
         label: Option<String>,
@@ -283,6 +299,9 @@ impl DeadpanApp {
             action,
             Action::Step { .. }
                 | Action::Beat { .. }
+                | Action::Word { .. }
+                | Action::Sentence { .. }
+                | Action::SelectSpeech(_)
                 | Action::First
                 | Action::Last
                 | Action::VisualMoment
@@ -308,13 +327,16 @@ impl DeadpanApp {
                 | Action::Invalid(_)
                 | Action::OfferInsert
         ) {
-            self.error = Some("This action cannot be recorded yet. Macros support frame and beat motions, group boundaries, Visual selections, cuts, copies, Repeat wraps and count changes, grouping, ungrouping, register pastes and named calls. Save or cancel recording first.".into());
+            self.error = Some("This action cannot be recorded yet. Macros support frame, beat, word and sentence motions, group boundaries, word and sentence objects, Visual selections, cuts, copies, Repeat wraps and count changes, grouping, ungrouping, register pastes and named calls. Save or cancel recording first.".into());
             return false;
         }
         if matches!(
             action,
             Action::Step { .. }
                 | Action::Beat { .. }
+                | Action::Word { .. }
+                | Action::Sentence { .. }
+                | Action::SelectSpeech(_)
                 | Action::First
                 | Action::Last
                 | Action::VisualMoment

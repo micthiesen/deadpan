@@ -196,9 +196,9 @@ fn recording_mode_stops_on_the_complete_configured_prefix_and_clears_old_input()
     bindings.set_macro_recording(false);
     assert!(bindings.pending().is_empty());
 
-    let mut bindings = Bindings::from_json(br#"{"version":1,"key_mode":"logical","bindings":[{"action":"macro.record","keys":[["e","b"],["F2"]]},{"action":"macro.execute","keys":[["e","c"]]}]}"#).unwrap();
-    assert_eq!(bindings.key_label(BindingId::MacroRecord), "eb");
-    assert_eq!(bindings.key(Key::E, Modifiers::NONE, false, false), None);
+    let mut bindings = Bindings::from_json(br#"{"version":1,"key_mode":"logical","bindings":[{"action":"macro.record","keys":[["o","b"],["F2"]]},{"action":"macro.execute","keys":[["o","c"]]}]}"#).unwrap();
+    assert_eq!(bindings.key_label(BindingId::MacroRecord), "ob");
+    assert_eq!(bindings.key(Key::O, Modifiers::NONE, false, false), None);
     assert!(bindings.macro_pending());
     assert_eq!(bindings.key(Key::B, Modifiers::NONE, false, false), None);
     assert!(bindings.macro_pending());
@@ -208,7 +208,7 @@ fn recording_mode_stops_on_the_complete_configured_prefix_and_clears_old_input()
     );
     bindings.set_macro_recording(true);
     assert_eq!(bindings.key(Key::Q, Modifiers::NONE, false, false), None);
-    assert_eq!(bindings.key(Key::E, Modifiers::NONE, false, false), None);
+    assert_eq!(bindings.key(Key::O, Modifiers::NONE, false, false), None);
     assert!(
         bindings
             .pending_hint()
@@ -225,7 +225,7 @@ fn recording_mode_stops_on_the_complete_configured_prefix_and_clears_old_input()
     );
     bindings.set_macro_recording(false);
     count(&mut bindings, "3");
-    bindings.key(Key::E, Modifiers::NONE, false, false);
+    bindings.key(Key::O, Modifiers::NONE, false, false);
     assert!(bindings.macro_pending());
     bindings.key(Key::C, Modifiers::NONE, false, false);
     assert_eq!(
@@ -338,7 +338,7 @@ fn macro_execution_is_destructive_for_native_controls_without_taking_names() {
             assert!(!bindings.native_control_owns_cut(Key::X, Modifiers::NONE, selection));
         }
     }
-    let bindings = Bindings::from_json(br#"{"version":1,"key_mode":"logical","bindings":[{"action":"macro.execute","keys":[["e"]]},{"action":"cut.frames","keys":[["@"]]}]}"#).unwrap();
+    let bindings = Bindings::from_json(br#"{"version":1,"key_mode":"logical","bindings":[{"action":"macro.execute","keys":[["o"]]},{"action":"cut.frames","keys":[["@"]]}]}"#).unwrap();
     assert!(bindings.native_control_owns_cut_event_with_logical_text(
         Key::Num2,
         Some(Key::Num2),

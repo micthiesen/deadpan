@@ -144,6 +144,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"source_cursor":alpha}),
         json!({"source_cursor":d.app().source_cursor}),
     )?;
+    words_in_your_edit(d, &expected)?;
     d.report.skipped.push("Replay saves a synthetic transcript; real recognition is covered by the worker tests and transcription qualification. No model is downloaded.".into());
     Ok(())
 }
@@ -205,4 +206,116 @@ fn synthetic(
         transcript,
         video.index().index().clone(),
     ))
+}
+
+/// `w` and `diw` in Your edit: motions land on word starts, the cut removes
+/// exactly the word's frames, and words follow the edit.
+fn words_in_your_edit(
+    d: &mut Driver<'_>,
+    expected: &dyn Fn(usize) -> Result<u64, String>,
+) -> Result<(), String> {
+    d.command("sequence")?;
+    focus_your_edit(d)?;
+    d.chord(&[Key::G, Key::G])?;
+    d.settled()?;
+    // The baseline presents Original picture k at project frame k.
+    let (alpha, beta) = (expected(0)?, expected(1)?);
+    d.key(Key::W)?;
+    d.settled()?;
+    let first = d.app().sequence_cursor;
+    d.key(Key::W)?;
+    d.settled()?;
+    d.check(
+        "w moves the Edit cursor to each word's first picture",
+        first == alpha && d.app().sequence_cursor == beta,
+        json!({"first":alpha,"second":beta}),
+        json!({"first":first,"second":d.app().sequence_cursor,"message":d.app().message}),
+    )?;
+    let before = d.app_mut().edit_speech()?;
+    let word = before
+        .runs()
+        .iter()
+        .find(|run| run.word == 1)
+        .copied()
+        .ok_or("beta has no run in Your edit")?;
+    let duration = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("No project")?
+        .plan
+        .duration()
+        .frames();
+    let revision = d.revision();
+    d.chord(&[Key::D, Key::I, Key::W])?;
+    d.changed(&revision)?;
+    d.settled()?;
+    let after = d.app_mut().edit_speech()?;
+    let remaining: Vec<u32> = after.runs().iter().map(|run| run.word).collect();
+    let shortened = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("No project")?
+        .plan
+        .duration()
+        .frames();
+    d.check(
+        "diw cuts exactly the word's frames and the transcript follows the edit",
+        duration - shortened == word.range.duration().frames()
+            && remaining == [0, 2]
+            && after.runs()[1].range.start().0
+                == before.runs()[2].range.start().0 - word.range.duration().frames(),
+        json!({"removed":word.range.duration().frames(),"words":[0,2]}),
+        json!({"removed":duration - shortened,"words":remaining}),
+    )?;
+    d.capture("Word cut from Your edit")?;
+    let cut = d.revision();
+    d.key(Key::U)?;
+    d.changed(&cut)?;
+    d.settled()?;
+
+    // A split inside a word changes beats, not words.
+    d.chord(&[Key::G, Key::G])?;
+    d.chord(&[Key::W, Key::W, Key::L, Key::L])?;
+    let revision = d.revision();
+    d.key(Key::S)?;
+    d.changed(&revision)?;
+    d.settled()?;
+    let split = d.app_mut().edit_speech()?;
+    let runs: Vec<(u32, i64, i64)> = split
+        .runs()
+        .iter()
+        .map(|run| (run.word, run.range.start().0, run.range.end().0))
+        .collect();
+    let unchanged: Vec<(u32, i64, i64)> = before
+        .runs()
+        .iter()
+        .map(|run| (run.word, run.range.start().0, run.range.end().0))
+        .collect();
+    d.check(
+        "Splitting inside a word keeps one word occurrence",
+        runs == unchanged,
+        json!(unchanged),
+        json!(runs),
+    )?;
+    let split_revision = d.revision();
+    d.key(Key::U)?;
+    d.changed(&split_revision)?;
+    d.settled()?;
+    Ok(())
+}
+
+fn focus_your_edit(d: &mut Driver<'_>) -> Result<(), String> {
+    for _ in 0..6 {
+        if d.app().pane == Pane::Sequence
+            && d.harness
+                .ctx
+                .memory(|memory| memory.has_focus(pane_id(Pane::Sequence)))
+        {
+            return Ok(());
+        }
+        d.key(Key::Tab)?;
+    }
+    Err("Keyboard focus could not reach Your edit".into())
 }

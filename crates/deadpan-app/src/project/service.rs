@@ -1744,10 +1744,8 @@ fn snapshot(
 
 /// The Original's stored transcript, preferring the installed transcription
 /// pack's model. A damaged stored transcript is reported, not hidden.
-/// The best stored transcript of the ready Original: an approved model's
-/// English transcript first. Transcripts are rebuildable annotations, so an
-/// unreadable one is skipped rather than preventing the project from opening;
-/// without any, the app transcribes again and replaces the bad row.
+/// The preferred stored transcript of the ready Original. An unreadable one
+/// is skipped; without any, the app transcribes again and replaces it.
 fn original_transcript(
     store: &ProjectStore,
     single_source: Option<&SingleSourceState>,
@@ -1758,16 +1756,8 @@ fn original_transcript(
     };
     let source = sources.get(asset)?;
     let content = source.receipt.original().content().to_string();
-    let mut keys = store.transcript_keys_for_content(&content).ok()?;
-    let approved = deadpan_models::packs::approved_packs()
-        .into_iter()
-        .flat_map(|pack| pack.files.into_iter().map(|file| file.sha256))
-        .collect::<Vec<_>>();
-    keys.sort_by_key(|key| (!approved.contains(&key.model_sha256), key.language != "en"));
-    keys.into_iter().find_map(|key| {
-        let transcript = store.transcript(&key).ok()??;
-        Some(Arc::new(super::OriginalTranscript { key, transcript }))
-    })
+    let (key, transcript) = deadpan_cli::speech::stored_transcript(store, &content)?;
+    Some(Arc::new(super::OriginalTranscript { key, transcript }))
 }
 
 fn registered_source(

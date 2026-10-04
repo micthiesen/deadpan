@@ -243,19 +243,19 @@ fn visual_repeat_is_immediate_and_mode_changes_cannot_reinterpret_pending_input(
 fn repeat_configuration_composes_motion_paths_and_reports_exact_pending_scope() {
     let mut bindings = configured(serde_json::json!([
         {"action":"repeat", "keys":[["f","r"]]},
-        {"action":"repeat.operator", "keys":[["e","b"]]},
-        {"action":"repeat.range", "keys":[["e","v"]]},
+        {"action":"repeat.operator", "keys":[["o","z"]]},
+        {"action":"repeat.range", "keys":[["o","v"]]},
         {"action":"frame.next", "keys":[["a","l"]]}
     ]))
     .unwrap();
-    press(&mut bindings, Key::E);
+    press(&mut bindings, Key::O);
     assert_eq!(
         bindings.repeat_pending_scope(),
         Some(RepeatPendingScope::Mixed)
     );
-    press(&mut bindings, Key::B);
+    press(&mut bindings, Key::Z);
     digits(&mut bindings, "3");
-    assert_eq!(bindings.pending(), "eb3");
+    assert_eq!(bindings.pending(), "oz3");
     assert!(
         bindings
             .pending_next_keys()
@@ -264,7 +264,7 @@ fn repeat_configuration_composes_motion_paths_and_reports_exact_pending_scope() 
             .any(|key| key == "a")
     );
     press(&mut bindings, Key::A);
-    assert_eq!(bindings.pending(), "eb3a");
+    assert_eq!(bindings.pending(), "oz3a");
     assert!(
         bindings
             .pending_hint()
@@ -284,7 +284,7 @@ fn repeat_configuration_composes_motion_paths_and_reports_exact_pending_scope() 
         press(&mut bindings, Key::R),
         Some(repeat(Selector::SelectedBeat, 2))
     );
-    bindings.key_with_selection(Key::E, Modifiers::NONE, false, false, EditSelection::Range);
+    bindings.key_with_selection(Key::O, Modifiers::NONE, false, false, EditSelection::Range);
     assert_eq!(
         bindings.repeat_pending_scope(),
         Some(RepeatPendingScope::VisualSelection)
@@ -295,7 +295,7 @@ fn repeat_configuration_composes_motion_paths_and_reports_exact_pending_scope() 
     );
     assert_eq!(
         bindings.key_labels_in(BindingId::Repeat, RoutingDomain::Edit, EditSelection::Range),
-        "ev"
+        "ov"
     );
     for entries in [
         serde_json::json!([{"action":"repeat.operator", "keys":[["h"]]}]),
@@ -309,12 +309,12 @@ fn repeat_configuration_composes_motion_paths_and_reports_exact_pending_scope() 
 #[test]
 fn ancestor_repeat_aliases_keep_counts_at_the_completed_prefix() {
     for (path, leading, distance, expected_label, plays) in [
-        (&[Key::E][..], "", "3", "e3", 2),
-        (&[Key::E, Key::B][..], "", "3", "eb3", 2),
-        (&[Key::E, Key::B][..], "3", "", "3eb", 3),
+        (&[Key::O][..], "", "3", "o3", 2),
+        (&[Key::O, Key::Z][..], "", "3", "oz3", 2),
+        (&[Key::O, Key::Z][..], "3", "", "3oz", 3),
     ] {
         let mut bindings = configured(serde_json::json!([
-            {"action":"repeat.operator", "keys":[["e"],["e","b"]]}
+            {"action":"repeat.operator", "keys":[["o"],["o","z"]]}
         ]))
         .unwrap();
         digits(&mut bindings, leading);
@@ -326,7 +326,7 @@ fn ancestor_repeat_aliases_keep_counts_at_the_completed_prefix() {
             assert!(bindings.repeat_pending());
             assert_eq!(
                 bindings.pending(),
-                format!("{leading}{}", if index == 0 { "e" } else { "eb" })
+                format!("{leading}{}", if index == 0 { "o" } else { "oz" })
             );
         }
         digits(&mut bindings, distance);
@@ -347,12 +347,12 @@ fn a_motion_count_cannot_cross_into_another_completed_operator_alias() {
     for first_count in ["3", "0", "4294967296"] {
         for second_count in ["", "4"] {
             let mut bindings = configured(serde_json::json!([
-                {"action":"repeat.operator", "keys":[["e"],["e","b"]]}
+                {"action":"repeat.operator", "keys":[["o"],["o","z"]]}
             ]))
             .unwrap();
-            assert_eq!(press(&mut bindings, Key::E), Some(Action::OfferInsert));
+            assert_eq!(press(&mut bindings, Key::O), Some(Action::OfferInsert));
             digits(&mut bindings, first_count);
-            assert_eq!(press(&mut bindings, Key::B), None);
+            assert_eq!(press(&mut bindings, Key::Z), None);
             assert!(bindings.repeat_pending());
             digits(&mut bindings, second_count);
             assert!(bindings.repeat_pending());
@@ -363,7 +363,7 @@ fn a_motion_count_cannot_cross_into_another_completed_operator_alias() {
                     .contains("complete operator prefix")
             );
             if first_count == "3" {
-                assert_eq!(bindings.pending(), "e3b");
+                assert_eq!(bindings.pending(), "o3z");
             }
             assert!(matches!(
                 press(&mut bindings, Key::L),
@@ -377,10 +377,10 @@ fn a_motion_count_cannot_cross_into_another_completed_operator_alias() {
                     count: 1
                 })
             );
-            press(&mut bindings, Key::E);
-            press(&mut bindings, Key::B);
+            press(&mut bindings, Key::O);
+            press(&mut bindings, Key::Z);
             digits(&mut bindings, "2");
-            assert_eq!(bindings.pending(), "eb2");
+            assert_eq!(bindings.pending(), "oz2");
             assert_eq!(
                 press(&mut bindings, Key::L),
                 Some(repeat(frames(true, 2), 2))

@@ -31,12 +31,12 @@ fn distinct_operator_families_cannot_overlap_at_either_prefix_depth() {
 fn operator_aliases_and_shared_nonoperator_ancestors_remain_configurable() {
     for entries in [
         serde_json::json!([
-            {"action": "repeat.operator", "keys": [["e"], ["e", "b"]]}
+            {"action": "repeat.operator", "keys": [["o"], ["o", "z"]]}
         ]),
         serde_json::json!([
-            {"action": "repeat.operator", "keys": [["e", "b"]]},
-            {"action": "cut.operator", "keys": [["e", "f"]]},
-            {"action": "hold", "keys": [["e", "n"]]}
+            {"action": "repeat.operator", "keys": [["o", "z"]]},
+            {"action": "cut.operator", "keys": [["o", "f"]]},
+            {"action": "hold", "keys": [["o", "n"]]}
         ]),
     ] {
         let bytes = serde_json::to_vec(&serde_json::json!({

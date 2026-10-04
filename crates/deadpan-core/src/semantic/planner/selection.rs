@@ -76,10 +76,11 @@ pub(super) fn validate_context(
     Ok(())
 }
 
-impl<F, R> Planner<'_, F, R>
+impl<F, R, S> Planner<'_, F, R, S>
 where
     F: FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
     R: FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
+    S: FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
 {
     pub(super) fn finish_selection(&mut self) -> Result<(), EditError> {
         match self
@@ -129,8 +130,16 @@ where
                     }
                 }
             }
+            SemanticSelector::Speech { object } => SliceCaptureSelection::Range {
+                range: self.speech()?.object_range(
+                    self.context.cursor,
+                    self.bounds,
+                    object,
+                    self.current.presentation_basis().frame_rate,
+                )?,
+            },
             SemanticSelector::Motion { motion } => {
-                let (destination, _) = self.motion_target(motion);
+                let (destination, _) = self.motion_target(motion)?;
                 let cursor = self.context.cursor;
                 if destination == cursor {
                     return Err(unavailable("the macro motion selection is empty"));
@@ -210,7 +219,7 @@ where
             ),
             _ => None,
         };
-        let (cursor, child) = self.motion_target(motion);
+        let (cursor, child) = self.motion_target(motion)?;
         self.context.cursor = cursor;
         self.context.selected_child = child;
         if let Some(anchor) = object_anchor {
@@ -265,7 +274,10 @@ where
         Ok((bounds, scope, labels))
     }
 
-    fn motion_target(&self, motion: SemanticMotion) -> (ProjectFrame, Option<NodeId>) {
+    fn motion_target(
+        &self,
+        motion: SemanticMotion,
+    ) -> Result<(ProjectFrame, Option<NodeId>), EditError> {
         let cursor = match motion {
             SemanticMotion::Frames { forward, count } => {
                 // Clamp the distance before adding so large counts cannot
@@ -284,7 +296,7 @@ where
                 })
             }
             SemanticMotion::Beats { forward, count } => {
-                return self.beat_target(forward, count.get());
+                return Ok(self.beat_target(forward, count.get()));
             }
             SemanticMotion::Scope { end } => {
                 if end {
@@ -293,11 +305,35 @@ where
                     self.bounds.0
                 }
             }
+            SemanticMotion::Words {
+                forward,
+                count,
+                end,
+            } => self.speech()?.motion_target(
+                self.context.cursor,
+                self.bounds,
+                SpeechMotion {
+                    forward,
+                    count: count.get(),
+                    sentence: false,
+                    end,
+                },
+            ),
+            SemanticMotion::Sentences { forward, count } => self.speech()?.motion_target(
+                self.context.cursor,
+                self.bounds,
+                SpeechMotion {
+                    forward,
+                    count: count.get(),
+                    sentence: true,
+                    end: false,
+                },
+            ),
         };
-        (
+        Ok((
             cursor,
             selected_child(&self.child_ends, cursor, self.bounds),
-        )
+        ))
     }
 
     fn beat_target(&self, forward: bool, count: u32) -> (ProjectFrame, Option<NodeId>) {

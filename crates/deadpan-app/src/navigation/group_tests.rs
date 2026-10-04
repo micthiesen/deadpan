@@ -89,8 +89,8 @@ fn group_and_ungroup_remaps_share_count_and_native_control_policies() {
     for mode in ["logical", "physical"] {
         let bytes = serde_json::to_vec(&serde_json::json!({
             "version":1, "key_mode":mode, "bindings":[
-                {"action":"group.create", "keys":[["b","g"]]},
-                {"action":"group.ungroup", "keys":[["b","u"]]}
+                {"action":"group.create", "keys":[["o","g"]]},
+                {"action":"group.ungroup", "keys":[["o","u"]]}
             ]
         }))
         .unwrap();
@@ -99,11 +99,11 @@ fn group_and_ungroup_remaps_share_count_and_native_control_policies() {
             template
                 .map
                 .prefix_paths()
-                .contains(&vec![editor_map::Stroke::Key(Key::B, false)])
+                .contains(&vec![editor_map::Stroke::Key(Key::O, false)])
         );
         for (terminal, action) in [(Key::G, Action::Group), (Key::U, Action::Ungroup)] {
             let mut bindings = template.clone();
-            key(&mut bindings, Key::B, EditSelection::None);
+            key(&mut bindings, Key::O, EditSelection::None);
             assert!(
                 bindings
                     .pending_hint()
@@ -120,7 +120,7 @@ fn group_and_ungroup_remaps_share_count_and_native_control_policies() {
                 Some(action)
             );
             key(&mut bindings, Key::Num3, EditSelection::None);
-            key(&mut bindings, Key::B, EditSelection::None);
+            key(&mut bindings, Key::O, EditSelection::None);
             assert!(matches!(
                 key(&mut bindings, terminal, EditSelection::None),
                 Some(Action::Invalid(_))

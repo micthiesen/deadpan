@@ -8,13 +8,13 @@ use egui_kittest::kittest::Queryable as _;
 const VALID: &[u8] = br#"{
   "version":1,"key_mode":"logical","bindings":[
     {"action":"frame.next","keys":[["a","h"]]},
-    {"action":"repeat.operator","keys":[["b"]]},
-    {"action":"hold","keys":[["e","b"]]},
-    {"action":"command","keys":[["e","c"],[":"],["F2"]]},
-    {"action":"search","keys":[["e","s"],["/"]]},
+    {"action":"repeat.operator","keys":[["c"]]},
+    {"action":"hold","keys":[["o","b"]]},
+    {"action":"command","keys":[["o","c"],[":"],["F2"]]},
+    {"action":"search","keys":[["o","s"],["/"]]},
     {"action":"help","keys":[["?"],[";"]]},
     {"action":"cut.frames","keys":[["z"]]},
-    {"action":"trim","keys":[["e","t"]]}
+    {"action":"trim","keys":[["o","t"]]}
   ]
 }"#;
 
@@ -66,7 +66,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     minimum_size(d)?;
     d.command("help")?;
     d.step("Measure remapped Repeat help", false)?;
-    let example = "3bah repeats one frame three times, b3ah repeats three frames twice";
+    let example = "3cah repeats one frame three times, c3ah repeats three frames twice";
     for _ in 0..128 {
         let paint = scenarios::text_paint_visibility(d, example);
         if !paint.is_empty() && paint.iter().all(|part| part["fully_visible"] == true) {
@@ -100,17 +100,17 @@ fn minimum_size(d: &mut Driver<'_>) -> Result<(), String> {
         .ok_or("Missing keymap replay viewport")?
         .inner_rect = Some(rect);
     d.step("Custom key hints at the minimum native window size", true)?;
-    for label in ["eb", "pause", "ec", "z"] {
+    for label in ["ob", "pause", "oc", "z"] {
         painted(d, label)?;
     }
     d.events(
         "Custom shared prefix with its native text echo",
-        stroke(Key::E, "e"),
+        stroke(Key::O, "o"),
     )?;
     d.check(
         "An arbitrary shared prefix is visible and teaches its actual continuations",
-        d.app().bindings.pending() == "e" && !d.app().command_open,
-        json!("e"),
+        d.app().bindings.pending() == "o" && !d.app().command_open,
+        json!("o"),
         d.snapshot(),
     )?;
     // Independent literals, not labels produced by the map under test.
@@ -210,7 +210,7 @@ fn held_motion(d: &mut Driver<'_>) -> Result<(), String> {
 fn custom_hold(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(), String> {
     d.chord(&[Key::G, Key::G])?;
     let before = d.revision();
-    let mut events = stroke(Key::E, "e");
+    let mut events = stroke(Key::O, "o");
     events.extend(stroke(Key::B, "b"));
     d.events("Insert one Hold through the configured eb path", events)?;
     d.changed(&before)?;
@@ -259,7 +259,7 @@ fn custom_hold(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(), Str
 
 fn field_entry(d: &mut Driver<'_>) -> Result<(), String> {
     let revision = d.revision();
-    let mut events = stroke(Key::E, "e");
+    let mut events = stroke(Key::O, "o");
     events.extend(stroke(Key::C, "c"));
     events.extend([
         Event::Text(":".into()),
@@ -273,7 +273,7 @@ fn field_entry(d: &mut Driver<'_>) -> Result<(), String> {
     command_text(d, ":/é")?;
     d.key(Key::Escape)?;
 
-    let mut events = stroke(Key::E, "e");
+    let mut events = stroke(Key::O, "o");
     events.extend(stroke(Key::C, "c"));
     events.extend([
         Event::Text("source".into()),
@@ -308,7 +308,7 @@ fn field_entry(d: &mut Driver<'_>) -> Result<(), String> {
         d.snapshot(),
     )?;
 
-    let mut events = stroke(Key::E, "e");
+    let mut events = stroke(Key::O, "o");
     events.extend([down(Key::C), Event::Text("c".into())]);
     d.events("Keep the custom Command opener physically held", events)?;
     command_text(d, "")?;
@@ -405,7 +405,7 @@ fn field_entry(d: &mut Driver<'_>) -> Result<(), String> {
     d.command("sequence")?;
     d.settled()?;
 
-    let mut events = stroke(Key::E, "e");
+    let mut events = stroke(Key::O, "o");
     events.extend(stroke(Key::C, "c"));
     events.extend([
         Event::Text("source".into()),
@@ -414,7 +414,7 @@ fn field_entry(d: &mut Driver<'_>) -> Result<(), String> {
         Event::Text("post-submit text".into()),
     ]);
     // The later command must run in the context produced by the first one.
-    events.extend(stroke(Key::E, "e"));
+    events.extend(stroke(Key::O, "o"));
     events.extend(stroke(Key::C, "c"));
     events.extend([
         Event::Text("sequence".into()),
@@ -443,7 +443,7 @@ fn field_entry(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.settled()?;
 
-    let mut events = stroke(Key::E, "e");
+    let mut events = stroke(Key::O, "o");
     events.extend(stroke(Key::S, "s"));
     events.extend([
         Event::Text("/".into()),
@@ -530,14 +530,14 @@ fn native_ownership(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.command("sequence")?;
     d.key(Key::Colon)?;
-    let mut events = stroke(Key::E, "e");
+    let mut events = stroke(Key::O, "o");
     events.extend(stroke(Key::B, "b"));
     events.extend(stroke(Key::Z, "z"));
     d.events(
         "Custom Hold and cut strings belong to the native command field",
         events,
     )?;
-    command_text(d, "ebz")?;
+    command_text(d, "obz")?;
     d.check(
         "Native field text cannot author edits",
         *document(d)? == before,
@@ -583,14 +583,14 @@ fn native_ownership(d: &mut Driver<'_>) -> Result<(), String> {
 fn trim_absence(d: &mut Driver<'_>) -> Result<(), String> {
     let revision = d.revision();
     d.command("source")?;
-    d.key(Key::E)?;
+    d.key(Key::O)?;
     d.check(
         "Shared custom e prefix captures unavailable Trim target immediately",
         d.app()
             .trim_prefix_target
             .as_ref()
             .is_some_and(Result::is_err)
-            && d.app().bindings.pending() == "e",
+            && d.app().bindings.pending() == "o",
         json!("Original target absence captured at e"),
         d.snapshot(),
     )?;

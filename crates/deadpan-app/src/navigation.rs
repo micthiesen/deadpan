@@ -152,6 +152,19 @@ pub enum Action {
         forward: bool,
         count: u32,
     },
+    /// Recognized word starts (`w`, `b`) or the next word end (`e`).
+    Word {
+        forward: bool,
+        end: bool,
+        count: u32,
+    },
+    /// Recognized sentence starts (`W`, `B`).
+    Sentence {
+        forward: bool,
+        count: u32,
+    },
+    /// Select a word or sentence object (`iw`, `aw`, `is`, `as`).
+    SelectSpeech(deadpan_core::SpeechObject),
     First,
     Last,
     Pane {
@@ -1493,6 +1506,72 @@ mod tests {
     }
 
     #[test]
+    fn word_and_sentence_keys_move_and_compose_after_operators() {
+        use deadpan_core::{SemanticMotion as M, SemanticSelector as S, SpeechObject as O};
+        let count = |value| std::num::NonZeroU32::new(value).unwrap();
+        let mut bindings = Bindings::default();
+        assert_eq!(
+            keys(&mut bindings, &[Key::Num3, Key::W]),
+            Some(Action::Word {
+                forward: true,
+                end: false,
+                count: 3
+            })
+        );
+        assert_eq!(
+            keys(&mut bindings, &[Key::E]),
+            Some(Action::Word {
+                forward: true,
+                end: true,
+                count: 1
+            })
+        );
+        assert_eq!(
+            bindings.key(Key::B, Modifiers::SHIFT, false, false),
+            Some(Action::Sentence {
+                forward: false,
+                count: 1
+            })
+        );
+        assert_eq!(
+            keys(&mut bindings, &[Key::D, Key::Num2, Key::W]),
+            Some(Action::Operator {
+                cut: true,
+                selector: S::Motion {
+                    motion: M::Words {
+                        forward: true,
+                        count: count(2),
+                        end: false
+                    }
+                }
+            })
+        );
+        assert_eq!(
+            keys(&mut bindings, &[Key::Y, Key::I, Key::S]),
+            Some(Action::Operator {
+                cut: false,
+                selector: S::Speech {
+                    object: O::InnerSentence
+                }
+            })
+        );
+        assert_eq!(
+            keys(&mut bindings, &[Key::Num3, Key::R, Key::I, Key::W]),
+            Some(Action::Repeat {
+                selector: S::Speech {
+                    object: O::InnerWord
+                },
+                plays: count(3)
+            })
+        );
+        assert!(matches!(
+            keys(&mut bindings, &[Key::D, Key::Num2, Key::I, Key::W]),
+            Some(Action::Invalid(_))
+        ));
+        assert!(bindings.pending().is_empty());
+    }
+
+    #[test]
     fn split_uses_a_single_unmodified_key_and_respects_native_text_entry() {
         let mut bindings = Bindings::default();
         assert_eq!(
@@ -1586,7 +1665,7 @@ mod tests {
             vec![Key::Num2, Key::D, Key::D],
             vec![Key::Num3, Key::R, Key::Num2, Key::L],
             vec![Key::R, Key::I, Key::B],
-            vec![Key::D, Key::W],
+            vec![Key::D, Key::O],
             vec![Key::R, Key::D],
         ] {
             let mut bindings = Bindings::default();

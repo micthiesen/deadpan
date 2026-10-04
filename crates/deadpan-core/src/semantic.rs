@@ -3,10 +3,12 @@
 mod object;
 mod planner;
 mod program;
+mod speech;
 
 pub use object::*;
 pub use planner::*;
 pub use program::*;
+pub use speech::*;
 
 use std::num::NonZeroU32;
 

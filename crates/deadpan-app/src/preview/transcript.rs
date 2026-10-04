@@ -13,6 +13,7 @@ use std::sync::mpsc;
 
 use deadpan_analysis::{Transcript, Word, picture_at, picture_seconds};
 use deadpan_cli::transcription::{TranscriptionRuntime, prepare_original_audio, transcribe};
+use deadpan_core::ProjectFrame;
 use deadpan_jobs::transcription::Language;
 use deadpan_models::packs::{InstallProgress, Operation, PackManifest, PackStore, approved_packs};
 use deadpan_store::{AccessMode, ProjectStore, TranscriptKey};
@@ -65,6 +66,13 @@ pub(super) struct Transcription {
     /// While the cursor stays there, that word is current even when a later
     /// word also begins in the same picture.
     chosen: Option<(usize, u64)>,
+    /// Speech on the Edit clock for one session, revision and transcript.
+    edit_speech: Option<(
+        (u64, deadpan_core::RevisionId, TranscriptKey),
+        Arc<deadpan_core::SpeechTimeline>,
+    )>,
+    /// Speech over the Original's pictures for one transcript.
+    source_speech: Option<(TranscriptKey, Arc<deadpan_core::SpeechTimeline>)>,
     /// Enter (true) or Shift+Enter (false) pressed in Find words this frame.
     step: Option<bool>,
     /// The background thread, joined briefly at exit so its worker is reaped.
@@ -84,6 +92,8 @@ impl Default for Transcription {
             models_root: None,
             unsaved: None,
             chosen: None,
+            edit_speech: None,
+            source_speech: None,
             step: None,
             attempts: 0,
             thread: None,
@@ -772,4 +782,220 @@ fn sentence(
         .iter()
         .find(|(chars, _)| chars.contains(&offset))
         .map(|(_, word)| *word)
+}
+
+/// Words on the Edit clock and in the Original, for motions and objects.
+impl DeadpanApp {
+    /// Why word keys cannot act yet, in terms of the transcript's progress.
+    fn words_not_ready(&self) -> String {
+        match &self.transcription.status {
+            Status::NeedsModel => {
+                "Words are not ready. Install the transcription model in the Original rail.".into()
+            }
+            Status::Installing { .. } => "Words are not ready while the model installs.".into(),
+            Status::Unchecked | Status::Preparing | Status::Transcribing(_) | Status::Saving(_) => {
+                "Words are not ready while the Original is transcribed.".into()
+            }
+            Status::Failed(_) => {
+                "Words are not ready: transcription failed. Try again in the Original rail.".into()
+            }
+            Status::Ready => "Words are not ready: the Original has no transcript.".into(),
+        }
+    }
+
+    /// The transcript, Original asset and picture index, when all exist.
+    fn speech_inputs(
+        &self,
+    ) -> Option<(
+        Arc<crate::project::OriginalTranscript>,
+        deadpan_core::AssetId,
+        Arc<Workspace>,
+    )> {
+        let workspace = self.workspace.as_ref()?;
+        let transcript = workspace.transcript.clone()?;
+        let asset = original_asset(workspace)?.clone();
+        workspace.sources.get(&asset)?.video_index.as_ref()?;
+        Some((transcript, asset, Arc::clone(workspace)))
+    }
+
+    /// Speech projected through the current revision, cached per revision.
+    pub(super) fn edit_speech(&mut self) -> Result<Arc<deadpan_core::SpeechTimeline>, String> {
+        let (transcript, asset, workspace) =
+            self.speech_inputs().ok_or_else(|| self.words_not_ready())?;
+        let key = (
+            workspace.session,
+            workspace.document.revision_id().clone(),
+            transcript.key.clone(),
+        );
+        if let Some((cached, speech)) = &self.transcription.edit_speech
+            && *cached == key
+        {
+            return Ok(Arc::clone(speech));
+        }
+        // The index bound to the project's asset identity.
+        let index = workspace.sources[&asset]
+            .video_index
+            .as_deref()
+            .expect("speech inputs checked the picture");
+        let speech = deadpan_cli::speech::project_speech(
+            &workspace.plan,
+            &asset,
+            index,
+            &transcript.transcript,
+        )
+        .map(Arc::new)
+        .map_err(|error| error.message)?;
+        self.transcription.edit_speech = Some((key, Arc::clone(&speech)));
+        Ok(speech)
+    }
+
+    /// Speech over the Original's pictures, cached per transcript.
+    fn source_speech(&mut self) -> Result<Arc<deadpan_core::SpeechTimeline>, String> {
+        let (transcript, asset, workspace) =
+            self.speech_inputs().ok_or_else(|| self.words_not_ready())?;
+        if let Some((cached, speech)) = &self.transcription.source_speech
+            && *cached == transcript.key
+        {
+            return Ok(Arc::clone(speech));
+        }
+        // The index bound to the project's asset identity.
+        let index = workspace.sources[&asset]
+            .video_index
+            .as_deref()
+            .expect("speech inputs checked the picture");
+        let speech = deadpan_cli::speech::original_speech(index, &transcript.transcript)
+            .map(Arc::new)
+            .map_err(|error| error.message)?;
+        self.transcription.source_speech = Some((transcript.key.clone(), Arc::clone(&speech)));
+        Ok(speech)
+    }
+
+    /// `w`, `b`, `e`, `W` and `B` in either context.
+    pub(super) fn speech_motion(&mut self, motion: deadpan_core::SpeechMotion) {
+        match self.view {
+            View::Source => {
+                let original = self
+                    .workspace
+                    .as_ref()
+                    .and_then(|workspace| original_asset(workspace))
+                    .cloned();
+                if self.raw_source.is_some()
+                    || original.is_none()
+                    || self.selected_source != original
+                {
+                    self.message = Some(
+                        "Word motions follow the Original's transcript; view the Original to use them."
+                            .into(),
+                    );
+                    return;
+                }
+                let speech = match self.source_speech() {
+                    Ok(speech) => speech,
+                    Err(error) => {
+                        self.message = Some(error);
+                        return;
+                    }
+                };
+                let length = self.source_length() as i64;
+                self.source_cursor = speech
+                    .motion_target(
+                        ProjectFrame(self.source_cursor as i64),
+                        (ProjectFrame(0), ProjectFrame(length)),
+                        motion,
+                    )
+                    .0 as u64;
+                self.moment.move_to(self.source_cursor);
+            }
+            View::Sequence => {
+                let speech = match self.edit_speech() {
+                    Ok(speech) => speech,
+                    Err(error) => {
+                        self.message = Some(error);
+                        return;
+                    }
+                };
+                let cursor = self.sequence_cursor.clamp(self.scope_start, self.scope_end);
+                self.sequence_cursor = speech
+                    .motion_target(
+                        ProjectFrame(cursor as i64),
+                        (
+                            ProjectFrame(self.scope_start as i64),
+                            ProjectFrame(self.scope_end as i64),
+                        ),
+                        motion,
+                    )
+                    .0 as u64;
+                self.edit_range.move_to(self.sequence_cursor);
+                self.select_at_cursor();
+                if let Some(count) = std::num::NonZeroU32::new(motion.count) {
+                    self.record_macro_local(if motion.sentence {
+                        deadpan_core::SemanticInstruction::MoveSentences {
+                            forward: motion.forward,
+                            count,
+                        }
+                    } else {
+                        deadpan_core::SemanticInstruction::MoveWords {
+                            forward: motion.forward,
+                            count,
+                            end: motion.end,
+                        }
+                    });
+                }
+            }
+        }
+        self.request_picture(false);
+    }
+
+    /// `iw`, `aw`, `is` and `as` in a Your edit Visual selection.
+    pub(super) fn select_speech(&mut self, object: deadpan_core::SpeechObject) {
+        if !self.macro_action_allowed(Action::SelectSpeech(object)) {
+            return;
+        }
+        self.bindings.clear();
+        let speech = match self.edit_speech() {
+            Ok(speech) => speech,
+            Err(error) => {
+                self.message = Some(error);
+                return;
+            }
+        };
+        let bounds = (
+            ProjectFrame(self.scope_start as i64),
+            ProjectFrame(self.scope_end as i64),
+        );
+        let result = self
+            .capture_macro_target()
+            .and_then(|capture| capture.select_speech(&speech, bounds, object));
+        match result {
+            Ok(context) => {
+                self.pause_playback();
+                let prior = self.sequence_cursor;
+                self.sequence_cursor = context.cursor.0 as u64;
+                if let Err(error) = self.restore_macro_visual_selection(context.visual_selection) {
+                    self.sequence_cursor = prior;
+                    self.error = Some(error);
+                    return;
+                }
+                self.record_macro_local(deadpan_core::SemanticInstruction::SelectSpeech { object });
+                self.error = None;
+                self.message = Some(format!(
+                    "Selected {}. {} copies; {} cuts; {} repeats.",
+                    match object {
+                        deadpan_core::SpeechObject::InnerWord => "the word",
+                        deadpan_core::SpeechObject::AroundWord => "the word with its pauses",
+                        deadpan_core::SpeechObject::InnerSentence => "the sentence",
+                        deadpan_core::SpeechObject::AroundSentence =>
+                            "the sentence with its pauses",
+                    },
+                    self.editor_key(EditorKey::Copy),
+                    self.editor_key(EditorKey::CutRange),
+                    self.editor_key(EditorKey::Repeat),
+                ));
+                if prior != self.sequence_cursor {
+                    self.request_picture(false);
+                }
+            }
+            Err(error) => self.error = Some(error),
+        }
+    }
 }

@@ -124,24 +124,24 @@ fn native_control_guard_covers_dot_and_configured_aliases_without_taking_names()
             selection
         ));
         let template = Bindings::from_json(
-            br#"{"version":1,"key_mode":"logical","bindings":[{"action":"edit.repeat-last","keys":[["b"]]}]}"#,
+            br#"{"version":1,"key_mode":"logical","bindings":[{"action":"edit.repeat-last","keys":[["o"]]}]}"#,
         )
         .unwrap();
-        assert!(template.native_control_owns_cut(Key::B, Modifiers::NONE, selection));
+        assert!(template.native_control_owns_cut(Key::O, Modifiers::NONE, selection));
         assert!(!template.native_control_owns_cut(Key::Period, Modifiers::NONE, selection));
         for (prefix, modifiers, expected) in [
-            (Key::M, Modifiers::NONE, Action::SetMark('b')),
-            (Key::Quote, Modifiers::NONE, Action::JumpMark('b')),
-            (Key::Quote, Modifiers::SHIFT, Action::SelectRegister('b')),
+            (Key::M, Modifiers::NONE, Action::SetMark('o')),
+            (Key::Quote, Modifiers::NONE, Action::JumpMark('o')),
+            (Key::Quote, Modifiers::SHIFT, Action::SelectRegister('o')),
         ] {
             let mut bindings = template.clone();
             bindings.key_with_selection(prefix, modifiers, false, false, selection);
             let pending = bindings.pending();
-            assert!(!bindings.native_control_owns_cut(Key::B, Modifiers::NONE, selection));
-            assert!(!bindings.native_control_owns_cut(Key::B, Modifiers::SHIFT, selection));
+            assert!(!bindings.native_control_owns_cut(Key::O, Modifiers::NONE, selection));
+            assert!(!bindings.native_control_owns_cut(Key::O, Modifiers::SHIFT, selection));
             assert_eq!(bindings.pending(), pending);
             assert_eq!(
-                bindings.key_with_selection(Key::B, Modifiers::NONE, false, false, selection),
+                bindings.key_with_selection(Key::O, Modifiers::NONE, false, false, selection),
                 Some(expected)
             );
         }

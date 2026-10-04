@@ -103,6 +103,15 @@ fn repeat_instruction_hint(
                 deadpan_core::SemanticTextObject::AroundGroup => "whole group",
             }
         ),
+        SemanticSelector::Speech { object } => format!(
+            "{action} {}",
+            match object {
+                deadpan_core::SpeechObject::InnerWord => "word",
+                deadpan_core::SpeechObject::AroundWord => "word with pauses",
+                deadpan_core::SpeechObject::InnerSentence => "sentence",
+                deadpan_core::SpeechObject::AroundSentence => "sentence with pauses",
+            }
+        ),
         SemanticSelector::Motion { motion } => match motion {
             SemanticMotion::Frames { forward, count } => format!(
                 "{action} {count}f {}",
@@ -115,6 +124,19 @@ fn repeat_instruction_hint(
             SemanticMotion::Scope { end } => {
                 format!("{action} to group {}", if *end { "end" } else { "start" })
             }
+            SemanticMotion::Words {
+                forward,
+                count,
+                end,
+            } => match (forward, end) {
+                (true, true) => format!("{action} to end of {count} words"),
+                (true, false) => format!("{action} {count} words forward"),
+                (false, _) => format!("{action} {count} words backward"),
+            },
+            SemanticMotion::Sentences { forward, count } => format!(
+                "{action} {count} sentences {}",
+                if *forward { "forward" } else { "backward" }
+            ),
         },
     }
 }

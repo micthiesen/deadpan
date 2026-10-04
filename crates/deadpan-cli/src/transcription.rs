@@ -311,7 +311,7 @@ const SOURCE_CHUNK_FRAMES: u32 = 32_768;
 
 /// The qualification receipt of the audio to analyse: the single-Original
 /// project's Original by default, or an explicitly registered source.
-fn analysed_receipt(
+pub(crate) fn analysed_receipt(
     store: &deadpan_store::ProjectStore,
     asset: Option<&deadpan_core::AssetId>,
 ) -> Result<deadpan_store::source_registration::SourceQualificationReceipt, TranscriptionError> {

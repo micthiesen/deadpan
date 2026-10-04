@@ -33,6 +33,13 @@ The [Repeat qualification](qualification/repeat-operator-2026-10-03.md) passes
 Kestrel source drift or conflicts. Rendered remap and native key checks are
 recorded separately from unqualified physical layouts and OS IME delivery.
 
+Word motions use bare `w`, `b` and `e` and Shift+`w`/Shift+`b` for sentences, in
+Original and Your edit; `iw`, `aw`, `is` and `as` are Your edit Visual objects
+and compose after `y`, `d` and `r`. None has a modifier, so no Kestrel global is
+involved. The Sound pane refuses them like frame motions, and Trim and Slip keep
+their own modal `b`/`e` handling, which runs before the editor router. Custom
+keymaps that used these letters as free prefixes must move to another key.
+
 Catalog placement uses `,s` with no count or key-repeat activation. In Placed
 sounds and its inspector, `h/l`, `j/k`, Enter, `+/-` and `dd` act on the event.
 Logical Plus accepts no modifier or Shift; Minus accepts no modifier so the
