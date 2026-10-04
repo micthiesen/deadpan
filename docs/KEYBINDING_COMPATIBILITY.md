@@ -47,6 +47,8 @@ keep their paste meaning: only a pending `]`, `[`, `i` or `a` prefix reaches
 the pause bindings. Custom keymaps that bound `[` or `]` alone must move.
 Shot motions `]s`/`[s` share those prefixes, and `iS`/`aS` use Shift+`s`
 only after a pending `i` or `a`, so the plain `s` split binding is unchanged.
+`,e` joins the comma family (`,h`, `,i`, `,s`, `,f`, `,v`, `,g`, `,z`, `,c`)
+with no modifier; `e` alone keeps its word-end meaning.
 
 Catalog placement uses `,s` with no count or key-repeat activation. In Placed
 sounds and its inspector, `h/l`, `j/k`, Enter, `+/-` and `dd` act on the event.

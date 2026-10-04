@@ -99,6 +99,7 @@ pub enum BindingId {
     Repeat,
     RepeatOperator,
     RepeatRange,
+    EscalatingRepeat,
     Hold,
     Insert,
     PlaceSound,
@@ -124,7 +125,7 @@ pub enum BindingId {
 }
 
 impl BindingId {
-    pub const ALL: [Self; 69] = [
+    pub const ALL: [Self; 70] = [
         Self::FramePrevious,
         Self::FrameNext,
         Self::BeatPrevious,
@@ -172,6 +173,7 @@ impl BindingId {
         Self::Repeat,
         Self::RepeatOperator,
         Self::RepeatRange,
+        Self::EscalatingRepeat,
         Self::Hold,
         Self::Insert,
         Self::PlaceSound,
@@ -244,6 +246,7 @@ impl BindingId {
             Self::Repeat => "repeat",
             Self::RepeatOperator => "repeat.operator",
             Self::RepeatRange => "repeat.range",
+            Self::EscalatingRepeat => "repeat.escalating",
             Self::Hold => "hold",
             Self::Insert => "insert",
             Self::PlaceSound => "sound.place",
@@ -647,6 +650,7 @@ impl Rule {
             Action::DeleteSelection => I::CutRange,
             Action::Edit(BeatEdit::WrapRepeat(_)) => I::Repeat,
             Action::Edit(BeatEdit::InsertHold(_)) => I::Hold,
+            Action::EscalatingRepeat => I::EscalatingRepeat,
             Action::Insert => I::Insert,
             Action::Sound(SoundAction::Place) => I::PlaceSound,
             Action::GainStep(step) if step > 0 => I::GainUp,
@@ -1233,6 +1237,9 @@ fn enabled(id: BindingId, visual: bool, domain: RoutingDomain) -> bool {
     }
     if id == BindingId::RepeatRange {
         return domain == RoutingDomain::Edit && visual;
+    }
+    if id == BindingId::EscalatingRepeat {
+        return domain == RoutingDomain::Edit;
     }
     !matches!(
         (id, visual),
@@ -1984,6 +1991,14 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
             ))),
             C::Hold,
             "pause",
+        ),
+        (
+            Key::E,
+            Action::EscalatingRepeat,
+            C::Refuse(
+                "Escalate once, without a count; :repeat N gain-step= zoom-step= adjusts it.",
+            ),
+            "escalating repeat",
         ),
         (
             Key::F,

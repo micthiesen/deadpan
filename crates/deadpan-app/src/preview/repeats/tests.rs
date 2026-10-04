@@ -109,7 +109,8 @@ fn repeat_command_resolves_exact_selected_kind_and_preserves_same_count_setter_i
             repeat_count_instruction(&document, &context(Some(selected)), plays).unwrap(),
             SemanticInstruction::Repeat {
                 selector: SemanticSelector::SelectedBeat,
-                plays
+                plays,
+                escalation: None,
             }
         );
     }

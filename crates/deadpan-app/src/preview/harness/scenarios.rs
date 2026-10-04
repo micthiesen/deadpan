@@ -523,6 +523,33 @@ fn escalation(d: &mut Driver<'_>, original: u64) -> Result<(), String> {
         json!({"escalation":null}),
         d.snapshot(),
     )?;
+    // ,e wraps the selected beat in an escalating Repeat as one edit.
+    let before = d.revision();
+    d.chord(&[Key::Comma, Key::E])?;
+    d.changed(&before)?;
+    d.settled()?;
+    let workspace = d.app().workspace.clone().ok_or("No project")?;
+    let wrapper = d.app().selected_beat.clone().ok_or("No wrapper")?;
+    let wrapped = matches!(
+        &workspace.document.nodes()[&wrapper].kind,
+        NodeKind::Repeat { iterations, escalation: Some(escalation), .. }
+            if iterations.len() == 3 && escalation.gain_step.millidecibels() == 3000
+    );
+    d.check(
+        ",e wraps the selected beat in a three-play escalating Repeat with one Undo",
+        wrapped && d.app().sequence_length() == original * 9 && workspace.can_undo,
+        json!({"plays":3,"gain_step_mdb":3000,"frames":original * 9}),
+        json!({"wrapped":wrapped,"frames":d.app().sequence_length(),"message":d.app().message}),
+    )?;
+    let escalated = d.revision();
+    d.key(Key::U)?;
+    d.changed(&escalated)?;
+    d.check(
+        "One undo removes the escalating wrapper",
+        d.app().sequence_length() == original * 3,
+        json!(original * 3),
+        json!(d.app().sequence_length()),
+    )?;
     Ok(())
 }
 

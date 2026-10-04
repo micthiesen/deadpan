@@ -4,6 +4,7 @@ fn repeat(selector: SemanticSelector, plays: u32) -> SemanticInstruction {
     SemanticInstruction::Repeat {
         selector,
         plays: NonZeroU32::new(plays).unwrap(),
+        escalation: None,
     }
 }
 fn inverse(document: &ProjectDocument, planned: &SemanticPlan) {
@@ -169,4 +170,49 @@ fn repeat_failures_do_not_publish_staged_edits_and_allocations_are_checked() {
         assert!(serde_json::from_str::<SemanticInstruction>(wire).is_err());
     }
     assert_eq!(document, original);
+}
+
+#[test]
+fn an_escalating_repeat_wraps_and_escalates_in_one_transaction() {
+    let document = tree(&["a", "b"], vec![("a", hold(3)), ("b", hold(4))]);
+    let entry = SemanticContext {
+        selected_child: Some(node("a")),
+        ..context("root", 0)
+    };
+    let escalation = crate::RepeatEscalation {
+        gain_step: crate::GainDb::new(3_000).unwrap(),
+        zoom: None,
+    };
+    let escalating = SemanticInstruction::Repeat {
+        selector: SemanticSelector::SelectedBeat,
+        plays: NonZeroU32::new(3).unwrap(),
+        escalation: Some(escalation),
+    };
+    let planned = plan(&document, entry.clone(), vec![escalating], &BTreeMap::new()).unwrap();
+    assert!(matches!(
+        &planned.document.nodes()[&node("repeat-0")].kind,
+        NodeKind::Repeat { iterations, escalation: Some(stored), .. }
+            if iterations.len() == 3 && *stored == escalation
+    ));
+    assert_eq!(planned.document.duration().unwrap().frames(), 13);
+    assert_eq!(planned.context.selected_child, Some(node("repeat-0")));
+    inverse(&document, &planned);
+
+    // +12 dB per play would leave +24 dB on the third play: refused before
+    // any staged edit.
+    let refused = plan(
+        &document,
+        entry,
+        vec![SemanticInstruction::Repeat {
+            selector: SemanticSelector::SelectedBeat,
+            plays: NonZeroU32::new(4).unwrap(),
+            escalation: Some(crate::RepeatEscalation {
+                gain_step: crate::GainDb::new(12_000).unwrap(),
+                zoom: None,
+            }),
+        }],
+        &BTreeMap::new(),
+    )
+    .unwrap_err();
+    assert!(refused.message.contains("gain"), "{refused:?}");
 }

@@ -67,6 +67,40 @@ impl DeadpanApp {
         }
     }
 
+    /// `,e`: three plays, each 3 dB louder and 0.08 closer than the last,
+    /// over the Visual range or the selected beat, as one Undo.
+    pub(super) fn escalating_repeat(&mut self) {
+        self.bindings.clear();
+        self.cancel_repeats("an escalating Repeat was requested");
+        let selector = if self
+            .capture_visual_selection()
+            .is_ok_and(|visual| visual.is_some())
+        {
+            SemanticSelector::VisualSelection
+        } else {
+            SemanticSelector::SelectedBeat
+        };
+        let escalation = deadpan_core::RepeatEscalation {
+            gain_step: deadpan_core::GainDb::new(3_000).expect("constant gain"),
+            zoom: Some(deadpan_core::ZoomStep {
+                step: deadpan_core::quantize_zoom_step(
+                    deadpan_core::ExactRatio::new(8, 100).expect("constant ratio"),
+                )
+                .expect("constant step"),
+                progression: deadpan_core::ZoomProgression::Add,
+            }),
+        };
+        let target = self.capture_macro_target();
+        self.apply_recorded_instruction(
+            target,
+            Ok(SemanticInstruction::Repeat {
+                selector,
+                plays: NonZeroU32::new(3).expect("constant plays"),
+                escalation: Some(escalation),
+            }),
+        );
+    }
+
     pub(super) fn repeat_action(&mut self, selector: SemanticSelector, plays: NonZeroU32) {
         self.reconcile_repeat_prefix();
         let target = self.repeat_prefix_target.take().map_or_else(
@@ -104,7 +138,11 @@ impl DeadpanApp {
             self.cancel_repeats("a Repeat selection was requested");
             self.apply_recorded_instruction(
                 target,
-                Ok(SemanticInstruction::Repeat { selector, plays }),
+                Ok(SemanticInstruction::Repeat {
+                    selector,
+                    plays,
+                    escalation: None,
+                }),
             );
         }
     }
@@ -266,6 +304,7 @@ pub(super) fn repeat_count_instruction(
         Some(_) => Ok(SemanticInstruction::Repeat {
             selector: SemanticSelector::SelectedBeat,
             plays,
+            escalation: None,
         }),
         None => Err("The captured Repeat target is no longer available.".into()),
     }

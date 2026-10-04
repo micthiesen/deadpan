@@ -126,6 +126,8 @@ pub enum Action {
     LeaveGroup,
     Group,
     Ungroup,
+    /// `,e`: wrap the selected beat or Visual range in an escalating Repeat.
+    EscalatingRepeat,
     VisualMoment,
     SelectObject(deadpan_core::SemanticTextObject),
     DeleteSelection,

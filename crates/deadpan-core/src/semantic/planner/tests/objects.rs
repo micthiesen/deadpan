@@ -345,6 +345,7 @@ fn group_and_repeat_objects_select_the_correct_surviving_navigation_owner() {
                     SemanticInstruction::Repeat {
                         selector: object(kind),
                         plays: NonZeroU32::new(2).unwrap(),
+                        escalation: None,
                     }
                 } else {
                     SemanticInstruction::Group {
@@ -445,7 +446,8 @@ fn empty_contents_are_explicit_and_all_empty_children_remain_real_objects() {
                 entry,
                 vec![SemanticInstruction::Repeat {
                     selector: object(InnerGroup),
-                    plays: NonZeroU32::new(2).unwrap()
+                    plays: NonZeroU32::new(2).unwrap(),
+                    escalation: None,
                 }],
                 &BTreeMap::new()
             )

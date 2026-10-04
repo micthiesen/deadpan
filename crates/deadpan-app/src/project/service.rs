@@ -921,6 +921,7 @@ impl Service {
                     selector: deadpan_core::SemanticSelector::SelectedBeat,
                     plays: std::num::NonZeroU32::new(*plays)
                         .ok_or("A Repeat needs at least one total play")?,
+                    escalation: None,
                 },
                 register: None,
             }),

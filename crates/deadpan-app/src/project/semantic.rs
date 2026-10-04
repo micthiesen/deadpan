@@ -41,6 +41,7 @@ pub enum RepeatableEdit {
     Repeat {
         selector: SemanticSelector,
         plays: NonZeroU32,
+        escalation: Option<deadpan_core::RepeatEscalation>,
     },
     SetRepeatPlays {
         plays: NonZeroU32,
@@ -80,13 +81,18 @@ impl LastEdit {
                     operation.instruction(register)
                 }
             }
-            RepeatableEdit::Repeat { selector, plays } => SemanticInstruction::Repeat {
+            RepeatableEdit::Repeat {
+                selector,
+                plays,
+                escalation,
+            } => SemanticInstruction::Repeat {
                 selector: if context.visual_selection.is_some() {
                     SemanticSelector::VisualSelection
                 } else {
                     *selector
                 },
                 plays: *plays,
+                escalation: *escalation,
             },
             RepeatableEdit::SetRepeatPlays { plays } => {
                 SemanticInstruction::SetRepeatPlays { plays: *plays }
@@ -125,11 +131,17 @@ impl LastEdit {
                 register: None,
             });
         }
-        if let SemanticInstruction::Repeat { selector, plays } = instruction {
+        if let SemanticInstruction::Repeat {
+            selector,
+            plays,
+            escalation,
+        } = instruction
+        {
             return Some(Self {
                 operation: RepeatableEdit::Repeat {
                     selector: *selector,
                     plays: *plays,
+                    escalation: *escalation,
                 },
                 register: None,
             });

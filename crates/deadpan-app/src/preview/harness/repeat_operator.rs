@@ -463,6 +463,7 @@ fn recorded(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(), String
     let expected = SemanticInstruction::Repeat {
         selector: SemanticSelector::SelectedBeat,
         plays: NonZeroU32::new(2).unwrap(),
+        escalation: None,
     };
     d.check("The named Macro durably stores Repeat intent while preserving the unnamed contents",
         matches!(saved_bank.entries.get(&RegisterName::new('z').map_err(|error| error.to_string())?).map(AsRef::as_ref), Some(RegisterValue::Macro { program }) if program.instructions() == [expected])
@@ -765,6 +766,7 @@ fn candidate(d: &mut Driver<'_>, selector: SemanticSelector, plays: u32) -> Resu
     let expected = RepeatableEdit::Repeat {
         selector,
         plays: NonZeroU32::new(plays).unwrap(),
+        escalation: None,
     };
     d.check(
         "Saved repetition retains the requested selector and total plays at the current revision",

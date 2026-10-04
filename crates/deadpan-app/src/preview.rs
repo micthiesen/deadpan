@@ -1806,6 +1806,7 @@ impl DeadpanApp {
                 sentence: true,
                 end: false,
             }),
+            Action::EscalatingRepeat => self.escalating_repeat(),
             Action::Pause { forward, count } => {
                 self.analysis_motion(deadpan_core::SpeechUnit::Pause, forward, count)
             }
@@ -4124,6 +4125,7 @@ impl DeadpanApp {
                         (format!("{} / {} · Visual or after {}/{}/{}", key(EditorKey::InnerGroup), key(EditorKey::AroundGroup), key(EditorKey::YankOperator), key(EditorKey::CutOperator), key(EditorKey::RepeatOperator)), "Select exact group contents or the whole group. An explicitly selected Sequence wins; otherwise use the containing nonroot group. Visual finish retains the object; moving while extending changes it into a time range. Whole-group edits return to the outer parent. Empty contents can receive a paste; an all-empty child forest still has exact owners. Macros and dot resolve the object in their current context.".to_owned()),
                         (":repeat 3".to_owned(), "Set total plays on the captured Repeat, preserving its gaps and surviving plays; wrap a different selected beat. Clear Visual selection first. Recording keeps the effective wrap or count-change instruction; dot reapplies a count change to the newly selected Repeat.".to_owned()),
                         (":cutaway register=r fit=hold|loop|gap".to_owned(), "Show a copied Original moment over the Edit range (or the whole selected beat) while that beat's sound continues. A short moment holds its last picture, loops or lets the beat show through. The cutaway belongs to the beat and moves, splits and copies with it. :cutaway clear removes cutaways there. One Undo.".to_owned()),
+                        (key(EditorKey::EscalatingRepeat), "Wrap the selected beat or Visual range in three plays, each 3 dB louder and 0.08 closer than the last, as one Undo. Adjust it with :repeat 3 gain-step= zoom-step=.".to_owned()),
                         (":repeat 3 gain-step=3dB zoom-step=0.08".to_owned(), "Escalate the selected Repeat: each play after the first adds the gain step and grows the centered picture scale by the zoom step (progression=multiply compounds it). The count must match the Repeat's plays; omitted steps keep their values and 0dB or 0 removes one. Timing and gaps are unchanged; one Undo.".to_owned()),
                         (":wrap-repeat 3".to_owned(), "Always add an enclosing Repeat around the captured Visual range or selected beat, including nesting. Command entry captures the target; stale or missing targets refuse.".to_owned()),
                         (":retime 0.75 pitch=preserve".to_owned(), "Slow the selected beat to 0.75× input speed. Use pitch=tape to let pitch follow speed. Exact fractions such as 3/4 work too. The command shows its resolved duration before Enter; Escape cancels entry.".to_owned()),

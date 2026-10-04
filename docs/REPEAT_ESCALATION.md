@@ -57,6 +57,11 @@ selection the command explains that a beat must be wrapped first. `gap=` is
 refused: changing a gap's duration is not supported yet. The inspector shows
 "Gain per play" and "Zoom per play".
 
+`,e` applies the escalating-repeat recipe: three plays over the Visual range or
+the selected beat, +3 dB and +0.08 scale per play, through the semantic
+`Repeat` instruction's optional `escalation`, so the wrap and its escalation
+are one Undo, macros record it and dot-repeat reapplies it.
+
 ## Tests
 
 - Core: step arithmetic, bounds, grid rounding and wire form
@@ -73,6 +78,5 @@ refused: changing a gap's duration is not supported yet. The inspector shows
 ## Remaining
 
 Per-play speed and gap progression ("One More Time"), escalation toward a
-selected target rather than the canvas center, recording escalation in macros
-and dot-repeat, an `,e` recipe binding, and setting count and steps in one
-undoable command.
+selected target rather than the canvas center, recording the `:repeat` setter's
+steps in macros, and setting count and steps in one undoable command.

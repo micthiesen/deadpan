@@ -320,6 +320,9 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
         SemanticAllocationRequest::SetRepeatPlays { .. } => SemanticAllocation::SetRepeatPlays {
             new_revision: crate::new_revision()?,
         },
+        SemanticAllocationRequest::ParameterEdit { .. } => SemanticAllocation::ParameterEdit {
+            new_revision: crate::new_revision()?,
+        },
         SemanticAllocationRequest::Repeat {
             required_split_ids,
             needs_group,

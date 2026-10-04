@@ -94,7 +94,13 @@ where
         trace_index: usize,
         selector: SemanticSelector,
         plays: u32,
+        escalation: Option<crate::RepeatEscalation>,
     ) -> Result<(), EditError> {
+        if let Some(escalation) = escalation {
+            escalation
+                .validate(plays)
+                .map_err(|error| invalid(&error.to_string()))?;
+        }
         self.charge_step(false)?;
         let target = self.resolve_selector(selector)?;
         let selection = target.selection()?.clone();
@@ -152,6 +158,34 @@ where
         )?;
         self.current = next;
         self.steps.push(ResolvedStep::Edit { edit });
+        if let Some(escalation) = escalation {
+            self.charge_step(false)?;
+            let SemanticAllocation::ParameterEdit { new_revision } =
+                (self.allocate)(SemanticAllocationRequest::ParameterEdit {
+                    step_index: self.steps.len(),
+                })?
+            else {
+                return Err(invalid("Repeat escalation requires a parameter allocation"));
+            };
+            self.reserve_revision(&new_revision)?;
+            let edit = LeafEdit::new(
+                new_revision,
+                Command::SetRepeatEscalation {
+                    node: selected.clone(),
+                    escalation: Some(escalation),
+                },
+            )?;
+            let applied = crate::apply(&self.current, &edit.request(&self.current))?;
+            let next = applied.forward.apply(&self.current)?;
+            charge(
+                &mut self.document_bytes,
+                wire::size(&next, MAX_DOCUMENT_JSON_BYTES)?,
+                MAX_COMPOUND_DOCUMENT_BYTES,
+                "macro staged document byte limit",
+            )?;
+            self.current = next;
+            self.steps.push(ResolvedStep::Edit { edit });
+        }
         self.continue_target(&target, plan.range.start(), Some(selected))?;
         self.trace[trace_index].resolved_parent = Some(target.parent);
         self.trace[trace_index].resolved_selection = Some(selection);

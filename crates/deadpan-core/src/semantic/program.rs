@@ -156,6 +156,9 @@ pub enum SemanticInstruction {
     Repeat {
         selector: SemanticSelector,
         plays: NonZeroU32,
+        /// Escalate the new Repeat's plays in the same transaction (`,e`).
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        escalation: Option<crate::RepeatEscalation>,
     },
     /// Set the selected direct-child Repeat's total count. Visual selection is
     /// incompatible with this node parameter edit, including an empty range.

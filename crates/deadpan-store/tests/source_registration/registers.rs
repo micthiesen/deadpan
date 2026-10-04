@@ -31,6 +31,7 @@ fn qualified_range_repeat_stages_exact_wrapper_capture_and_reopens_with_one_undo
         SemanticInstruction::Repeat {
             selector: SemanticSelector::VisualSelection,
             plays: NonZeroU32::new(3).unwrap(),
+            escalation: None,
         },
         SemanticInstruction::Yank {
             selector: SemanticSelector::SelectedBeat,

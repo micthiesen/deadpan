@@ -64,11 +64,20 @@ fn repeat_instruction_hint(
             }
             ("repeat cut".to_owned(), selector)
         }
-        RepeatableEdit::Repeat { selector, plays } => {
-            if let Some(hint) = visual_hint(format!("repeat selection ×{plays}")) {
+        RepeatableEdit::Repeat {
+            selector,
+            plays,
+            escalation,
+        } => {
+            let escalating = if escalation.is_some() {
+                " escalating"
+            } else {
+                ""
+            };
+            if let Some(hint) = visual_hint(format!("repeat selection ×{plays}{escalating}")) {
                 return hint;
             }
-            (format!("repeat ×{plays}"), selector)
+            (format!("repeat ×{plays}{escalating}"), selector)
         }
         RepeatableEdit::Group { selector, label } => {
             if let Some(hint) = visual_hint(format!("group selection as {label:?}")) {
@@ -160,9 +169,18 @@ pub(super) fn applied_text(instruction: &deadpan_core::SemanticInstruction) -> O
     let (verb, selector) = match instruction {
         I::Cut { selector, .. } => ("Cut", selector),
         I::Yank { selector, .. } => ("Copied", selector),
-        I::Repeat { selector, plays } => {
+        I::Repeat {
+            selector,
+            plays,
+            escalation,
+        } => {
+            let escalated = if escalation.is_some() {
+                ", escalating"
+            } else {
+                ""
+            };
             return (!matches!(selector, SemanticSelector::VisualSelection))
-                .then(|| format!("Repeated {} ×{plays}", selector_text(selector)));
+                .then(|| format!("Repeated {} ×{plays}{escalated}", selector_text(selector)));
         }
         I::Group { selector, label } => {
             return (!matches!(selector, SemanticSelector::VisualSelection))
@@ -289,6 +307,7 @@ mod tests {
         let wrapped = RepeatableEdit::Repeat {
             selector: SemanticSelector::VisualSelection,
             plays: std::num::NonZeroU32::new(3).unwrap(),
+            escalation: None,
         };
         assert_eq!(
             repeat_instruction_hint(&wrapped, EditSelection::None, true),

@@ -4,6 +4,7 @@ fn wrapping(selector: SemanticSelector, plays: u32) -> SemanticInstruction {
     SemanticInstruction::Repeat {
         selector,
         plays: NonZeroU32::new(plays).unwrap(),
+        escalation: None,
     }
 }
 
@@ -14,6 +15,7 @@ fn wrapping_intent(update: &ProjectUpdate, selector: SemanticSelector, plays: u3
         RepeatableEdit::Repeat {
             selector,
             plays: NonZeroU32::new(plays).unwrap(),
+            escalation: None,
         }
     );
     assert!(!edit.uses_register());

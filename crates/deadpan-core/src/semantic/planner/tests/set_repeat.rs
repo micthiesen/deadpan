@@ -118,6 +118,7 @@ fn wrap_then_set_then_move_resolves_each_new_staged_repeat_in_one_compound() {
             SemanticInstruction::Repeat {
                 selector: SemanticSelector::SelectedBeat,
                 plays: NonZeroU32::new(2).unwrap(),
+                escalation: None,
             },
             call('a', 1),
             SemanticInstruction::MoveBeats {

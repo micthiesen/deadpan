@@ -116,6 +116,11 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
                 new_revision: revision(&format!("leaf-{step_index}")),
             }
         }
+        SemanticAllocationRequest::ParameterEdit { step_index } => {
+            SemanticAllocation::ParameterEdit {
+                new_revision: revision(&format!("leaf-{step_index}")),
+            }
+        }
         SemanticAllocationRequest::Repeat {
             step_index,
             required_split_ids,

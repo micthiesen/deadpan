@@ -83,6 +83,10 @@ pub enum SemanticAllocationRequest {
     SetRepeatPlays {
         step_index: usize,
     },
+    /// A parameter-only edit, such as a new Repeat's escalation.
+    ParameterEdit {
+        step_index: usize,
+    },
     Repeat {
         step_index: usize,
         required_split_ids: usize,
@@ -116,6 +120,9 @@ pub enum SemanticAllocation {
         new_revision: RevisionId,
     },
     SetRepeatPlays {
+        new_revision: RevisionId,
+    },
+    ParameterEdit {
         new_revision: RevisionId,
     },
     Repeat {
@@ -500,8 +507,12 @@ where
                     self.group(index, *selector, label)?;
                 }
                 SemanticInstruction::Ungroup => self.ungroup(index)?,
-                SemanticInstruction::Repeat { selector, plays } => {
-                    self.repeat(index, *selector, plays.get())?;
+                SemanticInstruction::Repeat {
+                    selector,
+                    plays,
+                    escalation,
+                } => {
+                    self.repeat(index, *selector, plays.get(), *escalation)?;
                 }
                 SemanticInstruction::SetRepeatPlays { plays } => {
                     self.set_repeat_plays(index, plays.get())?;
@@ -591,8 +602,13 @@ where
         let direct_steps = program
             .instructions()
             .iter()
-            .filter(|instruction| {
-                matches!(
+            .map(|instruction| match instruction {
+                // An escalating Repeat stages its wrap and its escalation.
+                SemanticInstruction::Repeat {
+                    escalation: Some(_),
+                    ..
+                } => 2,
+                _ => usize::from(matches!(
                     instruction,
                     SemanticInstruction::CutFrames { .. }
                         | SemanticInstruction::Yank { .. }
@@ -606,9 +622,9 @@ where
                         | SemanticInstruction::YankSelection { .. }
                         | SemanticInstruction::CutSelection { .. }
                         | SemanticInstruction::ReplaceSelection { .. }
-                )
+                )),
             })
-            .count();
+            .sum();
         let minimum_steps = usize::try_from(count)
             .ok()
             .and_then(|count| count.checked_mul(direct_steps))

@@ -318,6 +318,7 @@ impl DeadpanApp {
                 | Action::Repeat { .. }
                 | Action::Group
                 | Action::Ungroup
+                | Action::EscalatingRepeat
                 | Action::Edit(BeatEdit::WrapRepeat(_))
                 | Action::Edit(BeatEdit::Repeat(_))
                 | Action::CopyMoment
@@ -355,6 +356,7 @@ impl DeadpanApp {
                 | Action::Repeat { .. }
                 | Action::Group
                 | Action::Ungroup
+                | Action::EscalatingRepeat
                 | Action::Edit(BeatEdit::WrapRepeat(_))
                 | Action::Edit(BeatEdit::Repeat(_))
                 | Action::CopyMoment
