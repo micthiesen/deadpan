@@ -711,6 +711,10 @@ isolate repeated occurrences first. Retime ancestors remain conservatively rejec
 Do not retroactively reject valid legacy operational bindings during migration.
 Ready bundles alone do not authorize an edit. See [acceptance](docs/GENERATION_ACCEPTANCE.md).
 See [generated Hold semantics](docs/GENERATED_HOLDS.md).
+Host AI Hold generation is `deadpan_cli::generation`: allocate and finish on the
+writer, `run_worker` on a job thread without store access, durable transitions
+returned as records. The development runtime comes from `DEADPAN_BRIDGE_*`;
+keep the virtual-environment interpreter path unresolved. See [AI Holds](docs/AI_HOLDS.md).
 
 Original byte ownership is operational and separate from stream readiness.
 Database schema 44 retains content-keyed original records with monotonic location

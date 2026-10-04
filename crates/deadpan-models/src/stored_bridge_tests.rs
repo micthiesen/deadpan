@@ -211,6 +211,7 @@ impl Fixture {
                 native_object: native,
                 provenance: object(&bytes),
                 sampling: binding.plan.sampling_map().unwrap(),
+                content_aspect: None,
             },
             project: binding.project_id,
             context: context_bytes,

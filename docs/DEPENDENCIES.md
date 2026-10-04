@@ -14,7 +14,7 @@ requires an explicit pinned FFmpeg developer prefix; see [Development](DEVELOPME
 | Rust | 1.97.1 | MIT OR Apache-2.0 | Compiler, rustfmt, Clippy. |
 | eframe | 0.36.2 | MIT OR Apache-2.0 | Native project workspace, egui, wgpu and AccessKit. |
 | egui_kittest | 0.36.2 | MIT OR Apache-2.0 | Optional developer `ui-harness` feature only. Replays the production eframe app using its shared Metal renderer and AccessKit geometry. Native input and physical display qualification remain separate. |
-| image | 0.25.10 | MIT OR Apache-2.0 | Already locked; optional direct PNG capture and bounded checkpoint comparison for `ui-harness`. No image-diff runtime in the shipped app. |
+| image | 0.25.10 | MIT OR Apache-2.0 | Already locked; optional direct PNG capture and bounded checkpoint comparison for `ui-harness`, and (PNG feature only) the CLI's contain-resize and PNG encoding of AI hold conditioning frames. No image-diff runtime in the shipped app. |
 | rfd | 0.17.2 | MIT | macOS-only asynchronous native file/save/folder panels. Default features disabled; no shell or external dialog executable. |
 | objc2-foundation | 0.3.2 | MIT | Existing locked native dependency, now direct with narrowly selected features for safe system Documents-directory discovery through NSFileManager. No new runtime or unsafe application code. |
 | objc2 | 0.6.4 | MIT | Existing locked dependency, now direct for a safe autorelease pool around Documents discovery on the service thread. Only an owned Rust path leaves the pool. |

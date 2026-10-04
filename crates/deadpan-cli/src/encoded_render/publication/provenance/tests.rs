@@ -87,6 +87,7 @@ fn artifact(
             BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
         )
         .unwrap(),
+        content_aspect: None,
     };
     let record = |reference: &GeneratedObjectRef, frames: i64| AssetRecord {
         label: "Private generated label".into(),

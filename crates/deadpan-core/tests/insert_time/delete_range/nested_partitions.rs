@@ -412,6 +412,7 @@ fn nested_generated_provider_still_requires_a_whole_owned_cut() {
             BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
         )
         .unwrap(),
+        content_aspect: None,
     };
     let mut wire = json!(original);
     for (name, object) in [("sampled", sampled), ("native", native)] {

@@ -644,7 +644,12 @@ fn generated_picture(
         .source
         .frame(id, FRAME_TIMEOUT, cancelled)
         .map_err(|error| error.to_string())?;
-    let frame = render_frame(decoded, session.source.info())?;
+    let mut frame = render_frame(decoded, session.source.info())?;
+    if let Some(aspect) = artifact.content_aspect {
+        // Undo the conditioning letterbox so the Hold fills the canvas.
+        frame = deadpan_cli::picture::fill_canvas_aspect(frame, aspect)
+            .map_err(|error| error.to_string())?;
+    }
     media
         .generated()
         .check_live(cancelled)

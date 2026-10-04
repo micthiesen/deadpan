@@ -9,6 +9,7 @@ mod doctor;
 pub mod encoded_render;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod export_picture;
+pub mod generation;
 pub mod generation_context;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod host;
@@ -90,6 +91,8 @@ const HELP: &str = "Deadpan headless commands:
   pauses <project.deadpan> [--asset <id>]
   detect-shots <project.deadpan> [--asset <id>]
   shots <project.deadpan> [--asset <id>]
+  generate-hold <project.deadpan> --hold <node-id> [--seed N]
+  accept-hold <project.deadpan> --request <request-id>
 
 Creation defaults to a provisional 1920x1080, 30 fps presentation basis.
 Document dumps are inspection output; SQLite remains authoritative.
@@ -99,6 +102,7 @@ Original retention preserves complete bytes; stream qualification and authored i
 Audio inspection returns at most 256 stereo samples at the explicitly selected processing stage.
 Domain inspection reads raw physical context; signed START/END use its captured root grid.
 Definition inspection reads a local-zero point grid, not final timeline allocation.
+AI pauses use the development model runtime located by DEADPAN_BRIDGE_* variables (docs/AI_HOLDS.md); generation proposes pictures and only accept-hold edits the project.
 Placement inspection evaluates the selected revision's recipe on an explicit signed root clock.";
 
 #[derive(Debug, thiserror::Error)]
@@ -148,6 +152,9 @@ pub enum CliError {
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[error(transparent)]
     Shots(#[from] shots::ShotScanError),
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[error(transparent)]
+    Generation(#[from] generation::attempt::GenerationError),
 }
 
 impl CliError {
@@ -204,6 +211,8 @@ impl CliError {
             Self::Shots(shots::ShotScanError::Unavailable(_)) => "ShotDetectionUnavailable",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::Shots(_) => "ShotDetectionFailed",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::Generation(error) => error.code(),
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::ProjectAudio(error) => match error {
                 audio::ProjectAudioError::Store(error) => error.code(),
@@ -438,6 +447,10 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         ["detect-shots", rest @ ..] => shots::run_detect_shots(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["shots", rest @ ..] => shots::run_shots(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["generate-hold", rest @ ..] => generation::command::run_generate(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["accept-hold", rest @ ..] => generation::command::run_accept(rest),
         [] | ["--help"] | ["-h"] => {
             println!("{HELP}");
             Ok(())

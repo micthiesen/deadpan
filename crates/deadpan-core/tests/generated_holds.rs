@@ -73,6 +73,7 @@ fn generated_fixture() -> (GeneratedArtifact, BTreeMap<AssetId, AssetRecord>) {
             BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
         )
         .unwrap(),
+        content_aspect: None,
     };
     let assets = BTreeMap::from([
         (sampled_asset, video_asset("Sampled", &sampled_object, 30)),

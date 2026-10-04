@@ -22,7 +22,9 @@ use deadpan_store::original_media::OriginalMediaLimits;
 use deadpan_store::{AccessMode, ProjectStore, StoreError};
 
 mod shared;
-pub use shared::{render_layers, same_index_mapping, source_to_render_frame};
+pub use shared::{
+    aspect_region, fill_canvas_aspect, render_layers, same_index_mapping, source_to_render_frame,
+};
 mod generated;
 pub use generated::open_generated_picture;
 #[cfg(test)]
@@ -286,7 +288,10 @@ impl ProjectPictureSession {
                     .select_source_frame(retained.source.index().index())?
                     .identity;
                 let decoded = retained.source.frame(id, FRAME_TIMEOUT, cancelled)?;
-                let frame = source_to_render_frame(decoded, retained.source.info())?;
+                let mut frame = source_to_render_frame(decoded, retained.source.info())?;
+                if let Some(aspect) = artifact.content_aspect {
+                    frame = shared::fill_canvas_aspect(frame, aspect)?;
+                }
                 self.generated.check_live(cancelled)?;
                 PreparedPicture::Generated {
                     artifact: artifact.clone(),

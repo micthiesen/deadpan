@@ -1,8 +1,10 @@
 # Durable generated-bundle acceptance
 
 The store exposes `preview_generation_acceptance` and `accept_generation_bundle`
-for an explicit host acceptance of the exact selected Ready bundle. This is a
-Rust host API; the native app and CLI have no generation or audition workflow yet.
+for an explicit host acceptance of the exact selected Ready bundle.
+[`generation::acceptance::accept`](AI_HOLDS.md) uses them with a relevance plan
+from the installed boundary resolver, and `deadpan-cli accept-hold` exposes it;
+the native app has no generation or audition workflow yet.
 It does not turn background completion, qualification, or selection into an edit.
 
 ## Evidence and transaction
@@ -77,7 +79,9 @@ decoding/color qualification, installed-model attestation, useful motion and sea
 quality remain required. The store trusts the host's qualification receipt; it
 does not independently decode media or parse provenance. Reference inventory,
 history-aware cleanup, portable copy, source joins, model-independent application
-rendering, scheduling and interactive acceptance remain open.
+rendering, app scheduling, audition and interactive acceptance remain open. The
+headless chain, its measured real run and the symmetric conditioning and
+presentation raster policy are in [AI Holds](AI_HOLDS.md).
 
 [The measured acceptance run](qualification/acceptance-2026-09-21.md) records the
 actual media/history probe, independent decode, repository gate and sanitizer scope.

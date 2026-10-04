@@ -51,6 +51,7 @@ fn generated_decoder_identity_preserves_edits_but_rechecks_media_interpretation(
             BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
         )
         .unwrap(),
+        content_aspect: None,
     });
     let initial = ProjectDocument::new(
         ProjectId::new("generated-key").unwrap(),

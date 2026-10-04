@@ -171,6 +171,12 @@ fn prepare_acceptance(
         sampling: plan
             .sampling_map()
             .map_err(|_| invalid("invalid retained sampling map"))?,
+        // Relevance binds the canvas: an accepted request's context, which
+        // includes the canvas, is unchanged since it was conditioned.
+        content_aspect: Some([
+            current.presentation_basis().width,
+            current.presentation_basis().height,
+        ]),
     };
     let command = CommandRequest {
         project_id: current.project_id().clone(),

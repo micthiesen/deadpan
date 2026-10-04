@@ -113,3 +113,98 @@ pub fn render_layers(
     }
     Ok(layers)
 }
+
+/// Crop a generated bridge picture, centered, to the aspect of `canvas`, the
+/// artifact's recorded `content_aspect`.
+///
+/// Bridge conditioning fits each canvas-aspect boundary picture whole inside
+/// the model's native raster (see `generation::conditioning`). Cropping the
+/// generated picture back to the canvas aspect removes exactly those bars, so
+/// the accepted Hold fills the canvas like its neighbours instead of showing
+/// letterboxed inside it. Display aspect accounts for sample aspect ratio.
+/// Both sides round with [`aspect_region`], so the crop and the conditioning
+/// region agree to the pixel.
+pub fn fill_canvas_aspect(
+    frame: Rgba8Frame,
+    canvas: [u32; 2],
+) -> Result<Rgba8Frame, ProjectPictureError> {
+    let metadata = *frame.metadata();
+    let quarter_turned = matches!(
+        metadata.rotation,
+        Rotation::Clockwise90 | Rotation::Clockwise270
+    );
+    if quarter_turned || canvas[0] == 0 || canvas[1] == 0 {
+        return Ok(frame);
+    }
+    let (width, height) = (metadata.width, metadata.height);
+    let sar = metadata.sample_aspect_ratio;
+    let [crop_width, crop_height] = aspect_region(
+        canvas,
+        [width, height],
+        [sar.numerator(), sar.denominator()],
+    );
+    if (crop_width, crop_height) == (width, height) {
+        return Ok(frame);
+    }
+    let (left, top) = ((width - crop_width) / 2, (height - crop_height) / 2);
+    let stride = metadata.row_stride_bytes as usize;
+    let mut bytes = Vec::with_capacity(crop_width as usize * crop_height as usize * 4);
+    for row in frame
+        .bytes()
+        .chunks_exact(stride)
+        .skip(top as usize)
+        .take(crop_height as usize)
+    {
+        let start = left as usize * 4;
+        bytes.extend_from_slice(&row[start..start + crop_width as usize * 4]);
+    }
+    Ok(Rgba8Frame::new(
+        FrameMetadata {
+            width: crop_width,
+            height: crop_height,
+            row_stride_bytes: crop_width * 4,
+            ..metadata
+        },
+        bytes,
+    )?)
+}
+
+/// The largest centered region of a `bounds` pixel raster, with pixel aspect
+/// `sar` (numerator, denominator), whose display aspect is `aspect`'s. The
+/// shorter side rounds half up in exact integer arithmetic and stays within
+/// `1..=bound`. Bridge conditioning and the generated-picture crop share it.
+pub fn aspect_region(aspect: [u32; 2], bounds: [u32; 2], sar: [u32; 2]) -> [u32; 2] {
+    let [aspect_width, aspect_height] = aspect.map(|value| u128::from(value.max(1)));
+    let [width, height] = bounds;
+    let [sar_n, sar_d] = sar.map(|value| u128::from(value.max(1)));
+    let half_up = |numerator: u128, denominator: u128, bound: u32| {
+        u32::try_from((2 * numerator + denominator) / (2 * denominator))
+            .unwrap_or(bound)
+            .clamp(1, bound.max(1))
+    };
+    // Display width over height: width*sar_n / (height*sar_d) vs aspect.
+    let raster = u128::from(width) * sar_n * aspect_height;
+    let wanted = u128::from(height) * sar_d * aspect_width;
+    if raster > wanted {
+        // The raster is wider: keep its height.
+        [
+            half_up(
+                u128::from(height) * sar_d * aspect_width,
+                sar_n * aspect_height,
+                width,
+            ),
+            height,
+        ]
+    } else if raster < wanted {
+        [
+            width,
+            half_up(
+                u128::from(width) * sar_n * aspect_height,
+                sar_d * aspect_width,
+                height,
+            ),
+        ]
+    } else {
+        bounds
+    }
+}

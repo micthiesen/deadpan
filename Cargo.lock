@@ -975,6 +975,7 @@ dependencies = [
  "deadpan-render",
  "deadpan-source",
  "deadpan-store",
+ "image",
  "pollster",
  "rusqlite",
  "rustix 1.1.5",

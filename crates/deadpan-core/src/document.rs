@@ -1186,6 +1186,15 @@ impl ProjectDocument {
         accepted: &AcceptedGeneration,
     ) -> Result<(), DocumentError> {
         let artifact = &accepted.artifact;
+        if artifact
+            .content_aspect
+            .is_some_and(|[width, height]| width == 0 || height == 0)
+        {
+            return Err(DocumentError::new(
+                DocumentErrorCode::InvalidTree,
+                "a generated Hold's content aspect has positive dimensions",
+            ));
+        }
         if artifact.sampling.project_rate() != self.presentation_basis.frame_rate
             || duration > artifact.sampling.output_frame_count()
         {

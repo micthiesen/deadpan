@@ -1169,6 +1169,7 @@ fn generated_fixture(
             BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
         )
         .unwrap(),
+        content_aspect: None,
     };
     let record = |object: &GeneratedObjectRef, frames: i64| AssetRecord {
         source_qualification: None,

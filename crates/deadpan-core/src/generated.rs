@@ -333,4 +333,11 @@ pub struct GeneratedArtifact {
     pub native_object: GeneratedObjectRef,
     pub provenance: GeneratedObjectRef,
     pub sampling: BridgeSamplingMap,
+    /// The canvas (width, height) whose aspect the bridge was conditioned
+    /// for: its boundary pictures were fitted whole into that aspect's region
+    /// of the native raster, and presentation crops the generated pictures
+    /// back to it. Absent for artifacts conditioned without that policy,
+    /// which present uncropped.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content_aspect: Option<[u32; 2]>,
 }

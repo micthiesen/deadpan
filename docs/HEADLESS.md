@@ -1195,3 +1195,14 @@ transcript as an annotation outside history. It needs the project's writer.
 transcripts or phrase matches with exact source sample bounds. Errors use
 `TranscriptionUnavailable`, `TranscriptionCancelled` and `TranscriptionFailed`.
 See [local transcription](TRANSCRIPTION.md).
+
+## AI pauses
+
+`generate-hold <project.deadpan> --hold <node-id> [--seed N]` fills a Hold with
+pictures from the development LTX MLX runtime: it records a bridge request and
+attempt, supervises the worker, qualifies and publishes the bundle and records
+it Ready, without editing the project. `accept-hold <project.deadpan> --request
+<request-id>` accepts that request's selected Ready bundle as one undoable edit.
+Both need the project closed in the app. Errors use `GenerationUnavailable`,
+`GenerationInputsUnavailable`, `GenerationRefused`, `GenerationCancelled` and
+`GenerationFailed`. See [AI Holds](AI_HOLDS.md).

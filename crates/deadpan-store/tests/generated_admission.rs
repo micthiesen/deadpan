@@ -88,6 +88,7 @@ fn fixture() -> Result<(
             duration(30),
             BridgeInterpolation::EncodedSrgbRgb8LinearHalfUp,
         )?,
+        content_aspect: None,
     };
     let clock = SourceTimeBase::new(1, 1000)?;
     let record = |object: &GeneratedObjectRef, frames| AssetRecord {

@@ -1092,6 +1092,21 @@ fn explicit_acceptance_derives_assets_and_survives_history_without_worker() -> R
     assert_eq!(outcome.edit, preview);
     assert_eq!(store.snapshot()?, accepted);
     store.validate()?;
+    // The artifact records the canvas its conditioning was fitted for.
+    let NodeKind::Hold { recipe } = &accepted.nodes()[&NodeId::new("hold")?].kind else {
+        panic!()
+    };
+    let HoldVideo::Generated {
+        accepted: generated,
+    } = &recipe.video
+    else {
+        panic!("accepted Hold is generated")
+    };
+    let basis = accepted.presentation_basis();
+    assert_eq!(
+        generated.artifact.content_aspect,
+        Some([basis.width, basis.height])
+    );
     drop(store);
 
     let mut store = ProjectStore::open(&package, AccessMode::ReadWrite)?;
