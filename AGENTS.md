@@ -1215,10 +1215,13 @@ Finish independent review before one full workspace gate for a coherent delivery
 milestone. Do not run the full gate after each small increment:
 
 ```sh
-cargo fmt --all -- --check
-cargo clippy --workspace --all-targets --locked -- -D warnings
-cargo test --workspace --locked --no-fail-fast
+cargo xtask gate
 ```
+
+It first prunes the build directory when Cargo artifacts exceed 40 GiB (stale
+artifacts slowed rebuilds from 16 s to over six minutes), then runs formatting,
+workspace and `ui-harness` Clippy, and the workspace and `ui-harness` tests with
+`--no-fail-fast`. See [Development](docs/DEVELOPMENT.md).
 
 The workspace tests already build and exercise the normal app, CLI and media
 worker executables, including doctor. Use a separate build for packaging or

@@ -38,6 +38,15 @@ After independent review, run one full gate for the completed milestone from
 the repository root:
 
 ```sh
+cargo xtask gate
+```
+
+It runs build-directory hygiene, then `cargo fmt --all -- --check`, workspace
+Clippy with `-D warnings`, `deadpan-app` Clippy with `ui-harness`, and the
+workspace and `ui-harness` tests (nextest when installed, then doc tests;
+otherwise `cargo test`). CI runs the same commands individually:
+
+```sh
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo test --workspace --locked
@@ -53,10 +62,18 @@ Cargo never deletes superseded artifacts. On macOS, unpacked debug info keeps
 object files beside every test binary, so each rebuild adds more. A directory
 with millions of entries makes every rustc invocation slow in the kernel: on
 2026-10-04, 2.87 million `.o` files (494 GB) made an incremental
-`deadpan-core` test build take 376 s; after `cargo clean` it took 16 s. Run
-`cargo clean` when `ls target/debug/deps | wc -l` reaches several hundred
-thousand. The dev profile keeps line tables for workspace crates and omits
-dependency debug info to slow that growth.
+`deadpan-core` test build take 376 s; after `cargo clean` it took 16 s. One day
+later, with that fixed, `target/debug` had regrown to 78 GiB: 40 GiB of
+superseded dependency artifacts and 39 GiB of incremental state in 1,555
+per-crate directories. `cargo xtask gate` (or `cargo xtask hygiene` alone)
+therefore measures the Cargo profile directories first and, above 40 GiB
+(`DEADPAN_TARGET_LIMIT_GIB`), removes the oldest artifacts with
+`cargo sweep --maxsize` and the least recently changed incremental directories
+until 20 GiB remain; recent builds stay warm and rustc rebuilds missing
+incremental state. Install `cargo-sweep` with `brew install cargo-sweep` (it is
+in the dotfiles Brewfile); without it only incremental state is pruned. The dev
+profile keeps line tables for workspace crates and omits dependency debug info
+to slow the growth.
 
 Workspace integration tests already build and exercise the normal application,
 CLI and media-worker executables, including doctor. A separate workspace build
