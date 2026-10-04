@@ -49,6 +49,15 @@ Shot motions `]s`/`[s` share those prefixes, and `iS`/`aS` use Shift+`s`
 only after a pending `i` or `a`, so the plain `s` split binding is unchanged.
 `,e` joins the comma family (`,h`, `,i`, `,s`, `,f`, `,v`, `,g`, `,z`, `,c`)
 with no modifier; `e` alone keeps its word-end meaning.
+`,a` (`ai.generate`) generates AI pictures for the selected pause. It is Normal
+Edit only, refuses a count, does not repeat while held and yields to native
+text and composition; `a` alone keeps its text-object prefix. The production
+audit after adding it passed 10,890,672 routing cases against the 62 reserved
+Kestrel bindings with no conflict, and the live Kestrel source digest matched
+the fixture (`368c01df…`). The rest of the AI workflow is command-only
+(`:cancel-ai`, `:preview-ai`, `:accept-ai`, `:discard-ai`); Escape leaves an AI
+preview only after register choice, macro, Visual and pending-key owners have
+none left to clear, and never cancels a generation.
 
 Catalog placement uses `,s` with no count or key-repeat activation. In Placed
 sounds and its inspector, `h/l`, `j/k`, Enter, `+/-` and `dd` act on the event.

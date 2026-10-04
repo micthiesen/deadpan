@@ -23,6 +23,7 @@ use crate::project::{
 };
 use crate::worker::{PreviewWorker, ProjectView, SourceSummary, Ticket, Work};
 
+mod ai_pause;
 mod camera;
 mod camera_fields;
 mod cards;
@@ -167,6 +168,7 @@ pub struct DeadpanApp {
     trim_prefix_target: Option<Result<trim::Capture, String>>,
     trim_abandon: VecDeque<crate::project::trim::ProposalId>,
     trim_picture_pending: bool,
+    ai: ai_pause::State,
     splice: Option<splice::Draft>,
     splice_abandon: Option<crate::project::splice::ProposalId>,
     sound_cursor: u64,
@@ -320,6 +322,7 @@ impl DeadpanApp {
             trim_command_target: None,
             trim_prefix_target: None,
             trim_abandon: VecDeque::new(),
+            ai: ai_pause::State::default(),
             trim_picture_pending: false,
             splice: None,
             splice_abandon: None,
@@ -556,6 +559,8 @@ impl DeadpanApp {
                 self.presentation.invalidate_pending();
                 return;
             };
+            work
+        } else if let Some(work) = self.ai_picture_work(picture) {
             work
         } else if let Some(workspace) = &self.workspace {
             let view = match self.view {
@@ -926,6 +931,7 @@ impl DeadpanApp {
             if self.view == View::Sequence && !committed_selection {
                 self.reconcile_beat_selection();
             }
+            let ai_picture = self.receive_ai(update.generation);
             if old_revision != new_revision || old_session != new_session || completed {
                 if self.trim.is_some() || self.trim_picture_pending {
                     // Restore the ordinary stopped picture only after Trim closes.
@@ -936,6 +942,8 @@ impl DeadpanApp {
                 } else {
                     self.request_picture(!preserve_picture);
                 }
+            } else if ai_picture && self.trim.is_none() && self.slip.is_none() {
+                self.request_picture(false);
             }
             if repeat_completion {
                 if let Some(target) = self.repeat_target() {
@@ -1376,6 +1384,7 @@ impl DeadpanApp {
         self.trim_command_target = Some(self.capture_trim_target());
         self.trim_prefix_target = None;
         self.hold_command_target = Some(self.capture_hold_command());
+        self.ai.command = Some(self.ai_capture());
         self.sound_command_target = self.capture_sound_command(&command);
         self.cancel_repeats("command entry was opened");
         self.pause_playback();
@@ -1816,6 +1825,12 @@ impl DeadpanApp {
                 end: false,
             }),
             Action::EscalatingRepeat => self.escalating_repeat(),
+            Action::Ai(action) => {
+                // Key paths carry the `,a` ancestor capture; commands are
+                // dispatched with their entry capture in run_command.
+                let target = self.ai.prefix.take();
+                self.ai_action(action, target);
+            }
             Action::Gag(input) => self.apply_gag(input),
             Action::Pause { forward, count } => {
                 self.analysis_motion(deadpan_core::SpeechUnit::Pause, forward, count)
@@ -1942,6 +1957,9 @@ impl DeadpanApp {
                 self.bindings.clear();
             }
             Action::Escape => {
+                // Other Escape owners clear first; only an otherwise idle
+                // Escape leaves the AI preview. It never cancels generation.
+                let owned = self.escape_owned_elsewhere();
                 self.record_macro_escape();
                 self.cancel_register_choice();
                 if !self.sound_focused() {
@@ -1953,6 +1971,9 @@ impl DeadpanApp {
                 self.command_focus_pending = false;
                 self.help_open = false;
                 self.bindings.clear();
+                if !owned && self.ai_stop_preview() {
+                    self.message = Some("Showing your edit again.".into());
+                }
                 context.memory_mut(|m| m.request_focus(pane_id(self.pane)));
             }
             Action::OfferInsert => {
@@ -2245,6 +2266,7 @@ impl DeadpanApp {
                 }
                 let before = self.bindings.pending();
                 let trim_pending = self.bindings.trim_pending();
+                let ai_pending = self.bindings.ai_pending();
                 let macro_pending = self.bindings.macro_pending();
                 let operator_pending = self.bindings.operator_pending();
                 let repeat_pending = self.bindings.repeat_pending();
@@ -2295,6 +2317,13 @@ impl DeadpanApp {
                     // a direct binding. An absent target stays absent throughout
                     // the pending path, even if a service reply arrives later.
                     self.trim_prefix_target = Some(self.capture_trim_target());
+                }
+                if !ai_pending
+                    && (self.bindings.ai_pending()
+                        || action == Some(Action::Ai(navigation::AiAction::Generate)))
+                {
+                    // Capture at the first `,a` ancestor, including absence.
+                    self.ai.prefix = Some(self.ai_capture());
                 }
                 if let Some(action) = action {
                     if matches!(action, Action::SetMark(_) | Action::JumpMark(_))
@@ -2359,6 +2388,9 @@ impl DeadpanApp {
                 if !self.bindings.trim_pending() {
                     self.trim_prefix_target = None;
                 }
+                if !self.bindings.ai_pending() {
+                    self.ai.prefix = None;
+                }
                 if !self.bindings.macro_pending() {
                     self.macro_prefix_target = None;
                 }
@@ -2386,6 +2418,7 @@ impl DeadpanApp {
         let gain_target = self.gain_command_target.take();
         let slip_target = self.slip_command_target.take();
         let trim_target = self.trim_command_target.take();
+        let ai_target = self.ai.command.take();
         self.trim_prefix_target = None;
         let placement_target = self.placement_command_target.take();
         let copy_register = self.copy_command_register.take();
@@ -2573,6 +2606,9 @@ impl DeadpanApp {
                         Err("Open the paste command again to capture its destination.".into())
                     }),
                 );
+            }
+            Ok(navigation::command::Entry::Action(Action::Ai(action))) => {
+                self.ai_action(action, ai_target);
             }
             Ok(navigation::command::Entry::Action(action)) => self.action(action, context),
             Ok(navigation::command::Entry::Source) => self.show_original(context),
@@ -2966,6 +3002,7 @@ impl DeadpanApp {
                 });
                 return;
             }
+            self.ai_footer(ui);
             let pending = self.bindings.pending();
             let mode = if self.command_open { "COMMAND" } else if text_input_active(ui.ctx(), false) { "TEXT" } else if (self.moment.active && self.view == View::Source) || (self.edit_range.active && self.view == View::Sequence) { "VISUAL" } else if pending.is_empty() { "NORMAL" } else { "PENDING" };
             ui.horizontal_wrapped(|ui| {
@@ -3091,6 +3128,7 @@ impl DeadpanApp {
                         if pauses { self.add_editor_pair_hint(&mut hints, EditorKey::PauseNext, EditorKey::PausePrevious, " ", "pauses"); }
                         let shots = self.workspace.as_ref().is_some_and(|workspace| workspace.shot_analysis.is_some());
                         if shots { self.add_editor_pair_hint(&mut hints, EditorKey::ShotNext, EditorKey::ShotPrevious, " ", "shots"); }
+                        if self.ai_hold().is_some() { self.add_editor_hint(&mut hints, EditorKey::GenerateAi, "AI pictures"); }
                         self.add_editor_hint(&mut hints, EditorKey::Visual, if selection == navigation::EditSelection::Object { if self.edit_range.active { "retain object" } else { "select time" } } else if self.edit_range.active { "finish range" } else { "select range" });
                         self.add_editor_hint(&mut hints, EditorKey::Repeat, if selection == navigation::EditSelection::None { "repeat beat" } else if selection == navigation::EditSelection::Object { "repeat object" } else { "repeat range" });
                         match selection {
@@ -3675,6 +3713,7 @@ impl DeadpanApp {
                                 .color(style::MUTED),
                         );
                         if data.kind == "Hold" {
+                            self.ai_inspector(ui, ready);
                             self.hold_audio_controls(ui, ready);
                         }
                         self.gain_inspector(ui, ready);
@@ -4124,6 +4163,8 @@ impl DeadpanApp {
                         (format!("{} / :split", key(EditorKey::Split)), "Split linked picture and sound at the cursor inside the selected beat. The right fragment stays selected; duration and output stay unchanged.".to_owned()),
                         (format!("{} / {}", key(EditorKey::Hold), bindings.counted_label(EditorKey::Hold, 3)), format!("Insert a silent freeze at the cursor: 0.5 s per count. Keeps the following original speech. The cursor stays at the pause; {} opens its enclosing group when needed. At a group edge, {} returns to the seam's owner. {} undoes it.", key(EditorKey::EnterGroup), key(EditorKey::LeaveGroup), key(EditorKey::Undo))),
                         (":hold 1.5s".to_owned(), "Choose an exact pause duration: 12f, 250ms, 1.5s, or 01:02.500. Seconds round once to project frames. Zero makes no edit. Source and pause fragments work inside Sequence groups; Repeat and Retime interiors remain unavailable.".to_owned()),
+                        (format!("{} / :generate", key(EditorKey::GenerateAi)), "Generate AI pictures for the selected pause from the pictures on both sides, with the local model, in the background. The inspector and footer show the stage and time; :cancel-ai stops it; Escape never cancels it.".to_owned()),
+                        (":preview-ai · :accept-ai · :discard-ai".to_owned(), "Ready pictures never change your edit. Preview shows them in the viewer at the edit cursor (Esc returns), Accept makes them the pause's picture as one undoable edit, and Discard hides them for this session.".to_owned()),
                         (format!("{} / {}", key(EditorKey::Repeat), bindings.counted_label(EditorKey::Repeat, 3)), "Wrap the selected beat in two / three total plays. Rapid wraps wait in order, up to 16 pending; each has its own undo. Escape, navigation or another action cancels the waiting wraps.".to_owned()),
                         (format!("{} + motion · Visual {}", key(EditorKey::RepeatOperator), key(EditorKey::RepeatRange)), format!("Repeat a motion's half-open range, or the current Visual range, in one Undo. The result remains an editable Repeat. A leading count chooses total plays; a count after {} chooses motion distance: {}{} repeats one frame three times, {}3{} repeats three frames twice. Two explicit counts refuse. Empty ranges refuse. Registers are preserved.", key(EditorKey::RepeatOperator), bindings.counted_label(EditorKey::RepeatOperator, 3), bindings.key_label(EditorKey::FrameNext), bindings.key_label(EditorKey::RepeatOperator), bindings.key_label(EditorKey::FrameNext))),
                         (format!("{} · motions · {}", key(EditorKey::Visual), key(EditorKey::CutRange)), "Cut the nonempty active or finished Edit range and close its time in one undo. Linked picture and sound stay together. Source/Hold/fragment endpoints and whole intervening beats work in an ordinary Sequence. Enter a group to cut inside it. Empty selections never cut a beat.".to_owned()),

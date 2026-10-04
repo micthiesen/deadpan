@@ -19,6 +19,7 @@ use deadpan_store::source_registration::SourceQualificationReceipt;
 use crate::library::ProjectLibrary;
 
 pub mod gain;
+pub mod generation;
 pub mod macros;
 pub mod marks;
 mod pause;
@@ -275,6 +276,8 @@ pub struct ProjectUpdate {
     pub activity_save: Option<TranscriptSave>,
     /// Background shot analysis saves, reported like transcript saves.
     pub shot_save: Option<TranscriptSave>,
+    /// AI pause jobs and Ready candidates, independent of editor feedback.
+    pub generation: Option<generation::Update>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -557,6 +560,8 @@ pub enum ProjectRequest {
         analysis: Arc<deadpan_analysis::ShotAnalysis>,
     },
     Marks(marks::Request),
+    /// AI pause generation. Only Accept edits the project.
+    Generation(generation::GenerationOperation),
     Render(ProjectRenderRequest),
     RenderHistory(render_history::Request),
     /// Source first: native projects are always allocated in Documents/Deadpan.
@@ -683,6 +688,15 @@ impl ProjectService {
         wake: Arc<dyn Fn() + Send + Sync>,
         library: Option<ProjectLibrary>,
     ) -> io::Result<Self> {
+        Self::start_with(wake, library, generation::Backend::Environment)
+    }
+
+    /// Production always uses [`generation::Backend::Environment`].
+    pub(crate) fn start_with(
+        wake: Arc<dyn Fn() + Send + Sync>,
+        library: Option<ProjectLibrary>,
+        backend: generation::Backend,
+    ) -> io::Result<Self> {
         let shared = Arc::new(Shared {
             busy: AtomicBool::new(false),
             preview_active: AtomicBool::new(false),
@@ -710,7 +724,7 @@ impl ProjectService {
         let state = shared.clone();
         std::thread::Builder::new()
             .name("deadpan-project".into())
-            .spawn(move || service::run(state, receive, jobs, results, worker, library))?;
+            .spawn(move || service::run(state, receive, jobs, results, worker, library, backend))?;
         Ok(Self { requests, shared })
     }
 

@@ -156,6 +156,11 @@ pub fn parse(input: &str) -> Result<Entry, String> {
             }));
         }
         "marks" => Action::Marks,
+        "generate" | "generate-ai" => Action::Ai(super::AiAction::Generate),
+        "cancel-ai" => Action::Ai(super::AiAction::Cancel),
+        "preview-ai" => Action::Ai(super::AiAction::Preview),
+        "accept-ai" => Action::Ai(super::AiAction::Accept),
+        "discard-ai" => Action::Ai(super::AiAction::Discard),
         "record-stop" => Action::MacroStop,
         "record-cancel" => Action::MacroCancel,
         "delete-frames" => {

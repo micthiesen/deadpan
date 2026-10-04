@@ -49,8 +49,19 @@ pub fn prepare(
     hold: &NodeId,
     cancelled: &AtomicBool,
 ) -> Result<BridgeInputs, String> {
+    // Decoding polls `cancelled` itself; check between the uncancellable
+    // steps too so a host shutdown is never held by a finished-but-unused step.
+    let check = || {
+        if cancelled.load(std::sync::atomic::Ordering::Acquire) {
+            Err("The AI pause was cancelled.".to_owned())
+        } else {
+            Ok(())
+        }
+    };
+    check()?;
     let mut session = ProjectPictureSession::open_revision(package, revision, None, cancelled)
         .map_err(|error| error.to_string())?;
+    check()?;
     let document = session.document().clone();
     let NodeKind::Hold { recipe } = &document
         .nodes()
@@ -69,6 +80,7 @@ pub fn prepare(
         ));
     }
     let plan_picture = RenderPlan::compile(&document).map_err(|error| error.to_string())?;
+    check()?;
     let range = plan_picture
         .single_occurrence_range(hold)
         .ok_or("AI pictures need a pause that plays once, outside Repeats and speed changes.")?;
@@ -102,7 +114,9 @@ pub fn prepare(
         region,
         cancelled,
     )?;
+    check()?;
     let right_png = boundary_png(&mut session, range.end(), region, cancelled)?;
+    check()?;
     assemble(plan, constraints, left_png, right_png)
 }
 

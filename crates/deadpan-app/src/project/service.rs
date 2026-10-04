@@ -32,6 +32,7 @@ mod cut_slice;
 mod delete_range;
 pub(super) mod edit_slice;
 mod gain;
+mod generation;
 mod headless;
 mod macros;
 mod marks;
@@ -121,6 +122,7 @@ struct Service {
     host: Option<headless::Host>,
     // Kept across session replacement until the shared worker drains its reply.
     host_preparing: Option<(u64, Arc<AtomicBool>)>,
+    generation: generation::State,
     #[cfg(test)]
     render_preview_refresh_failure: bool,
 }
@@ -132,6 +134,7 @@ pub(super) fn run(
     results: Receiver<Reply>,
     worker: JoinHandle<()>,
     library: Option<ProjectLibrary>,
+    backend: super::generation::Backend,
 ) {
     let mut service = Service {
         shared,
@@ -187,6 +190,7 @@ pub(super) fn run(
         pending_session_change: None,
         host: None,
         host_preparing: None,
+        generation: generation::State::new(backend),
         #[cfg(test)]
         render_preview_refresh_failure: false,
     };
@@ -200,7 +204,10 @@ pub(super) fn run(
         } else {
             false
         };
-        let changed = shutdown_changed | service.pump_render() | service.finish_session_change();
+        let changed = shutdown_changed
+            | service.pump_render()
+            | service.pump_generation()
+            | service.finish_session_change();
         if changed {
             service.reconcile_slip();
             service.reconcile_trim();
@@ -212,6 +219,7 @@ pub(super) fn run(
             && !service.shared.busy.load(Ordering::Acquire)
             && service.pending_session_change.is_none()
             && service.render.is_none()
+            && !service.generation.active()
         {
             break;
         }
@@ -337,6 +345,7 @@ impl Service {
             transcript_save: self.transcript_save.clone(),
             activity_save: self.activity_save.clone(),
             shot_save: self.shot_save.clone(),
+            generation: self.generation_update(),
         };
         *self
             .shared
@@ -432,6 +441,15 @@ impl Service {
                 self.abandon_splice(&id);
                 return Ok(());
             }
+            ProjectRequest::Generation(operation)
+                if !matches!(
+                    operation,
+                    super::generation::GenerationOperation::Accept { .. }
+                ) =>
+            {
+                self.generation_command(operation);
+                return Ok(());
+            }
             request => request,
         };
         if let ProjectRequest::RenderHistory(request) = request {
@@ -520,6 +538,7 @@ impl Service {
                 index,
             ),
             ProjectRequest::PasteMoment(request) => self.paste_moment(request),
+            ProjectRequest::Generation(operation) => self.accept_generation(operation),
             ProjectRequest::PasteEditedSlice(request) => self.paste_edited_slice(request),
             ProjectRequest::CaptureEditSlice(_) => unreachable!("copy uses independent feedback"),
             ProjectRequest::CaptureOriginal(_) => unreachable!("copy uses independent feedback"),

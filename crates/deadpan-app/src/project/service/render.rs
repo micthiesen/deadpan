@@ -53,7 +53,7 @@ impl Service {
             self.render_command(request);
             return true;
         }
-        let outcome = if self.render.is_some() {
+        let outcome = if self.render.is_some() || self.generation.active() {
             self.defer_session_change(request)
         } else {
             self.command(request).map(|()| true)
@@ -110,6 +110,7 @@ impl Service {
         self.pending_session_change = Some(pending);
         self.cancel();
         self.cancel_render_for_transition();
+        self.cancel_generation();
         Ok(false)
     }
 
@@ -450,6 +451,7 @@ impl Service {
         self.pending_session_change = Some(PendingSessionChange::Shutdown);
         self.cancel();
         self.cancel_render_for_transition();
+        self.cancel_generation();
         true
     }
 
@@ -476,6 +478,10 @@ impl Service {
 
     pub(super) fn finish_session_change(&mut self) -> bool {
         if self.pending_session_change.is_none() {
+            return false;
+        }
+        // The AI job's worker must be reaped and its outcome recorded first.
+        if self.generation.active() {
             return false;
         }
         if self

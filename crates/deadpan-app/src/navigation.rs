@@ -1,5 +1,7 @@
 use eframe::egui::{Key, Modifiers};
 
+#[cfg(test)]
+mod ai_tests;
 mod binding_trie;
 pub mod camera;
 pub mod command;
@@ -129,6 +131,8 @@ pub enum Action {
     Ungroup,
     /// `,e`: wrap the selected beat or Visual range in an escalating Repeat.
     EscalatingRepeat,
+    /// AI pause pictures for the selected Hold (`,a`, `:generate`, …).
+    Ai(AiAction),
     /// `:gag NAME`: apply a built-in recipe.
     Gag(gag::GagInput),
     VisualMoment,
@@ -235,6 +239,16 @@ pub enum RepeatPendingScope {
     VisualSelection,
     TextObject,
     Mixed,
+}
+
+/// The AI pause workflow. Only Accept edits the project.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AiAction {
+    Generate,
+    Cancel,
+    Preview,
+    Accept,
+    Discard,
 }
 
 /// Framing actions owned by the selected edited beat.
@@ -470,6 +484,17 @@ impl Bindings {
             leading: self.count,
             motion: self.motion_count,
         }
+    }
+    /// The pending path can still complete `ai.generate`.
+    pub fn ai_pending(&self) -> bool {
+        self.count.is_none()
+            && !self.count_overflow
+            && self.map.has_descendant(
+                &self.path,
+                self.active_selection(),
+                BindingId::GenerateAi,
+                self.domain,
+            )
     }
     pub fn trim_pending(&self) -> bool {
         self.count.is_none()
@@ -1413,7 +1438,7 @@ mod tests {
         ));
         bindings.key(Key::Comma, Modifiers::NONE, false, false);
         assert!(matches!(
-            bindings.key(Key::A, Modifiers::NONE, false, false),
+            bindings.key(Key::X, Modifiers::NONE, false, false),
             Some(Action::Invalid(_))
         ));
         assert!(bindings.pending().is_empty());

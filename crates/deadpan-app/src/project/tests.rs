@@ -14,6 +14,7 @@ mod delete;
 mod delete_range;
 mod edited_slice;
 mod gain;
+mod generation;
 mod headless;
 mod macros;
 mod marks;
@@ -691,6 +692,7 @@ fn shutdown_finishes_an_admitted_command_before_releasing_the_store() {
         results,
         std::thread::spawn(|| {}),
         None,
+        Default::default(),
     );
     assert!(!service.is_busy());
     let update = service
@@ -930,7 +932,17 @@ impl Harness {
         let (replies, results) = mpsc::sync_channel(1);
         let state = shared.clone();
         let worker = std::thread::spawn(|| {});
-        std::thread::spawn(move || service::run(state, receive, sender, results, worker, library));
+        std::thread::spawn(move || {
+            service::run(
+                state,
+                receive,
+                sender,
+                results,
+                worker,
+                library,
+                Default::default(),
+            )
+        });
         Self {
             service: ProjectService { requests, shared },
             jobs,

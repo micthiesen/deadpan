@@ -269,6 +269,14 @@ pub struct WorkerRun {
 }
 
 impl WorkerRun {
+    /// A run that concluded without a worker workspace: a host whose job
+    /// thread stopped before or instead of [`run_worker`], or a test seam that
+    /// substitutes the worker. Only a failure or cancellation is meaningful;
+    /// [`finish`] records it truthfully.
+    pub fn without_workspace(result: RunResult, timings: RunTimings) -> Self {
+        Self::early(result, timings)
+    }
+
     fn early(result: RunResult, timings: RunTimings) -> Self {
         Self {
             result,
@@ -294,7 +302,8 @@ fn diagnostic(reason: &str) -> Diagnostic {
     .expect("at most 1000 Unicode characters fit the diagnostic budget")
 }
 
-fn host_failure(code: HostFailureCode, reason: &str) -> HostFailure {
+/// A host failure with a bounded diagnostic.
+pub fn host_failure(code: HostFailureCode, reason: &str) -> HostFailure {
     HostFailure {
         code,
         detail: diagnostic(reason),

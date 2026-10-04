@@ -10,6 +10,7 @@ use serde_json::{Value, json};
 use super::*;
 use crate::ui_harness::{Options, gpu::Offscreen, report::*};
 
+mod ai_pause;
 mod cutaway;
 mod delete_range;
 mod edit_latency;
@@ -189,6 +190,9 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
             if name == "generated-picture" {
                 generated_picture::preflight(fixture)?;
             }
+            if name == "ai-pause-ready" {
+                ai_pause::preflight(fixture)?;
+            }
             let retained = options.retained_project_root(name)?;
             let scratch = if retained.is_none() {
                 Some(tempfile::Builder::new().prefix("deadpan-ui-").tempdir().map_err(|error| error.to_string())?)
@@ -210,6 +214,18 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
             } else {
                 scratch.as_ref().ok_or("Missing temporary replay root")?.path().join("Documents")
             };
+            // Accepting edits the project: replay a private copy, never the fixture.
+            let fixture = if name == "ai-pause-ready" {
+                let copy = documents
+                    .parent()
+                    .ok_or("Replay Documents root has no parent")?
+                    .join("ai-pause-ready.deadpan");
+                copy_package(fixture, &copy)?;
+                copy
+            } else {
+                fixture.to_owned()
+            };
+            let fixture = fixture.as_path();
             let keymap = keymap::startup(name, &documents)?;
             let models = documents.join("Models");
             let library = crate::library::ProjectLibrary::from_documents(documents)?;
@@ -248,9 +264,14 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                         )
                         .map_err(|e| e.to_string())?;
                         let repaint = context.egui_ctx.clone();
-                        app.service = ProjectService::start(
+                        app.service = ProjectService::start_with(
                             Arc::new(move || repaint.request_repaint()),
                             Some(library),
+                            if name == "ai-pause" {
+                                ai_pause::backend()
+                            } else {
+                                crate::project::generation::Backend::Environment
+                            },
                         )
                         .map_err(|e| e.to_string())?;
                         app.dialogs = Dialogs::scripted(vec![(
@@ -311,6 +332,13 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                     })?;
                     return generated_picture::run(&mut driver);
                 }
+                if name == "ai-pause-ready" {
+                    driver.click("Open project  ⌘O")?;
+                    driver.wait_for("AI pause fixture copy opened", |app| {
+                        app.workspace.is_some() && !app.service.is_busy()
+                    })?;
+                    return ai_pause::ready(&mut driver);
+                }
                 driver.click("New project  ⌘N")?;
                 driver.wait_for("Original initialized and displayed", |app| {
                     app.workspace.as_ref().is_some_and(|w| {
@@ -331,6 +359,8 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                     room_tone::run(&mut driver)
                 } else if name == "gain" {
                     gain::run(&mut driver)
+                } else if name == "ai-pause" {
+                    ai_pause::run(&mut driver)
                 } else {
                     scenarios::run(name, &mut driver)
                 }
@@ -373,6 +403,32 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
         });
     }
     report
+}
+
+/// Copy a closed project package, refusing links, for a private replay.
+fn copy_package(from: &Path, to: &Path) -> Result<(), String> {
+    std::fs::create_dir(to).map_err(|error| format!("Create {}: {error}", to.display()))?;
+    for entry in std::fs::read_dir(from).map_err(|error| error.to_string())? {
+        let entry = entry.map_err(|error| error.to_string())?;
+        let kind = entry.file_type().map_err(|error| error.to_string())?;
+        let name = entry.file_name();
+        if name == ".writer.lock" || name == ".host.json" {
+            continue;
+        }
+        let target = to.join(&name);
+        if kind.is_dir() {
+            copy_package(&entry.path(), &target)?;
+        } else if kind.is_file() {
+            std::fs::copy(entry.path(), &target)
+                .map_err(|error| format!("Copy {}: {error}", entry.path().display()))?;
+        } else {
+            return Err(format!(
+                "Fixture contains a link: {}",
+                entry.path().display()
+            ));
+        }
+    }
+    Ok(())
 }
 
 fn panic_message(panic: Box<dyn std::any::Any + Send>) -> String {

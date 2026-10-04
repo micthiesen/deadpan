@@ -29,6 +29,13 @@ enum Location {
         source: CopiedViewId,
         frame: deadpan_core::ProjectFrame,
     },
+    Candidate {
+        session: u64,
+        project: ProjectId,
+        revision: RevisionId,
+        request: deadpan_jobs::RequestId,
+        frame: deadpan_core::ProjectFrame,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -70,6 +77,15 @@ impl RequestedPicture {
                 source: view.id().clone(),
                 frame: *frame,
             },
+            Work::Candidate {
+                candidate, frame, ..
+            } => Location::Candidate {
+                session: candidate.session(),
+                project: candidate.project().clone(),
+                revision: candidate.base().clone(),
+                request: candidate.request().clone(),
+                frame: *frame,
+            },
         };
         Self { ticket, location }
     }
@@ -101,6 +117,10 @@ impl RequestedPicture {
                 ..
             } => Some(format!(
                 "Showing proposed edit frame {}",
+                i128::from(frame.0) + 1
+            )),
+            Location::Candidate { frame, .. } => Some(format!(
+                "Showing AI preview frame {}",
                 i128::from(frame.0) + 1
             )),
             Location::Copied { source, frame } => Some(format!(
@@ -150,6 +170,14 @@ impl Presentation {
             } if *current_session == session && current_project == project
                 && current_revision == revision && current_view == view)
         })
+    }
+
+    /// The displayed picture is an AI pause candidate's preview frame.
+    #[cfg(feature = "ui-harness")]
+    pub(crate) fn displayed_candidate(&self) -> bool {
+        self.displayed
+            .as_ref()
+            .is_some_and(|picture| matches!(picture.request.location, Location::Candidate { .. }))
     }
 
     #[cfg(feature = "ui-harness")]

@@ -57,6 +57,7 @@ The 16-key bound also applies to each composed operator-plus-motion path.
 | `pause.next`, `pause.previous` | `]p` / `[p`: start of the next / previous detected pause, in Original and Your edit; counts move further and compose after `y`, `d`, `r` |
 | `object.inner_pause`, `object.around_pause` | `ip` / `ap`: Visual pause at the Edit cursor, with up to 80 ms of the adjoining speech for `a`; also compose after `y`, `d`, `r` |
 | `shot.next`, `shot.previous` | `]s` / `[s`: start of the next / previous detected shot occurrence, in Original and Your edit; counts move further and compose after `y`, `d`, `r` |
+| `ai.generate` | `,a`: generate AI pictures for the selected pause (Hold) in Your edit, in the background; Normal Edit only, no count. `:generate`, `:cancel-ai`, `:preview-ai`, `:accept-ai` and `:discard-ai` complete the workflow |
 | `repeat.escalating` | `,e`: wrap the selected beat or Visual range in three plays, each 3 dB louder and 0.08 closer, as one Undo |
 | `object.inner_shot`, `object.around_shot` | `iS` / `aS`: Visual shot occurrence at the Edit cursor (hard cuts carry no transition handles, so they match); also compose after `y`, `d`, `r` |
 | `first`, `last` | Start and end |

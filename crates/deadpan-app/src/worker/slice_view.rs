@@ -13,6 +13,7 @@ pub(super) enum PlanIdentity {
         media: Arc<MediaView>,
     },
     Copied(Arc<CopiedView>),
+    Candidate(Arc<crate::project::generation::CandidatePreview>),
 }
 
 pub(super) struct PlanCache {

@@ -711,6 +711,16 @@ isolate repeated occurrences first. Retime ancestors remain conservatively rejec
 Do not retroactively reject valid legacy operational bindings during migration.
 Ready bundles alone do not authorize an edit. See [acceptance](docs/GENERATION_ACCEPTANCE.md).
 See [generated Hold semantics](docs/GENERATED_HOLDS.md).
+
+Native AI pause jobs run conditioning and the worker on one bounded job thread
+per project; allocation, attempt records, finish and acceptance stay on the
+service writer; a refused record or stopped writer fails the attempt. Derive
+Ready candidates from the store, never from job results. Previews are
+service-issued acceptance documents admitted only against their exact committed
+base; Ready and Preview never edit. Session replacement and shutdown cancel and
+drain the job before releasing the writer. The scripted backend replaces only
+the worker and exists only in tests and `ui-harness`. See
+[AI holds](docs/AI_HOLDS.md#native-app-workflow).
 Host AI Hold generation is `deadpan_cli::generation`: allocate and finish on the
 writer, `run_worker` on a job thread without store access, durable transitions
 returned as records. The development runtime comes from `DEADPAN_BRIDGE_*`;

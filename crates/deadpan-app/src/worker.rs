@@ -71,6 +71,14 @@ pub enum Work {
         view: Arc<CopiedView>,
         frame: ProjectFrame,
     },
+    /// An AI pause candidate's acceptance preview. Media authority belongs to
+    /// the exact committed base the service issued it for; the worker compiles
+    /// the service-issued document itself.
+    Candidate {
+        base: Arc<Workspace>,
+        candidate: Arc<crate::project::generation::CandidatePreview>,
+        frame: ProjectFrame,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -439,6 +447,22 @@ fn perform(
             .map_err(|error| error.to_string())?;
         return Ok(picture);
     }
+    if let Work::Candidate {
+        base,
+        candidate,
+        frame,
+    } = &request.work
+    {
+        let plan = candidate_plan(base, candidate, proposal, &request.cancelled)?;
+        return project_picture(
+            base,
+            candidate.document(),
+            plan,
+            &ProjectView::Sequence { frame: *frame },
+            &request.cancelled,
+            retained,
+        );
+    }
     if let Work::Copied { view, frame } = &request.work {
         return slice_view::copied_picture(view, *frame, proposal, &request.cancelled, retained);
     }
@@ -460,7 +484,8 @@ fn perform(
         Work::Project { .. }
         | Work::Proposed { .. }
         | Work::EditedProposed { .. }
-        | Work::Copied { .. } => {
+        | Work::Copied { .. }
+        | Work::Candidate { .. } => {
             unreachable!("project requests handled above")
         }
     };
@@ -587,6 +612,40 @@ fn media_picture(
     };
     let registered = media_source(media, document, asset)?;
     registered_picture(media, registered, frame, canvas, cancelled, retained)
+}
+
+/// Admit a candidate preview against its exact committed base and compile its
+/// plan once per issued preview.
+fn candidate_plan<'a>(
+    base: &Arc<Workspace>,
+    candidate: &Arc<crate::project::generation::CandidatePreview>,
+    retained: &'a mut Option<PlanCache>,
+    cancelled: &AtomicBool,
+) -> Result<&'a RenderPlan, String> {
+    if cancelled.load(Ordering::Acquire) {
+        return Err("AI preview picture was cancelled.".into());
+    }
+    if candidate.session() != base.session
+        || candidate.project() != base.document.project_id()
+        || candidate.base() != base.document.revision_id()
+    {
+        return Err("The AI preview belongs to another project revision.".into());
+    }
+    let cached = retained.as_ref().is_some_and(|previous| {
+        matches!(&previous.identity, slice_view::PlanIdentity::Candidate(old)
+            if Arc::ptr_eq(old, candidate))
+    });
+    if !cached {
+        let plan = RenderPlan::compile(candidate.document()).map_err(|error| error.to_string())?;
+        if plan.duration() != base.plan.duration() {
+            return Err("The AI preview changes the edit's timing.".into());
+        }
+        *retained = Some(PlanCache {
+            identity: slice_view::PlanIdentity::Candidate(candidate.clone()),
+            plan,
+        });
+    }
+    Ok(&retained.as_ref().expect("admitted candidate plan").plan)
 }
 
 fn background_picture(canvas: Option<(u32, u32)>) -> Picture {

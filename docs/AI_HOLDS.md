@@ -69,6 +69,93 @@ implemented. Error codes: `GenerationUnavailable` (runtime missing),
 `GenerationInputsUnavailable`, `GenerationRefused`, `GenerationCancelled`,
 `GenerationFailed`, and store codes.
 
+## Native app workflow
+
+Select a pause (Hold) in Your edit. The inspector's **AI PICTURES** section and
+the footer teach the actions:
+
+| Action | Keys | Effect |
+| --- | --- | --- |
+| Generate | `,a`, `:generate` | Start one background job for the selected pause |
+| Cancel | `:cancel-ai` (Esc never cancels) | Cancel cooperatively; the attempt ends Cancelled |
+| Preview | `:preview-ai`; Esc leaves it once nothing else owns Esc | Show the candidate's pictures in the viewer at the edit cursor |
+| Accept | `:accept-ai` | One undoable edit; the pause stays selected |
+| Discard | `:discard-ai` | Hide the candidate for this session; nothing is written |
+
+`project::generation` defines the requests and published state, and
+`project/service/generation.rs` runs them:
+
+- **Start** captures session, revision and Hold. The service resolves
+  `BridgeRuntime::from_environment` first. A missing runtime ends the job as
+  Unavailable with the runtime's own text, records nothing and starts no thread.
+- One bounded job thread per project (`deadpan-ai-pause`) runs
+  `conditioning::prepare` (read-only store) and then `run_worker`. Allocation,
+  every `AttemptRecord`, `finish` and acceptance run on the service's writer
+  thread. The job sends its records through a bounded channel the service loop
+  drains every iteration, then waits for each acknowledgement. The wait has no
+  timer, so a long writer task (such as a preview's six-object verification)
+  cannot fail the attempt; a refused record or a stopped writer (disconnected
+  channel) makes `run_worker` cancel and fail it. Progress is display-only and
+  may drop a step when the queue is full. The final run has its own one-slot
+  channel, so it is never dropped and its qualified workspace reaches `finish`.
+- `,a` captures its session, revision and pause at the first `,a` ancestor and
+  `:generate`, `:preview-ai`, `:accept-ai` and `:discard-ai` at command entry,
+  including absence. Cancel, Preview and Discard bypass the editing command
+  path, so Camera drafts, Repeat chains, playback and pending keys are kept.
+- Allocation requires the head to still be the captured revision; an edit during
+  the (about one second) conditioning fails the job with a request to generate
+  again. Ordinary edits after allocation keep the request reconciled.
+- Progress (stage, step k/n when the worker reports it, elapsed time) appears in
+  the inspector and in a footer row that stays visible with other selections.
+  The development worker reports stages only; it sends no inference steps.
+- Ready candidates are read from the store, not from the job: every current
+  request with a selected Ready bundle whose Hold has not accepted those
+  pictures. They therefore survive reopen and reappear after an Undo of the
+  acceptance. A new request for the Hold supersedes its candidate.
+- **Preview** asks the store for the acceptance preview
+  (`preview_generation_acceptance`, which verifies the six retained objects)
+  and publishes the resulting uncommitted document as a service-issued
+  `CandidatePreview`. The preview worker admits it only against the exact
+  committed session and revision it was issued for, compiles its plan, refuses
+  any timing change and decodes the generated sampled master through the shared
+  generated-picture path. Presentation records it as a separate location
+  (“Showing AI preview frame N”), so Camera cannot target it. Edits, Undo,
+  session changes and a superseded candidate end the preview.
+- **Accept** is the only authored change: `acceptance::accept` through the
+  ordinary edit receipt, selecting the Hold and keeping the cursor.
+- Stale session, revision, ticket and request identities are refused. Close,
+  Open, New and shutdown are deferred while a job runs: the service cancels it,
+  waits until the worker is reaped and its outcome recorded, and only then
+  releases the writer, as it does for render work.
+
+### Test seam
+
+`project::generation::Backend::Scripted` exists only in tests and the
+`ui-harness` build. It keeps conditioning, request allocation and every durable
+transition real and replaces only the model worker with a deterministic script
+(an unavailable runtime, progress steps, then cancellation or a worker failure).
+It cannot produce Ready pictures: Ready, Preview and Accept are exercised only
+with real bundles (`ai-pause-ready` replay and the opt-in service test).
+
+### Verification
+
+- Service tests (`project::tests::generation`): unavailable runtime records
+  nothing; progress then cancellation records Cancelled; immediate cancellation
+  leaves no live attempt; worker failure is recorded; stale session, revision,
+  target, ticket and request are refused; Close and shutdown drain the job
+  before the writer is released.
+- `real_worker_generates_a_candidate_that_acceptance_commits` is ignored unless
+  `DEADPAN_BRIDGE_REAL=1`. It needs `deadpan-media-worker` beside the test
+  executable (for example a link in `target/debug/deps`) and accepts
+  `DEADPAN_BRIDGE_REAL_PROJECT` (a scratch copy). On 2026-10-04 (M5 Max, debug)
+  it ran on a copy of `interview.deadpan` with a 30-frame pause at frame 297:
+  stages Preflight 0.7 s, RuntimeLoading 14.1 s, ModelLoading 15.0 s, Inference
+  19.7 s, Decoding 91.9 s, Encoding 93.2 s, WorkerValidation 93.4 s, Qualifying
+  93.9 s, Ready at 96.0 s; Preview and Accept passed; `/usr/bin/time -l`
+  maximum RSS 14.6 GB including the reaped worker.
+- UI replay: `ai-pause` (scripted worker) and `ai-pause-ready --project` (a
+  copy of that accepted project). See [UI feedback](UI_FEEDBACK.md).
+
 ## Development runtime
 
 `BridgeRuntime::from_environment` locates each part and reports every missing
@@ -170,7 +257,10 @@ publication); a second exits at once with status 130.
 
 ## Remaining work
 
-App integration (job scheduling, progress, cancellation and acceptance UI),
-audition and variants, routing generation through an open project's writer,
-composed framing in conditioning, source/colour
-context qualification, and a distributed runtime and model installation.
+Variants and a durable Discard, sound audition of the candidate (Preview is
+pictures only; acceptance does not change the Hold's audio), candidate
+thumbnails in the inspector, a Generate entry inside scoped Repeat/Retime
+inspection, routing the headless commands through an open project's writer,
+composed framing in conditioning, source/colour context qualification, native
+physical-input, VoiceOver and real-window checks of the AI controls, and a
+distributed runtime and model installation.

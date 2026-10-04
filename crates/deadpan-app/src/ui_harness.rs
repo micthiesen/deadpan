@@ -45,6 +45,8 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "sound-placement",
     "room-tone",
     "gain",
+    "ai-pause",
+    "ai-pause-ready",
     "retime",
     "slip",
     "trim",
@@ -113,11 +115,20 @@ impl Options {
         if baseline.is_some() && mode != RunMode::Visual {
             return Err("Baseline comparison requires visual mode".into());
         }
-        if project.is_some() && scenario.as_deref() != Some("generated-picture") {
-            return Err("--project is reserved for --scenario generated-picture".into());
+        let fixture_scenario = matches!(
+            scenario.as_deref(),
+            Some("generated-picture" | "ai-pause-ready")
+        );
+        if project.is_some() && !fixture_scenario {
+            return Err(
+                "--project is reserved for --scenario generated-picture or ai-pause-ready".into(),
+            );
         }
-        if scenario.as_deref() == Some("generated-picture") && project.is_none() {
-            return Err("Generated picture replay requires an explicit --project fixture".into());
+        if fixture_scenario && project.is_none() {
+            return Err(format!(
+                "{} replay requires an explicit --project fixture",
+                scenario.as_deref().unwrap_or_default()
+            ));
         }
         if project.as_ref().is_some_and(|path| {
             !path.is_absolute()
@@ -193,7 +204,7 @@ fn binary_sha256() -> Option<String> {
 pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
     if arguments == ["--help"] {
         println!(
-            "Usage: deadpan-app --ui-check --output NEW_DIRECTORY [--mode visual|performance] [--scenario NAME] [--hz 60|120] [--kestrel-source Shortcuts.swift] [--baseline PRIOR_DIRECTORY] [--retain-projects]\n\nScenarios: {}\nVisual mode writes report.json, report.html and actual offscreen PNG frames.\nPerformance mode submits full UI + picture GPU work without screenshot readback.\nUse --release for performance. Projects use private temporary storage by default.\n--retain-projects keeps each scenario's Documents root under output/projects/NAME for native QA after replay exits.\nGenerated picture replay requires --scenario generated-picture --project /absolute/accepted.deadpan, exported by the real bundle qualification test with DEADPAN_GENERATED_PICTURE_FIXTURE_ROOT. It opens the generic compatibility fixture without editing it.\nNative pickers are scripted; audio output and the desktop are not opened.",
+            "Usage: deadpan-app --ui-check --output NEW_DIRECTORY [--mode visual|performance] [--scenario NAME] [--hz 60|120] [--kestrel-source Shortcuts.swift] [--baseline PRIOR_DIRECTORY] [--retain-projects]\n\nScenarios: {}\nVisual mode writes report.json, report.html and actual offscreen PNG frames.\nPerformance mode submits full UI + picture GPU work without screenshot readback.\nUse --release for performance. Projects use private temporary storage by default.\n--retain-projects keeps each scenario's Documents root under output/projects/NAME for native QA after replay exits.\nGenerated picture replay requires --scenario generated-picture --project /absolute/accepted.deadpan, exported by the real bundle qualification test with DEADPAN_GENERATED_PICTURE_FIXTURE_ROOT. It opens the generic compatibility fixture without editing it.\nai-pause-ready requires --project /absolute/project.deadpan whose last edit accepted real AI pictures; it replays a private copy.\nNative pickers are scripted; audio output and the desktop are not opened.",
             SCENARIOS.join(", ")
         );
         return Ok(());
@@ -219,7 +230,10 @@ pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
         })
         .canonicalize()
         .map_err(|error| format!("Resolve replay fixture: {error}"))?;
-    let fixture_identity = if options.project.is_some() {
+    let ready_fixture = options.scenario.as_deref() == Some("ai-pause-ready");
+    let fixture_identity = if ready_fixture {
+        fixture.join("project.sqlite")
+    } else if options.project.is_some() {
         fixture
             .parent()
             .ok_or("Fixture package has no parent")?
@@ -227,7 +241,15 @@ pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
     } else {
         fixture.clone()
     };
-    let fixture_hash = if options.project.is_some() {
+    let fixture_hash = if ready_fixture {
+        let mut bytes = Vec::new();
+        std::fs::File::open(&fixture_identity)
+            .map_err(|error| error.to_string())?
+            .take(256 * 1024 * 1024 + 1)
+            .read_to_end(&mut bytes)
+            .map_err(|error| error.to_string())?;
+        sha256(&bytes)
+    } else if options.project.is_some() {
         let mut bytes = Vec::new();
         std::fs::File::open(&fixture_identity)
             .map_err(|error| error.to_string())?
@@ -257,7 +279,7 @@ pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
             "hardware": command_output("sysctl", &["-n", "machdep.cpu.brand_string"]),
             "os": command_output("sw_vers", &["-productVersion"]),
             "rust": command_output("rustc", &["--version"]),
-            "fixture": if options.project.is_some() { "accepted Generated compatibility project" } else { "cfr-bframes.mp4" },
+            "fixture": if ready_fixture { "project with real accepted AI pictures (replayed from a private copy)" } else if options.project.is_some() { "accepted Generated compatibility project" } else { "cfr-bframes.mp4" },
             "fixture_identity_file": fixture_identity,
             "fixture_sha256": fixture_hash,
             "replay_hz": options.hz, "viewport_points": [1280,820],
@@ -295,6 +317,12 @@ pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
         if *name == "generated-picture" && options.project.is_none() {
             let mut skipped = ScenarioReport::new(*name);
             skipped.skipped.push("Requires explicit --scenario generated-picture --project and the real bundle qualification fixture; ordinary replay does not fabricate accepted evidence.".into());
+            report.scenarios.push(skipped);
+            continue;
+        }
+        if *name == "ai-pause-ready" && options.project.is_none() {
+            let mut skipped = ScenarioReport::new(*name);
+            skipped.skipped.push("Requires explicit --scenario ai-pause-ready --project with a project whose last edit accepted real AI pictures; ordinary replay does not fabricate Ready bundles.".into());
             report.scenarios.push(skipped);
             continue;
         }

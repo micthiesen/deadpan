@@ -427,7 +427,11 @@ impl DeadpanApp {
         if !self.macros.is_pending()
             && matches!(
                 request,
-                ProjectRequest::CutFrames { .. } | ProjectRequest::Macro(_)
+                ProjectRequest::CutFrames { .. }
+                    | ProjectRequest::Macro(_)
+                    | ProjectRequest::Generation(
+                        crate::project::generation::GenerationOperation::Cancel { .. }
+                    )
             )
         {
             return true;
