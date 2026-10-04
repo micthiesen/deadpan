@@ -291,13 +291,9 @@ pub(super) fn draw_heading(
     let heading = ui
         .horizontal_wrapped(|ui| {
             ui.spacing_mut().item_spacing.x = 6.0;
-            let heading = ui.label(egui::RichText::new("BEATS").size(13.0).strong());
+            let heading = ui.label(style::section_title("BEATS", focused));
             if focused {
-                ui.label(
-                    egui::RichText::new("FOCUS")
-                        .size(9.0)
-                        .color(style::LAVENDER),
-                );
+                style::focus_pill(ui);
             }
             if depth > 0
                 && ui
@@ -331,10 +327,18 @@ pub(super) fn draw_heading(
                             if index > 0 {
                                 ui.weak("›");
                             }
+                            // The current level is plain text; only its
+                            // ancestors are navigation targets.
+                            if index == depth {
+                                ui.label(style::semibold(label));
+                                continue;
+                            }
                             if ui
-                                .add_enabled(
-                                    index != depth,
-                                    egui::Button::new(label).selected(index == depth),
+                                .add(
+                                    egui::Button::new(
+                                        egui::RichText::new(label).color(style::MUTED),
+                                    )
+                                    .frame_when_inactive(false),
                                 )
                                 .on_hover_text(format!(
                                     "View {label}. {} opens a selected group; {} returns.",
@@ -342,11 +346,11 @@ pub(super) fn draw_heading(
                                     bindings.key_label(EditorKey::LeaveGroup)
                                 ))
                                 .clicked()
-                                && index != depth
                             {
                                 destination = Some(index);
                             }
                         }
+                        ui.add_space(4.0);
                         ui.weak(format!("{beats} beats · {frames} f"));
                     });
                 });

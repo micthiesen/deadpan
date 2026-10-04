@@ -15,7 +15,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         ExactRatio::new(3, 4).map_err(|error| error.to_string())?,
         false,
     )?;
-    d.click("Change speed…  ·  :retime")?;
+    d.click("Change speed…  :retime")?;
     d.capture("Speed entry previews exact duration and pitch before applying")?;
     let hint = expected.describe(PitchPolicy::Preserve);
     let hint_paint = scenarios::text_paint_visibility(d, &hint);
@@ -54,7 +54,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
             }), json!({"frames":expected.after.frames(), "pitch":"preserve", "input":original.as_str()}), d.snapshot())?;
 
     let before_update = d.revision();
-    d.click("Change speed…  ·  Enter")?;
+    d.click("Change speed…  Enter")?;
     d.key_modified(Key::A, Modifiers::COMMAND)?;
     d.events(
         "Replace speed and pitch through native-style command text editing",

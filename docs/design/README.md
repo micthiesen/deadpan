@@ -59,13 +59,26 @@ or examples differ.
 | Saved | `#A7F3D0` | Confirmed persisted state, paired with text |
 | Spacing | `4 / 8 / 16 / 24` pt | Related controls through pane separation |
 | Radius | `4 / 6` pt | Controls / cards |
-| Text | `13–14` pt body | Compact readable system-style text; monospace units and keys |
+| Text | `13–14` pt body | Installed SF Pro (text optical size) and SF Mono, loaded at runtime and never bundled; egui's fonts remain the fallback |
+| Error / warning | `#F88A8A` / `#F5B86B` | Failures and cautions, always paired with words |
 
 Lavender is selective. Do not tint every panel or make controls compete with the
 image. A selected beat has an outline, name and textual scope, not just a color.
 Pane focus has its own visible label or heading treatment. A selected Original and
 selected beat may coexist; their selection outlines alone cannot tell the user
 which pane receives `j/k`.
+Pane and section titles are small uppercase semibold labels in secondary text;
+the focused pane's title turns lavender and adds a `FOCUS` pill, so focus never
+depends on color alone. Command buttons show their label and key as one text
+run (`Camera…  ,f`), with the key in grey monospace, so the painted text and the
+accessible label are identical. Side-pane commands are full-width left-aligned
+rows; read-only values are plain label/value columns, never field-shaped. The
+current breadcrumb level is plain semibold text; only ancestors are buttons.
+The footer shows as many contextual keys as fit in two rows, in priority order
+(movement, selection, repeat, cut, undo, dot-repeat, copy, paste, then the
+rest), and always ends with the Help key. Help opens with the basics; `:registers`
+opens it with the register inventory first.
+
 Use short unit-bearing values and visible keycaps. Error and pending states need
 words as well as distinct styling. Resize with the window and retain readable
 controls, a usable image and a visible status bar at the supported minimum.
@@ -77,15 +90,18 @@ feedback on the status row so it does not push ordinary navigation hints into
 another row. The [footer qualification](../qualification/footer-layout-2026-09-27.md)
 records first-frame checks and the remaining small-window picture limitation.
 
-Below 700 logical points, single-Original workspaces place Sounds beside the
-BEATS heading when Original is visible or the edit has no placed sounds.
+Single-Original workspaces place Sounds beside the BEATS heading whenever the
+edit has no placed sounds, at every window height; an empty list never takes a
+panel's height from the picture. Below 700 logical points Original also
+summarizes a populated list, and that compact condition selects the compact
+control layout.
 The summary shows the actual count, a distinct focus cue and the existing
 Sounds pane identity. Its measured width is reserved before the scrolling
 breadcrumbs. The inactive panel remains in the UI tree at zero height.
 Focusing a populated summary opens its list in Your edit and retains both
 clocks, the selected beat and copied time. Normal Tab still cycles visible panes.
-Room tone overlays the same compact background; Camera, Gain and default-size
-layouts keep their existing treatment.
+Room tone overlays the same compact background; Camera and Gain keep their
+existing treatment.
 
 Compact Original uses a read-only clock row and puts Monitor beside idle
 transport actions when their complete labels fit. Otherwise it reserves the

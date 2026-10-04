@@ -669,7 +669,7 @@ pub(super) fn empty_heading(d: &mut Driver<'_>) -> Result<(), String> {
             && clipped.clip_rect.contains_rect(sounds)
     });
     d.check(
-        "Compact empty Sounds has a fully painted separate focus target beside Beats",
+        "Empty Sounds has a fully painted separate focus target beside Beats",
         document(d)?.sounds().is_empty()
             && !sounds.intersects(beats)
             && (sounds.center().y - beats.center().y).abs() <= 14.0

@@ -257,7 +257,7 @@ fn provider_visible(d: &mut Driver<'_>) -> Result<(), String> {
         "Accepted AI",
         "Sound",
         "Silence",
-        "Change duration…  ·  Enter",
+        "Change duration…  Enter",
         "NORMAL",
         "SEQUENCE",
         "Focus: Viewer",

@@ -2,6 +2,24 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Workspace design pass and build hygiene, 2026-10-04
+
+Neutral Group, GroupSelection and Ungroup now keep saved sound clocks when the
+change lies outside every retained journal scope; changes inside a scope,
+sound-owning Sequence removal and selected groups needing endpoint Splits stay
+guarded. See [neutral grouping](../OWNED_SOUND_VOICES.md#neutral-grouping).
+
+The [design pass](../qualification/ui-design-pass-2026-10-04.md) uses installed
+SF Pro/SF Mono, shared title/command/value helpers in `preview/style.rs`, a
+two-row priority footer and a Sounds heading summary at every height. Command
+buttons paint `label  key` as one text run so replay labels and paint checks
+stay exact; keep that convention for new controls. Card thumbnails are the next
+UI increment.
+
+Locally, a 494 GB target directory with 2.87 million stale `.o` files made rustc
+spend most of its time in the kernel. See
+[development](../DEVELOPMENT.md#validation-workflow) for nextest and cleanup.
+
 ## Copied sound clocks, 2026-10-03
 
 Core 46/database 58 gives each independent sound journal one live processing

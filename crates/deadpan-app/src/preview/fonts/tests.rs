@@ -8,10 +8,10 @@ fn frame(context: &egui::Context) {
 }
 
 #[test]
-fn real_system_fallbacks_cover_cjk_without_changing_ascii_fonts_or_widths() {
+fn real_system_fonts_lead_their_families_and_fallbacks_cover_cjk() {
     let loaded = system();
     assert!(loaded.report.skipped.is_empty(), "{:?}", loaded.report);
-    assert_eq!(loaded.report.loaded.len(), 2);
+    assert_eq!(loaded.report.loaded.len(), 4);
     assert!(
         loaded
             .report
@@ -29,40 +29,36 @@ fn real_system_fallbacks_cover_cjk_without_changing_ascii_fonts_or_widths() {
 
     let context = egui::Context::default();
     frame(&context);
-    let families = [FontFamily::Proportional, FontFamily::Monospace];
-    let sample = "Answer 0123456789 :group name=\"\"";
-    let baseline: Vec<Vec<_>> = families
-        .iter()
-        .map(|family| {
-            context.fonts_mut(|fonts| {
-                let id = egui::FontId::new(13.0, family.clone());
-                assert!(!fonts.has_glyphs(&id, "答え"));
-                sample.chars().map(|c| fonts.glyph_width(&id, c)).collect()
-            })
-        })
-        .collect();
+    let sample = "Answer 0123456789 :group";
+    let builtin: Vec<_> = context.fonts_mut(|fonts| {
+        let id = egui::FontId::proportional(13.0);
+        sample.chars().map(|c| fonts.glyph_width(&id, c)).collect()
+    });
     install(&context);
     frame(&context);
     let defaults = FontDefinitions::default();
-    for (index, family) in families.iter().enumerate() {
+    for (family, primary) in [
+        (FontFamily::Proportional, "Deadpan SF Pro"),
+        (FontFamily::Monospace, "Deadpan SF Mono"),
+    ] {
         context.fonts_mut(|fonts| {
             let id = egui::FontId::new(13.0, family.clone());
             // This is egui's actual fallback lookup, not text presence or a
             // nonempty tofu rectangle. Both command and ordinary label families
             // must resolve every sample to a real supported glyph.
             assert!(fonts.has_glyphs(&id, "答え日本語简体中文繁體한글한국어"));
-            assert_eq!(
-                sample
-                    .chars()
-                    .map(|c| fonts.glyph_width(&id, c))
-                    .collect::<Vec<_>>(),
-                baseline[index]
-            );
-            let installed = &fonts.definitions().families[family];
-            assert!(installed.starts_with(&defaults.families[family]));
-            assert_eq!(installed.len(), defaults.families[family].len() + 2);
+            let installed = &fonts.definitions().families[&family];
+            assert_eq!(installed[0], primary);
+            assert!(installed[1..].starts_with(&defaults.families[&family]));
+            assert_eq!(installed.len(), defaults.families[&family].len() + 3);
         });
     }
+    // The system face replaces the built-in Latin metrics.
+    let system: Vec<_> = context.fonts_mut(|fonts| {
+        let id = egui::FontId::proportional(13.0);
+        sample.chars().map(|c| fonts.glyph_width(&id, c)).collect()
+    });
+    assert_ne!(system, builtin);
     let report = context
         .data(|data| data.get_temp::<Report>(egui::Id::new(REPORT_KEY)))
         .unwrap();
@@ -87,24 +83,28 @@ fn missing_oversized_directory_and_invalid_fonts_keep_builtins_with_bounded_diag
                 path: &missing,
                 index: 0,
                 required: "答",
+                role: Role::Fallback,
             },
             Candidate {
                 name: "oversized",
                 path: &oversized,
                 index: 0,
                 required: "答",
+                role: Role::Fallback,
             },
             Candidate {
                 name: "directory",
                 path: scratch.path(),
                 index: 0,
                 required: "答",
+                role: Role::Fallback,
             },
             Candidate {
                 name: "invalid",
                 path: &invalid,
                 index: 0,
                 required: "答",
+                role: Role::Fallback,
             },
         ],
         8,
@@ -139,11 +139,11 @@ fn missing_oversized_directory_and_invalid_fonts_keep_builtins_with_bounded_diag
 #[test]
 fn face_index_and_required_glyphs_are_checked_before_egui_and_total_budget_is_enforced() {
     let loaded = system();
-    let (_, data) = loaded.fonts.first().expect("installed Hiragino font");
+    let (_, _, data) = &loaded.fonts[2];
     assert!(validate(data.font.as_ref(), u32::MAX, "答").is_err());
     assert!(validate(data.font.as_ref(), 0, "\u{10ffff}").is_err());
     let budget = data.font.len();
-    let path = Path::new(&loaded.report.loaded[0].path);
+    let path = Path::new(&loaded.report.loaded[2].path);
     let limited = load(
         &[
             Candidate {
@@ -151,12 +151,14 @@ fn face_index_and_required_glyphs_are_checked_before_egui_and_total_budget_is_en
                 path,
                 index: 0,
                 required: "答え",
+                role: Role::Fallback,
             },
             Candidate {
                 name: "second",
                 path,
                 index: 0,
                 required: "答え",
+                role: Role::Fallback,
             },
         ],
         budget,
@@ -174,7 +176,7 @@ fn face_index_and_required_glyphs_are_checked_before_egui_and_total_budget_is_en
 fn missing_primary_still_admits_the_next_installed_fallback() {
     let scratch = tempfile::tempdir().unwrap();
     let missing = scratch.path().join("missing-primary.ttc");
-    let fallback = &system().report.loaded[1];
+    let fallback = &system().report.loaded[3];
     let loaded = load(
         &[
             Candidate {
@@ -182,12 +184,14 @@ fn missing_primary_still_admits_the_next_installed_fallback() {
                 path: &missing,
                 index: 0,
                 required: "答え",
+                role: Role::Fallback,
             },
             Candidate {
                 name: "remaining fallback",
                 path: Path::new(&fallback.path),
                 index: fallback.face_index,
                 required: "答え한글",
+                role: Role::Fallback,
             },
         ],
         MAX_TOTAL_BYTES,

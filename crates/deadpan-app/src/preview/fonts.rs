@@ -1,4 +1,6 @@
-//! Installed macOS text fallbacks. Font bytes stay local and are never bundled.
+//! Installed macOS interface fonts and text fallbacks. Font bytes stay local and
+//! are never bundled: SF Pro and SF Mono become the primary families when the
+//! system provides them, and egui's built-in fonts remain the portable fallback.
 
 use std::{
     fs::File,
@@ -13,7 +15,12 @@ use sha2::{Digest, Sha256};
 use skrifa::MetadataProvider;
 
 const MAX_FONT_BYTES: usize = 32 * 1024 * 1024;
-const MAX_TOTAL_BYTES: usize = 32 * 1024 * 1024;
+const MAX_TOTAL_BYTES: usize = 48 * 1024 * 1024;
+/// SF Pro's optical-size axis defaults to display sizes. Interface text uses
+/// its smallest optical size, which has the wider spacing macOS uses for text.
+const SF_TEXT_OPTICAL_SIZE: f32 = 17.0;
+/// SF Mono's variable default is lighter than the system monospaced Regular.
+const SF_MONO_REGULAR: f32 = 400.0;
 const MAX_DIAGNOSTIC_CHARS: usize = 160;
 
 // The report describes the fonts actually admitted at startup. The native replay
@@ -46,10 +53,23 @@ struct Candidate<'a> {
     path: &'a Path,
     index: u32,
     required: &'a str,
+    role: Role,
+}
+
+/// A primary font leads one family; a fallback follows every family's
+/// built-ins and supplies glyphs they lack.
+#[derive(Clone, Copy)]
+enum Role {
+    Primary {
+        monospace: bool,
+        axis: [u8; 4],
+        value: f32,
+    },
+    Fallback,
 }
 
 struct Loaded {
-    fonts: Vec<(String, Arc<FontData>)>,
+    fonts: Vec<(String, Role, Arc<FontData>)>,
     report: Report,
 }
 
@@ -59,16 +79,40 @@ fn system() -> &'static Loaded {
         load(
             &[
                 Candidate {
+                    name: "Deadpan SF Pro",
+                    path: Path::new("/System/Library/Fonts/SFNS.ttf"),
+                    index: 0,
+                    required: "Deadpan 0123456789 ·…–⌘",
+                    role: Role::Primary {
+                        monospace: false,
+                        axis: *b"opsz",
+                        value: SF_TEXT_OPTICAL_SIZE,
+                    },
+                },
+                Candidate {
+                    name: "Deadpan SF Mono",
+                    path: Path::new("/System/Library/Fonts/SFNSMono.ttf"),
+                    index: 0,
+                    required: "Deadpan 0123456789 :[]",
+                    role: Role::Primary {
+                        monospace: true,
+                        axis: *b"wght",
+                        value: SF_MONO_REGULAR,
+                    },
+                },
+                Candidate {
                     name: "Deadpan Hiragino fallback",
                     path: Path::new("/System/Library/Fonts/ヒラギノ角ゴシック W3.ttc"),
                     index: 0,
                     required: "答え日本語",
+                    role: Role::Fallback,
                 },
                 Candidate {
                     name: "Deadpan Unicode fallback",
                     path: Path::new("/System/Library/Fonts/Supplemental/Arial Unicode.ttf"),
                     index: 0,
                     required: "答え日本語简体中文繁體한글한국어",
+                    role: Role::Fallback,
                 },
             ],
             MAX_TOTAL_BYTES,
@@ -82,14 +126,30 @@ pub(super) fn install(context: &egui::Context) {
 
 fn install_loaded(context: &egui::Context, loaded: &Loaded) {
     let mut definitions = FontDefinitions::default();
-    for (name, data) in &loaded.fonts {
+    for (name, role, data) in &loaded.fonts {
         definitions.font_data.insert(name.clone(), Arc::clone(data));
-        for family in [FontFamily::Proportional, FontFamily::Monospace] {
-            definitions
-                .families
-                .entry(family)
-                .or_default()
-                .push(name.clone());
+        match role {
+            Role::Primary { monospace, .. } => {
+                let family = if *monospace {
+                    FontFamily::Monospace
+                } else {
+                    FontFamily::Proportional
+                };
+                definitions
+                    .families
+                    .entry(family)
+                    .or_default()
+                    .insert(0, name.clone());
+            }
+            Role::Fallback => {
+                for family in [FontFamily::Proportional, FontFamily::Monospace] {
+                    definitions
+                        .families
+                        .entry(family)
+                        .or_default()
+                        .push(name.clone());
+                }
+            }
         }
     }
     context.set_fonts(definitions);
@@ -107,7 +167,9 @@ fn load(candidates: &[Candidate<'_>], total_limit: usize) -> Loaded {
         match admitted {
             Ok((data, provenance)) => {
                 remaining -= provenance.bytes;
-                loaded.fonts.push((candidate.name.into(), Arc::new(data)));
+                loaded
+                    .fonts
+                    .push((candidate.name.into(), candidate.role, Arc::new(data)));
                 loaded.report.loaded.push(provenance);
             }
             Err(reason) => loaded.report.skipped.push(Skipped {
@@ -153,6 +215,9 @@ fn read_font(candidate: &Candidate<'_>, limit: usize) -> Result<(FontData, Prove
     };
     let mut data = FontData::from_owned(bytes);
     data.index = candidate.index;
+    if let Role::Primary { axis, value, .. } = candidate.role {
+        data.tweak.coords = egui::epaint::text::VariationCoords::new([(axis, value)]);
+    }
     Ok((data, provenance))
 }
 

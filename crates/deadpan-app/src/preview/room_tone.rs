@@ -638,6 +638,7 @@ impl DeadpanApp {
 
     pub(super) fn hold_audio_controls(&mut self, ui: &mut egui::Ui, ready: bool) {
         ui.add_space(8.0);
+        ui.label(style::section_title("PAUSE SOUND", false));
         if let Some(workspace) = &self.workspace
             && let Some(node) = self
                 .inspected_node()
@@ -660,13 +661,13 @@ impl DeadpanApp {
             ui.weak("Crossfades stay inside this pause.");
         }
         if ui
-            .add_enabled(ready, egui::Button::new("Room tone…  ·  :room-tone"))
+            .add_enabled(ready, style::row_action(ui, "Room tone…", ":room-tone"))
             .clicked()
         {
             self.open_room_tone(Some(self.capture_hold_command()), ui.ctx());
         }
         if ui
-            .add_enabled(ready, egui::Button::new("Use silence  ·  :hold-silence"))
+            .add_enabled(ready, style::row_action(ui, "Use silence", ":hold-silence"))
             .clicked()
         {
             self.silence_hold(Some(self.capture_hold_command()));

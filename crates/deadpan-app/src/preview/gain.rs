@@ -884,36 +884,26 @@ impl DeadpanApp {
                 .clone(),
         );
         let previewing = proposed.is_some();
-        ui.separator();
-        ui.label(
-            egui::RichText::new(format!("{} dB", crate::gain::format_db(edit.trim()))).size(24.0),
-        );
-        ui.weak(if previewing {
-            "This beat · unsaved gain"
-        } else {
-            "This beat · authored gain"
+        ui.add_space(8.0);
+        ui.label(style::section_title("GAIN", false));
+        ui.horizontal(|ui| {
+            ui.label(
+                style::semibold(format!("{} dB", crate::gain::format_db(edit.trim()))).size(20.0),
+            );
+            ui.weak(if previewing { "unsaved" } else { "this beat" });
         });
-        ui.weak("Placed sounds have their own gain.");
         ui.add_enabled_ui(ready && self.gain.is_none(), |ui| {
             ui.horizontal_wrapped(|ui| {
+                ui.spacing_mut().item_spacing.x = 4.0;
                 if ui
-                    .add(
-                        egui::Button::new(format!(
-                            "−  ·  {}",
-                            self.editor_key(EditorKey::GainDown)
-                        ))
-                        .wrap(),
-                    )
+                    .add(style::action("−3 dB", self.editor_key(EditorKey::GainDown)))
                     .reveal_on_focus()
                     .clicked()
                 {
                     self.gain_step(-3000, ui.ctx());
                 }
                 if ui
-                    .add(
-                        egui::Button::new(format!("+  ·  {}", self.editor_key(EditorKey::GainUp)))
-                            .wrap(),
-                    )
+                    .add(style::action("+3 dB", self.editor_key(EditorKey::GainUp)))
                     .reveal_on_focus()
                     .clicked()
                 {
@@ -929,7 +919,7 @@ impl DeadpanApp {
                 }
             });
             if ui
-                .button("Edit envelope… · :gain")
+                .add(style::row_action(ui, "Edit envelope…", ":gain"))
                 .reveal_on_focus()
                 .clicked()
             {
@@ -937,7 +927,7 @@ impl DeadpanApp {
             }
         });
         ui.weak(format!(
-            "{} envelopes · {} mute ranges",
+            "{} envelopes · {} mute ranges. Placed sounds keep their own gain.",
             edit.envelopes().len(),
             edit.mute_ranges().len()
         ));

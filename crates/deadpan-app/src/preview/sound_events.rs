@@ -29,11 +29,25 @@ pub(super) struct CommandTarget {
 }
 
 impl DeadpanApp {
+    /// Show the Placed sounds count beside the beat heading instead of a
+    /// panel when the edit has no placed sounds, at every height. Compact
+    /// Original also summarizes a populated list to keep the picture usable.
+    pub(super) fn sounds_in_heading(&self, context: &egui::Context) -> bool {
+        self.focused_workflow()
+            && self.gain.is_none()
+            && self.camera.is_none()
+            && self.workspace.as_ref().is_some_and(|workspace| {
+                workspace.document.sounds().is_empty()
+                    || (self.view == View::Source && compact_height(context))
+            })
+    }
+
+    /// The compact workspace below 700 points, which also tightens controls.
     pub(super) fn compact_sounds_heading(&self, context: &egui::Context) -> bool {
         self.focused_workflow()
             && self.gain.is_none()
             && self.camera.is_none()
-            && context.input(|input| input.content_rect().height() < 700.0)
+            && compact_height(context)
             && self.workspace.as_ref().is_some_and(|workspace| {
                 self.view == View::Source || workspace.document.sounds().is_empty()
             })
@@ -617,6 +631,10 @@ fn gain_label(value: i32) -> String {
         label.pop();
     }
     label
+}
+
+fn compact_height(context: &egui::Context) -> bool {
+    context.input(|input| input.content_rect().height() < 700.0)
 }
 
 #[cfg(test)]

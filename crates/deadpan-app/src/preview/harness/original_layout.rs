@@ -264,11 +264,13 @@ fn original_layout(
             json!({"play":format!("{play:?}"),"audition":format!("{audition:?}"),"monitor":format!("{monitor:?}")}),
         )?;
     }
-    if d.harness.ctx.content_rect().height() < 700.0 {
+    // An empty list is always a summary beside Beats; a populated list keeps
+    // its panel at ordinary heights.
+    if d.harness.ctx.content_rect().height() < 700.0 || count == 0 {
         summary(d, count)?;
     } else {
         d.check(
-            "Default-height Original retains the full Sounds panel beneath Beats",
+            "Default-height Original retains the populated Sounds panel beneath Beats",
             d.rect("Placed sounds pane")?.top()
                 > d.rect("Current group beat outline pane")?.bottom(),
             json!("Separate full Sounds panel below Beats"),
@@ -344,7 +346,7 @@ fn summary(d: &mut Driver<'_>, count: usize) -> Result<(), String> {
             && clipped.clip_rect.contains_rect(sounds)
     });
     d.check(
-        "Compact Original shows the actual placed-sound count in a separate painted focus target",
+        "Original shows the actual placed-sound count in a separate painted focus target",
         sound_count(d)? == count
             && !sounds.intersects(beats)
             && (sounds.center().y - beats.center().y).abs() <= 14.0

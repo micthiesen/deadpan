@@ -332,8 +332,8 @@ fn navigate_and_edit(
     )?;
     d.check(
         "The nested Hold exposes its duration inspector action",
-        d.rect("Change duration…  ·  Enter").is_ok(),
-        json!("Change duration…  ·  Enter"),
+        d.rect("Change duration…  Enter").is_ok(),
+        json!("Change duration…  Enter"),
         d.widgets(),
     )?;
     d.capture("Nested Hold selected with group breadcrumbs")?;
@@ -682,8 +682,9 @@ fn check_scope(
     let visible_breadcrumbs = breadcrumbs.iter().all(|label| {
         widgets.as_array().is_some_and(|widgets| {
             widgets.iter().any(|widget| {
-                widget["label"] == *label
-                    && widget["role"] == "Button"
+                // Ancestors are buttons; the current level is plain text.
+                ((widget["role"] == "Button" && widget["label"] == *label)
+                    || (widget["role"] == "Label" && widget["value"] == *label))
                     && widget["hidden"] == false
                     && !widget["rect"].is_null()
             })

@@ -510,8 +510,8 @@ fn saved_layout(d: &mut Driver<'_>, source: &SourceAudio) -> Result<(), String> 
         let labels = [
             samples.as_str(),
             "Crossfades stay inside this pause.",
-            "Room tone…  ·  :room-tone",
-            "Use silence  ·  :hold-silence",
+            "Room tone…  :room-tone",
+            "Use silence  :hold-silence",
         ];
         // Reveal the whole fact/action group, not just its first line.
         // Retained accessibility nodes alone prove no paint.
@@ -704,19 +704,13 @@ fn compact_workspace_scale(d: &mut Driver<'_>) -> Result<(), String> {
             scenarios::footer_anchored(d, "Scale change keeps the copied-range footer anchored")?;
         }
         d.settled()?;
+        // An empty Sounds list is a summary beside Beats at every size.
         if width == 960.0 {
             compact_workspace_picture(d)?;
-            super::sound_placement::empty_heading(d)?;
         } else {
             scenarios::viewer_visible(d)?;
-            d.check(
-                "Default size restores the empty Sounds panel below Beats with the same identity",
-                d.rect("Placed sounds pane")?.top()
-                    > d.rect("Current group beat outline pane")?.bottom(),
-                json!("Separate full-height empty Sounds panel"),
-                d.widgets(),
-            )?;
         }
+        super::sound_placement::empty_heading(d)?;
     }
     d.command("sequence")?;
     d.settled()
@@ -772,7 +766,7 @@ fn gain_inspector_reachable(d: &mut Driver<'_>, width: f32, height: f32) -> Resu
     let revision = d.revision();
     let nodes = document(d)?.nodes().clone();
     let editor = editor_state(d);
-    for label in ["−  ·  -", "+  ·  +", "Mute", "Edit envelope… · :gain"] {
+    for label in ["−3 dB  -", "+3 dB  +", "Mute", "Edit envelope…  :gain"] {
         // Use the accessibility input route, not direct egui memory or scroll
         // mutation. Normal workspace Tab intentionally cycles visible panes.
         {

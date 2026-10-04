@@ -514,19 +514,22 @@ impl DeadpanApp {
                 if pane_focus(ui, Pane::Inspector, heading.rect, "Nested beat inspector pane").has_focus() { self.pane = Pane::Inspector; }
                 ui.separator();
                 egui::ScrollArea::vertical().id_salt("scoped-inspector-details").show(ui, |ui| {
-                    style::ink_padded_label(ui, egui::RichText::new(label).heading(), None);
+                    style::ink_padded_label(ui, style::semibold(label).size(16.0), None);
                     ui.colored_label(style::LAVENDER, scope);
                     if let Some(interval) = interval { ui.small(interval); }
                     ui.small("All plays changes the shared definition. Existing overrides keep their own changes.");
                     if let Some(reason) = reason { ui.add_space(8.0); ui.weak(reason); ui.small("The viewer retains its last displayed picture."); }
                     let ready = !self.service.is_busy() && !self.dialogs.is_open();
-                    if composite && ui.button(format!("Enter contents  {}", self.editor_key(EditorKey::EnterGroup))).clicked() { self.enter_scoped(ui.ctx()); }
-                    self.gain_inspector(ui, ready);
+                    ui.add_space(4.0);
+                    if composite && ui.add(style::row_action(ui, "Enter contents", self.editor_key(EditorKey::EnterGroup)).fill(style::SELECTED)).clicked() { self.enter_scoped(ui.ctx()); }
                     if hold { self.hold_audio_controls(ui, ready); }
-                    if ui.add_enabled(ready, egui::Button::new(format!("Camera…  {}", self.editor_key(EditorKey::Camera)))).clicked() {
+                    self.gain_inspector(ui, ready);
+                    ui.add_space(8.0);
+                    ui.label(style::section_title("EDIT", false));
+                    if ui.add_enabled(ready, style::row_action(ui, "Camera…", self.editor_key(EditorKey::Camera))).clicked() {
                         self.framing_action(navigation::FramingAction::EnterCamera, ui.ctx());
                     }
-                    ui.separator();
+                    ui.add_space(4.0);
                     ui.small(format!("{} children · {} enter · {} parent", self.editor_pair(EditorKey::BeatPrevious, EditorKey::BeatNext, "/"), self.editor_key(EditorKey::EnterGroup), self.editor_key(EditorKey::LeaveGroup)));
                     ui.small(STRUCTURE_UNAVAILABLE);
                 });

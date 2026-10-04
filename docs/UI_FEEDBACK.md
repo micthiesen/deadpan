@@ -11,6 +11,13 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+The [workspace design pass](qualification/ui-design-pass-2026-10-04.md) moves the
+interface to installed SF Pro/SF Mono, removes an unpainted header band,
+restructures the inspector, header, rail and tabs, fits footer keys to two
+priority-ordered rows and collapses an empty Sounds panel at every height. The
+full visual replay passes 5,388 checks after a focused rerun, including the
+previously failing Help End and room-tone minimum-picture checks.
+
 Named groups have a new `groups` replay for captured text entry, partial
 Source/Repeat/Retime ranges, exact Undo/Redo, navigation, macros, dot and
 register preservation. It also compares displayed source identities and actual

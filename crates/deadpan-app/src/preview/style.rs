@@ -11,6 +11,105 @@ pub(super) const LAVENDER: Color32 = Color32::from_rgb(0xc4, 0xb5, 0xfd);
 pub(super) const SELECTED: Color32 = Color32::from_rgb(0x39, 0x37, 0x50);
 pub(super) const CURSOR: Color32 = Color32::from_rgb(0xf6, 0xd3, 0x65);
 pub(super) const SAVED: Color32 = Color32::from_rgb(0xa7, 0xf3, 0xd0);
+pub(super) const ERROR: Color32 = Color32::from_rgb(0xf8, 0x8a, 0x8a);
+pub(super) const WARNING: Color32 = Color32::from_rgb(0xf5, 0xb8, 0x6b);
+
+/// SF Pro weight for titles and emphasized values.
+pub(super) const SEMIBOLD: f32 = 600.0;
+
+pub(super) fn semibold(text: impl Into<String>) -> RichText {
+    RichText::new(text).variation("wght", SEMIBOLD)
+}
+
+/// Small uppercase pane and section title.
+pub(super) fn section_title(text: &str, focused: bool) -> RichText {
+    RichText::new(text)
+        .size(11.0)
+        .extra_letter_spacing(0.8)
+        .variation("wght", SEMIBOLD)
+        .color(if focused { LAVENDER } else { MUTED })
+}
+
+/// A word-bearing focus cue, so pane focus never depends on color alone.
+pub(super) fn focus_pill(ui: &mut egui::Ui) {
+    egui::Frame::new()
+        .fill(SELECTED)
+        .corner_radius(3)
+        .inner_margin(egui::Margin::symmetric(5, 1))
+        .show(ui, |ui| {
+            ui.label(
+                RichText::new("FOCUS")
+                    .size(9.0)
+                    .extra_letter_spacing(0.6)
+                    .variation("wght", SEMIBOLD)
+                    .color(LAVENDER),
+            );
+        });
+}
+
+/// A command label and its key as one text run: the label in normal text and
+/// the key in grey monospace. One run keeps the painted text identical to the
+/// accessible label, `"{label}  {key}"`.
+pub(super) fn action_text(label: &str, key: &str, size: f32) -> egui::text::LayoutJob {
+    let mut job = egui::text::LayoutJob::default();
+    let proportional = egui::TextFormat {
+        font_id: FontId::proportional(size),
+        color: TEXT,
+        ..Default::default()
+    };
+    job.append(label, 0.0, proportional.clone());
+    job.append("  ", 0.0, proportional);
+    job.append(
+        key,
+        0.0,
+        egui::TextFormat {
+            font_id: FontId::monospace(size - 1.5),
+            color: MUTED,
+            valign: egui::Align::Center,
+            ..Default::default()
+        },
+    );
+    job
+}
+
+/// A command button showing its key.
+pub(super) fn action<'a>(label: impl AsRef<str>, key: impl AsRef<str>) -> egui::Button<'a> {
+    egui::Button::new(action_text(label.as_ref(), key.as_ref(), 13.0))
+}
+
+/// A full-width, left-aligned command row for side panes.
+pub(super) fn row_action<'a>(
+    ui: &egui::Ui,
+    label: impl AsRef<str>,
+    key: impl AsRef<str>,
+) -> egui::Button<'a> {
+    egui::Button::new((
+        action_text(label.as_ref(), key.as_ref(), 13.0),
+        egui::Atom::grow(),
+    ))
+    .min_size(egui::vec2(ui.available_width(), 28.0))
+}
+
+/// Read-only label/value pairs in aligned columns. Values are plain text,
+/// never field-shaped, so they cannot be mistaken for editable inputs.
+pub(super) fn value_grid<'a>(
+    ui: &mut egui::Ui,
+    id: &str,
+    rows: impl IntoIterator<Item = (&'a str, &'a str)>,
+) {
+    egui::Grid::new(id)
+        .num_columns(2)
+        .spacing(egui::vec2(12.0, 6.0))
+        .min_row_height(18.0)
+        .show(ui, |ui| {
+            for (label, value) in rows {
+                ui.label(RichText::new(label).size(12.0).color(MUTED));
+                ui.add(egui::Label::new(RichText::new(value).monospace().size(11.5)).truncate())
+                    .on_hover_text(format!("{label}: {value}"));
+                ui.end_row();
+            }
+        });
+}
 
 pub(super) fn apply(context: &egui::Context) {
     context.set_theme(egui::Theme::Dark);
@@ -29,6 +128,9 @@ pub(super) fn apply(context: &egui::Context) {
         style.visuals.selection.bg_fill = SELECTED;
         style.visuals.selection.stroke = Stroke::new(1.5, LAVENDER);
         style.visuals.window_stroke = Stroke::new(1.0, BORDER);
+        style.visuals.hyperlink_color = LAVENDER;
+        style.visuals.error_fg_color = ERROR;
+        style.visuals.warn_fg_color = WARNING;
         for widget in [
             &mut style.visuals.widgets.noninteractive,
             &mut style.visuals.widgets.inactive,

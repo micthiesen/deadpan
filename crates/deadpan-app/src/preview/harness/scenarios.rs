@@ -436,7 +436,7 @@ fn editing(d: &mut Driver<'_>) -> Result<(), String> {
         json!(original * 3),
         json!(d.app().sequence_length()),
     )?;
-    d.click("Set total plays…  ·  Enter")?;
+    d.click("Set total plays…  Enter")?;
     let before = d.revision();
     replace_text(d, "repeat 2")?;
     d.changed(&before)?;
@@ -545,7 +545,7 @@ fn editing(d: &mut Driver<'_>) -> Result<(), String> {
     d.settled()?;
     selected_visible(d)?;
     let before = d.revision();
-    d.click("Change duration…  ·  Enter")?;
+    d.click("Change duration…  Enter")?;
     replace_text(d, "hold-duration 17f")?;
     d.changed(&before)?;
     d.check(
@@ -701,8 +701,8 @@ fn camera(d: &mut Driver<'_>) -> Result<(), String> {
         json!("framing of the submitted entry picture"),
         entry.clone(),
     )?;
-    reveal_inspector_button(d, "Camera…  ·  ,f")?;
-    d.click("Camera…  ·  ,f")?;
+    reveal_inspector_button(d, "Camera…  ,f")?;
+    d.click("Camera…  ,f")?;
     d.wait_for("Camera opens on the displayed picture", |app| {
         app.camera.is_some()
     })?;
@@ -1278,6 +1278,12 @@ fn visible_help_markers(d: &Driver<'_>) -> Vec<(String, [f32; 4])> {
         "u / Ctrl R",
         ": / Enter / Esc",
         "? / :help / Esc",
+        "REGISTERS",
+        "SEMANTIC MACROS",
+        "yy / dd",
+        "q + letter · :record a",
+        "q · :record-stop",
+        "@ + letter · :macro a 3",
     ];
     d.harness
         .output()

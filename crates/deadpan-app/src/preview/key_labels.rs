@@ -92,31 +92,58 @@ fn hint_size(ui: &egui::Ui, width: f32, key: &str, description: &str) -> egui::V
     }
 }
 
-/// Footer teaching yields to one complete reference shortcut when the entire
-/// contextual set would consume the viewer. The reference and action controls
-/// retain every binding; no individual key path is shortened.
+/// Footer teaching shows the most important contextual keys that fit in the
+/// row budget, in the caller's priority order, and always ends with the
+/// complete reference shortcut. No individual key path is shortened; a hint
+/// that does not fit is left to the reference and the action controls.
 pub(super) fn footer_hints(ui: &mut egui::Ui, hints: &Hints, help: &str, budget: f32) {
     let width = ui.max_rect().width().max(1.0);
-    let mut used = (width - ui.available_width()).max(0.0);
-    let mut height = 0.0;
-    let mut row = ui.spacing().interact_size.y;
-    for (key, description) in hints {
-        let size = hint_size(ui, width, key, description);
-        if used > 0.0 && used + size.x > width {
-            height += row + ui.spacing().item_spacing.y;
-            row = 0.0;
-            used = 0.0;
+    // A wrapping row reports its full width as available; measure the
+    // content already placed on the current row from the cursor instead.
+    let start = (ui.cursor().min.x - ui.max_rect().min.x).max(0.0);
+    // The caller's final reference hint is mandatory; keep its own wording
+    // when every other hint fits.
+    let (optional, reference) = match hints.split_last() {
+        Some((last, rest)) if last.0 == help => (rest, Some(last.1.as_str())),
+        _ => (hints.as_slice(), None),
+    };
+    let sizes: Vec<_> = optional
+        .iter()
+        .map(|(key, description)| hint_size(ui, width, key, description))
+        .collect();
+    let height = |chosen: &[usize], last: egui::Vec2| -> f32 {
+        let mut used = start;
+        let mut total = 0.0;
+        let mut row = ui.spacing().interact_size.y;
+        for size in chosen.iter().map(|index| sizes[*index]).chain([last]) {
+            if used > 0.0 && used + size.x > width {
+                total += row + ui.spacing().item_spacing.y;
+                row = 0.0;
+                used = 0.0;
+            }
+            row = row.max(size.y);
+            used += size.x + ui.spacing().item_spacing.x;
         }
-        row = row.max(size.y);
-        used += size.x + ui.spacing().item_spacing.x;
+        total + row
+    };
+    let more = hint_size(ui, width, help, "all editor keys");
+    let mut chosen = Vec::with_capacity(optional.len());
+    for index in 0..optional.len() {
+        chosen.push(index);
+        if height(&chosen, more) > budget {
+            chosen.pop();
+        }
     }
-    if height + row > budget {
-        hint(ui, help, "all editor keys");
+    for index in &chosen {
+        let (key, description) = &optional[*index];
+        hint(ui, key, description);
+    }
+    let description = if chosen.len() == optional.len() {
+        reference.unwrap_or("keys")
     } else {
-        for (key, description) in hints {
-            hint(ui, key, description);
-        }
-    }
+        "all editor keys"
+    };
+    hint(ui, help, description);
 }
 
 /// Large branches keep their exact next strokes visible without repeating all
@@ -219,7 +246,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn many_legal_long_paths_keep_footer_teaching_within_one_reference_row() {
+    fn many_legal_long_paths_keep_complete_footer_hints_within_the_row_budget() {
         let actions = [
             EditorKey::FramePrevious,
             EditorKey::FrameNext,
@@ -318,7 +345,17 @@ mod tests {
             .collect::<Vec<_>>();
         assert!(painted.contains(&help.as_str()));
         assert!(painted.contains(&"all editor keys"));
-        assert!(!painted.contains(&bindings.key_label(EditorKey::FramePrevious).as_str()));
+        // Hints that fit keep their complete paths; the rest yield to Help.
+        let shown = actions
+            .iter()
+            .filter(|id| painted.contains(&bindings.key_label(**id).as_str()))
+            .count();
+        assert!(shown < actions.len());
+        for id in actions {
+            if painted.contains(&id.as_str()) {
+                assert!(painted.contains(&bindings.key_label(id).as_str()));
+            }
+        }
     }
 
     #[test]
