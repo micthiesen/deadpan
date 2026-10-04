@@ -14,6 +14,7 @@ test = true
 
 [dependencies]
 deadpan-core.workspace = true
+deadpan-analysis.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true

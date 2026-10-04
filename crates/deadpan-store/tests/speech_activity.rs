@@ -176,7 +176,7 @@ fn a_schema59_package_is_read_without_activity_and_upgraded_by_its_writer() -> R
     // Recreate the schema-59 layout: no speech activity table.
     let connection = Connection::open(path.join("project.sqlite"))?;
     connection.execute_batch(
-        "DROP TABLE speech_activity; DROP TABLE shot_analysis; PRAGMA user_version=59;",
+        "DROP TABLE original_provenance; DROP TABLE speech_activity; DROP TABLE shot_analysis; PRAGMA user_version=59;",
     )?;
     drop(connection);
     let version = |path: &std::path::Path| -> Result<u32> {
@@ -215,7 +215,7 @@ fn a_schema59_package_is_read_without_activity_and_upgraded_by_its_writer() -> R
     // The migration entrypoint upgrades the same way and reports it.
     let connection = Connection::open(path.join("project.sqlite"))?;
     connection.execute_batch(
-        "DROP TABLE speech_activity; DROP TABLE shot_analysis; PRAGMA user_version=59;",
+        "DROP TABLE original_provenance; DROP TABLE speech_activity; DROP TABLE shot_analysis; PRAGMA user_version=59;",
     )?;
     drop(connection);
     let outcome = ProjectStore::migrate(&path)?;

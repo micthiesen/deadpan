@@ -22,6 +22,8 @@ mod object_storage;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod original_media;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod original_provenance;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod publication;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod publication_durability;
@@ -310,9 +312,9 @@ impl ProjectStore {
         if mode == AccessMode::ReadWrite {
             connection.pragma_update(None, "journal_mode", "WAL")?;
             connection.pragma_update(None, "synchronous", "FULL")?;
-            // The writer adds the speech activity and shot analysis tables
-            // to a schema-59 or 60 package; readers of one see no stored
-            // analyses until then.
+            // The writer adds the speech activity, shot analysis and original
+            // provenance tables to a schema-59, 60 or 61 package; readers of
+            // one see no stored analyses or provenance until then.
             schema::upgrade(&connection)?;
         } else {
             connection.pragma_update(None, "query_only", true)?;
@@ -426,6 +428,8 @@ impl ProjectStore {
         source_registration::check_stored_sizes(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         single_source::check_stored_sizes(&transaction)?;
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        original_provenance::validate_store(&transaction)?;
         let integrity: String =
             transaction.query_row("PRAGMA quick_check", [], |row| row.get(0))?;
         if integrity != "ok" {

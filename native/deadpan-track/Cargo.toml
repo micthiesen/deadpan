@@ -1,0 +1,44 @@
+[package]
+name = "deadpan-track"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+description = "Process-isolated selected-target tracking worker built on Apple Vision"
+
+[[bin]]
+name = "deadpan-track"
+path = "src/main.rs"
+
+[dependencies]
+deadpan-analysis.workspace = true
+deadpan-jobs.workspace = true
+deadpan-source.workspace = true
+rustix.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+
+[target.'cfg(target_os = "macos")'.dependencies]
+# Vision's VNTrackObjectRequest over BGRA CVPixelBuffers; see docs/DEPENDENCIES.md.
+objc2 = { version = "=0.6.4", default-features = false, features = ["std"] }
+objc2-foundation = { version = "=0.3.2", default-features = false, features = ["std", "NSArray", "NSError", "NSString"] }
+objc2-core-foundation = { version = "=0.3.2", default-features = false, features = ["std", "CFBase", "CFCGTypes", "CFDictionary"] }
+objc2-core-video = { version = "=0.3.2", default-features = false, features = ["std", "objc2", "CVBase", "CVBuffer", "CVImageBuffer", "CVPixelBuffer", "CVReturn"] }
+objc2-vision = { version = "=0.3.2", default-features = false, features = ["std", "objc2-core-foundation", "objc2-core-video", "VNObservation", "VNRequest", "VNRequestHandler", "VNTrackingRequest", "VNTrackObjectRequest", "VNTypes"] }
+
+[dev-dependencies]
+deadpan-cli = { path = "../../crates/deadpan-cli" }
+deadpan-core.workspace = true
+deadpan-plan.workspace = true
+deadpan-store.workspace = true
+serde_json.workspace = true
+tempfile.workspace = true
+
+# Only the Vision adapter in src/vision.rs opts in; everything else is safe.
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }

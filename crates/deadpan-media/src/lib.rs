@@ -33,6 +33,6 @@ pub mod source_qualification;
 mod conversion;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use conversion::{
-    CanonicalBridge, CanonicalMedia, ConversionError, InputIdentity, canonicalize,
-    canonicalize_bridge, sample_bridge,
+    CanonicalBridge, CanonicalMedia, ConversionError, InputIdentity, RemuxLimits, append_for_remux,
+    canonicalize, canonicalize_bridge, remux_av, remux_joined, sample_bridge,
 };

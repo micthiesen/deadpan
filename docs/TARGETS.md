@@ -19,9 +19,29 @@ that show it. Targets name no person.
   correction or sample at or before a time applies, and a correction wins at the
   same time. `correction_range` is the range a correction invalidates: from it to
   the next correction or the end of the span.
+- `provenance` (optional): how the samples were produced. `rule` is a closed
+  `TargetRule` (`deadpan-track-1`), `stop` a closed `TargetStop` (`range_end`,
+  `shot_boundary` or `picture_limit`: why the first run ended where the span
+  ends), and `engine` one printable line of 1–96 bytes (no control characters
+  or Unicode line/paragraph separators) naming the tracker of the latest run.
+  It is a record, never an authorization; a hand-made target omits it, and
+  documents without it are unchanged.
+
+Between two consecutive samples in the same moving state (both `Tracked` or both
+`Interpolated`) with no correction after the first up to the second,
+`region_at` interpolates linearly in exact source time, rounding each center and
+size component half to even to a millionth (sizes at least one). Nothing
+interpolates across a `Lost` sample, a change of state, a correction or from the
+initial region; there the earlier entry holds. Sparse or strided paths therefore
+move smoothly instead of stepping. Where the exact interpolation overflows (an
+extreme fractional source point), `region_at` returns `None`, as outside the
+span, so a follow uses its fallback rather than a region the target does not
+describe.
 
 Bounds: 64 targets, 4,096 samples and 256 corrections per target, and 32,768
-samples per project. Hosts compact denser tracker output before saving.
+samples per project. Hosts compact denser tracker output before saving; the
+tracking host drops only samples this interpolation reproduces within a stated
+tolerance ([tracking](TRACKING.md#saving-as-an-attention-target)).
 
 `SetTarget` and `DeleteTarget` are ordinary reversible commands. They add no
 picture time. The document map is `targets`; patches carry `targets` changes.
@@ -50,6 +70,7 @@ scale and the fallback; the target supplies the center.
 
 Target regions are in source picture coordinates. When the canvas aspect
 differs from the source's, the innermost layer's input is the fitted canvas,
-and follow centers are not yet corrected for that letterbox. Tracking itself,
-keyboard target creation and the Camera picker integration are tracked in
-[tracking](TRACKING.md) and [framing](FRAMING.md).
+and follow centers are not yet corrected for that letterbox. Headless tracking
+creates and corrects targets (`track --save`, `track-correct`; see
+[tracking](TRACKING.md)); keyboard target creation and the Camera picker
+integration remain open ([framing](FRAMING.md)).

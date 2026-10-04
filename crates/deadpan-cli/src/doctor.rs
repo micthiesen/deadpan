@@ -14,7 +14,7 @@ pub fn report() -> Result<serde_json::Value, CliError> {
         },
         "document_schema": deadpan_core::DOCUMENT_SCHEMA_VERSION,
         "database_schema": deadpan_store::DATABASE_SCHEMA_VERSION,
-        "partial": ["structural-editing-commands", "sqlite-project-history", "schema-1-through-57-development-format-refusal", "persistent-copy-registers", "resolved-compound-transactions", "native-semantic-macros", "headless-semantic-macros", "single-original-project-baseline", "native-documents-project-library", "indexed-picture-plan", "indexed-audio-plan", "worker-dsp-adapter", "source-audio-preparation", "plan-driven-source-pcm", "transparent-audio-partitions", "retained-context-split", "atomic-sequence-pause-insertion", "logical-mark-bindings", "exact-boundary-selectors", "persistent-marks", "sparse-play-overrides", "nested-occurrence-edits", "persistent-generation-requests", "persistent-generation-attempts", "authored-generated-hold-semantics", "generated-media-conversion", "native-bridge-bundle-qualification", "durable-generated-bundle-acceptance", "durable-original-byte-ownership", "identity-checked-relinking", "persistent-source-decoding", "measured-source-audio-indexes", "independent-source-audio-mapping", "independent-source-video-mapping", "exact-source-stream-placement", "measured-import-timing-candidates", "measured-original-moment-candidates", "exact-source-audio-selections", "durable-source-qualification", "atomic-source-registration-and-insertion", "background-import-preparation", "automatic-presentation-basis", "timed-basis-locking", "explicit-canvas-geometry", "shared-sdr-picture-pipeline", "authored-framing-envelopes", "ordered-canvas-framing", "captured-hold-framing", "native-camera-draft", "native-source-preview", "native-project-workspace", "native-sequence-audition", "native-original-audition", "selection-loop-audition", "native-structural-speed-editing", "root-sound-event-commands-and-mixing", "saved-beat-sound-commands", "root-sound-ripple-edit-history", "hold-audio-policy-commands"],
+        "partial": ["structural-editing-commands", "sqlite-project-history", "schema-1-through-57-development-format-refusal", "persistent-copy-registers", "resolved-compound-transactions", "native-semantic-macros", "headless-semantic-macros", "single-original-project-baseline", "headless-youtube-original-import", "native-documents-project-library", "indexed-picture-plan", "indexed-audio-plan", "worker-dsp-adapter", "source-audio-preparation", "plan-driven-source-pcm", "transparent-audio-partitions", "retained-context-split", "atomic-sequence-pause-insertion", "logical-mark-bindings", "exact-boundary-selectors", "persistent-marks", "sparse-play-overrides", "nested-occurrence-edits", "persistent-generation-requests", "persistent-generation-attempts", "authored-generated-hold-semantics", "generated-media-conversion", "native-bridge-bundle-qualification", "durable-generated-bundle-acceptance", "durable-original-byte-ownership", "identity-checked-relinking", "persistent-source-decoding", "measured-source-audio-indexes", "independent-source-audio-mapping", "independent-source-video-mapping", "exact-source-stream-placement", "measured-import-timing-candidates", "measured-original-moment-candidates", "exact-source-audio-selections", "durable-source-qualification", "atomic-source-registration-and-insertion", "background-import-preparation", "automatic-presentation-basis", "timed-basis-locking", "explicit-canvas-geometry", "shared-sdr-picture-pipeline", "authored-framing-envelopes", "ordered-canvas-framing", "captured-hold-framing", "native-camera-draft", "native-source-preview", "native-project-workspace", "native-sequence-audition", "native-original-audition", "selection-loop-audition", "native-structural-speed-editing", "root-sound-event-commands-and-mixing", "saved-beat-sound-commands", "root-sound-ripple-edit-history", "hold-audio-policy-commands"],
         "time_mapped_pcm": "bounded-continuous-preserve-before-effects",
         "room_tone_pcm": "explicit-source-range-exact-overlap-before-effects",
         "edge_faded_pcm": "authored-boundary-exceptions-after-time-mapping-before-voice-effects",
@@ -24,6 +24,29 @@ pub fn report() -> Result<serde_json::Value, CliError> {
         "render": "automatic-sdr-committed-revision-macos-apfs",
         "render_entrypoints": ["native-cmd-e-and-render-command", "closed-project-headless-render-and-recovery"],
         "render_preview_choices": ["commit-and-render", "discard-and-render", "keep-editing"],
-        "unimplemented": ["mastered-preview-audio", "full-device-and-acoustic-qualification", "full-keyboard-editor", "analysis", "ai-generation", "youtube-import", "full-render-mastering", "hdr-render", "open-project-render-ipc", "native-render-recovery-browser", "distribution"],
+        "downloader": downloader(),
+        "unimplemented": ["mastered-preview-audio", "full-device-and-acoustic-qualification", "full-keyboard-editor", "analysis", "ai-generation", "native-youtube-import", "bundled-signed-downloader", "full-render-mastering", "hdr-render", "open-project-render-ipc", "native-render-recovery-browser", "distribution"],
     }))
+}
+
+/// Pinned downloader helpers and whether they are present in the default
+/// development location. Presence is not verification; `downloader status`
+/// hashes the files and `downloader status --probe` runs them.
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+fn downloader() -> serde_json::Value {
+    use crate::youtube::helpers::{BUNDLE, EJS_VERSION, default_root};
+    let root = default_root().ok();
+    serde_json::json!({
+        "helpers": BUNDLE.iter().map(|pin| serde_json::json!({
+            "name": pin.name, "version": pin.version, "license": pin.license,
+            "present": root.as_ref().is_some_and(|root| pin.path(root).is_file()),
+        })).collect::<Vec<_>>(),
+        "ejs": EJS_VERSION,
+        "distribution": "development install; release bundling and signing remain open",
+    })
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux")))]
+fn downloader() -> serde_json::Value {
+    serde_json::Value::Null
 }

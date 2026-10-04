@@ -55,6 +55,7 @@ fn target() -> AttentionTarget {
             at: 30,
             region: region(300_000),
         }],
+        provenance: None,
     }
 }
 fn point(ticks: i64) -> SourcePoint {
@@ -264,5 +265,132 @@ fn copying_a_followed_beat_carries_its_target_to_a_destination_without_it() {
     assert_eq!(
         after.targets()[&TargetId::new("speaker").unwrap()],
         target()
+    );
+}
+
+fn sample(at: i64, x: u32, state: TrackState) -> TargetSample {
+    TargetSample {
+        at,
+        region: region(x),
+        confidence: 800,
+        state,
+    }
+}
+
+#[test]
+fn moving_samples_interpolate_but_never_across_loss_state_or_correction() {
+    let mut moving = target();
+    moving.corrections.clear();
+    moving.samples = vec![
+        sample(20, 200_000, TrackState::Tracked),
+        sample(30, 300_000, TrackState::Tracked),
+        sample(40, 400_000, TrackState::Interpolated),
+        sample(50, 500_000, TrackState::Interpolated),
+        sample(60, 500_000, TrackState::Lost),
+        sample(70, 700_000, TrackState::Lost),
+    ];
+    moving.validate(&assets()).unwrap();
+    let region_at = |target: &AttentionTarget, ticks: ExactRatio| {
+        target
+            .region_at(SourcePoint {
+                ticks,
+                time_base: base(),
+            })
+            .unwrap()
+    };
+    let at = |ticks: ExactRatio| region_at(&moving, ticks);
+    // Linear in source time, including fractional source points.
+    assert_eq!(at(ExactRatio::integer(25)).0.center[0], 250_000);
+    assert_eq!(at(ExactRatio::new(51, 2).unwrap()).0.center[0], 255_000);
+    assert_eq!(
+        at(ExactRatio::integer(25)).1,
+        TargetSource::Tracked(TrackState::Tracked)
+    );
+    // Rounded to the nearest millionth: a third of 100_000 is 33_333.3…
+    assert_eq!(at(ExactRatio::new(70, 3).unwrap()).0.center[0], 233_333);
+    assert_eq!(at(ExactRatio::integer(45)).0.center[0], 450_000);
+    // Tracked → Interpolated is a change of state: the earlier one holds.
+    assert_eq!(at(ExactRatio::integer(35)).0.center[0], 300_000);
+    // Lost samples hold; nothing interpolates from the initial region.
+    assert_eq!(at(ExactRatio::integer(65)).0.center[0], 500_000);
+    assert_eq!(at(ExactRatio::integer(15)).0, region(100_000));
+    // A correction between two samples stops interpolation from the first.
+    let mut corrected = moving.clone();
+    corrected.corrections = vec![TargetCorrection {
+        at: 28,
+        region: region(900_000),
+    }];
+    assert_eq!(
+        region_at(&corrected, ExactRatio::integer(25)).0.center[0],
+        200_000
+    );
+    assert_eq!(
+        region_at(&corrected, ExactRatio::integer(29)).0,
+        region(900_000)
+    );
+}
+
+#[test]
+fn provenance_is_optional_enumerated_bounded_and_round_trips() {
+    let json = serde_json::to_value(target()).unwrap();
+    assert!(json.get("provenance").is_none());
+    let mut recorded = target();
+    recorded.provenance = Some(TargetProvenance {
+        rule: TargetRule::DeadpanTrack1,
+        engine: "Apple Vision VNTrackObjectRequest 2 accurate".into(),
+        stop: TargetStop::ShotBoundary,
+    });
+    recorded.validate(&assets()).unwrap();
+    let value = serde_json::to_value(&recorded).unwrap();
+    assert_eq!(value["provenance"]["rule"], "deadpan-track-1");
+    assert_eq!(value["provenance"]["stop"], "shot_boundary");
+    assert_eq!(
+        serde_json::from_value::<AttentionTarget>(value.clone()).unwrap(),
+        recorded
+    );
+    // Unknown rules and stop reasons are not admitted.
+    for (field, unknown) in [("rule", "deadpan-track-9"), ("stop", "tired")] {
+        let mut forged = value.clone();
+        forged["provenance"][field] = unknown.into();
+        assert!(serde_json::from_value::<AttentionTarget>(forged).is_err());
+    }
+    for invalid in [
+        "",
+        "line\nbreak",
+        "line\u{2028}separator",
+        "para\u{2029}separator",
+        "next\u{85}line",
+        &"x".repeat(97),
+    ] {
+        let mut bad = recorded.clone();
+        bad.provenance.as_mut().unwrap().engine = invalid.into();
+        assert!(bad.validate(&assets()).is_err(), "{invalid:?}");
+    }
+}
+
+#[test]
+fn an_unrepresentable_interpolation_is_unavailable_not_a_held_region() {
+    let mut moving = target();
+    moving.corrections.clear();
+    moving.samples = vec![
+        sample(20, 200_000, TrackState::Tracked),
+        sample(30, 300_000, TrackState::Tracked),
+    ];
+    // A point between the samples with a huge exact denominator: scaling its
+    // offset by the region's movement overflows i128.
+    let denominator = (1_i128 << 122) + 3;
+    let point = SourcePoint {
+        ticks: ExactRatio::new(25 * denominator + 1, denominator).unwrap(),
+        time_base: base(),
+    };
+    assert!(point.ticks.compare_integer(25).is_gt() && point.ticks.compare_integer(26).is_lt());
+    assert_eq!(moving.region_at(point), None);
+    // Ordinary points still interpolate.
+    assert_eq!(
+        moving.region_at(SourcePoint {
+            ticks: ExactRatio::integer(25),
+            time_base: base(),
+        }),
+        Some((region(250_000), TargetSource::Tracked(TrackState::Tracked)))
     );
 }

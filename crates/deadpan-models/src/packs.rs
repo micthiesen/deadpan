@@ -630,14 +630,14 @@ fn download_file(
 }
 
 /// How often a download checks for cancellation while waiting for data.
-const POLL: Duration = Duration::from_millis(200);
+pub const POLL: Duration = Duration::from_millis(200);
 /// A body that delivers nothing for this long is abandoned and resumed later.
-const STALL: Duration = Duration::from_secs(60);
+pub const STALL: Duration = Duration::from_secs(60);
 
 /// Read a response body on its own thread, so cancellation and stall
 /// detection never wait on a blocked socket read. An abandoned reader ends
 /// when its read returns and the receiver is gone.
-fn read_in_background(mut body: Box<dyn Read + Send>) -> mpsc::Receiver<io::Result<Vec<u8>>> {
+pub fn read_in_background(mut body: Box<dyn Read + Send>) -> mpsc::Receiver<io::Result<Vec<u8>>> {
     let (sender, receiver) = mpsc::sync_channel(4);
     std::thread::spawn(move || {
         loop {
@@ -718,10 +718,17 @@ pub struct HttpsTransport {
 
 impl Default for HttpsTransport {
     fn default() -> Self {
+        Self::with_user_agent(concat!("Deadpan/", env!("CARGO_PKG_VERSION")))
+    }
+}
+
+impl HttpsTransport {
+    /// The same HTTPS-only, redirect-bounded transport with another user agent.
+    pub fn with_user_agent(user_agent: &str) -> Self {
         let agent = ureq::Agent::config_builder()
             .https_only(true)
             .max_redirects(5)
-            .user_agent(concat!("Deadpan/", env!("CARGO_PKG_VERSION")))
+            .user_agent(user_agent)
             .timeout_connect(Some(std::time::Duration::from_secs(20)))
             .timeout_recv_response(Some(std::time::Duration::from_secs(60)))
             .build()

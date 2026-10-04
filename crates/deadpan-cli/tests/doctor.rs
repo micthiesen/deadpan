@@ -26,7 +26,13 @@ fn doctor_reports_real_timing_probe_and_missing_capabilities() {
         report["render_preview_choices"],
         serde_json::json!(["commit-and-render", "discard-and-render", "keep-editing"])
     );
+    let helpers = report["downloader"]["helpers"].as_array().unwrap();
+    assert_eq!(helpers[0]["name"], "yt-dlp");
+    assert_eq!(helpers[0]["version"], "2026.08.19");
+    assert_eq!(helpers[1]["name"], "deno");
+    assert_eq!(report["downloader"]["ejs"], "0.8.0");
     let missing = report["unimplemented"].as_array().unwrap();
+    assert!(missing.contains(&serde_json::json!("native-youtube-import")));
     assert!(!missing.contains(&serde_json::json!("export")));
     for capability in [
         "full-render-mastering",

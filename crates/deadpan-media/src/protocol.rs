@@ -374,6 +374,93 @@ pub enum WorkerReply {
     Failure { code: String, message: String },
 }
 
+/// First worker argument selecting stream-copy assembly instead of conversion.
+pub const REMUX_ARGUMENT: &str = "remux";
+pub const REMUX_PROTOCOL_VERSION: u32 = 1;
+/// Upper bound on one remux's assembled output.
+pub const MAX_REMUX_OUTPUT_BYTES: u64 = 2 * MAX_FILE_BYTES;
+const MAX_REMUX_TIMEOUT_MS: u64 = 24 * 60 * 60 * 1000;
+/// Packets of either stream; bounds report values independently of the input.
+const MAX_REMUX_PACKETS: u64 = 50_000_000;
+
+/// Assemble one H.264 picture stream and one AAC sound stream, each delivered
+/// in its own MP4 container, into one progressive MP4 by stream copy. The
+/// worker's stdin carries the picture input followed by the sound input.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RemuxRequest {
+    pub protocol: u32,
+    pub video_byte_length: u64,
+    pub audio_byte_length: u64,
+    pub max_output_bytes: u64,
+    pub timeout_ms: u64,
+}
+
+impl RemuxRequest {
+    pub fn validate(&self) -> Result<(), ContractError> {
+        if self.protocol != REMUX_PROTOCOL_VERSION {
+            return Err(ContractError("unsupported remux protocol"));
+        }
+        if self.video_byte_length == 0
+            || self.audio_byte_length == 0
+            || self.video_byte_length > MAX_FILE_BYTES
+            || self.audio_byte_length > MAX_FILE_BYTES
+        {
+            return Err(ContractError("remux inputs must be nonempty and bounded"));
+        }
+        if self.max_output_bytes == 0 || self.max_output_bytes > MAX_REMUX_OUTPUT_BYTES {
+            return Err(ContractError("remux output budget is out of range"));
+        }
+        if self.timeout_ms == 0 || self.timeout_ms > MAX_REMUX_TIMEOUT_MS {
+            return Err(ContractError("remux deadline is out of range"));
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RemuxReport {
+    pub protocol: u32,
+    pub output_bytes: u64,
+    pub video_packets: u64,
+    pub audio_packets: u64,
+    pub width: u32,
+    pub height: u32,
+    pub sample_rate: u32,
+    pub channels: u32,
+}
+
+impl RemuxReport {
+    pub fn validate_for(&self, request: &RemuxRequest) -> Result<(), ContractError> {
+        if self.protocol != REMUX_PROTOCOL_VERSION
+            || self.output_bytes == 0
+            || self.output_bytes > request.max_output_bytes
+            || self.video_packets == 0
+            || self.audio_packets == 0
+            || self.video_packets.saturating_add(self.audio_packets) > MAX_REMUX_PACKETS
+            || self.width == 0
+            || self.height == 0
+            || self.width > 8192
+            || self.height > 8192
+            || self.sample_rate == 0
+            || self.sample_rate > 384_000
+            || self.channels == 0
+            || self.channels > 64
+        {
+            return Err(ContractError("remux report violates its contract"));
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "status", rename_all = "snake_case", deny_unknown_fields)]
+pub enum RemuxReply {
+    Success { report: RemuxReport },
+    Failure { code: String, message: String },
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

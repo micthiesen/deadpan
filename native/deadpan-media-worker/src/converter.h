@@ -47,4 +47,26 @@ int deadpan_convert(int input_fd, int output_fd, int scratch_fd,
                     DeadpanConversionReport *report,
                     DeadpanConversionError *error);
 
+typedef struct {
+    uint64_t video_byte_length;
+    uint64_t audio_byte_length;
+    uint64_t max_output_bytes;
+    uint64_t timeout_ms;
+} DeadpanRemuxRequest;
+
+typedef struct {
+    uint64_t output_bytes;
+    uint64_t video_packets;
+    uint64_t audio_packets;
+    uint32_t width;
+    uint32_t height;
+    uint32_t sample_rate;
+    uint32_t channels;
+} DeadpanRemuxReport;
+
+/* The input descriptor holds the picture input followed immediately by the
+   sound input. */
+int deadpan_remux(int input_fd, int output_fd, const DeadpanRemuxRequest *request,
+                  DeadpanRemuxReport *report, DeadpanConversionError *error);
+
 #endif

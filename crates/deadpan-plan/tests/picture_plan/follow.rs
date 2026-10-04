@@ -49,11 +49,18 @@ fn with_target(document: ProjectDocument, end: i64, follows: &[(&str, i64)]) -> 
             asset: asset_id("video"),
             span: span(0, end),
             region: region(200_000),
-            samples: [sample(0, 200_000), sample(5005, 800_000)]
-                .into_iter()
-                .filter(|sample| sample.at < end)
-                .collect(),
+            // Consecutive tracked samples interpolate, so the move is a
+            // one-tick ramp just before frame 5.
+            samples: [
+                sample(0, 200_000),
+                sample(5004, 200_000),
+                sample(5005, 800_000),
+            ]
+            .into_iter()
+            .filter(|sample| sample.at < end)
+            .collect(),
             corrections: Vec::new(),
+            provenance: None,
         },
     )]))
     .unwrap();

@@ -68,8 +68,8 @@ project. Every read takes the expected picture count (the Original's qualified
 index length), requires the stored count and BLOB length to agree with it and
 revalidates through `ShotAnalysis::new`. `stored_shots` reads only the current
 signature version and skips an unreadable or mismatched row, so the app scans
-again. Schema 59 and 60 packages are upgraded in place by their next writer
-(see [development formats](DEVELOPMENT_FORMATS.md)).
+again. Schema 59, 60 and 61 packages are upgraded in place to the current
+schema 62 by their next writer (see [development formats](DEVELOPMENT_FORMATS.md)).
 
 ## Commands
 

@@ -845,6 +845,38 @@ The CLI uses the host defaults of 64 GiB and 300 cooperative seconds. The Rust
 host API also accepts cancellation, tighter limits and opaque bookmark data.
 See [original media](ORIGINAL_MEDIA.md) for durability and remaining import work.
 
+## One-Original projects from a file or YouTube URL
+
+```sh
+cargo run --locked -p deadpan-cli -- project create-original /tmp/example.deadpan /absolute/source.mp4
+cargo run --locked -p deadpan-cli -- downloader install
+cargo run --locked -p deadpan-cli -- downloader status --probe
+cargo run --locked -p deadpan-cli -- project create-from-url /tmp/example.deadpan 'https://youtu.be/VIDEO_ID' [--cookies /absolute/cookies.txt]
+cargo run --locked -p deadpan-cli -- project original-provenance /tmp/example.deadpan BLAKE3_DIGEST
+```
+
+`create-original` is the closed-project equivalent of native New: it creates an
+Awaiting Source [single-Original](SINGLE_ORIGINAL.md) package at the explicit
+path, retains the complete file as a managed original, qualifies its picture and
+first audio track and establishes the full-source baseline in one store
+transaction. The package is built at a hidden sibling path and renamed into
+place only once Ready, so a failure leaves nothing at the requested path.
+Headless creation keeps explicit developer paths; only the native
+app chooses `~/Documents/Deadpan`.
+
+`create-from-url` uses the pinned helpers that `downloader install` verifies
+into `~/Library/Application Support/Deadpan/helpers` (`--root`/`--helpers`
+select another absolute directory). It emits one JSON object per stdout line
+(`fetching_metadata`, `metadata` with title, author, duration, thumbnail URL and
+selected streams, `progress`, `assembling`, `creating_project`), then the
+created project and its provenance. Refusals before transfer create nothing.
+SIGINT/SIGTERM cancel the helper process group and remove the private files;
+every signal only requests cancellation.
+Errors carry actionable codes such as `YouTubeVideoUnavailable`,
+`YouTubeAgeRestricted` or `YouTubeRateLimited`. `original-provenance` reads the
+private provenance of one retained original. See
+[YouTube import](YOUTUBE_IMPORT.md) for helpers, selection, security and limits.
+
 ## Measured source registration
 
 After retention, explicitly qualify the selected streams and optionally insert

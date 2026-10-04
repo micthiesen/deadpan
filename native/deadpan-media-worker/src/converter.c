@@ -64,6 +64,9 @@ static WorkerState state;
 
 typedef struct {
     int fd;
+    /* Absolute descriptor offset of logical byte zero; one file may carry
+       several concatenated inputs. */
+    int64_t base;
     int64_t position;
     int64_t length;
     int64_t maximum;
@@ -255,7 +258,7 @@ static int descriptor_read(void *opaque, uint8_t *buffer, int buffer_size) {
     }
     ssize_t count;
     do {
-        count = pread(io->fd, buffer, amount, (off_t)io->position);
+        count = pread(io->fd, buffer, amount, (off_t)(io->base + io->position));
     } while (count < 0 && errno == EINTR);
     if (count < 0) {
         return AVERROR(errno);
@@ -275,7 +278,7 @@ static int descriptor_write(void *opaque, const uint8_t *buffer, int buffer_size
     }
     if (buffer_size < 0 || io->position < 0 ||
         (int64_t)buffer_size > io->maximum - io->position) {
-        fail("output_too_large", "FFV1 output exceeds its byte budget");
+        fail("output_too_large", "output exceeds its byte budget");
         return AVERROR(ENOSPC);
     }
     while (written < buffer_size) {
@@ -327,7 +330,7 @@ static int64_t descriptor_seek(void *opaque, int64_t offset, int whence) {
     int64_t boundary = io->writing ? io->maximum : io->length;
     if (position < 0 || position > boundary) {
         if (io->writing && position > boundary) {
-            fail("output_too_large", "FFV1 output seek exceeds its byte budget");
+            fail("output_too_large", "output seek exceeds its byte budget");
         }
         return AVERROR(EINVAL);
     }
@@ -1398,6 +1401,458 @@ cleanup:
     av_free(decoded.input_sha);
     if (!success && error->code[0] == '\0') {
         fail("internal_error", "conversion failed without a classified error");
+    }
+    return success ? 0 : 1;
+}
+
+/* ---- Stream-copy assembly of one separately delivered H.264 picture stream
+   and one AAC sound stream into a progressive MP4. No decoder or encoder is
+   opened; packets keep their exact timestamps in the muxer's time base. ---- */
+
+#define REMUX_MAX_PACKETS 50000000ULL
+
+typedef struct {
+    AVFormatContext *format;
+    OwnedAvio io;
+    AVPacket *pending;
+    int has_pending;
+    int finished;
+    int output_index;
+    uint64_t packets;
+    struct AVSHA *timing;
+} RemuxInput;
+
+static void remux_close(RemuxInput *input);
+
+/* Digest of everything that defines a stream's demuxed timing and payload:
+   timestamps and durations in the stream clock, key/discard flags, bytes and
+   the skip-samples side data that carries priming and padding trims. */
+static void remux_digest_packet(struct AVSHA *sha, const AVPacket *packet) {
+    int64_t fields[4] = {packet->pts, packet->dts, packet->duration,
+                         (int64_t)(packet->flags & (AV_PKT_FLAG_KEY | AV_PKT_FLAG_DISCARD))};
+    int64_t size = packet->size;
+    size_t side_size = 0;
+    const uint8_t *skip = av_packet_get_side_data(packet, AV_PKT_DATA_SKIP_SAMPLES, &side_size);
+    av_sha_update(sha, (const uint8_t *)fields, sizeof(fields));
+    av_sha_update(sha, (const uint8_t *)&size, sizeof(size));
+    if (packet->size > 0) {
+        av_sha_update(sha, packet->data, (size_t)packet->size);
+    }
+    av_sha_update(sha, (const uint8_t *)&side_size, sizeof(side_size));
+    if (skip != NULL && side_size > 0) {
+        av_sha_update(sha, skip, side_size);
+    }
+}
+
+static void remux_digest_stream(struct AVSHA *sha, const AVStream *stream) {
+    const AVCodecParameters *parameters = stream->codecpar;
+    /* Start time is derived from the packets, which are digested exactly. */
+    int64_t fields[6] = {stream->time_base.num, stream->time_base.den,
+                         parameters->initial_padding, parameters->trailing_padding,
+                         parameters->seek_preroll, parameters->extradata_size};
+    av_sha_update(sha, (const uint8_t *)fields, sizeof(fields));
+    if (parameters->extradata_size > 0) {
+        av_sha_update(sha, parameters->extradata, (size_t)parameters->extradata_size);
+    }
+}
+
+static int remux_new_digest(struct AVSHA **sha) {
+    *sha = av_sha_alloc();
+    if (*sha == NULL || av_sha_init(*sha, 256) < 0) {
+        return fail("resource_exhausted", "allocate remux timing digest");
+    }
+    return 1;
+}
+
+/* Re-demux the written MP4 and require every stream to match its input. */
+static int remux_verify(int output_fd, int64_t length, RemuxInput inputs[2]) {
+    RemuxInput check = {0};
+    struct AVSHA *digests[2] = {NULL, NULL};
+    uint8_t expected[32];
+    uint8_t actual[32];
+    int verified = 0;
+    if (!owned_avio_open(&check.io, output_fd, length, length, 0)) {
+        return 0;
+    }
+    check.format = avformat_alloc_context();
+    if (check.format == NULL) {
+        fail("resource_exhausted", "allocate remux verification context");
+        goto done;
+    }
+    check.format->pb = check.io.avio;
+    check.format->flags |= AVFMT_FLAG_CUSTOM_IO;
+    check.format->max_streams = MAX_STREAMS;
+    check.format->interrupt_callback.callback = deadline_interrupt;
+    check.format->interrupt_callback.opaque = &state;
+    check.format->io_open = deny_external_io;
+    check.format->protocol_whitelist = av_strdup("");
+    check.format->format_whitelist = av_strdup("mov,mp4,m4a,3gp,3g2,mj2");
+    if (check.format->protocol_whitelist == NULL || check.format->format_whitelist == NULL) {
+        fail("resource_exhausted", "allocate FFmpeg verification allowlists");
+        goto done;
+    }
+    int code = avformat_open_input(&check.format, NULL, av_find_input_format("mov"), NULL);
+    if (code < 0) {
+        fail_ffmpeg("reopen assembled MP4", code);
+        goto done;
+    }
+    if (check.format->nb_streams != 2) {
+        fail("verification_failed", "assembled MP4 does not have exactly two streams");
+        goto done;
+    }
+    check.pending = av_packet_alloc();
+    if (check.pending == NULL || !remux_new_digest(&digests[0]) ||
+        !remux_new_digest(&digests[1])) {
+        fail("resource_exhausted", "allocate remux verification state");
+        goto done;
+    }
+    for (int index = 0; index < 2; index++) {
+        remux_digest_stream(digests[index], check.format->streams[inputs[index].output_index]);
+    }
+    for (;;) {
+        code = av_read_frame(check.format, check.pending);
+        if (code == AVERROR_EOF) {
+            break;
+        }
+        if (code < 0) {
+            fail_ffmpeg("read assembled MP4 packet", code);
+            goto done;
+        }
+        for (int index = 0; index < 2; index++) {
+            if (check.pending->stream_index == inputs[index].output_index) {
+                remux_digest_packet(digests[index], check.pending);
+            }
+        }
+        av_packet_unref(check.pending);
+        if (!within_deadline()) {
+            goto done;
+        }
+    }
+    for (int index = 0; index < 2; index++) {
+        av_sha_final(inputs[index].timing, expected);
+        av_sha_final(digests[index], actual);
+        if (memcmp(expected, actual, sizeof(expected)) != 0) {
+            fail("verification_failed",
+                 "assembled %s stream differs from its input in timing, trims or bytes",
+                 index == 0 ? "picture" : "sound");
+            goto done;
+        }
+    }
+    verified = 1;
+
+done:
+    av_free(digests[0]);
+    av_free(digests[1]);
+    remux_close(&check);
+    return verified;
+}
+
+static int remux_validate(const DeadpanRemuxRequest *request) {
+    uint64_t total;
+    if (request->video_byte_length == 0 || request->audio_byte_length == 0 ||
+        request->video_byte_length > MAX_FILE_BYTES || request->audio_byte_length > MAX_FILE_BYTES ||
+        !checked_add_u64(request->video_byte_length, request->audio_byte_length, &total) ||
+        request->max_output_bytes == 0 || request->max_output_bytes > 2 * MAX_FILE_BYTES ||
+        request->timeout_ms == 0 || request->timeout_ms > 24ULL * 60ULL * 60ULL * 1000ULL) {
+        return fail("invalid_request", "remux lengths, output budget or deadline are out of range");
+    }
+    return 1;
+}
+
+static int remux_open(RemuxInput *input, int fd, int64_t base, int64_t length,
+                      enum AVMediaType type, enum AVCodecID codec_id, const char *codec_name) {
+    const AVInputFormat *demuxer = av_find_input_format("mov");
+    int result;
+    if (demuxer == NULL) {
+        return fail("runtime_mismatch", "required MP4 demuxer is unavailable");
+    }
+    if (!owned_avio_open(&input->io, fd, length, length, 0)) {
+        return 0;
+    }
+    input->io.descriptor.base = base;
+    input->format = avformat_alloc_context();
+    if (input->format == NULL) {
+        return fail("resource_exhausted", "allocate input format context");
+    }
+    input->format->pb = input->io.avio;
+    input->format->flags |= AVFMT_FLAG_CUSTOM_IO;
+    input->format->probesize = length < MAX_PROBE_BYTES ? length : MAX_PROBE_BYTES;
+    input->format->max_streams = MAX_STREAMS;
+    input->format->interrupt_callback.callback = deadline_interrupt;
+    input->format->interrupt_callback.opaque = &state;
+    input->format->io_open = deny_external_io;
+    input->format->protocol_whitelist = av_strdup("");
+    input->format->format_whitelist = av_strdup("mov,mp4,m4a,3gp,3g2,mj2");
+    input->format->codec_whitelist = av_strdup(codec_name);
+    if (input->format->protocol_whitelist == NULL || input->format->format_whitelist == NULL ||
+        input->format->codec_whitelist == NULL) {
+        return fail("resource_exhausted", "allocate FFmpeg input allowlists");
+    }
+    result = avformat_open_input(&input->format, NULL, demuxer, NULL);
+    if (result < 0) {
+        return fail_ffmpeg("open remux input descriptor", result);
+    }
+    if (input->format->nb_streams != 1) {
+        return fail("invalid_media", "each remux input must contain exactly one stream");
+    }
+    const AVCodecParameters *parameters = input->format->streams[0]->codecpar;
+    if (parameters->codec_type != type || parameters->codec_id != codec_id) {
+        return fail("invalid_media", "remux input is not the required %s stream", codec_name);
+    }
+    if (type == AVMEDIA_TYPE_VIDEO &&
+        (parameters->width <= 0 || parameters->height <= 0 ||
+         parameters->width > 8192 || parameters->height > 8192)) {
+        return fail("invalid_media", "remux picture dimensions are out of range");
+    }
+    if (parameters->extradata_size <= 0) {
+        return fail("invalid_media", "remux %s stream lacks its decoder configuration",
+                    codec_name);
+    }
+    input->pending = av_packet_alloc();
+    if (input->pending == NULL) {
+        return fail("resource_exhausted", "allocate remux packet");
+    }
+    if (!remux_new_digest(&input->timing)) {
+        return 0;
+    }
+    remux_digest_stream(input->timing, input->format->streams[0]);
+    return within_deadline();
+}
+
+static void remux_close(RemuxInput *input) {
+    av_freep(&input->timing);
+    av_packet_free(&input->pending);
+    if (input->format != NULL) {
+        input->format->pb = NULL;
+        avformat_close_input(&input->format);
+    }
+    owned_avio_close(&input->io);
+}
+
+/* Keep one packet buffered per input so packets reach the muxer in
+   decode-time order without unbounded interleaving queues. */
+static int remux_fill(RemuxInput *input) {
+    while (!input->has_pending && !input->finished) {
+        int result = av_read_frame(input->format, input->pending);
+        if (result == AVERROR_EOF) {
+            input->finished = 1;
+            break;
+        }
+        if (result < 0) {
+            return fail_ffmpeg("read remux packet", result);
+        }
+        if (input->pending->stream_index != 0) {
+            av_packet_unref(input->pending);
+            continue;
+        }
+        if (input->pending->dts == AV_NOPTS_VALUE && input->pending->pts == AV_NOPTS_VALUE) {
+            av_packet_unref(input->pending);
+            return fail("invalid_media", "remux packet has no timestamp");
+        }
+        input->has_pending = 1;
+    }
+    return within_deadline();
+}
+
+static int64_t remux_order(const AVPacket *packet) {
+    return packet->dts != AV_NOPTS_VALUE ? packet->dts : packet->pts;
+}
+
+int deadpan_remux(int input_fd, int output_fd, const DeadpanRemuxRequest *request,
+                  DeadpanRemuxReport *report, DeadpanConversionError *error) {
+    RemuxInput inputs[2];
+    AVFormatContext *output = NULL;
+    OwnedAvio output_io;
+    struct stat metadata;
+    uint64_t start;
+    uint64_t timeout_ns;
+    int header_written = 0;
+    int success = 0;
+    int code;
+
+    memset(inputs, 0, sizeof(inputs));
+    memset(&output_io, 0, sizeof(output_io));
+    memset(report, 0, sizeof(*report));
+    memset(error, 0, sizeof(*error));
+    memset(&state, 0, sizeof(state));
+    state.error = error;
+    if (!remux_validate(request)) {
+        return 1;
+    }
+    start = monotonic_ns();
+    if (start == UINT64_MAX || !checked_mul_u64(request->timeout_ms, 1000000ULL, &timeout_ns) ||
+        !checked_add_u64(start, timeout_ns, &state.deadline_ns)) {
+        fail("invalid_request", "remux deadline overflow");
+        return 1;
+    }
+    av_log_set_level(AV_LOG_ERROR);
+    av_log_set_callback(worker_log);
+    av_max_alloc(128U * 1024U * 1024U);
+    if (!verify_runtime()) {
+        goto cleanup;
+    }
+    if (fstat(input_fd, &metadata) != 0 || !S_ISREG(metadata.st_mode) ||
+        (uint64_t)metadata.st_size != request->video_byte_length + request->audio_byte_length) {
+        fail("invalid_request", "remux input descriptor does not hold exactly both inputs");
+        goto cleanup;
+    }
+    if (fstat(output_fd, &metadata) != 0 || !S_ISREG(metadata.st_mode) || metadata.st_size != 0) {
+        fail("invalid_request", "remux output must be an empty regular file");
+        goto cleanup;
+    }
+    if (!remux_open(&inputs[0], input_fd, 0, (int64_t)request->video_byte_length,
+                    AVMEDIA_TYPE_VIDEO, AV_CODEC_ID_H264, "h264") ||
+        !remux_open(&inputs[1], input_fd, (int64_t)request->video_byte_length,
+                    (int64_t)request->audio_byte_length, AVMEDIA_TYPE_AUDIO, AV_CODEC_ID_AAC,
+                    "aac")) {
+        goto cleanup;
+    }
+    code = avformat_alloc_output_context2(&output, NULL, "mp4", NULL);
+    if (code < 0 || output == NULL) {
+        fail_ffmpeg("create MP4 output", code < 0 ? code : AVERROR_UNKNOWN);
+        goto cleanup;
+    }
+    if (!owned_avio_open(&output_io, output_fd, 0, (int64_t)request->max_output_bytes, 1)) {
+        goto cleanup;
+    }
+    output->pb = output_io.avio;
+    output->flags |= AVFMT_FLAG_CUSTOM_IO;
+    output->interrupt_callback.callback = deadline_interrupt;
+    output->interrupt_callback.opaque = &state;
+    output->io_open = deny_external_io;
+    output->protocol_whitelist = av_strdup("");
+    if (output->protocol_whitelist == NULL) {
+        fail("resource_exhausted", "allocate FFmpeg output protocol denylist");
+        goto cleanup;
+    }
+    for (int index = 0; index < 2; index++) {
+        const AVStream *source = inputs[index].format->streams[0];
+        AVStream *stream = avformat_new_stream(output, NULL);
+        if (stream == NULL) {
+            fail("resource_exhausted", "allocate MP4 stream");
+            goto cleanup;
+        }
+        code = avcodec_parameters_copy(stream->codecpar, source->codecpar);
+        if (code < 0) {
+            fail_ffmpeg("copy stream parameters", code);
+            goto cleanup;
+        }
+        stream->codecpar->codec_tag = 0;
+        stream->time_base = source->time_base;
+        stream->avg_frame_rate = source->avg_frame_rate;
+        stream->r_frame_rate = source->r_frame_rate;
+        stream->sample_aspect_ratio = source->sample_aspect_ratio;
+        stream->disposition = AV_DISPOSITION_DEFAULT;
+        const AVDictionaryEntry *language = av_dict_get(source->metadata, "language", NULL, 0);
+        if (language != NULL && av_dict_set(&stream->metadata, "language", language->value, 0) < 0) {
+            fail("resource_exhausted", "copy stream language");
+            goto cleanup;
+        }
+        inputs[index].output_index = stream->index;
+    }
+    {
+        /* Express edit lists in the picture track's own clock. The default
+           millisecond movie clock would round an initial composition delay
+           (for example 1001/30000 s) and move every picture. */
+        AVDictionary *options = NULL;
+        int timescale = inputs[0].format->streams[0]->time_base.den;
+        if (timescale <= 0 || av_dict_set_int(&options, "movie_timescale", timescale, 0) < 0) {
+            av_dict_free(&options);
+            fail("invalid_media", "picture time base cannot become the movie clock");
+            goto cleanup;
+        }
+        code = avformat_write_header(output, &options);
+        av_dict_free(&options);
+    }
+    if (code < 0) {
+        fail_ffmpeg("write MP4 header", code);
+        goto cleanup;
+    }
+    header_written = 1;
+    for (;;) {
+        RemuxInput *next = NULL;
+        if (!remux_fill(&inputs[0]) || !remux_fill(&inputs[1])) {
+            goto cleanup;
+        }
+        if (inputs[0].has_pending && inputs[1].has_pending) {
+            next = av_compare_ts(remux_order(inputs[0].pending),
+                                 inputs[0].format->streams[0]->time_base,
+                                 remux_order(inputs[1].pending),
+                                 inputs[1].format->streams[0]->time_base) <= 0
+                       ? &inputs[0]
+                       : &inputs[1];
+        } else if (inputs[0].has_pending) {
+            next = &inputs[0];
+        } else if (inputs[1].has_pending) {
+            next = &inputs[1];
+        } else {
+            break;
+        }
+        if (report->video_packets + report->audio_packets >= REMUX_MAX_PACKETS) {
+            fail("invalid_media", "remux inputs exceed the packet bound");
+            goto cleanup;
+        }
+        AVPacket *packet = next->pending;
+        remux_digest_packet(next->timing, packet);
+        av_packet_rescale_ts(packet, next->format->streams[0]->time_base,
+                             output->streams[next->output_index]->time_base);
+        packet->stream_index = next->output_index;
+        packet->pos = -1;
+        next->has_pending = 0;
+        if (next == &inputs[0]) {
+            report->video_packets++;
+        } else {
+            report->audio_packets++;
+        }
+        code = av_interleaved_write_frame(output, packet);
+        av_packet_unref(packet);
+        if (code < 0) {
+            fail_ffmpeg("write MP4 packet", code);
+            goto cleanup;
+        }
+    }
+    if (report->video_packets == 0 || report->audio_packets == 0) {
+        fail("invalid_media", "remux input stream has no packets");
+        goto cleanup;
+    }
+    code = av_write_trailer(output);
+    header_written = 0;
+    if (code < 0) {
+        fail_ffmpeg("write MP4 trailer", code);
+        goto cleanup;
+    }
+    avio_flush(output_io.avio);
+    if (output_io.avio->error < 0) {
+        fail_ffmpeg("flush MP4 output", output_io.avio->error);
+        goto cleanup;
+    }
+    if (fsync(output_fd) != 0) {
+        fail("io_failure", "synchronize MP4 output: %s", strerror(errno));
+        goto cleanup;
+    }
+    if (!remux_verify(output_fd, output_io.descriptor.length, inputs)) {
+        goto cleanup;
+    }
+    report->output_bytes = (uint64_t)output_io.descriptor.length;
+    report->width = (uint32_t)inputs[0].format->streams[0]->codecpar->width;
+    report->height = (uint32_t)inputs[0].format->streams[0]->codecpar->height;
+    report->sample_rate = (uint32_t)inputs[1].format->streams[0]->codecpar->sample_rate;
+    report->channels = (uint32_t)inputs[1].format->streams[0]->codecpar->ch_layout.nb_channels;
+    success = within_deadline();
+
+cleanup:
+    if (header_written && output != NULL) {
+        (void)av_write_trailer(output);
+    }
+    if (output != NULL) {
+        output->pb = NULL;
+        avformat_free_context(output);
+    }
+    owned_avio_close(&output_io);
+    remux_close(&inputs[0]);
+    remux_close(&inputs[1]);
+    if (!success && error->code[0] == '\0') {
+        fail("internal_error", "remux failed without a classified error");
     }
     return success ? 0 : 1;
 }

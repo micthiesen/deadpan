@@ -176,7 +176,9 @@ fn a_schema60_package_is_read_without_shots_and_upgraded_by_its_writer() -> Resu
     let path = project(&scratch)?;
     let downgrade = |path: &std::path::Path| -> Result {
         let connection = Connection::open(path.join("project.sqlite"))?;
-        connection.execute_batch("DROP TABLE shot_analysis; PRAGMA user_version=60;")?;
+        connection.execute_batch(
+            "DROP TABLE original_provenance; DROP TABLE shot_analysis; PRAGMA user_version=60;",
+        )?;
         Ok(())
     };
     let version = |path: &std::path::Path| -> Result<u32> {

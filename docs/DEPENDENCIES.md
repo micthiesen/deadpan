@@ -16,12 +16,16 @@ requires an explicit pinned FFmpeg developer prefix; see [Development](DEVELOPME
 | egui_kittest | 0.36.2 | MIT OR Apache-2.0 | Optional developer `ui-harness` feature only. Replays the production eframe app using its shared Metal renderer and AccessKit geometry. Native input and physical display qualification remain separate. |
 | image | 0.25.10 | MIT OR Apache-2.0 | Already locked; optional direct PNG capture and bounded checkpoint comparison for `ui-harness`, and (PNG feature only) the CLI's contain-resize and PNG encoding of AI hold conditioning frames. No image-diff runtime in the shipped app. |
 | rfd | 0.17.2 | MIT | macOS-only asynchronous native file/save/folder panels. Default features disabled; no shell or external dialog executable. |
-| objc2-foundation | 0.3.2 | MIT | Existing locked native dependency, now direct with narrowly selected features for safe system Documents-directory discovery through NSFileManager. No new runtime or unsafe application code. |
-| objc2 | 0.6.4 | MIT | Existing locked dependency, now direct for a safe autorelease pool around Documents discovery on the service thread. Only an owned Rust path leaves the pool. |
+| objc2-foundation | 0.3.2 | MIT | Existing locked native dependency, now direct with narrowly selected features for safe system Documents-directory discovery through NSFileManager. No new runtime or unsafe application code. Also direct in the `deadpan-track` worker for the request `NSArray` and Vision `NSError` descriptions. |
+| objc2 | 0.6.4 | MIT | Existing locked dependency, now direct for a safe autorelease pool around Documents discovery on the service thread. Only an owned Rust path leaves the pool. Also direct in the `deadpan-track` worker for Vision object ownership and a per-picture autorelease pool. |
 | muda | 0.21.0 | Apache-2.0 OR MIT | macOS-only native menu bar (default GTK features disabled). Reuses the locked objc2 0.6.4 / objc2-app-kit 0.3.2 stack; adds crossbeam-channel 0.5.17 and keyboard-types 0.8.3. Its Objective-C code stays inside the crate; the app keeps `unsafe_code = "forbid"`. |
-| ureq | 3.4.2 | MIT OR Apache-2.0 | HTTPS model-pack downloads in `deadpan-models` only: rustls 0.23 with ring, rustls-platform-verifier (system trust store), HTTPS-only redirects. No other network client is linked. |
+| ureq | 3.4.2 | MIT OR Apache-2.0 | HTTPS model-pack downloads in `deadpan-models`, whose transport the CLI also uses for pinned [downloader helper](YOUTUBE_IMPORT.md#helper-bundle) installs: rustls 0.23 with ring, rustls-platform-verifier (system trust store), HTTPS-only redirects. No other network client is linked. |
+| flate2 | 1.1.10 | MIT OR Apache-2.0 | Already locked through `png`/`ureq`; direct in `deadpan-cli` only to inflate the single entry of the hash-verified Deno release ZIP. The extracted executable is verified against its own pinned SHA-256. |
 | whisper-rs | 0.16.0 | Unlicense | macOS-only, in the `deadpan-transcribe` worker only, with Metal. Its safe abort wrapper is not used (see [transcription](TRANSCRIPTION.md)). Build uses bindgen 0.72.1 and cmake 0.1.58 with the host CMake and Clang. |
 | whisper-rs-sys / whisper.cpp | 0.15.0 / 1.8.3 | Unlicense / MIT | Vendored whisper.cpp and ggml compiled statically into the worker executable; not linked into the app or CLI. |
+| objc2-vision | 0.3.2 | Zlib OR Apache-2.0 OR MIT | macOS-only, in the `deadpan-track` worker only: bindings to the system Vision framework (`VNTrackObjectRequest`, `VNSequenceRequestHandler`, `VNDetectedObjectObservation`) with default features disabled. Vision itself ships with macOS; nothing is bundled. Its `unsafe` calls stay in the worker's documented adapter (see [tracking](TRACKING.md)). |
+| objc2-core-video | 0.3.2 | Zlib OR Apache-2.0 OR MIT | macOS-only, in `deadpan-track` only: owned BGRA `CVPixelBuffer` creation and locking for Vision input. |
+| objc2-core-foundation | 0.3.2 | Zlib OR Apache-2.0 OR MIT | Existing locked dependency, now direct in `deadpan-track` only for `CGRect` and `CFRetained` ownership of pixel buffers. |
 | wgpu | 30.0.1 | MIT OR Apache-2.0 | Already locked through eframe; direct Metal/WGSL dependency for the shared picture baseline. |
 | pollster | 1.0.1 | Apache-2.0 OR MIT | Already locked; development-only offscreen GPU qualification. |
 | serde | 1.0.229 | MIT OR Apache-2.0 | Validated domain, transaction, and protocol serialization. |
@@ -114,6 +118,27 @@ libc pin. Real APFS clone independence and forced verified-copy fallback are
 tested. No registry package or end-user runtime was added. This is partial
 storage qualification; authored import, reference collection, portable-copy
 workflow and restore/recovery UI remain open.
+
+## Downloader helpers
+
+[YouTube import](YOUTUBE_IMPORT.md) runs external helper executables; none is
+linked into Deadpan. This build accepts only these exact upstream release files.
+`deadpan-cli downloader install` is the development stand-in that downloads and
+verifies them into `~/Library/Application Support/Deadpan/helpers`; the release
+application must ship them inside its signed bundle (DP-22) with signed update
+manifests and rollback, as specification §15.2 requires.
+
+| Helper | Pinned release file | Size and SHA-256 | License | Notes |
+| --- | --- | --- | --- | --- |
+| yt-dlp | 2026.08.19 `yt-dlp_macos` (universal2 PyInstaller one-file) | 37,146,048 bytes, `0f192b7ec147ab6288885d6351d9ab67367640029b4377576ef46dd79cf7b202` (release `SHA2-256SUMS`) | Unlicense | Official executable; bundles Python 3.14.6 and its optional libraries, including `yt_dlp_ejs`. |
+| yt-dlp-ejs | 0.8.0, embedded in the yt-dlp executable | Covered by the yt-dlp hash; `downloader status --probe` reads the loaded version | Unlicense (scripts); bundled third-party JavaScript under its own notices | YouTube JavaScript challenge solver. `--no-remote-components` forbids fetching other versions. |
+| Deno | 2.9.7 `deno-aarch64-apple-darwin.zip` | 38,469,316 bytes, `5cd46d6268f6f78f5d88bdc7159d20bd44cdaa4b3303474839f87ec6fe7ae25c` (release `.sha256sum`); extracted `deno` 80,982,000 bytes, `b73737579d5a84c160e3316487594783fa5c15f4e13252a6a07050b755317f1a` | MIT | The only enabled yt-dlp JavaScript runtime, by absolute path. |
+
+Merging separately delivered picture and sound uses Deadpan's own isolated media
+worker and pinned LGPL FFmpeg 8.0.3 libraries (stream copy, no codec), not an
+`ffmpeg` executable; the developer prefix intentionally builds no `ffmpeg` program.
+Release redistribution must carry the yt-dlp, PyInstaller/Python, yt-dlp-ejs and
+Deno license notices.
 
 ## Measured media candidates
 

@@ -1,7 +1,8 @@
 # One Original, one evolving edit
 
 [Specification 1.1](spec/DEADPAN_SPEC.md) defines the V1 workflow. Choose one local
-video or, when the bundled downloader is integrated, one YouTube video. The full
+video or one YouTube video ([headless import](YOUTUBE_IMPORT.md); the native
+URL flow and signed helper bundling remain open). The full
 qualified source becomes the initial timeline. The user changes that existing
 video through cuts, repeats, Holds, reframing and sound rather than assembling
 a project from unrelated picture sources.
@@ -60,7 +61,9 @@ collision result. It does not retry partial initialization or permission errors
 as if they were naming collisions. The original display label remains separate
 from the package filename. Existing projects elsewhere can still be opened;
 they are not moved automatically. Generic headless creation retains explicit
-developer paths.
+developer paths. `project create-original` and `project create-from-url` create
+profiled projects headlessly at an explicit path through the same store
+initialization (see [headless commands](HEADLESS.md#one-original-projects-from-a-file-or-youtube-url)).
 
 New selects the source before allocating a project, so canceling the picker
 creates nothing. `CreateFromSource` allocates an Awaiting Source package, prepares
@@ -113,8 +116,8 @@ container admission pass as explicit selection, sharing opening byte/deadline
 budgets. They do not probe guessed streams or weaken allocation guards. Explicit
 stream selection remains available through the backend.
 
-The full V1 still requires sound-event authoring/mixing/placement, local YouTube
-acquisition, arbitrary ranges and splices, analysis, app generation/audition,
+The full V1 still requires sound-event authoring/mixing/placement, native YouTube
+acquisition and signed helper bundling, arbitrary ranges and splices, analysis, app generation/audition,
 playback, export and release qualification. These remain explicit in
 [Requirements](REQUIREMENTS.md). A focused interface does not remove them or
 justify exposing a control that pretends they work.

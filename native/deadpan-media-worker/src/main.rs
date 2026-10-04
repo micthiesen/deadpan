@@ -1,4 +1,4 @@
-//! Private descriptor-only FFV1 conversion helper.
+//! Private descriptor-only FFV1 conversion and MP4 stream-copy helper.
 
 use std::ffi::OsString;
 use std::io::{self, Write};
@@ -6,8 +6,8 @@ use std::os::fd::AsRawFd;
 use std::process::ExitCode;
 
 use deadpan_media::protocol::{
-    ConversionReport, MAX_REPLY_BYTES, MAX_REQUEST_BYTES, REPORT_PROTOCOL_VERSION, WorkerReply,
-    WorkerRequest,
+    ConversionReport, MAX_REPLY_BYTES, MAX_REQUEST_BYTES, REMUX_ARGUMENT, REMUX_PROTOCOL_VERSION,
+    REPORT_PROTOCOL_VERSION, RemuxReply, RemuxReport, RemuxRequest, WorkerReply, WorkerRequest,
 };
 
 #[allow(unsafe_code)]
@@ -84,7 +84,34 @@ mod ffi {
         }
     }
 
+    #[repr(C)]
+    pub struct RemuxRequest {
+        pub video_byte_length: u64,
+        pub audio_byte_length: u64,
+        pub max_output_bytes: u64,
+        pub timeout_ms: u64,
+    }
+
+    #[repr(C)]
+    #[derive(Default)]
+    pub struct RemuxReport {
+        pub output_bytes: u64,
+        pub video_packets: u64,
+        pub audio_packets: u64,
+        pub width: u32,
+        pub height: u32,
+        pub sample_rate: u32,
+        pub channels: u32,
+    }
+
     unsafe extern "C" {
+        fn deadpan_remux(
+            input_fd: c_int,
+            output_fd: c_int,
+            request: *const RemuxRequest,
+            report: *mut RemuxReport,
+            error: *mut Error,
+        ) -> c_int;
         fn deadpan_convert(
             input_fd: c_int,
             output_fd: c_int,
@@ -93,6 +120,20 @@ mod ffi {
             report: *mut Report,
             error: *mut Error,
         ) -> c_int;
+    }
+
+    #[allow(unsafe_code)]
+    pub fn remux(
+        input_fd: c_int,
+        output_fd: c_int,
+        request: &RemuxRequest,
+        report: &mut RemuxReport,
+        error: &mut Error,
+    ) -> c_int {
+        // SAFETY: all pointers reference initialized repr(C) values that remain
+        // exclusively borrowed for this synchronous call. The C adapter retains
+        // no pointer or descriptor and bounds every write by the supplied arrays.
+        unsafe { deadpan_remux(input_fd, output_fd, request, report, error) }
     }
 
     #[allow(unsafe_code)]
@@ -246,8 +287,79 @@ fn convert(request: &WorkerRequest) -> WorkerReply {
     }
 }
 
-fn emit(reply: &WorkerReply) -> io::Result<()> {
-    let mut encoded = serde_json::to_vec(reply).map_err(io::Error::other)?;
+fn parse_remux(
+    argument: Option<OsString>,
+    extra: Option<OsString>,
+) -> Result<RemuxRequest, String> {
+    if extra.is_some() {
+        return Err("remux requires exactly one JSON argument".into());
+    }
+    let encoded = argument
+        .ok_or("remux requires exactly one JSON argument")?
+        .into_string()
+        .map_err(|_| "remux request is not UTF-8")?;
+    if encoded.len() > MAX_REQUEST_BYTES {
+        return Err("remux request exceeds the wire limit".into());
+    }
+    let request: RemuxRequest =
+        serde_json::from_str(&encoded).map_err(|error| format!("invalid remux JSON: {error}"))?;
+    request.validate().map_err(|error| error.to_string())?;
+    Ok(request)
+}
+
+fn remux(request: &RemuxRequest) -> RemuxReply {
+    let native_request = ffi::RemuxRequest {
+        video_byte_length: request.video_byte_length,
+        audio_byte_length: request.audio_byte_length,
+        max_output_bytes: request.max_output_bytes,
+        timeout_ms: request.timeout_ms,
+    };
+    let mut native_report = ffi::RemuxReport::default();
+    let mut native_error = ffi::Error::default();
+    let status = ffi::remux(
+        io::stdin().as_raw_fd(),
+        io::stdout().as_raw_fd(),
+        &native_request,
+        &mut native_report,
+        &mut native_error,
+    );
+    if status != 0 {
+        let code = bounded_c_string(&native_error.code);
+        let message = bounded_c_string(&native_error.message);
+        return RemuxReply::Failure {
+            code: if code.is_empty() {
+                "internal_error".into()
+            } else {
+                code
+            },
+            message: if message.is_empty() {
+                "native remux failed without a diagnostic".into()
+            } else {
+                message
+            },
+        };
+    }
+    let report = RemuxReport {
+        protocol: REMUX_PROTOCOL_VERSION,
+        output_bytes: native_report.output_bytes,
+        video_packets: native_report.video_packets,
+        audio_packets: native_report.audio_packets,
+        width: native_report.width,
+        height: native_report.height,
+        sample_rate: native_report.sample_rate,
+        channels: native_report.channels,
+    };
+    match report.validate_for(request) {
+        Ok(()) => RemuxReply::Success { report },
+        Err(error) => RemuxReply::Failure {
+            code: "internal_error".into(),
+            message: format!("native remux report violated contract: {error}"),
+        },
+    }
+}
+
+fn emit_json(encoded: serde_json::Result<Vec<u8>>) -> io::Result<()> {
+    let mut encoded = encoded.map_err(io::Error::other)?;
     if encoded.len() + 1 > MAX_REPLY_BYTES {
         encoded = br#"{"status":"failure","code":"internal_error","message":"worker reply exceeded the wire limit"}"#.to_vec();
     }
@@ -255,6 +367,10 @@ fn emit(reply: &WorkerReply) -> io::Result<()> {
     let mut stderr = io::stderr().lock();
     stderr.write_all(&encoded)?;
     stderr.flush()
+}
+
+fn emit(reply: &WorkerReply) -> io::Result<()> {
+    emit_json(serde_json::to_vec(reply))
 }
 
 fn run() -> (WorkerReply, ExitCode) {
@@ -274,6 +390,22 @@ fn run() -> (WorkerReply, ExitCode) {
 }
 
 fn main() -> ExitCode {
+    let mut arguments = std::env::args_os().skip(1);
+    if arguments.next().as_deref() == Some(std::ffi::OsStr::new(REMUX_ARGUMENT)) {
+        let reply = match parse_remux(arguments.next(), arguments.next()) {
+            Ok(request) => remux(&request),
+            Err(message) => RemuxReply::Failure {
+                code: "invalid_request".into(),
+                message,
+            },
+        };
+        let success = matches!(reply, RemuxReply::Success { .. });
+        return if emit_json(serde_json::to_vec(&reply)).is_ok() && success {
+            ExitCode::SUCCESS
+        } else {
+            ExitCode::FAILURE
+        };
+    }
     let (reply, code) = run();
     if emit(&reply).is_err() {
         ExitCode::FAILURE

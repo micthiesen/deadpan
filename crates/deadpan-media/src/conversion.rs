@@ -17,6 +17,9 @@ use crate::protocol::{
     MAX_REQUEST_BYTES, PROTOCOL_VERSION, WorkerReply, WorkerRequest,
 };
 
+mod remux;
+pub use remux::{RemuxLimits, append_for_remux, remux_av, remux_joined};
+
 const GROUP_CLEANUP_GRACE: Duration = Duration::from_millis(250);
 
 /// SHA-256 of the closed worker artifact supplied by its declared manifest.

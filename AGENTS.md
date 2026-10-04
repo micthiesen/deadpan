@@ -76,6 +76,7 @@ Current crates:
 - `crates/deadpan-cli`: versioned headless project/command API, reused by `deadpan-app --headless`.
 - `crates/deadpan-analysis`: pure analysis annotations; validated word-timed transcripts and Silero speech activity with energy-refined pauses, both with exact Original timing, and per-picture shot change measurements. See [transcription](docs/TRANSCRIPTION.md), [speech activity](docs/SPEECH_ACTIVITY.md) and [shot detection](docs/SHOT_DETECTION.md).
 - `native/deadpan-transcribe`: process-isolated whisper.cpp worker. Its only `unsafe` is the documented abort-callback adapter; never use whisper-rs's `set_abort_callback_safe`, which aborts every encode.
+- `native/deadpan-track`: process-isolated Apple Vision selected-target tracking worker over the verified Original through `deadpan-source`. `unsafe` stays in its documented `vision.rs` adapter; tracking policy and the path-to-target mapping are pure in `deadpan-analysis`; tracking never edits, and only `track --save`/`track-correct` commit a reversible `SetTarget`. See [tracking](docs/TRACKING.md).
 
 [Architecture](docs/ARCHITECTURE.md) records Section 24's full boundary map. Add crates only when an implemented responsibility needs isolation. Do not create empty crates or feature controls that pretend to work.
 
@@ -403,7 +404,7 @@ and workspace delivery order. Keep the first child's identity separate from the
 complete result interval. See
 [atomic moves](docs/ATOMIC_MOVES.md).
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 45 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings with exact picture selections and dormant linked audio, audio edge policies, transparent Retime partitions, owned timing bindings with exact local-origin translations, retained framing clocks, root sound routes, owner-local BeatSound maps and independent sound clock journals, and binds qualified assets to immutable source receipts. Database schema 61 is current (59 added transcripts; 60 speech activity; 61 adds shot analysis). A writer upgrades a schema-59 or 60 package in place by only creating the missing empty `speech_activity`/`shot_analysis` tables; read-only opens of one see no stored analyses. Refuse schemas 1 through 58 before writer acquisition, backups, recovery or document parsing. Retain current history validation, checkpoints, accepted-media recovery and the frozen audio-context codecs still referenced by current documents. Historical qualification reports apply to their recorded revisions. See [development formats](docs/DEVELOPMENT_FORMATS.md).
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 45 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings with exact picture selections and dormant linked audio, audio edge policies, transparent Retime partitions, owned timing bindings with exact local-origin translations, retained framing clocks, root sound routes, owner-local BeatSound maps and independent sound clock journals, and binds qualified assets to immutable source receipts. Database schema 62 is current (59 added transcripts; 60 speech activity; 61 shot analysis; 62 remote-original provenance). A writer upgrades a schema-59, 60 or 61 package in place by only creating the missing empty `speech_activity`/`shot_analysis`/`original_provenance` tables; read-only opens of one see no stored analyses or provenance. Refuse schemas 1 through 58 before writer acquisition, backups, recovery or document parsing. Retain current history validation, checkpoints, accepted-media recovery and the frozen audio-context codecs still referenced by current documents. Historical qualification reports apply to their recorded revisions. See [development formats](docs/DEVELOPMENT_FORMATS.md).
 
 Audio placement offsets map current physical-local coordinates into retained
 historical-local coordinates. Rebase lattice, phase-term and reanchor templates
@@ -725,6 +726,17 @@ Host AI Hold generation is `deadpan_cli::generation`: allocate and finish on the
 writer, `run_worker` on a job thread without store access, durable transitions
 returned as records. The development runtime comes from `DEADPAN_BRIDGE_*`;
 keep the virtual-environment interpreter path unresolved. See [AI Holds](docs/AI_HOLDS.md).
+
+YouTube import (`deadpan_cli::youtube`) runs only the pinned, re-verified yt-dlp
+and Deno by absolute path through `deadpan_native_process::spawn`, with argument
+vectors, a cleared private environment, `--ignore-config`, `--no-plugin-dirs`,
+no remote components and explicit-file cookies copied `0600` and deleted. Refuse
+from metadata before transfer or package creation; Deadpan selects admissible
+streams, never yt-dlp. Merge separate streams only by the media worker's
+stream-copy `remux`, then create through `single_original::create`. Remote
+provenance is schema-62 operational metadata outside history; never store
+cookies or headers. Helper installs never overwrite a published version. See
+[YouTube import](docs/YOUTUBE_IMPORT.md).
 
 Original byte ownership is operational and separate from stream readiness.
 Database schema 44 retains content-keyed original records with monotonic location

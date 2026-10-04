@@ -18,7 +18,7 @@ use deadpan_store::checkpoint::{CheckpointHandle, CheckpointLimits, PreparedChec
 use deadpan_store::original_media::{
     LinkedOriginal, OriginalContentId, OriginalImportHandle, OriginalMediaError,
     OriginalMediaLimits, OriginalMediaRecord, OriginalOwnership, PreparedOriginalRelink,
-    PreparedOriginalRetention,
+    PreparedOriginalRetention, PreparedOriginalSnapshot,
 };
 use deadpan_store::source_registration::{PreparedSourceRegistration, SourceRegistration};
 use deadpan_store::{ProjectStore, StoreError};
@@ -279,12 +279,16 @@ fn validate_label(label: &str) -> Result<(), LiveError> {
     }
     Ok(())
 }
-fn original_limits() -> OriginalMediaLimits {
-    let maximum = SourceSessionLimits::default()
+/// Largest original both default decoders admit.
+pub(crate) fn original_byte_limit() -> u64 {
+    SourceSessionLimits::default()
         .decode
         .max_input_bytes
-        .min(AudioSessionLimits::default().decode.max_input_bytes);
-    OriginalMediaLimits::new(maximum, Duration::from_secs(300)).expect("bounded decoder defaults")
+        .min(AudioSessionLimits::default().decode.max_input_bytes)
+}
+pub(crate) fn original_limits() -> OriginalMediaLimits {
+    OriginalMediaLimits::new(original_byte_limit(), Duration::from_secs(300))
+        .expect("bounded decoder defaults")
 }
 fn record(
     store: &ProjectStore,
@@ -429,6 +433,49 @@ fn qualify(
     streams: SourceStreams,
     cancelled: &AtomicBool,
 ) -> Result<PreparedSourceRegistration, LiveError> {
+    let (original, bytes) = verified_input(&handle, record, cancelled)?;
+    let video = match streams {
+        SourceStreams::VideoOnly {} | SourceStreams::VideoAndAudio { .. } => Some(open_video(
+            &bytes,
+            registration.new_asset_id.clone(),
+            cancelled,
+        )?),
+        SourceStreams::AudioOnly { .. } => None,
+    };
+    let audio = match streams {
+        SourceStreams::VideoAndAudio {
+            audio_stream: stream,
+        }
+        | SourceStreams::AudioOnly { stream } => Some(open_audio(bytes, stream, cancelled)?),
+        SourceStreams::VideoOnly {} => None,
+    };
+    finish_qualification(original, video.as_ref(), audio.as_ref(), cancelled)
+}
+
+/// Qualify an Original the way native creation chooses its streams: the
+/// primary picture plus the container's first audio track when one exists.
+pub(crate) fn qualify_primary(
+    handle: &OriginalImportHandle,
+    record: &OriginalMediaRecord,
+    asset: AssetId,
+    cancelled: &AtomicBool,
+) -> Result<PreparedSourceRegistration, LiveError> {
+    let (original, bytes) = verified_input(handle, record, cancelled)?;
+    let video = open_video(&bytes, asset, cancelled)?;
+    let audio = video
+        .info()
+        .audio_streams
+        .first()
+        .map(|stream| open_audio(bytes, stream.stream_index, cancelled))
+        .transpose()?;
+    finish_qualification(original, Some(&video), audio.as_ref(), cancelled)
+}
+
+fn verified_input(
+    handle: &OriginalImportHandle,
+    record: &OriginalMediaRecord,
+    cancelled: &AtomicBool,
+) -> Result<(PreparedOriginalSnapshot, VerifiedSourceInput), LiveError> {
     let mut original = handle
         .snapshot_original(record, original_limits(), cancelled)
         .map_err(LiveError::store)?;
@@ -447,29 +494,39 @@ fn qualify(
         cancelled,
     )
     .map_err(|error| LiveError::new("SourceSnapshotFailed", error))?;
-    let video = match streams {
-        SourceStreams::VideoOnly {} | SourceStreams::VideoAndAudio { .. } => Some(
-            SourceSession::open_input(
-                bytes.clone(),
-                registration.new_asset_id.clone(),
-                video_limits,
-                cancelled,
-            )
-            .map_err(|error| LiveError::new("SourceVideoDecodeFailed", error))?,
-        ),
-        SourceStreams::AudioOnly { .. } => None,
-    };
-    let audio = match streams {
-        SourceStreams::VideoAndAudio {
-            audio_stream: stream,
-        }
-        | SourceStreams::AudioOnly { stream } => Some(
-            AudioSession::open_input(bytes, stream, audio_limits, cancelled)
-                .map_err(|error| LiveError::new("SourceAudioDecodeFailed", error))?,
-        ),
-        SourceStreams::VideoOnly {} => None,
-    };
-    let decoded = DecodedSourceQualification::from_sessions(video.as_ref(), audio.as_ref())
+    Ok((original, bytes))
+}
+
+fn open_video(
+    bytes: &VerifiedSourceInput,
+    asset: AssetId,
+    cancelled: &AtomicBool,
+) -> Result<SourceSession, LiveError> {
+    SourceSession::open_input(
+        bytes.clone(),
+        asset,
+        SourceSessionLimits::default(),
+        cancelled,
+    )
+    .map_err(|error| LiveError::new("SourceVideoDecodeFailed", error))
+}
+
+fn open_audio(
+    bytes: VerifiedSourceInput,
+    stream: u32,
+    cancelled: &AtomicBool,
+) -> Result<AudioSession, LiveError> {
+    AudioSession::open_input(bytes, stream, AudioSessionLimits::default(), cancelled)
+        .map_err(|error| LiveError::new("SourceAudioDecodeFailed", error))
+}
+
+fn finish_qualification(
+    original: PreparedOriginalSnapshot,
+    video: Option<&SourceSession>,
+    audio: Option<&AudioSession>,
+    cancelled: &AtomicBool,
+) -> Result<PreparedSourceRegistration, LiveError> {
+    let decoded = DecodedSourceQualification::from_sessions(video, audio)
         .map_err(|error| LiveError::store(error.into()))?;
     PreparedSourceRegistration::from_decoded(original, &decoded, cancelled)
         .map_err(LiveError::store)

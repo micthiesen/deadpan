@@ -55,6 +55,13 @@ pub(super) fn run(action: &str, arguments: &[&str]) -> Result<(), CliError> {
                 &serde_json::json!({ "protocol": 1, "originals": records, "next_after": cursor }),
             )
         }
+        ("original-provenance", [project, digest]) => {
+            let key = content(digest)?;
+            let store = ProjectStore::open(Path::new(project), AccessMode::ReadOnly)?;
+            write_json(&serde_json::json!({
+                "protocol": 1, "content": key, "provenance": store.original_provenance(&key)?
+            }))
+        }
         ("verify-original", [project, digest]) => {
             let key = content(digest)?;
             let store = ProjectStore::open(Path::new(project), AccessMode::ReadOnly)?;

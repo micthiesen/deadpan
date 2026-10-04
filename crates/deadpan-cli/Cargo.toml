@@ -34,6 +34,8 @@ rustix = { workspace = true, features = ["system", "net"] }
 deadpan-native-process.workspace = true
 tempfile.workspace = true
 signal-hook.workspace = true
+# Extracts the pinned Deno executable from its verified release archive.
+flate2 = "=1.1.10"
 # Conditioning frames for local AI holds: contain-resize and PNG encoding.
 image = { version = "=0.25.10", default-features = false, features = ["png"] }
 

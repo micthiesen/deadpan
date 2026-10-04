@@ -69,7 +69,7 @@ pub struct ShotScan {
 
 /// The qualification receipt whose pictures to scan: the single-Original
 /// project's Original by default, or an explicitly registered source.
-fn shot_receipt(
+pub(crate) fn shot_receipt(
     store: &deadpan_store::ProjectStore,
     asset: Option<&deadpan_core::AssetId>,
 ) -> Result<SourceQualificationReceipt, ShotScanError> {

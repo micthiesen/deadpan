@@ -31,10 +31,15 @@ pub mod render_worker;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod shots;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod single_original;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 mod source_registration;
 pub mod speech;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod tracking;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod transcription;
+pub mod youtube;
 
 use std::fs::File;
 use std::io::{self, Read, Write};
@@ -51,6 +56,8 @@ use serde::{Deserialize, Serialize};
 const HELP: &str = "Deadpan headless commands:
   doctor
   project create <project.deadpan> [--fps <N/D> --size <WIDTHxHEIGHT>]
+  project create-original <project.deadpan> <absolute-video>
+  project create-from-url <project.deadpan> <https-youtube-url> [--cookies <file>] [--helpers <dir>]
   project validate <project.deadpan>
   project dump <project.deadpan> --json
   project undo <project.deadpan> --expected <revision> [--dry-run]
@@ -61,6 +68,7 @@ const HELP: &str = "Deadpan headless commands:
   project register-source <project.deadpan> --request-json <request.json> [--dry-run]
   project adopt-primary-geometry <project.deadpan> --request-json <request.json> [--dry-run]
   project originals <project.deadpan> [--after <blake3-digest>]
+  project original-provenance <project.deadpan> <blake3-digest>
   project verify-original <project.deadpan> <blake3-digest>
   project relink-original <project.deadpan> <blake3-digest> <absolute-source> --expected-version <N>
   inspect-plan <project.deadpan> [--frame <N>]
@@ -83,6 +91,8 @@ const HELP: &str = "Deadpan headless commands:
   render status <project.deadpan> --job <job> [--after-attempt <ordinal>]
   render status <project.deadpan> --publications [--after <publication>]
   render status <project.deadpan> --publication <publication>
+  downloader install [--root <dir>]
+  downloader status [--root <dir>] [--probe]
   models list [--root <dir>]
   models install <pack> [--root <dir>]
   models remove <pack> [--root <dir>]
@@ -91,6 +101,8 @@ const HELP: &str = "Deadpan headless commands:
   pauses <project.deadpan> [--asset <id>]
   detect-shots <project.deadpan> [--asset <id>]
   shots <project.deadpan> [--asset <id>]
+  track <project.deadpan> --from <pts> --to <pts> --region <x,y,w,h> [--asset <id>] [--stride <n>] [--through-shots] [--save <target-id> [--label <text>] [--replace]]
+  track-correct <project.deadpan> --target <id> --at <pts> --region <x,y,w,h> [--stride <n>]
   generate-hold <project.deadpan> --hold <node-id> [--seed N]
   accept-hold <project.deadpan> --request <request-id>
 
@@ -99,6 +111,9 @@ Document dumps are inspection output; SQLite remains authoritative.
 Rendering uses automatic SDR policy, emits bounded JSON lines, and requires a closed project on qualified macOS/APFS. SIGINT/SIGTERM requests cancellation and drain.
 Open-project Render routing, the native recovery browser, full mastering and HDR output remain unavailable.
 Original retention preserves complete bytes; stream qualification and authored import remain separate.
+create-original and create-from-url make a new one-Original project with its full-source baseline.
+create-from-url uses the pinned yt-dlp/Deno helpers from `downloader install` (docs/YOUTUBE_IMPORT.md);
+cookies come only from an explicit file. You are responsible for having the rights to use imported videos.
 Audio inspection returns at most 256 stereo samples at the explicitly selected processing stage.
 Domain inspection reads raw physical context; signed START/END use its captured root grid.
 Definition inspection reads a local-zero point grid, not final timeline allocation.
@@ -115,6 +130,8 @@ pub enum CliError {
     Render(#[from] render::PublicRenderError),
     #[error("{0}")]
     Usage(String),
+    #[error(transparent)]
+    Import(#[from] youtube::ImportError),
     #[error("Unsupported command protocol {0}; expected 1")]
     Protocol(u32),
     #[error(transparent)]
@@ -154,6 +171,9 @@ pub enum CliError {
     Shots(#[from] shots::ShotScanError),
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[error(transparent)]
+    Tracking(#[from] tracking::TrackingError),
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[error(transparent)]
     Generation(#[from] generation::attempt::GenerationError),
 }
 
@@ -165,6 +185,7 @@ impl CliError {
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::Render(error) => &error.code,
             Self::Usage(_) | Self::Timing(_) | Self::Json(_) => "InvalidInput",
+            Self::Import(error) => error.code,
             Self::Protocol(_) => "ProtocolUnsupported",
             Self::Document(_) => "ProjectInvalid",
             Self::Plan(deadpan_plan::PlanError::FrameOutOfRange { .. }) => "FrameOutOfRange",
@@ -211,6 +232,14 @@ impl CliError {
             Self::Shots(shots::ShotScanError::Unavailable(_)) => "ShotDetectionUnavailable",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::Shots(_) => "ShotDetectionFailed",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::Tracking(tracking::TrackingError::Cancelled) => "TrackingCancelled",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::Tracking(tracking::TrackingError::Request(_)) => "InvalidInput",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::Tracking(tracking::TrackingError::Unavailable(_)) => "TrackingUnavailable",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::Tracking(_) => "TrackingFailed",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::Generation(error) => error.code(),
             #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -438,6 +467,10 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["models", rest @ ..] => models::run(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["downloader", rest @ ..] => youtube::helpers::run(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["project", "create-from-url", rest @ ..] => youtube::acquire::run(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["transcribe", rest @ ..] => transcription::run_transcribe(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["transcript", rest @ ..] => transcription::run_transcript(rest),
@@ -447,6 +480,10 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         ["detect-shots", rest @ ..] => shots::run_detect_shots(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["shots", rest @ ..] => shots::run_shots(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["track", rest @ ..] => tracking::run_track(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["track-correct", rest @ ..] => tracking::run_track_correct(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["generate-hold", rest @ ..] => generation::command::run_generate(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -654,9 +691,17 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         [
             "project",
-            action @ ("retain-original" | "originals" | "verify-original" | "relink-original"),
+            action @ ("retain-original"
+            | "originals"
+            | "original-provenance"
+            | "verify-original"
+            | "relink-original"),
             rest @ ..,
         ] => originals::run(action, rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["project", "create-original", path, source] => {
+            single_original::run(Path::new(path), Path::new(source))
+        }
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         [
             "project",

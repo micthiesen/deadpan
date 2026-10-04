@@ -28,6 +28,8 @@ pub const MAX_TARGET_SAMPLES: usize = 4_096;
 pub const MAX_DOCUMENT_TARGET_SAMPLES: usize = 32_768;
 /// Manual corrections one target may hold.
 pub const MAX_TARGET_CORRECTIONS: usize = 256;
+/// Bytes of each provenance label.
+pub const MAX_TARGET_PROVENANCE_BYTES: usize = 96;
 
 /// A rectangle by center and size, in millionths of the displayed picture.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -96,6 +98,58 @@ pub struct TargetCorrection {
     pub region: TargetRegion,
 }
 
+/// The versioned tracking policy that produced a target's samples.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TargetRule {
+    #[serde(rename = "deadpan-track-1")]
+    DeadpanTrack1,
+}
+
+/// Why tracking ended where the target's span ends.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum TargetStop {
+    /// The requested range ended.
+    RangeEnd,
+    /// A shot boundary began the next shot.
+    ShotBoundary,
+    /// The tracker's picture limit was reached.
+    PictureLimit,
+}
+
+/// How a target's samples were produced, for display and re-tracking. It is
+/// a record, never an authorization; a hand-made target has none.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TargetProvenance {
+    pub rule: TargetRule,
+    /// The tracker of the latest run over any of the samples, such as
+    /// `Apple Vision VNTrackObjectRequest 2 accurate`.
+    pub engine: String,
+    /// Why the first run, which set the span's end, stopped there.
+    pub stop: TargetStop,
+}
+
+impl TargetProvenance {
+    fn validate(&self) -> Result<(), DocumentError> {
+        // One printable line: no control characters and no Unicode line or
+        // paragraph separators.
+        let printable = !self.engine.is_empty()
+            && self.engine.len() <= MAX_TARGET_PROVENANCE_BYTES
+            && !self
+                .engine
+                .chars()
+                .any(|c| c.is_control() || matches!(c, '\u{2028}' | '\u{2029}'));
+        if printable {
+            Ok(())
+        } else {
+            Err(invalid(
+                "a target provenance engine is one printable line of 1–96 bytes",
+            ))
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct AttentionTarget {
@@ -109,6 +163,8 @@ pub struct AttentionTarget {
     pub samples: Vec<TargetSample>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub corrections: Vec<TargetCorrection>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provenance: Option<TargetProvenance>,
 }
 
 /// The region a target gives one source time, and where it came from.
@@ -148,6 +204,9 @@ impl AttentionTarget {
             ));
         }
         self.region.validate()?;
+        if let Some(provenance) = &self.provenance {
+            provenance.validate()?;
+        }
         if self.samples.len() > MAX_TARGET_SAMPLES
             || self.corrections.len() > MAX_TARGET_CORRECTIONS
         {
@@ -187,6 +246,20 @@ impl AttentionTarget {
     /// The region at source time `point`, or `None` outside the span or in
     /// another time base. The latest correction or sample at or before the
     /// point applies; a correction wins over a sample at the same time.
+    ///
+    /// Between two consecutive samples in the same moving state (both
+    /// `Tracked` or both `Interpolated`) with no correction after the first
+    /// one up to the second, the region is interpolated linearly in source
+    /// time, each center and size component rounded half to even to a
+    /// millionth, so sparse or strided paths do not step. Nothing is
+    /// interpolated across a `Lost` sample, a change of state, a correction or
+    /// from the initial region; there the earlier entry holds.
+    ///
+    /// Where that exact interpolation cannot be represented (an extreme
+    /// fractional source point overflows the exact arithmetic), the region is
+    /// unavailable and the result is `None`, as outside the span: a caller
+    /// such as `Follow` framing then uses its fallback rather than a region the
+    /// target does not describe.
     pub fn region_at(&self, point: SourcePoint) -> Option<(TargetRegion, TargetSource)> {
         let (start, end) = (self.span.start(), self.span.end());
         if point.time_base != start.time_base
@@ -197,23 +270,78 @@ impl AttentionTarget {
         }
         // Both lists are strictly ordered: take the last entry at or before.
         let at_or_before = |at: i64| !point.ticks.compare_integer(at).is_lt();
-        let sample = self
+        let sample_index = self
             .samples
             .partition_point(|sample| at_or_before(sample.at))
-            .checked_sub(1)
-            .map(|index| &self.samples[index]);
+            .checked_sub(1);
+        let sample = sample_index.map(|index| &self.samples[index]);
         let correction = self
             .corrections
             .partition_point(|correction| at_or_before(correction.at))
             .checked_sub(1)
             .map(|index| &self.corrections[index]);
         Some(match (sample, correction) {
-            (Some(sample), Some(correction)) if sample.at > correction.at => {
-                (sample.region, TargetSource::Tracked(sample.state))
-            }
+            (Some(sample), Some(correction)) if sample.at > correction.at => (
+                self.sample_region(sample_index?, point)?,
+                TargetSource::Tracked(sample.state),
+            ),
             (_, Some(correction)) => (correction.region, TargetSource::Manual),
-            (Some(sample), None) => (sample.region, TargetSource::Tracked(sample.state)),
+            (Some(sample), None) => (
+                self.sample_region(sample_index?, point)?,
+                TargetSource::Tracked(sample.state),
+            ),
             (None, None) => (self.region, TargetSource::Initial),
+        })
+    }
+
+    /// The region from sample `index` (the last at or before `point`),
+    /// interpolated towards the next sample where both move together, or
+    /// `None` when that interpolation overflows.
+    fn sample_region(&self, index: usize, point: SourcePoint) -> Option<TargetRegion> {
+        let first = &self.samples[index];
+        let Some(next) = self.samples.get(index + 1) else {
+            return Some(first.region);
+        };
+        let moving = matches!(first.state, TrackState::Tracked | TrackState::Interpolated);
+        let corrected = self
+            .corrections
+            .iter()
+            .any(|correction| correction.at > first.at && correction.at <= next.at);
+        if !moving
+            || next.state != first.state
+            || corrected
+            || point.ticks.compare_integer(first.at).is_eq()
+        {
+            return Some(first.region);
+        }
+        let fraction = point
+            .ticks
+            .checked_sub(ExactRatio::integer(first.at))
+            .and_then(|offset| {
+                offset.checked_div(ExactRatio::new(
+                    i128::from(next.at) - i128::from(first.at),
+                    1,
+                )?)
+            });
+        let fraction = fraction.ok()?;
+        let mix = |from: u32, to: u32, minimum: u32| -> Option<u32> {
+            let delta = ExactRatio::integer(i64::from(to) - i64::from(from));
+            let value = ExactRatio::integer(i64::from(from))
+                .checked_add(delta.checked_mul(fraction).ok()?)
+                .ok()?
+                .round_even()
+                .ok()?;
+            u32::try_from(value.clamp(i128::from(minimum), i128::from(TARGET_UNITS))).ok()
+        };
+        Some(TargetRegion {
+            center: [
+                mix(first.region.center[0], next.region.center[0], 0)?,
+                mix(first.region.center[1], next.region.center[1], 0)?,
+            ],
+            size: [
+                mix(first.region.size[0], next.region.size[0], 1)?,
+                mix(first.region.size[1], next.region.size[1], 1)?,
+            ],
         })
     }
 
