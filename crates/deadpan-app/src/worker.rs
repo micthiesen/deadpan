@@ -219,12 +219,18 @@ pub struct PreviewWorker {
 
 impl PreviewWorker {
     pub fn new(context: egui::Context) -> std::io::Result<Self> {
+        Self::named(context, "deadpan-source-preview")
+    }
+
+    /// An independent worker, such as the card thumbnail service, with its
+    /// own decoder and request slot.
+    pub fn named(context: egui::Context, name: &str) -> std::io::Result<Self> {
         let shared = Arc::new(Shared::default());
         let background = Arc::clone(&shared);
         // The single thread owns all file I/O, hashing, indexing and decoding.
         // Dropping the handle deliberately avoids a blocking GUI shutdown join.
         std::thread::Builder::new()
-            .name("deadpan-source-preview".into())
+            .name(name.into())
             .spawn(move || run(background, context))?;
         Ok(Self { shared })
     }

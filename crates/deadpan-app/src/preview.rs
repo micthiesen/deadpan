@@ -56,6 +56,7 @@ mod slip;
 mod sound_events;
 mod splice;
 mod style;
+mod thumbnails;
 mod trim;
 
 const SEARCH_ID: &str = "source-search";
@@ -130,6 +131,7 @@ pub struct DeadpanApp {
     renderer: PictureRenderer,
     // Logical drafts borrow this owner; closing one never drops in-flight work.
     junction_pictures: splice::JunctionDisplay,
+    thumbnails: thumbnails::Thumbnails,
     target: Option<RegisteredTarget>,
     workspace: Option<Arc<Workspace>>,
     import: Option<ImportStatus>,
@@ -253,6 +255,8 @@ impl DeadpanApp {
         };
         let renderer = PictureRenderer::new(&render_state.device, &render_state.queue);
         let junction_pictures = splice::JunctionDisplay::new(render_state.clone());
+        let thumbnails =
+            thumbnails::Thumbnails::new(context.egui_ctx.clone(), render_state.clone())?;
         let mut app = Self {
             #[cfg(feature = "ui-harness")]
             feedback: harness::Feedback::default(),
@@ -277,6 +281,7 @@ impl DeadpanApp {
             render_state,
             renderer,
             junction_pictures,
+            thumbnails,
             target: None,
             workspace: None,
             import: None,
@@ -3072,7 +3077,15 @@ impl DeadpanApp {
                         let sources = Arc::clone(&self.source_rows);
                         if let Some((asset, label, _)) = sources.first() {
                             let detail = format!("{} decoded video frames", self.source_length());
-                            let response = cards::original(ui, label, &detail, self.selected_sound.is_none() && self.selected_source.as_ref() == Some(asset));
+                            let thumbnail = self.workspace.as_ref().filter(|_| self.source_length() > 0).and_then(|workspace| {
+                                self.thumbnails.show(thumbnails::Key {
+                                    session: workspace.session,
+                                    revision: workspace.document.revision_id().clone(),
+                                    slot: thumbnails::Slot::Original,
+                                    view: ProjectView::Source { asset: asset.clone(), frame: SourceFrameId(0) },
+                                })
+                            });
+                            let response = cards::original(ui, label, &detail, self.selected_sound.is_none() && self.selected_source.as_ref() == Some(asset), thumbnail);
                             if response.clicked() { self.select_source(asset.clone()); }
                         }
                         ui.label(egui::RichText::new("Your starting point stays intact.").size(12.0).color(style::MUTED));
@@ -3080,7 +3093,7 @@ impl DeadpanApp {
                         ui.label(style::section_title("REUSE", false));
                         if ui.add(style::row_action(ui, "Browse", ":source")).clicked()
                             && let Some(asset) = self.workspace.as_ref().and_then(|workspace| original_asset(workspace)).cloned() { self.select_source(asset); }
-                        if ui.add_enabled(!self.service.is_busy(), style::row_action(ui, "Reuse full Original", self.editor_key(EditorKey::Insert))).on_hover_text(format!("Append the entire Original after the selected beat in the current group. Select a range in Original with {}, move with {}, then copy with {}.", self.editor_key(EditorKey::Visual), self.editor_pair(EditorKey::FramePrevious, EditorKey::FrameNext, "/"), self.bindings.key_label(EditorKey::Copy))).clicked() { self.insert(); }
+                        if ui.add_enabled(!self.service.is_busy(), style::row_action(ui, "Reuse all", self.editor_key(EditorKey::Insert))).on_hover_text(format!("Append the entire Original after the selected beat in the current group. Select a range in Original with {}, move with {}, then copy with {}.", self.editor_key(EditorKey::Visual), self.editor_pair(EditorKey::FramePrevious, EditorKey::FrameNext, "/"), self.bindings.key_label(EditorKey::Copy))).clicked() { self.insert(); }
                     } else {
                         let search_hint = format!("Find source  {}", self.editor_key(EditorKey::Search));
                         let search = ui.add(egui::TextEdit::singleline(&mut self.source_search).id(egui::Id::new(SEARCH_ID)).hint_text(search_hint).desired_width(f32::INFINITY));
@@ -3236,14 +3249,27 @@ impl DeadpanApp {
             } else {
                 None
             };
+            let markers = cards::Markers { cursor: marker, frame: self.sequence_cursor, range: self.selected_edit_range().map(|range| range.start().0 as u64..range.end().0 as u64) };
+            let reveal = std::mem::take(&mut self.reveal_beat);
+            let identity = self.workspace.as_ref().map(|workspace| (workspace.session, workspace.document.revision_id().clone()));
+            let thumbnails = &mut self.thumbnails;
+            let mut thumbnail = |beat: &BeatRow| {
+                let (session, revision) = identity.clone()?;
+                thumbnails.show(thumbnails::Key {
+                    session,
+                    revision,
+                    slot: thumbnails::Slot::Beat(beat.id.clone()),
+                    view: ProjectView::Sequence { frame: ProjectFrame(i64::try_from(beat.start).ok()?) },
+                })
+            };
             if let Some(index) = cards::strip(
                 ui,
                 layout,
                 &beats,
                 selected.as_ref(),
-                cards::Markers { cursor: marker, range: self.selected_edit_range().map(|range| range.start().0 as u64..range.end().0 as u64) },
-                self.sequence_cursor,
-                std::mem::take(&mut self.reveal_beat),
+                markers,
+                reveal,
+                &mut thumbnail,
             ) {
                 let beat = &beats[index];
                 self.bindings.clear();
@@ -3968,6 +3994,9 @@ impl eframe::App for DeadpanApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let context = ui.ctx().clone();
         let first_pass = context.current_pass_index() == 0;
+        // Cards record the thumbnails they show during this layout pass.
+        self.thumbnails
+            .begin(self.workspace.as_ref().map(|workspace| workspace.session));
         if first_pass && !self.deferred_text_input.is_empty() {
             // A field closes only after its native text is processed. Preserve
             // the later events for the resulting context, ahead of new input.
@@ -4207,6 +4236,13 @@ impl eframe::App for DeadpanApp {
                 self.dispatch_render_history(&context);
             }
             self.schedule_playback_picture();
+            let main_busy = self.presentation.loading() || self.presentation.needs_render();
+            self.thumbnails.pump(
+                &context,
+                self.workspace.as_ref(),
+                &mut self.renderer,
+                main_busy,
+            );
             self.dispatch_waiting_repeat(&context);
             self.dispatch_gain_proposal(&context);
             self.dispatch_splice(&context);
@@ -4243,6 +4279,7 @@ impl eframe::App for DeadpanApp {
         self.service.shutdown();
         self.worker.shutdown();
         self.endpoint_worker.shutdown();
+        self.thumbnails.shutdown();
         // No GPU wait on the UI. Submitted targets keep their queue callback
         // owner if shutdown ends the display before its final frame can drain.
         self.junction_pictures.clear();

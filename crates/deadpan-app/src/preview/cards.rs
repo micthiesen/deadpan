@@ -2,11 +2,42 @@
 
 use eframe::egui;
 
-use super::{BeatRow, NodeId, paint_cursor, style};
+use super::thumbnails::Painted;
+use super::{BeatRow, NodeId, fit_rect, paint_cursor, style};
+
+/// Logical height of an ordinary card thumbnail; textures render at this
+/// height times the display scale and are fitted into smaller cards.
+pub(super) const THUMBNAIL_HEIGHT: f32 = 76.0;
+const MIN_THUMBNAIL_WIDTH: f32 = 64.0;
+/// Room for a card's name, `frames · kind` and `start–end` lines.
+const MIN_TEXT_WIDTH: f32 = 112.0;
+
+/// Letterboxed picture on black, with a hairline so dark frames keep an edge.
+fn paint_thumbnail(ui: &egui::Ui, rect: egui::Rect, painted: Option<Painted>) {
+    let painter = ui.painter();
+    painter.rect_filled(rect, 4.0, egui::Color32::BLACK);
+    if let Some(Painted::Texture { texture, aspect }) = painted {
+        painter.image(
+            texture,
+            fit_rect(rect, aspect),
+            egui::Rect::from_min_max(egui::Pos2::ZERO, egui::pos2(1.0, 1.0)),
+            egui::Color32::WHITE,
+        );
+    }
+    painter.rect_stroke(
+        rect,
+        4.0,
+        egui::Stroke::new(1.0, style::BORDER),
+        egui::StrokeKind::Inside,
+    );
+}
 
 #[derive(Default)]
 pub(super) struct Markers {
+    /// Card index and fraction of the cursor badge.
     pub cursor: Option<(usize, f32)>,
+    /// The Edit frame the badge reports.
+    pub frame: u64,
     pub range: Option<std::ops::Range<u64>>,
 }
 
@@ -15,9 +46,10 @@ pub(super) fn original(
     label: &str,
     detail: &str,
     selected: bool,
+    thumbnail: Option<Painted>,
 ) -> egui::Response {
     let (rect, _) = ui.allocate_exact_size(
-        egui::vec2(ui.available_width(), 106.0),
+        egui::vec2(ui.available_width(), 118.0),
         egui::Sense::hover(),
     );
     let response = workspace_card(
@@ -29,25 +61,16 @@ pub(super) fn original(
     );
     // Space was reserved above. A scope_builder would move the parent cursor
     // back to this child's last text row and overlap the following caption.
-    let mut content = ui.new_child(egui::UiBuilder::new().max_rect(rect.shrink(12.0)));
-    egui::Frame::new()
-        .fill(style::SELECTED)
-        .corner_radius(4)
-        .inner_margin(egui::Margin::symmetric(5, 8))
-        .show(&mut content, |ui| {
-            ui.add(
-                egui::Label::new(
-                    egui::RichText::new("ORIGINAL VIDEO")
-                        .monospace()
-                        .size(10.0)
-                        .color(style::LAVENDER),
-                )
-                .truncate()
-                .selectable(false),
-            );
-        });
+    let inner = rect.shrink(10.0);
+    let picture = egui::Rect::from_min_size(inner.min, egui::vec2(inner.width(), 58.0));
+    paint_thumbnail(ui, picture, thumbnail);
+    let mut content = ui.new_child(egui::UiBuilder::new().max_rect(egui::Rect::from_min_max(
+        egui::pos2(inner.left() + 2.0, picture.bottom() + 6.0),
+        inner.max,
+    )));
+    content.spacing_mut().item_spacing.y = 2.0;
     content.add(
-        egui::Label::new(egui::RichText::new(label).strong())
+        egui::Label::new(style::semibold(label))
             .truncate()
             .selectable(false),
     );
@@ -65,8 +88,8 @@ pub(super) fn strip(
     beats: &[BeatRow],
     selected: Option<&NodeId>,
     markers: Markers,
-    cursor: u64,
     reveal: bool,
+    thumbnail: &mut dyn FnMut(&BeatRow) -> Option<Painted>,
 ) -> Option<usize> {
     let canvas_width = beats.len() as f32 * layout.card_width;
     let geometry_id = ui.make_persistent_id("beat-strip-geometry");
@@ -100,7 +123,7 @@ pub(super) fn strip(
                 origin + egui::vec2(index as f32 * layout.card_width, 0.0),
                 egui::vec2(layout.card_width - 8.0, layout.card_height),
             );
-            let response = beat_card(ui, rect, beat, index, selected == Some(&beat.id));
+            let response = beat_card(ui, rect, beat, index, selected == Some(&beat.id), thumbnail);
             if let Some(range) = &markers.range
                 && beat.frames > 0
             {
@@ -132,7 +155,7 @@ pub(super) fn strip(
             if let Some((marker_index, fraction)) = markers.cursor
                 && marker_index == index
             {
-                paint_cursor(ui, rect, fraction, cursor);
+                paint_cursor(ui, rect, fraction, markers.frame);
             }
             if response.clicked() {
                 clicked = Some(index);
@@ -148,6 +171,7 @@ fn beat_card(
     beat: &BeatRow,
     index: usize,
     selected: bool,
+    thumbnail: &mut dyn FnMut(&BeatRow) -> Option<Painted>,
 ) -> egui::Response {
     let response = workspace_card(
         ui,
@@ -165,10 +189,22 @@ fn beat_card(
         ),
     );
     let compact = rect.height() <= 64.0;
+    let mut inner = rect.shrink(if compact { 6.0 } else { 10.0 });
+    // Exact durations and boundaries outrank the picture: narrow cards keep
+    // their full text width. Zero-duration beats have no picture of their own.
+    let width = (inner.height() * 16.0 / 9.0).min(inner.width() * 0.42);
+    if beat.frames > 0
+        && width >= MIN_THUMBNAIL_WIDTH
+        && inner.width() - width - 10.0 >= MIN_TEXT_WIDTH
+    {
+        let picture = egui::Rect::from_min_size(inner.min, egui::vec2(width, inner.height()));
+        paint_thumbnail(ui, picture, thumbnail(beat));
+        inner.min.x = picture.right() + 10.0;
+    }
     let mut content = ui.new_child(
         egui::UiBuilder::new()
             .id_salt(("beat-content", &beat.id))
-            .max_rect(rect.shrink(if compact { 6.0 } else { 12.0 })),
+            .max_rect(inner),
     );
     content.spacing_mut().item_spacing.y = if compact { 2.0 } else { 6.0 };
     content.add(
@@ -184,25 +220,36 @@ fn beat_card(
         .truncate()
         .selectable(false),
     );
-    content.add(
-        egui::Label::new(
-            egui::RichText::new(&beat.kind)
-                .size(12.0)
-                .color(style::MUTED),
-        )
-        .truncate()
-        .selectable(false),
+    // Duration leads its line so a long kind truncates first; the half-open
+    // boundaries have a line of their own.
+    let mut duration = egui::text::LayoutJob::default();
+    duration.append(
+        &format!("{} f", beat.frames),
+        0.0,
+        egui::TextFormat {
+            font_id: egui::FontId::monospace(11.5),
+            color: style::TEXT,
+            valign: egui::Align::Center,
+            ..Default::default()
+        },
     );
+    duration.append(
+        &format!(" · {}", beat.kind),
+        0.0,
+        egui::TextFormat {
+            font_id: egui::FontId::proportional(12.0),
+            color: style::MUTED,
+            valign: egui::Align::Center,
+            ..Default::default()
+        },
+    );
+    content.add(egui::Label::new(duration).truncate().selectable(false));
     content.add(
         egui::Label::new(
-            egui::RichText::new(format!(
-                "{} f · {}–{}",
-                beat.frames,
-                beat.start,
-                beat.start + beat.frames,
-            ))
-            .monospace()
-            .size(11.5),
+            egui::RichText::new(format!("{}–{}", beat.start, beat.start + beat.frames))
+                .monospace()
+                .size(11.5)
+                .color(style::MUTED),
         )
         .truncate()
         .selectable(false),
@@ -287,9 +334,12 @@ mod tests {
                             layout,
                             &beats,
                             Some(&beats[30].id),
-                            Markers::default(),
-                            360,
+                            Markers {
+                                frame: 360,
+                                ..Markers::default()
+                            },
                             reveal,
+                            &mut |_| None,
                         );
                     });
                 },
@@ -371,10 +421,11 @@ mod tests {
                         Some(&selected),
                         Markers {
                             cursor: Some((marker, 0.0)),
+                            frame: beats[marker].start,
                             range: None,
                         },
-                        beats[marker].start,
                         true,
+                        &mut |_| None,
                     );
                 });
                 egui::CentralPanel::default().show(ui, |_| {});
@@ -399,8 +450,8 @@ mod tests {
                 }
                 if let egui::Shape::Text(shape) = &clipped.shape
                     && (shape.galley.text().contains(". cfr-bframes.mp4")
-                        || shape.galley.text() == "Source"
-                        || shape.galley.text().contains(" f · "))
+                        || shape.galley.text().contains(" f · ")
+                        || shape.galley.text().contains('–'))
                 {
                     assert!(viewport.contains_rect(shape.visual_bounding_rect()));
                     assert!(
@@ -488,7 +539,7 @@ mod tests {
                     egui::pos2(10.0 + index as f32 * 220.0, 10.0),
                     egui::vec2(210.0, 92.0),
                 );
-                let response = beat_card(ui, rect, &beat, index, true);
+                let response = beat_card(ui, rect, &beat, index, true, &mut |_| None);
                 assert_eq!(response.rect, rect);
                 if index == 0 {
                     id = Some(response.id);
@@ -549,8 +600,8 @@ mod tests {
                                 &beats,
                                 Some(&beats.last().unwrap().id),
                                 Markers::default(),
-                                0,
                                 true,
+                                &mut |_| None,
                             );
                         });
                         egui::CentralPanel::default().show(ui, |_| {});
@@ -652,10 +703,11 @@ mod tests {
                                             Some(&beats[count - 1].id),
                                             Markers {
                                                 cursor: Some((count - 1, 0.0)),
+                                                frame: beats[count - 1].start,
                                                 range: None,
                                             },
-                                            beats[count - 1].start,
                                             reveal,
+                                            &mut |_| None,
                                         );
                                     })
                                     .response
@@ -708,8 +760,8 @@ mod tests {
                         for clipped in &output.shapes {
                             if let egui::Shape::Text(shape) = &clipped.shape
                                 && (shape.galley.text().contains(". Original")
-                                    || shape.galley.text() == "Source"
-                                    || shape.galley.text().contains(" f · "))
+                                    || shape.galley.text().contains(" f · ")
+                                    || shape.galley.text().contains('–'))
                             {
                                 let text = shape.visual_bounding_rect();
                                 assert!(text.top() >= title.bottom());
@@ -761,8 +813,14 @@ mod tests {
                     .exact_size(width)
                     .frame(style::panel())
                     .show(ui, |ui| {
-                        card =
-                            original(ui, "cfr-bframes.mp4", "120 decoded video frames", true).rect;
+                        card = original(
+                            ui,
+                            "cfr-bframes.mp4",
+                            "120 decoded video frames",
+                            true,
+                            None,
+                        )
+                        .rect;
                         caption = ui
                             .label(
                                 egui::RichText::new("Your starting point stays intact.").size(12.0),
@@ -778,12 +836,8 @@ mod tests {
             let mut rows = 0;
             for clipped in output.shapes {
                 if let egui::Shape::Text(shape) = clipped.shape
-                    && [
-                        "ORIGINAL VIDEO",
-                        "cfr-bframes.mp4",
-                        "120 decoded video frames",
-                    ]
-                    .contains(&shape.galley.text())
+                    && ["cfr-bframes.mp4", "120 decoded video frames"]
+                        .contains(&shape.galley.text())
                 {
                     rows += 1;
                     assert!(
@@ -793,7 +847,7 @@ mod tests {
                     );
                 }
             }
-            assert_eq!(rows, 3);
+            assert_eq!(rows, 2);
         }
     }
 }

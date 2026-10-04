@@ -233,6 +233,19 @@ fn workspace(d: &mut Driver<'_>) -> Result<(), String> {
     }
     d.capture("Newly inserted card is revealed")?;
     selected_visible(d)?;
+    d.wait_for("Visible card thumbnails rendered", |app| {
+        app.thumbnails
+            .rendered_for_revision(app.workspace.as_deref())
+            >= 3
+    })?;
+    d.check(
+        "Visible cards show thumbnails of the current revision through the shared renderer",
+        d.app().thumbnails.rendered_for_revision(d.app().workspace.as_deref()) >= 3
+            && d.app().thumbnails.retained() <= 48,
+        json!({"current_revision_thumbnails":">= 3","bounded":48}),
+        json!({"current":d.app().thumbnails.rendered_for_revision(d.app().workspace.as_deref()),"retained":d.app().thumbnails.retained()}),
+    )?;
+    d.capture("Card thumbnails at the default size")?;
     for (width, height, scale) in [
         (960.0, 640.0, 1.0),
         (1492.0, 929.0, 2.0),

@@ -60,8 +60,30 @@ clean for both feature sets.
 Captured frames were inspected at 1280×820 and 960×640, including the
 workspace, nested pause, sound placement, Help and command entry.
 
-## Remaining
+## Card thumbnails
 
-Card thumbnails (DP-20) are not part of this pass. Transport buttons keep their
+[`preview/thumbnails.rs`](../../crates/deadpan-app/src/preview/thumbnails.rs)
+adds thumbnails to the Original card and to visible beat cards. A dedicated
+preview worker decodes each card's first picture from the committed workspace;
+replies render through the shared SDR pipeline, including committed framing,
+into small textures. Only cards in the visible strip request work, one decode is
+outstanding at a time, nothing renders while the main picture waits for a
+submission, and at most 48 textures are retained (least recently shown first
+out). A card keeps its previous texture until the current revision's replacement
+renders. Zero-duration beats show no picture, and cards narrower than the room
+needed for their name, `frames · kind` and `start–end` lines omit it, so exact
+values always stay readable; at 960×640 cards are text-only. Unit tests cover the
+display-order request policy, stale retention and bounded eviction; the
+`workspace` replay waits for current-revision thumbnails on visible cards.
+
+With thumbnails, the full visual replay passes with no failures and the
+release performance replay passes all 6,370 checks. Warm navigation
+input-to-picture p95 is 1.71 ms, cached Repeat 6.13 ms and Hold fallback
+6.53 ms against unchanged 50/100 ms targets (previous record 1.52/5.89/5.91 ms);
+10,000-beat navigation CPU p95 is 0.46 ms. These are small-fixture offscreen
+measurements, not full-size or physical-display latency.
+
+## Remaining
+ Transport buttons keep their
 pre-measured text geometry and older `Label  ·  Key` format. Physical VoiceOver,
 IME and display-latency acceptance remain open; replay does not establish them.

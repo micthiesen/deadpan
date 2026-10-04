@@ -63,7 +63,7 @@ pub(super) fn action_text(label: &str, key: &str, size: f32) -> egui::text::Layo
         key,
         0.0,
         egui::TextFormat {
-            font_id: FontId::monospace(size - 1.5),
+            font_id: FontId::monospace(size - 2.0),
             color: MUTED,
             valign: egui::Align::Center,
             ..Default::default()
