@@ -165,6 +165,10 @@ pub enum Action {
     },
     /// Select a word or sentence object (`iw`, `aw`, `is`, `as`).
     SelectSpeech(deadpan_core::SpeechObject),
+    /// Next / previous transcript search match (`n`, `N`).
+    SearchStep {
+        forward: bool,
+    },
     First,
     Last,
     Pane {
@@ -1568,6 +1572,14 @@ mod tests {
             keys(&mut bindings, &[Key::D, Key::Num2, Key::I, Key::W]),
             Some(Action::Invalid(_))
         ));
+        assert_eq!(
+            keys(&mut bindings, &[Key::N]),
+            Some(Action::SearchStep { forward: true })
+        );
+        assert_eq!(
+            bindings.key(Key::N, Modifiers::SHIFT, false, false),
+            Some(Action::SearchStep { forward: false })
+        );
         assert!(bindings.pending().is_empty());
     }
 

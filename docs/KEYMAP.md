@@ -71,7 +71,8 @@ The 16-key bound also applies to each composed operator-plus-motion path.
 | `camera`, `punch_in`, `creep`, `trim` | Enter a draft or apply the framing action |
 | `mark.set`, `mark.jump` | Letter-mark prefix families |
 | `register.select` | Select the register for the next copy, picture cut or paste |
-| `command`, `search`, `help` | Native command/search entry and Keys |
+| `command`, `search`, `help` | Native command/search entry and Keys; with a transcript, `search` focuses Find words |
+| `search.next`, `search.previous` | `n` / `N`: next / previous transcript match after the cursor, in Original or Your edit |
 | `pane.next`, `pane.previous`, `escape` | Fixed paths; included in the semantic catalog |
 
 ## Logical and physical keys

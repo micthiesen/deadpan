@@ -269,6 +269,15 @@ fn words_in_your_edit(
         json!({"removed":word.range.duration().frames(),"words":[0,2]}),
         json!({"removed":duration - shortened,"words":remaining}),
     )?;
+    let alpha_paint = scenarios::text_paint_visibility(d, "alpha");
+    let beta_paint = scenarios::text_paint_visibility(d, "beta");
+    let caption = scenarios::text_paint_visibility(d, "Your edit · 2 of 3 words kept");
+    d.check(
+        "In Your edit the rail lists the edit's words, without the cut one",
+        !alpha_paint.is_empty() && beta_paint.is_empty() && !caption.is_empty(),
+        json!({"alpha":"painted","beta":"absent","caption":"2 of 3 words kept"}),
+        json!({"alpha":alpha_paint,"beta":beta_paint,"caption":caption}),
+    )?;
     d.capture("Word cut from Your edit")?;
     let cut = d.revision();
     d.key(Key::U)?;
@@ -302,6 +311,60 @@ fn words_in_your_edit(
     let split_revision = d.revision();
     d.key(Key::U)?;
     d.changed(&split_revision)?;
+    d.settled()?;
+
+    // The rail search ("gam") steps through its occurrences in Your edit.
+    focus_your_edit(d)?;
+    d.chord(&[Key::G, Key::G])?;
+    let gamma = d
+        .app_mut()
+        .edit_speech()?
+        .runs()
+        .iter()
+        .find(|run| run.word == 2)
+        .map(|run| run.range.start().0 as u64)
+        .ok_or("gamma has no run in Your edit")?;
+    d.key(Key::N)?;
+    d.settled()?;
+    let next = d.app().sequence_cursor;
+    d.key_modified(Key::N, egui::Modifiers::SHIFT)?;
+    d.settled()?;
+    d.check(
+        "n and N move the Edit cursor to matching words in Your edit, wrapping",
+        next == gamma
+            && d.app().sequence_cursor == gamma
+            && d.app()
+                .message
+                .as_deref()
+                .is_some_and(|message| message.contains("wrapped")),
+        json!({"next":gamma,"previous":gamma,"wrapped":true}),
+        json!({"next":next,"previous":d.app().sequence_cursor,"message":d.app().message}),
+    )?;
+    d.events(
+        "Slash focuses Find words",
+        vec![
+            egui::Event::Key {
+                key: Key::Slash,
+                physical_key: Some(Key::Slash),
+                pressed: true,
+                repeat: false,
+                modifiers: egui::Modifiers::NONE,
+            },
+            egui::Event::Text("/".into()),
+        ],
+    )?;
+    d.settled()?;
+    let focused = d
+        .harness
+        .ctx
+        .memory(|memory| memory.has_focus(egui::Id::new(TRANSCRIPT_SEARCH_ID)));
+    d.check(
+        "/ focuses the transcript search without typing a slash",
+        focused && d.app().transcription.search_text() == "gam",
+        json!({"focused":true,"search":"gam"}),
+        json!({"focused":focused,"search":d.app().transcription.search_text()}),
+    )?;
+    d.key(Key::Escape)?;
     d.settled()?;
     Ok(())
 }

@@ -1888,9 +1888,16 @@ impl DeadpanApp {
                 }) {
                     return;
                 }
+                // With a transcript, / searches its words; n and N then step
+                // through matches in the current context.
+                if self.transcription_ready() && !self.sound_focused() {
+                    context.memory_mut(|m| m.request_focus(egui::Id::new(TRANSCRIPT_SEARCH_ID)));
+                    return;
+                }
                 self.pane = Pane::Sources;
                 context.memory_mut(|m| m.request_focus(egui::Id::new(SEARCH_ID)));
             }
+            Action::SearchStep { forward } => self.search_step(forward),
             Action::Command => {
                 self.open_command(String::new(), context);
             }
@@ -2279,7 +2286,10 @@ impl DeadpanApp {
                     let entered_text = (matches!(action, Action::Command | Action::Group)
                         && self.command_open)
                         || (action == Action::Search
-                            && context.memory(|m| m.has_focus(egui::Id::new(SEARCH_ID))));
+                            && context.memory(|m| {
+                                m.has_focus(egui::Id::new(SEARCH_ID))
+                                    || m.has_focus(egui::Id::new(TRANSCRIPT_SEARCH_ID))
+                            }));
                     if entered_text {
                         // Discard this path's earlier keys and companion text,
                         // but preserve every later native input event in order.
@@ -4063,7 +4073,8 @@ impl DeadpanApp {
                         (":scope all / :scope play N".to_owned(), "Inside a Repeat, choose the shared definition or one stable play by its current one-based number. All plays preserves existing independent overrides. Browsing never creates an override; a changed value isolates only the selected play. Nested scope choices remain explicit.".to_owned()),
                         (":source / :sequence".to_owned(), "Browse unchanged Original / work on Your edit.".to_owned()),
                         (key_labels::aliases_pair(&bindings, EditorKey::PaneNext, EditorKey::PanePrevious, " / "), "Cycle Original, Viewer, visible Inspector, Beats, and Placed sounds focus.".to_owned()),
-                        (key(EditorKey::Search), "Find a sound in V1, or a source in a legacy project.".to_owned()),
+                        (key(EditorKey::Search), "Search the Original's transcript once it is ready (Enter steps through matches); otherwise find a sound, or a source in a legacy project.".to_owned()),
+                        (key_labels::aliases_pair(&bindings, EditorKey::SearchNext, EditorKey::SearchPrevious, " / "), "Next / previous transcript match after the cursor, in the Original or as occurrences in Your edit, wrapping at the ends.".to_owned()),
                     ] { help_binding(ui, &key, &description); }
                     ui.separator();
                     ui.label(style::section_title("RESHAPE THE SELECTED BEAT", true));

@@ -105,6 +105,8 @@ pub enum BindingId {
     MacroExecute,
     Command,
     Search,
+    SearchNext,
+    SearchPrevious,
     Help,
     PaneNext,
     PanePrevious,
@@ -112,7 +114,7 @@ pub enum BindingId {
 }
 
 impl BindingId {
-    pub const ALL: [Self; 59] = [
+    pub const ALL: [Self; 61] = [
         Self::FramePrevious,
         Self::FrameNext,
         Self::BeatPrevious,
@@ -168,6 +170,8 @@ impl BindingId {
         Self::MacroExecute,
         Self::Command,
         Self::Search,
+        Self::SearchNext,
+        Self::SearchPrevious,
         Self::Help,
         Self::PaneNext,
         Self::PanePrevious,
@@ -231,6 +235,8 @@ impl BindingId {
             Self::Command => "command",
             Self::Search => "search",
             Self::Help => "help",
+            Self::SearchNext => "search.next",
+            Self::SearchPrevious => "search.previous",
             Self::PaneNext => "pane.next",
             Self::PanePrevious => "pane.previous",
             Self::Escape => "escape",
@@ -583,6 +589,8 @@ impl Rule {
             Action::Command => I::Command,
             Action::Search => I::Search,
             Action::Help => I::Help,
+            Action::SearchStep { forward: true } => I::SearchNext,
+            Action::SearchStep { forward: false } => I::SearchPrevious,
             Action::Pane { reverse: false } => I::PaneNext,
             Action::Pane { reverse: true } => I::PanePrevious,
             Action::Escape => I::Escape,
@@ -1616,6 +1624,18 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
         ),
         (Key::Colon, false, Action::Command, "command"),
         (Key::Slash, false, Action::Search, "search"),
+        (
+            Key::N,
+            false,
+            Action::SearchStep { forward: true },
+            "next match",
+        ),
+        (
+            Key::N,
+            true,
+            Action::SearchStep { forward: false },
+            "previous match",
+        ),
         (Key::Questionmark, false, Action::Help, "keys"),
     ] {
         add(&[Stroke::Key(key, shift)], action, C::Ignore, short, false);

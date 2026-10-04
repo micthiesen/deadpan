@@ -168,6 +168,24 @@ In Original, `w`, `b`, `e`, `W` and `B` move the Original cursor over the
 Original's own pictures with the same rule. Original operators with motions
 are not yet available; `v` with word motions selects a moment to copy.
 
+## Your edit in the rail
+
+While Your edit is in view, the TRANSCRIPT section lists the edit's words in
+playback order around the Edit cursor, from the same projection the motions
+use: cut words are absent, repeated words appear at each play, and the caption
+counts words kept and plays. Clicking a word moves the Edit cursor to where that
+occurrence begins. In Original the rail shows the Original's sentences.
+
+## Search keys
+
+With a transcript, `/` focuses Find words in the Original rail without typing
+the slash. Enter and Shift+Enter in the field, and `n` and `N` elsewhere, move
+to the next or previous match after the cursor in the current context: in
+Original to the picture where the matching word begins, in Your edit to each
+occurrence of a matching word in the arrangement, so a repeated or cut word is
+found where it actually plays. Both wrap at the ends and report the position.
+Without a transcript, `/` finds a sound as before.
+
 ## Failure handling
 
 A finished transcript is submitted to the project service without the side
@@ -190,7 +208,6 @@ every word per query.
 
 ## Remaining
 
-Transcript display through Your edit, `/` and `n`/`N` search integration,
 Original operators with word motions, background scheduling by visible range,
 VAD and refinement, manual correction, accuracy measurement on real speech, and
 a manager listing every pack.

@@ -11,7 +11,7 @@
 use std::ops::Range;
 use std::sync::mpsc;
 
-use deadpan_analysis::{Transcript, Word, picture_at, picture_seconds};
+use deadpan_analysis::{Transcript, picture_at, picture_seconds};
 use deadpan_cli::transcription::{TranscriptionRuntime, prepare_original_audio, transcribe};
 use deadpan_core::ProjectFrame;
 use deadpan_jobs::transcription::Language;
@@ -508,20 +508,130 @@ impl DeadpanApp {
         self.transcription.matches = matches;
     }
 
-    fn step_transcript_match(&mut self, forward: bool) {
-        let count = self.transcription.matches.len();
-        if count == 0 {
+    /// Whether the rail shows a searchable transcript.
+    pub(super) fn transcription_ready(&self) -> bool {
+        self.transcription.status == Status::Ready
+            && self
+                .workspace
+                .as_ref()
+                .and_then(|workspace| workspace.transcript.as_ref())
+                .is_some_and(|transcript| !transcript.transcript.words().is_empty())
+    }
+
+    /// `n` / `N` and Enter in Find words: the next or previous match after
+    /// the cursor in the current context, wrapping at its ends. Your edit
+    /// steps through occurrences of matching words in the arrangement.
+    pub(super) fn search_step(&mut self, forward: bool) {
+        if self.transcription.matches.is_empty() {
+            self.message = Some(if self.transcription.search.trim().is_empty() {
+                format!(
+                    "Search the transcript with {} first.",
+                    self.editor_key(EditorKey::Search)
+                )
+            } else {
+                "No transcript words match the search.".into()
+            });
             return;
         }
-        let next = match self.transcription.current_match {
-            None if forward => 0,
-            None => count - 1,
-            Some(index) if forward => (index + 1) % count,
-            Some(index) => (index + count - 1) % count,
+        let edit = self.view == View::Sequence;
+        if !edit && !self.viewing_original() {
+            self.message = Some(
+                "Transcript matches are in the Original; view the Original or Your edit.".into(),
+            );
+            return;
+        }
+        let speech = if edit {
+            self.edit_speech()
+        } else {
+            self.source_speech()
         };
-        self.transcription.current_match = Some(next);
-        let word = self.transcription.matches[next].start;
-        self.jump_to_word(word);
+        let speech = match speech {
+            Ok(speech) => speech,
+            Err(error) => {
+                self.message = Some(error);
+                return;
+            }
+        };
+        let (scope, cursor) = if edit {
+            (
+                self.scope_start as i64..self.scope_end as i64,
+                self.sequence_cursor as i64,
+            )
+        } else {
+            (0..self.source_length() as i64, self.source_cursor as i64)
+        };
+        // Each occurrence: its first frame and the match it belongs to.
+        let occurrences: Vec<(i64, usize)> = speech
+            .runs()
+            .iter()
+            .filter(|run| scope.contains(&run.range.start().0))
+            .filter_map(|run| {
+                let matched = self
+                    .transcription
+                    .matches
+                    .iter()
+                    .position(|range| range.start == run.word as usize)?;
+                Some((run.range.start().0, matched))
+            })
+            .collect();
+        let next = if forward {
+            occurrences
+                .iter()
+                .find(|(start, _)| *start > cursor)
+                .or(occurrences.first())
+        } else {
+            occurrences
+                .iter()
+                .rev()
+                .find(|(start, _)| *start < cursor)
+                .or(occurrences.last())
+        };
+        let Some((next, matched)) = next.copied() else {
+            self.message = Some(if edit {
+                "No match remains in Your edit.".into()
+            } else {
+                "No match lies on an Original picture.".into()
+            });
+            return;
+        };
+        let wrapped = if forward {
+            next <= cursor
+        } else {
+            next >= cursor
+        };
+        self.transcription.current_match = Some(matched);
+        if edit {
+            self.sequence_cursor = next as u64;
+            self.edit_range.move_to(self.sequence_cursor);
+            self.select_at_cursor();
+        } else {
+            self.source_cursor = next as u64;
+            self.moment.move_to(self.source_cursor);
+            let word = self.transcription.matches[matched].start;
+            self.transcription.chosen = Some((word, self.source_cursor));
+        }
+        self.request_picture(false);
+        let position = occurrences
+            .iter()
+            .position(|(start, _)| *start == next)
+            .unwrap_or(0);
+        self.message = Some(format!(
+            "Match {} of {} in {}{}.",
+            position + 1,
+            occurrences.len(),
+            if edit { "Your edit" } else { "the Original" },
+            if wrapped { ", wrapped" } else { "" }
+        ));
+    }
+
+    /// The Original is the viewed source.
+    fn viewing_original(&self) -> bool {
+        let original = self
+            .workspace
+            .as_ref()
+            .and_then(|workspace| original_asset(workspace))
+            .cloned();
+        self.raw_source.is_none() && original.is_some() && self.selected_source == original
     }
 
     /// The TRANSCRIPT rail section.
@@ -611,22 +721,23 @@ impl DeadpanApp {
         if search.changed() {
             self.update_transcript_search();
         }
-        if search.has_focus() {
-            self.pane = Pane::Sources;
-        }
         if let Some(forward) = self.transcription.step.take() {
-            self.step_transcript_match(forward);
+            self.search_step(forward);
         }
         if !self.transcription.search.trim().is_empty() {
             let count = self.transcription.matches.len();
+            let keys = self.editor_pair(EditorKey::SearchNext, EditorKey::SearchPrevious, " / ");
             ui.weak(match (count, self.transcription.current_match) {
                 (0, _) => "No matches".to_owned(),
-                (count, Some(index)) => format!(
-                    "{} of {count} · Enter next · Shift+Enter previous",
-                    index + 1
-                ),
-                (count, None) => format!("{count} matches · Enter jumps to the first"),
+                (count, Some(index)) => format!("{} of {count} · Enter or {keys}", index + 1),
+                (count, None) => format!("{count} matches · Enter goes to the next"),
             });
+        }
+        if self.view == View::Sequence
+            && let Ok(speech) = self.edit_speech()
+        {
+            self.edit_words(ui, &transcript, &speech);
+            return;
         }
         let current = self.current_word();
         let focus = self
@@ -655,9 +766,16 @@ impl DeadpanApp {
                             .iter()
                             .take_while(|word| word.segment == segment)
                             .count();
-                    if let Some(word) = sentence(ui, words, index..line_end, current, &highlighted)
-                    {
-                        clicked = Some(word);
+                    let entries: Vec<Entry<'_>> = (index..line_end)
+                        .map(|word| Entry {
+                            text: &words[word].text,
+                            approximate: words[word].approximate(),
+                            current: Some(word) == current,
+                            matched: highlighted.iter().any(|range| range.contains(&word)),
+                        })
+                        .collect();
+                    if let Some(offset) = phrase(ui, &entries) {
+                        clicked = Some(index + offset);
                     }
                     index = line_end;
                 }
@@ -666,19 +784,101 @@ impl DeadpanApp {
             .iter()
             .filter(|word| word.approximate())
             .count();
-        let mut caption = format!(
-            "{} words · {} · recognized on this Mac",
-            words.len(),
-            transcript.key.engine
-        );
+        let mut caption = format!("{} words · on this Mac", words.len());
         if approximate > 0 {
-            caption.push_str(&format!(
-                ". {approximate} nearby words are approximate (grey italics)."
-            ));
+            caption.push_str(&format!(" · {approximate} approximate in grey"));
         }
         ui.label(egui::RichText::new(caption).size(11.0).color(style::MUTED));
         if let Some(word) = clicked {
             self.jump_to_word(word);
+        }
+    }
+}
+
+impl DeadpanApp {
+    /// Your edit's words around the Edit cursor, in arrangement order: cut
+    /// words are absent and repeated words appear at each play. Clicking a
+    /// word moves the Edit cursor to where that occurrence begins.
+    fn edit_words(
+        &mut self,
+        ui: &mut egui::Ui,
+        transcript: &crate::project::OriginalTranscript,
+        speech: &deadpan_core::SpeechTimeline,
+    ) {
+        let words = transcript.transcript.words();
+        let runs = speech.runs();
+        if runs.is_empty() {
+            ui.weak("Your edit shows no recognized speech.");
+            return;
+        }
+        // Sentence occurrences: consecutive runs of one segment whose words advance.
+        let mut sentences: Vec<Range<usize>> = Vec::new();
+        for (index, run) in runs.iter().enumerate() {
+            match sentences.last_mut() {
+                Some(range)
+                    if runs[range.end - 1].sentence == run.sentence
+                        && runs[range.end - 1].word < run.word =>
+                {
+                    range.end = index + 1;
+                }
+                _ => sentences.push(index..index + 1),
+            }
+        }
+        let cursor = self.sequence_cursor as i64;
+        let current = runs
+            .iter()
+            .position(|run| run.range.start().0 <= cursor && cursor < run.range.end().0);
+        let near = runs
+            .partition_point(|run| run.range.end().0 <= cursor)
+            .min(runs.len() - 1);
+        let focus = sentences
+            .iter()
+            .position(|range| range.contains(&current.unwrap_or(near)))
+            .unwrap_or(0);
+        let shown = focus.saturating_sub(CONTEXT_SEGMENTS)
+            ..(focus + CONTEXT_SEGMENTS + 1).min(sentences.len());
+        let matches = self.transcription.matches.clone();
+        let mut clicked = None;
+        egui::ScrollArea::vertical()
+            .id_salt("transcript-edit-words")
+            .max_height(200.0)
+            .show(ui, |ui| {
+                for sentence in &sentences[shown] {
+                    let entries: Vec<Entry<'_>> = sentence
+                        .clone()
+                        .map(|index| {
+                            let word = &words[runs[index].word as usize];
+                            Entry {
+                                text: &word.text,
+                                approximate: word.approximate(),
+                                current: Some(index) == current,
+                                matched: matches
+                                    .iter()
+                                    .any(|range| range.contains(&(runs[index].word as usize))),
+                            }
+                        })
+                        .collect();
+                    if let Some(offset) = phrase(ui, &entries) {
+                        clicked = Some(sentence.start + offset);
+                    }
+                }
+            });
+        let kept: std::collections::BTreeSet<u32> = runs.iter().map(|run| run.word).collect();
+        ui.label(
+            egui::RichText::new(format!(
+                "Your edit · {} of {} words kept · {} plays",
+                kept.len(),
+                words.len(),
+                runs.len()
+            ))
+            .size(11.0)
+            .color(style::MUTED),
+        );
+        if let Some(index) = clicked {
+            self.sequence_cursor = runs[index].range.start().0 as u64;
+            self.edit_range.move_to(self.sequence_cursor);
+            self.select_at_cursor();
+            self.request_picture(false);
         }
     }
 }
@@ -726,39 +926,39 @@ fn run_transcription(
     ))
 }
 
-/// One sentence as a single wrapped text run. Clicking a word returns it.
-fn sentence(
-    ui: &mut egui::Ui,
-    words: &[Word],
-    range: Range<usize>,
-    current: Option<usize>,
-    matches: &[Range<usize>],
-) -> Option<usize> {
+/// One word shown in the rail.
+struct Entry<'a> {
+    text: &'a str,
+    approximate: bool,
+    current: bool,
+    matched: bool,
+}
+
+/// One sentence as a single wrapped text run. Returns the clicked entry.
+fn phrase(ui: &mut egui::Ui, entries: &[Entry<'_>]) -> Option<usize> {
     let mut job = egui::text::LayoutJob::default();
-    let mut spans = Vec::with_capacity(range.len());
-    for index in range.clone() {
-        let word = &words[index];
-        let matched = matches.iter().any(|m| m.contains(&index));
+    let mut spans = Vec::with_capacity(entries.len());
+    for entry in entries {
         let mut format = egui::TextFormat {
             font_id: egui::FontId::proportional(12.5),
-            color: if word.approximate() {
+            color: if entry.approximate {
                 style::MUTED
             } else {
                 style::TEXT
             },
-            italics: word.approximate(),
+            italics: entry.approximate,
             ..Default::default()
         };
-        if Some(index) == current {
+        if entry.current {
             format.background = style::SELECTED;
             format.color = style::LAVENDER;
         }
-        if matched {
+        if entry.matched {
             format.underline = egui::Stroke::new(1.5, style::CURSOR);
         }
         let begin = job.text.chars().count();
-        job.append(&word.text, 0.0, format.clone());
-        spans.push((begin..job.text.chars().count(), index));
+        job.append(entry.text, 0.0, format.clone());
+        spans.push(begin..job.text.chars().count());
         job.append(
             " ",
             0.0,
@@ -776,12 +976,8 @@ fn sentence(
     let position = response
         .interact_pointer_pos()
         .filter(|_| response.clicked())?;
-    let cursor = galley.cursor_from_pos(position - response.rect.min);
-    let offset = cursor.index.0;
-    spans
-        .iter()
-        .find(|(chars, _)| chars.contains(&offset))
-        .map(|(_, word)| *word)
+    let offset = galley.cursor_from_pos(position - response.rect.min).index.0;
+    spans.iter().position(|chars| chars.contains(&offset))
 }
 
 /// Words on the Edit clock and in the Original, for motions and objects.
@@ -874,15 +1070,7 @@ impl DeadpanApp {
     pub(super) fn speech_motion(&mut self, motion: deadpan_core::SpeechMotion) {
         match self.view {
             View::Source => {
-                let original = self
-                    .workspace
-                    .as_ref()
-                    .and_then(|workspace| original_asset(workspace))
-                    .cloned();
-                if self.raw_source.is_some()
-                    || original.is_none()
-                    || self.selected_source != original
-                {
+                if !self.viewing_original() {
                     self.message = Some(
                         "Word motions follow the Original's transcript; view the Original to use them."
                             .into(),
