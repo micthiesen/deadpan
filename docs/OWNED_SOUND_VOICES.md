@@ -204,6 +204,18 @@ placements. Original audio bindings cannot substitute for those records.
 See the [routed occurrence qualification](qualification/routed-occurrence-pcm-2026-10-03.md)
 for sample comparisons, exact rounding checks, review and limits.
 
+## Neutral grouping
+
+`Group`, `GroupSelection` and `Ungroup` preserve absolute time, so they keep
+saved sound clocks, timing layouts and owner recipes unchanged when the change
+lies outside every retained journal scope. A wrapper may stay in place through
+later timing edits; the journal's scope still names the same processing subtree.
+Grouping or ungrouping inside a retained scope, removing a Sequence that owns
+sounds, and selected groups that need endpoint Splits refuse atomically.
+Core tests cover direct, child, sibling and range groups plus refusals; the audio
+definition test compares rendered occurrence PCM before grouping, after a later
+Hold insertion and deletion, and after Ungroup.
+
 ## Authored bus and remaining work
 
 The canonical authored bus prepares every saved event's bounded occurrences
@@ -219,8 +231,9 @@ PCM cannot hide a revoked dependency.
 The final product still requires all of the following:
 
 - Extend independent sound clocks to edits inside a surviving processing branch.
-- Preserve or transform sound intervals through Split, Trim, Group, Repeat,
-  Retime and occurrence isolation.
+- Preserve or transform sound intervals through Split, Trim, grouping inside
+  a retained scope or with endpoint Splits, Repeat, Retime and occurrence
+  isolation.
 - Extend whole-owner copying to partial captures and timing-preserving edits;
   distinguish `ib` from `ab` without changing picture bounds.
 - Add scoped beat-sound allowances and permitted tails.

@@ -4,7 +4,7 @@
 //! timed edits can transport unchanged top-level sound-bearing subtrees; other
 //! temporal and ownership changes remain explicit refusals.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{
     Deserialize, Serialize,
@@ -257,20 +257,10 @@ pub(crate) fn validate_command(
     document: &ProjectDocument,
     command: &Command,
 ) -> Result<(), EditError> {
-    if !document.audio_bindings.sound_clocks.is_empty()
-        && matches!(
-            command,
-            Command::Group { .. } | Command::GroupSelection { .. } | Command::Ungroup { .. }
-        )
-    {
-        return Err(EditError::new(
-            EditErrorCode::InvalidCommand,
-            "group ownership changes cannot yet remap retained beat sound clocks",
-        ));
-    }
+    validate_group_ownership(document, command)?;
     if !document.beat_sounds.is_empty()
         && crate::sound_clock::edit::timing(command).is_none()
-        && !(preserves_sound_clocks(command) && !matches!(command, Command::GroupSelection { .. }))
+        && !preserves_sound_clocks(command)
     {
         return Err(EditError::new(
             EditErrorCode::InvalidCommand,
@@ -308,6 +298,77 @@ pub(crate) fn validate_command(
     Err(EditError::new(
         EditErrorCode::InvalidCommand,
         "this structural edit cannot yet preserve authored sound intervals and sample phase; remove the sound events before editing time",
+    ))
+}
+
+/// Neutral wrappers preserve absolute clocks, including the placement implicit
+/// in a journal's current scope. They must not change or remove that scope's
+/// paired subtree, split an attachment owner, or discard a group's own sounds.
+fn validate_group_ownership(
+    document: &ProjectDocument,
+    command: &Command,
+) -> Result<(), EditError> {
+    let changed = match command {
+        Command::Group { parent, .. } => parent,
+        Command::GroupSelection {
+            parent, selection, ..
+        } => {
+            if !document.beat_sounds.is_empty()
+                && document
+                    .group_selection(parent, selection)?
+                    .required_split_ids
+                    != 0
+            {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "group endpoint splits cannot yet preserve beat-owned sound clocks",
+                ));
+            }
+            parent
+        }
+        Command::Ungroup { node } => {
+            if document.beat_sounds.contains_key(node) {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "ungroup cannot yet preserve sounds owned by the removed Sequence",
+                ));
+            }
+            node
+        }
+        _ => return Ok(()),
+    };
+    let scopes: BTreeSet<_> = document
+        .audio_bindings
+        .sound_clocks
+        .values()
+        .flat_map(|events| events.values().map(|journal| journal.scope()))
+        .collect();
+    if scopes.is_empty() {
+        return Ok(());
+    }
+    // Index structural parents once, including sparse override roots. Walking
+    // the one changed ancestry avoids rescanning each shared journal's subtree.
+    let parents: BTreeMap<_, _> = document
+        .nodes()
+        .keys()
+        .flat_map(|parent| document.children(parent).map(move |child| (child, parent)))
+        .collect();
+    let mut ancestor = changed;
+    for _ in 0..=crate::MAX_DOCUMENT_DEPTH {
+        if scopes.contains(ancestor) {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "group ownership changes inside a retained beat sound scope are not yet supported",
+            ));
+        }
+        let Some(parent) = parents.get(ancestor).copied() else {
+            return Ok(());
+        };
+        ancestor = parent;
+    }
+    Err(EditError::new(
+        EditErrorCode::LimitExceeded,
+        "group sound-scope ancestry exceeds the document depth limit",
     ))
 }
 

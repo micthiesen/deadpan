@@ -690,6 +690,138 @@ fn copied_nested_sound_clocks_keep_old_pcm_labels_and_terminal_clip_across_recop
 }
 
 #[test]
+fn neutral_groups_outside_retained_sound_scopes_preserve_pcm_and_allow_later_timing_edits() {
+    let before = nested_ntsc_copy_document();
+    let inserted = insert_prefix(&before);
+    let clocked = remove_prefix(&inserted);
+    let initial_pcm = render_nested_occurrences(&clocked, 2);
+    assert_eq!(initial_pcm.1, vec![[0.0; 2]; initial_pcm.1.len()]);
+    assert_eq!(initial_pcm.0.last().copied().unwrap(), [0.0; 2]);
+    assert_eq!(initial_pcm.2.last().copied().unwrap(), [0.0; 2]);
+
+    let original_sounds = clocked.beat_sounds().clone();
+    let original_clocks = clocked.audio_bindings().sound_clocks().clone();
+    let original_timings = clocked.audio_bindings().timings().clone();
+    let grouped = edit(
+        &clocked,
+        "neutral-group",
+        Command::Group {
+            parent: id("root"),
+            start: 1,
+            end: 2,
+            id: id("clock-wrapper"),
+            label: "Clock wrapper".into(),
+        },
+    );
+    assert_eq!(grouped.beat_sounds(), &original_sounds);
+    assert_eq!(grouped.audio_bindings().sound_clocks(), &original_clocks);
+    assert_eq!(grouped.audio_bindings().timings(), &original_timings);
+    let grouped_pcm = render_nested_occurrences(&grouped, 2);
+    assert_eq!(grouped_pcm, initial_pcm);
+
+    let hold_recipe = match hold(1, HoldAudio::Silence).kind {
+        NodeKind::Hold { recipe } => recipe,
+        _ => unreachable!(),
+    };
+    let shifted = edit(
+        &grouped,
+        "after-group-insert",
+        Command::InsertTime {
+            at: ProjectFrame(0),
+            hold: hold_recipe,
+            id: id("after-group-hold"),
+            identities: SplitIdentities { nodes: vec![] },
+            timing: AudioTimingId {
+                allocation: RevisionId::new("after-group-insert").unwrap(),
+                ordinal: 0,
+            },
+        },
+    );
+    assert_eq!(
+        shifted.audio_bindings().sound_clocks()[&id("owner")][&sound_id("effect")]
+            .clocks()
+            .len(),
+        original_clocks[&id("owner")][&sound_id("effect")]
+            .clocks()
+            .len()
+            + 1
+    );
+    let shifted_pcm = render_nested_occurrences(&shifted, 3);
+    assert_eq!(shifted_pcm.0.len() + 1, initial_pcm.0.len());
+    assert_eq!(shifted_pcm.2.len() + 1, initial_pcm.2.len());
+    assert_inner_gap_silence(&shifted_pcm.0, 3);
+    assert_inner_gap_silence(&shifted_pcm.2, 8);
+    assert_pcm_equal_outside_current_gate_context(&initial_pcm.0, &shifted_pcm.0, 2, 3);
+    assert_pcm_equal_outside_current_gate_context(&initial_pcm.2, &shifted_pcm.2, 7, 8);
+
+    let returned = edit(
+        &shifted,
+        "after-group-delete",
+        Command::DeleteRipple {
+            node: id("after-group-hold"),
+            timing: AudioTimingId {
+                allocation: RevisionId::new("after-group-delete").unwrap(),
+                ordinal: 0,
+            },
+        },
+    );
+    let after_timing_clocks = returned.audio_bindings().sound_clocks().clone();
+    let after_timing_layouts = returned.audio_bindings().timings().clone();
+    let returned_pcm = render_nested_occurrences(&returned, 2);
+    assert_eq!(returned_pcm, initial_pcm);
+    assert_eq!(returned_pcm.0.last().copied().unwrap(), [0.0; 2]);
+    assert_eq!(returned_pcm.2.last().copied().unwrap(), [0.0; 2]);
+
+    let ungrouped = edit(
+        &returned,
+        "neutral-ungroup",
+        Command::Ungroup {
+            node: id("clock-wrapper"),
+        },
+    );
+    assert_eq!(ungrouped.beat_sounds(), &original_sounds);
+    assert_eq!(
+        ungrouped.audio_bindings().sound_clocks(),
+        &after_timing_clocks
+    );
+    assert_eq!(ungrouped.audio_bindings().timings(), &after_timing_layouts);
+    assert_eq!(render_nested_occurrences(&ungrouped, 2), returned_pcm);
+
+    // The identity-based grouping path with no endpoint Splits is also a
+    // neutral wrapper. Its caller-owned timing ID is validated but not stored.
+    let selection = SliceCaptureSelection::Child { node: id("repeat") };
+    let plan = ungrouped.group_selection(&id("root"), &selection).unwrap();
+    assert_eq!(plan.required_split_ids, 0);
+    let selected_group = edit(
+        &ungrouped,
+        "group-selection",
+        Command::GroupSelection {
+            parent: id("root"),
+            selection,
+            label: "Selected clock wrapper".into(),
+            identities: GroupSelectionIdentities {
+                group: id("selected-clock-wrapper"),
+                split: SplitIdentities { nodes: vec![] },
+            },
+            timing: AudioTimingId {
+                allocation: RevisionId::new("group-selection").unwrap(),
+                ordinal: 0,
+            },
+        },
+    );
+    assert_eq!(selected_group.beat_sounds(), &original_sounds);
+    assert_eq!(
+        selected_group.audio_bindings().sound_clocks(),
+        &after_timing_clocks
+    );
+    assert_eq!(
+        selected_group.audio_bindings().timings(),
+        &after_timing_layouts
+    );
+    assert_eq!(render_nested_occurrences(&selected_group, 2), returned_pcm);
+}
+
+#[test]
 fn retained_sound_and_current_bus_share_the_pcm_residency_cap() {
     let moved = insert_prefix(&ntsc(AudioEdgePolicy::Hard));
     let mut renderer = StageAudio::with_limits(

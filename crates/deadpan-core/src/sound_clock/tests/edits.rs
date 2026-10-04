@@ -1,5 +1,7 @@
 use super::*;
 
+mod grouping;
+
 fn timing(name: &str) -> AudioTimingId {
     AudioTimingId {
         allocation: revision(name),
@@ -468,24 +470,8 @@ fn ordinary_whole_owner_paste_merges_imported_events_and_saved_clocks() {
 }
 
 #[test]
-fn ancestry_changes_and_direct_clone_cannot_drop_retained_clocks() {
+fn direct_occurrence_clone_cannot_drop_retained_clocks() {
     let before = edit(&fixture(), "shifted", insert("shifted", 0, 2));
-    let error = apply(
-        &before,
-        &request(
-            &before,
-            "grouped",
-            Command::Group {
-                parent: node("root"),
-                start: 0,
-                end: 3,
-                id: node("group"),
-                label: "Group".into(),
-            },
-        ),
-    )
-    .unwrap_err();
-    assert!(error.message.contains("ownership changes"), "{error}");
     let mut private = before.clone();
     let error = crate::occurrence_edit::clone_nodes(
         &mut private,
