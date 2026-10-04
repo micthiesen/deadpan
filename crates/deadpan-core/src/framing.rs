@@ -202,8 +202,20 @@ impl<'de> Deserialize<'de> for FramingClock {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum FramingValue {
-    Static { pose: FramingPose },
-    Envelope { envelope: FramingEnvelope },
+    Static {
+        pose: FramingPose,
+    },
+    Envelope {
+        envelope: FramingEnvelope,
+    },
+    /// Center on an attention target at the source time of the picture
+    /// shown, at a fixed scale. Where the picture is not the target's asset
+    /// or lies outside its span, `fallback` applies.
+    Follow {
+        target: crate::TargetId,
+        scale: ExactRatio,
+        fallback: FramingPose,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -298,6 +310,12 @@ impl Framing {
         self.clock.validate()?;
         match &self.value {
             FramingValue::Static { pose } => pose.validate(),
+            FramingValue::Follow {
+                scale, fallback, ..
+            } => {
+                fallback.validate()?;
+                FramingPose::new(fallback.center_x, fallback.center_y, *scale).map(|_| ())
+            }
             FramingValue::Envelope { envelope } => {
                 envelope.initial.validate()?;
                 if envelope.segments.is_empty() || envelope.segments.len() > MAX_FRAMING_SEGMENTS {
@@ -328,7 +346,7 @@ impl Framing {
 
     pub fn record_count(&self) -> usize {
         match &self.value {
-            FramingValue::Static { .. } => 1,
+            FramingValue::Static { .. } | FramingValue::Follow { .. } => 1,
             FramingValue::Envelope { envelope } => {
                 1 + envelope
                     .segments
@@ -371,11 +389,12 @@ impl Framing {
             return Err(FramingError::TimeRange);
         }
         let (local, duration) = self.clock.resolve(local, duration)?;
-        let FramingValue::Envelope { envelope } = &self.value else {
-            let FramingValue::Static { pose } = self.value else {
-                unreachable!()
-            };
-            return Ok(pose);
+        let envelope = match &self.value {
+            FramingValue::Static { pose } => return Ok(*pose),
+            // The target is resolved against the picture by the plan; on its
+            // own, a follow evaluates to its fallback.
+            FramingValue::Follow { fallback, .. } => return Ok(*fallback),
+            FramingValue::Envelope { envelope } => envelope,
         };
         let mut start = ExactRatio::ZERO;
         let mut from = envelope.initial;
@@ -506,6 +525,19 @@ pub(crate) fn validate_document(
     document: &crate::ProjectDocument,
 ) -> Result<(), crate::DocumentError> {
     let records = validate_nodes(document.nodes().values())?;
+    for node in document.nodes().values() {
+        if let Some(Framing {
+            value: FramingValue::Follow { target, .. },
+            ..
+        }) = &node.framing
+            && !document.targets().contains_key(target)
+        {
+            return Err(crate::DocumentError::new(
+                crate::DocumentErrorCode::InvalidTree,
+                "framing follows a target the project does not have",
+            ));
+        }
+    }
     // A Repeat's zoom escalation adds a posed layer of its own.
     let escalated = |node: &crate::BeatNode| {
         matches!(

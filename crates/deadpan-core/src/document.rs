@@ -71,6 +71,7 @@ identifier!(NodeId);
 identifier!(AssetId);
 identifier!(MarkId);
 identifier!(SoundId);
+identifier!(TargetId);
 
 /// BLAKE3 identity of a canonical host qualification receipt. The core retains
 /// the binding; only the host can establish receipt ownership and validity.
@@ -453,6 +454,9 @@ pub struct ProjectDocument {
     pub(crate) audio_lineage: BTreeMap<NodeId, crate::AudioLineageId>,
     #[serde(skip_serializing_if = "crate::AudioBindingState::is_empty")]
     pub(crate) audio_bindings: crate::AudioBindingState,
+    /// Attention targets followed in source time.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub(crate) targets: BTreeMap<TargetId, crate::AttentionTarget>,
 }
 
 #[derive(Deserialize)]
@@ -486,6 +490,8 @@ struct DocumentWire {
     audio_lineage: BTreeMap<NodeId, crate::AudioLineageId>,
     #[serde(default)]
     audio_bindings: crate::AudioBindingState,
+    #[serde(default, deserialize_with = "unique_map")]
+    targets: BTreeMap<TargetId, crate::AttentionTarget>,
 }
 
 impl TryFrom<DocumentWire> for ProjectDocument {
@@ -509,6 +515,7 @@ impl TryFrom<DocumentWire> for ProjectDocument {
             gap_overrides: value.gap_overrides,
             audio_lineage: value.audio_lineage,
             audio_bindings: value.audio_bindings,
+            targets: value.targets,
         };
         document.validate()?;
         Ok(document)
@@ -540,6 +547,7 @@ impl ProjectDocument {
             gap_overrides: BTreeMap::new(),
             audio_lineage: BTreeMap::new(),
             audio_bindings: crate::AudioBindingState::default(),
+            targets: BTreeMap::new(),
         };
         document.validate()?;
         Ok(document)
@@ -638,6 +646,10 @@ impl ProjectDocument {
     pub fn beat_sounds(&self) -> &BTreeMap<NodeId, BTreeMap<SoundId, crate::BeatSound>> {
         &self.beat_sounds
     }
+    pub fn targets(&self) -> &BTreeMap<TargetId, crate::AttentionTarget> {
+        &self.targets
+    }
+
     pub fn sound_allowances(&self) -> &BTreeMap<SoundId, crate::SoundHoldAllowances> {
         &self.sound_allowances
     }
@@ -767,6 +779,7 @@ impl ProjectDocument {
             }
             crate::cutaway::validate(&node.cutaways, &self.assets)?;
         }
+        crate::target::validate_targets(&self.targets, &self.assets)?;
         crate::audio_gain::validate_document(self, gain_limit)?;
         crate::picture_context::validate_nodes_with_limit(self.nodes.values(), context_limit)?;
         self.validate_basis_state(&durations)?;

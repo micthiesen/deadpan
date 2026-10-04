@@ -86,6 +86,14 @@ struct SliceWire {
     #[serde(deserialize_with = "crate::document::unique_map")]
     audio_lineage: BTreeMap<NodeId, AudioLineageId>,
     audio_bindings: AudioBindingState,
+    /// Targets the captured framing follows. Pasting adds a target only where
+    /// the destination lacks it; an existing target, like an asset, is shared.
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "crate::document::unique_map"
+    )]
+    targets: BTreeMap<crate::TargetId, crate::AttentionTarget>,
 }
 
 /// A closed editable forest. Its source revision is provenance, not a live link.
@@ -251,10 +259,24 @@ impl CapturedEditSlice {
             .iter()
             .map(|id| (id.clone(), document.nodes()[id].clone()))
             .collect();
+        let targets: BTreeMap<_, _> = nodes
+            .values()
+            .filter_map(|node| match &node.framing {
+                Some(crate::Framing {
+                    value: crate::FramingValue::Follow { target, .. },
+                    ..
+                }) => document
+                    .targets()
+                    .get(target)
+                    .map(|found| (target.clone(), found.clone())),
+                _ => None,
+            })
+            .collect();
         let mut assets = BTreeSet::new();
         for node in nodes.values() {
             node_assets(node, &mut assets);
         }
+        assets.extend(targets.values().map(|target| target.asset.clone()));
         for owner in &selected {
             if let Some(events) = document.beat_sounds().get(owner) {
                 assets.extend(events.values().map(|event| event.source.asset.clone()));
@@ -271,6 +293,7 @@ impl CapturedEditSlice {
             }
         }
         let slice = Self(SliceWire {
+            targets,
             project_id: document.project_id().clone(),
             revision_id: document.revision_id().clone(),
             capture_timing: timing,
@@ -457,6 +480,7 @@ impl CapturedEditSlice {
         document.gap_overrides = value.gap_overrides.clone();
         document.audio_lineage = value.audio_lineage.clone();
         document.audio_bindings = value.audio_bindings.clone();
+        document.targets = value.targets.clone();
         document.validate()?;
         Ok(document)
     }

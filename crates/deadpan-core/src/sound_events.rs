@@ -380,6 +380,8 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::DeleteBeatSound { .. }
         | Command::ReplaceSound { .. }
         | Command::DeleteSound { .. }
+        | Command::SetTarget { .. }
+        | Command::DeleteTarget { .. }
         | Command::SetSoundAllowance { .. }
         | Command::SlipSource { .. }
         | Command::SetSourceVideoMapping { .. }

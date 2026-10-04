@@ -644,6 +644,7 @@ pub(super) struct Imported {
     lineage: BTreeMap<NodeId, AudioLineageId>,
     bindings: AudioBindingState,
     beat_sounds: BTreeMap<NodeId, BTreeMap<SoundId, BeatSound>>,
+    targets: BTreeMap<crate::TargetId, crate::AttentionTarget>,
 }
 impl Imported {
     pub(super) fn install(self, document: &mut ProjectDocument) -> Result<(), EditError> {
@@ -658,6 +659,10 @@ impl Imported {
         document.nodes.extend(self.nodes);
         document.beat_sounds.extend(self.beat_sounds);
         document.assets.extend(self.assets);
+        // The destination's current target wins over a historical copy.
+        for (id, target) in self.targets {
+            document.targets.entry(id).or_insert(target);
+        }
         document.marks.extend(self.marks);
         document.overrides.extend(self.overrides);
         document.gap_overrides.extend(self.gap_overrides);
@@ -765,6 +770,7 @@ pub(super) fn prepare(
     )?;
     context.nodes.extend(slice.nodes.clone());
     context.assets = slice.assets.clone();
+    context.targets = slice.targets.clone();
     context.overrides = slice.overrides.clone();
     context.gap_overrides = slice.gap_overrides.clone();
     context.nodes.insert(
@@ -863,6 +869,7 @@ pub(super) fn prepare(
         })
         .collect::<Result<_, EditError>>()?;
     Ok(Imported {
+        targets: slice.targets.clone(),
         nodes,
         assets: slice.assets.clone(),
         marks,

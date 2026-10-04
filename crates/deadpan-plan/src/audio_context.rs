@@ -241,6 +241,7 @@ impl RenderPlan {
             beat_sounds: BTreeMap::new(),
             sound_routes: BTreeMap::new(),
             sound_allowances: BTreeMap::new(),
+            targets: Default::default(),
             compiled_sounds: BTreeMap::new(),
             audio_context: true,
             has_audio_treatments: false,
@@ -415,6 +416,7 @@ impl RenderPlan {
             sounds: BTreeMap::new(),
             beat_sounds: BTreeMap::new(),
             sound_allowances: BTreeMap::new(),
+            targets: Default::default(),
             sound_routes: BTreeMap::new(),
             compiled_sounds: BTreeMap::new(),
             metadata: PlanMetadata {

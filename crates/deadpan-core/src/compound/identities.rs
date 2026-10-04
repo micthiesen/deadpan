@@ -169,6 +169,8 @@ fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mu
         | Command::DeleteBeatSound { .. }
         | Command::ReplaceSound { .. }
         | Command::DeleteSound { .. }
+        | Command::SetTarget { .. }
+        | Command::DeleteTarget { .. }
         | Command::SetSoundAllowance { .. }
         | Command::Delete { .. }
         | Command::DeleteRipple { .. }

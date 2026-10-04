@@ -121,6 +121,14 @@ define_commands! {
     DeleteSound {
         id: crate::SoundId,
     },
+    /// Add or replace one attention target. Targets carry no picture time.
+    SetTarget {
+        id: crate::TargetId,
+        target: crate::AttentionTarget,
+    },
+    DeleteTarget {
+        id: crate::TargetId,
+    },
     /// Permit one sound through one current silent-Hold occurrence.
     SetSoundAllowance {
         sound: crate::SoundId,
@@ -579,6 +587,12 @@ pub struct DocumentPatch {
         deserialize_with = "unique_map"
     )]
     pub sound_allowances: BTreeMap<crate::SoundId, ValueChange<crate::SoundHoldAllowances>>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "unique_map"
+    )]
+    pub targets: BTreeMap<crate::TargetId, ValueChange<crate::AttentionTarget>>,
     #[serde(deserialize_with = "unique_map")]
     pub overrides: BTreeMap<NodeId, ValueChange<PlayOverrides>>,
     #[serde(
@@ -623,6 +637,7 @@ impl DocumentPatch {
             || self.beat_sounds.len() > 2 * crate::MAX_DOCUMENT_SOUNDS
             || self.sound_routes.len() > 2 * crate::MAX_DOCUMENT_SOUNDS
             || self.sound_allowances.len() > 2 * crate::MAX_DOCUMENT_SOUNDS
+            || self.targets.len() > 2 * crate::MAX_DOCUMENT_TARGETS
             || self.overrides.len() > MAX_DOCUMENT_NODES
             || self.gap_overrides.len() > MAX_DOCUMENT_NODES
             || self.audio_lineage.len() > MAX_DOCUMENT_NODES
@@ -702,6 +717,7 @@ impl DocumentPatch {
         apply_changes(&mut result.sounds, &self.sounds)?;
         apply_changes(&mut result.sound_routes, &self.sound_routes)?;
         apply_changes(&mut result.sound_allowances, &self.sound_allowances)?;
+        apply_changes(&mut result.targets, &self.targets)?;
         apply_changes(&mut result.overrides, &self.overrides)?;
         apply_changes(&mut result.gap_overrides, &self.gap_overrides)?;
         apply_changes(&mut result.audio_lineage, &self.audio_lineage)?;
@@ -741,6 +757,7 @@ impl DocumentPatch {
             beat_sounds: inverse_changes(&self.beat_sounds),
             sound_routes: inverse_changes(&self.sound_routes),
             sound_allowances: inverse_changes(&self.sound_allowances),
+            targets: inverse_changes(&self.targets),
             overrides: inverse_changes(&self.overrides),
             gap_overrides: inverse_changes(&self.gap_overrides),
             audio_lineage: inverse_changes(&self.audio_lineage),
@@ -1057,6 +1074,7 @@ pub(crate) fn net_transaction(
         beat_sounds: diff(&document.beat_sounds, &result.beat_sounds),
         sound_routes: diff(&document.sound_routes, &result.sound_routes),
         sound_allowances: diff(&document.sound_allowances, &result.sound_allowances),
+        targets: diff(&document.targets, &result.targets),
         overrides: diff(&document.overrides, &result.overrides),
         gap_overrides: diff(&document.gap_overrides, &result.gap_overrides),
         audio_lineage: diff(&document.audio_lineage, &result.audio_lineage),
@@ -1309,6 +1327,17 @@ pub(crate) fn reduce(
             }
             if events.is_empty() {
                 document.beat_sounds.remove(owner);
+            }
+        }
+        Command::SetTarget { id, target } => {
+            document.targets.insert(id.clone(), target.clone());
+        }
+        Command::DeleteTarget { id } => {
+            if document.targets.remove(id).is_none() {
+                return Err(EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    "target is absent",
+                ));
             }
         }
         Command::DeleteSound { id } => {
@@ -2433,6 +2462,8 @@ fn description(command: &Command) -> &'static str {
         Command::DeleteBeatSound { .. } => "Delete beat sound event",
         Command::ReplaceSound { .. } => "Replace sound recipe",
         Command::DeleteSound { .. } => "Delete sound event",
+        Command::SetTarget { .. } => "Set target",
+        Command::DeleteTarget { .. } => "Delete target",
         Command::SetSoundAllowance { .. } => "Set sound Hold allowance",
         Command::InsertTime { .. } => "Insert pause",
         Command::SpliceSource { .. } => "Paste source moment",

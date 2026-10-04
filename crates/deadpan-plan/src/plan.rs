@@ -127,6 +127,8 @@ pub struct RenderPlan {
     beat_sounds: BTreeMap<NodeId, BTreeMap<deadpan_core::SoundId, deadpan_core::BeatSound>>,
     sound_routes: BTreeMap<deadpan_core::SoundId, deadpan_core::RootSoundRoute>,
     sound_allowances: BTreeMap<deadpan_core::SoundId, deadpan_core::SoundHoldAllowances>,
+    /// Attention targets that `Follow` framing resolves in source time.
+    targets: Arc<BTreeMap<deadpan_core::TargetId, deadpan_core::AttentionTarget>>,
     compiled_sounds: BTreeMap<deadpan_core::SoundId, crate::audio_sound_event::CompiledRootSound>,
     // Frozen admission stays distinct even when its catalog is empty.
     audio_context: bool,
@@ -684,6 +686,7 @@ impl RenderPlan {
             beat_sounds: document.beat_sounds().clone(),
             sound_routes: document.sound_routes().clone(),
             sound_allowances: document.sound_allowances().clone(),
+            targets: Arc::new(document.targets().clone()),
             compiled_sounds: BTreeMap::new(),
             audio_context: false,
             has_audio_treatments: document.nodes().values().any(|node| {
@@ -916,6 +919,92 @@ impl RenderPlan {
         self.sample_picture(frame, false)
     }
 
+    /// Center each `Follow` layer on its target at the picture's source time.
+    ///
+    /// `framing` runs from the root inward; the picture enters at the last
+    /// layer. The target's point is carried outward through every inner posed
+    /// layer (`p' = (p - center) * scale + 1/2` per axis), innermost first, so
+    /// an outer follow sees where the subject is after inner framing. A layer
+    /// keeps its fallback where the picture is not the target's asset, lies
+    /// outside its span, or the centered pose is out of range.
+    fn resolve_follows(
+        &self,
+        framing: &mut [PictureFraming],
+        follows: &[(usize, &deadpan_core::TargetId, ExactRatio)],
+        picture: &Picture,
+        captured_geometry: bool,
+    ) {
+        // A pause's captured geometry sits between its picture and every
+        // framing layer; follows keep their fallback there until that
+        // geometry is mapped too.
+        if captured_geometry {
+            return;
+        }
+        let (asset, point) = match picture {
+            Picture::Source {
+                asset,
+                point,
+                selection,
+                ..
+            } => {
+                // An endpoint-held picture shows the selection's last moment.
+                let last = selection
+                    .end()
+                    .ticks
+                    .checked_sub(ExactRatio::new(1, 1_000_000).expect("constant ratio"));
+                match last {
+                    Ok(last) if !point.ticks.compare(last).is_lt() => (
+                        asset,
+                        SourcePoint {
+                            ticks: last,
+                            time_base: point.time_base,
+                        },
+                    ),
+                    _ => (asset, *point),
+                }
+            }
+            Picture::Freeze { asset, point } => (asset, *point),
+            _ => return,
+        };
+        for &(index, target, scale) in follows.iter().rev() {
+            let Some(found) = self.targets.get(target) else {
+                continue;
+            };
+            if &found.asset != asset {
+                continue;
+            }
+            let Some((region, _)) = found.region_at(point) else {
+                continue;
+            };
+            let half = ExactRatio::new(1, 2).expect("constant ratio");
+            let mapped = framing[index + 1..].iter().rev().try_fold(
+                region.center_ratio(),
+                |position, layer| -> Option<[ExactRatio; 2]> {
+                    let Some(pose) = layer.pose else {
+                        return Some(position);
+                    };
+                    let through = |value: ExactRatio, center: ExactRatio| {
+                        value
+                            .checked_sub(center)
+                            .and_then(|offset| offset.checked_mul(pose.scale))
+                            .and_then(|offset| offset.checked_add(half))
+                            .ok()
+                    };
+                    Some([
+                        through(position[0], pose.center_x)?,
+                        through(position[1], pose.center_y)?,
+                    ])
+                },
+            );
+            if let Some([x, y]) = mapped
+                && let Ok(pose) = deadpan_core::FramingPose::new(x, y, scale)
+                && let Ok(pose) = pose.quantized()
+            {
+                framing[index].pose = Some(pose);
+            }
+        }
+    }
+
     fn sample_picture(
         &self,
         frame: ProjectFrame,
@@ -935,6 +1024,8 @@ impl RenderPlan {
         let mut repeats = Vec::new();
         let mut lookup = LookupStats::default();
         let mut framing = Vec::new();
+        // Follow layers resolve once the picture's source time is known.
+        let mut follows = Vec::new();
         let (picture, picture_context, gap_after) = loop {
             let node = &self.nodes[current];
             lookup.visited_nodes += 1;
@@ -946,6 +1037,13 @@ impl RenderPlan {
                 return Err(PlanError::InvalidPlan(
                     "local picture coordinate exceeds node duration",
                 ));
+            }
+            if let Some(deadpan_core::Framing {
+                value: deadpan_core::FramingValue::Follow { target, scale, .. },
+                ..
+            }) = &node.framing
+            {
+                follows.push((framing.len(), target, *scale));
             }
             framing.push(PictureFraming {
                 instance: InstancePath {
@@ -1113,6 +1211,7 @@ impl RenderPlan {
                 }
             }
         };
+        self.resolve_follows(&mut framing, &follows, &picture, picture_context.is_some());
         framing.reverse();
         Ok(PictureSample {
             project_id: self.metadata.project_id.clone(),

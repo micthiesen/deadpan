@@ -130,6 +130,7 @@ fn prefix_patch(
         beat_sounds: BTreeMap::new(),
         sound_routes: BTreeMap::new(),
         sound_allowances: BTreeMap::new(),
+        targets: BTreeMap::new(),
         overrides: BTreeMap::new(),
         gap_overrides: BTreeMap::new(),
         audio_lineage: BTreeMap::new(),

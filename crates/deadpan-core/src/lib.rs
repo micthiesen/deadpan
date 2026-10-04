@@ -65,6 +65,7 @@ mod source_trim;
 mod source_trim_edit;
 mod source_trim_geometry;
 mod split;
+mod target;
 mod time;
 mod video_mapping;
 
@@ -129,6 +130,7 @@ pub use source_trim_edit::{
 };
 pub use source_trim_geometry::*;
 pub use split::SplitIdentities;
+pub use target::*;
 pub use video_mapping::SourceVideoMapping;
 
 pub use time::{

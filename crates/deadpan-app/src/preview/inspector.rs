@@ -185,6 +185,10 @@ impl Inspector {
                     format!("Static · {scale:.3}×")
                 }
                 deadpan_core::FramingValue::Envelope { .. } => "Whole-beat motion".into(),
+                deadpan_core::FramingValue::Follow { target, scale, .. } => {
+                    let scale = scale.numerator() as f64 / scale.denominator() as f64;
+                    format!("Follows {target} · {scale:.3}×")
+                }
             };
             fields.push(("Framing", description));
         }

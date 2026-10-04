@@ -203,6 +203,10 @@ fn adjusted_framing(
     let mut framing = entry.expect("nonempty entry checked").clone();
     match &mut framing.value {
         FramingValue::Static { pose } => transform(pose)?,
+        // Camera sessions refuse followed framing at entry.
+        FramingValue::Follow { .. } => {
+            return Err("Camera cannot adjust a followed framing.".into());
+        }
         FramingValue::Envelope { envelope } => {
             transform(&mut envelope.initial)?;
             for segment in &mut envelope.segments {
@@ -276,6 +280,18 @@ impl CameraSession {
                 .transpose()?;
             targets.push((number, label, projected));
         }
+        let entry = workspace.document.nodes()[&pending.node].framing.clone();
+        if let Some(Framing {
+            value: FramingValue::Follow { target, .. },
+            ..
+        }) = &entry
+        {
+            // Its center comes from the tracked subject; nudging a fixed pose
+            // would not show on screen.
+            return Err(format!(
+                "This beat follows target {target}; Camera cannot adjust a followed framing yet."
+            ));
+        }
         let entry_pose = layer.pose;
         Ok(Self {
             session: pending.session,
@@ -285,7 +301,7 @@ impl CameraSession {
             scoped: pending.scoped,
             ticket,
             cursor: pending.cursor,
-            entry: workspace.document.nodes()[&pending.node].framing.clone(),
+            entry,
             entry_pose,
             draft: CameraDraft::new(entry_pose.unwrap_or_default())
                 .map_err(|error| error.to_string())?,
@@ -1249,6 +1265,28 @@ mod tests {
             ExactRatio::new(i128::from(scale), 100).unwrap(),
         )
         .unwrap()
+    }
+
+    #[test]
+    fn a_followed_framing_is_never_replaced_by_a_camera_pose() {
+        let follow = Framing {
+            clock: deadpan_core::FramingClock::OwnerOutput,
+            value: FramingValue::Follow {
+                target: deadpan_core::TargetId::new("speaker").unwrap(),
+                scale: ExactRatio::integer(2),
+                fallback: FramingPose::identity(),
+            },
+        };
+        let moved = FramingPose {
+            scale: ExactRatio::integer(3),
+            ..FramingPose::identity()
+        };
+        assert!(adjusted_framing(Some(&follow), FramingPose::identity(), moved, false).is_err());
+        // An unchanged draft keeps the follow exactly.
+        assert_eq!(
+            adjusted_framing(Some(&follow), moved, moved, false).unwrap(),
+            Some(follow)
+        );
     }
 
     #[test]
