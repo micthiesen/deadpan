@@ -230,6 +230,14 @@ impl CapturedEditSlice {
             offset = end;
         }
         let marks = crate::marks::capture_slice_mark_bindings(document, &parts, &selected)?;
+        if selected
+            .iter()
+            .any(|owner| document.audio_bindings.sound_clocks.contains_key(owner))
+        {
+            return Err(invalid(
+                "copied contents cannot yet retain beat sound clock aliases",
+            ));
+        }
         let state = if range.duration() == FrameDuration::ZERO {
             // A validated zero-duration owned tree can contain only Sequences.
             // Prove this rather than discarding a physical owner's clock.
@@ -459,6 +467,11 @@ impl CapturedEditSlice {
 
     fn validate(&self) -> Result<(), EditError> {
         let value = &self.0;
+        if !value.audio_bindings.sound_clocks.is_empty() {
+            return Err(invalid(
+                "copied contents cannot yet retain beat sound clock aliases",
+            ));
+        }
         if value.range.start().0 < 0 || value.range.end().0 > value.source_duration.frames() {
             return Err(invalid("slice bounds are outside its captured project"));
         }
@@ -572,6 +585,10 @@ fn capture_audio(
     structural.sounds.clear();
     structural.sound_routes.clear();
     structural.sound_allowances.clear();
+    // Unselected independent voices do not belong to the copied forest. The
+    // selected-owner guard above has already refused retained clock aliases.
+    structural.audio_bindings.sound_clocks.clear();
+    crate::audio_binding_lifecycle::prune(&mut structural);
     let captured = crate::audio_binding_lifecycle::capture_for_composite_insertion(
         &structural,
         timing.clone(),

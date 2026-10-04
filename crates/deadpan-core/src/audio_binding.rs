@@ -301,6 +301,7 @@ pub struct AudioBindingState {
     pub(crate) timings: BTreeMap<AudioTimingId, FrozenAudioLayout>,
     pub(crate) bindings: BTreeMap<NodeId, OwnedAudioBinding>,
     pub(crate) gap_bindings: BTreeMap<NodeId, OwnedAudioBinding>,
+    pub(crate) sound_clocks: crate::sound_clock::SoundClocks,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1121,6 +1122,17 @@ impl AudioBindingState {
         bindings: BTreeMap<NodeId, OwnedAudioBinding>,
         gap_bindings: BTreeMap<NodeId, OwnedAudioBinding>,
     ) -> Result<Self, DocumentError> {
+        Self::new_with_sound_clocks(timings, bindings, gap_bindings, BTreeMap::new())
+    }
+
+    /// Assemble physical bindings and independent sound journals over one checked
+    /// timing table. Live owner/address admission still requires `validate_for`.
+    pub fn new_with_sound_clocks(
+        timings: Vec<AudioTimingRecord>,
+        bindings: BTreeMap<NodeId, OwnedAudioBinding>,
+        gap_bindings: BTreeMap<NodeId, OwnedAudioBinding>,
+        sound_clocks: BTreeMap<NodeId, BTreeMap<crate::SoundId, crate::SoundClockJournal>>,
+    ) -> Result<Self, DocumentError> {
         if timings.len() > MAX_AUDIO_BINDING_ENTRIES {
             return Err(limit("audio timing record count"));
         }
@@ -1134,12 +1146,16 @@ impl AudioBindingState {
             timings: unique,
             bindings,
             gap_bindings,
+            sound_clocks,
         };
         state.to_json()?;
         Ok(state)
     }
     pub fn is_empty(&self) -> bool {
-        self.timings.is_empty() && self.bindings.is_empty() && self.gap_bindings.is_empty()
+        self.timings.is_empty()
+            && self.bindings.is_empty()
+            && self.gap_bindings.is_empty()
+            && self.sound_clocks.is_empty()
     }
     pub fn timings(&self) -> &BTreeMap<AudioTimingId, FrozenAudioLayout> {
         &self.timings
@@ -1149,6 +1165,12 @@ impl AudioBindingState {
     }
     pub fn gap_bindings(&self) -> &BTreeMap<NodeId, OwnedAudioBinding> {
         &self.gap_bindings
+    }
+    /// Chronological pre-edit clocks keyed by exact owner-local sound identity.
+    pub fn sound_clocks(
+        &self,
+    ) -> &BTreeMap<NodeId, BTreeMap<crate::SoundId, crate::SoundClockJournal>> {
+        &self.sound_clocks
     }
     pub(crate) fn owners(
         &self,
@@ -1235,6 +1257,18 @@ impl AudioBindingState {
             layout.validate()?;
         }
         let mut used = BTreeSet::new();
+        work.spend(crate::sound_clock::reference_count(&self.sound_clocks)?)?;
+        crate::sound_clock::wire_size(&self.sound_clocks)?;
+        for journals in self.sound_clocks.values() {
+            for journal in journals.values() {
+                for timing in journal.clocks() {
+                    if !self.timings.contains_key(timing) {
+                        return Err(invalid("sound clock timing identity is missing"));
+                    }
+                    used.insert(timing);
+                }
+            }
+        }
         let mut entries = 0usize;
         for (kind, _, binding) in self.owners() {
             binding_wire_size(binding)?;
@@ -1300,6 +1334,37 @@ impl AudioBindingState {
             .any(|layout| layout.rate() != document.presentation_basis().frame_rate)
         {
             return Err(invalid("audio timing rate differs from the project rate"));
+        }
+        if !self.sound_clocks.is_empty() {
+            // Charge the live snapshot before building its indexes or body.
+            work.spend(document.nodes().len() + document.audio_lineage().len())?;
+            for node in document.nodes().values() {
+                if let NodeKind::Repeat { iterations, .. } = &node.kind {
+                    work.spend(iterations.segment_count())?;
+                }
+            }
+            let live = FrozenAudioLayout::capture_structural(document)?;
+            let mut checked = BTreeSet::new();
+            for (owner, journals) in &self.sound_clocks {
+                for (sound, journal) in journals {
+                    if !document
+                        .beat_sounds()
+                        .get(owner)
+                        .is_some_and(|events| events.contains_key(sound))
+                    {
+                        return Err(invalid("sound clock address has no beat sound"));
+                    }
+                    for timing in journal.clocks() {
+                        if checked.insert((owner, timing)) {
+                            work.spend(self.timings[timing].validate_sound_clock_owner(
+                                &live,
+                                owner,
+                                work.remaining()?,
+                            )?)?;
+                        }
+                    }
+                }
+            }
         }
         let mut parents = BTreeMap::new();
         for parent in document.nodes().keys() {
@@ -1550,6 +1615,8 @@ impl AudioBindingState {
             bindings: &'a RawValue,
             #[serde(default, borrow, deserialize_with = "present_raw")]
             gap_bindings: Option<&'a RawValue>,
+            #[serde(default, borrow, deserialize_with = "present_raw")]
+            sound_clocks: Option<&'a RawValue>,
         }
         #[derive(Deserialize)]
         #[serde(deny_unknown_fields)]
@@ -1579,6 +1646,12 @@ impl AudioBindingState {
         for raw in raws.values().chain(gaps.values()) {
             preflight_binding(raw.get(), &mut budget)?;
         }
+        let sound_clocks = wire
+            .sound_clocks
+            .map(|raw| crate::sound_clock::from_json(raw.get()))
+            .transpose()?
+            .unwrap_or_default();
+        budget.spend(crate::sound_clock::reference_count(&sound_clocks)?)?;
         // All aggregate collection counts are charged before any frozen tree
         // or binding body is materialized.
         let mut timings = Vec::with_capacity(timing_wires.len());
@@ -1602,7 +1675,7 @@ impl AudioBindingState {
                 serde_json::from_str(raw.get()).map_err(DocumentError::json)?,
             );
         }
-        Self::new_with_gaps(timings, bindings, gap_bindings)
+        Self::new_with_sound_clocks(timings, bindings, gap_bindings, sound_clocks)
     }
 
     pub fn to_json(&self) -> Result<String, DocumentError> {
@@ -1638,12 +1711,16 @@ impl Serialize for AudioBindingState {
         }
         let mut state = serializer.serialize_struct(
             "AudioBindingState",
-            2 + usize::from(!self.gap_bindings.is_empty()),
+            2 + usize::from(!self.gap_bindings.is_empty())
+                + usize::from(!self.sound_clocks.is_empty()),
         )?;
         state.serialize_field("timings", &Timings(&self.timings))?;
         state.serialize_field("bindings", &self.bindings)?;
         if !self.gap_bindings.is_empty() {
             state.serialize_field("gap_bindings", &self.gap_bindings)?;
+        }
+        if !self.sound_clocks.is_empty() {
+            state.serialize_field("sound_clocks", &self.sound_clocks)?;
         }
         state.end()
     }

@@ -2,9 +2,9 @@
 
 Beat-owned sounds have independent source recipes and processing histories.
 The saved command path now connects those recipes to bounded occurrence
-preparation and the canonical authored bus. Temporal editing still needs
-independent retained clocks. This does not enable `ib`/`ab` or add a native
-placement control.
+preparation and the canonical authored bus. Independent retained clocks now
+support moving unchanged sound-bearing subtrees through ordinary Sequence
+edits. This does not enable `ib`/`ab` or add a native placement control.
 
 ## Saved attachment contract
 
@@ -19,20 +19,65 @@ Recipes require a qualified source, an exact natural-rate mapping and a
 selected interval that fits the owner's output clock. Store admission rechecks
 changed owner/ID pairs against the selected or validated captured revision,
 the source receipt and its retained original. Copies rename owner IDs while
-retaining local SoundIds. Whole-child capture can carry those recipes into a
-destination with no existing beat attachments. Their placement uses the new
+retaining local SoundIds. Whole-child capture can carry unclocked recipes into an
+eligible ordinary Sequence destination. Their placement uses the new
 current owner clock; this does not claim retained historical sample phase.
 
-Timing changes in a document containing beat sounds fail explicitly, including
-Split, Trim, Move, duration/Repeat/Retime changes, ripple deletion and paste.
+Explicit-timing insertion, deletion, replacement, slice paste and MoveRange can
+transport surviving attachments when their complete top-level processing
+subtree is unchanged. Whole-owner deletion removes its events and clocks.
+Changing that subtree, partially splitting an owner, transporting root-owned
+attachments, or copying a retained-clock attachment fails explicitly.
 Identity-preserving metadata edits and sound Set/Delete remain available.
 Deleting an attachment before pasting a historical copy is an explicit change
 of authored intent. Existing root-only sound editing keeps its qualified routes.
 Partial-copy timing qualification and `ib`/`ab` await the full attachment
 transform lifecycle.
 
-Database 56 stores core schema 44. Earlier unused development packages refuse
+Database 57 stores core schema 45. Earlier unused development packages refuse
 before writes; see [development formats](DEVELOPMENT_FORMATS.md).
+
+## Saved independent clocks
+
+`AudioBindingState::sound_clocks` maps each owner/local-ID pair to a nonempty
+chronological `SoundClockJournal`. Its IDs reference the existing frozen timing
+table. They describe each pre-edit placement; the live final placement is
+implicit. Independent journals never become physical Source bindings. A move
+away and back keeps both steps, including any intermediate sample clipping.
+An unchanged origin adds no step. Commands use their explicit fresh timing ID
+and share an exactly equal capture with existing physical binding helpers.
+
+The supported transport compares the entire sound-bearing branch below the
+root: durations, child order, stable Repeat identities and overrides, gap
+geometry and Retime mappings/pitch. Source placement, current Hold policy,
+labels, framing, treatments and edge policies do not define the independent
+processing clock. Unsupported structural changes reject the transaction.
+Changing a sound's source, mapping or offset explicitly replaces its recipe
+and clears that sound's journal. Label, gain and edge changes retain it.
+
+The planner compiles each first retained structure with only the current
+qualified assets used by sounds sharing that clock. It preserves the complete
+processing graph without introducing primary Source audio, Hold carriers or
+historical gain. The audio bus retains the first complete occurrence and
+transports its old integral PCM labels through every placement. Intermediate
+layouts supply an exact translation of that processed extent; their nominal
+owner geometry never replaces the audio allocation.
+At most 64 first plans are retained, and their combined selected asset count
+is bounded by the same 64-event limit. The bus then applies current Hold gates,
+edge choices and owner/event gain. The virtual edge envelope keeps its historical
+progress even when a later allocation clips physical samples. At an exact shared
+boundary, a current Hold owns its newly rounded endpoint.
+
+All plans share one preparation controller, deadline, work budget, source
+admission and PCM residency cap. Intrinsic prepared-stage cache entries include
+their immutable plan identity. Retained source reads use the current revision
+and exact expected asset record; clock-only store changes recheck receipts and
+original ownership. A warm cache cannot conceal source revocation.
+
+Remaining work includes temporal edits inside the surviving processing branch,
+retained-clock copy/import aliases, occurrence isolation, root-owned attachment
+transport, allowances, tails and native placement. Full beat objects still
+require their complete attachment lifecycle.
 
 ## Ownership and clocks
 
@@ -54,10 +99,10 @@ processes this voice independently using the existing canonical DSP. A sound
 owned by a Retime enters at that node's output and bypasses its processor; a
 sound on its child passes through it.
 
-The new voice uses current structural maps. The Original's retained source
+The borrowed voice uses its plan's structural maps. The Original's retained source
 bindings, source absence, endpoint masks and processing cache do not become
-this sound's history. Future authored edits must retain the sound's own clocks
-and complete processing recipe explicitly.
+this sound's history. Saved journals select the appropriate frozen plan without
+rebinding its borrowed handles to a different plan.
 
 ## Preparation and policy
 
@@ -126,10 +171,10 @@ Even an entirely silent route must pass depth, work, residency and source
 admission. Current consuming Hold gates, edges and gain apply separately after
 this raw retained input.
 
-This borrowed route does not persist a sound clock or lift a temporal command
-guard. The next integration must retain the sound's own processing definition,
-stable occurrence correspondence and chronological route in the document;
-Original audio bindings cannot substitute for those records.
+This borrowed route does not itself persist a sound clock or lift a temporal
+command guard. The saved-clock integration above supplies the sound's own
+processing definition, stable occurrence correspondence and chronological
+placements. Original audio bindings cannot substitute for those records.
 See the [routed occurrence qualification](qualification/routed-occurrence-pcm-2026-10-03.md)
 for sample comparisons, exact rounding checks, review and limits.
 
@@ -147,9 +192,9 @@ PCM cannot hide a revoked dependency.
 
 The final product still requires all of the following:
 
-- Persist independent retained sound clocks across temporal edits.
-- Preserve or transform sound intervals through Split, Trim, Move, Group,
-  Repeat, Retime, occurrence isolation and deletion.
+- Extend independent sound clocks to edits inside a surviving processing branch.
+- Preserve or transform sound intervals through Split, Trim, Group, Repeat,
+  Retime and occurrence isolation, including retained-clock copy/import.
 - Extend whole-owner copying to partial captures and timing-preserving edits;
   distinguish `ib` from `ab` without changing picture bounds.
 - Add scoped beat-sound allowances and permitted tails.
@@ -160,5 +205,6 @@ Root sound editing and its guards remain described in [sound events](SOUND_EVENT
 The [qualification record](qualification/owned-sound-voices-2026-10-03.md)
 retains the initial preparation checks. The
 [saved-sound record](qualification/saved-beat-sounds-2026-10-03.md) covers
-persisted recipes and the authored bus. No full-product requirement or release
-gate is complete.
+persisted recipes and the authored bus. The
+[saved-clock record](qualification/sound-clocks-2026-10-03.md) covers supported
+temporal transport. No full-product requirement or release gate is complete.

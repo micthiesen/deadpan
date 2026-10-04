@@ -1,0 +1,26 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--workspace",
+    "--locked",
+    "sound_clock",
+    "--no-fail-fast"
+  ],
+  "started": "2026-10-04T00:41:10.618393+00:00",
+  "base_commit": "53bed8e967b940b825bd92e363b4ed0d19b33998",
+  "diff_sha256": "f5e9b8fffeaccf7ba2b1257501cd129cdad688622466c51bc3e01aa2fc207a76",
+  "source_manifest_sha256": "df1b73a16100795c5b19e44d9f18dc12ad40e8596ec0c7e08e3c8c9640fd6430",
+  "pid": 98380,
+  "exit_code": 101,
+  "seconds": 108.48241991596296,
+  "source_manifest_after_sha256": "df1b73a16100795c5b19e44d9f18dc12ad40e8596ec0c7e08e3c8c9640fd6430",
+  "source_unchanged": true,
+  "gate_exit_code": 101,
+  "test_totals": {
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "name": "focused-sound-clock-3"
+}

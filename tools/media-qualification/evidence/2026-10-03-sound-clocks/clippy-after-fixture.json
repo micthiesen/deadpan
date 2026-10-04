@@ -1,0 +1,28 @@
+{
+  "command": [
+    "cargo",
+    "clippy",
+    "--workspace",
+    "--all-targets",
+    "--locked",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "started": "2026-10-04T01:52:22.466392+00:00",
+  "base_commit": "53bed8e967b940b825bd92e363b4ed0d19b33998",
+  "diff_sha256": "3f8404fc3b0437e3a336f784bf7fa1ffbd1e5f8a8ed10a0269fae86d587be9e5",
+  "source_manifest_sha256": "8588cea6b70f485b15e280a1f916cc0b8c62d0d477101415f77dc5ffb211279f",
+  "pid": 7226,
+  "exit_code": 0,
+  "seconds": 16.40549683291465,
+  "source_manifest_after_sha256": "8588cea6b70f485b15e280a1f916cc0b8c62d0d477101415f77dc5ffb211279f",
+  "source_unchanged": true,
+  "gate_exit_code": 0,
+  "test_totals": {
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "name": "clippy-after-fixture"
+}

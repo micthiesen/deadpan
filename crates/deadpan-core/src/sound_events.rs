@@ -1,8 +1,8 @@
 //! Independent authored sound recipes in their owner's output clock.
 //!
-//! Root-routed recipes and owner-local recipes are persisted separately. Until
-//! beat-owned sample clocks can be transported, timing edits on documents with
-//! owner-local recipes are rejected explicitly.
+//! Root-routed recipes and owner-local recipes are persisted separately. Exact
+//! timed edits can transport unchanged top-level sound-bearing subtrees; other
+//! temporal and ownership changes remain explicit refusals.
 
 use std::collections::BTreeMap;
 
@@ -257,10 +257,21 @@ pub(crate) fn validate_command(
     document: &ProjectDocument,
     command: &Command,
 ) -> Result<(), EditError> {
-    if !document.beat_sounds.is_empty() {
-        if preserves_sound_clocks(command) && !matches!(command, Command::GroupSelection { .. }) {
-            return Ok(());
-        }
+    if !document.audio_bindings.sound_clocks.is_empty()
+        && matches!(
+            command,
+            Command::Group { .. } | Command::GroupSelection { .. } | Command::Ungroup { .. }
+        )
+    {
+        return Err(EditError::new(
+            EditErrorCode::InvalidCommand,
+            "group ownership changes cannot yet remap retained beat sound clocks",
+        ));
+    }
+    if !document.beat_sounds.is_empty()
+        && crate::sound_clock::edit::timing(command).is_none()
+        && !(preserves_sound_clocks(command) && !matches!(command, Command::GroupSelection { .. }))
+    {
         return Err(EditError::new(
             EditErrorCode::InvalidCommand,
             "this structural edit cannot yet preserve beat-owned sound clocks and sample phase; remove beat sounds before editing time",

@@ -3,7 +3,7 @@ use rusqlite::{Connection, limits::Limit};
 use crate::StoreError;
 
 // Storage has operational tables beyond the independently versioned core JSON.
-pub const VERSION: u32 = 56;
+pub const VERSION: u32 = 57;
 pub const APPLICATION_ID: u32 = 0x4450_4e31;
 pub const MAX_DOCUMENT_BYTES: usize = deadpan_core::MAX_DOCUMENT_JSON_BYTES;
 
@@ -18,7 +18,7 @@ pub fn configure(connection: &Connection) -> Result<(), StoreError> {
 
 pub fn check_version(connection: &Connection) -> Result<(), StoreError> {
     let version = read_version(connection)?;
-    // Core schema 44 changes authored sound ownership. Refuse prior unused
+    // Core schema 45 retains independent sound clocks. Refuse prior unused
     // development packages before writable open or document parsing.
     if version != VERSION {
         return Err(StoreError::UnsupportedSchema(version));

@@ -8,8 +8,8 @@ use std::sync::atomic::AtomicBool;
 use std::time::{Duration, Instant};
 
 use deadpan_core::{
-    AssetId, AudioSample, ExactRatio, FrameDuration, FrameRate, InstancePath, IterationId,
-    ProjectId, RevisionId, SourceAudio, SourceAudioMapping, SourcePoint, TimeError,
+    AssetId, AudioSample, AudioTimingId, ExactRatio, FrameDuration, FrameRate, InstancePath,
+    IterationId, ProjectId, RevisionId, SourceAudio, SourceAudioMapping, SourcePoint, TimeError,
 };
 use deadpan_dsp::{CanonicalRecipe, CanonicalStretch, StereoPcm, StretchRate};
 use deadpan_media::audio_index::AudioChannelLayout;
@@ -66,6 +66,9 @@ pub use voice_occurrences::SourceOccurrencesBlock;
 
 #[path = "beat_sounds.rs"]
 mod beat_sounds;
+
+#[path = "sound_clocks.rs"]
+mod sound_clocks;
 
 #[path = "routed.rs"]
 mod routed;
@@ -324,6 +327,8 @@ enum PreparedKey {
 }
 
 struct PreparedStage {
+    // Equal descriptors in different retained layouts do not share PCM.
+    plan: Arc<RenderPlan>,
     key: PreparedKey,
     block: SignalBlock,
 }
@@ -361,7 +366,7 @@ struct ReadWork {
     projected: Vec<(AudioProjectionIdentity, Arc<SignalBlock>)>,
     projected_active: Vec<AudioProjectionIdentity>,
     projected_preflight: Vec<(AudioProjectionIdentity, usize)>,
-    intrinsic_preflight: Vec<(AudioStageDescriptor, usize)>,
+    intrinsic_preflight: Vec<(Arc<RenderPlan>, AudioStageDescriptor, usize)>,
     projected_resident_frames: u64,
 }
 
@@ -503,15 +508,43 @@ pub struct StageAudio {
     plan: Arc<RenderPlan>,
     limits: StageLimits,
     cache: Vec<Arc<PreparedStage>>,
+    sound_processing_plans: BTreeMap<AudioTimingId, Arc<RenderPlan>>,
     active_frames: u64,
 }
 
+/// All layouts share the controller's cache, active allocations and request
+/// budget. Restore its public plan even if a provider unwinds during a read.
+struct PlanScope<'a> {
+    controller: &'a mut StageAudio,
+    entry: Arc<RenderPlan>,
+}
+
+impl Drop for PlanScope<'_> {
+    fn drop(&mut self) {
+        self.controller.plan = Arc::clone(&self.entry);
+    }
+}
+
 impl StageAudio {
+    fn with_plan_scope<T>(
+        &mut self,
+        plan: Arc<RenderPlan>,
+        read: impl FnOnce(&mut Self) -> Result<T, StageAudioError>,
+    ) -> Result<T, StageAudioError> {
+        let entry = std::mem::replace(&mut self.plan, plan);
+        let scope = PlanScope {
+            controller: self,
+            entry,
+        };
+        read(&mut *scope.controller)
+    }
+
     pub fn new(plan: Arc<RenderPlan>) -> Self {
         Self {
             plan,
             limits: StageLimits::default(),
             cache: Vec::new(),
+            sound_processing_plans: BTreeMap::new(),
             active_frames: 0,
         }
     }
@@ -1575,7 +1608,11 @@ impl StageAudio {
         control: WorkControl<'_>,
         depth: usize,
     ) -> Result<Option<Arc<PreparedStage>>, StageAudioError> {
-        if let Some(index) = self.cache.iter().position(|entry| entry.key == *key) {
+        if let Some(index) = self
+            .cache
+            .iter()
+            .position(|entry| Arc::ptr_eq(&entry.plan, &self.plan) && entry.key == *key)
+        {
             if depth
                 .checked_add(self.cache[index].block.relative_depth)
                 .is_none_or(|maximum| maximum > self.limits.maximum_depth)
@@ -1635,7 +1672,11 @@ impl StageAudio {
         control: WorkControl<'_>,
     ) -> Result<Arc<PreparedStage>, StageAudioError> {
         self.make_room(block.samples.len() as u64, true, control)?;
-        let entry = Arc::new(PreparedStage { key, block });
+        let entry = Arc::new(PreparedStage {
+            plan: Arc::clone(&self.plan),
+            key,
+            block,
+        });
         self.cache.push(Arc::clone(&entry));
         Ok(entry)
     }

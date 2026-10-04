@@ -791,6 +791,7 @@ pub(super) fn prepare(
             timings,
             bindings: rename.bindings(&slice.audio_bindings.bindings)?,
             gap_bindings: rename.bindings(&slice.audio_bindings.gap_bindings)?,
+            sound_clocks: BTreeMap::new(),
         },
         beat_sounds,
     })

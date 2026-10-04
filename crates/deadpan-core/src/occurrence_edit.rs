@@ -461,6 +461,14 @@ pub(crate) fn clone_nodes(
     mapping: &BTreeMap<NodeId, NodeId>,
     allocation: &RevisionId,
 ) -> Result<(), EditError> {
+    if mapping
+        .keys()
+        .any(|owner| document.audio_bindings.sound_clocks.contains_key(owner))
+    {
+        return Err(invalid(
+            "occurrence copies cannot yet remap retained beat sound clocks",
+        ));
+    }
     // Isolation and Split can duplicate existing contexts repeatedly. Check the
     // combined set before copying any recipe, not after all ancestors expand.
     crate::audio_gain::validate_nodes_with_limit(

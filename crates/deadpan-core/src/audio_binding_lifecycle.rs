@@ -505,10 +505,30 @@ pub(crate) fn prune(document: &mut ProjectDocument) {
     document.audio_bindings.gap_bindings.retain(|owner, _| {
         matches!(document.nodes.get(owner).map(|node| &node.kind), Some(NodeKind::Repeat { gap: Some(gap), .. }) if gap.duration != crate::FrameDuration::ZERO)
     });
+    document
+        .audio_bindings
+        .sound_clocks
+        .retain(|owner, journals| {
+            if !document.nodes.contains_key(owner) {
+                return false;
+            }
+            journals.retain(|sound, _| {
+                document
+                    .beat_sounds
+                    .get(owner)
+                    .is_some_and(|events| events.contains_key(sound))
+            });
+            !journals.is_empty()
+        });
     let mut retained = BTreeSet::new();
     for (_, _, binding) in document.audio_bindings.owners() {
         for template in binding.placements() {
             retained.insert(template.reference.timing.clone());
+        }
+    }
+    for journals in document.audio_bindings.sound_clocks.values() {
+        for journal in journals.values() {
+            retained.extend(journal.clocks().iter().cloned());
         }
     }
     document

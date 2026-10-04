@@ -252,6 +252,19 @@ impl FrozenAudioLayout {
         })
     }
     pub fn capture(document: &ProjectDocument) -> Result<Self, DocumentError> {
+        Self::capture_inner(document, true)
+    }
+
+    /// Binding validation cannot recursively validate the binding state while
+    /// constructing its live comparison clock. Structural validation still runs.
+    pub(crate) fn capture_structural(document: &ProjectDocument) -> Result<Self, DocumentError> {
+        Self::capture_inner(document, false)
+    }
+
+    fn capture_inner(
+        document: &ProjectDocument,
+        validate_bindings: bool,
+    ) -> Result<Self, DocumentError> {
         // Precharge before cloning nodes, overrides or iteration vectors and
         // before durations() builds any derived Repeat layouts.
         let mut edges = 0usize;
@@ -272,7 +285,11 @@ impl FrozenAudioLayout {
                 return Err(limit("document exceeds frozen reference complexity limits"));
             }
         }
-        let durations = document.durations()?;
+        let durations = if validate_bindings {
+            document.durations()?
+        } else {
+            document.structural_durations()?
+        };
         let rate = document.presentation_basis().frame_rate;
         let mut nodes = BTreeMap::new();
         for (id, node) in document.nodes() {
@@ -413,6 +430,62 @@ impl FrozenAudioLayout {
     }
     pub fn duration(&self) -> FrameDuration {
         self.nodes[&self.root].duration
+    }
+
+    /// Prove that an independent voice retains its complete top-level processing
+    /// subtree. Root offsets may change; stable owner and play identities may not.
+    /// This does not infer processed audible support from geometric ownership.
+    pub fn validate_sound_clock_owner(
+        &self,
+        current: &Self,
+        owner: &NodeId,
+        maximum_work: usize,
+    ) -> Result<usize, DocumentError> {
+        if maximum_work == 0 || maximum_work > MAX_DOCUMENT_NODES {
+            return Err(limit("invalid sound clock comparison budget"));
+        }
+        if owner == &self.root || owner == &current.root {
+            return Err(invalid("root-owned sound clocks are not supported"));
+        }
+        if self.root != current.root || self.rate != current.rate {
+            return Err(invalid("sound clock project root or rate changed"));
+        }
+        let (top, mut work) = self.branch_below(&self.root, owner, maximum_work)?;
+        let remaining = maximum_work
+            .checked_sub(work)
+            .filter(|n| *n > 0)
+            .ok_or_else(|| limit("sound clock comparison work exhausted"))?;
+        let (live_top, used) = current.branch_below(&current.root, owner, remaining)?;
+        spend(&mut work, used, maximum_work)?;
+        if top != live_top {
+            return Err(invalid("sound clock owner changed its top-level subtree"));
+        }
+        let mut pending = vec![top];
+        while let Some(id) = pending.pop() {
+            spend(&mut work, 1, maximum_work)?;
+            let before = &self.nodes[&id];
+            let after = current
+                .nodes
+                .get(&id)
+                .ok_or_else(|| invalid("sound clock subtree owner is missing"))?;
+            let child_count = self.children(&id).count();
+            spend(&mut work, child_count, maximum_work)?;
+            if let FrozenAudioKind::Repeat { iterations, .. } = &before.kind {
+                spend(&mut work, iterations.segment_count(), maximum_work)?;
+            }
+            if let FrozenAudioKind::Repeat { iterations, .. } = &after.kind {
+                spend(&mut work, iterations.segment_count(), maximum_work)?;
+            }
+            if before.duration != after.duration
+                || !same_sound_clock_kind(&before.kind, &after.kind)
+                || self.overrides.get(&id) != current.overrides.get(&id)
+                || self.gap_overrides.get(&id) != current.gap_overrides.get(&id)
+            {
+                return Err(invalid("sound clock processing subtree changed"));
+            }
+            pending.extend(self.children(&id).cloned());
+        }
+        Ok(work)
     }
 
     pub(crate) fn children<'a>(
@@ -883,6 +956,45 @@ impl FrozenAudioLayout {
             }
             node = parent;
         }
+    }
+}
+
+fn same_sound_clock_kind(before: &FrozenAudioKind, after: &FrozenAudioKind) -> bool {
+    match (before, after) {
+        (FrozenAudioKind::Source { .. }, FrozenAudioKind::Source { .. })
+        | (FrozenAudioKind::Hold { .. }, FrozenAudioKind::Hold { .. }) => true,
+        (FrozenAudioKind::Sequence { children: a }, FrozenAudioKind::Sequence { children: b }) => {
+            a == b
+        }
+        (
+            FrozenAudioKind::Repeat {
+                child: a,
+                iterations: ai,
+                gap_duration: ag,
+                ..
+            },
+            FrozenAudioKind::Repeat {
+                child: b,
+                iterations: bi,
+                gap_duration: bg,
+                ..
+            },
+        ) => a == b && ai == bi && ag == bg,
+        (
+            FrozenAudioKind::Retime {
+                child: a,
+                mapping: am,
+                pitch: ap,
+                purpose: au,
+            },
+            FrozenAudioKind::Retime {
+                child: b,
+                mapping: bm,
+                pitch: bp,
+                purpose: bu,
+            },
+        ) => a == b && am == bm && ap == bp && au == bu,
+        _ => false,
     }
 }
 

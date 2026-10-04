@@ -139,12 +139,12 @@ impl StageAudio {
     ) -> Result<usize, StageAudioError> {
         control.check()?;
         self.check_projected_depth(depth, 0)?;
-        if let Some((_, relative)) = control
+        if let Some((_, _, relative)) = control
             .work
             .borrow()
             .intrinsic_preflight
             .iter()
-            .find(|(key, _)| key == stage.descriptor())
+            .find(|(plan, key, _)| Arc::ptr_eq(plan, &self.plan) && key == stage.descriptor())
         {
             self.check_projected_depth(depth, *relative)?;
             return Ok(*relative);
@@ -165,8 +165,11 @@ impl StageAudio {
         {
             return Err(StageAudioError::Limit("preflight stages per read"));
         }
-        work.intrinsic_preflight
-            .push((stage.descriptor().clone(), relative));
+        work.intrinsic_preflight.push((
+            Arc::clone(&self.plan),
+            stage.descriptor().clone(),
+            relative,
+        ));
         Ok(relative)
     }
 

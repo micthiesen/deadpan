@@ -85,12 +85,15 @@ impl StageAudio {
                 fades: fades.spans,
             });
         }
-        let beat_voices = self.prepare_beat_sounds(&plan, start..AudioSample(end), control)?;
+        let retained = self.prepare_sound_processing_plans(&plan, control)?;
+        let beat_voices =
+            self.prepare_beat_sounds(&plan, &retained, start..AudioSample(end), control)?;
         // Reserve the retained Original, the f64 sum and the source reader's
         // two transient PCM buffers under the existing shared residency limit.
         let routed = voices
             .iter()
-            .any(|voice| matches!(&voice.input, PreparedSoundInput::Routed(_)));
+            .any(|voice| matches!(&voice.input, PreparedSoundInput::Routed(_)))
+            || beat_voices.iter().any(|voice| voice.has_routed());
         let reservation = u64::from(frames) * if routed { 6 } else { 5 };
         self.make_room(reservation, false, control)?;
         self.active_frames += reservation;

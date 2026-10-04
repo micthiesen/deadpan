@@ -401,7 +401,7 @@ and workspace delivery order. Keep the first child's identity separate from the
 complete result interval. See
 [atomic moves](docs/ATOMIC_MOVES.md).
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 44 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings with exact picture selections and dormant linked audio, audio edge policies, transparent Retime partitions, owned timing bindings with exact local-origin translations, retained framing clocks, root sound routes and owner-local BeatSound maps, and binds qualified assets to immutable source receipts. Database schema 56 is current. Refuse schemas 1 through 55 before writer acquisition, backups, recovery or document parsing. Retain current history validation, checkpoints, accepted-media recovery and the frozen audio-context codecs still referenced by current documents. Historical qualification reports apply to their recorded revisions. See [development formats](docs/DEVELOPMENT_FORMATS.md).
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 45 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings with exact picture selections and dormant linked audio, audio edge policies, transparent Retime partitions, owned timing bindings with exact local-origin translations, retained framing clocks, root sound routes, owner-local BeatSound maps and independent sound clock journals, and binds qualified assets to immutable source receipts. Database schema 57 is current. Refuse schemas 1 through 56 before writer acquisition, backups, recovery or document parsing. Retain current history validation, checkpoints, accepted-media recovery and the frozen audio-context codecs still referenced by current documents. Historical qualification reports apply to their recorded revisions. See [development formats](docs/DEVELOPMENT_FORMATS.md).
 
 Audio placement offsets map current physical-local coordinates into retained
 historical-local coordinates. Rebase lattice, phase-term and reanchor templates
@@ -585,7 +585,7 @@ receipts are independent of authored revisions and survive compact replies,
 workspace refresh failure and final stdout failure. Terminal cancellation needs
 worker completion; a lost observer does not prove cancellation.
 
-Database schema 56 stores core schema 44 and retains operational generation requests,
+Database schema 57 stores core schema 45 and retains operational generation requests,
 plus an optional validated single-Original workflow profile. Use the dedicated
 `create_single_source` / `initialize_prepared_source` path to bind the full measured
 Original, basis and protected baseline atomically. Undo never crosses that baseline;
@@ -1641,7 +1641,29 @@ then applies current Hold gates, complete-island edges and event/ancestor gain.
 Include current Repeat-gap Hard choices on explicit gap branches, using exact
 boundary coincidence. Sum Original, root and beat voices in f64 before the common
 limiter. Silent/absent occurrences retain source admission on warm caches.
-Native beat placement, allowances, retained sound clocks and `ib`/`ab` remain open.
+Native beat placement, allowances, full temporal/copy ownership and `ib`/`ab` remain open.
+
+Independent sound journals share the frozen timing table, separate from physical
+Source bindings. Each entry is the pre-edit layout of one actual movement;
+retain every step, including out-and-back clipping. Use the command's explicit
+fresh timing ID and share helper captures only when their layouts are exactly
+equal. Supported temporal commands preserve the entire sound-bearing top-level
+processing branch; reject changes inside it, root-owned transport and retained
+clock capture/import until their transforms exist. Genuine whole-owner deletion
+removes its events and journals. Metadata keeps history; replacing source,
+mapping or offset retires only that sound's journal.
+
+Compile historical independent processing from frozen structure and current
+qualified sound assets. Preserve Repeat/override/Retime ancestry, with no primary
+Source audio, old Hold carriers or historical gain. Compile only first layouts
+and group their selected assets. Intermediate layouts supply exact translation
+deltas applied to the first actual processed extent; nominal owner bounds cannot
+replace that extent through Preserve. Route the complete original occurrence
+through chronological allocations, then apply current Hold gates, virtual edge
+progress and event/owner gain. Share the preparation controller's
+deadline, work and PCM limits; intrinsic cache identity includes its plan.
+Recheck unchanged event receipts and original ownership on clock changes, and
+live source admission on warm reads. See [saved sound clocks](docs/OWNED_SOUND_VOICES.md#saved-independent-clocks).
 
 Persisted root `SoundEvent` recipes use qualified natural-rate source mappings,
 exact selected intervals, independent sample offsets, owned gain and edges, and

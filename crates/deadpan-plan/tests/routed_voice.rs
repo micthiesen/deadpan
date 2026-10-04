@@ -271,6 +271,52 @@ fn occurrence(plan: &RenderPlan, ordinal: u32) -> AudioSourceOccurrence<'_> {
     .unwrap()
 }
 
+fn short_occurrence(plan: &RenderPlan, ordinal: u32) -> AudioSourceOccurrence<'_> {
+    let mut owner = occurrence(plan, ordinal).instance().clone();
+    // A sound on the Retime output bypasses its own Preserve processor, so
+    // this selected recipe has a smaller audible interval than its owner.
+    owner.node = id("stage");
+    let base = SourceTimeBase::new(1, 44_100).unwrap();
+    let source = SourceAudio {
+        asset: AssetId::new("sound").unwrap(),
+        span: SourceSpan::new(
+            SourceTimestamp {
+                ticks: 10,
+                time_base: base,
+            },
+            SourceTimestamp {
+                ticks: 8_830,
+                time_base: base,
+            },
+        )
+        .unwrap(),
+    };
+    let natural = SourceAudioMapping::natural_rate(
+        source.span,
+        plan.metadata().presentation_basis.frame_rate,
+    )
+    .unwrap()
+    .duration_frames(FrameDuration::ZERO)
+    .unwrap();
+    plan.source_voice_occurrence(
+        owner,
+        AudioSourceVoiceRecipe {
+            source,
+            mapping: SourceAudioMapping::SelectedPlacement {
+                start: ExactRatio::ZERO,
+                frames: natural,
+                selection: ExactFrameRange {
+                    start: ExactRatio::ZERO,
+                    end: q(3, 1),
+                },
+            },
+            offset: AudioSample(0),
+        },
+        Default::default(),
+    )
+    .unwrap()
+}
+
 #[test]
 fn source_capture_retains_scope_identity_and_complete_recipe() {
     let plan = plan(FrameRate::new(48_000, 1).unwrap());
@@ -603,4 +649,54 @@ fn occurrence_route_normalizes_exact_round_even_half_sample_boundaries() {
             expected_start..expected_end
         );
     }
+}
+
+#[test]
+fn occurrence_routed_gates_validate_clock_history_and_apply_current_hold_mask() {
+    let rate = FrameRate::new(30_000, 1_001).unwrap();
+    let original_plan = plan_with_prefix(rate, 0);
+    let moved_plan = plan_with_prefix(rate, 1);
+    let returned_plan = plan_with_prefix(rate, 0);
+    let original = short_occurrence(&original_plan, 0);
+    let moved = short_occurrence(&moved_plan, 0);
+    let returned = short_occurrence(&returned_plan, 0);
+    assert!(original.processing_projection().is_none());
+    assert_ne!(original.audible_extent(), original.extent());
+    let placements = [original.extent(), moved.extent(), returned.extent()];
+    let result = returned
+        .routed_gate_fades(
+            &original,
+            &placements,
+            AudioEdgePolicy::Automatic,
+            AudioEdgePolicy::Automatic,
+            returned.samples(),
+            Default::default(),
+        )
+        .unwrap();
+    assert_eq!(
+        result.spans.first().unwrap().samples.start,
+        returned.samples().start
+    );
+    assert_eq!(
+        result.spans.last().unwrap().samples.end,
+        returned.samples().end
+    );
+    // The live picture branch contains a silent Hold through the Retime.
+    // Historical phase transport never grants permission through that gate.
+    assert!(result.spans.iter().all(|span| span.length == 0));
+
+    let mut wrong_extent = placements.to_vec();
+    wrong_extent[1] = q(1, 1)..q(8, 1);
+    assert!(
+        returned
+            .routed_gate_fades(
+                &original,
+                &wrong_extent,
+                AudioEdgePolicy::Automatic,
+                AudioEdgePolicy::Automatic,
+                returned.samples(),
+                Default::default(),
+            )
+            .is_err()
+    );
 }

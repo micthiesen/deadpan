@@ -49,11 +49,11 @@ fn success(arguments: &[&str]) -> Result<Value> {
 #[test]
 fn doctor_reports_sound_document_and_database_schemas() -> Result {
     let report = success(&["doctor"])?;
-    assert_eq!(report["document_schema"], 44);
-    assert_eq!(report["database_schema"], 56);
+    assert_eq!(report["document_schema"], 45);
+    assert_eq!(report["database_schema"], 57);
     let partial = report["partial"].as_array().unwrap();
     for capability in [
-        "schema-1-through-55-development-format-refusal",
+        "schema-1-through-56-development-format-refusal",
         "saved-beat-sound-commands",
         "persistent-copy-registers",
         "resolved-compound-transactions",

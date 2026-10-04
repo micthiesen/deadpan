@@ -323,6 +323,232 @@ pub(crate) fn occurrence_gate_fades(
     .query(samples, limits, |_, _, _| Ok(false))
 }
 
+/// Transport one occurrence's virtual edge envelope through exact root moves.
+/// Sample labels follow the canonical old integral-label delta at each move;
+/// exact frame positions move independently and retain boundary provenance.
+pub(crate) struct RoutedOccurrenceEnvelope {
+    pub original_allocation: Range<ExactRatio>,
+    pub current_allocation: Range<ExactRatio>,
+    pub original_audible: Range<ExactRatio>,
+    pub grid: AudioSampleGrid<AudioSample>,
+    pub inherited_hard_edges: (bool, bool),
+}
+
+pub(crate) fn routed_occurrence_gate_fades(
+    current: &RenderPlan,
+    envelope: RoutedOccurrenceEnvelope,
+    placements: &[Range<ExactRatio>],
+    start_edge: AudioEdgePolicy,
+    end_edge: AudioEdgePolicy,
+    samples: Range<AudioSample>,
+    limits: AudioQueryLimits,
+) -> Result<AudioSoundGateQuery, PlanError> {
+    let RoutedOccurrenceEnvelope {
+        original_allocation,
+        current_allocation,
+        original_audible,
+        grid,
+        inherited_hard_edges,
+    } = envelope;
+    limits.validate()?;
+    if placements.is_empty()
+        || placements.first() != Some(&original_allocation)
+        || placements.last() != Some(&current_allocation)
+        || !matches!(grid.boundary_rule(), AudioBoundaryRule::RoundEven)
+    {
+        return Err(PlanError::InvalidAudioSourceOccurrence(
+            "routed occurrence placements must preserve its exact extent",
+        ));
+    }
+    let original_duration = original_allocation
+        .end
+        .checked_sub(original_allocation.start)?;
+    if original_duration.compare_integer(0).is_le() {
+        return Err(PlanError::InvalidAudioSourceOccurrence(
+            "routed occurrence placements must have positive duration",
+        ));
+    }
+    for range in placements {
+        if range.end.checked_sub(range.start)? != original_duration {
+            return Err(PlanError::InvalidAudioSourceOccurrence(
+                "routed occurrence placements must preserve its exact extent",
+            ));
+        }
+    }
+    let rate = current.metadata().presentation_basis.frame_rate;
+    let current_step = ExactRatio::new(
+        i128::from(rate.numerator()),
+        i128::from(MIX_SAMPLE_RATE) * i128::from(rate.denominator()),
+    )?;
+    if grid.frame_origin() != ExactRatio::ZERO || grid.frames_per_sample() != current_step {
+        return Err(PlanError::InvalidAudioSourceOccurrence(
+            "routed occurrence sample grid differs from the current project rate",
+        ));
+    }
+    let root_end = current.audio_duration()?;
+    if samples.start.0 < 0 || samples.end < samples.start || samples.end > root_end {
+        return Err(PlanError::AudioRangeOutOfRange);
+    }
+    if samples.is_empty() {
+        return Ok(AudioSoundGateQuery {
+            spans: Vec::new(),
+            work: 0,
+        });
+    }
+    let mut work = 0;
+    let mut start = RoutedBoundary {
+        at: original_audible.start,
+        label: i128::from(grid.boundary(original_audible.start)?.0),
+        policy: if inherited_hard_edges.0 {
+            AudioEdgePolicy::Hard
+        } else {
+            start_edge
+        },
+    };
+    let mut end = RoutedBoundary {
+        at: original_audible.end,
+        label: i128::from(grid.boundary(original_audible.end)?.0),
+        policy: if inherited_hard_edges.1 {
+            AudioEdgePolicy::Hard
+        } else {
+            end_edge
+        },
+    };
+    let mut support =
+        grid.boundary(original_audible.start)?..grid.boundary(original_audible.end)?;
+    let original_allocation_samples =
+        grid.boundary(original_allocation.start)?..grid.boundary(original_allocation.end)?;
+    support.start = support.start.max(original_allocation_samples.start);
+    support.end = support.end.min(original_allocation_samples.end);
+    for pair in placements.windows(2) {
+        charge(&mut work, limits.maximum_work)?;
+        let old_start = grid.boundary(pair[0].start)?.0;
+        let new_start = grid.boundary(pair[1].start)?.0;
+        let sample_shift = i128::from(new_start) - i128::from(old_start);
+        let frame_shift = pair[1].start.checked_sub(pair[0].start)?;
+        start = move_boundary(start, frame_shift, sample_shift)?;
+        end = move_boundary(end, frame_shift, sample_shift)?;
+        let allocation = grid.boundary(pair[1].start)?..grid.boundary(pair[1].end)?;
+        support = sample_label(
+            i128::from(support.start.0)
+                .checked_add(sample_shift)
+                .ok_or(TimeError::Overflow)?,
+        )?
+            ..sample_label(
+                i128::from(support.end.0)
+                    .checked_add(sample_shift)
+                    .ok_or(TimeError::Overflow)?,
+            )?;
+        support.start = support.start.max(allocation.start);
+        support.end = support.end.min(allocation.end);
+    }
+    if support.start >= support.end {
+        charge(&mut work, limits.maximum_work)?;
+        return Ok(AudioSoundGateQuery {
+            spans: vec![silent(samples)],
+            work,
+        });
+    }
+    let context = AudioSample(samples.start.0.saturating_sub(GATE_CONTEXT_SAMPLES).max(0))
+        ..AudioSample(
+            samples
+                .end
+                .0
+                .saturating_add(GATE_CONTEXT_SAMPLES)
+                .min(root_end.0),
+        );
+    let query = current.audio(
+        context,
+        AudioQueryLimits {
+            maximum_spans: limits.maximum_spans.saturating_add(384).min(4096),
+            maximum_work: limits
+                .maximum_work
+                .checked_sub(work)
+                .filter(|remaining| *remaining > 0)
+                .ok_or(PlanError::AudioQueryLimit("sound gate work"))?,
+        },
+    )?;
+    work = work
+        .checked_add(query.work)
+        .filter(|value| *value <= limits.maximum_work)
+        .ok_or(PlanError::AudioQueryLimit("sound gate work"))?;
+    let mut gates: Vec<(RoutedBoundary, RoutedBoundary)> = Vec::new();
+    for span in query.spans {
+        charge(&mut work, limits.maximum_work)?;
+        if !matches!(
+            span.content,
+            AudioContent::Silence {
+                reason: SilenceReason::SilentHold
+            }
+        ) {
+            continue;
+        }
+        let gate_start = RoutedBoundary {
+            at: span.project_extent.start,
+            label: i128::from(grid.boundary(span.project_extent.start)?.0),
+            policy: if span.project_extent.start == span.envelope_extent.start
+                && span
+                    .boundaries
+                    .start
+                    .iter()
+                    .any(|origin| origin.policy == AudioEdgePolicy::Hard)
+            {
+                AudioEdgePolicy::Hard
+            } else {
+                AudioEdgePolicy::Automatic
+            },
+        };
+        let gate_end = RoutedBoundary {
+            at: span.project_extent.end,
+            label: i128::from(grid.boundary(span.project_extent.end)?.0),
+            policy: if span.project_extent.end == span.envelope_extent.end
+                && span
+                    .boundaries
+                    .end
+                    .iter()
+                    .any(|origin| origin.policy == AudioEdgePolicy::Hard)
+            {
+                AudioEdgePolicy::Hard
+            } else {
+                AudioEdgePolicy::Automatic
+            },
+        };
+        if let Some(previous) = gates.last_mut()
+            && gate_start.label <= previous.1.label
+        {
+            previous.1 = gate_end;
+        } else {
+            gates.push((gate_start, gate_end));
+        }
+    }
+    let mut envelopes = Vec::new();
+    append_routed_gated_envelope(
+        &mut envelopes,
+        &samples,
+        &RoutedIsland {
+            support,
+            start,
+            end,
+        },
+        &gates,
+        limits,
+        &mut work,
+    )?;
+    let end_sample = envelopes
+        .last()
+        .map_or(samples.start, |span| span.samples.end);
+    if end_sample < samples.end {
+        push_span(
+            &mut envelopes,
+            silent(end_sample..samples.end),
+            limits,
+            &mut work,
+        )?;
+    }
+    let spans = clip_current_hold_samples(envelopes, &gates, limits, &mut work)?;
+    Ok(AudioSoundGateQuery { spans, work })
+}
+
 struct CurrentEnvelope<'plan> {
     plan: &'plan RenderPlan,
     audible: Range<AudioSample>,
@@ -709,38 +935,7 @@ impl AudioRootSound<'_> {
             if island.support.start >= samples.end {
                 break;
             }
-            let mut cursor = island.start;
-            for &(start, end) in &gates {
-                charge(&mut work, limits.maximum_work)?;
-                if end.label < cursor.label && end.at != cursor.at {
-                    continue;
-                }
-                if island.end.label < start.label && island.end.at != start.at {
-                    break;
-                }
-                append_routed_envelope(
-                    &mut spans,
-                    &samples,
-                    &island.support,
-                    cursor,
-                    routed_earlier(island.end, start)?,
-                    limits,
-                    &mut work,
-                )?;
-                cursor = routed_later(cursor, end)?;
-                if cursor.label >= island.end.label {
-                    break;
-                }
-            }
-            append_routed_envelope(
-                &mut spans,
-                &samples,
-                &island.support,
-                cursor,
-                island.end,
-                limits,
-                &mut work,
-            )?;
+            append_routed_gated_envelope(&mut spans, &samples, island, &gates, limits, &mut work)?;
         }
         let end = spans.last().map_or(samples.start, |span| span.samples.end);
         if end < samples.end {
@@ -752,6 +947,41 @@ impl AudioRootSound<'_> {
         let spans = clip_current_hold_samples(spans, &gates, limits, &mut work)?;
         Ok(AudioSoundGateQuery { spans, work })
     }
+}
+
+fn append_routed_gated_envelope(
+    spans: &mut Vec<AudioSoundGateSpan>,
+    samples: &Range<AudioSample>,
+    island: &RoutedIsland,
+    gates: &[(RoutedBoundary, RoutedBoundary)],
+    limits: AudioQueryLimits,
+    work: &mut usize,
+) -> Result<(), PlanError> {
+    let (support, start, end) = (&island.support, island.start, island.end);
+    let mut cursor = start;
+    for &(gate_start, gate_end) in gates {
+        charge(work, limits.maximum_work)?;
+        if gate_end.label < cursor.label && gate_end.at != cursor.at {
+            continue;
+        }
+        if end.label < gate_start.label && end.at != gate_start.at {
+            break;
+        }
+        append_routed_envelope(
+            spans,
+            samples,
+            support,
+            cursor,
+            routed_earlier(end, gate_start)?,
+            limits,
+            work,
+        )?;
+        cursor = routed_later(cursor, gate_end)?;
+        if cursor.label >= end.label {
+            break;
+        }
+    }
+    append_routed_envelope(spans, samples, support, cursor, end, limits, work)
 }
 
 fn clip_current_hold_samples(

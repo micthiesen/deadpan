@@ -12,22 +12,40 @@ pub(super) struct PreparedBeatSound<'plan> {
 struct PreparedOccurrence<'plan> {
     voice: AudioSourceOccurrence<'plan>,
     samples: Range<AudioSample>,
-    queries: RootReadQueries<'plan>,
+    input: PreparedBeatInput<'plan>,
     fades: Vec<deadpan_plan::AudioSoundGateSpan>,
+}
+
+enum PreparedBeatInput<'plan> {
+    Current(Box<RootReadQueries<'plan>>),
+    Routed {
+        plan: Arc<RenderPlan>,
+        query: super::routed::PreparedRoutedRootQuery<'plan>,
+    },
+}
+
+impl PreparedBeatSound<'_> {
+    pub(super) fn has_routed(&self) -> bool {
+        self.occurrences
+            .iter()
+            .any(|occurrence| matches!(&occurrence.input, PreparedBeatInput::Routed { .. }))
+    }
 }
 
 impl StageAudio {
     pub(super) fn prepare_beat_sounds<'plan>(
-        &self,
+        &mut self,
         plan: &'plan RenderPlan,
+        retained: &'plan super::sound_clocks::SoundProcessingPlans,
         samples: Range<AudioSample>,
         control: WorkControl<'_>,
     ) -> Result<Vec<PreparedBeatSound<'plan>>, StageAudioError> {
         let mut prepared = Vec::new();
         for (owner, events) in plan.beat_sounds() {
-            for event in events.values() {
+            for (sound, event) in events {
                 control.check()?;
                 control.admit_dependency(&event.source.asset)?;
+                let clocks = plan.beat_sound_clock_layouts(owner, sound)?;
                 let batch = plan.source_voice_occurrences(
                     owner,
                     AudioSourceVoiceRecipe {
@@ -53,27 +71,65 @@ impl StageAudio {
                             .iter()
                             .filter_map(|owner| owner.treatments()),
                     )?;
-                    let queries =
-                        self.source_occurrence_queries(voice, interval.clone(), control)?;
-                    self.preflight_root_queries(
-                        &queries,
-                        interval.start,
-                        count(&interval)?,
-                        control,
-                        0,
-                    )?;
-                    let fades = voice.gate_fades(
-                        event.start_edge,
-                        event.end_edge,
-                        interval.clone(),
-                        control.query_limits()?,
-                    )?;
-                    control.spend_plan_work(fades.work)?;
+                    let (input, fades) = if let Some((first, _)) = clocks.first() {
+                        let first_plan = retained.get(*first).ok_or(PlanError::InvalidPlan(
+                            "sound processing layout was not prepared",
+                        ))?;
+                        let original = super::sound_clocks::historical_occurrence(
+                            first_plan, voice, event, control,
+                        )?;
+                        let placements =
+                            super::sound_clocks::placements(&original, voice, &clocks, control)?;
+                        let fades = voice.routed_gate_fades(
+                            &original,
+                            &placements,
+                            event.start_edge,
+                            event.end_edge,
+                            interval.clone(),
+                            control.query_limits()?,
+                        )?;
+                        control.spend_plan_work(fades.work)?;
+                        let routed =
+                            super::sound_clocks::route_occurrence(original, &placements, control)?;
+                        let query = self.with_plan_scope(Arc::clone(first_plan), |reader| {
+                            reader.preflight_routed_root(
+                                &routed,
+                                interval.start,
+                                count(&interval)?,
+                                control,
+                            )
+                        })?;
+                        (
+                            PreparedBeatInput::Routed {
+                                plan: Arc::clone(first_plan),
+                                query,
+                            },
+                            fades,
+                        )
+                    } else {
+                        let queries =
+                            self.source_occurrence_queries(voice, interval.clone(), control)?;
+                        self.preflight_root_queries(
+                            &queries,
+                            interval.start,
+                            count(&interval)?,
+                            control,
+                            0,
+                        )?;
+                        let fades = voice.gate_fades(
+                            event.start_edge,
+                            event.end_edge,
+                            interval.clone(),
+                            control.query_limits()?,
+                        )?;
+                        control.spend_plan_work(fades.work)?;
+                        (PreparedBeatInput::Current(Box::new(queries)), fades)
+                    };
                     sound_events::validate_gate_envelopes(&fades.spans, interval.clone())?;
                     occurrences.push(PreparedOccurrence {
                         voice: voice.clone(),
                         samples: interval,
-                        queries,
+                        input,
                         fades: fades.spans,
                     });
                 }
@@ -105,14 +161,20 @@ impl StageAudio {
             control.check()?;
             for occurrence in sound.occurrences {
                 control.spend_plan_work(count(&occurrence.samples)? as usize)?;
-                let mut block = self.read_queries(
-                    provider,
-                    occurrence.samples.start,
-                    count(&occurrence.samples)?,
-                    control,
-                    0,
-                    occurrence.queries,
-                )?;
+                let mut block = match occurrence.input {
+                    PreparedBeatInput::Current(queries) => self.read_queries(
+                        provider,
+                        occurrence.samples.start,
+                        count(&occurrence.samples)?,
+                        control,
+                        0,
+                        *queries,
+                    )?,
+                    PreparedBeatInput::Routed { plan, query } => self
+                        .with_plan_scope(plan, |reader| {
+                            reader.read_routed_root_controlled(provider, query, control)
+                        })?,
+                };
                 let offset = usize::try_from(occurrence.samples.start.0 - original.start.0)
                     .map_err(|_| StageAudioError::Range)?;
                 let expected = count(&occurrence.samples)? as usize;

@@ -1,0 +1,28 @@
+{
+  "command": [
+    "cargo",
+    "clippy",
+    "--workspace",
+    "--all-targets",
+    "--locked",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "started": "2026-10-04T01:07:05.395076+00:00",
+  "base_commit": "53bed8e967b940b825bd92e363b4ed0d19b33998",
+  "diff_sha256": "4f6caf095f4b9b49943858382e47f86623a8ccb5a8b5c46a1f1c0837d638249a",
+  "source_manifest_sha256": "7198413a4089d76689365652070f1b95ebfb901f74377a7c717d05c51c87232f",
+  "pid": 2119,
+  "exit_code": 101,
+  "seconds": 739.1068249582313,
+  "source_manifest_after_sha256": "7198413a4089d76689365652070f1b95ebfb901f74377a7c717d05c51c87232f",
+  "source_unchanged": true,
+  "gate_exit_code": 101,
+  "test_totals": {
+    "passed": 0,
+    "failed": 0,
+    "ignored": 0
+  },
+  "name": "clippy-2"
+}

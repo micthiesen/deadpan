@@ -49,6 +49,7 @@ mod repeat_selection;
 mod scoped_edit;
 mod semantic;
 mod sound_allowance;
+mod sound_clock;
 mod sound_events;
 mod sound_route;
 mod sound_routing;
@@ -102,6 +103,7 @@ pub use scoped_edit::{
 };
 pub use semantic::*;
 pub use sound_allowance::*;
+pub use sound_clock::{MAX_SOUND_CLOCK_BYTES, MAX_SOUND_CLOCKS, SoundClockJournal};
 pub use sound_events::*;
 pub use sound_route::*;
 pub use sound_routing::*;

@@ -3,6 +3,9 @@ use super::*;
 use deadpan_audio::{LimitedAudio, LimitedTile, LimiterContext};
 use std::time::Instant;
 
+#[path = "sound_clocks.rs"]
+mod sound_clocks;
+
 fn saved(document: &ProjectDocument, owner: &str, length: i64) -> ProjectDocument {
     let recipe = voice_recipe(document.presentation_basis().frame_rate, length);
     let event = BeatSound {
@@ -22,7 +25,7 @@ fn saved(document: &ProjectDocument, owner: &str, length: i64) -> ProjectDocumen
 
 fn bus(
     renderer: &mut StageAudio,
-    provider: &mut FixtureProvider,
+    provider: &mut impl AudioSourceProvider,
     start: i64,
     count: u32,
 ) -> deadpan_audio::EdgeFadedBlock {

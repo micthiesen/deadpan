@@ -5,6 +5,9 @@ use deadpan_core::{
 };
 use std::collections::BTreeMap;
 
+#[path = "sound_clocks.rs"]
+mod sound_clocks;
+
 fn event(document: &ProjectDocument) -> Result<BeatSound> {
     let root = sound(document)?;
     Ok(BeatSound {
@@ -126,8 +129,8 @@ fn beat_sound_save_copy_rename_and_history_preserve_owner_local_ids() -> Result 
     let renamed = store.snapshot()?;
     assert_eq!(renamed.beat_sounds(), added.beat_sounds());
     let slice = capture(&renamed)?;
-    // Keep the immutable owner capture, then remove the live event before
-    // temporal authoring. Paste into a live owned-sound document is unsupported.
+    // Keep the immutable owner capture, then remove the live event so this
+    // copy test follows the historical recipe independently of live transport.
     store.commit(&edit(
         &renamed,
         "remove-before-copy",

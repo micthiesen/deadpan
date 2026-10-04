@@ -2,6 +2,49 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Saved independent sound clocks, 2026-10-03
+
+Core 45/database 57 adds owner/local-sound clock journals, separate from physical
+audio bindings. Each movement retains its pre-edit layout; the current layout
+is implicit. Supported ordinary Sequence commands can translate an otherwise
+unchanged complete top-level sound-bearing branch. Every move participates in
+RoundEven allocation, so moving out and back cannot revive an earlier clipped
+sample. Unchanged origins allocate no journal step. Genuine owner deletion
+removes its sounds and journals.
+
+Historical independent plans compile the first layout with only its selected
+qualified sound assets. They omit Original audio and clear old treatments/edges.
+Keep complete Repeat/override/Retime processing. Intermediate layouts supply
+exact affine translation deltas applied to the first actual processed extent;
+geometric owner bounds cannot replace that extent through Preserve. Compile
+only first layouts, group their assets, and share the current reader's work,
+deadline, dependency and PCM residency limits. Intrinsic cache identity includes
+the retained plan. Scoped reads restore the current plan even on unwind.
+
+Apply current Hold gates, edges and gain after retained raw PCM. At exact shared
+boundaries, current Holds own their rounded endpoints. SetBeatSound label/gain/
+edge changes preserve journals; source/mapping/offset replacement retires them.
+Store admission checks changed owner/local-ID journals against the original
+receipt and bytes. Keep these checks distinct when two owners reuse a SoundId.
+
+Whole unclocked owner copies can enter eligible ordinary Sequences. Root-owned
+temporal transport, changed surviving processing branches, partial sound copies,
+copy/import of retained clocks, sound allowances and native beat-sound placement
+remain guarded. This is insufficient to enable complete `ib`/`ab` behavior.
+Prior unused databases 1 through 56 refuse before writes. See
+[owned sounds](../OWNED_SOUND_VOICES.md#saved-independent-clocks) and the
+[qualification record](../qualification/sound-clocks-2026-10-03.md).
+
+Independent review is complete. The full workspace run recorded 3,588 passes
+and one invalid new fixture assertion about Preserve output. All 11 affected
+planner tests pass after its test-only correction. Final formatting and strict
+workspace lint pass. Retained source inventories prove production code stayed
+unchanged after the broad run. No interactive native app was launched.
+
+The sections below describe their historical checkpoints. This section and
+the current contracts supersede their open-clock and blanket temporal-guard
+statements. No product requirement or release gate is complete.
+
 ## Retained occurrence preparation, 2026-10-03
 
 `AudioRoutedRoot::occurrence` accepts one complete independent source occurrence

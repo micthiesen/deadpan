@@ -702,6 +702,42 @@ impl<'plan> AudioSourceOccurrence<'plan> {
             limits,
         )
     }
+
+    /// Build current output gates around a historically transported occurrence.
+    /// `placements` is ordered from the original processed allocation through
+    /// each chronological edit to this occurrence's current allocation. Every
+    /// step keeps exact duration; the method transports integral sample labels
+    /// by canonical boundary differences and applies only current Hold gates.
+    pub fn routed_gate_fades(
+        &self,
+        original: &AudioSourceOccurrence<'_>,
+        placements: &[Range<ExactRatio>],
+        start_edge: deadpan_core::AudioEdgePolicy,
+        end_edge: deadpan_core::AudioEdgePolicy,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+    ) -> Result<crate::AudioSoundGateQuery, PlanError> {
+        if self.instance != original.instance {
+            return Err(PlanError::InvalidAudioSourceOccurrence(
+                "routed occurrence owner differs from its original",
+            ));
+        }
+        crate::audio_sound_event::routed_occurrence_gate_fades(
+            self.plan,
+            crate::audio_sound_event::RoutedOccurrenceEnvelope {
+                original_allocation: original.extent(),
+                current_allocation: self.extent(),
+                original_audible: original.audible_extent(),
+                grid: original.grid,
+                inherited_hard_edges: self.inherited_hard_edges,
+            },
+            placements,
+            start_edge,
+            end_edge,
+            samples,
+            limits,
+        )
+    }
     pub fn samples(&self) -> Range<AudioSample> {
         self.samples.clone()
     }

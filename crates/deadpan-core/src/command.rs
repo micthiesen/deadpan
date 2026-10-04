@@ -771,6 +771,11 @@ pub fn apply(
     crate::picture_context::validate_command(&request.command)?;
     crate::audio_gain::validate_command(&request.command)?;
     crate::sound_events::validate_command(document, &request.command)?;
+    let beat_sound_edit = crate::sound_clock::edit::SoundClockEditCapture::prepare(
+        document,
+        &request.command,
+        &request.new_revision,
+    )?;
     let sound_edit =
         crate::sound_routing::RootSoundEditCapture::prepare(document, &request.command)?;
     let mut allowance_edit =
@@ -778,7 +783,11 @@ pub fn apply(
     let mut structural = sound_edit
         .as_ref()
         .map(|capture| capture.structural_document(document))
-        .or_else(|| allowance_edit.as_ref().map(|_| document.clone()));
+        .or_else(|| allowance_edit.as_ref().map(|_| document.clone()))
+        .or_else(|| beat_sound_edit.as_ref().map(|_| document.clone()));
+    if let Some(capture) = &beat_sound_edit {
+        capture.detach(structural.as_mut().expect("beat sound structural view"));
+    }
     if allowance_edit.is_some()
         && let Some(structural) = &mut structural
     {
@@ -992,6 +1001,9 @@ pub fn apply(
         }
     };
     if let Some(capture) = sound_edit {
+        capture.restore(&mut result)?;
+    }
+    if let Some(capture) = beat_sound_edit {
         capture.restore(&mut result)?;
     }
     if let Some(allowances) = allowance_edit {
@@ -1244,6 +1256,21 @@ pub(crate) fn reduce(
                     EditErrorCode::LimitExceeded,
                     "document exceeds 64 live sound events",
                 ));
+            }
+            // Gain, labels and edges remain live over the retained placement.
+            // A replacement recipe starts on the current clock deliberately.
+            if document
+                .beat_sounds
+                .get(owner)
+                .and_then(|events| events.get(id))
+                .is_some_and(|old| {
+                    old.source != event.source
+                        || old.mapping != event.mapping
+                        || old.offset != event.offset
+                })
+                && let Some(journals) = document.audio_bindings.sound_clocks.get_mut(owner)
+            {
+                journals.remove(id);
             }
             document
                 .beat_sounds

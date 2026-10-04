@@ -539,6 +539,43 @@ impl RenderPlan {
         self.audio_context.then_some(&self.audio_assets)
     }
 
+    /// Frozen layouts retained for one beat-owned sound, in chronological
+    /// pre-edit order. The live plan supplies the final clock separately.
+    pub fn beat_sound_clock_layouts<'a>(
+        &'a self,
+        owner: &deadpan_core::NodeId,
+        sound: &deadpan_core::SoundId,
+    ) -> Result<
+        Vec<(
+            &'a deadpan_core::AudioTimingId,
+            &'a deadpan_core::FrozenAudioLayout,
+        )>,
+        PlanError,
+    > {
+        let Some(journal) = self
+            .audio_bindings
+            .sound_clocks()
+            .get(owner)
+            .and_then(|sounds| sounds.get(sound))
+        else {
+            return Ok(Vec::new());
+        };
+        journal
+            .clocks()
+            .iter()
+            .map(|id| {
+                let layout =
+                    self.audio_bindings
+                        .timings()
+                        .get(id)
+                        .ok_or(PlanError::InvalidPlan(
+                            "beat sound clock refers to a missing frozen layout",
+                        ))?;
+                Ok((id, layout))
+            })
+            .collect()
+    }
+
     pub fn duration(&self) -> FrameDuration {
         self.metadata.duration
     }

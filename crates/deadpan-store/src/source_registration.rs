@@ -1192,6 +1192,16 @@ pub(crate) fn validate_sound_sources(
                         .get(owner)
                         .and_then(|local| local.get(*id))
                         != Some(*event)
+                        || current
+                            .audio_bindings()
+                            .sound_clocks()
+                            .get(owner)
+                            .and_then(|local| local.get(*id))
+                            != next
+                                .audio_bindings()
+                                .sound_clocks()
+                                .get(owner)
+                                .and_then(|local| local.get(*id))
                         || current.assets().get(&event.source.asset)
                             != next.assets().get(&event.source.asset)
                 })
@@ -1407,3 +1417,7 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
 fn invalid(message: &str) -> StoreError {
     StoreError::SourceRegistration(message.into())
 }
+
+#[cfg(test)]
+#[path = "source_registration/sound_clocks_tests.rs"]
+mod sound_clocks_tests;
