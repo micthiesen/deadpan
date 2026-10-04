@@ -108,6 +108,7 @@ during Gain drafts and blocking renders; and Quit uses the graceful close path
 instead of `terminate:`.
 
 ## Remaining
- Transport buttons keep their
-pre-measured text geometry and older `Label  ·  Key` format. Physical VoiceOver,
+
+Every keyed button, including the pre-measured transport and sound-audition
+controls, now uses the shared one-run `label  key` format. Physical VoiceOver,
 IME and display-latency acceptance remain open; replay does not establish them.
