@@ -256,3 +256,55 @@ fn words_and_pauses_explain_their_own_absence() {
     );
     assert!(timeline().with_pauses(vec![range(4, 4)]).is_err());
 }
+
+fn shot(start: i64, end: i64, shot: u32) -> ShotRun {
+    ShotRun {
+        range: range(start, end),
+        shot,
+    }
+}
+
+#[test]
+fn shot_motions_and_objects_follow_shot_occurrences() {
+    // Shot 0, shot 1, then shot 0 replayed after a cut.
+    let timeline = SpeechTimeline::without_words("no transcript")
+        .with_shots(vec![shot(0, 30, 0), shot(30, 60, 1), shot(70, 100, 0)])
+        .unwrap();
+    let target = |from: i64, forward: bool, count: u32| {
+        timeline
+            .shot_target(ProjectFrame(from), BOUNDS, forward, count)
+            .map(|frame| frame.0)
+    };
+    assert_eq!(target(0, true, 1).unwrap(), 30);
+    assert_eq!(
+        target(0, true, 2).unwrap(),
+        70,
+        "a replay starts an occurrence"
+    );
+    assert_eq!(target(75, false, 1).unwrap(), 70);
+    assert!(
+        target(80, true, 1)
+            .unwrap_err()
+            .message
+            .contains("no later shot")
+    );
+    let object =
+        |at: i64, object| timeline.object_range(ProjectFrame(at), BOUNDS, object, thirty());
+    assert_eq!(object(40, SpeechObject::InnerShot).unwrap(), range(30, 60));
+    assert_eq!(
+        object(40, SpeechObject::AroundShot).unwrap(),
+        range(30, 60),
+        "hard cuts have no transition handles"
+    );
+    assert!(
+        object(65, SpeechObject::InnerShot).is_err(),
+        "a gap holds no shot"
+    );
+    let missing = super::tests::timeline()
+        .shot_target(ProjectFrame(0), BOUNDS, true, 1)
+        .unwrap_err();
+    assert!(
+        missing.message.contains("shots are not ready"),
+        "{missing:?}"
+    );
+}

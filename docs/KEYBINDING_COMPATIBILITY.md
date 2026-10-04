@@ -45,6 +45,8 @@ Visual objects. Plain `[` and `]` carry no modifier, so the Kestrel registry is
 not involved (it reserves no bracket chord). `p` and `P`
 keep their paste meaning: only a pending `]`, `[`, `i` or `a` prefix reaches
 the pause bindings. Custom keymaps that bound `[` or `]` alone must move.
+Shot motions `]s`/`[s` share those prefixes, and `iS`/`aS` use Shift+`s`
+only after a pending `i` or `a`, so the plain `s` split binding is unchanged.
 
 Catalog placement uses `,s` with no count or key-repeat activation. In Placed
 sounds and its inspector, `h/l`, `j/k`, Enter, `+/-` and `dd` act on the event.

@@ -3,10 +3,11 @@ use rusqlite::{Connection, limits::Limit};
 use crate::StoreError;
 
 // Storage has operational tables beyond the independently versioned core JSON.
-pub const VERSION: u32 = 60;
-/// The one earlier schema a writer upgrades in place: 60 only adds the
-/// `speech_activity` table, so a schema-59 package needs no backup.
-pub const UPGRADABLE_VERSION: u32 = 59;
+pub const VERSION: u32 = 61;
+/// Earlier schemas a writer upgrades in place. 60 only added the
+/// `speech_activity` table and 61 only adds `shot_analysis`, so neither
+/// upgrade needs a backup.
+pub const UPGRADABLE_VERSIONS: [u32; 2] = [59, 60];
 pub const APPLICATION_ID: u32 = 0x4450_4e31;
 pub const MAX_DOCUMENT_BYTES: usize = deadpan_core::MAX_DOCUMENT_JSON_BYTES;
 
@@ -21,7 +22,7 @@ pub fn configure(connection: &Connection) -> Result<(), StoreError> {
 
 pub fn check_version(connection: &Connection) -> Result<(), StoreError> {
     let version = read_version(connection)?;
-    // Database schema 60 adds speech activity. Refuse prior unused development
+    // Database schema 61 adds shot analysis. Refuse prior unused development
     // packages before writable open or document parsing.
     if version != VERSION {
         return Err(StoreError::UnsupportedSchema(version));
@@ -29,26 +30,27 @@ pub fn check_version(connection: &Connection) -> Result<(), StoreError> {
     Ok(())
 }
 
-/// Accept the current schema or the additively upgradable one, returning it.
+/// Accept the current schema or an additively upgradable one, returning it.
 pub fn check_openable_version(connection: &Connection) -> Result<u32, StoreError> {
     let version = read_version(connection)?;
-    if version != VERSION && version != UPGRADABLE_VERSION {
+    if version != VERSION && !UPGRADABLE_VERSIONS.contains(&version) {
         return Err(StoreError::UnsupportedSchema(version));
     }
     Ok(version)
 }
 
-/// Upgrade a schema-59 database to 60 in one immediate transaction. Current
-/// databases are unchanged.
+/// Upgrade a schema-59 or 60 database to 61 in one immediate transaction.
+/// Current databases are unchanged.
 pub fn upgrade(connection: &Connection) -> Result<(), StoreError> {
     let transaction =
         rusqlite::Transaction::new_unchecked(connection, rusqlite::TransactionBehavior::Immediate)?;
     match read_version(&transaction)? {
         VERSION => return Ok(()),
-        UPGRADABLE_VERSION => {}
+        59 => crate::speech_activity::create_tables(&transaction)?,
+        60 => {}
         version => return Err(StoreError::UnsupportedSchema(version)),
     }
-    crate::speech_activity::create_tables(&transaction)?;
+    crate::shot_analysis::create_tables(&transaction)?;
     transaction.pragma_update(None, "user_version", VERSION)?;
     transaction.commit()?;
     Ok(())
@@ -101,6 +103,7 @@ pub fn create(connection: &mut Connection) -> Result<(), StoreError> {
     crate::generation_attempts::create_tables(&transaction)?;
     crate::transcripts::create_tables(&transaction)?;
     crate::speech_activity::create_tables(&transaction)?;
+    crate::shot_analysis::create_tables(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::render_jobs::create_tables(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]

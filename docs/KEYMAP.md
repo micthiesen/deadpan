@@ -56,6 +56,8 @@ The 16-key bound also applies to each composed operator-plus-motion path.
 | `object.inner_word`, `object.around_word`, `object.inner_sentence`, `object.around_sentence` | `iw` / `aw` / `is` / `as`: Visual word or sentence at the Edit cursor, with up to 80 ms pause handles for `a`; also compose after `y`, `d`, `r` |
 | `pause.next`, `pause.previous` | `]p` / `[p`: start of the next / previous detected pause, in Original and Your edit; counts move further and compose after `y`, `d`, `r` |
 | `object.inner_pause`, `object.around_pause` | `ip` / `ap`: Visual pause at the Edit cursor, with up to 80 ms of the adjoining speech for `a`; also compose after `y`, `d`, `r` |
+| `shot.next`, `shot.previous` | `]s` / `[s`: start of the next / previous detected shot occurrence, in Original and Your edit; counts move further and compose after `y`, `d`, `r` |
+| `object.inner_shot`, `object.around_shot` | `iS` / `aS`: Visual shot occurrence at the Edit cursor (hard cuts carry no transition handles, so they match); also compose after `y`, `d`, `r` |
 | `first`, `last` | Start and end |
 | `undo` | Undo; native undo/redo alternatives remain fixed |
 | `playback`, `audition` | Play/pause and selection loop |

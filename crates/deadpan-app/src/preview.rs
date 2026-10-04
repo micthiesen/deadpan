@@ -52,6 +52,7 @@ mod scope;
 mod scoped;
 mod selection;
 mod semantic;
+mod shots;
 mod slip;
 mod sound_events;
 mod splice;
@@ -137,6 +138,7 @@ pub struct DeadpanApp {
     junction_pictures: splice::JunctionDisplay,
     thumbnails: thumbnails::Thumbnails,
     transcription: transcript::Transcription,
+    shots: shots::ShotJob,
     /// The native menu bar, present only for native launches.
     #[cfg(target_os = "macos")]
     menu: Option<crate::menu::MenuBar>,
@@ -291,6 +293,7 @@ impl DeadpanApp {
             junction_pictures,
             thumbnails,
             transcription: transcript::Transcription::default(),
+            shots: shots::ShotJob::default(),
             #[cfg(target_os = "macos")]
             menu: None,
             target: None,
@@ -956,6 +959,7 @@ impl DeadpanApp {
             self.transcription.receive_save(update.transcript_save);
             self.transcription
                 .receive_activity_save(update.activity_save);
+            self.shots.receive_save(update.shot_save);
             // A service publication can replace the captured head before a
             // stopped decode is polled below. Revoke that proposal now, not
             // after receive returns or when final layout requests its successor.
@@ -1793,7 +1797,12 @@ impl DeadpanApp {
                 sentence: true,
                 end: false,
             }),
-            Action::Pause { forward, count } => self.pause_motion(forward, count),
+            Action::Pause { forward, count } => {
+                self.analysis_motion(deadpan_core::SpeechUnit::Pause, forward, count)
+            }
+            Action::Shot { forward, count } => {
+                self.analysis_motion(deadpan_core::SpeechUnit::Shot, forward, count)
+            }
             Action::SelectSpeech(object) => self.select_speech(object),
             Action::First | Action::Last => {
                 let end = action == Action::Last;
@@ -3060,6 +3069,8 @@ impl DeadpanApp {
                         let pauses = self.workspace.as_ref().is_some_and(|workspace| workspace.speech_activity.is_some());
                         if words { self.add_editor_pair_hint(&mut hints, EditorKey::WordNext, EditorKey::WordPrevious, " ", "word"); }
                         if pauses { self.add_editor_pair_hint(&mut hints, EditorKey::PauseNext, EditorKey::PausePrevious, " ", "pauses"); }
+                        let shots = self.workspace.as_ref().is_some_and(|workspace| workspace.shot_analysis.is_some());
+                        if shots { self.add_editor_pair_hint(&mut hints, EditorKey::ShotNext, EditorKey::ShotPrevious, " ", "shots"); }
                         self.add_editor_hint(&mut hints, EditorKey::Visual, if selection == navigation::EditSelection::Object { if self.edit_range.active { "retain object" } else { "select time" } } else if self.edit_range.active { "finish range" } else { "select range" });
                         self.add_editor_hint(&mut hints, EditorKey::Repeat, if selection == navigation::EditSelection::None { "repeat beat" } else if selection == navigation::EditSelection::Object { "repeat object" } else { "repeat range" });
                         match selection {
@@ -3082,6 +3093,7 @@ impl DeadpanApp {
                                 self.add_editor_hint(&mut hints, EditorKey::InnerSentence, "sentence");
                             }
                             if pauses { self.add_editor_hint(&mut hints, EditorKey::InnerPause, "pause"); }
+                            if shots { self.add_editor_hint(&mut hints, EditorKey::InnerShot, "shot"); }
                             self.add_editor_hint(&mut hints, EditorKey::InnerGroup, "group contents");
                             self.add_editor_hint(&mut hints, EditorKey::AroundGroup, "whole group");
                         }
@@ -3101,6 +3113,7 @@ impl DeadpanApp {
                         self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " ", "frame");
                         if self.workspace.as_ref().is_some_and(|workspace| workspace.transcript.is_some()) { self.add_editor_pair_hint(&mut hints, EditorKey::WordNext, EditorKey::WordPrevious, " ", "word"); }
                         if self.workspace.as_ref().is_some_and(|workspace| workspace.speech_activity.is_some()) { self.add_editor_pair_hint(&mut hints, EditorKey::PauseNext, EditorKey::PausePrevious, " ", "pauses"); }
+                        if self.workspace.as_ref().is_some_and(|workspace| workspace.shot_analysis.is_some()) { self.add_editor_pair_hint(&mut hints, EditorKey::ShotNext, EditorKey::ShotPrevious, " ", "shots"); }
                         if self.focused_workflow() && !self.beat_rows.is_empty() { self.add_editor_pair_hint(&mut hints, EditorKey::BeatNext, EditorKey::BeatPrevious, " ", "edit beat"); }
                         self.add_editor_hint(&mut hints, EditorKey::Visual, if self.moment.active { "finish selection" } else { "select moment" });
                         self.add_editor_hint(&mut hints, EditorKey::Copy, "copy moment");
@@ -3239,7 +3252,7 @@ impl DeadpanApp {
                     } else if matches!(profile, Some(SingleSourceState::Ready { .. })) {
                         let sources = Arc::clone(&self.source_rows);
                         if let Some((asset, label, _)) = sources.first() {
-                            let detail = format!("{} decoded video frames", self.source_length());
+                            let detail = self.original_detail();
                             let thumbnail = self.workspace.as_ref().filter(|_| self.source_length() > 0).and_then(|workspace| {
                                 self.thumbnails.show(thumbnails::Key {
                                     session: workspace.session,
@@ -3253,7 +3266,7 @@ impl DeadpanApp {
                         }
                         ui.label(egui::RichText::new("Your starting point stays intact.").size(12.0).color(style::MUTED));
                         ui.add_space(8.0);
-                        ui.label(style::section_title("REUSE", false));
+                        self.reuse_heading(ui);
                         if ui.add(style::row_action(ui, "Browse", ":source")).clicked()
                             && let Some(asset) = self.workspace.as_ref().and_then(|workspace| original_asset(workspace)).cloned() { self.select_source(asset); }
                         if ui.add_enabled(!self.service.is_busy(), style::row_action(ui, "Reuse all", self.editor_key(EditorKey::Insert))).on_hover_text(format!("Append the entire Original after the selected beat in the current group. Select a range in Original with {}, move with {}, then copy with {}.", self.editor_key(EditorKey::Visual), self.editor_pair(EditorKey::FramePrevious, EditorKey::FrameNext, "/"), self.bindings.key_label(EditorKey::Copy))).clicked() { self.insert(); }
@@ -4073,6 +4086,7 @@ impl DeadpanApp {
                         (format!("{} {} {}", key(EditorKey::WordNext), key(EditorKey::WordPrevious), key(EditorKey::WordEnd)), format!("Next word / previous word / end of the word, from the Original's transcript. Counts move further: {}. In Your edit words follow every edit; freezes, generated pictures and gaps hold none.", bindings.counted_label(EditorKey::WordNext, 3))),
                         (key_labels::aliases_pair(&bindings, EditorKey::SentenceNext, EditorKey::SentencePrevious, " "), "Next / previous sentence.".to_owned()),
                         (key_labels::aliases_pair(&bindings, EditorKey::PauseNext, EditorKey::PausePrevious, " "), format!("Start of the next / previous pause detected in the Original's speech. In Your edit inserted pauses, freezes and gaps count as pauses too. Counts move further: {}.", bindings.counted_label(EditorKey::PauseNext, 2))),
+                        (key_labels::aliases_pair(&bindings, EditorKey::ShotNext, EditorKey::ShotPrevious, " "), "Start of the next / previous shot detected in the Original's pictures. In Your edit a replayed shot starts again; freezes and gaps belong to no shot.".to_owned()),
                         (key_labels::aliases_pair(&bindings, EditorKey::First, EditorKey::Last, " / "), "First / final boundary of the current group or Original.".to_owned()),
                         (format!("{} + letter · {} + letter", key(EditorKey::MarkSet), key(EditorKey::MarkJump)), "Save an exact Original or Edit mark, then jump to it. Uppercase letters are separate. Edit marks follow their content through edits; deleted targets stay unresolved until Undo or an explicit new mark. Setting a mark is undoable and preserves both cursors and selection.".to_owned()),
                         ("Ctrl O / Ctrl I".to_owned(), "Back / forward through successful mark jumps. Original positions retain their qualified source clock. A changed Edit revision expires old history positions instead of seeking unrelated content; saved marks still follow structural edits.".to_owned()),
@@ -4097,6 +4111,7 @@ impl DeadpanApp {
                         (format!("{} / {} / :delete-frames 12f", key(EditorKey::CutFrames), bindings.counted_label(EditorKey::CutFrames, 12)), format!("Cut one or a counted number of linked picture and sound frames beginning at the Edit cursor, stopping at this group's end. The command captures its cursor and group when entry opens. A Visual selection must be cleared with {} first, or cut with {}. At the group's end no edit is made. One Undo restores the cut; the exact removed slice remains available for paste.", key(EditorKey::Escape), key(EditorKey::CutRange))),
                         (format!("{} {} {} {} · Visual or after {}/{}/{}", key(EditorKey::InnerWord), key(EditorKey::AroundWord), key(EditorKey::InnerSentence), key(EditorKey::AroundSentence), key(EditorKey::YankOperator), key(EditorKey::CutOperator), key(EditorKey::RepeatOperator)), format!("Select the word or sentence at the Edit cursor. The around forms add half of each adjoining pause, at most 80 ms per side, never reaching other speech. After an operator they act at once: {}{} cuts the word, {}{}{} plays it three times in total. Word motions such as {}{} also follow operators.", key(EditorKey::CutOperator), key(EditorKey::InnerWord), "3", key(EditorKey::RepeatOperator), key(EditorKey::InnerWord), key(EditorKey::CutOperator), key(EditorKey::WordNext))),
                         (format!("{} {} · Visual or after {}/{}/{}", key(EditorKey::InnerPause), key(EditorKey::AroundPause), key(EditorKey::YankOperator), key(EditorKey::CutOperator), key(EditorKey::RepeatOperator)), format!("Select the pause at the Edit cursor. The around form adds a little of the speech on each side: half of it, at most 80 ms. {}{} cuts the pause, closing the gap.", key(EditorKey::CutOperator), key(EditorKey::InnerPause))),
+                        (format!("{} {} · Visual or after {}/{}/{}", key(EditorKey::InnerShot), key(EditorKey::AroundShot), key(EditorKey::YankOperator), key(EditorKey::CutOperator), key(EditorKey::RepeatOperator)), format!("Select the shot occurrence at the Edit cursor. Detected boundaries are hard cuts, so the around form adds no transition frames. {}{} copies the shot.", key(EditorKey::YankOperator), key(EditorKey::InnerShot))),
                         (format!("{} / {} · Visual or after {}/{}/{}", key(EditorKey::InnerGroup), key(EditorKey::AroundGroup), key(EditorKey::YankOperator), key(EditorKey::CutOperator), key(EditorKey::RepeatOperator)), "Select exact group contents or the whole group. An explicitly selected Sequence wins; otherwise use the containing nonroot group. Visual finish retains the object; moving while extending changes it into a time range. Whole-group edits return to the outer parent. Empty contents can receive a paste; an all-empty child forest still has exact owners. Macros and dot resolve the object in their current context.".to_owned()),
                         (":repeat 3".to_owned(), "Set total plays on the captured Repeat, preserving its gaps and surviving plays; wrap a different selected beat. Clear Visual selection first. Recording keeps the effective wrap or count-change instruction; dot reapplies a count change to the newly selected Repeat.".to_owned()),
                         (":wrap-repeat 3".to_owned(), "Always add an enclosing Repeat around the captured Visual range or selected beat, including nesting. Command entry captures the target; stale or missing targets refuse.".to_owned()),
@@ -4200,6 +4215,7 @@ impl eframe::App for DeadpanApp {
             self.receive_gain_waveform();
             self.receive_trim_media();
             self.reconcile_transcription(&context);
+            self.reconcile_shots(&context);
             if self.close_pending {
                 self.junction_pictures.clear();
             }
@@ -4458,6 +4474,7 @@ impl eframe::App for DeadpanApp {
         self.endpoint_worker.shutdown();
         self.thumbnails.shutdown();
         self.transcription.shutdown();
+        self.shots.shutdown();
         // No GPU wait on the UI. Submitted targets keep their queue callback
         // owner if shutdown ends the display before its final frame can drain.
         self.junction_pictures.clear();

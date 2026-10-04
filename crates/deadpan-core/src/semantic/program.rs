@@ -44,13 +44,18 @@ pub enum SemanticMotion {
         forward: bool,
         count: NonZeroU32,
     },
+    /// `]s` and `[s`: detected shot starts.
+    Shots {
+        forward: bool,
+        count: NonZeroU32,
+    },
 }
 
 impl SemanticMotion {
     pub const fn uses_speech(self) -> bool {
         matches!(
             self,
-            Self::Words { .. } | Self::Sentences { .. } | Self::Pauses { .. }
+            Self::Words { .. } | Self::Sentences { .. } | Self::Pauses { .. } | Self::Shots { .. }
         )
     }
 }
@@ -113,6 +118,10 @@ pub enum SemanticInstruction {
         count: NonZeroU32,
     },
     MovePauses {
+        forward: bool,
+        count: NonZeroU32,
+    },
+    MoveShots {
         forward: bool,
         count: NonZeroU32,
     },
@@ -189,6 +198,7 @@ impl SemanticInstruction {
             Self::MoveWords { .. }
             | Self::MoveSentences { .. }
             | Self::MovePauses { .. }
+            | Self::MoveShots { .. }
             | Self::SelectSpeech { .. } => true,
             Self::Yank { selector, .. }
             | Self::Cut { selector, .. }

@@ -20,8 +20,8 @@ pub struct MigrationOutcome {
 
 impl ProjectStore {
     /// Validate a current package without obtaining a writer or creating a
-    /// backup. A schema-59 package is upgraded in place by a writer: schema 60
-    /// only adds an empty table, so no backup is needed. Earlier unused
+    /// backup. A schema-59 or 60 package is upgraded in place by a writer:
+    /// schemas 60 and 61 only add empty tables, so no backup is needed. Earlier unused
     /// development formats have no supported migration.
     pub fn migrate(path: &Path) -> Result<MigrationOutcome, StoreError> {
         validate_extension(path)?;

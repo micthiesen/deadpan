@@ -1,12 +1,13 @@
-//! Recognized speech on the Edit clock: word, sentence and pause motions and
-//! objects.
+//! Analysed speech and pictures on the Edit clock: word, sentence, pause and
+//! shot motions and objects.
 //!
 //! The host projects a stored transcript through the staged document's render
 //! plan and supplies one run per visible word occurrence, in project frames,
 //! and projects detected pauses the same way. Analysis never mutates the
 //! document; it only answers where words and pauses lie in the current
-//! arrangement, so motions and objects follow every edit. Words and pauses come
-//! from separate analyses, so each carries its own reason when it is missing.
+//! arrangement, so motions and objects follow every edit. Words, pauses and
+//! shots come from separate analyses, so each carries its own reason when it
+//! is missing.
 
 use serde::{Deserialize, Serialize};
 
@@ -41,6 +42,16 @@ pub struct SpeechTimeline {
     words_missing: Option<String>,
     /// Quiet intervals, or why they are unavailable.
     pauses: Result<Vec<FrameRange>, String>,
+    /// Visible shot occurrences, or why they are unavailable.
+    shots: Result<Vec<ShotRun>, String>,
+}
+
+/// One contiguous visible occurrence of a detected Original shot.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ShotRun {
+    pub range: FrameRange,
+    /// Shot index in the Original; a replayed shot appears in several runs.
+    pub shot: u32,
 }
 
 impl Default for SpeechTimeline {
@@ -49,10 +60,13 @@ impl Default for SpeechTimeline {
             runs: Vec::new(),
             words_missing: None,
             pauses: Err(PAUSES_NOT_DETECTED.into()),
+            shots: Err(SHOTS_NOT_DETECTED.into()),
         }
     }
 }
 
+const SHOTS_NOT_DETECTED: &str =
+    "shots are not ready: the Original's pictures have not been analysed";
 const PAUSES_NOT_DETECTED: &str =
     "pauses are not ready: the Original's speech has not been analysed";
 
@@ -73,6 +87,13 @@ pub enum SpeechObject {
     /// `ap`: a pause with short handles of the content around it.
     #[serde(deserialize_with = "super::program::deserialize_empty")]
     AroundPause,
+    /// `iS`: a detected shot.
+    #[serde(deserialize_with = "super::program::deserialize_empty")]
+    InnerShot,
+    /// `aS`: a shot with its transition handles. Detected boundaries are hard
+    /// cuts with no transition frames, so this equals `iS`.
+    #[serde(deserialize_with = "super::program::deserialize_empty")]
+    AroundShot,
 }
 
 /// What a speech motion or object steps between.
@@ -81,6 +102,7 @@ pub enum SpeechUnit {
     Word,
     Sentence,
     Pause,
+    Shot,
 }
 
 impl SpeechObject {
@@ -89,6 +111,7 @@ impl SpeechObject {
             Self::InnerWord | Self::AroundWord => SpeechUnit::Word,
             Self::InnerSentence | Self::AroundSentence => SpeechUnit::Sentence,
             Self::InnerPause | Self::AroundPause => SpeechUnit::Pause,
+            Self::InnerShot | Self::AroundShot => SpeechUnit::Shot,
         }
     }
 
@@ -125,6 +148,24 @@ impl SpeechTimeline {
         Ok(self)
     }
 
+    /// Add detected shot occurrences: nonempty, sorted and disjoint.
+    pub fn with_shots(mut self, shots: Vec<ShotRun>) -> Result<Self, EditError> {
+        check_ranges(shots.iter().map(|run| run.range), shots.len(), "shot runs")?;
+        self.shots = Ok(shots);
+        Ok(self)
+    }
+
+    /// Record why shots are unavailable.
+    pub fn without_shots(mut self, reason: impl Into<String>) -> Self {
+        self.shots = Err(reason.into());
+        self
+    }
+
+    /// Detected shot occurrences, when available.
+    pub fn shots(&self) -> Option<&[ShotRun]> {
+        self.shots.as_deref().ok()
+    }
+
     /// Record why pauses are unavailable.
     pub fn without_pauses(mut self, reason: impl Into<String>) -> Self {
         self.pauses = Err(reason.into());
@@ -149,6 +190,11 @@ impl SpeechTimeline {
             },
             SpeechUnit::Pause => self
                 .pauses
+                .as_ref()
+                .map(|_| ())
+                .map_err(|reason| unavailable(reason)),
+            SpeechUnit::Shot => self
+                .shots
                 .as_ref()
                 .map(|_| ())
                 .map_err(|reason| unavailable(reason)),
@@ -195,20 +241,16 @@ impl SpeechTimeline {
                 .map(|run| run.range)
                 .collect(),
             SpeechUnit::Sentence => Self::sentences(&self.clipped(bounds)),
-            SpeechUnit::Pause => {
-                let pauses = self.pauses.as_deref().unwrap_or_default();
-                let first = pauses.partition_point(|pause| pause.end() <= bounds.0);
-                pauses[first..]
+            SpeechUnit::Pause => clip(self.pauses.as_deref().unwrap_or_default(), bounds),
+            SpeechUnit::Shot => {
+                let shots: Vec<FrameRange> = self
+                    .shots
+                    .as_deref()
+                    .unwrap_or_default()
                     .iter()
-                    .take_while(|pause| pause.start() < bounds.1)
-                    .filter_map(|pause| {
-                        let start = pause.start().max(bounds.0);
-                        let end = pause.end().min(bounds.1);
-                        (start < end)
-                            .then(|| FrameRange::new(start, end).ok())
-                            .flatten()
-                    })
-                    .collect()
+                    .map(|run| run.range)
+                    .collect();
+                clip(&shots, bounds)
             }
         }
     }
@@ -281,9 +323,10 @@ impl SpeechTimeline {
                     SpeechUnit::Word => "the cursor is not on a recognized word",
                     SpeechUnit::Sentence => "the cursor is not in a recognized sentence",
                     SpeechUnit::Pause => "the cursor is not in a pause",
+                    SpeechUnit::Shot => "the cursor is not in a shot of the Original",
                 })
             })?;
-        if !object.around() {
+        if !object.around() || object.unit() == SpeechUnit::Shot {
             return Ok(unit);
         }
         let cap = handle_frames(rate);
@@ -310,9 +353,32 @@ impl SpeechTimeline {
         forward: bool,
         count: u32,
     ) -> Result<ProjectFrame, EditError> {
-        self.require(SpeechUnit::Pause)?;
+        self.start_target(SpeechUnit::Pause, cursor, bounds, forward, count)
+    }
+
+    /// Destination of `]s` or `[s`: the start of the `count`th shot
+    /// occurrence after (or before) the cursor, as for pauses.
+    pub fn shot_target(
+        &self,
+        cursor: ProjectFrame,
+        bounds: (ProjectFrame, ProjectFrame),
+        forward: bool,
+        count: u32,
+    ) -> Result<ProjectFrame, EditError> {
+        self.start_target(SpeechUnit::Shot, cursor, bounds, forward, count)
+    }
+
+    fn start_target(
+        &self,
+        unit: SpeechUnit,
+        cursor: ProjectFrame,
+        bounds: (ProjectFrame, ProjectFrame),
+        forward: bool,
+        count: u32,
+    ) -> Result<ProjectFrame, EditError> {
+        self.require(unit)?;
         let starts: Vec<ProjectFrame> = self
-            .units(bounds, SpeechUnit::Pause)
+            .units(bounds, unit)
             .into_iter()
             .map(|pause| pause.start())
             .collect();
@@ -331,10 +397,11 @@ impl SpeechTimeline {
                 .copied()
         };
         found.ok_or_else(|| {
-            unavailable(if forward {
-                "there is no later pause here"
-            } else {
-                "there is no earlier pause here"
+            unavailable(match (unit, forward) {
+                (SpeechUnit::Shot, true) => "there is no later shot here",
+                (SpeechUnit::Shot, false) => "there is no earlier shot here",
+                (_, true) => "there is no later pause here",
+                (_, false) => "there is no earlier pause here",
             })
         })
     }
@@ -367,6 +434,22 @@ pub struct SpeechMotion {
     pub count: u32,
     pub sentence: bool,
     pub end: bool,
+}
+
+/// Sorted disjoint ranges inside a scope, clipped to it.
+fn clip(ranges: &[FrameRange], bounds: (ProjectFrame, ProjectFrame)) -> Vec<FrameRange> {
+    let first = ranges.partition_point(|range| range.end() <= bounds.0);
+    ranges[first..]
+        .iter()
+        .take_while(|range| range.start() < bounds.1)
+        .filter_map(|range| {
+            let start = range.start().max(bounds.0);
+            let end = range.end().min(bounds.1);
+            (start < end)
+                .then(|| FrameRange::new(start, end).ok())
+                .flatten()
+        })
+        .collect()
 }
 
 fn check_ranges(

@@ -1080,6 +1080,11 @@ impl DeadpanApp {
         }
     }
 
+    /// Why shot keys cannot act yet.
+    fn shots_not_ready(&self) -> String {
+        "Shots are not ready: the Original's pictures have not been analysed yet.".into()
+    }
+
     /// The Original's analyses, asset and picture index, when the Original
     /// has a qualified picture.
     fn speech_inputs(&self) -> Option<(SpeechInputs, deadpan_core::AssetId, Arc<Workspace>)> {
@@ -1089,6 +1094,7 @@ impl DeadpanApp {
         let inputs = SpeechInputs {
             transcript: workspace.transcript.clone(),
             activity: workspace.speech_activity.clone(),
+            shots: workspace.shot_analysis.clone(),
         };
         Some((inputs, asset, Arc::clone(workspace)))
     }
@@ -1103,20 +1109,37 @@ impl DeadpanApp {
         pauses: impl FnOnce(
             &[(deadpan_core::ExactRatio, deadpan_core::ExactRatio)],
         ) -> Result<Vec<deadpan_core::FrameRange>, deadpan_core::EditError>,
+        shots: impl FnOnce(&[usize]) -> Result<Vec<deadpan_core::ShotRun>, deadpan_core::EditError>,
     ) -> Result<Arc<deadpan_core::SpeechTimeline>, String> {
+        // A failure places only its own analysis; the others stay usable.
         let timeline = match &inputs.transcript {
-            Some(transcript) => words(&transcript.transcript).map_err(|error| error.message)?,
+            Some(transcript) => words(&transcript.transcript)
+                .unwrap_or_else(|error| deadpan_core::SpeechTimeline::without_words(error.message)),
             None => deadpan_core::SpeechTimeline::without_words(self.words_not_ready()),
         };
         let timeline = match &inputs.activity {
             Some(activity) => {
-                let seconds = deadpan_cli::speech::pause_seconds(&activity.activity)
-                    .map_err(|error| error.message)?;
-                timeline
-                    .with_pauses(pauses(&seconds).map_err(|error| error.message)?)
-                    .map_err(|error| error.message)?
+                let projected = deadpan_cli::speech::pause_seconds(&activity.activity)
+                    .and_then(|seconds| pauses(&seconds));
+                match projected {
+                    Ok(ranges) => timeline
+                        .clone()
+                        .with_pauses(ranges)
+                        .unwrap_or_else(|error| timeline.without_pauses(error.message)),
+                    Err(error) => timeline.without_pauses(error.message),
+                }
             }
             None => timeline.without_pauses(self.pauses_not_ready()),
+        };
+        let timeline = match &inputs.shots {
+            Some(analysis) => match shots(&analysis.analysis.boundaries()) {
+                Ok(runs) => timeline
+                    .clone()
+                    .with_shots(runs)
+                    .unwrap_or_else(|error| timeline.without_shots(error.message)),
+                Err(error) => timeline.without_shots(error.message),
+            },
+            None => timeline.without_shots(self.shots_not_ready()),
         };
         Ok(Arc::new(timeline))
     }
@@ -1146,6 +1169,9 @@ impl DeadpanApp {
                 deadpan_cli::speech::project_speech(&workspace.plan, &asset, index, transcript)
             },
             |pauses| deadpan_cli::speech::project_pauses(&workspace.plan, &asset, index, pauses),
+            |boundaries| {
+                deadpan_cli::speech::project_shots(&workspace.plan, &asset, index, boundaries)
+            },
         )?;
         self.transcription.edit_speech = Some((key, Arc::clone(&speech)));
         Ok(speech)
@@ -1179,6 +1205,7 @@ impl DeadpanApp {
             &inputs,
             |transcript| deadpan_cli::speech::original_speech(index, transcript),
             |pauses| deadpan_cli::speech::original_pauses(index, pauses),
+            |boundaries| deadpan_cli::speech::original_shots(index.frames().len(), boundaries),
         )?;
         self.transcription.source_speech = Some((key, Arc::clone(&speech)));
         Ok(speech)
@@ -1193,32 +1220,42 @@ impl DeadpanApp {
         Ok(speech)
     }
 
-    /// `]p` and `[p` in either context.
-    pub(super) fn pause_motion(&mut self, forward: bool, count: u32) {
+    /// `]p`, `[p`, `]s` and `[s` in either context.
+    pub(super) fn analysis_motion(
+        &mut self,
+        unit: deadpan_core::SpeechUnit,
+        forward: bool,
+        count: u32,
+    ) {
         let count = count.max(1);
+        let target = |speech: &deadpan_core::SpeechTimeline, cursor: u64, bounds: (u64, u64)| {
+            let cursor = ProjectFrame(cursor as i64);
+            let bounds = (ProjectFrame(bounds.0 as i64), ProjectFrame(bounds.1 as i64));
+            match unit {
+                deadpan_core::SpeechUnit::Shot => {
+                    speech.shot_target(cursor, bounds, forward, count)
+                }
+                _ => speech.pause_target(cursor, bounds, forward, count),
+            }
+            .map(|frame| frame.0 as u64)
+            .map_err(|error| error.message)
+        };
         match self.view {
             View::Source => {
                 if !self.viewing_original() {
                     self.message = Some(
-                        "Pause motions follow the Original's speech; view the Original to use them."
+                        "Pause and shot motions follow the Original's analysis; view the Original to use them."
                             .into(),
                     );
                     return;
                 }
-                let target = self.source_analysis().and_then(|speech| {
-                    let length = self.source_length() as i64;
-                    speech
-                        .pause_target(
-                            ProjectFrame(self.source_cursor as i64),
-                            (ProjectFrame(0), ProjectFrame(length)),
-                            forward,
-                            count,
-                        )
-                        .map_err(|error| error.message)
-                });
-                match target {
-                    Ok(target) => {
-                        self.source_cursor = target.0 as u64;
+                let length = self.source_length();
+                match self
+                    .source_analysis()
+                    .and_then(|speech| target(&speech, self.source_cursor, (0, length)))
+                {
+                    Ok(frame) => {
+                        self.source_cursor = frame;
                         self.moment.move_to(self.source_cursor);
                     }
                     Err(error) => {
@@ -1229,28 +1266,24 @@ impl DeadpanApp {
             }
             View::Sequence => {
                 let cursor = self.sequence_cursor.clamp(self.scope_start, self.scope_end);
-                let target = self.edit_analysis().and_then(|speech| {
-                    speech
-                        .pause_target(
-                            ProjectFrame(cursor as i64),
-                            (
-                                ProjectFrame(self.scope_start as i64),
-                                ProjectFrame(self.scope_end as i64),
-                            ),
-                            forward,
-                            count,
-                        )
-                        .map_err(|error| error.message)
-                });
-                match target {
-                    Ok(target) => {
-                        self.sequence_cursor = target.0 as u64;
+                let bounds = (self.scope_start, self.scope_end);
+                match self
+                    .edit_analysis()
+                    .and_then(|speech| target(&speech, cursor, bounds))
+                {
+                    Ok(frame) => {
+                        self.sequence_cursor = frame;
                         self.edit_range.move_to(self.sequence_cursor);
                         self.select_at_cursor();
                         if let Some(count) = std::num::NonZeroU32::new(count) {
-                            self.record_macro_local(
-                                deadpan_core::SemanticInstruction::MovePauses { forward, count },
-                            );
+                            self.record_macro_local(match unit {
+                                deadpan_core::SpeechUnit::Shot => {
+                                    deadpan_core::SemanticInstruction::MoveShots { forward, count }
+                                }
+                                _ => {
+                                    deadpan_core::SemanticInstruction::MovePauses { forward, count }
+                                }
+                            });
                         }
                     }
                     Err(error) => {
@@ -1373,6 +1406,8 @@ impl DeadpanApp {
                             "the sentence with its pauses",
                         deadpan_core::SpeechObject::InnerPause => "the pause",
                         deadpan_core::SpeechObject::AroundPause => "the pause with its edges",
+                        deadpan_core::SpeechObject::InnerShot => "the shot",
+                        deadpan_core::SpeechObject::AroundShot => "the shot with its transitions",
                     },
                     self.editor_key(EditorKey::Copy),
                     self.editor_key(EditorKey::CutRange),
@@ -1391,6 +1426,7 @@ impl DeadpanApp {
 struct SpeechInputs {
     transcript: Option<Arc<crate::project::OriginalTranscript>>,
     activity: Option<Arc<crate::project::OriginalActivity>>,
+    shots: Option<Arc<crate::project::OriginalShots>>,
 }
 
 /// Identifies the analyses behind a cached timeline: each analysis key, or
@@ -1398,6 +1434,7 @@ struct SpeechInputs {
 type SpeechKey = (
     Result<TranscriptKey, String>,
     Result<deadpan_store::SpeechActivityKey, String>,
+    Result<deadpan_store::ShotAnalysisKey, String>,
 );
 
 impl DeadpanApp {
@@ -1413,6 +1450,11 @@ impl DeadpanApp {
                 .as_ref()
                 .map(|activity| activity.key.clone())
                 .ok_or_else(|| self.pauses_not_ready()),
+            inputs
+                .shots
+                .as_ref()
+                .map(|shots| shots.key.clone())
+                .ok_or_else(|| self.shots_not_ready()),
         )
     }
 }

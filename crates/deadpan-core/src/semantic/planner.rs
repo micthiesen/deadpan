@@ -449,6 +449,12 @@ where
                         count: *count,
                     })?;
                 }
+                SemanticInstruction::MoveShots { forward, count } => {
+                    self.move_context(SemanticMotion::Shots {
+                        forward: *forward,
+                        count: *count,
+                    })?;
+                }
                 SemanticInstruction::SelectSpeech { object } => {
                     self.context = self.speech()?.select_object(
                         &self.context,

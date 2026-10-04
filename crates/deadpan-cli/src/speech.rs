@@ -11,13 +11,18 @@
 //! detected pause, or when it shows a freeze, generated picture, blank or
 //! background, which carry no Original speech. Consecutive quiet frames form
 //! one pause, so a pause inserted after a sentence lengthens the pause there.
+//!
+//! A frame belongs to a shot when it presents an Original picture: the shot
+//! containing that picture. Consecutive frames of one shot form an occurrence
+//! while their pictures do not go back, so a cut inside a shot keeps one
+//! occurrence and a replay starts another.
 
 use std::sync::Arc;
 
 use deadpan_analysis::{SpeechActivity, Transcript, picture_seconds};
 use deadpan_core::{
     AssetId, EditError, EditErrorCode, ExactRatio, FrameRange, ProjectDocument, ProjectFrame,
-    SourceFrameIndex, SpeechRun, SpeechTimeline,
+    ShotRun, SourceFrameIndex, SpeechRun, SpeechTimeline,
 };
 use deadpan_plan::{Picture, RenderPlan};
 
@@ -227,6 +232,75 @@ pub fn original_pauses(
     Ok(ranges)
 }
 
+/// Shot occurrences on the Edit clock. `boundaries` are the Original
+/// pictures that begin a shot after the first, in order.
+pub fn project_shots(
+    plan: &RenderPlan,
+    asset: &AssetId,
+    index: &SourceFrameIndex,
+    boundaries: &[usize],
+) -> Result<Vec<ShotRun>, EditError> {
+    let mut runs: Vec<ShotRun> = Vec::new();
+    let mut previous: Option<(u32, usize)> = None;
+    for frame in 0..plan.duration().frames() {
+        let sample = plan
+            .picture(ProjectFrame(frame))
+            .map_err(|error| failed(&error.to_string()))?;
+        let Picture::Source { asset: shown, .. } = &sample.picture else {
+            previous = None;
+            continue;
+        };
+        if shown != asset {
+            previous = None;
+            continue;
+        }
+        let selected = sample
+            .picture
+            .select_source_frame(index)
+            .map_err(|error| failed(&error.to_string()))?;
+        let picture =
+            usize::try_from(selected.identity.0).map_err(|_| failed("source picture ordinal"))?;
+        let shot = u32::try_from(boundaries.partition_point(|start| *start <= picture))
+            .map_err(|_| failed("shot index"))?;
+        match (previous, runs.last_mut()) {
+            (Some((last, at)), Some(run)) if last == shot && picture >= at => {
+                run.range = frame_range(run.range.start().0, frame + 1)?;
+            }
+            _ => runs.push(ShotRun {
+                range: frame_range(frame, frame + 1)?,
+                shot,
+            }),
+        }
+        previous = Some((shot, picture));
+    }
+    Ok(runs)
+}
+
+/// Shots over the Original's own pictures, numbered by picture ordinal.
+pub fn original_shots(pictures: usize, boundaries: &[usize]) -> Result<Vec<ShotRun>, EditError> {
+    let starts =
+        std::iter::once(0).chain(boundaries.iter().copied().filter(|start| *start < pictures));
+    let ends = boundaries
+        .iter()
+        .copied()
+        .filter(|start| *start < pictures)
+        .chain(std::iter::once(pictures));
+    starts
+        .zip(ends)
+        .enumerate()
+        .filter(|(_, (start, end))| start < end)
+        .map(|(shot, (start, end))| {
+            Ok(ShotRun {
+                range: frame_range(
+                    i64::try_from(start).map_err(|_| failed("picture ordinal"))?,
+                    i64::try_from(end).map_err(|_| failed("picture ordinal"))?,
+                )?,
+                shot: u32::try_from(shot).map_err(|_| failed("shot index"))?,
+            })
+        })
+        .collect()
+}
+
 fn frame_range(start: i64, end: i64) -> Result<FrameRange, EditError> {
     FrameRange::new(ProjectFrame(start), ProjectFrame(end)).map_err(|_| failed("pause range"))
 }
@@ -273,6 +347,8 @@ pub struct StoredSpeech {
     pub transcript: Option<Transcript>,
     /// Detected pauses as exact container times.
     pub pauses: Option<Vec<(ExactRatio, ExactRatio)>>,
+    /// Original pictures that begin a shot after the first.
+    pub shots: Option<Vec<usize>>,
 }
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -291,12 +367,12 @@ impl StoredSpeech {
         };
         let receipt = crate::transcription::analysed_receipt(store, None)
             .map_err(|error| not_ready(&error.to_string()))?;
-        let measured = receipt
+        let qualified = receipt
             .snapshot()
             .video()
             .ok_or_else(|| not_ready("the Original has no qualified picture"))?
-            .index()
             .index();
+        let measured = qualified.index();
         let index = SourceFrameIndex::new(
             asset.clone(),
             measured.time_base(),
@@ -310,11 +386,19 @@ impl StoredSpeech {
         let pauses = crate::activity::stored_activity(store, &content)
             .map(|(_, activity)| pause_seconds(&activity))
             .transpose()?;
+        let shots = crate::shots::stored_shots(
+            store,
+            &content,
+            qualified.stream_index(),
+            index.frames().len(),
+        )
+        .map(|(_, analysis)| analysis.boundaries());
         Ok(Self {
             asset,
             index,
             transcript,
             pauses,
+            shots,
         })
     }
 
@@ -324,12 +408,20 @@ impl StoredSpeech {
             Some(transcript) => project_speech(&plan, &self.asset, &self.index, transcript)?,
             None => SpeechTimeline::without_words(deadpan_core::speech_unavailable().message),
         };
-        Ok(Arc::new(match &self.pauses {
+        let timeline = match &self.pauses {
             Some(pauses) => {
                 timeline.with_pauses(project_pauses(&plan, &self.asset, &self.index, pauses)?)?
             }
             None => timeline.without_pauses(
                 "pauses are not ready: the Original's speech has not been analysed",
+            ),
+        };
+        Ok(Arc::new(match &self.shots {
+            Some(boundaries) => {
+                timeline.with_shots(project_shots(&plan, &self.asset, &self.index, boundaries)?)?
+            }
+            None => timeline.without_shots(
+                "shots are not ready: the Original's pictures have not been analysed",
             ),
         }))
     }
@@ -391,6 +483,20 @@ mod tests {
             TerminalProvenance::DecodedFrameDuration,
         )
         .unwrap()
+    }
+
+    #[test]
+    fn original_shots_split_pictures_at_boundaries() {
+        let range = |start, end| FrameRange::new(ProjectFrame(start), ProjectFrame(end)).unwrap();
+        let shots = original_shots(10, &[4, 7]).unwrap();
+        assert_eq!(
+            shots
+                .iter()
+                .map(|run| (run.range, run.shot))
+                .collect::<Vec<_>>(),
+            [(range(0, 4), 0), (range(4, 7), 1), (range(7, 10), 2)]
+        );
+        assert_eq!(original_shots(3, &[]).unwrap().len(), 1);
     }
 
     #[test]

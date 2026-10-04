@@ -372,7 +372,7 @@ fn words_in_your_edit(
     Ok(())
 }
 
-fn focus_your_edit(d: &mut Driver<'_>) -> Result<(), String> {
+pub(super) fn focus_your_edit(d: &mut Driver<'_>) -> Result<(), String> {
     for _ in 0..6 {
         if d.app().pane == Pane::Sequence
             && d.harness

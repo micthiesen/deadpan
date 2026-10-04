@@ -28,6 +28,7 @@ mod saved_receipts;
 mod scope;
 mod scoped;
 mod semantic;
+mod shots;
 mod slip;
 mod sound;
 mod speech_activity;

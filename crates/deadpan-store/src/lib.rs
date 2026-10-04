@@ -31,12 +31,14 @@ pub mod render_jobs;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod render_media;
 mod schema;
+mod shot_analysis;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod single_source;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod slice_preview;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod source_registration;
+pub use shot_analysis::{MAX_SHOT_ANALYSES, ShotAnalysisKey};
 mod speech_activity;
 pub use speech_activity::{MAX_SPEECH_ACTIVITY, SpeechActivityKey};
 mod transcripts;
@@ -305,8 +307,9 @@ impl ProjectStore {
         if mode == AccessMode::ReadWrite {
             connection.pragma_update(None, "journal_mode", "WAL")?;
             connection.pragma_update(None, "synchronous", "FULL")?;
-            // The writer adds the speech activity table to a schema-59
-            // package; readers of one see no stored activity until then.
+            // The writer adds the speech activity and shot analysis tables
+            // to a schema-59 or 60 package; readers of one see no stored
+            // analyses until then.
             schema::upgrade(&connection)?;
         } else {
             connection.pragma_update(None, "query_only", true)?;
@@ -399,6 +402,7 @@ impl ProjectStore {
         generation_attempts::check_stored_sizes(&transaction)?;
         transcripts::check_stored_sizes(&transaction)?;
         speech_activity::check_stored_sizes(&transaction)?;
+        shot_analysis::check_stored_sizes(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         render_jobs::check_stored_sizes(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]

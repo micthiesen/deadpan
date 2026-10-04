@@ -297,6 +297,7 @@ impl Fixture {
             original_duration: None,
             transcript: None,
             speech_activity: None,
+            shot_analysis: None,
         })
     }
 

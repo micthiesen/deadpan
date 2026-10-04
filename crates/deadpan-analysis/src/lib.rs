@@ -6,7 +6,9 @@
 //! coordinates and keep low-confidence words visibly approximate.
 
 pub mod activity;
+pub mod shots;
 pub mod transcript;
 
 pub use activity::*;
+pub use shots::*;
 pub use transcript::*;

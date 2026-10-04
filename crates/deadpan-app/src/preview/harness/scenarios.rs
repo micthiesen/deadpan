@@ -17,6 +17,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "nested-pause" => super::nested_pause::run(d),
         "original-moment" => super::moment::run(d),
         "transcript" => super::transcript::run(d),
+        "shots" => super::shots::run(d),
         "original-layout" | "original-layout-long" => super::original_layout::run(d),
         "place-slice" => super::splice::run(d),
         "delete-range" => super::delete_range::run(d),

@@ -116,6 +116,8 @@ pub(super) fn selector_text(selector: &SemanticSelector) -> String {
             deadpan_core::SpeechObject::AroundSentence => "sentence with pauses",
             deadpan_core::SpeechObject::InnerPause => "pause",
             deadpan_core::SpeechObject::AroundPause => "pause with edges",
+            deadpan_core::SpeechObject::InnerShot => "shot",
+            deadpan_core::SpeechObject::AroundShot => "shot with transitions",
         }
         .into(),
         SemanticSelector::Motion { motion } => {
@@ -143,6 +145,9 @@ pub(super) fn selector_text(selector: &SemanticSelector) -> String {
                 }
                 SemanticMotion::Pauses { forward, count } => {
                     format!("{count} pauses {}", direction(*forward))
+                }
+                SemanticMotion::Shots { forward, count } => {
+                    format!("{count} shots {}", direction(*forward))
                 }
             }
         }

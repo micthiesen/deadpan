@@ -305,6 +305,7 @@ impl DeadpanApp {
                 | Action::Word { .. }
                 | Action::Sentence { .. }
                 | Action::Pause { .. }
+                | Action::Shot { .. }
                 | Action::SelectSpeech(_)
                 | Action::First
                 | Action::Last
@@ -331,7 +332,7 @@ impl DeadpanApp {
                 | Action::Invalid(_)
                 | Action::OfferInsert
         ) {
-            self.error = Some("This action cannot be recorded yet. Macros support frame, beat, word, sentence and pause motions, group boundaries, word, sentence and pause objects, Visual selections, cuts, copies, Repeat wraps and count changes, grouping, ungrouping, register pastes and named calls. Save or cancel recording first.".into());
+            self.error = Some("This action cannot be recorded yet. Macros support frame, beat, word, sentence, pause and shot motions, group boundaries, word, sentence, pause and shot objects, Visual selections, cuts, copies, Repeat wraps and count changes, grouping, ungrouping, register pastes and named calls. Save or cancel recording first.".into());
             return false;
         }
         if matches!(
@@ -341,6 +342,7 @@ impl DeadpanApp {
                 | Action::Word { .. }
                 | Action::Sentence { .. }
                 | Action::Pause { .. }
+                | Action::Shot { .. }
                 | Action::SelectSpeech(_)
                 | Action::First
                 | Action::Last

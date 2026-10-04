@@ -26,6 +26,8 @@ pub mod render;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod render_worker;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod shots;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 mod source_registration;
 pub mod speech;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -84,6 +86,8 @@ const HELP: &str = "Deadpan headless commands:
   transcribe <project.deadpan> [--model <ggml.bin> --sha256 <hex>] [--vad-model <ggml-silero.bin> --vad-sha256 <hex>] [--language <auto|xx>] [--asset <id>]
   transcript <project.deadpan> [--search <words>] [--asset <id>]
   pauses <project.deadpan> [--asset <id>]
+  detect-shots <project.deadpan> [--asset <id>]
+  shots <project.deadpan> [--asset <id>]
 
 Creation defaults to a provisional 1920x1080, 30 fps presentation basis.
 Document dumps are inspection output; SQLite remains authoritative.
@@ -139,6 +143,9 @@ pub enum CliError {
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[error(transparent)]
     ModelPack(#[from] deadpan_models::packs::PackError),
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[error(transparent)]
+    Shots(#[from] shots::ShotScanError),
 }
 
 impl CliError {
@@ -189,6 +196,12 @@ impl CliError {
             Self::ModelPack(deadpan_models::packs::PackError::Space { .. }) => "ModelPackSpace",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::ModelPack(_) => "ModelPackFailed",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::Shots(shots::ShotScanError::Cancelled) => "ShotDetectionCancelled",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::Shots(shots::ShotScanError::Unavailable(_)) => "ShotDetectionUnavailable",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::Shots(_) => "ShotDetectionFailed",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::ProjectAudio(error) => match error {
                 audio::ProjectAudioError::Store(error) => error.code(),
@@ -419,6 +432,10 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         ["transcript", rest @ ..] => transcription::run_transcript(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["pauses", rest @ ..] => activity::run_pauses(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["detect-shots", rest @ ..] => shots::run_detect_shots(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["shots", rest @ ..] => shots::run_shots(rest),
         [] | ["--help"] | ["-h"] => {
             println!("{HELP}");
             Ok(())

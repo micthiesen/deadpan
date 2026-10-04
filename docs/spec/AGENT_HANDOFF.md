@@ -2,6 +2,17 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Shot proposals, 2026-10-04
+
+Every Original picture is decoded exactly against its qualified index
+(`deadpan_media::picture_scan`) and reduced to a signature; three-byte changes
+per picture are stored in schema-61 `shot_analysis` and the `deadpan-shots-1`
+rule proposes hard cuts; see [shot detection](../SHOT_DETECTION.md). The app
+scans automatically in the background (no model needed) and shows the count on
+the Original card. `]s`/`[s` and `iS`/`aS` use shot occurrences projected like
+words. Dissolves are not detected; the scan is decode-bound (69 pictures/s at
+1080p24, about 21 minutes per hour of footage) and restarts if interrupted.
+
 ## Pauses from speech activity, 2026-10-04
 
 Silero VAD (v6.2.0, through whisper.cpp in the transcription worker) plus

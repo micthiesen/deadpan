@@ -63,6 +63,8 @@ pub enum BindingId {
     SentencePrevious,
     PauseNext,
     PausePrevious,
+    ShotNext,
+    ShotPrevious,
     First,
     Last,
     Undo,
@@ -81,6 +83,8 @@ pub enum BindingId {
     AroundSentence,
     InnerPause,
     AroundPause,
+    InnerShot,
+    AroundShot,
     Copy,
     CopyBeat,
     CutOperator,
@@ -120,7 +124,7 @@ pub enum BindingId {
 }
 
 impl BindingId {
-    pub const ALL: [Self; 65] = [
+    pub const ALL: [Self; 69] = [
         Self::FramePrevious,
         Self::FrameNext,
         Self::BeatPrevious,
@@ -132,6 +136,8 @@ impl BindingId {
         Self::SentencePrevious,
         Self::PauseNext,
         Self::PausePrevious,
+        Self::ShotNext,
+        Self::ShotPrevious,
         Self::First,
         Self::Last,
         Self::Undo,
@@ -150,6 +156,8 @@ impl BindingId {
         Self::AroundSentence,
         Self::InnerPause,
         Self::AroundPause,
+        Self::InnerShot,
+        Self::AroundShot,
         Self::Copy,
         Self::CopyBeat,
         Self::CutOperator,
@@ -200,6 +208,8 @@ impl BindingId {
             Self::SentencePrevious => "sentence.previous",
             Self::PauseNext => "pause.next",
             Self::PausePrevious => "pause.previous",
+            Self::ShotNext => "shot.next",
+            Self::ShotPrevious => "shot.previous",
             Self::First => "first",
             Self::Last => "last",
             Self::Undo => "undo",
@@ -218,6 +228,8 @@ impl BindingId {
             Self::AroundSentence => "object.around_sentence",
             Self::InnerPause => "object.inner_pause",
             Self::AroundPause => "object.around_pause",
+            Self::InnerShot => "object.inner_shot",
+            Self::AroundShot => "object.around_shot",
             Self::Copy => "copy",
             Self::CopyBeat => "copy.beat",
             Self::CutOperator => "cut.operator",
@@ -370,9 +382,17 @@ impl Rule {
                             count: distance,
                         },
                     },
+                    S::Motion {
+                        motion: M::Shots { forward, .. },
+                    } => S::Motion {
+                        motion: M::Shots {
+                            forward,
+                            count: distance,
+                        },
+                    },
                     _ if counts.motion.is_some() => {
                         return Action::Invalid(
-                            "A motion count requires frame, beat, word, sentence or pause motion; put total plays before Repeat.",
+                            "A motion count requires frame, beat, word, sentence, pause or shot motion; put total plays before Repeat.",
                         );
                     }
                     selector => selector,
@@ -400,7 +420,7 @@ impl Rule {
                     }
                     S::Speech { .. } if count.is_some_and(|count| count > 1) => {
                         return Action::Invalid(
-                            "A word, sentence or pause object selects one; use a motion such as d3w for more.",
+                            "A word, sentence, pause or shot object selects one; use a motion such as d3w for more.",
                         );
                     }
                     S::SelectedBeat if count.is_some_and(|count| count > 1) => {
@@ -456,6 +476,14 @@ impl Rule {
                             count: std::num::NonZeroU32::new(count.unwrap_or(1)).unwrap(),
                         },
                     },
+                    S::Motion {
+                        motion: M::Shots { forward, .. },
+                    } => S::Motion {
+                        motion: M::Shots {
+                            forward,
+                            count: std::num::NonZeroU32::new(count.unwrap_or(1)).unwrap(),
+                        },
+                    },
                     selector => selector,
                 };
                 Action::Operator { cut, selector }
@@ -480,6 +508,10 @@ impl Rule {
                     count: count.unwrap_or(1).max(1),
                 },
                 Action::Pause { forward, .. } => Action::Pause {
+                    forward,
+                    count: count.unwrap_or(1).max(1),
+                },
+                Action::Shot { forward, .. } => Action::Shot {
                     forward,
                     count: count.unwrap_or(1).max(1),
                 },
@@ -583,12 +615,16 @@ impl Rule {
             Action::Sentence { forward: false, .. } => I::SentencePrevious,
             Action::Pause { forward: true, .. } => I::PauseNext,
             Action::Pause { forward: false, .. } => I::PausePrevious,
+            Action::Shot { forward: true, .. } => I::ShotNext,
+            Action::Shot { forward: false, .. } => I::ShotPrevious,
             Action::SelectSpeech(deadpan_core::SpeechObject::InnerWord) => I::InnerWord,
             Action::SelectSpeech(deadpan_core::SpeechObject::AroundWord) => I::AroundWord,
             Action::SelectSpeech(deadpan_core::SpeechObject::InnerSentence) => I::InnerSentence,
             Action::SelectSpeech(deadpan_core::SpeechObject::AroundSentence) => I::AroundSentence,
             Action::SelectSpeech(deadpan_core::SpeechObject::InnerPause) => I::InnerPause,
             Action::SelectSpeech(deadpan_core::SpeechObject::AroundPause) => I::AroundPause,
+            Action::SelectSpeech(deadpan_core::SpeechObject::InnerShot) => I::InnerShot,
+            Action::SelectSpeech(deadpan_core::SpeechObject::AroundShot) => I::AroundShot,
             Action::First => I::First,
             Action::Last => I::Last,
             Action::Undo => I::Undo,
@@ -1143,6 +1179,12 @@ fn repeat_description(
             "{count} pause(s) {}",
             if forward { "forward" } else { "backward" }
         ),
+        S::Motion {
+            motion: M::Shots { forward, count },
+        } => format!(
+            "{count} shot(s) {}",
+            if forward { "forward" } else { "backward" }
+        ),
         S::Speech { object } => speech_object_text(object).into(),
     };
     format!("repeats {selected}, {plays} total plays")
@@ -1156,6 +1198,8 @@ fn speech_object_text(object: deadpan_core::SpeechObject) -> &'static str {
         deadpan_core::SpeechObject::AroundSentence => "the sentence with its pauses",
         deadpan_core::SpeechObject::InnerPause => "the pause",
         deadpan_core::SpeechObject::AroundPause => "the pause with its edges",
+        deadpan_core::SpeechObject::InnerShot => "the shot",
+        deadpan_core::SpeechObject::AroundShot => "the shot with its transitions",
     }
 }
 
@@ -1170,6 +1214,8 @@ fn enabled(id: BindingId, visual: bool, domain: RoutingDomain) -> bool {
             | BindingId::AroundSentence
             | BindingId::InnerPause
             | BindingId::AroundPause
+            | BindingId::InnerShot
+            | BindingId::AroundShot
     ) {
         return domain == RoutingDomain::Edit && visual;
     }
@@ -1241,6 +1287,14 @@ fn compile_mode(
                             Action::Pause { forward, .. } => {
                                 deadpan_core::SemanticSelector::Motion {
                                     motion: deadpan_core::SemanticMotion::Pauses {
+                                        forward,
+                                        count: std::num::NonZeroU32::new(1).unwrap(),
+                                    },
+                                }
+                            }
+                            Action::Shot { forward, .. } => {
+                                deadpan_core::SemanticSelector::Motion {
+                                    motion: deadpan_core::SemanticMotion::Shots {
                                         forward,
                                         count: std::num::NonZeroU32::new(1).unwrap(),
                                     },
@@ -1445,6 +1499,10 @@ fn speech_operator_description(cut: bool, object: deadpan_core::SpeechObject) ->
         (false, O::InnerPause) => "copies the pause",
         (true, O::AroundPause) => "cuts the pause with its edges",
         (false, O::AroundPause) => "copies the pause with its edges",
+        (true, O::InnerShot) => "cuts the shot",
+        (false, O::InnerShot) => "copies the shot",
+        (true, O::AroundShot) => "cuts the shot with its transitions",
+        (false, O::AroundShot) => "copies the shot with its transitions",
     }
 }
 
@@ -1477,6 +1535,10 @@ fn operator_description(cut: bool, motion: deadpan_core::SemanticMotion) -> &'st
         (false, M::Pauses { forward: true, .. }) => "copies to the next pause",
         (true, M::Pauses { forward: false, .. }) => "cuts back to a pause start",
         (false, M::Pauses { forward: false, .. }) => "copies back to a pause start",
+        (true, M::Shots { forward: true, .. }) => "cuts to the next shot",
+        (false, M::Shots { forward: true, .. }) => "copies to the next shot",
+        (true, M::Shots { forward: false, .. }) => "cuts back to a shot start",
+        (false, M::Shots { forward: false, .. }) => "copies back to a shot start",
     }
 }
 
@@ -1526,6 +1588,8 @@ fn speech_select_text(object: deadpan_core::SpeechObject) -> &'static str {
         deadpan_core::SpeechObject::AroundSentence => "selects the sentence with its pauses",
         deadpan_core::SpeechObject::InnerPause => "selects the pause",
         deadpan_core::SpeechObject::AroundPause => "selects the pause with its edges",
+        deadpan_core::SpeechObject::InnerShot => "selects the shot",
+        deadpan_core::SpeechObject::AroundShot => "selects the shot with its transitions",
     }
 }
 
@@ -1602,8 +1666,20 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
         add(
             &[plain(key[0]), plain(key[1])],
             Action::SelectSpeech(object),
-            C::Refuse("Select one word, sentence or pause object without a count."),
+            C::Refuse("Select one word, sentence, pause or shot object without a count."),
             short,
+            false,
+        );
+    }
+    for (prefix, object) in [
+        (Key::I, deadpan_core::SpeechObject::InnerShot),
+        (Key::A, deadpan_core::SpeechObject::AroundShot),
+    ] {
+        add(
+            &[plain(prefix), Stroke::Key(Key::S, true)],
+            Action::SelectSpeech(object),
+            C::Refuse("Select one word, sentence, pause or shot object without a count."),
+            speech_select_text(object),
             false,
         );
     }
@@ -1661,6 +1737,18 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
         add(
             &[plain(key), plain(Key::P)],
             Action::Pause { forward, count: 1 },
+            C::Motion,
+            short,
+            true,
+        );
+    }
+    for (key, forward, short) in [
+        (Key::CloseBracket, true, "next shot"),
+        (Key::OpenBracket, false, "previous shot"),
+    ] {
+        add(
+            &[plain(key), plain(Key::S)],
+            Action::Shot { forward, count: 1 },
             C::Motion,
             short,
             true,

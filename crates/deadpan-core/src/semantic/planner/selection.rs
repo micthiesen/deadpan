@@ -335,6 +335,12 @@ where
                 forward,
                 count.get(),
             )?,
+            SemanticMotion::Shots { forward, count } => self.speech()?.shot_target(
+                self.context.cursor,
+                self.bounds,
+                forward,
+                count.get(),
+            )?,
         };
         Ok((
             cursor,

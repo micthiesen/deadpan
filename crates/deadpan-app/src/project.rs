@@ -66,6 +66,13 @@ pub struct OriginalActivity {
     pub activity: deadpan_analysis::SpeechActivity,
 }
 
+/// Stored shot analysis of the Original's pictures, carried across edits.
+#[derive(Debug)]
+pub struct OriginalShots {
+    pub key: deadpan_store::ShotAnalysisKey,
+    pub analysis: deadpan_analysis::ShotAnalysis,
+}
+
 /// The outcome of one background transcript save, matched by attempt.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TranscriptSave {
@@ -95,6 +102,9 @@ pub struct Workspace {
     /// Loaded when the project opens and replaced when speech activity is
     /// saved; like the transcript, it never changes with document revisions.
     pub speech_activity: Option<Arc<OriginalActivity>>,
+    /// Loaded when the project opens and replaced when shot analysis is
+    /// saved; like the other analyses it never changes with revisions.
+    pub shot_analysis: Option<Arc<OriginalShots>>,
 }
 
 impl Workspace {
@@ -110,6 +120,14 @@ impl Workspace {
     pub fn with_speech_activity(&self, activity: Arc<OriginalActivity>) -> Self {
         Self {
             speech_activity: Some(activity),
+            ..self.annotated()
+        }
+    }
+
+    /// The same committed workspace with a newly saved shot analysis.
+    pub fn with_shot_analysis(&self, shots: Arc<OriginalShots>) -> Self {
+        Self {
+            shot_analysis: Some(shots),
             ..self.annotated()
         }
     }
@@ -131,6 +149,7 @@ impl Workspace {
             original_duration,
             transcript,
             speech_activity,
+            shot_analysis,
         } = self;
         Self {
             session: *session,
@@ -146,6 +165,7 @@ impl Workspace {
             original_duration: *original_duration,
             transcript: transcript.clone(),
             speech_activity: speech_activity.clone(),
+            shot_analysis: shot_analysis.clone(),
         }
     }
 
@@ -253,6 +273,8 @@ pub struct ProjectUpdate {
     pub transcript_save: Option<TranscriptSave>,
     /// Background speech activity saves, reported like transcript saves.
     pub activity_save: Option<TranscriptSave>,
+    /// Background shot analysis saves, reported like transcript saves.
+    pub shot_save: Option<TranscriptSave>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -513,6 +535,13 @@ pub enum ProjectRequest {
         attempt: u64,
         key: deadpan_store::SpeechActivityKey,
         activity: Arc<deadpan_analysis::SpeechActivity>,
+    },
+    /// Store a validated shot analysis of the Original; never an edit.
+    SaveShotAnalysis {
+        expected_session: u64,
+        attempt: u64,
+        key: deadpan_store::ShotAnalysisKey,
+        analysis: Arc<deadpan_analysis::ShotAnalysis>,
     },
     Marks(marks::Request),
     Render(ProjectRenderRequest),

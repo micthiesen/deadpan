@@ -33,6 +33,7 @@ mod scale;
 mod scenarios;
 mod scoped_plays;
 mod semantic;
+mod shots;
 mod slip;
 mod sound_placement;
 mod sound_playback;

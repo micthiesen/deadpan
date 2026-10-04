@@ -5,6 +5,8 @@ activity detector run by whisper.cpp, refined by energy measured from the same
 audio. Section 11 of the [specification](spec/DEADPAN_SPEC.md) requires
 silence intervals derived from VAD plus measured energy; this records the
 implemented boundary. Pauses are proposals: they never edit the project.
+[Shot detection](SHOT_DETECTION.md) is the picture-side analysis, stored and
+published the same way.
 
 ## Pieces
 

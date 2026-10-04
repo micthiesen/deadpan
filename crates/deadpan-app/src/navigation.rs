@@ -168,6 +168,11 @@ pub enum Action {
         forward: bool,
         count: u32,
     },
+    /// Detected shot starts (`]s`, `[s`).
+    Shot {
+        forward: bool,
+        count: u32,
+    },
     /// Select a word, sentence or pause object (`iw`, `aw`, `is`, `as`,
     /// `ip`, `ap`).
     SelectSpeech(deadpan_core::SpeechObject),

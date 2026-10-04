@@ -42,6 +42,7 @@ mod render_history;
 mod room_tone;
 mod scoped;
 mod semantic;
+mod shots;
 mod slip;
 mod splice;
 mod transcripts;
@@ -75,6 +76,7 @@ struct Service {
     gain: Option<super::gain::ProposalUpdate>,
     transcript_save: Option<super::TranscriptSave>,
     activity_save: Option<super::TranscriptSave>,
+    shot_save: Option<super::TranscriptSave>,
     splice: Option<super::splice::ProposalUpdate>,
     splice_commit: Option<super::splice::SpliceCommitUpdate>,
     splice_draft: Option<splice::Draft>,
@@ -147,6 +149,7 @@ pub(super) fn run(
         gain: None,
         transcript_save: None,
         activity_save: None,
+        shot_save: None,
         splice: None,
         splice_commit: None,
         splice_draft: None,
@@ -333,6 +336,7 @@ impl Service {
             render_history: self.render_history.clone(),
             transcript_save: self.transcript_save.clone(),
             activity_save: self.activity_save.clone(),
+            shot_save: self.shot_save.clone(),
         };
         *self
             .shared
@@ -364,6 +368,15 @@ impl Service {
                 activity,
             } => {
                 self.save_speech_activity_command(expected_session, attempt, key, activity);
+                return Ok(());
+            }
+            ProjectRequest::SaveShotAnalysis {
+                expected_session,
+                attempt,
+                key,
+                analysis,
+            } => {
+                self.save_shot_analysis_command(expected_session, attempt, key, analysis);
                 return Ok(());
             }
             ProjectRequest::CaptureEditSlice(request) => {
@@ -435,7 +448,9 @@ impl Service {
         self.gain = None;
         match request {
             ProjectRequest::Marks(_) => unreachable!("marks use independent feedback"),
-            ProjectRequest::SaveTranscript { .. } | ProjectRequest::SaveSpeechActivity { .. } => {
+            ProjectRequest::SaveTranscript { .. }
+            | ProjectRequest::SaveSpeechActivity { .. }
+            | ProjectRequest::SaveShotAnalysis { .. } => {
                 unreachable!("analysis annotations use independent feedback")
             }
             ProjectRequest::Render(_) => unreachable!("render commands use their own feedback"),
@@ -1734,14 +1749,16 @@ fn snapshot(
         ),
         _ => None,
     };
-    let (transcript, speech_activity) = match previous {
+    let (transcript, speech_activity, shot_analysis) = match previous {
         Some(previous) => (
             previous.transcript.clone(),
             previous.speech_activity.clone(),
+            previous.shot_analysis.clone(),
         ),
         None => (
             original_transcript(store, single_source.as_ref(), &sources),
             original_activity(store, single_source.as_ref(), &sources),
+            original_shots(store, single_source.as_ref(), &sources),
         ),
     };
     Ok(Workspace {
@@ -1758,6 +1775,7 @@ fn snapshot(
         original_duration,
         transcript,
         speech_activity,
+        shot_analysis,
     })
 }
 
@@ -1793,6 +1811,26 @@ fn original_activity(
     let content = source.receipt.original().content().to_string();
     let (key, activity) = deadpan_cli::activity::stored_activity(store, &content)?;
     Some(Arc::new(super::OriginalActivity { key, activity }))
+}
+
+/// The stored shot analysis of the ready Original under the current
+/// signature, checked against its qualified picture count. An unreadable or
+/// mismatched row is skipped; without one, the app scans again.
+fn original_shots(
+    store: &ProjectStore,
+    single_source: Option<&SingleSourceState>,
+    sources: &BTreeMap<AssetId, Arc<RegisteredSource>>,
+) -> Option<Arc<super::OriginalShots>> {
+    let Some(SingleSourceState::Ready { asset, .. }) = single_source else {
+        return None;
+    };
+    let receipt = &sources.get(asset)?.receipt;
+    let video = receipt.snapshot().video()?;
+    let pictures = video.index().index().frames().len();
+    let content = receipt.original().content().to_string();
+    let (key, analysis) =
+        deadpan_cli::shots::stored_shots(store, &content, video.index().stream_index(), pictures)?;
+    Some(Arc::new(super::OriginalShots { key, analysis }))
 }
 
 fn registered_source(
