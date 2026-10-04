@@ -24,6 +24,7 @@ deadpan-render.workspace = true
 deadpan-source.workspace = true
 deadpan-models.workspace = true
 deadpan-jobs.workspace = true
+deadpan-analysis.workspace = true
 deadpan-encode.workspace = true
 deadpan-filesystem.workspace = true
 wgpu.workspace = true

@@ -74,6 +74,8 @@ Current crates:
 - `native/deadpan-process`: checked worker/leader teardown and Darwin group-membership adapter; unsafe is denied except for its documented bounded libproc call. Higher layers continue to forbid unsafe.
 - `crates/deadpan-app`: native `egui`/`eframe` project workspace using Metal. One service owns the writable store, one import worker prepares media, and a separate bounded preview worker consumes immutable workspaces. Native dialogs, source registration, explicit insertion, history, current-depth Camera previews, limited Original/edit/sound audition and automatic SDR Render with explicit preview decisions are implemented. Full editing, mastered playback, complete export qualification and native render recovery remain open.
 - `crates/deadpan-cli`: versioned headless project/command API, reused by `deadpan-app --headless`.
+- `crates/deadpan-analysis`: pure analysis annotations; validated word-timed transcripts with exact Original timing. See [transcription](docs/TRANSCRIPTION.md).
+- `native/deadpan-transcribe`: process-isolated whisper.cpp worker. Its only `unsafe` is the documented abort-callback adapter; never use whisper-rs's `set_abort_callback_safe`, which aborts every encode.
 
 [Architecture](docs/ARCHITECTURE.md) records Section 24's full boundary map. Add crates only when an implemented responsibility needs isolation. Do not create empty crates or feature controls that pretend to work.
 

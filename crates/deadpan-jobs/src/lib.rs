@@ -16,6 +16,8 @@ pub mod protocol;
 pub mod render;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod supervisor;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod transcription;
 
 pub use generation_plan::*;
 pub use lifecycle::*;

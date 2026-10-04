@@ -1,0 +1,31 @@
+[package]
+name = "deadpan-transcribe"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+description = "Process-isolated local transcription worker built on whisper.cpp"
+
+[[bin]]
+name = "deadpan-transcribe"
+path = "src/main.rs"
+
+[dependencies]
+deadpan-analysis.workspace = true
+deadpan-jobs.workspace = true
+rustix.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+
+[target.'cfg(target_os = "macos")'.dependencies]
+# Pinned whisper.cpp 1.8.3 (vendored by whisper-rs-sys 0.15.0) with Metal.
+whisper-rs = { version = "=0.16.0", default-features = false, features = ["metal"] }
+
+# Only the abort-callback adapter in main.rs opts in; everything else is safe.
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
