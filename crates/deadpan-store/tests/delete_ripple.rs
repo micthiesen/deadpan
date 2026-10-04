@@ -80,7 +80,7 @@ fn assert_authored(actual: &ProjectDocument, expected: &ProjectDocument) -> Resu
 
 fn history(path: &Path) -> Result<Vec<CommandRequest>> {
     let database = Connection::open(path.join("project.sqlite"))?;
-    assert_eq!(DATABASE_SCHEMA_VERSION, 59);
+    assert_eq!(DATABASE_SCHEMA_VERSION, 60);
     assert_eq!(
         database.pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?,
         DATABASE_SCHEMA_VERSION

@@ -109,7 +109,7 @@ fn requests_bound_paths_audio_scope_budget_and_timeout() {
         }),
         with(|m| {
             if let HostMessage::Transcribe { protocol, .. } = m {
-                *protocol = 2;
+                *protocol = VERSION + 1;
             }
         }),
     ];
@@ -226,4 +226,130 @@ fn framed_messages_round_trip_and_reject_unknown_fields() {
         elapsed_millis: 1,
     };
     assert!(write_worker(&mut Vec::new(), &engine).is_err());
+}
+
+const VAD: &str = "2aa269b785eeb53a82983a20501ddf7c1d9c48e33ab63a41391ac6c9f7fb6987";
+
+fn detect() -> HostMessage {
+    HostMessage::DetectSpeech {
+        protocol: VERSION,
+        request: RequestId::new("activity-1").unwrap(),
+        attempt: AttemptId::new("attempt-1").unwrap(),
+        cancellation_token: CancellationToken::new("cancel-1").unwrap(),
+        model: ModelInput {
+            path: PathBuf::from("/models/ggml-silero-v6.2.0.bin"),
+            sha256: Sha256::new(VAD).unwrap(),
+            byte_length: 885_098,
+        },
+        audio: WorkspaceArtifact::new(
+            WorkspaceRef::new("input/analysis.f32").unwrap(),
+            Sha256::new(AUDIO).unwrap(),
+            16_000 * 4,
+        )
+        .unwrap(),
+        output_scope: WorkspaceRef::new("output").unwrap(),
+        maximum_output_bytes: 32 * 4,
+        timeout_millis: 60_000,
+    }
+}
+
+fn detected(reference: &str, bytes: u64, model: &str) -> WorkerMessage {
+    WorkerMessage::SpeechDetected {
+        protocol: VERSION,
+        request: RequestId::new("activity-1").unwrap(),
+        attempt: AttemptId::new("attempt-1").unwrap(),
+        probabilities: WorkspaceArtifact::new(
+            WorkspaceRef::new(reference).unwrap(),
+            Sha256::new(OUTPUT).unwrap(),
+            bytes,
+        )
+        .unwrap(),
+        runtime: RuntimeReport {
+            engine: "whisper.cpp 1.8.3".into(),
+            backend: Backend::Cpu,
+            model_sha256: Sha256::new(model).unwrap(),
+        },
+        elapsed_millis: 12,
+    }
+}
+
+#[test]
+fn speech_detection_requests_bound_their_probability_budget() {
+    assert!(detect().validate().is_ok());
+    let protocol = TranscriptionProtocol::from_request(&detect()).unwrap();
+    assert_eq!(protocol.operation(), Operation::DetectSpeech);
+    let budget = |bytes| {
+        let mut message = detect();
+        if let HostMessage::DetectSpeech {
+            maximum_output_bytes,
+            ..
+        } = &mut message
+        {
+            *maximum_output_bytes = bytes;
+        }
+        message
+    };
+    assert!(budget(0).validate().is_err());
+    assert!(budget(MAX_PROBABILITY_BYTES).validate().is_ok());
+    assert!(budget(MAX_PROBABILITY_BYTES + 1).validate().is_err());
+    let mut wrong = detect();
+    if let HostMessage::DetectSpeech { output_scope, .. } = &mut wrong {
+        *output_scope = WorkspaceRef::new("input").unwrap();
+    }
+    assert!(TranscriptionProtocol::from_request(&wrong).is_err());
+    assert_eq!(MAX_PROBABILITY_BYTES, MAX_ANALYSIS_FRAMES.div_ceil(512) * 4);
+}
+
+#[test]
+fn each_attempt_accepts_only_its_own_completion_kind() {
+    let detecting = TranscriptionProtocol::from_request(&detect()).unwrap();
+    assert_eq!(
+        detecting.classify(&detected("output/activity.f32", 32 * 4, VAD)),
+        Ok(ResponseKind::Completed)
+    );
+    for refused in [
+        detected("output/activity.f32", 33 * 4, VAD),
+        detected("output/activity.f32", 6, VAD),
+        detected("elsewhere/activity.f32", 8, VAD),
+        detected("output/activity.f32", 8, MODEL),
+    ] {
+        assert!(detecting.classify(&refused).is_err(), "{refused:?}");
+    }
+    let mut transcript = completed("output/transcript.json", 8, VAD);
+    if let WorkerMessage::Completed {
+        request, attempt, ..
+    } = &mut transcript
+    {
+        *request = RequestId::new("activity-1").unwrap();
+        *attempt = AttemptId::new("attempt-1").unwrap();
+    }
+    assert!(detecting.classify(&transcript).is_err());
+
+    let transcribing = TranscriptionProtocol::from_request(&transcribe()).unwrap();
+    assert_eq!(transcribing.operation(), Operation::Transcribe);
+    let mut probabilities = detected("output/activity.f32", 8, MODEL);
+    if let WorkerMessage::SpeechDetected {
+        request, attempt, ..
+    } = &mut probabilities
+    {
+        *request = RequestId::new("transcript-1").unwrap();
+        *attempt = AttemptId::new("attempt-1").unwrap();
+    }
+    assert!(transcribing.classify(&probabilities).is_err());
+}
+
+#[test]
+fn speech_detection_messages_round_trip() {
+    let mut wire = Vec::new();
+    TranscriptionProtocol::write_request(&mut wire, &detect()).unwrap();
+    assert_eq!(read_host(&mut wire.as_slice()).unwrap(), Some(detect()));
+    let mut wire = Vec::new();
+    write_worker(&mut wire, &detected("output/activity.f32", 8, VAD)).unwrap();
+    assert_eq!(
+        TranscriptionProtocol::read_response(&mut wire.as_slice()).unwrap(),
+        Some(detected("output/activity.f32", 8, VAD))
+    );
+    let mut value = serde_json::to_value(detect()).unwrap();
+    value["language"] = serde_json::json!("en");
+    assert!(serde_json::from_value::<HostMessage>(value).is_err());
 }

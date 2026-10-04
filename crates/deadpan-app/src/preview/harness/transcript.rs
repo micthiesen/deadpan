@@ -5,7 +5,9 @@
 //! service and drives search, Enter and word clicks against exact frames.
 
 use super::*;
-use deadpan_analysis::{AnalysedAudio, Transcript, Word, picture_at};
+use deadpan_analysis::{
+    ActivityAudio, AnalysedAudio, SpeechActivity, Transcript, Word, picture_at,
+};
 use egui::Key;
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
@@ -145,6 +147,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"source_cursor":d.app().source_cursor}),
     )?;
     words_in_your_edit(d, &expected)?;
+    pauses_in_your_edit(d)?;
     d.report.skipped.push("Replay saves a synthetic transcript; real recognition is covered by the worker tests and transcription qualification. No model is downloaded.".into());
     Ok(())
 }
@@ -381,4 +384,162 @@ fn focus_your_edit(d: &mut Driver<'_>) -> Result<(), String> {
         d.key(Key::Tab)?;
     }
     Err("Keyboard focus could not reach Your edit".into())
+}
+
+/// `]p`, `[p` and `dip` in Your edit against synthetic speech activity:
+/// quiet from 0.60 to 0.95 s and from 1.60 to 1.95 s of the fixture's audio.
+fn pauses_in_your_edit(d: &mut Driver<'_>) -> Result<(), String> {
+    let workspace = d.app().workspace.as_ref().ok_or("No project")?;
+    let asset = original_asset(workspace).ok_or("No Original")?;
+    let source = workspace
+        .sources
+        .get(asset)
+        .ok_or("Missing Original source")?;
+    let audio = source
+        .receipt
+        .snapshot()
+        .audio()
+        .ok_or("Fixture has no audio")?;
+    let origin = audio
+        .frames()
+        .first()
+        .ok_or("Empty audio index")?
+        .valid_start;
+    let samples: u64 = 60_800;
+    let quiet =
+        |sample: u64| (9_600..15_200).contains(&sample) || (25_600..31_200).contains(&sample);
+    let speech = (0..samples.div_ceil(deadpan_analysis::VAD_HOP))
+        .map(|hop| {
+            if quiet(hop * deadpan_analysis::VAD_HOP + 256) {
+                0
+            } else {
+                240
+            }
+        })
+        .collect();
+    let energy = (0..samples.div_ceil(deadpan_analysis::ENERGY_HOP))
+        .map(|frame| {
+            if quiet(frame * deadpan_analysis::ENERGY_HOP + 80) {
+                20
+            } else {
+                200
+            }
+        })
+        .collect();
+    let activity = SpeechActivity::new(
+        ActivityAudio {
+            origin,
+            sample_rate: audio.stream().sample_rate,
+            samples,
+        },
+        speech,
+        energy,
+    )
+    .map_err(|e| e.to_string())?;
+    let key = deadpan_store::SpeechActivityKey {
+        content: source.receipt.original().content().to_string(),
+        audio_stream: audio.stream().stream_index,
+        model_sha256: "2aa269b785eeb53a82983a20501ddf7c1d9c48e33ab63a41391ac6c9f7fb6987".into(),
+        engine: "replay".into(),
+    };
+    let session = workspace.session;
+    let revision = d.revision();
+    let submitted = d.app_mut().submit(ProjectRequest::SaveSpeechActivity {
+        expected_session: session,
+        attempt: 0,
+        key,
+        activity: Arc::new(activity),
+    });
+    d.wait_for("Speech activity saved", |app| {
+        app.workspace
+            .as_ref()
+            .is_some_and(|workspace| workspace.speech_activity.is_some())
+    })?;
+    focus_your_edit(d)?;
+    d.chord(&[Key::G, Key::G])?;
+    d.settled()?;
+    let pauses: Vec<(i64, i64)> = d
+        .app_mut()
+        .edit_analysis()?
+        .pauses()
+        .ok_or("pauses are not projected")?
+        .iter()
+        .map(|pause| (pause.start().0, pause.end().0))
+        .collect();
+    d.chord(&[Key::CloseBracket, Key::P])?;
+    d.settled()?;
+    let first = d.app().sequence_cursor;
+    d.chord(&[Key::CloseBracket, Key::P])?;
+    d.settled()?;
+    let second = d.app().sequence_cursor;
+    d.chord(&[Key::OpenBracket, Key::P])?;
+    d.settled()?;
+    let back = d.app().sequence_cursor;
+    d.check(
+        "]p and [p move the Edit cursor between pause starts without editing",
+        submitted
+            && d.revision() == revision
+            && pauses.len() == 2
+            && first == pauses[0].0 as u64
+            && second == pauses[1].0 as u64
+            && back == pauses[0].0 as u64,
+        json!({"pauses":2,"first":pauses.first().map(|p| p.0),"second":pauses.get(1).map(|p| p.0)}),
+        json!({"pauses":pauses,"first":first,"second":second,"back":back,"message":d.app().message}),
+    )?;
+    d.chord(&[Key::G, Key::G])?;
+    d.settled()?;
+    d.chord(&[Key::CloseBracket, Key::P])?;
+    d.settled()?;
+    let duration = |d: &Driver<'_>| -> Result<i64, String> {
+        Ok(d.app()
+            .workspace
+            .as_ref()
+            .ok_or("No project")?
+            .plan
+            .duration()
+            .frames())
+    };
+    let before = duration(d)?;
+    let revision = d.revision();
+    d.chord(&[Key::D, Key::I, Key::P])?;
+    d.changed(&revision)?;
+    d.settled()?;
+    let after: Vec<(i64, i64)> = d
+        .app_mut()
+        .edit_analysis()?
+        .pauses()
+        .ok_or("pauses are not projected")?
+        .iter()
+        .map(|pause| (pause.start().0, pause.end().0))
+        .collect();
+    let removed = pauses[0].1 - pauses[0].0;
+    d.check(
+        "dip cuts exactly the pause's frames and the later pause follows the edit",
+        before - duration(d)? == removed
+            && after == [(pauses[1].0 - removed, pauses[1].1 - removed)],
+        json!({"removed":removed,"pauses":[(pauses[1].0 - removed, pauses[1].1 - removed)]}),
+        json!({"removed":before - duration(d)?,"pauses":after}),
+    )?;
+    d.capture("Pause cut from Your edit")?;
+    let cut = d.revision();
+    d.key(Key::U)?;
+    d.changed(&cut)?;
+    d.settled()?;
+    d.chord(&[Key::G, Key::G])?;
+    d.key_modified(Key::G, egui::Modifiers::SHIFT)?;
+    d.settled()?;
+    let end = d.app().sequence_cursor;
+    d.chord(&[Key::CloseBracket, Key::P])?;
+    d.settled()?;
+    d.check(
+        "]p after the last pause stays put and says why",
+        d.app().sequence_cursor == end
+            && d.app()
+                .message
+                .as_deref()
+                .is_some_and(|message| message.contains("no later pause")),
+        json!({"cursor":end,"message":"no later pause"}),
+        json!({"cursor":d.app().sequence_cursor,"message":d.app().message}),
+    )?;
+    Ok(())
 }

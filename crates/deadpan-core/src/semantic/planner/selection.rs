@@ -309,7 +309,7 @@ where
                 forward,
                 count,
                 end,
-            } => self.speech()?.motion_target(
+            } => self.words()?.motion_target(
                 self.context.cursor,
                 self.bounds,
                 SpeechMotion {
@@ -319,7 +319,7 @@ where
                     end,
                 },
             ),
-            SemanticMotion::Sentences { forward, count } => self.speech()?.motion_target(
+            SemanticMotion::Sentences { forward, count } => self.words()?.motion_target(
                 self.context.cursor,
                 self.bounds,
                 SpeechMotion {
@@ -329,6 +329,12 @@ where
                     end: false,
                 },
             ),
+            SemanticMotion::Pauses { forward, count } => self.speech()?.pause_target(
+                self.context.cursor,
+                self.bounds,
+                forward,
+                count.get(),
+            )?,
         };
         Ok((
             cursor,

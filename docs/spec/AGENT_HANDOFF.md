@@ -2,6 +2,21 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Pauses from speech activity, 2026-10-04
+
+Silero VAD (v6.2.0, through whisper.cpp in the transcription worker) plus
+measured 10 ms energies give a versioned pause rule, `deadpan-silence-1`; see
+[speech activity](../SPEECH_ACTIVITY.md). Database schema 60 adds the
+`speech_activity` table and upgrades 59 in place. The `whisper-base-en` pack
+is now version 2 (recognizer plus detector); installed version 1 packs are
+offered as an update. Core `SpeechTimeline` carries words and pauses
+independently, each with its own unavailability reason; `]p`/`[p` and
+`ip`/`ap` follow the same projection as words. Applied operators now report
+what they did ("Cut pause.") instead of "Action completed.".
+
+Next: shot boundary proposals (`]s`/`[s`, `iS`/`aS`) from decoded picture
+change metrics, then pause display in the rail and manual correction.
+
 ## Transcription, model packs and File Provider, 2026-10-04
 
 Local transcription (DP-10) and the model-pack manager (DP-13) are integrated

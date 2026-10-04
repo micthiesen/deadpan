@@ -30,6 +30,7 @@ mod scoped;
 mod semantic;
 mod slip;
 mod sound;
+mod speech_activity;
 mod splice;
 mod trim;
 

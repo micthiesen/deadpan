@@ -39,11 +39,19 @@ pub enum SemanticMotion {
         forward: bool,
         count: NonZeroU32,
     },
+    /// `]p` and `[p`: detected pause starts.
+    Pauses {
+        forward: bool,
+        count: NonZeroU32,
+    },
 }
 
 impl SemanticMotion {
     pub const fn uses_speech(self) -> bool {
-        matches!(self, Self::Words { .. } | Self::Sentences { .. })
+        matches!(
+            self,
+            Self::Words { .. } | Self::Sentences { .. } | Self::Pauses { .. }
+        )
     }
 }
 
@@ -62,7 +70,8 @@ pub enum SemanticSelector {
     TextObject {
         object: SemanticTextObject,
     },
-    /// `iw`, `aw`, `is` and `as` against recognized speech at the cursor.
+    /// `iw`, `aw`, `is`, `as`, `ip` and `ap` against analysed speech at the
+    /// cursor.
     Speech {
         object: super::SpeechObject,
     },
@@ -103,7 +112,12 @@ pub enum SemanticInstruction {
         forward: bool,
         count: NonZeroU32,
     },
-    /// Select a word or sentence object as an extending Visual time range.
+    MovePauses {
+        forward: bool,
+        count: NonZeroU32,
+    },
+    /// Select a word, sentence or pause object as an extending Visual time
+    /// range.
     SelectSpeech {
         object: super::SpeechObject,
     },
@@ -172,7 +186,10 @@ impl SemanticInstruction {
     /// True when resolving this instruction needs recognized speech.
     pub fn uses_speech(&self) -> bool {
         match self {
-            Self::MoveWords { .. } | Self::MoveSentences { .. } | Self::SelectSpeech { .. } => true,
+            Self::MoveWords { .. }
+            | Self::MoveSentences { .. }
+            | Self::MovePauses { .. }
+            | Self::SelectSpeech { .. } => true,
             Self::Yank { selector, .. }
             | Self::Cut { selector, .. }
             | Self::Group { selector, .. }

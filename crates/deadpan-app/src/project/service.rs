@@ -74,6 +74,7 @@ struct Service {
     room_tone_error: Option<RoomToneFailure>,
     gain: Option<super::gain::ProposalUpdate>,
     transcript_save: Option<super::TranscriptSave>,
+    activity_save: Option<super::TranscriptSave>,
     splice: Option<super::splice::ProposalUpdate>,
     splice_commit: Option<super::splice::SpliceCommitUpdate>,
     splice_draft: Option<splice::Draft>,
@@ -145,6 +146,7 @@ pub(super) fn run(
         room_tone_error: None,
         gain: None,
         transcript_save: None,
+        activity_save: None,
         splice: None,
         splice_commit: None,
         splice_draft: None,
@@ -330,6 +332,7 @@ impl Service {
             render: self.render_update.clone(),
             render_history: self.render_history.clone(),
             transcript_save: self.transcript_save.clone(),
+            activity_save: self.activity_save.clone(),
         };
         *self
             .shared
@@ -352,6 +355,15 @@ impl Service {
                 transcript,
             } => {
                 self.save_transcript_command(expected_session, attempt, key, transcript);
+                return Ok(());
+            }
+            ProjectRequest::SaveSpeechActivity {
+                expected_session,
+                attempt,
+                key,
+                activity,
+            } => {
+                self.save_speech_activity_command(expected_session, attempt, key, activity);
                 return Ok(());
             }
             ProjectRequest::CaptureEditSlice(request) => {
@@ -423,8 +435,8 @@ impl Service {
         self.gain = None;
         match request {
             ProjectRequest::Marks(_) => unreachable!("marks use independent feedback"),
-            ProjectRequest::SaveTranscript { .. } => {
-                unreachable!("transcripts use independent feedback")
+            ProjectRequest::SaveTranscript { .. } | ProjectRequest::SaveSpeechActivity { .. } => {
+                unreachable!("analysis annotations use independent feedback")
             }
             ProjectRequest::Render(_) => unreachable!("render commands use their own feedback"),
             ProjectRequest::RenderHistory(_) => {
@@ -1722,9 +1734,15 @@ fn snapshot(
         ),
         _ => None,
     };
-    let transcript = match previous {
-        Some(previous) => previous.transcript.clone(),
-        None => original_transcript(store, single_source.as_ref(), &sources),
+    let (transcript, speech_activity) = match previous {
+        Some(previous) => (
+            previous.transcript.clone(),
+            previous.speech_activity.clone(),
+        ),
+        None => (
+            original_transcript(store, single_source.as_ref(), &sources),
+            original_activity(store, single_source.as_ref(), &sources),
+        ),
     };
     Ok(Workspace {
         session,
@@ -1739,6 +1757,7 @@ fn snapshot(
         single_source,
         original_duration,
         transcript,
+        speech_activity,
     })
 }
 
@@ -1758,6 +1777,22 @@ fn original_transcript(
     let content = source.receipt.original().content().to_string();
     let (key, transcript) = deadpan_cli::speech::stored_transcript(store, &content)?;
     Some(Arc::new(super::OriginalTranscript { key, transcript }))
+}
+
+/// The preferred stored speech activity of the ready Original. An unreadable
+/// row is skipped; without any, the app detects speech again.
+fn original_activity(
+    store: &ProjectStore,
+    single_source: Option<&SingleSourceState>,
+    sources: &BTreeMap<AssetId, Arc<RegisteredSource>>,
+) -> Option<Arc<super::OriginalActivity>> {
+    let Some(SingleSourceState::Ready { asset, .. }) = single_source else {
+        return None;
+    };
+    let source = sources.get(asset)?;
+    let content = source.receipt.original().content().to_string();
+    let (key, activity) = deadpan_cli::activity::stored_activity(store, &content)?;
+    Some(Arc::new(super::OriginalActivity { key, activity }))
 }
 
 fn registered_source(

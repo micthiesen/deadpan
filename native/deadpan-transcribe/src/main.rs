@@ -1,9 +1,12 @@
 //! Private transcription worker.
 //!
 //! The host launches this executable with an empty environment in a fresh
-//! attempt workspace and sends one framed `Transcribe` message on stdin. The
-//! worker verifies its model and analysis PCM again, runs whisper.cpp with token
-//! timestamps, and writes raw recognizer segments to `output/transcript.json`.
+//! attempt workspace and sends one framed `Transcribe` or `DetectSpeech`
+//! message on stdin. The worker verifies its model and analysis PCM again, then
+//! either runs whisper.cpp with token timestamps and writes raw recognizer
+//! segments to `output/transcript.json`, or runs the Silero voice activity
+//! detector and writes one little-endian `f32` speech probability per 512
+//! samples to `output/activity.f32`.
 //! Stdout carries only framed protocol messages; whisper.cpp logs go to stderr,
 //! which the host keeps as a bounded diagnostic tail.
 
@@ -20,14 +23,15 @@ use deadpan_jobs::protocol::{
     AttemptId, Diagnostic, RequestId, Sha256, WorkspaceArtifact, WorkspaceRef,
 };
 use deadpan_jobs::transcription::{
-    Backend, HostMessage, Language, ModelInput, RuntimeReport, VERSION, WorkerMessage, read_host,
-    write_worker,
+    Backend, HostMessage, Language, ModelInput, RuntimeReport, VAD_HOP, VERSION, WorkerMessage,
+    read_host, write_worker,
 };
 use rustix::fs::{Mode, OFlags};
 use sha2::Digest;
 
 const ENGINE: &str = "whisper.cpp 1.8.3";
 const OUTPUT_FILE: &str = "transcript.json";
+const ACTIVITY_FILE: &str = "activity.f32";
 
 type Output = Arc<Mutex<io::Stdout>>;
 
@@ -38,19 +42,50 @@ fn main() -> ExitCode {
         Ok(Some(message)) => message,
         Ok(None) | Err(_) => return ExitCode::from(2),
     };
-    let HostMessage::Transcribe {
-        request,
-        attempt,
-        cancellation_token,
-        model,
-        audio,
-        language,
-        output_scope,
-        maximum_output_bytes,
-        ..
-    } = first
-    else {
-        return ExitCode::from(2);
+    let (request, attempt, cancellation_token, operation) = match first {
+        HostMessage::Transcribe {
+            request,
+            attempt,
+            cancellation_token,
+            model,
+            audio,
+            language,
+            output_scope,
+            maximum_output_bytes,
+            ..
+        } => (
+            request,
+            attempt,
+            cancellation_token,
+            Operation::Transcribe {
+                model,
+                audio,
+                language,
+                output_scope,
+                maximum_output_bytes,
+            },
+        ),
+        HostMessage::DetectSpeech {
+            request,
+            attempt,
+            cancellation_token,
+            model,
+            audio,
+            output_scope,
+            maximum_output_bytes,
+            ..
+        } => (
+            request,
+            attempt,
+            cancellation_token,
+            Operation::DetectSpeech {
+                model,
+                audio,
+                output_scope,
+                maximum_output_bytes,
+            },
+        ),
+        HostMessage::Cancel { .. } => return ExitCode::from(2),
     };
     let cancelled = Arc::new(AtomicBool::new(false));
     {
@@ -77,15 +112,36 @@ fn main() -> ExitCode {
         attempt,
         output: Arc::clone(&output),
     };
-    let result = run(
-        &job,
-        &model,
-        &audio,
-        &language,
-        &output_scope,
-        maximum_output_bytes,
-        &cancelled,
-    );
+    let result = match &operation {
+        Operation::Transcribe {
+            model,
+            audio,
+            language,
+            output_scope,
+            maximum_output_bytes,
+        } => run(
+            &job,
+            model,
+            audio,
+            language,
+            output_scope,
+            *maximum_output_bytes,
+            &cancelled,
+        ),
+        Operation::DetectSpeech {
+            model,
+            audio,
+            output_scope,
+            maximum_output_bytes,
+        } => run_detection(
+            &job,
+            model,
+            audio,
+            output_scope,
+            *maximum_output_bytes,
+            &cancelled,
+        ),
+    };
     match result {
         Ok(Some(completed)) => {
             if job.send(completed).is_err() {
@@ -117,6 +173,23 @@ fn main() -> ExitCode {
             ExitCode::from(1)
         }
     }
+}
+
+/// The initial host message's work.
+enum Operation {
+    Transcribe {
+        model: ModelInput,
+        audio: WorkspaceArtifact,
+        language: Language,
+        output_scope: WorkspaceRef,
+        maximum_output_bytes: u64,
+    },
+    DetectSpeech {
+        model: ModelInput,
+        audio: WorkspaceArtifact,
+        output_scope: WorkspaceRef,
+        maximum_output_bytes: u64,
+    },
 }
 
 struct Job {
@@ -178,6 +251,83 @@ fn run(
         },
         elapsed_millis: u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX),
     }))
+}
+
+/// Verify the VAD model and PCM, detect speech and write the probabilities.
+/// Detection is fast (well under a second per minute of audio), so
+/// cancellation is observed before and after it rather than during it.
+fn run_detection(
+    job: &Job,
+    model: &ModelInput,
+    audio: &WorkspaceArtifact,
+    output_scope: &WorkspaceRef,
+    maximum_output_bytes: u64,
+    cancelled: &Arc<AtomicBool>,
+) -> Result<Option<WorkerMessage>, String> {
+    let started = Instant::now();
+    verify_model(model)?;
+    let pcm = read_pcm(audio)?;
+    if cancelled.load(Ordering::Acquire) {
+        return Ok(None);
+    }
+    let probabilities = detect_speech(model, &pcm)?;
+    if cancelled.load(Ordering::Acquire) {
+        return Ok(None);
+    }
+    let expected = (pcm.len() as u64).div_ceil(VAD_HOP);
+    if probabilities.len() as u64 != expected {
+        return Err(format!(
+            "speech detection returned {} probabilities for {expected} hops",
+            probabilities.len()
+        ));
+    }
+    if probabilities
+        .iter()
+        .any(|probability| !probability.is_finite() || !(0.0..=1.0).contains(probability))
+    {
+        return Err("speech detection returned a probability outside 0..=1".into());
+    }
+    let mut bytes = Vec::with_capacity(probabilities.len() * 4);
+    for probability in &probabilities {
+        bytes.extend_from_slice(&probability.to_le_bytes());
+    }
+    let artifact = write_output(output_scope, ACTIVITY_FILE, &bytes, maximum_output_bytes)?;
+    Ok(Some(WorkerMessage::SpeechDetected {
+        protocol: VERSION,
+        request: job.request.clone(),
+        attempt: job.attempt.clone(),
+        probabilities: artifact,
+        runtime: RuntimeReport {
+            engine: ENGINE.into(),
+            // whisper.cpp runs Silero on the CPU.
+            backend: Backend::Cpu,
+            model_sha256: model.sha256.clone(),
+        },
+        elapsed_millis: u64::try_from(started.elapsed().as_millis()).unwrap_or(u64::MAX),
+    }))
+}
+
+#[cfg(target_os = "macos")]
+fn detect_speech(model: &ModelInput, pcm: &[f32]) -> Result<Vec<f32>, String> {
+    use whisper_rs::{WhisperVadContext, WhisperVadContextParams};
+
+    if pcm.is_empty() || i32::try_from(pcm.len()).is_err() {
+        return Err("analysis audio length is outside the detector's range".into());
+    }
+    let path = model.path.to_str().ok_or("model path must be UTF-8")?;
+    let mut parameters = WhisperVadContextParams::new();
+    parameters.set_use_gpu(false);
+    let mut context = WhisperVadContext::new(path, parameters)
+        .map_err(|error| format!("load speech detector: {error}"))?;
+    context
+        .detect_speech(pcm)
+        .map_err(|error| format!("detect speech: {error}"))?;
+    Ok(context.probabilities().to_vec())
+}
+
+#[cfg(not(target_os = "macos"))]
+fn detect_speech(_model: &ModelInput, _pcm: &[f32]) -> Result<Vec<f32>, String> {
+    Err("this platform has no qualified speech detection runtime".into())
 }
 
 /// Open a regular file without following a final symbolic link.
@@ -403,8 +553,18 @@ fn write_transcript(
     maximum_bytes: u64,
 ) -> Result<WorkspaceArtifact, String> {
     let bytes = serde_json::to_vec(segments).map_err(|error| error.to_string())?;
+    write_output(output_scope, OUTPUT_FILE, &bytes, maximum_bytes)
+}
+
+/// Create `name` exclusively below the output scope and write `bytes`.
+fn write_output(
+    output_scope: &WorkspaceRef,
+    name: &str,
+    bytes: &[u8],
+    maximum_bytes: u64,
+) -> Result<WorkspaceArtifact, String> {
     if bytes.is_empty() || bytes.len() as u64 > maximum_bytes {
-        return Err("transcript exceeds its byte budget".into());
+        return Err(format!("{name} exceeds its byte budget"));
     }
     // The host creates and owns the output scope before launch.
     let directory = Path::new(output_scope.as_str());
@@ -416,17 +576,17 @@ fn write_transcript(
     .map_err(|error| format!("open output scope: {error}"))?;
     let descriptor = rustix::fs::openat(
         &parent,
-        OUTPUT_FILE,
+        name,
         OFlags::WRONLY | OFlags::CREATE | OFlags::EXCL | OFlags::NOFOLLOW | OFlags::CLOEXEC,
         Mode::from_raw_mode(0o600),
     )
-    .map_err(|error| format!("create transcript: {error}"))?;
+    .map_err(|error| format!("create {name}: {error}"))?;
     let mut file = File::from(descriptor);
-    file.write_all(&bytes).map_err(|error| error.to_string())?;
+    file.write_all(bytes).map_err(|error| error.to_string())?;
     file.sync_all().map_err(|error| error.to_string())?;
-    let reference = WorkspaceRef::new(format!("{}/{OUTPUT_FILE}", output_scope.as_str()))
+    let reference = WorkspaceRef::new(format!("{}/{name}", output_scope.as_str()))
         .map_err(|error| error.to_string())?;
-    let digest = Sha256::new(hex(&sha2::Sha256::digest(&bytes))).map_err(|e| e.to_string())?;
+    let digest = Sha256::new(hex(&sha2::Sha256::digest(bytes))).map_err(|e| e.to_string())?;
     WorkspaceArtifact::new(reference, digest, bytes.len() as u64).map_err(|error| error.to_string())
 }
 

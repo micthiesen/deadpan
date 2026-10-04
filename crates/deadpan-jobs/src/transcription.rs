@@ -6,6 +6,10 @@
 //! segments as one JSON artifact below the output scope. Large data travels only
 //! by hashed artifact reference; a completed message is not a trusted transcript
 //! until the host snapshots, parses and validates the artifact.
+//!
+//! The same worker also detects speech activity: `DetectSpeech` runs the
+//! Silero voice activity detector over the same PCM and writes one
+//! little-endian `f32` speech probability per [`VAD_HOP`] samples.
 
 use std::io::{Read, Write};
 use std::path::PathBuf;
@@ -18,13 +22,17 @@ use crate::protocol::{
     read_frame, write_frame,
 };
 
-pub const VERSION: u32 = 1;
+pub const VERSION: u32 = 2;
 /// Analysis PCM sample rate.
 pub const SAMPLE_RATE: u32 = 16_000;
 /// Three hours of mono analysis PCM.
 pub const MAX_ANALYSIS_FRAMES: u64 = 3 * 60 * 60 * SAMPLE_RATE as u64;
 pub const MAX_MODEL_BYTES: u64 = 8 * 1024 * 1024 * 1024;
 pub const MAX_TRANSCRIPT_BYTES: u64 = 64 * 1024 * 1024;
+/// Analysis samples per speech probability.
+pub const VAD_HOP: u64 = 512;
+/// One `f32` probability per hop of the longest analysis audio.
+pub const MAX_PROBABILITY_BYTES: u64 = MAX_ANALYSIS_FRAMES.div_ceil(VAD_HOP) * 4;
 const MAX_PATH_BYTES: usize = 4_096;
 const MAX_ENGINE_BYTES: usize = 64;
 const MAX_TIMEOUT_MILLIS: u64 = 24 * 60 * 60 * 1_000;
@@ -123,12 +131,50 @@ pub enum HostMessage {
         maximum_output_bytes: u64,
         timeout_millis: u64,
     },
+    /// Run voice activity detection over the analysis PCM.
+    DetectSpeech {
+        protocol: u32,
+        request: RequestId,
+        attempt: AttemptId,
+        cancellation_token: CancellationToken,
+        /// A Silero VAD model in ggml format.
+        model: ModelInput,
+        /// Mono 16 kHz little-endian f32 PCM below `input/`.
+        audio: WorkspaceArtifact,
+        output_scope: WorkspaceRef,
+        maximum_output_bytes: u64,
+        timeout_millis: u64,
+    },
     Cancel {
         protocol: u32,
         request: RequestId,
         attempt: AttemptId,
         cancellation_token: CancellationToken,
     },
+}
+
+/// Bounds shared by both initial messages.
+fn validate_job(
+    model: &ModelInput,
+    audio: &WorkspaceArtifact,
+    output_scope: &WorkspaceRef,
+    timeout_millis: u64,
+) -> Result<(), String> {
+    model.validate()?;
+    let frames = audio.byte_length() / 4;
+    if !audio.byte_length().is_multiple_of(4) || frames > MAX_ANALYSIS_FRAMES {
+        return Err("analysis audio must be whole f32 frames within the bound".into());
+    }
+    if !audio.reference().as_str().starts_with("input/") {
+        return Err("analysis audio must be a workspace input".into());
+    }
+    if output_scope.as_str() == "input" || output_scope.as_str().starts_with("input/") {
+        return Err("output scope must be separate from inputs".into());
+    }
+    if !(1..=MAX_TIMEOUT_MILLIS).contains(&timeout_millis) {
+        return Err("transcription timeout outside its bound".into());
+    }
+    Ok(())
 }
 
 impl HostMessage {
@@ -144,22 +190,25 @@ impl HostMessage {
                 ..
             } => {
                 version(*protocol)?;
-                model.validate()?;
-                let frames = audio.byte_length() / 4;
-                if !audio.byte_length().is_multiple_of(4) || frames > MAX_ANALYSIS_FRAMES {
-                    return Err("analysis audio must be whole f32 frames within the bound".into());
-                }
-                if !audio.reference().as_str().starts_with("input/") {
-                    return Err("analysis audio must be a workspace input".into());
-                }
-                if output_scope.as_str() == "input" || output_scope.as_str().starts_with("input/") {
-                    return Err("output scope must be separate from inputs".into());
-                }
+                validate_job(model, audio, output_scope, *timeout_millis)?;
                 if *maximum_output_bytes == 0 || *maximum_output_bytes > MAX_TRANSCRIPT_BYTES {
                     return Err("transcript byte budget outside its bound".into());
                 }
-                if !(1..=MAX_TIMEOUT_MILLIS).contains(timeout_millis) {
-                    return Err("transcription timeout outside its bound".into());
+                Ok(())
+            }
+            Self::DetectSpeech {
+                protocol,
+                model,
+                audio,
+                output_scope,
+                maximum_output_bytes,
+                timeout_millis,
+                ..
+            } => {
+                version(*protocol)?;
+                validate_job(model, audio, output_scope, *timeout_millis)?;
+                if *maximum_output_bytes == 0 || *maximum_output_bytes > MAX_PROBABILITY_BYTES {
+                    return Err("probability byte budget outside its bound".into());
                 }
                 Ok(())
             }
@@ -185,6 +234,15 @@ pub enum WorkerMessage {
         runtime: RuntimeReport,
         elapsed_millis: u64,
     },
+    /// Speech probabilities as raw little-endian `f32`, one per [`VAD_HOP`].
+    SpeechDetected {
+        protocol: u32,
+        request: RequestId,
+        attempt: AttemptId,
+        probabilities: WorkspaceArtifact,
+        runtime: RuntimeReport,
+        elapsed_millis: u64,
+    },
     Failed {
         protocol: u32,
         request: RequestId,
@@ -207,6 +265,9 @@ impl WorkerMessage {
             | Self::Completed {
                 request, attempt, ..
             }
+            | Self::SpeechDetected {
+                request, attempt, ..
+            }
             | Self::Failed {
                 request, attempt, ..
             }
@@ -227,6 +288,9 @@ impl WorkerMessage {
                 *protocol
             }
             Self::Completed {
+                protocol, runtime, ..
+            }
+            | Self::SpeechDetected {
                 protocol, runtime, ..
             } => {
                 if runtime.engine.is_empty()
@@ -251,8 +315,16 @@ fn version(value: u32) -> Result<(), String> {
     }
 }
 
+/// Which initial operation an attempt runs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Operation {
+    Transcribe,
+    DetectSpeech,
+}
+
 /// Host-side adapter binding every response to the captured attempt.
 pub struct TranscriptionProtocol {
+    operation: Operation,
     request: RequestId,
     attempt: AttemptId,
     token: CancellationToken,
@@ -267,21 +339,57 @@ impl WorkerProtocol for TranscriptionProtocol {
 
     fn from_request(request: &HostMessage) -> Result<Self, SupervisorError> {
         request.validate().map_err(SupervisorError::Request)?;
-        let HostMessage::Transcribe {
+        let (
+            operation,
             request,
             attempt,
             cancellation_token,
             model,
             output_scope,
             maximum_output_bytes,
-            ..
-        } = request
-        else {
-            return Err(SupervisorError::Request(
-                "initial transcription message must transcribe".into(),
-            ));
+        ) = match request {
+            HostMessage::Transcribe {
+                request,
+                attempt,
+                cancellation_token,
+                model,
+                output_scope,
+                maximum_output_bytes,
+                ..
+            } => (
+                Operation::Transcribe,
+                request,
+                attempt,
+                cancellation_token,
+                model,
+                output_scope,
+                maximum_output_bytes,
+            ),
+            HostMessage::DetectSpeech {
+                request,
+                attempt,
+                cancellation_token,
+                model,
+                output_scope,
+                maximum_output_bytes,
+                ..
+            } => (
+                Operation::DetectSpeech,
+                request,
+                attempt,
+                cancellation_token,
+                model,
+                output_scope,
+                maximum_output_bytes,
+            ),
+            HostMessage::Cancel { .. } => {
+                return Err(SupervisorError::Request(
+                    "initial transcription message must transcribe or detect speech".into(),
+                ));
+            }
         };
         Ok(Self {
+            operation,
             request: request.clone(),
             attempt: attempt.clone(),
             token: cancellation_token.clone(),
@@ -325,21 +433,50 @@ impl WorkerProtocol for TranscriptionProtocol {
                 runtime,
                 ..
             } => {
-                let scope = format!("{}/", self.output_scope.as_str());
-                if !transcript.reference().as_str().starts_with(&scope) {
-                    return Err("transcript artifact is outside the output scope".into());
+                if self.operation != Operation::Transcribe {
+                    return Err("worker returned a transcript for speech detection".into());
                 }
-                if transcript.byte_length() > self.maximum_output_bytes {
-                    return Err("transcript artifact exceeds its byte budget".into());
+                self.admit(transcript, runtime)?;
+                Ok(ResponseKind::Completed)
+            }
+            WorkerMessage::SpeechDetected {
+                probabilities,
+                runtime,
+                ..
+            } => {
+                if self.operation != Operation::DetectSpeech {
+                    return Err("worker returned speech probabilities for transcription".into());
                 }
-                if runtime.model_sha256 != self.model_sha256 {
-                    return Err("worker ran a different model".into());
+                if !probabilities.byte_length().is_multiple_of(4) {
+                    return Err("speech probabilities must be whole f32 values".into());
                 }
+                self.admit(probabilities, runtime)?;
                 Ok(ResponseKind::Completed)
             }
             WorkerMessage::Failed { .. } => Ok(ResponseKind::Failed),
             WorkerMessage::Cancelled { .. } => Ok(ResponseKind::Terminal),
         }
+    }
+}
+
+impl TranscriptionProtocol {
+    /// The operation this attempt runs.
+    pub fn operation(&self) -> Operation {
+        self.operation
+    }
+
+    fn admit(&self, artifact: &WorkspaceArtifact, runtime: &RuntimeReport) -> Result<(), String> {
+        let scope = format!("{}/", self.output_scope.as_str());
+        if !artifact.reference().as_str().starts_with(&scope) {
+            return Err("worker artifact is outside the output scope".into());
+        }
+        if artifact.byte_length() > self.maximum_output_bytes {
+            return Err("worker artifact exceeds its byte budget".into());
+        }
+        if runtime.model_sha256 != self.model_sha256 {
+            return Err("worker ran a different model".into());
+        }
+        Ok(())
     }
 }
 

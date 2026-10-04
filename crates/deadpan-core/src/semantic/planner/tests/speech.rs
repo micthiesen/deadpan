@@ -171,3 +171,43 @@ fn speech_is_requested_only_when_needed_and_explains_its_absence() {
     assert!(error.message.contains("transcript"), "{error:?}");
     assert!(SemanticProgram::new(vec![word_motion(false, 1, true)]).is_err());
 }
+
+#[test]
+fn pause_motions_and_objects_resolve_without_words() {
+    let document = fixture(100);
+    let speech = Arc::new(
+        SpeechTimeline::without_words("words are not ready: no transcript")
+            .with_pauses(vec![range(20, 30), range(60, 70)])
+            .unwrap(),
+    );
+    let planned = plan_speech(
+        &document,
+        context("root", 0),
+        vec![
+            SemanticInstruction::MovePauses {
+                forward: true,
+                count: count(2),
+            },
+            SemanticInstruction::Cut {
+                selector: SemanticSelector::Speech {
+                    object: SpeechObject::InnerPause,
+                },
+                register: name('a'),
+            },
+        ],
+        |_| Ok(Arc::clone(&speech)),
+    )
+    .unwrap();
+    assert_eq!(planned.trace[0].resolved_range, None);
+    assert_eq!(planned.trace[1].resolved_range, Some(range(60, 70)));
+    assert_eq!(planned.document.duration().unwrap().frames(), 90);
+
+    let error = plan_speech(
+        &document,
+        context("root", 0),
+        vec![word_motion(true, 1, false)],
+        |_| Ok(Arc::clone(&speech)),
+    )
+    .unwrap_err();
+    assert_eq!(error.message, "words are not ready: no transcript");
+}

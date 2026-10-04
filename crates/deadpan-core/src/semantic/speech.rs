@@ -1,9 +1,12 @@
-//! Recognized speech on the Edit clock: word and sentence motions and objects.
+//! Recognized speech on the Edit clock: word, sentence and pause motions and
+//! objects.
 //!
 //! The host projects a stored transcript through the staged document's render
-//! plan and supplies one run per visible word occurrence, in project frames.
-//! Analysis never mutates the document; it only answers where words begin and
-//! end in the current arrangement, so motions and objects follow every edit.
+//! plan and supplies one run per visible word occurrence, in project frames,
+//! and projects detected pauses the same way. Analysis never mutates the
+//! document; it only answers where words and pauses lie in the current
+//! arrangement, so motions and objects follow every edit. Words and pauses come
+//! from separate analyses, so each carries its own reason when it is missing.
 
 use serde::{Deserialize, Serialize};
 
@@ -29,11 +32,29 @@ pub struct SpeechRun {
     pub sentence: u32,
 }
 
-/// Visible word occurrences in Edit order: nonempty, sorted and disjoint.
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
+/// Visible word occurrences and pauses in Edit order, each nonempty, sorted
+/// and disjoint.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SpeechTimeline {
     runs: Vec<SpeechRun>,
+    /// Why words are unavailable; `runs` is then empty.
+    words_missing: Option<String>,
+    /// Quiet intervals, or why they are unavailable.
+    pauses: Result<Vec<FrameRange>, String>,
 }
+
+impl Default for SpeechTimeline {
+    fn default() -> Self {
+        Self {
+            runs: Vec::new(),
+            words_missing: None,
+            pauses: Err(PAUSES_NOT_DETECTED.into()),
+        }
+    }
+}
+
+const PAUSES_NOT_DETECTED: &str =
+    "pauses are not ready: the Original's speech has not been analysed";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
@@ -46,36 +67,92 @@ pub enum SpeechObject {
     InnerSentence,
     #[serde(deserialize_with = "super::program::deserialize_empty")]
     AroundSentence,
+    /// `ip`: a detected pause.
+    #[serde(deserialize_with = "super::program::deserialize_empty")]
+    InnerPause,
+    /// `ap`: a pause with short handles of the content around it.
+    #[serde(deserialize_with = "super::program::deserialize_empty")]
+    AroundPause,
+}
+
+/// What a speech motion or object steps between.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SpeechUnit {
+    Word,
+    Sentence,
+    Pause,
 }
 
 impl SpeechObject {
-    const fn sentence(self) -> bool {
-        matches!(self, Self::InnerSentence | Self::AroundSentence)
+    pub const fn unit(self) -> SpeechUnit {
+        match self {
+            Self::InnerWord | Self::AroundWord => SpeechUnit::Word,
+            Self::InnerSentence | Self::AroundSentence => SpeechUnit::Sentence,
+            Self::InnerPause | Self::AroundPause => SpeechUnit::Pause,
+        }
     }
 
     const fn around(self) -> bool {
-        matches!(self, Self::AroundWord | Self::AroundSentence)
+        matches!(
+            self,
+            Self::AroundWord | Self::AroundSentence | Self::AroundPause
+        )
     }
 }
 
 impl SpeechTimeline {
+    /// Words without detected pauses.
     pub fn new(runs: Vec<SpeechRun>) -> Result<Self, EditError> {
-        if runs.len() > MAX_SPEECH_RUNS {
-            return Err(invalid("speech timeline has too many runs"));
+        check_ranges(runs.iter().map(|run| run.range), runs.len(), "speech runs")?;
+        Ok(Self {
+            runs,
+            ..Self::default()
+        })
+    }
+
+    /// No words, for the given reason (shown when a word key is used).
+    pub fn without_words(reason: impl Into<String>) -> Self {
+        Self {
+            words_missing: Some(reason.into()),
+            ..Self::default()
         }
-        for (index, run) in runs.iter().enumerate() {
-            if run.range.start() == run.range.end() {
-                return Err(invalid("speech runs must be nonempty"));
-            }
-            if index > 0 && runs[index - 1].range.end() > run.range.start() {
-                return Err(invalid("speech runs must be sorted and disjoint"));
-            }
-        }
-        Ok(Self { runs })
+    }
+
+    /// Add detected pauses: nonempty, sorted and disjoint.
+    pub fn with_pauses(mut self, pauses: Vec<FrameRange>) -> Result<Self, EditError> {
+        check_ranges(pauses.iter().copied(), pauses.len(), "pauses")?;
+        self.pauses = Ok(pauses);
+        Ok(self)
+    }
+
+    /// Record why pauses are unavailable.
+    pub fn without_pauses(mut self, reason: impl Into<String>) -> Self {
+        self.pauses = Err(reason.into());
+        self
     }
 
     pub fn runs(&self) -> &[SpeechRun] {
         &self.runs
+    }
+
+    /// Detected pauses, when available.
+    pub fn pauses(&self) -> Option<&[FrameRange]> {
+        self.pauses.as_deref().ok()
+    }
+
+    /// Fail with the reason a unit's analysis is missing.
+    pub fn require(&self, unit: SpeechUnit) -> Result<(), EditError> {
+        match unit {
+            SpeechUnit::Word | SpeechUnit::Sentence => match &self.words_missing {
+                Some(reason) => Err(unavailable(reason)),
+                None => Ok(()),
+            },
+            SpeechUnit::Pause => self
+                .pauses
+                .as_ref()
+                .map(|_| ())
+                .map_err(|reason| unavailable(reason)),
+        }
     }
 
     /// Runs inside one scope, clipped to it.
@@ -110,12 +187,29 @@ impl SpeechTimeline {
         sentences.into_iter().map(|(range, _)| range).collect()
     }
 
-    fn units(&self, bounds: (ProjectFrame, ProjectFrame), sentence: bool) -> Vec<FrameRange> {
-        let runs = self.clipped(bounds);
-        if sentence {
-            Self::sentences(&runs)
-        } else {
-            runs.into_iter().map(|run| run.range).collect()
+    fn units(&self, bounds: (ProjectFrame, ProjectFrame), unit: SpeechUnit) -> Vec<FrameRange> {
+        match unit {
+            SpeechUnit::Word => self
+                .clipped(bounds)
+                .into_iter()
+                .map(|run| run.range)
+                .collect(),
+            SpeechUnit::Sentence => Self::sentences(&self.clipped(bounds)),
+            SpeechUnit::Pause => {
+                let pauses = self.pauses.as_deref().unwrap_or_default();
+                let first = pauses.partition_point(|pause| pause.end() <= bounds.0);
+                pauses[first..]
+                    .iter()
+                    .take_while(|pause| pause.start() < bounds.1)
+                    .filter_map(|pause| {
+                        let start = pause.start().max(bounds.0);
+                        let end = pause.end().min(bounds.1);
+                        (start < end)
+                            .then(|| FrameRange::new(start, end).ok())
+                            .flatten()
+                    })
+                    .collect()
+            }
         }
     }
 
@@ -128,7 +222,14 @@ impl SpeechTimeline {
         bounds: (ProjectFrame, ProjectFrame),
         motion: SpeechMotion,
     ) -> ProjectFrame {
-        let units = self.units(bounds, motion.sentence);
+        let units = self.units(
+            bounds,
+            if motion.sentence {
+                SpeechUnit::Sentence
+            } else {
+                SpeechUnit::Word
+            },
+        );
         let mut cursor = cursor;
         for _ in 0..motion.count {
             let next = if motion.forward {
@@ -152,9 +253,10 @@ impl SpeechTimeline {
         cursor
     }
 
-    /// The word or sentence at the picture after the cursor (or before it at
-    /// the scope end). Around objects add handles from adjoining pauses: half
-    /// of each pause, capped at 80 ms, never reaching neighboring speech.
+    /// The word, sentence or pause at the picture after the cursor (or before
+    /// it at the scope end). Around objects add handles from what adjoins it:
+    /// half of each neighboring gap, capped at 80 ms, never reaching the next
+    /// unit. A word's handles come from pauses; a pause's from speech.
     pub fn object_range(
         &self,
         cursor: ProjectFrame,
@@ -167,17 +269,18 @@ impl SpeechTimeline {
         } else {
             cursor
         };
-        let units = self.units(bounds, object.sentence());
+        self.require(object.unit())?;
+        let units = self.units(bounds, object.unit());
         let index = units.partition_point(|unit| unit.end() <= frame);
         let unit = units
             .get(index)
             .filter(|unit| unit.contains(frame))
             .copied()
             .ok_or_else(|| {
-                unavailable(if object.sentence() {
-                    "the cursor is not in a recognized sentence"
-                } else {
-                    "the cursor is not on a recognized word"
+                unavailable(match object.unit() {
+                    SpeechUnit::Word => "the cursor is not on a recognized word",
+                    SpeechUnit::Sentence => "the cursor is not in a recognized sentence",
+                    SpeechUnit::Pause => "the cursor is not in a pause",
                 })
             })?;
         if !object.around() {
@@ -197,7 +300,47 @@ impl SpeechTimeline {
         .map_err(|error| DocumentError::from(error).into())
     }
 
-    /// A Visual selection of a word or sentence object, extending at its end.
+    /// Destination of `]p` or `[p`: the start of the `count`th pause after
+    /// (or before) the cursor. With none in that direction there is no
+    /// motion; a shorter supply stops at the last pause found.
+    pub fn pause_target(
+        &self,
+        cursor: ProjectFrame,
+        bounds: (ProjectFrame, ProjectFrame),
+        forward: bool,
+        count: u32,
+    ) -> Result<ProjectFrame, EditError> {
+        self.require(SpeechUnit::Pause)?;
+        let starts: Vec<ProjectFrame> = self
+            .units(bounds, SpeechUnit::Pause)
+            .into_iter()
+            .map(|pause| pause.start())
+            .collect();
+        let count = usize::try_from(count.max(1)).unwrap_or(usize::MAX);
+        let found = if forward {
+            let first = starts.partition_point(|start| *start <= cursor);
+            starts
+                .get(first..)
+                .and_then(|later| later.get(count.min(later.len()).checked_sub(1)?).copied())
+        } else {
+            let earlier = &starts[..starts.partition_point(|start| *start < cursor)];
+            earlier
+                .len()
+                .checked_sub(count.min(earlier.len()))
+                .and_then(|index| earlier.get(index))
+                .copied()
+        };
+        found.ok_or_else(|| {
+            unavailable(if forward {
+                "there is no later pause here"
+            } else {
+                "there is no earlier pause here"
+            })
+        })
+    }
+
+    /// A Visual selection of a word, sentence or pause object, extending at
+    /// its end.
     pub fn select_object(
         &self,
         context: &SemanticContext,
@@ -224,6 +367,27 @@ pub struct SpeechMotion {
     pub count: u32,
     pub sentence: bool,
     pub end: bool,
+}
+
+fn check_ranges(
+    ranges: impl Iterator<Item = FrameRange>,
+    count: usize,
+    what: &str,
+) -> Result<(), EditError> {
+    if count > MAX_SPEECH_RUNS {
+        return Err(invalid(&format!("speech timeline has too many {what}")));
+    }
+    let mut previous: Option<FrameRange> = None;
+    for range in ranges {
+        if range.start() == range.end() {
+            return Err(invalid(&format!("{what} must be nonempty")));
+        }
+        if previous.is_some_and(|previous| previous.end() > range.start()) {
+            return Err(invalid(&format!("{what} must be sorted and disjoint")));
+        }
+        previous = Some(range);
+    }
+    Ok(())
 }
 
 /// The largest whole number of project frames within the handle cap.

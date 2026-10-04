@@ -40,6 +40,12 @@ involved. The Sound pane refuses them like frame motions, and Trim and Slip keep
 their own modal `b`/`e` handling, which runs before the editor router. Custom
 keymaps that used these letters as free prefixes must move to another key.
 
+Pause motions use the bare two-key paths `]p` and `[p`, and `ip`/`ap` join the
+Visual objects. Plain `[` and `]` carry no modifier, so the Kestrel registry is
+not involved (it reserves no bracket chord). `p` and `P`
+keep their paste meaning: only a pending `]`, `[`, `i` or `a` prefix reaches
+the pause bindings. Custom keymaps that bound `[` or `]` alone must move.
+
 Catalog placement uses `,s` with no count or key-repeat activation. In Placed
 sounds and its inspector, `h/l`, `j/k`, Enter, `+/-` and `dd` act on the event.
 Logical Plus accepts no modifier or Shift; Minus accepts no modifier so the

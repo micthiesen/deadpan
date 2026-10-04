@@ -1,6 +1,8 @@
 //! Headless application boundary, shared with the native host.
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod activity;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod audio;
 mod doctor;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -79,8 +81,9 @@ const HELP: &str = "Deadpan headless commands:
   models list [--root <dir>]
   models install <pack> [--root <dir>]
   models remove <pack> [--root <dir>]
-  transcribe <project.deadpan> [--model <ggml.bin> --sha256 <hex>] [--language <auto|xx>] [--asset <id>]
+  transcribe <project.deadpan> [--model <ggml.bin> --sha256 <hex>] [--vad-model <ggml-silero.bin> --vad-sha256 <hex>] [--language <auto|xx>] [--asset <id>]
   transcript <project.deadpan> [--search <words>] [--asset <id>]
+  pauses <project.deadpan> [--asset <id>]
 
 Creation defaults to a provisional 1920x1080, 30 fps presentation basis.
 Document dumps are inspection output; SQLite remains authoritative.
@@ -414,6 +417,8 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         ["transcribe", rest @ ..] => transcription::run_transcribe(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["transcript", rest @ ..] => transcription::run_transcript(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["pauses", rest @ ..] => activity::run_pauses(rest),
         [] | ["--help"] | ["-h"] => {
             println!("{HELP}");
             Ok(())

@@ -94,51 +94,79 @@ fn repeat_instruction_hint(
         }
     };
     match selector {
-        SemanticSelector::SelectedBeat => format!("{action} beat"),
         SemanticSelector::VisualSelection => format!("select range to {action}"),
-        SemanticSelector::TextObject { object } => format!(
-            "{action} {}",
-            match object {
-                deadpan_core::SemanticTextObject::InnerGroup => "group contents",
-                deadpan_core::SemanticTextObject::AroundGroup => "whole group",
-            }
-        ),
-        SemanticSelector::Speech { object } => format!(
-            "{action} {}",
-            match object {
-                deadpan_core::SpeechObject::InnerWord => "word",
-                deadpan_core::SpeechObject::AroundWord => "word with pauses",
-                deadpan_core::SpeechObject::InnerSentence => "sentence",
-                deadpan_core::SpeechObject::AroundSentence => "sentence with pauses",
-            }
-        ),
-        SemanticSelector::Motion { motion } => match motion {
-            SemanticMotion::Frames { forward, count } => format!(
-                "{action} {count}f {}",
-                if *forward { "forward" } else { "backward" }
-            ),
-            SemanticMotion::Beats { forward, count } => format!(
-                "{action} {count} beats {}",
-                if *forward { "forward" } else { "backward" }
-            ),
-            SemanticMotion::Scope { end } => {
-                format!("{action} to group {}", if *end { "end" } else { "start" })
-            }
-            SemanticMotion::Words {
-                forward,
-                count,
-                end,
-            } => match (forward, end) {
-                (true, true) => format!("{action} to end of {count} words"),
-                (true, false) => format!("{action} {count} words forward"),
-                (false, _) => format!("{action} {count} words backward"),
-            },
-            SemanticMotion::Sentences { forward, count } => format!(
-                "{action} {count} sentences {}",
-                if *forward { "forward" } else { "backward" }
-            ),
-        },
+        selector => format!("{action} {}", selector_text(selector)),
     }
+}
+
+/// What a non-Visual selector selects, as a short phrase.
+pub(super) fn selector_text(selector: &SemanticSelector) -> String {
+    match selector {
+        SemanticSelector::SelectedBeat => "beat".into(),
+        SemanticSelector::VisualSelection => "range".into(),
+        SemanticSelector::TextObject { object } => match object {
+            deadpan_core::SemanticTextObject::InnerGroup => "group contents",
+            deadpan_core::SemanticTextObject::AroundGroup => "whole group",
+        }
+        .into(),
+        SemanticSelector::Speech { object } => match object {
+            deadpan_core::SpeechObject::InnerWord => "word",
+            deadpan_core::SpeechObject::AroundWord => "word with pauses",
+            deadpan_core::SpeechObject::InnerSentence => "sentence",
+            deadpan_core::SpeechObject::AroundSentence => "sentence with pauses",
+            deadpan_core::SpeechObject::InnerPause => "pause",
+            deadpan_core::SpeechObject::AroundPause => "pause with edges",
+        }
+        .into(),
+        SemanticSelector::Motion { motion } => {
+            let direction = |forward: bool| if forward { "forward" } else { "backward" };
+            match motion {
+                SemanticMotion::Frames { forward, count } => {
+                    format!("{count}f {}", direction(*forward))
+                }
+                SemanticMotion::Beats { forward, count } => {
+                    format!("{count} beats {}", direction(*forward))
+                }
+                SemanticMotion::Scope { end } => {
+                    format!("to group {}", if *end { "end" } else { "start" })
+                }
+                SemanticMotion::Words {
+                    forward,
+                    count,
+                    end,
+                } => match (forward, end) {
+                    (true, true) => format!("to end of {count} words"),
+                    (_, _) => format!("{count} words {}", direction(*forward)),
+                },
+                SemanticMotion::Sentences { forward, count } => {
+                    format!("{count} sentences {}", direction(*forward))
+                }
+                SemanticMotion::Pauses { forward, count } => {
+                    format!("{count} pauses {}", direction(*forward))
+                }
+            }
+        }
+    }
+}
+
+/// The footer message after an applied editor operator.
+pub(super) fn applied_text(instruction: &deadpan_core::SemanticInstruction) -> Option<String> {
+    use deadpan_core::SemanticInstruction as I;
+    let (verb, selector) = match instruction {
+        I::Cut { selector, .. } => ("Cut", selector),
+        I::Yank { selector, .. } => ("Copied", selector),
+        I::Repeat { selector, plays } => {
+            return (!matches!(selector, SemanticSelector::VisualSelection))
+                .then(|| format!("Repeated {} ×{plays}", selector_text(selector)));
+        }
+        I::Group { selector, label } => {
+            return (!matches!(selector, SemanticSelector::VisualSelection))
+                .then(|| format!("Grouped {} as {label:?}", selector_text(selector)));
+        }
+        _ => return None,
+    };
+    (!matches!(selector, SemanticSelector::VisualSelection))
+        .then(|| format!("{verb} {}", selector_text(selector)))
 }
 
 #[derive(Default)]

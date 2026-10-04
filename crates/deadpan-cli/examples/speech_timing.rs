@@ -1,4 +1,4 @@
-//! Time transcript projection onto a project's current edit.
+//! Time transcript and pause projection onto a project's current edit.
 //!
 //! `cargo run --release -p deadpan-cli --example speech_timing -- PROJECT`
 

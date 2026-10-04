@@ -37,6 +37,8 @@ pub mod single_source;
 pub mod slice_preview;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod source_registration;
+mod speech_activity;
+pub use speech_activity::{MAX_SPEECH_ACTIVITY, SpeechActivityKey};
 mod transcripts;
 pub use transcripts::{MAX_TRANSCRIPT_JSON_BYTES, MAX_TRANSCRIPTS, TranscriptKey};
 mod validation;
@@ -270,7 +272,7 @@ impl ProjectStore {
         // Probe the format read-only before acquiring writable state or enabling WAL.
         let probe = Connection::open_with_flags(&database, read_flags())?;
         schema::configure(&probe)?;
-        schema::check_version(&probe)?;
+        schema::check_openable_version(&probe)?;
         drop(probe);
         let lock = if mode == AccessMode::ReadWrite {
             Some(acquire_lock(&package)?)
@@ -299,10 +301,13 @@ impl ProjectStore {
         };
         let connection = Connection::open_with_flags(&database, flags)?;
         schema::configure(&connection)?;
-        schema::check_version(&connection)?;
+        schema::check_openable_version(&connection)?;
         if mode == AccessMode::ReadWrite {
             connection.pragma_update(None, "journal_mode", "WAL")?;
             connection.pragma_update(None, "synchronous", "FULL")?;
+            // The writer adds the speech activity table to a schema-59
+            // package; readers of one see no stored activity until then.
+            schema::upgrade(&connection)?;
         } else {
             connection.pragma_update(None, "query_only", true)?;
         }
@@ -393,6 +398,7 @@ impl ProjectStore {
         generation::check_stored_sizes(&transaction)?;
         generation_attempts::check_stored_sizes(&transaction)?;
         transcripts::check_stored_sizes(&transaction)?;
+        speech_activity::check_stored_sizes(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         render_jobs::check_stored_sizes(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]

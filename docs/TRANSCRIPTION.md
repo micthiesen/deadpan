@@ -3,7 +3,8 @@
 Deadpan transcribes the Original locally with whisper.cpp. A transcript is an
 analysis annotation: it proposes where words were heard and never edits the
 project. Section 11 of the [specification](spec/DEADPAN_SPEC.md) is normative;
-this records the implemented boundary.
+this records the implemented boundary. The same worker and analysis PCM also
+detect [speech activity and pauses](SPEECH_ACTIVITY.md).
 
 ## Pieces
 
@@ -47,7 +48,7 @@ both FFmpeg and Deadpan. Choosing a channel for such recordings remains open.
 
 The host creates a fresh attempt workspace with `input/` and `output/`, writes
 the analysis PCM as little-endian `f32` to `input/analysis.f32`, and sends one
-`Transcribe` message with its hash and length, the verified model's absolute
+protocol-2 `Transcribe` message with its hash and length, the verified model's absolute
 path, SHA-256 and length, the language (`auto` or a two-letter code), the output
 scope, a transcript byte budget and a timeout. The worker opens both files
 without following symbolic links, checks exact length and SHA-256, rejects
@@ -71,11 +72,11 @@ environment and is disabled).
 
 ## Model
 
-Development uses `ggml-base.en.bin` from the whisper.cpp model repository:
-147,964,211 bytes, SHA-256
-`a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002`, MIT licensed
-like whisper.cpp. Weights are never committed. The verified model-pack manager,
-download and installation flow (DP-13) remains open.
+The approved `whisper-base-en` pack (version 2, see [model packs](MODEL_PACKS.md))
+provides `ggml-base.en.bin` from the whisper.cpp model repository: 147,964,211
+bytes, SHA-256 `a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002`,
+MIT licensed like whisper.cpp, and the Silero detector for
+[speech activity](SPEECH_ACTIVITY.md). Weights are never committed.
 
 ## Qualification
 
@@ -91,9 +92,11 @@ identity, audio stream, model SHA-256, language and engine. Saving replaces the
 transcript for its key, never creates a revision or Undo step, and is limited to
 32 transcripts per project; every read revalidates the stored transcript.
 
-`transcribe <project> --model <ggml.bin> --sha256 <hex> [--language <auto|xx>]
-[--asset <id>]` prepares analysis PCM, runs the worker installed beside the
-executable and stores the result; it needs the project's writer.
+`transcribe <project> --model <ggml.bin> --sha256 <hex> [--vad-model
+<ggml-silero.bin> --vad-sha256 <hex>] [--language <auto|xx>] [--asset <id>]`
+prepares analysis PCM, runs the worker installed beside the executable and
+stores the result, with speech activity of the same PCM when a detector is
+installed or given; it needs the project's writer to save.
 `transcript <project> [--search <words>] [--asset <id>]` prints stored
 transcripts, or phrase matches with exact Original sample bounds.
 
@@ -209,5 +212,5 @@ every word per query.
 ## Remaining
 
 Original operators with word motions, background scheduling by visible range,
-VAD and refinement, manual correction, accuracy measurement on real speech, and
+word-boundary refinement from speech activity, manual correction, accuracy measurement on real speech, and
 a manager listing every pack.

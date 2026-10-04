@@ -85,11 +85,22 @@ fn the_approved_whisper_pack_is_valid_and_pinned() {
     assert_eq!(packs.len(), 1);
     let whisper = &packs[0];
     assert_eq!(whisper.pack_id, "whisper-base-en");
-    assert_eq!(whisper.operations, [Operation::Transcribe]);
-    assert_eq!(whisper.total_bytes(), 147_964_211);
+    assert_eq!(whisper.pack_version, "2");
+    assert_eq!(
+        whisper.operations,
+        [Operation::Transcribe, Operation::SpeechActivity]
+    );
+    assert_eq!(whisper.total_bytes(), 147_964_211 + 885_098);
     assert_eq!(
         whisper.files[0].sha256,
         "a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002"
+    );
+    assert_eq!(whisper.files[1].name, "ggml-silero-v6.2.0.bin");
+    assert_eq!(whisper.transcription_file(), Some(&whisper.files[0]));
+    assert_eq!(whisper.speech_activity_file(), Some(&whisper.files[1]));
+    assert_eq!(
+        whisper.files[1].sha256,
+        "2aa269b785eeb53a82983a20501ddf7c1d9c48e33ab63a41391ac6c9f7fb6987"
     );
     assert!(whisper.license.redistribution);
 }
@@ -431,4 +442,80 @@ fn unexpected_resume_offsets_restart_and_installs_are_exclusive() {
     assert!(matches!(second, Err(PackError::Busy)));
     store.activate(staged).unwrap();
     assert!(store.installed(&manifest).unwrap().is_some());
+}
+
+#[test]
+fn a_new_version_copies_identical_files_from_an_installed_one() {
+    let root = tempfile::tempdir().unwrap();
+    let store = PackStore::new(root.path().to_path_buf());
+    let bytes = payload();
+    let mut first = manifest(&bytes);
+    first.pack_version = "1".into();
+    let staged = store
+        .stage(
+            &first,
+            &Memory::new(bytes.clone()),
+            plenty,
+            &AtomicBool::new(false),
+            |_| {},
+        )
+        .unwrap();
+    store.activate(staged).unwrap();
+
+    // Version 2 keeps model.bin and adds a second file.
+    let extra: Vec<u8> = (0..1_000_u32).map(|i| (i % 7) as u8).collect();
+    let mut second = first.clone();
+    second.pack_version = "2".into();
+    second.files.push(PackFile {
+        name: "extra.bin".into(),
+        url: "https://huggingface.co/example/extra.bin".into(),
+        sha256: sha2::Sha256::digest(&extra)
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect(),
+        bytes: extra.len() as u64,
+    });
+    let transport = Memory::new(extra.clone());
+    let staged = store
+        .stage(&second, &transport, plenty, &AtomicBool::new(false), |_| {})
+        .unwrap();
+    // Only the new file was downloaded.
+    assert_eq!(*transport.offsets.lock().unwrap(), [0]);
+    let installed = store.activate(staged).unwrap();
+    assert_eq!(
+        std::fs::read(installed.file("model.bin").unwrap()).unwrap(),
+        bytes
+    );
+    assert_eq!(
+        std::fs::read(installed.file("extra.bin").unwrap()).unwrap(),
+        extra
+    );
+    assert!(store.installed(&first).unwrap().is_some());
+
+    // A tampered installed copy is discarded and downloaded instead.
+    let mut third = second.clone();
+    third.pack_version = "3".into();
+    let tampered = root.path().join("test-pack/2/model.bin");
+    let mut damaged = bytes.clone();
+    damaged[10] ^= 1;
+    std::fs::write(&tampered, &damaged).unwrap();
+    std::fs::remove_dir_all(root.path().join("test-pack/1")).unwrap();
+    let transport = Memory::new(bytes.clone());
+    let staged = store.stage(
+        &third,
+        &Memory::new(extra.clone()),
+        plenty,
+        &AtomicBool::new(false),
+        |_| {},
+    );
+    // The tampered copy fails verification and falls back to the transport,
+    // which here serves the wrong bytes.
+    assert!(staged.is_err());
+    let staged = store
+        .stage(&third, &transport, plenty, &AtomicBool::new(false), |_| {})
+        .unwrap();
+    assert_eq!(
+        std::fs::read(staged.file("model.bin").unwrap()).unwrap(),
+        bytes
+    );
 }

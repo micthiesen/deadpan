@@ -11,7 +11,7 @@ use std::time::{Duration, Instant};
 use deadpan_jobs::Sha256;
 use deadpan_jobs::transcription::{Language, ModelInput};
 use deadpan_models::packs::{
-    HttpsTransport, InstallProgress, InstalledPack, Operation, PackManifest, PackStore, StagedPack,
+    HttpsTransport, InstallProgress, InstalledPack, PackFile, PackManifest, PackStore, StagedPack,
     approved_packs, available_space,
 };
 
@@ -160,57 +160,73 @@ fn emit(value: &serde_json::Value) -> Result<(), CliError> {
     Ok(())
 }
 
-/// Load the staged model in the real runtime and recognize one second of
-/// silence. A pack that cannot do this never replaces a known-good one.
+/// Load the staged models in the real runtime: recognize one second of
+/// silence and detect speech in it. A pack that cannot do this never replaces
+/// a known-good one.
 fn smoke_test(staged: &StagedPack, cancelled: &AtomicBool) -> Result<(), CliError> {
     let manifest = staged.manifest();
-    if !manifest.operations.contains(&Operation::Transcribe) {
-        return Ok(());
+    let silence = AnalysisInput {
+        samples: vec![0.0; 16_000],
+        origin: 0,
+        source_rate: 16_000,
+    };
+    if let Some(file) = manifest.transcription_file() {
+        let model = model_input(file, staged.file(&file.name))?;
+        transcribe(
+            &TranscriptionRuntime::beside_current_executable()?,
+            &model,
+            &silence,
+            Language::Automatic,
+            "pack-smoke",
+            cancelled,
+            Instant::now() + Duration::from_secs(300),
+            |_| {},
+        )?;
     }
-    let file = &manifest.files[0];
-    let path = staged
-        .file(&file.name)
-        .ok_or_else(|| CliError::Usage("staged pack lacks its model file".into()))?;
-    let model = ModelInput {
+    if let Some(file) = manifest.speech_activity_file() {
+        let model = model_input(file, staged.file(&file.name))?;
+        crate::activity::detect_speech(
+            &TranscriptionRuntime::beside_current_executable()?,
+            &model,
+            &silence,
+            "pack-smoke-activity",
+            cancelled,
+            Instant::now() + Duration::from_secs(60),
+        )?;
+    }
+    Ok(())
+}
+
+fn model_input(file: &PackFile, path: Option<PathBuf>) -> Result<ModelInput, CliError> {
+    let path = path.ok_or_else(|| CliError::Usage(format!("pack lacks {}", file.name)))?;
+    Ok(ModelInput {
         path: std::fs::canonicalize(&path)?,
         sha256: Sha256::new(file.sha256.clone()).map_err(|e| CliError::Usage(e.to_string()))?,
         byte_length: file.bytes,
-    };
-    transcribe(
-        &TranscriptionRuntime::beside_current_executable()?,
-        &model,
-        &AnalysisInput {
-            samples: vec![0.0; 16_000],
-            origin: 0,
-            source_rate: 16_000,
-        },
-        Language::Automatic,
-        "pack-smoke",
-        cancelled,
-        Instant::now() + Duration::from_secs(300),
-        |_| {},
-    )?;
-    Ok(())
+    })
 }
 
 /// The installed model file for transcription, if its pack is active.
 pub fn installed_transcription_model(root: &Path) -> Result<Option<ModelInput>, CliError> {
+    installed_model(root, PackManifest::transcription_file)
+}
+
+/// The installed Silero model for speech detection, if its pack is active.
+pub fn installed_speech_activity_model(root: &Path) -> Result<Option<ModelInput>, CliError> {
+    installed_model(root, PackManifest::speech_activity_file)
+}
+
+fn installed_model(
+    root: &Path,
+    select: fn(&PackManifest) -> Option<&PackFile>,
+) -> Result<Option<ModelInput>, CliError> {
     let store = PackStore::new(root.to_path_buf());
     for manifest in approved_packs() {
-        if !manifest.operations.contains(&Operation::Transcribe) {
+        let Some(file) = select(&manifest) else {
             continue;
-        }
+        };
         if let Some(installed) = store.installed(&manifest)? {
-            let file = &manifest.files[0];
-            let path = installed
-                .file(&file.name)
-                .ok_or_else(|| CliError::Usage("installed pack lacks its model file".into()))?;
-            return Ok(Some(ModelInput {
-                path,
-                sha256: Sha256::new(file.sha256.clone())
-                    .map_err(|e| CliError::Usage(e.to_string()))?,
-                byte_length: file.bytes,
-            }));
+            return model_input(file, installed.file(&file.name)).map(Some);
         }
     }
     Ok(None)

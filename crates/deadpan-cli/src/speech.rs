@@ -1,14 +1,20 @@
-//! Project a stored Original transcript onto the Edit clock.
+//! Project a stored Original transcript and its detected pauses onto the Edit
+//! clock.
 //!
 //! Each project frame that presents an Original picture is assigned the word
 //! being spoken during that picture: the latest word that begins before the
 //! picture ends and has not ended when it starts. Consecutive frames of one
 //! word in one occurrence form a run. Freezes, generated pictures, stills and
 //! gaps carry no speech. Speech follows the picture mapping of linked beats.
+//!
+//! A frame is quiet when it presents an Original picture lying wholly inside a
+//! detected pause, or when it shows a freeze, generated picture, blank or
+//! background, which carry no Original speech. Consecutive quiet frames form
+//! one pause, so a pause inserted after a sentence lengthens the pause there.
 
 use std::sync::Arc;
 
-use deadpan_analysis::{Transcript, picture_seconds};
+use deadpan_analysis::{SpeechActivity, Transcript, picture_seconds};
 use deadpan_core::{
     AssetId, EditError, EditErrorCode, ExactRatio, FrameRange, ProjectDocument, ProjectFrame,
     SourceFrameIndex, SpeechRun, SpeechTimeline,
@@ -116,6 +122,115 @@ pub fn original_speech(
     SpeechTimeline::new(runs)
 }
 
+/// Detected pauses as exact container times, in order.
+pub fn pause_seconds(
+    activity: &SpeechActivity,
+) -> Result<Vec<(ExactRatio, ExactRatio)>, EditError> {
+    activity
+        .pauses()
+        .into_iter()
+        .map(|pause| Ok((activity.seconds(pause.start)?, activity.seconds(pause.end)?)))
+        .collect::<Result<Vec<_>, deadpan_analysis::ActivityError>>()
+        .map_err(|error| failed(&error.to_string()))
+}
+
+/// Whether each Original picture lies wholly inside a pause.
+fn quiet_pictures(
+    index: &SourceFrameIndex,
+    pauses: &[(ExactRatio, ExactRatio)],
+) -> Result<Vec<bool>, EditError> {
+    let terminal = ratio(index.terminal_end(), index)?;
+    (0..index.frames().len())
+        .map(|picture| {
+            let start = picture_seconds(index, picture).ok_or_else(|| failed("picture"))?;
+            let end = picture_seconds(index, picture + 1).unwrap_or(terminal);
+            // The last pause beginning at or before the picture start.
+            let begun =
+                pauses.partition_point(|(pause_start, _)| pause_start.compare(start).is_le());
+            Ok(begun
+                .checked_sub(1)
+                .is_some_and(|index| pauses[index].1.compare(end).is_ge()))
+        })
+        .collect()
+}
+
+/// Pauses on the Edit clock of a compiled plan.
+pub fn project_pauses(
+    plan: &RenderPlan,
+    asset: &AssetId,
+    index: &SourceFrameIndex,
+    pauses: &[(ExactRatio, ExactRatio)],
+) -> Result<Vec<FrameRange>, EditError> {
+    let quiet = quiet_pictures(index, pauses)?;
+    let mut ranges = Vec::new();
+    let mut start: Option<i64> = None;
+    let frames = plan.duration().frames();
+    for frame in 0..frames {
+        let sample = plan
+            .picture(ProjectFrame(frame))
+            .map_err(|error| failed(&error.to_string()))?;
+        let is_quiet = match &sample.picture {
+            Picture::Source { asset: shown, .. } if shown == asset => {
+                let selected = sample
+                    .picture
+                    .select_source_frame(index)
+                    .map_err(|error| failed(&error.to_string()))?;
+                let picture = usize::try_from(selected.identity.0)
+                    .map_err(|_| failed("source picture ordinal"))?;
+                *quiet
+                    .get(picture)
+                    .ok_or_else(|| failed("source picture ordinal"))?
+            }
+            Picture::Freeze { .. }
+            | Picture::Accepted { .. }
+            | Picture::Blank
+            | Picture::Background => true,
+            _ => false,
+        };
+        match (is_quiet, start) {
+            (true, None) => start = Some(frame),
+            (false, Some(first)) => {
+                ranges.push(frame_range(first, frame)?);
+                start = None;
+            }
+            _ => {}
+        }
+    }
+    if let Some(first) = start {
+        ranges.push(frame_range(first, frames)?);
+    }
+    Ok(ranges)
+}
+
+/// Pauses over the Original's own pictures, numbered by picture ordinal.
+pub fn original_pauses(
+    index: &SourceFrameIndex,
+    pauses: &[(ExactRatio, ExactRatio)],
+) -> Result<Vec<FrameRange>, EditError> {
+    let mut ranges = Vec::new();
+    let mut start: Option<i64> = None;
+    let quiet = quiet_pictures(index, pauses)?;
+    let pictures = i64::try_from(quiet.len()).map_err(|_| failed("picture ordinal"))?;
+    for (picture, is_quiet) in (0..pictures).zip(quiet) {
+        match (is_quiet, start) {
+            (true, None) => start = Some(picture),
+            (false, Some(first)) => {
+                ranges.push(frame_range(first, picture)?);
+                start = None;
+            }
+            _ => {}
+        }
+    }
+    if let Some(first) = start {
+        ranges.push(frame_range(first, pictures)?);
+    }
+    Ok(ranges)
+}
+
+fn frame_range(start: i64, end: i64) -> Result<FrameRange, EditError> {
+    FrameRange::new(ProjectFrame(start), ProjectFrame(end)).map_err(|_| failed("pause range"))
+}
+
 fn timed_words(transcript: &Transcript) -> Result<Vec<(ExactRatio, ExactRatio, u32)>, EditError> {
     transcript
         .words()
@@ -148,25 +263,27 @@ pub fn stored_transcript(
         .find_map(|key| Some((key.clone(), store.transcript(&key).ok()??)))
 }
 
-/// What a planner needs to place words: the ready Original, its qualified
-/// picture index and its preferred transcript.
+/// What a planner needs to place words and pauses: the ready Original, its
+/// qualified picture index and whichever analyses are stored.
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub struct StoredSpeech {
     pub asset: AssetId,
     /// The qualified picture index, bound to the project's asset identity.
     pub index: SourceFrameIndex,
-    pub transcript: Transcript,
+    pub transcript: Option<Transcript>,
+    /// Detected pauses as exact container times.
+    pub pauses: Option<Vec<(ExactRatio, ExactRatio)>>,
 }
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 impl StoredSpeech {
-    /// Why words are unavailable when the project has no ready Original,
-    /// qualified picture or readable transcript.
+    /// Why speech is unavailable when the project has no ready Original or
+    /// qualified picture. Missing analyses are reported when a key needs them.
     pub fn load(store: &deadpan_store::ProjectStore) -> Result<Self, EditError> {
         use deadpan_store::single_source::SingleSourceState;
         let not_ready = |reason: &str| EditError {
             code: EditErrorCode::SelectionUnavailable,
-            message: format!("words are not ready: {reason}"),
+            message: format!("speech is not ready: {reason}"),
             current_revision: None,
         };
         let Ok(Some(SingleSourceState::Ready { asset, .. })) = store.single_source_state() else {
@@ -188,29 +305,34 @@ impl StoredSpeech {
             measured.terminal_provenance(),
         )
         .map_err(|error| not_ready(&error.to_string()))?;
-        let (_, transcript) = stored_transcript(store, &receipt.original().content().to_string())
-            .ok_or_else(deadpan_core::speech_unavailable)?;
+        let content = receipt.original().content().to_string();
+        let transcript = stored_transcript(store, &content).map(|(_, transcript)| transcript);
+        let pauses = crate::activity::stored_activity(store, &content)
+            .map(|(_, activity)| pause_seconds(&activity))
+            .transpose()?;
         Ok(Self {
             asset,
             index,
             transcript,
+            pauses,
         })
     }
 
     pub fn project(&self, document: &ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError> {
-        project_document_speech(document, &self.asset, &self.index, &self.transcript)
+        let plan = RenderPlan::compile(document).map_err(|error| failed(&error.to_string()))?;
+        let timeline = match &self.transcript {
+            Some(transcript) => project_speech(&plan, &self.asset, &self.index, transcript)?,
+            None => SpeechTimeline::without_words(deadpan_core::speech_unavailable().message),
+        };
+        Ok(Arc::new(match &self.pauses {
+            Some(pauses) => {
+                timeline.with_pauses(project_pauses(&plan, &self.asset, &self.index, pauses)?)?
+            }
+            None => timeline.without_pauses(
+                "pauses are not ready: the Original's speech has not been analysed",
+            ),
+        }))
     }
-}
-
-/// Compile a staged document and project speech through it.
-pub fn project_document_speech(
-    document: &ProjectDocument,
-    asset: &AssetId,
-    index: &SourceFrameIndex,
-    transcript: &Transcript,
-) -> Result<Arc<SpeechTimeline>, EditError> {
-    let plan = RenderPlan::compile(document).map_err(|error| failed(&error.to_string()))?;
-    project_speech(&plan, asset, index, transcript).map(Arc::new)
 }
 
 /// The latest word beginning before `end` that is still spoken at `start`.
@@ -236,7 +358,7 @@ fn ratio(pts: i64, index: &SourceFrameIndex) -> Result<ExactRatio, EditError> {
 fn failed(reason: &str) -> EditError {
     EditError {
         code: EditErrorCode::SelectionUnavailable,
-        message: format!("words could not be placed on the edit: {reason}"),
+        message: format!("speech could not be placed on the edit: {reason}"),
         current_revision: None,
     }
 }
@@ -247,6 +369,47 @@ mod tests {
 
     fn seconds(hundredths: i128) -> ExactRatio {
         ExactRatio::new(hundredths, 100).unwrap()
+    }
+
+    /// Ten pictures of 0.1 s each.
+    fn pictures() -> SourceFrameIndex {
+        use deadpan_core::{IndexedSourceFrame, SourceFrameId, SourceTimeBase, TerminalProvenance};
+        SourceFrameIndex::new(
+            AssetId::new("original").unwrap(),
+            SourceTimeBase::new(1, 10).unwrap(),
+            (0..10)
+                .map(|number| IndexedSourceFrame {
+                    identity: SourceFrameId(number),
+                    pts: number as i64,
+                    reported_duration: Some(1),
+                    keyframe: true,
+                    seek_from: None,
+                    decode_timestamp: None,
+                })
+                .collect(),
+            10,
+            TerminalProvenance::DecodedFrameDuration,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn pictures_wholly_inside_a_pause_are_quiet() {
+        // Pauses 0.15–0.45 s and 0.70 s to the end.
+        let pauses = [(seconds(15), seconds(45)), (seconds(70), seconds(100))];
+        let quiet = quiet_pictures(&pictures(), &pauses).unwrap();
+        assert_eq!(
+            quiet,
+            [
+                false, false, true, true, false, false, false, true, true, true
+            ],
+            "pictures 0.1–0.2 and 0.4–0.5 straddle the first pause's edges"
+        );
+        let range = |start, end| FrameRange::new(ProjectFrame(start), ProjectFrame(end)).unwrap();
+        assert_eq!(
+            original_pauses(&pictures(), &pauses).unwrap(),
+            [range(2, 4), range(7, 10)]
+        );
     }
 
     #[test]

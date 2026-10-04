@@ -12,11 +12,11 @@ use std::ops::Range;
 use std::sync::mpsc;
 
 use deadpan_analysis::{Transcript, picture_at, picture_seconds};
-use deadpan_cli::transcription::{TranscriptionRuntime, prepare_original_audio, transcribe};
+use deadpan_cli::transcription::transcribe;
 use deadpan_core::ProjectFrame;
 use deadpan_jobs::transcription::Language;
 use deadpan_models::packs::{InstallProgress, Operation, PackManifest, PackStore, approved_packs};
-use deadpan_store::{AccessMode, ProjectStore, TranscriptKey};
+use deadpan_store::TranscriptKey;
 
 use super::*;
 
@@ -29,8 +29,21 @@ enum Event {
     InstallFailed(String),
     InstallCancelled,
     Progress(u8),
+    /// Speech activity of the same PCM; `last` when no transcript follows.
+    Detected {
+        result: Result<
+            (
+                deadpan_store::SpeechActivityKey,
+                deadpan_analysis::SpeechActivity,
+            ),
+            String,
+        >,
+        last: bool,
+    },
     Transcribed(Result<(TranscriptKey, Transcript), String>),
 }
+
+mod activity;
 
 #[derive(Debug, Clone, PartialEq)]
 enum Status {
@@ -66,17 +79,19 @@ pub(super) struct Transcription {
     /// While the cursor stays there, that word is current even when a later
     /// word also begins in the same picture.
     chosen: Option<(usize, u64)>,
-    /// Speech on the Edit clock for one session, revision and transcript.
+    /// Speech on the Edit clock for one session, revision and analysis.
     edit_speech: Option<(
-        (u64, deadpan_core::RevisionId, TranscriptKey),
+        (u64, deadpan_core::RevisionId, SpeechKey),
         Arc<deadpan_core::SpeechTimeline>,
     )>,
-    /// Speech over the Original's pictures for one transcript.
-    source_speech: Option<(TranscriptKey, Arc<deadpan_core::SpeechTimeline>)>,
+    /// Speech over the Original's pictures for one analysis.
+    source_speech: Option<((u64, SpeechKey), Arc<deadpan_core::SpeechTimeline>)>,
     /// Enter (true) or Shift+Enter (false) pressed in Find words this frame.
     step: Option<bool>,
     /// The background thread, joined briefly at exit so its worker is reaped.
     thread: Option<std::thread::JoinHandle<()>>,
+    /// Speech activity detection, which shares the job and its PCM.
+    activity: activity::ActivityJob,
 }
 
 impl Default for Transcription {
@@ -97,6 +112,7 @@ impl Default for Transcription {
             step: None,
             attempts: 0,
             thread: None,
+            activity: activity::ActivityJob::default(),
         }
     }
 }
@@ -231,6 +247,12 @@ impl DeadpanApp {
                 Event::Progress(percent) => {
                     self.transcription.status = Status::Transcribing(percent);
                 }
+                Event::Detected { result, last } => {
+                    if last {
+                        self.transcription.events = None;
+                    }
+                    self.transcription.activity.receive(result);
+                }
                 Event::Transcribed(result) => {
                     self.transcription.events = None;
                     match result {
@@ -244,10 +266,13 @@ impl DeadpanApp {
             context.request_repaint();
         }
         self.save_transcript(session, context);
+        self.save_activity(session, context);
         let Some(workspace) = self.workspace.as_ref() else {
             return;
         };
         if workspace.transcript.is_some() {
+            // Projects transcribed before pause detection get it on its own.
+            self.reconcile_activity(context);
             self.transcription.status = Status::Ready;
             return;
         }
@@ -340,20 +365,43 @@ impl DeadpanApp {
                 return;
             }
         };
+        // Detect speech on the same PCM unless the Original already has it.
+        let vad = workspace
+            .speech_activity
+            .is_none()
+            .then(|| activity::vad_model(pack, installed))
+            .flatten();
         let package = workspace.path.clone();
         let (sender, receiver) = mpsc::channel();
         let cancel = Arc::new(AtomicBool::new(false));
         self.transcription.cancel = Arc::clone(&cancel);
         self.transcription.events = Some(receiver);
         self.transcription.status = Status::Preparing;
+        if vad.is_some() {
+            self.transcription.activity.start();
+        }
         let repaint = context.clone();
         let spawned = std::thread::Builder::new()
             .name("deadpan-transcription".into())
             .spawn(move || {
-                let result = run_transcription(&package, &model, &cancel, |percent| {
-                    let _ = sender.send(Event::Progress(percent));
+                let detected = |result| {
+                    let _ = sender.send(Event::Detected {
+                        result,
+                        last: false,
+                    });
                     repaint.request_repaint();
-                });
+                };
+                let result = run_transcription(
+                    &package,
+                    &model,
+                    vad.as_ref(),
+                    &cancel,
+                    detected,
+                    |percent| {
+                        let _ = sender.send(Event::Progress(percent));
+                        repaint.request_repaint();
+                    },
+                );
                 let _ = sender.send(Event::Transcribed(result));
                 repaint.request_repaint();
             });
@@ -697,6 +745,7 @@ impl DeadpanApp {
             }
             Status::Ready => self.transcript_words(ui),
         }
+        self.activity_section(ui);
     }
 
     fn transcript_words(&mut self, ui: &mut egui::Ui) {
@@ -885,20 +934,30 @@ impl DeadpanApp {
 
 /// Prepare analysis PCM from a read-only view of the project and run the
 /// worker installed beside the application.
+/// Prepare the Original's analysis PCM once, detect speech in it when a
+/// detector model is given (reported through `detected` exactly once), then
+/// transcribe it.
 fn run_transcription(
     package: &std::path::Path,
     model: &deadpan_jobs::transcription::ModelInput,
+    vad: Option<&deadpan_jobs::transcription::ModelInput>,
     cancel: &AtomicBool,
+    detected: impl FnOnce(activity::Detection),
     progress: impl FnMut(u8),
 ) -> Result<(TranscriptKey, Transcript), String> {
     let deadline = std::time::Instant::now() + Duration::from_secs(6 * 60 * 60);
-    let store = ProjectStore::open(package, AccessMode::ReadOnly).map_err(|e| e.to_string())?;
-    let analysis =
-        prepare_original_audio(&store, None, cancel, deadline).map_err(|e| e.to_string())?;
-    drop(store);
-    let runtime = TranscriptionRuntime::beside_current_executable().map_err(|e| e.to_string())?;
-    if !runtime.executable.is_file() {
-        return Err("the transcription helper is missing beside Deadpan".into());
+    let prepared = activity::prepare(package, cancel, deadline);
+    let (analysis, runtime) = match prepared {
+        Ok(prepared) => prepared,
+        Err(error) => {
+            if vad.is_some() {
+                detected(Err(error.clone()));
+            }
+            return Err(error);
+        }
+    };
+    if let Some(vad) = vad {
+        detected(activity::detect(&runtime, vad, &analysis, cancel, deadline));
     }
     let language = Language::Code("en".into());
     let label: String = language.clone().into();
@@ -999,29 +1058,77 @@ impl DeadpanApp {
         }
     }
 
-    /// The transcript, Original asset and picture index, when all exist.
-    fn speech_inputs(
-        &self,
-    ) -> Option<(
-        Arc<crate::project::OriginalTranscript>,
-        deadpan_core::AssetId,
-        Arc<Workspace>,
-    )> {
+    /// Why pause keys cannot act yet. Pauses are detected with the transcript.
+    fn pauses_not_ready(&self) -> String {
+        if let Some(reason) = self.transcription.activity.not_ready() {
+            return reason;
+        }
+        match &self.transcription.status {
+            Status::NeedsModel => {
+                "Pauses are not ready. Install the transcription model in the Original rail.".into()
+            }
+            Status::Installing { .. } => "Pauses are not ready while the model installs.".into(),
+            Status::Unchecked | Status::Preparing | Status::Transcribing(_) | Status::Saving(_) => {
+                "Pauses are not ready while the Original's speech is analysed.".into()
+            }
+            Status::Failed(_) => {
+                "Pauses are not ready: analysis failed. Try again in the Original rail.".into()
+            }
+            Status::Ready => {
+                "Pauses are not ready: the Original's speech has not been analysed.".into()
+            }
+        }
+    }
+
+    /// The Original's analyses, asset and picture index, when the Original
+    /// has a qualified picture.
+    fn speech_inputs(&self) -> Option<(SpeechInputs, deadpan_core::AssetId, Arc<Workspace>)> {
         let workspace = self.workspace.as_ref()?;
-        let transcript = workspace.transcript.clone()?;
         let asset = original_asset(workspace)?.clone();
         workspace.sources.get(&asset)?.video_index.as_ref()?;
-        Some((transcript, asset, Arc::clone(workspace)))
+        let inputs = SpeechInputs {
+            transcript: workspace.transcript.clone(),
+            activity: workspace.speech_activity.clone(),
+        };
+        Some((inputs, asset, Arc::clone(workspace)))
+    }
+
+    /// A timeline from whichever analyses exist, each missing one explained.
+    fn speech_timeline(
+        &self,
+        inputs: &SpeechInputs,
+        words: impl FnOnce(
+            &deadpan_analysis::Transcript,
+        ) -> Result<deadpan_core::SpeechTimeline, deadpan_core::EditError>,
+        pauses: impl FnOnce(
+            &[(deadpan_core::ExactRatio, deadpan_core::ExactRatio)],
+        ) -> Result<Vec<deadpan_core::FrameRange>, deadpan_core::EditError>,
+    ) -> Result<Arc<deadpan_core::SpeechTimeline>, String> {
+        let timeline = match &inputs.transcript {
+            Some(transcript) => words(&transcript.transcript).map_err(|error| error.message)?,
+            None => deadpan_core::SpeechTimeline::without_words(self.words_not_ready()),
+        };
+        let timeline = match &inputs.activity {
+            Some(activity) => {
+                let seconds = deadpan_cli::speech::pause_seconds(&activity.activity)
+                    .map_err(|error| error.message)?;
+                timeline
+                    .with_pauses(pauses(&seconds).map_err(|error| error.message)?)
+                    .map_err(|error| error.message)?
+            }
+            None => timeline.without_pauses(self.pauses_not_ready()),
+        };
+        Ok(Arc::new(timeline))
     }
 
     /// Speech projected through the current revision, cached per revision.
-    pub(super) fn edit_speech(&mut self) -> Result<Arc<deadpan_core::SpeechTimeline>, String> {
-        let (transcript, asset, workspace) =
+    pub(super) fn edit_analysis(&mut self) -> Result<Arc<deadpan_core::SpeechTimeline>, String> {
+        let (inputs, asset, workspace) =
             self.speech_inputs().ok_or_else(|| self.words_not_ready())?;
         let key = (
             workspace.session,
             workspace.document.revision_id().clone(),
-            transcript.key.clone(),
+            self.speech_key(&inputs),
         );
         if let Some((cached, speech)) = &self.transcription.edit_speech
             && *cached == key
@@ -1033,24 +1140,33 @@ impl DeadpanApp {
             .video_index
             .as_deref()
             .expect("speech inputs checked the picture");
-        let speech = deadpan_cli::speech::project_speech(
-            &workspace.plan,
-            &asset,
-            index,
-            &transcript.transcript,
-        )
-        .map(Arc::new)
-        .map_err(|error| error.message)?;
+        let speech = self.speech_timeline(
+            &inputs,
+            |transcript| {
+                deadpan_cli::speech::project_speech(&workspace.plan, &asset, index, transcript)
+            },
+            |pauses| deadpan_cli::speech::project_pauses(&workspace.plan, &asset, index, pauses),
+        )?;
         self.transcription.edit_speech = Some((key, Arc::clone(&speech)));
         Ok(speech)
     }
 
-    /// Speech over the Original's pictures, cached per transcript.
-    fn source_speech(&mut self) -> Result<Arc<deadpan_core::SpeechTimeline>, String> {
-        let (transcript, asset, workspace) =
+    /// Edit speech whose words are available.
+    pub(super) fn edit_speech(&mut self) -> Result<Arc<deadpan_core::SpeechTimeline>, String> {
+        let speech = self.edit_analysis()?;
+        speech
+            .require(deadpan_core::SpeechUnit::Word)
+            .map_err(|error| error.message)?;
+        Ok(speech)
+    }
+
+    /// Speech over the Original's pictures, cached per analysis.
+    fn source_analysis(&mut self) -> Result<Arc<deadpan_core::SpeechTimeline>, String> {
+        let (inputs, asset, workspace) =
             self.speech_inputs().ok_or_else(|| self.words_not_ready())?;
+        let key = (workspace.session, self.speech_key(&inputs));
         if let Some((cached, speech)) = &self.transcription.source_speech
-            && *cached == transcript.key
+            && *cached == key
         {
             return Ok(Arc::clone(speech));
         }
@@ -1059,11 +1175,92 @@ impl DeadpanApp {
             .video_index
             .as_deref()
             .expect("speech inputs checked the picture");
-        let speech = deadpan_cli::speech::original_speech(index, &transcript.transcript)
-            .map(Arc::new)
-            .map_err(|error| error.message)?;
-        self.transcription.source_speech = Some((transcript.key.clone(), Arc::clone(&speech)));
+        let speech = self.speech_timeline(
+            &inputs,
+            |transcript| deadpan_cli::speech::original_speech(index, transcript),
+            |pauses| deadpan_cli::speech::original_pauses(index, pauses),
+        )?;
+        self.transcription.source_speech = Some((key, Arc::clone(&speech)));
         Ok(speech)
+    }
+
+    /// Original speech whose words are available.
+    fn source_speech(&mut self) -> Result<Arc<deadpan_core::SpeechTimeline>, String> {
+        let speech = self.source_analysis()?;
+        speech
+            .require(deadpan_core::SpeechUnit::Word)
+            .map_err(|error| error.message)?;
+        Ok(speech)
+    }
+
+    /// `]p` and `[p` in either context.
+    pub(super) fn pause_motion(&mut self, forward: bool, count: u32) {
+        let count = count.max(1);
+        match self.view {
+            View::Source => {
+                if !self.viewing_original() {
+                    self.message = Some(
+                        "Pause motions follow the Original's speech; view the Original to use them."
+                            .into(),
+                    );
+                    return;
+                }
+                let target = self.source_analysis().and_then(|speech| {
+                    let length = self.source_length() as i64;
+                    speech
+                        .pause_target(
+                            ProjectFrame(self.source_cursor as i64),
+                            (ProjectFrame(0), ProjectFrame(length)),
+                            forward,
+                            count,
+                        )
+                        .map_err(|error| error.message)
+                });
+                match target {
+                    Ok(target) => {
+                        self.source_cursor = target.0 as u64;
+                        self.moment.move_to(self.source_cursor);
+                    }
+                    Err(error) => {
+                        self.message = Some(error);
+                        return;
+                    }
+                }
+            }
+            View::Sequence => {
+                let cursor = self.sequence_cursor.clamp(self.scope_start, self.scope_end);
+                let target = self.edit_analysis().and_then(|speech| {
+                    speech
+                        .pause_target(
+                            ProjectFrame(cursor as i64),
+                            (
+                                ProjectFrame(self.scope_start as i64),
+                                ProjectFrame(self.scope_end as i64),
+                            ),
+                            forward,
+                            count,
+                        )
+                        .map_err(|error| error.message)
+                });
+                match target {
+                    Ok(target) => {
+                        self.sequence_cursor = target.0 as u64;
+                        self.edit_range.move_to(self.sequence_cursor);
+                        self.select_at_cursor();
+                        if let Some(count) = std::num::NonZeroU32::new(count) {
+                            self.record_macro_local(
+                                deadpan_core::SemanticInstruction::MovePauses { forward, count },
+                            );
+                        }
+                    }
+                    Err(error) => {
+                        self.message = Some(error);
+                        return;
+                    }
+                }
+            }
+        }
+        self.request_picture(false);
     }
 
     /// `w`, `b`, `e`, `W` and `B` in either context.
@@ -1134,13 +1331,13 @@ impl DeadpanApp {
         self.request_picture(false);
     }
 
-    /// `iw`, `aw`, `is` and `as` in a Your edit Visual selection.
+    /// `iw`, `aw`, `is`, `as`, `ip` and `ap` in a Your edit Visual selection.
     pub(super) fn select_speech(&mut self, object: deadpan_core::SpeechObject) {
         if !self.macro_action_allowed(Action::SelectSpeech(object)) {
             return;
         }
         self.bindings.clear();
-        let speech = match self.edit_speech() {
+        let speech = match self.edit_analysis() {
             Ok(speech) => speech,
             Err(error) => {
                 self.message = Some(error);
@@ -1174,6 +1371,8 @@ impl DeadpanApp {
                         deadpan_core::SpeechObject::InnerSentence => "the sentence",
                         deadpan_core::SpeechObject::AroundSentence =>
                             "the sentence with its pauses",
+                        deadpan_core::SpeechObject::InnerPause => "the pause",
+                        deadpan_core::SpeechObject::AroundPause => "the pause with its edges",
                     },
                     self.editor_key(EditorKey::Copy),
                     self.editor_key(EditorKey::CutRange),
@@ -1185,5 +1384,35 @@ impl DeadpanApp {
             }
             Err(error) => self.error = Some(error),
         }
+    }
+}
+
+/// The analyses a speech timeline was built from.
+struct SpeechInputs {
+    transcript: Option<Arc<crate::project::OriginalTranscript>>,
+    activity: Option<Arc<crate::project::OriginalActivity>>,
+}
+
+/// Identifies the analyses behind a cached timeline: each analysis key, or
+/// the reason it is missing, which changes as the job progresses.
+type SpeechKey = (
+    Result<TranscriptKey, String>,
+    Result<deadpan_store::SpeechActivityKey, String>,
+);
+
+impl DeadpanApp {
+    fn speech_key(&self, inputs: &SpeechInputs) -> SpeechKey {
+        (
+            inputs
+                .transcript
+                .as_ref()
+                .map(|transcript| transcript.key.clone())
+                .ok_or_else(|| self.words_not_ready()),
+            inputs
+                .activity
+                .as_ref()
+                .map(|activity| activity.key.clone())
+                .ok_or_else(|| self.pauses_not_ready()),
+        )
     }
 }

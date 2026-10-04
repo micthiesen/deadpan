@@ -379,6 +379,13 @@ where
             .ok_or_else(speech_unavailable)
     }
 
+    /// Speech whose words are available.
+    fn words(&self) -> Result<&SpeechTimeline, EditError> {
+        let speech = self.speech()?;
+        speech.require(crate::SpeechUnit::Word)?;
+        Ok(speech)
+    }
+
     fn execute(&mut self, program: &SemanticProgram) -> Result<(), EditError> {
         for instruction in program.instructions() {
             if self.trace.len() == MAX_SEMANTIC_INSTRUCTION_FUEL {
@@ -432,6 +439,12 @@ where
                 }
                 SemanticInstruction::MoveSentences { forward, count } => {
                     self.move_context(SemanticMotion::Sentences {
+                        forward: *forward,
+                        count: *count,
+                    })?;
+                }
+                SemanticInstruction::MovePauses { forward, count } => {
+                    self.move_context(SemanticMotion::Pauses {
                         forward: *forward,
                         count: *count,
                     })?;

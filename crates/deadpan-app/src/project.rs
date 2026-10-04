@@ -59,6 +59,13 @@ pub struct OriginalTranscript {
     pub transcript: deadpan_analysis::Transcript,
 }
 
+/// Stored speech activity of the Original, carried across edits.
+#[derive(Debug)]
+pub struct OriginalActivity {
+    pub key: deadpan_store::SpeechActivityKey,
+    pub activity: deadpan_analysis::SpeechActivity,
+}
+
 /// The outcome of one background transcript save, matched by attempt.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TranscriptSave {
@@ -85,11 +92,30 @@ pub struct Workspace {
     /// Loaded when the project opens and replaced when a transcript is saved;
     /// annotations never change with document revisions.
     pub transcript: Option<Arc<OriginalTranscript>>,
+    /// Loaded when the project opens and replaced when speech activity is
+    /// saved; like the transcript, it never changes with document revisions.
+    pub speech_activity: Option<Arc<OriginalActivity>>,
 }
 
 impl Workspace {
     /// The same committed workspace with a newly saved transcript.
     pub fn with_transcript(&self, transcript: Arc<OriginalTranscript>) -> Self {
+        Self {
+            transcript: Some(transcript),
+            ..self.annotated()
+        }
+    }
+
+    /// The same committed workspace with newly saved speech activity.
+    pub fn with_speech_activity(&self, activity: Arc<OriginalActivity>) -> Self {
+        Self {
+            speech_activity: Some(activity),
+            ..self.annotated()
+        }
+    }
+
+    /// A copy of this committed workspace, for replacing one annotation.
+    fn annotated(&self) -> Self {
         // Exhaustive destructuring: a new field must be carried here explicitly.
         let Self {
             session,
@@ -103,7 +129,8 @@ impl Workspace {
             can_redo,
             single_source,
             original_duration,
-            transcript: _,
+            transcript,
+            speech_activity,
         } = self;
         Self {
             session: *session,
@@ -117,7 +144,8 @@ impl Workspace {
             can_redo: *can_redo,
             single_source: single_source.clone(),
             original_duration: *original_duration,
-            transcript: Some(transcript),
+            transcript: transcript.clone(),
+            speech_activity: speech_activity.clone(),
         }
     }
 
@@ -223,6 +251,8 @@ pub struct ProjectUpdate {
     /// Background transcript saves report here, never through the editor's
     /// command error, which the next dispatch clears.
     pub transcript_save: Option<TranscriptSave>,
+    /// Background speech activity saves, reported like transcript saves.
+    pub activity_save: Option<TranscriptSave>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -476,6 +506,13 @@ pub enum ProjectRequest {
         attempt: u64,
         key: deadpan_store::TranscriptKey,
         transcript: Arc<deadpan_analysis::Transcript>,
+    },
+    /// Store validated speech activity of the Original; never an edit.
+    SaveSpeechActivity {
+        expected_session: u64,
+        attempt: u64,
+        key: deadpan_store::SpeechActivityKey,
+        activity: Arc<deadpan_analysis::SpeechActivity>,
     },
     Marks(marks::Request),
     Render(ProjectRenderRequest),

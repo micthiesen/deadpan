@@ -33,6 +33,9 @@ fn navigate(motion: SemanticMotion) -> SemanticInstruction {
         SemanticMotion::Sentences { forward, count } => {
             SemanticInstruction::MoveSentences { forward, count }
         }
+        SemanticMotion::Pauses { forward, count } => {
+            SemanticInstruction::MovePauses { forward, count }
+        }
     }
 }
 fn yank(selector: SemanticSelector, register: char) -> SemanticInstruction {

@@ -6,7 +6,9 @@
 *.deadpan/
 /Exports/
 /data/
-/models/
+# Weights stay local; approved pack manifests are compiled into the app.
+/models/*
+!/models/packs/
 /logs/
 __pycache__/
 *.pyc

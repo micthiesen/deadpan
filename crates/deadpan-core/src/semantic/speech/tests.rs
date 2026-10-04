@@ -165,3 +165,94 @@ fn timelines_reject_empty_overlapping_and_unsorted_runs() {
     assert!(SpeechTimeline::new(vec![run(10, 12, 0, 0), run(0, 5, 1, 0)]).is_err());
     assert!(SpeechTimeline::new(Vec::new()).unwrap().runs().is_empty());
 }
+
+/// The words of [`timeline`] with pauses 0..10, 30..40 and 55..100.
+fn paused() -> SpeechTimeline {
+    timeline()
+        .with_pauses(vec![range(0, 10), range(30, 40), range(55, 100)])
+        .unwrap()
+}
+
+#[test]
+fn pause_motions_go_to_pause_starts_and_report_when_there_are_none() {
+    let timeline = paused();
+    let target = |from: i64, forward: bool, count: u32| {
+        timeline
+            .pause_target(ProjectFrame(from), BOUNDS, forward, count)
+            .map(|frame| frame.0)
+    };
+    assert_eq!(
+        target(0, true, 1).unwrap(),
+        30,
+        "a pause at the cursor is skipped"
+    );
+    assert_eq!(target(12, true, 2).unwrap(), 55);
+    assert_eq!(
+        target(12, true, 9).unwrap(),
+        55,
+        "a long count stops at the last pause"
+    );
+    assert_eq!(target(45, false, 1).unwrap(), 30);
+    assert_eq!(target(30, false, 1).unwrap(), 0);
+    let none = target(60, true, 1).unwrap_err();
+    assert_eq!(none.code, EditErrorCode::SelectionUnavailable);
+    assert!(none.message.contains("no later pause"), "{none:?}");
+    assert!(target(0, false, 1).is_err());
+    // A scope clips pauses: the pause beginning before it starts at its edge.
+    let scope = (ProjectFrame(35), ProjectFrame(60));
+    assert_eq!(
+        timeline
+            .pause_target(ProjectFrame(50), scope, false, 1)
+            .unwrap(),
+        ProjectFrame(35)
+    );
+}
+
+#[test]
+fn pause_objects_select_the_pause_with_handles_of_adjoining_speech() {
+    let timeline = paused();
+    let object =
+        |at: i64, object| timeline.object_range(ProjectFrame(at), BOUNDS, object, thirty());
+    assert_eq!(object(33, SpeechObject::InnerPause).unwrap(), range(30, 40));
+    // Two frames (80 ms at 30 fps) of the words on each side.
+    assert_eq!(
+        object(33, SpeechObject::AroundPause).unwrap(),
+        range(28, 42)
+    );
+    // The first pause starts the scope; the last ends it.
+    assert_eq!(object(0, SpeechObject::AroundPause).unwrap(), range(0, 12));
+    assert_eq!(
+        object(100, SpeechObject::InnerPause).unwrap(),
+        range(55, 100)
+    );
+    let speaking = object(12, SpeechObject::InnerPause).unwrap_err();
+    assert!(speaking.message.contains("not in a pause"), "{speaking:?}");
+}
+
+#[test]
+fn words_and_pauses_explain_their_own_absence() {
+    let words_only = timeline();
+    let error = words_only
+        .object_range(ProjectFrame(33), BOUNDS, SpeechObject::InnerPause, thirty())
+        .unwrap_err();
+    assert!(error.message.contains("pauses are not ready"), "{error:?}");
+    let pauses_only = SpeechTimeline::without_words("words are not ready: no model")
+        .with_pauses(vec![range(30, 40)])
+        .unwrap();
+    assert_eq!(
+        pauses_only
+            .pause_target(ProjectFrame(0), BOUNDS, true, 1)
+            .unwrap(),
+        ProjectFrame(30)
+    );
+    let error = pauses_only
+        .object_range(ProjectFrame(33), BOUNDS, SpeechObject::InnerWord, thirty())
+        .unwrap_err();
+    assert_eq!(error.message, "words are not ready: no model");
+    assert!(
+        timeline()
+            .with_pauses(vec![range(0, 10), range(5, 12)])
+            .is_err()
+    );
+    assert!(timeline().with_pauses(vec![range(4, 4)]).is_err());
+}

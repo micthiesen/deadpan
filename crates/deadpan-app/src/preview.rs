@@ -954,6 +954,8 @@ impl DeadpanApp {
             self.receive_macro(update.macros, update.saved_macro);
             self.receive_marks(update.marks, context);
             self.transcription.receive_save(update.transcript_save);
+            self.transcription
+                .receive_activity_save(update.activity_save);
             // A service publication can replace the captured head before a
             // stopped decode is polled below. Revoke that proposal now, not
             // after receive returns or when final layout requests its successor.
@@ -1791,6 +1793,7 @@ impl DeadpanApp {
                 sentence: true,
                 end: false,
             }),
+            Action::Pause { forward, count } => self.pause_motion(forward, count),
             Action::SelectSpeech(object) => self.select_speech(object),
             Action::First | Action::Last => {
                 let end = action == Action::Last;
@@ -3054,7 +3057,9 @@ impl DeadpanApp {
                         self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " ", "frame");
                         self.add_editor_pair_hint(&mut hints, EditorKey::BeatNext, EditorKey::BeatPrevious, " ", "beat");
                         let words = self.workspace.as_ref().is_some_and(|workspace| workspace.transcript.is_some());
+                        let pauses = self.workspace.as_ref().is_some_and(|workspace| workspace.speech_activity.is_some());
                         if words { self.add_editor_pair_hint(&mut hints, EditorKey::WordNext, EditorKey::WordPrevious, " ", "word"); }
+                        if pauses { self.add_editor_pair_hint(&mut hints, EditorKey::PauseNext, EditorKey::PausePrevious, " ", "pauses"); }
                         self.add_editor_hint(&mut hints, EditorKey::Visual, if selection == navigation::EditSelection::Object { if self.edit_range.active { "retain object" } else { "select time" } } else if self.edit_range.active { "finish range" } else { "select range" });
                         self.add_editor_hint(&mut hints, EditorKey::Repeat, if selection == navigation::EditSelection::None { "repeat beat" } else if selection == navigation::EditSelection::Object { "repeat object" } else { "repeat range" });
                         match selection {
@@ -3076,6 +3081,7 @@ impl DeadpanApp {
                                 self.add_editor_hint(&mut hints, EditorKey::InnerWord, "word");
                                 self.add_editor_hint(&mut hints, EditorKey::InnerSentence, "sentence");
                             }
+                            if pauses { self.add_editor_hint(&mut hints, EditorKey::InnerPause, "pause"); }
                             self.add_editor_hint(&mut hints, EditorKey::InnerGroup, "group contents");
                             self.add_editor_hint(&mut hints, EditorKey::AroundGroup, "whole group");
                         }
@@ -3094,6 +3100,7 @@ impl DeadpanApp {
                     } else {
                         self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " ", "frame");
                         if self.workspace.as_ref().is_some_and(|workspace| workspace.transcript.is_some()) { self.add_editor_pair_hint(&mut hints, EditorKey::WordNext, EditorKey::WordPrevious, " ", "word"); }
+                        if self.workspace.as_ref().is_some_and(|workspace| workspace.speech_activity.is_some()) { self.add_editor_pair_hint(&mut hints, EditorKey::PauseNext, EditorKey::PausePrevious, " ", "pauses"); }
                         if self.focused_workflow() && !self.beat_rows.is_empty() { self.add_editor_pair_hint(&mut hints, EditorKey::BeatNext, EditorKey::BeatPrevious, " ", "edit beat"); }
                         self.add_editor_hint(&mut hints, EditorKey::Visual, if self.moment.active { "finish selection" } else { "select moment" });
                         self.add_editor_hint(&mut hints, EditorKey::Copy, "copy moment");
@@ -4065,6 +4072,7 @@ impl DeadpanApp {
                         (key_labels::aliases_pair(&bindings, EditorKey::BeatNext, EditorKey::BeatPrevious, " "), "In the sound catalog, select the next / previous sound. Elsewhere select a beat at the current group depth and return to Your edit. In legacy Sources, choose a source.".to_owned()),
                         (format!("{} {} {}", key(EditorKey::WordNext), key(EditorKey::WordPrevious), key(EditorKey::WordEnd)), format!("Next word / previous word / end of the word, from the Original's transcript. Counts move further: {}. In Your edit words follow every edit; freezes, generated pictures and gaps hold none.", bindings.counted_label(EditorKey::WordNext, 3))),
                         (key_labels::aliases_pair(&bindings, EditorKey::SentenceNext, EditorKey::SentencePrevious, " "), "Next / previous sentence.".to_owned()),
+                        (key_labels::aliases_pair(&bindings, EditorKey::PauseNext, EditorKey::PausePrevious, " "), format!("Start of the next / previous pause detected in the Original's speech. In Your edit inserted pauses, freezes and gaps count as pauses too. Counts move further: {}.", bindings.counted_label(EditorKey::PauseNext, 2))),
                         (key_labels::aliases_pair(&bindings, EditorKey::First, EditorKey::Last, " / "), "First / final boundary of the current group or Original.".to_owned()),
                         (format!("{} + letter · {} + letter", key(EditorKey::MarkSet), key(EditorKey::MarkJump)), "Save an exact Original or Edit mark, then jump to it. Uppercase letters are separate. Edit marks follow their content through edits; deleted targets stay unresolved until Undo or an explicit new mark. Setting a mark is undoable and preserves both cursors and selection.".to_owned()),
                         ("Ctrl O / Ctrl I".to_owned(), "Back / forward through successful mark jumps. Original positions retain their qualified source clock. A changed Edit revision expires old history positions instead of seeking unrelated content; saved marks still follow structural edits.".to_owned()),
@@ -4088,6 +4096,7 @@ impl DeadpanApp {
                         (format!("{} / :delete", key(EditorKey::CutBeat)), format!("Without a Visual selection, {} cuts one whole beat, including an empty group. :delete captures the exact range or beat when command entry opens; stale or missing targets fail. A saved cut replaces the copy register; {} or :splice places that copy. Failure keeps the previous copy. The cursor stays at a range cut's join. Undo restores the removed content and retains the copy, including after reopening the project.", key(EditorKey::CutBeat), key_labels::aliases_pair(&bindings, EditorKey::PasteAfter, EditorKey::PasteBefore, "/"))),
                         (format!("{} / {} / :delete-frames 12f", key(EditorKey::CutFrames), bindings.counted_label(EditorKey::CutFrames, 12)), format!("Cut one or a counted number of linked picture and sound frames beginning at the Edit cursor, stopping at this group's end. The command captures its cursor and group when entry opens. A Visual selection must be cleared with {} first, or cut with {}. At the group's end no edit is made. One Undo restores the cut; the exact removed slice remains available for paste.", key(EditorKey::Escape), key(EditorKey::CutRange))),
                         (format!("{} {} {} {} · Visual or after {}/{}/{}", key(EditorKey::InnerWord), key(EditorKey::AroundWord), key(EditorKey::InnerSentence), key(EditorKey::AroundSentence), key(EditorKey::YankOperator), key(EditorKey::CutOperator), key(EditorKey::RepeatOperator)), format!("Select the word or sentence at the Edit cursor. The around forms add half of each adjoining pause, at most 80 ms per side, never reaching other speech. After an operator they act at once: {}{} cuts the word, {}{}{} plays it three times in total. Word motions such as {}{} also follow operators.", key(EditorKey::CutOperator), key(EditorKey::InnerWord), "3", key(EditorKey::RepeatOperator), key(EditorKey::InnerWord), key(EditorKey::CutOperator), key(EditorKey::WordNext))),
+                        (format!("{} {} · Visual or after {}/{}/{}", key(EditorKey::InnerPause), key(EditorKey::AroundPause), key(EditorKey::YankOperator), key(EditorKey::CutOperator), key(EditorKey::RepeatOperator)), format!("Select the pause at the Edit cursor. The around form adds a little of the speech on each side: half of it, at most 80 ms. {}{} cuts the pause, closing the gap.", key(EditorKey::CutOperator), key(EditorKey::InnerPause))),
                         (format!("{} / {} · Visual or after {}/{}/{}", key(EditorKey::InnerGroup), key(EditorKey::AroundGroup), key(EditorKey::YankOperator), key(EditorKey::CutOperator), key(EditorKey::RepeatOperator)), "Select exact group contents or the whole group. An explicitly selected Sequence wins; otherwise use the containing nonroot group. Visual finish retains the object; moving while extending changes it into a time range. Whole-group edits return to the outer parent. Empty contents can receive a paste; an all-empty child forest still has exact owners. Macros and dot resolve the object in their current context.".to_owned()),
                         (":repeat 3".to_owned(), "Set total plays on the captured Repeat, preserving its gaps and surviving plays; wrap a different selected beat. Clear Visual selection first. Recording keeps the effective wrap or count-change instruction; dot reapplies a count change to the newly selected Repeat.".to_owned()),
                         (":wrap-repeat 3".to_owned(), "Always add an enclosing Repeat around the captured Visual range or selected beat, including nesting. Command entry captures the target; stale or missing targets refuse.".to_owned()),

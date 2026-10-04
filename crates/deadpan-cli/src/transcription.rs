@@ -100,6 +100,8 @@ pub enum TranscriptionError {
     #[error(transparent)]
     Transcript(#[from] deadpan_analysis::TranscriptError),
     #[error(transparent)]
+    Activity(#[from] deadpan_analysis::ActivityError),
+    #[error(transparent)]
     Supervisor(#[from] deadpan_jobs::process::SupervisorError),
     #[error(transparent)]
     Artifact(#[from] deadpan_jobs::artifact::ArtifactError),
@@ -121,9 +123,62 @@ pub fn transcribe(
     attempt: &str,
     cancelled: &AtomicBool,
     deadline: Instant,
-    mut progress: impl FnMut(u8),
+    progress: impl FnMut(u8),
 ) -> Result<TranscriptionResult, TranscriptionError> {
     let audio = input.audio()?;
+    let completed = supervise(
+        runtime,
+        input,
+        transcription::MAX_TRANSCRIPT_BYTES,
+        cancelled,
+        deadline,
+        progress,
+        |audio_artifact, timeout_millis| {
+            Ok(HostMessage::Transcribe {
+                protocol: transcription::VERSION,
+                request: RequestId::new(format!("transcript-{attempt}")).map_err(protocol_error)?,
+                attempt: AttemptId::new(attempt).map_err(protocol_error)?,
+                cancellation_token: CancellationToken::new(format!("cancel-{attempt}"))
+                    .map_err(protocol_error)?,
+                model: model.clone(),
+                audio: audio_artifact,
+                language,
+                output_scope: WorkspaceRef::new(OUTPUT_SCOPE).map_err(protocol_error)?,
+                maximum_output_bytes: transcription::MAX_TRANSCRIPT_BYTES,
+                timeout_millis,
+            })
+        },
+    )?;
+    let segments: Vec<RawSegment> =
+        serde_json::from_slice(&completed.bytes).map_err(protocol_error)?;
+    let transcript = Transcript::from_segments(audio, &segments)?;
+    Ok(TranscriptionResult {
+        transcript,
+        runtime: completed.runtime,
+        elapsed: completed.elapsed,
+    })
+}
+
+/// A worker artifact admitted after clean teardown and a hashed snapshot.
+pub(crate) struct Completed {
+    pub bytes: Vec<u8>,
+    pub runtime: RuntimeReport,
+    pub elapsed: Duration,
+}
+
+/// Write the analysis PCM into a fresh attempt workspace, run the worker on
+/// the request `build` makes, and return the completed artifact's bytes after
+/// clean process teardown and a contained, hashed snapshot.
+pub(crate) fn supervise(
+    runtime: &TranscriptionRuntime,
+    input: &AnalysisInput,
+    maximum_bytes: u64,
+    cancelled: &AtomicBool,
+    deadline: Instant,
+    mut progress: impl FnMut(u8),
+    build: impl FnOnce(WorkspaceArtifact, u64) -> Result<HostMessage, TranscriptionError>,
+) -> Result<Completed, TranscriptionError> {
+    input.audio()?;
     if input.samples.iter().any(|sample| !sample.is_finite()) {
         return Err(TranscriptionError::Configuration(
             "analysis audio contains non-finite samples",
@@ -156,19 +211,7 @@ pub fn transcribe(
     if timeout_millis == 0 {
         return Err(TranscriptionError::Deadline);
     }
-    let request = HostMessage::Transcribe {
-        protocol: transcription::VERSION,
-        request: RequestId::new(format!("transcript-{attempt}")).map_err(protocol_error)?,
-        attempt: AttemptId::new(attempt).map_err(protocol_error)?,
-        cancellation_token: CancellationToken::new(format!("cancel-{attempt}"))
-            .map_err(protocol_error)?,
-        model: model.clone(),
-        audio: audio_artifact,
-        language,
-        output_scope: WorkspaceRef::new(OUTPUT_SCOPE).map_err(protocol_error)?,
-        maximum_output_bytes: transcription::MAX_TRANSCRIPT_BYTES,
-        timeout_millis,
-    };
+    let request = build(audio_artifact, timeout_millis)?;
     let mut process = SupervisedProcess::<TranscriptionProtocol>::spawn(
         ProcessSpec {
             executable: runtime.executable.clone(),
@@ -215,12 +258,20 @@ pub fn transcribe(
                             progress(percent);
                         }
                     }
+                    // The protocol adapter admits only the completion kind
+                    // that matches the request.
                     WorkerMessage::Completed {
-                        transcript,
+                        transcript: artifact,
                         runtime,
                         elapsed_millis,
                         ..
-                    } => completion = Some((transcript, runtime, elapsed_millis)),
+                    }
+                    | WorkerMessage::SpeechDetected {
+                        probabilities: artifact,
+                        runtime,
+                        elapsed_millis,
+                        ..
+                    } => completion = Some((artifact, runtime, elapsed_millis)),
                     WorkerMessage::Failed { diagnostic, .. } => {
                         failure.get_or_insert_with(|| {
                             TranscriptionError::Worker(diagnostic.as_str().to_owned())
@@ -262,11 +313,11 @@ pub fn transcribe(
         return Err(TranscriptionError::Cancelled);
     }
     let (artifact, runtime_report, elapsed_millis) = completion
-        .ok_or_else(|| TranscriptionError::Protocol("no clean completed transcript".into()))?;
+        .ok_or_else(|| TranscriptionError::Protocol("no clean completed artifact".into()))?;
     let mut snapshot = pinned.snapshot_with_control(
         &WorkspaceRef::new(OUTPUT_SCOPE).map_err(protocol_error)?,
         &artifact,
-        ArtifactLimits::new(transcription::MAX_TRANSCRIPT_BYTES)?,
+        ArtifactLimits::new(maximum_bytes)?,
         || {
             if cancelled.load(Ordering::Acquire) {
                 return Err(SnapshotInterruption::Cancelled);
@@ -277,20 +328,18 @@ pub fn transcribe(
             Ok(())
         },
     )?;
-    let mut json = Vec::new();
+    let mut bytes = Vec::new();
     snapshot
         .by_ref()
-        .take(transcription::MAX_TRANSCRIPT_BYTES + 1)
-        .read_to_end(&mut json)?;
-    if json.len() as u64 != artifact.byte_length() {
+        .take(maximum_bytes + 1)
+        .read_to_end(&mut bytes)?;
+    if bytes.len() as u64 != artifact.byte_length() {
         return Err(TranscriptionError::Protocol(
-            "transcript snapshot length changed".into(),
+            "artifact snapshot length changed".into(),
         ));
     }
-    let segments: Vec<RawSegment> = serde_json::from_slice(&json).map_err(protocol_error)?;
-    let transcript = Transcript::from_segments(audio, &segments)?;
-    Ok(TranscriptionResult {
-        transcript,
+    Ok(Completed {
+        bytes,
         runtime: runtime_report,
         elapsed: Duration::from_millis(elapsed_millis),
     })
@@ -513,7 +562,7 @@ fn hex(bytes: &[u8]) -> String {
 pub fn run_transcribe(arguments: &[&str]) -> Result<(), crate::CliError> {
     let usage = || {
         crate::CliError::Usage(
-            "usage: transcribe <project.deadpan> [--model <ggml.bin> --sha256 <hex>] [--language <auto|xx>] [--asset <id>]"
+            "usage: transcribe <project.deadpan> [--model <ggml.bin> --sha256 <hex>] [--vad-model <ggml-silero.bin> --vad-sha256 <hex>] [--language <auto|xx>] [--asset <id>]"
                 .into(),
         )
     };
@@ -522,6 +571,8 @@ pub fn run_transcribe(arguments: &[&str]) -> Result<(), crate::CliError> {
     };
     let mut model = None;
     let mut sha256 = None;
+    let mut vad_model = None;
+    let mut vad_sha256 = None;
     let mut language = Language::Code("en".into());
     let mut asset = None;
     let mut options = rest.iter();
@@ -529,6 +580,11 @@ pub fn run_transcribe(arguments: &[&str]) -> Result<(), crate::CliError> {
         let value = options.next().ok_or_else(usage)?;
         match *option {
             "--model" => model = Some(std::fs::canonicalize(value)?),
+            "--vad-model" => vad_model = Some(std::fs::canonicalize(value)?),
+            "--vad-sha256" => {
+                vad_sha256 =
+                    Some(Sha256::new(*value).map_err(|e| crate::CliError::Usage(e.to_string()))?)
+            }
             "--sha256" => {
                 sha256 =
                     Some(Sha256::new(*value).map_err(|e| crate::CliError::Usage(e.to_string()))?)
@@ -561,6 +617,19 @@ pub fn run_transcribe(arguments: &[&str]) -> Result<(), crate::CliError> {
         ))?,
         _ => return Err(usage()),
     };
+    // Speech detection runs on the same analysis PCM when a Silero model is
+    // given or installed with the pack.
+    let vad = match (vad_model, vad_sha256) {
+        (Some(path), Some(sha256)) => Some(ModelInput {
+            byte_length: std::fs::metadata(&path)?.len(),
+            path,
+            sha256,
+        }),
+        (None, None) => {
+            crate::models::installed_speech_activity_model(&crate::models::default_root()?)?
+        }
+        _ => return Err(usage()),
+    };
     // Read-only while preparing and recognizing, which can take hours, so
     // the app can keep editing the project; the writer is taken only to save.
     let reader = deadpan_store::ProjectStore::open(
@@ -572,9 +641,27 @@ pub fn run_transcribe(arguments: &[&str]) -> Result<(), crate::CliError> {
     let analysis = prepare_original_audio(&reader, asset.as_ref(), &cancelled, deadline)?;
     drop(reader);
     let attempt = uuid::Uuid::new_v4().simple().to_string();
+    let runtime = TranscriptionRuntime::beside_current_executable()?;
+    // Cancellation stops the command; any other detection failure is
+    // reported beside a transcript that still completes.
+    let activity = match &vad {
+        None => None,
+        Some(vad) => match crate::activity::detect_speech(
+            &runtime,
+            vad,
+            &analysis.input,
+            &format!("{attempt}-activity"),
+            &cancelled,
+            deadline,
+        ) {
+            Ok(detected) => Some((vad, Ok(detected))),
+            Err(TranscriptionError::Cancelled) => return Err(TranscriptionError::Cancelled.into()),
+            Err(error) => Some((vad, Err(error.to_string()))),
+        },
+    };
     let language_label: String = language.clone().into();
     let result = transcribe(
-        &TranscriptionRuntime::beside_current_executable()?,
+        &runtime,
         &model,
         &analysis.input,
         language,
@@ -590,11 +677,31 @@ pub fn run_transcribe(arguments: &[&str]) -> Result<(), crate::CliError> {
         language: language_label,
         engine: result.runtime.engine.clone(),
     };
-    deadpan_store::ProjectStore::open(
+    let writer = deadpan_store::ProjectStore::open(
         std::path::Path::new(path),
         deadpan_store::AccessMode::ReadWrite,
-    )?
-    .save_transcript(&key, &result.transcript)?;
+    )?;
+    let activity_report = match &activity {
+        Some((_, Err(error))) => serde_json::json!({ "error": error }),
+        Some((vad, Ok(detected))) => {
+            let activity_key = deadpan_store::SpeechActivityKey {
+                content: key.content.clone(),
+                audio_stream: key.audio_stream,
+                model_sha256: vad.sha256.as_str().to_owned(),
+                engine: detected.runtime.engine.clone(),
+            };
+            writer.save_speech_activity(&activity_key, &detected.activity)?;
+            serde_json::json!({
+                "key": activity_key,
+                "rule": deadpan_analysis::SILENCE_RULE,
+                "worker_elapsed_ms":
+                    u64::try_from(detected.elapsed.as_millis()).unwrap_or(u64::MAX),
+                "pauses": detected.activity.pauses().len(),
+            })
+        }
+        None => serde_json::Value::Null,
+    };
+    writer.save_transcript(&key, &result.transcript)?;
     let words = result.transcript.words();
     crate::write_json(&serde_json::json!({
         "protocol": 1,
@@ -604,6 +711,7 @@ pub fn run_transcribe(arguments: &[&str]) -> Result<(), crate::CliError> {
         "audio_seconds": analysis.input.samples.len() as f64 / f64::from(ANALYSIS_SAMPLE_RATE),
         "words": words.len(),
         "approximate_words": words.iter().filter(|word| word.approximate()).count(),
+        "speech_activity": activity_report,
     }))
 }
 

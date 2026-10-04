@@ -143,7 +143,10 @@ struct Recording {
 struct Pending {
     operation: protocol::Operation,
     capture: Capture,
+    /// Recorded into the active macro on success.
     instruction: Option<SemanticInstruction>,
+    /// The footer message on success.
+    summary: Option<String>,
     owns_cursor: bool,
 }
 
@@ -301,6 +304,7 @@ impl DeadpanApp {
                 | Action::Beat { .. }
                 | Action::Word { .. }
                 | Action::Sentence { .. }
+                | Action::Pause { .. }
                 | Action::SelectSpeech(_)
                 | Action::First
                 | Action::Last
@@ -327,7 +331,7 @@ impl DeadpanApp {
                 | Action::Invalid(_)
                 | Action::OfferInsert
         ) {
-            self.error = Some("This action cannot be recorded yet. Macros support frame, beat, word and sentence motions, group boundaries, word and sentence objects, Visual selections, cuts, copies, Repeat wraps and count changes, grouping, ungrouping, register pastes and named calls. Save or cancel recording first.".into());
+            self.error = Some("This action cannot be recorded yet. Macros support frame, beat, word, sentence and pause motions, group boundaries, word, sentence and pause objects, Visual selections, cuts, copies, Repeat wraps and count changes, grouping, ungrouping, register pastes and named calls. Save or cancel recording first.".into());
             return false;
         }
         if matches!(
@@ -336,6 +340,7 @@ impl DeadpanApp {
                 | Action::Beat { .. }
                 | Action::Word { .. }
                 | Action::Sentence { .. }
+                | Action::Pause { .. }
                 | Action::SelectSpeech(_)
                 | Action::First
                 | Action::Last
@@ -472,6 +477,7 @@ impl DeadpanApp {
                             operation,
                             capture: captured,
                             instruction: self.macros.recording().then_some(instruction),
+                            summary: None,
                             owns_cursor: true,
                         });
                         self.message = Some("Running macro…".into());
@@ -521,6 +527,7 @@ impl DeadpanApp {
                     operation,
                     capture,
                     instruction: None,
+                    summary: None,
                     owns_cursor: true,
                 });
                 self.message = Some("Saving macro…".into());
@@ -803,6 +810,7 @@ impl DeadpanApp {
                 self.macros.pending = Some(Pending {
                     operation,
                     capture: captured,
+                    summary: super::semantic::applied_text(&instruction),
                     instruction: self.macros.recording().then_some(instruction),
                     owns_cursor: true,
                 });
@@ -1006,7 +1014,11 @@ impl DeadpanApp {
                         },
                     ),
                     protocol::Outcome::Applied { .. } => format!(
-                        "Action completed{}.",
+                        "{}{}.",
+                        pending
+                            .summary
+                            .clone()
+                            .unwrap_or_else(|| "Action completed".into()),
                         if self.macros.recording() {
                             " and recorded"
                         } else {

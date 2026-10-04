@@ -121,3 +121,40 @@ fn a_missing_model_or_expired_deadline_is_reported() {
     .unwrap_err();
     assert!(matches!(expired, TranscriptionError::Deadline), "{expired}");
 }
+
+fn detect(model: &ModelInput) -> Result<(), TranscriptionError> {
+    deadpan_cli::activity::detect_speech(
+        &runtime(),
+        model,
+        &input(),
+        "worker-activity",
+        &AtomicBool::new(false),
+        Instant::now() + Duration::from_secs(60),
+    )
+    .map(|_| ())
+}
+
+#[test]
+fn speech_detection_verifies_and_loads_its_model_like_transcription() {
+    let (_directory, path, digest) = model_file(b"verified bytes that are not silero");
+    let hash = detect(&ModelInput {
+        path: path.clone(),
+        sha256: Sha256::new("0".repeat(64)).unwrap(),
+        byte_length: 34,
+    })
+    .unwrap_err();
+    assert!(
+        matches!(&hash, TranscriptionError::Worker(message) if message.contains("model hash differs")),
+        "{hash}"
+    );
+    let load = detect(&ModelInput {
+        path,
+        sha256: Sha256::new(digest).unwrap(),
+        byte_length: 34,
+    })
+    .unwrap_err();
+    assert!(
+        matches!(&load, TranscriptionError::Worker(message) if message.contains("load speech detector")),
+        "{load}"
+    );
+}

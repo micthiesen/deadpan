@@ -163,7 +163,13 @@ pub enum Action {
         forward: bool,
         count: u32,
     },
-    /// Select a word or sentence object (`iw`, `aw`, `is`, `as`).
+    /// Detected pause starts (`]p`, `[p`).
+    Pause {
+        forward: bool,
+        count: u32,
+    },
+    /// Select a word, sentence or pause object (`iw`, `aw`, `is`, `as`,
+    /// `ip`, `ap`).
     SelectSpeech(deadpan_core::SpeechObject),
     /// Next / previous transcript search match (`n`, `N`).
     SearchStep {

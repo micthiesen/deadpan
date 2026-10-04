@@ -32,7 +32,7 @@ const ALLOWED_HOSTS: [&str; 1] = ["huggingface.co"];
 
 /// The packs this build accepts.
 pub fn approved_packs() -> Vec<PackManifest> {
-    [include_str!("../../../models/packs/whisper-base-en-1.json")]
+    [include_str!("../../../models/packs/whisper-base-en-2.json")]
         .into_iter()
         .map(|text| {
             let manifest: PackManifest =
@@ -67,6 +67,8 @@ pub enum PackError {
 #[serde(rename_all = "snake_case")]
 pub enum Operation {
     Transcribe,
+    /// Voice activity detection: one speech probability per analysis hop.
+    SpeechActivity,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -199,6 +201,26 @@ impl PackManifest {
 
     pub fn total_bytes(&self) -> u64 {
         self.files.iter().map(|file| file.bytes).sum()
+    }
+
+    /// The recognizer model of a transcription pack: its first file.
+    pub fn transcription_file(&self) -> Option<&PackFile> {
+        self.operations
+            .contains(&Operation::Transcribe)
+            .then(|| self.files.first())
+            .flatten()
+    }
+
+    /// The Silero voice activity model of a pack that detects speech.
+    pub fn speech_activity_file(&self) -> Option<&PackFile> {
+        self.operations
+            .contains(&Operation::SpeechActivity)
+            .then(|| {
+                self.files
+                    .iter()
+                    .find(|file| file.name.starts_with("ggml-silero-"))
+            })
+            .flatten()
     }
 }
 
@@ -400,6 +422,23 @@ impl PackStore {
                 continue;
             }
             let partial = staging.join(part(&file.name));
+            // An installed version of the same pack may already hold this
+            // exact file; copy it instead of downloading it again. The copy
+            // is verified like a download and discarded when it differs.
+            if self.copy_installed(manifest, file, &partial)?
+                && verify_file(file, &partial, cancelled).is_ok()
+            {
+                std::fs::rename(&partial, &finished)?;
+                completed += file.bytes;
+                progress(InstallProgress {
+                    completed_bytes: completed,
+                    total_bytes: total,
+                });
+                continue;
+            }
+            if cancelled.load(Ordering::Acquire) {
+                return Err(PackError::Cancelled);
+            }
             download_file(file, &partial, transport, cancelled, |bytes| {
                 progress(InstallProgress {
                     completed_bytes: completed + bytes,
@@ -424,6 +463,38 @@ impl PackStore {
             directory: staging,
             _lock: lock,
         })
+    }
+
+    /// Copy a same-named file of exact size from another installed version of
+    /// this pack into `partial`. Returns whether a candidate was copied.
+    fn copy_installed(
+        &self,
+        manifest: &PackManifest,
+        file: &PackFile,
+        partial: &Path,
+    ) -> Result<bool, PackError> {
+        let versions = match std::fs::read_dir(self.root.join(&manifest.pack_id)) {
+            Ok(entries) => entries,
+            Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(false),
+            Err(error) => return Err(error.into()),
+        };
+        for entry in versions {
+            let entry = entry?;
+            if entry.file_name().to_str() == Some(manifest.pack_version.as_str()) {
+                continue;
+            }
+            let candidate = entry.path().join(&file.name);
+            let regular = std::fs::symlink_metadata(&candidate)
+                .is_ok_and(|metadata| metadata.is_file() && metadata.len() == file.bytes);
+            if !regular {
+                continue;
+            }
+            let _ = std::fs::remove_file(partial);
+            // On APFS this clones rather than duplicating the bytes.
+            std::fs::copy(&candidate, partial)?;
+            return Ok(true);
+        }
+        Ok(false)
     }
 
     /// Move a smoke-tested staged pack into place as one directory rename.
