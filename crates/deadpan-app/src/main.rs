@@ -5,6 +5,8 @@ mod gain;
 mod keymap;
 mod keymap_file;
 mod library;
+#[cfg(target_os = "macos")]
+mod menu;
 mod navigation;
 mod presentation;
 mod preview;
@@ -110,7 +112,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     adapter.name, adapter.backend
                 );
             }
-            Ok(Box::new(DeadpanApp::new(
+            #[cfg_attr(not(target_os = "macos"), allow(unused_mut))]
+            let mut app = DeadpanApp::new(
                 context,
                 render_state.clone(),
                 smoke_test,
@@ -118,7 +121,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 preview_source,
                 project,
                 keymap,
-            )?))
+            )?;
+            #[cfg(target_os = "macos")]
+            app.install_menu(&context.egui_ctx)?;
+            Ok(Box::new(app))
         }),
     )?;
 

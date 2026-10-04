@@ -132,6 +132,9 @@ pub struct DeadpanApp {
     // Logical drafts borrow this owner; closing one never drops in-flight work.
     junction_pictures: splice::JunctionDisplay,
     thumbnails: thumbnails::Thumbnails,
+    /// The native menu bar, present only for native launches.
+    #[cfg(target_os = "macos")]
+    menu: Option<crate::menu::MenuBar>,
     target: Option<RegisteredTarget>,
     workspace: Option<Arc<Workspace>>,
     import: Option<ImportStatus>,
@@ -282,6 +285,8 @@ impl DeadpanApp {
             renderer,
             junction_pictures,
             thumbnails,
+            #[cfg(target_os = "macos")]
+            menu: None,
             target: None,
             workspace: None,
             import: None,
@@ -2491,40 +2496,8 @@ impl DeadpanApp {
                 );
             }
             Ok(navigation::command::Entry::Action(action)) => self.action(action, context),
-            Ok(navigation::command::Entry::Source) => {
-                self.scoped = None;
-                self.stop_playback();
-                let leaving_event = self.pane == Pane::Sounds || self.event_focused();
-                self.selected_sound = None;
-                self.selected_event = None;
-                self.sound_inspection = None;
-                if leaving_event {
-                    self.pane = Pane::Sources;
-                    context.memory_mut(|m| m.request_focus(pane_id(self.pane)));
-                }
-                if self.view != View::Source {
-                    self.view.set(View::Source, &mut self.message);
-                    self.request_picture(true);
-                }
-            }
-            Ok(navigation::command::Entry::Sequence) => {
-                self.stop_playback();
-                let leaving_event = self.pane == Pane::Sounds || self.event_focused();
-                self.selected_sound = None;
-                self.selected_event = None;
-                self.sound_inspection = None;
-                if leaving_event {
-                    self.pane = Pane::Sequence;
-                    context.memory_mut(|m| m.request_focus(pane_id(self.pane)));
-                }
-                if self.workspace.is_none() {
-                    self.error = Some("Create or open a project to inspect its sequence.".into());
-                } else if self.view != View::Sequence {
-                    self.view.set(View::Sequence, &mut self.message);
-                    self.reconcile_beat_selection();
-                    self.request_picture(true);
-                }
-            }
+            Ok(navigation::command::Entry::Source) => self.show_original(context),
+            Ok(navigation::command::Entry::Sequence) => self.show_edit(context),
             Ok(navigation::command::Entry::Help) => {
                 if self
                     .command
@@ -2586,6 +2559,128 @@ impl DeadpanApp {
         }
     }
 
+    /// Replace the application menu bar. Native launches only; replay and
+    /// tests keep the in-window File menu.
+    #[cfg(target_os = "macos")]
+    pub fn install_menu(&mut self, context: &egui::Context) -> Result<(), String> {
+        let repaint = context.clone();
+        self.menu = Some(crate::menu::MenuBar::install(move || {
+            repaint.request_repaint();
+        })?);
+        Ok(())
+    }
+
+    /// Dispatch chosen menu commands that are currently allowed, then refresh
+    /// menu enablement. Each command rechecks the state left by the previous
+    /// one, so a queued item can never act after its precondition ended.
+    #[cfg(target_os = "macos")]
+    fn menu_commands(&mut self, context: &egui::Context) {
+        use crate::menu::MenuCommand;
+        let Some(commands) = self.menu.as_ref().map(crate::menu::MenuBar::take_commands) else {
+            return;
+        };
+        for command in commands {
+            if !self.menu_state(context).enabled(command) {
+                continue;
+            }
+            match command {
+                MenuCommand::New => self.action(Action::New, context),
+                MenuCommand::Open => self.action(Action::Open, context),
+                MenuCommand::Import => self.action(Action::Import, context),
+                MenuCommand::Close => {
+                    self.submit(ProjectRequest::Close);
+                }
+                MenuCommand::Render => self.action(Action::Render, context),
+                MenuCommand::Renders => self.render.history.requested = true,
+                MenuCommand::Undo => self.history(false),
+                MenuCommand::Redo => self.history(true),
+                MenuCommand::ViewOriginal => self.show_original(context),
+                MenuCommand::ViewEdit => self.show_edit(context),
+                MenuCommand::Keys => self.action(Action::Help, context),
+                MenuCommand::Quit => context.send_viewport_cmd(egui::ViewportCommand::Close),
+            }
+        }
+        let state = self.menu_state(context);
+        if let Some(menu) = &mut self.menu {
+            menu.update(state);
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    fn menu_state(&self, context: &egui::Context) -> crate::menu::MenuState {
+        let profile = self
+            .workspace
+            .as_ref()
+            .and_then(|workspace| workspace.single_source.as_ref());
+        crate::menu::MenuState {
+            ready: !self.service.is_busy()
+                && !self.dialogs.is_open()
+                && self.gain.is_none()
+                && self.camera.is_none()
+                && self.splice.is_none()
+                && self.slip.is_none()
+                && self.trim.is_none()
+                && !self.render.blocking()
+                && !self.marks.open
+                && !self.help_open
+                && !self.macros.recording()
+                && !self.macros.is_pending()
+                && self.bindings.pending().is_empty()
+                && !text_input_active(context, self.command_open),
+            project: self.workspace.is_some(),
+            importing: self.importing(),
+            can_undo: self
+                .workspace
+                .as_ref()
+                .is_some_and(|workspace| workspace.can_undo),
+            can_redo: self
+                .workspace
+                .as_ref()
+                .is_some_and(|workspace| workspace.can_redo),
+            single_original_ready: matches!(profile, Some(SingleSourceState::Ready { .. })),
+            awaiting_original: matches!(profile, Some(SingleSourceState::AwaitingSource { .. })),
+            help_allowed: self.gain.is_none() && !self.render.blocking(),
+        }
+    }
+
+    /// Browse the unchanged Original, as `:source` and the View menu do.
+    fn show_original(&mut self, context: &egui::Context) {
+        self.scoped = None;
+        self.stop_playback();
+        let leaving_event = self.pane == Pane::Sounds || self.event_focused();
+        self.selected_sound = None;
+        self.selected_event = None;
+        self.sound_inspection = None;
+        if leaving_event {
+            self.pane = Pane::Sources;
+            context.memory_mut(|m| m.request_focus(pane_id(self.pane)));
+        }
+        if self.view != View::Source {
+            self.view.set(View::Source, &mut self.message);
+            self.request_picture(true);
+        }
+    }
+
+    /// Return to Your edit, as `:sequence` and the View menu do.
+    fn show_edit(&mut self, context: &egui::Context) {
+        self.stop_playback();
+        let leaving_event = self.pane == Pane::Sounds || self.event_focused();
+        self.selected_sound = None;
+        self.selected_event = None;
+        self.sound_inspection = None;
+        if leaving_event {
+            self.pane = Pane::Sequence;
+            context.memory_mut(|m| m.request_focus(pane_id(self.pane)));
+        }
+        if self.workspace.is_none() {
+            self.error = Some("Create or open a project to inspect its sequence.".into());
+        } else if self.view != View::Sequence {
+            self.view.set(View::Sequence, &mut self.message);
+            self.reconcile_beat_selection();
+            self.request_picture(true);
+        }
+    }
+
     fn header(&mut self, ui: &mut egui::Ui, enabled: bool) {
         egui::Panel::top("workspace-header")
             .resizable(false)
@@ -2615,7 +2710,14 @@ impl DeadpanApp {
                         let ready = !self.service.is_busy()
                             && !self.dialogs.is_open()
                             && self.gain.is_none();
-                        ui.add_enabled_ui(ready, |ui| {
+                        #[cfg(target_os = "macos")]
+                        let native_menu = self.menu.is_some();
+                        #[cfg(not(target_os = "macos"))]
+                        let native_menu = false;
+                        ui.add_enabled_ui(ready && !native_menu, |ui| {
+                            if native_menu {
+                                return;
+                            }
                             ui.menu_button("File", |ui| {
                                 for (label, action) in [
                                     ("New project…  ⌘N", Action::New),
@@ -3094,6 +3196,10 @@ impl DeadpanApp {
                         if ui.add(style::row_action(ui, "Browse", ":source")).clicked()
                             && let Some(asset) = self.workspace.as_ref().and_then(|workspace| original_asset(workspace)).cloned() { self.select_source(asset); }
                         if ui.add_enabled(!self.service.is_busy(), style::row_action(ui, "Reuse all", self.editor_key(EditorKey::Insert))).on_hover_text(format!("Append the entire Original after the selected beat in the current group. Select a range in Original with {}, move with {}, then copy with {}.", self.editor_key(EditorKey::Visual), self.editor_pair(EditorKey::FramePrevious, EditorKey::FrameNext, "/"), self.bindings.key_label(EditorKey::Copy))).clicked() { self.insert(); }
+                    } else if self.workspace.is_none() {
+                        ui.weak("One video. Start intact, then make it strange.");
+                        ui.add_space(8.0);
+                        ui.small("Projects live in Documents/Deadpan.");
                     } else {
                         let search_hint = format!("Find source  {}", self.editor_key(EditorKey::Search));
                         let search = ui.add(egui::TextEdit::singleline(&mut self.source_search).id(egui::Id::new(SEARCH_ID)).hint_text(search_hint).desired_width(f32::INFINITY));
@@ -3112,13 +3218,7 @@ impl DeadpanApp {
                                 }
                             }
                         });
-                        if self.workspace.is_none() {
-                            ui.weak("One video. Start intact, then make it strange.");
-                            ui.add_space(8.0);
-                            ui.small("Projects live in Documents/Deadpan.");
-                        } else {
-                            ui.weak("Legacy project. Existing sources remain available.");
-                        }
+                        ui.weak("Legacy project. Existing sources remain available.");
                     }
                     if matches!(profile, Some(SingleSourceState::Ready { .. })) {
                         ui.add_space(12.0);
@@ -4094,6 +4194,10 @@ impl eframe::App for DeadpanApp {
         #[cfg(feature = "ui-harness")]
         if first_pass {
             self.feedback.record("input_dispatch");
+        }
+        #[cfg(target_os = "macos")]
+        if first_pass && !self.close_pending {
+            self.menu_commands(&context);
         }
         let text_result = if self.close_pending {
             None

@@ -54,13 +54,14 @@ impl<T> Default for Cache<T> {
 }
 
 impl<T> Cache<T> {
-    /// The retained value for a card and whether it matches the wanted key.
-    fn get(&mut self, key: &Key) -> Option<(&T, bool)> {
+    /// The retained value for a card, whether it matches the wanted key, and
+    /// the session that produced it.
+    fn get(&mut self, key: &Key) -> Option<(&T, bool, u64)> {
         self.clock += 1;
         let clock = self.clock;
         self.entries.get_mut(&key.slot).map(|entry| {
             entry.used = clock;
-            (&entry.value, entry.key == *key)
+            (&entry.value, entry.key == *key, entry.key.session)
         })
     }
 
@@ -135,6 +136,9 @@ pub(super) struct Thumbnails {
     pending: Option<(u64, Key)>,
     received: Option<(Key, Result<crate::worker::Picture, String>)>,
     wanted: Vec<Key>,
+    /// Displaced textures may still be referenced by the frame being painted;
+    /// they are freed when the next frame begins.
+    retired: Vec<Thumb>,
 }
 
 impl Thumbnails {
@@ -148,11 +152,15 @@ impl Thumbnails {
             pending: None,
             received: None,
             wanted: Vec::new(),
+            retired: Vec::new(),
         })
     }
 
     /// Start a layout pass. A different project session drops every texture.
     pub fn begin(&mut self, session: Option<u64>) {
+        for thumb in std::mem::take(&mut self.retired) {
+            self.release(thumb);
+        }
         if session != self.session {
             self.session = session;
             self.release_all();
@@ -162,7 +170,12 @@ impl Thumbnails {
 
     /// Record a visible card and return what it should paint now.
     pub fn show(&mut self, key: Key) -> Option<Painted> {
-        let painted = self.cache.get(&key).and_then(|(thumb, _)| {
+        let session = key.session;
+        let painted = self.cache.get(&key).and_then(|(thumb, _, cached)| {
+            // A previous project's picture never stands in for this one.
+            if cached != session {
+                return None;
+            }
             Some(match &thumb.picture {
                 Some(target) => Painted::Texture {
                     texture: target.texture,
@@ -210,12 +223,22 @@ impl Thumbnails {
                 Ok(true) => {
                     let (key, picture) = self.received.take().expect("received thumbnail");
                     let thumb = self.render(context, renderer, picture);
-                    for old in self.cache.insert(key, thumb) {
-                        self.release(old);
-                    }
+                    self.retired.extend(self.cache.insert(key, thumb));
+                    // The cards already painted this frame's previous state.
+                    context.request_repaint();
                 }
                 Ok(false) => context.request_repaint_after(Duration::from_millis(16)),
-                Err(_) => {}
+                Err(_) => {
+                    // Record a failure for this key instead of stalling.
+                    let (key, _) = self.received.take().expect("received thumbnail");
+                    self.retired.extend(self.cache.insert(
+                        key,
+                        Thumb {
+                            picture: None,
+                            aspect: 0.0,
+                        },
+                    ));
+                }
             }
         } else if self.received.is_some() {
             context.request_repaint_after(Duration::from_millis(16));
@@ -324,9 +347,8 @@ impl Thumbnails {
         self.worker.cancel();
         self.pending = None;
         self.received = None;
-        for thumb in self.cache.clear() {
-            self.release(thumb);
-        }
+        let cleared = self.cache.clear();
+        self.retired.extend(cleared);
     }
 
     /// Rendered textures whose key matches the workspace's current revision.
@@ -352,6 +374,9 @@ impl Thumbnails {
 
     pub fn shutdown(&mut self) {
         self.release_all();
+        for thumb in std::mem::take(&mut self.retired) {
+            self.release(thumb);
+        }
         self.worker.shutdown();
     }
 }
@@ -408,9 +433,9 @@ mod tests {
         // A new revision wants fresh pictures, but the old ones still paint.
         let edited = key(beat("a"), "r2", 0);
         assert_eq!(cache.missing(std::slice::from_ref(&edited)), Some(&edited));
-        assert_eq!(cache.get(&edited), Some((&1, false)));
+        assert_eq!(cache.get(&edited), Some((&1, false, 1)));
         assert_eq!(cache.insert(edited.clone(), 3), vec![1]);
-        assert_eq!(cache.get(&edited), Some((&3, true)));
+        assert_eq!(cache.get(&edited), Some((&3, true, 1)));
     }
 
     #[test]

@@ -354,7 +354,8 @@ impl DeadpanApp {
     }
 
     pub(super) fn placed_sounds(&mut self, ui: &mut egui::Ui, compact_sounds_heading: bool) {
-        if self.gain.is_some() || compact_sounds_heading {
+        // Without a project there is nothing to place or list.
+        if self.gain.is_some() || compact_sounds_heading || self.workspace.is_none() {
             // Preserve the panel's place in the ID tree while its inactive
             // list gives the picture room. In the compact normal workspace,
             // Sounds retains a visible summary and focus target beside Beats.

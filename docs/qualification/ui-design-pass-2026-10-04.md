@@ -83,6 +83,30 @@ input-to-picture p95 is 1.71 ms, cached Repeat 6.13 ms and Hold fallback
 10,000-beat navigation CPU p95 is 0.46 ms. These are small-fixture offscreen
 measurements, not full-size or physical-display latency.
 
+## Native menu bar
+
+[`menu.rs`](../../crates/deadpan-app/src/menu.rs) installs a muda menu bar
+for native launches. Unit tests cover the identifier-to-command mapping,
+enablement while busy, without a project and while importing, and the
+context-dependent import title. A live native run on the host read the bar
+through System Events: `Apple, deadpan-app, File, Edit, View, Window, Help`;
+with no project, New and Open were enabled and Import, Render, Saved Renders
+and Close were disabled. Choosing Help → Keyboard Reference opened the Keys
+window. The first attempt did not: a muda event handler replaces its global
+channel, so the handler now forwards items through the window's own channel.
+The bare executable names its application menu `deadpan-app`; a bundle uses
+Deadpan. Quit Deadpan (⌘Q) asks the window to close, so unfinished project work
+completes through the ordinary close path; a live run exited cleanly through it.
+
+A second independent review covered thumbnails and the menu. Fixed: displaced
+thumbnail textures are now freed when the next frame begins rather than before
+the frame that painted them; a repaint follows each rendered thumbnail; another
+session's thumbnail never paints; a renderer error records a failure instead of
+stalling; queued menu commands each recheck enablement first; open Help, Macro
+recording or a pending key prefix make the menu not ready; Keys is disabled
+during Gain drafts and blocking renders; and Quit uses the graceful close path
+instead of `terminate:`.
+
 ## Remaining
  Transport buttons keep their
 pre-measured text geometry and older `Label  ·  Key` format. Physical VoiceOver,

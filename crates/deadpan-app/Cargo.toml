@@ -39,6 +39,8 @@ tempfile = { workspace = true, optional = true }
 # Validate system font faces with the same parser already used by epaint.
 skrifa = { version = "=0.44.0", default-features = false, features = ["std"] }
 rfd = { version = "=0.17.2", default-features = false }
+# Native menu bar; macOS backend only.
+muda = { version = "=0.21.0", default-features = false }
 objc2 = { version = "=0.6.4", default-features = false, features = ["std"] }
 objc2-foundation = { version = "=0.3.2", default-features = false, features = ["std", "NSBundle", "NSFileManager", "NSArray", "NSURL", "NSString", "NSPathUtilities"] }
 

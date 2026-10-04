@@ -67,6 +67,14 @@ image. A selected beat has an outline, name and textual scope, not just a color.
 Pane focus has its own visible label or heading treatment. A selected Original and
 selected beat may coexist; their selection outlines alone cannot tell the user
 which pane receives `j/k`.
+Native launches install a macOS menu bar (File, Edit, View, Window, Help).
+Its items dispatch the same actions as keys and buttons, so the Help menu can
+search them and VoiceOver can reach them. Only commands that never belong to a
+text field carry menu key equivalents (⌘N, ⌘O, ⌘I, ⌘E), and those items are
+disabled while text entry or a modal draft owns the keyboard; Undo and Redo keep
+window routing so fields retain ⌘Z. With the menu bar present the in-window
+File button is omitted; replay keeps it.
+
 Pane and section titles are small uppercase semibold labels in secondary text;
 the focused pane's title turns lavender and adds a `FOCUS` pill, so focus never
 depends on color alone. Command buttons show their label and key as one text

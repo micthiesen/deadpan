@@ -18,6 +18,7 @@ requires an explicit pinned FFmpeg developer prefix; see [Development](DEVELOPME
 | rfd | 0.17.2 | MIT | macOS-only asynchronous native file/save/folder panels. Default features disabled; no shell or external dialog executable. |
 | objc2-foundation | 0.3.2 | MIT | Existing locked native dependency, now direct with narrowly selected features for safe system Documents-directory discovery through NSFileManager. No new runtime or unsafe application code. |
 | objc2 | 0.6.4 | MIT | Existing locked dependency, now direct for a safe autorelease pool around Documents discovery on the service thread. Only an owned Rust path leaves the pool. |
+| muda | 0.21.0 | Apache-2.0 OR MIT | macOS-only native menu bar (default GTK features disabled). Reuses the locked objc2 0.6.4 / objc2-app-kit 0.3.2 stack; adds crossbeam-channel 0.5.17 and keyboard-types 0.8.3. Its Objective-C code stays inside the crate; the app keeps `unsafe_code = "forbid"`. |
 | wgpu | 30.0.1 | MIT OR Apache-2.0 | Already locked through eframe; direct Metal/WGSL dependency for the shared picture baseline. |
 | pollster | 1.0.1 | Apache-2.0 OR MIT | Already locked; development-only offscreen GPU qualification. |
 | serde | 1.0.229 | MIT OR Apache-2.0 | Validated domain, transaction, and protocol serialization. |
