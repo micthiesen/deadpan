@@ -81,6 +81,58 @@ impl Inventory {
                 }
             }
         }
+        if !slice.audio_bindings.sound_clocks.is_empty() {
+            let context = CapturedEditSlice::context_for(slice)?;
+            result.charge(context.nodes().len())?;
+            let live = FrozenAudioLayout::capture(&context)?;
+            let mut proofs = BTreeMap::new();
+            for (owner, journals) in &slice.audio_bindings.sound_clocks {
+                for journal in journals.values() {
+                    for reference in journal.clocks() {
+                        let key = (
+                            reference.timing().clone(),
+                            reference.scope().clone(),
+                            journal.scope().clone(),
+                        );
+                        if !proofs.contains_key(&key) {
+                            let historical = &slice.audio_bindings.timings[reference.timing()];
+                            let remaining = MAX_AUDIO_BINDING_ENTRIES
+                                .checked_sub(result.work)
+                                .filter(|remaining| *remaining > 0)
+                                .ok_or_else(|| limit("slice sound clock identity work limit"))?;
+                            let proof = historical.sound_clock_correspondence(
+                                &live,
+                                reference.scope(),
+                                journal.scope(),
+                                remaining.min(MAX_DOCUMENT_NODES),
+                            )?;
+                            result.charge(proof.work())?;
+                            // Only proven corresponding Repeat definitions share a
+                            // fresh play family. Equal old strings alone prove none.
+                            for (current, old) in proof.node_pairs() {
+                                if matches!(
+                                    live.nodes()[current].kind,
+                                    FrozenAudioKind::Repeat { .. }
+                                ) {
+                                    let current = result.key(&RepeatKey::Live(current.clone()))?;
+                                    let old = result.key(&RepeatKey::Historical(
+                                        reference.timing().clone(),
+                                        old.clone(),
+                                    ))?;
+                                    result.join(current, old);
+                                }
+                            }
+                            proofs.insert(key.clone(), proof);
+                        }
+                        if proofs[&key].historical_node(owner) != Some(reference.owner()) {
+                            return Err(invalid(
+                                "slice sound owner has a different historical alias",
+                            ));
+                        }
+                    }
+                }
+            }
+        }
         for mark in slice.marks.values() {
             result.charge(mark.binding_count())?;
             for binding in mark.bindings() {
@@ -599,6 +651,7 @@ impl Imported {
         bindings.timings.extend(self.bindings.timings);
         bindings.bindings.extend(self.bindings.bindings);
         bindings.gap_bindings.extend(self.bindings.gap_bindings);
+        bindings.sound_clocks.extend(self.bindings.sound_clocks);
         // Validate aggregate historical work and serialized bounds before graph changes.
         bindings.to_json()?;
         document.audio_bindings = bindings;
@@ -780,6 +833,34 @@ pub(super) fn prepare(
             Ok((new_owner, events.clone()))
         })
         .collect::<Result<_, EditError>>()?;
+    let sound_clocks = slice
+        .audio_bindings
+        .sound_clocks
+        .iter()
+        .map(|(owner, events)| {
+            let events = events
+                .iter()
+                .map(|(sound, journal)| {
+                    let clocks = journal
+                        .clocks()
+                        .iter()
+                        .map(|reference| {
+                            Ok(SoundClockReference::new(
+                                rename.timings[reference.timing()].clone(),
+                                rename.historical(reference.timing(), reference.scope())?,
+                                rename.historical(reference.timing(), reference.owner())?,
+                            ))
+                        })
+                        .collect::<Result<_, EditError>>()?;
+                    Ok((
+                        sound.clone(),
+                        SoundClockJournal::new(rename.live(journal.scope())?, clocks)?,
+                    ))
+                })
+                .collect::<Result<_, EditError>>()?;
+            Ok((rename.live(owner)?, events))
+        })
+        .collect::<Result<_, EditError>>()?;
     Ok(Imported {
         nodes,
         assets: slice.assets.clone(),
@@ -791,7 +872,7 @@ pub(super) fn prepare(
             timings,
             bindings: rename.bindings(&slice.audio_bindings.bindings)?,
             gap_bindings: rename.bindings(&slice.audio_bindings.gap_bindings)?,
-            sound_clocks: BTreeMap::new(),
+            sound_clocks,
         },
         beat_sounds,
     })

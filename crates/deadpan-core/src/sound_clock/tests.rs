@@ -109,10 +109,23 @@ fn record(doc: &ProjectDocument, ordinal: u32) -> AudioTimingRecord {
         layout: FrozenAudioLayout::capture(doc).unwrap(),
     }
 }
+fn reference(timing: AudioTimingId) -> SoundClockReference {
+    SoundClockReference::new(timing, node("top"), node("owner"))
+}
+fn clock_ids(journal: &SoundClockJournal) -> Vec<AudioTimingId> {
+    journal
+        .clocks()
+        .iter()
+        .map(|reference| reference.timing().clone())
+        .collect()
+}
 fn clocks(ids: Vec<AudioTimingId>) -> SoundClocks {
     BTreeMap::from([(
         node("owner"),
-        BTreeMap::from([(sound("effect"), SoundClockJournal::new(ids).unwrap())]),
+        BTreeMap::from([(
+            sound("effect"),
+            SoundClockJournal::new(node("top"), ids.into_iter().map(reference).collect()).unwrap(),
+        )]),
     )])
 }
 fn state(records: Vec<AudioTimingRecord>, journals: SoundClocks) -> AudioBindingState {
@@ -132,8 +145,8 @@ fn sound_only_clocks_roundtrip_and_retain_distinct_equal_layouts() {
     after.validate().unwrap();
     assert!(after.audio_bindings.bindings().is_empty());
     assert_eq!(
-        after.audio_bindings.sound_clocks()[&node("owner")][&sound("effect")].clocks(),
-        &[clock(0), clock(1)]
+        clock_ids(&after.audio_bindings.sound_clocks()[&node("owner")][&sound("effect")]),
+        vec![clock(0), clock(1)]
     );
     let decoded = ProjectDocument::from_json(&after.to_json().unwrap()).unwrap();
     assert_eq!(decoded, after);
@@ -163,7 +176,7 @@ fn pruning_tracks_exact_event_addresses_and_shared_physical_clocks() {
     let mut journals = clocks(vec![clock(0)]);
     journals.get_mut(&node("owner")).unwrap().insert(
         sound("second"),
-        SoundClockJournal::new(vec![clock(0)]).unwrap(),
+        SoundClockJournal::new(node("top"), vec![reference(clock(0))]).unwrap(),
     );
     doc.audio_bindings = state(vec![record(&doc, 0)], journals);
     doc.beat_sounds
@@ -234,7 +247,18 @@ fn missing_addresses_roots_and_timing_references_refuse() {
     let mut journals = BTreeMap::new();
     journals.insert(
         node("root"),
-        clocks(vec![clock(0)]).remove(&node("owner")).unwrap(),
+        BTreeMap::from([(
+            sound("effect"),
+            SoundClockJournal::new(
+                node("root"),
+                vec![SoundClockReference::new(
+                    clock(0),
+                    node("root"),
+                    node("root"),
+                )],
+            )
+            .unwrap(),
+        )]),
     );
     let bindings = state(vec![record(&root, 0)], journals);
     assert!(
@@ -248,30 +272,37 @@ fn missing_addresses_roots_and_timing_references_refuse() {
 
 #[test]
 fn journal_and_relation_wire_are_strict_and_bounded() {
-    assert!(SoundClockJournal::new(vec![]).is_err());
-    assert!(SoundClockJournal::new(vec![clock(0), clock(0)]).is_err());
-    let journal = SoundClockJournal::new(vec![clock(0)]).unwrap();
-    assert!(journal.with_appended(clock(0)).is_err());
+    assert!(SoundClockJournal::new(node("top"), vec![]).is_err());
+    assert!(
+        SoundClockJournal::new(node("top"), vec![reference(clock(0)), reference(clock(0))])
+            .is_err()
+    );
+    let journal = SoundClockJournal::new(node("top"), vec![reference(clock(0))]).unwrap();
+    assert!(journal.with_appended(reference(clock(0))).is_err());
     assert_eq!(
-        journal.with_appended(clock(1)).unwrap().clocks(),
-        &[clock(0), clock(1)]
+        clock_ids(&journal.with_appended(reference(clock(1))).unwrap()),
+        vec![clock(0), clock(1)]
     );
     let excessive: Vec<_> = (0..=u32::try_from(MAX_SOUND_CLOCKS).unwrap())
         .map(clock)
+        .map(reference)
         .collect();
-    assert!(SoundClockJournal::new(excessive.clone()).is_err());
+    assert!(SoundClockJournal::new(node("top"), excessive.clone()).is_err());
     assert!(
-        serde_json::from_value::<SoundClockJournal>(serde_json::to_value(excessive).unwrap())
-            .is_err()
+        serde_json::from_value::<SoundClockJournal>(serde_json::json!({
+            "scope": "top",
+            "clocks": excessive
+        }))
+        .is_err()
     );
-    let clock_json = serde_json::to_string(&clock(0)).unwrap();
+    let clock_json = serde_json::to_string(&reference(clock(0))).unwrap();
     for json in [
         r#"{"owner":{}}"#.to_owned(),
         r#"{"owner":{"effect":[]}}"#.to_owned(),
-        format!(r#"{{"owner":{{"effect":[{clock_json},{clock_json}]}}}}"#),
-        format!(r#"{{"owner":{{"effect":[{clock_json}],"effect":[{clock_json}]}}}}"#),
-        format!(r#"{{"owner":{{"effect":[{clock_json}]}},"owner":{{"effect":[{clock_json}]}}}}"#),
-        r#"{"owner":{"effect":[{"allocation":"clock","ordinal":0,"extra":true}]}}"#.to_owned(),
+        format!(r#"{{"owner":{{"effect":{{"scope":"top","clocks":[{clock_json},{clock_json}]}}}}}}"#),
+        format!(r#"{{"owner":{{"effect":{{"scope":"top","clocks":[{clock_json}]}},"effect":{{"scope":"top","clocks":[{clock_json}]}}}}}}"#),
+        format!(r#"{{"owner":{{"effect":{{"scope":"top","clocks":[{clock_json}]}}}},"owner":{{"effect":{{"scope":"top","clocks":[{clock_json}]}}}}}}"#),
+        r#"{"owner":{"effect":{"scope":"top","clocks":[{"timing":{"allocation":"clock","ordinal":0},"scope":"top","owner":"owner","extra":true}]}}}"#.to_owned(),
         "null".to_owned(),
     ] {
         assert!(super::from_json(&json).is_err(), "accepted {json}");

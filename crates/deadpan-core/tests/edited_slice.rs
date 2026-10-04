@@ -14,6 +14,9 @@ mod children;
 #[path = "edited_slice/replacement_children.rs"]
 mod replacement_children;
 
+#[path = "edited_slice/sound_clocks.rs"]
+mod sound_clocks;
+
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }

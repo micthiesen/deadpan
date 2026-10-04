@@ -5,6 +5,7 @@ mod preflight;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::Write;
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
@@ -211,6 +212,102 @@ pub struct FrozenAudioProjection {
     pub gap_after: Option<IterationId>,
     /// Charged nodes and compact identity segments, not rendered play count.
     pub work: usize,
+}
+
+/// A bounded, typed correspondence between two complete processing subtrees.
+/// Node identities may differ, but clocks, Repeat identities, and processing
+/// controls must agree. The proof owns only bounded scoped indexes, not either
+/// full layout.
+#[derive(Debug, Clone)]
+pub struct SoundClockCorrespondence {
+    inner: Arc<SoundClockCorrespondenceInner>,
+}
+
+#[derive(Debug)]
+struct SoundClockCorrespondenceInner {
+    live_to_historical: BTreeMap<NodeId, NodeId>,
+    historical_path: ScopedPathIndex,
+    live_path: ScopedPathIndex,
+    work: usize,
+}
+
+#[derive(Debug, Clone)]
+struct ScopedPathIndex {
+    scope: NodeId,
+    parents: BTreeMap<NodeId, NodeId>,
+    repeats: BTreeMap<NodeId, ScopedRepeat>,
+}
+
+#[derive(Debug, Clone)]
+struct ScopedRepeat {
+    iterations: IterationOrder,
+    child: NodeId,
+    overrides: PlayOverrides,
+    gap_overrides: PlayOverrides,
+}
+
+impl SoundClockCorrespondence {
+    /// Work charged while proving the two complete scoped subtrees.
+    pub fn work(&self) -> usize {
+        self.inner.work
+    }
+
+    /// Historical node corresponding to a live node in the paired scope.
+    pub fn historical_node(&self, live: &NodeId) -> Option<&NodeId> {
+        self.inner.live_to_historical.get(live)
+    }
+
+    /// All proven pairs, ordered by the live NodeId.
+    pub fn node_pairs(&self) -> impl Iterator<Item = (&NodeId, &NodeId)> {
+        self.inner.live_to_historical.iter()
+    }
+
+    /// Validate and translate a live occurrence path into its historical alias.
+    /// Repeat identities are stable across the paired processing scopes.
+    pub fn remap_instance(&self, live: &InstancePath) -> Result<InstancePath, DocumentError> {
+        self.remap_instance_with_work(live, MAX_DOCUMENT_NODES)
+            .map(|(historical, _)| historical)
+    }
+
+    /// Remap an instance and return the bounded path-validation work charged.
+    pub fn remap_instance_with_work(
+        &self,
+        live: &InstancePath,
+        maximum_work: usize,
+    ) -> Result<(InstancePath, usize), DocumentError> {
+        if maximum_work == 0 || maximum_work > MAX_DOCUMENT_NODES {
+            return Err(limit("invalid sound clock path budget"));
+        }
+        let live_work = validate_scoped_instance(&self.inner.live_path, live, maximum_work)?;
+        let historical = InstancePath {
+            node: self
+                .historical_node(&live.node)
+                .cloned()
+                .ok_or_else(|| invalid("sound clock occurrence is outside its live scope"))?,
+            repeats: live
+                .repeats
+                .iter()
+                .map(|step| {
+                    Ok(crate::RepeatInstance {
+                        node: self.historical_node(&step.node).cloned().ok_or_else(|| {
+                            invalid("sound clock Repeat is outside its live scope")
+                        })?,
+                        iteration: step.iteration.clone(),
+                    })
+                })
+                .collect::<Result<Vec<_>, DocumentError>>()?,
+        };
+        let remaining = maximum_work
+            .checked_sub(live_work)
+            .filter(|remaining| *remaining > 0)
+            .ok_or_else(|| limit("sound clock occurrence work exhausted"))?;
+        let historical_work =
+            validate_scoped_instance(&self.inner.historical_path, &historical, remaining)?;
+        let work = live_work
+            .checked_add(historical_work)
+            .ok_or_else(|| limit("sound clock occurrence work overflow"))?;
+        Ok((historical, work))
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -432,60 +529,142 @@ impl FrozenAudioLayout {
         self.nodes[&self.root].duration
     }
 
-    /// Prove that an independent voice retains its complete top-level processing
-    /// subtree. Root offsets may change; stable owner and play identities may not.
-    /// This does not infer processed audible support from geometric ownership.
+    /// Prove that two complete processing subtrees correspond, allowing fresh
+    /// node IDs while preserving exact clocks, Repeat identities, and controls.
+    /// The scopes themselves cannot be project roots; only ordinary Sequence
+    /// nodes may surround either scope.
+    pub fn sound_clock_correspondence(
+        &self,
+        current: &Self,
+        historical_scope: &NodeId,
+        live_scope: &NodeId,
+        maximum_work: usize,
+    ) -> Result<SoundClockCorrespondence, DocumentError> {
+        if maximum_work == 0 || maximum_work > MAX_DOCUMENT_NODES {
+            return Err(limit("invalid sound clock comparison budget"));
+        }
+        if historical_scope == &self.root || live_scope == &current.root {
+            return Err(invalid("root-owned sound clocks are not supported"));
+        }
+        if self.rate != current.rate {
+            return Err(invalid("sound clock project rate changed"));
+        }
+        if !self.nodes.contains_key(historical_scope) || !current.nodes.contains_key(live_scope) {
+            return Err(invalid("sound clock scope is missing"));
+        }
+
+        let mut work = 0usize;
+        validate_sequence_scope(self, historical_scope, maximum_work, &mut work)?;
+        validate_sequence_scope(current, live_scope, maximum_work, &mut work)?;
+
+        let mut live_to_historical = BTreeMap::new();
+        let mut historical_seen = BTreeSet::new();
+        let mut live_parents = BTreeMap::new();
+        let mut historical_parents = BTreeMap::new();
+        let mut live_repeats = BTreeMap::new();
+        let mut historical_repeats = BTreeMap::new();
+        let mut pending = vec![(historical_scope.clone(), live_scope.clone())];
+        while let Some((historical_id, live_id)) = pending.pop() {
+            spend(&mut work, 1, maximum_work)?;
+            if live_to_historical
+                .insert(live_id.clone(), historical_id.clone())
+                .is_some()
+                || !historical_seen.insert(historical_id.clone())
+            {
+                return Err(invalid(
+                    "sound clock subtree correspondence is not one-to-one",
+                ));
+            }
+            let historical_node = self
+                .nodes
+                .get(&historical_id)
+                .ok_or_else(|| invalid("historical sound clock node is missing"))?;
+            let live_node = current
+                .nodes
+                .get(&live_id)
+                .ok_or_else(|| invalid("live sound clock node is missing"))?;
+            let pair_work = sound_clock_pair_work(self, current, &historical_id, &live_id)?;
+            // Charge both frozen sides before scanning Repeat runs/override keys
+            // or allocating paired-child and compact path indexes.
+            spend(&mut work, pair_work, maximum_work)?;
+            if historical_node.duration != live_node.duration
+                || !same_sound_clock_kind(&historical_node.kind, &live_node.kind)
+            {
+                return Err(invalid("sound clock processing subtree changed"));
+            }
+
+            let children = paired_sound_clock_children(self, current, &historical_id, &live_id)?;
+            if let FrozenAudioKind::Repeat { iterations, .. } = &live_node.kind {
+                let historical_repeat = scoped_repeat(self, &historical_id)?;
+                let live_repeat = scoped_repeat(current, &live_id)?;
+                // The full sparse branch shape is already proven by the paired
+                // child list; these compact descriptors validate later paths.
+                debug_assert_eq!(&live_repeat.iterations, iterations);
+                debug_assert_eq!(&historical_repeat.iterations, iterations);
+                live_repeats.insert(live_id.clone(), live_repeat);
+                historical_repeats.insert(historical_id.clone(), historical_repeat);
+            }
+            for (historical_child, live_child) in children {
+                if historical_parents
+                    .insert(historical_child.clone(), historical_id.clone())
+                    .is_some()
+                    || live_parents
+                        .insert(live_child.clone(), live_id.clone())
+                        .is_some()
+                {
+                    return Err(invalid("sound clock subtree contains a shared child"));
+                }
+                pending.push((historical_child, live_child));
+            }
+        }
+
+        Ok(SoundClockCorrespondence {
+            inner: Arc::new(SoundClockCorrespondenceInner {
+                live_to_historical,
+                historical_path: ScopedPathIndex {
+                    scope: historical_scope.clone(),
+                    parents: historical_parents,
+                    repeats: historical_repeats,
+                },
+                live_path: ScopedPathIndex {
+                    scope: live_scope.clone(),
+                    parents: live_parents,
+                    repeats: live_repeats,
+                },
+                work,
+            }),
+        })
+    }
+
+    /// Compatibility helper for callers which have not yet named a narrower
+    /// scope. New code should retain the returned paired-scope proof.
     pub fn validate_sound_clock_owner(
         &self,
         current: &Self,
         owner: &NodeId,
         maximum_work: usize,
     ) -> Result<usize, DocumentError> {
-        if maximum_work == 0 || maximum_work > MAX_DOCUMENT_NODES {
-            return Err(limit("invalid sound clock comparison budget"));
-        }
-        if owner == &self.root || owner == &current.root {
-            return Err(invalid("root-owned sound clocks are not supported"));
-        }
-        if self.root != current.root || self.rate != current.rate {
-            return Err(invalid("sound clock project root or rate changed"));
-        }
-        let (top, mut work) = self.branch_below(&self.root, owner, maximum_work)?;
+        let (historical_scope, old_work) = self.branch_below(&self.root, owner, maximum_work)?;
         let remaining = maximum_work
-            .checked_sub(work)
-            .filter(|n| *n > 0)
+            .checked_sub(old_work)
+            .filter(|remaining| *remaining > 0)
             .ok_or_else(|| limit("sound clock comparison work exhausted"))?;
-        let (live_top, used) = current.branch_below(&current.root, owner, remaining)?;
-        spend(&mut work, used, maximum_work)?;
-        if top != live_top {
-            return Err(invalid("sound clock owner changed its top-level subtree"));
+        let (live_scope, live_work) = current.branch_below(&current.root, owner, remaining)?;
+        let prefix_work = old_work
+            .checked_add(live_work)
+            .ok_or_else(|| limit("sound clock comparison work overflow"))?;
+        let remaining = maximum_work
+            .checked_sub(prefix_work)
+            .filter(|remaining| *remaining > 0)
+            .ok_or_else(|| limit("sound clock comparison work exhausted"))?;
+        let proof =
+            self.sound_clock_correspondence(current, &historical_scope, &live_scope, remaining)?;
+        if proof.historical_node(owner) != Some(owner) {
+            return Err(invalid("sound clock owner changed its historical identity"));
         }
-        let mut pending = vec![top];
-        while let Some(id) = pending.pop() {
-            spend(&mut work, 1, maximum_work)?;
-            let before = &self.nodes[&id];
-            let after = current
-                .nodes
-                .get(&id)
-                .ok_or_else(|| invalid("sound clock subtree owner is missing"))?;
-            let child_count = self.children(&id).count();
-            spend(&mut work, child_count, maximum_work)?;
-            if let FrozenAudioKind::Repeat { iterations, .. } = &before.kind {
-                spend(&mut work, iterations.segment_count(), maximum_work)?;
-            }
-            if let FrozenAudioKind::Repeat { iterations, .. } = &after.kind {
-                spend(&mut work, iterations.segment_count(), maximum_work)?;
-            }
-            if before.duration != after.duration
-                || !same_sound_clock_kind(&before.kind, &after.kind)
-                || self.overrides.get(&id) != current.overrides.get(&id)
-                || self.gap_overrides.get(&id) != current.gap_overrides.get(&id)
-            {
-                return Err(invalid("sound clock processing subtree changed"));
-            }
-            pending.extend(self.children(&id).cloned());
-        }
-        Ok(work)
+        prefix_work
+            .checked_add(proof.work())
+            .ok_or_else(|| limit("sound clock comparison work overflow"))
     }
 
     pub(crate) fn children<'a>(
@@ -959,41 +1138,250 @@ impl FrozenAudioLayout {
     }
 }
 
+fn validate_sequence_scope(
+    layout: &FrozenAudioLayout,
+    scope: &NodeId,
+    maximum_work: usize,
+    work: &mut usize,
+) -> Result<(), DocumentError> {
+    let mut node = scope;
+    while node != &layout.root {
+        let (parent, _) = layout
+            .index
+            .parents
+            .get(node)
+            .ok_or_else(|| invalid("sound clock scope is outside its project root"))?;
+        spend(work, 1, maximum_work)?;
+        if !matches!(layout.nodes[parent].kind, FrozenAudioKind::Sequence { .. }) {
+            return Err(invalid(
+                "sound clock scope may only be surrounded by ordinary Sequences",
+            ));
+        }
+        node = parent;
+    }
+    Ok(())
+}
+
+fn scoped_repeat(layout: &FrozenAudioLayout, id: &NodeId) -> Result<ScopedRepeat, DocumentError> {
+    let FrozenAudioKind::Repeat {
+        child, iterations, ..
+    } = &layout
+        .nodes
+        .get(id)
+        .ok_or_else(|| invalid("sound clock Repeat is missing"))?
+        .kind
+    else {
+        return Err(invalid("sound clock Repeat pair changed kind"));
+    };
+    Ok(ScopedRepeat {
+        iterations: iterations.clone(),
+        child: child.clone(),
+        overrides: layout.overrides.get(id).cloned().unwrap_or_default(),
+        gap_overrides: layout.gap_overrides.get(id).cloned().unwrap_or_default(),
+    })
+}
+
+/// Count work over both sides before the comparison scans compact Repeat
+/// identity runs, override keys, or copies any child/path indexes.
+fn sound_clock_pair_work(
+    historical: &FrozenAudioLayout,
+    current: &FrozenAudioLayout,
+    historical_id: &NodeId,
+    live_id: &NodeId,
+) -> Result<usize, DocumentError> {
+    fn node_work(layout: &FrozenAudioLayout, id: &NodeId) -> Result<usize, DocumentError> {
+        let node = layout
+            .nodes
+            .get(id)
+            .ok_or_else(|| invalid("sound clock node is missing"))?;
+        let work = match &node.kind {
+            FrozenAudioKind::Sequence { children } => children.len(),
+            FrozenAudioKind::Repeat { iterations, .. } => 1usize
+                .checked_add(iterations.segment_count())
+                .and_then(|count| {
+                    count.checked_add(layout.overrides.get(id).map_or(0, PlayOverrides::len))
+                })
+                .and_then(|count| {
+                    count.checked_add(layout.gap_overrides.get(id).map_or(0, PlayOverrides::len))
+                })
+                .ok_or_else(|| limit("sound clock Repeat work overflow"))?,
+            FrozenAudioKind::Retime { .. } => 1,
+            FrozenAudioKind::Source { .. } | FrozenAudioKind::Hold { .. } => 0,
+        };
+        Ok(work)
+    }
+
+    node_work(historical, historical_id)?
+        .checked_add(node_work(current, live_id)?)
+        .ok_or_else(|| limit("sound clock pair work overflow"))
+}
+
+fn paired_sound_clock_children(
+    historical: &FrozenAudioLayout,
+    current: &FrozenAudioLayout,
+    historical_id: &NodeId,
+    live_id: &NodeId,
+) -> Result<Vec<(NodeId, NodeId)>, DocumentError> {
+    let historical_node = &historical.nodes[historical_id];
+    let live_node = &current.nodes[live_id];
+    match (&historical_node.kind, &live_node.kind) {
+        (
+            FrozenAudioKind::Sequence {
+                children: historical,
+            },
+            FrozenAudioKind::Sequence { children: live },
+        ) if historical.len() == live.len() => Ok(historical
+            .iter()
+            .cloned()
+            .zip(live.iter().cloned())
+            .collect()),
+        (
+            FrozenAudioKind::Repeat {
+                child: historical_child,
+                iterations: historical_order,
+                ..
+            },
+            FrozenAudioKind::Repeat {
+                child: live_child,
+                iterations: live_order,
+                ..
+            },
+        ) if historical_order == live_order => {
+            let historical_overrides = historical.overrides.get(historical_id);
+            let live_overrides = current.overrides.get(live_id);
+            let historical_gaps = historical.gap_overrides.get(historical_id);
+            let live_gaps = current.gap_overrides.get(live_id);
+            if !same_override_keys(historical_overrides, live_overrides)
+                || !same_override_keys(historical_gaps, live_gaps)
+            {
+                return Err(invalid("sound clock Repeat override keys changed"));
+            }
+            let mut children = vec![(historical_child.clone(), live_child.clone())];
+            if let (Some(old), Some(new)) = (historical_overrides, live_overrides) {
+                children.extend(old.iter().zip(new.iter()).map(
+                    |((_, old_child), (_, new_child))| (old_child.clone(), new_child.clone()),
+                ));
+            }
+            if let (Some(old), Some(new)) = (historical_gaps, live_gaps) {
+                children.extend(old.iter().zip(new.iter()).map(
+                    |((_, old_child), (_, new_child))| (old_child.clone(), new_child.clone()),
+                ));
+            }
+            Ok(children)
+        }
+        (
+            FrozenAudioKind::Retime {
+                child: historical_child,
+                ..
+            },
+            FrozenAudioKind::Retime {
+                child: live_child, ..
+            },
+        ) => Ok(vec![(historical_child.clone(), live_child.clone())]),
+        (FrozenAudioKind::Source { .. }, FrozenAudioKind::Source { .. })
+        | (FrozenAudioKind::Hold { .. }, FrozenAudioKind::Hold { .. }) => Ok(Vec::new()),
+        _ => Err(invalid("sound clock processing subtree changed")),
+    }
+}
+
+fn same_override_keys(historical: Option<&PlayOverrides>, live: Option<&PlayOverrides>) -> bool {
+    match (historical, live) {
+        (None, None) => true,
+        (Some(historical), Some(live)) => {
+            historical.len() == live.len()
+                && historical
+                    .iter()
+                    .zip(live.iter())
+                    .all(|((historical, _), (live, _))| historical == live)
+        }
+        _ => false,
+    }
+}
+
+fn validate_scoped_instance(
+    index: &ScopedPathIndex,
+    instance: &InstancePath,
+    maximum_work: usize,
+) -> Result<usize, DocumentError> {
+    if maximum_work == 0 || maximum_work > MAX_DOCUMENT_NODES {
+        return Err(limit("invalid sound clock path budget"));
+    }
+    instance.validate_depth()?;
+    let mut node = &instance.node;
+    let mut repeat_step = instance.repeats.len();
+    let mut work = 0usize;
+    while node != &index.scope {
+        spend(&mut work, 1, maximum_work)?;
+        let parent = index
+            .parents
+            .get(node)
+            .ok_or_else(|| invalid("sound clock occurrence is outside its scope"))?;
+        if let Some(repeat) = index.repeats.get(parent) {
+            repeat_step = repeat_step
+                .checked_sub(1)
+                .ok_or_else(|| invalid("sound clock occurrence omits a Repeat ancestor"))?;
+            let selected = &instance.repeats[repeat_step];
+            if &selected.node != parent {
+                return Err(invalid("sound clock occurrence Repeat order is wrong"));
+            }
+            spend(&mut work, repeat.iterations.segment_count(), maximum_work)?;
+            if repeat.iterations.position(&selected.iteration).is_none() {
+                return Err(invalid("sound clock occurrence names a retired iteration"));
+            }
+            let child = repeat
+                .overrides
+                .get(&selected.iteration)
+                .unwrap_or(&repeat.child);
+            let gap_child = repeat.gap_overrides.get(&selected.iteration);
+            if child != node && gap_child != Some(node) {
+                return Err(invalid(
+                    "sound clock occurrence selects the wrong override branch",
+                ));
+            }
+        }
+        node = parent;
+    }
+    if repeat_step != 0 {
+        return Err(invalid("sound clock occurrence has extra Repeat ancestors"));
+    }
+    Ok(work)
+}
+
 fn same_sound_clock_kind(before: &FrozenAudioKind, after: &FrozenAudioKind) -> bool {
     match (before, after) {
         (FrozenAudioKind::Source { .. }, FrozenAudioKind::Source { .. })
         | (FrozenAudioKind::Hold { .. }, FrozenAudioKind::Hold { .. }) => true,
         (FrozenAudioKind::Sequence { children: a }, FrozenAudioKind::Sequence { children: b }) => {
-            a == b
+            a.len() == b.len()
         }
         (
             FrozenAudioKind::Repeat {
-                child: a,
                 iterations: ai,
                 gap_duration: ag,
-                ..
+                gap_audio: _,
+                child: _,
             },
             FrozenAudioKind::Repeat {
-                child: b,
                 iterations: bi,
                 gap_duration: bg,
-                ..
+                gap_audio: _,
+                child: _,
             },
-        ) => a == b && ai == bi && ag == bg,
+        ) => ai == bi && ag == bg,
         (
             FrozenAudioKind::Retime {
-                child: a,
                 mapping: am,
                 pitch: ap,
                 purpose: au,
+                child: _,
             },
             FrozenAudioKind::Retime {
-                child: b,
                 mapping: bm,
                 pitch: bp,
                 purpose: bu,
+                child: _,
             },
-        ) => a == b && am == bm && ap == bp && au == bu,
+        ) => am == bm && ap == bp && au == bu,
         _ => false,
     }
 }

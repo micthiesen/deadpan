@@ -18,6 +18,7 @@ pub struct AudioSourceVoiceRecipe {
 #[derive(Debug)]
 pub(super) struct SourceVoiceProvider {
     audio: CompiledSourceAudio,
+    recipe: AudioSourceVoiceRecipe,
 }
 
 /// Identity of one immutable voice recipe, retained by every derived view.
@@ -41,6 +42,10 @@ pub struct AudioSourceVoice<'plan> {
 }
 
 impl<'plan> AudioSourceVoice<'plan> {
+    pub fn recipe(&self) -> &AudioSourceVoiceRecipe {
+        &self.identity.0.recipe
+    }
+
     /// Complete input for downstream DSP. Current silent Holds are output
     /// policy and must not remove the input needed to prepare adjacent samples.
     pub fn input_signal(&self) -> AudioSignal<'plan> {
@@ -161,6 +166,7 @@ impl<'plan> AudioSignal<'plan> {
                 "source voice mapping must preserve the original audio rate",
             ));
         }
+        let retained_recipe = recipe.clone();
         let audio = CompiledSourceAudio {
             start: recipe
                 .mapping
@@ -174,7 +180,10 @@ impl<'plan> AudioSignal<'plan> {
             selected: matches!(recipe.mapping, SourceAudioMapping::SelectedPlacement { .. }),
             source: recipe.source,
         };
-        let provider = Arc::new(SourceVoiceProvider { audio });
+        let provider = Arc::new(SourceVoiceProvider {
+            audio,
+            recipe: retained_recipe,
+        });
         let mut signal = self.clone();
         signal.provider = SignalProvider::Source {
             recipe: Arc::clone(&provider),

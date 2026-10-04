@@ -1,4 +1,7 @@
-use std::{collections::BTreeMap, sync::Arc};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    sync::Arc,
+};
 
 use deadpan_core::{
     AssetId, CapturedFraming, EndpointPolicy, ExactRatio, FrameDuration, FrameRange, HoldAudio,
@@ -130,7 +133,177 @@ pub struct RenderPlan {
     has_audio_treatments: bool,
     has_audio_editorial_edges: bool,
     audio_bindings: deadpan_core::AudioBindingState,
+    // A checked structural snapshot used as the live side of sound-clock
+    // correspondence proofs. Historical clocks live in `audio_bindings`.
+    sound_clock_layout: Option<Arc<deadpan_core::FrozenAudioLayout>>,
     parents: Vec<Option<usize>>,
+}
+
+/// One journal reference paired with the live processing scope. The proof is
+/// constructed once per sound/reference, then reused to remap concrete Repeat
+/// occurrences without revisiting either complete subtree.
+#[derive(Debug, Clone)]
+pub struct AudioSoundClockScope<'plan> {
+    live_plan: &'plan RenderPlan,
+    live_owner: NodeId,
+    timing: &'plan deadpan_core::AudioTimingId,
+    historical_scope: &'plan NodeId,
+    historical_owner: &'plan NodeId,
+    historical_layout: &'plan deadpan_core::FrozenAudioLayout,
+    correspondence: deadpan_core::SoundClockCorrespondence,
+    recipe: crate::AudioSourceVoiceRecipe,
+}
+
+/// Authority to compare a current occurrence with one proven historical alias.
+/// Callers cannot construct this token from NodeIds or arbitrary plans.
+#[derive(Debug, Clone)]
+pub struct AudioOccurrenceAlias<'plan> {
+    pub(crate) live_plan: &'plan RenderPlan,
+    pub(crate) historical_plan: &'plan RenderPlan,
+    pub(crate) live_instance: InstancePath,
+    pub(crate) historical_instance: InstancePath,
+    pub(crate) recipe: crate::AudioSourceVoiceRecipe,
+}
+
+/// A retained processing plan bound once to one journal reference and event
+/// recipe. Occurrence aliases derive from this checked binding.
+#[derive(Debug, Clone)]
+pub struct AudioSoundClockBinding<'scope, 'plan> {
+    scope: &'scope AudioSoundClockScope<'plan>,
+    historical_plan: &'scope RenderPlan,
+    recipe: crate::AudioSourceVoiceRecipe,
+}
+
+impl<'plan> AudioSoundClockScope<'plan> {
+    pub fn timing(&self) -> &deadpan_core::AudioTimingId {
+        self.timing
+    }
+
+    pub fn historical_layout(&self) -> &deadpan_core::FrozenAudioLayout {
+        self.historical_layout
+    }
+
+    pub fn historical_scope(&self) -> &NodeId {
+        self.historical_scope
+    }
+
+    pub fn historical_owner(&self) -> &NodeId {
+        self.historical_owner
+    }
+
+    pub fn proof_work(&self) -> usize {
+        self.correspondence.work()
+    }
+
+    pub fn remap_instance(&self, live: &InstancePath) -> Result<InstancePath, PlanError> {
+        Ok(self
+            .remap_instance_with_work(live, deadpan_core::MAX_DOCUMENT_NODES)?
+            .0)
+    }
+
+    pub fn remap_instance_with_work(
+        &self,
+        live: &InstancePath,
+        maximum_work: usize,
+    ) -> Result<(InstancePath, usize), PlanError> {
+        if self.correspondence.historical_node(&live.node).is_none() {
+            return Err(PlanError::InvalidPlan(
+                "sound clock occurrence is outside the live scope",
+            ));
+        }
+        Ok(self
+            .correspondence
+            .remap_instance_with_work(live, maximum_work)?)
+    }
+
+    /// Bind one compiled plan to this exact frozen layout and sound recipe.
+    /// The full layout and selected asset contract are compared once per read,
+    /// not once per concrete Repeat occurrence.
+    pub fn bind_historical_plan<'scope>(
+        &'scope self,
+        historical_plan: &'scope RenderPlan,
+        maximum_work: usize,
+    ) -> Result<(AudioSoundClockBinding<'scope, 'plan>, usize), PlanError> {
+        let recipe = self.recipe.clone();
+        let asset = recipe.source.asset.clone();
+        let work = RenderPlan::sound_processing_layout_work(
+            self.historical_layout,
+            &BTreeSet::from([asset.clone()]),
+        )?
+        .checked_mul(2)
+        .ok_or(TimeError::Overflow)?;
+        if work > maximum_work {
+            return Err(PlanError::AudioQueryLimit("sound plan binding work"));
+        }
+        if historical_plan.sound_clock_layout.as_deref() != Some(self.historical_layout)
+            || historical_plan.metadata.presentation_basis.frame_rate
+                != self.live_plan.metadata.presentation_basis.frame_rate
+            || historical_plan.audio_context_assets().is_none()
+            || historical_plan.audio_assets.get(&asset) != self.live_plan.audio_assets.get(&asset)
+            || historical_plan
+                .audio_assets
+                .get(&asset)
+                .is_none_or(|record| {
+                    !record
+                        .audio
+                        .is_some_and(|span| span.contains_span(recipe.source.span))
+                })
+        {
+            return Err(PlanError::InvalidPlan(
+                "sound processing plan does not match its frozen clock and asset",
+            ));
+        }
+        Ok((
+            AudioSoundClockBinding {
+                scope: self,
+                historical_plan,
+                recipe,
+            },
+            work,
+        ))
+    }
+}
+
+impl AudioSoundClockBinding<'_, '_> {
+    /// Mint an alias only from the exact current and historical handles and
+    /// recipe validated by this scope proof and plan binding.
+    pub fn alias_occurrence<'a>(
+        &'a self,
+        historical: &'a crate::AudioSourceOccurrence<'_>,
+        live: &'a crate::AudioSourceOccurrence<'_>,
+        maximum_work: usize,
+    ) -> Result<(AudioOccurrenceAlias<'a>, usize), PlanError> {
+        let scope = self.scope;
+        if !live.belongs_to(scope.live_plan)
+            || live.instance().node != scope.live_owner
+            || scope.correspondence.historical_node(&live.instance().node)
+                != Some(scope.historical_owner)
+            || !std::ptr::eq(historical.plan(), self.historical_plan)
+            || historical.recipe() != &self.recipe
+            || live.recipe() != &self.recipe
+        {
+            return Err(PlanError::InvalidAudioSourceOccurrence(
+                "sound occurrences do not match their bound clock alias",
+            ));
+        }
+        let (expected_historical, work) =
+            scope.remap_instance_with_work(live.instance(), maximum_work)?;
+        if historical.instance() != &expected_historical {
+            return Err(PlanError::InvalidAudioSourceOccurrence(
+                "historical sound occurrence has a foreign processing instance",
+            ));
+        }
+        Ok((
+            AudioOccurrenceAlias {
+                live_plan: scope.live_plan,
+                historical_plan: self.historical_plan,
+                live_instance: live.instance().clone(),
+                historical_instance: historical.instance().clone(),
+                recipe: self.recipe.clone(),
+            },
+            work,
+        ))
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -482,6 +655,13 @@ impl RenderPlan {
             root,
             parents,
             audio_bindings: document.audio_bindings().clone(),
+            sound_clock_layout: if document.audio_bindings().sound_clocks().is_empty() {
+                None
+            } else {
+                Some(Arc::new(deadpan_core::FrozenAudioLayout::capture(
+                    document,
+                )?))
+            },
             audio_assets: document.assets().clone(),
             sounds: document.sounds().clone(),
             beat_sounds: document.beat_sounds().clone(),
@@ -563,17 +743,90 @@ impl RenderPlan {
         journal
             .clocks()
             .iter()
-            .map(|id| {
-                let layout =
-                    self.audio_bindings
-                        .timings()
-                        .get(id)
-                        .ok_or(PlanError::InvalidPlan(
-                            "beat sound clock refers to a missing frozen layout",
-                        ))?;
-                Ok((id, layout))
+            .map(|reference| {
+                let layout = self
+                    .audio_bindings
+                    .timings()
+                    .get(reference.timing())
+                    .ok_or(PlanError::InvalidPlan(
+                        "beat sound clock refers to a missing frozen layout",
+                    ))?;
+                Ok((reference.timing(), layout))
             })
             .collect()
+    }
+
+    /// Validated historical processing-scope aliases for one live BeatSound.
+    /// Proof construction is bounded by `maximum_work`; concrete instance
+    /// remapping is separately charged by the caller for each occurrence.
+    pub fn beat_sound_clock_scopes<'a>(
+        &'a self,
+        owner: &NodeId,
+        sound: &deadpan_core::SoundId,
+        maximum_work: usize,
+    ) -> Result<Vec<AudioSoundClockScope<'a>>, PlanError> {
+        let Some(journal) = self
+            .audio_bindings
+            .sound_clocks()
+            .get(owner)
+            .and_then(|sounds| sounds.get(sound))
+        else {
+            return Ok(Vec::new());
+        };
+        let current_layout = self
+            .sound_clock_layout
+            .as_deref()
+            .ok_or(PlanError::InvalidPlan(
+                "beat sound clock has no live frozen layout",
+            ))?;
+        let mut scopes = Vec::with_capacity(journal.clocks().len());
+        let event = self
+            .beat_sounds
+            .get(owner)
+            .and_then(|events| events.get(sound))
+            .ok_or(PlanError::InvalidPlan(
+                "sound clock has no matching live beat sound",
+            ))?;
+        let recipe = crate::AudioSourceVoiceRecipe {
+            source: event.source.clone(),
+            mapping: event.mapping,
+            offset: event.offset,
+        };
+        let mut remaining_work = maximum_work;
+        for reference in journal.clocks() {
+            let historical_layout = self
+                .audio_bindings
+                .timings()
+                .get(reference.timing())
+                .ok_or(PlanError::InvalidPlan(
+                    "beat sound clock refers to a missing frozen layout",
+                ))?;
+            let correspondence = historical_layout.sound_clock_correspondence(
+                current_layout,
+                reference.scope(),
+                journal.scope(),
+                remaining_work,
+            )?;
+            remaining_work = remaining_work.checked_sub(correspondence.work()).ok_or(
+                PlanError::AudioQueryLimit("sound clock correspondence work"),
+            )?;
+            if correspondence.historical_node(owner) != Some(reference.owner()) {
+                return Err(PlanError::InvalidPlan(
+                    "beat sound clock owner is outside its proven scope",
+                ));
+            }
+            scopes.push(AudioSoundClockScope {
+                live_plan: self,
+                live_owner: owner.clone(),
+                timing: reference.timing(),
+                historical_scope: reference.scope(),
+                historical_owner: reference.owner(),
+                historical_layout,
+                correspondence,
+                recipe: recipe.clone(),
+            });
+        }
+        Ok(scopes)
     }
 
     pub fn duration(&self) -> FrameDuration {

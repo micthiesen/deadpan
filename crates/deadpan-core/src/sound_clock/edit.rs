@@ -2,7 +2,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use super::{SoundClockJournal, SoundClocks};
+use super::{SoundClockJournal, SoundClockReference, SoundClocks};
 use crate::{
     AudioTimingId, BeatSound, Command, EditError, EditErrorCode, ExactRatio, FrameRange,
     FrozenAudioLayout, InstancePath, MAX_DOCUMENT_NODES, NodeId, NodeKind, ProjectDocument,
@@ -64,10 +64,12 @@ impl SoundClockEditCapture {
         let mut retained = BTreeMap::new();
         for events in journals.values() {
             for journal in events.values() {
-                for id in journal.clocks() {
+                for reference in journal.clocks() {
                     retained
-                        .entry(id.clone())
-                        .or_insert_with(|| document.audio_bindings.timings[id].clone());
+                        .entry(reference.timing().clone())
+                        .or_insert_with(|| {
+                            document.audio_bindings.timings[reference.timing()].clone()
+                        });
                 }
             }
         }
@@ -91,7 +93,12 @@ impl SoundClockEditCapture {
         // Imported events already belong to the result. Never replace that map
         // with the entry snapshot, and never transport their newly born clocks.
         let current = FrozenAudioLayout::capture(document)?;
-        let mut moved = BTreeMap::new();
+        let mut moved: BTreeMap<(NodeId, NodeId), (crate::SoundClockCorrespondence, bool)> =
+            BTreeMap::new();
+        let mut historical: BTreeMap<
+            (AudioTimingId, NodeId, NodeId),
+            crate::SoundClockCorrespondence,
+        > = BTreeMap::new();
         let mut work = 0usize;
         for (owner, events) in self.events {
             if !document.nodes.contains_key(&owner) {
@@ -106,24 +113,6 @@ impl SoundClockEditCapture {
                 self.before
                     .branch_below(self.before.root(), &owner, budget(work)?)?;
             work = work.checked_add(used).ok_or_else(exhausted)?;
-            let changed_origin = if let Some(changed) = moved.get(&top) {
-                *changed
-            } else {
-                work = work
-                    .checked_add(self.before.validate_sound_clock_owner(
-                        &current,
-                        &owner,
-                        budget(work)?,
-                    )?)
-                    .ok_or_else(exhausted)?;
-                let (old, old_work) = origin(&self.before, &top, budget(work)?)?;
-                work = work.checked_add(old_work).ok_or_else(exhausted)?;
-                let (new, new_work) = origin(&current, &top, budget(work)?)?;
-                work = work.checked_add(new_work).ok_or_else(exhausted)?;
-                let changed = old != new;
-                moved.insert(top, changed);
-                changed
-            };
             if document
                 .beat_sounds
                 .insert(owner.clone(), events.clone())
@@ -136,22 +125,100 @@ impl SoundClockEditCapture {
             let mut journals = self.journals.remove(&owner).unwrap_or_default();
             for id in events.keys() {
                 let previous = journals.remove(id);
+                let (old_scope, live_scope) = match &previous {
+                    Some(previous) => {
+                        if !document.nodes.contains_key(previous.scope()) {
+                            return Err(invalid(
+                                "sound owner scope disappeared without whole-owner deletion",
+                            ));
+                        }
+                        (previous.scope().clone(), previous.scope().clone())
+                    }
+                    None => {
+                        let live_scope =
+                            current.branch_below(current.root(), &owner, budget(work)?)?;
+                        work = work.checked_add(live_scope.1).ok_or_else(exhausted)?;
+                        (top.clone(), live_scope.0)
+                    }
+                };
+                let key = (old_scope.clone(), live_scope.clone());
+                let (proof, changed_origin) = if let Some((proof, changed)) = moved.get(&key) {
+                    (proof.clone(), *changed)
+                } else {
+                    let proof = self.before.sound_clock_correspondence(
+                        &current,
+                        &old_scope,
+                        &live_scope,
+                        budget(work)?,
+                    )?;
+                    work = work.checked_add(proof.work()).ok_or_else(exhausted)?;
+                    let (old, old_work) = origin(&self.before, &old_scope, budget(work)?)?;
+                    work = work.checked_add(old_work).ok_or_else(exhausted)?;
+                    let (new, new_work) = origin(&current, &live_scope, budget(work)?)?;
+                    work = work.checked_add(new_work).ok_or_else(exhausted)?;
+                    let changed = old != new;
+                    moved.insert(key, (proof.clone(), changed));
+                    (proof, changed)
+                };
+                // Each event owner must retain its own identity in the paired
+                // live subtree, even when another event already populated the
+                // scope-pair cache. A same-shaped sibling is not an alias.
+                if proof.historical_node(&owner) != Some(&owner) {
+                    return Err(invalid("sound owner moved outside its captured scope"));
+                }
+                if let Some(previous) = &previous {
+                    for reference in previous.clocks() {
+                        let key = (
+                            reference.timing().clone(),
+                            reference.scope().clone(),
+                            live_scope.clone(),
+                        );
+                        if !historical.contains_key(&key) {
+                            let layout = &self.retained[reference.timing()];
+                            let historical_proof = layout.sound_clock_correspondence(
+                                &current,
+                                reference.scope(),
+                                &live_scope,
+                                budget(work)?,
+                            )?;
+                            work = work
+                                .checked_add(historical_proof.work())
+                                .ok_or_else(exhausted)?;
+                            historical.insert(key.clone(), historical_proof);
+                        }
+                        let historical_proof = historical
+                            .get(&key)
+                            .expect("historical sound clock proof was inserted");
+                        if historical_proof.historical_node(&owner) != Some(reference.owner()) {
+                            return Err(invalid("sound owner processing subtree changed"));
+                        }
+                    }
+                }
                 let journal = if changed_origin {
+                    let reference = SoundClockReference::new(
+                        self.timing.clone(),
+                        old_scope.clone(),
+                        owner.clone(),
+                    );
                     Some(match previous {
-                        Some(previous) => previous.with_appended(self.timing.clone())?,
-                        None => SoundClockJournal::new(vec![self.timing.clone()])?,
+                        Some(previous) => previous.with_appended(reference)?,
+                        None => SoundClockJournal::new(live_scope.clone(), vec![reference])?,
                     })
                 } else {
                     previous
+                        .map(|previous| {
+                            SoundClockJournal::new(live_scope.clone(), previous.clocks().to_vec())
+                        })
+                        .transpose()?
                 };
                 if let Some(journal) = journal {
-                    for clock in journal.clocks() {
-                        let layout = if clock == &self.timing {
+                    for reference in journal.clocks() {
+                        let layout = if reference.timing() == &self.timing {
                             &self.before
                         } else {
-                            &self.retained[clock]
+                            &self.retained[reference.timing()]
                         };
-                        install_layout(document, clock, layout)?;
+                        install_layout(document, reference.timing(), layout)?;
                     }
                     document
                         .audio_bindings

@@ -1774,3 +1774,18 @@ prepare raw independent input before current gates, edges and gain. A borrowed
 route does not establish persisted sound clocks or enable temporal commands.
 See [routed preparation](docs/SOUND_EVENTS.md#routed-pcm-preparation) and
 [occurrence routes](docs/OWNED_SOUND_VOICES.md#retained-occurrence-sample-routing).
+
+BeatSound journals name one live processing scope and chronological historical
+scope/owner aliases. Both scopes have only ordinary Sequence ancestors. Prove
+complete scoped timing and Repeat correspondence with bounded work; current
+policy, gain, edges and primary-audio lineage do not define an independent
+sound's raw clock. Live temporal edits must retain each owner's exact identity,
+including scope-cache hits. Only copied historical references use fresh aliases.
+Capture appends the formerly implicit current placement so a later paste cannot
+revive clipped samples. Rename live owners, historical aliases, timing records
+and explicitly paired Repeat families together. Bind retained playback to the
+exact historical plan and saved recipe before accepting a different occurrence
+identity. Recheck copied media through immutable recapture and normal store
+admission. Partial sound owners, root-owned temporal transport, occurrence
+isolation and complete `ib`/`ab` still require their remaining lifecycle. See
+[copied sound clocks](docs/OWNED_SOUND_VOICES.md#copying-retained-sound-clocks).

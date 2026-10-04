@@ -1261,7 +1261,8 @@ impl AudioBindingState {
         crate::sound_clock::wire_size(&self.sound_clocks)?;
         for journals in self.sound_clocks.values() {
             for journal in journals.values() {
-                for timing in journal.clocks() {
+                for reference in journal.clocks() {
+                    let timing = reference.timing();
                     if !self.timings.contains_key(timing) {
                         return Err(invalid("sound clock timing identity is missing"));
                     }
@@ -1344,7 +1345,7 @@ impl AudioBindingState {
                 }
             }
             let live = FrozenAudioLayout::capture_structural(document)?;
-            let mut checked = BTreeSet::new();
+            let mut checked = BTreeMap::new();
             for (owner, journals) in &self.sound_clocks {
                 for (sound, journal) in journals {
                     if !document
@@ -1354,13 +1355,30 @@ impl AudioBindingState {
                     {
                         return Err(invalid("sound clock address has no beat sound"));
                     }
-                    for timing in journal.clocks() {
-                        if checked.insert((owner, timing)) {
-                            work.spend(self.timings[timing].validate_sound_clock_owner(
+                    for reference in journal.clocks() {
+                        let timing = reference.timing();
+                        let key = (
+                            timing.clone(),
+                            reference.scope().clone(),
+                            journal.scope().clone(),
+                        );
+                        if !checked.contains_key(&key) {
+                            let proof = self.timings[timing].sound_clock_correspondence(
                                 &live,
-                                owner,
+                                reference.scope(),
+                                journal.scope(),
                                 work.remaining()?,
-                            )?)?;
+                            )?;
+                            work.spend(proof.work())?;
+                            checked.insert(key.clone(), proof);
+                        }
+                        let proof = checked
+                            .get(&key)
+                            .expect("sound clock correspondence was inserted");
+                        if proof.historical_node(owner) != Some(reference.owner()) {
+                            return Err(invalid(
+                                "sound clock reference names another historical owner",
+                            ));
                         }
                     }
                 }

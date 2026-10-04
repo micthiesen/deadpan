@@ -1,0 +1,289 @@
+{
+  "base_commit": "16c650ecea0e234479a2e8cf7d3361c5cdfc12a5",
+  "source_manifest_sha256": "d4b70a5edab1e3dc2453483540f473c33f53c8b5571139bbac7471eb2013548c",
+  "environment": {
+    "hardware": "Apple M5 Max",
+    "memory_bytes": 137438953472,
+    "macos": "26.5.2 (25F84)",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "ffmpeg_prefix": "/tmp/deadpan-ui-ffmpeg/prefix",
+    "dependencies": "locked"
+  },
+  "checks": [
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-10-04T03:27:19.166432+00:00",
+      "base_commit": "16c650ecea0e234479a2e8cf7d3361c5cdfc12a5",
+      "diff_sha256": "b480b387d171f7815879f7cada40668c521316da7611737f2a6cbfb200b18cd3",
+      "source_manifest_sha256": "66b8468ae8f510801ec4df0f81f38b6925e008db0b6c6aac3b4c4f9dae7a1682",
+      "pid": 25141,
+      "exit_code": 101,
+      "seconds": 233.5176985003054,
+      "source_manifest_after_sha256": "66b8468ae8f510801ec4df0f81f38b6925e008db0b6c6aac3b4c4f9dae7a1682",
+      "source_unchanged": true,
+      "gate_exit_code": 101,
+      "test_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "name": "clippy-1"
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-10-04T03:32:12.787102+00:00",
+      "base_commit": "16c650ecea0e234479a2e8cf7d3361c5cdfc12a5",
+      "diff_sha256": "997941cca688f9d598a4614c3be5fd8500d6a07309c7e15088a88de2914e5e0c",
+      "source_manifest_sha256": "71346f768616eba8558da915c92b35e1f8153f8a7da75b212f4df12dfe349a40",
+      "pid": 25748,
+      "exit_code": 101,
+      "seconds": 429.3504986669868,
+      "source_manifest_after_sha256": "71346f768616eba8558da915c92b35e1f8153f8a7da75b212f4df12dfe349a40",
+      "source_unchanged": true,
+      "gate_exit_code": 101,
+      "test_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "name": "clippy-2"
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "started": "2026-10-04T03:40:21.578874+00:00",
+      "base_commit": "16c650ecea0e234479a2e8cf7d3361c5cdfc12a5",
+      "diff_sha256": "c4550ec8a163daf63a28d03dc6d3dbd4a5fca1dbcfbd040ef20b633514a1a5bd",
+      "source_manifest_sha256": "d4b70a5edab1e3dc2453483540f473c33f53c8b5571139bbac7471eb2013548c",
+      "pid": 26601,
+      "exit_code": 0,
+      "seconds": 544.3912512920797,
+      "source_manifest_after_sha256": "d4b70a5edab1e3dc2453483540f473c33f53c8b5571139bbac7471eb2013548c",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "name": "clippy-3"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--workspace",
+        "--no-fail-fast",
+        "sound_clock"
+      ],
+      "started": "2026-10-04T02:39:00.553801+00:00",
+      "base_commit": "16c650ecea0e234479a2e8cf7d3361c5cdfc12a5",
+      "diff_sha256": "0c7172e6860011668aa670f3cb54852b019cd921afc43178dc946979313cc622",
+      "source_manifest_sha256": "b503f9073169d413136545868fc4105c61ecffa96c256c0907187d748e4e3b43",
+      "pid": 18435,
+      "exit_code": 101,
+      "seconds": 474.0526614165865,
+      "source_manifest_after_sha256": "b503f9073169d413136545868fc4105c61ecffa96c256c0907187d748e4e3b43",
+      "source_unchanged": true,
+      "gate_exit_code": 101,
+      "test_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "name": "focused-sound-clock-1"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--workspace",
+        "--no-fail-fast",
+        "sound_clock"
+      ],
+      "started": "2026-10-04T02:47:55.966139+00:00",
+      "base_commit": "16c650ecea0e234479a2e8cf7d3361c5cdfc12a5",
+      "diff_sha256": "065856901365a3d537468a5edc6e97575b07ce22599a516f8676965934da5d89",
+      "source_manifest_sha256": "aaff9cf2a13046d01ee1383eb8be7fbe29db7759f11f53c66fca76665f172fea",
+      "pid": 19825,
+      "exit_code": 101,
+      "seconds": 148.128941624891,
+      "source_manifest_after_sha256": "aaff9cf2a13046d01ee1383eb8be7fbe29db7759f11f53c66fca76665f172fea",
+      "source_unchanged": true,
+      "gate_exit_code": 101,
+      "test_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "name": "focused-sound-clock-2"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--workspace",
+        "--no-fail-fast",
+        "sound_clock"
+      ],
+      "started": "2026-10-04T02:55:03.416874+00:00",
+      "base_commit": "16c650ecea0e234479a2e8cf7d3361c5cdfc12a5",
+      "diff_sha256": "bc0d169a0529af0e58f8105d0ef5be65dd2822ec84030bcdfd4d6c556f405bd9",
+      "source_manifest_sha256": "8762a7a05d4a602377c4d02bcdcc67172ebda53c045f3f3324660b4e65eafe20",
+      "pid": 20721,
+      "exit_code": 101,
+      "seconds": 1115.8913569576107,
+      "source_manifest_after_sha256": "8762a7a05d4a602377c4d02bcdcc67172ebda53c045f3f3324660b4e65eafe20",
+      "source_unchanged": true,
+      "gate_exit_code": 101,
+      "test_totals": {
+        "passed": 34,
+        "failed": 6,
+        "ignored": 0
+      },
+      "name": "focused-sound-clock-3"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--workspace",
+        "--no-fail-fast",
+        "--lib",
+        "--test",
+        "audio_definition",
+        "--test",
+        "source_registration",
+        "--test",
+        "edited_slice",
+        "--test",
+        "sound_processing_layout",
+        "--test",
+        "sound_routing",
+        "sound_clock"
+      ],
+      "started": "2026-10-04T03:49:39.710518+00:00",
+      "base_commit": "16c650ecea0e234479a2e8cf7d3361c5cdfc12a5",
+      "diff_sha256": "c4550ec8a163daf63a28d03dc6d3dbd4a5fca1dbcfbd040ef20b633514a1a5bd",
+      "source_manifest_sha256": "d4b70a5edab1e3dc2453483540f473c33f53c8b5571139bbac7471eb2013548c",
+      "pid": 27307,
+      "exit_code": 0,
+      "seconds": 241.588212874718,
+      "source_manifest_after_sha256": "d4b70a5edab1e3dc2453483540f473c33f53c8b5571139bbac7471eb2013548c",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_totals": {
+        "passed": 40,
+        "failed": 0,
+        "ignored": 0
+      },
+      "name": "focused-sound-clock-4"
+    },
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "started": "2026-10-04T03:49:51.284148+00:00",
+      "base_commit": "16c650ecea0e234479a2e8cf7d3361c5cdfc12a5",
+      "diff_sha256": "c4550ec8a163daf63a28d03dc6d3dbd4a5fca1dbcfbd040ef20b633514a1a5bd",
+      "source_manifest_sha256": "d4b70a5edab1e3dc2453483540f473c33f53c8b5571139bbac7471eb2013548c",
+      "pid": 27339,
+      "exit_code": 0,
+      "seconds": 2.058315166272223,
+      "source_manifest_after_sha256": "d4b70a5edab1e3dc2453483540f473c33f53c8b5571139bbac7471eb2013548c",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_totals": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      },
+      "name": "format-final"
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--workspace",
+        "--no-fail-fast"
+      ],
+      "started": "2026-10-04T03:54:10.345513+00:00",
+      "base_commit": "16c650ecea0e234479a2e8cf7d3361c5cdfc12a5",
+      "diff_sha256": "c4550ec8a163daf63a28d03dc6d3dbd4a5fca1dbcfbd040ef20b633514a1a5bd",
+      "source_manifest_sha256": "d4b70a5edab1e3dc2453483540f473c33f53c8b5571139bbac7471eb2013548c",
+      "pid": 27736,
+      "exit_code": 0,
+      "seconds": 1846.1845882078633,
+      "source_manifest_after_sha256": "d4b70a5edab1e3dc2453483540f473c33f53c8b5571139bbac7471eb2013548c",
+      "source_unchanged": true,
+      "gate_exit_code": 0,
+      "test_totals": {
+        "passed": 3600,
+        "failed": 0,
+        "ignored": 0
+      },
+      "name": "workspace-1"
+    }
+  ],
+  "review": {
+    "result": "Independent review identified repeated full scope proofs per attached sound during capture and Repeat-family inventory. Proof caches now use the full timing/historical-scope/live-scope tuple, retain per-owner validation, and install each historical layout once. Re-review found no further findings.",
+    "regression": "Copy 64 sounds sharing one scope with 800 additional leaves; preserve all events and both clocks through validation, paste, serialization and inverse restoration.",
+    "withdrawn": "A suspected recopy-of-outer-wrapper failure was withdrawn after confirming selection membership includes the complete selected subtree.",
+    "final_oracle_review": "Independent follow-up found no findings in the corrected PCM oracle, rational Hold boundaries or per-occurrence clipping. Frame32 restores the original sample phase; its terminal-zero assertions are separate from the edge comparison mask.",
+    "corrections": [
+      "focused-sound-clock-1: the new store test tried to deserialize FrozenAudioLayout directly. It now uses the bounded AudioBindingState validating reader.",
+      "focused-sound-clock-2: new audio test helpers used a nonexistent revision helper and indexed an iterator. They now construct RevisionId explicitly and use nth().",
+      "Between focused runs 2 and 3: independent review found repeated scope proofs per sound in slice capture and Repeat-family inventory. Full-tuple caches and one-time historical layout installation address it; the new 64-event/800-extra-leaf copy regression passes in focused run 3.",
+      "focused-sound-clock-3: 34 tests passed and six failed. Four core fixtures had an out-of-scope absolute range, an old root-journal shape, a lookup of a deliberately removed local sound, and an expectation of the old rather than freshly allocated copy timing ID. The corruption fixture hit SQLite foreign-key enforcement before injecting missing registry rows. The nested PCM fixture exceeded the per-read prepared-stage cap.",
+      "Core fixture corrections retain exact errors and identity assertions. The reordered-sibling regression now also exercises a cache hit populated by an unchanged earlier owner. The corruption test disables foreign keys only on its separate injection connection and verifies restored referential integrity afterward.",
+      "Root removed an identity iterator map and added alias rejection checks for foreign current/historical plan handles with equal contents.",
+      "After focused run3: the nested audio fixture groups its destination before clocks, captures from the post-return document, and uses 1024-sample reads without raising production limits. A same-gain source reference avoids scaling an already rounded f32 mix. Exact comparisons omit computed current Hold fade neighborhoods; separate checks cover silent gaps and the lost terminal sample of each outer play. A third recopy at frame32 checks that increased allocation cannot revive those labels.",
+      "clippy-1: the new routed_gate_fades_from API exceeded the argument-count lint. Its start/end edge policies now form one documented pair; the three call sites changed without altering gate behavior.",
+      "clippy-2: removed a redundant clone of Copy RegisterName and named the test stereo-PCM vector type to simplify its return signature. No lint suppression or production-limit change was added."
+    ]
+  },
+  "limits": [
+    "Whole sound-bearing scopes only, surrounded by ordinary Sequence ancestors; partial sound owners and changed surviving processing branches remain guarded.",
+    "Root-owned temporal transport, occurrence isolation, allowances, tails, native beat-sound placement and complete ib/ab semantics remain open.",
+    "Register structural restore is distinct from qualified source admission at preview and commit.",
+    "Preserve reference PCM uses the canonical DSP engine and does not independently qualify that algorithm.",
+    "No optional app configuration, native GUI launch, acoustic or performance checks in this increment; copied attached sounds have no emitted-movie equivalence check yet.",
+    "No full-product requirement or release gate is complete."
+  ]
+}

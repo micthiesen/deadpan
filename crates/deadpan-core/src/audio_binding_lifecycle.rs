@@ -528,7 +528,12 @@ pub(crate) fn prune(document: &mut ProjectDocument) {
     }
     for journals in document.audio_bindings.sound_clocks.values() {
         for journal in journals.values() {
-            retained.extend(journal.clocks().iter().cloned());
+            retained.extend(
+                journal
+                    .clocks()
+                    .iter()
+                    .map(|reference| reference.timing().clone()),
+            );
         }
     }
     document

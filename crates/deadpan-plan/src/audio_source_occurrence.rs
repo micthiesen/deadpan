@@ -648,6 +648,9 @@ impl<'plan> AudioSourceOccurrence<'plan> {
     pub fn source(&self) -> &SourceAudio {
         self.voice.source()
     }
+    pub fn recipe(&self) -> &AudioSourceVoiceRecipe {
+        self.voice.recipe()
+    }
     pub fn source_identity(&self) -> AudioSourceVoiceIdentity {
         self.voice.identity()
     }
@@ -720,6 +723,47 @@ impl<'plan> AudioSourceOccurrence<'plan> {
         if self.instance != original.instance {
             return Err(PlanError::InvalidAudioSourceOccurrence(
                 "routed occurrence owner differs from its original",
+            ));
+        }
+        crate::audio_sound_event::routed_occurrence_gate_fades(
+            self.plan,
+            crate::audio_sound_event::RoutedOccurrenceEnvelope {
+                original_allocation: original.extent(),
+                current_allocation: self.extent(),
+                original_audible: original.audible_extent(),
+                grid: original.grid,
+                inherited_hard_edges: self.inherited_hard_edges,
+            },
+            placements,
+            start_edge,
+            end_edge,
+            samples,
+            limits,
+        )
+    }
+
+    /// Transport a historical occurrence across a proven copied-owner alias.
+    /// This requires the opaque token minted by `AudioSoundClockScope` and
+    /// preserves the strict same-instance API above for unaliased callers.
+    /// Edge policies are supplied as a `(start, end)` pair.
+    pub fn routed_gate_fades_from(
+        &self,
+        original: &AudioSourceOccurrence<'_>,
+        alias: &crate::AudioOccurrenceAlias<'_>,
+        placements: &[Range<ExactRatio>],
+        (start_edge, end_edge): (deadpan_core::AudioEdgePolicy, deadpan_core::AudioEdgePolicy),
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+    ) -> Result<crate::AudioSoundGateQuery, PlanError> {
+        if !self.belongs_to(alias.live_plan)
+            || !original.belongs_to(alias.historical_plan)
+            || self.instance != alias.live_instance
+            || original.instance != alias.historical_instance
+            || original.recipe() != &alias.recipe
+            || self.recipe() != &alias.recipe
+        {
+            return Err(PlanError::InvalidAudioSourceOccurrence(
+                "routed occurrences do not match their sound clock alias",
             ));
         }
         crate::audio_sound_event::routed_occurrence_gate_fades(

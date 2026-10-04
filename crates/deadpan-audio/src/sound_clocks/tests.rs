@@ -4,9 +4,9 @@ use deadpan_core::{
     AssetId, AssetRecord, AudioBindingState, AudioEdgePolicy, AudioSample, AudioTimingId,
     AudioTimingRecord, BeatNode, BeatSound, ColorPolicy, FrameDuration, FrameRate,
     FrozenAudioLayout, HoldAudio, HoldRecipe, HoldVideo, NodeId, PresentationBasis,
-    ProjectDocument, ProjectId, RevisionId, SoundClockJournal, SoundId, SoundOverflowPolicy,
-    SourceAudio, SourceAudioMapping, SourceQualificationId, SourceSpan, SourceTimeBase,
-    SourceTimestamp,
+    ProjectDocument, ProjectId, RevisionId, SoundClockJournal, SoundClockReference, SoundId,
+    SoundOverflowPolicy, SourceAudio, SourceAudioMapping, SourceQualificationId, SourceSpan,
+    SourceTimeBase, SourceTimestamp,
 };
 use std::{
     cell::RefCell,
@@ -136,13 +136,20 @@ fn document(event_assets: &[&str], clocks_per_event: usize) -> ProjectDocument {
                 allocation: revision(&format!("timing-{event_index}-{ordinal}")),
                 ordinal: 0,
             };
-            clocks.push(timing.clone());
+            clocks.push(SoundClockReference::new(
+                timing.clone(),
+                owner.clone(),
+                owner.clone(),
+            ));
             timing_records.push(AudioTimingRecord {
                 id: timing,
                 layout: layout.clone(),
             });
         }
-        clocks_by_sound.insert(sound, SoundClockJournal::new(clocks).unwrap());
+        clocks_by_sound.insert(
+            sound,
+            SoundClockJournal::new(owner.clone(), clocks).unwrap(),
+        );
     }
     let bindings = AudioBindingState::new_with_sound_clocks(
         timing_records,

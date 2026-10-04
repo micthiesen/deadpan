@@ -32,8 +32,8 @@ mutation and historical admission contract.
 Range serialization keeps its previous shape. A missing selector reads only as
 Range using the stored interval; it never infers Child from structure or labels.
 Explicit null, unknown, duplicate or inconsistent selector fields fail. Child
-and Children use explicit tagged selectors. The current document schema is 43
-and database schema is 55. See [development formats](DEVELOPMENT_FORMATS.md)
+and Children use explicit tagged selectors. The current document schema is 46
+and database schema is 58. See [development formats](DEVELOPMENT_FORMATS.md)
 for the supported package versions; older qualification reports describe their
 recorded formats.
 
@@ -50,6 +50,11 @@ The selection contains complete owned beat contexts and separate output windows:
 - Independent root sound events, sound routes and Hold allowances remain
   outside this structural ownership selection. Their source document remains
   unchanged. Root sounds at the destination undergo one insertion transform.
+- Whole selected beat-owned sounds retain their source recipes and chronological
+  sample clocks. Capture records the current placement before paste supplies a
+  new final clock. Fresh historical aliases preserve exact PCM phase and earlier
+  clipped support across repeated paste and recopy; partial sound owners still
+  refuse. See [owned sound clocks](OWNED_SOUND_VOICES.md#copying-retained-sound-clocks).
 
 The initial boundary uses the existing ordinary Sequence endpoint admission:
 Source/ordinary Hold fragments and complete intervening composites. Capture can

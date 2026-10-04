@@ -133,6 +133,203 @@ fn ntsc(edge: AudioEdgePolicy) -> ProjectDocument {
     ProjectDocument::from_json(&wire.to_string()).unwrap()
 }
 
+fn repeated_with_gap(child: &str, allocation: &str, gap: i64) -> BeatNode {
+    BeatNode {
+        kind: NodeKind::Repeat {
+            child: id(child),
+            iterations: IterationOrder::new(RevisionId::new(allocation).unwrap(), 2).unwrap(),
+            gap: Some(HoldRecipe {
+                duration: FrameDuration::new(gap).unwrap(),
+                video: HoldVideo::Background,
+                picture_context: None,
+                audio: HoldAudio::Silence,
+            }),
+        },
+        ..BeatNode::sequence("Repeated sound owner", Vec::new())
+    }
+}
+
+fn nested_ntsc_copy_document() -> ProjectDocument {
+    let mut wire = serde_json::to_value(ntsc(AudioEdgePolicy::Hard)).unwrap();
+    wire["nodes"]["inner_repeat"] =
+        serde_json::to_value(repeated_with_gap("owner", "inner-plays", 1)).unwrap();
+    wire["nodes"]["inner_stage"] =
+        serde_json::to_value(retime("inner_repeat", 6, 0..9, PitchPolicy::Preserve)).unwrap();
+    wire["nodes"]["outer_stage"] =
+        serde_json::to_value(retime("inner_stage", 4, 0..6, PitchPolicy::Preserve)).unwrap();
+    wire["nodes"]["repeat"] =
+        serde_json::to_value(repeated_with_gap("outer_stage", "outer-plays", 1)).unwrap();
+    wire["nodes"]["destination_hold"] = serde_json::to_value(hold(1, HoldAudio::Silence)).unwrap();
+    wire["nodes"]["root"]["kind"]["children"] =
+        serde_json::json!(["lead", "repeat", "tail", "destination_hold"]);
+    ProjectDocument::from_json(&wire.to_string()).unwrap()
+}
+
+fn frame_sample_boundary(frame: i64) -> i64 {
+    ExactRatio::new(i128::from(frame) * 48_000 * 1001, 30_000)
+        .unwrap()
+        .round_even()
+        .unwrap() as i64
+}
+
+fn sound_id(value: &str) -> SoundId {
+    SoundId::new(value).unwrap()
+}
+
+type StereoPcm = Vec<[f32; 2]>;
+
+fn render_nested_occurrences(
+    document: &ProjectDocument,
+    first_frame: i64,
+) -> (StereoPcm, StereoPcm, StereoPcm) {
+    let mut renderer = StageAudio::new(compile(document, false));
+    let mut provider = ClockProvider::new(document);
+    let mut render = |start: i64, end: i64| {
+        let mut output = Vec::with_capacity(usize::try_from(end - start).unwrap());
+        let mut cursor = start;
+        while cursor < end {
+            let count = u32::try_from((end - cursor).min(1024)).unwrap();
+            output.extend(bus(&mut renderer, &mut provider, cursor, count).samples);
+            cursor += i64::from(count);
+        }
+        output
+    };
+    let first_start = frame_sample_boundary(first_frame);
+    let first_end = frame_sample_boundary(first_frame + 4);
+    let gap_end = frame_sample_boundary(first_frame + 5);
+    let second_end = frame_sample_boundary(first_frame + 9);
+    (
+        render(first_start, first_end),
+        render(first_end, gap_end),
+        render(gap_end, second_end),
+    )
+}
+
+fn local_sample_boundary(start_frame: i64, local_frame: ExactRatio) -> i64 {
+    ExactRatio::integer(start_frame)
+        .checked_add(local_frame)
+        .unwrap()
+        .checked_mul(ExactRatio::new(8008, 5).unwrap())
+        .unwrap()
+        .round_even()
+        .unwrap() as i64
+        - frame_sample_boundary(start_frame)
+}
+
+fn assert_pcm_equal_outside_current_gate_context(
+    expected: &[[f32; 2]],
+    actual: &[[f32; 2]],
+    expected_start: i64,
+    actual_start: i64,
+) {
+    let hold_edges = [
+        ExactRatio::ZERO,
+        ExactRatio::new(16, 9).unwrap(),
+        ExactRatio::new(20, 9).unwrap(),
+        ExactRatio::integer(4),
+    ];
+    let mut compared = 0;
+    let mut compared_nonzero = false;
+    for (index, (expected, actual)) in expected.iter().zip(actual).enumerate() {
+        let index = i64::try_from(index).unwrap();
+        let near_old_edge = hold_edges
+            .iter()
+            .any(|edge| (index - local_sample_boundary(expected_start, *edge)).abs() <= 96);
+        let near_current_edge = hold_edges
+            .iter()
+            .any(|edge| (index - local_sample_boundary(actual_start, *edge)).abs() <= 96);
+        if !near_old_edge && !near_current_edge {
+            assert_eq!(expected, actual, "sample offset {index}");
+            compared += 1;
+            compared_nonzero |= *expected != [0.0; 2];
+        }
+    }
+    assert!(
+        compared > 512,
+        "too few samples compared outside Hold gates"
+    );
+    assert!(compared_nonzero, "comparison skipped all audible samples");
+}
+
+fn assert_inner_gap_silence(samples: &[[f32; 2]], start_frame: i64) {
+    let gap_start = usize::try_from(local_sample_boundary(
+        start_frame,
+        ExactRatio::new(16, 9).unwrap(),
+    ))
+    .unwrap();
+    let gap_end = usize::try_from(local_sample_boundary(
+        start_frame,
+        ExactRatio::new(20, 9).unwrap(),
+    ))
+    .unwrap();
+    assert!(gap_start < gap_end && gap_end <= samples.len());
+    assert!(
+        samples[gap_start..gap_end]
+            .iter()
+            .all(|sample| *sample == [0.0; 2])
+    );
+}
+
+fn slice_identities(slice: &CapturedEditSlice, prefix: &str) -> SlicePasteIdentities {
+    let required = slice.identity_requirements().unwrap();
+    SlicePasteIdentities {
+        authored: OccurrenceIdentities {
+            nodes: (0..required.nodes)
+                .map(|index| id(&format!("{prefix}-node-{index}")))
+                .collect(),
+            marks: (0..required.marks)
+                .map(|index| MarkId::new(format!("{prefix}-mark-{index}")).unwrap())
+                .collect(),
+        },
+        aliases: (0..required.aliases)
+            .map(|index| id(&format!("{prefix}-alias-{index}")))
+            .collect(),
+    }
+}
+
+fn capture_repeat_slice(
+    document: &ProjectDocument,
+    parent: &str,
+    repeat: &NodeId,
+    name: &str,
+) -> CapturedEditSlice {
+    CapturedEditSlice::capture_selection(
+        document,
+        &id(parent),
+        &SliceCaptureSelection::Child {
+            node: repeat.clone(),
+        },
+        AudioTimingId {
+            allocation: RevisionId::new(name).unwrap(),
+            ordinal: 0,
+        },
+    )
+    .unwrap()
+}
+
+fn paste_repeat_slice(
+    document: &ProjectDocument,
+    parent: &str,
+    index: usize,
+    slice: &CapturedEditSlice,
+    name: &str,
+) -> ProjectDocument {
+    edit(
+        document,
+        name,
+        Command::SpliceSlice {
+            parent: id(parent),
+            index,
+            slice: slice.clone(),
+            identities: slice_identities(slice, name),
+            timing: AudioTimingId {
+                allocation: RevisionId::new(name).unwrap(),
+                ordinal: 0,
+            },
+        },
+    )
+}
+
 #[test]
 fn command_created_clocks_keep_ntsc_pcm_and_edge_progress_through_move_and_return() {
     for edge in [AudioEdgePolicy::Hard, AudioEdgePolicy::Automatic] {
@@ -324,6 +521,171 @@ fn sound_clocks_translate_processed_ntsc_extent_through_nested_preserve() {
             .samples,
             expected[offset as usize..offset as usize + count as usize]
         );
+    }
+}
+
+#[test]
+fn copied_nested_sound_clocks_keep_old_pcm_labels_and_terminal_clip_across_recopy() {
+    let before = nested_ntsc_copy_document();
+    // Create the destination Sequence before sound clocks exist. Grouping is
+    // intentionally outside the retained-clock edit path exercised below.
+    let grouped = edit(
+        &before,
+        "group-destination",
+        Command::Group {
+            parent: id("root"),
+            start: 3,
+            end: 4,
+            id: id("destination-sequence"),
+            label: "Destination".into(),
+        },
+    );
+    let original = render_nested_occurrences(&grouped, 2);
+    assert_eq!(original.1, vec![[0.0; 2]; original.1.len()]);
+    assert_ne!(original.0.last().copied().unwrap(), [0.0; 2]);
+    assert_ne!(original.2.last().copied().unwrap(), [0.0; 2]);
+
+    let moved = insert_prefix(&grouped);
+    let returned = remove_prefix(&moved);
+    let clipped = render_nested_occurrences(&returned, 2);
+    assert_eq!(
+        &clipped.0[..clipped.0.len() - 1],
+        &original.0[..original.0.len() - 1]
+    );
+    assert_eq!(
+        &clipped.2[..clipped.2.len() - 1],
+        &original.2[..original.2.len() - 1]
+    );
+    assert_eq!(clipped.0.last().copied().unwrap(), [0.0; 2]);
+    assert_eq!(clipped.2.last().copied().unwrap(), [0.0; 2]);
+    assert_eq!(clipped.1, vec![[0.0; 2]; clipped.1.len()]);
+
+    // A returned-document reference uses the copy's gain so the f32 oracle
+    // observes the same per-contribution multiply and f64 accumulation order.
+    let mut source_event = returned.beat_sounds()[&id("owner")][&sound_id("effect")].clone();
+    source_event.gain_millidecibels = -6000;
+    let gained_reference = edit(
+        &returned,
+        "reference-gain",
+        Command::SetBeatSound {
+            owner: id("owner"),
+            id: sound_id("effect"),
+            event: source_event,
+        },
+    );
+    let reference = render_nested_occurrences(&gained_reference, 2);
+    assert_eq!(reference.1, vec![[0.0; 2]; reference.1.len()]);
+    assert_eq!(reference.0.last().copied().unwrap(), [0.0; 2]);
+    assert_eq!(reference.2.last().copied().unwrap(), [0.0; 2]);
+
+    // The copied subtree gets fresh node/Repeat IDs in the destination scope.
+    let first_slice = capture_repeat_slice(&returned, "root", &id("repeat"), "capture-first");
+    let first_copy = paste_repeat_slice(
+        &returned,
+        "destination-sequence",
+        1,
+        &first_slice,
+        "paste-first",
+    );
+    let first_copy_repeat = first_copy
+        .children(&id("destination-sequence"))
+        .nth(1)
+        .unwrap()
+        .clone();
+    assert_ne!(first_copy_repeat, id("repeat"));
+    let first_copy_owner = first_copy
+        .beat_sounds()
+        .keys()
+        .find(|owner| *owner != &id("owner"))
+        .unwrap()
+        .clone();
+    let mut copied_event = first_copy.beat_sounds()[&first_copy_owner][&sound_id("effect")].clone();
+    copied_event.gain_millidecibels = -6000;
+    let first_copy = edit(
+        &first_copy,
+        "first-copy-gain",
+        Command::SetBeatSound {
+            owner: first_copy_owner,
+            id: sound_id("effect"),
+            event: copied_event,
+        },
+    );
+
+    // The copy begins at frame 14, a different NTSC phase from frame 2.
+    // Render bounded per-stage blocks, then compare away from current Hold
+    // envelopes while checking both transported terminal labels explicitly.
+    let first_actual = render_nested_occurrences(&first_copy, 14);
+    assert_eq!(first_actual.1, vec![[0.0; 2]; first_actual.1.len()]);
+    assert_inner_gap_silence(&first_actual.0, 14);
+    assert_inner_gap_silence(&first_actual.2, 19);
+    for (expected, actual, old_frame, new_frame) in [
+        (&reference.0, &first_actual.0, 2, 14),
+        (&reference.2, &first_actual.2, 7, 19),
+    ] {
+        assert_eq!(expected.len(), actual.len());
+        assert_eq!(actual.last().copied().unwrap(), [0.0; 2]);
+        assert_pcm_equal_outside_current_gate_context(expected, actual, old_frame, new_frame);
+    }
+
+    // Recopying that fresh subtree at frame 23 crosses to the opposite rounded
+    // allocation length. The already-clipped terminal PCM stays absent.
+    let second_slice = capture_repeat_slice(
+        &first_copy,
+        "destination-sequence",
+        &first_copy_repeat,
+        "capture-second",
+    );
+    let second_copy = paste_repeat_slice(
+        &first_copy,
+        "destination-sequence",
+        2,
+        &second_slice,
+        "paste-second",
+    );
+    let second_copy_repeat = second_copy
+        .children(&id("destination-sequence"))
+        .nth(2)
+        .unwrap()
+        .clone();
+    let second_actual = render_nested_occurrences(&second_copy, 23);
+    assert_eq!(second_actual.1, vec![[0.0; 2]; second_actual.1.len()]);
+    assert_inner_gap_silence(&second_actual.0, 23);
+    assert_inner_gap_silence(&second_actual.2, 28);
+    for (expected, actual, old_frame, new_frame) in [
+        (&reference.0, &second_actual.0, 2, 23),
+        (&reference.2, &second_actual.2, 7, 28),
+    ] {
+        assert_eq!(actual.len() + 1, expected.len());
+        assert_pcm_equal_outside_current_gate_context(expected, actual, old_frame, new_frame);
+    }
+
+    // A later phase restores the full frame allocation, but cannot restore the
+    // terminal label clipped from each occurrence earlier in
+    // the journal.
+    let third_slice = capture_repeat_slice(
+        &second_copy,
+        "destination-sequence",
+        &second_copy_repeat,
+        "capture-third",
+    );
+    let third_copy = paste_repeat_slice(
+        &second_copy,
+        "destination-sequence",
+        3,
+        &third_slice,
+        "paste-third",
+    );
+    let third_actual = render_nested_occurrences(&third_copy, 32);
+    assert_eq!(third_actual.1, vec![[0.0; 2]; third_actual.1.len()]);
+    assert_inner_gap_silence(&third_actual.0, 32);
+    assert_inner_gap_silence(&third_actual.2, 37);
+    for (expected, actual, old_frame, new_frame) in [
+        (&reference.0, &third_actual.0, 2, 32),
+        (&reference.2, &third_actual.2, 7, 37),
+    ] {
+        assert_eq!(actual.len(), expected.len());
+        assert_eq!(actual.last().copied().unwrap(), [0.0; 2]);
+        assert_pcm_equal_outside_current_gate_context(expected, actual, old_frame, new_frame);
     }
 }
 

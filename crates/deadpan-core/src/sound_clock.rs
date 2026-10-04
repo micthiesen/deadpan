@@ -1,7 +1,8 @@
 //! Retained structural clocks for independent beat-owned sound voices.
 //!
-//! These records establish historical placement, not physical source bindings,
-//! media admission, or permission to edit a sound-bearing subtree.
+//! Each reference names an immutable frozen scope and owner. The journal also
+//! names the owner's current live scope. These records preserve clock history;
+//! they do not establish media admission or permission to edit a sound owner.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
@@ -16,67 +17,133 @@ pub(crate) mod edit;
 pub const MAX_SOUND_CLOCKS: usize = 1024;
 pub const MAX_SOUND_CLOCK_BYTES: usize = 1024 * 1024;
 
+/// One historical owner's clock in a frozen processing scope.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SoundClockReference {
+    timing: AudioTimingId,
+    scope: NodeId,
+    owner: NodeId,
+}
+
+impl SoundClockReference {
+    pub fn new(timing: AudioTimingId, scope: NodeId, owner: NodeId) -> Self {
+        Self {
+            timing,
+            scope,
+            owner,
+        }
+    }
+
+    pub fn timing(&self) -> &AudioTimingId {
+        &self.timing
+    }
+
+    pub fn scope(&self) -> &NodeId {
+        &self.scope
+    }
+
+    pub fn owner(&self) -> &NodeId {
+        &self.owner
+    }
+}
+
 /// Chronological pre-edit clocks. The current document supplies the final clock.
-/// Repeated layout contents are meaningful, but a capture identity is used once.
+/// Equal frozen layouts remain distinct when their timing identities differ.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(transparent)]
-pub struct SoundClockJournal(Vec<AudioTimingId>);
+pub struct SoundClockJournal {
+    scope: NodeId,
+    clocks: Vec<SoundClockReference>,
+}
 
 impl SoundClockJournal {
-    pub fn new(clocks: Vec<AudioTimingId>) -> Result<Self, DocumentError> {
+    pub fn new(scope: NodeId, clocks: Vec<SoundClockReference>) -> Result<Self, DocumentError> {
         if clocks.is_empty() {
             return Err(invalid("sound clock journal requires at least one capture"));
         }
         if clocks.len() > MAX_SOUND_CLOCKS {
             return Err(limit("sound clock journal capture limit"));
         }
-        if clocks.iter().collect::<BTreeSet<_>>().len() != clocks.len() {
+        if clocks
+            .iter()
+            .map(SoundClockReference::timing)
+            .collect::<BTreeSet<_>>()
+            .len()
+            != clocks.len()
+        {
             return Err(invalid("duplicate sound clock capture identity"));
         }
-        Ok(Self(clocks))
+        Ok(Self { scope, clocks })
     }
 
-    pub fn clocks(&self) -> &[AudioTimingId] {
-        &self.0
+    /// The current live processing scope containing this sound owner.
+    pub fn scope(&self) -> &NodeId {
+        &self.scope
     }
 
-    pub fn with_appended(&self, clock: AudioTimingId) -> Result<Self, DocumentError> {
-        if self.0.len() == MAX_SOUND_CLOCKS {
+    /// Chronological historical clocks, oldest first.
+    pub fn clocks(&self) -> &[SoundClockReference] {
+        &self.clocks
+    }
+
+    pub fn with_appended(&self, reference: SoundClockReference) -> Result<Self, DocumentError> {
+        if self.clocks.len() == MAX_SOUND_CLOCKS {
             return Err(limit("sound clock journal capture limit"));
         }
-        if self.0.contains(&clock) {
+        if self
+            .clocks
+            .iter()
+            .any(|previous| previous.timing == reference.timing)
+        {
             return Err(invalid("duplicate sound clock capture identity"));
         }
-        let mut clocks = self.0.clone();
-        clocks.push(clock);
-        Ok(Self(clocks))
+        let mut clocks = self.clocks.clone();
+        clocks.push(reference);
+        Ok(Self {
+            scope: self.scope.clone(),
+            clocks,
+        })
     }
+}
+
+struct BoundedReferences(Vec<SoundClockReference>);
+
+impl<'de> Deserialize<'de> for BoundedReferences {
+    fn deserialize<D: Deserializer<'de>>(decoder: D) -> Result<Self, D::Error> {
+        struct References;
+        impl<'de> Visitor<'de> for References {
+            type Value = BoundedReferences;
+
+            fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.write_str("a bounded sequence of sound clock references")
+            }
+
+            fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+                let mut clocks = Vec::new();
+                while let Some(reference) = seq.next_element::<SoundClockReference>()? {
+                    if clocks.len() == MAX_SOUND_CLOCKS {
+                        return Err(de::Error::custom("sound clock journal capture limit"));
+                    }
+                    clocks.push(reference);
+                }
+                Ok(BoundedReferences(clocks))
+            }
+        }
+        decoder.deserialize_seq(References)
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct JournalWire {
+    scope: NodeId,
+    clocks: BoundedReferences,
 }
 
 impl<'de> Deserialize<'de> for SoundClockJournal {
     fn deserialize<D: Deserializer<'de>>(decoder: D) -> Result<Self, D::Error> {
-        struct Journal;
-        impl<'de> Visitor<'de> for Journal {
-            type Value = SoundClockJournal;
-            fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-                f.write_str("a bounded nonempty sequence of distinct sound clocks")
-            }
-            fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
-                let mut clocks = Vec::new();
-                let mut seen = BTreeSet::new();
-                while let Some(clock) = seq.next_element::<AudioTimingId>()? {
-                    if clocks.len() == MAX_SOUND_CLOCKS {
-                        return Err(de::Error::custom("sound clock journal capture limit"));
-                    }
-                    if !seen.insert(clock.clone()) {
-                        return Err(de::Error::custom("duplicate sound clock capture identity"));
-                    }
-                    clocks.push(clock);
-                }
-                SoundClockJournal::new(clocks).map_err(de::Error::custom)
-            }
-        }
-        decoder.deserialize_seq(Journal)
+        let wire = JournalWire::deserialize(decoder)?;
+        Self::new(wire.scope, wire.clocks.0).map_err(de::Error::custom)
     }
 }
 
@@ -118,9 +185,11 @@ where
     struct Map<K, V>(std::marker::PhantomData<(K, V)>);
     impl<'de, K: Deserialize<'de> + Ord, V: Deserialize<'de>> Visitor<'de> for Map<K, V> {
         type Value = BTreeMap<K, V>;
+
         fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             f.write_str("a bounded unique sound clock map")
         }
+
         fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
             let mut values = BTreeMap::new();
             while let Some(key) = map.next_key::<K>()? {
@@ -171,6 +240,7 @@ pub(crate) fn wire_size(clocks: &SoundClocks) -> Result<(), DocumentError> {
                 .ok_or_else(|| std::io::Error::other("sound clock journal byte limit"))?;
             Ok(bytes.len())
         }
+
         fn flush(&mut self) -> std::io::Result<()> {
             Ok(())
         }

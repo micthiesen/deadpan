@@ -4,6 +4,7 @@
 mod children;
 mod placement;
 mod rename;
+mod sound_clocks;
 mod wire;
 
 pub use children::SequenceChildrenPlan;
@@ -230,14 +231,6 @@ impl CapturedEditSlice {
             offset = end;
         }
         let marks = crate::marks::capture_slice_mark_bindings(document, &parts, &selected)?;
-        if selected
-            .iter()
-            .any(|owner| document.audio_bindings.sound_clocks.contains_key(owner))
-        {
-            return Err(invalid(
-                "copied contents cannot yet retain beat sound clock aliases",
-            ));
-        }
         let state = if range.duration() == FrameDuration::ZERO {
             // A validated zero-duration owned tree can contain only Sequences.
             // Prove this rather than discarding a physical owner's clock.
@@ -433,7 +426,10 @@ impl CapturedEditSlice {
     }
 
     fn context(&self) -> Result<ProjectDocument, EditError> {
-        let value = &self.0;
+        Self::context_for(&self.0)
+    }
+
+    fn context_for(value: &SliceWire) -> Result<ProjectDocument, EditError> {
         if value.nodes.len() >= MAX_DOCUMENT_NODES
             || value.parts.is_empty()
             || value.parts.len() > value.nodes.len()
@@ -467,11 +463,6 @@ impl CapturedEditSlice {
 
     fn validate(&self) -> Result<(), EditError> {
         let value = &self.0;
-        if !value.audio_bindings.sound_clocks.is_empty() {
-            return Err(invalid(
-                "copied contents cannot yet retain beat sound clock aliases",
-            ));
-        }
         if value.range.start().0 < 0 || value.range.end().0 > value.source_duration.frames() {
             return Err(invalid("slice bounds are outside its captured project"));
         }
@@ -579,14 +570,18 @@ fn capture_audio(
     range: FrameRange,
     timing: &AudioTimingId,
 ) -> Result<AudioBindingState, EditError> {
+    // Check before detaching voices: pruning can remove a clock-only record,
+    // but its identity must not be reused for the capture-time layout.
+    if document.audio_bindings.timings.contains_key(timing) {
+        return Err(invalid("slice capture timing identity already exists"));
+    }
     // The independent root bus is outside this ownership selection. Only a
     // private structural view is detached; the source document is unchanged.
     let mut structural = document.clone();
     structural.sounds.clear();
     structural.sound_routes.clear();
     structural.sound_allowances.clear();
-    // Unselected independent voices do not belong to the copied forest. The
-    // selected-owner guard above has already refused retained clock aliases.
+    // Independent voices are captured separately from physical source bindings.
     structural.audio_bindings.sound_clocks.clear();
     crate::audio_binding_lifecycle::prune(&mut structural);
     let captured = crate::audio_binding_lifecycle::capture_for_composite_insertion(
@@ -636,10 +631,16 @@ fn capture_audio(
     )?;
     state.bindings.retain(|id, _| selected.contains(id));
     state.gap_bindings.retain(|id, _| selected.contains(id));
+    sound_clocks::capture(document, parts, selected, timing, &mut state)?;
     let retained: BTreeSet<_> = state
         .owners()
         .flat_map(|(_, _, binding)| binding.placements())
         .map(|placement| placement.reference.timing.clone())
+        .chain(state.sound_clocks.values().flat_map(|events| {
+            events
+                .values()
+                .flat_map(|journal| journal.clocks().iter().map(|clock| clock.timing().clone()))
+        }))
         .collect();
     state.timings.retain(|id, _| retained.contains(id));
     Ok(state)

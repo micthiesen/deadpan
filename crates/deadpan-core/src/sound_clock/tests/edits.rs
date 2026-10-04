@@ -41,15 +41,26 @@ fn insert(name: &str, at: i64, duration: i64) -> Command {
         timing: timing(name),
     }
 }
-fn journal(document: &ProjectDocument) -> &[AudioTimingId] {
-    document.audio_bindings.sound_clocks[&node("owner")][&sound("effect")].clocks()
+fn journal(document: &ProjectDocument) -> Vec<AudioTimingId> {
+    document.audio_bindings.sound_clocks[&node("owner")][&sound("effect")]
+        .clocks()
+        .iter()
+        .map(|reference| reference.timing().clone())
+        .collect()
+}
+fn owner_journal(document: &ProjectDocument, owner: &NodeId) -> Vec<AudioTimingId> {
+    document.audio_bindings.sound_clocks[owner][&sound("effect")]
+        .clocks()
+        .iter()
+        .map(|reference| reference.timing().clone())
+        .collect()
 }
 
 #[test]
 fn prefix_insertion_deletion_and_moves_keep_chronology_and_exact_inverse() {
     let before = fixture();
     let inserted = edit(&before, "inserted", insert("inserted", 0, 2));
-    assert_eq!(journal(&inserted), &[timing("inserted")]);
+    assert_eq!(journal(&inserted), vec![timing("inserted")]);
     assert_eq!(
         inserted.audio_bindings.timings[&timing("inserted")],
         FrozenAudioLayout::capture(&before).unwrap()
@@ -63,7 +74,10 @@ fn prefix_insertion_deletion_and_moves_keep_chronology_and_exact_inverse() {
             timing: timing("deleted"),
         },
     );
-    assert_eq!(journal(&deleted), &[timing("inserted"), timing("deleted")]);
+    assert_eq!(
+        journal(&deleted),
+        vec![timing("inserted"), timing("deleted")]
+    );
     assert_eq!(deleted.nodes, before.nodes);
     let moved = edit(
         &deleted,
@@ -82,7 +96,7 @@ fn prefix_insertion_deletion_and_moves_keep_chronology_and_exact_inverse() {
     );
     assert_eq!(
         journal(&moved),
-        &[timing("inserted"), timing("deleted"), timing("moved")]
+        vec![timing("inserted"), timing("deleted"), timing("moved")]
     );
     assert_eq!(
         moved.source_splice_boundary(&node("root"), 0).unwrap(),
@@ -105,7 +119,7 @@ fn prefix_insertion_deletion_and_moves_keep_chronology_and_exact_inverse() {
     );
     assert_eq!(
         journal(&restored),
-        &[
+        vec![
             timing("inserted"),
             timing("deleted"),
             timing("moved"),
@@ -207,6 +221,59 @@ fn changed_processing_subtree_and_partial_owner_deletion_refuse_atomically() {
 }
 
 #[test]
+fn reordering_equal_shaped_siblings_cannot_reassign_an_unclocked_owner() {
+    for cached_scope in [false, true] {
+        let mut before = fixture();
+        if cached_scope {
+            // This unchanged owner is visited first and populates the shared
+            // scope proof. The later owner still needs its own identity check.
+            before.nodes.insert(node("alpha"), hold(4));
+            let NodeKind::Sequence { children } =
+                &mut before.nodes.get_mut(&node("top")).unwrap().kind
+            else {
+                unreachable!()
+            };
+            children.insert(0, node("alpha"));
+            before
+                .beat_sounds
+                .insert(node("alpha"), before.beat_sounds[&node("owner")].clone());
+        }
+        before.validate().unwrap();
+        let snapshot = before.to_json().unwrap();
+        let error = apply(
+            &before,
+            &request(
+                &before,
+                "reordered",
+                Command::MoveRange {
+                    source_revision: before.revision_id().clone(),
+                    source_parent: node("top"),
+                    range: if cached_scope {
+                        range(5, 9)
+                    } else {
+                        range(1, 5)
+                    },
+                    destination: MoveRangeDestination::Seam {
+                        parent: node("top"),
+                        index: if cached_scope { 3 } else { 2 },
+                    },
+                    identities: SplitIdentities { nodes: vec![] },
+                    timing: timing("reordered"),
+                },
+            ),
+        )
+        .unwrap_err();
+        assert!(
+            error
+                .message
+                .contains("sound owner moved outside its captured scope"),
+            "{error}"
+        );
+        assert_eq!(before.to_json().unwrap(), snapshot);
+    }
+}
+
+#[test]
 fn metadata_and_rename_preserve_journals_recipe_replacement_retires_only_one() {
     let mut before = fixture();
     let event = before.beat_sounds[&node("owner")][&sound("effect")].clone();
@@ -252,8 +319,8 @@ fn metadata_and_rename_preserve_journals_recipe_replacement_retires_only_one() {
     );
     assert!(!replaced.audio_bindings.sound_clocks[&node("owner")].contains_key(&sound("effect")));
     assert_eq!(
-        replaced.audio_bindings.sound_clocks[&node("owner")][&sound("second")].clocks(),
-        &[timing("shifted")]
+        clock_ids(&replaced.audio_bindings.sound_clocks[&node("owner")][&sound("second")]),
+        vec![timing("shifted")]
     );
     let deleted = edit(
         &replaced,
@@ -366,7 +433,7 @@ fn ordinary_whole_owner_paste_merges_imported_events_and_saved_clocks() {
     let shifted = edit(&before, "shifted", insert("shifted", 0, 2));
     let pasted = edit(&shifted, "pasted", paste_command(&slice, "pasted", 0));
     assert_eq!(pasted.beat_sounds.len(), 2);
-    assert_eq!(journal(&pasted), &[timing("shifted"), timing("pasted")]);
+    assert_eq!(journal(&pasted), vec![timing("shifted"), timing("pasted")]);
     let copied_owner = pasted
         .beat_sounds
         .keys()
@@ -376,23 +443,20 @@ fn ordinary_whole_owner_paste_merges_imported_events_and_saved_clocks() {
         pasted.beat_sounds[copied_owner],
         before.beat_sounds[&node("owner")]
     );
-    assert!(
-        !pasted
-            .audio_bindings
-            .sound_clocks
-            .contains_key(copied_owner)
+    assert_eq!(
+        owner_journal(&pasted, copied_owner),
+        vec![AudioTimingId {
+            allocation: revision("pasted"),
+            ordinal: 1,
+        }]
     );
-    assert!(
-        CapturedEditSlice::capture_selection(
-            &pasted,
-            &node("root"),
-            &SliceCaptureSelection::Child { node: node("top") },
-            timing("copy-retained")
-        )
-        .unwrap_err()
-        .message
-        .contains("clock aliases")
-    );
+    CapturedEditSlice::capture_selection(
+        &pasted,
+        &node("root"),
+        &SliceCaptureSelection::Child { node: node("top") },
+        timing("copy-retained"),
+    )
+    .unwrap();
     // Retained clocks elsewhere must not prevent copying an unrelated beat.
     CapturedEditSlice::capture_selection(
         &pasted,
@@ -518,7 +582,7 @@ fn explicit_source_and_range_commands_transport_after_unsounded_endpoint_splits(
         ),
     ] {
         let after = edit(&before, name, command);
-        assert_eq!(journal(&after), &[timing(name)], "{name}");
+        assert_eq!(journal(&after), vec![timing(name)], "{name}");
         assert_eq!(after.beat_sounds, before.beat_sounds, "{name}");
         assert_eq!(
             after.audio_bindings.timings[&timing(name)],
@@ -529,7 +593,7 @@ fn explicit_source_and_range_commands_transport_after_unsounded_endpoint_splits(
 }
 
 #[test]
-fn retained_clock_slice_wire_is_refused_before_alias_renaming() {
+fn retained_clock_slice_wire_roundtrips_and_rejects_duplicate_history() {
     let before = fixture();
     let slice = CapturedEditSlice::capture_selection(
         &before,
@@ -538,9 +602,13 @@ fn retained_clock_slice_wire_is_refused_before_alias_renaming() {
         timing("copy"),
     )
     .unwrap();
+    let encoded = serde_json::to_string(&slice).unwrap();
+    assert_eq!(CapturedEditSlice::from_json(&encoded).unwrap(), slice);
     let mut wire = serde_json::to_value(&slice).unwrap();
-    wire["audio_bindings"]["sound_clocks"] =
-        serde_json::json!({"owner":{"effect":[timing("copy")]}});
+    let clocks = wire["audio_bindings"]["sound_clocks"]["owner"]["effect"]["clocks"]
+        .as_array_mut()
+        .unwrap();
+    clocks.push(clocks[0].clone());
     let error = CapturedEditSlice::from_json(&wire.to_string()).unwrap_err();
-    assert!(error.message.contains("clock aliases"), "{error}");
+    assert!(error.message.contains("duplicate sound clock"), "{error}");
 }

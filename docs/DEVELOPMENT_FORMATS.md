@@ -1,7 +1,7 @@
 # Supported development project formats
 
-The current package uses SQLite schema 57 and core document schema 45. This
-development build opens schema 57. It refuses schemas 1 through 56 with the
+The current package uses SQLite schema 58 and core document schema 46. This
+development build opens schema 58. It refuses schemas 1 through 57 with the
 store's `UnsupportedSchema` error (`SchemaUnsupported` over the CLI) before obtaining
 a writer lock, creating a backup, enabling WAL, repairing directories or parsing
 authored documents. The old package remains intact. Create a current project to
@@ -20,14 +20,14 @@ speed improvements have not been isolated or measured.
 cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 ```
 
-Core schema 45 retains chronological sample clocks for beat-owned sounds,
-addressed by owner and local sound ID. Database 57 stores these documents and
-their reversible patches. Prior unused packages have no supported migration,
-including the former schema-52
-additive upgrade. Create a current package to continue; refusal never rewrites
+Core schema 46 retains scoped historical aliases in chronological sample clocks
+for beat-owned sounds, addressed by owner and local sound ID. Database 58 stores
+these documents and their reversible patches. Prior unused packages have no
+supported migration, including the former schema-52 additive upgrade. Create a
+current package to continue; refusal never rewrites
 the old package or its media.
 
-Calling `project migrate` on schema 57 performs read-only validation and reports
+Calling `project migrate` on schema 58 performs read-only validation and reports
 equal source/destination schemas with `backup: null`, including alongside a
 native writer. Calling it on an older package returns `SchemaUnsupported`
 before creating a backup or obtaining a writer. An open native endpoint only

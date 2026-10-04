@@ -50,6 +50,7 @@ pub use plan::{
 };
 pub use plan::{AudioDefinition, AudioDefinitionSelector, AudioPointDomain, AudioRootPlacement};
 pub use plan::{AudioHoldIssuer, AudioHoldPolicyQuery, AudioHoldRule};
+pub use plan::{AudioOccurrenceAlias, AudioSoundClockBinding, AudioSoundClockScope};
 pub use plan::{
     AudioOwnerClock, AudioOwnerClockOrigin, AudioOwnerKind, AudioOwnerQuery, AudioOwnerSpan,
     AudioOwnerSupport,

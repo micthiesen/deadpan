@@ -2,8 +2,8 @@ use super::*;
 use deadpan_core::{
     AudioBindingState, AudioEdgePolicy, AudioSample, AudioTimingRecord, BeatNode, BeatSound,
     ColorPolicy, ExactRatio, FrozenAudioLayout, HoldAudio, HoldRecipe, HoldVideo,
-    PresentationBasis, ProjectId, SoundClockJournal, SoundId, SoundOverflowPolicy, SourceAudio,
-    SourceAudioMapping, SourceTimeBase,
+    PresentationBasis, ProjectId, SoundClockJournal, SoundClockReference, SoundId,
+    SoundOverflowPolicy, SourceAudio, SourceAudioMapping, SourceTimeBase,
 };
 use deadpan_media::audio_index::{
     AudioChannelLayout, AudioFrameObservation, AudioIndexSnapshot, AudioStreamDescriptor,
@@ -194,12 +194,17 @@ fn with_clocks(document: &ProjectDocument, owner: &str, ordinals: &[u32]) -> Pro
             layout: FrozenAudioLayout::capture(document).unwrap(),
         })
         .collect();
+    let scope = node(owner);
     let journals = if clocks.is_empty() {
         BTreeMap::new()
     } else {
+        let references = clocks
+            .iter()
+            .map(|id| SoundClockReference::new(id.clone(), scope.clone(), node(owner)))
+            .collect();
         BTreeMap::from([(
-            node(owner),
-            BTreeMap::from([(sound(), SoundClockJournal::new(clocks).unwrap())]),
+            scope.clone(),
+            BTreeMap::from([(sound(), SoundClockJournal::new(scope, references).unwrap())]),
         )])
     };
     let bindings = AudioBindingState::new_with_sound_clocks(

@@ -103,7 +103,9 @@ pub use scoped_edit::{
 };
 pub use semantic::*;
 pub use sound_allowance::*;
-pub use sound_clock::{MAX_SOUND_CLOCK_BYTES, MAX_SOUND_CLOCKS, SoundClockJournal};
+pub use sound_clock::{
+    MAX_SOUND_CLOCK_BYTES, MAX_SOUND_CLOCKS, SoundClockJournal, SoundClockReference,
+};
 pub use sound_events::*;
 pub use sound_route::*;
 pub use sound_routing::*;

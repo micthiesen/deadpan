@@ -109,16 +109,20 @@ pub(super) fn route_occurrence<'plan>(
 pub(super) fn placements(
     original: &AudioSourceOccurrence<'_>,
     current: &AudioSourceOccurrence<'_>,
-    clocks: &[(&AudioTimingId, &FrozenAudioLayout)],
+    clocks: &[deadpan_plan::AudioSoundClockScope<'_>],
     control: WorkControl<'_>,
 ) -> Result<Vec<Range<ExactRatio>>, StageAudioError> {
     let extent = original.extent();
     let mut placements = Vec::with_capacity(clocks.len() + 1);
     let mut first_origin = None;
-    for (_, layout) in clocks {
-        let projection = layout
+    for clock in clocks {
+        let (historical_instance, remap_work) = clock
+            .remap_instance_with_work(current.instance(), control.query_limits()?.maximum_work)?;
+        control.spend_plan_work(remap_work)?;
+        let projection = clock
+            .historical_layout()
             .project(
-                original.instance(),
+                &historical_instance,
                 ExactRatio::ZERO,
                 None,
                 control
@@ -130,10 +134,8 @@ pub(super) fn placements(
         control.spend_plan_work(projection.work)?;
         let first = *first_origin.get_or_insert(projection.origin);
         let shift = projection.origin.checked_sub(first)?;
-        // Core admission proves the complete top-level processing branch is
-        // unchanged. Its affine-origin difference is therefore a root translation
-        // for every processed sample, even through Preserve. Geometry supplies
-        // only that delta; the actual processed allocation remains authoritative.
+        // Core's paired proof establishes that each frozen owner path has the
+        // same nested processing graph and stable Repeat labels.
         placements.push(extent.start.checked_add(shift)?..extent.end.checked_add(shift)?);
     }
     placements.push(current.extent());
@@ -146,12 +148,12 @@ mod tests;
 
 pub(super) fn historical_occurrence<'plan>(
     plan: &'plan RenderPlan,
-    current: &AudioSourceOccurrence<'_>,
     event: &deadpan_core::BeatSound,
+    instance: deadpan_core::InstancePath,
     control: WorkControl<'_>,
 ) -> Result<AudioSourceOccurrence<'plan>, StageAudioError> {
     let voice = plan.source_voice_occurrence(
-        current.instance().clone(),
+        instance,
         AudioSourceVoiceRecipe {
             source: event.source.clone(),
             mapping: event.mapping,

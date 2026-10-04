@@ -2,6 +2,52 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Copied sound clocks, 2026-10-03
+
+Core 46/database 58 gives each independent sound journal one live processing
+scope and chronological historical scope/owner references. Paired subtree proofs
+allow fresh copied node IDs while requiring equal timing, Repeat orders and
+processing controls. Only ordinary Sequence ancestors may surround either scope.
+Temporal edits preserve each live owner's exact identity, including cache hits.
+
+Whole-owner capture appends the source's formerly implicit final placement,
+including previous clipping. Narrow an enclosing ordinary Sequence scope when
+selecting one child; preserve a smaller existing scope when copying its outer
+group. Paste renames live nodes, historical aliases, timing records and explicitly
+paired Repeat families together. Cache proofs by the full timing/scope tuple,
+but check each event's historical owner on every hit.
+
+The audio reader binds historical plans to the exact retained layout and qualified
+source recipe once per sound/read. An opaque alias then proves concrete current
+and historical occurrences before transporting PCM and edge envelopes. Retain
+complete nested Preserve history; apply current gates and gain after raw routing.
+The store recaptures immutable register contents and independently checks source
+receipts and retained originals at preview and commit.
+
+Partial sound owners, changed surviving processing branches, root-owned temporal
+transport, occurrence isolation, allowances and native beat-sound placement remain
+guarded. Complete `ib`/`ab` behavior still needs the remaining attachment lifecycle.
+Prior unused databases 1 through 57 refuse before writes. See
+[copied sound clocks](../OWNED_SOUND_VOICES.md#copying-retained-sound-clocks) and
+the [qualification record](../qualification/sound-slice-clocks-2026-10-03.md).
+
+Independent review is complete. The full workspace passes 3,600 tests with none
+failed or ignored. All 40 focused regressions, formatting and strict workspace
+lint pass on one unchanged source inventory. Full logs and earlier failures are
+retained. No interactive native app was launched for this increment.
+
+The next bounded structural increment can support neutral Group/Ungroup outside
+every retained sound scope. Existing scope IDs survive ordinary Sequence wrappers;
+do not infer that wrapping requires a root-branch clock rebase. Prove unchanged
+owner positions, scopes and PCM, preserve journals without adding timing, and
+check a subsequent timed edit. Keep scope removal, edits inside a retained scope,
+sound-owning Sequence removal and partial-owner operations guarded. This is a
+proposed next step, not implemented behavior.
+
+The sections below describe historical checkpoints. This section and the current
+contracts supersede their blanket refusal of retained-clock copies. No product
+requirement or release gate is complete.
+
 ## Saved independent sound clocks, 2026-10-03
 
 Core 45/database 57 adds owner/local-sound clock journals, separate from physical

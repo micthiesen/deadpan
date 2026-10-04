@@ -234,7 +234,15 @@ fn document_with_sound_clock(
             owner,
             BTreeMap::from([(
                 sound_id,
-                SoundClockJournal::new(vec![timing.clone()]).unwrap(),
+                SoundClockJournal::new(
+                    id("outer_repeat"),
+                    vec![SoundClockReference::new(
+                        timing.clone(),
+                        id("outer_repeat"),
+                        id("owner_a"),
+                    )],
+                )
+                .unwrap(),
             )]),
         )]),
     )
@@ -330,6 +338,140 @@ fn beat_sound_clock_accessor_returns_borrowed_layouts_in_journal_order() {
     assert_eq!(clocks.len(), 1);
     assert_eq!(clocks[0].0, &timing);
     assert_eq!(clocks[0].1, &expected);
+}
+
+#[test]
+fn sound_clock_scope_mints_only_recipe_matched_nested_occurrence_aliases() {
+    let rate = FrameRate::new(30_000, 1001).unwrap();
+    let (document, _, layout) = document_with_sound_clock(rate);
+    let plan = RenderPlan::compile(&document).unwrap();
+    let sound = SoundId::new("event").unwrap();
+    let event = &plan.beat_sounds()[&id("owner_a")][&sound];
+    let recipe = deadpan_plan::AudioSourceVoiceRecipe {
+        source: event.source.clone(),
+        mapping: event.mapping,
+        offset: event.offset,
+    };
+    let instance = InstancePath {
+        node: id("owner_a"),
+        repeats: vec![
+            RepeatInstance {
+                node: id("outer_repeat"),
+                iteration: play("outer-plays", 0),
+            },
+            RepeatInstance {
+                node: id("inner_repeat"),
+                iteration: play("inner-plays", 1),
+            },
+        ],
+    };
+    let current = plan
+        .source_voice_occurrence(instance.clone(), recipe.clone(), Default::default())
+        .unwrap();
+    let scopes = plan
+        .beat_sound_clock_scopes(&id("owner_a"), &sound, deadpan_core::MAX_DOCUMENT_NODES)
+        .unwrap();
+    assert_eq!(scopes.len(), 1);
+    assert_eq!(
+        scopes[0].remap_instance(current.instance()).unwrap(),
+        instance
+    );
+
+    let historical_plan = plan
+        .compile_sound_processing_layout(&layout, &BTreeSet::from([event.source.asset.clone()]))
+        .unwrap();
+    let (binding, _) = scopes[0]
+        .bind_historical_plan(&historical_plan, deadpan_core::MAX_DOCUMENT_NODES)
+        .unwrap();
+    let historical = historical_plan
+        .source_voice_occurrence(instance, recipe, Default::default())
+        .unwrap();
+    let (alias, _) = binding
+        .alias_occurrence(&historical, &current, deadpan_core::MAX_DOCUMENT_NODES)
+        .unwrap();
+    let placements = [historical.extent(), current.extent()];
+    assert!(
+        current
+            .routed_gate_fades_from(
+                &historical,
+                &alias,
+                &placements,
+                (event.start_edge, event.end_edge),
+                current.samples(),
+                Default::default(),
+            )
+            .is_ok()
+    );
+
+    // Equal plan contents do not let an occurrence borrow another plan's token.
+    let foreign_history = historical_plan.clone();
+    let foreign_original = foreign_history
+        .source_voice_occurrence(
+            historical.instance().clone(),
+            historical.recipe().clone(),
+            Default::default(),
+        )
+        .unwrap();
+    assert!(
+        binding
+            .alias_occurrence(
+                &foreign_original,
+                &current,
+                deadpan_core::MAX_DOCUMENT_NODES
+            )
+            .is_err()
+    );
+    assert!(
+        current
+            .routed_gate_fades_from(
+                &foreign_original,
+                &alias,
+                &placements,
+                (event.start_edge, event.end_edge),
+                current.samples(),
+                Default::default(),
+            )
+            .is_err()
+    );
+    let foreign_live = plan.clone();
+    let foreign_current = foreign_live
+        .source_voice_occurrence(
+            current.instance().clone(),
+            current.recipe().clone(),
+            Default::default(),
+        )
+        .unwrap();
+    assert!(
+        binding
+            .alias_occurrence(
+                &historical,
+                &foreign_current,
+                deadpan_core::MAX_DOCUMENT_NODES
+            )
+            .is_err()
+    );
+
+    let different_recipe = deadpan_plan::AudioSourceVoiceRecipe {
+        source: event.source.clone(),
+        mapping: event.mapping,
+        offset: AudioSample(1),
+    };
+    let wrong_current = plan
+        .source_voice_occurrence(
+            current.instance().clone(),
+            different_recipe,
+            Default::default(),
+        )
+        .unwrap();
+    assert!(
+        binding
+            .alias_occurrence(
+                &historical,
+                &wrong_current,
+                deadpan_core::MAX_DOCUMENT_NODES
+            )
+            .is_err()
+    );
 }
 
 #[test]
