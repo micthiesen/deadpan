@@ -37,6 +37,8 @@ pub mod single_source;
 pub mod slice_preview;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod source_registration;
+mod transcripts;
+pub use transcripts::{MAX_TRANSCRIPT_JSON_BYTES, MAX_TRANSCRIPTS, TranscriptKey};
 mod validation;
 
 use std::fs::{self, File, OpenOptions};
@@ -390,6 +392,7 @@ impl ProjectStore {
         registers::check_stored_sizes(&transaction)?;
         generation::check_stored_sizes(&transaction)?;
         generation_attempts::check_stored_sizes(&transaction)?;
+        transcripts::check_stored_sizes(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         render_jobs::check_stored_sizes(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]

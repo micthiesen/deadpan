@@ -23,6 +23,10 @@ sha2.workspace = true
 # Pinned whisper.cpp 1.8.3 (vendored by whisper-rs-sys 0.15.0) with Metal.
 whisper-rs = { version = "=0.16.0", default-features = false, features = ["metal"] }
 
+[dev-dependencies]
+deadpan-cli = { path = "../../crates/deadpan-cli" }
+tempfile.workspace = true
+
 # Only the abort-callback adapter in main.rs opts in; everything else is safe.
 [lints.rust]
 unsafe_code = "deny"

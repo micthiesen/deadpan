@@ -3,7 +3,7 @@ use rusqlite::{Connection, limits::Limit};
 use crate::StoreError;
 
 // Storage has operational tables beyond the independently versioned core JSON.
-pub const VERSION: u32 = 58;
+pub const VERSION: u32 = 59;
 pub const APPLICATION_ID: u32 = 0x4450_4e31;
 pub const MAX_DOCUMENT_BYTES: usize = deadpan_core::MAX_DOCUMENT_JSON_BYTES;
 
@@ -18,8 +18,8 @@ pub fn configure(connection: &Connection) -> Result<(), StoreError> {
 
 pub fn check_version(connection: &Connection) -> Result<(), StoreError> {
     let version = read_version(connection)?;
-    // Core schema 46 retains scoped historical sound aliases. Refuse prior unused
-    // development packages before writable open or document parsing.
+    // Database schema 59 adds local transcripts. Refuse prior unused development
+    // packages before writable open or document parsing.
     if version != VERSION {
         return Err(StoreError::UnsupportedSchema(version));
     }
@@ -71,6 +71,7 @@ pub fn create(connection: &mut Connection) -> Result<(), StoreError> {
     crate::compound::create_tables(&transaction)?;
     crate::registers::create_tables(&transaction)?;
     crate::generation_attempts::create_tables(&transaction)?;
+    crate::transcripts::create_tables(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     crate::render_jobs::create_tables(&transaction)?;
     #[cfg(any(target_os = "macos", target_os = "linux"))]

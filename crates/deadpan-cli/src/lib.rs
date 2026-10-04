@@ -73,6 +73,8 @@ const HELP: &str = "Deadpan headless commands:
   render status <project.deadpan> --job <job> [--after-attempt <ordinal>]
   render status <project.deadpan> --publications [--after <publication>]
   render status <project.deadpan> --publication <publication>
+  transcribe <project.deadpan> --model <ggml.bin> --sha256 <hex> [--language <auto|xx>] [--asset <id>]
+  transcript <project.deadpan> [--search <words>] [--asset <id>]
 
 Creation defaults to a provisional 1920x1080, 30 fps presentation basis.
 Document dumps are inspection output; SQLite remains authoritative.
@@ -122,6 +124,9 @@ pub enum CliError {
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[error(transparent)]
     ProjectAudio(#[from] audio::ProjectAudioError),
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[error(transparent)]
+    Transcription(#[from] transcription::TranscriptionError),
 }
 
 impl CliError {
@@ -154,6 +159,16 @@ impl CliError {
             Self::SourceVideo(_) => "SourceVideoDecodeFailed",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::SourceAudio(_) => "SourceAudioDecodeFailed",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::Transcription(transcription::TranscriptionError::Cancelled) => {
+                "TranscriptionCancelled"
+            }
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::Transcription(transcription::TranscriptionError::Configuration(_)) => {
+                "TranscriptionUnavailable"
+            }
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::Transcription(_) => "TranscriptionFailed",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::ProjectAudio(error) => match error {
                 audio::ProjectAudioError::Store(error) => error.code(),
@@ -376,6 +391,10 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         ["macro", rest @ ..] => macros::run(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["render", rest @ ..] => render::run(rest).map_err(CliError::Render),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["transcribe", rest @ ..] => transcription::run_transcribe(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["transcript", rest @ ..] => transcription::run_transcript(rest),
         [] | ["--help"] | ["-h"] => {
             println!("{HELP}");
             Ok(())
@@ -948,7 +967,7 @@ fn summary(document: &ProjectDocument) -> Result<(), CliError> {
     }))
 }
 
-fn write_json(value: &impl Serialize) -> Result<(), CliError> {
+pub(crate) fn write_json(value: &impl Serialize) -> Result<(), CliError> {
     let mut output = io::stdout().lock();
     serde_json::to_writer_pretty(&mut output, value)?;
     writeln!(output)?;

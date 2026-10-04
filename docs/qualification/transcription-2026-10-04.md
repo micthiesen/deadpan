@@ -28,3 +28,24 @@ accuracy benchmark.
 
 The recorded whisper tokens from the standalone probe are the `recorded()`
 fixture in the transcript tests.
+
+## Project run
+
+A generic project created with `project create`, `project retain-original` and
+`project register-source` holds a 320×180 H.264/AAC video of the same speech
+(`ffmpeg` from Homebrew with explicit BT.709 bitstream colour description; a
+first encode without it was correctly refused as an unqualified transfer).
+`transcribe proj.deadpan --model ggml-base.en.bin --sha256 a03779c8… --asset
+speech` decoded the AAC stream from retained bytes, prepared 7.28 s of analysis
+PCM with the canonical resampler, transcribed 18 words (one approximate) in
+961 ms inside the worker, 3.7 s in total in a debug build, and stored the result
+under the Original's content identity. `transcript … --search "absolutely not"`
+returned words `[10..12)` at 382–477 cs, Original audio samples 183,360–228,960
+at 48 kHz.
+
+`cargo nextest run -p deadpan-store --test transcripts`, `-p deadpan-cli --test
+transcription` and `-p deadpan-transcribe` pass 3, 2 and 3 tests: storage
+replacement, reopening, cap, read-only refusal and tamper detection; exact
+analysis length, origin and an independently measured -79.2 dB mono level from
+the B-frame fixture; command errors; and real-executable model hash, size,
+load, missing-file and deadline failures.

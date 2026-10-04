@@ -1,7 +1,7 @@
 # Supported development project formats
 
-The current package uses SQLite schema 58 and core document schema 46. This
-development build opens schema 58. It refuses schemas 1 through 57 with the
+The current package uses SQLite schema 59 and core document schema 46. This
+development build opens schema 59. It refuses schemas 1 through 58 with the
 store's `UnsupportedSchema` error (`SchemaUnsupported` over the CLI) before obtaining
 a writer lock, creating a backup, enabling WAL, repairing directories or parsing
 authored documents. The old package remains intact. Create a current project to

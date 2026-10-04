@@ -31,6 +31,18 @@ Bounds are clamped into their segment and the analysed duration and kept
 monotonic, so recognizer output always produces a valid transcript or a typed
 error. Stored transcripts are revalidated on deserialization.
 
+## Analysis audio
+
+`prepare_original_audio` decodes the Original's qualified audio stream from its
+verified retained bytes, mixes it with the canonical speaker matrix, resamples
+it with the project's exact-phase resampler to 16 kHz, and averages left and
+right. Analysis sample `k` is source sample `origin + k · rate / 16000`, where
+`origin` is the first measured valid sample. Coverage gaps fail rather than
+being filled. An explicit registered asset can be analysed instead of the
+single-Original default. Averaging cancels opposite-polarity channels: the
+B-frame fixture measures -79.2 dB mono against -55.7/-56.9 dB per channel in
+both FFmpeg and Deadpan. Choosing a channel for such recordings remains open.
+
 ## Worker protocol
 
 The host creates a fresh attempt workspace with `input/` and `output/`, writes
@@ -72,10 +84,21 @@ REPORT.json [phrase]` runs the real worker on a PCM16 mono 16 kHz WAV.
 `DEADPAN_QUALIFY_CANCEL_MS` cancels instead. See the
 [qualification record](qualification/transcription-2026-10-04.md).
 
+## Storage and headless commands
+
+Database schema 59 adds a `transcripts` table keyed by Original content
+identity, audio stream, model SHA-256, language and engine. Saving replaces the
+transcript for its key, never creates a revision or Undo step, and is limited to
+32 transcripts per project; every read revalidates the stored transcript.
+
+`transcribe <project> --model <ggml.bin> --sha256 <hex> [--language <auto|xx>]
+[--asset <id>]` prepares analysis PCM, runs the worker installed beside the
+executable and stores the result; it needs the project's writer.
+`transcript <project> [--search <words>] [--asset <id>]` prints stored
+transcripts, or phrase matches with exact Original sample bounds.
+
 ## Remaining
 
-Preparing analysis PCM from the Original's measured audio, durable transcript
-storage keyed by Original content, model, language and engine, the headless
-command, the transcript and search UI with word navigation, background
+The transcript and search UI with word navigation, background
 scheduling by visible range, VAD and refinement, manual correction, sentence
 objects, accuracy measurement on real speech, and the model manager.

@@ -1184,3 +1184,14 @@ and explanation; the process exits nonzero. A failed storage write never reports
 a committed revision. Tests cover SQLite page exhaustion (`DiskFull`), rollback
 after an interrupted history write, process exit inside an uncommitted database
 transaction, and cross-process writer rejection.
+
+## Transcription
+
+`transcribe <project.deadpan> --model <ggml.bin> --sha256 <hex> [--language
+<auto|xx>] [--asset <id>]` transcribes the single-Original project's Original, or
+an explicit registered source, in the isolated whisper.cpp worker and stores the
+transcript as an annotation outside history. It needs the project's writer.
+`transcript <project.deadpan> [--search <words>] [--asset <id>]` prints stored
+transcripts or phrase matches with exact source sample bounds. Errors use
+`TranscriptionUnavailable`, `TranscriptionCancelled` and `TranscriptionFailed`.
+See [local transcription](TRANSCRIPTION.md).

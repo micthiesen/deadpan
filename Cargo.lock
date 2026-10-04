@@ -1156,6 +1156,7 @@ name = "deadpan-store"
 version = "0.1.0"
 dependencies = [
  "blake3",
+ "deadpan-analysis",
  "deadpan-core",
  "deadpan-fileclone",
  "deadpan-jobs",
@@ -1176,10 +1177,12 @@ name = "deadpan-transcribe"
 version = "0.1.0"
 dependencies = [
  "deadpan-analysis",
+ "deadpan-cli",
  "deadpan-jobs",
  "rustix 1.1.5",
  "serde_json",
  "sha2",
+ "tempfile",
  "whisper-rs",
 ]
 
