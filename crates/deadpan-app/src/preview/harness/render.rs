@@ -12,7 +12,7 @@ mod history;
 
 const COMMIT: &str = "Commit preview and render";
 const DISCARD: &str = "Discard preview and render";
-const KEEP: &str = "Keep editing  ·  Esc";
+const KEEP: &str = "Keep editing  Esc";
 const BEATS: &str = "Current group beat outline pane";
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
@@ -162,7 +162,7 @@ fn camera_decision(d: &mut Driver<'_>) -> Result<(), String> {
         render_snapshot(d),
     )?;
     close_status(d)?;
-    d.click("Cancel  ·  Esc")?;
+    d.click("Cancel  Esc")?;
     d.settled()
 }
 
@@ -237,7 +237,7 @@ fn gain_decision(d: &mut Driver<'_>) -> Result<(), String> {
         render_snapshot(d),
     )?;
     close_status(d)?;
-    d.click("Cancel · Esc")?;
+    d.click("Cancel  Esc")?;
     d.settled()
 }
 
@@ -290,7 +290,7 @@ fn room_tone_decision(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     // Cancel the original sheet through its real control before closing the
     // separate status window, which sits behind the modal.
-    d.click("Cancel  ·  Esc")?;
+    d.click("Cancel  Esc")?;
     close_status(d)?;
     d.click(BEATS)?;
     d.key(Key::U)?;

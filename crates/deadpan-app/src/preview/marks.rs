@@ -648,13 +648,13 @@ impl DeadpanApp {
                 if ui.add_enabled(!busy && letter.is_some(), egui::Button::new("Save this position")).clicked() {
                     action = letter.map(Action::SetMark);
                 }
-                if ui.button("Back to editor · Esc").clicked() { close = true; }
+                if ui.add(style::action("Back to editor", "Esc")).clicked() { close = true; }
             });
             ui.horizontal(|ui| {
-                if ui.add_enabled(!busy && self.marks.history.target(false).is_some(), egui::Button::new("Back · Ctrl O")).clicked() {
+                if ui.add_enabled(!busy && self.marks.history.target(false).is_some(), style::action("Back", "Ctrl O")).clicked() {
                     action = Some(Action::JumpHistory { forward: false });
                 }
-                if ui.add_enabled(!busy && self.marks.history.target(true).is_some(), egui::Button::new("Forward · Ctrl I")).clicked() {
+                if ui.add_enabled(!busy && self.marks.history.target(true).is_some(), style::action("Forward", "Ctrl I")).clicked() {
                     action = Some(Action::JumpHistory { forward: true });
                 }
                 if busy { ui.spinner(); ui.weak("Resolving mark…"); }

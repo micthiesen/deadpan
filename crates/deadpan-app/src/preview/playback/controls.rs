@@ -48,11 +48,10 @@ impl Controls {
         } else {
             "Play edit"
         };
-        let play = text(
-            egui::RichText::new(format!(
-                "{action}  ·  {}",
-                app.editor_key(EditorKey::Playback)
-            )),
+        let play = style::action_galley(
+            ui,
+            action,
+            &app.editor_key(EditorKey::Playback),
             (width - padding.x).max(1.0),
         );
         let action = if looping {
@@ -60,11 +59,10 @@ impl Controls {
         } else {
             "Loop selection"
         };
-        let audition = text(
-            egui::RichText::new(format!(
-                "{action}  ·  {}",
-                app.editor_key(EditorKey::Audition)
-            )),
+        let audition = style::action_galley(
+            ui,
+            action,
+            &app.editor_key(EditorKey::Audition),
             (width - padding.x).max(1.0),
         );
         let status = app.transport.as_ref().map(|run| {

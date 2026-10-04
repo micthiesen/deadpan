@@ -111,7 +111,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     // enter the UI tree on the next paint, as in the native event loop.
     d.step("Paint controls for the selected catalog sound", true)?;
     let before = d.revision();
-    d.click("Place at edit cursor  ·  ,s")?;
+    d.click("Place at edit cursor  ,s")?;
     d.changed(&before)?;
     let first = selected(d)?;
     let first_recipe = event(d, &first)?;
@@ -412,10 +412,10 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         }
         reveal(d, "Fine position · 48 kHz samples", 240.0)?;
         visible(d, "Fine position · 48 kHz samples")?;
-        reveal(d, "Change gain  ·  + / -", -240.0)?;
-        visible(d, "Change gain  ·  + / -")?;
-        reveal(d, "Remove sound  ·  dd", -240.0)?;
-        visible(d, "Remove sound  ·  dd")?;
+        reveal(d, "Change gain  + / -", -240.0)?;
+        visible(d, "Change gain  + / -")?;
+        reveal(d, "Remove sound  dd", -240.0)?;
+        visible(d, "Remove sound  dd")?;
         d.capture(&format!("Sound removal is reachable at {width}x{height}"))?;
         d.check(
             "Placed sounds keep a distinct pane focus at both window sizes",
@@ -434,8 +434,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         d.command("sounds")?;
     }
     choose(d, &second)?;
-    reveal(d, "Change gain  ·  + / -", 240.0)?;
-    d.click("Change gain  ·  + / -")?;
+    reveal(d, "Change gain  + / -", 240.0)?;
+    d.click("Change gain  + / -")?;
     d.key(Key::Escape)?;
     d.check(
         "The sound inspector owns destructive shortcuts while the picture beat stays selected",
@@ -471,8 +471,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         d.snapshot(),
     )?;
     let before = d.revision();
-    reveal(d, "Remove sound  ·  dd", -240.0)?;
-    d.click("Remove sound  ·  dd")?;
+    reveal(d, "Remove sound  dd", -240.0)?;
+    d.click("Remove sound  dd")?;
     d.changed(&before)?;
     d.check(
         "Pointer removal shares sound deletion and never deletes the retained beat",
@@ -714,7 +714,7 @@ fn compact_playback(d: &mut Driver<'_>) -> Result<(), String> {
     let revision = d.revision();
     let selected = selected(d)?;
     let sounds = document(d)?.sounds().clone();
-    d.click("Play edit  ·  Space")?;
+    d.click("Play edit  Space")?;
     d.check(
         "Pointer Play from Sounds starts the edit transport in Preparing",
         d.app().transport.as_ref().is_some_and(|run| {
@@ -725,7 +725,7 @@ fn compact_playback(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     // Inspect the click-release frame itself. An extra frame could conceal a
     // control painted after the old stopped-state reservation was allocated.
-    playback_layout(d, "Cancel preparation  ·  Space", "Preparing ·")?;
+    playback_layout(d, "Cancel preparation  Space", "Preparing ·")?;
     d.capture("Preparing edit playback with sound inspector at 960x640")?;
 
     let (mut feed, _callback) = deadpan_output::channel().map_err(|error| error.to_string())?;
@@ -760,9 +760,9 @@ fn compact_playback(d: &mut Driver<'_>) -> Result<(), String> {
         before.clone(),
         d.snapshot(),
     )?;
-    playback_layout(d, "Pause  ·  Space", "Playing ·")?;
-    d.click("Pause  ·  Space")?;
-    visible(d, "Play edit  ·  Space")?;
+    playback_layout(d, "Pause  Space", "Playing ·")?;
+    d.click("Pause  Space")?;
+    visible(d, "Play edit  Space")?;
     visible(d, "Monitor · :monitor")?;
     scenarios::footer_anchored(
         d,

@@ -912,7 +912,7 @@ impl DeadpanApp {
                             ui.label("Captured view retained");
                             ui.weak("Camera changes this view. Reset keeps its captured crop.");
                         }
-                        if ui.button(if camera.draft.phase() == CameraPhase::TargetPicker { "Close source targets  ·  f" } else { "Choose source target  ·  f" }).clicked() { requested = Some(CameraKey::RefreshTargets); }
+                        if ui.add(style::action(if camera.draft.phase() == CameraPhase::TargetPicker { "Close source targets" } else { "Choose source target" }, "f")).clicked() { requested = Some(CameraKey::RefreshTargets); }
                         if camera.draft.phase() == CameraPhase::TargetPicker {
                             for (number, label, center) in &camera.targets {
                                 let response = ui.add_enabled(center.is_some(), egui::Button::new(format!("{number}  {label}")).min_size(egui::vec2(ui.available_width(), 28.0)));
@@ -923,9 +923,9 @@ impl DeadpanApp {
                         }
                         ui.add_space(12.0);
                         let valid = camera.fields.is_valid() && camera.field_error.is_none() && camera.draft.phase() == CameraPhase::Adjust;
-                        if ui.add_enabled(valid, egui::Button::new("Apply  ·  Enter").fill(style::SELECTED).min_size(egui::vec2(ui.available_width(), 30.0))).clicked() { requested = Some(CameraKey::Commit); }
-                        if ui.add_sized([ui.available_width(), 28.0], egui::Button::new("Cancel  ·  Esc")).clicked() { requested = Some(CameraKey::Cancel); }
-                        if ui.button("Reset framing  ·  r").clicked() { requested = Some(CameraKey::Reset); }
+                        if ui.add_enabled(valid, style::action("Apply", "Enter").fill(style::SELECTED).min_size(egui::vec2(ui.available_width(), 30.0))).clicked() { requested = Some(CameraKey::Commit); }
+                        if ui.add_sized([ui.available_width(), 28.0], style::action("Cancel", "Esc")).clicked() { requested = Some(CameraKey::Cancel); }
+                        if ui.add(style::action("Reset framing", "r")).clicked() { requested = Some(CameraKey::Reset); }
                         ui.add_space(8.0);
                         ui.weak("Timing stays put. Uncovered picture is black.");
                     });

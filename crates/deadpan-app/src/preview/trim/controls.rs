@@ -241,19 +241,19 @@ impl DeadpanApp {
                         context_focus(ui.ctx(), FOCUS);
                     } else { field.request_focus(); }
                 }
-                if ui.add_enabled(enabled, egui::Button::new("−1f · h")).clicked() { actions.push(TrimKey::Nudge(-1)); }
-                if ui.add_enabled(enabled, egui::Button::new("+1f · l")).clicked() { actions.push(TrimKey::Nudge(1)); }
+                if ui.add_enabled(enabled, style::action("−1f", "h")).clicked() { actions.push(TrimKey::Nudge(-1)); }
+                if ui.add_enabled(enabled, style::action("+1f", "l")).clicked() { actions.push(TrimKey::Nudge(1)); }
                 ui.weak("Shift · 10f");
                 if ui.add_enabled(enabled, egui::Button::new(if draft.side == JunctionSide::Before { "Before · b" } else { "Proposed · b" }).selected(draft.side == JunctionSide::Proposed)).clicked() { actions.push(TrimKey::Compare); }
-                if ui.add_enabled(enabled, egui::Button::new("In junction · i")).on_hover_text("Select In. While Slip is active, inspect its In junction and keep Slip active.").clicked() { actions.push(TrimKey::In); }
-                if ui.add_enabled(enabled, egui::Button::new("Out junction · o")).on_hover_text("Select Out. While Slip is active, inspect its Out junction and keep Slip active.").clicked() { actions.push(TrimKey::Out); }
+                if ui.add_enabled(enabled, style::action("In junction", "i")).on_hover_text("Select In. While Slip is active, inspect its In junction and keep Slip active.").clicked() { actions.push(TrimKey::In); }
+                if ui.add_enabled(enabled, style::action("Out junction", "o")).on_hover_text("Select Out. While Slip is active, inspect its Out junction and keep Slip active.").clicked() { actions.push(TrimKey::Out); }
             });
             ui.horizontal_wrapped(|ui| {
                 if ui.add_enabled(enabled && draft.inspection.is_some(), egui::Button::new(if self.transport.is_some() { "Pause · Space" } else { "Audition · Space" })).on_hover_text("Audition the inspected Before or Proposed junction. Space pauses and resumes at the heard position. The picture pair and editor cursors stay fixed.").clicked() { actions.push(TrimKey::Play); }
-                if ui.add_enabled(enabled && draft.inspection.is_some(), egui::Button::new("Loop · Shift-Space")).on_hover_text("Restart a loop from the beginning of this junction's context. Space pauses or resumes it; changing the inspected junction or draft resets the loop.").clicked() { actions.push(TrimKey::Loop); }
+                if ui.add_enabled(enabled && draft.inspection.is_some(), style::action("Loop", "Shift-Space")).on_hover_text("Restart a loop from the beginning of this junction's context. Space pauses or resumes it; changing the inspected junction or draft resets the loop.").clicked() { actions.push(TrimKey::Loop); }
                 ui.weak(format!("Context {} before / {} after", self.audition_context.lead_label(), self.audition_context.follow_label()));
-                if ui.add_enabled(draft.can_apply(&self.junction_pictures) && !self.service.is_busy(), egui::Button::new("Apply · Enter").fill(style::SELECTED)).on_disabled_hover_text("Apply needs all input acknowledged and the current nonzero Proposed picture pair displayed at this window size.").clicked() { actions.push(TrimKey::Apply); }
-                if ui.add_enabled(draft.applying.is_none(), egui::Button::new("Cancel · Esc")).clicked() { actions.push(TrimKey::Cancel); }
+                if ui.add_enabled(draft.can_apply(&self.junction_pictures) && !self.service.is_busy(), style::action("Apply", "Enter").fill(style::SELECTED)).on_disabled_hover_text("Apply needs all input acknowledged and the current nonzero Proposed picture pair displayed at this window size.").clicked() { actions.push(TrimKey::Apply); }
+                if ui.add_enabled(draft.applying.is_none(), style::action("Cancel", "Esc")).clicked() { actions.push(TrimKey::Cancel); }
                 if enabled && draft.input.error.is_some() && ui.button("Retry proposal").clicked() { retry = true; }
             });
             if media_changed || inspect.is_some() || actions.iter().any(|action| !matches!(action, TrimKey::Apply | TrimKey::Play | TrimKey::Loop | TrimKey::FocusAmount)) || retry { ui.ctx().request_discard("Trim input precedes pair submission"); }

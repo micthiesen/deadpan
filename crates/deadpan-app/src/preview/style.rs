@@ -72,6 +72,22 @@ pub(super) fn action_text(label: &str, key: &str, size: f32) -> egui::text::Layo
     job
 }
 
+/// A pre-measured command label, for controls that reserve their height from
+/// the same galley they paint.
+pub(super) fn action_galley(
+    ui: &egui::Ui,
+    label: &str,
+    key: &str,
+    width: f32,
+) -> std::sync::Arc<egui::Galley> {
+    egui::WidgetText::from(action_text(label, key, 13.0)).into_galley(
+        ui,
+        Some(egui::TextWrapMode::Wrap),
+        width,
+        egui::TextStyle::Button,
+    )
+}
+
 /// A command button showing its key.
 pub(super) fn action<'a>(label: impl AsRef<str>, key: impl AsRef<str>) -> egui::Button<'a> {
     egui::Button::new(action_text(label.as_ref(), key.as_ref(), 13.0))

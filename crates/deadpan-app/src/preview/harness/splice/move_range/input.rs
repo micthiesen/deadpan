@@ -180,7 +180,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!("proposal unchanged"),
         state(d),
     )?;
-    focus_with_tab(d, "Removal join · s")?;
+    focus_with_tab(d, "Removal join  s")?;
     d.key(Key::Enter)?;
     d.check(
         "Native Enter selects removal without rebuilding the Move proposal",

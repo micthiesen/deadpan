@@ -6,10 +6,10 @@ use egui::{Key, Modifiers};
 
 const IN: &str = "Room tone In sample";
 const OUT: &str = "Room tone Out sample";
-const APPLY: &str = "Apply room tone  ·  Enter";
-const CANCEL: &str = "Cancel  ·  Esc";
-const PLAY: &str = "Play source  ·  Space";
-const LOOP: &str = "Loop source  ·  Shift+Space";
+const APPLY: &str = "Apply room tone  Enter";
+const CANCEL: &str = "Cancel  Esc";
+const PLAY: &str = "Play source  Space";
+const LOOP: &str = "Loop source  Shift+Space";
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.report.skipped.push("Source and committed Sequence audition use injected typed delivery updates, with real descriptor preparation and project writes. This replay does not prepare PCM, open an output device, establish acoustic quality or certify speech absence.".into());
@@ -574,27 +574,27 @@ fn compact_workspace_picture(d: &mut Driver<'_>) -> Result<(), String> {
         "Paste before  P",
         "Monitor · :monitor",
         "PLACED SOUNDS 0 · ,s place",
-        "Loop selection  ·  Shift+Space",
+        "Loop selection  Shift+Space",
         "Loop context",
     ];
     let action = if let Some(run) = &d.app().transport {
         if run.phase == deadpan_playback::Phase::Preparing {
-            labels.extend(["Cancel preparation  ·  Space", "Preparing ·"]);
-            "Cancel preparation  ·  Space"
+            labels.extend(["Cancel preparation  Space", "Preparing ·"]);
+            "Cancel preparation  Space"
         } else {
-            labels.extend(["Pause  ·  Space", "Playing ·"]);
-            "Pause  ·  Space"
+            labels.extend(["Pause  Space", "Playing ·"]);
+            "Pause  Space"
         }
     } else {
-        labels.push("Play edit  ·  Space");
-        "Play edit  ·  Space"
+        labels.push("Play edit  Space");
+        "Play edit  Space"
     };
     let hits = super::sound_placement::control_hits(
         d,
         &[
             "Paste after  p",
             "Paste before  P",
-            "Loop selection  ·  Shift+Space",
+            "Loop selection  Shift+Space",
             "Monitor · :monitor",
             action,
         ],

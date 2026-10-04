@@ -138,7 +138,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     })?;
     painted(d, "Scope: Repeat · play 3/3")?;
     d.key(Key::Plus)?;
-    d.click("Apply  ·  Enter")?;
+    d.click("Apply  Enter")?;
     d.changed(&before)?;
     idle(d)?;
     let camera_target = d

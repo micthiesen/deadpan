@@ -12,8 +12,8 @@ use egui_kittest::kittest::Queryable as _;
 
 const HEADING: &str = "Slip preview keyboard controls";
 const AMOUNT: &str = "Signed Slip amount in project frames, for example +5f";
-const APPLY: &str = "Apply Slip · Enter";
-const CANCEL: &str = "Cancel · Esc";
+const APPLY: &str = "Apply Slip  Enter";
+const CANCEL: &str = "Cancel  Esc";
 const BEATS: &str = "Current group beat outline pane";
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {

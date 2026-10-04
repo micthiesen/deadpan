@@ -31,7 +31,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
                 && !run.window().looping()
                 && run.window().start() == AudioSample(0)
                 && run.window().end() == original.end()
-        }) && d.rect("Cancel preparation  ·  Space").is_ok(),
+        }) && d.rect("Cancel preparation  Space").is_ok(),
         json!("Original preparation at boundary 10 with full-source window"),
         d.snapshot(),
     )?;
@@ -75,9 +75,9 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!(heard.0),
         d.snapshot(),
     )?;
-    d.click("Cancel preparation  ·  Space")?;
+    d.click("Cancel preparation  Space")?;
     d.capture("Pointer cancellation exposes Original playback again")?;
-    d.click("Play Original  ·  Space")?;
+    d.click("Play Original  Space")?;
     d.capture("Pointer Original playback exposes preparation cancellation")?;
     d.check(
         "Pointer Original playback uses the same exact resume path",
@@ -87,7 +87,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!(heard.0),
         d.snapshot(),
     )?;
-    d.click("Cancel preparation  ·  Space")?;
+    d.click("Cancel preparation  Space")?;
 
     d.chord(&[
         Key::G,
@@ -226,9 +226,9 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"source_cursor":17,"sample":sample_after_resume.0,"range":[10,24]}),
         d.snapshot(),
     )?;
-    d.click("Pause loop  ·  Shift+Space")?;
+    d.click("Pause loop  Shift+Space")?;
     d.capture("Pointer pause exposes the selection loop control")?;
-    d.click("Loop selection  ·  Shift+Space")?;
+    d.click("Loop selection  Shift+Space")?;
     d.check(
         "Pointer loop restarts the same half-open window selected by Shift Space",
         d.app()

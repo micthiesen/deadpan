@@ -200,7 +200,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         for text in [
             "Marks",
             "Save this position",
-            "Back to editor · Esc",
+            "Back to editor  Esc",
             "Jump 'a",
             "Jump 's",
             "Jump 'S",

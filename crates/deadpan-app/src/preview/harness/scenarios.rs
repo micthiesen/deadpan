@@ -39,7 +39,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
 
 fn playback(d: &mut Driver<'_>) -> Result<(), String> {
     d.report.skipped.push("Playback service updates are explicitly simulated. This scenario qualifies UI feedback and picture routing, not PCM preparation, device timing or listening.".into());
-    d.click("Play edit  ·  Space")?;
+    d.click("Play edit  Space")?;
     d.capture("Preparation feedback on the next UI frame")?;
     d.check(
         "Play exposes preparation and cancel within one UI frame",
@@ -47,7 +47,7 @@ fn playback(d: &mut Driver<'_>) -> Result<(), String> {
             .transport
             .as_ref()
             .is_some_and(|run| run.phase == deadpan_playback::Phase::Preparing)
-            && d.rect("Cancel preparation  ·  Space").is_ok(),
+            && d.rect("Cancel preparation  Space").is_ok(),
         json!("preparing with cancel control"),
         d.snapshot(),
     )?;
@@ -78,7 +78,7 @@ fn playback(d: &mut Driver<'_>) -> Result<(), String> {
             && !app.presentation.loading()
             && !app.presentation.needs_render()
     })?;
-    d.click("Pause  ·  Space")?;
+    d.click("Pause  Space")?;
     d.settled()?;
     let cursor = d.app().sequence_cursor;
     d.app_mut().feedback.playback_updates.push_back(playing);
@@ -89,7 +89,7 @@ fn playback(d: &mut Driver<'_>) -> Result<(), String> {
         json!(cursor),
         json!(d.app().sequence_cursor),
     )?;
-    d.click("Play edit  ·  Space")?;
+    d.click("Play edit  Space")?;
     let fault = update(
         d,
         deadpan_playback::Phase::Failed,
@@ -162,9 +162,9 @@ fn playback(d: &mut Driver<'_>) -> Result<(), String> {
             json!(paint),
         )?;
     }
-    d.click("Play edit  ·  Space")?;
+    d.click("Play edit  Space")?;
     d.capture("Retry exposes preparation cancellation")?;
-    d.click("Cancel preparation  ·  Space")?;
+    d.click("Cancel preparation  Space")?;
     d.check(
         "Preparation cancellation remains responsive",
         d.app().transport.is_none(),
@@ -734,7 +734,7 @@ fn camera(d: &mut Driver<'_>) -> Result<(), String> {
         json!("changed framing submitted, unchanged project revision"),
         adjusted,
     )?;
-    d.click("Cancel  ·  Esc")?;
+    d.click("Cancel  Esc")?;
     d.step("First paint after Camera cancellation", true)?;
     footer_anchored(d, "Camera cancellation leaves no footer gap")?;
     d.settled()?;
@@ -752,7 +752,7 @@ fn camera(d: &mut Driver<'_>) -> Result<(), String> {
     d.chord(&[Key::Comma, Key::F])?;
     d.wait_for("Camera opens again", |app| app.camera.is_some())?;
     d.key(Key::Plus)?;
-    d.click("Apply  ·  Enter")?;
+    d.click("Apply  Enter")?;
     d.changed(&before)?;
     d.check(
         "Apply commits and closes Camera",

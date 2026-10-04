@@ -672,17 +672,17 @@ impl DeadpanApp {
                     draft.changed(value); self.invalidate_slip_picture();
                     ui.ctx().request_discard("Slip amount text changed");
                 }
-                if ui.add_enabled(editable, egui::Button::new("−1f · h")).clicked() { actions.push(SlipKey::Nudge(-1)); }
-                if ui.add_enabled(editable, egui::Button::new("+1f · l")).clicked() { actions.push(SlipKey::Nudge(1)); }
+                if ui.add_enabled(editable, style::action("−1f", "h")).clicked() { actions.push(SlipKey::Nudge(-1)); }
+                if ui.add_enabled(editable, style::action("+1f", "l")).clicked() { actions.push(SlipKey::Nudge(1)); }
                 if ui.add_enabled(editable, egui::Button::new(if draft.before { "Before · b" } else { "Proposed · b" }).selected(!draft.before)).clicked() { actions.push(SlipKey::Compare); }
-                if ui.add_enabled(editable, egui::Button::new("First picture · i")).clicked() { actions.push(SlipKey::First); }
-                if ui.add_enabled(editable, egui::Button::new("Last picture · o")).clicked() { actions.push(SlipKey::Last); }
+                if ui.add_enabled(editable, style::action("First picture", "i")).clicked() { actions.push(SlipKey::First); }
+                if ui.add_enabled(editable, style::action("Last picture", "o")).clicked() { actions.push(SlipKey::Last); }
             });
             ui.horizontal_wrapped(|ui| {
-                if ui.add_enabled(editable, egui::Button::new("Previous picture · Left")).clicked() { actions.push(SlipKey::Inspect(-1)); }
-                if ui.add_enabled(editable, egui::Button::new("Next picture · Right")).clicked() { actions.push(SlipKey::Inspect(1)); }
-                if ui.add_enabled(draft.can_apply() && !self.service.is_busy(), egui::Button::new("Apply Slip · Enter").fill(style::SELECTED)).on_disabled_hover_text("Apply requires a nonzero current proposal displayed at this inspection frame. Choose Proposed and wait for its picture.").clicked() { actions.push(SlipKey::Apply); }
-                if ui.add_enabled(!draft.applying, egui::Button::new("Cancel · Esc")).clicked() { actions.push(SlipKey::Cancel); }
+                if ui.add_enabled(editable, style::action("Previous picture", "Left")).clicked() { actions.push(SlipKey::Inspect(-1)); }
+                if ui.add_enabled(editable, style::action("Next picture", "Right")).clicked() { actions.push(SlipKey::Inspect(1)); }
+                if ui.add_enabled(draft.can_apply() && !self.service.is_busy(), style::action("Apply Slip", "Enter").fill(style::SELECTED)).on_disabled_hover_text("Apply requires a nonzero current proposal displayed at this inspection frame. Choose Proposed and wait for its picture.").clicked() { actions.push(SlipKey::Apply); }
+                if ui.add_enabled(!draft.applying, style::action("Cancel", "Esc")).clicked() { actions.push(SlipKey::Cancel); }
             });
             ui.weak("h/l changes Slip; Shift gives 10 frames. Arrows inspect pictures. Tab selects controls. Playback is stopped.");
             if !keys.is_empty() || !actions.is_empty() { ui.ctx().request_discard("Slip input precedes picture submission"); }

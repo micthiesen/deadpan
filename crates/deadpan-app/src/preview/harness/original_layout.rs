@@ -63,7 +63,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.click(&catalog.1)?;
     d.step("Paint selected catalog sound controls", true)?;
     let before = d.revision();
-    d.click("Place at edit cursor  ·  ,s")?;
+    d.click("Place at edit cursor  ,s")?;
     d.changed(&before)?;
     d.check(
         "The populated summary is backed by one committed sound at the retained edit cursor",
@@ -89,7 +89,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
 }
 
 fn transport_label(d: &Driver<'_>, action: &str, binding: EditorKey) -> String {
-    format!("{action}  ·  {}", d.app().editor_key(binding))
+    format!("{action}  {}", d.app().editor_key(binding))
 }
 
 fn long_transport(d: &Driver<'_>) -> bool {

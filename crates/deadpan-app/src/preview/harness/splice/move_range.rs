@@ -537,7 +537,7 @@ fn layout(d: &mut Driver<'_>) -> Result<(), String> {
             "UNSAVED · Move · Linked picture + sound",
             "Copy instead · m",
             "Insertion join · f",
-            "Removal join · s",
+            "Removal join  s",
             "Loop this join · Shift Space",
             APPLY,
             CANCEL,

@@ -644,17 +644,11 @@ impl DeadpanApp {
         } else {
             "Play sound"
         };
-        let label = format!("{action}  ·  {}", self.editor_key(EditorKey::Playback));
-        let loop_label = format!(
-            "{}  ·  {}",
-            if looping { "Pause loop" } else { "Loop sound" },
-            self.editor_key(EditorKey::Audition)
-        );
-        // Use this exact label for measurement, paint and accessibility.
-        let placement_label = format!(
-            "Place at edit cursor  ·  {}",
-            self.editor_key(EditorKey::PlaceSound)
-        );
+        let playback_key = self.editor_key(EditorKey::Playback);
+        let loop_action = if looping { "Pause loop" } else { "Loop sound" };
+        let audition_key = self.editor_key(EditorKey::Audition);
+        // Use these exact galleys for measurement, paint and accessibility.
+        let place_key = self.editor_key(EditorKey::PlaceSound);
         let frame = egui::Frame::new()
             .fill(style::PANEL)
             .stroke(egui::Stroke::new(1.0, style::BORDER))
@@ -711,21 +705,12 @@ impl DeadpanApp {
             width,
         );
         let padding = ui.spacing().button_padding * 2.0;
-        let play = text(
-            egui::RichText::new(label),
-            egui::TextWrapMode::Wrap,
-            (width - padding.x).max(1.0),
-        );
-        let looping_text = text(
-            egui::RichText::new(loop_label),
-            egui::TextWrapMode::Wrap,
-            (width - padding.x).max(1.0),
-        );
-        let placement_text = text(
-            egui::RichText::new(&placement_label),
-            egui::TextWrapMode::Wrap,
-            (width - padding.x).max(1.0),
-        );
+        let button_width = (width - padding.x).max(1.0);
+        let play = style::action_galley(ui, action, &playback_key, button_width);
+        let looping_text = style::action_galley(ui, loop_action, &audition_key, button_width);
+        let placement_text =
+            style::action_galley(ui, "Place at edit cursor", &place_key, button_width);
+        let placement_label = placement_text.text().to_owned();
         let destination = text(
             egui::RichText::new(format!("Destination: Edit {} f", self.sequence_cursor))
                 .size(11.0)

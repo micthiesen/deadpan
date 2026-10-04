@@ -222,7 +222,7 @@ impl DeadpanApp {
                     && let Some(query) = &self.render.history.query {
                     choice = Some(Choice::Query(query.clone(), false));
                 }
-                if ui.button("Back to editor · Esc").clicked() { choice = Some(Choice::Close); }
+                if ui.add(style::action("Back to editor", "Esc")).clicked() { choice = Some(Choice::Close); }
                 if self.current_render().is_some()
                     && ui.button("View current render").clicked() { choice = Some(Choice::Current); }
             });

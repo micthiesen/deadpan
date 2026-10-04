@@ -496,12 +496,12 @@ impl DeadpanApp {
                     ui.add_space(8.0);
                     ui.horizontal_wrapped(|ui| {
                         let play_label = match self.transport.as_ref().map(|run| run.phase) {
-                            Some(deadpan_playback::Phase::Preparing) => "Cancel source  ·  Space",
-                            Some(_) => "Pause source  ·  Space",
-                            None => "Play source  ·  Space",
+                            Some(deadpan_playback::Phase::Preparing) => "Cancel source",
+                            Some(_) => "Pause source",
+                            None => "Play source",
                         };
-                        if ui.add_enabled(ready && !changed && !busy, egui::Button::new(play_label)).clicked() { action = Some(SheetAction::Play); }
-                        if ui.add_enabled(ready && !changed && !busy, egui::Button::new("Loop source  ·  Shift+Space")).clicked() { action = Some(SheetAction::Loop); }
+                        if ui.add_enabled(ready && !changed && !busy, style::action(play_label, "Space")).clicked() { action = Some(SheetAction::Play); }
+                        if ui.add_enabled(ready && !changed && !busy, style::action("Loop source", "Shift+Space")).clicked() { action = Some(SheetAction::Loop); }
                     });
                     let total = draft.prepared.as_ref().map_or(0, |p| p.audition.duration_samples().0.max(0) as u64);
                     let status = self.transport.as_ref().map_or("Stopped", |run| if run.phase == deadpan_playback::Phase::Preparing { "Preparing" } else { "Playing" });
@@ -511,8 +511,8 @@ impl DeadpanApp {
                 ui.separator();
                 ui.weak("Apply changes only this pause's sound. One edit, one undo.");
                 ui.horizontal_wrapped(|ui| {
-                    if ui.add_enabled(ready && !changed && !busy, egui::Button::new("Apply room tone  ·  Enter").fill(style::SELECTED)).clicked() { action = Some(SheetAction::Apply); }
-                    if ui.button("Cancel  ·  Esc").clicked() { action = Some(SheetAction::Cancel); }
+                    if ui.add_enabled(ready && !changed && !busy, style::action("Apply room tone", "Enter").fill(style::SELECTED)).clicked() { action = Some(SheetAction::Apply); }
+                    if ui.add(style::action("Cancel", "Esc")).clicked() { action = Some(SheetAction::Cancel); }
                 });
                 ui.weak("Tab / Shift+Tab moves through controls. Escape discards the draft.");
             });

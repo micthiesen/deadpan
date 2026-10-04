@@ -12,8 +12,8 @@ mod move_range;
 mod replacement;
 mod structural_capture;
 
-const APPLY: &str = "Place slice · Enter";
-const CANCEL: &str = "Cancel · Esc";
+const APPLY: &str = "Place slice  Enter";
+const CANCEL: &str = "Cancel  Esc";
 const HEADING: &str = "Place slice keyboard controls";
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
@@ -267,11 +267,7 @@ fn interior_commit(d: &mut Driver<'_>) -> Result<(), String> {
         )?;
         wait_endpoints(d, 10, 24)?;
         wait_picture(d, 10, "Showing proposed edit frame 62")?;
-        for label in [
-            "Edit boundary 61",
-            "local boundary 1",
-            "Place slice · Enter",
-        ] {
+        for label in ["Edit boundary 61", "local boundary 1", "Place slice  Enter"] {
             paint_text(d, label)?;
         }
         viewer_painted(d)?;
@@ -321,7 +317,7 @@ fn saved_destination_button(d: &mut Driver<'_>) -> Result<(), String> {
     let destination = d.app().sequence_cursor;
     let simulated = d.app().feedback.simulate_playback;
     d.app_mut().feedback.simulate_playback = true;
-    d.click("Play edit  ·  Space")?;
+    d.click("Play edit  Space")?;
     let start_sample = d
         .app()
         .transport
@@ -726,10 +722,10 @@ fn tab_circuit(d: &mut Driver<'_>, width: f32, height: f32) -> Result<(), String
         "Out 27 exclusive · o",
         "Destination Edit 60 · d",
         "Inspect picture · f",
-        "Previous seam · k",
-        "Next seam · j",
-        "−1 · h",
-        "+1 · l",
+        "Previous seam  k",
+        "Next seam  j",
+        "−1  h",
+        "+1  l",
         "Proposed · b",
         "Audition · Space",
         "Loop both joins · Shift Space",

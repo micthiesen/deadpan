@@ -4907,7 +4907,7 @@ mod tests {
     fn focused_button_keeps_space_and_return_while_pane_space_controls_playback() {
         for (pane, label) in [
             (Pane::Viewer, "Change duration"),
-            (Pane::Sources, "Play sound  ·  Space"),
+            (Pane::Sources, "Play sound  Space"),
         ] {
             for key in [egui::Key::Space, egui::Key::Enter] {
                 let context = egui::Context::default();

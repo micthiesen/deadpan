@@ -746,13 +746,13 @@ impl DeadpanApp {
                             && draft.prepared.is_some()
                             && draft.controls.ready(&draft.edit)
                             && !changed,
-                        egui::Button::new("Apply · Enter").fill(style::SELECTED),
+                        style::action("Apply", "Enter").fill(style::SELECTED),
                     )
                     .clicked()
                 {
                     action = Some(DraftAction::Apply);
                 }
-                let cancel = ui.add_enabled(!draft.applying, egui::Button::new("Cancel · Esc"));
+                let cancel = ui.add_enabled(!draft.applying, style::action("Cancel", "Esc"));
                 draft.cancel_focus = Some(cancel.id);
                 if cancel.clicked() {
                     action = Some(DraftAction::Cancel);

@@ -38,7 +38,7 @@ pub(super) fn run(d: &mut Driver<'_>, output: &Path) -> Result<(), String> {
             "Saved edits",
             "Destinations",
             "View render attempts",
-            "Back to editor · Esc",
+            "Back to editor  Esc",
         ] {
             visible_text(d, label, "Stored render browsing remains fully painted")?;
         }

@@ -75,7 +75,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
                 && run.window().start() == AudioSample(0)
                 && run.window().end() == end
                 && !run.window().looping()
-        }) && d.rect("Cancel preparation  ·  Space").is_ok(),
+        }) && d.rect("Cancel preparation  Space").is_ok(),
         json!({"domain":"sound","end":end.0}),
         d.snapshot(),
     )?;
@@ -148,7 +148,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         d.snapshot(),
     )?;
 
-    d.click("Play sound  ·  Space")?;
+    d.click("Play sound  Space")?;
     d.check(
         "Pointer Play after the terminal boundary restarts the sound at zero",
         d.app()
@@ -167,7 +167,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         None,
     )?;
     inject(d, pointer, "Pointer sound playback receives fake delivery")?;
-    d.click("Pause sound  ·  Space")?;
+    d.click("Pause sound  Space")?;
     d.check(
         "Pointer release pauses sound immediately at the retained sample",
         d.app().transport.is_none()
@@ -183,7 +183,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     // The release is handled after the button is painted. Check its new label
     // on the very next frame without waiting for an eventual settled state.
     d.capture("Pointer sound pause paints Resume on the next frame")?;
-    let resume_paint = scenarios::text_paint_visibility(d, "Resume sound  ·  Space");
+    let resume_paint = scenarios::text_paint_visibility(d, "Resume sound  Space");
     d.check(
         "Pointer pause exposes the retained sound clock and Resume control",
         d.app().transport.is_none()
@@ -192,7 +192,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
                 .resume
                 .as_ref()
                 .is_some_and(|resume| resume.domain().is_sound())
-            && d.rect("Resume sound  ·  Space").is_ok()
+            && d.rect("Resume sound  Space").is_ok()
             && !resume_paint.is_empty()
             && resume_paint
                 .iter()
@@ -212,11 +212,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         d.capture(&format!(
             "Pinned sound controls on first resize frame at {width}x{height}"
         ))?;
-        for label in [
-            "Resume sound  ·  Space",
-            "Loop sound  ·  Shift+Space",
-            "Paused",
-        ] {
+        for label in ["Resume sound  Space", "Loop sound  Shift+Space", "Paused"] {
             let paint = scenarios::text_paint_visibility(d, label);
             d.check(
                 "Sound transport remains fully painted without catalog scrolling",
@@ -299,7 +295,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!("No pending operator"),
         d.snapshot(),
     )?;
-    d.click("Loop sound  ·  Shift+Space")?;
+    d.click("Loop sound  Shift+Space")?;
     let fault_generation = feed.restart(0).map_err(|e| e.to_string())?;
     let fault = update(
         d,
@@ -365,7 +361,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         d.snapshot(),
     )?;
 
-    d.click("Play sound  ·  Space")?;
+    d.click("Play sound  Space")?;
     d.app_mut().feedback.hold_preview = true;
     d.click("Browse  :source")?;
     d.check(

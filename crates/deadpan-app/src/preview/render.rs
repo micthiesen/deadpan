@@ -491,7 +491,7 @@ impl DeadpanApp {
                 if let Err(error) = &proposal { ui.colored_label(style::LAVENDER, error); }
                 if ui.add_enabled(proposal.is_ok(), egui::Button::new("Commit preview and render")).clicked() { decision = Some(true); }
                 if ui.button("Discard preview and render").clicked() { decision = Some(false); }
-                if ui.button("Keep editing  ·  Esc").clicked() { self.render.flow = None; }
+                if ui.add(style::action("Keep editing", "Esc")).clicked() { self.render.flow = None; }
             });
             if !self.ime_composing
                 && !context.input(|input| {

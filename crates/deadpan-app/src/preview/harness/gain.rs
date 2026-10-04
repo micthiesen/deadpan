@@ -11,8 +11,8 @@ use egui::{Key, Modifiers};
 
 const TRIM: &str = "Whole beat trim · dB";
 const UPDATE_TRIM: &str = "Set trim";
-const APPLY: &str = "Apply · Enter";
-const CANCEL: &str = "Cancel · Esc";
+const APPLY: &str = "Apply  Enter";
+const CANCEL: &str = "Cancel  Esc";
 const PLAY: &str = "Audition · Space";
 const PAUSE: &str = "Pause · Space";
 const BEATS: &str = "Current group beat outline pane";

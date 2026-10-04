@@ -369,8 +369,8 @@ fn replacement_layout(d: &mut Driver<'_>) -> Result<(), String> {
         viewer_painted(d)?;
         d.check(
             "Replace omits destination and seam controls while exposing its retained removal",
-            d.rect("Previous seam · k").is_err()
-                && d.rect("Next seam · j").is_err()
+            d.rect("Previous seam  k").is_err()
+                && d.rect("Next seam  j").is_err()
                 && d.rect("Insert instead · r").is_ok(),
             json!("fixed removed interval, source refinement, picture inspection"),
             state(d),

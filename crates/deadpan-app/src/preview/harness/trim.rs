@@ -13,8 +13,8 @@ use egui::{Key, Modifiers};
 use egui_kittest::kittest::Queryable as _;
 
 const HEADING: &str = "Trim keyboard controls. Tab cycles In, Out, Slip and Roll; Shift-Tab reverses. H and L adjust one project frame, Shift adjusts ten. E focuses the amount field.";
-const APPLY: &str = "Apply · Enter";
-const CANCEL: &str = "Cancel · Esc";
+const APPLY: &str = "Apply  Enter";
+const CANCEL: &str = "Cancel  Esc";
 const BEATS: &str = "Current group beat outline pane";
 const GRAPH: &str = "Trim stereo waveform · absolute Edit samples · authored mix before limiter";
 const FEEDBACK: &str =
@@ -268,8 +268,8 @@ fn pair_readiness(d: &mut Driver<'_>) -> Result<(), String> {
     for label in [
         "Trim",
         "UNSAVED · Edit junction",
-        "Apply · Enter",
-        "Cancel · Esc",
+        "Apply  Enter",
+        "Cancel  Esc",
     ] {
         visible(d, label)?;
     }

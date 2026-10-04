@@ -110,29 +110,29 @@ impl DeadpanApp {
                     let endpoint = matches!(key, SpliceKey::In | SpliceKey::Out);
                     if ui.add_enabled(enabled && !(empty_structure && endpoint), egui::Button::new(label).selected(selected)).on_disabled_hover_text(empty::ENDPOINT_REASON).clicked() { action = Some(key); }
                 }
-                if draft.proposal.operation == Operation::Move && ui.add_enabled(enabled, egui::Button::new("Removal join · s").selected(draft.focus == Focus::Picture && draft.site == Site::Removal)).clicked() { action = Some(SpliceKey::Removal); }
+                if draft.proposal.operation == Operation::Move && ui.add_enabled(enabled, style::action("Removal join", "s").selected(draft.focus == Focus::Picture && draft.site == Site::Removal)).clicked() { action = Some(SpliceKey::Removal); }
                 if !draft.replacing && draft.proposal.operation != Operation::Move {
-                    if ui.add_enabled(enabled, egui::Button::new("Previous seam · k")).clicked() { action = Some(SpliceKey::Boundary(false)); }
-                    if ui.add_enabled(enabled, egui::Button::new("Next seam · j")).clicked() { action = Some(SpliceKey::Boundary(true)); }
+                    if ui.add_enabled(enabled, style::action("Previous seam", "k")).clicked() { action = Some(SpliceKey::Boundary(false)); }
+                    if ui.add_enabled(enabled, style::action("Next seam", "j")).clicked() { action = Some(SpliceKey::Boundary(true)); }
                 } else if draft.replacing && let Some(range) = draft.replacement {
                     ui.label(format!("Fixed {} [{}..{})", if draft.replacement_object.is_some() { "group object" } else { "Edit" }, range.start().0, range.end().0));
                 }
             });
             ui.horizontal_wrapped(|ui| {
                 let frames_enabled = enabled && (!empty_structure || draft.focus == Focus::Picture && draft.frames() > 0);
-                if ui.add_enabled(frames_enabled, egui::Button::new("−1 · h")).on_hover_text("Previous frame in the selected control").on_disabled_hover_text(empty::PLACEMENT_REASON).clicked() { action = Some(SpliceKey::Step(false)); }
-                if ui.add_enabled(frames_enabled, egui::Button::new("+1 · l")).on_hover_text("Next frame in the selected control").on_disabled_hover_text(empty::PLACEMENT_REASON).clicked() { action = Some(SpliceKey::Step(true)); }
+                if ui.add_enabled(frames_enabled, style::action("−1", "h")).on_hover_text("Previous frame in the selected control").on_disabled_hover_text(empty::PLACEMENT_REASON).clicked() { action = Some(SpliceKey::Step(false)); }
+                if ui.add_enabled(frames_enabled, style::action("+1", "l")).on_hover_text("Next frame in the selected control").on_disabled_hover_text(empty::PLACEMENT_REASON).clicked() { action = Some(SpliceKey::Step(true)); }
                 if draft.proposal.operation == Operation::Move {
-                    if ui.add_enabled(enabled, egui::Button::new("Prev · k")).on_hover_text("Previous Sequence seam at the destination").clicked() { action = Some(SpliceKey::Boundary(false)); }
-                    if ui.add_enabled(enabled, egui::Button::new("Next · j")).on_hover_text("Next Sequence seam at the destination").clicked() { action = Some(SpliceKey::Boundary(true)); }
+                    if ui.add_enabled(enabled, style::action("Prev", "k")).on_hover_text("Previous Sequence seam at the destination").clicked() { action = Some(SpliceKey::Boundary(false)); }
+                    if ui.add_enabled(enabled, style::action("Next", "j")).on_hover_text("Next Sequence seam at the destination").clicked() { action = Some(SpliceKey::Boundary(true)); }
                 }
                 let ready = enabled && draft.prepared.is_some() && !draft.dirty && draft.pending.is_none();
                 let audition_ready = ready && draft.frames() > 0 && !(empty_structure && matches!(draft.focus, Focus::In | Focus::Out));
                 if ui.add_enabled(audition_ready, egui::Button::new(if draft.before { "Before · b" } else { "Proposed · b" }).selected(!draft.before)).clicked() { action = Some(SpliceKey::Compare); }
                 if ui.add_enabled(audition_ready || self.transport.is_some(), egui::Button::new(if self.transport.is_some() { "Pause · Space" } else { "Audition · Space" })).on_disabled_hover_text("Empty groups contain no pictures or audio. Select a nonempty destination to audition its context.").clicked() { action = Some(SpliceKey::Play); }
                 if ui.add_enabled(audition_ready, egui::Button::new(if empty_structure { "Loop destination · Shift Space" } else if draft.proposal.operation == Operation::Move { "Loop this join · Shift Space" } else { "Loop both joins · Shift Space" })).clicked() { action = Some(SpliceKey::Loop); }
-                if ui.add_enabled(ready, egui::Button::new("Place slice · Enter").fill(style::SELECTED)).clicked() { action = Some(SpliceKey::Apply); }
-                if ui.add_enabled(!draft.applying, egui::Button::new("Cancel · Esc")).clicked() { action = Some(SpliceKey::Cancel); }
+                if ui.add_enabled(ready, style::action("Place slice", "Enter").fill(style::SELECTED)).clicked() { action = Some(SpliceKey::Apply); }
+                if ui.add_enabled(!draft.applying, style::action("Cancel", "Esc")).clicked() { action = Some(SpliceKey::Cancel); }
             });
             ui.weak(if empty_structure { "j/k chooses an exact destination slot, including slots at the same Edit frame. f then h/l inspects destination pictures. Enter inserts the group." } else if draft.proposal.operation == Operation::Move { "h/l adjusts frames; j/k chooses destination seams. Counts work: 12l. Tab / Shift Tab selects buttons; Enter activates." } else { "h/l adjusts the selected control; counts work: 12l. Tab / Shift Tab selects buttons; Enter activates." });
             if action.is_some() || !keys.is_empty() {
