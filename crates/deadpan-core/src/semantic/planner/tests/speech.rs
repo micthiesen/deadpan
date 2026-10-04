@@ -42,6 +42,7 @@ fn plan_speech(
         allocate,
         no_original,
         speech,
+        |_, _| Err(crate::pause_unavailable()),
     )
 }
 fn word_motion(forward: bool, value: u32, end: bool) -> SemanticInstruction {

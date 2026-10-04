@@ -250,6 +250,8 @@ pub fn plan_program(
     let mut originals: Vec<(RegisterValue, AssetRecord, FrameRate, SourceNode)> = Vec::new();
     // Loaded only when an instruction needs words.
     let mut speech: Option<Result<crate::speech::StoredSpeech, EditError>> = None;
+    // Measured picture indexes for pause pictures, loaded once per asset.
+    let mut indexes: Vec<(deadpan_core::AssetId, Arc<deadpan_core::SourceFrameIndex>)> = Vec::new();
     let result = deadpan_core::plan_semantic_with_speech(
         document,
         context,
@@ -292,8 +294,33 @@ pub fn plan_program(
                 .map_err(Clone::clone)?
                 .project(staged)
         },
+        |staged, at| {
+            let plan = deadpan_plan::RenderPlan::compile(staged)
+                .map_err(|error| pause_error(&error.to_string()))?;
+            crate::pause::pause_provider(staged, &plan, at, &mut |asset| {
+                if let Some((_, index)) = indexes.iter().find(|(known, _)| known == asset) {
+                    return Ok(Arc::clone(index));
+                }
+                let index = Arc::new(
+                    store
+                        .source_video_index(document.revision_id(), asset)
+                        .map_err(|error| error.to_string())?,
+                );
+                indexes.push((asset.clone(), Arc::clone(&index)));
+                Ok(index)
+            })
+            .map_err(|error| pause_error(&error))
+        },
     );
     result.map_err(|error| source_error.unwrap_or_else(|| edit_error(error)))
+}
+
+fn pause_error(message: &str) -> EditError {
+    EditError {
+        code: EditErrorCode::SelectionUnavailable,
+        message: format!("the pause picture could not be resolved: {message}"),
+        current_revision: None,
+    }
 }
 
 fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, EditError> {
@@ -322,6 +349,15 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
         },
         SemanticAllocationRequest::ParameterEdit { .. } => SemanticAllocation::ParameterEdit {
             new_revision: crate::new_revision()?,
+        },
+        SemanticAllocationRequest::InsertPause {
+            required_split_ids, ..
+        } => SemanticAllocation::InsertPause {
+            new_revision: crate::new_revision()?,
+            id: NodeId::new(uuid::Uuid::new_v4().to_string())?,
+            split: SplitIdentities {
+                nodes: nodes(required_split_ids)?,
+            },
         },
         SemanticAllocationRequest::Repeat {
             required_split_ids,

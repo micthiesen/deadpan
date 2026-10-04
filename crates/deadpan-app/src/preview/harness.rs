@@ -13,6 +13,7 @@ use crate::ui_harness::{Options, gpu::Offscreen, report::*};
 mod cutaway;
 mod delete_range;
 mod edit_latency;
+mod gags;
 mod gain;
 mod generated_picture;
 mod group_pixels;

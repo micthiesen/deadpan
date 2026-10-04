@@ -2,6 +2,15 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Gags and macro pauses, 2026-10-04
+
+Semantic programs gained `InsertPause` (host-resolved freeze through
+`deadpan_cli::pause::pause_provider`, shared with native `,h`), `SetFraming`
+and `Gag { recipe }`. Built-in recipes expand to ordinary instructions under a
+group whose label pins recipe, version and parameters; see [gags](../GAGS.md).
+`,e` applies the escalating repeat. Remaining §8.4 recipes need gap
+progression, cutaway tails and room-tone cuts.
+
 ## Cutaways, 2026-10-04
 
 `BeatNode.cutaways` carries picture-only attachments in the host's local

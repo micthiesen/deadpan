@@ -481,6 +481,25 @@ impl DeadpanApp {
                     .map_err(|error| error.to_string())
             };
             match framing {
+                Ok(framing) if self.macros.recording() => {
+                    // Recorded as the semantic framing of the selected beat;
+                    // a scoped play has no semantic equivalent yet.
+                    if session.scoped.is_some() {
+                        self.error = Some("Framing a single Repeat play cannot be recorded yet; record framing on an ordinary beat.".into());
+                        return;
+                    }
+                    if framing == session.entry {
+                        self.message = Some("Framing is unchanged; no edit was made.".into());
+                        return;
+                    }
+                    let target = self.capture_macro_target();
+                    self.apply_recorded_instruction(
+                        target,
+                        Ok(deadpan_core::SemanticInstruction::SetFraming {
+                            framing: framing.map(Box::new),
+                        }),
+                    );
+                }
                 Ok(framing) => {
                     self.submit_framing(&session, framing);
                 }

@@ -1,10 +1,12 @@
 //! Reusable editing intent, resolved against the host's current selection.
 
+mod gags;
 mod object;
 mod planner;
 mod program;
 mod speech;
 
+pub use gags::*;
 pub use object::*;
 pub use planner::*;
 pub use program::*;

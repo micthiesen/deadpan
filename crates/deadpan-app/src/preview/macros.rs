@@ -319,6 +319,12 @@ impl DeadpanApp {
                 | Action::Group
                 | Action::Ungroup
                 | Action::EscalatingRepeat
+                | Action::Gag(_)
+                | Action::Edit(BeatEdit::InsertHold(_))
+                | Action::Framing(
+                    crate::navigation::FramingAction::PunchIn
+                        | crate::navigation::FramingAction::Creep
+                )
                 | Action::Edit(BeatEdit::WrapRepeat(_))
                 | Action::Edit(BeatEdit::Repeat(_))
                 | Action::CopyMoment
@@ -333,7 +339,7 @@ impl DeadpanApp {
                 | Action::Invalid(_)
                 | Action::OfferInsert
         ) {
-            self.error = Some("This action cannot be recorded yet. Macros support frame, beat, word, sentence, pause and shot motions, group boundaries, word, sentence, pause and shot objects, Visual selections, cuts, copies, Repeat wraps and count changes, grouping, ungrouping, register pastes and named calls. Save or cancel recording first.".into());
+            self.error = Some("This action cannot be recorded yet. Macros support pauses, punch-ins and creeps, frame, beat, word, sentence, pause and shot motions, group boundaries, word, sentence, pause and shot objects, Visual selections, cuts, copies, Repeat wraps and count changes, grouping, ungrouping, register pastes and named calls. Save or cancel recording first.".into());
             return false;
         }
         if matches!(
@@ -357,6 +363,12 @@ impl DeadpanApp {
                 | Action::Group
                 | Action::Ungroup
                 | Action::EscalatingRepeat
+                | Action::Gag(_)
+                | Action::Edit(BeatEdit::InsertHold(_))
+                | Action::Framing(
+                    crate::navigation::FramingAction::PunchIn
+                        | crate::navigation::FramingAction::Creep
+                )
                 | Action::Edit(BeatEdit::WrapRepeat(_))
                 | Action::Edit(BeatEdit::Repeat(_))
                 | Action::CopyMoment

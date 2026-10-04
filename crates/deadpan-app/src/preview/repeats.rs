@@ -101,6 +101,27 @@ impl DeadpanApp {
         );
     }
 
+    /// `:gag NAME`: one recipe instruction, applied and recorded as one Undo.
+    pub(super) fn apply_gag(&mut self, input: crate::navigation::gag::GagInput) {
+        self.bindings.clear();
+        self.cancel_repeats("a gag was requested");
+        let Some(rate) = self
+            .workspace
+            .as_ref()
+            .map(|workspace| workspace.document.presentation_basis().frame_rate)
+        else {
+            self.error = Some("Open a project first.".into());
+            return;
+        };
+        let target = self.capture_macro_target();
+        self.apply_recorded_instruction(
+            target,
+            input
+                .recipe(rate)
+                .map(|recipe| SemanticInstruction::Gag { recipe }),
+        );
+    }
+
     pub(super) fn repeat_action(&mut self, selector: SemanticSelector, plays: NonZeroU32) {
         self.reconcile_repeat_prefix();
         let target = self.repeat_prefix_target.take().map_or_else(

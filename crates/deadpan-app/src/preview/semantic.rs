@@ -182,6 +182,9 @@ pub(super) fn applied_text(instruction: &deadpan_core::SemanticInstruction) -> O
             return (!matches!(selector, SemanticSelector::VisualSelection))
                 .then(|| format!("Repeated {} ×{plays}{escalated}", selector_text(selector)));
         }
+        I::Gag { recipe } => return Some(format!("Applied {}", recipe.name())),
+        I::InsertPause { .. } => return Some("Inserted a pause".into()),
+        I::SetFraming { .. } => return Some("Framed the beat".into()),
         I::Group { selector, label } => {
             return (!matches!(selector, SemanticSelector::VisualSelection))
                 .then(|| format!("Grouped {} as {label:?}", selector_text(selector)));

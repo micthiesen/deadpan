@@ -112,6 +112,10 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         }
         return super::slip::parse_frames(amount).map(Entry::Slip);
     }
+    if verb == "gag" {
+        let arguments: Vec<&str> = words.collect();
+        return super::gag::parse(&arguments).map(|input| Entry::Action(Action::Gag(input)));
+    }
     if verb == "cutaway" {
         let arguments: Vec<&str> = words.collect();
         return super::cutaway::parse(&arguments)

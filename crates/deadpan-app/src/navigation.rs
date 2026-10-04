@@ -11,6 +11,7 @@ mod keymap_config;
 pub use editor_map::BindingId;
 pub mod cutaway;
 pub mod escalation;
+pub mod gag;
 pub mod gain;
 mod group;
 #[cfg(test)]
@@ -128,6 +129,8 @@ pub enum Action {
     Ungroup,
     /// `,e`: wrap the selected beat or Visual range in an escalating Repeat.
     EscalatingRepeat,
+    /// `:gag NAME`: apply a built-in recipe.
+    Gag(gag::GagInput),
     VisualMoment,
     SelectObject(deadpan_core::SemanticTextObject),
     DeleteSelection,

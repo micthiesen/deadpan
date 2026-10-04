@@ -8,6 +8,7 @@ use std::num::NonZeroU32;
 mod content;
 mod group;
 mod objects;
+mod pause;
 mod repeat;
 mod selectors;
 mod set_repeat;
@@ -121,6 +122,18 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
                 new_revision: revision(&format!("leaf-{step_index}")),
             }
         }
+        SemanticAllocationRequest::InsertPause {
+            step_index,
+            required_split_ids,
+        } => SemanticAllocation::InsertPause {
+            new_revision: revision(&format!("leaf-{step_index}")),
+            id: node(&format!("pause-{step_index}")),
+            split: crate::SplitIdentities {
+                nodes: (0..required_split_ids)
+                    .map(|index| node(&format!("pause-split-{step_index}-{index}")))
+                    .collect(),
+            },
+        },
         SemanticAllocationRequest::Repeat {
             step_index,
             required_split_ids,
@@ -748,6 +761,7 @@ fn cumulative_document_and_capture_budgets_refuse_before_another_leaf_allocation
             },
             resolve_original: no_original,
             resolve_speech: |_: &ProjectDocument| Err(speech_unavailable()),
+            resolve_pause: |_: &ProjectDocument, _: ProjectFrame| Err(super::pause_unavailable()),
             speech: None,
         };
         let error = planner.execute(&program(vec![cut(1, 'a')])).unwrap_err();

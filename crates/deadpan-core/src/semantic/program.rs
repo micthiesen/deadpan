@@ -60,6 +60,48 @@ impl SemanticMotion {
     }
 }
 
+/// A pause length, resolved once against the project frame rate.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "unit", rename_all = "snake_case", deny_unknown_fields)]
+pub enum PauseLength {
+    Frames {
+        frames: NonZeroU32,
+    },
+    /// Rounded once to the nearest project frame, ties to even.
+    Milliseconds {
+        milliseconds: NonZeroU32,
+    },
+}
+
+impl PauseLength {
+    pub fn resolve(self, rate: crate::FrameRate) -> Result<crate::FrameDuration, EditError> {
+        let frames = match self {
+            Self::Frames { frames } => i64::from(frames.get()),
+            Self::Milliseconds { milliseconds } => {
+                let numerator = i128::from(milliseconds.get()) * i128::from(rate.numerator());
+                let denominator = 1000 * i128::from(rate.denominator());
+                let (quotient, remainder) = (numerator / denominator, numerator % denominator);
+                let rounded = match (remainder * 2).cmp(&denominator) {
+                    std::cmp::Ordering::Less => quotient,
+                    std::cmp::Ordering::Greater => quotient + 1,
+                    std::cmp::Ordering::Equal => quotient + (quotient & 1),
+                };
+                i64::try_from(rounded).map_err(|_| {
+                    EditError::new(EditErrorCode::TimingOverflow, "pause length overflows")
+                })?
+            }
+        };
+        if frames == 0 {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "the pause resolves to zero project frames",
+            ));
+        }
+        crate::FrameDuration::new(frames)
+            .map_err(|error| EditError::from(crate::DocumentError::from(error)))
+    }
+}
+
 /// Select copied or deleted content without moving the context. Motion ranges
 /// run from the entry cursor to the same destination as ordinary navigation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -159,6 +201,19 @@ pub enum SemanticInstruction {
         /// Escalate the new Repeat's plays in the same transaction (`,e`).
         #[serde(default, skip_serializing_if = "Option::is_none")]
         escalation: Option<crate::RepeatEscalation>,
+    },
+    /// Apply a built-in gag recipe (`:gag`), pinned by version and parameters.
+    Gag {
+        recipe: super::GagRecipe,
+    },
+    /// Insert a silent freeze pause at the cursor (`,h`, `:hold`). The host
+    /// resolves the frozen picture from the staged document.
+    InsertPause {
+        length: PauseLength,
+    },
+    /// Replace the selected direct child's framing (`,c`, `,z`).
+    SetFraming {
+        framing: Option<Box<crate::Framing>>,
     },
     /// Set the selected direct-child Repeat's total count. Visual selection is
     /// incompatible with this node parameter edit, including an empty range.

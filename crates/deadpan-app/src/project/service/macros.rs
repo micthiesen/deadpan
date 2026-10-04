@@ -165,6 +165,9 @@ impl Service {
                             SemanticInstruction::SetRepeatPlays { .. } => "Set Repeat plays",
                             SemanticInstruction::Group { .. } => "Group beats",
                             SemanticInstruction::Ungroup => "Ungroup beats",
+                            SemanticInstruction::Gag { .. } => "Apply gag",
+                            SemanticInstruction::InsertPause { .. } => "Insert pause",
+                            SemanticInstruction::SetFraming { .. } => "Frame beat",
                             _ => "Recorded action",
                         }
                         .to_owned(),

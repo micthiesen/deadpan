@@ -22,6 +22,7 @@ use super::{MAX_SEMANTIC_CALL_DEPTH, MAX_SEMANTIC_INSTRUCTION_FUEL};
 
 mod content;
 mod group;
+mod pause;
 mod repeat;
 mod selection;
 
@@ -87,6 +88,10 @@ pub enum SemanticAllocationRequest {
     ParameterEdit {
         step_index: usize,
     },
+    InsertPause {
+        step_index: usize,
+        required_split_ids: usize,
+    },
     Repeat {
         step_index: usize,
         required_split_ids: usize,
@@ -124,6 +129,11 @@ pub enum SemanticAllocation {
     },
     ParameterEdit {
         new_revision: RevisionId,
+    },
+    InsertPause {
+        new_revision: RevisionId,
+        id: NodeId,
+        split: crate::SplitIdentities,
     },
     Repeat {
         new_revision: RevisionId,
@@ -210,7 +220,24 @@ pub fn plan_semantic(
         allocate,
         resolve_original,
         |_| Err(speech_unavailable()),
+        |_, _| Err(pause_unavailable()),
     )
+}
+
+/// The error for pause insertion without a host picture resolver.
+pub fn pause_unavailable() -> EditError {
+    EditError::new(
+        EditErrorCode::SelectionUnavailable,
+        "pause insertion needs the project's measured pictures",
+    )
+}
+
+/// The frozen picture a pause inserted at a boundary shows, resolved by the
+/// host from the staged document's picture before that boundary.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PauseProvider {
+    pub video: crate::HoldVideo,
+    pub picture_context: Option<crate::CapturedFraming>,
 }
 
 /// The error for word and sentence selectors without a transcript.
@@ -234,6 +261,7 @@ pub fn plan_semantic_with_speech(
     allocate: impl FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
     resolve_original: impl FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
     resolve_speech: impl FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
+    resolve_pause: impl FnMut(&ProjectDocument, ProjectFrame) -> Result<PauseProvider, EditError>,
 ) -> Result<SemanticPlan, EditError> {
     program.validate()?;
     document.validate()?;
@@ -293,6 +321,7 @@ pub fn plan_semantic_with_speech(
         allocate,
         resolve_original,
         resolve_speech,
+        resolve_pause,
         speech: None,
     };
     planner.execute(program)?;
@@ -332,7 +361,7 @@ pub fn plan_semantic_with_speech(
     })
 }
 
-struct Planner<'a, F, R, S> {
+struct Planner<'a, F, R, S, P> {
     current: ProjectDocument,
     context: SemanticContext,
     bounds: (ProjectFrame, ProjectFrame),
@@ -354,15 +383,17 @@ struct Planner<'a, F, R, S> {
     allocate: F,
     resolve_original: R,
     resolve_speech: S,
+    resolve_pause: P,
     /// Speech for the staged document after this many resolved steps.
     speech: Option<(usize, Arc<SpeechTimeline>)>,
 }
 
-impl<F, R, S> Planner<'_, F, R, S>
+impl<F, R, S, P> Planner<'_, F, R, S, P>
 where
     F: FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
     R: FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
     S: FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
+    P: FnMut(&ProjectDocument, ProjectFrame) -> Result<PauseProvider, EditError>,
 {
     /// Project speech through the current staged document once per change.
     fn ensure_speech(&mut self) -> Result<(), EditError> {
@@ -517,6 +548,33 @@ where
                 SemanticInstruction::SetRepeatPlays { plays } => {
                     self.set_repeat_plays(index, plays.get())?;
                 }
+                SemanticInstruction::Gag { recipe } => {
+                    // The expansion runs as ordinary instructions on the
+                    // staged document, with their own trace entries and fuel.
+                    if recipe.frames_its_pause()
+                        && self
+                            .current
+                            .insert_time_target(self.context.cursor)
+                            .is_ok_and(|target| target.parent != self.context.parent)
+                    {
+                        return Err(EditError::new(
+                            EditErrorCode::SelectionUnavailable,
+                            format!(
+                                "{} frames its pause, which here would land inside a nested group; open that group with Enter first",
+                                recipe.name()
+                            ),
+                        ));
+                    }
+                    let visual = self.context.visual_selection.is_some();
+                    let expansion = SemanticProgram::new(recipe.expand(visual)?)?;
+                    self.execute(&expansion)?;
+                }
+                SemanticInstruction::InsertPause { length } => {
+                    self.insert_pause(index, *length)?;
+                }
+                SemanticInstruction::SetFraming { framing } => {
+                    self.set_framing(index, framing.as_deref().cloned())?;
+                }
                 SemanticInstruction::CutFrames {
                     operation,
                     register,
@@ -608,9 +666,13 @@ where
                     escalation: Some(_),
                     ..
                 } => 2,
+                // A recipe stages at most three leaves.
+                SemanticInstruction::Gag { .. } => 2,
                 _ => usize::from(matches!(
                     instruction,
                     SemanticInstruction::CutFrames { .. }
+                        | SemanticInstruction::InsertPause { .. }
+                        | SemanticInstruction::SetFraming { .. }
                         | SemanticInstruction::Yank { .. }
                         | SemanticInstruction::Cut { .. }
                         | SemanticInstruction::Repeat { .. }

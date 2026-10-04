@@ -57,6 +57,26 @@ impl DurationInput {
         Ok(Self::Seconds(seconds))
     }
 
+    /// The macro form: exact milliseconds when the input has them, otherwise
+    /// the frames it resolves to now.
+    pub fn pause_length(self, rate: FrameRate) -> Result<deadpan_core::PauseLength, String> {
+        use std::num::NonZeroU32;
+        if let Self::Seconds(seconds) = self
+            && let Ok(milliseconds) = seconds.checked_mul(ExactRatio::integer(1000))
+            && milliseconds.denominator() == 1
+            && let Some(milliseconds) = u32::try_from(milliseconds.numerator())
+                .ok()
+                .and_then(NonZeroU32::new)
+        {
+            return Ok(deadpan_core::PauseLength::Milliseconds { milliseconds });
+        }
+        let frames = u32::try_from(self.resolve(rate)?.frames())
+            .ok()
+            .and_then(NonZeroU32::new)
+            .ok_or("The pause resolves to no whole project frame.")?;
+        Ok(deadpan_core::PauseLength::Frames { frames })
+    }
+
     pub fn resolve(self, rate: FrameRate) -> Result<FrameDuration, String> {
         match self {
             Self::Frames(frames) => Ok(frames),

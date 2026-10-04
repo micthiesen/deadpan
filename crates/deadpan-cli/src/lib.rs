@@ -19,6 +19,7 @@ pub mod macros;
 pub mod models;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod originals;
+pub mod pause;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod picture;
 #[cfg(any(target_os = "macos", target_os = "linux"))]

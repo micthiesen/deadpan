@@ -10,14 +10,19 @@ Both binding families are configurable through `macro.record` and
 
 The current vocabulary includes relative frame and beat motion, group start/end,
 Visual selection begin/finish/clear, frame, beat or Visual cut, selected-beat or
-Visual yank, typed operator motions and group objects, Repeat wraps and count setters, named Group,
-neutral Ungroup, register paste or Visual replacement, and named Macro call.
+Visual yank, typed operator motions and group objects, Repeat wraps (optionally
+escalating) and count setters, named Group, neutral Ungroup, register paste or
+Visual replacement, pauses (`InsertPause`, exact frames or milliseconds with a
+host-resolved freeze), framing of the selected beat, built-in
+[gag recipes](GAGS.md), and named Macro call. Word, sentence, pause and shot
+motions and objects resolve against analyses projected through each staged
+document.
 Motions and cuts retain their requested counts, including when they
 clamp at a group boundary. Copy, cut and paste retain the selected register name.
 The planner resolves each instruction against the preceding staged edit in
 its checked ordinary Sequence context, including the scope returned by `ig/ag`.
-Temporal occurrence scopes, beat and analysis text objects,
-analysis-dependent motions, additional edits and broader semantic dot-repeat remain required.
+Temporal occurrence scopes, beat text objects, additional edits and broader
+semantic dot-repeat remain required.
 This is partial DP-06 implementation, not full macro acceptance.
 See [Repeat selections](REPEAT_SELECTION.md) for total-play versus motion counts,
 captured targets and structural range wrapping. `:repeat N` records a count setter
