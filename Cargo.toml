@@ -53,6 +53,15 @@ unsafe_code = "forbid"
 [workspace.lints.clippy]
 all = { level = "warn", priority = -1 }
 
+# Line tables keep file:line backtraces for workspace crates; dependencies carry
+# no debug info. On macOS, unpacked debug info keeps every object file beside
+# each test binary, so full debug info multiplies codegen, disk and link work.
+[profile.dev]
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+debug = false
+
 [profile.release]
 codegen-units = 1
 lto = "thin"

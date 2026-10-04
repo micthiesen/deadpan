@@ -43,6 +43,21 @@ cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo test --workspace --locked
 ```
 
+Locally, `cargo nextest run --workspace --locked` followed by
+`cargo test --workspace --locked --doc` replaces the last command with the
+same tests. Nextest runs each test in its own process across all test binaries
+in parallel; on 2026-10-04 an M5 Max ran all 3,604 workspace tests in 96 s.
+CI keeps plain `cargo test`. Install nextest with `brew install cargo-nextest`.
+
+Cargo never deletes superseded artifacts. On macOS, unpacked debug info keeps
+object files beside every test binary, so each rebuild adds more. A directory
+with millions of entries makes every rustc invocation slow in the kernel: on
+2026-10-04, 2.87 million `.o` files (494 GB) made an incremental
+`deadpan-core` test build take 376 s; after `cargo clean` it took 16 s. Run
+`cargo clean` when `ls target/debug/deps | wc -l` reaches several hundred
+thousand. The dev profile keeps line tables for workspace crates and omits
+dependency debug info to slow that growth.
+
 Workspace integration tests already build and exercise the normal application,
 CLI and media-worker executables, including doctor. A separate workspace build
 and doctor invocation add no required coverage after those tests. Use builds
