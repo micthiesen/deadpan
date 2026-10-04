@@ -52,6 +52,13 @@ pub struct RegisteredSource {
     pub sound_audition: Option<Arc<deadpan_playback::Sound>>,
 }
 
+/// A stored transcript of the Original, carried across edits.
+#[derive(Debug)]
+pub struct OriginalTranscript {
+    pub key: deadpan_store::TranscriptKey,
+    pub transcript: deadpan_analysis::Transcript,
+}
+
 pub struct Workspace {
     pub session: u64,
     pub path: PathBuf,
@@ -67,9 +74,30 @@ pub struct Workspace {
     /// Full measured Original stream union in the current project-frame clock.
     /// This is not the video's decoded presentation-frame count.
     pub original_duration: Option<FrameDuration>,
+    /// Loaded when the project opens and replaced when a transcript is saved;
+    /// annotations never change with document revisions.
+    pub transcript: Option<Arc<OriginalTranscript>>,
 }
 
 impl Workspace {
+    /// The same committed workspace with a newly saved transcript.
+    pub fn with_transcript(&self, transcript: Arc<OriginalTranscript>) -> Self {
+        Self {
+            session: self.session,
+            path: self.path.clone(),
+            document: Arc::clone(&self.document),
+            plan: Arc::clone(&self.plan),
+            sources: self.sources.clone(),
+            originals: self.originals.clone(),
+            generated: self.generated.clone(),
+            can_undo: self.can_undo,
+            can_redo: self.can_redo,
+            single_source: self.single_source.clone(),
+            original_duration: self.original_duration,
+            transcript: Some(transcript),
+        }
+    }
+
     /// Media capabilities stay anchored in this committed workspace, even when
     /// an independently validated gain proposal uses them for audition.
     pub fn playback_snapshot(&self) -> deadpan_playback::Snapshot {
@@ -416,6 +444,12 @@ pub struct MomentPaste {
 }
 
 pub enum ProjectRequest {
+    /// Store a validated transcript of the Original; never an edit.
+    SaveTranscript {
+        expected_session: u64,
+        key: deadpan_store::TranscriptKey,
+        transcript: Arc<deadpan_analysis::Transcript>,
+    },
     Marks(marks::Request),
     Render(ProjectRenderRequest),
     RenderHistory(render_history::Request),

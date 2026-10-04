@@ -57,6 +57,7 @@ mod sound_events;
 mod splice;
 mod style;
 mod thumbnails;
+mod transcript;
 mod trim;
 
 const SEARCH_ID: &str = "source-search";
@@ -132,6 +133,7 @@ pub struct DeadpanApp {
     // Logical drafts borrow this owner; closing one never drops in-flight work.
     junction_pictures: splice::JunctionDisplay,
     thumbnails: thumbnails::Thumbnails,
+    transcription: transcript::Transcription,
     /// The native menu bar, present only for native launches.
     #[cfg(target_os = "macos")]
     menu: Option<crate::menu::MenuBar>,
@@ -285,6 +287,7 @@ impl DeadpanApp {
             renderer,
             junction_pictures,
             thumbnails,
+            transcription: transcript::Transcription::default(),
             #[cfg(target_os = "macos")]
             menu: None,
             target: None,
@@ -3280,6 +3283,9 @@ impl DeadpanApp {
                         if let Some(error) = &import.error { ui.colored_label(ui.visuals().error_fg_color, error); }
                         if self.importing() && ui.button("Cancel import").clicked() { self.submit(ProjectRequest::CancelImport); }
                     }
+                    if matches!(profile, Some(SingleSourceState::Ready { .. })) {
+                        self.transcript_section(ui);
+                    }
                 });
             });
     }
@@ -4129,6 +4135,7 @@ impl eframe::App for DeadpanApp {
             self.reconcile_render(&context);
             self.receive_gain_waveform();
             self.receive_trim_media();
+            self.reconcile_transcription(&context);
             if self.close_pending {
                 self.junction_pictures.clear();
             }
@@ -4384,6 +4391,7 @@ impl eframe::App for DeadpanApp {
         self.worker.shutdown();
         self.endpoint_worker.shutdown();
         self.thumbnails.shutdown();
+        self.transcription.shutdown();
         // No GPU wait on the UI. Submitted targets keep their queue callback
         // owner if shutdown ends the display before its final frame can drain.
         self.junction_pictures.clear();

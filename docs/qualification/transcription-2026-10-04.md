@@ -49,3 +49,22 @@ replacement, reopening, cap, read-only refusal and tamper detection; exact
 analysis length, origin and an independently measured -79.2 dB mono level from
 the B-frame fixture; command errors; and real-executable model hash, size,
 load, missing-file and deadline failures.
+
+## Native application run
+
+The debug app and worker ran on the host with the pack installed in
+`~/Library/Application Support/Deadpan/Models`. File → New Project… in the native
+menu bar opened the system panel; the 19.8 s interview-style speech video was
+chosen by path. The first preparation failed with `media object changed during
+verification`: `~/Documents` is an iCloud Drive File Provider domain on this
+Mac, and the stored Original's ctime changed after creation (birth/mtime
+06:18:32, ctime 06:35:08) while content did not. Choose Original… succeeded on
+retry; the Original became ready and the app transcribed it automatically and
+saved the transcript. macOS accessibility exposed the rail's sentences, and
+`transcript … --search "absolutely not"` found both occurrences at 561–655 cs and
+1463–1551 cs. Quit Deadpan closed the app and released the writer.
+
+The verification comparisons no longer include ctime (see
+[original media](../ORIGINAL_MEDIA.md)); unit tests show an added File Provider
+attribute changes ctime without failing either comparison while an mtime change
+still does. The interrupted first attempt was not rerun after the fix.

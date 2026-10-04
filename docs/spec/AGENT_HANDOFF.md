@@ -2,6 +2,25 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Transcription, model packs and File Provider, 2026-10-04
+
+Local transcription (DP-10) and the model-pack manager (DP-13) are integrated
+end to end: approved pack manifests, verified resumable installs, the isolated
+whisper.cpp worker, schema-59 transcript storage, headless commands and an
+automatic app transcript in the Original rail. See
+[transcription](../TRANSCRIPTION.md) and [model packs](../MODEL_PACKS.md).
+`cargo build` now builds the worker beside the app; never use whisper-rs's
+`set_abort_callback_safe`.
+
+`~/Documents` is often an iCloud Drive File Provider domain. It changes files'
+ctime through extended attributes, which failed the first native import; file
+state comparisons no longer include ctime. Possible eviction of project media
+by Optimize Mac Storage is an open offline-guarantee risk that needs a product
+decision (for example excluding packages from sync).
+
+The next steps are word motions and selectors over the transcript in Your edit,
+then VAD/silence proposals.
+
 ## Workspace design pass and build hygiene, 2026-10-04
 
 Neutral Group, GroupSelection and Ungroup now keep saved sound clocks when the

@@ -11,7 +11,8 @@ use std::time::{Duration, Instant};
 use deadpan_jobs::Sha256;
 use deadpan_jobs::transcription::{Language, ModelInput};
 use deadpan_models::packs::{
-    HttpsTransport, Operation, PackManifest, PackStore, StagedPack, approved_packs, available_space,
+    HttpsTransport, InstallProgress, InstalledPack, Operation, PackManifest, PackStore, StagedPack,
+    approved_packs, available_space,
 };
 
 use crate::CliError;
@@ -98,46 +99,55 @@ fn install(store: &PackStore, manifest: &PackManifest) -> Result<(), CliError> {
     }
     // The size and license are shown before any byte is downloaded.
     emit(&serde_json::json!({
-            "event": "installing", "pack_id": manifest.pack_id, "bytes": manifest.total_bytes(),
-            "license": manifest.license.id, "attribution": manifest.license.attribution,
+        "event": "installing", "pack_id": manifest.pack_id, "bytes": manifest.total_bytes(),
+        "license": manifest.license.id, "attribution": manifest.license.attribution,
     }))?;
-    let cancelled = AtomicBool::new(false);
     let mut reported = 0_u64;
     let mut output_error = None;
+    let installed = install_pack(store, manifest, &AtomicBool::new(false), |progress| {
+        // One progress line per 5% keeps output bounded.
+        let step = (progress.total_bytes / 20).max(1);
+        if progress.completed_bytes >= reported + step
+            || progress.completed_bytes == progress.total_bytes
+        {
+            reported = progress.completed_bytes;
+            if let Err(error) = emit(&serde_json::json!({
+                "event": "progress",
+                "completed_bytes": progress.completed_bytes,
+                "total_bytes": progress.total_bytes,
+            })) {
+                output_error.get_or_insert(error);
+            }
+        }
+    })?;
+    if let Some(error) = output_error {
+        return Err(error);
+    }
+    crate::write_json(&serde_json::json!({ "protocol": 1, "installed": installed.directory }))
+}
+
+/// Download, verify, smoke-test and activate one approved pack. A failed
+/// smoke test discards the staged copy and leaves installed versions intact.
+pub fn install_pack(
+    store: &PackStore,
+    manifest: &PackManifest,
+    cancelled: &AtomicBool,
+    progress: impl FnMut(InstallProgress),
+) -> Result<InstalledPack, CliError> {
     let staged = store
         .stage(
             manifest,
             &HttpsTransport::default(),
             available_space,
-            &cancelled,
-            |progress| {
-                // One progress line per 5% keeps output bounded.
-                let step = (progress.total_bytes / 20).max(1);
-                if progress.completed_bytes >= reported + step
-                    || progress.completed_bytes == progress.total_bytes
-                {
-                    reported = progress.completed_bytes;
-                    if let Err(error) = emit(&serde_json::json!({
-                        "event": "progress",
-                        "completed_bytes": progress.completed_bytes,
-                        "total_bytes": progress.total_bytes,
-                    })) {
-                        output_error.get_or_insert(error);
-                    }
-                }
-            },
+            cancelled,
+            progress,
         )
         .map_err(models_error)?;
-    if let Some(error) = output_error {
-        return Err(error);
-    }
-    emit(&serde_json::json!({ "event": "smoke_test" }))?;
     if let Err(error) = smoke_test(&staged) {
         store.discard(staged).map_err(models_error)?;
         return Err(error);
     }
-    let installed = store.activate(staged).map_err(models_error)?;
-    crate::write_json(&serde_json::json!({ "protocol": 1, "installed": installed.directory }))
+    store.activate(staged).map_err(models_error)
 }
 
 /// One complete JSON object per stdout line, as `render` reports progress.

@@ -97,8 +97,34 @@ executable and stores the result; it needs the project's writer.
 `transcript <project> [--search <words>] [--asset <id>]` prints stored
 transcripts, or phrase matches with exact Original sample bounds.
 
+## In the app
+
+When a single-Original project's Original is ready and the approved pack is
+installed, the app prepares analysis PCM from a read-only store connection on
+a background thread, runs the worker beside its executable and submits the
+validated transcript to the project service, which saves it outside history
+and publishes it with the workspace. The workspace loads the stored transcript
+when a project opens and carries it across edits without reloading.
+
+Without the pack, the TRANSCRIPT section at the end of the Original rail states
+the model's size and license and offers Install model…, which downloads,
+verifies, smoke-tests and activates it in the background with progress and
+cancel. Transcription progress, saving and failures (with Try again) appear in
+the same section.
+
+A ready transcript shows the sentences around the current word, at most four on
+each side, as wrapped text runs. The current word (the latest word begun by the
+end of the Original cursor's picture, compared as exact rationals) is
+highlighted; approximate words are grey italics; search matches are
+underlined. Clicking a word or pressing Enter (Shift+Enter for previous) in Find
+words moves the Original cursor to the picture presented when that word begins.
+Replay uses an empty model directory, so it never downloads or uses an
+installed model; the `transcript` scenario saves a synthetic transcript through
+the real service and checks display, search, current word and exact jumps.
+
 ## Remaining
 
-The transcript and search UI with word navigation, background
+Transcript display through Your edit, keyboard word motions and `/`
+search integration, background
 scheduling by visible range, VAD and refinement, manual correction, sentence
 objects, accuracy measurement on real speech, and the model manager.

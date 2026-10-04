@@ -44,6 +44,7 @@ mod scoped;
 mod semantic;
 mod slip;
 mod splice;
+mod transcripts;
 mod trim;
 
 struct Pending {
@@ -341,6 +342,14 @@ impl Service {
                 self.marks_command(request);
                 return Ok(());
             }
+            ProjectRequest::SaveTranscript {
+                expected_session,
+                key,
+                transcript,
+            } => {
+                self.save_transcript_command(expected_session, key, transcript);
+                return Ok(());
+            }
             ProjectRequest::CaptureEditSlice(request) => {
                 self.capture_edit_slice_command(request);
                 return Ok(());
@@ -410,6 +419,9 @@ impl Service {
         self.gain = None;
         match request {
             ProjectRequest::Marks(_) => unreachable!("marks use independent feedback"),
+            ProjectRequest::SaveTranscript { .. } => {
+                unreachable!("transcripts use independent feedback")
+            }
             ProjectRequest::Render(_) => unreachable!("render commands use their own feedback"),
             ProjectRequest::RenderHistory(_) => {
                 unreachable!("render history queries use their own feedback")
@@ -1706,6 +1718,10 @@ fn snapshot(
         ),
         _ => None,
     };
+    let transcript = match previous {
+        Some(previous) => previous.transcript.clone(),
+        None => original_transcript(store, single_source.as_ref(), &sources)?,
+    };
     Ok(Workspace {
         session,
         path,
@@ -1718,7 +1734,34 @@ fn snapshot(
         can_redo,
         single_source,
         original_duration,
+        transcript,
     })
+}
+
+/// The Original's stored transcript, preferring the installed transcription
+/// pack's model. A damaged stored transcript is reported, not hidden.
+fn original_transcript(
+    store: &ProjectStore,
+    single_source: Option<&SingleSourceState>,
+    sources: &BTreeMap<AssetId, Arc<RegisteredSource>>,
+) -> Result<Option<Arc<super::OriginalTranscript>>> {
+    let Some(SingleSourceState::Ready { asset, .. }) = single_source else {
+        return Ok(None);
+    };
+    let Some(source) = sources.get(asset) else {
+        return Ok(None);
+    };
+    let content = source.receipt.original().content().to_string();
+    let mut transcripts = store.transcripts_for_content(&content).map_err(display)?;
+    let preferred = deadpan_models::packs::approved_packs()
+        .into_iter()
+        .flat_map(|pack| pack.files.into_iter().map(|file| file.sha256))
+        .collect::<Vec<_>>();
+    transcripts.sort_by_key(|(key, _)| !preferred.contains(&key.model_sha256));
+    Ok(transcripts
+        .into_iter()
+        .next()
+        .map(|(key, transcript)| Arc::new(super::OriginalTranscript { key, transcript })))
 }
 
 fn registered_source(

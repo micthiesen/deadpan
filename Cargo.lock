@@ -912,11 +912,13 @@ dependencies = [
 name = "deadpan-app"
 version = "0.1.0"
 dependencies = [
+ "deadpan-analysis",
  "deadpan-audio",
  "deadpan-cli",
  "deadpan-core",
  "deadpan-jobs",
  "deadpan-media",
+ "deadpan-models",
  "deadpan-native-process",
  "deadpan-output",
  "deadpan-plan",

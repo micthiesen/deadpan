@@ -1722,6 +1722,11 @@ fn confirm_named_file(
     Ok(())
 }
 
+/// Identity, permissions, links, size and modification time. Change time is
+/// deliberately excluded: macOS File Provider domains such as iCloud Drive's
+/// Documents and Desktop add extended attributes to files and directories at
+/// any time, which changes ctime without changing content. Content writes
+/// update mtime, and every object is hashed against its identity.
 fn same_file_state(before: &Stat, after: &Stat) -> bool {
     before.st_dev == after.st_dev
         && before.st_ino == after.st_ino
@@ -1731,8 +1736,6 @@ fn same_file_state(before: &Stat, after: &Stat) -> bool {
         && before.st_nlink == after.st_nlink
         && before.st_mtime == after.st_mtime
         && before.st_mtime_nsec == after.st_mtime_nsec
-        && before.st_ctime == after.st_ctime
-        && before.st_ctime_nsec == after.st_ctime_nsec
 }
 
 #[derive(Debug, Error)]
@@ -1855,6 +1858,39 @@ mod tests {
     use std::os::unix::fs::{PermissionsExt, symlink};
 
     use super::*;
+
+    #[test]
+    fn extended_attributes_keep_file_state_while_modification_time_changes_it() {
+        let scratch = tempfile::tempdir().unwrap();
+        let path = scratch.path().join("object");
+        fs::write(&path, b"bytes").unwrap();
+        let file = File::open(&path).unwrap();
+        let before = fstat(&file).unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(5));
+        rustix::fs::fsetxattr(
+            &file,
+            "com.apple.fileprovider.deadpan-test#P",
+            b"1",
+            rustix::fs::XattrFlags::empty(),
+        )
+        .unwrap();
+        let attributed = fstat(&file).unwrap();
+        assert!(
+            (attributed.st_ctime, attributed.st_ctime_nsec)
+                != (before.st_ctime, before.st_ctime_nsec)
+        );
+        assert!(same_file_state(&before, &attributed));
+        File::options()
+            .write(true)
+            .open(&path)
+            .unwrap()
+            .set_times(
+                std::fs::FileTimes::new()
+                    .set_modified(std::time::SystemTime::now() + std::time::Duration::from_secs(2)),
+            )
+            .unwrap();
+        assert!(!same_file_state(&before, &fstat(&file).unwrap()));
+    }
 
     fn package() -> tempfile::TempDir {
         let package = tempfile::tempdir().unwrap();

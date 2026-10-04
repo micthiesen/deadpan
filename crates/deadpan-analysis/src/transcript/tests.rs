@@ -254,3 +254,78 @@ proptest! {
         }
     }
 }
+
+fn video_index() -> deadpan_core::SourceFrameIndex {
+    use deadpan_core::{
+        AssetId, IndexedSourceFrame, SourceFrameId, SourceTimeBase, TerminalProvenance,
+    };
+    // 30000/1001 fps pictures in a 1/30000 time base, starting at PTS 1001.
+    let frames = (0..90_u64)
+        .map(|ordinal| IndexedSourceFrame {
+            identity: SourceFrameId(ordinal),
+            pts: 1_001 * (ordinal as i64 + 1),
+            reported_duration: Some(1_001),
+            keyframe: ordinal == 0,
+            seek_from: Some(SourceFrameId(0)),
+            decode_timestamp: None,
+        })
+        .collect();
+    deadpan_core::SourceFrameIndex::new(
+        AssetId::new("original").unwrap(),
+        SourceTimeBase::new(1, 30_000).unwrap(),
+        frames,
+        1_001 * 91,
+        TerminalProvenance::DecodedFrameDuration,
+    )
+    .unwrap()
+}
+
+#[test]
+fn word_times_map_to_the_picture_presented_at_that_instant_and_back() {
+    let transcript = Transcript::from_segments(audio(), &recorded()).unwrap();
+    // origin -1024 samples at 48 kHz: analysis 0 cs is -1024/48000 s.
+    assert_eq!(
+        transcript.seconds(290).unwrap(),
+        ExactRatio::new(290 * 480 - 1_024, 48_000).unwrap()
+    );
+    assert_eq!(
+        transcript.centiseconds_at(transcript.seconds(290).unwrap()),
+        Some(290)
+    );
+    assert_eq!(
+        transcript.centiseconds_at(ExactRatio::new(-1, 1).unwrap()),
+        None
+    );
+    assert_eq!(
+        transcript.centiseconds_at(ExactRatio::new(60, 1).unwrap()),
+        None
+    );
+
+    let index = video_index();
+    // Picture k starts at (k + 1) · 1001 / 30000 s.
+    let picture =
+        |seconds: (i128, i128)| picture_at(&index, ExactRatio::new(seconds.0, seconds.1).unwrap());
+    assert_eq!(picture((0, 1)), None, "before the first picture");
+    assert_eq!(
+        picture((1_001, 30_000)),
+        Some(0),
+        "exactly at the first PTS"
+    );
+    assert_eq!(
+        picture((2_001, 30_000)),
+        Some(0),
+        "one tick before the second"
+    );
+    assert_eq!(picture((2_002, 30_000)), Some(1));
+    assert_eq!(picture((1_001 * 90, 30_000)), Some(89));
+    assert_eq!(
+        picture((1_001 * 91, 30_000)),
+        None,
+        "at the terminal endpoint"
+    );
+    assert_eq!(
+        picture_seconds(&index, 1),
+        Some(ExactRatio::new(2_002, 30_000).unwrap())
+    );
+    assert_eq!(picture_seconds(&index, 90), None);
+}

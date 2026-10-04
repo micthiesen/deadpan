@@ -9,7 +9,7 @@
 
 use std::ops::Range;
 
-use deadpan_core::{ExactRatio, TimeError};
+use deadpan_core::{ExactRatio, SourceFrameIndex, TimeError};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -255,6 +255,32 @@ impl Transcript {
         Ok(ExactRatio::new(i128::from(self.audio.origin), 1)?.checked_add(offset)?)
     }
 
+    /// Container time in seconds of an analysis time. Original audio sample
+    /// positions are PTS converted to samples, so this is `sample / rate`.
+    pub fn seconds(&self, centiseconds: u32) -> Result<ExactRatio, TranscriptError> {
+        Ok(self
+            .original_sample(centiseconds)?
+            .checked_div(ExactRatio::new(i128::from(self.audio.sample_rate), 1)?)?)
+    }
+
+    /// The analysis time of a container time, if it lies in the analysed audio.
+    pub fn centiseconds_at(&self, seconds: ExactRatio) -> Option<u32> {
+        let origin = ExactRatio::new(
+            i128::from(self.audio.origin),
+            i128::from(self.audio.sample_rate),
+        )
+        .ok()?;
+        let offset = seconds
+            .checked_sub(origin)
+            .ok()?
+            .checked_mul(ExactRatio::new(100, 1).ok()?)
+            .ok()?
+            .floor();
+        u32::try_from(offset)
+            .ok()
+            .filter(|centiseconds| *centiseconds < self.audio.duration_cs)
+    }
+
     /// The word heard at an analysis time, if any.
     pub fn word_at(&self, centiseconds: u32) -> Option<usize> {
         let index = self
@@ -288,6 +314,39 @@ impl Transcript {
             .map(|start| start..start + terms.len())
             .collect()
     }
+}
+
+/// The picture shown at a container time: the last frame whose presentation
+/// timestamp is at or before it, within the measured terminal endpoint.
+pub fn picture_at(index: &SourceFrameIndex, seconds: ExactRatio) -> Option<usize> {
+    let base = index.time_base();
+    // pts · num / den <= seconds  ⇔  pts · num · s_den <= s_num · den
+    let at_or_before = |pts: i64| {
+        i128::from(pts)
+            .checked_mul(i128::from(base.numerator()))
+            .and_then(|value| value.checked_mul(seconds.denominator()))
+            .zip(
+                seconds
+                    .numerator()
+                    .checked_mul(i128::from(base.denominator())),
+            )
+            .is_some_and(|(left, right)| left <= right)
+    };
+    let frames = index.frames();
+    let count = frames.partition_point(|frame| at_or_before(frame.pts));
+    let candidate = count.checked_sub(1)?;
+    (!at_or_before(index.terminal_end())).then_some(candidate)
+}
+
+/// The container time at which a picture begins.
+pub fn picture_seconds(index: &SourceFrameIndex, frame: usize) -> Option<ExactRatio> {
+    let base = index.time_base();
+    let pts = index.frames().get(frame)?.pts;
+    ExactRatio::new(
+        i128::from(pts) * i128::from(base.numerator()),
+        i128::from(base.denominator()),
+    )
+    .ok()
 }
 
 fn centiseconds(value: i64) -> Result<u32, TranscriptError> {

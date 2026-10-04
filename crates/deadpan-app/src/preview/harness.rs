@@ -38,6 +38,7 @@ mod sound_placement;
 mod sound_playback;
 mod splice;
 mod telemetry;
+mod transcript;
 mod trim;
 mod wake;
 
@@ -207,6 +208,7 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                 scratch.as_ref().ok_or("Missing temporary replay root")?.path().join("Documents")
             };
             let keymap = keymap::startup(name, &documents)?;
+            let models = documents.join("Models");
             let library = crate::library::ProjectLibrary::from_documents(documents)?;
             let mut construction_error = None;
             let wake = Arc::new(RepaintWake::default());
@@ -253,6 +255,8 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                             Some(fixture.to_owned()),
                         )]);
                         app.feedback.simulate_playback = true;
+                        // Replay never sees models installed on this Mac.
+                        app.transcription.set_models_root(models.clone());
                         Ok(app)
                     })();
                     match result {

@@ -890,14 +890,16 @@ fn confirm_source_path(
     Ok(())
 }
 
+/// Identity, size and modification time. Change time is excluded because
+/// File Provider domains (iCloud Drive Documents and Desktop) add extended
+/// attributes to a chosen file around selection, changing ctime but not
+/// content; the bytes are hashed in the same pass.
 fn same_source_state(before: &Metadata, after: &Metadata) -> bool {
     before.dev() == after.dev()
         && before.ino() == after.ino()
         && before.len() == after.len()
         && before.mtime() == after.mtime()
         && before.mtime_nsec() == after.mtime_nsec()
-        && before.ctime() == after.ctime()
-        && before.ctime_nsec() == after.ctime_nsec()
 }
 
 struct Control<'a> {
@@ -1181,5 +1183,32 @@ mod tests {
             confirm_source_path(&path, &file, &inspected.state),
             Err(OriginalMediaError::SourceChanged)
         ));
+    }
+
+    #[test]
+    fn file_provider_attributes_change_ctime_without_counting_as_source_changes() {
+        let scratch = tempfile::tempdir().unwrap();
+        let path = scratch.path().join("chosen.mov");
+        fs::write(&path, b"original").unwrap();
+        let file = open_source(&path).unwrap();
+        let limits = OriginalMediaLimits::default();
+        let cancelled = AtomicBool::new(false);
+        let control = limits.control(&cancelled).unwrap();
+        let inspected = inspect_original(&file, limits, &control, io::sink()).unwrap();
+        std::thread::sleep(Duration::from_millis(5));
+        // What iCloud Drive's File Provider does to a selected file.
+        rustix::fs::setxattr(
+            &path,
+            "com.apple.fileprovider.deadpan-test#P",
+            b"1",
+            rustix::fs::XattrFlags::empty(),
+        )
+        .unwrap();
+        let changed = file.metadata().unwrap();
+        assert!(
+            (changed.ctime(), changed.ctime_nsec())
+                != (inspected.state.ctime(), inspected.state.ctime_nsec())
+        );
+        confirm_source_path(&path, &file, &inspected.state).unwrap();
     }
 }
