@@ -14,6 +14,7 @@ fn partition(label: &str, child: &str, start: i64, end: i64) -> BeatNode {
             pitch: PitchPolicy::Preserve,
             purpose: RetimePurpose::Partition,
         },
+        cutaways: Vec::new(),
     }
 }
 

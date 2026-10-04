@@ -58,6 +58,7 @@ fn source(length: i64) -> BeatNode {
                 link: LinkRelation::Independent,
             },
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -107,6 +108,7 @@ fn make_plan(rate: FrameRate, source_frames: i64) -> RenderPlan {
                     pitch: PitchPolicy::FollowSpeed,
                     purpose: RetimePurpose::Partition,
                 },
+                cutaways: Vec::new(),
             },
         ),
     ]);

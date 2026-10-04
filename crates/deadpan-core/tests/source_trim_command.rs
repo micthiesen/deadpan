@@ -103,7 +103,7 @@ fn fixture(audio: Option<(i64, i64)>, offset: i64) -> ProjectDocument {
         "basis_state":{"rate_origin":"explicit","geometry_origin":"explicit","primary":null},
         "root":"root","marks":{},"overrides":{},
         "assets":{"original":AssetRecord {label:"Original".into(),content_hash:"a".repeat(64),video:Some(picture),audio:sound,still_image:false,frame_count:Some(frames(100)),source_qualification:Some(SourceQualificationId::new("b".repeat(64)).unwrap())}},
-        "nodes":{"root":BeatNode::sequence("Root",vec![id("source")]),"source":BeatNode {label:"Source".into(),framing:None,audio_treatments:Default::default(),audio_editorial_edges: Default::default(), audio_edges:Default::default(),kind:NodeKind::Source {source}}},
+        "nodes":{"root":BeatNode::sequence("Root",vec![id("source")]),"source":BeatNode {label:"Source".into(),framing:None,audio_treatments:Default::default(),audio_editorial_edges: Default::default(), audio_edges:Default::default(),kind:NodeKind::Source {source}, cutaways: Vec::new() }},
     }).to_string()).unwrap()
 }
 fn source(document: &ProjectDocument) -> &SourceNode {
@@ -713,6 +713,7 @@ fn trim_prefix_reconstructs_wrapper_and_ancestor_points_on_their_own_clocks() {
                 pitch: PitchPolicy::FollowSpeed,
                 purpose: RetimePurpose::Partition,
             },
+            cutaways: Vec::new(),
         })
         .unwrap();
         for (name, duration) in [("prefix", 5), ("suffix", 2)] {

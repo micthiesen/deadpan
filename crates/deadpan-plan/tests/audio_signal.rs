@@ -64,6 +64,7 @@ fn source(frames: i64, start: i64, end: i64, mapping: SourceAudioMapping) -> Bea
                 link: LinkRelation::Independent,
             },
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -94,6 +95,7 @@ fn retime(child: &str, frames: i64, start: i64, end: i64, pitch: PitchPolicy) ->
             mapping: FrameRange::new(ProjectFrame(start), ProjectFrame(end)).unwrap(),
             pitch,
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -117,6 +119,7 @@ fn repeat(child: &str, plays: u32, gap: i64) -> BeatNode {
             gap: (gap > 0).then(|| hold_recipe(gap, HoldAudio::Silence)),
             escalation: None,
         },
+        cutaways: Vec::new(),
     }
 }
 

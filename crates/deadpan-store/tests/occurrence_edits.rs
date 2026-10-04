@@ -69,6 +69,7 @@ fn initial() -> Result<ProjectDocument> {
                 gap: Some(recipe(gap)),
                 escalation: None,
             },
+            cutaways: Vec::new(),
         })
     };
     let mark = |owner: &str, coordinate| Mark {

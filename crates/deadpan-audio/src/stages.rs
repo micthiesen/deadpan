@@ -2453,6 +2453,7 @@ mod controlled_reads {
                     link: LinkRelation::Independent,
                 },
             },
+            cutaways: Vec::new(),
         };
         let mut wire = serde_json::to_value(
             ProjectDocument::new(
@@ -2505,6 +2506,7 @@ mod controlled_reads {
                         pitch: PitchPolicy::Preserve,
                         purpose: RetimePurpose::Edit,
                     },
+                    cutaways: Vec::new(),
                 },
             ),
         ]))
@@ -2878,6 +2880,7 @@ mod controlled_reads {
                     link: LinkRelation::Independent,
                 },
             },
+            cutaways: Vec::new(),
         };
         let retime = |child: &str, output, selected| BeatNode {
             framing: None,
@@ -2892,6 +2895,7 @@ mod controlled_reads {
                 pitch: PitchPolicy::Preserve,
                 purpose: RetimePurpose::Edit,
             },
+            cutaways: Vec::new(),
         };
         let mut wire = serde_json::to_value(
             ProjectDocument::new(

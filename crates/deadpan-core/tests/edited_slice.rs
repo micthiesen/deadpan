@@ -512,6 +512,7 @@ fn whole_units_keep_hidden_marks_partial_endpoints_filter_them() {
             pitch: PitchPolicy::Preserve,
             purpose: RetimePurpose::Partition,
         },
+        cutaways: Vec::new(),
     };
     let before = marked(
         &tree(&["part"], vec![("part", partition), ("held", hold(10))]),
@@ -908,6 +909,7 @@ fn incompatible_historical_play_union_rejects_capture_without_expanding_plays() 
                         gap: None,
                         escalation: None,
                     },
+                    cutaways: Vec::new(),
                 },
             ),
             ("held", hold(1)),

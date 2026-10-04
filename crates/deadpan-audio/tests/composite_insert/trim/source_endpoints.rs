@@ -24,6 +24,7 @@ fn disjoint_source_endpoint_keeps_44100_phase_and_chunk_independent_kernel() {
             pitch: PitchPolicy::FollowSpeed,
             purpose: RetimePurpose::Partition,
         },
+        cutaways: Vec::new(),
     };
     let before = document(
         ntsc(),

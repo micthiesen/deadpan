@@ -132,6 +132,7 @@ fn retime(child: &str, start: i64, end: i64, frames: i64) -> BeatNode {
             duration: duration(frames),
             pitch: PitchPolicy::Preserve,
         },
+        cutaways: Vec::new(),
     }
 }
 fn play(document: &ProjectDocument, repeat: &str, ordinal: u32) -> RepeatInstance {
@@ -472,6 +473,7 @@ fn source_document() -> ProjectDocument {
                                 audio_offset: AudioSample(0),
                             },
                         },
+                        cutaways: Vec::new(),
                     },
                 )]),
             },

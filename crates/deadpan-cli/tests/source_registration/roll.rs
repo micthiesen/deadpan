@@ -73,6 +73,7 @@ pub(super) fn ready(directory: &Path) -> Result<PathBuf> {
                             kind: NodeKind::Source {
                                 source: timing.source_node(asset_id),
                             },
+                            cutaways: Vec::new(),
                         },
                     )]),
                     overrides: Default::default(),

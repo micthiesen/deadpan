@@ -100,6 +100,7 @@ pub(super) fn ready(parent: &Path, right_ordinals: Range<u64>) -> Result<(PathBu
                             kind: NodeKind::Source {
                                 source: timing.source_node(id(asset)),
                             },
+                            cutaways: Vec::new(),
                         },
                     )]),
                     overrides: Default::default(),

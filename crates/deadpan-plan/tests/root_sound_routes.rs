@@ -109,7 +109,8 @@ fn document(
             framing: None,
             audio_treatments: Default::default(),
             audio_editorial_edges: Default::default(),
-            audio_edges: Default::default()
+            audio_edges: Default::default(),
+            cutaways: Vec::new(),
         });
     }
     wire["nodes"]["root"] = json!(BeatNode::sequence("root", children));

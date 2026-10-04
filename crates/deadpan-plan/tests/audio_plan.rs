@@ -72,6 +72,7 @@ fn source(frames: i64, mapping: SourceAudioMapping, offset: i64) -> BeatNode {
                 link: LinkRelation::Independent,
             },
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -102,6 +103,7 @@ fn retime(child: &str, frames: i64, start: i64, end: i64, pitch: PitchPolicy) ->
             mapping: FrameRange::new(ProjectFrame(start), ProjectFrame(end)).unwrap(),
             pitch,
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -118,6 +120,7 @@ fn repeat(child: &str, plays: u32, gap: i64) -> BeatNode {
             gap: (gap > 0).then(|| hold_recipe(gap, HoldAudio::Silence)),
             escalation: None,
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -965,6 +968,7 @@ fn hold_policies_and_absent_source_audio_remain_distinct() {
                 link: LinkRelation::Independent,
             },
         },
+        cutaways: Vec::new(),
     };
     let doc = document(
         one_sample_per_frame(),

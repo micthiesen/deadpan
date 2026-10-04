@@ -166,6 +166,7 @@ fn fixture(offset: AudioSample, mapping: SourceAudioMapping) -> ProjectDocument 
                 audio_offset: offset,
             },
         },
+        cutaways: Vec::new(),
     };
     let picture_only = BeatNode {
         audio_treatments: Default::default(),
@@ -188,6 +189,7 @@ fn fixture(offset: AudioSample, mapping: SourceAudioMapping) -> ProjectDocument 
                 audio_offset: AudioSample(0),
             },
         },
+        cutaways: Vec::new(),
     };
     let hold = BeatNode::hold(
         "tail",
@@ -221,6 +223,7 @@ fn fixture(offset: AudioSample, mapping: SourceAudioMapping) -> ProjectDocument 
             }),
             escalation: None,
         },
+        cutaways: Vec::new(),
     };
     edit(
         &document,

@@ -59,6 +59,7 @@ fn source(frames: i64) -> BeatNode {
         },
         audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
+        cutaways: Vec::new(),
     }
 }
 fn source_span() -> SourceSpan {
@@ -594,6 +595,7 @@ fn sequence_interiors_and_root_composite_seams_preserve_their_owners() {
             gap,
             escalation: None,
         },
+        cutaways: Vec::new(),
     };
     let repeated = tree(
         &["repeat"],
@@ -648,6 +650,7 @@ fn composite_seam_moves_root_marks_once_and_retains_occurrence_and_source_clocks
                         gap: Some(recipe(1)),
                         escalation: None,
                     },
+                    cutaways: Vec::new(),
                 },
             ),
             ("inner", source(2)),
@@ -736,6 +739,7 @@ fn billion_play_seam_insertion_keeps_one_step_per_owned_recipe() {
                         gap: Some(recipe(1)),
                         escalation: None,
                     },
+                    cutaways: Vec::new(),
                 },
             ),
             ("inner", source(2)),

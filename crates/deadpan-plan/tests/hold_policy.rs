@@ -51,6 +51,7 @@ fn repeat(child: &str, count: u32, gap: Option<i64>) -> BeatNode {
             gap: gap.map(|length| recipe(length, HoldAudio::Silence)),
             escalation: None,
         },
+        cutaways: Vec::new(),
     }
 }
 fn retime(child: &str, length: i64, start: i64, end: i64, pitch: PitchPolicy) -> BeatNode {
@@ -67,6 +68,7 @@ fn retime(child: &str, length: i64, start: i64, end: i64, pitch: PitchPolicy) ->
             pitch,
             purpose: RetimePurpose::Edit,
         },
+        cutaways: Vec::new(),
     }
 }
 fn audio() -> SourceAudio {
@@ -107,6 +109,7 @@ fn source(length: i64, audio: Option<SourceAudio>, mapping: SourceAudioMapping) 
                 link: LinkRelation::Independent,
             },
         },
+        cutaways: Vec::new(),
     }
 }
 fn document(

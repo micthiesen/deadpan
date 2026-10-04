@@ -180,6 +180,7 @@ fn repeat(child: &str, plays: u32, allocation: &str) -> BeatNode {
             gap: Some(freeze_recipe(1, 7007)),
             escalation: None,
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -197,6 +198,7 @@ fn preserve(child: &str) -> BeatNode {
             mapping: range(1, 8),
             pitch: PitchPolicy::Preserve,
         },
+        cutaways: Vec::new(),
     }
 }
 

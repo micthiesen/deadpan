@@ -117,6 +117,7 @@ fn fixture(plays: u32) -> ProjectDocument {
                         audio_offset: AudioSample(-17),
                     },
                 },
+                cutaways: Vec::new(),
             },
         ),
         (
@@ -134,6 +135,7 @@ fn fixture(plays: u32) -> ProjectDocument {
                     pitch: PitchPolicy::Preserve,
                     purpose: RetimePurpose::Edit,
                 },
+                cutaways: Vec::new(),
             },
         ),
     ]);
@@ -157,6 +159,7 @@ fn fixture(plays: u32) -> ProjectDocument {
                 }),
                 escalation: None,
             },
+            cutaways: Vec::new(),
         },
     );
     let overrides = BTreeMap::from([(

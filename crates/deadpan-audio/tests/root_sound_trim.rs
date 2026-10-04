@@ -282,6 +282,7 @@ fn document(
                 link: LinkRelation::Independent,
             },
         },
+        cutaways: Vec::new(),
     };
     let mut wire = serde_json::to_value(empty).unwrap();
     wire["nodes"]["root"] =

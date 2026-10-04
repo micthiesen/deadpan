@@ -188,6 +188,16 @@ impl Inspector {
             };
             fields.push(("Framing", description));
         }
+        if !node.cutaways.is_empty() {
+            fields.push((
+                "Cutaways",
+                node.cutaways
+                    .iter()
+                    .map(|cutaway| format!("{}–{}", cutaway.range.start().0, cutaway.range.end().0))
+                    .collect::<Vec<_>>()
+                    .join(", "),
+            ));
+        }
         Self {
             label: node.label.clone(),
             kind,
@@ -224,6 +234,7 @@ mod tests {
                     audio: HoldAudio::Silence,
                 },
             },
+            cutaways: Vec::new(),
         };
         let inspector = Inspector::describe(&node, 132, 11);
         assert_eq!(inspector.duration, "11 f");
@@ -253,6 +264,7 @@ mod tests {
                 gap: None,
                 escalation: None,
             },
+            cutaways: Vec::new(),
         };
         let inspector = Inspector::describe(&node, 143, 72);
         assert_eq!(
@@ -295,6 +307,7 @@ mod tests {
                 pitch: PitchPolicy::FollowSpeed,
                 purpose: deadpan_core::RetimePurpose::Edit,
             },
+            cutaways: Vec::new(),
         };
         let inspector = Inspector::describe(&node, 22, 3);
         let command = inspector.parameter.unwrap().1;

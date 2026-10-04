@@ -95,6 +95,7 @@ fn source(rate: FrameRate, frames: i64, selected: Range<i64>) -> BeatNode {
                 link: LinkRelation::Independent,
             },
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -137,6 +138,7 @@ fn retime(child: &str, frames: i64, selected: Range<i64>, pitch: PitchPolicy) ->
                 .unwrap(),
             pitch,
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -1226,6 +1228,7 @@ fn repeat_and_override_occurrences_do_not_alias_prepared_history() {
             }),
             escalation: None,
         },
+        cutaways: Vec::new(),
     };
     let planned = plan_with_overrides(
         rate,
@@ -1482,6 +1485,7 @@ fn nested_depth_and_native_long_input_limits_fail_without_decoding_originals() {
             gap: None,
             escalation: None,
         },
+        cutaways: Vec::new(),
     };
     let mut renderer = StageAudio::new(plan(
         rate,
@@ -1602,6 +1606,7 @@ fn repeated_stage_plan() -> Arc<RenderPlan> {
                         gap: None,
                         escalation: None,
                     },
+                    cutaways: Vec::new(),
                 },
             ),
             ("outer", retime("repeat", 108, 0..72, PitchPolicy::Preserve)),
@@ -1842,6 +1847,7 @@ fn repeated_room_tone_and_override_restart_locally_with_two_distinct_gap_caches(
             }),
             escalation: None,
         },
+        cutaways: Vec::new(),
     };
     let planned = plan_with_overrides(
         rate,
@@ -2364,6 +2370,7 @@ fn partition_inside_a_repeat_gap_keeps_its_full_room_tone_origin() {
             }),
             escalation: None,
         },
+        cutaways: Vec::new(),
     };
     let whole = plan(
         rate,
@@ -2589,6 +2596,7 @@ fn one_hard_repeat_override_and_room_tone_gap_edges_preserve_silence_masks() {
             }),
             escalation: None,
         },
+        cutaways: Vec::new(),
     };
     let planned = plan_with_overrides(
         rate,

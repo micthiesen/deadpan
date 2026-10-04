@@ -103,6 +103,7 @@ fn repeated(plays: u32, recipe: HoldRecipe) -> BeatNode {
             gap: Some(recipe),
             escalation: None,
         },
+        cutaways: Vec::new(),
     }
 }
 fn partition(child: &str, selected: Range<i64>) -> BeatNode {
@@ -120,6 +121,7 @@ fn partition(child: &str, selected: Range<i64>) -> BeatNode {
             pitch: PitchPolicy::FollowSpeed,
             purpose: RetimePurpose::Partition,
         },
+        cutaways: Vec::new(),
     }
 }
 fn preserve(child: &str, input: i64, output: i64) -> BeatNode {

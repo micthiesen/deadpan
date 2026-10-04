@@ -585,6 +585,7 @@ mod tests {
                     gap: None,
                     escalation: None,
                 },
+                cutaways: Vec::new(),
             },
         );
         document.nodes.insert(
@@ -704,6 +705,7 @@ mod tests {
                 gap: (gap_duration > 0).then(|| capture_gap(gap_duration)),
                 escalation: None,
             },
+            cutaways: Vec::new(),
         }
     }
 
@@ -894,6 +896,7 @@ mod tests {
                 pitch: PitchPolicy::Preserve,
                 purpose: RetimePurpose::Edit,
             },
+            cutaways: Vec::new(),
         };
         let mut before = capture_document(
             &["outside", "tail"],

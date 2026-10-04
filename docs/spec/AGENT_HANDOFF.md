@@ -2,6 +2,14 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Cutaways, 2026-10-04
+
+`BeatNode.cutaways` carries picture-only attachments in the host's local
+clock; the picture plan substitutes the Original selection inside each range
+and audio never reads them. Living on the node, they follow Split (full owner
+context), copies, isolation and deletion; Trim/Roll prefix growth shifts them.
+`:cutaway register=r` places one (§31 step 7). See [cutaways](../CUTAWAYS.md).
+
 ## Repeat escalation, 2026-10-04
 
 `NodeKind::Repeat` gained an optional `escalation` (exact gain step and

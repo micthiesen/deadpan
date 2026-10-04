@@ -801,6 +801,7 @@ pub(super) fn prepare(
                         pitch: PitchPolicy::Preserve,
                         purpose: RetimePurpose::Partition,
                     },
+                    cutaways: Vec::new(),
                 },
             );
             children.push(wrapper);

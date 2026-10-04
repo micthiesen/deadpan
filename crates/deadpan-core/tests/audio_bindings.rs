@@ -57,6 +57,7 @@ fn repeat(child: &str, allocation: &str, count: u32) -> BeatNode {
             gap: None,
             escalation: None,
         },
+        cutaways: Vec::new(),
     }
 }
 fn retime(
@@ -80,6 +81,7 @@ fn retime(
             pitch,
             purpose,
         },
+        cutaways: Vec::new(),
     }
 }
 fn document(

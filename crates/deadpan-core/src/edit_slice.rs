@@ -667,6 +667,7 @@ impl std::io::Write for SliceJson {
 }
 
 fn node_assets(node: &BeatNode, output: &mut BTreeSet<AssetId>) {
+    output.extend(node.cutaways.iter().map(|cutaway| cutaway.asset.clone()));
     match &node.kind {
         NodeKind::Source { source } => {
             match &source.video {

@@ -89,6 +89,7 @@ fn fixture() -> Result<ProjectDocument> {
                     pitch: PitchPolicy::FollowSpeed,
                     purpose: RetimePurpose::Partition,
                 },
+                cutaways: Vec::new(),
             },
         ),
         (
@@ -118,6 +119,7 @@ fn fixture() -> Result<ProjectDocument> {
                         link: LinkRelation::Independent,
                     },
                 },
+                cutaways: Vec::new(),
             },
         ),
     ]))?;

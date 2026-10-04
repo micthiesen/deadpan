@@ -67,6 +67,7 @@ fn captured(plays: u32) -> ProjectDocument {
                     gap: Some(recipe(2)),
                     escalation: None,
                 },
+                cutaways: Vec::new(),
             },
         ),
     ] {

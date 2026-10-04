@@ -298,6 +298,7 @@ fn retained_copy_ownership_depends_on_authored_nodes_not_visible_matching_plays(
             gap: None,
             escalation: None,
         },
+        cutaways: Vec::new(),
     };
     let partition = |child, start, end| BeatNode {
         audio_treatments: Default::default(),
@@ -312,6 +313,7 @@ fn retained_copy_ownership_depends_on_authored_nodes_not_visible_matching_plays(
             pitch: PitchPolicy::Preserve,
             purpose: RetimePurpose::Partition,
         },
+        cutaways: Vec::new(),
     };
     let mut wire = serde_json::to_value(fixture()).unwrap();
     wire["nodes"] = serde_json::to_value(BTreeMap::from([

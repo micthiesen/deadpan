@@ -199,6 +199,7 @@ impl RenderPlan {
                 audio_editorial_edges: Default::default(),
                 audio_treatments: Default::default(),
                 framing: None,
+                cutaways: Vec::new(),
             });
         }
 
@@ -407,6 +408,7 @@ impl RenderPlan {
                     .cloned()
                     .unwrap_or_default(),
                 framing: None,
+                cutaways: Vec::new(),
             });
         }
         Ok(Self {

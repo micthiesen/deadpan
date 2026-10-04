@@ -69,6 +69,7 @@ fn preserve(label: &str, child: &str, output: i64, input: i64) -> BeatNode {
             pitch: PitchPolicy::Preserve,
             purpose: RetimePurpose::Edit,
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -85,6 +86,7 @@ fn repeated(child: &str, allocation: &str, count: u32) -> BeatNode {
             gap: None,
             escalation: None,
         },
+        cutaways: Vec::new(),
     }
 }
 

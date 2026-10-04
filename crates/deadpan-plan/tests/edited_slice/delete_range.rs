@@ -15,6 +15,7 @@ fn window(child: &str, start: i64, end: i64) -> BeatNode {
             pitch: PitchPolicy::FollowSpeed,
             purpose: RetimePurpose::Partition,
         },
+        cutaways: Vec::new(),
     }
 }
 

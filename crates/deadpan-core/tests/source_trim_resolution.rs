@@ -69,7 +69,7 @@ fn fixture() -> ProjectDocument {
         "basis_state":{"rate_origin":"explicit","geometry_origin":"explicit","primary":null},
         "root":"root","marks":{},"overrides":{},
         "assets":{"original":AssetRecord {label:"Original".into(),content_hash:"a".repeat(64),video:Some(picture),audio:Some(audio),still_image:false,frame_count:Some(frames(100)),source_qualification:Some(SourceQualificationId::new("b".repeat(64)).unwrap())}},
-        "nodes":{"root":BeatNode::sequence("Root",vec![id("source")]),"source":BeatNode {label:"Source".into(),framing:None,audio_treatments:Default::default(),audio_editorial_edges: Default::default(), audio_edges:Default::default(),kind:NodeKind::Source {source}}},
+        "nodes":{"root":BeatNode::sequence("Root",vec![id("source")]),"source":BeatNode {label:"Source".into(),framing:None,audio_treatments:Default::default(),audio_editorial_edges: Default::default(), audio_edges:Default::default(),kind:NodeKind::Source {source}, cutaways: Vec::new() }},
     }).to_string()).unwrap()
 }
 fn modify(d: &ProjectDocument, f: impl FnOnce(&mut Value)) -> ProjectDocument {
@@ -97,6 +97,7 @@ fn crop(a: i64, b: i64) -> BeatNode {
             pitch: PitchPolicy::FollowSpeed,
             purpose: RetimePurpose::Partition,
         },
+        cutaways: Vec::new(),
     }
 }
 fn partition(d: &ProjectDocument, a: i64, b: i64) -> ProjectDocument {

@@ -71,6 +71,7 @@ fn ready_trim(parent: &Path) -> Result<(PathBuf, ProjectStore)> {
                         audio_editorial_edges: Default::default(),
                         audio_edges: Default::default(),
                         kind: NodeKind::Source { source },
+                        cutaways: Vec::new(),
                     },
                 )]),
                 overrides: Default::default(),

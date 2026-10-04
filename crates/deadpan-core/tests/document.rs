@@ -282,6 +282,7 @@ fn inserted_repeat_cannot_reserve_a_future_revision_and_revive_retired_plays() {
                                 gap: None,
                                 escalation: None,
                             },
+                            cutaways: Vec::new(),
                         },
                     ),
                 ]),
@@ -696,6 +697,7 @@ fn source_streams_retain_timestamps_and_validate_bounds_independently() {
                     audio_edges: Default::default(),
                     label: "Source".into(),
                     kind: NodeKind::Source { source },
+                    cutaways: Vec::new(),
                 },
             )]),
         },
@@ -853,6 +855,7 @@ fn retime_range_is_in_child_clock_and_overflow_is_rejected() {
                 mapping: FrameRange::new(ProjectFrame(2), ProjectFrame(9)).unwrap(),
                 pitch: PitchPolicy::Preserve,
             },
+            cutaways: Vec::new(),
         },
     );
     let (document, _) = edited(

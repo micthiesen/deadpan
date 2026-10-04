@@ -69,6 +69,7 @@ fn source(length: i64, selection: SourceAudio, offset: i64) -> BeatNode {
                 link: LinkRelation::Independent,
             },
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -118,6 +119,7 @@ fn retime(
                 .unwrap(),
             pitch,
         },
+        cutaways: Vec::new(),
     }
 }
 

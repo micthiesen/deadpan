@@ -72,6 +72,7 @@ pub(super) fn nested_initial(source: bool) -> Result<ProjectDocument> {
                     audio_offset: AudioSample(0),
                 },
             },
+            cutaways: Vec::new(),
         }
     } else {
         BeatNode::hold("First", silent_hold(4)?)

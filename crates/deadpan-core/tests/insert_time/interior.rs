@@ -19,6 +19,7 @@ fn composite_suffix(lead: BeatNode, plays: u32) -> ProjectDocument {
                         gap: Some(recipe(1)),
                         escalation: None,
                     },
+                    cutaways: Vec::new(),
                 },
             ),
             ("inner", source(2)),

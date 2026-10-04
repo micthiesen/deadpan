@@ -67,6 +67,7 @@ fn source(length: i64, input: Option<SourceAudio>, offset: i64) -> BeatNode {
                 link: LinkRelation::Independent,
             },
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -103,6 +104,7 @@ fn retime(
                 .unwrap(),
             pitch,
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -500,6 +502,7 @@ fn billion_play_sparse_domains_and_gaps_keep_complete_occurrence_identity() {
                         }),
                         escalation: None,
                     },
+                    cutaways: Vec::new(),
                 },
             ),
         ],
@@ -654,6 +657,7 @@ fn cropped_nested_gap_keeps_its_outer_play_and_its_own_original_zero() {
                         }),
                         escalation: None,
                     },
+                    cutaways: Vec::new(),
                 },
             ),
             ("partition", partition("inner", 5..6)),
@@ -671,6 +675,7 @@ fn cropped_nested_gap_keeps_its_outer_play_and_its_own_original_zero() {
                         gap: None,
                         escalation: None,
                     },
+                    cutaways: Vec::new(),
                 },
             ),
         ],

@@ -62,6 +62,7 @@ fn document() -> ProjectDocument {
                 video_mapping: SourceVideoMapping::FitBeat,
             },
         },
+        cutaways: Vec::new(),
     })
     .unwrap();
     let event = SoundEvent {

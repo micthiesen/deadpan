@@ -395,6 +395,12 @@ define_commands! {
         node: NodeId,
         framing: Option<crate::Framing>,
     },
+    /// Replace a beat's picture-only cutaways. Timing, sound and every
+    /// retained clock are unchanged.
+    SetCutaways {
+        node: NodeId,
+        cutaways: Vec<crate::Cutaway>,
+    },
     /// Replace a Repeat's per-play escalation. Timing, plays, gaps and every
     /// retained clock are unchanged.
     SetRepeatEscalation {
@@ -833,6 +839,7 @@ pub fn apply(
                 kind: NodeKind::Source {
                     source: source.clone(),
                 },
+                cutaways: Vec::new(),
             },
             timing,
             &request.new_revision,
@@ -883,6 +890,7 @@ pub fn apply(
                     kind: NodeKind::Source {
                         source: source.clone(),
                     },
+                    cutaways: Vec::new(),
                 },
                 id,
                 identities,
@@ -912,6 +920,7 @@ pub fn apply(
                     kind: NodeKind::Source {
                         source: source.clone(),
                     },
+                    cutaways: Vec::new(),
                 },
                 id,
                 identities,
@@ -940,6 +949,7 @@ pub fn apply(
                 kind: NodeKind::Source {
                     source: source.clone(),
                 },
+                cutaways: Vec::new(),
             },
             id,
             timing,
@@ -1472,6 +1482,7 @@ pub(crate) fn reduce(
                         gap: gap.clone(),
                         escalation: None,
                     },
+                    cutaways: Vec::new(),
                 },
             );
         }
@@ -1550,6 +1561,7 @@ pub(crate) fn reduce(
                         pitch: *pitch,
                         purpose: crate::RetimePurpose::Edit,
                     },
+                    cutaways: Vec::new(),
                 },
             );
         }
@@ -1826,6 +1838,7 @@ pub(crate) fn reduce(
                         kind: NodeKind::Source {
                             source: insertion.source.clone(),
                         },
+                        cutaways: Vec::new(),
                     },
                 );
             }
@@ -1837,6 +1850,9 @@ pub(crate) fn reduce(
                 })?;
             }
             node_mut(document, node)?.framing = framing.clone();
+        }
+        Command::SetCutaways { node, cutaways } => {
+            node_mut(document, node)?.cutaways = cutaways.clone();
         }
         Command::SetRepeatEscalation { node, escalation } => {
             let NodeKind::Repeat {
@@ -2461,6 +2477,7 @@ fn description(command: &Command) -> &'static str {
         Command::SetAudioEdge { .. } => "Change audio edge policy",
         Command::SetFraming { .. } => "Change framing",
         Command::SetRepeatEscalation { .. } => "Change Repeat escalation",
+        Command::SetCutaways { .. } => "Change cutaways",
         Command::SetAudioTreatments { .. } => "Change audio treatments",
         Command::AddAsset { .. } => "Register media asset",
         Command::ImportSource { .. } => "Import source media",

@@ -889,6 +889,7 @@ impl Service {
             | ProjectEdit::Repeat { node, .. }
             | ProjectEdit::WrapRepeat { node, .. }
             | ProjectEdit::Escalate { node, .. }
+            | ProjectEdit::SetCutaways { node, .. }
             | ProjectEdit::Retime { node, .. }
             | ProjectEdit::SetFraming { node, .. }
             | ProjectEdit::SetAudioTreatments { node, .. }
@@ -910,6 +911,7 @@ impl Service {
                 | ProjectEdit::HoldAudio { .. }
                 | ProjectEdit::SetAudioTreatments { .. }
                 | ProjectEdit::Escalate { .. }
+                | ProjectEdit::SetCutaways { .. }
         );
         let mut retime_message = None;
         let new_revision = revision();
@@ -968,6 +970,25 @@ impl Service {
                 selected,
                 "Framing updated and saved",
             ),
+            ProjectEdit::SetCutaways {
+                node,
+                host,
+                cutaways,
+            } => {
+                if deadpan_core::cutaway_host(document, &node).map(|(host, _)| host)
+                    != Some(host.clone())
+                {
+                    return Err("The cutaway host is no longer under the selected beat.".into());
+                }
+                (
+                    Command::SetCutaways {
+                        node: host,
+                        cutaways,
+                    },
+                    selected,
+                    "Cutaways updated and saved",
+                )
+            }
             ProjectEdit::Escalate { node, input } => {
                 let NodeKind::Repeat {
                     iterations,

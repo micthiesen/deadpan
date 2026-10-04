@@ -82,6 +82,7 @@ fn document() -> Result<ProjectDocument> {
                     gap: Some(recipe(1)),
                     escalation: None,
                 },
+                cutaways: Vec::new(),
             },
         ),
         (node("echo"), BeatNode::hold("Echo", recipe(2))),

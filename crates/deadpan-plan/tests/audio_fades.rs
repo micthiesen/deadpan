@@ -37,6 +37,7 @@ fn retime(child: &str, length: i64, start: i64, end: i64, pitch: PitchPolicy) ->
             pitch,
             purpose: RetimePurpose::Edit,
         },
+        cutaways: Vec::new(),
     }
 }
 fn document(rate: u32, children: &[&str], nodes: Vec<(&str, BeatNode)>) -> ProjectDocument {
@@ -565,6 +566,7 @@ fn virtual_source_support_can_have_zero_or_one_fade_samples() {
                     link: LinkRelation::Independent,
                 },
             },
+            cutaways: Vec::new(),
         };
         let mut wire = serde_json::to_value(current).unwrap();
         wire["nodes"]["voice"] = serde_json::to_value(source).unwrap();

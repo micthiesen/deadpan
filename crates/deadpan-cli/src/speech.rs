@@ -42,7 +42,7 @@ pub fn project_speech(
     let mut previous: Option<(usize, usize)> = None;
     for frame in 0..plan.duration().frames() {
         let sample = plan
-            .picture(ProjectFrame(frame))
+            .provider_picture(ProjectFrame(frame))
             .map_err(|error| failed(&error.to_string()))?;
         let shown = match &sample.picture {
             Picture::Source { asset: shown, .. } if shown == asset => {
@@ -172,7 +172,7 @@ pub fn project_pauses(
     let frames = plan.duration().frames();
     for frame in 0..frames {
         let sample = plan
-            .picture(ProjectFrame(frame))
+            .provider_picture(ProjectFrame(frame))
             .map_err(|error| failed(&error.to_string()))?;
         let is_quiet = match &sample.picture {
             Picture::Source { asset: shown, .. } if shown == asset => {
@@ -244,7 +244,7 @@ pub fn project_shots(
     let mut previous: Option<(u32, usize)> = None;
     for frame in 0..plan.duration().frames() {
         let sample = plan
-            .picture(ProjectFrame(frame))
+            .provider_picture(ProjectFrame(frame))
             .map_err(|error| failed(&error.to_string()))?;
         let Picture::Source { asset: shown, .. } = &sample.picture else {
             previous = None;

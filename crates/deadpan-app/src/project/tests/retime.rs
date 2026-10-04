@@ -219,6 +219,7 @@ fn nested_scope_and_split_partition_are_preserved_by_retime() {
             pitch: PitchPolicy::FollowSpeed,
             purpose: RetimePurpose::Partition,
         },
+        cutaways: Vec::new(),
     };
     seed_command(
         &mut store,

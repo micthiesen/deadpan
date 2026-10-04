@@ -47,6 +47,7 @@ fn repeat(child: &str, count: u32) -> BeatNode {
             gap: None,
             escalation: None,
         },
+        cutaways: Vec::new(),
     }
 }
 fn retime(child: &str, duration: i64, start: i64, end: i64, pitch: PitchPolicy) -> BeatNode {
@@ -63,6 +64,7 @@ fn retime(child: &str, duration: i64, start: i64, end: i64, pitch: PitchPolicy) 
             pitch,
             purpose: RetimePurpose::Edit,
         },
+        cutaways: Vec::new(),
     }
 }
 fn document(
@@ -315,6 +317,7 @@ fn source_capture_retains_its_current_placement_without_freezing_raw_assets() {
                 link: LinkRelation::Independent,
             },
         },
+        cutaways: Vec::new(),
     })
     .unwrap();
     let before = ProjectDocument::from_json(&wire.to_string()).unwrap();

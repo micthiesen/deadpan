@@ -67,6 +67,7 @@ fn source(length: i64) -> BeatNode {
                 link: LinkRelation::Independent,
             },
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -95,6 +96,7 @@ fn repeat(child: &str, count: u32) -> BeatNode {
             gap: None,
             escalation: None,
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -119,6 +121,7 @@ fn retime(
             pitch,
             purpose,
         },
+        cutaways: Vec::new(),
     }
 }
 

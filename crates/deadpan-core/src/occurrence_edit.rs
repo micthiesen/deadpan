@@ -594,6 +594,7 @@ mod tests {
                     gap: None,
                     escalation: None,
                 },
+                cutaways: Vec::new(),
             },
         );
         document.nodes.insert(

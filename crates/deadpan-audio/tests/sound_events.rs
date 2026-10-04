@@ -164,6 +164,7 @@ fn many_original_dependencies(count: u32, routed: bool) -> Arc<RenderPlan> {
                         link: LinkRelation::Independent,
                     },
                 },
+                cutaways: Vec::new(),
             },
         );
         children.push(id);
@@ -187,6 +188,7 @@ fn many_original_dependencies(count: u32, routed: bool) -> Arc<RenderPlan> {
                 pitch: PitchPolicy::Preserve,
                 purpose: RetimePurpose::Edit,
             },
+            cutaways: Vec::new(),
         },
     );
     planned(

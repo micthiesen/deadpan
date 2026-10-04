@@ -10,6 +10,7 @@ use serde_json::{Value, json};
 use super::*;
 use crate::ui_harness::{Options, gpu::Offscreen, report::*};
 
+mod cutaway;
 mod delete_range;
 mod edit_latency;
 mod gain;

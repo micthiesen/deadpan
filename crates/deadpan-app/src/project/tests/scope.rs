@@ -42,6 +42,7 @@ fn nested_document(path: &Path) -> ProjectStore {
                 audio_editorial_edges: Default::default(),
                 audio_edges: Default::default(),
                 framing: None,
+                cutaways: Vec::new(),
             },
         ),
         (
@@ -64,6 +65,7 @@ fn nested_document(path: &Path) -> ProjectStore {
                 audio_editorial_edges: Default::default(),
                 audio_edges: Default::default(),
                 framing: None,
+                cutaways: Vec::new(),
             },
         ),
         (

@@ -63,6 +63,7 @@ fn source(frames: i64) -> BeatNode {
                 link: LinkRelation::Independent,
             },
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -92,6 +93,7 @@ fn retime(child: &str, frames: i64, start: i64, end: i64, pitch: PitchPolicy) ->
             pitch,
             purpose: RetimePurpose::Edit,
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -847,6 +849,7 @@ fn copy_lineage_keeps_compact_repeat_paths_and_gap_identity_explicit() {
                         }),
                         escalation: None,
                     },
+                    cutaways: Vec::new(),
                 },
             ),
             ("a", source(6)),
@@ -913,6 +916,7 @@ fn nested_occurrence_split_retains_copy_lineage_without_expanding_repeats() {
                         gap: None,
                         escalation: None,
                     },
+                    cutaways: Vec::new(),
                 },
             ),
             (
@@ -929,6 +933,7 @@ fn nested_occurrence_split_retains_copy_lineage_without_expanding_repeats() {
                         gap: None,
                         escalation: None,
                     },
+                    cutaways: Vec::new(),
                 },
             ),
             ("a", source(6)),
@@ -1079,6 +1084,7 @@ fn tail_maximum_retains_local_hold_and_gap_units_through_retime() {
                                 }),
                                 escalation: None,
                             },
+                            cutaways: Vec::new(),
                         },
                     ),
                     ("a", source(2)),
@@ -1189,6 +1195,7 @@ fn billion_play_reference_keeps_old_order_gap_identity_after_current_edits() {
                         }),
                         escalation: None,
                     },
+                    cutaways: Vec::new(),
                 },
             ),
             ("a", source(1)),
@@ -1330,6 +1337,7 @@ fn sparse_override_clock_validates_its_effective_play_and_retains_partition_allo
                         gap: None,
                         escalation: None,
                     },
+                    cutaways: Vec::new(),
                 },
             ),
             ("default", retime("a", 2, 0, 4, PitchPolicy::Preserve)),
@@ -1460,6 +1468,7 @@ fn invalid_owner_paths_ranges_and_budgets_fail_before_results() {
                         gap: None,
                         escalation: None,
                     },
+                    cutaways: Vec::new(),
                 },
             ),
             ("preserve", retime("a", 2, 0, 4, PitchPolicy::Preserve)),

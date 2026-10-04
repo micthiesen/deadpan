@@ -314,6 +314,8 @@ struct PlanNode {
     audio_editorial_edges: deadpan_core::AudioEditorialEdges,
     audio_treatments: deadpan_core::AudioTreatments,
     framing: Option<deadpan_core::Framing>,
+    /// Picture-only cutaways, each with its asset's full video context.
+    cutaways: Vec<(deadpan_core::Cutaway, deadpan_core::SourceSpan)>,
 }
 
 #[derive(Debug, Clone)]
@@ -635,6 +637,18 @@ impl RenderPlan {
                 audio_editorial_edges: node.audio_editorial_edges,
                 audio_treatments: node.audio_treatments.clone(),
                 framing: node.framing.clone(),
+                cutaways: node
+                    .cutaways
+                    .iter()
+                    .map(|cutaway| {
+                        document
+                            .assets()
+                            .get(&cutaway.asset)
+                            .and_then(|asset| asset.video)
+                            .map(|span| (cutaway.clone(), span))
+                            .ok_or(PlanError::InvalidPlan("cutaway asset has no video"))
+                    })
+                    .collect::<Result<_, _>>()?,
             });
         }
         let root = by_id[document.root()];
@@ -867,6 +881,20 @@ impl RenderPlan {
     /// O(depth * log(max(children, runs + overrides))); repeat counts do not affect storage.
     /// Arithmetic overflow fails explicitly instead of rounding an intermediate.
     pub fn picture(&self, frame: ProjectFrame) -> Result<PictureSample, PlanError> {
+        self.sample_picture(frame, true)
+    }
+
+    /// The picture a frame would show without cutaways: the provider whose
+    /// sound plays there. Analyses that follow the heard Original use this.
+    pub fn provider_picture(&self, frame: ProjectFrame) -> Result<PictureSample, PlanError> {
+        self.sample_picture(frame, false)
+    }
+
+    fn sample_picture(
+        &self,
+        frame: ProjectFrame,
+        cutaways: bool,
+    ) -> Result<PictureSample, PlanError> {
         if self.audio_context {
             return Err(PlanError::AudioOnlyContext);
         }
@@ -907,6 +935,31 @@ impl RenderPlan {
                     .transpose()?,
                 escalation: false,
             });
+            // A cutaway replaces this beat's provider picture inside its range;
+            // this beat's framing and its ancestors' still apply.
+            if let Some((cutaway, context)) =
+                node.cutaways
+                    .iter()
+                    .filter(|_| cutaways)
+                    .find(|(cutaway, _)| {
+                        !local.compare_integer(cutaway.range.start().0).is_lt()
+                            && local.compare_integer(cutaway.range.end().0).is_lt()
+                    })
+                && let Some(point) =
+                    cutaway.picture_point(local, self.metadata.presentation_basis.frame_rate)?
+            {
+                break (
+                    Picture::Source {
+                        asset: cutaway.asset.clone(),
+                        span: *context,
+                        selection: cutaway.selection,
+                        endpoints: deadpan_core::EndpointPolicy::HoldAdjacent,
+                        point,
+                    },
+                    None,
+                    None,
+                );
+            }
             match &node.kind {
                 CompiledKind::Source {
                     video,

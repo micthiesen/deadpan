@@ -106,6 +106,7 @@ fn fixture() -> ProjectDocument {
                                 picture_context: None,
                             },
                         },
+                        cutaways: Vec::new(),
                     },
                 )]),
                 overrides: BTreeMap::new(),

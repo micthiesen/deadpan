@@ -240,6 +240,7 @@ fn tape_keeps_repeat_default_and_actual_room_tone_occurrence_scopes_distinct() {
             gap: None,
             escalation: None,
         },
+        cutaways: Vec::new(),
     };
     let doc = document(
         rate,

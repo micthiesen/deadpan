@@ -82,6 +82,7 @@ fn source(length: i64, audio: bool, selected: bool) -> BeatNode {
                 link: LinkRelation::Independent,
             },
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -311,6 +312,7 @@ fn tape_recomputes_fractional_hold_boundaries_on_its_consuming_grid() {
                         pitch: PitchPolicy::Preserve,
                         purpose: RetimePurpose::Edit,
                     },
+                    cutaways: Vec::new(),
                 },
             ),
         ],
@@ -387,6 +389,7 @@ fn repeated_and_definition_issuers_survive_the_independent_provider() {
                         gap: None,
                         escalation: None,
                     },
+                    cutaways: Vec::new(),
                 },
             ),
         ],

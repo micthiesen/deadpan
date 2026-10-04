@@ -200,6 +200,7 @@ mod endpoint_tests {
                     link: LinkRelation::Independent,
                 },
             },
+            cutaways: Vec::new(),
         };
         let mut wire = serde_json::to_value(blank).unwrap();
         wire["nodes"]["root"] =

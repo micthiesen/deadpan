@@ -366,6 +366,7 @@ fn nested_override_insertion_remaps_ids_and_wrapping_preserves_actual_ancestry()
                         gap: None,
                         escalation: None,
                     },
+                    cutaways: Vec::new(),
                 },
             ),
             (id("inner-base"), BeatNode::hold("Default", recipe(2))),

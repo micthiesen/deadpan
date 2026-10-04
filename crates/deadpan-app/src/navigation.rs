@@ -9,6 +9,7 @@ pub mod duration;
 mod editor_map;
 mod keymap_config;
 pub use editor_map::BindingId;
+pub mod cutaway;
 pub mod escalation;
 pub mod gain;
 mod group;
@@ -47,6 +48,8 @@ pub enum BeatEdit {
     WrapRepeat(u32),
     /// Set the selected Repeat's per-play escalation.
     Escalate(escalation::EscalationInput),
+    /// Place or clear picture-only cutaways over the selected beat.
+    Cutaway(cutaway::CutawayInput),
     Delete,
     HoldDuration(deadpan_core::FrameDuration),
     Retime(retime::RetimeInput),

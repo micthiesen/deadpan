@@ -14,6 +14,7 @@ fn fixture() -> ProjectDocument {
             gap: Some(freeze_recipe(1, 4004)),
             escalation: None,
         },
+        cutaways: Vec::new(),
     };
     let before = document(
         &[

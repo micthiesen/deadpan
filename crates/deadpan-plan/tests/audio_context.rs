@@ -61,6 +61,7 @@ fn source(length: i64, selection: Option<SourceAudio>, offset: i64) -> BeatNode 
                 link: LinkRelation::Independent,
             },
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -97,6 +98,7 @@ fn retime(
                 .unwrap(),
             pitch,
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -305,6 +307,7 @@ fn billion_play_context_keeps_sparse_override_and_bounded_last_seek() {
             gap: None,
             escalation: None,
         },
+        cutaways: Vec::new(),
     };
     let override_at = IterationId {
         allocation: RevisionId::new("play-allocation").unwrap(),

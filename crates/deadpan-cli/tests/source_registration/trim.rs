@@ -52,6 +52,7 @@ fn ready_trim(directory: &Path) -> Result<PathBuf> {
                         kind: NodeKind::Source {
                             source: timing.source_node(asset),
                         },
+                        cutaways: Vec::new(),
                     },
                 )]),
                 overrides: Default::default(),

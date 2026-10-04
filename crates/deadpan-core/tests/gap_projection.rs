@@ -53,6 +53,7 @@ fn repeat(child: &str, allocation: &str, plays: u32, gap: i64) -> BeatNode {
             gap: (gap > 0).then(|| recipe(gap)),
             escalation: None,
         },
+        cutaways: Vec::new(),
     }
 }
 fn retime(
@@ -76,6 +77,7 @@ fn retime(
             pitch,
             purpose,
         },
+        cutaways: Vec::new(),
     }
 }
 fn document(

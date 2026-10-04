@@ -61,6 +61,7 @@ fn document(hold_start: i64) -> ProjectDocument {
                 link: LinkRelation::Independent,
             },
         },
+        cutaways: Vec::new(),
     };
     let empty = ProjectDocument::new(
         ProjectId::new("reference-mask").unwrap(),
@@ -92,6 +93,7 @@ fn document(hold_start: i64) -> ProjectDocument {
                     pitch: PitchPolicy::Preserve,
                     purpose: RetimePurpose::Edit,
                 },
+                cutaways: Vec::new(),
             },
         ),
         (

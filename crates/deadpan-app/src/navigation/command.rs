@@ -112,6 +112,11 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         }
         return super::slip::parse_frames(amount).map(Entry::Slip);
     }
+    if verb == "cutaway" {
+        let arguments: Vec<&str> = words.collect();
+        return super::cutaway::parse(&arguments)
+            .map(|input| Entry::Action(Action::Edit(BeatEdit::Cutaway(input))));
+    }
     if verb == "repeat" {
         let arguments: Vec<&str> = words.clone().collect();
         if let Some(input) = super::escalation::parse(&arguments)? {

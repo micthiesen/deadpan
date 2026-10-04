@@ -455,6 +455,7 @@ fn mapped_inspection_prepares_preserve_from_historical_aac_without_writing() -> 
                                 mapping: FrameRange::new(ProjectFrame(0), ProjectFrame(length))?,
                                 pitch: PitchPolicy::Preserve,
                             },
+                            cutaways: Vec::new(),
                         },
                     ),
                 ]),

@@ -213,6 +213,7 @@ fn repeat_or_retime_ancestry_never_silently_changes_scope() {
                 gap: None,
                 escalation: None,
             },
+            cutaways: Vec::new(),
         },
         BeatNode {
             audio_treatments: Default::default(),
@@ -227,6 +228,7 @@ fn repeat_or_retime_ancestry_never_silently_changes_scope() {
                 pitch: PitchPolicy::FollowSpeed,
                 purpose: RetimePurpose::Edit,
             },
+            cutaways: Vec::new(),
         },
     ] {
         let before = tree(

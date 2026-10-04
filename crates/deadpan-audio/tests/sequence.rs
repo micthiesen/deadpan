@@ -75,6 +75,7 @@ fn source(rate: FrameRate, frames: i64, selected: Range<i64>, offset: i64) -> Be
                 link: LinkRelation::Independent,
             },
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -106,6 +107,7 @@ fn retime(child: &str, frames: i64, selected: Range<i64>, pitch: PitchPolicy) ->
                 .unwrap(),
             pitch,
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -135,6 +137,7 @@ fn repeat(child: &str, plays: u32, gap: i64) -> BeatNode {
             gap: (gap > 0).then(|| hold_recipe(gap, HoldAudio::Silence)),
             escalation: None,
         },
+        cutaways: Vec::new(),
     }
 }
 

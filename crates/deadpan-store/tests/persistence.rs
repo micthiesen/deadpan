@@ -875,6 +875,7 @@ fn transparent_partition_intent_is_durable_atomic_and_undoable() -> Result {
             },
             audio_editorial_edges: Default::default(),
             audio_edges: Default::default(),
+            cutaways: Vec::new(),
         },
     );
     let mut store = ProjectStore::create(&path, &initial)?;

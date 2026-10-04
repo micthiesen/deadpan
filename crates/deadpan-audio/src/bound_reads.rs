@@ -51,6 +51,7 @@ fn source(rate: FrameRate, start: i64, end: i64, duration: i64) -> BeatNode {
                 link: LinkRelation::Independent,
             },
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -80,6 +81,7 @@ fn preserve(child: &str, selected: i64, duration: i64) -> BeatNode {
             pitch: PitchPolicy::Preserve,
             purpose: RetimePurpose::Edit,
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -616,6 +618,7 @@ fn bound_hidden_negative_support_is_not_capped_to_the_old_project() {
             pitch: PitchPolicy::FollowSpeed,
             purpose: RetimePurpose::Partition,
         },
+        cutaways: Vec::new(),
     };
     let (old, mut provider) = document(
         rate,
@@ -692,6 +695,7 @@ fn new_ordinary_edit_crop_excludes_filter_context_from_bound_raw_source() {
             pitch: PitchPolicy::FollowSpeed,
             purpose: RetimePurpose::Edit,
         },
+        cutaways: Vec::new(),
     };
     let mut wire = serde_json::to_value(&old).unwrap();
     wire["nodes"].as_object_mut().unwrap().remove("prefix");
@@ -1059,6 +1063,7 @@ fn reordered_survivors_keep_old_phase_and_a_fresh_play_uses_definition_phase() {
             gap: None,
             escalation: None,
         },
+        cutaways: Vec::new(),
     };
     let (old, mut provider) = document(
         rate,

@@ -20,6 +20,7 @@ mod audio_reference;
 mod basis;
 mod command;
 mod compound;
+mod cutaway;
 mod document;
 mod edit_slice;
 mod exact;
@@ -78,6 +79,7 @@ pub use audio_reference::*;
 pub use basis::*;
 pub use command::*;
 pub use compound::*;
+pub use cutaway::*;
 pub use document::*;
 pub use edit_slice::{
     CapturedEditSlice, SequenceChildrenPlan, SliceCaptureSelection, SliceIdentityRequirements,

@@ -105,6 +105,7 @@ fn document(rate: FrameRate, recipe: Option<HoldRecipe>, revision: &str) -> Proj
                 link: LinkRelation::Independent,
             },
         },
+        cutaways: Vec::new(),
     };
     let repeat = BeatNode {
         framing: None,
@@ -118,6 +119,7 @@ fn document(rate: FrameRate, recipe: Option<HoldRecipe>, revision: &str) -> Proj
             gap: recipe,
             escalation: None,
         },
+        cutaways: Vec::new(),
     };
     let mut wire = serde_json::to_value(empty).unwrap();
     wire["nodes"] = serde_json::to_value(BTreeMap::from([

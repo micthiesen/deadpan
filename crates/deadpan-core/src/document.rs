@@ -392,6 +392,9 @@ pub struct BeatNode {
     pub audio_editorial_edges: crate::AudioEditorialEdges,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub framing: Option<crate::Framing>,
+    /// Picture-only attachments in this beat's local clock.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub cutaways: Vec<crate::Cutaway>,
 }
 
 impl BeatNode {
@@ -403,6 +406,7 @@ impl BeatNode {
             audio_edges: crate::AudioEdgePolicies::default(),
             audio_editorial_edges: Default::default(),
             framing: None,
+            cutaways: Vec::new(),
         }
     }
     pub fn hold(label: impl Into<String>, recipe: HoldRecipe) -> Self {
@@ -413,6 +417,7 @@ impl BeatNode {
             audio_edges: crate::AudioEdgePolicies::default(),
             audio_editorial_edges: Default::default(),
             framing: None,
+            cutaways: Vec::new(),
         }
     }
 }
@@ -590,6 +595,7 @@ impl ProjectDocument {
                 audio_editorial_edges: Default::default(),
                 audio_edges: Default::default(),
                 kind: NodeKind::Source { source },
+                cutaways: Vec::new(),
             },
         );
         view.validate()?;
@@ -750,6 +756,17 @@ impl ProjectDocument {
         crate::sound_events::validate(self, &durations)?;
         crate::sound_allowance::validate(self)?;
         crate::framing::validate_document(self)?;
+        for node in self.nodes.values() {
+            if !node.cutaways.is_empty()
+                && !matches!(node.kind, NodeKind::Source { .. } | NodeKind::Hold { .. })
+            {
+                return Err(DocumentError::new(
+                    DocumentErrorCode::InvalidTree,
+                    "cutaways belong to a Source or Hold beat, whose local clock is its content",
+                ));
+            }
+            crate::cutaway::validate(&node.cutaways, &self.assets)?;
+        }
         crate::audio_gain::validate_document(self, gain_limit)?;
         crate::picture_context::validate_nodes_with_limit(self.nodes.values(), context_limit)?;
         self.validate_basis_state(&durations)?;

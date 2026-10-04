@@ -49,6 +49,7 @@ pub(crate) fn fixture_plan(preserve: bool) -> RenderPlan {
                 link: LinkRelation::Independent,
             },
         },
+        cutaways: Vec::new(),
     };
     let mut nodes = BTreeMap::from([
         (
@@ -76,6 +77,7 @@ pub(crate) fn fixture_plan(preserve: bool) -> RenderPlan {
                     mapping: FrameRange::new(ProjectFrame(0), ProjectFrame(30)).unwrap(),
                     pitch: PitchPolicy::Preserve,
                 },
+                cutaways: Vec::new(),
             },
         );
     }

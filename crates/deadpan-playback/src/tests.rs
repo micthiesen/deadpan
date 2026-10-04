@@ -71,6 +71,7 @@ fn hold(frames: i64) -> ProjectDocument {
                 audio: HoldAudio::Silence,
             }
         },
+        cutaways: Vec::new(),
     });
     ProjectDocument::from_json(&wire.to_string()).unwrap()
 }
@@ -773,6 +774,7 @@ fn canonical_playback_consumes_pause_bindings_and_a_real_preserve_stage() {
             pitch: PitchPolicy::Preserve,
             purpose: RetimePurpose::Edit,
         },
+        cutaways: Vec::new(),
     });
     let edited = Arc::new(Snapshot::committed(
         captured.session,

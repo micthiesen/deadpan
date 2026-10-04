@@ -79,6 +79,7 @@ fn source(rate: FrameRate, duration: i64, selected: Range<i64>) -> BeatNode {
                 link: LinkRelation::Independent,
             },
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -109,6 +110,7 @@ fn retime(child: &str, duration: i64, selection: Range<i64>, pitch: PitchPolicy)
                 .unwrap(),
             pitch,
         },
+        cutaways: Vec::new(),
     }
 }
 
@@ -373,6 +375,7 @@ fn all_overridden_repeat_still_renders_its_unheard_default_definition() {
                         gap: None,
                         escalation: None,
                     },
+                    cutaways: Vec::new(),
                 },
             ),
         ],
@@ -1085,6 +1088,7 @@ fn owned_nested_preserve_uses_edited_room_tone_in_the_same_root_clock() {
                         gap: Some(silent_gap.clone()),
                         escalation: None,
                     },
+                    cutaways: Vec::new(),
                 },
             ),
             (

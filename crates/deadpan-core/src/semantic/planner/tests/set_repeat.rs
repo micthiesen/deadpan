@@ -553,3 +553,42 @@ fn escalation_is_one_reversible_parameter_change_checked_against_play_count() {
     .unwrap_err();
     assert_eq!(wrong.code, EditErrorCode::WrongNodeKind);
 }
+
+#[test]
+fn cutaways_belong_only_to_source_and_hold_beats() {
+    let document = fixture();
+    let base = crate::SourceTimeBase::new(1, 30).unwrap();
+    let stamp = |ticks| crate::SourceTimestamp {
+        ticks,
+        time_base: base,
+    };
+    let span = crate::SourceSpan::new(stamp(0), stamp(30)).unwrap();
+    let mut wire = serde_json::to_value(&document).unwrap();
+    wire["assets"]["clip"] = serde_json::to_value(crate::AssetRecord {
+        label: "Clip".into(),
+        content_hash: "a".repeat(64),
+        video: Some(span),
+        audio: None,
+        still_image: false,
+        frame_count: Some(crate::FrameDuration::new(30).unwrap()),
+        source_qualification: None,
+    })
+    .unwrap();
+    let cutaway = serde_json::to_value(vec![crate::Cutaway {
+        range: range(0, 2),
+        asset: crate::AssetId::new("clip").unwrap(),
+        selection: crate::ExactSourceSpan::from(
+            crate::SourceSpan::new(stamp(0), stamp(2)).unwrap(),
+        ),
+        fit: crate::CutawayFit::Hold,
+    }])
+    .unwrap();
+    let with = |node: &str| {
+        let mut wire = wire.clone();
+        wire["nodes"][node]["cutaways"] = cutaway.clone();
+        ProjectDocument::from_json(&wire.to_string())
+    };
+    with("prefix").expect("a Hold hosts a cutaway");
+    let refused = with("repeated").unwrap_err();
+    assert!(refused.message.contains("Source or Hold"), "{refused:?}");
+}

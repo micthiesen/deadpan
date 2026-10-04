@@ -45,6 +45,7 @@ fn repeat(child: &str, plays: u32, gap_frames: i64, allocation: &str) -> BeatNod
             gap: gap(gap_frames),
             escalation: None,
         },
+        cutaways: Vec::new(),
     }
 }
 fn clock() -> SourceTimeBase {
@@ -85,6 +86,7 @@ fn source(frames: i64, start: i64, end: i64) -> BeatNode {
                 audio_offset: AudioSample(0),
             },
         },
+        cutaways: Vec::new(),
     }
 }
 fn retime(child: &str, frames: i64, start: i64, end: i64) -> BeatNode {
@@ -101,6 +103,7 @@ fn retime(child: &str, frames: i64, start: i64, end: i64) -> BeatNode {
             mapping: FrameRange::new(ProjectFrame(start), ProjectFrame(end)).unwrap(),
             pitch: PitchPolicy::Preserve,
         },
+        cutaways: Vec::new(),
     }
 }
 fn document(

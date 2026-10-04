@@ -486,6 +486,14 @@ pub enum ProjectEdit {
         node: NodeId,
         plays: u32,
     },
+    /// Replace a beat's picture-only cutaways without changing timing.
+    SetCutaways {
+        /// The selected beat in the current Sequence.
+        node: NodeId,
+        /// The Source or Hold under it, through unity Partitions.
+        host: NodeId,
+        cutaways: Vec<deadpan_core::Cutaway>,
+    },
     /// Set a selected Repeat's per-play escalation without changing timing.
     Escalate {
         node: NodeId,

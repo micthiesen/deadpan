@@ -565,6 +565,7 @@ fn reference(gap: InputGap) -> Arc<AudioReferencePlan> {
                 link: LinkRelation::Independent,
             },
         },
+        cutaways: Vec::new(),
     };
     let quiet = match gap {
         InputGap::SilentHold => BeatNode::hold(
@@ -625,6 +626,7 @@ fn reference(gap: InputGap) -> Arc<AudioReferencePlan> {
                     pitch: PitchPolicy::Preserve,
                     purpose: RetimePurpose::Edit,
                 },
+                cutaways: Vec::new(),
             },
         ),
         (

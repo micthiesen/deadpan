@@ -70,6 +70,7 @@ fn fixture(root: &Path) -> Result<(PathBuf, ProjectStore)> {
                 pitch: PitchPolicy::Preserve,
                 purpose: RetimePurpose::Edit,
             },
+            cutaways: Vec::new(),
         })
     };
     let repeat = BeatNode {
@@ -89,6 +90,7 @@ fn fixture(root: &Path) -> Result<(PathBuf, ProjectStore)> {
             }),
             escalation: None,
         },
+        cutaways: Vec::new(),
     };
     let nodes = BTreeMap::from([
         (

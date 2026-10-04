@@ -176,6 +176,7 @@ fn source_and_gap_choices_are_kind_checked_and_retained_when_not_audible() {
                         },
                         audio_editorial_edges: Default::default(),
                         audio_edges: Default::default(),
+                        cutaways: Vec::new(),
                     },
                 )]),
             },

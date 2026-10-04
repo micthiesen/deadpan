@@ -26,6 +26,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "original-moment",
     "transcript",
     "shots",
+    "cutaway",
     "original-layout",
     "original-layout-long",
     "place-slice",

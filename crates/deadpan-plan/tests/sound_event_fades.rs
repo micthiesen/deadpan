@@ -76,7 +76,8 @@ fn document(parts: &[(i64, bool)], rate: u32) -> ProjectDocument {
             framing: None,
             audio_treatments: Default::default(),
             audio_editorial_edges: Default::default(),
-            audio_edges: Default::default()
+            audio_edges: Default::default(),
+            cutaways: Vec::new(),
         });
     }
     wire["nodes"]["root"] = json!(BeatNode::sequence("root", children));
@@ -126,6 +127,7 @@ fn custom_allowances_select_one_contribution_and_exact_repeat_issuers() {
             }),
             escalation: None,
         },
+        cutaways: Vec::new(),
     });
     wire["sounds"]["sound"]["mapping"]["selection"]["end"] = json!(ExactRatio::integer(400));
     wire["sounds"]["other"] = wire["sounds"]["sound"].clone();

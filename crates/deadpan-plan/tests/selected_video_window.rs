@@ -69,6 +69,7 @@ fn beat(kind: NodeKind) -> BeatNode {
         audio_edges: Default::default(),
         label: "Selected picture fixture".into(),
         kind,
+        cutaways: Vec::new(),
     }
 }
 

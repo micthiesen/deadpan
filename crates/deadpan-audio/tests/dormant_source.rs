@@ -96,6 +96,7 @@ fn document(
                 link: LinkRelation::Linked,
             },
         },
+        cutaways: Vec::new(),
     };
     let empty = ProjectDocument::new(
         ProjectId::new("dormant-source").unwrap(),

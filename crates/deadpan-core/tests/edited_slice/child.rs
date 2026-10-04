@@ -121,6 +121,7 @@ fn whole_child_retains_positive_composites_and_excludes_adjacent_empty_siblings(
             gap: None,
             escalation: None,
         },
+        cutaways: Vec::new(),
     };
     let retimed = BeatNode {
         label: "Preserve owner".into(),
@@ -135,6 +136,7 @@ fn whole_child_retains_positive_composites_and_excludes_adjacent_empty_siblings(
             pitch: PitchPolicy::Preserve,
             purpose: RetimePurpose::Edit,
         },
+        cutaways: Vec::new(),
     };
     let before = tree(
         &["left", "group", "right"],
@@ -467,6 +469,7 @@ fn child_under_repeat_clock_is_rejected_and_extra_wrapper_obeys_depth_limit() {
             gap: None,
             escalation: None,
         },
+        cutaways: Vec::new(),
     };
     let repeated = tree(
         &["repeat"],

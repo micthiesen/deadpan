@@ -46,6 +46,7 @@ fn node(kind: NodeKind) -> BeatNode {
         audio_edges: Default::default(),
         label: "Fixture".into(),
         kind,
+        cutaways: Vec::new(),
     }
 }
 fn background(frames: i64) -> HoldRecipe {
@@ -150,6 +151,13 @@ fn document(roots: &[&str], nodes: Vec<(&str, BeatNode)>) -> ProjectDocument {
     ]))
     .unwrap();
     ProjectDocument::from_json(&value.to_string()).unwrap()
+}
+fn document_without_cutaways(document: &ProjectDocument) -> ProjectDocument {
+    let mut wire = serde_json::to_value(document).unwrap();
+    for node in wire["nodes"].as_object_mut().unwrap().values_mut() {
+        node.as_object_mut().unwrap().remove("cutaways");
+    }
+    ProjectDocument::from_json(&wire.to_string()).unwrap()
 }
 fn index(asset: &str, time_base: SourceTimeBase, pts: &[i64], end: i64) -> SourceFrameIndex {
     SourceFrameIndex::new(
@@ -318,6 +326,62 @@ fn escalation_scales_each_later_play_and_its_gap_inside_the_repeat_framing() {
     );
     assert_eq!(sample.framing[1].instance, sample.framing[2].instance);
     sample.framing[1].instance.validate(&document).unwrap();
+}
+
+#[test]
+fn a_cutaway_replaces_the_host_picture_in_its_range_and_holds_its_last_picture() {
+    let mut host = framed(hold(20), 2);
+    // Four pictures from 2002 over host frames 5..11 at the project rate.
+    host.cutaways = vec![Cutaway {
+        range: range(5, 11),
+        asset: asset_id("video"),
+        selection: ExactSourceSpan::from(span(2002, 6006)),
+        fit: CutawayFit::Hold,
+    }];
+    let document = document(&["host"], vec![("host", host)]);
+    let plan = RenderPlan::compile(&document).unwrap();
+    let at = |frame: i64| plan.picture(ProjectFrame(frame)).unwrap();
+    assert!(
+        matches!(at(4).picture, Picture::Background),
+        "before the cutaway"
+    );
+    assert_eq!(
+        ticks(&at(5).picture),
+        ExactRatio::new(2002 * 2 + 1001, 2).unwrap()
+    );
+    assert_eq!(
+        ticks(&at(8).picture),
+        ExactRatio::new(5005 * 2 + 1001, 2).unwrap()
+    );
+    assert_eq!(
+        ticks(&at(10).picture),
+        ExactRatio::integer(6006),
+        "held final picture"
+    );
+    assert!(
+        matches!(at(11).picture, Picture::Background),
+        "the host returns"
+    );
+    let inside = at(6);
+    assert_eq!(
+        inside.instance.node,
+        id("host"),
+        "the host owns the cutaway"
+    );
+    assert!(inside.picture_context.is_none());
+    assert!(
+        inside.framing[0].pose.is_some(),
+        "the host's framing still applies over the cutaway"
+    );
+    // Pictures every 1001 ticks covering the asset's whole video context.
+    let pts: Vec<i64> = (-10..100).map(|picture| picture * 1001).collect();
+    let pictures = index("video", clock(), &pts, 100_100);
+    let held = at(10).picture.select_source_frame(&pictures).unwrap();
+    assert_eq!(
+        pictures.frames()[usize::try_from(held.identity.0).unwrap()].pts,
+        5005,
+        "the final selected picture, never the next one"
+    );
 }
 
 #[test]
@@ -657,6 +721,87 @@ fn retained_partitions_preserve_exact_vfr_picture_mapping_through_fractional_ret
         );
         after.instance.validate(&divided).unwrap();
     }
+}
+
+#[test]
+fn a_cutaway_survives_a_split_through_its_range_with_every_picture_unchanged() {
+    let mut host = source(12, 0, 12012);
+    host.cutaways = vec![Cutaway {
+        range: range(3, 9),
+        asset: asset_id("video"),
+        selection: ExactSourceSpan::from(span(50050, 54054)),
+        fit: CutawayFit::Loop,
+    }];
+    let before = document(&["source"], vec![("source", host)]);
+    let original = RenderPlan::compile(&before).unwrap();
+    let transaction = apply(
+        &before,
+        &CommandRequest {
+            project_id: before.project_id().clone(),
+            expected_revision: before.revision_id().clone(),
+            new_revision: revision("split-cutaway"),
+            command: Command::Split {
+                node: id("source"),
+                at: duration(6),
+                identities: SplitIdentities {
+                    nodes: (0..10).map(|n| id(&format!("part-{n}"))).collect(),
+                },
+            },
+        },
+    )
+    .unwrap();
+    let divided = transaction.forward.apply(&before).unwrap();
+    // Refine the right fragment again: the cutaway stays on its Source.
+    let NodeKind::Sequence { children } = &divided.nodes()[&id("root")].kind else {
+        panic!("root Sequence")
+    };
+    let right = children[1].clone();
+    let refined = apply(
+        &divided,
+        &CommandRequest {
+            project_id: divided.project_id().clone(),
+            expected_revision: divided.revision_id().clone(),
+            new_revision: revision("refine-cutaway"),
+            command: Command::Split {
+                node: right,
+                at: duration(2),
+                identities: SplitIdentities {
+                    nodes: (0..10).map(|n| id(&format!("again-{n}"))).collect(),
+                },
+            },
+        },
+    )
+    .unwrap()
+    .forward
+    .apply(&divided)
+    .unwrap();
+    for document in [&divided, &refined] {
+        let after = RenderPlan::compile(document).unwrap();
+        for frame in 0..12 {
+            assert_eq!(
+                original.picture(ProjectFrame(frame)).unwrap().picture,
+                after.picture(ProjectFrame(frame)).unwrap().picture,
+                "frame {frame}"
+            );
+        }
+        assert_eq!(
+            after.provider_picture(ProjectFrame(5)).unwrap().picture,
+            RenderPlan::compile(&document_without_cutaways(document))
+                .unwrap()
+                .picture(ProjectFrame(5))
+                .unwrap()
+                .picture,
+            "the provider picture ignores the cutaway"
+        );
+    }
+    let after = RenderPlan::compile(&divided).unwrap();
+    assert!(
+        matches!(
+            after.picture(ProjectFrame(7)).unwrap().picture,
+            Picture::Source { point, .. } if point.ticks == ExactRatio::new(50050 * 2 + 1001, 2).unwrap()
+        ),
+        "the four-picture cutaway loops on its fifth frame"
+    );
 }
 
 #[test]

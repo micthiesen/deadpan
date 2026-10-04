@@ -100,6 +100,7 @@ fn fixture(plays: u32, branches: &[(u32, &str)]) -> ProjectDocument {
                     }),
                     escalation: None,
                 },
+                cutaways: Vec::new(),
             },
         ),
         (
@@ -130,6 +131,7 @@ fn fixture(plays: u32, branches: &[(u32, &str)]) -> ProjectDocument {
                     }),
                     escalation: None,
                 },
+                cutaways: Vec::new(),
             },
         ),
         (
