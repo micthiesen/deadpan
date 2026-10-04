@@ -1210,7 +1210,7 @@ fn repeat_count_macro_dry_run_late_failure_and_counted_commit_keep_bank_and_exac
     let after = store.snapshot()?;
     assert_eq!(after.duration()?.frames(), 4 * 45 + 3 * 3);
     assert!(matches!(&after.nodes()[&NodeId::new("repeat")?].kind,
-        deadpan_core::NodeKind::Repeat {child, iterations, gap:Some(gap)}
+        deadpan_core::NodeKind::Repeat {child, iterations, gap:Some(gap), ..}
         if child == &NodeId::new("hold")? && iterations.len() == 4 && gap.duration.frames() == 3));
     assert_eq!(store.registers()?, bank);
     store.undo(after.revision_id(), RevisionId::new("count-undo")?)?;

@@ -608,6 +608,7 @@ fn full_repeat_overrides_gaps_and_preserve_retime_keep_exact_picture_clocks() {
             child: id("base"),
             iterations: IterationOrder::new(revision("plays"), 3).unwrap(),
             gap: Some(freeze_recipe(1, 7007)),
+            escalation: None,
         },
     };
     let retime = BeatNode {

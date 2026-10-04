@@ -146,7 +146,7 @@ impl Queue {
             return Err("the Repeat result has no new wrapper");
         };
         if !matches!(document.nodes().get(wrapper).map(|node| &node.kind),
-            Some(NodeKind::Repeat { child, iterations, gap: None })
+            Some(NodeKind::Repeat { child, iterations, gap: None, escalation: None })
             if child == &target.node && iterations.len() == *plays)
         {
             return Err("the Repeat result did not match the requested wrap");

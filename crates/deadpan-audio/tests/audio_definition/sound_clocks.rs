@@ -144,6 +144,7 @@ fn repeated_with_gap(child: &str, allocation: &str, gap: i64) -> BeatNode {
                 picture_context: None,
                 audio: HoldAudio::Silence,
             }),
+            escalation: None,
         },
         ..BeatNode::sequence("Repeated sound owner", Vec::new())
     }

@@ -385,6 +385,7 @@ fn repeated_and_definition_issuers_survive_the_independent_provider() {
                         child: id("silent"),
                         iterations: IterationOrder::new(allocation.clone(), 2).unwrap(),
                         gap: None,
+                        escalation: None,
                     },
                 },
             ),

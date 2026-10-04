@@ -308,6 +308,7 @@ fn document_at_context_limit() -> ProjectDocument {
         child: id("repeat-child"),
         iterations: IterationOrder::new(initial.revision_id().clone(), 2).unwrap(),
         gap: Some(gap),
+        escalation: None,
     };
     nodes.insert(id("repeat-child"), BeatNode::hold("Child", recipe()));
     nodes.insert(id("repeat"), repeat);

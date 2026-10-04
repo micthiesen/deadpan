@@ -39,6 +39,7 @@ fn dense_bound_repeat_inventory_uses_shared_work_not_output_span_capacity() {
             child: node("voice"),
             iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 256).unwrap(),
             gap: None,
+            escalation: None,
         },
     })
     .unwrap();

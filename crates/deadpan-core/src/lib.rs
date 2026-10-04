@@ -44,6 +44,7 @@ mod occurrence;
 mod occurrence_edit;
 mod picture_context;
 mod register;
+mod repeat_escalation;
 mod repeat_layout;
 mod repeat_selection;
 mod scoped_edit;
@@ -95,6 +96,7 @@ pub use occurrence::*;
 pub use occurrence_edit::{OccurrenceEdit, OccurrenceIdentities};
 pub use picture_context::*;
 pub use register::{RegisterName, RegisterValue};
+pub use repeat_escalation::*;
 pub use repeat_layout::*;
 pub use repeat_selection::{RepeatSelectionIdentities, RepeatSelectionPlan};
 pub use scoped_edit::{

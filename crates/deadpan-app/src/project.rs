@@ -486,6 +486,11 @@ pub enum ProjectEdit {
         node: NodeId,
         plays: u32,
     },
+    /// Set a selected Repeat's per-play escalation without changing timing.
+    Escalate {
+        node: NodeId,
+        input: crate::navigation::escalation::EscalationInput,
+    },
     Delete {
         node: NodeId,
     },

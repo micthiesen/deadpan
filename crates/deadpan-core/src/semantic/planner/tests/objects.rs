@@ -696,6 +696,7 @@ fn stale_foreign_and_nonordinary_objects_refuse_without_fallback_or_allocation()
         child: node("inner"),
         iterations: crate::IterationOrder::new(revision("plays"), 2).unwrap(),
         gap: None,
+        escalation: None,
     };
     under_repeat.nodes.remove(&node("lead"));
     under_repeat.nodes.remove(&node("after"));

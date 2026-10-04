@@ -12,6 +12,7 @@ fn fixture() -> ProjectDocument {
             child: id("repeated-source"),
             iterations: IterationOrder::new(revision("original-plays"), 2).unwrap(),
             gap: Some(freeze_recipe(1, 4004)),
+            escalation: None,
         },
     };
     let before = document(

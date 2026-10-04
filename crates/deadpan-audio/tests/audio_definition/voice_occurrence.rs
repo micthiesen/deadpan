@@ -53,6 +53,7 @@ fn occurrence_document() -> ProjectDocument {
                         child: id("outer"),
                         iterations: plays,
                         gap: None,
+                        escalation: None,
                     },
                     ..BeatNode::sequence("Repeated passage", Vec::new())
                 },

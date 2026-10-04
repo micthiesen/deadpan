@@ -45,6 +45,7 @@ fn repeat(child: &str, count: u32) -> BeatNode {
             child: id(child),
             iterations: IterationOrder::new(revision("plays"), count).unwrap(),
             gap: None,
+            escalation: None,
         },
     }
 }

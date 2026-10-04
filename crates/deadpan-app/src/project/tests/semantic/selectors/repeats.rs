@@ -270,7 +270,7 @@ fn empty_child_refuses_without_cursor_fallback_and_legacy_wrap_retains_queue_rec
     let wrapper = receipt.selected_node.as_ref().unwrap();
     assert!(
         matches!(&wrapped.workspace.as_ref().unwrap().document.nodes()[wrapper].kind,
-        NodeKind::Repeat { child, iterations, gap: None } if child == &node("a") && iterations.len() == 3)
+        NodeKind::Repeat { child, iterations, gap: None, .. } if child == &node("a") && iterations.len() == 3)
     );
     assert_eq!(
         wrapped.workspace.as_ref().unwrap().plan.duration().frames(),

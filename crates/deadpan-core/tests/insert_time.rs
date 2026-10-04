@@ -592,6 +592,7 @@ fn sequence_interiors_and_root_composite_seams_preserve_their_owners() {
             child: id("inner"),
             iterations: IterationOrder::new(revision("plays"), 2).unwrap(),
             gap,
+            escalation: None,
         },
     };
     let repeated = tree(
@@ -645,6 +646,7 @@ fn composite_seam_moves_root_marks_once_and_retains_occurrence_and_source_clocks
                         child: id("inner"),
                         iterations: IterationOrder::new(revision("plays"), 3).unwrap(),
                         gap: Some(recipe(1)),
+                        escalation: None,
                     },
                 },
             ),
@@ -732,6 +734,7 @@ fn billion_play_seam_insertion_keeps_one_step_per_owned_recipe() {
                         child: id("inner"),
                         iterations: IterationOrder::new(revision("plays"), 1_000_000_000).unwrap(),
                         gap: Some(recipe(1)),
+                        escalation: None,
                     },
                 },
             ),

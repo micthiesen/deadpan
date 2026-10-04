@@ -1057,6 +1057,7 @@ fn reordered_survivors_keep_old_phase_and_a_fresh_play_uses_definition_phase() {
             child: id("a"),
             iterations: IterationOrder::new(revision("plays"), 2).unwrap(),
             gap: None,
+            escalation: None,
         },
     };
     let (old, mut provider) = document(

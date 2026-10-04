@@ -280,6 +280,7 @@ fn inserted_repeat_cannot_reserve_a_future_revision_and_revive_retired_plays() {
                                 child: id("child"),
                                 iterations: imported,
                                 gap: None,
+                                escalation: None,
                             },
                         },
                     ),

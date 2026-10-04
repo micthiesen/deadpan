@@ -219,6 +219,7 @@ fn fixture(offset: AudioSample, mapping: SourceAudioMapping) -> ProjectDocument 
                     source: source.clone(),
                 },
             }),
+            escalation: None,
         },
     };
     edit(

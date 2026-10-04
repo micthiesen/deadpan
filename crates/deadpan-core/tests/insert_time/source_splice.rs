@@ -211,6 +211,7 @@ fn repeat_or_retime_ancestry_never_silently_changes_scope() {
                 child: id("group"),
                 iterations: IterationOrder::new(revision("plays"), 1_000_000_000).unwrap(),
                 gap: None,
+                escalation: None,
             },
         },
         BeatNode {

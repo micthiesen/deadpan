@@ -65,6 +65,7 @@ fn captured(plays: u32) -> ProjectDocument {
                     child: id("child"),
                     iterations: IterationOrder::new(play(0).allocation, plays).unwrap(),
                     gap: Some(recipe(2)),
+                    escalation: None,
                 },
             },
         ),

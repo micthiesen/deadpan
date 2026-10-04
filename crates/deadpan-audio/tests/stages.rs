@@ -1224,6 +1224,7 @@ fn repeat_and_override_occurrences_do_not_alias_prepared_history() {
                 video: HoldVideo::Background,
                 audio: HoldAudio::Silence,
             }),
+            escalation: None,
         },
     };
     let planned = plan_with_overrides(
@@ -1479,6 +1480,7 @@ fn nested_depth_and_native_long_input_limits_fail_without_decoding_originals() {
             child: id("source"),
             iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 129).unwrap(),
             gap: None,
+            escalation: None,
         },
     };
     let mut renderer = StageAudio::new(plan(
@@ -1598,6 +1600,7 @@ fn repeated_stage_plan() -> Arc<RenderPlan> {
                         iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 9)
                             .unwrap(),
                         gap: None,
+                        escalation: None,
                     },
                 },
             ),
@@ -1837,6 +1840,7 @@ fn repeated_room_tone_and_override_restart_locally_with_two_distinct_gap_caches(
                     source: audio(512, 611),
                 },
             }),
+            escalation: None,
         },
     };
     let planned = plan_with_overrides(
@@ -2358,6 +2362,7 @@ fn partition_inside_a_repeat_gap_keeps_its_full_room_tone_origin() {
                     source: audio(512, 611),
                 },
             }),
+            escalation: None,
         },
     };
     let whole = plan(
@@ -2582,6 +2587,7 @@ fn one_hard_repeat_override_and_room_tone_gap_edges_preserve_silence_masks() {
                     source: audio(512, 611),
                 },
             }),
+            escalation: None,
         },
     };
     let planned = plan_with_overrides(

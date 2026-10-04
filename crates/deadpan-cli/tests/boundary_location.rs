@@ -87,6 +87,7 @@ fn fixture(root: &Path) -> Result<(PathBuf, ProjectStore)> {
                 audio: HoldAudio::Silence,
                 picture_context: None,
             }),
+            escalation: None,
         },
     };
     let nodes = BTreeMap::from([

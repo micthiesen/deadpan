@@ -93,6 +93,7 @@ fn repeat(child: &str, count: u32) -> BeatNode {
             child: id(child),
             iterations: IterationOrder::new(play(0).allocation, count).unwrap(),
             gap: None,
+            escalation: None,
         },
     }
 }

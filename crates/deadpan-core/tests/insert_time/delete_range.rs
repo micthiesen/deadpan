@@ -199,6 +199,7 @@ fn complete_composites_are_admitted_but_partial_or_clocked_ancestry_is_rejected(
             child: id("group"),
             iterations: IterationOrder::new(revision("plays"), 2).unwrap(),
             gap: None,
+            escalation: None,
         },
         NodeKind::Retime {
             child: id("group"),

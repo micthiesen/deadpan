@@ -163,6 +163,7 @@ impl RenderPlan {
                             gap_picture_context: None,
                             gap_duration: *gap_duration,
                             gap_audio: None,
+                            escalation: None,
                         },
                         NodeType::Repeat,
                     )
@@ -366,6 +367,7 @@ impl RenderPlan {
                             gap_audio: gap
                                 .then(|| retained_hold_audio(context, id, *gap_audio))
                                 .transpose()?,
+                            escalation: None,
                         },
                         NodeType::Repeat,
                     )

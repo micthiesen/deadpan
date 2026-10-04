@@ -290,6 +290,7 @@ impl<'a> AnchorIndex<'a> {
                 child,
                 iterations,
                 gap,
+                ..
             } = &node.kind
             {
                 repeats.insert(

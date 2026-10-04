@@ -178,6 +178,7 @@ fn repeat(child: &str, plays: u32, allocation: &str) -> BeatNode {
             child: id(child),
             iterations: IterationOrder::new(revision(allocation), plays).unwrap(),
             gap: Some(freeze_recipe(1, 7007)),
+            escalation: None,
         },
     }
 }

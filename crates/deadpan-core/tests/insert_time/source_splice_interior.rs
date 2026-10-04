@@ -274,6 +274,7 @@ fn interior_splice_never_descends_a_repeat_or_authored_retime() {
             child: id("group"),
             iterations: IterationOrder::new(revision("plays"), 2).unwrap(),
             gap: None,
+            escalation: None,
         },
         NodeKind::Retime {
             child: id("group"),

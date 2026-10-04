@@ -171,3 +171,7 @@ and VoiceOver acceptance, long-source performance, listening and export remain
 required. Native CUA also exercised exact trim/key edits, focus reveal, literal
 shortcut text and Escape; the before/after project dumps were identical. This
 increment does not close the complete DP-09 audio workflow.
+
+
+A Repeat's per-play [escalation](REPEAT_ESCALATION.md) gain is added on the
+Repeat owner like an authored factor, from the span's play position.

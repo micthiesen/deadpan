@@ -395,6 +395,12 @@ define_commands! {
         node: NodeId,
         framing: Option<crate::Framing>,
     },
+    /// Replace a Repeat's per-play escalation. Timing, plays, gaps and every
+    /// retained clock are unchanged.
+    SetRepeatEscalation {
+        node: NodeId,
+        escalation: Option<crate::RepeatEscalation>,
+    },
     /// Replace postmapping gain intent without changing any raw audio clock.
     SetAudioTreatments {
         node: NodeId,
@@ -1464,6 +1470,7 @@ pub(crate) fn reduce(
                         child: node.clone(),
                         iterations: IterationOrder::new(allocation.clone(), *plays)?,
                         gap: gap.clone(),
+                        escalation: None,
                     },
                 },
             );
@@ -1830,6 +1837,19 @@ pub(crate) fn reduce(
                 })?;
             }
             node_mut(document, node)?.framing = framing.clone();
+        }
+        Command::SetRepeatEscalation { node, escalation } => {
+            let NodeKind::Repeat {
+                escalation: current,
+                ..
+            } = &mut node_mut(document, node)?.kind
+            else {
+                return Err(EditError::new(
+                    EditErrorCode::WrongNodeKind,
+                    "escalation belongs to a Repeat",
+                ));
+            };
+            *current = *escalation;
         }
         Command::SetAudioTreatments { node, treatments } => {
             treatments.validate().map_err(crate::audio_gain::invalid)?;
@@ -2440,6 +2460,7 @@ fn description(command: &Command) -> &'static str {
         Command::Rename { .. } => "Rename beat",
         Command::SetAudioEdge { .. } => "Change audio edge policy",
         Command::SetFraming { .. } => "Change framing",
+        Command::SetRepeatEscalation { .. } => "Change Repeat escalation",
         Command::SetAudioTreatments { .. } => "Change audio treatments",
         Command::AddAsset { .. } => "Register media asset",
         Command::ImportSource { .. } => "Import source media",

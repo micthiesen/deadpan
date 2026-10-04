@@ -342,6 +342,7 @@ enum CompiledKind {
         gap_picture_context: Option<Arc<CapturedFraming>>,
         gap_audio: Option<HoldAudio>,
         gap_duration: FrameDuration,
+        escalation: Option<deadpan_core::RepeatEscalation>,
     },
     Retime {
         child: usize,
@@ -563,6 +564,7 @@ impl RenderPlan {
                     child,
                     iterations,
                     gap,
+                    escalation,
                 } => {
                     let overrides = document.overrides().get(id);
                     let gap_overrides = document.gap_overrides().get(id);
@@ -596,6 +598,7 @@ impl RenderPlan {
                                 .as_ref()
                                 .map(|recipe| CompiledHold::compile(recipe, document))
                                 .transpose()?,
+                            escalation: *escalation,
                         },
                         NodeType::Repeat,
                     )
@@ -669,10 +672,16 @@ impl RenderPlan {
             sound_allowances: document.sound_allowances().clone(),
             compiled_sounds: BTreeMap::new(),
             audio_context: false,
-            has_audio_treatments: document
-                .nodes()
-                .values()
-                .any(|node| !node.audio_treatments.is_empty()),
+            has_audio_treatments: document.nodes().values().any(|node| {
+                !node.audio_treatments.is_empty()
+                    || matches!(
+                        &node.kind,
+                        NodeKind::Repeat {
+                            escalation: Some(escalation),
+                            ..
+                        } if escalation.gain_step != deadpan_core::GainDb::UNITY
+                    )
+            }),
             has_audio_editorial_edges: document
                 .nodes()
                 .values()
@@ -896,6 +905,7 @@ impl RenderPlan {
                     .as_ref()
                     .map(|framing| framing.evaluate(local, node.inspection.duration))
                     .transpose()?,
+                escalation: false,
             });
             match &node.kind {
                 CompiledKind::Source {
@@ -973,11 +983,31 @@ impl RenderPlan {
                     layout,
                     gap,
                     gap_picture_context,
+                    escalation,
                     ..
                 } => {
                     let location = layout.locate(local, InsertionBias::Right)?;
                     lookup.iteration_run_comparisons += location.comparisons;
                     local = location.position;
+                    // A play and the gap following it share that play's
+                    // escalation, applied inside the Repeat's own framing.
+                    if let Some(pose) = escalation
+                        .map(|escalation| escalation.pose(location.play.index))
+                        .transpose()
+                        .map_err(|_| PlanError::InvalidPlan("repeat escalation scale"))?
+                        .flatten()
+                    {
+                        framing.push(PictureFraming {
+                            instance: InstancePath {
+                                node: node.inspection.id.clone(),
+                                repeats: repeats.clone(),
+                            },
+                            local_position: local,
+                            duration: node.inspection.duration,
+                            pose: Some(pose),
+                            escalation: true,
+                        });
+                    }
                     if location.in_gap {
                         if let Some(child) = location.play.gap_child {
                             repeats.push(RepeatInstance {

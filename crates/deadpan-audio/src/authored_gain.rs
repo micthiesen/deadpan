@@ -48,6 +48,21 @@ impl GainSum {
         Ok(())
     }
 
+    /// A Repeat play's escalation step, added like an authored factor.
+    fn escalation(
+        &mut self,
+        owner: &deadpan_plan::AudioOwnerClock<'_>,
+    ) -> Result<(), StageAudioError> {
+        let millidecibels = owner.escalation_millidecibels();
+        if millidecibels != 0 {
+            self.add(EvaluatedGain {
+                millidecibels: ExactRatio::integer(millidecibels),
+                muted: false,
+            })?;
+        }
+        Ok(())
+    }
+
     pub(super) fn apply(self, sample: [f32; 2]) -> Result<[f64; 2], StageAudioError> {
         if sample.iter().any(|value| !value.is_finite()) {
             return Err(PreparationError::InvalidSamples.into());
@@ -118,6 +133,7 @@ pub(super) fn original_samples(
                         control,
                     )?;
                 }
+                gain.escalation(owner)?;
             }
             result.push(gain.apply(sample)?);
         }
@@ -168,6 +184,7 @@ pub(super) fn beat_sound_gain(
             if let Some(treatment) = owner.treatments() {
                 gain.treatment(treatment, owner.sampling().local_at(at)?, control)?;
             }
+            gain.escalation(owner)?;
         }
     }
     Ok(gain)

@@ -264,6 +264,7 @@ fn repeat_child_restarts_and_repeat_gain_spans_plays_and_roomtone_gaps_once() {
                 },
                 picture_context: None,
             }),
+            escalation: None,
         },
     };
     let base = document_with_asset(
@@ -310,6 +311,69 @@ fn repeat_child_restarts_and_repeat_gain_spans_plays_and_roomtone_gaps_once() {
     assert_eq!(
         authored_all(&treated, &mut provider, &[7, 129, 11]),
         expected
+    );
+}
+
+#[test]
+fn repeat_escalation_adds_its_step_to_each_later_play_and_its_gap() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    let repeat = |escalation| BeatNode {
+        label: "Escalating voice".into(),
+        framing: None,
+        audio_editorial_edges: Default::default(),
+        audio_edges: Default::default(),
+        audio_treatments: Default::default(),
+        kind: NodeKind::Repeat {
+            child: id("source"),
+            iterations: IterationOrder::new(RevisionId::new("gain-plays").unwrap(), 3).unwrap(),
+            gap: Some(HoldRecipe {
+                duration: duration(128),
+                video: HoldVideo::Background,
+                audio: HoldAudio::RoomTone {
+                    source: audio(512, 1024),
+                },
+                picture_context: None,
+            }),
+            escalation,
+        },
+    };
+    let document = |escalation| {
+        document_with_asset(
+            rate,
+            &["repeat"],
+            [
+                ("source", source(rate, 256, 0..256)),
+                ("repeat", repeat(escalation)),
+            ],
+            BTreeMap::new(),
+            audio(0, 8197).span,
+        )
+    };
+    let base = document(None);
+    let escalated = document(Some(RepeatEscalation {
+        gain_step: GainDb::new(3000).unwrap(),
+        zoom: None,
+    }));
+    let mut provider = FixtureProvider::new();
+    // Three 256-sample plays, each but the last followed by a 128-sample gap.
+    let baseline = authored_all(&base, &mut provider, &[1024]);
+    let expected: Vec<_> = baseline
+        .iter()
+        .enumerate()
+        .map(|(at, sample)| {
+            let play = match at {
+                0..384 => 0,
+                384..768 => 1,
+                _ => 2,
+            };
+            scaled(*sample, f64::from(3000 * play))
+        })
+        .collect();
+    assert_eq!(authored_all(&escalated, &mut provider, &[1024]), expected);
+    assert_eq!(
+        authored_all(&escalated, &mut provider, &[100, 300, 624]),
+        expected,
+        "the step does not depend on query boundaries"
     );
 }
 

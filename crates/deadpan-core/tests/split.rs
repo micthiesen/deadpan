@@ -32,6 +32,7 @@ fn repeat(child: &str, plays: u32) -> BeatNode {
             child: id(child),
             iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), plays).unwrap(),
             gap: None,
+            escalation: None,
         },
         audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),

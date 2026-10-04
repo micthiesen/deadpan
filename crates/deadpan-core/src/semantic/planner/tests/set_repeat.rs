@@ -17,6 +17,7 @@ fn repeated(child: &str, plays: u32, gap: Option<i64>) -> BeatNode {
             };
             recipe
         }),
+        escalation: None,
     };
     beat
 }
@@ -483,4 +484,72 @@ fn huge_count_stays_compact_and_regrowth_does_not_reuse_retired_play_ids() {
     );
     assert_eq!(planned.context.cursor, ProjectFrame(0));
     inverse(&document, &planned);
+}
+
+#[test]
+fn escalation_is_one_reversible_parameter_change_checked_against_play_count() {
+    let document = fixture();
+    let request = |command| CommandRequest {
+        project_id: document.project_id().clone(),
+        expected_revision: document.revision_id().clone(),
+        new_revision: revision("escalated"),
+        command,
+    };
+    let escalation = crate::RepeatEscalation {
+        gain_step: crate::GainDb::new(8_000).unwrap(),
+        zoom: None,
+    };
+    let edit = crate::apply(
+        &document,
+        &request(Command::SetRepeatEscalation {
+            node: node("repeated"),
+            escalation: Some(escalation),
+        }),
+    )
+    .unwrap();
+    let escalated = edit.forward.apply(&document).unwrap();
+    let NodeKind::Repeat {
+        escalation: stored, ..
+    } = &escalated.nodes()[&node("repeated")].kind
+    else {
+        panic!("expected Repeat")
+    };
+    assert_eq!(*stored, Some(escalation));
+    assert_eq!(
+        escalated.duration(),
+        document.duration(),
+        "timing unchanged"
+    );
+    assert_eq!(edit.duration_delta, 0);
+    let mut restored = edit.inverse.apply(&escalated).unwrap();
+    restored.revision_id = document.revision_id().clone();
+    assert_eq!(restored, document);
+
+    // +8 dB per play reaches +16 dB on the third play; a fifth would exceed +24.
+    let grow = |plays| CommandRequest {
+        project_id: escalated.project_id().clone(),
+        expected_revision: escalated.revision_id().clone(),
+        new_revision: revision("grown"),
+        command: Command::SetRepeatPlays {
+            node: node("repeated"),
+            plays,
+            timing: AudioTimingId {
+                allocation: revision("grown"),
+                ordinal: 0,
+            },
+        },
+    };
+    assert!(crate::apply(&escalated, &grow(4)).is_ok());
+    let refused = crate::apply(&escalated, &grow(5)).unwrap_err();
+    assert!(refused.message.contains("escalation"), "{refused:?}");
+
+    let wrong = crate::apply(
+        &document,
+        &request(Command::SetRepeatEscalation {
+            node: node("prefix"),
+            escalation: Some(escalation),
+        }),
+    )
+    .unwrap_err();
+    assert_eq!(wrong.code, EditErrorCode::WrongNodeKind);
 }

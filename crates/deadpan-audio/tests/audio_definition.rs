@@ -371,6 +371,7 @@ fn all_overridden_repeat_still_renders_its_unheard_default_definition() {
                         iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 2)
                             .unwrap(),
                         gap: None,
+                        escalation: None,
                     },
                 },
             ),
@@ -1082,6 +1083,7 @@ fn owned_nested_preserve_uses_edited_room_tone_in_the_same_root_clock() {
                         iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 2)
                             .unwrap(),
                         gap: Some(silent_gap.clone()),
+                        escalation: None,
                     },
                 },
             ),

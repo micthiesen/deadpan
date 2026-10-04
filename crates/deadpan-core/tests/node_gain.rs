@@ -735,6 +735,7 @@ fn replacement_and_isolation_bound_transient_gain_without_rejecting_valid_final_
                     child: id("plain"),
                     iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 2).unwrap(),
                     gap: None,
+                    escalation: None,
                 },
             },
         ),

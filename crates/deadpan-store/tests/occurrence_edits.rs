@@ -67,6 +67,7 @@ fn initial() -> Result<ProjectDocument> {
                 child: id(child),
                 iterations: IterationOrder::new(revision(name), count)?,
                 gap: Some(recipe(gap)),
+                escalation: None,
             },
         })
     };

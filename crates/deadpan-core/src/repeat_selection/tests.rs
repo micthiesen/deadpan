@@ -53,6 +53,7 @@ fn repeated(child: &str, plays: u32, gap: Option<HoldRecipe>) -> BeatNode {
         child: node(child),
         iterations: IterationOrder::new(revision("old-plays"), plays).unwrap(),
         gap,
+        escalation: None,
     };
     value
 }

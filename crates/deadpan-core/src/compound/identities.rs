@@ -191,6 +191,7 @@ fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mu
         | Command::Rename { .. }
         | Command::SetAudioEdge { .. }
         | Command::SetFraming { .. }
+        | Command::SetRepeatEscalation { .. }
         | Command::SetAudioTreatments { .. }
         | Command::AddAsset { .. }
         | Command::SetCanvas { .. }

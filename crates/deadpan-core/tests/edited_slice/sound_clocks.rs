@@ -272,6 +272,7 @@ fn copied_sound_clocks_link_fresh_repeat_plays_to_every_historical_alias() {
         child: id("owner"),
         iterations: IterationOrder::new(revision("plays"), 3).unwrap(),
         gap: None,
+        escalation: None,
     };
     let initial = attached(
         &tree(

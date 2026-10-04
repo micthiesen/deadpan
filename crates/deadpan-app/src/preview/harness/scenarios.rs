@@ -439,6 +439,92 @@ fn replace_text(d: &mut Driver<'_>, text: &str) -> Result<(), String> {
     )
 }
 
+/// Specification §31 step 3: `:repeat 3 gain-step=3dB zoom-step=0.08`
+/// escalates the selected three-play Repeat without nesting or retiming it.
+fn escalation(d: &mut Driver<'_>, original: u64) -> Result<(), String> {
+    let repeat = d.app().selected_beat.clone().ok_or("No selected Repeat")?;
+    let before = d.revision();
+    d.command("repeat 3 gain-step=3dB zoom-step=0.08")?;
+    d.changed(&before)?;
+    d.settled()?;
+    let workspace = d.app().workspace.clone().ok_or("No project")?;
+    let escalation = match &workspace.document.nodes()[&repeat].kind {
+        NodeKind::Repeat { escalation, .. } => *escalation,
+        _ => None,
+    };
+    let scale = |frame: u64| -> Result<Option<f64>, String> {
+        Ok(workspace
+            .plan
+            .picture(ProjectFrame(frame as i64))
+            .map_err(|e| e.to_string())?
+            .framing
+            .iter()
+            .find(|layer| layer.escalation)
+            .and_then(|layer| layer.pose)
+            .map(|pose| pose.scale.numerator() as f64 / pose.scale.denominator() as f64))
+    };
+    let (first, third) = (scale(1)?, scale(original * 2 + 1)?);
+    d.check(
+        "A Repeat setter with steps escalates each later play without nesting or retiming",
+        escalation.is_some_and(|escalation| escalation.gain_step.millidecibels() == 3000)
+            && first.is_none()
+            && third.is_some_and(|scale| (scale - 1.16).abs() < 1e-6)
+            && d.app().sequence_length() == original * 3
+            && d.app().beat_rows.len() == 1,
+        json!({"gain_step_mdb":3000,"first_play_scale":null,"third_play_scale":1.16,"frames":original * 3}),
+        json!({"escalation":format!("{escalation:?}"),"first":first,"third":third,"frames":d.app().sequence_length(),"message":d.app().message}),
+    )?;
+    let gain = text_paint_visibility(d, "+3 dB");
+    let zoom = text_paint_visibility(d, "+0.080");
+    d.check(
+        "The inspector shows the escalation steps in full",
+        [&gain, &zoom]
+            .iter()
+            .all(|paint| !paint.is_empty() && paint.iter().all(|p| p["fully_visible"] == true)),
+        json!({"gain":"+3 dB","zoom":"+0.080"}),
+        json!({"gain":gain,"zoom":zoom}),
+    )?;
+    d.capture("Escalated Repeat")?;
+    let escalated = d.revision();
+    d.command("repeat 4 gain-step=3dB")?;
+    d.wait_for("Mismatched count refused", |app| {
+        app.project_error
+            .as_deref()
+            .is_some_and(|error| error.contains("has 3 plays"))
+    })?;
+    d.check(
+        "A mismatched count refuses with guidance and no edit",
+        d.revision() == escalated
+            && d.app()
+                .project_error
+                .as_deref()
+                .is_some_and(|error| error.contains("has 3 plays")),
+        json!({"revision":escalated,"error":"has 3 plays"}),
+        json!({"revision":d.revision(),"error":d.app().project_error}),
+    )?;
+    d.key(Key::U)?;
+    d.changed(&escalated)?;
+    let restored = match &d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("No project")?
+        .document
+        .nodes()[&repeat]
+        .kind
+    {
+        NodeKind::Repeat { escalation, .. } => escalation.is_none(),
+        _ => false,
+    };
+    d.check(
+        "One undo removes the escalation",
+        restored && d.app().sequence_length() == original * 3,
+        json!({"escalation":null}),
+        d.snapshot(),
+    )?;
+    Ok(())
+}
+
 fn editing(d: &mut Driver<'_>) -> Result<(), String> {
     held_motion_after_leader(d)?;
     let original = d.app().sequence_length();
@@ -451,7 +537,7 @@ fn editing(d: &mut Driver<'_>) -> Result<(), String> {
         json!(original * 3),
         json!(d.app().sequence_length()),
     )?;
-    d.click("Set total plays…  Enter")?;
+    d.click("Plays or escalation…  Enter")?;
     let before = d.revision();
     replace_text(d, "repeat 2")?;
     d.changed(&before)?;
@@ -470,6 +556,7 @@ fn editing(d: &mut Driver<'_>) -> Result<(), String> {
         json!(original * 3),
         json!(d.app().sequence_length()),
     )?;
+    escalation(d, original)?;
     let before_pause = d.revision();
     d.command("hold 11f")?;
     d.changed(&before_pause)?;

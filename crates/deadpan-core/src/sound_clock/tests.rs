@@ -453,6 +453,7 @@ fn repeated_fixture() -> ProjectDocument {
                     picture_context: None,
                     audio: HoldAudio::Silence,
                 }),
+                escalation: None,
             },
             ..BeatNode::sequence("Repeat", vec![])
         },

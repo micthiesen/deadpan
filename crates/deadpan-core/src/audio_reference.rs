@@ -411,10 +411,12 @@ impl FrozenAudioLayout {
                 NodeKind::Sequence { children } => FrozenAudioKind::Sequence {
                     children: children.clone(),
                 },
+                // Frozen timing omits postmapping escalation, like gain.
                 NodeKind::Repeat {
                     child,
                     iterations,
                     gap,
+                    ..
                 } => FrozenAudioKind::Repeat {
                     child: child.clone(),
                     iterations: iterations.clone(),

@@ -352,6 +352,9 @@ pub enum NodeKind {
         child: NodeId,
         iterations: IterationOrder,
         gap: Option<HoldRecipe>,
+        /// Per-play gain and scale progression; see [`crate::RepeatEscalation`].
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        escalation: Option<crate::RepeatEscalation>,
     },
     Retime {
         child: NodeId,
@@ -961,8 +964,18 @@ impl ProjectDocument {
                     child,
                     iterations,
                     gap,
+                    escalation,
                 } => {
                     iterations.validate()?;
+                    if let Some(escalation) = escalation {
+                        let plays = iterations.len();
+                        escalation.validate(plays).map_err(|error| {
+                            DocumentError::new(
+                                DocumentErrorCode::InvalidTree,
+                                format!("Repeat escalation: {error}"),
+                            )
+                        })?;
+                    }
                     if let Some(gap) = gap {
                         self.validate_hold(gap)?;
                     }

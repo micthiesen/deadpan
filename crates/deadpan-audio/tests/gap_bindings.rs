@@ -101,6 +101,7 @@ fn repeated(plays: u32, recipe: HoldRecipe) -> BeatNode {
             child: id("child"),
             iterations: IterationOrder::new(revision("plays"), plays).unwrap(),
             gap: Some(recipe),
+            escalation: None,
         },
     }
 }

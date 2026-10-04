@@ -112,6 +112,12 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         }
         return super::slip::parse_frames(amount).map(Entry::Slip);
     }
+    if verb == "repeat" {
+        let arguments: Vec<&str> = words.clone().collect();
+        if let Some(input) = super::escalation::parse(&arguments)? {
+            return Ok(Entry::Action(Action::Edit(BeatEdit::Escalate(input))));
+        }
+    }
     let argument = words.next();
     if words.next().is_some() {
         return Err("Extra arguments are not supported by this command.".into());
@@ -611,6 +617,7 @@ mod tests {
             "repeat 2.5",
             "repeat 4294967296",
             "repeat 3 gap=120ms",
+            "repeat 3 volume=2",
             "wrap-repeat 2 gain-step=3dB",
             "delete 2",
             "split 12f",

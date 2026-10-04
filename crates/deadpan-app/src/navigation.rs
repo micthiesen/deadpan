@@ -9,6 +9,7 @@ pub mod duration;
 mod editor_map;
 mod keymap_config;
 pub use editor_map::BindingId;
+pub mod escalation;
 pub mod gain;
 mod group;
 #[cfg(test)]
@@ -44,6 +45,8 @@ pub enum BeatEdit {
     InsertHold(duration::DurationInput),
     Repeat(u32),
     WrapRepeat(u32),
+    /// Set the selected Repeat's per-play escalation.
+    Escalate(escalation::EscalationInput),
     Delete,
     HoldDuration(deadpan_core::FrameDuration),
     Retime(retime::RetimeInput),

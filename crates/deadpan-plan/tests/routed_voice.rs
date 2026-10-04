@@ -60,6 +60,7 @@ fn plan_with_prefix(rate: FrameRate, prefix_frames: i64) -> RenderPlan {
                     child: id("stage"),
                     iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 2).unwrap(),
                     gap: None,
+                    escalation: None,
                 },
             },
         ),

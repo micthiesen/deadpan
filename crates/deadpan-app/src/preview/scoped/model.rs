@@ -661,6 +661,7 @@ impl Index {
                 child,
                 iterations,
                 gap,
+                ..
             } = &node.kind
             {
                 repeats.insert(

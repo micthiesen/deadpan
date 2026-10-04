@@ -583,6 +583,7 @@ mod tests {
                     child: node("hold"),
                     iterations: IterationOrder::new(revision("plays"), 2).unwrap(),
                     gap: None,
+                    escalation: None,
                 },
             },
         );
@@ -701,6 +702,7 @@ mod tests {
                 child: node(child),
                 iterations: IterationOrder::new(revision("plays"), count).unwrap(),
                 gap: (gap_duration > 0).then(|| capture_gap(gap_duration)),
+                escalation: None,
             },
         }
     }

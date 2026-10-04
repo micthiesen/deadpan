@@ -120,6 +120,7 @@ fn camera_picture() -> (Picture, deadpan_core::InstancePath) {
         local_position: deadpan_core::ExactRatio::new(1, 2).unwrap(),
         duration: deadpan_core::FrameDuration::new(11).unwrap(),
         pose: None,
+        escalation: false,
     });
     (value, scope)
 }

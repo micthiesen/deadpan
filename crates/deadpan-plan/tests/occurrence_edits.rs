@@ -43,6 +43,7 @@ fn repeat(child: &str, plays: u32, gap_frames: i64, allocation: &str) -> BeatNod
             child: id(child),
             iterations: IterationOrder::new(revision(allocation), plays).unwrap(),
             gap: gap(gap_frames),
+            escalation: None,
         },
     }
 }

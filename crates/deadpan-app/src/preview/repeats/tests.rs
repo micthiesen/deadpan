@@ -28,6 +28,7 @@ fn repeated(label: &str, child: &str) -> BeatNode {
         child: node(child),
         iterations: IterationOrder::new(revision(label), 3).unwrap(),
         gap: None,
+        escalation: None,
     };
     beat
 }

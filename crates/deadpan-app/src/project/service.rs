@@ -888,6 +888,7 @@ impl Service {
             ProjectEdit::Split { node, .. }
             | ProjectEdit::Repeat { node, .. }
             | ProjectEdit::WrapRepeat { node, .. }
+            | ProjectEdit::Escalate { node, .. }
             | ProjectEdit::Retime { node, .. }
             | ProjectEdit::SetFraming { node, .. }
             | ProjectEdit::SetAudioTreatments { node, .. }
@@ -908,6 +909,7 @@ impl Service {
             ProjectEdit::SetFraming { .. }
                 | ProjectEdit::HoldAudio { .. }
                 | ProjectEdit::SetAudioTreatments { .. }
+                | ProjectEdit::Escalate { .. }
         );
         let mut retime_message = None;
         let new_revision = revision();
@@ -966,6 +968,39 @@ impl Service {
                 selected,
                 "Framing updated and saved",
             ),
+            ProjectEdit::Escalate { node, input } => {
+                let NodeKind::Repeat {
+                    iterations,
+                    escalation,
+                    ..
+                } = &document.nodes()[&node].kind
+                else {
+                    return Err("Select a Repeat to set its escalation. Wrap a beat first with :repeat N or rr.".into());
+                };
+                let plays = iterations.len();
+                if input.plays.is_some_and(|requested| requested != plays) {
+                    return Err(format!(
+                        "This Repeat has {plays} plays. Change the count with :repeat N first, then set escalation for those plays."
+                    ));
+                }
+                let current = *escalation;
+                let escalation = input.apply(current)?;
+                if escalation == current {
+                    self.message =
+                        Some("This Repeat already has that escalation. No edit was made.".into());
+                    return Ok(());
+                }
+                if let Some(escalation) = &escalation {
+                    escalation
+                        .validate(plays)
+                        .map_err(|error| error.to_string())?;
+                }
+                (
+                    Command::SetRepeatEscalation { node, escalation },
+                    selected,
+                    "Repeat escalation updated and saved",
+                )
+            }
             ProjectEdit::Scoped { .. }
             | ProjectEdit::InsertTime { .. }
             | ProjectEdit::DeleteRange { .. } => {

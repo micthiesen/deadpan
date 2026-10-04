@@ -719,6 +719,7 @@ fn partial_composite_overwrite_retains_full_context_bindings_and_copied_lineage(
                         audio: HoldAudio::Silence,
                         picture_context: None,
                     }),
+                    escalation: None,
                 },
                 "preserve" | "follow" => NodeKind::Retime {
                     child: id("right"),

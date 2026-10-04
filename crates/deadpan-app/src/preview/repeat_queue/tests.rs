@@ -209,6 +209,7 @@ fn counted_wraps_continue_in_fifo_order_from_each_exact_committed_wrapper() {
             child,
             iterations,
             gap,
+            ..
         } = &document.nodes()[&selected].kind
         else {
             panic!("each queued wrap must add one actual Repeat ancestor");

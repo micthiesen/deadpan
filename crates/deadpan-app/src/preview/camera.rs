@@ -237,7 +237,8 @@ impl CameraSession {
             .framing
             .iter()
             .position(|layer| {
-                layer.instance.node == pending.node
+                !layer.escalation
+                    && layer.instance.node == pending.node
                     && pending.scoped.as_ref().map_or_else(
                         || layer.instance.repeats.is_empty(),
                         |target| target.presentation.as_ref() == Some(&layer.instance),

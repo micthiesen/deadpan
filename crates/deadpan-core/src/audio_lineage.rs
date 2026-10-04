@@ -147,15 +147,18 @@ fn same_raw_audio(a: &NodeKind, b: &NodeKind) -> bool {
         (NodeKind::Hold { recipe: a }, NodeKind::Hold { recipe: b }) => same_gap(Some(a), Some(b)),
         (NodeKind::Sequence { children: a }, NodeKind::Sequence { children: b }) => a == b,
         (
+            // Escalation is postmapping gain and framing, not raw audio.
             NodeKind::Repeat {
                 child: ac,
                 iterations: ai,
                 gap: ag,
+                ..
             },
             NodeKind::Repeat {
                 child: bc,
                 iterations: bi,
                 gap: bg,
+                ..
             },
         ) => ac == bc && ai == bi && same_gap(ag.as_ref(), bg.as_ref()),
         (

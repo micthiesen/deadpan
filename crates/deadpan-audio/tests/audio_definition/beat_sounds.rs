@@ -98,6 +98,38 @@ fn saved_beat_sound_renders_nested_preserve_and_restarts_owner_gain_each_play() 
 }
 
 #[test]
+fn saved_beat_sound_takes_its_repeat_escalation_on_later_plays() {
+    let base = saved(&occurrence_document(), "owner", 3840);
+    let mut wire = serde_json::to_value(&base).unwrap();
+    wire["nodes"]["repeat"]["kind"]["escalation"] = serde_json::json!({"gain_step": 6000});
+    let escalated = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let mut provider = FixtureProvider::new();
+    let mut renderer = StageAudio::new(compile(&base, false));
+    let baseline = bus(&mut renderer, &mut provider, 0, 2577).samples;
+    // 17 lead samples, then two plays of 1280 root samples each.
+    let gain = 10.0_f64.powf(6000.0 / 20_000.0);
+    let expected: Vec<_> = baseline
+        .iter()
+        .enumerate()
+        .map(|(at, sample)| {
+            if at < 17 + 1280 {
+                *sample
+            } else {
+                sample.map(|value| (f64::from(value) * gain) as f32)
+            }
+        })
+        .collect();
+    let plan = compile(&escalated, false);
+    let mut renderer = StageAudio::new(plan.clone());
+    assert_eq!(bus(&mut renderer, &mut provider, 0, 2577).samples, expected);
+    let mut cold = StageAudio::new(plan);
+    assert_eq!(
+        bus(&mut cold, &mut provider, 1290, 123).samples,
+        expected[1290..1413]
+    );
+}
+
+#[test]
 fn saved_beat_sound_sums_overlapping_preserve_histories_before_one_limiter() {
     let mut wire = serde_json::to_value(occurrence_document()).unwrap();
     wire["nodes"].as_object_mut().unwrap().remove("inner");
@@ -353,6 +385,7 @@ fn saved_beat_sound_on_gap_override_inherits_current_repeat_gap_edges() {
                         child: id("owner"),
                         iterations: plays.clone(),
                         gap: None,
+                        escalation: None,
                     },
                     ..BeatNode::sequence("Repeat", vec![])
                 },

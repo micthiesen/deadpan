@@ -12,7 +12,9 @@ mod tests;
 pub const MAX_FRAMING_LAYERS: usize = deadpan_core::MAX_FRAMING_LAYERS;
 /// Structural depth counts edges, so retain the root as well as an optional
 /// synthetic provider scope for a Repeat gap.
-pub const MAX_FRAMING_SCOPES: usize = deadpan_core::MAX_DOCUMENT_DEPTH + 2;
+/// Every structural scope, one extra escalation scope per Repeat and the
+/// provider and gap clips.
+pub const MAX_FRAMING_SCOPES: usize = 2 * deadpan_core::MAX_DOCUMENT_DEPTH + 2;
 /// Retained collection limits share the authored grammar. Native dimensions and
 /// cumulative spatial precision have independent renderer admission checks.
 pub const MAX_CAPTURED_CANVASES: usize = deadpan_core::MAX_CAPTURED_CANVASES;

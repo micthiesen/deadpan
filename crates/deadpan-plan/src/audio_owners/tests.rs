@@ -58,6 +58,7 @@ fn repeat(child: &str, count: u32, gap: i64) -> BeatNode {
             audio: HoldAudio::Silence,
             picture_context: None,
         }),
+        escalation: None,
     };
     node
 }

@@ -183,6 +183,7 @@ fn whole_composites_can_be_deleted_but_their_clocked_children_cannot() {
             child: id("group"),
             iterations: IterationOrder::new(revision("plays"), 2).unwrap(),
             gap: None,
+            escalation: None,
         },
         NodeKind::Retime {
             child: id("group"),

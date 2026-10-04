@@ -392,6 +392,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::Rename { .. }
         | Command::SetAudioEdge { .. }
         | Command::SetFraming { .. }
+        | Command::SetRepeatEscalation { .. }
         | Command::SetAudioTreatments { .. }
         | Command::AddAsset { .. }
         | Command::SetCanvas { .. }

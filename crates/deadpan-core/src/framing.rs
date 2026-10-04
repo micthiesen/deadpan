@@ -506,13 +506,24 @@ pub(crate) fn validate_document(
     document: &crate::ProjectDocument,
 ) -> Result<(), crate::DocumentError> {
     let records = validate_nodes(document.nodes().values())?;
-    if records == 0 {
+    // A Repeat's zoom escalation adds a posed layer of its own.
+    let escalated = |node: &crate::BeatNode| {
+        matches!(
+            &node.kind,
+            crate::NodeKind::Repeat {
+                escalation: Some(crate::RepeatEscalation { zoom: Some(_), .. }),
+                ..
+            }
+        )
+    };
+    if records == 0 && !document.nodes().values().any(escalated) {
         return Ok(());
     }
     // Structural validation already proved ownership and bounded this walk.
     let mut pending = vec![(document.root(), 0usize)];
     while let Some((id, layers)) = pending.pop() {
-        let layers = layers + usize::from(document.nodes()[id].framing.is_some());
+        let node = &document.nodes()[id];
+        let layers = layers + usize::from(node.framing.is_some()) + usize::from(escalated(node));
         if layers > MAX_FRAMING_LAYERS {
             return Err(invalid(FramingError::Limit));
         }

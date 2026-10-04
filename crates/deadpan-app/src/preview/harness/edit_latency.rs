@@ -231,7 +231,7 @@ fn assert_edit(d: &mut Driver<'_>, baseline: &Baseline, kind: EditKind) -> Resul
         EditKind::Repeat => (
             app.beat_rows.len() == 1
                 && selected.is_some_and(|node| {
-                    matches!(&node.kind, NodeKind::Repeat { child, iterations, gap }
+                    matches!(&node.kind, NodeKind::Repeat { child, iterations, gap, ..  }
                     if child == &baseline.original && iterations.len() == 2 && gap.is_none())
                 }),
             baseline

@@ -236,7 +236,7 @@ fn range_repeat_and_count_setter_share_one_history_entry_without_register_writes
     let after = store.snapshot().unwrap();
     assert_eq!(after.duration().unwrap().frames(), 22);
     assert!(matches!(&after.nodes()[&node("range-repeat")].kind,
-        NodeKind::Repeat { child, iterations, gap: None }
+        NodeKind::Repeat { child, iterations, gap: None, ..  }
         if child == &node("range-group") && iterations.len() == 4));
     assert_eq!(
         store

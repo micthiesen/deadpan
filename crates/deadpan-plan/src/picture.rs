@@ -135,6 +135,9 @@ pub struct PictureFraming {
     pub local_position: ExactRatio,
     pub duration: FrameDuration,
     pub pose: Option<FramingPose>,
+    /// A Repeat play's escalation scale rather than authored framing. Its
+    /// instance is the Repeat's own; Camera never edits it.
+    pub escalation: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]

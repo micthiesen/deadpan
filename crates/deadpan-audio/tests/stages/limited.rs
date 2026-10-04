@@ -288,6 +288,7 @@ fn adjacent_tiles_reuse_exact_bus_context_and_revalidate_its_source_layout() {
             child: id("source"),
             iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 32).unwrap(),
             gap: None,
+            escalation: None,
         },
     };
     let plan = plan(

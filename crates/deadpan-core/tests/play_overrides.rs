@@ -364,6 +364,7 @@ fn nested_override_insertion_remaps_ids_and_wrapping_preserves_actual_ancestry()
                         child: id("inner-base"),
                         iterations: foreign,
                         gap: None,
+                        escalation: None,
                     },
                 },
             ),

@@ -116,6 +116,7 @@ fn repeat(child: &str, plays: u32, gap: i64) -> BeatNode {
             child: id(child),
             iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), plays).unwrap(),
             gap: (gap > 0).then(|| hold_recipe(gap, HoldAudio::Silence)),
+            escalation: None,
         },
     }
 }

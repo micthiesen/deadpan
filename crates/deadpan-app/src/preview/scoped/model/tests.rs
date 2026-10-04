@@ -38,6 +38,7 @@ fn repeat(name: &str, child: &str, plays: u32, gap: Option<i64>) -> (NodeId, Bea
         child: node(child),
         iterations: IterationOrder::new(revision(name), plays).unwrap(),
         gap: gap.map(recipe),
+        escalation: None,
     };
     (node(name), beat)
 }

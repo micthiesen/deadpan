@@ -98,6 +98,7 @@ fn plays_plan(
         child,
         iterations,
         gap,
+        ..
     } = &document.nodes()[node].kind
     else {
         return Err(EditError::new(
@@ -299,6 +300,7 @@ fn wrap(
         child,
         iterations,
         gap: None,
+        escalation: None,
     };
     result.nodes.insert(identities.repeat.clone(), repeat);
     let NodeKind::Sequence { children } =

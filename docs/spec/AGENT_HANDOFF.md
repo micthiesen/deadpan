@@ -2,6 +2,16 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Repeat escalation, 2026-10-04
+
+`NodeKind::Repeat` gained an optional `escalation` (exact gain step and
+centered zoom step, additive or multiplicative), applied per play by the
+picture plan (a flagged scale layer Camera skips) and the authored audio bus,
+and set with `:repeat 3 gain-step=3dB zoom-step=0.08` (§31 step 3). The field
+is additive within core schema 46. See [Repeat escalation](../REPEAT_ESCALATION.md).
+Next candidates on the §31 path: `:cutaway` (step 7), gags/recipes (step 8),
+AI Hold candidates in the app (step 6), target selection for Camera (step 5).
+
 ## Shot proposals, 2026-10-04
 
 Every Original picture is decoded exactly against its qualified index

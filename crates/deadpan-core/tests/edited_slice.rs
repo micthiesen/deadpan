@@ -906,6 +906,7 @@ fn incompatible_historical_play_union_rejects_capture_without_expanding_plays() 
                         child: id("held"),
                         iterations: IterationOrder::new(revision("old-plays"), u32::MAX).unwrap(),
                         gap: None,
+                        escalation: None,
                     },
                 },
             ),

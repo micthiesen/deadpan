@@ -238,6 +238,7 @@ fn tape_keeps_repeat_default_and_actual_room_tone_occurrence_scopes_distinct() {
             child: id("room"),
             iterations: IterationOrder::new(RevisionId::new("room-plays").unwrap(), 2).unwrap(),
             gap: None,
+            escalation: None,
         },
     };
     let doc = document(

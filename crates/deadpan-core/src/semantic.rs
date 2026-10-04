@@ -246,6 +246,7 @@ mod tests {
             child: id("group"),
             iterations: IterationOrder::new(revision("plays"), 2).unwrap(),
             gap: None,
+            escalation: None,
         };
         let mut retime = BeatNode::sequence("Retime", vec![]);
         retime.kind = NodeKind::Retime {

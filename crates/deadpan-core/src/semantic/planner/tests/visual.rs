@@ -281,6 +281,7 @@ fn staged_visual_yank_replace_cut_and_paste_keep_composites_and_one_exact_invers
         child: node("repeated"),
         iterations: crate::IterationOrder::new(revision("plays"), 3).unwrap(),
         gap: None,
+        escalation: None,
     };
     let document = tree(
         &["prefix", "group", "suffix"],

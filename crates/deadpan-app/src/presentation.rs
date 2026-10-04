@@ -368,7 +368,7 @@ impl Presentation {
             .picture
             .framing
             .iter_mut()
-            .find(|layer| &layer.instance == scope)
+            .find(|layer| !layer.escalation && &layer.instance == scope)
             .ok_or("The Camera scope is absent from this picture.")?;
         if layer.pose == pose {
             return Ok(());

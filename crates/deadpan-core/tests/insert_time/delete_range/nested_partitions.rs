@@ -305,6 +305,7 @@ fn nested_windows_do_not_admit_general_retime_or_repeat_interiors() {
             child: id("provider"),
             iterations: IterationOrder::new(revision("plays"), 2).unwrap(),
             gap: None,
+            escalation: None,
         },
         NodeKind::Retime {
             child: id("provider"),

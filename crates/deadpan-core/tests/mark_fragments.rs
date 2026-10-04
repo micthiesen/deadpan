@@ -296,6 +296,7 @@ fn retained_copy_ownership_depends_on_authored_nodes_not_visible_matching_plays(
             child: node(child),
             iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 2).unwrap(),
             gap: None,
+            escalation: None,
         },
     };
     let partition = |child, start, end| BeatNode {

@@ -17,6 +17,7 @@ fn composite_suffix(lead: BeatNode, plays: u32) -> ProjectDocument {
                         child: id("inner"),
                         iterations: IterationOrder::new(revision("plays"), plays).unwrap(),
                         gap: Some(recipe(1)),
+                        escalation: None,
                     },
                 },
             ),

@@ -1291,6 +1291,7 @@ impl DeadpanApp {
                 ProjectEdit::Split { node, at }
             }
             BeatEdit::Repeat(plays) => ProjectEdit::Repeat { node, plays },
+            BeatEdit::Escalate(input) => ProjectEdit::Escalate { node, input },
             BeatEdit::WrapRepeat(_) => unreachable!("Repeat continuation handled above"),
             BeatEdit::Delete => unreachable!("deletion captured above"),
             BeatEdit::HoldDuration(duration) => ProjectEdit::HoldDuration { node, duration },
@@ -4114,6 +4115,7 @@ impl DeadpanApp {
                         (format!("{} {} · Visual or after {}/{}/{}", key(EditorKey::InnerShot), key(EditorKey::AroundShot), key(EditorKey::YankOperator), key(EditorKey::CutOperator), key(EditorKey::RepeatOperator)), format!("Select the shot occurrence at the Edit cursor. Detected boundaries are hard cuts, so the around form adds no transition frames. {}{} copies the shot.", key(EditorKey::YankOperator), key(EditorKey::InnerShot))),
                         (format!("{} / {} · Visual or after {}/{}/{}", key(EditorKey::InnerGroup), key(EditorKey::AroundGroup), key(EditorKey::YankOperator), key(EditorKey::CutOperator), key(EditorKey::RepeatOperator)), "Select exact group contents or the whole group. An explicitly selected Sequence wins; otherwise use the containing nonroot group. Visual finish retains the object; moving while extending changes it into a time range. Whole-group edits return to the outer parent. Empty contents can receive a paste; an all-empty child forest still has exact owners. Macros and dot resolve the object in their current context.".to_owned()),
                         (":repeat 3".to_owned(), "Set total plays on the captured Repeat, preserving its gaps and surviving plays; wrap a different selected beat. Clear Visual selection first. Recording keeps the effective wrap or count-change instruction; dot reapplies a count change to the newly selected Repeat.".to_owned()),
+                        (":repeat 3 gain-step=3dB zoom-step=0.08".to_owned(), "Escalate the selected Repeat: each play after the first adds the gain step and grows the centered picture scale by the zoom step (progression=multiply compounds it). The count must match the Repeat's plays; omitted steps keep their values and 0dB or 0 removes one. Timing and gaps are unchanged; one Undo.".to_owned()),
                         (":wrap-repeat 3".to_owned(), "Always add an enclosing Repeat around the captured Visual range or selected beat, including nesting. Command entry captures the target; stale or missing targets refuse.".to_owned()),
                         (":retime 0.75 pitch=preserve".to_owned(), "Slow the selected beat to 0.75× input speed. Use pitch=tape to let pitch follow speed. Exact fractions such as 3/4 work too. The command shows its resolved duration before Enter; Escape cancels entry.".to_owned()),
                         (":wrap-retime 2 pitch=tape".to_owned(), "Always add an enclosing speed stage. :retime instead updates an existing ordinary Retime, preserving its child and input range. Split fragments are wrapped without changing their retained clocks.".to_owned()),
@@ -4950,6 +4952,7 @@ mod tests {
                 )
                 .unwrap(),
                 gap: None,
+                escalation: None,
             };
             assert_eq!(beat_kind(&kind), expected);
         }

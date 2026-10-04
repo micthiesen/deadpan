@@ -100,6 +100,7 @@ fn repeat(child: &str, plays: u32, gap: i64, allocation: &str) -> BeatNode {
         child: id(child),
         iterations: IterationOrder::new(revision(allocation), plays).unwrap(),
         gap: (gap > 0).then(|| background(gap)),
+        escalation: None,
     })
 }
 fn document(roots: &[&str], nodes: Vec<(&str, BeatNode)>) -> ProjectDocument {
@@ -268,6 +269,58 @@ fn framing_retains_every_owner_clock_and_repeat_scope_in_composition_order() {
 }
 
 #[test]
+fn escalation_scales_each_later_play_and_its_gap_inside_the_repeat_framing() {
+    let mut escalating = framed(repeat("source", 3, 1, "plays"), 2);
+    let NodeKind::Repeat { escalation, .. } = &mut escalating.kind else {
+        unreachable!()
+    };
+    *escalation = Some(RepeatEscalation {
+        gain_step: GainDb::UNITY,
+        zoom: Some(ZoomStep {
+            step: ExactRatio::new(1, 4).unwrap(),
+            progression: ZoomProgression::Add,
+        }),
+    });
+    let document = document(
+        &["repeat"],
+        vec![("repeat", escalating), ("source", source(4, 0, 4000))],
+    );
+    let plan = RenderPlan::compile(&document).unwrap();
+    // Plays occupy 0..4, 5..9 and 10..14 with one-frame gaps at 4 and 9.
+    let scales = |frame: i64| {
+        plan.picture(ProjectFrame(frame))
+            .unwrap()
+            .framing
+            .iter()
+            .filter(|layer| layer.escalation)
+            .map(|layer| layer.pose.unwrap().scale)
+            .collect::<Vec<_>>()
+    };
+    assert!(scales(1).is_empty(), "the first play is unchanged");
+    assert_eq!(scales(6), [ExactRatio::new(5, 4).unwrap()]);
+    assert_eq!(scales(9), [ExactRatio::new(5, 4).unwrap()], "its gap");
+    assert_eq!(scales(12), [ExactRatio::new(3, 2).unwrap()]);
+    let sample = plan.picture(ProjectFrame(12)).unwrap();
+    let names: Vec<_> = sample
+        .framing
+        .iter()
+        .map(|layer| (layer.instance.node.as_str(), layer.escalation))
+        .collect();
+    assert_eq!(
+        names,
+        [
+            ("source", false),
+            ("repeat", true),
+            ("repeat", false),
+            ("root", false)
+        ],
+        "escalation applies inside the Repeat's own framing"
+    );
+    assert_eq!(sample.framing[1].instance, sample.framing[2].instance);
+    sample.framing[1].instance.validate(&document).unwrap();
+}
+
+#[test]
 fn freeze_picture_identity_stays_fixed_while_its_framing_clock_advances() {
     let freeze = node(NodeKind::Hold {
         recipe: HoldRecipe {
@@ -369,6 +422,7 @@ fn repeat_gap_retains_shared_picture_context() {
         child: id("child"),
         iterations: IterationOrder::new(revision("captured-gap-plays"), 3).unwrap(),
         gap: Some(gap),
+        escalation: None,
     });
     let document = document(
         &["repeat"],
@@ -1652,6 +1706,7 @@ fn moved_and_inserted_iteration_runs_use_binary_selection_and_stable_gap_identit
                     child: id("child"),
                     iterations: moved,
                     gap: Some(background(1)),
+                    escalation: None,
                 }),
             ),
         ],
@@ -1699,6 +1754,7 @@ fn document_with_repeat_order(iterations: IterationOrder) -> ProjectDocument {
                     child: id("child"),
                     iterations,
                     gap: None,
+                    escalation: None,
                 }),
             ),
         ],
@@ -1764,6 +1820,7 @@ fn accepted_repeat_gap_maps_exact_fractional_positions_without_a_trailing_gap() 
                     child: id("child"),
                     iterations: IterationOrder::new(revision("plays"), 2).unwrap(),
                     gap: Some(recipe),
+                    escalation: None,
                 }),
             ),
             ("retime", retime("repeat", 14, 0, 7)),

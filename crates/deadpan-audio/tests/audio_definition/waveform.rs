@@ -140,6 +140,7 @@ fn waveform_repeat_gap_and_selection_exhaustion_use_intrinsic_definition_clocks(
                             video: HoldVideo::Background,
                             audio: HoldAudio::Silence,
                         }),
+                        escalation: None,
                     },
                 },
             ),

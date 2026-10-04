@@ -54,6 +54,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
             child,
             iterations,
             gap: None,
+            ..
         }) = workspace
             .document
             .nodes()

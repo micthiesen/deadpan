@@ -80,6 +80,7 @@ fn document() -> Result<ProjectDocument> {
                     child: node("echo"),
                     iterations: IterationOrder::new(revision("plays"), 3)?,
                     gap: Some(recipe(1)),
+                    escalation: None,
                 },
             },
         ),

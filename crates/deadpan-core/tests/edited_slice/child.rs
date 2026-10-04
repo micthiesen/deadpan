@@ -119,6 +119,7 @@ fn whole_child_retains_positive_composites_and_excludes_adjacent_empty_siblings(
             child: id("unit"),
             iterations: IterationOrder::new(revision("plays"), 3).unwrap(),
             gap: None,
+            escalation: None,
         },
     };
     let retimed = BeatNode {
@@ -464,6 +465,7 @@ fn child_under_repeat_clock_is_rejected_and_extra_wrapper_obeys_depth_limit() {
             child: id("group"),
             iterations: IterationOrder::new(revision("plays"), 2).unwrap(),
             gap: None,
+            escalation: None,
         },
     };
     let repeated = tree(

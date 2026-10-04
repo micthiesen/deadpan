@@ -784,6 +784,7 @@ fn hidden_room_tone_gap_keeps_its_loop_origin_and_rechecks_cached_admission() {
                                 source: audio(512, 611, 48_000),
                             },
                         }),
+                        escalation: None,
                     },
                 },
             ),

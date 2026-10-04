@@ -116,6 +116,7 @@ fn document(rate: FrameRate, recipe: Option<HoldRecipe>, revision: &str) -> Proj
             child: id("child"),
             iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 1).unwrap(),
             gap: recipe,
+            escalation: None,
         },
     };
     let mut wire = serde_json::to_value(empty).unwrap();

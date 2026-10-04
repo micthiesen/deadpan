@@ -592,6 +592,7 @@ mod tests {
                     child: hold.clone(),
                     iterations: iterations.clone(),
                     gap: None,
+                    escalation: None,
                 },
             },
         );

@@ -76,6 +76,8 @@ struct Edge {
     map: Placement,
     repeats: usize,
     gap: Option<Range<ExactRatio>>,
+    /// The play position when the parent is a Repeat.
+    play: Option<u32>,
 }
 
 struct BuildBudget {
@@ -185,13 +187,16 @@ impl RenderPlan {
                     },
                 ));
             }
-            gain_owners.push(gain_owner(
-                self,
-                edge.parent,
-                &instance.repeats[..edge.repeats],
-                current_map,
-                step,
-            )?);
+            gain_owners.push(
+                gain_owner(
+                    self,
+                    edge.parent,
+                    &instance.repeats[..edge.repeats],
+                    current_map,
+                    step,
+                )?
+                .with_play(edge.play),
+            );
             current_map = current_map.compose(edge.map)?;
         }
         budget.spend(1 + instance.repeats.len())?;
@@ -390,6 +395,7 @@ fn resolve_edges(
         let child = pair[1];
         let scope = repeats;
         let mut gap = None;
+        let mut position = None;
         let map = match &plan.nodes[parent].kind {
             CompiledKind::Sequence { entries } => {
                 budget.spend(entries.len())?;
@@ -429,6 +435,7 @@ fn resolve_edges(
                     );
                 }
                 repeats += 1;
+                position = Some(play.index);
                 Placement {
                     origin: ExactRatio::integer(offset),
                     scale: ExactRatio::ONE,
@@ -457,6 +464,7 @@ fn resolve_edges(
             map,
             repeats: scope,
             gap,
+            play: position,
         });
     }
     if repeats != instance.repeats.len() {

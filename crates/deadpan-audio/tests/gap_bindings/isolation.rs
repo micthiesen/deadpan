@@ -159,6 +159,7 @@ fn materialized_gap_retains_distinct_outer_play_clocks_and_definition_birth() {
             child: id("repeat"),
             iterations: IterationOrder::new(revision("outer-plays"), 2).unwrap(),
             gap: None,
+            escalation: None,
         },
     };
     let original = document(

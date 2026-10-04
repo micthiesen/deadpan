@@ -303,6 +303,7 @@ fn billion_play_context_keeps_sparse_override_and_bounded_last_seek() {
             iterations: IterationOrder::new(RevisionId::new("play-allocation").unwrap(), plays)
                 .unwrap(),
             gap: None,
+            escalation: None,
         },
     };
     let override_at = IterationId {

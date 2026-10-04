@@ -411,6 +411,7 @@ fn extending_a_captured_repeat_hold_keeps_each_surviving_play_clock() {
                         iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 2)
                             .unwrap(),
                         gap: None,
+                        escalation: None,
                     },
                 },
             ),

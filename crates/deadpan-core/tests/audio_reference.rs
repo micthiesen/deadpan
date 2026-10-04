@@ -155,6 +155,7 @@ fn fixture(plays: u32) -> ProjectDocument {
                     video: HoldVideo::Background,
                     audio: HoldAudio::RoomTone { source: audio },
                 }),
+                escalation: None,
             },
         },
     );

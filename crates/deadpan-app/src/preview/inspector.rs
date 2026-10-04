@@ -59,7 +59,10 @@ impl Inspector {
                 )
             }
             NodeKind::Repeat {
-                iterations, gap, ..
+                iterations,
+                gap,
+                escalation,
+                ..
             } => {
                 fields.push(("Total plays", iterations.len().to_string()));
                 fields.push((
@@ -69,11 +72,17 @@ impl Inspector {
                         |gap| format!("{} f", gap.duration.frames()),
                     ),
                 ));
+                fields.extend(crate::navigation::escalation::EscalationInput::fields(
+                    escalation.as_ref(),
+                ));
                 (
                     "Repeat",
                     "↻",
-                    Some(("Set total plays…", format!("repeat {}", iterations.len()))),
-                    "Set total plays to change this Repeat. Wrap repeat adds a new enclosing Repeat.",
+                    Some((
+                        "Plays or escalation…",
+                        format!("repeat {}", iterations.len()),
+                    )),
+                    "Set total plays, or escalate each play with gain-step=3dB zoom-step=0.08. Wrap repeat adds a new enclosing Repeat.",
                 )
             }
             NodeKind::Source { source } => {
@@ -242,6 +251,7 @@ mod tests {
                 iterations: IterationOrder::new(RevisionId::new("allocation").unwrap(), u32::MAX)
                     .unwrap(),
                 gap: None,
+                escalation: None,
             },
         };
         let inspector = Inspector::describe(&node, 143, 72);
@@ -249,7 +259,8 @@ mod tests {
             inspector.fields,
             vec![
                 ("Total plays", u32::MAX.to_string()),
-                ("Between plays", "No gap".into())
+                ("Between plays", "No gap".into()),
+                ("Escalation", "None".into())
             ]
         );
         assert_eq!(inspector.parameter.unwrap().1, "repeat 4294967295");

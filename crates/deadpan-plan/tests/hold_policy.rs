@@ -49,6 +49,7 @@ fn repeat(child: &str, count: u32, gap: Option<i64>) -> BeatNode {
             child: id(child),
             iterations: IterationOrder::new(play(0).allocation, count).unwrap(),
             gap: gap.map(|length| recipe(length, HoldAudio::Silence)),
+            escalation: None,
         },
     }
 }

@@ -124,6 +124,7 @@ fn custom_allowances_select_one_contribution_and_exact_repeat_issuers() {
                 audio: HoldAudio::Silence,
                 picture_context: None
             }),
+            escalation: None,
         },
     });
     wire["sounds"]["sound"]["mapping"]["selection"]["end"] = json!(ExactRatio::integer(400));

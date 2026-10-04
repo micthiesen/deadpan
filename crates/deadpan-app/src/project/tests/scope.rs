@@ -37,6 +37,7 @@ fn nested_document(path: &Path) -> ProjectStore {
                     child: repeat_body.clone(),
                     iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 2).unwrap(),
                     gap: None,
+                    escalation: None,
                 },
                 audio_editorial_edges: Default::default(),
                 audio_edges: Default::default(),

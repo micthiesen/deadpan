@@ -145,7 +145,7 @@ geometry. See [the capture contract](CAPTURED_FRAMING.md) for its stricter legac
 recipe boundary and migration fixture.
 
 Saved named manual point/region targets, keyboard region creation, actual detection
-and source-time tracking, per-play crop escalation, nested native selection, full
+and source-time tracking, centered per-play scale escalation is in [Repeat escalation](REPEAT_ESCALATION.md); target-centered escalation, nested native selection, full
 framed Ungroup, arbitrary temporal envelopes, captions, cutaways, and the remaining
 Section 8 picture operations remain required. [Captured framing](CAPTURED_FRAMING.md)
 retains the cropped composition for native Source/Freeze pause insertion, separately

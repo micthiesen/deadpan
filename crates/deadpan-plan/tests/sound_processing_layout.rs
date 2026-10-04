@@ -83,6 +83,7 @@ fn repeated(child: &str, allocation: &str, count: u32) -> BeatNode {
             child: id(child),
             iterations: IterationOrder::new(revision(allocation), count).unwrap(),
             gap: None,
+            escalation: None,
         },
     }
 }

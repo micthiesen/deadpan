@@ -54,11 +54,20 @@ pub struct AudioOwnerClock<'plan, S = AudioSample> {
     instance: InstancePath,
     kind: AudioOwnerKind,
     gap_after: Option<IterationId>,
+    /// For a Repeat owner, the 0-based play this span lies in (a gap belongs
+    /// to the play before it).
+    play: Option<u32>,
     sampling: AudioSampleMap<S>,
     origin: AudioOwnerClockOrigin,
 }
 
 impl<'plan> AudioOwnerClock<'plan> {
+    /// Record the play this owner's span lies in, for a Repeat owner.
+    pub(crate) fn with_play(mut self, play: Option<u32>) -> Self {
+        self.play = play;
+        self
+    }
+
     pub(in crate::plan) fn current(
         plan: &'plan RenderPlan,
         instance: InstancePath,
@@ -70,6 +79,7 @@ impl<'plan> AudioOwnerClock<'plan> {
             instance,
             kind: AudioOwnerKind::Node,
             gap_after: None,
+            play: None,
             sampling,
             origin: AudioOwnerClockOrigin::Current,
         }
@@ -105,6 +115,20 @@ impl<S: Copy> AudioOwnerClock<'_, S> {
     pub fn treatments(&self) -> Option<&deadpan_core::AudioTreatments> {
         (self.kind == AudioOwnerKind::Node)
             .then(|| &self.plan.nodes[self.plan.by_id[&self.instance.node]].audio_treatments)
+    }
+    /// A Repeat owner's escalation gain for this span's play, in exact
+    /// millidecibels; zero for every other owner.
+    pub fn escalation_millidecibels(&self) -> i64 {
+        let (AudioOwnerKind::Node, Some(play)) = (self.kind, self.play) else {
+            return 0;
+        };
+        match &self.plan.nodes[self.plan.by_id[&self.instance.node]].kind {
+            CompiledKind::Repeat {
+                escalation: Some(escalation),
+                ..
+            } => escalation.gain_millidecibels(play),
+            _ => 0,
+        }
     }
 }
 
@@ -374,6 +398,7 @@ struct RawOwner {
     instance: InstancePath,
     kind: AudioOwnerKind,
     gap_after: Option<IterationId>,
+    play: Option<u32>,
     position: Position,
     origin: AudioOwnerClockOrigin,
 }
@@ -439,6 +464,7 @@ fn query<'plan, S: Copy>(
                     instance: owner.instance,
                     kind: owner.kind,
                     gap_after: owner.gap_after,
+                    play: owner.play,
                     origin: owner.origin,
                     sampling: AudioSampleMap::new(
                         label(cursor),
@@ -634,6 +660,7 @@ fn walk(
             instance,
             kind,
             gap_after,
+            play: None,
             position: local,
             origin: origin.clone(),
         });
@@ -713,6 +740,10 @@ fn walk(
                     })?;
                 budget.spend(location.comparisons)?;
                 budget.lookup.iteration_run_comparisons += location.comparisons;
+                // The Repeat's own owner was pushed above; record its play.
+                if let Some(owner) = output.owners.last_mut() {
+                    owner.play = Some(location.play.index);
+                }
                 let repeat = node.inspection.id.clone();
                 if location.in_gap {
                     let begin = location

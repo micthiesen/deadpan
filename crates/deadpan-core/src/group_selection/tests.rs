@@ -270,6 +270,7 @@ fn source_document() -> ProjectDocument {
         child: node("voice"),
         iterations: IterationOrder::new(revision("plays"), 3).unwrap(),
         gap: None,
+        escalation: None,
     };
     document.nodes.insert(node("repeat"), repeat);
     let processed = document.nodes.get_mut(&node("processed")).unwrap();

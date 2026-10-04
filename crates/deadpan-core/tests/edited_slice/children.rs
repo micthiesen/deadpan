@@ -206,6 +206,7 @@ fn missing_reversed_nonchild_and_nonordinary_ancestry_refuse_without_mutation() 
             child: id("group"),
             iterations: IterationOrder::new(revision("plays"), 2).unwrap(),
             gap: None,
+            escalation: None,
         },
         NodeKind::Retime {
             child: id("group"),

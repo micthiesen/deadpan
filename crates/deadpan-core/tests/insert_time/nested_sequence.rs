@@ -25,6 +25,7 @@ fn fixture() -> ProjectDocument {
                         child: id("repeated"),
                         iterations: IterationOrder::new(revision("plays"), 1_000_000_000).unwrap(),
                         gap: Some(recipe(1)),
+                        escalation: None,
                     },
                 },
             ),
