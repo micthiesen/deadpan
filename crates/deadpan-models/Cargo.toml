@@ -17,6 +17,9 @@ serde_json.workspace = true
 thiserror.workspace = true
 blake3.workspace = true
 sha2.workspace = true
+rustix = { workspace = true, features = ["fs"] }
+# HTTPS model-pack downloads only; rustls with the system trust store.
+ureq = { version = "=3.4.2", default-features = false, features = ["rustls", "platform-verifier"] }
 
 [dev-dependencies]
 deadpan-store.workspace = true

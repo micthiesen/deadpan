@@ -14,6 +14,8 @@ pub mod live_project;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod macros;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod models;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 mod originals;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod picture;
@@ -73,7 +75,10 @@ const HELP: &str = "Deadpan headless commands:
   render status <project.deadpan> --job <job> [--after-attempt <ordinal>]
   render status <project.deadpan> --publications [--after <publication>]
   render status <project.deadpan> --publication <publication>
-  transcribe <project.deadpan> --model <ggml.bin> --sha256 <hex> [--language <auto|xx>] [--asset <id>]
+  models list [--root <dir>]
+  models install <pack> [--root <dir>]
+  models remove <pack> [--root <dir>]
+  transcribe <project.deadpan> [--model <ggml.bin> --sha256 <hex>] [--language <auto|xx>] [--asset <id>]
   transcript <project.deadpan> [--search <words>] [--asset <id>]
 
 Creation defaults to a provisional 1920x1080, 30 fps presentation basis.
@@ -391,6 +396,8 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         ["macro", rest @ ..] => macros::run(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["render", rest @ ..] => render::run(rest).map_err(CliError::Render),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["models", rest @ ..] => models::run(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["transcribe", rest @ ..] => transcription::run_transcribe(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]

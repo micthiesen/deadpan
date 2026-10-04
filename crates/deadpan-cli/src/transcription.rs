@@ -508,7 +508,7 @@ fn hex(bytes: &[u8]) -> String {
 pub fn run_transcribe(arguments: &[&str]) -> Result<(), crate::CliError> {
     let usage = || {
         crate::CliError::Usage(
-            "usage: transcribe <project.deadpan> --model <ggml.bin> --sha256 <hex> [--language <auto|xx>] [--asset <id>]"
+            "usage: transcribe <project.deadpan> [--model <ggml.bin> --sha256 <hex>] [--language <auto|xx>] [--asset <id>]"
                 .into(),
         )
     };
@@ -541,13 +541,20 @@ pub fn run_transcribe(arguments: &[&str]) -> Result<(), crate::CliError> {
             _ => return Err(usage()),
         }
     }
-    let (Some(model_path), Some(sha256)) = (model, sha256) else {
-        return Err(usage());
-    };
-    let model = ModelInput {
-        byte_length: std::fs::metadata(&model_path)?.len(),
-        path: model_path,
-        sha256,
+    let model = match (model, sha256) {
+        (Some(path), Some(sha256)) => ModelInput {
+            byte_length: std::fs::metadata(&path)?.len(),
+            path,
+            sha256,
+        },
+        // Without an explicit model, use the installed approved pack.
+        (None, None) => crate::models::installed_transcription_model(
+            &crate::models::default_root()?,
+        )?
+        .ok_or(TranscriptionError::Configuration(
+            "no transcription model is installed; run models install whisper-base-en",
+        ))?,
+        _ => return Err(usage()),
     };
     let store = deadpan_store::ProjectStore::open(
         std::path::Path::new(path),
