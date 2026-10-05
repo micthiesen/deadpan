@@ -11,9 +11,11 @@ use deadpan_core::{
     FramingValue, TargetId,
 };
 
-pub const ZOOM_USAGE: &str = "Use :zoom 1.35 [target=current|center|ID or label] [curve=step|linear|smoothstep], or :zoom off to return to the full picture.";
-pub const CREEP_USAGE: &str =
-    "Use :creep [from=1] [to=1.35] [target=current|center|ID or label] [curve=smoothstep|linear].";
+pub const ZOOM_USAGE: &str = "Use :zoom 1.35 [target=current|center|face:N|ID or label] [curve=step|linear|smoothstep], or :zoom off to return to the full picture.";
+pub const CREEP_USAGE: &str = "Use :creep [from=1] [to=1.35] [target=current|center|face:N|ID or label] [curve=smoothstep|linear].";
+
+/// The most faces a `face:N` proposal can name (the detector's bound).
+pub const MAX_FACE_NUMBER: u8 = 64;
 
 /// The default punch-in and creep scale of `,z` and `,c`.
 pub fn default_scale() -> ExactRatio {
@@ -33,6 +35,10 @@ pub enum TargetChoice {
     Center,
     /// A saved target by id or label.
     Named(String),
+    /// `target=face:N`: the `N`th face (1-based, left to right) that face
+    /// detection proposes in the displayed picture. Detection runs in the
+    /// background; only this explicit command saves the face as a target.
+    Face(u8),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -142,10 +148,23 @@ fn scale(value: &str) -> Result<ExactRatio, String> {
 
 fn target(value: &str) -> Result<TargetChoice, String> {
     Ok(match value {
-        "" => return Err("target= needs current, center, or a target id or label.".into()),
+        "" => {
+            return Err("target= needs current, center, face:N, or a target id or label.".into());
+        }
         "current" => TargetChoice::Current,
         "center" => TargetChoice::Center,
-        other => TargetChoice::Named(other.to_owned()),
+        other => match other.strip_prefix("face:") {
+            Some(number) => TargetChoice::Face(
+                number
+                    .parse::<u8>()
+                    .ok()
+                    .filter(|number| (1..=MAX_FACE_NUMBER).contains(number))
+                    .ok_or(format!(
+                        "face:N numbers the faces in the picture from 1 to {MAX_FACE_NUMBER}, left to right."
+                    ))?,
+            ),
+            None => TargetChoice::Named(other.to_owned()),
+        },
     })
 }
 
@@ -258,6 +277,11 @@ pub fn resolve(
         TargetChoice::Keep => (Resolved::Keep, None),
         TargetChoice::Center => (Resolved::Center, None),
         TargetChoice::Named(text) => (Resolved::Target(named(text)?), None),
+        TargetChoice::Face(number) => {
+            return Err(format!(
+                "face:{number} names a detected face, which needs face detection first."
+            ));
+        }
         TargetChoice::Current | TargetChoice::Selected => {
             if let Some(id) = followed {
                 return Ok((Resolved::Target(id.clone()), None));
@@ -589,8 +613,16 @@ mod tests {
                 kind: ZoomKind::Smash {
                     scale: ratio(27, 20)
                 },
-                target: TargetChoice::Named("face:2".into()),
+                target: TargetChoice::Face(2),
             }
+        );
+        assert_eq!(
+            parse_creep("to=1.5 target=face:1").unwrap().target,
+            TargetChoice::Face(1)
+        );
+        assert_eq!(
+            parse_zoom("2 target=\"face 2\"").unwrap().target,
+            TargetChoice::Named("face 2".into())
         );
         assert_eq!(
             parse_zoom("2 curve=linear target=\"Target 1\"").unwrap(),
@@ -628,6 +660,11 @@ mod tests {
             "1.35 scale=2",
             "1.35 target=a target=b",
             "1.35 target=\"open",
+            "1.35 target=face:0",
+            "1.35 target=face:65",
+            "1.35 target=face:",
+            "1.35 target=face:two",
+            "1.35 target=face:-1",
         ] {
             assert!(parse_zoom(bad).is_err(), "{bad}");
         }

@@ -340,10 +340,12 @@ impl Service {
                         )
                     });
                 }
-                public_render::output_summary(&document).map_err(public_error)?;
+                let summary = public_render::committed_output_summary(store, &document)
+                    .map_err(public_error)?;
                 ProjectRenderOperation::Start {
                     request: public_render::start_request(
                         &request.context,
+                        summary.algorithm,
                         destination,
                         Instant::now(),
                     )

@@ -1609,7 +1609,7 @@ impl StageAudio {
                 u64::try_from(rate.numerator()).map_err(|_| TimeError::Overflow)?,
                 u64::try_from(rate.denominator()).map_err(|_| TimeError::Overflow)?,
             )?,
-            0,
+            i32::from(stage.descriptor().pitch.semitones()),
         );
         let reservation = self.reserve(input_frames, output_frames, control)?;
         let result = recipe.map_err(StageAudioError::from).and_then(|recipe| {

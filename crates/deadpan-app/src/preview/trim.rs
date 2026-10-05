@@ -667,3 +667,13 @@ impl DeadpanApp {
         }
     }
 }
+
+#[cfg(feature = "ui-harness")]
+impl DeadpanApp {
+    /// The open Trim draft's active control and its amount field.
+    pub(super) fn trim_state_for_check(&self) -> Option<(SourceTrimControl, String)> {
+        self.trim
+            .as_ref()
+            .map(|draft| (draft.control, draft.amount.clone()))
+    }
+}

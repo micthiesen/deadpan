@@ -159,6 +159,52 @@ pub(super) struct ZoomNote {
     pub(super) text: String,
 }
 
+/// `:zoom … target=face:N` waiting for face proposals in its stopped picture.
+/// It applies only when detection finishes for the same session, revision,
+/// beat, cursor, scope and range it was entered with.
+pub(super) struct FaceZoom {
+    /// The `DetectFaces` command's ticket.
+    pub(super) ticket: u64,
+    number: u8,
+    input: crate::navigation::zoom::ZoomInput,
+    range: Option<(u64, u64)>,
+    context: ZoomContext,
+    camera: CameraSession,
+    asset: AssetId,
+    span: SourceSpan,
+}
+
+/// A fresh `face-K` id and a `Face N` label for face `number`; the label
+/// names the id too when another target already uses it.
+fn fresh_face_target(
+    document: &deadpan_core::ProjectDocument,
+    number: u8,
+) -> Result<(TargetId, String), String> {
+    let taken = |label: &str| {
+        document
+            .targets()
+            .values()
+            .any(|target| target.label.eq_ignore_ascii_case(label))
+    };
+    for index in 1..=deadpan_core::MAX_DOCUMENT_TARGETS + 1 {
+        let id = TargetId::new(format!("face-{index}")).map_err(|error| error.to_string())?;
+        if document.targets().contains_key(&id) {
+            continue;
+        }
+        let label = format!("Face {number}");
+        let label = if taken(&label) {
+            format!("Face {number} ({})", id.as_str())
+        } else {
+            label
+        };
+        return Ok((id, label));
+    }
+    Err(format!(
+        "This project already has {} targets, the most it can hold.",
+        deadpan_core::MAX_DOCUMENT_TARGETS
+    ))
+}
+
 pub(super) struct CameraPending {
     request: FramingRequest,
     session: u64,
@@ -995,7 +1041,11 @@ impl DeadpanApp {
             context.memory_mut(|memory| memory.request_focus(pane_id(Pane::Viewer)));
             return;
         };
-        match self.zoom_framing(&session, &input, range) {
+        if let crate::navigation::zoom::TargetChoice::Face(number) = input.target {
+            self.start_face_zoom(session, input, range, number);
+            return;
+        }
+        match self.zoom_framing(&session, &input, range, None) {
             Ok((framing, _)) if self.macros.recording() => {
                 // Recorded as the semantic framing of the selected beat;
                 // a scoped play has no semantic equivalent yet. A ranged
@@ -1041,11 +1091,14 @@ impl DeadpanApp {
 
     /// Resolve the target, sample its center where needed and build the
     /// framing. The note explains a fallback or a sampled fixed center.
+    /// `proposal` is a face target not saved yet, which `target=face:N`
+    /// resolves to; it is saved together with the framing.
     fn zoom_framing(
         &self,
         session: &CameraSession,
         input: &crate::navigation::zoom::ZoomInput,
         range: Option<(u64, u64)>,
+        proposal: Option<(&TargetId, &AttentionTarget)>,
     ) -> Result<(Option<Framing>, Option<String>), String> {
         use crate::navigation::zoom::{self, Center, Resolved, TargetChoice};
         let followed = match &session.entry {
@@ -1065,9 +1118,16 @@ impl DeadpanApp {
                     .map(|(id, ..)| (id.clone(), entry.label.clone()))
             })
             .collect();
-        let (resolved, mut note) = zoom::resolve(&input.target, followed, &shown, |text| {
-            self.resolve_target(text)
-        })?;
+        let (resolved, mut note) = match (&input.target, proposal) {
+            (TargetChoice::Face(_), Some((id, _))) => (Resolved::Target(id.clone()), None),
+            _ => zoom::resolve(&input.target, followed, &shown, |text| {
+                self.resolve_target(text)
+            })?,
+        };
+        let label = |id: &TargetId| match proposal {
+            Some((proposed, target)) if proposed == id => target.label.clone(),
+            _ => self.target_label(id),
+        };
         let frames = session.duration.frames() as u64;
         let center = match resolved {
             Resolved::Keep => Center::Keep,
@@ -1082,10 +1142,10 @@ impl DeadpanApp {
             Resolved::Target(id) => match zoom::sample_frame(input.kind, range, frames) {
                 None => Center::Target { id, fixed: None },
                 Some(local) => {
-                    let (frame, fixed) = self.target_center_at(session, &id, local)?;
+                    let (frame, fixed) = self.target_center_at(session, &id, local, proposal)?;
                     note = Some(format!(
                         "Centered on {} where it is at frame {}; this framing does not follow it.",
-                        self.target_label(&id),
+                        label(&id),
                         frame.0
                     ));
                     Center::Target {
@@ -1118,6 +1178,173 @@ impl DeadpanApp {
         Ok((framing, note))
     }
 
+    /// `target=face:N`: propose faces in the stopped picture in the
+    /// background. Nothing is saved unless detection finishes for exactly
+    /// this context ([`Self::finish_face_zoom`]).
+    fn start_face_zoom(
+        &mut self,
+        session: CameraSession,
+        input: crate::navigation::zoom::ZoomInput,
+        range: Option<(u64, u64)>,
+        number: u8,
+    ) {
+        let result = (|| -> Result<(), String> {
+            if self.macros.recording() {
+                return Err("A face proposal cannot be recorded yet; save the face first, then record :zoom with its target name. Save or cancel recording first.".into());
+            }
+            if session.scoped.is_some() {
+                return Err("target=face:N frames an ordinary beat; a single Repeat play cannot use a face proposal yet. No edit was made.".into());
+            }
+            if self.targets.face_zoom.is_some() {
+                return Err(
+                    "Faces are already being found for another :zoom; wait for it to finish."
+                        .into(),
+                );
+            }
+            let (asset, pts) = session
+                .picture
+                .clone()
+                .ok_or("This picture shows no Original moment, so it has no faces to propose.")?;
+            let span = self.target_span(&asset, pts)?;
+            let context = self.capture_zoom();
+            let ticket = self
+                .submit_target(Operation::DetectFaces {
+                    ticket: 0,
+                    session: session.session,
+                    revision: session.revision.clone(),
+                    asset: asset.clone(),
+                    pts,
+                })
+                .ok_or_else(|| self.error.clone().unwrap_or_default())?;
+            self.message = Some(format!(
+                "Finding faces in the displayed picture for face:{number}… Nothing changes unless that face is found."
+            ));
+            self.targets.face_zoom = Some(FaceZoom {
+                ticket,
+                number,
+                input,
+                range,
+                context,
+                camera: session,
+                asset,
+                span,
+            });
+            Ok(())
+        })();
+        if let Err(error) = result
+            && !error.is_empty()
+        {
+            self.error = Some(error);
+        }
+    }
+
+    /// Use the chosen face once its detection has finished: refuse when the
+    /// context changed, no face was found or `face:N` is out of range;
+    /// otherwise save it as a target together with the framing toward it,
+    /// as one undoable edit.
+    pub(super) fn finish_face_zoom(&mut self) {
+        let Some(pending) = &self.targets.face_zoom else {
+            return;
+        };
+        let ticket = pending.ticket;
+        if self
+            .targets
+            .reply()
+            .is_some_and(|(answered, refusal)| *answered == ticket && refusal.is_some())
+        {
+            // The service refused to start; its reason is already shown.
+            self.targets.face_zoom = None;
+            return;
+        }
+        let Some(outcome) = self
+            .targets
+            .faces()
+            .filter(|job| {
+                job.ticket == ticket
+                    && job.session == pending.camera.session
+                    && job.revision == pending.camera.revision
+                    && pending.camera.picture.as_ref() == Some(&(job.asset.clone(), job.pts))
+            })
+            .and_then(|job| job.outcome.clone())
+        else {
+            if self.workspace.as_ref().map(|workspace| workspace.session)
+                != Some(pending.camera.session)
+            {
+                self.targets.face_zoom = None;
+            }
+            return;
+        };
+        let pending = self.targets.face_zoom.take().expect("checked above");
+        let result = (|| -> Result<(), String> {
+            use crate::project::targets::FaceOutcome;
+            let faces = match outcome {
+                FaceOutcome::Found(faces) => faces,
+                FaceOutcome::Unavailable(reason) => {
+                    return Err(format!(
+                        "Faces cannot be found here: {reason} No edit was made."
+                    ));
+                }
+                FaceOutcome::Failed(reason) => {
+                    return Err(format!("Finding faces failed: {reason} No edit was made."));
+                }
+                FaceOutcome::Cancelled => {
+                    return Err("Finding faces was cancelled; no edit was made.".into());
+                }
+            };
+            admit_zoom_context(Some(&pending.context), &self.capture_zoom()).map_err(|_| {
+                "The beat, range, cursor or revision changed while faces were being found; enter the command again. No edit was made.".to_owned()
+            })?;
+            let face = deadpan_cli::faces::choose_face(&faces, usize::from(pending.number))
+                .map_err(|refusal| format!("{refusal} No edit was made."))?;
+            let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
+            let (id, label) = fresh_face_target(&workspace.document, pending.number)?;
+            let target = deadpan_cli::faces::face_target(
+                face,
+                label,
+                pending.asset.clone(),
+                pending.span.start().time_base,
+                pending.span.start().ticks,
+                pending.span.end().ticks,
+            )
+            .map_err(|error| error.to_string())?;
+            let (framing, note) = self.zoom_framing(
+                &pending.camera,
+                &pending.input,
+                pending.range,
+                Some((&id, &target)),
+            )?;
+            let camera = &pending.camera;
+            self.submit_target(Operation::SaveFramed {
+                ticket: 0,
+                session: camera.session,
+                revision: camera.revision.clone(),
+                scope: camera.navigation_scope.clone(),
+                cursor: ProjectFrame(
+                    i64::try_from(camera.cursor).map_err(|_| "Camera cursor is out of range.")?,
+                ),
+                node: camera.scope.node.clone(),
+                id,
+                target: Box::new(target),
+                framing: framing.map(Box::new),
+            })
+            .ok_or_else(|| self.error.clone().unwrap_or_default())?;
+            if let Some(text) = note {
+                self.zoom_note = Some(ZoomNote {
+                    session: camera.session,
+                    base: camera.revision.clone(),
+                    text,
+                });
+            }
+            Ok(())
+        })();
+        if let Err(error) = result
+            && !error.is_empty()
+        {
+            self.message = None;
+            self.error = Some(error);
+        }
+    }
+
     /// The absolute project frame of beat-local `local` for this Camera
     /// scope. A Repeat play samples its displayed picture.
     fn zoom_absolute(&self, session: &CameraSession, local: u64) -> ProjectFrame {
@@ -1140,10 +1367,14 @@ impl DeadpanApp {
         session: &CameraSession,
         id: &TargetId,
         local: u64,
+        proposal: Option<(&TargetId, &AttentionTarget)>,
     ) -> Result<(ProjectFrame, [ExactRatio; 2]), String> {
         let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
         let frame = self.zoom_absolute(session, local);
-        let label = self.target_label(id);
+        let proposed = proposal
+            .filter(|(proposed, _)| *proposed == id)
+            .map(|(_, target)| target);
+        let label = proposed.map_or_else(|| self.target_label(id), |target| target.label.clone());
         let sample = workspace
             .plan
             .picture(frame)
@@ -1158,10 +1389,8 @@ impl DeadpanApp {
             .iter()
             .position(|layer| !layer.escalation && layer.instance == session.scope)
             .ok_or("The framed beat is not shown at the frame this framing samples.")?;
-        let target = workspace
-            .document
-            .targets()
-            .get(id)
+        let target = proposed
+            .or_else(|| workspace.document.targets().get(id))
             .ok_or_else(|| format!("There is no saved target {label}."))?;
         let pose = sample
             .picture

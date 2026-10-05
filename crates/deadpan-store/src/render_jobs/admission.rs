@@ -160,7 +160,28 @@ pub(super) fn validate_output_document(
     decision: &RenderEncodingDecision,
 ) -> Result<(), StoreError> {
     let document = validation::read_revision(connection, intent.revision_id.as_str())?.document;
-    validate_output_basis(document.presentation_basis(), decision)
+    validate_output_basis(document.presentation_basis(), decision)?;
+    // Re-derive the branch from the revision's own stored receipts; a stored
+    // decision cannot choose a different color policy or mastering volume.
+    let color = crate::output_color::committed_output_color(connection, &document)?;
+    validate_output_color(
+        &color,
+        decision.output.color_policy,
+        decision.output.mastering_display,
+    )
+}
+
+fn validate_output_color(
+    color: &deadpan_core::OutputColorDecision,
+    policy: deadpan_core::ColorPolicy,
+    mastering: Option<deadpan_core::MasteringDisplay>,
+) -> Result<(), StoreError> {
+    if policy != color.output || mastering != color.mastering {
+        return Err(invalid(
+            "automatic output color or mastering volume differs from the revision's receipts",
+        ));
+    }
+    Ok(())
 }
 
 fn validate_output_basis(
@@ -169,7 +190,7 @@ fn validate_output_basis(
 ) -> Result<(), StoreError> {
     if decision.output.canvas != [basis.width, basis.height]
         || decision.output.frame_rate != basis.frame_rate
-        || decision.output.color_policy != basis.color_policy
+        || !output_color_admitted(basis.color_policy, decision.output.color_policy)
     {
         return Err(invalid(
             "automatic output differs from its immutable document basis",
@@ -178,6 +199,16 @@ fn validate_output_basis(
     // validate_for already checks range, exact derived clocks, even raster,
     // aspect, project/revision/document identities and the pinned algorithm.
     Ok(())
+}
+
+/// The automatic branch keeps the basis transfer or falls back to tone-mapped
+/// SDR from an HDR basis. An SDR basis never yields HDR output, and HDR never
+/// changes transfer. Receipt-level branch facts are the host's responsibility.
+fn output_color_admitted(
+    basis: deadpan_core::ColorPolicy,
+    output: deadpan_core::ColorPolicy,
+) -> bool {
+    output == basis || output == deadpan_core::ColorPolicy::SdrRec709
 }
 
 pub(super) fn validate_attempt_decision(
@@ -248,4 +279,81 @@ pub(super) fn validate_all_outputs(
         validate_output_basis(&revision.basis, &decision)?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod color_tests {
+    use super::*;
+    use deadpan_core::ColorPolicy::{HdrRec2020Hlg, HdrRec2020Pq, SdrRec709};
+
+    #[test]
+    fn output_keeps_the_basis_transfer_or_falls_back_to_sdr_never_upgrades() {
+        for (basis, output, admitted) in [
+            (SdrRec709, SdrRec709, true),
+            (HdrRec2020Pq, HdrRec2020Pq, true),
+            (HdrRec2020Hlg, HdrRec2020Hlg, true),
+            (HdrRec2020Pq, SdrRec709, true),
+            (HdrRec2020Hlg, SdrRec709, true),
+            (SdrRec709, HdrRec2020Pq, false),
+            (SdrRec709, HdrRec2020Hlg, false),
+            (HdrRec2020Pq, HdrRec2020Hlg, false),
+            (HdrRec2020Hlg, HdrRec2020Pq, false),
+        ] {
+            assert_eq!(output_color_admitted(basis, output), admitted);
+        }
+    }
+
+    #[test]
+    fn stored_decisions_must_match_the_receipt_derived_branch() {
+        let volume = deadpan_core::MasteringDisplay {
+            primaries: [[35_400, 14_600], [8_500, 39_850], [6_550, 2_300]],
+            white_point: [15_635, 16_450],
+            max_luminance: 10_000_000,
+            min_luminance: 50,
+        };
+        let pq = deadpan_core::OutputColorDecision {
+            output: HdrRec2020Pq,
+            reason: deadpan_core::OutputColorReason::HdrSources,
+            hdr_sources: true,
+            mastering: Some(volume),
+            ..deadpan_core::OutputColorDecision::sdr()
+        };
+        assert!(validate_output_color(&pq, HdrRec2020Pq, Some(volume)).is_ok());
+        // A forged fallback, a dropped or altered volume all refuse.
+        assert!(validate_output_color(&pq, SdrRec709, None).is_err());
+        assert!(validate_output_color(&pq, HdrRec2020Pq, None).is_err());
+        let altered = deadpan_core::MasteringDisplay {
+            max_luminance: 40_000_000,
+            ..volume
+        };
+        assert!(validate_output_color(&pq, HdrRec2020Pq, Some(altered)).is_err());
+        // A receipt-derived SDR fallback cannot be stored as HDR.
+        let fallback = deadpan_core::OutputColorDecision {
+            hdr_sources: true,
+            reason: deadpan_core::OutputColorReason::GeneratedPictures,
+            ..deadpan_core::OutputColorDecision::sdr()
+        };
+        assert!(validate_output_color(&fallback, HdrRec2020Pq, Some(volume)).is_err());
+        assert!(validate_output_color(&fallback, SdrRec709, None).is_ok());
+        let mut decision = RenderEncodingDecision::from_json(include_bytes!(
+            "../../../deadpan-jobs/src/render/admission/tests/measured-decision-v1.json"
+        ))
+        .unwrap();
+        let basis = deadpan_core::PresentationBasis {
+            width: decision.output.canvas[0],
+            height: decision.output.canvas[1],
+            frame_rate: decision.output.frame_rate,
+            color_policy: HdrRec2020Pq,
+        };
+        // Tone-mapped SDR fallback from an HDR basis is admitted.
+        validate_output_basis(&basis, &decision).unwrap();
+        // HDR output from an SDR basis is refused.
+        decision.output.color_policy = HdrRec2020Pq;
+        let sdr_basis = deadpan_core::PresentationBasis {
+            color_policy: SdrRec709,
+            ..basis.clone()
+        };
+        assert!(validate_output_basis(&sdr_basis, &decision).is_err());
+        validate_output_basis(&basis, &decision).unwrap();
+    }
 }

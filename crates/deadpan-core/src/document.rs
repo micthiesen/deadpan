@@ -382,6 +382,53 @@ pub struct HoldRecipe {
 pub enum PitchPolicy {
     Preserve,
     FollowSpeed,
+    /// Pitch-preserving processing with a fixed shift of whole semitones,
+    /// independent of the duration (specification §8.3 "Pitch shift"). A
+    /// unity-rate Retime with a shift still runs the processor. Nonzero,
+    /// within ±24 like the qualified DSP adapter.
+    Shift {
+        semitones: i8,
+    },
+}
+
+/// The fixed pitch shift range of the canonical time/pitch processor.
+pub const MAX_PITCH_SHIFT_SEMITONES: i8 = 24;
+
+impl PitchPolicy {
+    /// Pitch-preserving time/pitch processing, with or without a shift.
+    pub const fn preserves(self) -> bool {
+        matches!(self, Self::Preserve | Self::Shift { .. })
+    }
+
+    /// The fixed shift in semitones; zero for every other policy.
+    pub const fn semitones(self) -> i8 {
+        match self {
+            Self::Shift { semitones } => semitones,
+            Self::Preserve | Self::FollowSpeed => 0,
+        }
+    }
+
+    /// Whether a Retime with this policy runs the time/pitch processor:
+    /// pitch-preserving with a nonunity rate or a nonzero shift. Every other
+    /// Retime maps samples transparently or as tape speed.
+    pub const fn processes(self, unity_rate: bool) -> bool {
+        self.preserves() && (!unity_rate || self.semitones() != 0)
+    }
+
+    /// A shift of `semitones` on pitch-preserving processing; zero is plain
+    /// Preserve.
+    pub fn shifted(semitones: i8) -> Result<Self, DocumentError> {
+        match semitones {
+            0 => Ok(Self::Preserve),
+            value if value.unsigned_abs() <= MAX_PITCH_SHIFT_SEMITONES.unsigned_abs() => {
+                Ok(Self::Shift { semitones: value })
+            }
+            _ => Err(DocumentError::new(
+                DocumentErrorCode::InvalidTree,
+                "a pitch shift is a nonzero whole number of semitones within ±24",
+            )),
+        }
+    }
 }
 
 /// An ordinary authored crop constrains audio filtering and introduces edit
@@ -974,8 +1021,9 @@ impl ProjectDocument {
         let speed_stage = |kind: &NodeKind| {
             matches!(
                 kind,
-                NodeKind::Retime { duration, mapping, purpose, .. }
-                    if purpose.is_edit() && *duration != mapping.duration()
+                NodeKind::Retime { duration, mapping, purpose, pitch, .. }
+                    if purpose.is_edit()
+                        && (*duration != mapping.duration() || pitch.semitones() != 0)
             )
         };
         // Only a node below a speed stage can carry a tail into it.
@@ -1279,9 +1327,18 @@ impl ProjectDocument {
                     duration,
                     mapping,
                     purpose,
-                    ..
+                    pitch,
                 } => {
                     positive(*duration, "retime")?;
+                    if let PitchPolicy::Shift { semitones } = pitch
+                        && (PitchPolicy::shifted(*semitones)? != *pitch
+                            || *purpose == RetimePurpose::Partition)
+                    {
+                        return Err(DocumentError::new(
+                            DocumentErrorCode::InvalidTree,
+                            "a pitch shift is a nonzero whole number of semitones within ±24 on an ordinary Retime",
+                        ));
+                    }
                     if *purpose == RetimePurpose::Partition
                         && (*duration != mapping.duration()
                             || !node

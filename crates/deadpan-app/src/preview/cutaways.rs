@@ -108,6 +108,7 @@ impl DeadpanApp {
                         asset: moment.identity.asset.clone(),
                         selection,
                         fit,
+                        removed: false,
                     },
                 );
             }

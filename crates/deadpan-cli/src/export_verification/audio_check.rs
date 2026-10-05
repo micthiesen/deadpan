@@ -106,7 +106,16 @@ pub fn compare_audio(
     let mut segments = Vec::new();
     let mut snr = None;
     let offset_status = if silent {
-        if metrics::dbfs(decoded_peak) > thresholds.silent_max_peak_dbfs {
+        // A peak the reference itself carries (for example a source codec's
+        // pre-echo just before a transient at the window end) is not new
+        // sound: the decoded peak must also exceed the reference peak by
+        // more than the block level tolerance. Exact-zero references (silent
+        // holds, gaps) keep the absolute gate.
+        let decoded_peak_dbfs = metrics::dbfs(decoded_peak);
+        if decoded_peak_dbfs > thresholds.silent_max_peak_dbfs
+            && decoded_peak_dbfs
+                > metrics::dbfs(metrics::peak(reference)) + thresholds.max_block_level_db
+        {
             flags.push("unexpected_sound_in_silence");
         }
         OffsetStatus::NotApplicable

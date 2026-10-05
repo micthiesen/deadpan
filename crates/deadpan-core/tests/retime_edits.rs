@@ -342,3 +342,85 @@ fn occurrence_retime_isolates_only_the_selected_repeat_play() {
         Some(&id("rate"))
     );
 }
+
+#[test]
+fn pitch_shift_is_a_bounded_pitch_preserving_stage_independent_of_duration() {
+    let document = fixture();
+    let shifted = PitchPolicy::shifted(3).unwrap();
+    assert_eq!(shifted, PitchPolicy::Shift { semitones: 3 });
+    assert_eq!(PitchPolicy::shifted(0).unwrap(), PitchPolicy::Preserve);
+    assert!(PitchPolicy::shifted(25).is_err());
+    assert!(shifted.preserves() && shifted.processes(true));
+    assert!(!PitchPolicy::Preserve.processes(true) && PitchPolicy::Preserve.processes(false));
+    assert!(!PitchPolicy::FollowSpeed.processes(false));
+    // A unity-speed stage keeps the beat's duration and records the shift.
+    let (after, _) = edit(&document, wrap(12, shifted), "shift");
+    assert_eq!(after.duration().unwrap(), document.duration().unwrap());
+    assert!(matches!(
+        &after.nodes()[&id("rate")].kind,
+        NodeKind::Retime { pitch: PitchPolicy::Shift { semitones: 3 }, duration, mapping, .. }
+            if duration.frames() == 12 && mapping.duration().frames() == 12
+    ));
+    let wire = serde_json::to_value(&after).unwrap();
+    assert_eq!(
+        wire["nodes"]["rate"]["kind"]["pitch"],
+        json!({"shift":{"semitones":3}})
+    );
+    // Out-of-range shifts and shifted partitions never validate.
+    for (pitch, purpose) in [
+        (json!({"shift":{"semitones":25}}), "edit"),
+        (json!({"shift":{"semitones":0}}), "edit"),
+        (json!({"shift":{"semitones":2}}), "partition"),
+    ] {
+        let mut wire = wire.clone();
+        wire["nodes"]["rate"]["kind"]["pitch"] = pitch.clone();
+        wire["nodes"]["rate"]["kind"]["purpose"] = json!(purpose);
+        assert!(
+            ProjectDocument::from_json(&wire.to_string()).is_err(),
+            "{pitch} {purpose}"
+        );
+    }
+}
+
+#[test]
+fn pitch_preserving_stages_over_the_processor_input_bound_refuse_at_edit_time() {
+    // 30000/1001 fps: 655 frames are 1,049,048 samples, over 1,048,576.
+    let mut wire = serde_json::to_value(fixture()).unwrap();
+    wire["nodes"]["a"]["kind"]["recipe"]["duration"] = json!(655);
+    let long = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    for pitch in [PitchPolicy::Preserve, PitchPolicy::Shift { semitones: 2 }] {
+        let refused = apply(&long, &request(&long, wrap(700, pitch), "too-long")).unwrap_err();
+        assert_eq!(refused.code, EditErrorCode::LimitExceeded, "{pitch:?}");
+    }
+    // A unity shift is processed too; tape speed needs no processor.
+    assert!(
+        apply(
+            &long,
+            &request(
+                &long,
+                wrap(655, PitchPolicy::Shift { semitones: 1 }),
+                "unity"
+            )
+        )
+        .is_err()
+    );
+    assert!(
+        apply(
+            &long,
+            &request(&long, wrap(700, PitchPolicy::FollowSpeed), "tape")
+        )
+        .is_ok()
+    );
+    let (wrapped, _) = edit(&long, wrap(700, PitchPolicy::FollowSpeed), "tape");
+    assert!(
+        apply(
+            &wrapped,
+            &request(
+                &wrapped,
+                set(655, PitchPolicy::Shift { semitones: 3 }),
+                "set"
+            )
+        )
+        .is_err()
+    );
+}

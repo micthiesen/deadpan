@@ -2,15 +2,15 @@
 //! This is allocation admission for immutable snapshots, not media qualification.
 
 use crate::audio::AudioDecodeLimits;
-use crate::{DecodeControl, DecodeLimits, SourceDecodeError};
+use crate::{ContentLight, DecodeControl, DecodeLimits, MasteringDisplay, SourceDecodeError};
 use std::{fs::File, os::unix::fs::FileExt, sync::atomic::Ordering, time::Instant};
 
 mod inspection;
 use inspection::{MovieHeader, TrackHeader};
 pub use inspection::{
-    Mp4AvcConfiguration, Mp4ColorDescription, Mp4Edit, Mp4H264Packet, Mp4Inspection,
-    Mp4PacketObservation, Mp4PacketReader, Mp4PresentationTime, Mp4TrackInspection, Mp4TrackKind,
-    inspect_mp4,
+    Mp4AvcConfiguration, Mp4ColorDescription, Mp4Edit, Mp4H264Packet, Mp4HevcConfiguration,
+    Mp4HevcPacket, Mp4Inspection, Mp4PacketObservation, Mp4PacketReader, Mp4PresentationTime,
+    Mp4TrackInspection, Mp4TrackKind, inspect_mp4,
 };
 
 const HEADER_BYTES: u64 = 16 * 1024 * 1024;
@@ -153,6 +153,8 @@ struct Track {
     timing_count: Option<u64>,
     composition_count: Option<u64>,
     sync: Option<Table>,
+    /// sdtp entry count (one byte per sample), checked against stsz.
+    dependencies: Option<u64>,
     roll_description: bool,
     roll_samples: Option<u32>,
     header: Option<TrackHeader>,
@@ -163,6 +165,9 @@ struct Track {
     timing_duration: u64,
     composition: Option<(Table, u8)>,
     avc: Option<Mp4AvcConfiguration>,
+    hevc: Option<Mp4HevcConfiguration>,
+    mastering: Option<MasteringDisplay>,
+    content_light: Option<ContentLight>,
     dimensions: Option<[u32; 2]>,
     color: Option<Mp4ColorDescription>,
     pixel_aspect_ratio: Option<[u32; 2]>,
@@ -1064,6 +1069,18 @@ fn sample_tables(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Result<()
                     track.timing_duration = duration;
                 }
             }
+            // Sample dependency flags (one byte per sample); FFmpeg derives
+            // only disposable-packet flags from them.
+            b"sdtp" => {
+                require(
+                    track.dependencies.is_none(),
+                    "duplicate sample dependency table",
+                )?;
+                r.full(atom.body, &[0], 0)?;
+                let count = atom.body.len() - 4;
+                r.charge_rows(count)?;
+                track.dependencies = Some(count);
+            }
             b"stss" => {
                 require(track.sync.is_none(), "duplicate sync-sample table")?;
                 track.sync = Some(r.table(atom.body, 4, &[0])?.0);
@@ -1172,15 +1189,25 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
         "sample description count or size disagrees with box",
     )?;
     let (kind, fixed) = match &entry.tag {
-        b"avc1" => (Kind::Video, 78),
+        b"avc1" | b"hvc1" => (Kind::Video, 78),
         b"mp4a" => (Kind::Audio, 28),
+        // hev1 permits parameter sets that exist only in-band and may change
+        // between pictures; only hvc1's complete hvcC arrays are admitted.
+        b"hev1" => {
+            return Err(SourceDecodeError::Native {
+                code: "unsupported_codec".into(),
+                message: "hev1 HEVC sample entries with in-band parameter sets are not admitted"
+                    .into(),
+            });
+        }
         _ => {
             return Err(SourceDecodeError::Native {
                 code: "unsupported_codec".into(),
-                message: "only avc1 and mp4a MP4 sample descriptions are admitted".into(),
+                message: "only avc1, hvc1 and mp4a MP4 sample descriptions are admitted".into(),
             });
         }
     };
+    let hevc = entry.tag == *b"hvc1";
     require(entry.body.len() >= fixed, "truncated sample description")?;
     require(
         r.bytes::<6>(entry.body.start)? == [0; 6] && r.bytes::<2>(entry.body.start + 6)? == [0, 1],
@@ -1229,10 +1256,42 @@ fn sample_description(r: &mut Reader<'_>, span: Span, track: &mut Track) -> Resu
     let mut color = false;
     let mut bitrate = false;
     let mut aspect = false;
+    let mut field = false;
     while cursor < children.end {
         let atom = r.atom(&mut cursor, children.end, 7)?;
         match &atom.tag {
-            b"avcC" if kind == Kind::Video => {
+            b"hvcC" if hevc => {
+                require(!config, "duplicate video configuration")?;
+                config = true;
+                track.hevc = Some(hvcc(r, atom.body)?);
+            }
+            b"mdcv" if kind == Kind::Video => {
+                require(track.mastering.is_none(), "duplicate mastering display")?;
+                track.mastering = Some(mdcv(r, atom.body)?);
+            }
+            b"clli" if kind == Kind::Video => {
+                require(
+                    track.content_light.is_none(),
+                    "duplicate content light level",
+                )?;
+                r.fixed(atom.body, 4)?;
+                let bytes = r.bytes::<4>(atom.body.start)?;
+                track.content_light = Some(ContentLight {
+                    max_cll: u16::from_be_bytes([bytes[0], bytes[1]]),
+                    max_fall: u16::from_be_bytes([bytes[2], bytes[3]]),
+                });
+            }
+            // Progressive only; the decoder independently rejects interlace.
+            b"fiel" if kind == Kind::Video => {
+                require(!field, "duplicate field description")?;
+                field = true;
+                r.fixed(atom.body, 2)?;
+                require(
+                    r.bytes::<2>(atom.body.start)? == [1, 0],
+                    "only progressive field descriptions are admitted",
+                )?;
+            }
+            b"avcC" if kind == Kind::Video && !hevc => {
                 require(!config, "duplicate video configuration")?;
                 config = true;
                 avcc(r, atom.body)?;
@@ -1331,6 +1390,307 @@ fn avcc(r: &mut Reader<'_>, span: Span) -> Result<()> {
         nal_units(r, &mut cursor, span.end, extension[3])?;
     }
     require(cursor == span.end, "AVC configuration exceeds its box")
+}
+/// ISO/IEC 14496-15 8.3.3.1 HEVCDecoderConfigurationRecord, closed to one
+/// Main10 4:2:0 ten-bit single-layer stream: complete VPS/SPS/PPS arrays plus
+/// optional prefix/suffix SEI, at most 8 arrays and 64 units in 64 KiB.
+fn hvcc(r: &mut Reader<'_>, span: Span) -> Result<Mp4HevcConfiguration> {
+    require(
+        (23..=EXTRA_BYTES).contains(&span.len()),
+        "invalid HEVC configuration size",
+    )?;
+    let head = r.bytes::<23>(span.start)?;
+    require(
+        head[0] == 1
+            && head[13] & 0xf0 == 0xf0
+            && head[15] & 0xfc == 0xfc
+            && head[16] & 0xfc == 0xfc
+            && head[17] & 0xf8 == 0xf8
+            && head[18] & 0xf8 == 0xf8,
+        "unsupported HEVC configuration prefix",
+    )?;
+    let configuration = Mp4HevcConfiguration {
+        profile_space: head[1] >> 6,
+        tier: (head[1] >> 5) & 1,
+        profile_idc: head[1] & 31,
+        level_idc: head[12],
+        chroma_format_idc: head[16] & 3,
+        bit_depth_luma: (head[17] & 7) + 8,
+        bit_depth_chroma: (head[18] & 7) + 8,
+        nal_length_bytes: (head[21] & 3) + 1,
+        vps_count: 0,
+        sps_count: 0,
+        pps_count: 0,
+        sei_count: 0,
+        sps_coded_size: [0, 0],
+        sps_cropped_size: [0, 0],
+    };
+    if configuration.profile_space != 0
+        || configuration.profile_idc != 2
+        || configuration.chroma_format_idc != 1
+        || configuration.bit_depth_luma != 10
+        || configuration.bit_depth_chroma != 10
+        || configuration.nal_length_bytes == 3
+    {
+        return Err(SourceDecodeError::Native {
+            code: "unsupported_codec".into(),
+            message: "only HEVC Main10 4:2:0 ten-bit with 1, 2 or 4 byte NAL lengths is admitted"
+                .into(),
+        });
+    }
+    let mut configuration = configuration;
+    let arrays = head[22];
+    require(
+        arrays <= 8,
+        "HEVC configuration declares too many NAL arrays",
+    )?;
+    let mut cursor = span.start + 23;
+    let mut seen = 0_u64;
+    let mut units = 0_u32;
+    for _ in 0..arrays {
+        require(span.end - cursor >= 3, "truncated HEVC configuration array")?;
+        let header = r.bytes::<3>(cursor)?;
+        cursor += 3;
+        let kind = header[0] & 63;
+        let count = u16::from_be_bytes([header[1], header[2]]);
+        require(
+            header[0] & 64 == 0 && seen & (1 << kind) == 0,
+            "invalid or duplicate HEVC configuration array",
+        )?;
+        seen |= 1 << kind;
+        let parameter_set = (32..=34).contains(&kind);
+        require(
+            parameter_set || matches!(kind, 39 | 40),
+            "HEVC configuration carries an unqualified NAL array",
+        )?;
+        require(
+            !parameter_set || (header[0] & 128 != 0 && count > 0),
+            "HEVC parameter-set arrays must be complete and nonempty",
+        )?;
+        units += u32::from(count);
+        require(units <= 64, "HEVC configuration has too many NAL units")?;
+        for _ in 0..count {
+            require(span.end - cursor >= 2, "truncated HEVC unit length")?;
+            let size = u64::from(u16::from_be_bytes(r.bytes(cursor)?));
+            cursor += 2;
+            require(
+                size >= 2 && size <= span.end - cursor,
+                "HEVC unit exceeds configuration bounds",
+            )?;
+            let nal = r.bytes::<2>(cursor)?;
+            require(
+                (nal[0] >> 1) & 63 == kind
+                    && nal[0] & 0x81 == 0
+                    && nal[1] >> 3 == 0
+                    && nal[1] & 7 != 0,
+                "HEVC configuration unit header disagrees with its array",
+            )?;
+            if kind == 33 {
+                let sps = hevc_sps_prefix(r, cursor, size)?;
+                let geometry = hevc_sps_geometry(&sps)?;
+                let [width, height] = geometry.coded;
+                if width > r.limits.max_dimension
+                    || height > r.limits.max_dimension
+                    || u64::from(width) * u64::from(height) > r.limits.max_pixels
+                {
+                    return Err(limit(
+                        "HEVC SPS picture size exceeds configured dimension or pixel bounds",
+                    ));
+                }
+                if configuration.sps_coded_size == [0, 0] {
+                    configuration.sps_coded_size = geometry.coded;
+                    configuration.sps_cropped_size = geometry.cropped;
+                }
+            }
+            cursor += size;
+        }
+        let count = u8::try_from(count).map_err(|_| limit("HEVC unit count overflow"))?;
+        match kind {
+            32 => configuration.vps_count = count,
+            33 => configuration.sps_count = count,
+            34 => configuration.pps_count = count,
+            _ => configuration.sei_count += count,
+        }
+    }
+    require(
+        cursor == span.end,
+        "HEVC configuration length disagrees with its arrays",
+    )?;
+    require(
+        seen & (7 << 32) == 7 << 32,
+        "HEVC configuration lacks VPS, SPS or PPS",
+    )?;
+    Ok(configuration)
+}
+/// Bytes read from each SPS: enough for the largest profile_tier_level plus
+/// every Exp-Golomb field through the conformance window, with emulation
+/// prevention bytes.
+const HEVC_SPS_PREFIX: u64 = 512;
+
+fn hevc_sps_prefix(r: &mut Reader<'_>, start: u64, size: u64) -> Result<Vec<u8>> {
+    let length = size.min(HEVC_SPS_PREFIX);
+    let mut bytes = Vec::with_capacity(length as usize);
+    let mut at = start;
+    while at < start + length {
+        if start + length - at >= 64 {
+            bytes.extend_from_slice(&r.bytes::<64>(at)?);
+            at += 64;
+        } else {
+            bytes.push(r.bytes::<1>(at)?[0]);
+            at += 1;
+        }
+    }
+    Ok(bytes)
+}
+
+/// SPS picture geometry in luma samples: the coded size the decoder
+/// allocates and the conformance-window cropped size.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct HevcSpsGeometry {
+    coded: [u32; 2],
+    cropped: [u32; 2],
+}
+
+/// Big-endian RBSP bit reader over a NAL unit that removes emulation
+/// prevention bytes (00 00 03).
+struct Rbsp<'a> {
+    bytes: &'a [u8],
+    index: usize,
+    zeros: u8,
+    current: u8,
+    remaining: u8,
+}
+impl Rbsp<'_> {
+    fn bit(&mut self) -> Result<u32> {
+        if self.remaining == 0 {
+            loop {
+                let byte = *self
+                    .bytes
+                    .get(self.index)
+                    .ok_or_else(|| invalid("truncated HEVC SPS"))?;
+                self.index += 1;
+                if self.zeros >= 2 && byte == 3 {
+                    self.zeros = 0;
+                    continue;
+                }
+                self.zeros = if byte == 0 {
+                    self.zeros.saturating_add(1)
+                } else {
+                    0
+                };
+                self.current = byte;
+                self.remaining = 8;
+                break;
+            }
+        }
+        self.remaining -= 1;
+        Ok(u32::from((self.current >> self.remaining) & 1))
+    }
+    fn bits(&mut self, count: u32) -> Result<u32> {
+        let mut value = 0;
+        for _ in 0..count {
+            value = (value << 1) | self.bit()?;
+        }
+        Ok(value)
+    }
+    fn skip(&mut self, count: u32) -> Result<()> {
+        for _ in 0..count {
+            self.bit()?;
+        }
+        Ok(())
+    }
+    /// Unsigned Exp-Golomb, limited to 32-bit values.
+    fn ue(&mut self) -> Result<u32> {
+        let mut zeros = 0;
+        while self.bit()? == 0 {
+            zeros += 1;
+            require(zeros <= 31, "HEVC SPS Exp-Golomb value exceeds 32 bits")?;
+        }
+        let value = (1_u64 << zeros) - 1 + u64::from(self.bits(zeros)?);
+        u32::try_from(value).map_err(|_| invalid("HEVC SPS Exp-Golomb value exceeds 32 bits"))
+    }
+}
+
+/// ITU-T H.265 7.3.2.2.1 through the conformance window: the SPS picture size
+/// governs the decoder's allocation, independently of the sample entry.
+fn hevc_sps_geometry(nal: &[u8]) -> Result<HevcSpsGeometry> {
+    require(nal.len() > 2, "truncated HEVC SPS")?;
+    let mut rbsp = Rbsp {
+        bytes: &nal[2..],
+        index: 0,
+        zeros: 0,
+        current: 0,
+        remaining: 0,
+    };
+    rbsp.skip(4)?; // sps_video_parameter_set_id
+    let sub_layers = rbsp.bits(3)?; // sps_max_sub_layers_minus1
+    require(sub_layers <= 6, "HEVC SPS declares too many sub-layers")?;
+    rbsp.skip(1)?; // sps_temporal_id_nesting_flag
+    // profile_tier_level(1, sps_max_sub_layers_minus1)
+    rbsp.skip(88 + 8)?;
+    let mut present = [(false, false); 7];
+    for flags in present.iter_mut().take(sub_layers as usize) {
+        *flags = (rbsp.bit()? == 1, rbsp.bit()? == 1);
+    }
+    if sub_layers > 0 {
+        rbsp.skip(2 * (8 - sub_layers))?;
+    }
+    for (profile, level) in present.iter().take(sub_layers as usize) {
+        if *profile {
+            rbsp.skip(88)?;
+        }
+        if *level {
+            rbsp.skip(8)?;
+        }
+    }
+    require(rbsp.ue()? <= 15, "invalid HEVC SPS identifier")?;
+    if rbsp.ue()? != 1 {
+        return Err(SourceDecodeError::Native {
+            code: "unsupported_codec".into(),
+            message: "HEVC SPS chroma format disagrees with admitted 4:2:0".into(),
+        });
+    }
+    let coded = [rbsp.ue()?, rbsp.ue()?];
+    require(
+        coded[0] > 0 && coded[1] > 0,
+        "HEVC SPS picture size must be positive",
+    )?;
+    let mut cropped = coded;
+    if rbsp.bit()? == 1 {
+        // 4:2:0: SubWidthC = SubHeightC = 2.
+        let window = [rbsp.ue()?, rbsp.ue()?, rbsp.ue()?, rbsp.ue()?];
+        let horizontal = 2 * (u64::from(window[0]) + u64::from(window[1]));
+        let vertical = 2 * (u64::from(window[2]) + u64::from(window[3]));
+        require(
+            horizontal < u64::from(coded[0]) && vertical < u64::from(coded[1]),
+            "HEVC SPS conformance window removes the whole picture",
+        )?;
+        let remaining = |size: u32, removed: u64| {
+            u32::try_from(u64::from(size) - removed)
+                .map_err(|_| invalid("invalid HEVC SPS conformance window"))
+        };
+        cropped = [
+            remaining(coded[0], horizontal)?,
+            remaining(coded[1], vertical)?,
+        ];
+    }
+    Ok(HevcSpsGeometry { coded, cropped })
+}
+/// SMPTE ST 2086 `mdcv` body: display primaries in G, B, R order (as in the
+/// HEVC SEI), white point, then max and min luminance. Returned in R, G, B.
+/// Only the box size is grammar: semantically invalid values are ignored with
+/// a recorded note after decoding (the shared `deadpan_core` rule set).
+fn mdcv(r: &mut Reader<'_>, span: Span) -> Result<MasteringDisplay> {
+    r.fixed(span, 24)?;
+    let bytes = r.bytes::<24>(span.start)?;
+    let word = |at: usize| u16::from_be_bytes([bytes[at], bytes[at + 1]]);
+    let long = |at: usize| u32::from_be_bytes(bytes[at..at + 4].try_into().expect("four bytes"));
+    Ok(MasteringDisplay {
+        primaries: [[word(8), word(10)], [word(0), word(2)], [word(4), word(6)]],
+        white_point: [word(12), word(14)],
+        max_luminance: long(16),
+        min_luminance: long(20),
+    })
 }
 fn nal_units(r: &mut Reader<'_>, cursor: &mut u64, end: u64, count: u8) -> Result<()> {
     for _ in 0..count {
@@ -1450,6 +1810,11 @@ fn encoder_metadata(r: &mut Reader<'_>, span: Span) -> Result<()> {
             b"ilst" => {
                 require(!found_list, "duplicate encoder metadata list")?;
                 found_list = true;
+                // FFmpeg's bitexact muxer writes an empty list without an
+                // encoder name; that is equally inert.
+                if atom.body.len() == 0 {
+                    continue;
+                }
                 let mut item_cursor = atom.body.start;
                 let item = r.atom(&mut item_cursor, atom.body.end, 4)?;
                 require(
@@ -1498,6 +1863,12 @@ fn validate_track(r: &mut Reader<'_>, track: &Track, media: Span) -> Result<()> 
             .composition_count
             .is_none_or(|count| count == u64::from(sizes.count)),
         "composition runs do not cover exactly the declared samples",
+    )?;
+    require(
+        track
+            .dependencies
+            .is_none_or(|count| count == u64::from(sizes.count)),
+        "sample dependency table does not cover exactly the declared samples",
     )?;
     require(
         track.roll_description == track.roll_samples.is_some(),
@@ -1800,6 +2171,14 @@ mod tests {
             path("fixtures", "offset-bframes.mp4"),
             path("fixtures", "vfr.mp4"),
             path("fixtures", "rotated90.mp4"),
+            path("fixtures", "hevc-pq.mp4"),
+            path("fixtures", "hevc-hlg.mp4"),
+            path("fixtures", "h264-high10-pq.mp4"),
+            path("fixtures", "hevc-ten-bit-sdr.mp4"),
+            path("fixtures", "hevc-pq-bt709.mp4"),
+            path("fixtures", "hevc-pq-mastering-change.mp4"),
+            path("fixtures", "hdr-pq-av.mp4"),
+            path("fixtures", "hdr-hlg-av.mp4"),
             path("../../deadpan-media-worker/tests/fixtures", "rgb1_24.mp4"),
             path(
                 "../../deadpan-media-worker/tests/fixtures",
@@ -2270,6 +2649,368 @@ mod tests {
             "invalid_input"
         );
     }
+    fn with_reader<T>(
+        bytes: &[u8],
+        parse: impl FnOnce(&mut Reader<'_>, Span) -> Result<T>,
+    ) -> Result<T> {
+        let source = file(bytes);
+        let mut reader = Reader {
+            file: &source,
+            control: control(),
+            started: Instant::now(),
+            length: bytes.len() as u64,
+            cache: std::array::from_fn(|_| Page::default()),
+            cache_clock: 0,
+            read_bytes: 0,
+            header_bytes: 0,
+            atoms: 0,
+            rows: 0,
+            samples: 0,
+            limits: AudioDecodeLimits::default().into(),
+        };
+        parse(
+            &mut reader,
+            Span {
+                start: 0,
+                end: bytes.len() as u64,
+            },
+        )
+    }
+    fn hevc_configuration() -> Vec<u8> {
+        let bytes = std::fs::read(path("fixtures", "hevc-pq.mp4")).unwrap();
+        let at = tag(&bytes, b"hvcC");
+        let size = u32::from_be_bytes(bytes[at - 4..at].try_into().unwrap()) as usize;
+        bytes[at + 4..at - 4 + size].to_vec()
+    }
+
+    #[test]
+    fn hvcc_admits_only_bounded_complete_main10_configurations() {
+        let original = hevc_configuration();
+        let parsed = with_reader(&original, hvcc).unwrap();
+        assert_eq!(
+            (
+                parsed.profile_idc,
+                parsed.bit_depth_luma,
+                parsed.nal_length_bytes
+            ),
+            (2, 10, 4)
+        );
+        assert_eq!(
+            (
+                parsed.vps_count,
+                parsed.sps_count,
+                parsed.pps_count,
+                parsed.sei_count
+            ),
+            (1, 1, 1, 2)
+        );
+        let reject = |edit: &dyn Fn(&mut Vec<u8>), expected: &str| {
+            let mut bytes = original.clone();
+            edit(&mut bytes);
+            assert_eq!(code(with_reader(&bytes, hvcc).unwrap_err()), expected);
+        };
+        reject(&|b| b[0] = 2, "invalid_input"); // configuration version
+        reject(&|b| b[1] = 1, "unsupported_codec"); // Main, not Main10
+        reject(&|b| b[16] = 0xfe, "unsupported_codec"); // 4:2:2
+        reject(&|b| b[17] = 0xf8, "unsupported_codec"); // eight-bit luma
+        reject(&|b| b[21] = (b[21] & !3) | 2, "unsupported_codec"); // 3-byte NAL lengths
+        reject(&|b| b[13] = 0, "invalid_input"); // reserved bits
+        reject(&|b| b[22] = 9, "invalid_input"); // too many arrays
+        reject(&|b| b.truncate(b.len() - 1), "invalid_input"); // unit escapes
+        reject(&|b| b.push(0), "invalid_input"); // trailing bytes
+        reject(&|b| b.truncate(22), "invalid_input"); // truncated header
+        // VPS array marked incomplete; then relabeled as an unqualified type.
+        reject(&|b| b[23] &= 0x7f, "invalid_input");
+        reject(&|b| b[23] = 0x80 | 35, "invalid_input");
+        // Unit header type disagrees with its array, or is multilayer.
+        reject(&|b| b[28] = 0x42, "invalid_input");
+        reject(&|b| b[29] = 0x09, "invalid_input");
+        // Dropping the PPS array leaves an incomplete configuration.
+        let pps = original.windows(3).position(|w| w == [0xa2, 0, 1]).unwrap();
+        let length = usize::from(u16::from_be_bytes([original[pps + 3], original[pps + 4]]));
+        let mut without = original.clone();
+        without.drain(pps..pps + 5 + length);
+        without[22] -= 1;
+        assert_eq!(
+            code(with_reader(&without, hvcc).unwrap_err()),
+            "invalid_input"
+        );
+        // Size bound: 64 KiB.
+        let mut large = original.clone();
+        large.resize(64 * 1024 + 1, 0);
+        assert_eq!(
+            code(with_reader(&large, hvcc).unwrap_err()),
+            "invalid_input"
+        );
+    }
+
+    /// A Main10 4:2:0 SPS NAL with the given luma size and optional 4:2:0
+    /// conformance window (left, right, top, bottom), emulation-prevented.
+    fn hevc_sps(width: u32, height: u32, window: Option<[u32; 4]>, sub_layers: u32) -> Vec<u8> {
+        hevc_sps_chroma(1, width, height, window, sub_layers)
+    }
+    fn hevc_sps_chroma(
+        chroma: u32,
+        width: u32,
+        height: u32,
+        window: Option<[u32; 4]>,
+        sub_layers: u32,
+    ) -> Vec<u8> {
+        let mut bits = Vec::<bool>::new();
+        let put = |bits: &mut Vec<bool>, value: u64, count: u32| {
+            for index in (0..count).rev() {
+                bits.push(index < 64 && (value >> index) & 1 == 1);
+            }
+        };
+        let ue = |bits: &mut Vec<bool>, value: u32| {
+            let coded = u64::from(value) + 1;
+            let length = 64 - coded.leading_zeros();
+            put(bits, 0, length - 1);
+            put(bits, coded, length);
+        };
+        put(&mut bits, 0, 4);
+        put(&mut bits, u64::from(sub_layers), 3);
+        put(&mut bits, 1, 1);
+        // general: space 0, tier 0, Main10; compatibility; progressive and
+        // frame-only; 43 + 1 reserved zero bits; level 3.1.
+        put(&mut bits, 2, 8);
+        put(&mut bits, 0x2000_0000, 32);
+        put(&mut bits, 0b1001, 4);
+        put(&mut bits, 0, 44);
+        put(&mut bits, 93, 8);
+        for _ in 0..sub_layers {
+            put(&mut bits, 0b11, 2); // both sub-layer profile and level present
+        }
+        if sub_layers > 0 {
+            put(&mut bits, 0, 2 * (8 - sub_layers));
+        }
+        for _ in 0..sub_layers {
+            put(&mut bits, 0, 88);
+            put(&mut bits, 90, 8);
+        }
+        ue(&mut bits, 0);
+        ue(&mut bits, chroma);
+        ue(&mut bits, width);
+        ue(&mut bits, height);
+        put(&mut bits, u64::from(window.is_some()), 1);
+        for value in window.into_iter().flatten() {
+            ue(&mut bits, value);
+        }
+        bits.push(true); // rbsp_stop_one_bit
+        while !bits.len().is_multiple_of(8) {
+            bits.push(false);
+        }
+        let mut nal = vec![0x42, 0x01];
+        let mut zeros = 0;
+        for chunk in bits.chunks(8) {
+            let byte = chunk
+                .iter()
+                .fold(0_u8, |value, bit| (value << 1) | u8::from(*bit));
+            if zeros >= 2 && byte <= 3 {
+                nal.push(3);
+                zeros = 0;
+            }
+            zeros = if byte == 0 { zeros + 1 } else { 0 };
+            nal.push(byte);
+        }
+        nal
+    }
+
+    /// Replace the hvcC configuration's single SPS unit.
+    fn with_sps(configuration: &[u8], sps: &[u8]) -> Vec<u8> {
+        let at = configuration
+            .windows(3)
+            .position(|w| w == [0xa1, 0, 1])
+            .unwrap();
+        let length = usize::from(u16::from_be_bytes([
+            configuration[at + 3],
+            configuration[at + 4],
+        ]));
+        let mut out = configuration[..at + 3].to_vec();
+        out.extend(u16::try_from(sps.len()).unwrap().to_be_bytes());
+        out.extend(sps);
+        out.extend(&configuration[at + 5 + length..]);
+        out
+    }
+
+    #[test]
+    fn hevc_sps_picture_size_is_checked_before_decoder_allocation() {
+        let original = hevc_configuration();
+        let parsed = with_reader(&original, hvcc).unwrap();
+        // The encoder codes 64x40 and crops 4 rows: the decoder allocates 64x40.
+        assert_eq!(
+            (parsed.sps_coded_size, parsed.sps_cropped_size),
+            ([64, 40], [64, 36])
+        );
+        for (width, height, window, layers, coded, cropped) in [
+            (64, 40, Some([0, 0, 0, 2]), 0, [64, 40], [64, 36]),
+            (
+                1920,
+                1088,
+                Some([0, 0, 0, 4]),
+                2,
+                [1920, 1088],
+                [1920, 1080],
+            ),
+            (8192, 8192, None, 6, [8192, 8192], [8192, 8192]),
+            // 2^16 has many zero bits, exercising emulation prevention.
+            (
+                4096,
+                2048,
+                Some([1, 1, 0, 0]),
+                0,
+                [4096, 2048],
+                [4092, 2048],
+            ),
+        ] {
+            let sps = hevc_sps(width, height, window, layers);
+            assert_eq!(
+                hevc_sps_geometry(&sps).unwrap(),
+                HevcSpsGeometry { coded, cropped }
+            );
+            let parsed = with_reader(&with_sps(&original, &sps), hvcc).unwrap();
+            assert_eq!(
+                (parsed.sps_coded_size, parsed.sps_cropped_size),
+                (coded, cropped)
+            );
+        }
+        assert!(
+            hevc_sps(4096, 2048, None, 0)
+                .windows(3)
+                .any(|w| w == [0, 0, 3])
+        );
+        // Oversized SPS pictures fail as resource limits before FFmpeg sees
+        // them (default preflight limits: 8192 per side, 8192^2 pixels).
+        for (width, height) in [(8200, 64), (64, 8200), (8192, 8200)] {
+            let bytes = with_sps(&original, &hevc_sps(width, height, None, 0));
+            assert_eq!(
+                code(with_reader(&bytes, hvcc).unwrap_err()),
+                "resource_limit"
+            );
+        }
+        for (sps, expected) in [
+            (hevc_sps(0, 64, None, 0), "invalid_input"),
+            (hevc_sps(64, 40, Some([16, 16, 0, 0]), 0), "invalid_input"),
+            (hevc_sps(64, 40, None, 7), "invalid_input"),
+            (hevc_sps(64, 40, None, 0)[..10].to_vec(), "invalid_input"),
+        ] {
+            assert_eq!(
+                code(with_reader(&with_sps(&original, &sps), hvcc).unwrap_err()),
+                expected
+            );
+        }
+        let wrong_chroma = hevc_sps_chroma(2, 64, 40, None, 0);
+        assert_eq!(
+            code(with_reader(&with_sps(&original, &wrong_chroma), hvcc).unwrap_err()),
+            "unsupported_codec"
+        );
+    }
+
+    #[test]
+    fn hevc_sps_size_governs_container_preflight_independently_of_the_sample_entry() {
+        let original = std::fs::read(path("fixtures", "hevc-pq.mp4")).unwrap();
+        // The sample entry says 64x36 (2304 pixels); the SPS allocates 64x40.
+        let tight = InputLimits {
+            max_pixels: 64 * 36,
+            ..video_limits()
+        };
+        assert_eq!(
+            code(video_admission(&file(&original), tight).unwrap_err()),
+            "resource_limit"
+        );
+        video_admission(
+            &file(&original),
+            InputLimits {
+                max_pixels: 64 * 40,
+                ..video_limits()
+            },
+        )
+        .unwrap();
+        // A same-length SPS declaring 8320x64 behind a 64x36 sample entry.
+        let configuration = hevc_configuration();
+        let at = configuration
+            .windows(3)
+            .position(|w| w == [0xa1, 0, 1])
+            .unwrap();
+        let length = usize::from(u16::from_be_bytes([
+            configuration[at + 3],
+            configuration[at + 4],
+        ]));
+        let mut sps = hevc_sps(8320, 64, None, 0);
+        assert!(sps.len() <= length);
+        sps.resize(length, 0x80);
+        let unit = at + 5 + tag(&original, b"hvcC") + 4;
+        let mut forged = original.clone();
+        forged[unit..unit + length].copy_from_slice(&sps);
+        assert_eq!(
+            code(video_admission(&file(&forged), video_limits()).unwrap_err()),
+            "resource_limit"
+        );
+    }
+
+    #[test]
+    fn mdcv_converts_stored_green_blue_red_order_and_leaves_values_to_the_shared_rule() {
+        let mut body = Vec::new();
+        for value in [
+            13_250_u16, 34_500, 7_500, 3_000, 34_000, 16_000, 15_635, 16_450,
+        ] {
+            body.extend(value.to_be_bytes());
+        }
+        body.extend(10_000_000_u32.to_be_bytes());
+        body.extend(1_u32.to_be_bytes());
+        let display = with_reader(&body, mdcv).unwrap();
+        assert_eq!(
+            display.primaries,
+            [[34_000, 16_000], [13_250, 34_500], [7_500, 3_000]]
+        );
+        assert_eq!(display.white_point, [15_635, 16_450]);
+        assert_eq!(
+            (display.max_luminance, display.min_luminance),
+            (10_000_000, 1)
+        );
+        assert!(display.is_valid());
+        // Out-of-range values are not container grammar: they parse, fail the
+        // shared rule and are later reported as ignored, not refused.
+        let mut bad = body.clone();
+        bad[20..24].copy_from_slice(&10_000_000_u32.to_be_bytes());
+        let display = with_reader(&bad, mdcv).unwrap();
+        assert_eq!(display.min_luminance, display.max_luminance);
+        assert!(!display.is_valid());
+        assert_eq!(
+            code(with_reader(&body[..23], mdcv).unwrap_err()),
+            "invalid_input"
+        );
+    }
+
+    #[test]
+    fn hevc_sample_entries_reject_hev1_and_unqualified_children() {
+        let original = std::fs::read(path("fixtures", "hevc-pq.mp4")).unwrap();
+        video_admission(&file(&original), video_limits()).unwrap();
+        for (from, to, expected) in [
+            (b"hvc1", b"hev1", "unsupported_codec"),
+            (b"hvcC", b"avcC", "invalid_input"),
+            (b"fiel", b"fie2", "invalid_input"),
+            (b"mdcv", b"dvcC", "invalid_input"),
+        ] {
+            let mut changed = original.clone();
+            let at = tag(&changed, from);
+            changed[at..at + 4].copy_from_slice(to);
+            assert_eq!(
+                code(video_admission(&file(&changed), video_limits()).unwrap_err()),
+                expected,
+                "{}",
+                String::from_utf8_lossy(to)
+            );
+        }
+        let mut interlaced = original.clone();
+        let at = tag(&interlaced, b"fiel");
+        interlaced[at + 4] = 2;
+        assert_eq!(
+            code(video_admission(&file(&interlaced), video_limits()).unwrap_err()),
+            "invalid_input"
+        );
+    }
+
     #[test]
     fn cached_constant_size_work_still_observes_cancellation_and_limits_charge_reads() {
         let bytes = small_mp4(4, false, true);

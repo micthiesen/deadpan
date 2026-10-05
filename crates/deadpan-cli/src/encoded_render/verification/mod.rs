@@ -1,4 +1,4 @@
-//! Independent full-file SDR inspection in a separate supervised process.
+//! Independent full-file SDR and HDR inspection in a separate supervised process.
 //!
 //! The verifier owns no project writer, encoder, destination or publication
 //! authority. Its report binds actual decoded observations to private bytes.
@@ -101,6 +101,98 @@ pub struct VerificationReport {
     pub manual_physical_samples: u64,
     pub ordinary_first_sample: i64,
     pub ordinary_physical_samples: u64,
+    /// PQ output only: the declared `clli` and the content light recomputed
+    /// from every decoded picture. Absent for SDR and HLG, whose serialized
+    /// reports are therefore unchanged.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content_light: Option<ContentLightEvidence>,
+}
+
+/// Largest admitted shortfall of a declared MaxCLL below the decoded
+/// chroma-site 99th-percentile bound, in limited-range 10-bit PQ code values
+/// (876 per unit signal). Lossy coding at dense saturated edges raised that
+/// bound up to 20.5 codes above the true MaxCLL in the 2026-10-05
+/// measurement; see docs/FINISHED_FILE_VERIFICATION.md.
+pub const MAX_CLL_PQ_CODE_TOLERANCE: f64 = 32.0;
+/// Largest admitted shortfall of a declared MaxFALL below the decoded
+/// chroma-site frame-mean bound, in the same PQ code units. The measured
+/// bound never exceeded the true MaxFALL.
+pub const MAX_FALL_PQ_CODE_TOLERANCE: f64 = 8.0;
+
+/// Content light sanity evidence for one PQ file; not CTA-861.3
+/// verification. Declared values are the `clli` box in whole cd/m². Decoded
+/// values are chroma-site lower bounds on the true MaxCLL (largest per-frame
+/// 99th percentile of site light) and MaxFALL (largest per-frame
+/// edge-weighted site mean) recomputed from every decoded picture, in
+/// 1/1000 cd/m² rounded half up. A declaration below them (beyond the coding
+/// tolerance) contradicts the emitted pictures. A 4:2:0 file cannot prove an
+/// overstated declaration, so no upper bound is claimed. Only the declared
+/// pair must satisfy MaxFALL <= MaxCLL: the decoded MaxFALL bound exceeds the
+/// decoded MaxCLL percentile when sparse highlights carry most of the light.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ContentLightEvidence {
+    pub declared_max_cll: u16,
+    pub declared_max_fall: u16,
+    pub decoded_bound_max_cll_millinits: u32,
+    pub decoded_bound_max_fall_millinits: u32,
+}
+
+impl ContentLightEvidence {
+    pub(crate) fn new(
+        declared: deadpan_source::ContentLight,
+        decoded: inspect::DecodedLight,
+    ) -> Result<Self, String> {
+        let millinits = |nits: f64| {
+            if !(0.0..=10_000.0).contains(&nits) {
+                return Err("decoded content light is outside the PQ range".to_owned());
+            }
+            // Bounded nonnegative value at most 10^7 after the check above.
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            Ok((nits * 1_000.0 + 0.5).floor() as u32)
+        };
+        let evidence = Self {
+            declared_max_cll: declared.max_cll,
+            declared_max_fall: declared.max_fall,
+            decoded_bound_max_cll_millinits: millinits(decoded.max_cll)?,
+            decoded_bound_max_fall_millinits: millinits(decoded.max_fall)?,
+        };
+        evidence.validate()?;
+        Ok(evidence)
+    }
+
+    /// Signed PQ code values by which `decoded_nits` exceeds `declared_nits`.
+    pub fn pq_code_shortfall(declared_nits: f64, decoded_nits: f64) -> f64 {
+        (deadpan_render::pq_inverse_eotf(decoded_nits)
+            - deadpan_render::pq_inverse_eotf(declared_nits))
+            * 876.0
+    }
+
+    pub fn validate(&self) -> Result<(), String> {
+        let decoded = [
+            self.decoded_bound_max_cll_millinits,
+            self.decoded_bound_max_fall_millinits,
+        ]
+        .map(|value| f64::from(value) / 1_000.0);
+        if self.declared_max_cll > 10_000
+            || self.declared_max_fall > self.declared_max_cll
+            || self.decoded_bound_max_cll_millinits > 10_000_000
+            || self.decoded_bound_max_fall_millinits > 10_000_000
+        {
+            return Err("ExportVerificationFailed: content light exceeds CTA-861.3 bounds".into());
+        }
+        if Self::pq_code_shortfall(f64::from(self.declared_max_cll), decoded[0])
+            > MAX_CLL_PQ_CODE_TOLERANCE
+            || Self::pq_code_shortfall(f64::from(self.declared_max_fall), decoded[1])
+                > MAX_FALL_PQ_CODE_TOLERANCE
+        {
+            return Err(format!(
+                "ExportVerificationFailed: declared clli {}/{} is below the decoded pictures' {:.3}/{:.3} cd/m²",
+                self.declared_max_cll, self.declared_max_fall, decoded[0], decoded[1]
+            ));
+        }
+        Ok(())
+    }
 }
 
 impl VerificationReport {
@@ -151,11 +243,17 @@ impl VerificationReport {
         {
             return Err("verification report exceeds the captured B-frame policy".into());
         }
+        let pq = native.video_format() == deadpan_encode::VideoFormat::HevcMain10Rec2100Pq;
+        match &self.content_light {
+            Some(light) if pq => light.validate()?,
+            None if !pq => {}
+            _ => return Err("content light evidence is required for PQ output only".into()),
+        }
         Ok(())
     }
 }
 
-/// Private bytes that passed this version's complete SDR structural/decode
+/// Private bytes that passed this version's complete SDR or HDR structural/decode
 /// checks. Runtime/content qualification and destination publication stay with
 /// the application. No path or writable descriptor is exposed.
 pub struct VerifiedCandidate {

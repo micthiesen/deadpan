@@ -46,6 +46,7 @@ fn request() -> AdmissionRequest {
         cancellation_token: CancellationToken::new("cancel").unwrap(),
         raster: [320, 180],
         frame_rate: [30, 1],
+        color_policy: deadpan_core::ColorPolicy::SdrRec709,
     }
 }
 fn rows(root: &Path) -> Vec<Value> {

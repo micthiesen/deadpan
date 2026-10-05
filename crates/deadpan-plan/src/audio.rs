@@ -789,10 +789,7 @@ impl RenderPlan {
                     pitch,
                     purpose,
                 } => {
-                    if stop_at_preserve
-                        && *pitch == PitchPolicy::Preserve
-                        && *scale != ExactRatio::ONE
-                    {
+                    if stop_at_preserve && pitch.processes(*scale == ExactRatio::ONE) {
                         budget.spend(repeats.len() + 1)?;
                         break (
                             AudioSignalContent::Stage(AudioStage::for_node(

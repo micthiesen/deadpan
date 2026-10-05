@@ -11,10 +11,12 @@ use super::*;
 use crate::ui_harness::{Options, gpu::Offscreen, report::*};
 
 mod ai_pause;
+mod audio_treatments;
 mod captions;
 mod cutaway;
 mod delete_range;
 mod edit_latency;
+mod faces;
 mod gags;
 mod gain;
 mod generated_picture;
@@ -30,6 +32,7 @@ mod nested_pause;
 mod original_layout;
 mod original_playback;
 mod proxy;
+mod recipe_library;
 mod recipes;
 mod recovery;
 mod registers;
@@ -47,6 +50,7 @@ mod slip;
 mod sound_placement;
 mod sound_playback;
 mod splice;
+mod split_edits;
 mod targets;
 mod telemetry;
 mod transcript;
@@ -304,6 +308,8 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                             },
                             if name == "targets" {
                                 targets::backend()
+                            } else if name == "faces" {
+                                faces::backend()
                             } else {
                                 crate::project::targets::Backend::Environment
                             },

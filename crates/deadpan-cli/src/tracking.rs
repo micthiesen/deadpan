@@ -162,7 +162,7 @@ pub struct TrackingResult {
     pub analysed: u32,
 }
 
-fn check(cancelled: &AtomicBool, deadline: Instant) -> Result<(), TrackingError> {
+pub(crate) fn check(cancelled: &AtomicBool, deadline: Instant) -> Result<(), TrackingError> {
     if cancelled.load(Ordering::Acquire) {
         return Err(TrackingError::Cancelled);
     }
@@ -290,10 +290,47 @@ pub fn prepare_tracking(
         coded_aspect
     };
 
-    // Copy the verified Original into the attempt workspace, hashing as it
-    // goes. The store's snapshot exposes no descriptor to clone, so this is
-    // one full copy per attempt.
-    let identity = video.index().content();
+    let (workspace, source) = copy_verified_original(
+        store,
+        &receipt,
+        video.index().content(),
+        "deadpan-track-",
+        cancelled,
+        deadline,
+    )?;
+    std::fs::create_dir(workspace.path().join(OUTPUT_SCOPE))?;
+    Ok(PreparedTrack {
+        workspace,
+        source,
+        stream,
+        pictures,
+        end_pts,
+        stop,
+        region: request.region,
+        stride: request.stride,
+        asset,
+        time_base,
+        display_aspect,
+        head: document,
+        content,
+        shots: stored.map(|(key, _)| key),
+    })
+}
+
+/// Copy the receipt's verified Original into `input/source` of a fresh
+/// attempt workspace, hashing as it goes, and admit the copy only when its
+/// length and SHA-256 equal the qualified index's content identity. The
+/// store's snapshot exposes no descriptor to clone, so this is one full copy
+/// per attempt.
+pub(crate) fn copy_verified_original(
+    store: &deadpan_store::ProjectStore,
+    receipt: &deadpan_store::source_registration::SourceQualificationReceipt,
+    identity: deadpan_media::source_index::SourceContentIdentity,
+    prefix: &str,
+    cancelled: &AtomicBool,
+    deadline: Instant,
+) -> Result<(tempfile::TempDir, WorkspaceArtifact), TrackingError> {
+    let unavailable = |error: &dyn std::fmt::Display| TrackingError::Unavailable(error.to_string());
     let remaining = deadline
         .saturating_duration_since(Instant::now())
         .min(Duration::from_secs(3_600));
@@ -311,11 +348,8 @@ pub fn prepare_tracking(
             "retained Original differs from its receipt".into(),
         ));
     }
-    let workspace = tempfile::Builder::new()
-        .prefix("deadpan-track-")
-        .tempdir()?;
+    let workspace = tempfile::Builder::new().prefix(prefix).tempdir()?;
     std::fs::create_dir(workspace.path().join("input"))?;
-    std::fs::create_dir(workspace.path().join(OUTPUT_SCOPE))?;
     let mut file = std::fs::File::create_new(workspace.path().join(SOURCE))?;
     let mut hasher = sha2::Sha256::new();
     let mut buffer = vec![0_u8; 1 << 20];
@@ -349,22 +383,7 @@ pub fn prepare_tracking(
         copied,
     )
     .map_err(protocol_error)?;
-    Ok(PreparedTrack {
-        workspace,
-        source,
-        stream,
-        pictures,
-        end_pts,
-        stop,
-        region: request.region,
-        stride: request.stride,
-        asset,
-        time_base,
-        display_aspect,
-        head: document,
-        content,
-        shots: stored.map(|(key, _)| key),
-    })
+    Ok((workspace, source))
 }
 
 /// Observations of one worker run and what the worker reported about it.
@@ -699,7 +718,7 @@ fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|byte| format!("{byte:02x}")).collect()
 }
 
-fn millis(duration: Duration) -> u64 {
+pub(crate) fn millis(duration: Duration) -> u64 {
     u64::try_from(duration.as_millis()).unwrap_or(u64::MAX)
 }
 
@@ -890,7 +909,7 @@ fn head_document(project: &Path) -> Result<deadpan_core::ProjectDocument, crate:
 }
 
 /// SIGINT/SIGTERM request cancellation; a second signal exits at once.
-fn cancellation() -> Result<Arc<AtomicBool>, crate::CliError> {
+pub(crate) fn cancellation() -> Result<Arc<AtomicBool>, crate::CliError> {
     let cancelled = Arc::new(AtomicBool::new(false));
     for signal in [signal_hook::consts::SIGINT, signal_hook::consts::SIGTERM] {
         signal_hook::flag::register_conditional_shutdown(signal, 130, Arc::clone(&cancelled))?;
@@ -900,7 +919,7 @@ fn cancellation() -> Result<Arc<AtomicBool>, crate::CliError> {
 }
 
 /// Options as `--name value` pairs plus bare flags, each at most once.
-fn options<'a>(
+pub(crate) fn options<'a>(
     arguments: &[&'a str],
     flags: &[&str],
     usage: &dyn Fn() -> crate::CliError,

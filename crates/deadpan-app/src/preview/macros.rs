@@ -321,9 +321,12 @@ impl DeadpanApp {
                 | Action::EscalatingRepeat
                 | Action::Gag(_)
                 | Action::Reverse { .. }
+                | Action::SplitEdit { .. }
+                | Action::RoleRepeat { .. }
                 | Action::Tail { .. }
                 | Action::Lift
                 | Action::Bleep { .. }
+                | Action::GainStep(_)
                 | Action::TailPicker
                 | Action::Edit(BeatEdit::Cutaway(
                     crate::navigation::cutaway::CutawayInput::Place { .. }
@@ -348,7 +351,7 @@ impl DeadpanApp {
                 | Action::Invalid(_)
                 | Action::OfferInsert
         ) {
-            self.error = Some("This action cannot be recorded yet. Macros support pauses, reverses, tails, whole-beat cutaways and captions, punch-ins and creeps, frame, beat, word, sentence, pause and shot motions, group boundaries, word, sentence, pause and shot objects, Visual selections, cuts, copies, Repeat wraps, count, gap and escalation changes, gags, grouping, ungrouping, register pastes and named calls. Save or cancel recording first.".into());
+            self.error = Some("This action cannot be recorded yet. Macros support pauses, reverses, J- and L-cuts, tails, gain and saturation changes, whole-beat cutaways and captions, punch-ins and creeps, frame, beat, word, sentence, pause and shot motions, group boundaries, word, sentence, pause and shot objects, Visual selections, cuts, copies, Repeat wraps, count, gap and escalation changes, gags, grouping, ungrouping, register pastes and named calls. Save or cancel recording first.".into());
             return false;
         }
         if matches!(
@@ -374,9 +377,12 @@ impl DeadpanApp {
                 | Action::EscalatingRepeat
                 | Action::Gag(_)
                 | Action::Reverse { .. }
+                | Action::SplitEdit { .. }
+                | Action::RoleRepeat { .. }
                 | Action::Tail { .. }
                 | Action::Lift
                 | Action::Bleep { .. }
+                | Action::GainStep(_)
                 | Action::Edit(BeatEdit::Cutaway(
                     crate::navigation::cutaway::CutawayInput::Place { .. }
                 ))
@@ -431,6 +437,24 @@ impl DeadpanApp {
             // Recorded as the framing it commits, like ,z and ,c.
             Ok(navigation::command::Entry::Zoom(_)) => self
                 .macro_action_allowed(Action::Framing(crate::navigation::FramingAction::PunchIn)),
+            // Recorded as the whole-group copy and register paste they are.
+            Ok(
+                navigation::command::Entry::RecipeSave(_) | navigation::command::Entry::Recipe(_),
+            ) => self.macro_action_allowed(Action::CopyMoment),
+            Ok(
+                navigation::command::Entry::RecipeInspect(_)
+                | navigation::command::Entry::GagInspect(_),
+            ) => true,
+            Ok(navigation::command::Entry::DeleteRole(_)) => {
+                self.macro_action_allowed(Action::DeleteSelection)
+            }
+            Ok(navigation::command::Entry::SelectRole(_)) => true,
+            // Recorded as one semantic gain or saturation change.
+            Ok(
+                navigation::command::Entry::Gain(Some(_))
+                | navigation::command::Entry::GainStep(_)
+                | navigation::command::Entry::Saturate(_),
+            ) => self.macro_action_allowed(Action::GainStep(0)),
             // Recorded as one semantic caption, checked like a whole-beat cutaway.
             Ok(navigation::command::Entry::Caption(_)) => self.macro_action_allowed(Action::Edit(
                 BeatEdit::Cutaway(crate::navigation::cutaway::CutawayInput::Place {

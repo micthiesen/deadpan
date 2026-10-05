@@ -178,6 +178,13 @@ fn rgba(frame: &Rgba8Frame) -> Result<RgbaImage, String> {
     if metadata.rotation != Rotation::None {
         return Err("Rotated Originals cannot condition an AI pause yet.".into());
     }
+    // The bridge model consumes SDR sRGB-like pictures; HDR conditioning
+    // needs a qualified tone-mapped readback that does not exist yet.
+    if frame.sample_depth() != deadpan_render::SampleDepth::Eight
+        || metadata.color.transfer.is_hdr()
+    {
+        return Err("HDR Originals cannot condition an AI pause yet.".into());
+    }
     let (width, height) = (metadata.width, metadata.height);
     let stride = metadata.row_stride_bytes as usize;
     let mut pixels = Vec::with_capacity(width as usize * height as usize * 4);

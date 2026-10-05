@@ -1,10 +1,13 @@
-//! Shared picture baseline: owned, bounded CPU RGBA8 upload, linear Rec.2020
-//! interpretation/compositing, source geometry, and an explicit sRGB display
-//! transform, plus bounded working readback and Rec.709 limited-range planar
-//! YUV420 encoder pixels. Preview and offline callers share renderer targets.
+//! Shared picture baseline: owned, bounded CPU RGBA8/RGBA64 upload, linear
+//! Rec.2020 interpretation/compositing (working 1.0 = 203 cd/m^2), source
+//! geometry, an SDR/HDR color branch with reference-white-preserving tone
+//! mapping, and an explicit sRGB display transform, plus bounded working
+//! readback, Rec.709 limited-range 8-bit and Rec.2100 PQ/HLG limited-range
+//! 10-bit planar YUV420 encoder pixels.
+//! Preview and offline callers share renderer targets.
 //!
-//! This does not implement a timeline, HDR input, tone mapping, an encoder,
-//! ICC display management, effects beyond canvas framing, or native interop.
+//! This does not implement a timeline, an encoder, ICC/HDR display management,
+//! effects beyond canvas framing, or native interop.
 
 mod caption;
 mod color;
@@ -13,22 +16,35 @@ mod framing;
 mod geometry;
 mod gpu;
 mod surface;
+mod tone;
 
 pub use caption::{CAPTION_STYLE_ID, CaptionLine, CaptionOverlay};
-pub use color::{Primaries, SourceColor, Transfer, source_to_working, working_to_display};
+pub use color::{
+    HDR_REFERENCE_WHITE_NITS, HLG_NOMINAL_PEAK_NITS, HLG_SYSTEM_GAMMA, PQ_PEAK_NITS, Primaries,
+    SourceColor, Transfer, hlg_inverse_oetf, hlg_inverse_ootf, hlg_oetf, hlg_ootf, pq_code_to_nits,
+    pq_eotf, pq_inverse_eotf, source_to_working, working_to_display,
+};
 pub use export::{
-    MAX_WORKING_FRAME_BYTES, Rec709Yuv420Frame, WorkingRgba16Frame, Yuv420Policy,
-    validate_working_readback_dimensions,
+    FrameLight, MAX_WORKING_FRAME_BYTES, Rec709Yuv420Frame, Rec2100Yuv420P10Frame,
+    WorkingRgba16Frame, Yuv420P10Policy, Yuv420Policy, rec2100_p10_to_working,
+    validate_working_readback_dimensions, working_to_rec2100_nonlinear,
 };
 pub use framing::{
     FramingLayer, MAX_CAPTURED_CANVASES, MAX_CAPTURED_POSES, MAX_CAPTURED_SCOPES,
     MAX_FRAMING_LAYERS, MAX_FRAMING_SCOPES,
 };
-pub use geometry::{FitMode, PictureGeometry, reference_pixel, reference_pixel_with_geometry};
+pub use geometry::{
+    FitMode, PictureGeometry, reference_pixel, reference_pixel_with_geometry,
+    reference_pixel_with_pipeline, reference_working_with_geometry,
+};
 pub use gpu::{PictureRenderer, RenderTarget, WorkingReadback};
 pub use surface::{
-    FrameMetadata, MAX_DIMENSION, MAX_FRAME_BYTES, MAX_PIXELS, Rgba8Frame, Rotation,
-    SampleAspectRatio,
+    FrameMetadata, MAX_DIMENSION, MAX_FRAME_BYTES, MAX_FRAME16_BYTES, MAX_PIXELS, Rgba8Frame,
+    Rotation, SampleAspectRatio, SampleDepth,
+};
+pub use tone::{
+    ColorPipeline, HdrTransfer, OutputColor, ToneMap, source_to_working_with, tone_map_highlights,
+    working_to_display_with,
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -51,6 +67,12 @@ pub enum RenderError {
         "RGBA8 rows require a four-byte-aligned stride, exact buffer length, and at most {MAX_FRAME_BYTES} bytes"
     )]
     Layout,
+    #[error(
+        "RGBA64 rows require an eight-byte-aligned stride, exact buffer length, and at most {MAX_FRAME16_BYTES} bytes"
+    )]
+    Layout16,
+    #[error("tone-map source peak must be 203 to 10000 cd/m^2")]
+    ToneMapPeak,
     #[error(
         "working RGBA16 rows require an eight-byte-aligned stride, exact length, and at most {MAX_WORKING_FRAME_BYTES} bytes"
     )]

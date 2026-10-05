@@ -42,6 +42,7 @@ fn contract() -> EncodedRenderContract {
             project_audio_start: AudioSample(1_602),
             project_audio_end: AudioSample(3_203),
             relative_aspect_error: ExactRatio::new(23, 9_570).unwrap(),
+            mastering_display: None,
         },
         choice: EncoderChoice {
             mode: EncoderMode::Hardware,
@@ -191,7 +192,16 @@ fn native_reconstruction_rejects_clock_geometry_and_encoding_bounds() {
         |value| value.picture.time_base.numerator = 2,
         |value| value.picture.raster[0] += 1,
         |value| value.picture.relative_aspect_error = ExactRatio::ZERO,
-        |value| value.picture.color_policy = ColorPolicy::HdrRec2020Pq,
+        // Mastering metadata belongs only to PQ output.
+        |value| {
+            value.picture.color_policy = ColorPolicy::HdrRec2020Hlg;
+            value.picture.mastering_display = Some(deadpan_core::MasteringDisplay {
+                primaries: [[35_400, 14_600], [8_500, 39_850], [6_550, 2_300]],
+                white_point: [15_635, 16_450],
+                max_luminance: 10_000_000,
+                min_luminance: 50,
+            });
+        },
         |value| value.picture.canvas = [8193, 2],
         |value| value.picture.range = FrameRange::new(ProjectFrame(-1), ProjectFrame(0)).unwrap(),
     ];
@@ -199,6 +209,22 @@ fn native_reconstruction_rejects_clock_geometry_and_encoding_bounds() {
         let mut invalid = contract();
         change(&mut invalid);
         assert!(invalid.native_contract().is_err(), "accepted {invalid:?}");
+    }
+    for (policy, format) in [
+        (
+            ColorPolicy::HdrRec2020Pq,
+            deadpan_encode::VideoFormat::HevcMain10Rec2100Pq,
+        ),
+        (
+            ColorPolicy::HdrRec2020Hlg,
+            deadpan_encode::VideoFormat::HevcMain10Rec2100Hlg,
+        ),
+    ] {
+        let mut hdr = contract();
+        hdr.picture.color_policy = policy;
+        let native = hdr.native_contract().unwrap();
+        assert_eq!(native.video_format(), format);
+        assert_eq!(native.picture_bytes(), hdr.picture.frame_bytes().unwrap());
     }
     let mut too_fast = contract();
     too_fast.picture.frame_rate = FrameRate::new(120, 1).unwrap();

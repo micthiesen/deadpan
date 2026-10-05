@@ -658,6 +658,9 @@ impl SourceSession {
     /// Reuses the decoder for adjacent forward steps. Random access seeks to the
     /// indexed keyframe, decodes metadata through preroll and copies only the
     /// requested picture. Returned bytes outlive further seeks and this session.
+    /// The picture-path representation: packed RGBA8 (`sample_bits == 8`) for
+    /// SDR sources, unchanged, and little-endian RGBA64 (`sample_bits == 16`)
+    /// of the nonlinear R'G'B' for sources qualified as PQ or HLG.
     pub fn frame(
         &mut self,
         id: SourceFrameId,
@@ -711,7 +714,7 @@ impl SourceSession {
             .ok_or(SourceSessionError::MissingFrame(id))?
             .clone();
         if self.last_frame == Some(id) {
-            return Ok(self.decoder.copy_current_rgba(control(deadline)?)?);
+            return self.copy_picture(deadline);
         }
         let adjacent = self
             .last_frame
@@ -745,12 +748,23 @@ impl SourceSession {
             if !same_frame(&decoded, &frame) {
                 return Err(SourceSessionError::IndexMismatch);
             }
-            let pixels = self.decoder.copy_current_rgba(control(deadline)?)?;
+            let pixels = self.copy_picture(deadline)?;
             deadline.check()?;
             self.last_frame = Some(id);
             return Ok(pixels);
         }
         Err(SourceSessionError::SeekLimit)
+    }
+
+    fn copy_picture(
+        &mut self,
+        deadline: &Deadline<'_>,
+    ) -> Result<DecodedRgbaFrame, SourceSessionError> {
+        Ok(if self.decoder.info().color.transfer.is_hdr() {
+            self.decoder.copy_current_rgba16(control(deadline)?)?
+        } else {
+            self.decoder.copy_current_rgba(control(deadline)?)?
+        })
     }
 }
 

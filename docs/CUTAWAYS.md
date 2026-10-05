@@ -15,6 +15,7 @@ content's clock. `BeatNode.cutaways` holds up to 16 sorted, disjoint
 | `range` | Half-open project frames in the host beat's own output clock. |
 | `asset`, `selection` | The Original video and the exact source interval shown at its natural rate. |
 | `fit` | After a short selection runs out: `hold` (default) the final picture, `loop` it, or `gap` to show the host again. |
+| `removed` | A video-only delete: the range shows the project background instead, and `asset`/`selection` record the removed Original pictures ([role edits](ROLE_EDITS.md#role-only-deletes)). Omitted when false. |
 
 Validation requires a registered non-still video asset, a selection inside its
 video, nonnegative nonempty ranges and the count bound. A cutaway longer than
@@ -56,7 +57,9 @@ cutaway ranges. While recording a macro, a whole-beat `:cutaway` records the
 semantic `SetCutaway { register, fit }`, which resolves the register's Original
 moment and the selected beat when replayed; `:gag are-we-done` uses the same
 instruction over its tail pause. A ranged cutaway refuses while recording.
-[Captions](CAPTIONS.md) follow the same host and lifecycle rules.
+[Captions](CAPTIONS.md) follow the same host and lifecycle rules. J- and L-cuts
+([role edits](ROLE_EDITS.md#j-and-l-cuts)) place a picture-keeping cutaway over
+the stretch their Roll moves.
 
 ## Tests
 

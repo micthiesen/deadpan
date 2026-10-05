@@ -181,6 +181,23 @@ impl Service {
                             SemanticInstruction::Lift { .. } => "Lift selection",
                             SemanticInstruction::Bleep { .. } => "Bleep selection",
                             SemanticInstruction::SetFraming { .. } => "Frame beat",
+                            SemanticInstruction::SetAudio {
+                                change: deadpan_core::AudioChange::Saturation { .. },
+                            } => "Change saturation",
+                            SemanticInstruction::SetAudio { .. } => "Change gain",
+                            SemanticInstruction::RoleRepeat {
+                                role: deadpan_core::MediaRole::Audio,
+                                ..
+                            } => "Repeat sound",
+                            SemanticInstruction::RoleRepeat { .. } => "Repeat picture",
+                            SemanticInstruction::DeleteRole {
+                                role: deadpan_core::MediaRole::Audio,
+                            } => "Delete sound",
+                            SemanticInstruction::DeleteRole { .. } => "Delete picture",
+                            SemanticInstruction::SplitEdit { kind, .. } => match kind {
+                                deadpan_core::SplitEditKind::J => "J-cut",
+                                deadpan_core::SplitEditKind::L => "L-cut",
+                            },
                             _ => "Recorded action",
                         }
                         .to_owned(),

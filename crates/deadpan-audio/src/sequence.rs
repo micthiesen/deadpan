@@ -5,7 +5,7 @@ use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use deadpan_core::{
-    AssetId, AssetRecord, AudioSample, ExactRatio, NodeId, PitchPolicy, ProjectId, RevisionId,
+    AssetId, AssetRecord, AudioSample, ExactRatio, NodeId, ProjectId, RevisionId,
     SourceAudioMapping, SourcePoint, SourceTimestamp, TimeError,
 };
 use deadpan_plan::{AudioContent, AudioQueryLimits, AudioSpan, PlanError, RenderPlan};
@@ -215,8 +215,9 @@ impl SequenceAudio {
                 source, duration, ..
             } => {
                 if let Some(stage) = span.retimes.iter().find(|stage| {
-                    stage.pitch == PitchPolicy::Preserve
-                        && stage.child_frames_per_local_frame != ExactRatio::ONE
+                    stage
+                        .pitch
+                        .processes(stage.child_frames_per_local_frame == ExactRatio::ONE)
                 }) {
                     return Err(SequenceAudioError::Unsupported {
                         node: stage.node.clone(),

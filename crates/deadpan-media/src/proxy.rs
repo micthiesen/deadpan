@@ -84,11 +84,14 @@ pub enum ProxyTransfer {
 }
 
 impl ProxyTransfer {
-    pub fn of(transfer: ColorTransfer) -> Self {
+    /// None for PQ/HLG: recipe 1 is an eight-bit SDR H.264 copy, which would
+    /// misrepresent an HDR Original, so HDR Originals never get a proxy.
+    pub fn of(transfer: ColorTransfer) -> Option<Self> {
         match transfer {
-            ColorTransfer::Bt709 => Self::Bt709,
-            ColorTransfer::Srgb => Self::Srgb,
-            ColorTransfer::Linear => Self::Linear,
+            ColorTransfer::Bt709 => Some(Self::Bt709),
+            ColorTransfer::Srgb => Some(Self::Srgb),
+            ColorTransfer::Linear => Some(Self::Linear),
+            ColorTransfer::Pq | ColorTransfer::Hlg => None,
         }
     }
     /// The FFmpeg `AVColorTransferCharacteristic` code.
@@ -264,6 +267,10 @@ pub enum ProxyIneligible {
     IrregularDurations,
     #[error("the Original's last picture has no measured duration")]
     MissingDuration,
+    #[error(
+        "the Original is HDR (PQ or HLG), which the eight-bit SDR proxy recipe cannot represent"
+    )]
+    HighDynamicRange,
 }
 
 /// Decide whether an Original needs a proxy and at which raster. `Ok(None)`
@@ -275,6 +282,9 @@ pub fn proxy_plan(
     let frames = index.frames();
     if frames.is_empty() {
         return Err(ProxyIneligible::Empty);
+    }
+    if info.color.transfer.is_hdr() {
+        return Err(ProxyIneligible::HighDynamicRange);
     }
     let pixels = u64::from(info.width) * u64::from(info.height);
     if pixels <= PROXY_RASTER_THRESHOLD {
@@ -325,16 +335,19 @@ pub fn estimated_proxy_bytes(plan: &ProxyPlan, frames: u64) -> u64 {
 
 /// The worker request for `plan`. The output bound is three quarters of a
 /// byte per proxy pixel and picture plus 16 MiB, capped at [`MAX_PROXY_BYTES`].
+/// An HDR Original is refused even with an explicit plan.
 pub fn proxy_request(
     input_byte_length: u64,
     info: &SourceStreamInfo,
     frames: u64,
     plan: &ProxyPlan,
     timeout: Duration,
-) -> ProxyRequest {
+) -> Result<ProxyRequest, ProxyIneligible> {
+    let transfer =
+        ProxyTransfer::of(info.color.transfer).ok_or(ProxyIneligible::HighDynamicRange)?;
     let per_picture = u64::from(plan.width) * u64::from(plan.height) * MAX_BYTES_PER_PIXEL_NUM
         / MAX_BYTES_PER_PIXEL_DEN;
-    ProxyRequest {
+    Ok(ProxyRequest {
         protocol: PROXY_PROTOCOL_VERSION,
         input_byte_length,
         stream_index: info.stream_index,
@@ -347,7 +360,7 @@ pub fn proxy_request(
         sar_num: info.sample_aspect_num,
         sar_den: info.sample_aspect_den,
         rotation_quarter_turns: info.rotation_quarter_turns,
-        transfer: ProxyTransfer::of(info.color.transfer),
+        transfer,
         primaries: ProxyPrimaries::of(info.color.primaries),
         quality: PROXY_QUALITY,
         frames,
@@ -359,7 +372,7 @@ pub fn proxy_request(
         timeout_ms: u64::try_from(timeout.as_millis())
             .unwrap_or(MAX_PROXY_TIMEOUT_MS)
             .clamp(1, MAX_PROXY_TIMEOUT_MS),
-    }
+    })
 }
 
 /// Uniform scale fitting the box in the picture's orientation, never

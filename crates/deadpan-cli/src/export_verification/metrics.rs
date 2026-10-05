@@ -7,44 +7,119 @@ use serde::Serialize;
 pub const IDENTICAL_PSNR_DB: f64 = 100.0;
 /// Luma thumbnail block edge in pixels for gross structural comparison.
 pub const THUMBNAIL_BLOCK: u32 = 8;
+/// Luma cell edge in pixels for the local structure comparison. Averaging a
+/// 4x4 cell removes most grain and coding noise while a stroke of a small
+/// graphic (two or more pixels wide) still moves the cell mean by a large
+/// fraction of its contrast.
+pub const LOCAL_CELL: u32 = 4;
 
-/// Tight 8-bit limited-range I420 planes with even dimensions.
+/// Tight limited-range 4:2:0 planes with even dimensions: eight-bit Rec.709
+/// I420 for SDR output or ten-bit Rec.2100 (PQ/HLG) for HDR output. Samples
+/// are stored as u16 codes at `bits` depth.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct I420 {
     pub width: u32,
     pub height: u32,
-    pub y: Vec<u8>,
-    pub cb: Vec<u8>,
-    pub cr: Vec<u8>,
+    /// Code depth: 8 (SDR) or 10 (HDR).
+    pub bits: u8,
+    pub y: Vec<u16>,
+    pub cb: Vec<u16>,
+    pub cr: Vec<u16>,
+}
+
+fn plane_lengths(width: u32, height: u32) -> Option<(usize, usize)> {
+    if width == 0 || height == 0 || !width.is_multiple_of(2) || !height.is_multiple_of(2) {
+        return None;
+    }
+    let luma = usize::try_from(u64::from(width) * u64::from(height)).ok()?;
+    Some((luma, luma / 4))
 }
 
 impl I420 {
-    /// Split one tight Y, Cb, Cr buffer. Returns None for an inexact length.
+    /// Split one tight eight-bit Y, Cb, Cr buffer. Returns None for an inexact length.
     pub fn from_tight(width: u32, height: u32, bytes: &[u8]) -> Option<Self> {
-        if width == 0 || height == 0 || !width.is_multiple_of(2) || !height.is_multiple_of(2) {
+        let (luma, chroma) = plane_lengths(width, height)?;
+        if bytes.len() != luma.checked_add(chroma.checked_mul(2)?)? {
             return None;
         }
-        let luma = usize::try_from(u64::from(width) * u64::from(height)).ok()?;
-        let chroma = luma / 4;
-        if bytes.len() != luma.checked_add(chroma.checked_mul(2)?)? {
+        let widen = |plane: &[u8]| plane.iter().map(|&value| u16::from(value)).collect();
+        Some(Self {
+            width,
+            height,
+            bits: 8,
+            y: widen(&bytes[..luma]),
+            cb: widen(&bytes[luma..luma + chroma]),
+            cr: widen(&bytes[luma + chroma..]),
+        })
+    }
+
+    /// Split one tight ten-bit Y, Cb, Cr sample buffer (yuv420p10). Returns
+    /// None for an inexact length or a sample above 1023.
+    pub fn from_tight_p10(width: u32, height: u32, samples: &[u16]) -> Option<Self> {
+        let (luma, chroma) = plane_lengths(width, height)?;
+        if samples.len() != luma.checked_add(chroma.checked_mul(2)?)?
+            || samples.iter().any(|&value| value > 1023)
+        {
             return None;
         }
         Some(Self {
             width,
             height,
-            y: bytes[..luma].to_vec(),
-            cb: bytes[luma..luma + chroma].to_vec(),
-            cr: bytes[luma + chroma..].to_vec(),
+            bits: 10,
+            y: samples[..luma].to_vec(),
+            cb: samples[luma..luma + chroma].to_vec(),
+            cr: samples[luma + chroma..].to_vec(),
         })
     }
 
-    pub fn mean_luma(&self) -> f64 {
-        mean(&self.y)
+    /// Tight little-endian ten-bit bytes, as the HDR encoder boundary emits them.
+    pub fn from_tight_p10_le(width: u32, height: u32, bytes: &[u8]) -> Option<Self> {
+        if !bytes.len().is_multiple_of(2) {
+            return None;
+        }
+        let samples: Vec<u16> = bytes
+            .chunks_exact(2)
+            .map(|pair| u16::from_le_bytes([pair[0], pair[1]]))
+            .collect();
+        Self::from_tight_p10(width, height, &samples)
     }
 
-    /// Box-averaged luma at 1/THUMBNAIL_BLOCK scale, partial edge blocks included.
+    /// Largest code at this depth, the PSNR peak (255 or 1023).
+    pub const fn peak(&self) -> u16 {
+        code_peak(self.bits)
+    }
+
+    /// Divisor that maps codes to eight-bit-equivalent codes: limited-range
+    /// ten-bit codes are exactly four times their eight-bit counterparts
+    /// (64/16, 940/235, 960/240).
+    fn eight_bit_scale(&self) -> f64 {
+        f64::from(1_u32 << (self.bits.saturating_sub(8)))
+    }
+
+    /// Mean luma in eight-bit-equivalent codes, at any depth.
+    pub fn mean_luma(&self) -> f64 {
+        mean(&self.y) / self.eight_bit_scale()
+    }
+
+    /// Box-averaged luma at 1/THUMBNAIL_BLOCK scale, partial edge blocks
+    /// included, in eight-bit-equivalent codes at any depth.
     pub fn thumbnail(&self) -> Vec<f64> {
-        let block = THUMBNAIL_BLOCK as usize;
+        let scale = self.eight_bit_scale();
+        self.block_means(THUMBNAIL_BLOCK)
+            .into_iter()
+            .map(|mean| mean / scale)
+            .collect()
+    }
+
+    /// Box-averaged luma over LOCAL_CELL x LOCAL_CELL cells, partial edge
+    /// cells included, in codes of this picture's depth.
+    pub fn local_cells(&self) -> Vec<f64> {
+        self.block_means(LOCAL_CELL)
+    }
+
+    /// Mean luma code of each `block` x `block` cell in row-major order.
+    fn block_means(&self, block: u32) -> Vec<f64> {
+        let block = block as usize;
         let width = self.width as usize;
         let height = self.height as usize;
         let columns = width.div_ceil(block);
@@ -62,7 +137,16 @@ impl I420 {
     }
 }
 
-fn mean(values: &[u8]) -> f64 {
+/// Largest code of a `bits`-deep sample: 255 for 8, 1023 for 10.
+pub const fn code_peak(bits: u8) -> u16 {
+    if bits >= 16 {
+        u16::MAX
+    } else {
+        (1_u16 << bits) - 1
+    }
+}
+
+fn mean(values: &[u16]) -> f64 {
     if values.is_empty() {
         return 0.0;
     }
@@ -71,17 +155,21 @@ fn mean(values: &[u8]) -> f64 {
 
 #[derive(Clone, Copy, Debug, PartialEq, Serialize)]
 pub struct PlaneMetrics {
-    /// 8-bit peak (255) PSNR; IDENTICAL_PSNR_DB when the planes are identical.
+    /// PSNR with the code peak of the plane's depth (255 for eight-bit SDR,
+    /// 1023 for ten-bit HDR, where codes are PQ or HLG signal values);
+    /// IDENTICAL_PSNR_DB when the planes are identical.
     pub psnr_db: f64,
-    pub max_abs_error: u8,
+    /// Codes at the plane's depth.
+    pub max_abs_error: u16,
     pub mean_abs_error: f64,
 }
 
-pub fn plane_metrics(reference: &[u8], actual: &[u8]) -> PlaneMetrics {
+/// Compare two planes of the same depth whose largest code is `peak`.
+pub fn plane_metrics(reference: &[u16], actual: &[u16], peak: u16) -> PlaneMetrics {
     debug_assert_eq!(reference.len(), actual.len());
     let mut squared = 0_u64;
     let mut absolute = 0_u64;
-    let mut maximum = 0_u8;
+    let mut maximum = 0_u16;
     for (&left, &right) in reference.iter().zip(actual) {
         let difference = left.abs_diff(right);
         maximum = maximum.max(difference);
@@ -91,17 +179,18 @@ pub fn plane_metrics(reference: &[u8], actual: &[u8]) -> PlaneMetrics {
     let count = reference.len().max(1) as f64;
     let mse = squared as f64 / count;
     PlaneMetrics {
-        psnr_db: psnr(mse),
+        psnr_db: psnr(mse, peak),
         max_abs_error: maximum,
         mean_abs_error: absolute as f64 / count,
     }
 }
 
-fn psnr(mse: f64) -> f64 {
+fn psnr(mse: f64, peak: u16) -> f64 {
     if mse == 0.0 {
         IDENTICAL_PSNR_DB
     } else {
-        (10.0 * (255.0 * 255.0 / mse).log10()).min(IDENTICAL_PSNR_DB)
+        let peak = f64::from(peak);
+        (10.0 * (peak * peak / mse).log10()).min(IDENTICAL_PSNR_DB)
     }
 }
 
@@ -115,6 +204,17 @@ pub fn thumbnail_mad(reference: &[f64], actual: &[f64]) -> f64 {
         .map(|(left, right)| (left - right).abs())
         .sum::<f64>()
         / reference.len() as f64
+}
+
+/// Largest absolute difference between corresponding local cell means
+/// (`I420::local_cells`), in codes of the compared depth. Unlike PSNR this
+/// does not dilute a small wrong region over the whole picture.
+pub fn max_local_error(reference: &[f64], actual: &[f64]) -> f64 {
+    reference
+        .iter()
+        .zip(actual)
+        .map(|(left, right)| (left - right).abs())
+        .fold(0.0, f64::max)
 }
 
 /// Decibels relative to digital full scale, floored at -200 for exact zero.

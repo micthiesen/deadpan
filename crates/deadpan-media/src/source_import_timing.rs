@@ -13,7 +13,7 @@ use deadpan_core::{
     SourceEditWindow, SourceFrameId, SourceNode, SourceSpan, SourceTimeBase, SourceTimestamp,
     SourceVideo, SourceVideoMapping, TerminalProvenance, TimeError,
 };
-use deadpan_source::SourceStreamInfo;
+use deadpan_source::{ColorTransfer, SourceStreamInfo};
 
 use crate::audio_index::AudioIndexSnapshot;
 use crate::source_index::SourceIndexSnapshot;
@@ -571,11 +571,23 @@ pub fn derive_presentation_basis(
             width: geometry.width,
             height: geometry.height,
             frame_rate,
-            color_policy: ColorPolicy::SdrRec709,
+            color_policy: color_policy(info),
         },
         cadence,
         geometry: geometry.evidence,
     })
+}
+
+/// The project color policy a qualified primary picture implies: its PQ or
+/// HLG transfer selects the matching Rec.2020 HDR policy, anything else SDR.
+pub fn color_policy(info: &SourceStreamInfo) -> ColorPolicy {
+    match info.color.transfer {
+        ColorTransfer::Pq => ColorPolicy::HdrRec2020Pq,
+        ColorTransfer::Hlg => ColorPolicy::HdrRec2020Hlg,
+        ColorTransfer::Bt709 | ColorTransfer::Srgb | ColorTransfer::Linear => {
+            ColorPolicy::SdrRec709
+        }
+    }
 }
 
 /// The specification's provisional audio-only canvas. Adoption is host policy.

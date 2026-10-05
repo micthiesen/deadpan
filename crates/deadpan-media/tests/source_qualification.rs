@@ -627,3 +627,214 @@ fn combined_input_byte_limit_is_checked_before_json_parsing() {
         Err(SourceQualificationError::Limit)
     ));
 }
+
+#[test]
+fn hdr_interpretation_and_static_metadata_round_trip_and_select_hdr_policy() {
+    use deadpan_core::{ColorPolicy, SourceFrameId};
+    use deadpan_media::proxy::{
+        ProxyIneligible, ProxyPlan, ProxyReason, proxy_plan, proxy_request,
+    };
+    use deadpan_source::{ColorPrimaries, ContentLight, MasteringDisplay};
+    let mastering = MasteringDisplay {
+        primaries: [[34_000, 16_000], [13_250, 34_500], [7_500, 3_000]],
+        white_point: [15_635, 16_450],
+        max_luminance: 10_000_000,
+        min_luminance: 1,
+    };
+    for (name, transfer, policy, static_metadata) in [
+        (
+            "hevc-pq.mp4",
+            ColorTransfer::Pq,
+            ColorPolicy::HdrRec2020Pq,
+            true,
+        ),
+        (
+            "hevc-hlg.mp4",
+            ColorTransfer::Hlg,
+            ColorPolicy::HdrRec2020Hlg,
+            false,
+        ),
+        (
+            "hdr-pq-av.mp4",
+            ColorTransfer::Pq,
+            ColorPolicy::HdrRec2020Pq,
+            true,
+        ),
+    ] {
+        let mut video = video(input("deadpan-source/tests/fixtures", name), "hdr-source");
+        let capture = DecodedSourceQualification::from_sessions(Some(&video), None).unwrap();
+        let json = capture.snapshot().to_json().unwrap();
+        let snapshot = SourceQualificationSnapshot::from_json(&json).unwrap();
+        let info = snapshot.video().unwrap().interpretation();
+        assert_eq!(info, video.info(), "{name}");
+        assert_eq!(info.color.transfer, transfer);
+        assert_eq!(info.color.primaries, ColorPrimaries::Bt2020);
+        assert_eq!(info.color.matrix, ColorMatrix::Bt2020NonConstant);
+        assert_eq!(info.color.mastering, static_metadata.then_some(mastering));
+        assert_eq!(
+            info.color.content_light,
+            static_metadata.then_some(ContentLight {
+                max_cll: 1000,
+                max_fall: 400
+            })
+        );
+        let text = String::from_utf8(json).unwrap();
+        assert_eq!(text.contains("\"mastering\":"), static_metadata, "{name}");
+        assert_eq!(
+            snapshot
+                .basis_candidate()
+                .unwrap()
+                .unwrap()
+                .basis
+                .color_policy,
+            policy,
+            "{name}"
+        );
+        // The picture path reads HDR sources at sixteen bits.
+        let picture = video
+            .frame(
+                SourceFrameId(0),
+                Duration::from_secs(10),
+                &AtomicBool::new(false),
+            )
+            .unwrap();
+        assert_eq!(picture.sample_bits, 16);
+        assert_eq!(picture.rgba.len(), (info.width * info.height * 8) as usize);
+        // HDR Originals never get an eight-bit SDR proxy, even when planned.
+        assert_eq!(
+            proxy_plan(info, video.index().index()),
+            Err(ProxyIneligible::HighDynamicRange)
+        );
+        let forced = ProxyPlan {
+            width: 64,
+            height: 36,
+            reason: ProxyReason::Requested,
+        };
+        assert_eq!(
+            proxy_request(100, info, 8, &forced, Duration::from_secs(1)),
+            Err(ProxyIneligible::HighDynamicRange)
+        );
+    }
+}
+
+#[test]
+fn sdr_color_wire_is_unchanged_and_static_metadata_fields_are_closed() {
+    let mut video = video(
+        input("deadpan-source/tests/fixtures", "limited709.mkv"),
+        "sdr-source",
+    );
+    let capture = DecodedSourceQualification::from_sessions(Some(&video), None).unwrap();
+    let json = String::from_utf8(capture.snapshot().to_json().unwrap()).unwrap();
+    // Identical to the pre-HDR wire: no optional static metadata keys.
+    assert!(json.contains(
+        "\"color\":{\"range\":\"limited\",\"matrix\":\"bt709\",\"transfer\":\"bt709\",\"primaries\":\"bt709\"}"
+    ));
+    assert!(!json.contains("mastering") && !json.contains("content_light"));
+    // Static metadata on an SDR interpretation is refused as stored evidence.
+    let injected = json.replace(
+        "\"primaries\":\"bt709\"}",
+        "\"primaries\":\"bt709\",\"content_light\":{\"max_cll\":1,\"max_fall\":1}}",
+    );
+    assert_ne!(injected, json);
+    assert!(SourceQualificationSnapshot::from_json(injected.as_bytes()).is_err());
+    let picture = video
+        .frame(
+            deadpan_core::SourceFrameId(0),
+            Duration::from_secs(10),
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+    assert_eq!(picture.sample_bits, 8);
+
+    let pq = video_snapshot_json("hevc-pq.mp4");
+    for (from, to) in [
+        ("\"max_cll\":1000", "\"max_cll\":1000,\"extra\":1"),
+        ("\"min_luminance\":1", "\"min_luminance\":1,\"extra\":1"),
+        ("\"transfer\":\"pq\"", "\"transfer\":\"st2084\""),
+        ("\"max_fall\":400", "\"max_fall\":65536"),
+    ] {
+        assert!(pq.contains(from), "{from}");
+        assert!(
+            SourceQualificationSnapshot::from_json(pq.replace(from, to).as_bytes()).is_err(),
+            "{to}"
+        );
+    }
+}
+
+fn video_snapshot_json(name: &str) -> String {
+    let video = video(input("deadpan-source/tests/fixtures", name), "hdr-source");
+    let capture = DecodedSourceQualification::from_sessions(Some(&video), None).unwrap();
+    String::from_utf8(capture.snapshot().to_json().unwrap()).unwrap()
+}
+
+#[test]
+fn ignored_static_metadata_is_a_recorded_note_and_never_coexists_with_values() {
+    let session = video(
+        input(
+            "deadpan-source/tests/fixtures",
+            "hevc-pq-invalid-static.mp4",
+        ),
+        "invalid-static",
+    );
+    let capture = DecodedSourceQualification::from_sessions(Some(&session), None).unwrap();
+    let json = String::from_utf8(capture.snapshot().to_json().unwrap()).unwrap();
+    assert!(json.contains(
+        "\"primaries\":\"bt2020\",\"ignored_static\":{\"mastering\":true,\"content_light\":true}}"
+    ));
+    assert!(!json.contains("\"mastering\":{") && !json.contains("\"content_light\":{"));
+    let snapshot = SourceQualificationSnapshot::from_json(json.as_bytes()).unwrap();
+    let color = snapshot.video().unwrap().interpretation().color;
+    assert_eq!((color.mastering, color.content_light), (None, None));
+    assert!(color.ignored_static.mastering && color.ignored_static.content_light);
+    assert_eq!(
+        String::from_utf8(snapshot.to_json().unwrap()).unwrap(),
+        json
+    );
+
+    let reject = |text: String| {
+        assert_ne!(text, json);
+        assert!(
+            SourceQualificationSnapshot::from_json(text.as_bytes()).is_err(),
+            "{text}"
+        );
+    };
+    // A note cannot sit beside a value it says was ignored.
+    reject(json.replace(
+        "\"ignored_static\":{\"mastering\":true,\"content_light\":true}",
+        "\"content_light\":{\"max_cll\":1000,\"max_fall\":400},\"ignored_static\":{\"mastering\":true,\"content_light\":true}",
+    ));
+    // Stored values must satisfy the shared rule set (MaxFALL above MaxCLL).
+    reject(json.replace(
+        "\"ignored_static\":{\"mastering\":true,\"content_light\":true}",
+        "\"content_light\":{\"max_cll\":100,\"max_fall\":400}",
+    ));
+    // A mastering peak below 50 cd/m2 is invalid stored evidence.
+    reject(json.replace(
+        "\"ignored_static\":{\"mastering\":true,\"content_light\":true}",
+        "\"mastering\":{\"primaries\":[[34000,16000],[13250,34500],[7500,3000]],\"white_point\":[15635,16450],\"max_luminance\":100000,\"min_luminance\":1}",
+    ));
+    reject(json.replace(
+        "\"content_light\":true}",
+        "\"content_light\":true,\"other\":true}",
+    ));
+
+    // An SDR interpretation carries no note.
+    let sdr = video(
+        input("deadpan-source/tests/fixtures", "limited709.mkv"),
+        "sdr-note",
+    );
+    let sdr = String::from_utf8(
+        DecodedSourceQualification::from_sessions(Some(&sdr), None)
+            .unwrap()
+            .snapshot()
+            .to_json()
+            .unwrap(),
+    )
+    .unwrap();
+    let injected = sdr.replace(
+        "\"primaries\":\"bt709\"}",
+        "\"primaries\":\"bt709\",\"ignored_static\":{\"mastering\":true}}",
+    );
+    assert_ne!(injected, sdr);
+    assert!(SourceQualificationSnapshot::from_json(injected.as_bytes()).is_err());
+}

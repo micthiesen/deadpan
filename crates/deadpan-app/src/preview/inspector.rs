@@ -187,10 +187,12 @@ impl Inspector {
                 fields.push((
                     "Pitch",
                     match pitch {
-                        PitchPolicy::Preserve => "Preserve",
-                        PitchPolicy::FollowSpeed => "Tape (follows speed)",
-                    }
-                    .into(),
+                        PitchPolicy::Preserve => "Preserve".into(),
+                        PitchPolicy::FollowSpeed => "Tape (follows speed)".into(),
+                        PitchPolicy::Shift { semitones } => {
+                            format!("Shifted {semitones:+} semitones")
+                        }
+                    },
                 ));
                 (
                     "Retime",
@@ -232,15 +234,34 @@ impl Inspector {
             };
             fields.push(("Framing", description));
         }
-        if !node.cutaways.is_empty() {
+        if let Some(saturation) = node.audio_treatments.saturation() {
+            let gain_first = node.audio_treatments.order().first()
+                == Some(&deadpan_core::AudioTreatmentStage::ClipGain);
             fields.push((
-                "Cutaways",
-                node.cutaways
-                    .iter()
-                    .map(|cutaway| format!("{}–{}", cutaway.range.start().0, cutaway.range.end().0))
-                    .collect::<Vec<_>>()
-                    .join(", "),
+                "Saturation",
+                format!(
+                    "{} dB drive{}",
+                    crate::gain::format_db(saturation.drive()),
+                    if node.audio_treatments.clip_gain().is_none() {
+                        ""
+                    } else if gain_first {
+                        " · after gain"
+                    } else {
+                        " · before gain"
+                    }
+                ),
             ));
+        }
+        for (label, removed) in [("Cutaways", false), ("Picture removed", true)] {
+            let ranges: Vec<_> = node
+                .cutaways
+                .iter()
+                .filter(|cutaway| cutaway.removed == removed)
+                .map(|cutaway| format!("{}–{}", cutaway.range.start().0, cutaway.range.end().0))
+                .collect();
+            if !ranges.is_empty() {
+                fields.push((label, ranges.join(", ")));
+            }
         }
         if !node.captions.is_empty() {
             fields.push((
@@ -309,6 +330,16 @@ mod tests {
             ]
         );
         assert_eq!(inspector.parameter.unwrap().1, "hold-duration 11f");
+        let mut driven = node.clone();
+        driven.audio_treatments = deadpan_core::AudioTreatments::default()
+            .with_saturation(Some(
+                deadpan_core::Saturation::new(deadpan_core::GainDb::new(12_500).unwrap()).unwrap(),
+            ))
+            .unwrap();
+        assert_eq!(
+            Inspector::describe(&driven, 0, 11).fields.last(),
+            Some(&("Saturation", "12.5 dB drive".into()))
+        );
     }
 
     #[test]

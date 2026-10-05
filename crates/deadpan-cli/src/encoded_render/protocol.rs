@@ -6,10 +6,11 @@
 
 use std::io::{Read, Write};
 
+use deadpan_core::ColorPolicy;
 use deadpan_encode::{
     AUDIO_FRAME_SAMPLES, AUDIO_SAMPLE_RATE, BFramePolicy, EncodeContract, EncodeLimits,
-    EncodeReport, EncoderMode, MAX_AUDIO_SAMPLES, MAX_OUTPUT_BYTES, MAX_PACKET_BYTES, MAX_PACKETS,
-    MAX_VIDEO_FRAMES,
+    EncodeReport, EncoderMode, HdrSignal, HdrTransfer, MAX_AUDIO_SAMPLES, MAX_OUTPUT_BYTES,
+    MAX_PACKET_BYTES, MAX_PACKETS, MAX_VIDEO_FRAMES, MasteringDisplay,
 };
 use deadpan_jobs::{
     CancellationToken, Diagnostic, Sha256, WorkspaceArtifact, WorkspaceRef,
@@ -64,16 +65,45 @@ impl EncodedRenderContract {
             .checked_sub(self.picture.project_audio_start.0)
             .and_then(|samples| u64::try_from(samples).ok())
             .ok_or_else(|| "encoded audio interval exceeds exact sample bounds".to_owned())?;
-        EncodeContract::new_v1(
+        let rate = [
+            self.picture.frame_rate.numerator(),
+            self.picture.frame_rate.denominator(),
+        ];
+        let transfer = match self.picture.color_policy {
+            ColorPolicy::SdrRec709 => {
+                return EncodeContract::new_v1(
+                    self.picture.raster,
+                    rate,
+                    self.picture.frame_count,
+                    audio_samples,
+                    self.choice.mode,
+                    self.choice.b_frames,
+                )
+                .map_err(|error| error.to_string());
+            }
+            ColorPolicy::HdrRec2020Pq => HdrTransfer::Pq,
+            ColorPolicy::HdrRec2020Hlg => HdrTransfer::Hlg,
+        };
+        let mastering = self
+            .picture
+            .mastering_display
+            .map(|volume| MasteringDisplay {
+                primaries: volume.primaries,
+                white_point: volume.white_point,
+                max_luminance: volume.max_luminance,
+                min_luminance: volume.min_luminance,
+            });
+        EncodeContract::new_hdr_v1(
             self.picture.raster,
-            [
-                self.picture.frame_rate.numerator(),
-                self.picture.frame_rate.denominator(),
-            ],
+            rate,
             self.picture.frame_count,
             audio_samples,
             self.choice.mode,
             self.choice.b_frames,
+            HdrSignal {
+                transfer,
+                mastering,
+            },
         )
         .map_err(|error| error.to_string())
     }
@@ -244,7 +274,13 @@ fn validate_report(contract: &EncodeContract, report: &EncodeReport) -> Result<(
         || info.audio_time_base_num != 1
         || info.audio_time_base_den != AUDIO_SAMPLE_RATE
         || info.audio_frame_size != AUDIO_FRAME_SAMPLES
-        || info.video_profile != 100
+        // FFmpeg profile ids: H.264 High 100; HEVC Main 10 is 2.
+        || info.video_profile
+            != match contract.video_format() {
+                deadpan_encode::VideoFormat::H264Rec709I420 => 100,
+                deadpan_encode::VideoFormat::HevcMain10Rec2100Pq
+                | deadpan_encode::VideoFormat::HevcMain10Rec2100Hlg => 2,
+            }
         || info.audio_profile != 1
         || info.requested_mode != contract.mode()
         || has_b.is_none_or(|value| value > policy.b_frames)

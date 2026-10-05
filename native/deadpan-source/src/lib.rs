@@ -6,6 +6,9 @@
 //! audio callback. Deadlines are cooperative around FFmpeg calls, not preemptive.
 //! Encoded RGB values retain their source transfer and primaries. No gamma or
 //! gamut conversion, deinterlacing, tone mapping, or orientation is performed.
+//! HDR (PQ/HLG) sources keep their nonlinear R'G'B'; the eight-bit RGBA output
+//! of such a source is a quantized analysis view, and pictures should use the
+//! sixteen-bit [`SourceDecoder::next_rgba16`] output.
 
 use std::{
     fs::File,
@@ -19,9 +22,9 @@ mod matroska_input;
 mod video_codec;
 
 pub use input::{
-    Mp4AvcConfiguration, Mp4ColorDescription, Mp4Edit, Mp4H264Packet, Mp4Inspection,
-    Mp4PacketObservation, Mp4PacketReader, Mp4PresentationTime, Mp4TrackInspection, Mp4TrackKind,
-    inspect_mp4,
+    Mp4AvcConfiguration, Mp4ColorDescription, Mp4Edit, Mp4H264Packet, Mp4HevcConfiguration,
+    Mp4HevcPacket, Mp4Inspection, Mp4PacketObservation, Mp4PacketReader, Mp4PresentationTime,
+    Mp4TrackInspection, Mp4TrackKind, inspect_mp4,
 };
 
 #[derive(Clone, Copy, Debug)]
@@ -106,6 +109,17 @@ pub enum ColorTransfer {
     Bt709,
     Srgb,
     Linear,
+    /// SMPTE ST 2084. Admitted only for ten-bit 4:2:0 limited-range BT.2020
+    /// NCL HEVC Main10 or H.264 High10 with BT.2020 primaries.
+    Pq,
+    /// ARIB STD-B67 hybrid log-gamma, under the same HDR admission as `Pq`.
+    Hlg,
+}
+
+impl ColorTransfer {
+    pub const fn is_hdr(self) -> bool {
+        matches!(self, Self::Pq | Self::Hlg)
+    }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ColorPrimaries {
@@ -114,12 +128,86 @@ pub enum ColorPrimaries {
     DisplayP3,
 }
 
+/// SMPTE ST 2086 mastering display color volume, exactly as declared.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct MasteringDisplay {
+    /// CIE 1931 xy of the red, green and blue primaries in that order, in
+    /// units of 1/50000 (at most 50000).
+    pub primaries: [[u16; 2]; 3],
+    /// CIE 1931 xy white point in units of 1/50000.
+    pub white_point: [u16; 2],
+    /// Units of 1/10000 cd/m2, at most 10000 cd/m2 and above `min_luminance`.
+    pub max_luminance: u32,
+    pub min_luminance: u32,
+}
+
+impl MasteringDisplay {
+    /// The shared `deadpan_core::MasteringDisplay` rule set (positive CIE xy
+    /// points with x + y <= 1, an R, G, B triangle enclosing the white point,
+    /// a 50..=10000 cd/m2 peak and black of at most 50 cd/m2 below it).
+    pub fn is_valid(&self) -> bool {
+        deadpan_core::MasteringDisplay {
+            primaries: self.primaries,
+            white_point: self.white_point,
+            max_luminance: self.max_luminance,
+            min_luminance: self.min_luminance,
+        }
+        .is_valid()
+    }
+}
+
+/// CTA-861.3 content light level in cd/m2; zero means unknown.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ContentLight {
+    pub max_cll: u16,
+    pub max_fall: u16,
+}
+
+impl ContentLight {
+    /// The shared `deadpan_core::ContentLight` rule: MaxCLL at most 10000
+    /// cd/m2 and MaxFALL at most MaxCLL.
+    pub fn is_valid(&self) -> bool {
+        deadpan_core::ContentLight {
+            max_cll: self.max_cll,
+            max_fall: self.max_fall,
+        }
+        .is_valid()
+    }
+}
+
+/// HDR static declarations that were present but failed the shared rule set
+/// (or could not be represented exactly) and are therefore treated as absent.
+/// This is a recorded note, not a refusal: the stream remains admissible.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct IgnoredStaticMetadata {
+    pub mastering: bool,
+    pub content_light: bool,
+}
+
+impl IgnoredStaticMetadata {
+    pub const NONE: Self = Self {
+        mastering: false,
+        content_light: false,
+    };
+    pub const fn is_empty(&self) -> bool {
+        !self.mastering && !self.content_light
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ColorMetadata {
     pub range: ColorRange,
     pub matrix: ColorMatrix,
     pub transfer: ColorTransfer,
     pub primaries: ColorPrimaries,
+    /// Static metadata exist only with a PQ/HLG transfer. Stream (MP4 `mdcv`/
+    /// `clli`) and first-picture SEI declarations must agree; every later
+    /// picture that repeats one must equal it, or decoding fails. A present
+    /// value is always valid under the shared rule set.
+    pub mastering: Option<MasteringDisplay>,
+    pub content_light: Option<ContentLight>,
+    /// Declarations that failed the shared rule set and are reported absent.
+    pub ignored_static: IgnoredStaticMetadata,
 }
 
 pub const MAX_SOURCE_AUDIO_STREAMS: usize = 32;
@@ -181,8 +269,12 @@ pub struct DecodedRgbaFrame {
     pub metadata: SourceFrameMetadata,
     pub width: u32,
     pub height: u32,
+    /// 8 for packed RGBA8 (`next_rgba`), 16 for packed little-endian RGBA64
+    /// (`next_rgba16`): u16 per channel, full RGB range 0..=65535, alpha 65535.
+    pub sample_bits: u8,
     pub row_stride_bytes: usize,
-    /// Owned packed RGBA8, full RGB range; transfer and primaries remain unchanged.
+    /// Owned packed full-range RGBA bytes at `sample_bits`; the source matrix
+    /// and range are applied, transfer and primaries remain unchanged.
     pub rgba: Vec<u8>,
 }
 
@@ -246,6 +338,16 @@ pub struct DecodedI420Frame {
     /// Tight Y, U, V planes copied from decoded 8-bit limited-range Rec.709
     /// YUV420. Even dimensions; no RGB conversion or chroma resampling.
     pub i420: Vec<u8>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DecodedYuv420p10Frame {
+    pub metadata: ExportFrameMetadata,
+    pub width: u32,
+    pub height: u32,
+    /// Tight Y (w*h), Cb (w/2*h/2), then Cr samples copied from decoded
+    /// ten-bit limited-range BT.2020 NCL PQ/HLG 4:2:0; each value is 0..=1023.
+    pub samples: Vec<u16>,
 }
 
 /// Cumulative work since opening, including the retained opening picture and
@@ -415,9 +517,9 @@ impl SourceDecoder {
     ) -> Result<Self, SourceDecodeError> {
         Self::open_with_keyframe(file, limits, control, None)
     }
-    /// Open a new H.264 decoder at an exact key PTS before decoding any packet.
-    /// The first packet must contain IDR slices; the first picture must be key/I
-    /// at `pts`. Container admission and this picture share the opening budget.
+    /// Open a new H.264 or HEVC decoder at an exact key PTS before decoding any
+    /// packet. The first packet must contain only IDR (H.264) or IRAP (HEVC
+    /// BLA/IDR/CRA) picture slices; the first picture must be key/I at `pts`. Container admission and this picture share the opening budget.
     pub fn open_at_keyframe(
         file: File,
         limits: DecodeLimits,
@@ -474,19 +576,100 @@ impl SourceDecoder {
     ) -> Result<Option<SourceFrameMetadata>, SourceDecodeError> {
         self.inner.next(control, None)
     }
+    /// Packed RGBA8. For a PQ/HLG source this quantizes ten-bit nonlinear
+    /// R'G'B' to eight bits and is suitable only for analysis, not pictures.
     pub fn next_rgba(
         &mut self,
         control: DecodeControl<'_>,
     ) -> Result<Option<DecodedRgbaFrame>, SourceDecodeError> {
-        self.rgba(control, false)
+        self.rgba(control, false, 8)
     }
     /// Convert the last decoded frame without advancing the persistent decoder.
     pub fn copy_current_rgba(
         &mut self,
         control: DecodeControl<'_>,
     ) -> Result<DecodedRgbaFrame, SourceDecodeError> {
-        self.rgba(control, true)?
+        self.rgba(control, true, 8)?
             .ok_or(SourceDecodeError::InvalidConfiguration("no current frame"))
+    }
+    /// Packed little-endian RGBA64 (`sample_bits == 16`) with the same explicit
+    /// matrix, range and chroma siting as `next_rgba`. Works for every admitted
+    /// source; an eight-bit source is expanded, not reinterpreted.
+    ///
+    /// The output is full-range integer nonlinear R'G'B' clamped to [0, 1]:
+    /// limited-range super-white and sub-black codes (and matrix results
+    /// outside the unit cube) are clipped, not preserved. Callers needing
+    /// those excursions must read `next_yuv420p10` instead.
+    pub fn next_rgba16(
+        &mut self,
+        control: DecodeControl<'_>,
+    ) -> Result<Option<DecodedRgbaFrame>, SourceDecodeError> {
+        self.rgba(control, false, 16)
+    }
+    /// Sixteen-bit conversion of the last decoded frame without advancing.
+    pub fn copy_current_rgba16(
+        &mut self,
+        control: DecodeControl<'_>,
+    ) -> Result<DecodedRgbaFrame, SourceDecodeError> {
+        self.rgba(control, true, 16)?
+            .ok_or(SourceDecodeError::InvalidConfiguration("no current frame"))
+    }
+    /// Decode and copy the next HDR picture's ten-bit planes without conversion.
+    pub fn next_yuv420p10(
+        &mut self,
+        control: DecodeControl<'_>,
+    ) -> Result<Option<DecodedYuv420p10Frame>, SourceDecodeError> {
+        self.yuv420p10(control, false)
+    }
+    /// Copy the current HDR picture's ten-bit planes without advancing.
+    pub fn copy_current_yuv420p10(
+        &mut self,
+        control: DecodeControl<'_>,
+    ) -> Result<DecodedYuv420p10Frame, SourceDecodeError> {
+        self.yuv420p10(control, true)?
+            .ok_or(SourceDecodeError::InvalidConfiguration("no current frame"))
+    }
+    fn yuv420p10(
+        &mut self,
+        control: DecodeControl<'_>,
+        copy: bool,
+    ) -> Result<Option<DecodedYuv420p10Frame>, SourceDecodeError> {
+        let started = Instant::now();
+        ffi::preflight(control)?;
+        let pixels = u64::from(self.info.width) * u64::from(self.info.height);
+        if pixels > self.max_pixels {
+            return Err(SourceDecodeError::InvalidConfiguration(
+                "YUV420P10 picture exceeds the configured pixel budget",
+            ));
+        }
+        let size = pixels
+            .checked_add(pixels / 2)
+            .and_then(|size| usize::try_from(size).ok())
+            .ok_or(SourceDecodeError::InvalidConfiguration(
+                "YUV420P10 size overflow",
+            ))?;
+        let mut samples = Vec::new();
+        samples
+            .try_reserve_exact(size)
+            .map_err(|_| SourceDecodeError::InvalidConfiguration("YUV420P10 allocation failed"))?;
+        samples.resize(size, 0);
+        let timeout = control
+            .timeout
+            .checked_sub(started.elapsed())
+            .filter(|timeout| !timeout.is_zero())
+            .ok_or_else(|| SourceDecodeError::Native {
+                code: "deadline_exceeded".into(),
+                message: "YUV420P10 output allocation exhausted the call budget".into(),
+            })?;
+        let metadata =
+            self.inner
+                .yuv420p10(DecodeControl { timeout, ..control }, &mut samples, copy)?;
+        Ok(metadata.map(|metadata| DecodedYuv420p10Frame {
+            metadata,
+            width: self.info.width,
+            height: self.info.height,
+            samples,
+        }))
     }
     pub fn next_i420(
         &mut self,
@@ -549,6 +732,7 @@ impl SourceDecoder {
         &mut self,
         control: DecodeControl<'_>,
         copy: bool,
+        sample_bits: u8,
     ) -> Result<Option<DecodedRgbaFrame>, SourceDecodeError> {
         // Reject cancelled/invalid requests before allocating the owned picture.
         ffi::preflight(control)?;
@@ -559,7 +743,7 @@ impl SourceDecoder {
         }
         let stride = usize::try_from(self.info.width)
             .ok()
-            .and_then(|v| v.checked_mul(4))
+            .and_then(|v| v.checked_mul(if sample_bits == 16 { 8 } else { 4 }))
             .ok_or(SourceDecodeError::InvalidConfiguration(
                 "RGBA stride overflow",
             ))?;
@@ -573,7 +757,9 @@ impl SourceDecoder {
         rgba.try_reserve_exact(size)
             .map_err(|_| SourceDecodeError::InvalidConfiguration("RGBA allocation failed"))?;
         rgba.resize(size, 0);
-        let metadata = if copy {
+        let metadata = if sample_bits == 16 {
+            self.inner.rgba64(control, &mut rgba, copy)?
+        } else if copy {
             self.inner.copy(control, &mut rgba)?
         } else {
             self.inner.next(control, Some(&mut rgba))?
@@ -582,6 +768,7 @@ impl SourceDecoder {
             metadata,
             width: self.info.width,
             height: self.info.height,
+            sample_bits,
             row_stride_bytes: stride,
             rgba,
         }))
@@ -604,7 +791,7 @@ impl SourceDecoder {
         self.inner.seek(pts, Some(target), control)
     }
     /// Reuse the admitted descriptor/demuxer, replacing the entire codec context
-    /// with a fresh H.264 decoder at this exact IDR key PTS. No preceding decoded
+    /// with a fresh H.264/HEVC decoder at this exact IDR/IRAP key PTS. No preceding decoded
     /// picture/reference state is retained. The first picture is retained for
     /// `next_*`; per-seek limits reset, cumulative `work()` does not.
     pub fn restart_at_keyframe(
@@ -678,6 +865,14 @@ mod ffi {
         pixel_format: [c_char; 32],
         audio_stream_count: u32,
         audio_streams: [AudioInfo; MAX_AUDIO_STREAMS],
+        has_mastering: i32,
+        mastering_primaries: [[u16; 2]; 3],
+        mastering_white_point: [u16; 2],
+        mastering_max_luminance: u32,
+        mastering_min_luminance: u32,
+        has_content_light: i32,
+        max_cll: u16,
+        max_fall: u16,
     }
     #[repr(C)]
     #[derive(Default)]
@@ -800,6 +995,46 @@ mod ffi {
             frame: *mut Frame,
             rgba: *mut u8,
             rgba_length: usize,
+            error: *mut Error,
+        ) -> c_int;
+        fn deadpan_source_next_rgba64(
+            source: *mut c_void,
+            timeout_ms: u64,
+            cancelled: Cancel,
+            opaque: *const c_void,
+            frame: *mut Frame,
+            rgba: *mut u8,
+            length: usize,
+            error: *mut Error,
+        ) -> c_int;
+        fn deadpan_source_copy_rgba64(
+            source: *mut c_void,
+            timeout_ms: u64,
+            cancelled: Cancel,
+            opaque: *const c_void,
+            frame: *mut Frame,
+            rgba: *mut u8,
+            length: usize,
+            error: *mut Error,
+        ) -> c_int;
+        fn deadpan_source_next_yuv420p10(
+            source: *mut c_void,
+            timeout_ms: u64,
+            cancelled: Cancel,
+            opaque: *const c_void,
+            frame: *mut ExportFrame,
+            samples: *mut u16,
+            count: usize,
+            error: *mut Error,
+        ) -> c_int;
+        fn deadpan_source_copy_yuv420p10(
+            source: *mut c_void,
+            timeout_ms: u64,
+            cancelled: Cancel,
+            opaque: *const c_void,
+            frame: *mut ExportFrame,
+            samples: *mut u16,
+            count: usize,
             error: *mut Error,
         ) -> c_int;
         fn deadpan_source_seek(
@@ -985,7 +1220,7 @@ mod ffi {
                 _file: file,
                 _not_sync: PhantomData,
             };
-            let color = ColorMetadata {
+            let mut color = ColorMetadata {
                 range: match info.range {
                     1 => ColorRange::Limited,
                     2 => ColorRange::Full,
@@ -1002,6 +1237,8 @@ mod ffi {
                     1 => ColorTransfer::Bt709,
                     8 => ColorTransfer::Linear,
                     13 => ColorTransfer::Srgb,
+                    16 => ColorTransfer::Pq,
+                    18 => ColorTransfer::Hlg,
                     _ => return Err(invalid_native()),
                 },
                 primaries: match info.primaries {
@@ -1010,7 +1247,46 @@ mod ffi {
                     12 => ColorPrimaries::DisplayP3,
                     _ => return Err(invalid_native()),
                 },
+                mastering: None,
+                content_light: None,
+                ignored_static: IgnoredStaticMetadata::NONE,
             };
+            match info.has_mastering {
+                0 => {}
+                1 | 2 => {
+                    let declared = MasteringDisplay {
+                        primaries: info.mastering_primaries,
+                        white_point: info.mastering_white_point,
+                        max_luminance: info.mastering_max_luminance,
+                        min_luminance: info.mastering_min_luminance,
+                    };
+                    if info.has_mastering == 1 && declared.is_valid() {
+                        color.mastering = Some(declared);
+                    } else {
+                        color.ignored_static.mastering = true;
+                    }
+                }
+                _ => return Err(invalid_native()),
+            }
+            match info.has_content_light {
+                0 => {}
+                1 | 2 => {
+                    let declared = ContentLight {
+                        max_cll: info.max_cll,
+                        max_fall: info.max_fall,
+                    };
+                    if info.has_content_light == 1 && declared.is_valid() {
+                        color.content_light = Some(declared);
+                    } else {
+                        color.ignored_static.content_light = true;
+                    }
+                }
+                _ => return Err(invalid_native()),
+            }
+            if !color.transfer.is_hdr() && (info.has_mastering != 0 || info.has_content_light != 0)
+            {
+                return Err(invalid_native());
+            }
             let positive = |v: i32| {
                 u32::try_from(v)
                     .ok()
@@ -1134,6 +1410,75 @@ mod ffi {
                 _ => Err(error.into_error()),
             }
         }
+        pub(super) fn rgba64(
+            &mut self,
+            ctl: DecodeControl<'_>,
+            rgba: &mut [u8],
+            copy: bool,
+        ) -> Result<Option<SourceFrameMetadata>, SourceDecodeError> {
+            let (timeout, opaque) = control(ctl)?;
+            let mut frame = Frame::default();
+            let mut error = Error::default();
+            let function = if copy {
+                deadpan_source_copy_rgba64
+            } else {
+                deadpan_source_next_rgba64
+            };
+            // SAFETY: the exclusively borrowed context, exact owned output and
+            // cancellation pointer remain alive during this synchronous call.
+            // C checks the exact packed byte size before writing.
+            let result = unsafe {
+                function(
+                    self.pointer.as_ptr(),
+                    timeout,
+                    cancelled,
+                    opaque,
+                    &mut frame,
+                    rgba.as_mut_ptr(),
+                    rgba.len(),
+                    &mut error,
+                )
+            };
+            match result {
+                1 => Ok(Some(frame_metadata(&frame))),
+                0 => Ok(None),
+                _ => Err(error.into_error()),
+            }
+        }
+        pub(super) fn yuv420p10(
+            &mut self,
+            ctl: DecodeControl<'_>,
+            samples: &mut [u16],
+            copy: bool,
+        ) -> Result<Option<ExportFrameMetadata>, SourceDecodeError> {
+            let (timeout, opaque) = control(ctl)?;
+            let mut frame = ExportFrame::default();
+            let mut error = Error::default();
+            let function = if copy {
+                deadpan_source_copy_yuv420p10
+            } else {
+                deadpan_source_next_yuv420p10
+            };
+            // SAFETY: as for i420; the u16 slice is aligned and C checks its
+            // exact sample count, owning plane buffers and strides.
+            let result = unsafe {
+                function(
+                    self.pointer.as_ptr(),
+                    timeout,
+                    cancelled,
+                    opaque,
+                    &mut frame,
+                    samples.as_mut_ptr(),
+                    samples.len(),
+                    &mut error,
+                )
+            };
+            match result {
+                1 => export_frame(frame).map(Some),
+                0 => Ok(None),
+                _ => Err(error.into_error()),
+            }
+        }
         pub(super) fn next(
             &mut self,
             ctl: DecodeControl<'_>,
@@ -1179,12 +1524,7 @@ mod ffi {
                 )
             };
             match result {
-                1 => Ok(Some(SourceFrameMetadata {
-                    pts: frame.pts,
-                    reported_duration: duration(frame.duration),
-                    keyframe: frame.keyframe != 0,
-                    decode_timestamp: timestamp(frame.dts),
-                })),
+                1 => Ok(Some(frame_metadata(&frame))),
                 0 => Ok(None),
                 _ => Err(error.into_error()),
             }
@@ -1296,6 +1636,14 @@ mod ffi {
             top_field_first: boolean(frame.top_field_first)?,
             corrupt: boolean(frame.corrupt)?,
         })
+    }
+    fn frame_metadata(frame: &Frame) -> SourceFrameMetadata {
+        SourceFrameMetadata {
+            pts: frame.pts,
+            reported_duration: duration(frame.duration),
+            keyframe: frame.keyframe != 0,
+            decode_timestamp: timestamp(frame.dts),
+        }
     }
     fn timestamp(value: i64) -> Option<i64> {
         (value != i64::MIN).then_some(value)

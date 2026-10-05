@@ -122,6 +122,155 @@ impl DeadpanApp {
         );
     }
 
+    /// `:gag-inspect`: show the recipe's exact expansion in Help, with the
+    /// current Visual range deciding its content as `:gag` would. Nothing is
+    /// applied and history is unchanged.
+    pub(super) fn inspect_gag(&mut self, input: crate::navigation::gag::GagInput) {
+        let Some(rate) = self
+            .workspace
+            .as_ref()
+            .map(|workspace| workspace.document.presentation_basis().frame_rate)
+        else {
+            self.error = Some("Open a project first.".into());
+            return;
+        };
+        let visual = self.edit_selection() != navigation::EditSelection::None;
+        let unseeded = matches!(
+            input,
+            crate::navigation::gag::GagInput::OneMoreTime {
+                variation: Some((_, None)),
+                ..
+            }
+        );
+        let result = input.recipe(rate).and_then(|recipe| {
+            let mut rows = crate::navigation::gag::expansion_rows(&recipe, visual, rate)?;
+            if let (true, deadpan_core::GagRecipe::OneMoreTime {
+                variation: Some(variation),
+                ..
+            }) = (unseeded, &recipe)
+            {
+                rows.push(format!(
+                    "No seed was given, so seed {} was drawn for this preview. Apply with seed={} to get exactly these gaps; without it a new seed is drawn.",
+                    variation.seed, variation.seed
+                ));
+            }
+            Ok((recipe.name().to_owned(), rows))
+        });
+        match result {
+            Ok((name, rows)) => {
+                self.message = Some(format!(
+                    "{name} expands to {} ordinary steps; see Help. Nothing was applied.",
+                    rows.len()
+                ));
+                self.help_expansion = Some((name, rows));
+                self.help_registers_first = false;
+                self.help_scroll = Default::default();
+                self.help_open = true;
+            }
+            Err(error) => self.error = Some(error),
+        }
+    }
+
+    /// `:recipe-save a`: the selected group as one whole-group copy in
+    /// project register a, recorded like `"ayag`.
+    pub(super) fn save_recipe(
+        &mut self,
+        name: char,
+        target: Option<Result<macros::Capture, String>>,
+    ) {
+        let group = self
+            .workspace
+            .as_ref()
+            .zip(self.selected_beat.as_ref())
+            .is_some_and(|(workspace, node)| {
+                matches!(
+                    workspace.document.nodes().get(node).map(|node| &node.kind),
+                    Some(deadpan_core::NodeKind::Sequence { .. })
+                )
+            });
+        if self.view != View::Sequence || !group {
+            self.error = Some(
+                "Select a group in Your edit, such as a gag, then save it with :recipe-save a."
+                    .into(),
+            );
+            return;
+        }
+        self.cancel_repeats("a recipe was saved");
+        let instruction = deadpan_core::RegisterName::new(name)
+            .map(|register| SemanticInstruction::Yank {
+                selector: SemanticSelector::TextObject {
+                    object: deadpan_core::SemanticTextObject::AroundGroup,
+                },
+                register,
+            })
+            .map_err(|error| error.message);
+        self.copied.begin_write();
+        self.apply_recorded_instruction(
+            target.unwrap_or_else(|| Err("Open :recipe-save again to capture its group.".into())),
+            instruction,
+        );
+    }
+
+    /// `:recipe a`: a fresh copy of local recipe a at the cursor.
+    pub(super) fn insert_recipe(
+        &mut self,
+        name: char,
+        target: Option<Result<macros::Capture, String>>,
+    ) {
+        if !self
+            .copied
+            .entries()
+            .any(|(slot, content)| slot == name && matches!(content, copied::Content::Edited(_)))
+        {
+            self.error = Some(format!(
+                "Local recipe {name} is empty. Select a group and save it with :recipe-save {name}."
+            ));
+            return;
+        }
+        self.cancel_repeats("a recipe was inserted");
+        let instruction = deadpan_core::RegisterName::new(name)
+            .map(|register| SemanticInstruction::Paste {
+                register,
+                before: false,
+            })
+            .map_err(|error| error.message);
+        self.apply_recorded_instruction(
+            target.unwrap_or_else(|| Err("Open :recipe again to capture its destination.".into())),
+            instruction,
+        );
+    }
+
+    /// `:recipe-inspect a`: the saved group's outline in Help. Nothing is
+    /// applied.
+    pub(super) fn inspect_recipe(&mut self, name: char) {
+        let rows = self
+            .copied
+            .entries()
+            .find_map(|(slot, content)| match content {
+                copied::Content::Edited(captured) if slot == name => {
+                    Some(captured.slice().outline())
+                }
+                _ => None,
+            });
+        match rows {
+            Some(rows) => {
+                self.message = Some(format!(
+                    "Local recipe {name} inserts {} parts; see Help. Nothing was applied.",
+                    rows.iter().filter(|row| !row.starts_with(' ')).count()
+                ));
+                self.help_expansion = Some((format!("Local recipe {name}"), rows));
+                self.help_registers_first = false;
+                self.help_scroll = Default::default();
+                self.help_open = true;
+            }
+            None => {
+                self.error = Some(format!(
+                    "Register {name} holds no saved group. Select a group and use :recipe-save {name}."
+                ));
+            }
+        }
+    }
+
     /// `:repeat [N] gap=… gain-step=… zoom-step=…`: change the selected
     /// Repeat's plays, gaps and escalation, or wrap a plain beat first, as
     /// one recorded instruction and one Undo.
@@ -174,6 +323,14 @@ impl DeadpanApp {
     }
 
     pub(super) fn repeat_action(&mut self, selector: SemanticSelector, plays: NonZeroU32) {
+        if selector == SemanticSelector::VisualSelection
+            && self.edit_role != deadpan_core::MediaRole::Linked
+        {
+            // Visual r under a chosen role repeats that role only.
+            self.repeat_prefix_target = None;
+            self.role_repeat(self.edit_role, plays, false, self.capture_macro_target());
+            return;
+        }
         self.reconcile_repeat_prefix();
         let target = self.repeat_prefix_target.take().map_or_else(
             || Err("Enter the Repeat binding again to capture its target.".into()),

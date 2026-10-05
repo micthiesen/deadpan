@@ -51,6 +51,29 @@ pub enum RepeatableEdit {
         label: String,
     },
     Ungroup,
+    /// A creative edit of the selected beat or at the cursor that keeps its
+    /// exact parameters: gain and saturation, reverse and ping-pong pauses,
+    /// tails and gags. Dot applies the same instruction to the current
+    /// selection, which resolves it afresh.
+    Parameter(SemanticInstruction),
+}
+
+impl RepeatableEdit {
+    /// Instructions whose parameters alone define the repeated edit.
+    fn parameter(instruction: &SemanticInstruction) -> bool {
+        matches!(
+            instruction,
+            SemanticInstruction::SetAudio { .. }
+                | SemanticInstruction::SplitEdit { .. }
+                | SemanticInstruction::DeleteRole { .. }
+                | SemanticInstruction::RoleRepeat { .. }
+                | SemanticInstruction::InsertReverse { .. }
+                | SemanticInstruction::Tail { .. }
+                | SemanticInstruction::InsertPause { .. }
+                | SemanticInstruction::SetFraming { .. }
+                | SemanticInstruction::Gag { .. }
+        )
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -106,10 +129,17 @@ impl LastEdit {
                 label: label.clone(),
             },
             RepeatableEdit::Ungroup => SemanticInstruction::Ungroup,
+            RepeatableEdit::Parameter(instruction) => instruction.clone(),
         }
     }
 
     pub fn from_instruction(instruction: &SemanticInstruction) -> Option<Self> {
+        if RepeatableEdit::parameter(instruction) {
+            return Some(Self {
+                operation: RepeatableEdit::Parameter(instruction.clone()),
+                register: None,
+            });
+        }
         if let SemanticInstruction::Group { selector, label } = instruction {
             return Some(Self {
                 operation: RepeatableEdit::Group {

@@ -86,6 +86,14 @@ Camera picks, draws, follows and corrects targets ([framing](FRAMING.md#native-i
 - `,z` and `:zoom S target=…` follow a target from outside Camera, and
   `:creep … target=…` eases toward its position at the displayed picture
   ([zoom and creep](FRAMING.md#zoom-and-creep-commands)).
+- `:zoom S target=face:N` and `:creep … target=face:N` use face `N` that Apple
+  Vision proposes in the displayed picture, left to right. Detection runs in
+  the background and only proposes; the explicit command saves the face as an
+  ordinary untracked target (`face-K`, `Face N`, span as for `n`) and frames
+  the beat toward it in one undoable `Compound`, refusing when no face, too few
+  faces or a changed context ([face proposals](FRAMING.md#face-proposals)).
+  Such a target can then be tracked with `T` or `:track face-K` like any drawn
+  one.
 - `t` follows the picked target; `c` corrects it at this picture; `T` tracks it.
   A correction of an untracked target replaces the initial rectangle at the
   span start or adds a manual correction at that picture. A correction of a
@@ -104,6 +112,8 @@ Target regions are in source picture coordinates. When the canvas aspect
 differs from the source's, the innermost layer's input is the fitted canvas,
 and follow centers are not yet corrected for that letterbox. Targets are
 created and corrected headlessly (`track --save`, `track-correct`; see
-[tracking](TRACKING.md)) and in Camera. Point targets, renaming and deleting
-targets in the app, pointer rectangle dragging and face/region proposals remain
-open.
+[tracking](TRACKING.md)) and in Camera, and saved from a face proposal by
+`target=face:N`. `detect-faces` lists proposals headlessly without editing.
+Point targets, renaming and deleting targets in the app, pointer rectangle
+dragging, face proposals as numbered entries of Camera's picker, general
+(non-face) region proposals and quality evidence on real people remain open.

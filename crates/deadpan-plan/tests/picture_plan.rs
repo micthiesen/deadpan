@@ -340,6 +340,7 @@ fn a_cutaway_replaces_the_host_picture_in_its_range_and_holds_its_last_picture()
         asset: asset_id("video"),
         selection: ExactSourceSpan::from(span(2002, 6006)),
         fit: CutawayFit::Hold,
+        removed: false,
     }];
     let document = document(&["host"], vec![("host", host)]);
     let plan = RenderPlan::compile(&document).unwrap();
@@ -870,6 +871,7 @@ fn a_cutaway_survives_a_split_through_its_range_with_every_picture_unchanged() {
         asset: asset_id("video"),
         selection: ExactSourceSpan::from(span(50050, 54054)),
         fit: CutawayFit::Loop,
+        removed: false,
     }];
     let before = document(&["source"], vec![("source", host)]);
     let original = RenderPlan::compile(&before).unwrap();
@@ -2254,4 +2256,43 @@ fn placed_picture_holds_only_selected_endpoints_and_preserves_negative_starts() 
             }
         }
     }
+}
+
+#[test]
+fn a_removed_picture_cutaway_shows_the_background_and_keeps_every_other_picture() {
+    let mut host = source(12, 0, 12012);
+    let base = document(&["source"], vec![("source", host.clone())]);
+    host.cutaways = vec![Cutaway {
+        range: range(3, 9),
+        asset: asset_id("video"),
+        selection: ExactSourceSpan::from(span(3003, 9009)),
+        fit: CutawayFit::Hold,
+        removed: true,
+    }];
+    let removed = document(&["source"], vec![("source", host)]);
+    let (before, after) = (
+        RenderPlan::compile(&base).unwrap(),
+        RenderPlan::compile(&removed).unwrap(),
+    );
+    for frame in 0..12 {
+        let picture = after.picture(ProjectFrame(frame)).unwrap().picture;
+        if (3..9).contains(&frame) {
+            assert_eq!(picture, Picture::Background, "frame {frame}");
+        } else {
+            assert_eq!(
+                picture,
+                before.picture(ProjectFrame(frame)).unwrap().picture,
+                "frame {frame}"
+            );
+        }
+        // Word, pause and shot projections still follow the provider.
+        assert_eq!(
+            after.provider_picture(ProjectFrame(frame)).unwrap().picture,
+            before
+                .provider_picture(ProjectFrame(frame))
+                .unwrap()
+                .picture
+        );
+    }
+    assert_eq!(after.duration(), before.duration());
 }

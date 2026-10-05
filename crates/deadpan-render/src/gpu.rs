@@ -10,9 +10,12 @@ use deadpan_core::CapturedFraming;
 use crate::WorkingRgba16Frame;
 use crate::export::{allocated, readback_layout};
 use crate::{
-    CaptionOverlay, FitMode, FramingLayer, PictureGeometry, Primaries, RenderError, Rgba8Frame,
-    Transfer,
+    CaptionOverlay, ColorPipeline, FitMode, FramingLayer, OutputColor, PictureGeometry, Primaries,
+    RenderError, Rgba8Frame, SampleDepth, Transfer,
 };
+
+/// Twelve flat vec4<f32> uniform values (see picture.wgsl `Parameters`).
+const UNIFORM_BYTES: u64 = 192;
 use crate::{color::conversion, surface::validate_dimensions};
 
 /// Single-flight allocation ownership survives both ticket cancellation and
@@ -148,9 +151,10 @@ impl RenderTarget {
         &self.display
     }
 
-    /// Linear Rec.2020 D65 composite in Rgba16Float. There is no normalized
-    /// range clamp; precision/range are those of IEEE binary16, not full HDR
-    /// input qualification. Display clipping occurs only in the second pass.
+    /// Linear Rec.2020 D65 composite in Rgba16Float, working 1.0 = 203 cd/m^2.
+    /// There is no normalized range clamp (binary16 holds up to 65504, i.e.
+    /// far above 10000 cd/m^2). Display clipping and the HDR-output preview
+    /// tone map occur only in the second pass and never alter this texture.
     pub fn working_texture(&self) -> &wgpu::Texture {
         &self.working
     }
@@ -175,7 +179,9 @@ pub struct PictureRenderer {
     complete: Arc<AtomicBool>,
     readback_busy: Arc<AtomicBool>,
     layout: wgpu::BindGroupLayout,
+    layout16: wgpu::BindGroupLayout,
     interpret: wgpu::RenderPipeline,
+    interpret16: wgpu::RenderPipeline,
     display: wgpu::RenderPipeline,
     caption: wgpu::RenderPipeline,
     uniform: wgpu::Buffer,
@@ -183,6 +189,7 @@ pub struct PictureRenderer {
     overlay: Option<wgpu::Texture>,
     /// The identity of the caption raster currently in `overlay`.
     overlay_identity: Option<u64>,
+    color_pipeline: ColorPipeline,
 }
 
 impl PictureRenderer {
@@ -206,11 +213,41 @@ impl PictureRenderer {
                     ty: wgpu::BindingType::Buffer {
                         ty: wgpu::BufferBindingType::Uniform,
                         has_dynamic_offset: false,
-                        min_binding_size: wgpu::BufferSize::new(160),
+                        min_binding_size: wgpu::BufferSize::new(UNIFORM_BYTES),
                     },
                     count: None,
                 },
             ],
+        });
+        let layout16 = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: Some("Deadpan RGBA64 picture bindings"),
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Buffer {
+                        ty: wgpu::BufferBindingType::Uniform,
+                        has_dynamic_offset: false,
+                        min_binding_size: wgpu::BufferSize::new(UNIFORM_BYTES),
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 2,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Uint,
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
+            ],
+        });
+        let pipeline_layout16 = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("Deadpan RGBA64 picture layout"),
+            bind_group_layouts: &[Some(&layout16)],
+            immediate_size: 0,
         });
         let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
             label: Some("Deadpan shared picture layout"),
@@ -228,6 +265,13 @@ impl PictureRenderer {
             "interpret",
             wgpu::TextureFormat::Rgba16Float,
         );
+        let interpret16 = pipeline(
+            device,
+            &pipeline_layout16,
+            &shader,
+            "interpret16",
+            wgpu::TextureFormat::Rgba16Float,
+        );
         let display = pipeline(
             device,
             &pipeline_layout,
@@ -238,7 +282,7 @@ impl PictureRenderer {
         let caption = blended_pipeline(device, &pipeline_layout, &shader);
         let uniform = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Deadpan picture parameters"),
-            size: 160,
+            size: UNIFORM_BYTES,
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
@@ -249,14 +293,30 @@ impl PictureRenderer {
             complete: Arc::new(AtomicBool::new(true)),
             readback_busy: Arc::new(AtomicBool::new(false)),
             layout,
+            layout16,
             interpret,
+            interpret16,
             display,
             caption,
             uniform,
             source: None,
             overlay: None,
             overlay_identity: None,
+            color_pipeline: ColorPipeline::default(),
         }
+    }
+
+    /// Select the output color branch for later submissions (default: SDR).
+    /// SDR output tone-maps PQ/HLG sources per texel before compositing and
+    /// leaves SDR sources bit-identical. HDR output keeps working light above
+    /// 1.0 for encoder readback; only the display (SDR preview) pass
+    /// tone-maps the composite. Already submitted pictures are unaffected.
+    pub fn set_color_pipeline(&mut self, pipeline: ColorPipeline) {
+        self.color_pipeline = pipeline;
+    }
+
+    pub const fn color_pipeline(&self) -> ColorPipeline {
+        self.color_pipeline
     }
 
     pub fn create_target(&self, width: u32, height: u32) -> Result<RenderTarget, RenderError> {
@@ -415,6 +475,12 @@ impl PictureRenderer {
         }
         if let Some(captions) = captions {
             let overlay = self.upload_overlay(captions, target)?;
+            // The display pass reads only the display rows and branch flags.
+            self.queue.write_buffer(
+                &self.uniform,
+                0,
+                &background_parameters(self.color_pipeline),
+            );
             let mut encoder = self
                 .device
                 .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -531,17 +597,25 @@ impl PictureRenderer {
             mode,
             layers,
         )?;
-        let parameters = parameters(frame, &geometry)?;
+        let parameters = parameters(frame, &geometry, self.color_pipeline)?;
         let overlay = captions
             .map(|captions| self.upload_overlay(captions, target))
             .transpose()?;
+        // RGBA64 uploads exact integer codes (Rgba16Uint, a core format); the
+        // shader normalizes them in f32, so every 10-bit code is preserved.
+        let format = match frame.sample_depth() {
+            SampleDepth::Eight => wgpu::TextureFormat::Rgba8Unorm,
+            SampleDepth::Sixteen => wgpu::TextureFormat::Rgba16Uint,
+        };
         if self.source.as_ref().is_none_or(|texture| {
-            texture.width() != metadata.width || texture.height() != metadata.height
+            texture.width() != metadata.width
+                || texture.height() != metadata.height
+                || texture.format() != format
         }) {
             self.source = Some(self.texture(
                 metadata.width,
                 metadata.height,
-                wgpu::TextureFormat::Rgba8Unorm,
+                format,
                 wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
                 "Deadpan owned source upload",
             ));
@@ -559,7 +633,10 @@ impl PictureRenderer {
         );
         self.queue.write_buffer(&self.uniform, 0, &parameters);
         let source_view = source.create_view(&Default::default());
-        let source_bindings = self.bindings(&source_view);
+        let (interpret, source_bindings) = match frame.sample_depth() {
+            SampleDepth::Eight => (&self.interpret, self.bindings(&source_view)),
+            SampleDepth::Sixteen => (&self.interpret16, self.bindings16(&source_view)),
+        };
         let display_bindings = self.bindings(&target.working_view);
         let mut encoder = self
             .device
@@ -568,7 +645,7 @@ impl PictureRenderer {
             });
         draw(
             &mut encoder,
-            &self.interpret,
+            interpret,
             &source_bindings,
             &target.working_view,
         );
@@ -682,16 +759,39 @@ impl PictureRenderer {
             ],
         })
     }
+
+    fn bindings16(&self, view: &wgpu::TextureView) -> wgpu::BindGroup {
+        self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("Deadpan RGBA64 picture input"),
+            layout: &self.layout16,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: self.uniform.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: wgpu::BindingResource::TextureView(view),
+                },
+            ],
+        })
+    }
 }
 
-fn parameters(frame: &Rgba8Frame, geometry: &PictureGeometry) -> Result<Vec<u8>, RenderError> {
+fn parameters(
+    frame: &Rgba8Frame,
+    geometry: &PictureGeometry,
+    pipeline: ColorPipeline,
+) -> Result<Vec<u8>, RenderError> {
     let metadata = frame.metadata();
     let transfer = match metadata.color.transfer {
         Transfer::Srgb => 0.0,
         Transfer::Rec709 => 1.0,
         Transfer::Linear => 2.0,
+        Transfer::Pq => 3.0,
+        Transfer::Hlg => 4.0,
     };
-    let mut vectors = Vec::with_capacity(10);
+    let mut vectors = Vec::with_capacity(12);
     vectors.extend(geometry.sampling_parameters()?);
     vectors.push(geometry.coverage.map(|value| value as f32));
     vectors.push([0.0, transfer, 0.0, 0.0]);
@@ -703,13 +803,47 @@ fn parameters(frame: &Rgba8Frame, geometry: &PictureGeometry) -> Result<Vec<u8>,
             vectors.push([row[0] as f32, row[1] as f32, row[2] as f32, 0.0]);
         }
     }
-    // Uniform consists solely of ten vec4<f32> values; no native struct casts,
-    // unsafe code, implicit padding, or external ABI representation is involved.
-    Ok(vectors
+    let flag = |enabled: bool| if enabled { 1.0 } else { 0.0 };
+    vectors.push([
+        flag(pipeline.tone_maps_source(metadata.color)),
+        flag(matches!(pipeline.output, OutputColor::Hdr(_))),
+        flag(metadata.color.transfer == Transfer::Hlg),
+        0.0,
+    ]);
+    vectors.push(pipeline.tone_map.shader_parameters());
+    Ok(flatten(vectors))
+}
+
+/// Uniform for the black Background picture: only the display rows and the
+/// preview tone-map flag/constants are read (by the display pass).
+fn background_parameters(pipeline: ColorPipeline) -> Vec<u8> {
+    let mut vectors = vec![[0.0; 4]; 7];
+    for row in conversion(Primaries::Rec2020, Primaries::Rec709) {
+        vectors.push([row[0] as f32, row[1] as f32, row[2] as f32, 0.0]);
+    }
+    vectors.push([
+        0.0,
+        if matches!(pipeline.output, OutputColor::Hdr(_)) {
+            1.0
+        } else {
+            0.0
+        },
+        0.0,
+        0.0,
+    ]);
+    vectors.push(pipeline.tone_map.shader_parameters());
+    flatten(vectors)
+}
+
+// Uniform consists solely of twelve vec4<f32> values; no native struct casts,
+// unsafe code, implicit padding, or external ABI representation is involved.
+fn flatten(vectors: Vec<[f32; 4]>) -> Vec<u8> {
+    debug_assert_eq!(vectors.len() * 16, UNIFORM_BYTES as usize);
+    vectors
         .into_iter()
         .flatten()
         .flat_map(f32::to_ne_bytes)
-        .collect())
+        .collect()
 }
 
 fn pipeline(

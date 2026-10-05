@@ -18,6 +18,8 @@ pub(super) struct State {
     awaiting: Option<u64>,
     /// Context captured when command entry opened.
     pub command: Option<Result<Capture, String>>,
+    /// `:zoom … target=face:N` waiting for its face proposals.
+    pub face_zoom: Option<super::camera::FaceZoom>,
 }
 
 /// The session, revision and followed target a `:track` command was entered
@@ -45,6 +47,11 @@ impl State {
 
     pub(super) fn saved(&self) -> Option<&Saved> {
         self.update.as_ref()?.saved.as_ref()
+    }
+
+    /// The latest face detection of this session.
+    pub(super) fn faces(&self) -> Option<&crate::project::targets::FaceJob> {
+        self.update.as_ref()?.faces.as_ref()
     }
 
     /// The latest independent reply: its ticket and refusal.
@@ -205,6 +212,40 @@ impl DeadpanApp {
                 session,
                 job,
             },
+            Operation::DetectFaces {
+                session,
+                revision,
+                asset,
+                pts,
+                ..
+            } => Operation::DetectFaces {
+                ticket,
+                session,
+                revision,
+                asset,
+                pts,
+            },
+            Operation::SaveFramed {
+                session,
+                revision,
+                scope,
+                cursor,
+                node,
+                id,
+                target,
+                framing,
+                ..
+            } => Operation::SaveFramed {
+                ticket,
+                session,
+                revision,
+                scope,
+                cursor,
+                node,
+                id,
+                target,
+                framing,
+            },
         };
         match self.service.submit(ProjectRequest::Target(operation)) {
             Ok(()) => {
@@ -224,6 +265,7 @@ impl DeadpanApp {
         let session = self.workspace.as_ref().map(|workspace| workspace.session);
         self.targets.update = update.filter(|update| Some(update.session) == session);
         let Some((answered, refusal)) = self.targets.reply().cloned() else {
+            self.finish_face_zoom();
             return;
         };
         // One service mailbox serializes commands: a later reply answers
@@ -241,6 +283,7 @@ impl DeadpanApp {
             self.targets.awaiting = None;
             self.camera_target_reply(answered, refusal.as_deref());
         }
+        self.finish_face_zoom();
     }
 
     /// The context `:track` acts on, captured at command entry.

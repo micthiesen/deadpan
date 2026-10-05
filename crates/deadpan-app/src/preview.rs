@@ -230,6 +230,15 @@ pub struct DeadpanApp {
     /// `:registers` opens Help with the register inventory first; `?` opens
     /// it with the basics first.
     help_registers_first: bool,
+    /// `:gag-inspect`: a recipe's exact expansion, listed first in Help
+    /// until Help next opens without it. Nothing is applied.
+    help_expansion: Option<(String, Vec<String>)>,
+    /// `:select role=`: the role a Visual `d` removes in Your edit. Linked
+    /// removes time; audio or video delete one role without moving content.
+    edit_role: deadpan_core::MediaRole,
+    /// The project session and group a non-linked role was chosen in; the
+    /// role returns to linked when either changes or the Original is shown.
+    edit_role_context: Option<(u64, SequenceScope)>,
     linked_import: bool,
     audio_import: bool,
     sound_stream: Option<u32>,
@@ -402,6 +411,9 @@ impl DeadpanApp {
             help_open: false,
             help_scroll: help_scroll::HelpScroll::default(),
             help_registers_first: false,
+            help_expansion: None,
+            edit_role: deadpan_core::MediaRole::Linked,
+            edit_role_context: None,
             linked_import: false,
             audio_import: false,
             sound_stream: None,
@@ -1546,6 +1558,13 @@ impl DeadpanApp {
                 pitch: input.pitch,
                 wrap: input.wrap,
             },
+            BeatEdit::Pitch(semitones) => match pitch_edit(workspace, node, semitones) {
+                Ok(edit) => edit,
+                Err(error) => {
+                    self.error = Some(error);
+                    return;
+                }
+            },
         };
         self.submit(ProjectRequest::Edit {
             expected_session: workspace.session,
@@ -1947,6 +1966,10 @@ impl DeadpanApp {
                 level_millidecibels,
             } => self.bleep_selection(frequency_hz, level_millidecibels),
             Action::Reverse { length, bounce } => self.apply_reverse(length, bounce),
+            Action::SplitEdit { kind, length } => self.apply_split_edit(kind, length),
+            Action::RoleRepeat { role, plays, trim } => {
+                self.role_repeat(role, plays, trim, self.capture_macro_target())
+            }
             Action::Tail { length, effect } => self.apply_tail(length, effect),
             Action::SaveFraming(name) => self.save_framing_preset(name),
             Action::Framing(action) => self.framing_action(action, context),
@@ -1981,6 +2004,9 @@ impl DeadpanApp {
             Action::Operator { cut, selector } => self.operator_action(cut, selector),
             Action::Repeat { selector, plays } => self.repeat_action(selector, plays),
             Action::SelectRegister(name) => self.select_register(name),
+            Action::DeleteSelection if self.edit_role != deadpan_core::MediaRole::Linked => {
+                self.delete_role(self.edit_role, self.capture_macro_target());
+            }
             Action::DeleteSelection => {
                 if !self.record_macro_delete(self.copied.selected(), None) {
                     self.delete_captured(self.capture_delete_target());
@@ -2186,6 +2212,7 @@ impl DeadpanApp {
                 self.pause_playback();
                 if !self.help_open {
                     self.help_registers_first = false;
+                    self.help_expansion = None;
                 }
                 self.help_open = true;
                 self.bindings.clear();
@@ -2222,6 +2249,7 @@ impl DeadpanApp {
     }
 
     fn keyboard(&mut self, context: &egui::Context) -> Option<(TextAction, bool)> {
+        self.reconcile_edit_role();
         self.reconcile_macro_recording();
         self.reconcile_operator();
         self.reconcile_repeat_prefix();
@@ -2834,10 +2862,29 @@ impl DeadpanApp {
                     count,
                 );
             }
+            Ok(navigation::command::Entry::Gain(Some(gain))) if self.macros.recording() => self
+                .record_audio_change(
+                    gain_target,
+                    macro_target,
+                    deadpan_core::AudioChange::Trim { gain },
+                ),
             Ok(navigation::command::Entry::Gain(value)) => {
                 self.gain_command(gain_target, value, context)
             }
             Ok(navigation::command::Entry::GainMute) => self.gain_mute(gain_target),
+            Ok(navigation::command::Entry::GainStep(millidecibels)) if self.macros.recording() => {
+                self.record_audio_change(
+                    gain_target,
+                    macro_target,
+                    deadpan_core::AudioChange::Step { millidecibels },
+                )
+            }
+            Ok(navigation::command::Entry::GainStep(delta)) => {
+                self.gain_step_captured(gain_target, delta)
+            }
+            Ok(navigation::command::Entry::Saturate(stage)) => {
+                self.saturate_command(gain_target, macro_target, stage)
+            }
             Ok(navigation::command::Entry::Slip(amount)) => {
                 self.open_slip(slip_target, amount, context)
             }
@@ -2866,6 +2913,19 @@ impl DeadpanApp {
                 self.zoom_command(zoom_target, input, context)
             }
             Ok(navigation::command::Entry::Caption(input)) => self.caption_command(input),
+            Ok(navigation::command::Entry::GagInspect(input)) => self.inspect_gag(input),
+            Ok(navigation::command::Entry::SelectRole(role)) => self.select_role(role),
+            Ok(navigation::command::Entry::DeleteRole(role)) => self.delete_role(
+                role,
+                macro_target.unwrap_or_else(|| {
+                    Err("Open :delete again to capture its range; no edit was made.".into())
+                }),
+            ),
+            Ok(navigation::command::Entry::RecipeSave(name)) => {
+                self.save_recipe(name, macro_target)
+            }
+            Ok(navigation::command::Entry::Recipe(name)) => self.insert_recipe(name, macro_target),
+            Ok(navigation::command::Entry::RecipeInspect(name)) => self.inspect_recipe(name),
             Ok(navigation::command::Entry::Action(action)) => self.action(action, context),
             Ok(navigation::command::Entry::Source) => self.show_original(context),
             Ok(navigation::command::Entry::Sequence) => self.show_edit(context),
@@ -3291,6 +3351,13 @@ impl DeadpanApp {
                 ui.separator();
                 ui.label(egui::RichText::new(if self.sound_focused() { "SOUND" } else { match (self.focused_workflow(), self.view) { (true, View::Source) => "ORIGINAL", (true, View::Sequence) => "YOUR EDIT", (false, View::Source) => "SOURCE", (false, View::Sequence) => "SEQUENCE" } }).monospace());
                 ui.separator();
+                if self.view == View::Sequence && self.edit_role != deadpan_core::MediaRole::Linked {
+                    ui.colored_label(style::LAVENDER, egui::RichText::new(match self.edit_role {
+                        deadpan_core::MediaRole::Audio => "AUDIO ROLE",
+                        _ => "VIDEO ROLE",
+                    }).monospace());
+                    ui.separator();
+                }
                 if self.presentation.loading() || self.presentation.needs_render() { ui.spinner(); ui.weak("Updating picture"); }
                 if self.sound_focused() {
                     ui.weak("Catalog audition");
@@ -4333,6 +4400,9 @@ impl DeadpanApp {
                     if self.presentation.displayed_tier() == Some(crate::worker::PictureTier::Proxy) {
                         style::proxy_badge(ui.painter(), painted);
                     }
+                    if let Some(label) = self.workspace.as_ref().and_then(|workspace| workspace.color_label()) {
+                        style::color_badge(ui.painter(), painted, label);
+                    }
                 }
                 else { ui.painter().rect_filled(canvas, 0.0, egui::Color32::BLACK); }
             } else if self.workspace.is_none() && self.raw_source.is_none() && !self.presentation.loading() {
@@ -4473,6 +4543,18 @@ impl DeadpanApp {
                 return;
             }
         };
+        // Preview applies the committed revision's automatic SDR/HDR branch,
+        // the same decision export derives; raw sources preview as SDR with
+        // any HDR picture tone-mapped.
+        self.renderer.set_color_pipeline(
+            self.workspace
+                .as_ref()
+                .map(|workspace| {
+                    use deadpan_cli::picture::ColorDecisionPipeline;
+                    workspace.color_decision().pipeline()
+                })
+                .unwrap_or_default(),
+        );
         let result = if let Some(frame) = picture.frame.as_ref()
             && let Some((width, height)) = picture.canvas
         {
@@ -4537,6 +4619,7 @@ impl DeadpanApp {
             .map(|(name, content)| (name, content.available_label(self.workspace.as_deref())))
             .collect();
         let registers_first = self.help_registers_first;
+        let expansion = self.help_expansion.clone();
         let advanced = |ui: &mut egui::Ui| {
             ui.label(style::section_title("REGISTERS", true));
             help_binding(
@@ -4580,6 +4663,14 @@ impl DeadpanApp {
         };
         self.help_scroll.show(context, &mut self.help_open, |ui| {
                     ui.label(&keymap_status);
+                    if let Some((label, rows)) = &expansion {
+                        ui.label(style::section_title("RECIPE EXPANSION", true));
+                        ui.label(format!("{label} expands to these ordinary steps, as one Undo. Nothing has been applied; enter :gag with the same parameters to apply it."));
+                        for (index, row) in rows.iter().enumerate() {
+                            help_binding(ui, &format!("{}", index + 1), row);
+                        }
+                        ui.separator();
+                    }
                     if registers_first {
                         advanced(ui);
                     }
@@ -4617,7 +4708,7 @@ impl DeadpanApp {
                         (format!("{} / {}", key(EditorKey::Hold), bindings.counted_label(EditorKey::Hold, 3)), format!("Insert a silent freeze at the cursor: 0.5 s per count. Keeps the following original speech. The cursor stays at the pause; {} opens its enclosing group when needed. At a group edge, {} returns to the seam's owner. {} undoes it.", key(EditorKey::EnterGroup), key(EditorKey::LeaveGroup), key(EditorKey::Undo))),
                         (":hold 1.5s".to_owned(), "Choose an exact pause duration: 12f, 250ms, 1.5s, or 01:02.500. Seconds round once to project frames. Zero makes no edit. Source and pause fragments work inside Sequence groups; Repeat and Retime interiors remain unavailable.".to_owned()),
                         (":hold 12f video=black".to_owned(), "Insert silent black picture at the cursor: black-frame punctuation. It adds time like any pause and is one Undo; :hold-duration changes it later.".to_owned()),
-                        (":zoom 1.35 target=current".to_owned(), "Smash zoom on the selected beat: a step to the scale, following a saved target (target=current, an id or label) or at the current center; target=center centers the Original. curve=linear|smoothstep eases from the current framing instead. With an Edit range inside the beat, only that range changes, centered on the target where it is at the range's first frame (not following it). On a beat that follows a target, :zoom S keeps following at the new scale. A camera path is replaced only with an explicit target=. :zoom off returns to the full picture (abrupt return). One Undo.".to_owned()),
+                        (":zoom 1.35 target=current".to_owned(), "Smash zoom on the selected beat: a step to the scale, following a saved target (target=current, an id or label) or at the current center; target=center centers the Original. target=face:N finds faces in the displayed picture in the background, numbers them left to right and saves face N as a target together with the framing; nothing changes when it is not found. curve=linear|smoothstep eases from the current framing instead. With an Edit range inside the beat, only that range changes, centered on the target where it is at the range's first frame (not following it). On a beat that follows a target, :zoom S keeps following at the new scale. A camera path is replaced only with an explicit target=. :zoom off returns to the full picture (abrupt return). One Undo.".to_owned()),
                         (":creep from=1 to=1.4 target=current".to_owned(), "Creep over the selected beat, or the Edit range inside it, from the current (or from=) scale to to=, toward the target's position at the creep's last frame (a fixed point). curve=smoothstep (default) or linear. A ranged creep arrives at the range end and holds its end pose to the end of the beat; outside the range the beat keeps its static framing. Paths and follows are never flattened implicitly. One Undo.".to_owned()),
                         (format!("{} / :generate", key(EditorKey::GenerateAi)), "Generate AI pictures for the selected pause from the pictures on both sides, with the local model, in the background. The inspector and footer show the stage and time; :cancel-ai stops it; Escape never cancels it.".to_owned()),
                         (":preview-ai · :accept-ai · :discard-ai".to_owned(), "Ready pictures never change your edit. Preview shows them in the viewer at the edit cursor (Esc returns), Accept makes them the pause's picture as one undoable edit, and Discard hides them for this session.".to_owned()),
@@ -4632,18 +4723,24 @@ impl DeadpanApp {
                         (format!("{} / {} · Visual or after {}/{}/{}", key(EditorKey::InnerGroup), key(EditorKey::AroundGroup), key(EditorKey::YankOperator), key(EditorKey::CutOperator), key(EditorKey::RepeatOperator)), "Select exact group contents or the whole group. An explicitly selected Sequence wins; otherwise use the containing nonroot group. Visual finish retains the object; moving while extending changes it into a time range. Whole-group edits return to the outer parent. Empty contents can receive a paste; an all-empty child forest still has exact owners. Macros and dot resolve the object in their current context.".to_owned()),
                         (":repeat 3".to_owned(), "Set total plays on the captured Repeat, preserving its gaps and surviving plays; wrap a different selected beat. Clear Visual selection first. Recording keeps the effective wrap or count-change instruction; dot reapplies a count change to the newly selected Repeat.".to_owned()),
                         (":cutaway register=r fit=hold|loop|gap".to_owned(), "Show a copied Original moment over the Edit range (or the whole selected beat) while that beat's sound continues. A short moment holds its last picture, loops or lets the beat show through. The cutaway belongs to the beat and moves, splits and copies with it. :cutaway clear removes cutaways there. One Undo.".to_owned()),
+                        (":recipe-save a · :recipe a · :recipe-inspect a".to_owned(), "Keep the selected group, such as a gag you have modified, as local recipe a: its exact beats, timing and attachments are saved in this project's register a and survive reopening. :recipe a inserts a fresh copy at the cursor as one Undo; :recipe-inspect a lists what it inserts first. Recordable.".to_owned()),
+                        (":gag-inspect one-more-time vary=20%".to_owned(), "List the exact ordinary steps a gag expands to with these parameters, including its resolved gaps, pause lengths and pinned label, without applying anything. vary=20% (one-more-time) makes each gap up to 20% longer or shorter from a pinned seed=; the same seed always gives the same gaps, stored in the edit.".to_owned()),
                         (":gag long-answer · escalator · non-sequitur · one-more-time · nothing-happens · are-we-done".to_owned(), "Apply a built-in gag as one Undo: long-answer inserts a silent pause at the cursor and creeps in on it (pause=1.5s creep=1.35); escalator repeats the selected beat louder and closer each play (plays=3 gain-step=3dB zoom-step=0.08); non-sequitur cuts to register=r and straight back; one-more-time repeats the selected beat with a silent held gap that gets shorter each play (plays=3 gap=500ms shorten=200ms); nothing-happens holds the picture at the cursor with room tone from the Original moment in register=r, then cuts to true silence (tone=1s silence=1s); are-we-done pauses at the cursor while what was just said hangs on in a reverb tail and the picture cuts to the reaction in register=r (pause=1.5s). The result is an ordinary group labelled with the recipe, its version and parameters: edit any part, or ungroup to detach it.".to_owned()),
                         (key(EditorKey::EscalatingRepeat), "Wrap the selected beat or Visual range in three plays, each 3 dB louder and 0.08 closer than the last, as one Undo. Adjust it with :repeat 3 gap= gain-step= zoom-step=.".to_owned()),
                         (key(EditorKey::Mute), "Mute the Visual range inside the selected beat as a mute range, or toggle the whole beat's mute without a range (same as :gain-mute). The beat keeps its timing; one Undo.".to_owned()),
                         (key(EditorKey::CutawayPicker), "Pick a reaction: opens :cutaway register= on a register holding a copied Original moment and lists the others. Enter shows it over the selected beat or Visual range while the beat's sound continues.".to_owned()),
                         (format!("{} / :tail 400ms effect=reverb|delay", key(EditorKey::Tail)), "Hanging tail: the reverb (or 300 ms echo) of what is heard just before a pause rings on into it, then fades to true silence. On a selected pause the length is how long it rings (at most the pause); otherwise a freeze pause of that length is inserted at the cursor. The key opens the command with the length ready to change. One Undo; recordable.".to_owned()),
                         (format!("{} / :bleep 880Hz level=-6dB", key(EditorKey::Bleep)), "Bleep the Visual range (viw selects a word): its sound becomes a tone, 1 kHz at -10 dB unless given, with 2 ms ramps, while its pictures keep playing at their natural speed. The cut sound goes to the selected register. One continuous Original passage only. One Undo; recordable.".to_owned()),
+                        (":repeat 3 role=audio · role=video".to_owned(), "Repeat one role of the Visual range inside a beat without adding time: role=audio plays the range's sound 3 times in total as placed sounds (they follow later edits; copying the muted range is refused so no silent copy is made) and silences the beat's own sound under the repeats; role=video loops its pictures while the beat's sound continues. Repeats that would pass the beat's end are refused unless overflow=trim cuts them there. With :select role=, Visual r does the same with 2 plays. One Undo; recordable.".to_owned()),
+                        (":select role=audio · :delete role=video".to_owned(), "Choose the role a Visual d deletes in Your edit: role=audio replaces the range's sound with silence, role=video removes its picture to show the background; neither moves later content or the other role. The range stays inside one beat. role=linked restores ordinary cuts; the status line shows the chosen role. :delete role=audio|video acts once. One Undo; recordable, and . repeats it over a new range.".to_owned()),
                         (":lift".to_owned(), "Lift the Visual range: cut it into the selected register (as d does) and put back a silent black pause of exactly the same length, so everything after it keeps its time. One Undo; recordable.".to_owned()),
                         (":caption Are we done? at=top delay=12f reveal=3".to_owned(), "Caption the selected beat, or the Edit range inside it, with one line of text drawn over the picture in preview and export. at= places it at the bottom (default), top or center; delay= starts it later in the beat (a delayed caption); reveal=N waits for play N of an enclosing Repeat. The caption belongs to the beat's source or pause and moves, splits and copies with it. :caption clear removes captions there. One Undo; recordable without a range.".to_owned()),
+                        (":jcut 6f · :lcut 200ms".to_owned(), "With the cursor on a cut between two source beats, move the sound's cut while the picture still cuts at the cursor: :jcut starts the next beat's sound early (premature sound), :lcut lets this beat's sound run on under the next picture (lingering sound). The linked seam rolls by the length and a cutaway keeps the earlier pictures, so the edit's duration stays the same. Both beats need enough source beyond the cut. One Undo; recordable, and . repeats it at another cut.".to_owned()),
                         (":reverse 8f · :ping-pong 12f".to_owned(), "Insert a pause at the cursor that plays the stretch before it backwards, picture and sound (a reverse hiccup); forward content then continues. :ping-pong bounces back without showing the turning picture twice, so the pause is one frame shorter. Needs one continuous Original passage at its natural speed. One Undo; recordable.".to_owned()),
                         (":repeat 3 gap=120ms gain-step=3dB zoom-step=0.08".to_owned(), "Change the selected Repeat, or wrap a plain beat, in one Undo: the count sets total plays; gap= sets every gap between plays to a silent hold of the play's last picture (gap=0 removes them all; gap-step=-40ms makes each later gap 40 ms shorter as its own pause, up to 64 gaps); each play after the first adds the gain step and grows the centered picture scale by the zoom step (progression=multiply compounds it). Omitted parts keep their values and 0dB or 0 removes a step. Recordable in macros.".to_owned()),
                         (":wrap-repeat 3".to_owned(), "Always add an enclosing Repeat around the captured Visual range or selected beat, including nesting. Command entry captures the target; stale or missing targets refuse.".to_owned()),
                         (":retime 0.75 pitch=preserve".to_owned(), "Slow the selected beat to 0.75× input speed. Use pitch=tape to let pitch follow speed. Exact fractions such as 3/4 work too. The command shows its resolved duration before Enter; Escape cancels entry.".to_owned()),
+                        (":pitch +3st · :retime 1 pitch=-2st".to_owned(), "Shift the selected beat's pitch by whole semitones (±24) without changing its duration, using the pitch-preserving processor at its current speed. A plain beat gets a unity-speed stage; a speed change keeps its speed. :pitch 0 removes the shift. One Undo.".to_owned()),
                         (":wrap-retime 2 pitch=tape".to_owned(), "Always add an enclosing speed stage. :retime instead updates an existing ordinary Retime, preserving its child and input range. Split fragments are wrapped without changing their retained clocks.".to_owned()),
                         ("Enter in Inspector".to_owned(), "Edit the selected Repeat count, Hold duration, Retime speed or placed sound's exact sample position.".to_owned()),
                         (format!("{} / :sound-place", key(EditorKey::PlaceSound)), "Place the complete selected catalog sound at the edit cursor, without changing picture duration. A sound that ends beyond the edit is rejected; move the edit cursor earlier.".to_owned()),
@@ -4651,6 +4748,8 @@ impl DeadpanApp {
                         (format!("Sound {} · Enter", key_labels::aliases_pair(&bindings, EditorKey::FramePrevious, EditorKey::FrameNext, "/")), "Move an uncut sound by exact project frames without accumulated rounding, or choose an exact sample onset with :sound-at 137. Escape cancels entry. Sounds with retained timeline cuts cannot be moved yet.".to_owned()),
                         (format!("Sound {} · :sound-gain -3", key_labels::aliases_pair(&bindings, EditorKey::GainUp, EditorKey::GainDown, "/")), "Change the selected sound's gain by 3 dB, or enter a value from -96 to 24 dB, to three decimal places. Counts repeat the gain step; Monitor and Original levels stay unchanged.".to_owned()),
                         (format!("Beat {} · :gain -3", key_labels::aliases_pair(&bindings, EditorKey::GainUp, EditorKey::GainDown, "/")), "Change the selected beat by 3 dB per count, or enter exact absolute trim. Existing envelopes stay intact. Placed sounds take precedence when focused; Original and catalog sound focus never change a retained beat.".to_owned()),
+                        (":gain +6dB · :gain +=3dB / -=3dB".to_owned(), "Set the selected beat's trim exactly (the dB unit is optional), or change it by a signed amount. Envelopes and mute stay intact; one Undo. Recordable in macros.".to_owned()),
+                        (":saturate 12dB · :saturate off".to_owned(), "Drive the selected beat's sound into a soft clipper (tanh, 0 to 24 dB of drive) after its clip gain and before the master limiter, as intentional distortion; off removes it. The inspector lists the drive and its order. One Undo; recordable, and . repeats it on another beat.".to_owned()),
                         (":gain · :gain-mute".to_owned(), "Open a reversible gain draft, or toggle true mute. The draft edits exact owner-output envelopes and mute ranges. Before/Draft compares the same full-mix loop at its heard sample. Tab moves through fields and buttons. Enter on the heading applies once; Escape cancels.".to_owned()),
                         (":sound-edges soft / hard".to_owned(), "Set both endpoint fade policies on the selected sound. Gain and edge changes retain its timeline cuts.".to_owned()),
                         (":framing-save a".to_owned(), "Keep the selected beat's framing (an off-center stare, a zoom or a creep) as a reusable preset in register a. Select another beat and press @a or :macro a to apply it as one Undo; it replaces that beat's framing.".to_owned()),
@@ -4675,6 +4774,7 @@ impl DeadpanApp {
                         (":trim edge=out delta=-3f mode=ripple".to_owned(), "Set the initial In, Out, Slip or Roll amount. Supply edge=in|out|slip|roll, delta=<whole frames>f and mode=ripple|overwrite exactly once each, in any order. Other amounts start at zero. Examples: -3f, +5f, 7f. Missing, duplicate or unknown arguments are rejected.".to_owned()),
                         ("Trim · Tab / h l / r / i o".to_owned(), "On the heading or background, Tab / Shift-Tab cycles In, Out, Slip and Roll while preserving all four values. h/l changes the active value by one project frame; Shift gives ten. Only h/l repeats while held. r toggles Ripple/Overwrite for the complete draft or reports why it cannot. i/o selects In/Out; within Slip it chooses the inspected edge without leaving Slip.".to_owned()),
                         ("Trim · e / b / Space / Enter / Esc".to_owned(), "e focuses the native amount field. Enter there accepts the text; it never applies the edit on the same key. Native fields and buttons keep Tab and activation, and IME keeps Enter/Escape. b compares Before/Proposed. Space auditions, pauses or resumes; Shift-Space restarts a context loop. The outgoing/incoming pair stays fixed during audio. Enter applies one nonzero edit after all input is acknowledged and the current Proposed pair displays. Escape restores entry context before saving starts. Command, Control and Option chords stay reserved.".to_owned()),
+                        (":roll +2f".to_owned(), "Open Trim on the selected source beat with Roll active and the cut after it moved 2 frames later (or earlier with -), keeping both beats' total length; the same as :trim edge=roll delta=+2f. Enter applies once; Escape cancels.".to_owned()),
                         (":slip +5f".to_owned(), "Preview linked media movement inside the selected Source beat while keeping its duration, Edit cursor and Original cursor. Clear Visual selection first. h/l adjusts project frames; Shift gives ten. i/o inspects first/last delivered pictures; arrows inspect inside the beat. b compares Before/Proposed. Enter applies once after the current Proposed picture displays; Escape cancels. Stopped pictures only.".to_owned()),
                         (":splice".to_owned(), "Preview a copied Original or Edit slice at the Edit cursor. Insert is the default. m toggles Move for a fresh Edit copy: one undoable edit relocates the linked slice and selects its full result. A copy from an older revision can still be inserted; yank again to move. With a captured Edit range, r toggles Replace selection and always uses Copy. Returning to Insert or Move restores the retained insertion destination. i/o refines source endpoints without changing the register; d selects destination and j/k chooses seams. In Move, s inspects removal and f insertion; h/l inspects nearby frames. b compares Before/Proposed at that join, Space auditions, and Shift+Space loops its local context. Enter commits once; Escape restores entry selection and cursors. Source/Hold/fragment endpoints and whole intervening beats work in ordinary Sequence scopes. Open the destination group before opening placement to target it.".to_owned()),
                         (format!("{} / :group name=\"the uncomfortable answer\"", key(EditorKey::Group)), "Name the selected beat or nonempty Visual range. Put the name in double quotes; spaces and Unicode are preserved. Grouping keeps picture and sound unchanged, creates one Undo step, and keeps the chosen register. The command uses the selection captured when entry opened.".to_owned()),
@@ -4937,6 +5037,7 @@ impl eframe::App for DeadpanApp {
         if !self.command_focus_pending && close_command_on_blur(&context, &mut self.command_open) {
             self.bindings.clear();
         }
+        self.reconcile_edit_role();
         self.reconcile_macro_recording();
         self.reconcile_operator();
         self.reconcile_repeat_prefix();
@@ -5338,6 +5439,40 @@ fn target_size(size: egui::Vec2, pixels_per_point: f32) -> (u32, u32) {
         (width * scale).floor().max(1.0) as u32,
         (height * scale).floor().max(1.0) as u32,
     )
+}
+
+/// `:pitch +3st` as a speed edit at the beat's current speed: an ordinary
+/// Retime keeps its exact speed and gets the shift; any other beat is wrapped
+/// in a unity-speed Retime with it. Zero restores plain pitch preservation.
+fn pitch_edit(workspace: &Workspace, node: NodeId, semitones: i8) -> Result<ProjectEdit, String> {
+    let beat = workspace
+        .document
+        .nodes()
+        .get(&node)
+        .ok_or("The selected beat no longer exists.")?;
+    let pitch = deadpan_core::PitchPolicy::shifted(semitones).map_err(|error| error.to_string())?;
+    let speed = match &beat.kind {
+        NodeKind::Retime {
+            mapping,
+            duration,
+            purpose: deadpan_core::RetimePurpose::Edit,
+            ..
+        } => deadpan_core::ExactRatio::new(
+            i128::from(mapping.duration().frames()),
+            i128::from(duration.frames()),
+        )
+        .map_err(|error| error.to_string())?,
+        _ if semitones == 0 => {
+            return Err("This beat has no pitch shift to remove; no edit was made.".into());
+        }
+        _ => deadpan_core::ExactRatio::ONE,
+    };
+    Ok(ProjectEdit::Retime {
+        node,
+        speed,
+        pitch,
+        wrap: false,
+    })
 }
 
 #[cfg(test)]

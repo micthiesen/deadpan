@@ -27,6 +27,23 @@ fn contract(
         &RevisionId::new("captured-revision").unwrap(),
         basis,
         range,
+        ColorPolicy::SdrRec709,
+        None,
+    )
+}
+
+fn branch(
+    basis: &PresentationBasis,
+    output: ColorPolicy,
+    mastering: Option<deadpan_core::MasteringDisplay>,
+) -> std::result::Result<ExportPictureContract, ExportPictureError> {
+    ExportPictureContract::from_captured(
+        &ProjectId::new("captured-project").unwrap(),
+        &RevisionId::new("captured-revision").unwrap(),
+        basis,
+        range(0, 1),
+        output,
+        mastering,
     )
 }
 
@@ -161,21 +178,53 @@ fn audio_boundaries_round_absolute_project_coordinates_independently() -> Result
 }
 
 #[test]
-fn empty_negative_and_hdr_captures_fail_explicitly() {
-    let mut basis = basis(320, 180, (30, 1));
+fn empty_and_negative_captures_fail_explicitly() {
+    let basis = basis(320, 180, (30, 1));
     for range in [range(0, 0), range(19, 19), range(-1, 3), range(-3, -1)] {
         assert!(matches!(
             contract(&basis, range),
             Err(ExportPictureError::Range)
         ));
     }
-    for color in [ColorPolicy::HdrRec2020Pq, ColorPolicy::HdrRec2020Hlg] {
-        basis.color_policy = color;
+}
+
+#[test]
+fn hdr_output_keeps_the_basis_transfer_or_falls_back_to_sdr() -> Result {
+    let volume = deadpan_core::MasteringDisplay {
+        primaries: [[35_400, 14_600], [8_500, 39_850], [6_550, 2_300]],
+        white_point: [15_635, 16_450],
+        max_luminance: 10_000_000,
+        min_luminance: 50,
+    };
+    let mut sdr = basis(320, 180, (30, 1));
+    // An SDR Original can never produce HDR output.
+    for output in [ColorPolicy::HdrRec2020Pq, ColorPolicy::HdrRec2020Hlg] {
         assert!(matches!(
-            contract(&basis, range(0, 1)),
+            branch(&sdr, output, None),
             Err(ExportPictureError::InvalidContract(_))
         ));
     }
+    sdr.color_policy = ColorPolicy::HdrRec2020Pq;
+    let pq = branch(&sdr, ColorPolicy::HdrRec2020Pq, Some(volume))?;
+    assert_eq!(pq.color_policy(), ColorPolicy::HdrRec2020Pq);
+    assert_eq!(pq.mastering_display(), Some(volume));
+    // Tone-mapped SDR fallback from an HDR basis, without metadata.
+    assert_eq!(
+        branch(&sdr, ColorPolicy::SdrRec709, None)?.color_policy(),
+        ColorPolicy::SdrRec709
+    );
+    assert!(branch(&sdr, ColorPolicy::SdrRec709, Some(volume)).is_err());
+    assert!(branch(&sdr, ColorPolicy::HdrRec2020Hlg, None).is_err());
+    sdr.color_policy = ColorPolicy::HdrRec2020Hlg;
+    assert!(branch(&sdr, ColorPolicy::HdrRec2020Hlg, Some(volume)).is_err());
+    assert!(branch(&sdr, ColorPolicy::HdrRec2020Hlg, None).is_ok());
+    let invalid = deadpan_core::MasteringDisplay {
+        min_luminance: volume.max_luminance,
+        ..volume
+    };
+    sdr.color_policy = ColorPolicy::HdrRec2020Pq;
+    assert!(branch(&sdr, ColorPolicy::HdrRec2020Pq, Some(invalid)).is_err());
+    Ok(())
 }
 
 #[test]

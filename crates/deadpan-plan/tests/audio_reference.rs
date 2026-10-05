@@ -559,6 +559,7 @@ fn processing_domains_keep_preserve_opaque_and_preparation_clocks_distinct() {
     assert_eq!(
         first.kind(),
         &ReferenceProcessingKind::Preserve {
+            pitch: PitchPolicy::Preserve,
             selection: ratio(0, 1)..ratio(12, 1),
             duration: duration(6),
             rate: ratio(2, 1),

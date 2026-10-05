@@ -3,6 +3,7 @@
 //! read-only store and runs the supervised tracker; the writer saves the
 //! result expecting the revision the command was entered at. Session
 //! replacement and shutdown cancel the job and wait until it has drained.
+//! Face proposals use a second, independent job thread ([`faces`]).
 
 use std::sync::mpsc::{self, Receiver, SyncSender};
 use std::time::Instant;
@@ -12,7 +13,11 @@ use deadpan_cli::tracking::{self, TrackRequest, TrackingError, TrackingRuntime};
 use deadpan_core::{SourceTimeBase, TargetId};
 
 use super::*;
-use crate::project::targets::{Backend, Job, Operation, Outcome, Phase, Saved, TrackMode, Update};
+use crate::project::targets::{
+    Backend, FaceJob, Job, Operation, Outcome, Phase, Saved, TrackMode, Update,
+};
+
+mod faces;
 
 /// Progress reports the job thread may queue ahead of the writer.
 const EVENT_CAPACITY: usize = 16;
@@ -58,6 +63,9 @@ pub(super) struct State {
     job: Option<Job>,
     reply: Option<(u64, Option<String>)>,
     saved: Option<Saved>,
+    /// The face-detection job thread, independent of tracking.
+    faces_running: Option<faces::Running>,
+    faces: Option<FaceJob>,
 }
 
 impl State {
@@ -70,15 +78,16 @@ impl State {
 
     /// A job thread is live; the project must not be released.
     pub(super) fn active(&self) -> bool {
-        self.running.is_some()
+        self.running.is_some() || self.faces_running.is_some()
     }
 
     fn reset(&mut self, session: u64) {
-        debug_assert!(self.running.is_none());
+        debug_assert!(self.running.is_none() && self.faces_running.is_none());
         self.session = session;
         self.job = None;
         self.reply = None;
         self.saved = None;
+        self.faces = None;
     }
 }
 
@@ -104,8 +113,10 @@ fn failure(error: TrackingError) -> Failure {
 }
 
 impl Service {
-    /// Cancel any live tracking job cooperatively; the pump drains it.
+    /// Cancel any live tracking or face-detection job cooperatively; the
+    /// pump drains it.
     pub(super) fn cancel_tracking(&mut self) {
+        self.cancel_faces();
         if let Some(running) = &self.targets.running {
             running.cancelled.store(true, Ordering::Release);
             if let Some(job) = &mut self.targets.job
@@ -156,6 +167,39 @@ impl Service {
                 };
                 (ticket, result)
             }
+            Operation::DetectFaces {
+                ticket,
+                session,
+                revision,
+                asset,
+                pts,
+            } => (
+                ticket,
+                self.start_faces(ticket, session, revision, asset, pts),
+            ),
+            Operation::SaveFramed {
+                ticket,
+                session,
+                revision,
+                scope,
+                cursor,
+                node,
+                id,
+                target,
+                framing,
+            } => (
+                ticket,
+                self.save_framed(
+                    session,
+                    revision,
+                    scope,
+                    cursor,
+                    node,
+                    id,
+                    *target,
+                    framing.map(|framing| *framing),
+                ),
+            ),
         };
         self.targets.reply = Some((ticket, result.err()));
     }
@@ -164,6 +208,7 @@ impl Service {
         if let Some(workspace) = &self.workspace
             && self.targets.session != workspace.session
             && self.targets.running.is_none()
+            && self.targets.faces_running.is_none()
         {
             self.targets.reset(workspace.session);
         }
@@ -336,6 +381,18 @@ impl Service {
                 }
                 Worker::Scripted(script)
             }
+            // Only face detection is scripted; tracking uses the installed worker.
+            #[cfg(any(test, feature = "ui-harness"))]
+            Backend::ScriptedFaces(_) => match TrackingRuntime::beside_current_executable() {
+                Ok(runtime) if runtime.executable.is_file() => Worker::Real(runtime),
+                _ => {
+                    self.targets.job = Some(job);
+                    self.conclude_tracking(Outcome::Unavailable(
+                        "The tracker is not installed beside Deadpan.".into(),
+                    ));
+                    return Ok(());
+                }
+            },
         };
         let cancelled = Arc::new(AtomicBool::new(false));
         let (events, receive) = mpsc::sync_channel(EVENT_CAPACITY);
@@ -388,12 +445,17 @@ impl Service {
                 .saved
                 .clone()
                 .filter(|saved| saved.session == session),
+            faces: self
+                .targets
+                .faces
+                .clone()
+                .filter(|faces| faces.session == session),
         })
     }
 
     /// Apply queued job events on the writer. True when published state changed.
     pub(super) fn pump_tracking(&mut self) -> bool {
-        let mut changed = false;
+        let mut changed = self.pump_faces();
         for _ in 0..EVENT_CAPACITY + 1 {
             let Some(running) = &self.targets.running else {
                 return changed;

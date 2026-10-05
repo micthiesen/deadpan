@@ -17,6 +17,146 @@ const MAX_CODEC_INTEGER: u32 = 2_147_483_647;
 /// Persist this identity alongside resolved controls when retaining a decision.
 pub const SDR_POLICY_VERSION_V1: u32 = 1;
 
+/// Frozen HDR control derivation used by `EncodeContract::new_hdr_v1`: the SDR
+/// v1 clocks, GOP, AAC target and timescale with video bitrate x1.25 rounded
+/// half up from the exact SDR v1 integer. Persist it like the SDR identity.
+pub const HDR_POLICY_VERSION_V1: u32 = 1;
+
+/// Largest mastering-display chromaticity coordinate (1.0 in 1/50000 units).
+pub const MAX_CHROMATICITY: u16 = 50_000;
+/// SMPTE ST 2086 luminance bounds in 1/10000 cd/m² units (shared with
+/// `deadpan_core`, which owns the rule set).
+pub const MIN_MASTERING_MAX_LUMINANCE: u32 = deadpan_core::MASTERING_MIN_PEAK;
+pub const MAX_MASTERING_MAX_LUMINANCE: u32 = deadpan_core::MASTERING_MAX_PEAK;
+pub const MAX_MASTERING_MIN_LUMINANCE: u32 = deadpan_core::MASTERING_MAX_BLACK;
+/// CTA-861.3 content light bound in cd/m².
+pub const MAX_CONTENT_LIGHT: u16 = deadpan_core::CONTENT_LIGHT_MAX;
+
+/// HDR transfer of the encoded signal. Primaries are BT.2020, the matrix is
+/// BT.2020 non-constant luminance and the range is limited for both.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", deny_unknown_fields)]
+pub enum HdrTransfer {
+    /// SMPTE ST 2084.
+    Pq,
+    /// ARIB STD-B67 (BT.2100 HLG).
+    Hlg,
+}
+
+/// SMPTE ST 2086 static mastering display volume. Primaries are R, G, B order;
+/// chromaticities use 1/50000 units and luminances 1/10000 cd/m² units.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct MasteringDisplay {
+    pub primaries: [[u16; 2]; 3],
+    pub white_point: [u16; 2],
+    pub max_luminance: u32,
+    pub min_luminance: u32,
+}
+
+impl MasteringDisplay {
+    /// Applies the shared `deadpan_core::MasteringDisplay::check` rule set, so
+    /// source admission, render contracts and the encoder agree exactly.
+    pub fn validate(&self) -> Result<(), EncodeError> {
+        let shared = deadpan_core::MasteringDisplay {
+            primaries: self.primaries,
+            white_point: self.white_point,
+            max_luminance: self.max_luminance,
+            min_luminance: self.min_luminance,
+        };
+        shared.check().map_err(|error| {
+            EncodeError::Configuration(match error {
+                deadpan_core::MasteringDisplayError::Chromaticity => {
+                    "mastering chromaticity must be a positive CIE xy point"
+                }
+                deadpan_core::MasteringDisplayError::Primaries => {
+                    "mastering primaries must enclose the white point in R,G,B order"
+                }
+                deadpan_core::MasteringDisplayError::Luminance => {
+                    "mastering luminance exceeds ST 2086 bounds or min is not below max"
+                }
+            })
+        })
+    }
+}
+
+/// CTA-861.3 static content light levels in cd/m². Zero means unknown.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ContentLight {
+    pub max_cll: u16,
+    pub max_fall: u16,
+}
+
+impl ContentLight {
+    pub fn validate(&self) -> Result<(), EncodeError> {
+        let shared = deadpan_core::ContentLight {
+            max_cll: self.max_cll,
+            max_fall: self.max_fall,
+        };
+        if !shared.is_valid() {
+            return Err(EncodeError::Configuration(
+                "content light exceeds 10000 cd/m² or MaxFALL exceeds MaxCLL",
+            ));
+        }
+        Ok(())
+    }
+}
+
+/// Requested HDR signal. HLG carries no static metadata in this policy, so
+/// `mastering` must be absent for HLG.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct HdrSignal {
+    pub transfer: HdrTransfer,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mastering: Option<MasteringDisplay>,
+}
+
+impl HdrSignal {
+    pub fn validate(&self) -> Result<(), EncodeError> {
+        match (self.transfer, &self.mastering) {
+            (HdrTransfer::Hlg, Some(_)) => Err(EncodeError::Configuration(
+                "HLG output carries no mastering display metadata",
+            )),
+            (_, Some(mastering)) => mastering.validate(),
+            (_, None) => Ok(()),
+        }
+    }
+}
+
+/// Encoded video stream format selected by the contract.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case", deny_unknown_fields)]
+pub enum VideoFormat {
+    /// H.264 High, 8-bit limited-range Rec.709 I420, `avc1`.
+    H264Rec709I420,
+    /// HEVC Main10, 10-bit limited-range BT.2020 NCL PQ, `hvc1`.
+    HevcMain10Rec2100Pq,
+    /// HEVC Main10, 10-bit limited-range BT.2020 NCL HLG, `hvc1`.
+    HevcMain10Rec2100Hlg,
+}
+
+impl VideoFormat {
+    pub const fn is_hdr(self) -> bool {
+        !matches!(self, Self::H264Rec709I420)
+    }
+    pub const fn hdr_transfer(self) -> Option<HdrTransfer> {
+        match self {
+            Self::H264Rec709I420 => None,
+            Self::HevcMain10Rec2100Pq => Some(HdrTransfer::Pq),
+            Self::HevcMain10Rec2100Hlg => Some(HdrTransfer::Hlg),
+        }
+    }
+}
+
+/// The HDR part of a contract, serialized only for HDR contracts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub struct HdrEncoding {
+    pub policy_version: u32,
+    pub signal: HdrSignal,
+}
+
 /// A separately admitted attempt. Neither mode permits an automatic fallback.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case", deny_unknown_fields)]
@@ -43,8 +183,9 @@ pub struct SdrPolicy {
     pub movie_timescale: u32,
 }
 
-/// Immutable exact input contract. Pixel input is tight limited-range Rec.709
-/// I420 with left-sited chroma, progressive square pixels. Audio is already
+/// Immutable exact input contract. SDR pixel input is tight limited-range
+/// Rec.709 I420 with left-sited chroma, progressive square pixels. HDR input is
+/// the same geometry as planar 10-bit little-endian u16 BT.2020 NCL samples. Audio is already
 /// mastered finite 48 kHz planar stereo, with output sample zero as its origin.
 ///
 /// `audio_samples` is supplied as B(project_end)-B(project_start). This adapter
@@ -60,6 +201,9 @@ pub struct EncodeContract {
     mode: EncoderMode,
     policy: SdrPolicy,
     picture_bytes: u64,
+    /// Absent for SDR so the frozen v1 serialization is unchanged.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    hdr: Option<HdrEncoding>,
 }
 
 impl EncodeContract {
@@ -174,7 +318,57 @@ impl EncodeContract {
             mode,
             policy,
             picture_bytes: pixels * 3 / 2,
+            hdr: None,
         })
+    }
+
+    /// Construct an HDR HEVC Main10 contract using frozen HDR policy version 1.
+    /// Clocks, GOP, AAC, timescale, B-frame request and admission are exactly
+    /// SDR v1; only the bitrate is SDR v1 x1.25 (half up). Input pictures are
+    /// tight planar 10-bit 4:2:0 little-endian u16 samples (Y, Cb, Cr).
+    pub fn new_hdr_v1(
+        raster: [u32; 2],
+        frame_rate: [u32; 2],
+        video_frames: u64,
+        audio_samples: u64,
+        mode: EncoderMode,
+        b_frames: BFramePolicy,
+        signal: HdrSignal,
+    ) -> Result<Self, EncodeError> {
+        signal.validate()?;
+        let mut contract = Self::new_v1(
+            raster,
+            frame_rate,
+            video_frames,
+            audio_samples,
+            mode,
+            b_frames,
+        )?;
+        contract.policy.video_bitrate = (contract.policy.video_bitrate * 5 + 2) / 4;
+        contract.picture_bytes *= 2;
+        contract.hdr = Some(HdrEncoding {
+            policy_version: HDR_POLICY_VERSION_V1,
+            signal,
+        });
+        Ok(contract)
+    }
+
+    pub const fn video_format(&self) -> VideoFormat {
+        match &self.hdr {
+            None => VideoFormat::H264Rec709I420,
+            Some(HdrEncoding {
+                signal:
+                    HdrSignal {
+                        transfer: HdrTransfer::Pq,
+                        ..
+                    },
+                ..
+            }) => VideoFormat::HevcMain10Rec2100Pq,
+            Some(_) => VideoFormat::HevcMain10Rec2100Hlg,
+        }
+    }
+    pub const fn hdr(&self) -> Option<&HdrEncoding> {
+        self.hdr.as_ref()
     }
 
     pub const fn raster(&self) -> [u32; 2] {

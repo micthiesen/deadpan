@@ -2,8 +2,8 @@
 //! Key positions stay in exact owner-output frames, including hidden keys.
 
 use deadpan_core::{
-    AudioTreatmentStage, AudioTreatments, ClipGain, ExactRatio, GainCurve, GainDb, GainEnvelope,
-    GainRange, GainSegment, MAX_GAIN_ENVELOPES, MAX_GAIN_MUTE_RANGES, MAX_GAIN_SEGMENTS,
+    AudioTreatments, ClipGain, ExactRatio, GainCurve, GainDb, GainEnvelope, GainRange, GainSegment,
+    MAX_GAIN_ENVELOPES, MAX_GAIN_MUTE_RANGES, MAX_GAIN_SEGMENTS,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -265,13 +265,21 @@ impl GainEdit {
     }
 
     fn install(&mut self, clip: ClipGain) -> Result<(), String> {
-        let order = if self.recipe.is_empty() {
-            vec![AudioTreatmentStage::ClipGain]
-        } else {
-            self.recipe.order().to_vec()
-        };
-        let recipe = AudioTreatments::new(order, Some(clip)).map_err(message)?;
-        self.recipe = recipe;
+        self.recipe = self.recipe.with_clip_gain(clip).map_err(message)?;
+        Ok(())
+    }
+
+    pub(crate) fn saturation(&self) -> Option<deadpan_core::Saturation> {
+        self.recipe.saturation()
+    }
+
+    /// Add, change or remove the saturation stage, keeping clip gain and the
+    /// authored stage order.
+    pub(crate) fn set_saturation(
+        &mut self,
+        saturation: Option<deadpan_core::Saturation>,
+    ) -> Result<(), String> {
+        self.recipe = self.recipe.with_saturation(saturation).map_err(message)?;
         Ok(())
     }
 }
@@ -402,7 +410,31 @@ fn digits(input: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use deadpan_core::GainClock;
+    use deadpan_core::{AudioTreatmentStage, GainClock, Saturation};
+
+    #[test]
+    fn saturation_is_a_separate_ordered_stage_beside_clip_gain() {
+        let mut edit = GainEdit::new(AudioTreatments::default());
+        let drive = Saturation::new(GainDb::new(12_000).unwrap()).unwrap();
+        edit.set_saturation(Some(drive)).unwrap();
+        assert_eq!(edit.recipe().order(), &[AudioTreatmentStage::Saturation]);
+        assert!(edit.clip().is_none());
+        // Clip gain added later keeps its default place before saturation.
+        edit.set_trim(GainDb::new(-3_000).unwrap()).unwrap();
+        assert_eq!(
+            edit.recipe().order(),
+            &[
+                AudioTreatmentStage::ClipGain,
+                AudioTreatmentStage::Saturation
+            ]
+        );
+        assert_eq!(edit.saturation(), Some(drive));
+        edit.set_saturation(None).unwrap();
+        assert_eq!(edit.recipe().order(), &[AudioTreatmentStage::ClipGain]);
+        assert_eq!(edit.trim().millidecibels(), -3_000);
+        assert!(Saturation::new(GainDb::new(24_000).unwrap()).is_ok());
+        assert!(Saturation::new(GainDb::new(-1).unwrap()).is_err());
+    }
 
     fn ratio(numerator: i128, denominator: i128) -> ExactRatio {
         ExactRatio::new(numerator, denominator).unwrap()

@@ -15,10 +15,13 @@ pub use host::{
 };
 
 use deadpan_core::{
-    AudioSample, ColorPolicy, ExactRatio, FrameRange, FrameRate, ProjectFrame, ProjectId,
-    RevisionId,
+    AudioSample, ColorPolicy, ExactRatio, FrameRange, FrameRate, MasteringDisplay, ProjectFrame,
+    ProjectId, RevisionId,
 };
-use deadpan_encode::{EncodeLimits, probe::EncoderProbe};
+use deadpan_encode::{
+    BFramePolicy, EncodeContract, EncodeError, EncodeLimits, EncoderMode, HdrTransfer,
+    probe::{AudioMarker, EncoderProbe, HdrEncoderProbe, ProbeConfig},
+};
 use deadpan_jobs::{Sha256, process::ProcessLimits};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256 as Hasher};
@@ -43,14 +46,90 @@ pub struct ProbeSpec {
     pub raster: [u32; 2],
     pub frame_rate: [u32; 2],
     pub choice: EncoderChoice,
+    /// Output color of the deterministic fixture. SDR is the default and is
+    /// omitted, so SDR specs, recipe hashes and retained decisions keep their
+    /// exact bytes. PQ/HLG select the 10-bit HEVC Main10 HDR probe.
+    #[serde(default = "sdr_color", skip_serializing_if = "is_sdr_color")]
+    pub color_policy: ColorPolicy,
+}
+
+const fn sdr_color() -> ColorPolicy {
+    ColorPolicy::SdrRec709
+}
+
+#[allow(clippy::trivially_copy_pass_by_ref)] // serde skip predicate signature
+fn is_sdr_color(color: &ColorPolicy) -> bool {
+    *color == ColorPolicy::SdrRec709
+}
+
+/// The deterministic SDR (8-bit H.264) or HDR (10-bit HEVC Main10) fixture.
+#[derive(Debug, Clone)]
+pub enum ProbeGenerator {
+    Sdr(EncoderProbe),
+    Hdr(HdrEncoderProbe),
+}
+
+impl ProbeGenerator {
+    pub fn config(&self) -> &ProbeConfig {
+        match self {
+            Self::Sdr(probe) => probe.config(),
+            Self::Hdr(probe) => probe.config(),
+        }
+    }
+    pub fn markers(&self) -> &[AudioMarker; 3] {
+        match self {
+            Self::Sdr(probe) => probe.markers(),
+            Self::Hdr(probe) => probe.markers(),
+        }
+    }
+    pub fn contract(
+        &self,
+        mode: EncoderMode,
+        b_frames: BFramePolicy,
+    ) -> Result<EncodeContract, EncodeError> {
+        match self {
+            Self::Sdr(probe) => probe.contract(mode, b_frames),
+            Self::Hdr(probe) => probe.contract(mode, b_frames),
+        }
+    }
+    /// Fill one native input picture: tight 8-bit I420 (SDR) or planar
+    /// little-endian 10-bit Y/Cb/Cr (HDR).
+    pub fn fill_picture(&self, ordinal: u64, output: &mut [u8]) -> Result<(), EncodeError> {
+        match self {
+            Self::Sdr(probe) => probe.fill_picture(ordinal, output),
+            Self::Hdr(probe) => probe.fill_picture(ordinal, output),
+        }
+    }
+    pub fn fill_audio(
+        &self,
+        first_sample: u64,
+        left: &mut [f32],
+        right: &mut [f32],
+    ) -> Result<(), EncodeError> {
+        match self {
+            Self::Sdr(probe) => probe.fill_audio(first_sample, left, right),
+            Self::Hdr(probe) => probe.fill_audio(first_sample, left, right),
+        }
+    }
 }
 
 impl ProbeSpec {
-    pub fn generator(&self) -> Result<EncoderProbe, String> {
+    pub fn generator(&self) -> Result<ProbeGenerator, String> {
         if self.raster[0] < 14 || self.raster[1] < 16 {
             return Err("encoder admission requires at least 14x16 pixels to distinguish every probe picture and color region".into());
         }
-        EncoderProbe::new(self.raster, self.frame_rate).map_err(|error| error.to_string())
+        let transfer = match self.color_policy {
+            ColorPolicy::SdrRec709 => {
+                return EncoderProbe::new(self.raster, self.frame_rate)
+                    .map(ProbeGenerator::Sdr)
+                    .map_err(|error| error.to_string());
+            }
+            ColorPolicy::HdrRec2020Pq => HdrTransfer::Pq,
+            ColorPolicy::HdrRec2020Hlg => HdrTransfer::Hlg,
+        };
+        HdrEncoderProbe::new(self.raster, self.frame_rate, transfer)
+            .map(ProbeGenerator::Hdr)
+            .map_err(|error| error.to_string())
     }
 
     pub fn contract(&self) -> Result<EncodedRenderContract, String> {
@@ -63,6 +142,15 @@ impl ProbeSpec {
             .map_err(|error| error.to_string())?;
         let range = FrameRange::new(ProjectFrame(0), ProjectFrame(frames))
             .map_err(|error| error.to_string())?;
+        let mastering_display = match &probe {
+            ProbeGenerator::Hdr(hdr) => hdr.signal().mastering.map(|volume| MasteringDisplay {
+                primaries: volume.primaries,
+                white_point: volume.white_point,
+                max_luminance: volume.max_luminance,
+                min_luminance: volume.min_luminance,
+            }),
+            ProbeGenerator::Sdr(_) => None,
+        };
         let contract = EncodedRenderContract {
             picture: RenderContract {
                 project_id: ProjectId::new("encoder-admission-probe-v1")
@@ -73,7 +161,7 @@ impl ProbeSpec {
                 canvas: self.raster,
                 raster: self.raster,
                 frame_rate: rate,
-                color_policy: ColorPolicy::SdrRec709,
+                color_policy: self.color_policy,
                 time_base: RenderTimeBase {
                     numerator: 1,
                     denominator: self.frame_rate[0],
@@ -87,6 +175,7 @@ impl ProbeSpec {
                     i64::try_from(native.audio_samples()).map_err(|_| "probe sample overflow")?,
                 ),
                 relative_aspect_error: ExactRatio::ZERO,
+                mastering_display,
             },
             choice: self.choice,
         };
@@ -94,11 +183,21 @@ impl ProbeSpec {
         Ok(contract)
     }
 
+    /// Domain separation of the frozen recipe identity. SDR keeps the
+    /// original v1 domain; each HDR transfer has its own fixture domain.
+    pub const fn recipe_domain(&self) -> &'static [u8] {
+        match self.color_policy {
+            ColorPolicy::SdrRec709 => b"deadpan-encoder-admission-probe-v1\0",
+            ColorPolicy::HdrRec2020Pq => b"deadpan-encoder-admission-probe-hdr-pq-v1\0",
+            ColorPolicy::HdrRec2020Hlg => b"deadpan-encoder-admission-probe-hdr-hlg-v1\0",
+        }
+    }
+
     pub fn document_sha256(&self) -> Result<Sha256, String> {
         // Domain-separated recipe identity. This is not a project document hash.
         let probe = self.generator()?;
         let mut digest = Hasher::new();
-        digest.update(b"deadpan-encoder-admission-probe-v1\0");
+        digest.update(self.recipe_domain());
         digest.update(serde_json::to_vec(probe.config()).map_err(|error| error.to_string())?);
         let hex: String = digest
             .finalize()
@@ -237,5 +336,7 @@ impl Default for AdmissionLimits {
     }
 }
 
+#[cfg(all(test, target_os = "macos"))]
+mod hardware_tests;
 #[cfg(test)]
 mod tests;

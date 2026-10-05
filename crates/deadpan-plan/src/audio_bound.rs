@@ -272,7 +272,7 @@ impl<'plan> AudioBound<'plan> {
         if self.gap.is_none()
             && matches!(&self.plan.nodes[self.node].kind,
                 CompiledKind::Retime { scale, pitch, .. }
-                if *scale != ExactRatio::ONE && *pitch == deadpan_core::PitchPolicy::Preserve)
+                if pitch.processes(*scale == ExactRatio::ONE))
         {
             return super::AudioStage::for_node(
                 self.plan,

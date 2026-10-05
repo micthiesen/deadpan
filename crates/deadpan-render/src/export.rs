@@ -1,9 +1,14 @@
-//! SDR encoder pixels from the canonical, already composited working picture.
-//! No geometry, source interpretation, timing, encoder or HDR policy lives here.
+//! SDR and HDR encoder pixels from the canonical, already composited working
+//! picture. No geometry, source interpretation, timing, encoder or automatic
+//! output-branch policy lives here.
 
-use crate::color::{conversion, encode_rec709, multiply};
+use crate::color::{
+    HDR_REFERENCE_WHITE_NITS, HLG_NOMINAL_PEAK_NITS, PQ_PEAK_NITS, REC2020_LUMA, conversion, dot,
+    encode_rec709, hlg_inverse_oetf, hlg_inverse_ootf, hlg_oetf, hlg_ootf, multiply, pq_eotf,
+    pq_inverse_eotf,
+};
 use crate::surface::validate_dimensions;
-use crate::{MAX_PIXELS, Primaries, RenderError};
+use crate::{HdrTransfer, MAX_PIXELS, Primaries, RenderError};
 
 /// At most 128 MiB of pixels plus at most 2 MiB of GPU row padding. This is
 /// separate from the smaller RGBA8 upload bound. Readback temporarily owns a
@@ -192,6 +197,248 @@ impl Rec709Yuv420Frame {
     pub fn bytes(&self) -> &[u8] {
         &self.bytes
     }
+}
+
+/// Fixed HDR encoder pixel contract: BT.2020 primaries, BT.2020 non-constant
+/// luminance YCbCr matrix, PQ (SMPTE ST 2084) or HLG (ARIB STD-B67) transfer,
+/// 10-bit limited range (Y 64..940, Cb/Cr 64..960, neutral 512), progressive
+/// 4:2:0, square pixels and left chroma location with the same chroma filter
+/// as [`Yuv420Policy::Rec709LimitedLeft`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Yuv420P10Policy {
+    Rec2100PqLimitedLeft,
+    Rec2100HlgLimitedLeft,
+}
+
+/// Per-frame light statistics in cd/m^2 (CTA-861.3 inputs), from the clipped
+/// linear display light used for coding: `max_nits` is the frame maximum of
+/// per-pixel max(R, G, B); `mean_nits` is the frame average of that value.
+/// MaxCLL is the maximum `max_nits` and MaxFALL the maximum `mean_nits` over
+/// all frames of a program.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct FrameLight {
+    pub max_nits: f64,
+    pub mean_nits: f64,
+}
+
+/// Bounded owned planar 10-bit Y, Cb, Cr: little-endian u16 samples with codes
+/// in the low ten bits, tight rows, even dimensions, all of Y then Cb then Cr
+/// (yuv420p10le). The caller supplies project-frame timestamps separately.
+#[derive(Debug, PartialEq, Eq)]
+pub struct Rec2100Yuv420P10Frame {
+    width: u32,
+    height: u32,
+    policy: Yuv420P10Policy,
+    luma_len: usize,
+    chroma_len: usize,
+    bytes: Vec<u8>,
+}
+
+impl Rec2100Yuv420P10Frame {
+    /// Worker-side, bounded CPU conversion. Signed linear working Rec.2020
+    /// (identity primaries stage) is scaled to cd/m^2 (x203) and clipped per
+    /// channel to [0, 10000] (PQ) or [0, 1000] (HLG); light statistics use
+    /// this clipped light. PQ applies the inverse EOTF per channel. HLG applies
+    /// the inverse OOTF (1000 cd/m^2, gamma 1.2) on Rec.2020 luminance, clips
+    /// scene light to [0, 1] per channel, then the OETF. Then the BT.2020 NCL
+    /// matrix; chroma uses the SDR boundary's left-sited filter before one
+    /// nearest (ties upward) 10-bit quantization.
+    pub fn from_working(
+        frame: &WorkingRgba16Frame,
+        transfer: HdrTransfer,
+    ) -> Result<(Self, FrameLight), RenderError> {
+        if !frame.width.is_multiple_of(2) || !frame.height.is_multiple_of(2) {
+            return Err(RenderError::EncoderDimensions);
+        }
+        let luma_len = usize::try_from(u64::from(frame.width) * u64::from(frame.height))
+            .map_err(|_| RenderError::WorkingLayout)?;
+        let chroma_len = luma_len / 4;
+        let samples = luma_len
+            .checked_add(
+                chroma_len
+                    .checked_mul(2)
+                    .ok_or(RenderError::WorkingLayout)?,
+            )
+            .ok_or(RenderError::WorkingLayout)?;
+        let mut bytes = allocated(
+            samples.checked_mul(2).ok_or(RenderError::WorkingLayout)?,
+            0_u8,
+        )?;
+        let width = usize::try_from(frame.width).map_err(|_| RenderError::WorkingLayout)?;
+        let mut rows = allocated(
+            width.checked_mul(2).ok_or(RenderError::WorkingLayout)?,
+            [0.0; 2],
+        )?;
+        let mut maximum = 0.0_f64;
+        let mut total = 0.0_f64;
+        let store = |bytes: &mut [u8], sample: usize, code: u16| {
+            bytes[sample * 2..sample * 2 + 2].copy_from_slice(&code.to_le_bytes());
+        };
+        for y in (0..frame.height).step_by(2) {
+            for dy in 0..2 {
+                let row = usize::try_from(dy).expect("two-row index") * width;
+                let destination = usize::try_from(u64::from(y + dy) * u64::from(frame.width))
+                    .map_err(|_| RenderError::WorkingLayout)?;
+                for x in 0..frame.width {
+                    let light = display_light(frame.pixel(x, y + dy)?, transfer);
+                    let brightest = light[0].max(light[1]).max(light[2]);
+                    maximum = maximum.max(brightest);
+                    total += brightest;
+                    let [luma, cb, cr] = rec2020_ycbcr(encode_light(light, transfer));
+                    let x = usize::try_from(x).expect("validated width fits address space");
+                    store(
+                        &mut bytes,
+                        destination + x,
+                        quantize10(64.0 + 876.0 * luma, 64.0, 940.0),
+                    );
+                    rows[row + x] = [cb, cr];
+                }
+            }
+            let chroma_row = usize::try_from(u64::from(y / 2) * u64::from(frame.width / 2))
+                .map_err(|_| RenderError::WorkingLayout)?;
+            for x in (0..width).step_by(2) {
+                let left = x.saturating_sub(1);
+                let right = (x + 1).min(width - 1);
+                let filtered: [f64; 2] = std::array::from_fn(|channel| {
+                    (rows[left][channel]
+                        + 2.0 * rows[x][channel]
+                        + rows[right][channel]
+                        + rows[width + left][channel]
+                        + 2.0 * rows[width + x][channel]
+                        + rows[width + right][channel])
+                        / 8.0
+                });
+                for (channel, value) in filtered.into_iter().enumerate() {
+                    store(
+                        &mut bytes,
+                        luma_len + channel * chroma_len + chroma_row + x / 2,
+                        quantize10(512.0 + 896.0 * value, 64.0, 960.0),
+                    );
+                }
+            }
+        }
+        let policy = match transfer {
+            HdrTransfer::Pq => Yuv420P10Policy::Rec2100PqLimitedLeft,
+            HdrTransfer::Hlg => Yuv420P10Policy::Rec2100HlgLimitedLeft,
+        };
+        // luma_len is nonzero: validated dimensions are nonzero.
+        let light = FrameLight {
+            max_nits: maximum,
+            mean_nits: total / luma_len as f64,
+        };
+        Ok((
+            Self {
+                width: frame.width,
+                height: frame.height,
+                policy,
+                luma_len,
+                chroma_len,
+                bytes,
+            },
+            light,
+        ))
+    }
+
+    pub const fn width(&self) -> u32 {
+        self.width
+    }
+    pub const fn height(&self) -> u32 {
+        self.height
+    }
+    pub const fn policy(&self) -> Yuv420P10Policy {
+        self.policy
+    }
+    pub const fn transfer(&self) -> HdrTransfer {
+        match self.policy {
+            Yuv420P10Policy::Rec2100PqLimitedLeft => HdrTransfer::Pq,
+            Yuv420P10Policy::Rec2100HlgLimitedLeft => HdrTransfer::Hlg,
+        }
+    }
+    /// Two bytes per sample.
+    pub const fn y_stride_bytes(&self) -> u32 {
+        self.width * 2
+    }
+    pub const fn chroma_stride_bytes(&self) -> u32 {
+        self.width
+    }
+    pub fn y_plane(&self) -> &[u8] {
+        &self.bytes[..self.luma_len * 2]
+    }
+    pub fn cb_plane(&self) -> &[u8] {
+        &self.bytes[self.luma_len * 2..(self.luma_len + self.chroma_len) * 2]
+    }
+    pub fn cr_plane(&self) -> &[u8] {
+        &self.bytes[(self.luma_len + self.chroma_len) * 2..]
+    }
+    /// All tightly packed planes in Y, Cb, Cr order (yuv420p10le).
+    pub fn bytes(&self) -> &[u8] {
+        &self.bytes
+    }
+    /// Number of u16 samples in [`Self::bytes`].
+    pub const fn sample_count(&self) -> usize {
+        self.luma_len + 2 * self.chroma_len
+    }
+    /// The code at a sample index in Y, Cb, Cr order.
+    pub fn code(&self, sample: usize) -> Option<u16> {
+        let start = sample.checked_mul(2)?;
+        let pair = self.bytes.get(start..start.checked_add(2)?)?;
+        Some(u16::from_le_bytes([pair[0], pair[1]]))
+    }
+}
+
+/// Working Rec.2020 to clipped display light in cd/m^2 for the output transfer.
+fn display_light(rgb: [f64; 3], transfer: HdrTransfer) -> [f64; 3] {
+    let peak = match transfer {
+        HdrTransfer::Pq => PQ_PEAK_NITS,
+        HdrTransfer::Hlg => HLG_NOMINAL_PEAK_NITS,
+    };
+    rgb.map(|value| (value * HDR_REFERENCE_WHITE_NITS).clamp(0.0, peak))
+}
+
+fn encode_light(light: [f64; 3], transfer: HdrTransfer) -> [f64; 3] {
+    match transfer {
+        HdrTransfer::Pq => light.map(pq_inverse_eotf),
+        HdrTransfer::Hlg => hlg_inverse_ootf(light).map(hlg_oetf),
+    }
+}
+
+/// CPU f64 reference of the per-pixel HDR nonlinear signal: signed working
+/// Rec.2020 to nonlinear R'G'B' in [0, 1] for the output transfer, using the
+/// same clip as [`Rec2100Yuv420P10Frame::from_working`].
+pub fn working_to_rec2100_nonlinear(rgb: [f64; 3], transfer: HdrTransfer) -> [f64; 3] {
+    encode_light(display_light(rgb, transfer), transfer)
+}
+
+/// Verification inverse: one limited-range 10-bit Y, Cb, Cr triple (as
+/// decoded, no chroma reconstruction) back to linear working Rec.2020 through
+/// the inverse BT.2020 NCL matrix and the transfer's EOTF (HLG: inverse OETF
+/// then OOTF). Nonlinear values are clamped to [0, 1].
+pub fn rec2100_p10_to_working(transfer: HdrTransfer, ycbcr: [u16; 3]) -> [f64; 3] {
+    let luma = (f64::from(ycbcr[0]) - 64.0) / 876.0;
+    let cb = (f64::from(ycbcr[1]) - 512.0) / 896.0;
+    let cr = (f64::from(ycbcr[2]) - 512.0) / 896.0;
+    let r = luma + 2.0 * (1.0 - REC2020_LUMA[0]) * cr;
+    let b = luma + 2.0 * (1.0 - REC2020_LUMA[2]) * cb;
+    let g = (luma - REC2020_LUMA[0] * r - REC2020_LUMA[2] * b) / REC2020_LUMA[1];
+    let nonlinear = [r, g, b].map(|value| value.clamp(0.0, 1.0));
+    let light = match transfer {
+        HdrTransfer::Pq => nonlinear.map(pq_eotf),
+        HdrTransfer::Hlg => hlg_ootf(nonlinear.map(hlg_inverse_oetf)),
+    };
+    light.map(|nits| nits / HDR_REFERENCE_WHITE_NITS)
+}
+
+fn rec2020_ycbcr(rgb: [f64; 3]) -> [f64; 3] {
+    let y = dot(REC2020_LUMA, rgb);
+    [
+        y,
+        (rgb[2] - y) / (2.0 * (1.0 - REC2020_LUMA[2])),
+        (rgb[0] - y) / (2.0 * (1.0 - REC2020_LUMA[0])),
+    ]
+}
+
+fn quantize10(value: f64, minimum: f64, maximum: f64) -> u16 {
+    value.clamp(minimum, maximum).round() as u16
 }
 
 fn rec709_ycbcr([r, g, b]: [f64; 3]) -> [f64; 3] {
@@ -391,6 +638,335 @@ mod tests {
         assert_eq!(
             Rec709Yuv420Frame::from_working(&frame(2, 2, 0, &[BLACK; 4])).unwrap(),
             Rec709Yuv420Frame::from_working(&frame(2, 2, 248, &[BLACK; 4])).unwrap()
+        );
+    }
+
+    // Independent f64 Rec.2100 reference: published constants (HLG c rounded
+    // as printed in BT.2100), separate matrix/filter/quantization code.
+    fn reference_signal(rgb: [f64; 3], transfer: HdrTransfer) -> [f64; 3] {
+        match transfer {
+            HdrTransfer::Pq => rgb.map(|working| {
+                let y = (working * 203.0).clamp(0.0, 10_000.0) / 10_000.0;
+                let (m1, m2) = (0.1593017578125, 78.84375);
+                let (c1, c2, c3) = (0.8359375, 18.8515625, 18.6875);
+                ((c1 + c2 * y.powf(m1)) / (1.0 + c3 * y.powf(m1))).powf(m2)
+            }),
+            HdrTransfer::Hlg => {
+                let display = rgb.map(|working| (working * 203.0).clamp(0.0, 1000.0));
+                let yd = 0.2627 * display[0] + 0.6780 * display[1] + 0.0593 * display[2];
+                display.map(|fd| {
+                    let e = if yd <= 0.0 {
+                        0.0
+                    } else {
+                        // Es = (Fd / Lw) * (Yd / Lw)^((1 - gamma) / gamma)
+                        (fd / 1000.0 * (yd / 1000.0).powf(-0.2 / 1.2)).min(1.0)
+                    };
+                    if e <= 1.0 / 12.0 {
+                        (3.0 * e).sqrt()
+                    } else {
+                        0.17883277 * (12.0 * e - 0.28466892).ln() + 0.55991073
+                    }
+                })
+            }
+        }
+    }
+
+    fn reference_codes(
+        width: usize,
+        height: usize,
+        pixels: &[[f64; 3]],
+        transfer: HdrTransfer,
+    ) -> Vec<u16> {
+        let ycbcr: Vec<[f64; 3]> = pixels
+            .iter()
+            .map(|rgb| {
+                let [r, g, b] = reference_signal(*rgb, transfer);
+                let y = 0.2627 * r + 0.6780 * g + 0.0593 * b;
+                [y, (b - y) / 1.8814, (r - y) / 1.4746]
+            })
+            .collect();
+        let code = |value: f64, low: f64, high: f64| (value.clamp(low, high) + 0.5).floor() as u16;
+        let mut output: Vec<u16> = ycbcr
+            .iter()
+            .map(|value| code(64.0 + 876.0 * value[0], 64.0, 940.0))
+            .collect();
+        for channel in [1, 2] {
+            for cy in 0..height / 2 {
+                for cx in 0..width / 2 {
+                    let x = cx * 2;
+                    let mut sum = 0.0;
+                    for y in [cy * 2, cy * 2 + 1] {
+                        for (column, weight) in [
+                            (x.saturating_sub(1), 0.125),
+                            (x, 0.25),
+                            ((x + 1).min(width - 1), 0.125),
+                        ] {
+                            sum += weight * ycbcr[y * width + column][channel];
+                        }
+                    }
+                    output.push(code(512.0 + 896.0 * sum, 64.0, 960.0));
+                }
+            }
+        }
+        output
+    }
+
+    fn half_bits(value: f64) -> u16 {
+        // Exact for the fixture values below, which are chosen representable.
+        let value32 = value as f32;
+        let bits = value32.to_bits();
+        let sign = ((bits >> 16) & 0x8000) as u16;
+        if value32 == 0.0 {
+            return sign;
+        }
+        let exponent = ((bits >> 23) & 0xff) as i32 - 127 + 15;
+        assert!(
+            (1..31).contains(&exponent),
+            "fixture {value} outside normal binary16"
+        );
+        assert_eq!(
+            bits & 0x1fff,
+            0,
+            "fixture {value} not representable in binary16"
+        );
+        sign | ((exponent as u16) << 10) | ((bits >> 13) & 0x3ff) as u16
+    }
+
+    fn working_frame(
+        width: u32,
+        height: u32,
+        padding: u32,
+        pixels: &[[f64; 3]],
+    ) -> WorkingRgba16Frame {
+        let pixels: Vec<[u16; 4]> = pixels
+            .iter()
+            .map(|rgb| {
+                [
+                    half_bits(rgb[0]),
+                    half_bits(rgb[1]),
+                    half_bits(rgb[2]),
+                    0x3c00,
+                ]
+            })
+            .collect();
+        frame(width, height, padding, &pixels)
+    }
+
+    fn codes(frame: &Rec2100Yuv420P10Frame) -> Vec<u16> {
+        (0..frame.sample_count())
+            .map(|index| frame.code(index).unwrap())
+            .collect()
+    }
+
+    #[test]
+    fn hdr_p10_vectors_match_independent_reference_and_layout() {
+        for (transfer, white, policy) in [
+            (HdrTransfer::Pq, 573, Yuv420P10Policy::Rec2100PqLimitedLeft),
+            (
+                HdrTransfer::Hlg,
+                721,
+                Yuv420P10Policy::Rec2100HlgLimitedLeft,
+            ),
+        ] {
+            let (black, light) = Rec2100Yuv420P10Frame::from_working(
+                &working_frame(2, 2, 8, &[[0.0; 3]; 4]),
+                transfer,
+            )
+            .unwrap();
+            assert_eq!(codes(&black), [64, 64, 64, 64, 512, 512]);
+            assert_eq!(
+                light,
+                FrameLight {
+                    max_nits: 0.0,
+                    mean_nits: 0.0
+                }
+            );
+            let (reference_white, light) = Rec2100Yuv420P10Frame::from_working(
+                &working_frame(2, 2, 0, &[[1.0; 3]; 4]),
+                transfer,
+            )
+            .unwrap();
+            assert_eq!(
+                codes(&reference_white),
+                [white, white, white, white, 512, 512]
+            );
+            assert_eq!(
+                light,
+                FrameLight {
+                    max_nits: 203.0,
+                    mean_nits: 203.0
+                }
+            );
+            assert_eq!(reference_white.policy(), policy);
+            assert_eq!(reference_white.transfer(), transfer);
+            assert_eq!(
+                (
+                    reference_white.y_stride_bytes(),
+                    reference_white.chroma_stride_bytes()
+                ),
+                (4, 2)
+            );
+            assert_eq!(
+                reference_white.y_plane(),
+                &[white as u8, (white >> 8) as u8].repeat(4)[..]
+            );
+            assert_eq!(reference_white.cb_plane(), &[0, 2]);
+            assert_eq!(reference_white.cr_plane(), &[0, 2]);
+            assert_eq!(reference_white.bytes().len(), 12);
+            assert_eq!(reference_white.code(6), None);
+        }
+        // PQ 10000 cd/m^2 neutral (working 49.26..) is the nominal peak code 940.
+        let (peak, _) = Rec2100Yuv420P10Frame::from_working(
+            &working_frame(2, 2, 0, &[[64.0; 3]; 4]),
+            HdrTransfer::Pq,
+        )
+        .unwrap();
+        assert_eq!(codes(&peak), [940, 940, 940, 940, 512, 512]);
+    }
+
+    #[test]
+    fn hdr_p10_patterns_match_the_independent_reference_exactly() {
+        let values = [
+            0.0,
+            0.000_061_035_156_25,
+            0.0625,
+            0.25,
+            0.5,
+            1.0,
+            1.5,
+            2.0,
+            4.875,
+            5.0,
+            19.75,
+            49.25,
+            60.0,
+            -0.25,
+            -2.0,
+        ];
+        let (width, height) = (10_usize, 6_usize);
+        let mut state = 17_u32;
+        let pixels: Vec<[f64; 3]> = (0..width * height)
+            .map(|_| {
+                std::array::from_fn(|_| {
+                    state = state.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
+                    values[(state >> 16) as usize % values.len()]
+                })
+            })
+            .collect();
+        for transfer in [HdrTransfer::Pq, HdrTransfer::Hlg] {
+            let (actual, light) = Rec2100Yuv420P10Frame::from_working(
+                &working_frame(width as u32, height as u32, 24, &pixels),
+                transfer,
+            )
+            .unwrap();
+            assert_eq!(
+                codes(&actual),
+                reference_codes(width, height, &pixels, transfer)
+            );
+            let peak = if transfer == HdrTransfer::Pq {
+                10_000.0
+            } else {
+                1000.0
+            };
+            let per_pixel: Vec<f64> = pixels
+                .iter()
+                .map(|rgb| {
+                    rgb.map(|v| (v * 203.0).clamp(0.0, peak))
+                        .into_iter()
+                        .fold(0.0, f64::max)
+                })
+                .collect();
+            let max = per_pixel.iter().copied().fold(0.0, f64::max);
+            let mean = per_pixel.iter().sum::<f64>() / per_pixel.len() as f64;
+            assert_eq!(light.max_nits, max);
+            assert!((light.mean_nits - mean).abs() < 1e-9);
+            assert!(
+                codes(&actual)
+                    .iter()
+                    .all(|&code| (64..=960).contains(&code))
+            );
+        }
+    }
+
+    #[test]
+    fn hdr_light_statistics_clip_per_transfer_and_above_reference_values_survive() {
+        let pixels = [
+            [1.0, 0.5, 0.0],
+            [100.0, 0.0, 0.0],
+            [-1.0, -1.0, -1.0],
+            [2.0, 4.0, 1.0],
+        ];
+        let (_, pq) =
+            Rec2100Yuv420P10Frame::from_working(&working_frame(2, 2, 0, &pixels), HdrTransfer::Pq)
+                .unwrap();
+        assert_eq!(pq.max_nits, 10_000.0);
+        assert_eq!(pq.mean_nits, (203.0 + 10_000.0 + 0.0 + 812.0) / 4.0);
+        let (_, hlg) =
+            Rec2100Yuv420P10Frame::from_working(&working_frame(2, 2, 0, &pixels), HdrTransfer::Hlg)
+                .unwrap();
+        assert_eq!(hlg.max_nits, 1000.0);
+        assert_eq!(hlg.mean_nits, (203.0 + 1000.0 + 0.0 + 812.0) / 4.0);
+        // Working values above reference white are coded, not clipped at 1.0.
+        let (one, _) = Rec2100Yuv420P10Frame::from_working(
+            &working_frame(2, 2, 0, &[[1.0; 3]; 4]),
+            HdrTransfer::Pq,
+        )
+        .unwrap();
+        let (five, _) = Rec2100Yuv420P10Frame::from_working(
+            &working_frame(2, 2, 0, &[[5.0; 3]; 4]),
+            HdrTransfer::Pq,
+        )
+        .unwrap();
+        assert!(five.code(0).unwrap() > one.code(0).unwrap() + 100);
+    }
+
+    #[test]
+    fn hdr_p10_rejects_invalid_input_and_ignores_padding() {
+        for transfer in [HdrTransfer::Pq, HdrTransfer::Hlg] {
+            let mut nonfinite = BLACK;
+            nonfinite[1] = 0x7c00;
+            assert!(matches!(
+                Rec2100Yuv420P10Frame::from_working(&frame(2, 2, 0, &[nonfinite; 4]), transfer),
+                Err(RenderError::WorkingNonFinite { x: 0, y: 0 })
+            ));
+            let mut transparent = BLACK;
+            transparent[3] = 0x3800;
+            assert!(matches!(
+                Rec2100Yuv420P10Frame::from_working(&frame(2, 2, 0, &[transparent; 4]), transfer),
+                Err(RenderError::WorkingAlpha { .. })
+            ));
+            assert!(matches!(
+                Rec2100Yuv420P10Frame::from_working(&frame(1, 2, 0, &[BLACK; 2]), transfer),
+                Err(RenderError::EncoderDimensions)
+            ));
+            assert_eq!(
+                Rec2100Yuv420P10Frame::from_working(&frame(2, 2, 0, &[RED; 4]), transfer).unwrap(),
+                Rec2100Yuv420P10Frame::from_working(&frame(2, 2, 248, &[RED; 4]), transfer)
+                    .unwrap()
+            );
+        }
+    }
+
+    #[test]
+    fn p10_inverse_recovers_working_light_within_quantization() {
+        for transfer in [HdrTransfer::Pq, HdrTransfer::Hlg] {
+            for level in [0.01, 0.25, 1.0, 2.5, 4.0] {
+                let rgb = [level; 3];
+                let signal = working_to_rec2100_nonlinear(rgb, transfer);
+                let code = (64.0 + 876.0 * signal[0] + 0.5).floor() as u16;
+                let back = rec2100_p10_to_working(transfer, [code, 512, 512]);
+                for value in back {
+                    // One 10-bit step near these levels is below 1% in light.
+                    assert!(
+                        (value / level - 1.0).abs() < 0.012,
+                        "{transfer:?} {level} {value}"
+                    );
+                }
+            }
+        }
+        assert_eq!(
+            rec2100_p10_to_working(HdrTransfer::Hlg, [64, 512, 512]),
+            [0.0; 3]
         );
     }
 

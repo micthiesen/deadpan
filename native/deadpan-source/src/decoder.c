@@ -6,6 +6,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <math.h>
 #include <stdatomic.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -23,6 +24,7 @@
 #include <libavutil/avutil.h>
 #include <libavutil/display.h>
 #include <libavutil/error.h>
+#include <libavutil/mastering_display_metadata.h>
 #include <libavutil/mem.h>
 #include <libavutil/opt.h>
 #include <libavutil/pixdesc.h>
@@ -36,7 +38,9 @@
 #define MAX_PROBE_BYTES (1024 * 1024)
 #define MAX_STREAMS (DEADPAN_SOURCE_MAX_AUDIO_STREAMS + 1)
 #define DEMUXERS "mov,matroska,webm"
-#define CODECS "h264,ffv1"
+#define CODECS "h264,ffv1,hevc"
+// hvcC parameter sets retained for exact in-band comparison.
+#define MAX_PARAMETER_SETS 64
 
 struct DeadpanSource {
     int fd;
@@ -50,9 +54,22 @@ struct DeadpanSource {
     AVFrame *frame;
     struct SwsContext *scaler;
     int stream, pixel_format, chroma_location, draining, ended, poisoned, inventory_ready;
-    int pending_first_frame, h264_length_bytes;
+    // Length-prefixed NAL width for H.264 (avcC) or HEVC (hvcC); hevc selects
+    // the HEVC packet grammar. hdr is set once the first picture is admitted.
+    int pending_first_frame, nal_length_bytes, hevc, hdr;
+    // Offsets/lengths of VPS/SPS/PPS units inside the immutable hvcC extradata.
+    int parameter_sets;
+    struct { int type, offset, length; } parameter_set[MAX_PARAMETER_SETS];
     int fresh_keyframe, fresh_key_packet_pending;
     int64_t fresh_key_pts;
+    // Set after a fresh HEVC key packet whose CRA/BLA_W_LP may have RASL
+    // leading pictures, until a trailing or IRAP picture ends that window.
+    int fresh_leading;
+    // Raw static declarations for exact change detection, independent of
+    // whether they converted into contract units.
+    AVMasteringDisplayMetadata raw_mastering;
+    AVContentLightMetadata raw_light;
+    int has_raw_mastering, has_raw_light;
     // Packets whose PTS precedes this target may skip non-reference pictures,
     // only while every admitted SPS makes that safe (see sps_allows_skip).
     int skip_nonref, skip_safe;
@@ -75,7 +92,7 @@ static void adopt_async(DeadpanSource *s) {
     const char *code = NULL, *message = NULL;
     switch (atomic_load(&s->async_failure)) {
         case ASYNC_GEOMETRY: code = "resource_limit"; message = "decoder geometry exceeds max_dimension or max_pixels"; break;
-        case ASYNC_DEPTH: code = "unsupported_depth"; message = "only eight-bit SDR decode is qualified"; break;
+        case ASYNC_DEPTH: code = "unsupported_depth"; message = "only eight-bit SDR or ten-bit 4:2:0 HDR decode is qualified"; break;
         case ASYNC_FORMAT: code = "unsupported_pixel_format"; message = "no bounded software picture format"; break;
         default: return;
     }
@@ -204,7 +221,7 @@ static int runtime(DeadpanSource *s) {
 }
 static int allowed_codec(enum AVCodecID id) {
     switch (id) {
-        case AV_CODEC_ID_H264: case AV_CODEC_ID_FFV1: return 1;
+        case AV_CODEC_ID_H264: case AV_CODEC_ID_FFV1: case AV_CODEC_ID_HEVC: return 1;
         default: return 0;
     }
 }
@@ -231,7 +248,8 @@ static int rotation(DeadpanSource *s, const AVPacketSideData *side, int count, i
     }
     return fail(s, "unsupported_transform", "only exact right-angle rotations are supported");
 }
-static int color(DeadpanSource *s, int format, int range, int matrix, int transfer, int primaries) {
+static int hdr_transfer(int transfer) { return transfer == AVCOL_TRC_SMPTE2084 || transfer == AVCOL_TRC_ARIB_STD_B67; }
+static int color(DeadpanSource *s, enum AVCodecID codec, int format, int range, int matrix, int transfer, int primaries) {
     const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(format);
     if (!desc || (desc->flags & (AV_PIX_FMT_FLAG_HWACCEL | AV_PIX_FMT_FLAG_FLOAT | AV_PIX_FMT_FLAG_BAYER | AV_PIX_FMT_FLAG_PAL | AV_PIX_FMT_FLAG_BITSTREAM)))
         return fail(s, "unsupported_pixel_format", "source pixel layout is unsupported");
@@ -239,8 +257,22 @@ static int color(DeadpanSource *s, int format, int range, int matrix, int transf
         return fail(s, "unsupported_pixel_format", "source must have three color components");
     // Alpha needs a separate representation and composition contract.
     if (desc->flags & AV_PIX_FMT_FLAG_ALPHA) return fail(s, "unsupported_pixel_format", "source alpha is not qualified");
+    if (hdr_transfer(transfer)) {
+        // The single qualified HDR interpretation: PQ or HLG, BT.2020 primaries,
+        // BT.2020 non-constant matrix, limited range, ten-bit 4:2:0 HEVC/H.264.
+        if (primaries != AVCOL_PRI_BT2020) return fail(s, "unsupported_primaries", "HDR source requires BT.2020 primaries");
+        if (matrix != AVCOL_SPC_BT2020_NCL) return fail(s, "unsupported_matrix", "HDR source requires the BT.2020 non-constant matrix");
+        if (range != AVCOL_RANGE_MPEG) return fail(s, "unsupported_range", "HDR source requires limited range");
+        if (format != AV_PIX_FMT_YUV420P10LE)
+            return fail(s, desc->comp[0].depth != 10 ? "unsupported_depth" : "unsupported_pixel_format",
+                        "HDR source requires ten-bit 4:2:0 (yuv420p10le)");
+        if (codec != AV_CODEC_ID_HEVC && codec != AV_CODEC_ID_H264)
+            return fail(s, "unsupported_codec", "HDR source requires HEVC Main10 or H264 High10");
+        return 1;
+    }
     for (int i = 0; i < desc->nb_components; i++)
         if (desc->comp[i].depth != 8) return fail(s, "unsupported_depth", "only eight-bit SDR decode is qualified");
+    if (codec == AV_CODEC_ID_HEVC) return fail(s, "unsupported_codec", "HEVC is admitted only for the qualified HDR interpretation");
     if (range != AVCOL_RANGE_MPEG && range != AVCOL_RANGE_JPEG)
         return fail(s, "missing_interpretation", "source color range needs an explicit interpretation");
     if (transfer != AVCOL_TRC_BT709 && transfer != AVCOL_TRC_IEC61966_2_1 && transfer != AVCOL_TRC_LINEAR)
@@ -256,11 +288,15 @@ static int color(DeadpanSource *s, int format, int range, int matrix, int transf
     return 1;
 }
 static AVRational sar(AVRational value) { return value.num == 0 ? (AVRational){1,1} : value; }
-static int packet_color_metadata(DeadpanSource *s, const AVPacketSideData *side, int count, const char *origin) {
+// Stream-level static HDR metadata is deferred to first-picture admission,
+// which knows the decoded transfer; FFV1 has no qualified HDR interpretation.
+static int packet_color_metadata(DeadpanSource *s, const AVPacketSideData *side, int count, const char *origin, int allow_static) {
     for (int i = 0; i < count; i++) {
         switch (side[i].type) {
             case AV_PKT_DATA_MASTERING_DISPLAY_METADATA:
             case AV_PKT_DATA_CONTENT_LIGHT_LEVEL:
+                if (allow_static) break;
+                return fail(s, "unsupported_hdr", "source %s carries unqualified HDR metadata: %s", origin, av_packet_side_data_name(side[i].type));
             case AV_PKT_DATA_DOVI_CONF:
             case AV_PKT_DATA_DYNAMIC_HDR10_PLUS:
                 return fail(s, "unsupported_hdr", "source %s carries unqualified HDR metadata: %s", origin, av_packet_side_data_name(side[i].type));
@@ -284,7 +320,7 @@ static int table(DeadpanSource *s, int initial) {
             if (!allowed_codec(p->codec_id)) return fail(s, "unsupported_codec", "source codec is outside the qualified decoder allowlist");
             // Container-level metadata must fail before stream probing can open
             // a decoder, and must be rechecked if demuxing changes the table.
-            if (packet_color_metadata(s, p->coded_side_data, p->nb_coded_side_data, "stream") < 0) return -1;
+            if (packet_color_metadata(s, p->coded_side_data, p->nb_coded_side_data, "stream", p->codec_id != AV_CODEC_ID_FFV1) < 0) return -1;
             if (geometry(s, p->width, p->height, "container video stream") < 0) return -1;
             selected = (int)i;
         } else if (p->codec_type != AVMEDIA_TYPE_AUDIO) return fail(s, "unsupported_streams", "source contains an unsupported stream type");
@@ -361,6 +397,9 @@ static enum AVPixelFormat bounded_format(AVCodecContext *context, const enum AVP
     for (unsigned int i = 0; i < 64 && formats[i] != AV_PIX_FMT_NONE; i++) {
         const AVPixFmtDescriptor *pixel = av_pix_fmt_desc_get(formats[i]);
         if (!pixel || (pixel->flags & AV_PIX_FMT_FLAG_HWACCEL)) continue;
+        // Ten-bit 4:2:0 exists only for the HDR interpretation, which first-
+        // picture admission enforces from the decoded color description.
+        if (formats[i] == AV_PIX_FMT_YUV420P10LE) return formats[i];
         for (unsigned int component = 0; component < pixel->nb_components; component++) {
             if (pixel->comp[component].depth != 8) {
                 async_fail(s, ASYNC_DEPTH);
@@ -494,6 +533,168 @@ static int avcc_allows_skip(const uint8_t *data, int size) {
     }
     return 1;
 }
+// Independent recheck of the admitted hvcC (ISO/IEC 14496-15 8.3.3.1). VPS,
+// SPS and PPS arrays must be present; their exact units are retained so an
+// in-band repetition is admitted only when byte-identical. Only prefix/suffix
+// SEI may accompany them. Multilayer and reserved header fields fail.
+static int parse_hvcc(DeadpanSource *s, const uint8_t *d, int size) {
+    if (size < 23 || d[0] != 1) return fail(s, "unsupported_codec", "HEVC source requires an admitted hvcC configuration");
+    int length = (d[21] & 3) + 1;
+    if (length == 3) return fail(s, "unsupported_codec", "unsupported HEVC NAL length field");
+    int arrays = d[22], position = 23, counts[3] = {0, 0, 0};
+    if (arrays > 8) return fail(s, "unsupported_codec", "HEVC configuration declares too many NAL arrays");
+    for (int array = 0; array < arrays; array++) {
+        if (size - position < 3) return fail(s, "unsupported_codec", "truncated HEVC configuration array");
+        int type = d[position] & 63, count = (d[position + 1] << 8) | d[position + 2];
+        position += 3;
+        if (type < 32 || (type > 34 && type != 39 && type != 40))
+            return fail(s, "unsupported_codec", "HEVC configuration carries an unqualified NAL array");
+        for (int unit = 0; unit < count; unit++) {
+            if (size - position < 2) return fail(s, "unsupported_codec", "truncated HEVC configuration unit");
+            int amount = (d[position] << 8) | d[position + 1];
+            position += 2;
+            if (amount < 2 || amount > size - position || ((d[position] >> 1) & 63) != type ||
+                (d[position] & 0x81) || (d[position + 1] >> 3) || !(d[position + 1] & 7))
+                return fail(s, "unsupported_codec", "invalid HEVC configuration unit");
+            if (type <= 34) {
+                if (s->parameter_sets >= MAX_PARAMETER_SETS) return fail(s, "resource_limit", "HEVC configuration has too many parameter sets");
+                s->parameter_set[s->parameter_sets].type = type;
+                s->parameter_set[s->parameter_sets].offset = position;
+                s->parameter_set[s->parameter_sets].length = amount;
+                s->parameter_sets++;
+                counts[type - 32]++;
+            }
+            position += amount;
+        }
+    }
+    if (position != size || !counts[0] || !counts[1] || !counts[2])
+        return fail(s, "unsupported_codec", "HEVC configuration lacks complete VPS/SPS/PPS arrays");
+    s->nal_length_bytes = length;
+    s->hevc = 1;
+    return 1;
+}
+static int known_parameter_set(const DeadpanSource *s, int type, const uint8_t *nal, uint32_t length) {
+    const uint8_t *extradata = s->format->streams[s->stream]->codecpar->extradata;
+    for (int i = 0; i < s->parameter_sets; i++)
+        if (s->parameter_set[i].type == type && (uint32_t)s->parameter_set[i].length == length &&
+            !memcmp(extradata + s->parameter_set[i].offset, nal, length)) return 1;
+    return 0;
+}
+// Exact conversion of FFmpeg's rational static metadata into contract units.
+static int units(AVRational value, int64_t scale, int64_t maximum, int64_t *out) {
+    if (value.den <= 0 || value.num < 0) return 0;
+    int64_t scaled = (int64_t)value.num * scale;
+    if (scaled % value.den) return 0;
+    scaled /= value.den;
+    if (scaled > maximum) return 0;
+    *out = scaled;
+    return 1;
+}
+// Static metadata is captured raw for change detection and converted to the
+// contract units only when exactly representable. A declaration that cannot be
+// represented is reported as present-but-invalid (has_* = 2); the Rust host
+// applies the shared ST 2086 / CTA-861.3 rule set and ignores invalid values
+// with a recorded note instead of refusing an otherwise admissible stream.
+static int read_mastering(DeadpanSource *s, const uint8_t *data, size_t size, AVMasteringDisplayMetadata *out) {
+    if (size < sizeof(AVMasteringDisplayMetadata)) return fail(s, "unsupported_hdr", "truncated mastering display metadata");
+    memcpy(out, data, sizeof(*out));
+    return 1;
+}
+static int read_light(DeadpanSource *s, const uint8_t *data, size_t size, AVContentLightMetadata *out) {
+    if (size < sizeof(AVContentLightMetadata)) return fail(s, "unsupported_hdr", "truncated content light metadata");
+    memcpy(out, data, sizeof(*out));
+    return 1;
+}
+static int same_rational(AVRational a, AVRational b) {
+    if (a.den == 0 || b.den == 0) return a.num == b.num && a.den == b.den;
+    return av_cmp_q(a, b) == 0;
+}
+static int same_raw_mastering(const AVMasteringDisplayMetadata *a, const AVMasteringDisplayMetadata *b) {
+    if (a->has_primaries != b->has_primaries || a->has_luminance != b->has_luminance) return 0;
+    if (a->has_primaries) {
+        for (int c = 0; c < 3; c++)
+            for (int k = 0; k < 2; k++)
+                if (!same_rational(a->display_primaries[c][k], b->display_primaries[c][k])) return 0;
+        for (int k = 0; k < 2; k++)
+            if (!same_rational(a->white_point[k], b->white_point[k])) return 0;
+    }
+    return !a->has_luminance ||
+        (same_rational(a->max_luminance, b->max_luminance) && same_rational(a->min_luminance, b->min_luminance));
+}
+static void store_mastering(DeadpanSource *s, const AVMasteringDisplayMetadata *m) {
+    DeadpanSourceInfo *info = &s->info;
+    s->raw_mastering = *m;
+    s->has_raw_mastering = 1;
+    info->has_mastering = 2;
+    if (!m->has_primaries || !m->has_luminance) return;
+    int64_t value;
+    for (int c = 0; c < 3; c++)
+        for (int k = 0; k < 2; k++) {
+            if (!units(m->display_primaries[c][k], 50000, UINT16_MAX, &value)) return;
+            info->mastering_primaries[c][k] = (uint16_t)value;
+        }
+    for (int k = 0; k < 2; k++) {
+        if (!units(m->white_point[k], 50000, UINT16_MAX, &value)) return;
+        info->mastering_white_point[k] = (uint16_t)value;
+    }
+    if (!units(m->max_luminance, 10000, UINT32_MAX, &value)) return;
+    info->mastering_max_luminance = (uint32_t)value;
+    if (!units(m->min_luminance, 10000, UINT32_MAX, &value)) return;
+    info->mastering_min_luminance = (uint32_t)value;
+    info->has_mastering = 1;
+}
+static void store_light(DeadpanSource *s, const AVContentLightMetadata *light) {
+    s->raw_light = *light;
+    s->has_raw_light = 1;
+    if (light->MaxCLL > UINT16_MAX || light->MaxFALL > UINT16_MAX) {
+        s->info.has_content_light = 2;
+        return;
+    }
+    s->info.has_content_light = 1;
+    s->info.max_cll = (uint16_t)light->MaxCLL;
+    s->info.max_fall = (uint16_t)light->MaxFALL;
+}
+static int same_raw_light(const AVContentLightMetadata *a, const AVContentLightMetadata *b) {
+    return a->MaxCLL == b->MaxCLL && a->MaxFALL == b->MaxFALL;
+}
+// Static metadata arrives from stream side data (MP4 mdcv/clli) and/or the
+// first picture's SEI. Both must agree; the first declaration is retained.
+static int capture_static(DeadpanSource *s) {
+    const AVCodecParameters *p = s->format->streams[s->stream]->codecpar;
+    const AVPacketSideData *side[2] = {
+        av_packet_side_data_get(p->coded_side_data, p->nb_coded_side_data, AV_PKT_DATA_MASTERING_DISPLAY_METADATA),
+        av_packet_side_data_get(p->coded_side_data, p->nb_coded_side_data, AV_PKT_DATA_CONTENT_LIGHT_LEVEL)};
+    const AVFrameSideData *frame[2] = {
+        av_frame_get_side_data(s->frame, AV_FRAME_DATA_MASTERING_DISPLAY_METADATA),
+        av_frame_get_side_data(s->frame, AV_FRAME_DATA_CONTENT_LIGHT_LEVEL)};
+    if (!s->hdr && (side[0] || side[1] || frame[0] || frame[1]))
+        return fail(s, "unsupported_hdr", "SDR source carries HDR static metadata");
+    s->has_raw_mastering = 0;
+    s->has_raw_light = 0;
+    AVMasteringDisplayMetadata m;
+    AVContentLightMetadata light;
+    if (side[0]) {
+        if (read_mastering(s, side[0]->data, side[0]->size, &m) < 0) return -1;
+        store_mastering(s, &m);
+    }
+    if (frame[0]) {
+        if (read_mastering(s, frame[0]->data, frame[0]->size, &m) < 0) return -1;
+        if (s->has_raw_mastering && !same_raw_mastering(&s->raw_mastering, &m))
+            return fail(s, "stream_changed", "picture mastering display metadata differs from the stream declaration");
+        store_mastering(s, &m);
+    }
+    if (side[1]) {
+        if (read_light(s, side[1]->data, side[1]->size, &light) < 0) return -1;
+        store_light(s, &light);
+    }
+    if (frame[1]) {
+        if (read_light(s, frame[1]->data, frame[1]->size, &light) < 0) return -1;
+        if (s->has_raw_light && !same_raw_light(&s->raw_light, &light))
+            return fail(s, "stream_changed", "picture content light metadata differs from the stream declaration");
+        store_light(s, &light);
+    }
+    return 1;
+}
 static int receive_frame(DeadpanSource *s);
 static int check_frame(DeadpanSource *s);
 static int allocate_decoder(DeadpanSource *s) {
@@ -527,12 +728,13 @@ static int allocate_decoder(DeadpanSource *s) {
 }
 static int seek_fresh_keyframe(DeadpanSource *s, int64_t pts) {
     if (pts == AV_NOPTS_VALUE) return fail(s, "invalid_timestamp", "seek timestamp is reserved for unknown PTS");
-    if (!s->h264_length_bytes) return fail(s, "unsupported_codec", "fresh export GOP checks require H264 AVC");
+    if (!s->nal_length_bytes) return fail(s, "unsupported_codec", "fresh export GOP checks require H264 AVC or HEVC hvcC");
     int result = av_seek_frame(s->format, s->stream, pts, AVSEEK_FLAG_BACKWARD);
     if (result < 0) return fferror(s, "seek fresh source GOP", result);
     s->fresh_key_pts = pts;
     s->fresh_keyframe = 1;
     s->fresh_key_packet_pending = 1;
+    s->fresh_leading = 0;
     s->pending_first_frame = 0;
     s->draining = 0; s->ended = 0; s->frames = 0; s->packets = 0;
     return check(s);
@@ -604,9 +806,11 @@ static int open_impl(DeadpanSource *s) {
     if (p->codec_id == AV_CODEC_ID_H264) {
         if (p->extradata_size < 7 || p->extradata[0] != 1)
             return fail(s, "unsupported_codec", "H264 source requires admitted AVC configuration");
-        s->h264_length_bytes = (p->extradata[4] & 3) + 1;
+        s->nal_length_bytes = (p->extradata[4] & 3) + 1;
         s->skip_safe = avcc_allows_skip(p->extradata, p->extradata_size);
-        if (s->h264_length_bytes == 3) return fail(s, "unsupported_codec", "unsupported AVC NAL length field");
+        if (s->nal_length_bytes == 3) return fail(s, "unsupported_codec", "unsupported AVC NAL length field");
+    } else if (p->codec_id == AV_CODEC_ID_HEVC && parse_hvcc(s, p->extradata, p->extradata_size) < 0) {
+        return -1;
     }
     s->packet = av_packet_alloc(); s->frame = av_frame_alloc();
     if (!s->packet || !s->frame) return fail(s, "resource_exhausted", "allocate source decode buffers");
@@ -622,7 +826,7 @@ static int open_impl(DeadpanSource *s) {
     if (!result) return fail(s, "invalid_stream", "source contains no decoded picture");
     if (s->fresh_keyframe && check_fresh_keyframe(s) < 0) return -1;
     AVFrame *f = s->frame;
-    if (color(s, f->format, f->color_range, f->colorspace, f->color_trc, f->color_primaries) < 0) return -1;
+    if (color(s, p->codec_id, f->format, f->color_range, f->colorspace, f->color_trc, f->color_primaries) < 0) return -1;
     const AVPixFmtDescriptor *pixel = av_pix_fmt_desc_get(f->format);
     if (!(pixel->flags & AV_PIX_FMT_FLAG_RGB) && (pixel->log2_chroma_w || pixel->log2_chroma_h)) {
         int x, y;
@@ -636,6 +840,8 @@ static int open_impl(DeadpanSource *s) {
         return fail(s, "unsupported_aspect", "invalid or excessive sample aspect ratio");
     s->info = (DeadpanSourceInfo){.width=p->width,.height=p->height,.stream_index=stream->index,.time_base_num=stream->time_base.num,.time_base_den=stream->time_base.den,.sar_num=aspect.num,.sar_den=aspect.den,.range=f->color_range,.matrix=f->colorspace,.transfer=f->color_trc,.primaries=f->color_primaries,.stream_start=stream->start_time,.stream_duration=stream->duration,.container_start=s->format->start_time,.container_duration=s->format->duration};
     if (capture_audio_inventory(s) < 0 || rotation(s, p->coded_side_data, p->nb_coded_side_data, &s->info.rotation) < 0) return -1;
+    s->hdr = hdr_transfer(f->color_trc);
+    if (capture_static(s) < 0) return -1;
     s->pixel_format = f->format;
     (void)snprintf(s->info.codec, sizeof(s->info.codec), "%s", codec->name);
     (void)snprintf(s->info.pixel_format, sizeof(s->info.pixel_format), "%s", av_get_pix_fmt_name(f->format));
@@ -712,10 +918,25 @@ static int check_frame(DeadpanSource *s) {
         if (rotation(s, &side, 1, &turn) < 0) return -1;
         if (turn != s->info.rotation) return fail(s, "stream_changed", "frame orientation differs from source metadata");
     }
-    // HDR side data is rejected even if a malformed stream tags its transfer SDR.
-    if (av_frame_get_side_data(f, AV_FRAME_DATA_MASTERING_DISPLAY_METADATA) ||
-        av_frame_get_side_data(f, AV_FRAME_DATA_CONTENT_LIGHT_LEVEL) ||
-        av_frame_get_side_data(f, AV_FRAME_DATA_DYNAMIC_HDR_PLUS) ||
+    // Static HDR metadata is admitted only with the HDR interpretation and must
+    // repeat the captured declaration exactly; absence keeps that declaration.
+    // Dynamic HDR side data is rejected even if a stream tags its transfer SDR.
+    const AVFrameSideData *static_side = av_frame_get_side_data(f, AV_FRAME_DATA_MASTERING_DISPLAY_METADATA);
+    if (static_side) {
+        AVMasteringDisplayMetadata m;
+        if (!s->hdr) return fail(s, "unsupported_hdr", "SDR source frame carries HDR static metadata");
+        if (read_mastering(s, static_side->data, static_side->size, &m) < 0) return -1;
+        if (!s->has_raw_mastering || !same_raw_mastering(&s->raw_mastering, &m))
+            return fail(s, "stream_changed", "frame mastering display metadata changed");
+    }
+    if ((static_side = av_frame_get_side_data(f, AV_FRAME_DATA_CONTENT_LIGHT_LEVEL))) {
+        AVContentLightMetadata light;
+        if (!s->hdr) return fail(s, "unsupported_hdr", "SDR source frame carries HDR static metadata");
+        if (read_light(s, static_side->data, static_side->size, &light) < 0) return -1;
+        if (!s->has_raw_light || !same_raw_light(&s->raw_light, &light))
+            return fail(s, "stream_changed", "frame content light metadata changed");
+    }
+    if (av_frame_get_side_data(f, AV_FRAME_DATA_DYNAMIC_HDR_PLUS) ||
         av_frame_get_side_data(f, AV_FRAME_DATA_DOVI_RPU_BUFFER) ||
         av_frame_get_side_data(f, AV_FRAME_DATA_DOVI_METADATA) ||
         av_frame_get_side_data(f, AV_FRAME_DATA_DYNAMIC_HDR_VIVID))
@@ -726,50 +947,205 @@ static int check_frame(DeadpanSource *s) {
         return fail(s, "unsupported_interpretation", "source frame carries an unqualified ambient viewing environment");
     return 1;
 }
-static int rgba(DeadpanSource *s, uint8_t *pixels, size_t length) {
-    size_t expected = (size_t)s->info.width * (size_t)s->info.height * 4;
-    if (!pixels || length != expected) return fail(s, "invalid_configuration", "RGBA output must have the exact packed frame size");
-    if (!s->scaler) {
-        s->scaler = sws_alloc_context();
-        if (!s->scaler) return fail(s, "unsupported_conversion", "source cannot be converted to packed RGBA8");
-        if (av_opt_set_int(s->scaler, "srcw", s->info.width, 0) < 0 ||
-            av_opt_set_int(s->scaler, "srch", s->info.height, 0) < 0 ||
-            av_opt_set_int(s->scaler, "src_format", s->pixel_format, 0) < 0 ||
-            av_opt_set_int(s->scaler, "dstw", s->info.width, 0) < 0 ||
-            av_opt_set_int(s->scaler, "dsth", s->info.height, 0) < 0 ||
-            av_opt_set_int(s->scaler, "dst_format", AV_PIX_FMT_RGBA, 0) < 0 ||
-            av_opt_set_int(s->scaler, "sws_flags", SWS_BILINEAR | SWS_ACCURATE_RND | SWS_BITEXACT | SWS_FULL_CHR_H_INT, 0) < 0)
-            return fail(s, "unsupported_conversion", "configure bounded RGBA conversion");
-        const AVPixFmtDescriptor *pixel = av_pix_fmt_desc_get(s->pixel_format);
-        if (!(pixel->flags & AV_PIX_FMT_FLAG_RGB) && (pixel->log2_chroma_w || pixel->log2_chroma_h)) {
-            int x, y;
-            if (av_chroma_location_enum_to_pos(&x, &y, s->chroma_location) < 0 ||
-                av_opt_set_int(s->scaler, "src_h_chr_pos", x, 0) < 0 ||
-                av_opt_set_int(s->scaler, "src_v_chr_pos", y, 0) < 0)
-                return fail(s, "unsupported_conversion", "configure explicit source chroma location");
-        }
-        if (sws_init_context(s->scaler, NULL, NULL) < 0)
-            return fail(s, "unsupported_conversion", "initialize explicit RGBA conversion");
-        int matrix = SWS_CS_ITU709;
-        switch (s->info.matrix) {
-            case AVCOL_SPC_BT470BG: case AVCOL_SPC_SMPTE170M: matrix = SWS_CS_ITU601; break;
-            case AVCOL_SPC_BT2020_NCL: matrix = SWS_CS_BT2020; break;
-            default: break;
-        }
-        // libswscale does only YUV matrix/range conversion here, preserving the
-        // source transfer and primaries for the shared compositor's transform.
-        const int *coefficients = sws_getCoefficients(matrix);
-        if (sws_setColorspaceDetails(s->scaler, coefficients, s->info.range == AVCOL_RANGE_JPEG,
-            coefficients, 1, 0, 1 << 16, 1 << 16) < 0)
-            return fail(s, "unsupported_conversion", "configure explicit source matrix and range");
+// One explicit matrix/range/chroma-siting setup shared by the packed RGBA8
+// and little-endian RGBA64 outputs; only the destination depth differs.
+static struct SwsContext *scaler(DeadpanSource *s, enum AVPixelFormat output) {
+    struct SwsContext *context = sws_alloc_context();
+    if (!context) { fail(s, "unsupported_conversion", "source cannot be converted to packed RGBA"); return NULL; }
+    if (av_opt_set_int(context, "srcw", s->info.width, 0) < 0 ||
+        av_opt_set_int(context, "srch", s->info.height, 0) < 0 ||
+        av_opt_set_int(context, "src_format", s->pixel_format, 0) < 0 ||
+        av_opt_set_int(context, "dstw", s->info.width, 0) < 0 ||
+        av_opt_set_int(context, "dsth", s->info.height, 0) < 0 ||
+        av_opt_set_int(context, "dst_format", output, 0) < 0 ||
+        av_opt_set_int(context, "sws_flags", SWS_BILINEAR | SWS_ACCURATE_RND | SWS_BITEXACT | SWS_FULL_CHR_H_INT, 0) < 0) {
+        sws_freeContext(context);
+        fail(s, "unsupported_conversion", "configure bounded RGBA conversion");
+        return NULL;
     }
+    const AVPixFmtDescriptor *pixel = av_pix_fmt_desc_get(s->pixel_format);
+    if (!(pixel->flags & AV_PIX_FMT_FLAG_RGB) && (pixel->log2_chroma_w || pixel->log2_chroma_h)) {
+        int x, y;
+        if (av_chroma_location_enum_to_pos(&x, &y, s->chroma_location) < 0 ||
+            av_opt_set_int(context, "src_h_chr_pos", x, 0) < 0 ||
+            av_opt_set_int(context, "src_v_chr_pos", y, 0) < 0) {
+            sws_freeContext(context);
+            fail(s, "unsupported_conversion", "configure explicit source chroma location");
+            return NULL;
+        }
+    }
+    if (sws_init_context(context, NULL, NULL) < 0) {
+        sws_freeContext(context);
+        fail(s, "unsupported_conversion", "initialize explicit RGBA conversion");
+        return NULL;
+    }
+    int matrix = SWS_CS_ITU709;
+    switch (s->info.matrix) {
+        case AVCOL_SPC_BT470BG: case AVCOL_SPC_SMPTE170M: matrix = SWS_CS_ITU601; break;
+        case AVCOL_SPC_BT2020_NCL: matrix = SWS_CS_BT2020; break;
+        default: break;
+    }
+    // libswscale does only YUV matrix/range conversion here, preserving the
+    // source transfer and primaries for the shared compositor's transform.
+    const int *coefficients = sws_getCoefficients(matrix);
+    if (sws_setColorspaceDetails(context, coefficients, s->info.range == AVCOL_RANGE_JPEG,
+        coefficients, 1, 0, 1 << 16, 1 << 16) < 0) {
+        sws_freeContext(context);
+        fail(s, "unsupported_conversion", "configure explicit source matrix and range");
+        return NULL;
+    }
+    return context;
+}
+static int convert(DeadpanSource *s, struct SwsContext **context, enum AVPixelFormat output, uint8_t *pixels, int stride) {
+    if (!*context && !(*context = scaler(s, output))) return -1;
     if (check(s) < 0) return -1;
     uint8_t *planes[4] = {pixels,NULL,NULL,NULL};
-    int strides[4] = {s->info.width * 4,0,0,0};
-    int rows = sws_scale(s->scaler, (const uint8_t * const *)s->frame->data, s->frame->linesize,
+    int strides[4] = {stride,0,0,0};
+    int rows = sws_scale(*context, (const uint8_t * const *)s->frame->data, s->frame->linesize,
         0, s->info.height, planes, strides);
     if (rows != s->info.height) return fail(s, "conversion_failure", "RGBA conversion did not write the complete frame");
     return check(s);
+}
+static int rgba(DeadpanSource *s, uint8_t *pixels, size_t length) {
+    size_t expected = (size_t)s->info.width * (size_t)s->info.height * 4;
+    if (!pixels || length != expected) return fail(s, "invalid_configuration", "RGBA output must have the exact packed frame size");
+    return convert(s, &s->scaler, AV_PIX_FMT_RGBA, pixels, s->info.width * 4);
+}
+// Linear interpolation weights of one luma coordinate between two chroma
+// samples, from the explicit siting (av_chroma_location_enum_to_pos units:
+// chroma sample 0 sits at luma coordinate position/256). Edges clamp.
+static void chroma_tap(int coordinate, int log2, int position, int samples, int *first, int *second, double *weight) {
+    double at = ((double)coordinate - position / 256.0) / (double)(1 << log2);
+    if (at <= 0) { *first = *second = 0; *weight = 0; return; }
+    int floor = (int)at;
+    if (floor >= samples - 1) { *first = *second = samples - 1; *weight = 0; return; }
+    *first = floor; *second = floor + 1; *weight = at - floor;
+}
+// One component's samples in a row: one byte or two little-endian bytes.
+typedef struct {
+    const uint8_t *data;
+    int linesize, step, shift, offset;
+    unsigned mask;
+} Plane;
+static Plane plane(const AVFrame *f, const AVComponentDescriptor *c) {
+    return (Plane){.data=f->data[c->plane],.linesize=f->linesize[c->plane],.step=c->step,.shift=c->shift,
+        .offset=c->offset,.mask=(1u << c->depth) - 1};
+}
+static inline unsigned plane_code(const uint8_t *row, const Plane *p, int x) {
+    const uint8_t *at = row + (ptrdiff_t)x * p->step;
+    unsigned value = p->step == 1 ? at[0] : (unsigned)(at[0] | (at[1] << 8));
+    return (value >> p->shift) & p->mask;
+}
+static inline const uint8_t *plane_row(const Plane *p, int y) {
+    return p->data + (ptrdiff_t)y * p->linesize + p->offset;
+}
+static inline void store_rgba64(uint8_t *out, const double value[3]) {
+    for (int c = 0; c < 4; c++) {
+        double v = c == 3 ? 1.0 : value[c] < 0 ? 0 : value[c] > 1 ? 1 : value[c];
+        unsigned code = (unsigned)(v * 65535.0 + 0.5);
+        out[c * 2] = (uint8_t)code;
+        out[c * 2 + 1] = (uint8_t)(code >> 8);
+    }
+}
+// Sixteen-bit packed RGBA, computed directly in double precision: libswscale
+// 8.0.3's ten-bit to RGBA64 path ignores the explicit BT.2020 matrix details
+// (measured green 0 for a mid-gray-green patch). Chroma is bilinearly
+// interpolated in code values at the decoded siting, then the explicit
+// matrix/range maps to nonlinear R'G'B', clamped to [0, 1] and rounded once.
+// The clamp is a limitation of the integer full-range output: limited-range
+// super-white and sub-black codes (and out-of-gamut matrix results) clip.
+// Per-frame tables hold the luma code mapping and the horizontal chroma taps;
+// every per-pixel expression is the same double arithmetic as the direct
+// form, so results are bit-identical to it.
+static int rgba64(DeadpanSource *s, uint8_t *pixels, size_t length) {
+    size_t expected = (size_t)s->info.width * (size_t)s->info.height * 8;
+    if (!pixels || length != expected) return fail(s, "invalid_configuration", "RGBA64 output must have the exact packed frame size");
+    const AVFrame *f = s->frame;
+    const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(f->format);
+    if (!desc || !(desc->flags & AV_PIX_FMT_FLAG_PLANAR) || (desc->flags & AV_PIX_FMT_FLAG_BE) || desc->nb_components != 3)
+        return fail(s, "unsupported_conversion", "sixteen-bit output requires a planar little-endian three-component picture");
+    for (int c = 0; c < 3; c++)
+        if ((desc->comp[c].step != 1 && desc->comp[c].step != 2) || desc->comp[c].depth > 16 ||
+            (desc->comp[c].step == 1) != (desc->comp[c].depth <= 8) || !f->data[desc->comp[c].plane])
+            return fail(s, "unsupported_conversion", "sixteen-bit output requires one- or two-byte planar samples");
+    int width = s->info.width, height = s->info.height, rgb = !!(desc->flags & AV_PIX_FMT_FLAG_RGB);
+    Plane planes[3] = {plane(f, &desc->comp[0]), plane(f, &desc->comp[1]), plane(f, &desc->comp[2])};
+    if (rgb) {
+        double scale[3];
+        for (int c = 0; c < 3; c++) scale[c] = pow(2, desc->comp[c].depth) - 1;
+        for (int y = 0; y < height; y++) {
+            if (check(s) < 0) return -1;
+            const uint8_t *rows[3] = {plane_row(&planes[0], y), plane_row(&planes[1], y), plane_row(&planes[2], y)};
+            uint8_t *out = pixels + (size_t)y * (size_t)width * 8;
+            for (int x = 0; x < width; x++) {
+                double value[3];
+                for (int c = 0; c < 3; c++) value[c] = plane_code(rows[c], &planes[c], x) / scale[c];
+                store_rgba64(out + (size_t)x * 8, value);
+            }
+        }
+        return check(s);
+    }
+    double depth = (double)desc->comp[0].depth, scale = (double)(1 << (desc->comp[0].depth - 8));
+    double y_offset, y_range, c_range;
+    if (s->info.range == AVCOL_RANGE_MPEG) { y_offset = 16 * scale; y_range = 219 * scale; c_range = 224 * scale; }
+    else { y_offset = 0; y_range = pow(2, depth) - 1; c_range = y_range; }
+    double c_offset = 128 * scale, kr = 0.2126, kb = 0.0722;
+    switch (s->info.matrix) {
+        case AVCOL_SPC_BT470BG: case AVCOL_SPC_SMPTE170M: kr = 0.299; kb = 0.114; break;
+        case AVCOL_SPC_BT2020_NCL: kr = 0.2627; kb = 0.0593; break;
+        default: break;
+    }
+    int x_position = 0, y_position = 0;
+    if ((desc->log2_chroma_w || desc->log2_chroma_h) &&
+        av_chroma_location_enum_to_pos(&x_position, &y_position, s->chroma_location) < 0)
+        return fail(s, "unsupported_conversion", "configure explicit source chroma location");
+    int chroma_width = AV_CEIL_RSHIFT(width, desc->log2_chroma_w), chroma_height = AV_CEIL_RSHIFT(height, desc->log2_chroma_h);
+    // Luma codes map through one table; horizontal taps depend only on x.
+    size_t codes = (size_t)planes[0].mask + 1;
+    double *luma_table = av_malloc_array(codes, sizeof(double));
+    int *x_first = av_malloc_array((size_t)width, sizeof(int)), *x_second = av_malloc_array((size_t)width, sizeof(int));
+    double *x_weight = av_malloc_array((size_t)width, sizeof(double));
+    int result = 1;
+    if (!luma_table || !x_first || !x_second || !x_weight) {
+        result = fail(s, "resource_limit", "allocate sixteen-bit conversion tables");
+        goto done;
+    }
+    for (size_t code = 0; code < codes; code++) luma_table[code] = ((double)code - y_offset) / y_range;
+    for (int x = 0; x < width; x++) {
+        x_first[x] = x_second[x] = x; x_weight[x] = 0;
+        if (desc->log2_chroma_w) chroma_tap(x, desc->log2_chroma_w, x_position, chroma_width, &x_first[x], &x_second[x], &x_weight[x]);
+    }
+    double green = 1 - kr - kb, red_cr = 2 * (1 - kr), blue_cb = 2 * (1 - kb);
+    for (int y = 0; y < height; y++) {
+        if ((result = check(s)) < 0) goto done;
+        int y0 = y, y1 = y;
+        double vy = 0;
+        if (desc->log2_chroma_h) chroma_tap(y, desc->log2_chroma_h, y_position, chroma_height, &y0, &y1, &vy);
+        double wy = 1 - vy;
+        const uint8_t *luma_row = plane_row(&planes[0], y);
+        const uint8_t *top[2] = {plane_row(&planes[1], y0), plane_row(&planes[2], y0)};
+        const uint8_t *bottom[2] = {plane_row(&planes[1], y1), plane_row(&planes[2], y1)};
+        uint8_t *out = pixels + (size_t)y * (size_t)width * 8;
+        for (int x = 0; x < width; x++) {
+            int x0 = x_first[x], x1 = x_second[x];
+            double vx = x_weight[x], wx = 1 - vx, chroma[2];
+            for (int c = 0; c < 2; c++) {
+                const Plane *p = &planes[c + 1];
+                double upper = plane_code(top[c], p, x0) * wx + plane_code(top[c], p, x1) * vx;
+                double lower = plane_code(bottom[c], p, x0) * wx + plane_code(bottom[c], p, x1) * vx;
+                chroma[c] = ((upper * wy + lower * vy) - c_offset) / c_range;
+            }
+            double luma = luma_table[plane_code(luma_row, &planes[0], x)], value[3];
+            value[0] = luma + red_cr * chroma[1];
+            value[2] = luma + blue_cb * chroma[0];
+            value[1] = (luma - kr * value[0] - kb * value[2]) / green;
+            store_rgba64(out + (size_t)x * 8, value);
+        }
+    }
+    result = check(s);
+done:
+    av_free(luma_table); av_free(x_first); av_free(x_second); av_free(x_weight);
+    return result;
 }
 static void metadata(DeadpanSource *s, DeadpanSourceFrame *out) {
     *out = (DeadpanSourceFrame){.pts=s->frame->pts,.duration=s->frame->duration,.dts=s->frame->pkt_dts,.keyframe=!!(s->frame->flags & AV_FRAME_FLAG_KEY)};
@@ -824,6 +1200,40 @@ static int i420(DeadpanSource *s, uint8_t *pixels, size_t length) {
     }
     return check(s);
 }
+static int yuv420p10(DeadpanSource *s, uint16_t *samples, size_t count) {
+    AVFrame *f = s->frame;
+    if (f->format != AV_PIX_FMT_YUV420P10LE || f->color_range != AVCOL_RANGE_MPEG ||
+        f->colorspace != AVCOL_SPC_BT2020_NCL || !hdr_transfer(f->color_trc) ||
+        f->color_primaries != AVCOL_PRI_BT2020 || (f->width & 1) || (f->height & 1))
+        return fail(s, "unsupported_export_format", "HDR export observations require even ten-bit limited BT2020 PQ/HLG YUV420 pictures");
+    size_t luma = (size_t)f->width * (size_t)f->height;
+    if (!samples || count != luma + luma / 2)
+        return fail(s, "invalid_configuration", "YUV420P10 output must have the exact tight frame size");
+    size_t output = 0;
+    for (int plane = 0; plane < 3; plane++) {
+        size_t columns = (size_t)f->width >> (plane != 0);
+        size_t rows = (size_t)f->height >> (plane != 0);
+        if (!f->data[plane] || f->linesize[plane] <= 0 || (size_t)f->linesize[plane] < columns * 2)
+            return fail(s, "invalid_picture", "decoded YUV420P10 plane has an unsupported stride");
+        AVBufferRef *buffer = av_frame_get_plane_buffer(f, plane);
+        if (rows - 1 > (SIZE_MAX - columns * 2) / (size_t)f->linesize[plane])
+            return fail(s, "resource_limit", "decoded YUV420P10 plane span overflows addressable memory");
+        size_t span = (rows - 1) * (size_t)f->linesize[plane] + columns * 2;
+        if (!buffer || (uintptr_t)f->data[plane] < (uintptr_t)buffer->data)
+            return fail(s, "invalid_picture", "decoded YUV420P10 plane has no owning buffer");
+        uintptr_t offset = (uintptr_t)f->data[plane] - (uintptr_t)buffer->data;
+        if (offset > buffer->size || span > buffer->size - offset)
+            return fail(s, "invalid_picture", "decoded YUV420P10 plane escapes its owning buffer");
+        for (size_t row = 0; row < rows; row++) {
+            if (check(s) < 0) return -1;
+            memcpy(samples + output, f->data[plane] + row * (size_t)f->linesize[plane], columns * 2);
+            for (size_t column = 0; column < columns; column++)
+                if (samples[output + column] > 1023) return fail(s, "invalid_picture", "decoded sample exceeds ten bits");
+            output += columns;
+        }
+    }
+    return check(s);
+}
 static int packet_budget(DeadpanSource *s) {
     if (s->packet->size <= 0 || (uint64_t)s->packet->size > s->limits.max_packet_bytes)
         return fail(s, "resource_limit", "source packet exceeds configured byte bound");
@@ -836,37 +1246,70 @@ static int packet_budget(DeadpanSource *s) {
         if (side->type == AV_PKT_DATA_NEW_EXTRADATA || side->type == AV_PKT_DATA_PARAM_CHANGE)
             return fail(s, "stream_changed", "packet changes admitted codec configuration");
     }
-    if (s->packet->stream_index == s->stream && s->h264_length_bytes) {
+    if (s->packet->stream_index == s->stream && s->nal_length_bytes) {
         size_t position = 0;
         uint32_t count = 0;
         size_t length = (size_t)s->packet->size;
         const uint8_t *data = s->packet->data;
-        int idr = 0, other_vcl = 0;
+        const char *name = s->hevc ? "HEVC" : "H264";
+        int idr = 0, other_vcl = 0, rasl = 0, trailing = 0, rasl_capable = 0;
         // A packet that FFmpeg would reinterpret as avcC is a configuration
         // change, not an ordinary length-prefixed picture packet.
-        if (length >= 7 && data[0] == 1 && (data[4] & 0xfc) == 0xfc && (data[5] & 0xe0) == 0xe0)
+        if (!s->hevc && length >= 7 && data[0] == 1 && (data[4] & 0xfc) == 0xfc && (data[5] & 0xe0) == 0xe0)
             return fail(s, "stream_changed", "packet carries replacement AVC configuration");
         while (position < length) {
             if (check(s) < 0) return -1;
-            if (++count > 4096) return fail(s, "resource_limit", "H264 packet exceeds 4096 NAL units");
-            if ((size_t)s->h264_length_bytes > length - position)
-                return fail(s, "invalid_input", "truncated H264 NAL length");
+            if (++count > 4096) return fail(s, "resource_limit", "%s packet exceeds 4096 NAL units", name);
+            if ((size_t)s->nal_length_bytes > length - position)
+                return fail(s, "invalid_input", "truncated %s NAL length", name);
             uint32_t amount = 0;
-            for (int i = 0; i < s->h264_length_bytes; i++) amount = (amount << 8) | data[position++];
+            for (int i = 0; i < s->nal_length_bytes; i++) amount = (amount << 8) | data[position++];
             if (!amount || amount > length - position)
-                return fail(s, "invalid_input", "H264 NAL escapes its packet");
-            int type = data[position] & 31;
-            if (type == 5) idr = 1;
-            // An in-band SPS governs the following pictures; it must also
-            // prove skipping safe, before this packet's skip decision.
-            if (type == 7 && !sps_allows_skip(data + position, amount)) s->skip_safe = 0;
-            if (type >= 1 && type <= 4) other_vcl = 1;
+                return fail(s, "invalid_input", "%s NAL escapes its packet", name);
+            if (s->hevc) {
+                if (amount < 2) return fail(s, "invalid_input", "truncated HEVC NAL header");
+                int type = (data[position] >> 1) & 63;
+                if ((data[position] & 0x81) || (data[position + 1] >> 3) || !(data[position + 1] & 7))
+                    return fail(s, "unsupported_codec", "HEVC NAL is multilayer or has an invalid header");
+                if (type >= 32 && type <= 34) {
+                    // hvc1 parameter sets live in hvcC; an exact repetition is
+                    // harmless, any other in-band set would change the stream.
+                    if (!known_parameter_set(s, type, data + position, amount))
+                        return fail(s, "stream_changed", "packet carries an HEVC parameter set that differs from hvcC");
+                } else if (type == 62 || type == 63) {
+                    return fail(s, "unsupported_hdr", "packet carries unqualified Dolby Vision HEVC NAL units");
+                } else if (type <= 9) {
+                    other_vcl = 1;
+                    if (type >= 8) rasl = 1;
+                    else if (type <= 5) trailing = 1;
+                } else if (type >= 16 && type <= 21) {
+                    idr = 1;  // any IRAP: BLA, IDR or CRA
+                    if (type == 16 || type == 21) rasl_capable = 1;  // BLA_W_LP, CRA
+                } else if (type < 35 || type > 40) {
+                    return fail(s, "unsupported_codec", "packet carries a reserved or unspecified HEVC NAL unit type");
+                }
+            } else {
+                int type = data[position] & 31;
+                if (type == 5) idr = 1;
+                // An in-band SPS governs the following pictures; it must also
+                // prove skipping safe, before this packet's skip decision.
+                if (type == 7 && !sps_allows_skip(data + position, amount)) s->skip_safe = 0;
+                if (type >= 1 && type <= 4) other_vcl = 1;
+            }
             position += amount;
         }
         if (s->fresh_key_packet_pending) {
             if (s->packet->pts != s->fresh_key_pts || !(s->packet->flags & AV_PKT_FLAG_KEY) || !idr || other_vcl)
-                return fail(s, "invalid_keyframe", "fresh GOP requires an exact key packet containing only IDR picture slices");
+                return fail(s, "invalid_keyframe", "fresh GOP requires an exact key packet containing only IDR (H264) or IRAP (HEVC) picture slices");
             s->fresh_key_packet_pending = 0;
+            s->fresh_leading = s->hevc && rasl_capable;
+        } else if (s->fresh_leading) {
+            // A fresh decoder at a CRA/BLA_W_LP sets NoRaslOutputFlag: its RASL
+            // pictures reference the previous GOP and FFmpeg silently drops
+            // them. An open GOP therefore cannot be decoded exactly from here.
+            if (rasl)
+                return fail(s, "invalid_keyframe", "fresh HEVC GOP starts at a CRA whose RASL pictures need the previous GOP; restart at an IDR or a CRA without RASL pictures");
+            if (trailing || idr) s->fresh_leading = 0;
         }
     }
     return check(s);
@@ -907,7 +1350,7 @@ static int receive_frame(DeadpanSource *s) {
             if (packet_budget(s) < 0) { av_packet_unref(s->packet); return -1; }
             if (s->packet->flags & AV_PKT_FLAG_CORRUPT) { av_packet_unref(s->packet); return fail(s, "corrupt_packet", "demuxer reported a corrupt packet"); }
             if (s->packet->stream_index == s->stream) {
-                if (table(s, 0) < 0 || packet_color_metadata(s, s->packet->side_data, s->packet->side_data_elems, "packet") < 0) {
+                if (table(s, 0) < 0 || packet_color_metadata(s, s->packet->side_data, s->packet->side_data_elems, "packet", 0) < 0) {
                     av_packet_unref(s->packet);
                     return -1;
                 }
@@ -938,6 +1381,22 @@ static int next_impl(DeadpanSource *s, DeadpanSourceFrame *out, uint8_t *pixels,
     metadata(s, out);
     return pixels ? rgba(s, pixels, length) : 1;
 }
+int deadpan_source_next_rgba64(DeadpanSource *s, uint64_t timeout, DeadpanCancelled cancelled,
+                        const void *opaque, DeadpanSourceFrame *frame, uint8_t *pixels,
+                        size_t length, DeadpanSourceError *error) {
+    if (begin(s, timeout, cancelled, opaque, error) < 0) return finish(s, -1);
+    int result = next_impl(s, frame, NULL, 0);
+    if (result <= 0) return finish(s, result);
+    return finish(s, rgba64(s, pixels, length));
+}
+int deadpan_source_copy_rgba64(DeadpanSource *s, uint64_t timeout, DeadpanCancelled cancelled,
+                        const void *opaque, DeadpanSourceFrame *frame, uint8_t *pixels,
+                        size_t length, DeadpanSourceError *error) {
+    if (begin(s, timeout, cancelled, opaque, error) < 0) return finish(s, -1);
+    if (s->pending_first_frame || !s->frame->buf[0]) return finish(s, fail(s, "no_current_frame", "decode a frame before copying its pixels"));
+    metadata(s, frame);
+    return finish(s, rgba64(s, pixels, length));
+}
 int deadpan_source_next(DeadpanSource *s, uint64_t timeout, DeadpanCancelled cancelled,
                         const void *opaque, DeadpanSourceFrame *frame, uint8_t *pixels,
                         size_t length, DeadpanSourceError *error) {
@@ -958,6 +1417,7 @@ static int seek_impl(DeadpanSource *s, int64_t pts, int skip, int64_t target) {
     av_frame_unref(s->frame); av_packet_unref(s->packet);
     s->pending_first_frame = 0;
     s->skip_nonref = 0;
+    s->fresh_leading = 0;
     int result = av_seek_frame(s->format, s->stream, pts, AVSEEK_FLAG_BACKWARD);
     if (result < 0) return fferror(s, "seek source", result);
     avcodec_flush_buffers(s->decoder);
@@ -1011,6 +1471,25 @@ int deadpan_source_copy_i420(DeadpanSource *s, uint64_t timeout, DeadpanCancelle
     if (table(s, 0) < 0 || check_frame(s) < 0) return finish(s, -1);
     export_metadata(s, frame);
     return finish(s, i420(s, pixels, length));
+}
+int deadpan_source_next_yuv420p10(DeadpanSource *s, uint64_t timeout, DeadpanCancelled cancelled,
+                        const void *opaque, DeadpanExportFrame *frame, uint16_t *samples,
+                        size_t count, DeadpanSourceError *error) {
+    if (begin(s, timeout, cancelled, opaque, error) < 0) return finish(s, -1);
+    DeadpanSourceFrame source;
+    int result = next_impl(s, &source, NULL, 0);
+    if (result <= 0) return finish(s, result);
+    export_metadata(s, frame);
+    return finish(s, yuv420p10(s, samples, count));
+}
+int deadpan_source_copy_yuv420p10(DeadpanSource *s, uint64_t timeout, DeadpanCancelled cancelled,
+                        const void *opaque, DeadpanExportFrame *frame, uint16_t *samples,
+                        size_t count, DeadpanSourceError *error) {
+    if (begin(s, timeout, cancelled, opaque, error) < 0) return finish(s, -1);
+    if (s->pending_first_frame || !s->frame->buf[0]) return finish(s, fail(s, "no_current_frame", "decode a frame before copying its pixels"));
+    if (table(s, 0) < 0 || check_frame(s) < 0) return finish(s, -1);
+    export_metadata(s, frame);
+    return finish(s, yuv420p10(s, samples, count));
 }
 void deadpan_source_work(const DeadpanSource *s, DeadpanDecodeWork *work) {
     *work = s->work;

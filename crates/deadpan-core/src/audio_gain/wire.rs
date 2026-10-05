@@ -236,11 +236,13 @@ pub(super) struct Treatments {
     // Required, including explicit null for the empty treatment chain.
     #[serde(deserialize_with = "required_clip")]
     clip_gain: Option<ClipGain>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    saturation: Option<Saturation>,
 }
 impl TryFrom<Treatments> for AudioTreatments {
     type Error = GainError;
     fn try_from(value: Treatments) -> Result<Self, Self::Error> {
-        Self::new(value.order, value.clip_gain)
+        Self::with_stages(value.order, value.clip_gain, value.saturation)
     }
 }
 impl From<AudioTreatments> for Treatments {
@@ -248,6 +250,7 @@ impl From<AudioTreatments> for Treatments {
         Self {
             order: value.order,
             clip_gain: value.clip_gain,
+            saturation: value.saturation,
         }
     }
 }
@@ -304,5 +307,22 @@ impl<'de> de::DeserializeSeed<'de> for Reject {
     type Value = ();
     fn deserialize<D: Deserializer<'de>>(self, _: D) -> Result<(), D::Error> {
         Err(de::Error::custom(GainError::Limit))
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(super) struct SaturationWire {
+    drive: GainDb,
+}
+impl TryFrom<SaturationWire> for Saturation {
+    type Error = GainError;
+    fn try_from(value: SaturationWire) -> Result<Self, Self::Error> {
+        Self::new(value.drive)
+    }
+}
+impl From<Saturation> for SaturationWire {
+    fn from(value: Saturation) -> Self {
+        Self { drive: value.drive }
     }
 }

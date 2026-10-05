@@ -1113,9 +1113,18 @@ impl RenderPlan {
                         !local.compare_integer(cutaway.range.start().0).is_lt()
                             && local.compare_integer(cutaway.range.end().0).is_lt()
                     })
-                && let Some(point) =
-                    cutaway.picture_point(local, self.metadata.presentation_basis.frame_rate)?
+                && (cutaway.removed
+                    || cutaway
+                        .picture_point(local, self.metadata.presentation_basis.frame_rate)?
+                        .is_some())
             {
+                if cutaway.removed {
+                    // A video-only delete exposes the project background.
+                    break (Picture::Background, None, None);
+                }
+                let point = cutaway
+                    .picture_point(local, self.metadata.presentation_basis.frame_rate)?
+                    .ok_or(PlanError::InvalidPlan("cutaway picture"))?;
                 break (
                     Picture::Source {
                         asset: cutaway.asset.clone(),

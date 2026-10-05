@@ -250,6 +250,7 @@ fn one_more_time_repeats_with_each_gap_shorter_than_the_last() {
         plays: NonZeroU32::new(4).unwrap(),
         gap: frames_length(6),
         shorten: frames_length(2),
+        variation: None,
     };
     let mut start = context("root", 0);
     start.selected_child = Some(node("a"));
@@ -296,6 +297,7 @@ fn one_more_time_repeats_with_each_gap_shorter_than_the_last() {
         plays: NonZeroU32::new(4).unwrap(),
         gap: frames_length(4),
         shorten: frames_length(2),
+        variation: None,
     };
     let mut start = context("root", 0);
     start.selected_child = Some(node("a"));
@@ -1028,4 +1030,65 @@ fn a_tail_on_a_pause_whose_picture_cannot_be_resolved_still_applies() {
         HoldVideo::Background,
         "the picture is untouched"
     );
+}
+
+#[test]
+fn audio_changes_set_trim_steps_and_saturation_on_the_selected_beat_in_order() {
+    use crate::{AudioChange, AudioTreatmentStage, GainDb};
+    let document = tree(&["a", "b"], vec![("a", hold(3)), ("b", hold(4))]);
+    let mut selected = context("root", 3);
+    selected.selected_child = Some(node("b"));
+    let change = |change| SemanticInstruction::SetAudio { change };
+    let planned = plan_pauses(
+        &document,
+        selected.clone(),
+        vec![
+            change(AudioChange::Saturation {
+                drive: Some(GainDb::new(12_000).unwrap()),
+            }),
+            change(AudioChange::Trim {
+                gain: GainDb::new(-6_000).unwrap(),
+            }),
+            change(AudioChange::Step {
+                millidecibels: 3_000,
+            }),
+        ],
+    )
+    .unwrap();
+    let treatments = &planned.document.nodes()[&node("b")].audio_treatments;
+    // Saturation came first, so the later clip gain is placed before it.
+    assert_eq!(
+        treatments.order(),
+        &[
+            AudioTreatmentStage::ClipGain,
+            AudioTreatmentStage::Saturation
+        ]
+    );
+    assert_eq!(
+        treatments.clip_gain().unwrap().trim().millidecibels(),
+        -3_000
+    );
+    assert_eq!(
+        treatments.saturation().unwrap().drive().millidecibels(),
+        12_000
+    );
+    assert_eq!(planned.document.duration(), document.duration());
+    let replay =
+        crate::replay_compound::<EditError>(&document, planned.request.as_ref().unwrap(), |_| {
+            Ok(())
+        })
+        .unwrap();
+    assert_eq!(replay.document, planned.document);
+    assert_eq!(
+        replay.edit.inverse.apply(&replay.document).unwrap(),
+        document
+    );
+    // Removing absent saturation, a Visual selection and no beat all refuse.
+    let off = change(AudioChange::Saturation { drive: None });
+    assert!(plan_pauses(&document, selected.clone(), vec![off.clone()]).is_err());
+    assert!(plan_pauses(&document, context("root", 3), vec![off]).is_err());
+    let too_hot = change(AudioChange::Saturation {
+        drive: Some(GainDb::new(-1).unwrap()),
+    });
+    assert!(plan_pauses(&document, selected, vec![too_hot]).is_err());
 }

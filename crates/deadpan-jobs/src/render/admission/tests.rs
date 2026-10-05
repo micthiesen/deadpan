@@ -246,6 +246,7 @@ fn frozen_fallback_graph_never_uses_generic_failures_or_diagnostic_text() {
     };
     assert_eq!(
         next_choice(
+            RenderAutomaticAlgorithm::AutomaticSdrV1,
             &hardware,
             RenderProbeFailureKind::Encoder(RenderEncodeFailureKind::VideoTimestampOrder),
             true
@@ -254,6 +255,7 @@ fn frozen_fallback_graph_never_uses_generic_failures_or_diagnostic_text() {
     );
     assert_eq!(
         next_choice(
+            RenderAutomaticAlgorithm::AutomaticSdrV1,
             &hardware,
             RenderProbeFailureKind::Encoder(RenderEncodeFailureKind::EncoderUnavailable),
             true
@@ -262,6 +264,7 @@ fn frozen_fallback_graph_never_uses_generic_failures_or_diagnostic_text() {
     );
     assert_eq!(
         next_choice(
+            RenderAutomaticAlgorithm::AutomaticSdrV1,
             &none,
             RenderProbeFailureKind::Encoder(RenderEncodeFailureKind::VideoTimestampOrder),
             true
@@ -270,6 +273,7 @@ fn frozen_fallback_graph_never_uses_generic_failures_or_diagnostic_text() {
     );
     assert_eq!(
         next_choice(
+            RenderAutomaticAlgorithm::AutomaticSdrV1,
             &software,
             RenderProbeFailureKind::Encoder(RenderEncodeFailureKind::VideoTimestampOrder),
             true
@@ -289,16 +293,27 @@ fn frozen_fallback_graph_never_uses_generic_failures_or_diagnostic_text() {
         RenderEncodeFailureKind::Evidence,
     ] {
         assert_eq!(
-            next_choice(&hardware, RenderProbeFailureKind::Encoder(kind), true),
+            next_choice(
+                RenderAutomaticAlgorithm::AutomaticSdrV1,
+                &hardware,
+                RenderProbeFailureKind::Encoder(kind),
+                true
+            ),
             None
         );
     }
     assert_eq!(
-        next_choice(&hardware, RenderProbeFailureKind::Output, true),
+        next_choice(
+            RenderAutomaticAlgorithm::AutomaticSdrV1,
+            &hardware,
+            RenderProbeFailureKind::Output,
+            true
+        ),
         None
     );
     assert_eq!(
         next_choice(
+            RenderAutomaticAlgorithm::AutomaticSdrV1,
             &software,
             RenderProbeFailureKind::Encoder(RenderEncodeFailureKind::EncoderUnavailable),
             true
@@ -400,4 +415,241 @@ fn pinned_controls_recipe_and_project_origin_reject_silent_retiming() {
     value.validate().unwrap();
     value.output.project_audio_end = AudioSample(3204);
     assert!(value.validate().is_err());
+}
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    Hasher::digest(bytes)
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
+
+/// The retained SDR decision must keep its exact serialized bytes and probe
+/// recipe identity after HDR fields were added (all optional and skipped).
+#[test]
+fn sdr_decision_bytes_and_probe_recipe_are_unchanged_by_hdr_support() {
+    let value = fixture();
+    // Captured before HDR support from this same fixture.
+    assert_eq!(
+        sha256_hex(&serde_json::to_vec(&value).unwrap()),
+        "c9f3344d4ddca1c0d9dcacdcd26ff30656fd176ec113dad2adcad163e9585048"
+    );
+    let selected = value.selected().unwrap();
+    assert_eq!(
+        selected.spec.document_sha256().unwrap().as_str(),
+        "87d0c71a8c941e10975b3b8148cd21c88c10567c96e84da6ec886d8322a849f0"
+    );
+    assert_eq!(
+        serde_json::to_string(&selected.spec).unwrap(),
+        r#"{"raster":[320,180],"frame_rate":[30000,1001],"choice":{"mode":"hardware","b_frames":"none"}}"#
+    );
+    assert!(
+        !String::from_utf8(serde_json::to_vec(&value).unwrap())
+            .unwrap()
+            .contains("mastering_display")
+    );
+}
+
+/// Derive a self-consistent synthetic HDR decision from the measured SDR one.
+/// This is a grammar fixture, not measured HDR evidence.
+fn hdr_fixture(color: ColorPolicy) -> RenderEncodingDecision {
+    let mut value = fixture();
+    value.algorithm = RenderAutomaticAlgorithm::AutomaticHdrV1;
+    value.output.color_policy = color;
+    value.output.mastering_display =
+        (color == ColorPolicy::HdrRec2020Pq).then_some(HDR_PROBE_MASTERING);
+    for probe in &mut value.probes {
+        probe.spec.color_policy = color;
+        if let RenderProbeOutcome::Succeeded { report } = &mut probe.result {
+            report.spec.color_policy = color;
+            let contract = report.spec.contract().unwrap();
+            let recipe = report.spec.document_sha256().unwrap();
+            let settings = report.spec.settings().unwrap();
+            report.manifest.contract = contract.clone();
+            report.verification.contract = contract;
+            report.manifest.document_sha256 = recipe.clone();
+            report.verification.document_sha256 = recipe;
+            report.manifest.report.info.video_bitrate = settings.video_bitrate;
+            report.manifest.report.info.video_profile = 2;
+            report.settings = settings;
+            report.content.schema_version = 2;
+            report.verification.content_light =
+                (color == ColorPolicy::HdrRec2020Pq).then_some(RenderContentLightEvidence {
+                    declared_max_cll: 1005,
+                    declared_max_fall: 167,
+                    decoded_bound_max_cll_millinits: 1_003_401,
+                    decoded_bound_max_fall_millinits: 165_461,
+                });
+        }
+    }
+    value
+}
+
+fn hdr_intent(value: &RenderEncodingDecision) -> RenderIntent {
+    let mut intent = intent(value);
+    intent.policy = RenderPolicy::Automatic(RenderAutomaticPolicy {
+        schema_version: 1,
+        selection: RenderAutomaticSelection::Automatic,
+        algorithm: RenderAutomaticAlgorithm::AutomaticHdrV1,
+    });
+    intent
+}
+
+#[test]
+fn hdr_decisions_validate_and_round_trip_for_pq_and_hlg() {
+    for color in [ColorPolicy::HdrRec2020Pq, ColorPolicy::HdrRec2020Hlg] {
+        let value = hdr_fixture(color);
+        value
+            .validate_for(&hdr_intent(&value), &value.encoding_attempt_id)
+            .unwrap();
+        let bytes = serde_json::to_vec(&value).unwrap();
+        assert_eq!(RenderEncodingDecision::from_json(&bytes).unwrap(), value);
+        let text = String::from_utf8(bytes).unwrap();
+        assert_eq!(
+            text.contains("mastering_display"),
+            color == ColorPolicy::HdrRec2020Pq
+        );
+        let selected = value.selected().unwrap();
+        let sdr = fixture();
+        let sdr_selected = sdr.selected().unwrap();
+        assert_eq!(
+            selected.settings.video_bitrate,
+            (sdr_selected.settings.video_bitrate * 5 + 2) / 4
+        );
+        assert_eq!(selected.manifest.contract.picture.color_policy, color);
+        assert_ne!(
+            selected.spec.document_sha256().unwrap(),
+            sdr_selected.spec.document_sha256().unwrap()
+        );
+        // An SDR intent cannot own an HDR decision, nor vice versa.
+        assert!(
+            value
+                .validate_for(&intent(&value), &value.encoding_attempt_id)
+                .is_err()
+        );
+        assert!(
+            sdr.validate_for(&hdr_intent(&sdr), &sdr.encoding_attempt_id)
+                .is_err()
+        );
+    }
+    let pq = hdr_fixture(ColorPolicy::HdrRec2020Pq)
+        .selected()
+        .unwrap()
+        .spec
+        .clone();
+    let hlg = hdr_fixture(ColorPolicy::HdrRec2020Hlg)
+        .selected()
+        .unwrap()
+        .spec
+        .clone();
+    assert_ne!(
+        pq.document_sha256().unwrap(),
+        hlg.document_sha256().unwrap()
+    );
+    assert!(
+        serde_json::to_string(&pq)
+            .unwrap()
+            .contains(r#""color_policy":"hdr_rec2020_pq""#)
+    );
+}
+
+#[test]
+fn hdr_decision_rejects_mismatched_algorithm_color_metadata_and_evidence() {
+    type Mutation = fn(&mut RenderEncodingDecision);
+    let mutations: [Mutation; 9] = [
+        // Algorithm and output color must agree.
+        |value| value.algorithm = RenderAutomaticAlgorithm::AutomaticSdrV1,
+        |value| value.output.color_policy = ColorPolicy::SdrRec709,
+        // Mastering only with PQ, and only a valid volume.
+        |value| value.output.mastering_display = Some(HDR_PROBE_MASTERING),
+        |value| value.probes[0].spec.color_policy = ColorPolicy::SdrRec709,
+        |value| selected_mut(value).manifest.report.info.video_profile = 100,
+        |value| selected_mut(value).content.schema_version = 1,
+        |value| selected_mut(value).settings.video_bitrate -= 1,
+        |value| {
+            let report = selected_mut(value);
+            report.manifest.document_sha256 = RenderProbeSpec {
+                color_policy: ColorPolicy::HdrRec2020Pq,
+                ..report.spec.clone()
+            }
+            .document_sha256()
+            .unwrap();
+        },
+        |value| selected_mut(value).content.maximum_plane_error[0] = 193,
+    ];
+    for (index, mutate) in mutations.into_iter().enumerate() {
+        let mut value = hdr_fixture(ColorPolicy::HdrRec2020Hlg);
+        mutate(&mut value);
+        assert!(value.validate().is_err(), "mutation {index}");
+    }
+    let mut invalid = hdr_fixture(ColorPolicy::HdrRec2020Pq);
+    invalid.output.mastering_display = Some(MasteringDisplay {
+        max_luminance: 0,
+        ..HDR_PROBE_MASTERING
+    });
+    assert!(invalid.validate().is_err());
+    let mut missing_light = hdr_fixture(ColorPolicy::HdrRec2020Pq);
+    selected_mut(&mut missing_light).verification.content_light = None;
+    assert!(missing_light.validate().is_err());
+    let mut hlg_light = hdr_fixture(ColorPolicy::HdrRec2020Hlg);
+    selected_mut(&mut hlg_light).verification.content_light =
+        hdr_fixture(ColorPolicy::HdrRec2020Pq)
+            .selected()
+            .unwrap()
+            .verification
+            .content_light;
+    assert!(hlg_light.validate().is_err());
+    // Sparse highlights: the decoded mean bound may exceed the decoded
+    // percentile bound; only the declared pair must keep FALL <= CLL.
+    let light_with = |declared: [u16; 2], decoded: [u32; 2]| {
+        let mut value = hdr_fixture(ColorPolicy::HdrRec2020Pq);
+        selected_mut(&mut value).verification.content_light = Some(RenderContentLightEvidence {
+            declared_max_cll: declared[0],
+            declared_max_fall: declared[1],
+            decoded_bound_max_cll_millinits: decoded[0],
+            decoded_bound_max_fall_millinits: decoded[1],
+        });
+        value.validate()
+    };
+    light_with([10_000, 25], [0, 2_470]).unwrap();
+    assert!(light_with([25, 26], [0, 2_470]).is_err());
+    assert!(light_with([10_000, 25], [0, 10_000_001]).is_err());
+    assert!(light_with([10_001, 25], [0, 2_470]).is_err());
+    let mut absent = hdr_fixture(ColorPolicy::HdrRec2020Pq);
+    absent.output.mastering_display = None;
+    absent.validate().unwrap();
+}
+
+#[test]
+fn hdr_settings_are_the_frozen_sdr_controls_with_scaled_bitrate() {
+    for (raster, rate) in [([1920, 1080], [30_000, 1001]), ([3840, 2160], [60, 1])] {
+        let sdr =
+            RenderSdrSettings::automatic_sdr_v1(raster, rate, RenderBFrames::TargetTwo).unwrap();
+        let hdr =
+            RenderSdrSettings::automatic_hdr_v1(raster, rate, RenderBFrames::TargetTwo).unwrap();
+        assert_eq!(hdr.video_bitrate, (sdr.video_bitrate * 5 + 2) / 4);
+        assert_eq!(
+            RenderSdrSettings {
+                video_bitrate: sdr.video_bitrate,
+                ..hdr.clone()
+            },
+            sdr
+        );
+        assert_eq!(
+            RenderSdrSettings::automatic(
+                ColorPolicy::HdrRec2020Hlg,
+                raster,
+                rate,
+                RenderBFrames::TargetTwo
+            )
+            .unwrap(),
+            hdr
+        );
+    }
+    assert_eq!(
+        RenderSdrSettings::automatic_hdr_v1([1920, 1080], [30_000, 1001], RenderBFrames::None)
+            .unwrap()
+            .video_bitrate,
+        10_000_000
+    );
 }

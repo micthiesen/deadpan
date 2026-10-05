@@ -37,6 +37,9 @@ enum Role {
     EditorialEdges,
     Audibility,
     Mapping,
+    /// A pitch policy string, or `{"shift":{"semitones":N}}`.
+    Pitch,
+    PitchShift,
     String,
     Scalar,
     Unknown,
@@ -201,7 +204,7 @@ impl<'de> Visitor<'de> for Scan<'_> {
         Ok(())
     }
     fn visit_str<E: Error>(self, _: &str) -> Result<(), E> {
-        if !matches!(self.role, Role::String) {
+        if !matches!(self.role, Role::String | Role::Pitch) {
             self.scalar();
         }
         Ok(())
@@ -279,7 +282,10 @@ impl<'de> Visitor<'de> for Scan<'_> {
                 (Role::Kind, "placement") => (Role::Placement, Charge::None),
                 (Role::Kind, "audio" | "gap_audio") => (Role::Audibility, Charge::None),
                 (Role::Kind, "mapping") => (Role::Mapping, Charge::None),
-                (Role::Kind, "type" | "pitch" | "purpose") => (Role::String, Charge::None),
+                (Role::Kind, "type" | "purpose") => (Role::String, Charge::None),
+                (Role::Kind, "pitch") => (Role::Pitch, Charge::None),
+                (Role::Pitch, "shift") => (Role::PitchShift, Charge::None),
+                (Role::PitchShift, "semitones") => (Role::Scalar, Charge::None),
                 (Role::Kind, "gap_duration") => (Role::Scalar, Charge::None),
                 (Role::Iterations, "runs") => (Role::Runs, Charge::None),
                 (Role::Overrides, _) => (Role::OverrideEntries, Charge::OverrideOwner),
@@ -394,6 +400,8 @@ fn record_field_bit(key: &str) -> u64 {
         "effect" => 39,
         "frequency_hz" => 40,
         "level" => 41,
+        "shift" => 42,
+        "semitones" => 43,
         _ => return 0,
     };
     1 << ordinal

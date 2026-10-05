@@ -68,8 +68,11 @@ impl Resolution {
         )
         .expect("positive resolved frame durations");
         let pitch = match pitch {
-            deadpan_core::PitchPolicy::Preserve => "preserve pitch",
-            deadpan_core::PitchPolicy::FollowSpeed => "tape pitch",
+            deadpan_core::PitchPolicy::Preserve => "preserve pitch".to_owned(),
+            deadpan_core::PitchPolicy::FollowSpeed => "tape pitch".to_owned(),
+            deadpan_core::PitchPolicy::Shift { semitones } => {
+                format!("pitch {semitones:+} semitones")
+            }
         };
         format!(
             "{} to {} f · {}/{}× · {pitch} · {}",

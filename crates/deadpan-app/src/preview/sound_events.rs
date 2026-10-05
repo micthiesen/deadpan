@@ -560,6 +560,10 @@ pub(super) fn command_hint(command: &str) -> Option<&'static str> {
             Some("End selected sound at the Edit cursor · hard edge · onset and phase kept")
         }
         "audio-lag" => Some("Sound offset from picture: +80ms later, -2f earlier, 0 realigns"),
+        "saturate" => Some("Saturation drive: 0 to 24 dB into a soft clipper · off removes it"),
+        "gain" => {
+            Some("Gain: 6dB sets the trim · +=3dB / -=3dB changes it · alone opens the draft")
+        }
         "sound-allow" | "sound-silence" => {
             Some("Captured Edit-cursor pause · selected sound only · no timing gaps filled")
         }

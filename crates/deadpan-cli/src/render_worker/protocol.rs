@@ -58,6 +58,11 @@ pub struct RenderContract {
     pub project_audio_start: AudioSample,
     pub project_audio_end: AudioSample,
     pub relative_aspect_error: ExactRatio,
+    /// PQ output only: the single consistent source mastering volume, emitted
+    /// as the MP4 `mdcv` box. Absent from SDR and HLG contracts, so their
+    /// serialized bytes are unchanged.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mastering_display: Option<deadpan_core::MasteringDisplay>,
 }
 
 impl RenderContract {
@@ -79,6 +84,7 @@ impl RenderContract {
             project_audio_start: contract.project_audio_start(),
             project_audio_end: contract.project_audio_end(),
             relative_aspect_error: contract.relative_aspect_error(),
+            mastering_display: contract.mastering_display(),
         }
     }
 
@@ -89,6 +95,9 @@ impl RenderContract {
     /// Check all derivable claims before any source, GPU or artifact allocation.
     pub fn validate(&self) -> Result<(), String> {
         self.validate_for_encoding()?;
+        if self.color_policy != ColorPolicy::SdrRec709 {
+            return Err("the raw diagnostic picture sink is qualified for SDR Rec.709 only".into());
+        }
         if self.frame_count > MAX_PICTURE_FRAMES {
             return Err("render raw range exceeds 100000 project frames".into());
         }
@@ -101,8 +110,14 @@ impl RenderContract {
     /// Shared geometry and clock admission without the diagnostic raw sink's
     /// total-byte/frame caps. Encoders separately enforce their own job bounds.
     pub fn validate_for_encoding(&self) -> Result<(), String> {
-        if self.color_policy != ColorPolicy::SdrRec709 {
-            return Err("render pictures require the qualified SDR Rec.709 policy".into());
+        match (self.color_policy, &self.mastering_display) {
+            (ColorPolicy::HdrRec2020Pq, Some(volume)) if !volume.is_valid() => {
+                return Err("render mastering display volume is invalid".into());
+            }
+            (ColorPolicy::SdrRec709 | ColorPolicy::HdrRec2020Hlg, Some(_)) => {
+                return Err("only PQ output carries a mastering display volume".into());
+            }
+            _ => {}
         }
         let frames =
             u64::try_from(self.range.duration().frames()).map_err(|error| error.to_string())?;
@@ -172,6 +187,14 @@ impl RenderContract {
             .checked_mul(u64::from(height))
             .and_then(|pixels| pixels.checked_mul(3))
             .map(|bytes| bytes / 2)
+            // HDR pictures are planar 10-bit samples in 16-bit little-endian words.
+            .and_then(|bytes| {
+                bytes.checked_mul(if self.color_policy == ColorPolicy::SdrRec709 {
+                    1
+                } else {
+                    2
+                })
+            })
             .ok_or_else(|| "render frame byte length overflow".into())
     }
 

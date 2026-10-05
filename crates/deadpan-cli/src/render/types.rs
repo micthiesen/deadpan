@@ -111,6 +111,16 @@ pub struct RenderOutputSummary {
     pub frame_count: u64,
     pub audio_samples: i64,
     pub algorithm: RenderAutomaticAlgorithm,
+    /// Encoded output branch: SdrRec709 (H.264) or HdrRec2020Pq/Hlg (HEVC Main10).
+    pub color_policy: deadpan_core::ColorPolicy,
+    pub color_reason: crate::picture::OutputColorReason,
+    pub hdr_sources: bool,
+    /// Declared HDR source peak used for tone mapping (SDR fallback output
+    /// and the SDR preview of an HDR composite).
+    pub tone_map_peak_nits: u32,
+    /// PQ output only.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mastering_display: Option<deadpan_core::MasteringDisplay>,
 }
 
 /// Compact live status. A stored verification report or decision never appears

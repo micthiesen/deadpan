@@ -5,7 +5,7 @@ use std::ops::Range;
 
 use deadpan_core::{
     AudioSample, ExactRatio, InsertionBias, InstancePath, IterationId, MIX_SAMPLE_RATE,
-    PitchPolicy, RepeatInstance, RetimePurpose, TimeError,
+    RepeatInstance, RetimePurpose, TimeError,
 };
 
 use super::audio::{Budget, intersect};
@@ -702,7 +702,7 @@ fn walk(
                     ExactRatio::ZERO.checked_sub(start.checked_mul(inverse)?)?,
                     inverse,
                 )?;
-                if *pitch == PitchPolicy::Preserve && *scale != ExactRatio::ONE {
+                if pitch.processes(*scale == ExactRatio::ONE) {
                     // Only the binding-resolution clock switches. Automation
                     // remains on the consuming output's exact nominal mapping.
                     // Canonical Preserve prepares its complete selected input;

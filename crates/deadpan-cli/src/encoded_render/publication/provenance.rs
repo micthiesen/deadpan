@@ -184,11 +184,11 @@ pub fn capture(
     let result = PublicationProvenance {
         schema_version: if automatic { 2 } else { 1 },
         document,
-        encoder_selection: if automatic {
-            "automatic_sdr_v1"
-        } else {
-            "explicit_engineering_choice"
-        },
+        encoder_selection: encoding_decision
+            .as_ref()
+            .map_or("explicit_engineering_choice", |decision| {
+                decision.algorithm.as_str()
+            }),
         render_intent,
         encoding_decision,
         encoded_manifest: encoded.manifest().clone(),

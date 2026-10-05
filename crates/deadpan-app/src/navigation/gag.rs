@@ -8,7 +8,7 @@ use deadpan_core::{ExactRatio, GainDb, RegisterName};
 
 use super::duration::DurationInput;
 
-pub const USAGE: &str = "Use :gag long-answer [pause=1.5s] [creep=1.35], :gag escalator [plays=3] [gain-step=3dB] [zoom-step=0.08], :gag non-sequitur [register=r], :gag one-more-time [plays=3] [gap=500ms] [shorten=200ms], :gag nothing-happens [register=r] [tone=1s] [silence=1s] or :gag are-we-done [register=r] [pause=1.5s].";
+pub const USAGE: &str = "Use :gag long-answer [pause=1.5s] [creep=1.35], :gag escalator [plays=3] [gain-step=3dB] [zoom-step=0.08], :gag non-sequitur [register=r], :gag one-more-time [plays=3] [gap=500ms] [shorten=200ms] [vary=20% [seed=7]], :gag nothing-happens [register=r] [tone=1s] [silence=1s] or :gag are-we-done [register=r] [pause=1.5s].";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GagInput {
@@ -28,6 +28,9 @@ pub enum GagInput {
         plays: NonZeroU32,
         gap: DurationInput,
         shorten: DurationInput,
+        /// `vary=20%` with an optional `seed=N`; a new seed is chosen and
+        /// pinned when none is given.
+        variation: Option<(u8, Option<u64>)>,
     },
     NothingHappens {
         tone: DurationInput,
@@ -67,11 +70,16 @@ impl GagInput {
                 plays,
                 gap,
                 shorten,
+                variation,
             } => deadpan_core::GagRecipe::OneMoreTime {
                 version,
                 plays,
                 gap: gap.pause_length(rate)?,
                 shorten: shorten.pause_length(rate)?,
+                variation: variation.map(|(percent, seed)| deadpan_core::GagVariation {
+                    percent,
+                    seed: seed.unwrap_or_else(fresh_seed),
+                }),
             },
             Self::NothingHappens {
                 tone,
@@ -90,6 +98,129 @@ impl GagInput {
             },
         })
     }
+}
+
+/// An authoring-time seed for a variation that names none. It is pinned in
+/// the recipe, so playback, export and Undo/Redo never draw again.
+fn fresh_seed() -> u64 {
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |elapsed| elapsed.as_nanos());
+    // Short enough to read and retype from the group label.
+    (nanos as u64 ^ (nanos >> 64) as u64) % 1_000_000
+}
+
+/// `vary=20%`: a whole percentage from 1 to 50.
+fn percent(value: &str) -> Result<u8, String> {
+    value
+        .strip_suffix('%')
+        .unwrap_or(value)
+        .parse::<u8>()
+        .ok()
+        .filter(|percent| (1..=deadpan_core::MAX_GAG_VARIATION_PERCENT).contains(percent))
+        .ok_or_else(|| "vary= is a whole percentage from 1% to 50%.".to_owned())
+}
+
+/// The ordinary steps a recipe expands to, one readable line each, with
+/// every resolved parameter: what `:gag-inspect` shows before applying.
+pub fn expansion_rows(
+    recipe: &deadpan_core::GagRecipe,
+    visual: bool,
+    rate: deadpan_core::FrameRate,
+) -> Result<Vec<String>, String> {
+    use deadpan_core::{PauseLength, SemanticInstruction as I, SemanticSelector};
+    let length = |length: &PauseLength| -> String {
+        let text = match length {
+            PauseLength::Frames { frames } => format!("{frames}f"),
+            PauseLength::Milliseconds { milliseconds } => format!("{milliseconds}ms"),
+        };
+        match length.resolve(rate) {
+            Ok(frames) if !matches!(length, PauseLength::Frames { .. }) => {
+                format!("{text} ({} f)", frames.frames())
+            }
+            _ => text,
+        }
+    };
+    let target = |selector: &SemanticSelector| match selector {
+        SemanticSelector::VisualSelection => "the Visual range".to_owned(),
+        SemanticSelector::SelectedBeat => "the selected beat".to_owned(),
+        SemanticSelector::Motion { .. } => "the frames just added".to_owned(),
+        _ => "the selection".to_owned(),
+    };
+    let instructions = recipe.expand(visual, rate).map_err(|error| error.message)?;
+    Ok(instructions
+        .iter()
+        .map(|instruction| match instruction {
+            I::InsertPause {
+                length: pause,
+                black,
+            } => format!(
+                "Insert a {} silent {} pause at the cursor",
+                length(pause),
+                if *black { "black" } else { "freeze" }
+            ),
+            I::SetFraming { framing } => match framing.as_deref().map(|framing| &framing.value) {
+                Some(deadpan_core::FramingValue::Envelope { envelope }) => {
+                    let end = envelope
+                        .segments
+                        .last()
+                        .map_or(envelope.initial.scale, |segment| segment.pose.scale);
+                    format!(
+                        "Creep in on it to {:.3}× ({} segment)",
+                        end.numerator() as f64 / end.denominator() as f64,
+                        envelope.segments.len()
+                    )
+                }
+                Some(_) => "Frame it with a fixed pose".into(),
+                None => "Remove its framing".into(),
+            },
+            I::Repeat {
+                selector,
+                plays,
+                escalation,
+            } => format!(
+                "Repeat {} for {plays} plays{}",
+                target(selector),
+                escalation.map_or(String::new(), |escalation| format!(
+                    ", each play {:+} dB{}",
+                    f64::from(escalation.gain_step.millidecibels()) / 1000.0,
+                    escalation.zoom.map_or(String::new(), |zoom| format!(
+                        " and {:+.3} scale",
+                        zoom.step.numerator() as f64 / zoom.step.denominator() as f64
+                    ))
+                ))
+            ),
+            I::SetRepeat {
+                gaps: Some(gaps), ..
+            } => format!(
+                "Silent freeze gaps after each play but the last: {}",
+                gaps.iter().map(length).collect::<Vec<_>>().join(", ")
+            ),
+            I::Paste { register, .. } => {
+                format!("Paste register {} at the cursor", register.as_char())
+            }
+            I::SetRoomTone { register } => format!(
+                "Loop room tone from the Original moment in register {}",
+                register.as_char()
+            ),
+            I::MoveFrames { forward, count } => format!(
+                "Move the cursor {count} frames {}",
+                if *forward { "forward" } else { "back" }
+            ),
+            I::Tail { effect, .. } => {
+                format!(
+                    "Ring a {} tail of the sound before it through the pause",
+                    effect.name()
+                )
+            }
+            I::SetCutaway { register, .. } => format!(
+                "Show the reaction in register {} over the pause; its sound continues",
+                register.as_char()
+            ),
+            I::Group { selector, label } => format!("Group {} as “{label}”", target(selector)),
+            other => format!("{other:?}"),
+        })
+        .collect())
 }
 
 pub fn parse(arguments: &[&str]) -> Result<GagInput, String> {
@@ -166,6 +297,20 @@ pub fn parse(arguments: &[&str]) -> Result<GagInput, String> {
                 )),
                 DurationInput::parse,
             )?,
+            variation: match (take("vary"), take("seed")) {
+                (None, None) => None,
+                (None, Some(_)) => {
+                    return Err("seed= needs vary=, for example vary=20% seed=7.".into());
+                }
+                (Some(vary), seed) => Some((
+                    percent(vary)?,
+                    seed.map(|seed| {
+                        seed.parse::<u64>()
+                            .map_err(|_| "seed= is a whole number.".to_owned())
+                    })
+                    .transpose()?,
+                )),
+            },
         },
         "nothing-happens" => GagInput::NothingHappens {
             register: register(take("register"))?,
@@ -247,8 +392,47 @@ mod tests {
                 plays: NonZeroU32::new(3).unwrap(),
                 gap: DurationInput::parse("500ms").unwrap(),
                 shorten: DurationInput::parse("200ms").unwrap(),
+                variation: None,
             }
         );
+        let varied = parse(&["one-more-time", "vary=20%", "seed=7"]).unwrap();
+        assert!(matches!(
+            varied,
+            GagInput::OneMoreTime {
+                variation: Some((20, Some(7))),
+                ..
+            }
+        ));
+        let rows = expansion_rows(
+            &varied
+                .recipe(deadpan_core::FrameRate::new(30, 1).unwrap())
+                .unwrap(),
+            false,
+            deadpan_core::FrameRate::new(30, 1).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(rows.len(), 3);
+        assert_eq!(rows[0], "Repeat the selected beat for 3 plays");
+        assert!(rows[1].starts_with("Silent freeze gaps after each play but the last: "));
+        assert!(rows[2].contains("varied ±20% (seed 7)"), "{rows:?}");
+        // A seed is drawn once and pinned when none is given.
+        assert!(matches!(
+            parse(&["one-more-time", "vary=10"])
+                .unwrap()
+                .recipe(deadpan_core::FrameRate::new(30, 1).unwrap())
+                .unwrap(),
+            deadpan_core::GagRecipe::OneMoreTime {
+                variation: Some(deadpan_core::GagVariation { percent: 10, .. }),
+                ..
+            }
+        ));
+        for bad in [
+            ["one-more-time", "seed=7"],
+            ["one-more-time", "vary=0%"],
+            ["one-more-time", "vary=51%"],
+        ] {
+            assert!(parse(&bad).is_err(), "{bad:?}");
+        }
         let rate = deadpan_core::FrameRate::new(30, 1).unwrap();
         assert!(matches!(
             parse(&["one-more-time", "plays=4", "gap=12f", "shorten=3f"])

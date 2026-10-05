@@ -25,6 +25,22 @@ adapters avoids maintaining their closed command vocabulary with each new
 command. The adapters alone occupied 31,091 lines before this change. Build
 speed improvements have not been isolated or measured.
 
+## Additive vocabulary in core schema 46 (2026-10-05)
+
+Core schema 46 also admits three additive, closed fields without a version
+bump; documents without them serialize exactly as before, and older builds
+refuse documents that use them (unknown field or variant):
+
+- `PitchPolicy::Shift { semitones }` (`{"shift":{"semitones":3}}`): nonzero,
+  within ±24, never on a Partition ([pitch shift](RETIME_EDITING.md#pitch-shift)).
+- `AudioTreatments.saturation` with a `saturation` entry in `order`
+  ([saturation](AUDIO_GAIN.md#saturation)).
+- `Cutaway.removed`, a video-only delete ([role edits](ROLE_EDITS.md)).
+
+Frozen audio contexts are schema 8: a context of schema 7 or older refuses a
+pitch shift or saturation, and the frozen layout validates a shift's range and
+purpose and its streaming preflight admits the shift object shape.
+
 ## Current validation and prior-format refusal
 
 ```sh

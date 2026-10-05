@@ -79,6 +79,8 @@ pub enum ReferenceProcessingKind {
         content: ReferenceAudioContent,
     },
     Preserve {
+        /// Pitch-preserving policy, including any fixed semitone shift.
+        pitch: PitchPolicy,
         selection: Range<ExactRatio>,
         duration: FrameDuration,
         rate: ExactRatio,
@@ -372,7 +374,7 @@ impl AudioReferencePlan {
         let FrozenAudioKind::Retime {
             child,
             mapping,
-            pitch: PitchPolicy::Preserve,
+            pitch,
             ..
         } = &node.kind
         else {
@@ -380,7 +382,12 @@ impl AudioReferencePlan {
                 "reference clock owner is not a Preserve stage",
             ));
         };
-        if mapping.duration() == node.duration {
+        if !pitch.preserves() {
+            return Err(PlanError::InvalidPlan(
+                "reference clock owner is not a Preserve stage",
+            ));
+        }
+        if !pitch.processes(mapping.duration() == node.duration) {
             return Err(PlanError::InvalidPlan(
                 "unity Retime does not own a preparation clock",
             ));
@@ -675,13 +682,12 @@ impl<'plan> ReferenceAudioClock<'plan> {
                         transform.child(ExactRatio::integer(entry.start), ExactRatio::ONE)?;
                     current = &entry.child;
                 }
-                FrozenAudioKind::Retime {
-                    mapping,
-                    pitch: PitchPolicy::Preserve,
-                    ..
-                } if stop_at_preserve && mapping.duration() != node.duration => {
+                FrozenAudioKind::Retime { mapping, pitch, .. }
+                    if stop_at_preserve && pitch.processes(mapping.duration() == node.duration) =>
+                {
                     break (
                         ReferenceProcessingKind::Preserve {
+                            pitch: *pitch,
                             selection: ExactRatio::integer(mapping.start().0)
                                 ..ExactRatio::integer(mapping.end().0),
                             duration: node.duration,

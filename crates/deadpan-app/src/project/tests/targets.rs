@@ -36,12 +36,16 @@ fn moving() -> Script {
 }
 
 fn project(runs: Vec<Script>) -> Fixture {
+    project_with(Backend::Scripted(Arc::new(ScriptQueue::new(runs))))
+}
+
+fn project_with(backend: Backend) -> Fixture {
     let scratch = tempfile::tempdir().unwrap();
     let service = ProjectService::start_with_tracking(
         Arc::new(|| {}),
         Some(ProjectLibrary::from_documents(scratch.path().join("Documents")).unwrap()),
         crate::project::generation::Backend::Environment,
-        Backend::Scripted(Arc::new(ScriptQueue::new(runs))),
+        backend,
     )
     .unwrap();
     service
@@ -483,3 +487,5 @@ fn a_worker_failure_reports_its_reason_and_saves_nothing() {
         workspace.document.revision_id()
     );
 }
+
+mod faces;

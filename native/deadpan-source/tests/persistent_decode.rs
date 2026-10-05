@@ -391,7 +391,9 @@ fn source_orientation_is_retained_and_unqualified_hdr_and_depth_fail() {
         )
         .err()
         .unwrap(),
-        "unsupported_transfer",
+        // Eight-bit 4:4:4 FFV1 PQ with BT.709 primaries is outside the single
+        // qualified HDR interpretation; primaries are checked first.
+        "unsupported_primaries",
     );
     assert_code(
         SourceDecoder::open(

@@ -29,6 +29,25 @@ pub fn parse_reverse(words: &[&str], bounce: bool) -> Result<DurationInput, Stri
     }
 }
 
+/// The split length `:jcut` and `:lcut` use when none is given.
+pub const DEFAULT_SPLIT: &str = "6f";
+const SPLIT_USAGE: &str = "Put the cursor on a cut between two source beats, then use :jcut 6f (the next beat's sound starts 6 frames early) or :lcut 200ms (this beat's sound runs on under the next picture).";
+
+/// `:jcut [D]` or `:lcut [D]`.
+pub fn parse_split(words: &[&str]) -> Result<DurationInput, String> {
+    match words {
+        [] => DurationInput::parse(DEFAULT_SPLIT),
+        [length] => match DurationInput::parse(length) {
+            Ok(DurationInput::Frames(frames)) if frames.frames() == 0 => Err(SPLIT_USAGE.into()),
+            Ok(DurationInput::Seconds(seconds)) if seconds == deadpan_core::ExactRatio::ZERO => {
+                Err(SPLIT_USAGE.into())
+            }
+            parsed => parsed.map_err(|error| format!("{error} {SPLIT_USAGE}")),
+        },
+        _ => Err(SPLIT_USAGE.into()),
+    }
+}
+
 const BLEEP_USAGE: &str = "Use :bleep over a Visual range, optionally :bleep 880Hz level=-6dB (20 Hz to 20 kHz, at or below 0 dB).";
 
 /// `:bleep [FREQUENCY[Hz]] [level=-10dB]`: frequency and level in

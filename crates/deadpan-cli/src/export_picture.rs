@@ -11,14 +11,19 @@ use std::sync::{
 };
 use std::time::{Duration, Instant};
 
+use deadpan_core::ColorPolicy;
 use deadpan_core::{
     AssetId, CapturedFraming, GeneratedArtifact, IterationId, SourceFrameId, SourceQualificationId,
     SourceTimestamp,
 };
-use deadpan_render::{FitMode, PictureRenderer, Rec709Yuv420Frame, RenderError, RenderTarget};
+use deadpan_render::{
+    FitMode, FrameLight, HdrTransfer, PictureRenderer, Rec709Yuv420Frame, Rec2100Yuv420P10Frame,
+    RenderError, RenderTarget,
+};
 
 use crate::picture::{
-    PreparedPicture, PreparedProjectPicture, ProjectPictureError, ProjectPictureSession,
+    ColorDecisionPipeline, PreparedPicture, PreparedProjectPicture, ProjectPictureError,
+    ProjectPictureSession,
 };
 
 mod contract;
@@ -63,6 +68,52 @@ pub enum ExportPictureSource {
     Background,
 }
 
+/// Encoder pixels at the contract's branch boundary: limited Rec.709 I420 for
+/// SDR output, or planar ten-bit Rec.2100 with its CTA-861.3 light statistics
+/// for HDR output. Both come from the same composed working target.
+#[derive(Debug)]
+pub enum ExportPixels {
+    Sdr(Rec709Yuv420Frame),
+    Hdr {
+        pixels: Rec2100Yuv420P10Frame,
+        light: FrameLight,
+    },
+}
+
+impl ExportPixels {
+    pub fn width(&self) -> u32 {
+        match self {
+            Self::Sdr(pixels) => pixels.width(),
+            Self::Hdr { pixels, .. } => pixels.width(),
+        }
+    }
+    pub fn height(&self) -> u32 {
+        match self {
+            Self::Sdr(pixels) => pixels.height(),
+            Self::Hdr { pixels, .. } => pixels.height(),
+        }
+    }
+    /// Tight encoder input: I420 bytes, or little-endian ten-bit samples.
+    pub fn bytes(&self) -> &[u8] {
+        match self {
+            Self::Sdr(pixels) => pixels.bytes(),
+            Self::Hdr { pixels, .. } => pixels.bytes(),
+        }
+    }
+    pub const fn sdr(&self) -> Option<&Rec709Yuv420Frame> {
+        match self {
+            Self::Sdr(pixels) => Some(pixels),
+            Self::Hdr { .. } => None,
+        }
+    }
+    pub const fn hdr(&self) -> Option<(&Rec2100Yuv420P10Frame, FrameLight)> {
+        match self {
+            Self::Sdr(_) => None,
+            Self::Hdr { pixels, light } => Some((pixels, *light)),
+        }
+    }
+}
+
 struct CompletedPermit(Arc<AtomicBool>);
 
 impl CompletedPermit {
@@ -87,7 +138,7 @@ pub struct ExportPictureFrame {
     contract: Arc<ExportPictureContract>,
     timing: OutputFrameTiming,
     source: ExportPictureSource,
-    pixels: Rec709Yuv420Frame,
+    pixels: ExportPixels,
     framing_scopes: usize,
     picture_context: Option<Arc<CapturedFraming>>,
     gap_after: Option<IterationId>,
@@ -104,7 +155,7 @@ impl ExportPictureFrame {
     pub const fn source(&self) -> &ExportPictureSource {
         &self.source
     }
-    pub const fn pixels(&self) -> &Rec709Yuv420Frame {
+    pub const fn pixels(&self) -> &ExportPixels {
         &self.pixels
     }
     pub const fn framing_scopes(&self) -> usize {
@@ -135,11 +186,13 @@ pub struct ExportPictureSession {
 impl ExportPictureSession {
     pub fn new(
         pictures: ProjectPictureSession,
-        renderer: PictureRenderer,
+        mut renderer: PictureRenderer,
         cancelled: &AtomicBool,
         deadline: Instant,
     ) -> Result<Self, ExportPictureError> {
         check_control(cancelled, deadline)?;
+        // Preview and export share this branch and tone map for the revision.
+        renderer.set_color_pipeline(pictures.color_decision().pipeline());
         let contract = Arc::new(ExportPictureContract::capture(&pictures)?);
         let [width, height] = contract.raster();
         let target = renderer.create_target(width, height)?;
@@ -251,7 +304,19 @@ impl ExportPictureSession {
             wait_for_progress(cancelled, deadline)?;
         };
         check_control(cancelled, deadline)?;
-        let pixels = Rec709Yuv420Frame::from_working(&working)?;
+        let pixels = match self.contract.color_policy() {
+            ColorPolicy::SdrRec709 => ExportPixels::Sdr(Rec709Yuv420Frame::from_working(&working)?),
+            ColorPolicy::HdrRec2020Pq => {
+                let (pixels, light) =
+                    Rec2100Yuv420P10Frame::from_working(&working, HdrTransfer::Pq)?;
+                ExportPixels::Hdr { pixels, light }
+            }
+            ColorPolicy::HdrRec2020Hlg => {
+                let (pixels, light) =
+                    Rec2100Yuv420P10Frame::from_working(&working, HdrTransfer::Hlg)?;
+                ExportPixels::Hdr { pixels, light }
+            }
+        };
         check_control(cancelled, deadline)?;
         Ok(ExportPictureFrame {
             contract: Arc::clone(&self.contract),

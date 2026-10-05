@@ -94,7 +94,21 @@ impl Progress {
             let y_length =
                 usize::try_from(u64::from(contract.raster()[0]) * u64::from(contract.raster()[1]))
                     .map_err(|_| EncodeError::Input("I420 plane length exceeds address space"))?;
-            if bytes[..y_length]
+            if contract.video_format().is_hdr() {
+                let (luma, chroma) = bytes.split_at(y_length * 2);
+                let sample = |pair: &[u8]| u16::from_le_bytes([pair[0], pair[1]]);
+                if luma
+                    .chunks_exact(2)
+                    .any(|pair| !(64..=940).contains(&sample(pair)))
+                    || chroma
+                        .chunks_exact(2)
+                        .any(|pair| !(64..=960).contains(&sample(pair)))
+                {
+                    return Err(EncodeError::Input(
+                        "10-bit input contains codes outside the limited range",
+                    ));
+                }
+            } else if bytes[..y_length]
                 .iter()
                 .any(|code| !(16..=235).contains(code))
                 || bytes[y_length..]

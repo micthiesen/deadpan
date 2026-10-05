@@ -109,6 +109,17 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
                 },
             },
         },
+        SemanticAllocationRequest::Sound { step_index } => SemanticAllocation::Sound {
+            new_revision: revision(&format!("leaf-{step_index}")),
+            id: crate::SoundId::new(format!("sound-{step_index}")).unwrap(),
+        },
+        SemanticAllocationRequest::Roll {
+            step_index,
+            needs_wrapper,
+        } => SemanticAllocation::Roll {
+            new_revision: revision(&format!("leaf-{step_index}")),
+            wrapper: needs_wrapper.then(|| node(&format!("wrapper-{step_index}"))),
+        },
         SemanticAllocationRequest::Ungroup { step_index } => SemanticAllocation::Ungroup {
             new_revision: revision(&format!("leaf-{step_index}")),
         },

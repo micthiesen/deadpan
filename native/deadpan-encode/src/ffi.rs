@@ -12,9 +12,50 @@ use std::rc::Rc;
 use rustix::fs::{OFlags, fcntl_getfl, fstat};
 
 use crate::{
-    AUDIO_FRAME_SAMPLES, AUDIO_SAMPLE_RATE, Control, EncodeContract, EncodeError, EncodeLimits,
-    EncodeReport, EncoderInfo, EncoderMode,
+    AUDIO_FRAME_SAMPLES, AUDIO_SAMPLE_RATE, ContentLight, Control, EncodeContract, EncodeError,
+    EncodeLimits, EncodeReport, EncoderInfo, EncoderMode, HdrTransfer, VideoCodecInfo, VideoFormat,
 };
+
+const HDR_ABI_VERSION: u32 = 1;
+const AV_PROFILE_H264_HIGH: i32 = 100;
+const AV_PROFILE_HEVC_MAIN_10: i32 = 2;
+
+#[repr(C)]
+struct HdrConfig {
+    abi_version: u32,
+    transfer: u32,
+    has_mastering: u32,
+    primaries: [[u16; 2]; 3],
+    white_point: [u16; 2],
+    max_luminance: u32,
+    min_luminance: u32,
+}
+
+#[repr(C)]
+struct NativeContentLight {
+    max_cll: u16,
+    max_fall: u16,
+}
+
+#[repr(C)]
+#[derive(Default)]
+struct VideoInfo {
+    abi_version: u32,
+    profile: i32,
+    pix_fmt: i32,
+    color_primaries: i32,
+    color_trc: i32,
+    colorspace: i32,
+    color_range: i32,
+    chroma_location: i32,
+    mastering_side_data: u32,
+    content_light_side_data: u32,
+    removed_unspecified_nal_units: u64,
+    encoder: [c_char; 32],
+    profile_name: [c_char; 32],
+    pix_fmt_name: [c_char; 32],
+    codec_tag: [c_char; 8],
+}
 
 #[repr(C)]
 struct Config {
@@ -153,7 +194,55 @@ unsafe extern "C" {
         report: *mut Report,
         error: *mut Error,
     ) -> c_int;
+    fn dp_encode_open_hdr(
+        fd: c_int,
+        config: *const Config,
+        hdr: *const HdrConfig,
+        control: *const NativeControl,
+        session: *mut *mut c_void,
+        info: *mut Info,
+        error: *mut Error,
+    ) -> c_int;
+    fn dp_encode_finish_hdr(
+        session: *mut c_void,
+        light: *const NativeContentLight,
+        control: *const NativeControl,
+        report: *mut Report,
+        error: *mut Error,
+    ) -> c_int;
+    fn dp_encode_query_video(session: *const c_void, video: *mut VideoInfo) -> c_int;
     fn dp_encode_close(session: *mut c_void);
+    // Test-only binding; the native session calls the filter directly.
+    #[cfg(test)]
+    fn dp_encode_strip_unspecified_hevc_nal_units(
+        data: *mut u8,
+        size: usize,
+        new_size: *mut usize,
+        removed: *mut u64,
+    ) -> c_int;
+}
+
+#[cfg(test)]
+/// The native packet filter applied to every HDR video packet: remove HEVC
+/// NAL types 62/63 from one Annex B buffer. None for malformed or empty input.
+pub(crate) fn strip_unspecified_hevc_nal_units(packet: &mut Vec<u8>) -> Option<u64> {
+    let mut size = 0_usize;
+    let mut removed = 0_u64;
+    // SAFETY: the pointer/length describe one live exclusively borrowed Vec;
+    // the C filter only moves bytes within [0, len) and writes the two outputs.
+    let ok = unsafe {
+        dp_encode_strip_unspecified_hevc_nal_units(
+            packet.as_mut_ptr(),
+            packet.len(),
+            &raw mut size,
+            &raw mut removed,
+        )
+    };
+    if ok != 1 || size > packet.len() {
+        return None;
+    }
+    packet.truncate(size);
+    Some(removed)
 }
 
 extern "C" fn interrupted(opaque: *mut c_void) -> c_int {
@@ -228,21 +317,48 @@ impl Encoder {
             maximum_packets: limits.maximum_packets,
             maximum_packet_bytes: limits.maximum_packet_bytes,
         };
+        let hdr = contract.hdr().map(|hdr| {
+            let mastering = hdr.signal.mastering;
+            HdrConfig {
+                abi_version: HDR_ABI_VERSION,
+                transfer: match hdr.signal.transfer {
+                    HdrTransfer::Pq => 1,
+                    HdrTransfer::Hlg => 2,
+                },
+                has_mastering: u32::from(mastering.is_some()),
+                primaries: mastering.map_or([[0; 2]; 3], |value| value.primaries),
+                white_point: mastering.map_or([0; 2], |value| value.white_point),
+                max_luminance: mastering.map_or(0, |value| value.max_luminance),
+                min_luminance: mastering.map_or(0, |value| value.min_luminance),
+            }
+        });
         let mut pointer = std::ptr::null_mut();
         let mut info = Info::default();
         let mut error = Error::default();
-        // SAFETY: Config is validated and matches encoder.h. Descriptor and
-        // writable result structs remain live for this synchronous call. C
-        // frees failed allocations and only returns an owned context on success.
+        // SAFETY: Config/HdrConfig are validated and match encoder.h. The
+        // descriptor and writable result structs remain live for this
+        // synchronous call. C frees failed allocations and only returns an
+        // owned context on success.
         let result = unsafe {
-            dp_encode_open(
-                file.as_raw_fd(),
-                &config,
-                &ctl,
-                &mut pointer,
-                &mut info,
-                &mut error,
-            )
+            match &hdr {
+                None => dp_encode_open(
+                    file.as_raw_fd(),
+                    &config,
+                    &ctl,
+                    &mut pointer,
+                    &mut info,
+                    &mut error,
+                ),
+                Some(hdr) => dp_encode_open_hdr(
+                    file.as_raw_fd(),
+                    &config,
+                    hdr,
+                    &ctl,
+                    &mut pointer,
+                    &mut info,
+                    &mut error,
+                ),
+            }
         };
         if result != 1 {
             return Err(error.into_error(control));
@@ -256,6 +372,7 @@ impl Encoder {
             _same_thread: PhantomData,
         };
         let info = info.admit(contract)?;
+        inner.video_codec(contract, false)?;
         control.check()?;
         Ok((inner, info))
     }
@@ -324,19 +441,61 @@ impl Encoder {
         Ok(())
     }
 
+    /// Read and admit the selected video encoder declarations. After a PQ
+    /// finish, the static metadata side data must be present exactly as
+    /// configured; before finish (and for SDR/HLG) it must be absent.
+    pub(super) fn video_codec(
+        &self,
+        contract: &EncodeContract,
+        finished: bool,
+    ) -> Result<VideoCodecInfo, EncodeError> {
+        let mut video = VideoInfo::default();
+        // SAFETY: pure read of this live exclusive context into an owned struct.
+        let result = unsafe { dp_encode_query_video(self.pointer().as_ptr(), &mut video) };
+        if result != 1 {
+            return Err(EncodeError::Evidence("native video query failed"));
+        }
+        video.admit(contract, finished)
+    }
+
     pub(super) fn finish(
         &mut self,
         contract: &EncodeContract,
         limits: EncodeLimits,
+        light: Option<ContentLight>,
         control: &Control<'_>,
-    ) -> Result<EncodeReport, EncodeError> {
+    ) -> Result<(EncodeReport, VideoCodecInfo), EncodeError> {
         let ctl = native_control(control)?;
         let mut report = Report::default();
         let mut error = Error::default();
-        // SAFETY: all input was accepted exactly once. Results/control remain
-        // borrowed only during this exclusive drain, trailer and relocation call.
-        let result =
-            unsafe { dp_encode_finish(self.pointer().as_ptr(), &ctl, &mut report, &mut error) };
+        let light = light.map(|light| NativeContentLight {
+            max_cll: light.max_cll,
+            max_fall: light.max_fall,
+        });
+        // SAFETY: all input was accepted exactly once. Results/control/light
+        // remain borrowed only during this exclusive drain, trailer and
+        // relocation call. The SDR entry point is unchanged.
+        let result = unsafe {
+            match &light {
+                None if !contract.video_format().is_hdr() => {
+                    dp_encode_finish(self.pointer().as_ptr(), &ctl, &mut report, &mut error)
+                }
+                None => dp_encode_finish_hdr(
+                    self.pointer().as_ptr(),
+                    std::ptr::null(),
+                    &ctl,
+                    &mut report,
+                    &mut error,
+                ),
+                Some(light) => dp_encode_finish_hdr(
+                    self.pointer().as_ptr(),
+                    light,
+                    &ctl,
+                    &mut report,
+                    &mut error,
+                ),
+            }
+        };
         if result != 1 {
             return Err(error.into_error(control));
         }
@@ -366,20 +525,24 @@ impl Encoder {
                 "finished counts, EOF or same-descriptor fast-start evidence differs",
             ));
         }
-        Ok(EncodeReport {
-            info: report.info.admit(contract)?,
-            video_frames: report.video_frames,
-            audio_samples: report.audio_samples,
-            video_packets: report.video_packets,
-            audio_packets: report.audio_packets,
-            output_bytes: report.output_bytes,
-            packet_bytes: report.packet_bytes,
-            video_duration_from_contract_packets: report.video_duration_from_contract_packets,
-            faststart_read_opens: report.faststart_read_opens,
-            faststart_read_closes: report.faststart_read_closes,
-            video_eof: true,
-            audio_eof: true,
-        })
+        let video = self.video_codec(contract, true)?;
+        Ok((
+            EncodeReport {
+                info: report.info.admit(contract)?,
+                video_frames: report.video_frames,
+                audio_samples: report.audio_samples,
+                video_packets: report.video_packets,
+                audio_packets: report.audio_packets,
+                output_bytes: report.output_bytes,
+                packet_bytes: report.packet_bytes,
+                video_duration_from_contract_packets: report.video_duration_from_contract_packets,
+                faststart_read_opens: report.faststart_read_opens,
+                faststart_read_closes: report.faststart_read_closes,
+                video_eof: true,
+                audio_eof: true,
+            },
+            video,
+        ))
     }
 
     fn pointer(&self) -> NonNull<c_void> {
@@ -415,7 +578,12 @@ impl Info {
             || self.audio_time_base_den != AUDIO_SAMPLE_RATE
             || self.audio_frame_size != AUDIO_FRAME_SAMPLES
             || self.requested_mode != mode(contract.mode())
-            || self.video_profile != 100
+            || self.video_profile
+                != if contract.video_format().is_hdr() {
+                    AV_PROFILE_HEVC_MAIN_10
+                } else {
+                    AV_PROFILE_H264_HIGH
+                }
             || self.audio_profile != 1
             || self.video_has_b_frames < 0
             || self.video_max_b_frames < 0
@@ -427,7 +595,7 @@ impl Info {
             || self.maximum_moov_bytes == 0
         {
             return Err(EncodeError::Evidence(
-                "native codec configuration differs from required SDR policy",
+                "native codec configuration differs from the required policy",
             ));
         }
         Ok(EncoderInfo {
@@ -456,8 +624,130 @@ impl Info {
     }
 }
 
+impl VideoInfo {
+    fn admit(
+        self,
+        contract: &EncodeContract,
+        finished: bool,
+    ) -> Result<VideoCodecInfo, EncodeError> {
+        let format = contract.video_format();
+        let hdr = format.is_hdr();
+        let pq = format == VideoFormat::HevcMain10Rec2100Pq;
+        let encoder = string(&self.encoder);
+        let pix_fmt = string(&self.pix_fmt_name);
+        let codec_tag = string(&self.codec_tag);
+        let mastering_expected = finished
+            && contract
+                .hdr()
+                .is_some_and(|hdr| hdr.signal.mastering.is_some());
+        // libavutil enum values: BT709=1, BT2020=9 (primaries); BT709=1,
+        // SMPTE2084=16, ARIB_STD_B67=18 (transfer); BT709=1, BT2020_NCL=9
+        // (matrix); MPEG range=1; LEFT chroma=1. Pixel formats compare by name.
+        let expected = if hdr {
+            (
+                "hevc_videotoolbox",
+                AV_PROFILE_HEVC_MAIN_10,
+                "p010le",
+                9,
+                if pq { 16 } else { 18 },
+                9,
+                "hvc1",
+            )
+        } else {
+            (
+                "h264_videotoolbox",
+                AV_PROFILE_H264_HIGH,
+                "yuv420p",
+                1,
+                1,
+                1,
+                "avc1",
+            )
+        };
+        if self.abi_version != HDR_ABI_VERSION
+            || encoder != expected.0
+            || self.profile != expected.1
+            || pix_fmt != expected.2
+            || self.color_primaries != expected.3
+            || self.color_trc != expected.4
+            || self.colorspace != expected.5
+            || codec_tag != expected.6
+            || self.color_range != 1
+            || self.chroma_location != 1
+            || self.mastering_side_data != u32::from(mastering_expected)
+            || self.content_light_side_data != u32::from(finished && pq)
+        {
+            return Err(EncodeError::Evidence(
+                "native video codec declarations differ from the contract format",
+            ));
+        }
+        Ok(VideoCodecInfo {
+            format,
+            encoder,
+            profile: self.profile,
+            profile_name: string(&self.profile_name),
+            pix_fmt,
+            color_primaries: self.color_primaries,
+            color_trc: self.color_trc,
+            colorspace: self.colorspace,
+            color_range: self.color_range,
+            chroma_location: self.chroma_location,
+            codec_tag,
+            mastering_display: mastering_expected,
+            content_light: finished && pq,
+            removed_unspecified_nal_units: self.removed_unspecified_nal_units,
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
+
+    fn nal(kind: u8, payload: &[u8], four: bool) -> Vec<u8> {
+        let mut bytes = if four {
+            vec![0, 0, 0, 1]
+        } else {
+            vec![0, 0, 1]
+        };
+        bytes.extend([kind << 1, 1]);
+        bytes.extend_from_slice(payload);
+        bytes
+    }
+
+    #[test]
+    fn unspecified_hevc_nal_units_are_removed_and_others_kept_byte_for_byte() {
+        let keep = [
+            nal(1, &[7, 8, 9], true),
+            nal(39, &[3], false),
+            nal(19, &[5, 6], false),
+        ];
+        let mut packet = Vec::new();
+        packet.extend(&keep[0]);
+        packet.extend(nal(62, &[0xAA; 12], false));
+        packet.extend(&keep[1]);
+        packet.extend(nal(63, &[0xBB], true));
+        packet.extend(&keep[2]);
+        assert_eq!(strip_unspecified_hevc_nal_units(&mut packet), Some(2));
+        assert_eq!(packet, keep.concat());
+        // Nothing to remove leaves the packet untouched.
+        let mut clean = keep.concat();
+        assert_eq!(strip_unspecified_hevc_nal_units(&mut clean), Some(0));
+        assert_eq!(clean, keep.concat());
+    }
+
+    #[test]
+    fn length_prefixed_empty_and_rpu_only_packets_are_refused() {
+        // hvc1 length-prefixed (4-byte length 0x1C) is not reinterpreted.
+        let mut prefixed = vec![0, 0, 0, 0x1C, 2, 1];
+        prefixed.extend([0; 0x1A]);
+        assert_eq!(strip_unspecified_hevc_nal_units(&mut prefixed), None);
+        assert_eq!(strip_unspecified_hevc_nal_units(&mut Vec::new()), None);
+        let mut empty_unit = vec![0, 0, 1, 0, 0, 1, 2, 1];
+        assert_eq!(strip_unspecified_hevc_nal_units(&mut empty_unit), None);
+        let mut only_rpu = nal(62, &[1, 2], true);
+        assert_eq!(strip_unspecified_hevc_nal_units(&mut only_rpu), None);
+    }
+
     use super::*;
     use crate::BFramePolicy;
     use std::fs::OpenOptions;

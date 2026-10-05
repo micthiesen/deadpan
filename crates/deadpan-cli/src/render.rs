@@ -1,4 +1,4 @@
-//! Public automatic SDR rendering. Serialized requests and observations do not
+//! Public automatic SDR/HDR rendering. Serialized requests and observations do not
 //! grant media, publication, or process-cleanup authority.
 
 use crate::{
@@ -132,8 +132,12 @@ fn publication(
 
 /// Pure UI-safe construction. Start admission still checks the captured revision
 /// against the owning writer. No filesystem, hashing, or media work occurs here.
+///
+/// `algorithm` comes from [`output_summary`] for the same committed revision;
+/// job creation rejects an algorithm that does not match its color branch.
 pub fn start_request(
     context: &RenderContext,
+    algorithm: RenderAutomaticAlgorithm,
     destination: PathBuf,
     now: Instant,
 ) -> Result<StartRender, PublicRenderError> {
@@ -146,7 +150,7 @@ pub fn start_request(
         policy: RenderPolicy::Automatic(RenderAutomaticPolicy {
             schema_version: 1,
             selection: RenderAutomaticSelection::Automatic,
-            algorithm: RenderAutomaticAlgorithm::AutomaticSdrV1,
+            algorithm,
         }),
         publication,
         deadline: deadline(now)?,
@@ -260,9 +264,24 @@ pub fn cancel_request(
         .map_err(PublicRenderError::workflow)
 }
 
-/// Informational geometry from the authored document, without media admission.
+/// Informational geometry and color branch, without media admission. The
+/// branch is decided from the revision's stored source receipts.
+pub fn committed_output_summary(
+    store: &ProjectStore,
+    document: &ProjectDocument,
+) -> Result<RenderOutputSummary, PublicRenderError> {
+    let color = crate::picture::committed_color(store, document)
+        .map_err(|error| PublicRenderError::new("RenderColorEvidence", error))?;
+    output_summary(document, &color)
+}
+
+/// Informational geometry from the authored document and its already decided
+/// color branch (for example `Workspace::color_decision()`), without media
+/// admission. An HDR branch selects AutomaticHdrV1; an SDR branch, including a
+/// tone-mapped fallback from an HDR basis, keeps AutomaticSdrV1.
 pub fn output_summary(
     document: &ProjectDocument,
+    color: &crate::picture::OutputColorDecision,
 ) -> Result<RenderOutputSummary, PublicRenderError> {
     let basis = document.presentation_basis();
     let frames = document
@@ -275,10 +294,11 @@ pub fn output_summary(
             "The committed edit has no picture time",
         ));
     }
-    if basis.color_policy != deadpan_core::ColorPolicy::SdrRec709 {
+    // The branch may only keep the basis transfer or fall back to SDR.
+    if color.output != deadpan_core::ColorPolicy::SdrRec709 && color.output != basis.color_policy {
         return Err(PublicRenderError::new(
             "RenderColorUnsupported",
-            "This output path requires a committed SDR Rec.709 document",
+            "The color decision does not belong to this committed document",
         ));
     }
     let raster = deadpan_jobs::render::admission::RenderPictureContract::nearest_even_raster([
@@ -296,7 +316,12 @@ pub fn output_summary(
             .audio_boundary(ProjectFrame(frames))
             .map_err(PublicRenderError::invalid)?
             .0,
-        algorithm: RenderAutomaticAlgorithm::AutomaticSdrV1,
+        algorithm: RenderAutomaticAlgorithm::for_output(color.output),
+        color_policy: color.output,
+        color_reason: color.reason,
+        hdr_sources: color.hdr_sources,
+        tone_map_peak_nits: color.tone_map_peak_nits,
+        mastering_display: color.mastering,
     })
 }
 

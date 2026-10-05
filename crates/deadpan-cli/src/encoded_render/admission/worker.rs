@@ -194,6 +194,8 @@ fn prepare(
         .try_reserve_exact(length)
         .map_err(|error| failure(EncodedFailureKind::Picture, error))?;
     picture.resize(length, 0);
+    let light = content::declared_light(&generator, cancelled, deadline)
+        .map_err(|error| failure(EncodedFailureKind::Picture, error))?;
     let mut left = [0_f32; 1024];
     let mut right = [0_f32; 1024];
     let output = open_output(Path::new("."), WorkerOutput::Movie)
@@ -255,7 +257,11 @@ fn prepare(
         }
     }
     // finish consumes and drops the native encoder before any decoder exists.
-    let (mut output, report) = encoder.finish().map_err(encoder_failure)?.into_parts();
+    // PQ probes declare their deterministic input light; SDR and HLG pass none.
+    let (mut output, report) = encoder
+        .finish_with_light(light)
+        .map_err(encoder_failure)?
+        .into_parts();
     drop(picture);
     check_control(cancelled, deadline)?;
     let hash = hash_movie(

@@ -50,6 +50,7 @@ fn contract() -> EncodedRenderContract {
             project_audio_start: AudioSample(1_602),
             project_audio_end: AudioSample(3_203),
             relative_aspect_error: ExactRatio::new(23, 9_570).unwrap(),
+            mastering_display: None,
         },
         choice: EncoderChoice {
             mode: EncoderMode::Hardware,
@@ -135,6 +136,7 @@ fn report() -> VerificationReport {
         manual_physical_samples: 3_072,
         ordinary_first_sample: 0,
         ordinary_physical_samples: 2_048,
+        content_light: None,
     }
 }
 

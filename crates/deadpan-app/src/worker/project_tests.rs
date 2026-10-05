@@ -288,6 +288,7 @@ impl Fixture {
             })
             .collect();
         Arc::new(Workspace {
+            color: self.store.output_color(&document).unwrap(),
             session,
             path: self.scratch.path().join("preview.deadpan"),
             plan: Arc::new(RenderPlan::compile(&document).unwrap()),

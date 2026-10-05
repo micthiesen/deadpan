@@ -10,8 +10,8 @@ use deadpan_core::{
     AssetId, DocumentError, ExactRatio, FrameRate, SourceFrameIndex, SourceTimeBase, TimeError,
 };
 use deadpan_source::{
-    ColorMatrix, ColorMetadata, ColorPrimaries, ColorRange, ColorTransfer, SourceAudioStreamInfo,
-    SourceStreamInfo,
+    ColorMatrix, ColorMetadata, ColorPrimaries, ColorRange, ColorTransfer, ContentLight,
+    IgnoredStaticMetadata, MasteringDisplay, SourceAudioStreamInfo, SourceStreamInfo,
 };
 use serde::{Deserialize, Serialize};
 
@@ -446,6 +446,40 @@ fn interpretation_guidance(channels: u32) -> String {
     }
 }
 
+/// The decoder's single HDR interpretation, rechecked on stored evidence:
+/// PQ/HLG only as ten-bit 4:2:0 limited-range BT.2020 NCL HEVC or H.264 with
+/// BT.2020 primaries; static metadata only with it. Present values satisfy the
+/// shared `deadpan_core` rule set; a declaration that failed it is recorded as
+/// ignored and absent, never both.
+fn validate_hdr(info: &SourceStreamInfo) -> Result<(), SourceQualificationError> {
+    let color = &info.color;
+    let hdr = matches!(color.transfer, ColorTransfer::Pq | ColorTransfer::Hlg);
+    let valid = if hdr {
+        matches!(info.codec.as_str(), "hevc" | "h264")
+            && info.pixel_format == "yuv420p10le"
+            && color.range == ColorRange::Limited
+            && color.matrix == ColorMatrix::Bt2020NonConstant
+            && color.primaries == ColorPrimaries::Bt2020
+            && color.mastering.is_none_or(|m| m.is_valid())
+            && color.content_light.is_none_or(|light| light.is_valid())
+            && !(color.ignored_static.mastering && color.mastering.is_some())
+            && !(color.ignored_static.content_light && color.content_light.is_some())
+    } else {
+        info.codec != "hevc"
+            && info.pixel_format != "yuv420p10le"
+            && color.mastering.is_none()
+            && color.content_light.is_none()
+            && color.ignored_static.is_empty()
+    };
+    if valid {
+        Ok(())
+    } else {
+        Err(SourceQualificationError::Metadata(
+            "HDR color interpretation",
+        ))
+    }
+}
+
 fn validate_video(video: &QualifiedVideoSnapshot) -> Result<(), SourceQualificationError> {
     let info = &video.interpretation;
     if !(1..=8192).contains(&info.width)
@@ -458,10 +492,11 @@ fn validate_video(video: &QualifiedVideoSnapshot) -> Result<(), SourceQualificat
         || info.sample_aspect_num > i32::MAX as u32
         || info.sample_aspect_den > i32::MAX as u32
         || info.rotation_quarter_turns > 3
-        || !matches!(info.codec.as_str(), "h264" | "ffv1")
+        || !matches!(info.codec.as_str(), "h264" | "ffv1" | "hevc")
     {
         return Err(SourceQualificationError::Metadata("video stream contract"));
     }
+    validate_hdr(info)?;
     validate_observations(info.stream_start, info.stream_duration)?;
     validate_observations(info.container_start, info.container_duration)?;
     if video
@@ -477,6 +512,8 @@ fn validate_video(video: &QualifiedVideoSnapshot) -> Result<(), SourceQualificat
     }
     let rgb = match info.pixel_format.as_str() {
         "gbrp" | "rgb24" | "bgr24" | "rgb0" | "bgr0" | "0rgb" | "0bgr" => true,
+        // Admitted only under the HDR interpretation checked by validate_hdr.
+        "yuv420p10le" => false,
         "yuv410p" | "yuv411p" | "yuv420p" | "yuv422p" | "yuv440p" | "yuv444p" | "yuvj411p"
         | "yuvj420p" | "yuvj422p" | "yuvj440p" | "yuvj444p" | "nv12" | "nv21" | "nv16" | "nv24"
         | "nv42" | "yuyv422" | "uyvy422" | "yvyu422" | "uyyvyy411" => false,
@@ -731,6 +768,83 @@ struct ColorMetadataWire {
     transfer: ColorTransfer,
     #[serde(with = "ColorPrimariesWire")]
     primaries: ColorPrimaries,
+    // Absent for SDR, so existing receipts serialize byte-identically.
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "optional_mastering"
+    )]
+    mastering: Option<MasteringDisplay>,
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "optional_content_light"
+    )]
+    content_light: Option<ContentLight>,
+    // A note that a declared value failed the shared rule set and is treated
+    // as absent; omitted when nothing was ignored, so SDR bytes are unchanged.
+    #[serde(
+        default,
+        skip_serializing_if = "IgnoredStaticMetadata::is_empty",
+        with = "IgnoredStaticMetadataWire"
+    )]
+    ignored_static: IgnoredStaticMetadata,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(remote = "IgnoredStaticMetadata", deny_unknown_fields)]
+struct IgnoredStaticMetadataWire {
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    mastering: bool,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    content_light: bool,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(remote = "MasteringDisplay", deny_unknown_fields)]
+struct MasteringDisplayWire {
+    primaries: [[u16; 2]; 3],
+    white_point: [u16; 2],
+    max_luminance: u32,
+    min_luminance: u32,
+}
+#[derive(Serialize, Deserialize)]
+#[serde(remote = "ContentLight", deny_unknown_fields)]
+struct ContentLightWire {
+    max_cll: u16,
+    max_fall: u16,
+}
+mod optional_mastering {
+    use super::*;
+    #[derive(Serialize, Deserialize)]
+    struct Value(#[serde(with = "MasteringDisplayWire")] MasteringDisplay);
+    pub(super) fn serialize<S: serde::Serializer>(
+        value: &Option<MasteringDisplay>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        value.map(Value).serialize(serializer)
+    }
+    pub(super) fn deserialize<'de, D: serde::Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<Option<MasteringDisplay>, D::Error> {
+        Ok(Option::<Value>::deserialize(deserializer)?.map(|Value(value)| value))
+    }
+}
+mod optional_content_light {
+    use super::*;
+    #[derive(Serialize, Deserialize)]
+    struct Value(#[serde(with = "ContentLightWire")] ContentLight);
+    pub(super) fn serialize<S: serde::Serializer>(
+        value: &Option<ContentLight>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        value.map(Value).serialize(serializer)
+    }
+    pub(super) fn deserialize<'de, D: serde::Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<Option<ContentLight>, D::Error> {
+        Ok(Option::<Value>::deserialize(deserializer)?.map(|Value(value)| value))
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -753,6 +867,8 @@ enum ColorTransferWire {
     Bt709,
     Srgb,
     Linear,
+    Pq,
+    Hlg,
 }
 #[derive(Serialize, Deserialize)]
 #[serde(remote = "ColorPrimaries", rename_all = "snake_case")]

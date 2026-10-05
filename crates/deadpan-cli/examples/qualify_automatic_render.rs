@@ -1,4 +1,4 @@
-//! Real durable automatic SDR workflow, checkpoint retry and reconciliation.
+//! Real durable automatic SDR/HDR workflow, checkpoint retry and reconciliation.
 //! Usage: qualify_automatic_render PACKAGE WORKER NEW_OUTPUT_DIRECTORY
 //! The package and all newly published evidence must be in private /tmp scratch.
 
@@ -151,6 +151,9 @@ fn run(
     ProjectStore::migrate(package)?;
     let mut store = ProjectStore::open(package, AccessMode::ReadWrite)?;
     let document = store.snapshot()?;
+    // The committed revision's color branch pins AutomaticSdrV1/HdrV1.
+    let summary = deadpan_cli::render::committed_output_summary(&store, &document)?;
+    report["output_summary"] = serde_json::to_value(&summary)?;
     let initial = identity("automatic-qualification", "automatic-first")?;
     let destination = publication(directory, "automatic-first")?;
     let mut workflow = RenderWorkflow::new(&store, config.clone())?;
@@ -163,7 +166,7 @@ fn run(
             policy: RenderPolicy::Automatic(RenderAutomaticPolicy {
                 schema_version: 1,
                 selection: RenderAutomaticSelection::Automatic,
-                algorithm: RenderAutomaticAlgorithm::AutomaticSdrV1,
+                algorithm: summary.algorithm,
             }),
             publication: destination.clone(),
             deadline,
@@ -183,14 +186,18 @@ fn run(
     report["decision"] = serde_json::to_value(&decision)?;
     report["initial_report"] = publication_evidence(workflow.status(), &decision, &intent)?;
     report["checkpoint"] = serde_json::to_value(&checkpoint)?;
-    report["direct_inputs"] = reference::capture(
-        package,
-        document.revision_id(),
-        intent.range,
-        "automatic",
-        directory,
-        deadline,
-    )?;
+    // The direct reference writes SDR I420 bytes; HDR outputs are compared by
+    // the finished-file verifier instead.
+    if summary.algorithm == RenderAutomaticAlgorithm::AutomaticSdrV1 {
+        report["direct_inputs"] = reference::capture(
+            package,
+            document.revision_id(),
+            intent.range,
+            "automatic",
+            directory,
+            deadline,
+        )?;
+    }
     save(file, report)?;
     drop(workflow);
     drop(store);
@@ -320,7 +327,7 @@ fn main() -> Result {
         .open(directory.join("report.json"))?;
     let mut report = json!({"schema_version": 1, "status": "running", "package": package,
         "scope": "real automatic durable encoding, verified publication, checkpoint reopen/retry, reconciliation and cold retry",
-        "limitations": ["bounded SDR synthetic project on one host", "no public Render UI, HDR, full effects or release qualification", "independent decoder comparison runs separately"]});
+        "limitations": ["bounded project on one host", "no public Render UI, full effects or release qualification", "independent decoder comparison runs separately; HDR has no direct SDR reference capture"]});
     save(&mut file, &report)?;
     let config = WorkflowConfig {
         package: package.clone(),

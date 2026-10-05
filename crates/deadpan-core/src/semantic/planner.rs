@@ -25,7 +25,9 @@ mod group;
 mod pause;
 pub use pause::copied_moment_audio;
 mod repeat;
+mod role_repeat;
 mod selection;
+mod split_edit;
 
 /// Exact Visual ownership. Time preserves oriented boundaries, including empty
 /// intervals; Object retains its checked group identity. A finished selection
@@ -119,6 +121,15 @@ pub enum SemanticAllocationRequest {
         step_index: usize,
         required_split_ids: usize,
     },
+    /// An adjacent Source Roll, with one fresh crop wrapper when needed.
+    Roll {
+        step_index: usize,
+        needs_wrapper: bool,
+    },
+    /// One new root sound event.
+    Sound {
+        step_index: usize,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -166,6 +177,14 @@ pub enum SemanticAllocation {
         new_revision: RevisionId,
         node: NodeId,
         split_identities: SplitIdentities,
+    },
+    Roll {
+        new_revision: RevisionId,
+        wrapper: Option<NodeId>,
+    },
+    Sound {
+        new_revision: RevisionId,
+        id: crate::SoundId,
     },
 }
 
@@ -587,6 +606,18 @@ where
                 SemanticInstruction::SetRepeatPlays { plays } => {
                     self.set_repeat_plays(index, plays.get())?;
                 }
+                SemanticInstruction::SetAudio { change } => {
+                    self.set_audio(index, *change)?;
+                }
+                SemanticInstruction::SplitEdit { kind, length } => {
+                    self.split_edit(index, *kind, *length)?;
+                }
+                SemanticInstruction::DeleteRole { role } => {
+                    self.delete_role(index, *role)?;
+                }
+                SemanticInstruction::RoleRepeat { role, plays, trim } => {
+                    self.role_repeat(index, *role, plays.get(), *trim)?;
+                }
                 SemanticInstruction::SetRepeat {
                     plays,
                     gaps,
@@ -746,6 +777,12 @@ where
                 } => 2,
                 // A recipe stages at most three leaves.
                 SemanticInstruction::Gag { .. } => 2,
+                // A Roll and a cutaway.
+                SemanticInstruction::SplitEdit { .. } => 2,
+                // A mute and one sound per later play, or one cutaway.
+                SemanticInstruction::RoleRepeat { plays, .. } => {
+                    usize::try_from(plays.get()).unwrap_or(usize::MAX)
+                }
                 SemanticInstruction::SetRepeat {
                     plays,
                     gaps,
@@ -764,6 +801,8 @@ where
                         | SemanticInstruction::Bleep { .. }
                         | SemanticInstruction::Tail { .. }
                         | SemanticInstruction::SetFraming { .. }
+                        | SemanticInstruction::SetAudio { .. }
+                        | SemanticInstruction::DeleteRole { .. }
                         | SemanticInstruction::Yank { .. }
                         | SemanticInstruction::Cut { .. }
                         | SemanticInstruction::Repeat { .. }

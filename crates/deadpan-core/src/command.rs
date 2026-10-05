@@ -1735,6 +1735,7 @@ pub(crate) fn reduce(
                 crate::ProjectFrame(selected.frames()),
             )
             .map_err(DocumentError::from)?;
+            check_preserve_bound(document, selected, *duration, *pitch)?;
             replace_child(document, &parent, node, id.clone())?;
             document.nodes.insert(
                 id.clone(),
@@ -1761,6 +1762,11 @@ pub(crate) fn reduce(
             duration,
             pitch,
         } => {
+            if let Some(NodeKind::Retime { mapping, .. }) =
+                document.nodes.get(node).map(|beat| &beat.kind)
+            {
+                check_preserve_bound(document, mapping.duration(), *duration, *pitch)?;
+            }
             let NodeKind::Retime {
                 duration: current_duration,
                 pitch: current_pitch,
@@ -2790,6 +2796,41 @@ impl fmt::Display for EditError {
     }
 }
 impl Error for EditError {}
+
+/// The canonical time/pitch processor prepares at most this many input
+/// samples per stage (`deadpan_dsp::MAX_INPUT_FRAMES`, about 21.8 s at 48 kHz)
+/// and eight times as many output samples.
+pub const MAX_PRESERVE_INPUT_SAMPLES: i128 = 1_048_576;
+
+/// Refuse a pitch-preserving or pitch-shifting stage the processor cannot
+/// prepare, at edit time rather than at playback or export.
+fn check_preserve_bound(
+    document: &ProjectDocument,
+    input: crate::FrameDuration,
+    output: crate::FrameDuration,
+    pitch: crate::PitchPolicy,
+) -> Result<(), EditError> {
+    if !pitch.processes(input == output) {
+        return Ok(());
+    }
+    let rate = document.presentation_basis().frame_rate;
+    let samples = |frames: crate::FrameDuration| {
+        let numerator = i128::from(frames.frames())
+            * i128::from(crate::MIX_SAMPLE_RATE)
+            * i128::from(rate.denominator());
+        let denominator = i128::from(rate.numerator());
+        (numerator + denominator - 1) / denominator
+    };
+    if samples(input) > MAX_PRESERVE_INPUT_SAMPLES
+        || samples(output) > 8 * MAX_PRESERVE_INPUT_SAMPLES
+    {
+        return Err(EditError::new(
+            EditErrorCode::LimitExceeded,
+            "pitch-preserving processing handles at most about 21.8 seconds of input; split the beat first or choose pitch=tape",
+        ));
+    }
+    Ok(())
+}
 
 #[cfg(test)]
 mod binding_patch_tests {

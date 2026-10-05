@@ -1,5 +1,6 @@
 //! The narrow Apple Vision adapter: one `VNTrackObjectRequest` driven by one
-//! `VNSequenceRequestHandler` over owned BGRA `CVPixelBuffer`s.
+//! `VNSequenceRequestHandler`, or one `VNDetectFaceRectanglesRequest` on one
+//! `VNImageRequestHandler`, over owned BGRA `CVPixelBuffer`s.
 //!
 //! Every `unsafe` block here calls an Objective-C or CoreVideo API whose
 //! generated binding is `unsafe` only because the framework cannot prove its
@@ -12,6 +13,7 @@ use std::ptr::NonNull;
 
 use objc2::AnyThread;
 use objc2::rc::{Retained, autoreleasepool};
+use objc2::runtime::AnyObject;
 use objc2_core_foundation::{CFRetained, CGPoint, CGRect, CGSize};
 use objc2_core_video::{
     CVPixelBuffer, CVPixelBufferCreate, CVPixelBufferGetBaseAddress, CVPixelBufferGetBytesPerRow,
@@ -19,13 +21,15 @@ use objc2_core_video::{
     CVPixelBufferLockFlags, CVPixelBufferUnlockBaseAddress, kCVPixelFormatType_32BGRA,
     kCVReturnSuccess,
 };
-use objc2_foundation::NSArray;
+use objc2_foundation::{NSArray, NSDictionary};
 use objc2_vision::{
-    VNDetectedObjectObservation, VNRequest, VNRequestTrackingLevel, VNSequenceRequestHandler,
+    VNDetectFaceRectanglesRequest, VNDetectedObjectObservation, VNImageOption,
+    VNImageRequestHandler, VNRequest, VNRequestTrackingLevel, VNSequenceRequestHandler,
     VNTrackObjectRequest,
 };
 
 pub const ENGINE: &str = "Apple Vision VNTrackObjectRequest";
+pub const FACE_ENGINE: &str = "Apple Vision VNDetectFaceRectanglesRequest";
 pub const TRACKING_LEVEL: &str = "accurate";
 
 /// A box in Vision's convention: normalized to the coded picture, origin at
@@ -137,6 +141,71 @@ impl Tracker {
             )))
         })
     }
+}
+
+/// Faces Vision found in one picture, with the request revision it used.
+pub struct Faces {
+    /// Bounding boxes in Vision's convention and confidences, in Vision's order.
+    pub faces: Vec<(VisionRect, f32)>,
+    pub revision: u64,
+}
+
+/// Detect face rectangles in one picture with a fresh
+/// `VNDetectFaceRectanglesRequest` on a fresh `VNImageRequestHandler`.
+/// `limit` bounds how many observations are read; more is an error.
+pub fn detect_faces(picture: &Picture<'_>, limit: usize) -> Result<Faces, String> {
+    let buffer = pixel_buffer(picture)?;
+    autoreleasepool(|_| {
+        // SAFETY: plain constructors. The handler retains the pixel buffer,
+        // which nothing modifies afterwards, and the empty options dictionary
+        // has the declared key and value types.
+        let (handler, request) = unsafe {
+            let options = NSDictionary::<VNImageOption, AnyObject>::new();
+            let handler = VNImageRequestHandler::initWithCVPixelBuffer_options(
+                VNImageRequestHandler::alloc(),
+                &buffer,
+                &options,
+            );
+            (handler, VNDetectFaceRectanglesRequest::new())
+        };
+        let base: &VNRequest = &request;
+        let requests = NSArray::from_slice(&[base]);
+        // The handler performs the request synchronously before returning.
+        handler
+            .performRequests_error(&requests)
+            .map_err(|error| error.localizedDescription().to_string())?;
+        // SAFETY: property reads on a performed request.
+        let (revision, results) = unsafe { (request.revision() as u64, request.results()) };
+        let Some(results) = results else {
+            return Ok(Faces {
+                faces: Vec::new(),
+                revision,
+            });
+        };
+        if results.count() > limit {
+            return Err(format!(
+                "Vision found {} faces; at most {limit} are accepted",
+                results.count()
+            ));
+        }
+        let faces = results
+            .iter()
+            .map(|face| {
+                // SAFETY: property reads on a live observation.
+                let (rect, confidence) = unsafe { (face.boundingBox(), face.confidence()) };
+                (
+                    VisionRect {
+                        x: rect.origin.x,
+                        y: rect.origin.y,
+                        width: rect.size.width,
+                        height: rect.size.height,
+                    },
+                    confidence,
+                )
+            })
+            .collect();
+        Ok(Faces { faces, revision })
+    })
 }
 
 /// Copy a picture into a new BGRA pixel buffer owned by CoreVideo.

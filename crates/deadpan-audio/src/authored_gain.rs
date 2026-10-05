@@ -6,10 +6,19 @@ use deadpan_plan::AudioOwnerSupport;
 
 use super::*;
 
-#[derive(Clone, Copy, Default)]
+/// Saturation stages one sample can pass through: at most one per owner layer.
+const MAX_SATURATION_STAGES: usize = deadpan_core::MAX_GAIN_LAYERS;
+
+/// The authored treatment chain of one sample, evaluated inner owner first.
+/// Gain factors between nonlinear stages add exactly in Q32 millidecibels;
+/// each saturation stage closes the gain accumulated before it. Without a
+/// saturation stage the chain is one exact gain sum, as it always was.
+#[derive(Clone, Default)]
 pub(super) struct GainSum {
     millidecibels_q32: i128,
     muted: bool,
+    /// Empty, and unallocated, unless an owner saturates.
+    saturations: Vec<(i128, deadpan_core::Saturation)>,
 }
 
 impl GainSum {
@@ -35,15 +44,38 @@ impl GainSum {
         Ok(())
     }
 
+    fn saturate(&mut self, stage: deadpan_core::Saturation) -> Result<(), GainError> {
+        if self.saturations.len() == MAX_SATURATION_STAGES {
+            return Err(GainError::Limit);
+        }
+        self.saturations.push((self.millidecibels_q32, stage));
+        self.millidecibels_q32 = 0;
+        Ok(())
+    }
+
+    /// One owner's treatments in their authored order. Callers visit owners
+    /// from the innermost outward so each owner processes its own output.
     fn treatment(
         &mut self,
         treatment: &AudioTreatments,
         local: ExactRatio,
         control: WorkControl<'_>,
     ) -> Result<(), StageAudioError> {
-        if !treatment.is_empty() {
-            control.spend_plan_work(treatment.record_count())?;
-            self.add(treatment.evaluate(local)?)?;
+        if treatment.is_empty() {
+            return Ok(());
+        }
+        control.spend_plan_work(treatment.record_count())?;
+        for stage in treatment.order() {
+            match stage {
+                deadpan_core::AudioTreatmentStage::ClipGain => {
+                    self.add(treatment.evaluate(local)?)?;
+                }
+                deadpan_core::AudioTreatmentStage::Saturation => {
+                    if let Some(saturation) = treatment.saturation() {
+                        self.saturate(saturation)?;
+                    }
+                }
+            }
         }
         Ok(())
     }
@@ -63,19 +95,43 @@ impl GainSum {
         Ok(())
     }
 
-    pub(super) fn apply(self, sample: [f32; 2]) -> Result<[f64; 2], StageAudioError> {
+    /// One owner layer: its escalation step feeds its own treatment chain.
+    fn owner(
+        &mut self,
+        owner: &deadpan_plan::AudioOwnerClock<'_>,
+        at: AudioSample,
+        control: WorkControl<'_>,
+    ) -> Result<(), StageAudioError> {
+        self.escalation(owner)?;
+        if let Some(treatment) = owner.treatments()
+            && !treatment.is_empty()
+        {
+            self.treatment(treatment, owner.sampling().local_at(at)?, control)?;
+        }
+        Ok(())
+    }
+
+    fn factor(millidecibels_q32: i128) -> f64 {
+        10.0_f64.powf(millidecibels_q32 as f64 / GAIN_NUMERIC_SCALE as f64 / 20_000.0)
+    }
+
+    pub(super) fn apply(&self, sample: [f32; 2]) -> Result<[f64; 2], StageAudioError> {
         if sample.iter().any(|value| !value.is_finite()) {
             return Err(PreparationError::InvalidSamples.into());
         }
         if self.muted {
             return Ok([0.0; 2]);
         }
-        if self.millidecibels_q32 == 0 {
-            return Ok(sample.map(f64::from));
+        let mut result = sample.map(f64::from);
+        for (before, stage) in &self.saturations {
+            let gain = Self::factor(*before);
+            result = result.map(|value| stage.shape(value * gain));
         }
-        let gain =
-            10.0_f64.powf(self.millidecibels_q32 as f64 / GAIN_NUMERIC_SCALE as f64 / 20_000.0);
-        let result = sample.map(|value| f64::from(value) * gain);
+        if self.millidecibels_q32 == 0 {
+            return Ok(result);
+        }
+        let gain = Self::factor(self.millidecibels_q32);
+        let result = result.map(|value| value * gain);
         if !gain.is_finite() || result.iter().any(|value| !value.is_finite()) {
             return Err(PreparationError::InvalidSamples.into());
         }
@@ -173,18 +229,10 @@ pub(super) fn original_samples_except(
             for owner in span
                 .owners()
                 .iter()
+                .rev()
                 .filter(|owner| shared.is_empty() || !shared.contains(&identity(owner)))
             {
-                if let Some(treatment) = owner.treatments()
-                    && !treatment.is_empty()
-                {
-                    gain.treatment(
-                        treatment,
-                        owner.sampling().local_at(AudioSample(at))?,
-                        control,
-                    )?;
-                }
-                gain.escalation(owner)?;
+                gain.owner(owner, AudioSample(at), control)?;
             }
             result.push(gain.apply(sample)?);
         }
@@ -231,11 +279,8 @@ pub(super) fn beat_sound_gain(
         muted: false,
     })?;
     if authored {
-        for owner in owners {
-            if let Some(treatment) = owner.treatments() {
-                gain.treatment(treatment, owner.sampling().local_at(at)?, control)?;
-            }
-            gain.escalation(owner)?;
+        for owner in owners.iter().rev() {
+            gain.owner(owner, at, control)?;
         }
     }
     Ok(gain)

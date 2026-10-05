@@ -8,7 +8,8 @@
 use serde::Serialize;
 
 use crate::{
-    AUDIO_FRAME_SAMPLES, AUDIO_SAMPLE_RATE, BFramePolicy, EncodeContract, EncodeError, EncoderMode,
+    AUDIO_FRAME_SAMPLES, AUDIO_SAMPLE_RATE, BFramePolicy, ContentLight, EncodeContract,
+    EncodeError, EncoderMode, HdrSignal, HdrTransfer, MasteringDisplay,
 };
 
 pub const PROBE_VERSION: u32 = 1;
@@ -287,4 +288,234 @@ fn sample_boundary(frame: u64, rate: [u32; 2]) -> Result<u64, EncodeError> {
         );
     u64::try_from(rounded)
         .map_err(|_| EncodeError::Configuration("probe sample boundary exceeds range"))
+}
+
+pub const HDR_PROBE_VERSION: u32 = 1;
+
+/// BT.2020 primaries, D65 white, 1000 cd/m² peak and 0.005 cd/m² black, in
+/// the contract units. Declared probe metadata, not a measured display.
+pub const HDR_PROBE_MASTERING: MasteringDisplay = MasteringDisplay {
+    primaries: [[35_400, 14_600], [8_500, 39_850], [6_550, 2_300]],
+    white_point: [15_635, 16_450],
+    max_luminance: 10_000_000,
+    min_luminance: 50,
+};
+
+/// Declared PQ probe content light for the `clli` round trip. These are fixed
+/// probe metadata values, not a measurement of the synthetic pictures.
+pub const HDR_PROBE_CONTENT_LIGHT: ContentLight = ContentLight {
+    max_cll: 1_000,
+    max_fall: 203,
+};
+
+/// Known 10-bit limited-range codes for one transfer. Neutral codes are
+/// achromatic (Cb=Cr=512); colored codes are BT.2020 NCL R'G'B' primaries and
+/// secondaries at the reference-white signal level, rounded half up once.
+struct HdrCodes {
+    black: u16,
+    near_black: u16,
+    ten_nits: u16,
+    reference_white: u16,
+    thousand_nits: u16,
+    colors: [[u16; 3]; 3],
+    moving: [u16; 3],
+}
+
+/// PQ: 0.1, 10, 203 and 1000 cd/m² inverse-EOTF codes. Colors use E'=PQ(203).
+const PQ_CODES: HdrCodes = HdrCodes {
+    black: 64,
+    near_black: 119,
+    ten_nits: 327,
+    reference_white: 573,
+    thousand_nits: 723,
+    colors: [[198, 439, 772], [409, 325, 273], [94, 772, 491]],
+    moving: [543, 252, 533],
+};
+
+/// HLG (Lw 1000, gamma 1.2) display-referred 0.1, 10, 203 and 1000 cd/m²
+/// achromatic codes. Colors use E'=0.75 (75% HLG reference white).
+const HLG_CODES: HdrCodes = HdrCodes {
+    black: 64,
+    near_black: 97,
+    ten_nits: 287,
+    reference_white: 721,
+    thousand_nits: 940,
+    colors: [[237, 418, 848], [509, 270, 203], [103, 848, 485]],
+    moving: [682, 176, 539],
+};
+
+const NEUTRAL: u16 = 512;
+
+/// Deterministic HDR probe analogous to `EncoderProbe`: same clocks, GOP-based
+/// length and audio markers, with planar 10-bit little-endian pictures. Like
+/// the SDR probe it grants no authority and opens nothing.
+#[derive(Debug, Clone)]
+pub struct HdrEncoderProbe {
+    base: EncoderProbe,
+    config: ProbeConfig,
+    transfer: HdrTransfer,
+}
+
+impl HdrEncoderProbe {
+    pub fn new(
+        raster: [u32; 2],
+        frame_rate: [u32; 2],
+        transfer: HdrTransfer,
+    ) -> Result<Self, EncodeError> {
+        let base = EncoderProbe::new(raster, frame_rate)?;
+        let mut config = base.config().clone();
+        config.version = HDR_PROBE_VERSION;
+        config.picture_bytes *= 2;
+        let probe = Self {
+            base,
+            config,
+            transfer,
+        };
+        // Admit the exact HDR contract once, independent of mode/B frames.
+        let contract = probe.contract(EncoderMode::Hardware, BFramePolicy::None)?;
+        debug_assert_eq!(contract.picture_bytes(), probe.config.picture_bytes);
+        Ok(probe)
+    }
+
+    pub fn config(&self) -> &ProbeConfig {
+        &self.config
+    }
+    pub const fn transfer(&self) -> HdrTransfer {
+        self.transfer
+    }
+    pub fn markers(&self) -> &[AudioMarker; 3] {
+        self.base.markers()
+    }
+
+    /// The probe's HDR signal: PQ carries `HDR_PROBE_MASTERING`; HLG none.
+    pub const fn signal(&self) -> HdrSignal {
+        HdrSignal {
+            transfer: self.transfer,
+            mastering: match self.transfer {
+                HdrTransfer::Pq => Some(HDR_PROBE_MASTERING),
+                HdrTransfer::Hlg => None,
+            },
+        }
+    }
+
+    /// Content light to pass at finish: `Some` for PQ, `None` for HLG.
+    pub const fn content_light(&self) -> Option<ContentLight> {
+        match self.transfer {
+            HdrTransfer::Pq => Some(HDR_PROBE_CONTENT_LIGHT),
+            HdrTransfer::Hlg => None,
+        }
+    }
+
+    pub fn contract(
+        &self,
+        mode: EncoderMode,
+        b_frames: BFramePolicy,
+    ) -> Result<EncodeContract, EncodeError> {
+        EncodeContract::new_hdr_v1(
+            self.config.raster,
+            self.config.frame_rate,
+            self.config.video_frames,
+            self.config.audio_samples,
+            mode,
+            b_frames,
+            self.signal(),
+        )
+    }
+
+    /// Fill one planar 10-bit little-endian Y/Cb/Cr frame. Shapes occupy whole
+    /// 2x2 luma cells exactly as in the SDR probe.
+    pub fn fill_picture(&self, ordinal: u64, output: &mut [u8]) -> Result<(), EncodeError> {
+        let ordinal = self.base.check_ordinal(ordinal)?;
+        if u64::try_from(output.len()).ok() != Some(self.config.picture_bytes) {
+            return Err(EncodeError::Input(
+                "probe picture buffer has the wrong length",
+            ));
+        }
+        let [width, height] = self.base.raster;
+        let pixels = width * height;
+        let (y_plane, chroma) = output.split_at_mut(pixels * 2);
+        let (u_plane, v_plane) = chroma.split_at_mut(pixels / 2);
+        for row in 0..height / 2 {
+            for column in 0..width / 2 {
+                let [y, u, v] = self.cell(ordinal, column, row).map(u16::to_le_bytes);
+                for line in [row * 2, row * 2 + 1] {
+                    let position = (line * width + column * 2) * 2;
+                    y_plane[position..position + 2].copy_from_slice(&y);
+                    y_plane[position + 2..position + 4].copy_from_slice(&y);
+                }
+                let position = (row * (width / 2) + column) * 2;
+                u_plane[position..position + 2].copy_from_slice(&u);
+                v_plane[position..position + 2].copy_from_slice(&v);
+            }
+        }
+        Ok(())
+    }
+
+    /// Exact 10-bit Y/Cb/Cr input codes of the cell containing a luma position.
+    pub fn pixel(&self, ordinal: u64, position: [u32; 2]) -> Result<[u16; 3], EncodeError> {
+        let ordinal = self.base.check_ordinal(ordinal)?;
+        if position[0] >= self.config.raster[0] || position[1] >= self.config.raster[1] {
+            return Err(EncodeError::Input("probe pixel is outside its raster"));
+        }
+        let column = usize::try_from(position[0] / 2)
+            .map_err(|_| EncodeError::Input("probe pixel exceeds address space"))?;
+        let row = usize::try_from(position[1] / 2)
+            .map_err(|_| EncodeError::Input("probe pixel exceeds address space"))?;
+        Ok(self.cell(ordinal, column, row))
+    }
+
+    pub fn fill_audio(
+        &self,
+        first_sample: u64,
+        left: &mut [f32],
+        right: &mut [f32],
+    ) -> Result<(), EncodeError> {
+        self.base.fill_audio(first_sample, left, right)
+    }
+
+    fn codes(&self) -> &'static HdrCodes {
+        match self.transfer {
+            HdrTransfer::Pq => &PQ_CODES,
+            HdrTransfer::Hlg => &HLG_CODES,
+        }
+    }
+
+    fn cell(&self, ordinal: usize, column: usize, row: usize) -> [u16; 3] {
+        let codes = self.codes();
+        let width = self.base.raster[0] / 2;
+        let height = self.base.raster[1] / 2;
+        let neutral = |code: u16| [code, NEUTRAL, NEUTRAL];
+        if row < (height / 8).max(1) {
+            let bit = column * 7 / width;
+            return neutral(if ordinal & (1 << bit) == 0 {
+                codes.black
+            } else {
+                codes.reference_white
+            });
+        }
+        if row >= height * 3 / 4 {
+            let patches = [
+                neutral(codes.black),
+                neutral(codes.near_black),
+                neutral(codes.ten_nits),
+                neutral(codes.reference_white),
+                neutral(codes.thousand_nits),
+                codes.colors[0],
+                codes.colors[1],
+                codes.colors[2],
+            ];
+            return patches[column * patches.len() / width];
+        }
+        let box_width = (width / 8).max(1);
+        let box_height = (height / 6).max(1);
+        let left = ordinal * (width - box_width) / self.base.terminal_ordinal;
+        let top = height / 3;
+        if (left..left + box_width).contains(&column) && (top..top + box_height).contains(&row) {
+            return codes.moving;
+        }
+        // Luma ramp from black to the 1000 cd/m² (PQ) or peak (HLG) code.
+        let span = usize::from(codes.thousand_nits - codes.black);
+        let step = column * span / (width - 1).max(1);
+        neutral(codes.black + u16::try_from(step).expect("ramp is bounded by its span"))
+    }
 }

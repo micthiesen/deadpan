@@ -12,6 +12,8 @@ pub mod encoded_render;
 pub mod export_picture;
 #[cfg(target_os = "macos")]
 pub mod export_verification;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod faces;
 pub mod generation;
 pub mod generation_context;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -113,6 +115,7 @@ const HELP: &str = "Deadpan headless commands:
   shots <project.deadpan> [--asset <id>]
   track <project.deadpan> --from <pts> --to <pts> --region <x,y,w,h> [--asset <id>] [--stride <n>] [--through-shots] [--save <target-id> [--label <text>] [--replace]]
   track-correct <project.deadpan> --target <id> --at <pts> --region <x,y,w,h> [--stride <n>]
+  detect-faces <project.deadpan> --at <pts> [--asset <id>]
   generate-hold <project.deadpan> --hold <node-id> [--seed N]
   accept-hold <project.deadpan> --request <request-id>
 
@@ -182,6 +185,9 @@ pub enum CliError {
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[error(transparent)]
     Tracking(#[from] tracking::TrackingError),
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[error(transparent)]
+    Faces(#[from] faces::FaceError),
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     #[error(transparent)]
     Generation(#[from] generation::attempt::GenerationError),
@@ -262,6 +268,14 @@ impl CliError {
             Self::Tracking(tracking::TrackingError::Unavailable(_)) => "TrackingUnavailable",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::Tracking(_) => "TrackingFailed",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::Faces(faces::FaceError::Cancelled) => "FaceDetectionCancelled",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::Faces(faces::FaceError::Request(_)) => "InvalidInput",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::Faces(faces::FaceError::Unavailable(_)) => "FaceDetectionUnavailable",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::Faces(_) => "FaceDetectionFailed",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::Generation(error) => error.code(),
             #[cfg(target_os = "macos")]
@@ -510,6 +524,8 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
         ["track", rest @ ..] => tracking::run_track(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["track-correct", rest @ ..] => tracking::run_track_correct(rest),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["detect-faces", rest @ ..] => faces::run_detect_faces(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         ["generate-hold", rest @ ..] => generation::command::run_generate(rest),
         #[cfg(any(target_os = "macos", target_os = "linux"))]

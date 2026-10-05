@@ -117,7 +117,12 @@ fn render_status_is_read_only_during_another_writer_and_pages_without_losing_job
     let mut store = ProjectStore::create(&package, &document)?;
     let context = RenderContext::from_document(&document);
     for ordinal in 0..=STATUS_PAGE_SIZE {
-        let request = start_request(&context, root.path().join("unused.mp4"), Instant::now())?;
+        let request = start_request(
+            &context,
+            deadpan_jobs::render::RenderAutomaticAlgorithm::AutomaticSdrV1,
+            root.path().join("unused.mp4"),
+            Instant::now(),
+        )?;
         store.create_render_job(
             RenderIntent {
                 schema_version: 2,

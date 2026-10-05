@@ -4,8 +4,7 @@
 use std::{collections::BTreeSet, ops::Range};
 
 use deadpan_core::{
-    AudioSample, ExactRatio, InstancePath, MIX_SAMPLE_RATE, NodeId, PitchPolicy, RepeatInstance,
-    TimeError,
+    AudioSample, ExactRatio, InstancePath, MIX_SAMPLE_RATE, NodeId, RepeatInstance, TimeError,
 };
 
 use super::{AudioQueryLimits, CompiledKind, RenderPlan};
@@ -296,8 +295,7 @@ impl Query<'_> {
                     root_zero.checked_add(child_zero_local.checked_mul(root_per_local)?)?;
                 let child_root_per = root_per_local.checked_mul(child_per_local)?;
                 let mut influence = preserve_influence;
-                if *pitch == PitchPolicy::Preserve
-                    && *scale != ExactRatio::ONE
+                if pitch.processes(*scale == ExactRatio::ONE)
                     && influence.is_none()
                     && ranges_overlap(&root_extent, &root_window)?
                 {
@@ -316,8 +314,7 @@ impl Query<'_> {
                     intersect(child_local_window, selected.clone())?,
                     child_extent,
                 )?;
-                let preserve_active = *pitch == PitchPolicy::Preserve
-                    && *scale != ExactRatio::ONE
+                let preserve_active = pitch.processes(*scale == ExactRatio::ONE)
                     && ranges_overlap(&root_extent, &root_window)?;
                 let child_visible = if preserve_active {
                     intersect(

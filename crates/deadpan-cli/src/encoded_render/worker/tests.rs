@@ -315,6 +315,7 @@ fn contract_and_source_admission_failures_are_typed_before_output_allocation() {
                 project_audio_start: AudioSample(0),
                 project_audio_end: AudioSample(1600),
                 relative_aspect_error: ExactRatio::new(0, 1).unwrap(),
+                mastering_display: None,
             },
             choice: EncoderChoice {
                 mode: EncoderMode::Hardware,

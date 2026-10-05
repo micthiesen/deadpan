@@ -25,6 +25,7 @@ mod object_storage;
 pub mod original_media;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod original_provenance;
+mod output_color;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod publication;
 #[cfg(any(target_os = "macos", target_os = "linux"))]

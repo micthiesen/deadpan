@@ -1,4 +1,4 @@
-//! Frozen automatic SDR admission observations. These bounded declarations
+//! Frozen automatic SDR/HDR admission observations. These bounded declarations
 //! preserve what was measured; deserialization grants no live encoder, worker
 //! cleanup, decoded-media or publication authority.
 
@@ -7,8 +7,8 @@ use super::{
 };
 use crate::{AttemptId, Diagnostic, RequestId, Sha256, WorkspaceArtifact};
 use deadpan_core::{
-    AudioSample, ColorPolicy, ExactRatio, FrameRange, FrameRate, ProjectFrame, ProjectId,
-    RevisionId,
+    AudioSample, ColorPolicy, ExactRatio, FrameRange, FrameRate, MasteringDisplay, ProjectFrame,
+    ProjectId, RevisionId,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256 as Hasher};
@@ -48,6 +48,10 @@ pub struct RenderPictureContract {
     pub project_audio_start: AudioSample,
     pub project_audio_end: AudioSample,
     pub relative_aspect_error: ExactRatio,
+    /// PQ output only. Absent (and omitted) for SDR and HLG, so SDR decision
+    /// bytes are unchanged.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mastering_display: Option<MasteringDisplay>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -206,6 +210,25 @@ pub struct RenderProbeVerification {
     pub manual_physical_samples: u64,
     pub ordinary_first_sample: i64,
     pub ordinary_physical_samples: u64,
+    /// PQ only: declared `clli` and the verifier's decoded lower bounds.
+    /// Absent (and omitted) for SDR and HLG.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content_light: Option<RenderContentLightEvidence>,
+}
+
+/// Mirror of the finished-file verifier's content light evidence. Declared
+/// values are the `clli` box in whole cd/m²; decoded values are chroma-site
+/// sanity lower bounds in 1/1000 cd/m², not a CTA-861.3 measurement. The live
+/// verifier applied its PQ-code tolerance; this retained copy rechecks only
+/// the PQ range and declared MaxFALL <= MaxCLL. The decoded MaxFALL bound may
+/// exceed the decoded MaxCLL bound (a percentile) for sparse highlights.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RenderContentLightEvidence {
+    pub declared_max_cll: u16,
+    pub declared_max_fall: u16,
+    pub decoded_bound_max_cll_millinits: u32,
+    pub decoded_bound_max_fall_millinits: u32,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -222,7 +245,9 @@ pub struct RenderProbeContent {
     pub schema_version: u32,
     pub video_frames: u64,
     pub plane_samples: [u64; 3],
-    pub maximum_plane_error: [u8; 3],
+    /// Schema 1 (SDR): 8-bit codes. Schema 2 (HDR): 10-bit codes. The wider
+    /// integer serializes identically for retained SDR evidence.
+    pub maximum_plane_error: [u16; 3],
     pub absolute_plane_error: [u64; 3],
     pub squared_plane_error: [u64; 3],
     pub worst_frame_mean_absolute_error_milli: [u32; 3],
@@ -238,6 +263,19 @@ pub struct RenderProbeSpec {
     pub raster: [u32; 2],
     pub frame_rate: [u32; 2],
     pub choice: RenderEncoderChoice,
+    /// Output color of the deterministic fixture. SDR is the default and is
+    /// omitted, preserving SDR specs, recipe hashes and decision bytes.
+    #[serde(default = "sdr_color", skip_serializing_if = "is_sdr_color")]
+    pub color_policy: ColorPolicy,
+}
+
+const fn sdr_color() -> ColorPolicy {
+    ColorPolicy::SdrRec709
+}
+
+#[allow(clippy::trivially_copy_pass_by_ref)] // serde skip predicate signature
+fn is_sdr_color(color: &ColorPolicy) -> bool {
+    *color == ColorPolicy::SdrRec709
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -493,8 +531,16 @@ impl RenderEncodingDecision {
             self.output.frame_rate.numerator(),
             self.output.frame_rate.denominator(),
         ];
-        let settings =
-            RenderSdrSettings::automatic_sdr_v1(self.output.raster, rate, RenderBFrames::None)?;
+        ensure(
+            self.algorithm.admits_output(self.output.color_policy),
+            "automatic algorithm does not admit this output color",
+        )?;
+        let settings = RenderSdrSettings::automatic(
+            self.output.color_policy,
+            self.output.raster,
+            rate,
+            RenderBFrames::None,
+        )?;
         let allow_b = settings.gop_frames > 2;
         let mut next = Some(RenderEncoderChoice {
             mode: RenderEncoder::Hardware,
@@ -516,6 +562,7 @@ impl RenderEncodingDecision {
                         .any(|previous| previous.identity.attempt_id == probe.identity.attempt_id)
                     && probe.spec.raster == self.output.raster
                     && probe.spec.frame_rate == rate
+                    && probe.spec.color_policy == self.output.color_policy
                     && next.as_ref() == Some(&probe.spec.choice),
                 "automatic probe order, identity or output binding differs",
             )?;
@@ -532,7 +579,7 @@ impl RenderEncodingDecision {
                     Some(&report.runtime)
                 }
                 RenderProbeOutcome::Rejected { failure, runtime } => {
-                    next = next_choice(&probe.spec.choice, failure.kind, allow_b);
+                    next = next_choice(self.algorithm, &probe.spec.choice, failure.kind, allow_b);
                     if ordinal + 1 < self.probes.len() {
                         ensure(
                             next.is_some() && runtime.is_some(),
@@ -607,9 +654,14 @@ impl RenderEncodingDecision {
     }
 }
 
-/// Frozen AutomaticSdrV1 transitions. Generic codec/open, I/O, capacity,
+/// Frozen per-algorithm transitions. AutomaticHdrV1 deliberately uses the
+/// same table as AutomaticSdrV1: hardware TargetTwo, then hardware None on a
+/// PTS<DTS rejection, then software. Generic codec/open, I/O, capacity,
 /// verification, cancellation and supervision faults cannot select a fallback.
+/// A software PQ probe that declares top-left chroma fails finished-file
+/// verification (an Output failure), which is never an eligible fallback.
 fn next_choice(
+    algorithm: super::RenderAutomaticAlgorithm,
     choice: &RenderEncoderChoice,
     failure: RenderProbeFailureKind,
     allow_b: bool,
@@ -617,6 +669,9 @@ fn next_choice(
     let RenderProbeFailureKind::Encoder(kind) = failure else {
         return None;
     };
+    match algorithm {
+        RenderAutomaticAlgorithm::AutomaticSdrV1 | RenderAutomaticAlgorithm::AutomaticHdrV1 => {}
+    }
     match (choice.mode, choice.b_frames, kind) {
         (_, RenderBFrames::TargetTwo, RenderEncodeFailureKind::VideoTimestampOrder) => {
             Some(RenderEncoderChoice {
@@ -676,7 +731,11 @@ impl RenderPictureContract {
                 && u64::try_from(frames).ok() == Some(self.frame_count)
                 && self.frame_count <= 1_000_000
                 && self.raster == raster
-                && self.color_policy == ColorPolicy::SdrRec709
+                && match (self.color_policy, &self.mastering_display) {
+                    (ColorPolicy::HdrRec2020Pq, Some(volume)) => volume.is_valid(),
+                    (_, Some(_)) => false,
+                    (_, None) => true,
+                }
                 && self.relative_aspect_error == aspect
                 && self.time_base.numerator == 1
                 && self.time_base.denominator == self.frame_rate.numerator()
@@ -689,9 +748,10 @@ impl RenderPictureContract {
                     .is_some_and(|samples| (1..=4_147_200_000).contains(&samples))
                 && i128::from(self.terminal_pts)
                     <= 86_400 * i128::from(self.frame_rate.numerator()),
-            "automatic output geometry or exact clocks differ",
+            "automatic output geometry, color metadata or exact clocks differ",
         )?;
-        RenderSdrSettings::automatic_sdr_v1(
+        RenderSdrSettings::automatic(
+            self.color_policy,
             self.raster,
             [self.frame_rate.numerator(), self.frame_rate.denominator()],
             RenderBFrames::None,
@@ -754,6 +814,45 @@ impl RenderSdrSettings {
         })
     }
 }
+
+impl RenderSdrSettings {
+    /// Frozen companion to native EncodeContract::new_hdr_v1: identical to
+    /// automatic_sdr_v1 except video bitrate x1.25, rounded half up once from
+    /// the exact SDR integer.
+    pub fn automatic_hdr_v1(
+        raster: [u32; 2],
+        rate: [u32; 2],
+        b_frames: RenderBFrames,
+    ) -> Result<Self, RenderError> {
+        let mut settings = Self::automatic_sdr_v1(raster, rate, b_frames)?;
+        settings.video_bitrate = (settings.video_bitrate * 5 + 2) / 4;
+        Ok(settings)
+    }
+
+    /// The frozen resolver for one output color.
+    pub fn automatic(
+        color: ColorPolicy,
+        raster: [u32; 2],
+        rate: [u32; 2],
+        b_frames: RenderBFrames,
+    ) -> Result<Self, RenderError> {
+        match color {
+            ColorPolicy::SdrRec709 => Self::automatic_sdr_v1(raster, rate, b_frames),
+            ColorPolicy::HdrRec2020Pq | ColorPolicy::HdrRec2020Hlg => {
+                Self::automatic_hdr_v1(raster, rate, b_frames)
+            }
+        }
+    }
+}
+
+/// Declared PQ probe mastering volume, mirroring deadpan_encode's
+/// HDR_PROBE_MASTERING (BT.2020 primaries, D65, 1000/0.005 cd/m²).
+pub const HDR_PROBE_MASTERING: MasteringDisplay = MasteringDisplay {
+    primaries: [[35_400, 14_600], [8_500, 39_850], [6_550, 2_300]],
+    white_point: [15_635, 16_450],
+    max_luminance: 10_000_000,
+    min_luminance: 50,
+};
 
 fn gcd(mut a: u32, mut b: u32) -> u32 {
     while b != 0 {
@@ -901,11 +1000,7 @@ impl RenderProbeSpec {
             self.raster[0] >= 14 && self.raster[1] >= 16,
             "probe raster cannot distinguish its fixed content",
         )?;
-        let settings = RenderSdrSettings::automatic_sdr_v1(
-            self.raster,
-            self.frame_rate,
-            self.choice.b_frames,
-        )?;
+        let settings = self.settings()?;
         let frames = u64::from(settings.gop_frames) * 3 + 1;
         ensure(
             frames <= 121
@@ -927,13 +1022,37 @@ impl RenderProbeSpec {
             audio_samples: u64::try_from(samples.0)
                 .map_err(|_| RenderError::Invalid("probe samples"))?,
             gop_frames: settings.gop_frames,
-            picture_bytes: u64::from(self.raster[0]) * u64::from(self.raster[1]) * 3 / 2,
+            picture_bytes: u64::from(self.raster[0]) * u64::from(self.raster[1]) * 3 / 2
+                * if self.color_policy == ColorPolicy::SdrRec709 {
+                    1
+                } else {
+                    2
+                },
         })
+    }
+
+    fn settings(&self) -> Result<RenderSdrSettings, RenderError> {
+        RenderSdrSettings::automatic(
+            self.color_policy,
+            self.raster,
+            self.frame_rate,
+            self.choice.b_frames,
+        )
+    }
+
+    /// Domain separation of the frozen recipe identity: SDR keeps the
+    /// original v1 domain; each HDR transfer has its own fixture domain.
+    pub const fn recipe_domain(&self) -> &'static [u8] {
+        match self.color_policy {
+            ColorPolicy::SdrRec709 => b"deadpan-encoder-admission-probe-v1\0",
+            ColorPolicy::HdrRec2020Pq => b"deadpan-encoder-admission-probe-hdr-pq-v1\0",
+            ColorPolicy::HdrRec2020Hlg => b"deadpan-encoder-admission-probe-hdr-hlg-v1\0",
+        }
     }
 
     pub fn document_sha256(&self) -> Result<Sha256, RenderError> {
         let mut hasher = Hasher::new();
-        hasher.update(b"deadpan-encoder-admission-probe-v1\0");
+        hasher.update(self.recipe_domain());
         hasher.update(serde_json::to_vec(&self.config()?)?);
         let hex: String = hasher
             .finalize()
@@ -960,7 +1079,7 @@ impl RenderProbeSpec {
                 raster: config.raster,
                 frame_rate: FrameRate::new(config.frame_rate[0], config.frame_rate[1])
                     .map_err(|_| RenderError::Invalid("probe rate"))?,
-                color_policy: ColorPolicy::SdrRec709,
+                color_policy: self.color_policy,
                 time_base: RenderOutputTimeBase {
                     numerator: 1,
                     denominator: config.frame_rate[0],
@@ -973,6 +1092,8 @@ impl RenderProbeSpec {
                         .map_err(|_| RenderError::Invalid("probe audio"))?,
                 ),
                 relative_aspect_error: ExactRatio::ZERO,
+                mastering_display: (self.color_policy == ColorPolicy::HdrRec2020Pq)
+                    .then_some(HDR_PROBE_MASTERING),
             },
         })
     }
@@ -984,11 +1105,7 @@ impl RenderProbeReport {
         let config = self.spec.config()?;
         let contract = self.spec.contract()?;
         let recipe = self.spec.document_sha256()?;
-        let settings = RenderSdrSettings::automatic_sdr_v1(
-            self.spec.raster,
-            self.spec.frame_rate,
-            self.spec.choice.b_frames,
-        )?;
+        let settings = self.spec.settings()?;
         ensure(
             self.schema_version == 2
                 && self.settings == settings
@@ -1007,6 +1124,7 @@ impl RenderProbeReport {
             &config,
             &settings,
             self.spec.choice.mode,
+            self.spec.color_policy,
         )?;
         validate_verification(
             &self.verification,
@@ -1014,7 +1132,20 @@ impl RenderProbeReport {
             &config,
             &settings,
         )?;
-        validate_content(&self.content, &config)
+        ensure(
+            match (self.spec.color_policy, &self.verification.content_light) {
+                (ColorPolicy::HdrRec2020Pq, Some(light)) => {
+                    light.declared_max_cll <= 10_000
+                        && light.declared_max_fall <= light.declared_max_cll
+                        && light.decoded_bound_max_cll_millinits <= 10_000_000
+                        && light.decoded_bound_max_fall_millinits <= 10_000_000
+                }
+                (ColorPolicy::HdrRec2020Pq, None) | (_, Some(_)) => false,
+                (_, None) => true,
+            },
+            "probe content light evidence is required for PQ only",
+        )?;
+        validate_content(&self.content, &config, self.spec.color_policy)
     }
 }
 
@@ -1023,6 +1154,7 @@ fn validate_encode_report(
     config: &ProbeConfigV1,
     settings: &RenderSdrSettings,
     mode: RenderEncoder,
+    color: ColorPolicy,
 ) -> Result<(), RenderError> {
     let packets = report
         .video_packets
@@ -1066,7 +1198,13 @@ fn validate_encode_report(
             && info.audio_time_base_num == 1
             && info.audio_time_base_den == 48_000
             && info.audio_frame_size == 1024
-            && info.video_profile == 100
+            // H.264 High (100) for SDR; HEVC Main10 (2) for HDR.
+            && info.video_profile
+                == if color == ColorPolicy::SdrRec709 {
+                    100
+                } else {
+                    2
+                }
             && info.audio_profile == 1
             && info.requested_mode == mode
             && u32::try_from(info.video_has_b_frames).is_ok_and(|value| value <= settings.b_frames)
@@ -1125,15 +1263,27 @@ fn milli(error: u64, samples: u64) -> Result<u32, RenderError> {
         .map_err(|_| RenderError::Invalid("probe statistic overflow"))
 }
 
+/// Frozen decoded-picture error limits per content schema, in code values of
+/// that schema's bit depth: (maximum, MAE milli, MSE milli).
+pub const SDR_PROBE_CONTENT_LIMITS: (u16, u32, u32) = (48, 1_500, 16_000);
+/// 10-bit HDR: the SDR limits scaled by 4 (codes) and 16 (squared codes).
+pub const HDR_PROBE_CONTENT_LIMITS: (u16, u32, u32) = (192, 6_000, 256_000);
+
 fn validate_content(
     report: &RenderProbeContent,
     config: &ProbeConfigV1,
+    color: ColorPolicy,
 ) -> Result<(), RenderError> {
     let pixels = u64::from(config.raster[0]) * u64::from(config.raster[1]);
     let plane_samples =
         [pixels, pixels / 4, pixels / 4].map(|samples| samples * config.video_frames);
+    let (schema, (maximum_limit, mae_limit, mse_limit)) = if color == ColorPolicy::SdrRec709 {
+        (1, SDR_PROBE_CONTENT_LIMITS)
+    } else {
+        (2, HDR_PROBE_CONTENT_LIMITS)
+    };
     ensure(
-        report.schema_version == 1
+        report.schema_version == schema
             && report.video_frames == config.video_frames
             && report.audio_samples == config.audio_samples
             && report.plane_samples == plane_samples
@@ -1148,17 +1298,17 @@ fn validate_content(
         let mae = milli(absolute, samples)?;
         let mse = milli(squared, samples)?;
         ensure(
-            maximum <= 48
-                && mae <= 1_500
-                && mse <= 16_000
+            maximum <= maximum_limit
+                && mae <= mae_limit
+                && mse <= mse_limit
                 && u128::from(absolute) <= u128::from(samples) * u128::from(maximum)
                 && u128::from(squared) <= u128::from(absolute) * u128::from(maximum)
                 && squared >= absolute
                 && absolute >= u64::from(maximum)
                 && squared >= u64::from(maximum).pow(2)
                 && u128::from(absolute).pow(2) <= u128::from(samples) * u128::from(squared)
-                && report.worst_frame_mean_absolute_error_milli[plane] <= 1_500
-                && report.worst_frame_mean_squared_error_milli[plane] <= 16_000
+                && report.worst_frame_mean_absolute_error_milli[plane] <= mae_limit
+                && report.worst_frame_mean_squared_error_milli[plane] <= mse_limit
                 && report.worst_frame_mean_absolute_error_milli[plane] >= mae
                 && report.worst_frame_mean_squared_error_milli[plane] >= mse,
             "probe decoded picture errors exceed fixed limits",

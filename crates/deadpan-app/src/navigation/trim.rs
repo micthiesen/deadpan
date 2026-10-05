@@ -72,6 +72,26 @@ pub fn parse<'a>(words: impl Iterator<Item = &'a str>) -> Result<TrimInput, Stri
     Ok(TrimInput { control, intent })
 }
 
+/// `:roll +2f`: open Trim on the selected beat with Roll active and the
+/// given whole-frame amount, as `:trim edge=roll delta=+2f` does.
+pub fn parse_roll<'a>(mut words: impl Iterator<Item = &'a str>) -> Result<TrimInput, String> {
+    let usage = || {
+        "Use :roll +2f or :roll -3f: move the cut after the selected source beat by whole frames, keeping both beats' total length.".to_owned()
+    };
+    let amount = words.next().ok_or_else(usage)?;
+    if words.next().is_some() {
+        return Err(usage());
+    }
+    let roll_frames = super::slip::parse_frames(amount).map_err(|_| usage())?;
+    Ok(TrimInput {
+        control: SourceTrimControl::Roll,
+        intent: SourceTrimIntent {
+            roll_frames,
+            ..Default::default()
+        },
+    })
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TrimKey {
     Cycle { reverse: bool },

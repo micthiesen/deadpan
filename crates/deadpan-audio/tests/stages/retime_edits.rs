@@ -208,10 +208,15 @@ fn rate_and_pitch_changes_use_fresh_output_but_keep_bound_child_pcm() {
     let before = bound_document();
     let mut provider = FixtureProvider::new();
     let original = record(&before, &mut provider, false, &[113, 17, 256]);
+    let mut unity = Vec::new();
     for (frames, pitch) in [
         (2, PitchPolicy::Preserve),
         (5, PitchPolicy::FollowSpeed),
         (4, PitchPolicy::Preserve),
+        // A fixed pitch shift processes even at unity speed, and with a
+        // speed change, on the same canonical processor.
+        (4, PitchPolicy::Shift { semitones: 12 }),
+        (2, PitchPolicy::Shift { semitones: -5 }),
     ] {
         let (changed, transaction) = edit(
             &before,
@@ -247,6 +252,9 @@ fn rate_and_pitch_changes_use_fresh_output_but_keep_bound_child_pcm() {
                 expected
             );
         }
+        if frames == 4 {
+            unity.push(record(&changed, &mut provider, false, &[256]));
+        }
         let restored = transaction.inverse.apply(&changed).unwrap();
         assert_eq!(
             record(&restored, &mut provider, false, &[31, 256]),
@@ -261,6 +269,11 @@ fn rate_and_pitch_changes_use_fresh_output_but_keep_bound_child_pcm() {
             before.audio_bindings().bindings()[&id("suffix")]
         );
     }
+    assert_eq!(unity[0].len(), unity[1].len(), "a shift keeps the duration");
+    assert_ne!(
+        unity[0], unity[1],
+        "an octave shift changes the processed sound"
+    );
     let (noop, _) = edit(
         &before,
         Command::SetRetime {
@@ -368,6 +381,7 @@ fn wrapping_a_split_partition_retains_child_processing_history_for_both_policies
                     restarted_inner[usize::try_from(at).unwrap()]
                 }),
             ),
+            PitchPolicy::Shift { .. } => unreachable!("only the two speed policies wrap here"),
         };
         assert_ne!(expected_tail, restarted_tail, "pitch {pitch:?}");
         let mut expected = complete_inner[..1002].to_vec();
@@ -400,4 +414,146 @@ fn wrapping_a_split_partition_retains_child_processing_history_for_both_policies
             );
         }
     }
+}
+
+/// Prefix pause, a shifted stage over a 4-frame source and a 2-frame suffix
+/// at an exact 1,600-sample frame, with every unbound clock captured.
+fn shifted_document(frames: i64, pitch: PitchPolicy) -> ProjectDocument {
+    let rate = FrameRate::new(30, 1).unwrap();
+    let document = document_with_asset(
+        rate,
+        &["prefix", "rate", "suffix"],
+        [
+            ("prefix", hold(1)),
+            ("source", source(rate, 4, 100..6500)),
+            ("rate", retime("source", frames, 0..4, pitch)),
+            ("suffix", source(rate, 2, 100..3300)),
+        ],
+        BTreeMap::new(),
+        audio(0, 8197).span,
+    );
+    let state = capture_unbound_audio_bindings(
+        &document,
+        AudioTimingId {
+            allocation: document.revision_id().clone(),
+            ordinal: 0,
+        },
+    )
+    .unwrap();
+    let mut wire = serde_json::to_value(document).unwrap();
+    wire["audio_bindings"] = serde_json::to_value(state).unwrap();
+    ProjectDocument::from_json(&wire.to_string()).unwrap()
+}
+
+#[test]
+fn shifted_stages_keep_their_bound_pcm_through_insert_split_and_move() {
+    const FRAME: usize = 1_600;
+    for (frames, pitch) in [
+        (4, PitchPolicy::Shift { semitones: 3 }),
+        (3, PitchPolicy::Shift { semitones: -2 }),
+    ] {
+        let before = shifted_document(frames, pitch);
+        let mut provider = FixtureProvider::new();
+        let original = record(&before, &mut provider, false, &[256]);
+        let stage = FRAME..FRAME * (1 + frames as usize);
+        let end = FRAME * (3 + frames as usize);
+        assert_eq!(original.len(), end);
+
+        // A pause after the stage: everything before it is unchanged and the
+        // suffix resumes two frames later on its own clock.
+        let (paused, _) = edit(
+            &before,
+            Command::InsertTime {
+                at: ProjectFrame(1 + frames),
+                hold: HoldRecipe {
+                    picture_context: None,
+                    duration: duration(2),
+                    video: HoldVideo::Background,
+                    audio: HoldAudio::Silence,
+                },
+                id: id("pause"),
+                identities: SplitIdentities {
+                    nodes: (0..8).map(|n| id(&format!("pause-{n}"))).collect(),
+                },
+                timing: AudioTimingId {
+                    allocation: RevisionId::new("paused").unwrap(),
+                    ordinal: 0,
+                },
+            },
+            "paused",
+        );
+        let after = record(&paused, &mut provider, false, &[113, 256]);
+        assert_eq!(after[..stage.end], original[..stage.end], "{pitch:?}");
+        assert_eq!(
+            after[stage.end + 2 * FRAME..],
+            original[stage.end..],
+            "{pitch:?}"
+        );
+
+        // Splitting the suffix changes no sample.
+        let (split, _) = edit(
+            &before,
+            Command::Split {
+                node: id("suffix"),
+                at: duration(1),
+                identities: SplitIdentities {
+                    nodes: (0..8).map(|n| id(&format!("split-{n}"))).collect(),
+                },
+            },
+            "split",
+        );
+        assert_eq!(record(&split, &mut provider, false, &[97, 256]), original);
+
+        // Moving the prefix pause after the stage moves the stage's
+        // processed output one frame earlier, sample for sample.
+        let range = FrameRange::new(ProjectFrame(0), ProjectFrame(1)).unwrap();
+        let destination = MoveRangeDestination::Seam {
+            parent: id("root"),
+            index: 2,
+        };
+        let query = before.range_move(&id("root"), range, &destination).unwrap();
+        let (moved, _) = edit(
+            &before,
+            Command::MoveRange {
+                source_revision: before.revision_id().clone(),
+                source_parent: id("root"),
+                range,
+                destination,
+                identities: SplitIdentities {
+                    nodes: (0..query.required_ids)
+                        .map(|n| id(&format!("move-{n}")))
+                        .collect(),
+                },
+                timing: AudioTimingId {
+                    allocation: RevisionId::new("moved").unwrap(),
+                    ordinal: 0,
+                },
+            },
+            "moved",
+        );
+        let shifted = record(&moved, &mut provider, false, &[256]);
+        assert_eq!(
+            shifted[..stage.end - FRAME],
+            original[stage.clone()],
+            "{pitch:?}"
+        );
+        assert_ne!(
+            original[stage.clone()],
+            record(
+                &shifted_document(frames, PitchPolicy::Preserve),
+                &mut provider,
+                false,
+                &[256]
+            )[stage.clone()],
+            "the shift is heard"
+        );
+    }
+}
+
+#[test]
+fn the_edit_time_preserve_bound_is_the_processor_input_bound() {
+    assert_eq!(
+        deadpan_core::MAX_PRESERVE_INPUT_SAMPLES,
+        i128::from(deadpan_dsp::MAX_INPUT_FRAMES)
+    );
 }

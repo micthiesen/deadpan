@@ -52,6 +52,46 @@ cannot appear retroactively in an old history. Existing Retime document recipes
 retain their meaning. Migration validates the complete history on a consistent
 copy and preserves its pre-migration backup.
 
+## Pitch shift
+
+`PitchPolicy::Shift { semitones }` is pitch-preserving processing with a fixed
+shift of whole semitones (nonzero, within ±24, the qualified range of the
+canonical Signalsmith adapter), independent of the duration. Every place that
+asked whether a Retime is a "nonunity Preserve" stage now asks
+`PitchPolicy::processes(unity_rate)`: pitch-preserving with a nonunity rate or a
+nonzero shift. So a unity-speed shifted Retime is a real processing stage for
+planning, owned audio bindings (including the Preserve-input point clock),
+frozen contexts and reference clocks, definition placements, composite
+insertion, moves and slice capture, and the stage descriptor passes its
+semitones to `CanonicalRecipe::with_rate`, which keeps them in the preparation
+cache identity. A first version missed five hardcoded `Preserve` matches
+(binding clock admission, reference clocks and processing domains, binding
+scope crossing and definition placement), so any edit that captured audio
+clocks in a project with a shift failed; they now use the same predicate, and
+`shifted_stages_keep_their_bound_pcm_through_insert_split_and_move` (decoded
+PCM, unity and nonunity shifts) and
+`split_edits_capture_clocks_beside_a_pitch_shifted_stage` cover InsertTime,
+Split, MoveRange and a J-cut's Roll. The remaining literal `Preserve` patterns
+construct test fixtures, Partitions (which never shift) or UI text.
+Partitions cannot carry a shift; a hanging tail inside a shifted stage is invalid,
+as inside a speed change.
+
+`:pitch +3st` (the `st` unit is optional) shifts the selected beat at its
+current speed: an ordinary Retime keeps its exact speed and changes its pitch
+through `SetRetime`; any other beat, including a Split fragment, is wrapped in a
+unity-speed Retime. `:pitch 0` returns a stage to plain `Preserve`.
+`:retime 0.75 pitch=-2st` combines a speed and a shift. The inspector shows
+"Shifted +3 semitones". Evidence:
+`pitch_shift_is_a_bounded_pitch_preserving_stage_independent_of_duration`, real
+PCM in `rate_and_pitch_changes_use_fresh_output_but_keep_bound_child_pcm`
+(unity +12 and nonunity −5 shifts against an independently rebuilt stage), the
+`audio-treatments` replay and the `pitch-shift` preview/export fixture, which
+measures a 1 kHz tone pause shifted an octave at about 4,000 zero crossings per
+second against 2,000 for the unshifted tone. `WrapRetime` and `SetRetime`
+refuse a processing stage whose input exceeds the processor's 1,048,576-sample
+bound (`MAX_PRESERVE_INPUT_SAMPLES`, about 21.8 s) or whose output exceeds eight
+times it, at edit time; tape speed is unaffected.
+
 ## Verification boundaries
 
 The existing shared picture plan and canonical audio path evaluate the resulting

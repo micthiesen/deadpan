@@ -35,6 +35,18 @@ report. Unusable inputs fail with `ExportVerificationMovie`,
   [SDR encoder pixel boundary](SDR_ENCODER_PIXELS.md) into limited Rec.709 I420,
   the like-for-like reference for a decoded H.264 picture (the display texture
   applies the sRGB display transform and is not a comparable code space).
+- **HDR branch.** The revision's automatic branch comes from
+  `ProjectPictureSession::color_decision()` (see [automatic HDR output](HDR_OUTPUT.md)),
+  the same decision preview and the encoder host use. When the captured
+  `ExportPictureContract::color_policy()` is PQ or HLG, the reference is
+  `ExportPixels::Hdr`: the same composed working target converted at the
+  [Rec.2100 ten-bit boundary](HDR_PIXELS.md#rec2100-encoder-pixels), and the movie
+  is decoded with `next_yuv420p10`. Planes are compared in ten-bit code values,
+  which for PQ and HLG are transfer-encoded signal values, so a code error
+  weighs the same perceptual step wherever it occurs. An HDR project whose
+  branch falls back to SDR (an SDR video, still or accepted footage present)
+  is compared exactly like an SDR project; its HDR sources are tone-mapped
+  into the eight-bit reference.
 - **This reference shares the picture session with the encoder host.** A
   planning or picture-session bug produces the same wrong picture on both
   sides and passes the PSNR gates. The picture comparison therefore proves
@@ -52,6 +64,22 @@ report. Unusable inputs fail with `ExportVerificationMovie`,
   encoder consumed.
 
 ## Container, color and timing checks
+
+SDR checks are unchanged. For an HDR branch the movie must have an `hvc1`
+sample entry whose `hvcC` is Main10 (profile 2), ten-bit luma and chroma and
+4:2:0; `colr` 9/16/9 (PQ) or 9/18/9 (HLG), limited range; a decoder
+interpretation of limited BT.2020 NCL with the branch transfer and codec
+`hevc`; decoder profile 2; and left-sited chroma on every picture. PQ movies
+must carry `clli` and an `mdcv` equal to the contract's retained mastering
+volume (or none when the contract has none); HLG movies carry neither. When
+every output frame was rendered (the automatic selection up to 600 frames),
+MaxCLL/MaxFALL are recomputed from the references' clipped linear light
+(`FrameLight`, rounded up to whole cd/m² as the encoder host does) and must
+equal `clli` (`hdr_light`). A movie of the wrong dynamic range (eight-bit SDR
+for an HDR branch, or the reverse) is reported as a color failure without
+picture comparison. A file that the qualified source decoder refuses (for
+example in-band Dolby Vision NAL units) is unusable input
+(`ExportVerificationMovie`).
 
 - Each track must have exactly one non-empty edit (`media_time >= 0`; an empty
   edit, `-1`, fails). The video edit must present exactly `frame_count × D / N`
@@ -82,11 +110,14 @@ with references `n-1` and `n+1`. Defaults (`Thresholds::default()`):
 
 | Check | Default | Rationale |
 | --- | --- | --- |
-| Luma PSNR | >= 32 dB | Measured 53.1–62.2 dB minimum per fixture; a different picture of the moving fixture measures 15–27 dB. |
-| Chroma PSNR (Cb and Cr) | >= 32 dB | Measured 53.5–60.1 dB. |
-| 8x8 luma thumbnail mean absolute difference | <= 4.0 codes | Gross mismatch gate for wrong framing, zoom or content. Measured <= 0.065; the 1.35x reframe negative fails it. |
+| Luma PSNR (SDR, peak 255) | >= 32 dB | Measured 53.1–62.2 dB minimum per fixture; a different picture of the moving fixture measures 15–27 dB. |
+| Chroma PSNR (SDR, Cb and Cr) | >= 32 dB | Measured 53.5–60.1 dB. |
+| Luma PSNR (HDR, ten-bit PQ/HLG codes, peak 1023) | >= 30 dB | Gross mismatch only. Correct encodes measured 59.9 dB (PQ) and 60.4 dB (HLG) on the clean recipes and 44.5 dB (PQ) and 43.6 dB (HLG) on the grain recipes; the 1.35x reframe negatives measured 11.7–18.7 dB. About 13.6 dB below the lowest correct encode and 11.3 dB above the highest gross negative. Small wrong regions are the local gate's job: a missing caption measured 34.3–39.2 dB and cannot be separated from grainy correct encodes by whole-picture PSNR. |
+| Chroma PSNR (HDR) | >= 40 dB | Measured 66.6 dB (PQ) and 67.9 dB (HLG) clean, 52.4 dB and 51.2 dB on grain (11.2 dB margin). |
+| HDR local structure: largest 4x4-cell luma mean difference | <= 40 ten-bit codes (`local_structure_mismatch`) | Averaging 4x4 cells removes most grain and coding noise but not a missing graphic. Correct encodes measured at most 3.9 (PQ) and 4.3 (HLG) codes clean and 8.4 and 12.6 codes on grain (3.2x below the gate); the missing caption measured 157.6–325.0 codes (3.9x above) and the reframe 422.9–868.3. A missing element that covers one full cell with more than 40 codes of contrast fails whatever the picture size; a two-pixel stroke split across cells needs about 160. SDR pictures report `local_luma_error` (eight-bit codes) without a gate. |
+| 8x8 luma thumbnail mean absolute difference | <= 4.0 eight-bit-equivalent codes | Gross mismatch gate for wrong framing, zoom or content. Ten-bit codes are divided by four (limited-range ten-bit codes are exactly four times their eight-bit counterparts). Measured <= 0.065 SDR and <= 0.059 HDR; the 1.35x reframe negatives fail it in both. |
 | Neighbor margin | reference `n±1` must not beat `n` by > 0.5 dB | `frame_index_mismatch`. The own frame beat its best neighbor by 28–38 dB on moving fixtures (`min_neighbor_margin_db`). |
-| Black frame | decoded mean luma <= 20 while reference mean > 32 | `unexpected_black_frame`. |
+| Black frame | decoded mean luma <= 20 while reference mean > 32 (eight-bit-equivalent codes) | `unexpected_black_frame`. |
 
 On static content (freezes, Background, repeated stills) neighbors are
 identical, the margin is 0 dB and an off-by-one frame is invisible in pixels.
@@ -109,7 +140,12 @@ reference level:
 | Between | not gated per block | Included in whole-window SNR, which is reported but not gated. |
 
 A silent window (reference RMS < -70 dBFS) additionally fails if any decoded
-sample exceeds -50 dBFS.
+sample exceeds -50 dBFS and the decoded peak also exceeds the reference peak by
+more than the 3 dB level tolerance. The second condition admits sound the
+reference itself carries: an unedited HDR Original whose click starts exactly at
+sample 48,000 has source AAC pre-echo at -48.4 dBFS inside the otherwise silent
+first window, which the export reproduced at -49.8 dBFS. Exact-zero references
+(silent holds, gaps) keep the absolute gate.
 
 **Alignment.** Up to eight nonoverlapping 4,096-sample reference segments per
 window (the loudest above -70 dBFS) are each cross-correlated against the
@@ -141,6 +177,16 @@ windows. `measured_offset_samples` is present only for `verified_zero` (0) and
 fails rather than passing as offset-verified. Nothing is shifted, trimmed or
 event-aligned to pass.
 
+## Report
+
+Report schema version 2 adds per-picture `local_luma_error` and
+`summary.max_local_luma_error`, `output_color` (output policy, reason,
+`hdr_sources`, `tone_map_peak_nits` and the PQ mastering volume),
+`picture_bits` (8 or 10), the HDR container observations in `movie.color`
+(`sample_entry`, `hevc_profile_idc`, `decoder_profile`, `mastering`,
+`content_light`; omitted for SDR) and `hdr_light` (PQ only). Plane
+`max_abs_error` and `mean_abs_error` are in codes of the compared depth.
+
 ## Memory and cancellation
 
 Decoded audio is streamed: a window's buffer (plus alignment margins) exists
@@ -167,17 +213,46 @@ them with public `render` and verify them with `verify-export`:
   on the previous ordinal, the last ordinal missing); and the original movie
   against the shorter pre-pause revision (range, frame count and audio edit
   duration all reported).
+- [HDR fixtures](../crates/deadpan-cli/tests/preview_export_hdr.rs) build
+  one-Original projects from `hdr-pq-av.mp4` and `hdr-hlg-av.mp4` (320x180,
+  30 fps, 60 frames, AAC, a frame-30 marker and a 1 kHz click at Original
+  sample 48,000) and from the grain fixtures `hdr-pq-grain-av.mp4` and
+  `hdr-hlg-grain-av.mp4` (the same size and audio; real-like footage with
+  edges, highlights, motion and clumped film-grain noise, generated by
+  `generate_hdr_fixtures.py grain`) with a cut, a two-play Repeat, a freeze
+  Hold and a caption (42 frames). `hdr_worker_exports_match_their_committed_previews` encodes them
+  through the real encoded render worker (hardware HEVC Main10, B frames
+  requested) and verifies tags, provenance, clli, PSNR, local structure and
+  zero audio offset, plus missing-caption (`local_structure_mismatch` on
+  exactly the four captioned frames) and 1.35x reframe negatives.
+  `hdr_public_render_matches_its_committed_preview` does the same through
+  public Render (automatic HDR encoder admission, finished-file HEVC
+  verification and publication). Both are ignored in debug builds:
+  `cargo test --release --locked -p deadpan-cli --test preview_export_hdr`.
+  The default-gate tests check the branch truth table on real committed
+  documents, BT.2408 caption placement in the HDR references (fill at PQ code
+  573 / HLG code 721) with the source patches preserved, an SDR Original
+  rendering SDR H.264, and the SDR fallback of a PQ project with a registered
+  SDR video (tone-mapped references never exceed Y 235; its public Render
+  verifies as SDR). `DEADPAN_PREVIEW_EXPORT_HDR_RESULTS=<new.json>` records the
+  HDR table. `deadpan_cli::export_verification::reference_pictures` renders
+  single references for such checks.
 - `every_recipe_export_matches_its_committed_preview` exports every recipe
-  fixture (24).
+  fixture (31).
   Debug renders cost about four seconds per output second, so it is ignored in
   debug builds. The release-mode gate is
   `cargo test --release --locked -p deadpan-cli --test preview_export` (about
-  19 s). `DEADPAN_PREVIEW_EXPORT_RESULTS=<new.json>` records the table, and
+  67 s for 31 fixtures on an M5 Max). `DEADPAN_PREVIEW_EXPORT_RESULTS=<new.json>` records the table, and
   `DEADPAN_PREVIEW_EXPORT_KEEP=1` keeps packages and movies.
+  `DEADPAN_PREVIEW_EXPORT_ONLY=saturation,j-cut` builds only the named
+  fixtures for a focused rerun, prints how many it skipped, refuses unknown
+  names and refuses to run when `CI` is set; record results from a full run.
 
 Measured results are in the
-[qualification record](qualification/preview-export-2026-10-04.md). The harness
-does not cover HDR, native key paths (fixtures use the headless command API that
+[qualification record](qualification/preview-export-2026-10-04.md) and, for HDR,
+the [HDR record](qualification/hdr-preview-export-2026-10-05.md). The harness
+does not cover HDR display or EDR presentation (the comparison is in encoded
+code values), native key paths (fixtures use the headless command API that
 the keys resolve to), accepted Generated Holds (no headless fixture exists
 without the model runtime), or physical playback/listening; device audio
 and display remain separate qualification. Captions are drawn by the shared

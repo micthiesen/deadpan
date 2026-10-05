@@ -18,6 +18,17 @@ Visual range taking precedence. A saved Visual selector needs a new nonempty
 range. Ungroup resolves a newly selected neutral Sequence and refuses every
 Visual state. Both operations preserve the copy bank and pending register choice.
 
+Creative parameter edits applied through the semantic path supply
+`RepeatableEdit::Parameter` intent: the exact instruction, repeated as written
+against the new current selection, which the planner resolves afresh. This
+covers saturation and recorded gain changes (`SetAudio`), J- and L-cuts
+(`SplitEdit`, at the cut under the new cursor), role-only deletes
+(`DeleteRole`) and role repeats (`RoleRepeat`), over a new Visual range, reverse and ping-pong pauses, tails,
+gags, and pauses and framing applied while recording. The dot hint names the
+edit ("repeat: J-cut: the next sound starts 6f early"). Native `,h`, `,z`/`,c`,
+`+`/`-`, cutaways, captions and retime outside a recording commit directly and
+still clear dot intent.
+
 This covers picture cuts, Repeat wraps/count setters and Group/Ungroup for DP-06.
 [Semantic macros](SEMANTIC_MACROS.md) record the effective instruction, so a
 recorded dot does not depend on a

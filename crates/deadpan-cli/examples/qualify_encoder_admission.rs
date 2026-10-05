@@ -1,5 +1,5 @@
 //! Run real automatic admission and retain its report plus exact probe movie.
-//! Usage: qualify_encoder_admission WORKER WIDTH HEIGHT FPS_NUM FPS_DEN REPORT
+//! Usage: qualify_encoder_admission WORKER WIDTH HEIGHT FPS_NUM FPS_DEN REPORT [sdr|pq|hlg]
 
 use deadpan_cli::{
     encoded_render::admission::{AdmissionLimits, AdmissionRequest, qualify},
@@ -19,8 +19,18 @@ use std::{
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<_> = std::env::args().skip(1).collect();
-    let [worker, width, height, num, den, report] = args.as_slice() else {
-        return Err("expected WORKER WIDTH HEIGHT FPS_NUM FPS_DEN REPORT".into());
+    let (args, color) = match args.as_slice() {
+        [rest @ .., color] if rest.len() == 6 => (rest, color.as_str()),
+        rest => (rest, "sdr"),
+    };
+    let color_policy = match color {
+        "sdr" => deadpan_core::ColorPolicy::SdrRec709,
+        "pq" => deadpan_core::ColorPolicy::HdrRec2020Pq,
+        "hlg" => deadpan_core::ColorPolicy::HdrRec2020Hlg,
+        _ => return Err("color must be sdr, pq or hlg".into()),
+    };
+    let [worker, width, height, num, den, report] = args else {
+        return Err("expected WORKER WIDTH HEIGHT FPS_NUM FPS_DEN REPORT [sdr|pq|hlg]".into());
     };
     let worker = fs::canonicalize(worker)?;
     let report = std::path::absolute(report)?;
@@ -48,6 +58,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         cancellation_token: CancellationToken::new("native-admission-cancel")?,
         raster: [width.parse()?, height.parse()?],
         frame_rate: [num.parse()?, den.parse()?],
+        color_policy,
     };
     let started = Instant::now();
     let deadline = started + Duration::from_secs(120);

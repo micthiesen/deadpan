@@ -74,6 +74,11 @@ pub(crate) fn from_qualified(
     live.selected
         .validate(AdmissionLimits::default().encode)
         .map_err(invalid)?;
+    if live.selected.spec.color_policy != contract.color_policy() {
+        return Err(invalid(
+            "fresh admission probed a different output color than the committed branch",
+        ));
+    }
     let binding = EncodingBinding::from_contract(
         &live.selected.manifest.contract,
         live.selected.runtime.clone(),
@@ -147,6 +152,11 @@ pub(crate) fn binding_for_decision(
     report
         .validate(AdmissionLimits::default().encode)
         .map_err(invalid)?;
+    if report.spec.color_policy != contract.color_policy() {
+        return Err(invalid(
+            "durable encoder decision probed a different output color",
+        ));
+    }
     let encoding = EncodedRenderContract::from_contract(contract, report.spec.choice);
     let binding = EncodingBinding::from_contract(&encoding, report.runtime).map_err(invalid)?;
     if binding.settings != observation::<_, ResolvedSdrSettings>(&selected.settings)? {

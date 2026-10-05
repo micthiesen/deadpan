@@ -14,7 +14,11 @@ Visual yank, typed operator motions and group objects, Repeat wraps (optionally
 escalating) and count setters, named Group, neutral Ungroup, register paste or
 Visual replacement, pauses (`InsertPause`, exact frames or milliseconds with a
 host-resolved freeze), framing of the selected beat, built-in
-[gag recipes](GAGS.md), and named Macro call. Word, sentence, pause and shot
+[gag recipes](GAGS.md), gain trims and steps and saturation of the selected
+beat (`SetAudio`, from `+`/`-`, `:gain` and `:saturate`), J- and L-cuts
+(`SplitEdit`), role-only deletes (`DeleteRole`) and audio-only or video-only repeats (`RoleRepeat`, see
+[role edits](ROLE_EDITS.md)), local recipe save and insert (a whole-group yank
+and a register paste), and named Macro call. Word, sentence, pause and shot
 motions and objects resolve against analyses projected through each staged
 document.
 Motions and cuts retain their requested counts, including when they

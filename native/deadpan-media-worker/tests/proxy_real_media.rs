@@ -132,7 +132,8 @@ fn build(original: &Original, scratch: &Path) -> Result<(File, ProxySidecar)> {
         frames,
         &plan,
         Duration::from_secs(120),
-    );
+    )
+    .expect("SDR proxy request");
     let cancelled = AtomicBool::new(false);
     // The production path: VideoToolbox's encoder service occasionally never
     // answers a synchronous request (see `VT_HANG` below), which the stall
@@ -397,7 +398,8 @@ fn cancellation_stops_the_worker_and_leaves_no_success() -> Result {
         original.index.index().frames().len() as u64,
         &plan,
         Duration::from_secs(120),
-    );
+    )
+    .expect("SDR proxy request");
     let scratch = tempfile::tempdir()?;
     let output = private_output(&scratch.path().join("proxy.mp4"))?;
     let cancelled = Arc::new(AtomicBool::new(false));
@@ -452,7 +454,8 @@ fn a_wrong_plan_is_refused_by_the_worker() -> Result {
         original.index.index().frames().len() as u64,
         &plan,
         Duration::from_secs(60),
-    );
+    )
+    .expect("SDR proxy request");
     request.time_base_den += 1;
     let scratch = tempfile::tempdir()?;
     let output = private_output(&scratch.path().join("proxy.mp4"))?;
@@ -476,7 +479,8 @@ fn a_wrong_plan_is_refused_by_the_worker() -> Result {
         10,
         &plan,
         Duration::from_secs(60),
-    );
+    )
+    .expect("SDR proxy request");
     let output = private_output(&scratch.path().join("short.mp4"))?;
     let error = encode_proxy(
         worker(),
@@ -563,6 +567,7 @@ fn retry_request(original: &Original) -> deadpan_media::proxy::ProxyRequest {
         &requested_plan(original),
         Duration::from_secs(120),
     )
+    .expect("SDR proxy request")
 }
 
 #[test]

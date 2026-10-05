@@ -159,6 +159,74 @@ fn overlapping_db_trim_and_exact_mute_follow_edges_without_changing_inspection()
 }
 
 #[test]
+fn saturation_shapes_each_owner_output_inner_first_in_its_serialized_order() {
+    use deadpan_core::{AudioTreatmentStage, Saturation};
+    let base = source_document(256);
+    let drive = Saturation::new(GainDb::new(18_000).unwrap()).unwrap();
+    let clip = |trim| ClipGain::new(GainDb::new(trim).unwrap(), false, vec![], vec![]).unwrap();
+    let ordered =
+        |order, trim| AudioTreatments::with_stages(order, Some(clip(trim)), Some(drive)).unwrap();
+    let mut provider = FixtureProvider::new();
+    let neutral = authored_all(&base, &mut provider, &[256]);
+    let shape = |value: f64| drive.shape(value);
+    let factor = |millidecibels: f64| 10.0_f64.powf(millidecibels / 20_000.0);
+    // Gain into saturation on the beat, then the root's own gain after it.
+    let gain_first = changed(
+        &base,
+        &[
+            (
+                "source",
+                ordered(
+                    vec![
+                        AudioTreatmentStage::ClipGain,
+                        AudioTreatmentStage::Saturation,
+                    ],
+                    6_000,
+                ),
+            ),
+            ("root", treatment(-3_000, false, vec![], vec![])),
+        ],
+    );
+    let expected: Vec<[f32; 2]> = neutral
+        .iter()
+        .map(|sample| {
+            sample
+                .map(|value| (shape(f64::from(value) * factor(6_000.0)) * factor(-3_000.0)) as f32)
+        })
+        .collect();
+    assert_eq!(authored_all(&gain_first, &mut provider, &[256]), expected);
+    assert_eq!(
+        authored_all(&gain_first, &mut provider, &[1, 77, 13]),
+        expected
+    );
+    // The reverse order trims after the clipper.
+    let shaped_first = changed(
+        &base,
+        &[(
+            "source",
+            ordered(
+                vec![
+                    AudioTreatmentStage::Saturation,
+                    AudioTreatmentStage::ClipGain,
+                ],
+                -6_000,
+            ),
+        )],
+    );
+    let expected: Vec<[f32; 2]> = neutral
+        .iter()
+        .map(|sample| sample.map(|value| (shape(f64::from(value)) * factor(-6_000.0)) as f32))
+        .collect();
+    let actual = authored_all(&shaped_first, &mut provider, &[256]);
+    assert_eq!(actual, expected);
+    assert!(
+        actual.iter().flatten().all(|value| value.abs() <= 0.502),
+        "a -6 dB trim after the clipper bounds the output near half scale"
+    );
+    assert_ne!(actual, neutral);
+}
+
+#[test]
 fn explicit_unity_and_opposing_owner_gains_are_bit_identical() {
     let base = source_document(256);
     let mut provider = FixtureProvider::new();

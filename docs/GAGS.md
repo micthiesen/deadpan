@@ -88,8 +88,43 @@ recordable yet.
   semantic path; `are-we-done` does too; `nothing-happens` exports its ordinary parts
   ([preview/export verification](PREVIEW_EXPORT_VERIFICATION.md)).
 
+## Inspecting an expansion
+
+`:gag-inspect NAME [parameters]` takes exactly the `:gag` grammar, resolves the
+recipe at the project rate with the current Visual range deciding its content,
+and lists its ordinary steps in Help (RECIPE EXPANSION), one line each with the
+resolved pause lengths (milliseconds also as frames), gap ladder, escalation and
+the pinned group label. Nothing is applied and history is unchanged; `:gag`
+with the same parameters applies the same expansion.
+
+## Seeded variation
+
+One More Time accepts `vary=20%` (1 to 50) and `seed=N`. Each gap `k` moves by
+at most that percentage of itself, by `GagVariation::vary`, a fixed SplitMix64
+draw from the seed, rounded once to a whole unit and kept positive. The seed is
+pinned in the recipe (and its macro wire) and in the group label (`varied ±20%
+(seed 7)`); the resolved gaps are stored as the gap Holds' exact durations, so
+playback, export and Undo never draw again. Without `seed=` the app draws one
+once at authoring time and pins it; `:gag-inspect` without `seed=` names the
+seed it drew for the preview and says to apply with that `seed=` to get exactly
+those gaps, since applying without one draws a new seed. Evidence:
+`seeded_variation_resolves_fixed_bounded_gaps_and_pins_its_seed`, the
+`recipe-library` replay (inspected gaps equal applied gaps) and the
+`one-more-time-varied` preview/export fixture.
+
+## Local recipes
+
+`:recipe-save a` keeps the selected group (for example a gag after changing its
+parts) as project register a, through the ordinary whole-group copy (`"ayag`):
+its exact beats, timing, framing, cutaways, captions and gain travel with it, and
+the bank persists across reopen. `:recipe a` inserts a fresh copy at the cursor
+(`"ap`) as one Undo, and `:recipe-inspect a` outlines it in Help before reuse:
+each part's root with kind, label and length, and a group's direct children with
+their attachments. Both are recordable. A saved group is fixed content: its
+recipe parameters are not re-exposed, and the recipe lives in this project.
+
 ## Remaining
 
-Saving a modified group as a local
-recipe and inspecting an expansion before applying it, a gag-aware inspector
-(the label is currently shown as a Sequence label), and seeded variation.
+A recipe library shared across projects, re-exposed parameters on a saved
+group, a gag-aware inspector (the label is currently shown as a Sequence label)
+and seeded framing variation.

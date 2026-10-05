@@ -51,6 +51,13 @@ pub struct Cutaway {
     pub selection: ExactSourceSpan,
     #[serde(default, skip_serializing_if = "CutawayFit::is_hold")]
     pub fit: CutawayFit,
+    /// A video-only delete (specification §6.5): the host's picture
+    /// contribution is removed over the range, exposing the project
+    /// background, while its sound and timing continue. `asset` and
+    /// `selection` then record exactly which Original pictures were removed;
+    /// nothing is shown from them.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub removed: bool,
 }
 
 impl Cutaway {
@@ -216,6 +223,7 @@ mod tests {
             asset: AssetId::new("original").unwrap(),
             selection: ExactSourceSpan::new(point(100), point(110)).unwrap(),
             fit,
+            removed: false,
         }
     }
 

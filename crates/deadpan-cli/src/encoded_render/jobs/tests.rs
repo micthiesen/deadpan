@@ -252,3 +252,36 @@ fn legacy_manifest_bytes_keep_frozen_four_field_shape_and_reject_automatic_polic
     assert!(serde_json::from_value::<RetainedRenderManifest>(extra).is_err());
     Ok(())
 }
+
+#[test]
+fn automatic_intent_algorithm_must_match_the_committed_color_branch() -> Result {
+    let fixture = fixture()?;
+    // The fixture revision is SDR (Background only), so its branch is SDR.
+    assert_eq!(fixture.contract.color_policy(), ColorPolicy::SdrRec709);
+    validate_output(&fixture.contract, &fixture.intent.policy)?;
+    let hdr: RenderPolicy = RenderAutomaticPolicy {
+        schema_version: 1,
+        selection: RenderAutomaticSelection::Automatic,
+        algorithm: RenderAutomaticAlgorithm::AutomaticHdrV1,
+    }
+    .into();
+    let error = validate_output(&fixture.contract, &hdr).unwrap_err();
+    assert!(error.to_string().contains("automatic_sdr_v1"), "{error}");
+    // A retained decision whose selected probe used another color cannot bind.
+    let mut decision = fixture.decision.clone();
+    if let Some(RenderProbeOutcome::Succeeded { report }) =
+        decision.probes.last_mut().map(|probe| &mut probe.result)
+    {
+        report.spec.color_policy = ColorPolicy::HdrRec2020Hlg;
+    }
+    assert!(
+        durable::binding_for_decision(
+            &fixture.intent,
+            &decision.encoding_attempt_id.clone(),
+            &fixture.contract,
+            &decision,
+        )
+        .is_err()
+    );
+    Ok(())
+}

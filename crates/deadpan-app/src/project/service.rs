@@ -2022,7 +2022,9 @@ fn snapshot(
             original_shots(store, single_source.as_ref(), &sources),
         ),
     };
+    let color = store.output_color(&document).map_err(display)?;
     Ok(Workspace {
+        color,
         session,
         path,
         document: Arc::new(document),

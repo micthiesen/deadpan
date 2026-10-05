@@ -245,3 +245,60 @@ Accepted Generated Holds (no headless accepted fixture exists without the
 development model runtime), effect sends, gain envelopes,
 per-play overrides, native key paths, odd canvases, nonzero export ranges,
 HDR, longer or higher-resolution media, and physical display/listening.
+
+## Section 8 increment (2026-10-05)
+
+Seven more fixtures, added with saturation, pitch shift, split edits,
+seeded variation and the §6.5 role edits. All 31 fixtures passed in one run of
+`cargo test --release --locked -p deadpan-cli --test preview_export` on an
+Apple M5 Max (macOS 26.5.2), uncommitted tree based on `af4677a3` with
+concurrent HDR work in progress (3 tests passed in 66.6 s). Each new fixture
+runs through the headless semantic path (macro save and run) the native
+commands share, except `pitch-shift`, which commits the `WrapRetime` the
+`:pitch` command authors.
+
+| Fixture | Construction | Frames |
+| --- | --- | --- |
+| saturation | two 12-frame 1 kHz -10 dBFS tone pauses before the base; `SetAudio` saturation 12 dB on the first (`:saturate 12dB`) | 54 |
+| pitch-shift | the same two tone pauses; `WrapRetime` of the first at unity duration with `PitchPolicy::Shift { semitones: 12 }` (`:pitch +12st`) | 54 |
+| j-cut | Original [10, 24) + [33, 49), `SplitEdit { kind: j, length: 6f }` at Edit 14: the Roll moves the cut to Edit 8 and a cutaway keeps Original 18..24 there | 30 |
+| l-cut | Original [10, 28) + [80, 92), `SplitEdit { kind: l, length: 6f }` at Edit 18: the cut moves to Edit 24 and a cutaway keeps Original 80..86 | 30 |
+| one-more-time-varied | `:gag one-more-time plays=3 gap=12f shorten=6f vary=25% seed=7`; seed 7 resolves gaps of 14 and 7 frames (`GagVariation::vary`) | 75 |
+| role-delete | Visual [15, 20) `DeleteRole audio` then [23, 27) `DeleteRole video` | 30 |
+| role-repeat | Visual [5, 8) `RoleRepeat video ×2`, then [15, 20) `RoleRepeat audio ×3`, then a ripple delete of Edit [0, 3) | 27 |
+
+Independently derived expectations: the saturated click, driven from -6 dB
+back above 0.5 peak; quiet base before the shifted beat; the J-cut's click from
+the incoming beat's handle at Edit frame 10.97 and the L-cut's from the outgoing
+handle at 19.97, where nothing sounds without the split edit, with every
+picture unchanged; each varied play's click 9,562 samples after its start and
+silent gap middles; the role-delete click silenced and Edit 23..27 showing the
+background; the role-repeat click heard again 8,008 and 16,016 samples later
+and Edit 8..11 showing Original 17..19 again.
+
+| Fixture | Pictures | Min Y PSNR dB | Min Cb/Cr PSNR dB | Max thumbnail MAD | Min neighbor margin dB | Audio windows (signal) | Gated blocks | Min block SNR dB | Max block level dB | Offset status | Render s | Verify s | Passed |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| saturation | 30 | 62.2 | 57.7 | 0.019 | 37.6 | 1 (1) | 1 | 56.4 | 0.01 | verified_zero | 1.40 | 0.41 | yes |
+| pitch-shift | 30 | 62.2 | 57.7 | 0.019 | 37.6 | 1 (1) | 2 | 19.4 | 0.10 | verified_zero | 1.36 | 0.48 | yes |
+| j-cut | 30 | 62.4 | 58.4 | 0.019 | 38.8 | 1 (1) | 1 | 53.0 | 0.01 | verified_zero | 1.19 | 0.33 | yes |
+| l-cut | 30 | 62.4 | 58.4 | 0.019 | 38.8 | 1 (1) | 1 | 52.4 | 0.01 | verified_zero | 1.12 | 0.31 | yes |
+| one-more-time-varied | 75 | 62.2 | 58.3 | 0.019 | 0.0 | 3 (3) | 3 | 34.7 | 0.04 | verified_zero ×3 | 1.65 | 0.74 | yes |
+| role-delete | 30 | 55.1 | 57.0 | 0.039 | 0.0 | 1 (0) | 0 | n/a | n/a | not_applicable | 1.19 | 0.21 | yes |
+| role-repeat | 30 | 62.2 | 57.7 | 0.019 | 37.5 | 1 (1) | 3 | 55.2 | 0.01 | verified_zero | 1.39 | 0.54 | yes |
+
+No preview/export mismatch was found. The pitch-shift fixture's lowest block
+SNR (19.4 dB) is the processed transient; the role-delete windows carry no
+signal and pass the silent-window gate. These fixtures do not exercise native
+key paths, saturation at its 24 dB maximum, shifts at other speeds, or listening.
+
+### Revision (same day, after review)
+
+The saturation and pitch-shift fixtures were rebuilt on synthesized tones so
+their effect is measured, not only matched: `Fixture.signals` reads 4,096
+samples of the limited bus and checks zero-crossing rate, crest factor and
+peak. Saturation: 2,000 crossings/s, crest 1.26–1.32 and peak 0.83–0.87 on the
+driven tone, crest 1.39–1.44 on the plain one. Pitch shift: about 4,000
+crossings/s on the shifted tone against 2,000 on the plain one. Role-repeat
+sounds are now owned by a group around the muted beat (an owner's mute also
+silences its own sounds). All 31 fixtures pass again in one run (67.8 s), with
+the export verifier's newer SDR gates from the concurrent HDR work.

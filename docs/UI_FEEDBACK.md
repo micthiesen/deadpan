@@ -50,6 +50,28 @@ checks). Captures of the reverse, ping-pong, tail command, tail pause, bleep and
 delayed caption were inspected; the inspector's narrow value column truncates
 the longest Sound descriptions.
 
+Three replays cover the 2026-10-05 Section 8 additions through the production
+router, semantic project service and store. `audio-treatments` (67 checks):
+`:saturate 12dB` with its inspector drive, `:gain +6dB`, `+=3dB`, `-=1.5dB`
+and four single Undos, `.` repeating the saturation on another beat, a recorded
+macro of `+` and `:saturate 6dB` replayed with `@a` as one Undo, and `:pitch
++5st`, `-3st` and `0` on a unity-speed stage with its inspector row.
+`split-edits` (87 checks): `:jcut 6f` and `:lcut 200ms` at a cut between two
+Original moments with every plan picture unchanged, `.` at a second cut, the
+refusal away from a cut, `:roll +2f` opening Trim with Roll active,
+`:select role=audio|video` with the status-line role and Visual `d` (mute range,
+background pictures), `:delete role=video` once, the refusal across a cut, and
+`:repeat 3 role=audio` (two Placed sounds over a muted range), Visual `r` under
+the video role (looped pictures) and the `overflow=trim` refusal and trim.
+`recipe-library` (25 checks): `:gag-inspect` listing seeded gaps in Help without
+an edit, the applied gag storing exactly those gaps with the seed in its label,
+`:recipe-save a`, `:recipe-inspect a` and `:recipe a` with one Undo. Their
+captures of the saturation inspector, J-cut, `:roll`, role deletes and Placed
+sounds were inspected. The earlier `gain`, `recipes`, `gags`, `dot-repeat`,
+`macros`, `retime`, `cutaway`, `hold-effects`, `editing`, `keymap`, `trim`,
+`captions`, `zoom`, `targets` and `repeat-operator` replays still pass with
+these changes.
+
 The [workspace design pass](qualification/ui-design-pass-2026-10-04.md) moves the
 interface to installed SF Pro/SF Mono, removes an unpainted header band,
 restructures the inspector, header, rail and tabs, fits footer keys to two
@@ -550,6 +572,7 @@ the real app. The initial viewport is 1280×820 points at 1×. The code lives in
 | `delete-range` | Cuts active and finished Visual selections in either direction, rejects empty selections, preserves whole-beat dd without a selection and captures independent :delete targets including absence. Checks exact decoded join pictures, one commit/Undo, stale revision/session/group refusal, native-control focus, synthetic IME, held/count/same-batch input and minimum-window text paint clips. Nested ordinary groups retain their owner; partial composite endpoints fail and whole composites can be removed. The frame-cut extension checks `x`/counts/`:delete-frames`, exact captured and clamped intervals, successful delayed-yank supersession, same-batch modal ownership, and focused-button mark names. See [current qualification](qualification/native-frame-cuts-2026-10-01.md) for counts and source identities. No device, acoustics or physical IME claim. |
 | `camera` | Pointer opening and numeric preview, Cancel, keyboard reopening/zoom and pointer Apply. Reach clipped inspector controls with real wheel input before clicking. Checks unchanged revision during preview, restoration of the submitted entry framing/source frame after Cancel, and authored framing after Apply. |
 | `targets` | Waits for the automatic shot analysis, then in Camera draws a target with `n`, Tab, counts, `h/j/k/l`, Shift and arrows, saves it with Enter, picks it with `f 1`, follows it with `t`, scales the follow, refuses a nudge, applies, reopens Camera on the follow (scale preview, Escape), tracks with Shift+`T` through the scripted worker seam, moves five pictures and corrects with `c`, then checks `:track` refusal, `:track-cancel` and Undo. Checks rectangle values, one revision per save with Camera continuing on it, picker order, painted state labels, inspector labels, that the committed follow equals the Camera preview exactly, progress, the entry-head save and a one-range correction. Only Vision observations are scripted. |
+| `faces` | Waits for shot analysis, moves to frame 10 of Your edit and enters `:zoom 1.35 target=face:2 curve=step`: the real installed `deadpan-track detect-faces` worker finds no face in the fixture and the command refuses without an edit. With only the worker's reported faces scripted (`Backend::ScriptedFaces`), a delayed detection shows its footer message while the editor keeps running, then `face:2` saves `Face 2` (`face-1`) and a 1.35× Follow of it as one revision, named in the inspector; one `u` removes both. A cursor move during a detection refuses the stale completion, `face:3` of two faces refuses with the count, and `face:0` is refused at entry. Picture resolution, the verified Original copy, face admission and the Compound save are real. |
 | `zoom` | Waits for shot analysis. `,z` with no saved target punches in to 1.35× at the center and explains the fallback; Undo. Draws a target in Camera (`,f`, `n`, `8l`, Enter, Escape), then `,z` saves a Follow of it at 1.35× and the displayed pose centers on it. `:zoom 2 target=center curve=step` replaces it with a centered step; `:creep from=1 to=1.4 target=current` saves an eased path toward the target; a Visual-range `,z` refuses to flatten that path; `:zoom off` clears it; a Visual-range `,z` then changes exactly the range frames in the committed plan. `:hold 6f video=black` inserts six Background/Silence frames, one Undo removes them, and a recorded `:zoom 1.5 target=center` replays after Undo. Captures each framing result and the black pause. |
 | `menus` | File-menu ownership of edit keys, help opening, keyboard/wheel changes to scroll offset and painted content, text containing edit keys and punctuation, and cancellation back to the exact active pane's focus. |
 | `delayed-preview` | Holds a real decoder reply at a controlled delivery boundary, advances intent, resizes, releases the stale reply, checks newest-picture recovery, then injects a decoder failure and recovers. |

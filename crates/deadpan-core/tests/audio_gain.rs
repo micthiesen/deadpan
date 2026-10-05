@@ -555,10 +555,12 @@ fn collection_limits_reject_typed_and_wire_growth_before_parsing_extra_records()
     let error = serde_json::from_str::<GainEnvelope>(&wire.to_string()).unwrap_err();
     assert!(error.to_string().contains("gain exceeds"), "{error}");
     assert!(
-        serde_json::from_str::<AudioTreatments>(r#"{"order":["clip_gain",{}],"clip_gain":null}"#)
-            .unwrap_err()
-            .to_string()
-            .contains("gain exceeds")
+        serde_json::from_str::<AudioTreatments>(
+            r#"{"order":["clip_gain","saturation",{}],"clip_gain":null}"#
+        )
+        .unwrap_err()
+        .to_string()
+        .contains("gain exceeds")
     );
 }
 
@@ -607,5 +609,65 @@ fn record_and_owner_path_limits_are_separate_and_include_explicit_unity() {
     assert_eq!(
         AudioTreatments::default().evaluate(ratio(1, 2)).unwrap(),
         EvaluatedGain::UNITY
+    );
+}
+
+#[test]
+fn saturation_is_an_ordered_bounded_stage_with_a_closed_wire() {
+    let drive = Saturation::new(gain(12_000)).unwrap();
+    assert!(Saturation::new(gain(-1)).is_err());
+    assert!((drive.shape(1.0) - (10_f64.powf(0.6)).tanh()).abs() < 1e-12);
+    assert_eq!(drive.shape(0.0), 0.0);
+    let only = AudioTreatments::default()
+        .with_saturation(Some(drive))
+        .unwrap();
+    assert_eq!(only.order(), &[AudioTreatmentStage::Saturation]);
+    assert_eq!(only.record_count(), 1);
+    assert!(!only.is_empty());
+    let wire = serde_json::to_value(&only).unwrap();
+    assert_eq!(
+        wire,
+        json!({"order":["saturation"],"clip_gain":null,"saturation":{"drive":12000}})
+    );
+    assert_eq!(
+        serde_json::from_value::<AudioTreatments>(wire).unwrap(),
+        only
+    );
+    for bad in [
+        json!({"order":[],"clip_gain":null,"saturation":{"drive":12000}}),
+        json!({"order":["saturation","saturation"],"clip_gain":null,"saturation":{"drive":1}}),
+        json!({"order":["saturation"],"clip_gain":null}),
+        json!({"order":["saturation"],"clip_gain":null,"saturation":{"drive":12000,"x":1}}),
+        json!({"order":["saturation"],"clip_gain":null,"saturation":{"drive":-5}}),
+    ] {
+        assert!(
+            serde_json::from_value::<AudioTreatments>(bad.clone()).is_err(),
+            "{bad}"
+        );
+    }
+    // A later clip gain is placed before the stage; either order validates.
+    let clip = ClipGain::new(gain(-3_000), false, vec![], vec![]).unwrap();
+    let both = only.with_clip_gain(clip.clone()).unwrap();
+    assert_eq!(
+        both.order(),
+        &[
+            AudioTreatmentStage::ClipGain,
+            AudioTreatmentStage::Saturation
+        ]
+    );
+    assert!(
+        AudioTreatments::with_stages(
+            vec![
+                AudioTreatmentStage::Saturation,
+                AudioTreatmentStage::ClipGain
+            ],
+            Some(clip),
+            Some(drive)
+        )
+        .is_ok()
+    );
+    assert_eq!(
+        both.with_saturation(None).unwrap().order(),
+        &[AudioTreatmentStage::ClipGain]
     );
 }

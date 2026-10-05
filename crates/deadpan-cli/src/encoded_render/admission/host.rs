@@ -34,6 +34,9 @@ pub struct AdmissionRequest {
     pub cancellation_token: CancellationToken,
     pub raster: [u32; 2],
     pub frame_rate: [u32; 2],
+    /// The committed revision's output branch. HDR selects the HEVC Main10
+    /// probe fixture; SDR keeps the frozen AutomaticSdrV1 H.264 probe.
+    pub color_policy: deadpan_core::ColorPolicy,
 }
 
 /// The exact rejected probes are retained even when no usable path is found.
@@ -259,6 +262,7 @@ pub(crate) fn qualify_guarded(
                 mode: EncoderMode::Hardware,
                 b_frames: BFramePolicy::TargetTwo,
             },
+            color_policy: request.color_policy,
         };
         let native = initial
             .contract()
@@ -281,6 +285,7 @@ pub(crate) fn qualify_guarded(
                 raster: request.raster,
                 frame_rate: request.frame_rate,
                 choice,
+                color_policy: request.color_policy,
             };
             let identity = RenderIdentity {
                 request_id: request.identity.request_id.clone(),
@@ -393,6 +398,9 @@ fn admit_loaded_runtime(
     Ok(())
 }
 
+/// Frozen per-algorithm transitions, mirrored by deadpan_jobs. AutomaticHdrV1
+/// deliberately uses the AutomaticSdrV1 table; verification failures (for
+/// example software PQ declaring top-left chroma) are never fallbacks.
 fn next_choice(
     choice: EncoderChoice,
     error: &EncodedRenderError,

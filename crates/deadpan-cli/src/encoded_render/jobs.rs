@@ -15,9 +15,10 @@ use deadpan_encode::{BFramePolicy, EncoderMode};
 use deadpan_jobs::{
     AttemptId, RequestId,
     render::{
-        RenderAttemptIdentity, RenderAttemptState, RenderBFrames, RenderEncoder,
-        RenderEngineeringPolicy, RenderIntent, RenderPolicy, RenderVerificationObservation,
-        admission::RenderEncodingDecision, deserialize_render_intent_v1,
+        RenderAttemptIdentity, RenderAttemptState, RenderAutomaticAlgorithm, RenderBFrames,
+        RenderEncoder, RenderEngineeringPolicy, RenderIntent, RenderPolicy,
+        RenderVerificationObservation, admission::RenderEncodingDecision,
+        deserialize_render_intent_v1,
     },
 };
 use deadpan_store::{
@@ -158,6 +159,7 @@ pub(super) fn qualify_for_attempt(
             cancellation_token: request.attempt.cancellation_token.clone(),
             raster: contract.raster(),
             frame_rate: [rate.numerator(), rate.denominator()],
+            color_policy: contract.color_policy(),
         },
         AdmissionLimits::default(),
         cancelled,
@@ -601,6 +603,19 @@ fn validate_output(
     contract: &ExportPictureContract,
     policy: &RenderPolicy,
 ) -> Result<(), EncodedRenderError> {
+    // An automatic intent pins the algorithm of the committed color branch:
+    // AutomaticSdrV1 for SDR (including a tone-mapped HDR-basis fallback),
+    // AutomaticHdrV1 for PQ/HLG output.
+    if let Some(automatic) = policy.automatic()
+        && !automatic.algorithm.admits_output(contract.color_policy())
+    {
+        return Err(EncodedRenderError::Protocol(format!(
+            "automatic algorithm {} does not match the committed {:?} output branch (expected {})",
+            automatic.algorithm.as_str(),
+            contract.color_policy(),
+            RenderAutomaticAlgorithm::for_output(contract.color_policy()).as_str(),
+        )));
+    }
     // This checks geometry/clocks only. Automatic selection still requires a
     // fresh probe; this temporary choice is never persisted as a decision.
     let choice = policy

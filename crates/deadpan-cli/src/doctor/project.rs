@@ -91,6 +91,10 @@ pub fn report(package: &Path) -> Result<serde_json::Value, CliError> {
     }
     let file_bytes = |name: &str| std::fs::metadata(package.join(name)).map_or(0, |m| m.len());
     let basis = document.presentation_basis();
+    // The automatic SDR/HDR branch that preview and Render apply.
+    let output_color = crate::picture::committed_color(&store, &document)
+        .map(|decision| serde_json::json!(decision))
+        .unwrap_or_else(|error| serde_json::json!({ "error": error.to_string() }));
     Ok(serde_json::json!({
         "package": package,
         "revision": document.revision_id(),
@@ -118,10 +122,11 @@ pub fn report(package: &Path) -> Result<serde_json::Value, CliError> {
             "canvas": [basis.width, basis.height],
             "frame_rate": basis.frame_rate,
             "color_policy": basis.color_policy,
+            "output_color": output_color,
             "quality_tier": "full canvas; no automatic proxy or reduced preview tier is implemented",
         },
         "decoder_path": "one persistent descriptor-only FFmpeg decoder per retained Original snapshot (deadpan-source); picture, audio and export sessions each open their own",
-        "encoder_path": "automatic_sdr_v1 hardware/software admission probe at render time (see render report provenance)",
+        "encoder_path": "automatic_sdr_v1 (H.264) or automatic_hdr_v1 (HEVC Main10) hardware/software admission probe at render time, chosen by output_color (see render report provenance)",
         "storage": {
             "database_bytes": file_bytes("project.sqlite"),
             "wal_bytes": file_bytes("project.sqlite-wal"),

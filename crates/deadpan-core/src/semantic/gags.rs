@@ -44,6 +44,12 @@ pub enum GagRecipe {
         plays: NonZeroU32,
         gap: PauseLength,
         shorten: PauseLength,
+        /// Seeded irregularity of each gap (specification §8.4). The seed is
+        /// pinned with the recipe and the resolved gaps are stored as the
+        /// gap Holds' exact durations, so playback and export never draw
+        /// new randomness.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        variation: Option<GagVariation>,
     },
     /// A held picture whose room tone, taken from the Original moment in
     /// `register`, cuts to true silence while the picture keeps holding.
@@ -61,6 +67,54 @@ pub enum GagRecipe {
         pause: PauseLength,
         register: RegisterName,
     },
+}
+
+/// Seeded, bounded irregularity: each value moves by at most `percent` of
+/// itself, in a direction and amount drawn deterministically from `seed`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct GagVariation {
+    pub percent: u8,
+    pub seed: u64,
+}
+
+/// The largest variation a recipe value may receive, in percent.
+pub const MAX_GAG_VARIATION_PERCENT: u8 = 50;
+
+impl GagVariation {
+    /// Draws are in thousandths of the full ±`percent` swing.
+    const SCALE: i64 = 1_000;
+
+    /// The `index`-th draw in [-SCALE, SCALE], from SplitMix64: a fixed,
+    /// platform-independent sequence for every seed.
+    fn draw(self, index: u32) -> i64 {
+        let mut z = self
+            .seed
+            .wrapping_add(0x9E37_79B9_7F4A_7C15_u64.wrapping_mul(u64::from(index) + 1));
+        z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+        z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+        z ^= z >> 31;
+        (z % (2 * Self::SCALE as u64 + 1)) as i64 - Self::SCALE
+    }
+
+    /// `value` moved by its `index`-th draw, rounded half away from zero to
+    /// a whole unit and kept positive.
+    pub fn vary(self, value: u32, index: u32) -> u32 {
+        let swing = i64::from(value) * i64::from(self.percent) * self.draw(index);
+        let denominator = 100 * Self::SCALE;
+        let offset = (swing + denominator / 2 * swing.signum()) / denominator;
+        u32::try_from((i64::from(value) + offset).max(1)).unwrap_or(u32::MAX)
+    }
+
+    fn validate(self) -> Result<(), EditError> {
+        if self.percent == 0 || self.percent > MAX_GAG_VARIATION_PERCENT {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "variation is 1 to 50 percent",
+            ));
+        }
+        Ok(())
+    }
 }
 
 /// The only version of each recipe so far.
@@ -100,11 +154,16 @@ impl GagRecipe {
                 plays,
                 gap,
                 shorten,
+                variation,
                 ..
             } => format!(
-                "{plays} plays, gap {} shortening by {}",
+                "{plays} plays, gap {} shortening by {}{}",
                 length(*gap),
-                length(*shorten)
+                length(*shorten),
+                variation.map_or(String::new(), |variation| format!(
+                    ", varied ±{}% (seed {})",
+                    variation.percent, variation.seed
+                ))
             ),
             Self::NothingHappens {
                 tone,
@@ -154,7 +213,11 @@ impl GagRecipe {
         plays: NonZeroU32,
         gap: PauseLength,
         shorten: PauseLength,
+        variation: Option<GagVariation>,
     ) -> Result<Vec<PauseLength>, EditError> {
+        if let Some(variation) = variation {
+            variation.validate()?;
+        }
         let invalid = |message: &str| EditError::new(EditErrorCode::InvalidCommand, message);
         if plays.get() < 2 {
             return Err(invalid("One More Time needs at least two plays"));
@@ -185,6 +248,13 @@ impl GagRecipe {
                 u32::try_from(u64::from(first).saturating_sub(value))
                     .ok()
                     .and_then(NonZeroU32::new)
+                    .and_then(|value| {
+                        NonZeroU32::new(
+                            variation.map_or(value.get(), |variation| {
+                                variation.vary(value.get(), index)
+                            }),
+                        )
+                    })
                     .map(|value| {
                         if frames {
                             PauseLength::Frames { frames: value }
@@ -270,6 +340,7 @@ impl GagRecipe {
                 plays,
                 gap,
                 shorten,
+                variation,
                 ..
             } => vec![
                 SemanticInstruction::Repeat {
@@ -279,7 +350,7 @@ impl GagRecipe {
                 },
                 SemanticInstruction::SetRepeat {
                     plays: None,
-                    gaps: Some(Self::gaps(*plays, *gap, *shorten)?),
+                    gaps: Some(Self::gaps(*plays, *gap, *shorten, *variation)?),
                     escalation: None,
                 },
             ],
@@ -400,5 +471,79 @@ mod tests {
         );
         let wire = serde_json::to_string(&recipe).unwrap();
         assert_eq!(serde_json::from_str::<GagRecipe>(&wire).unwrap(), recipe);
+    }
+
+    #[test]
+    fn seeded_variation_resolves_fixed_bounded_gaps_and_pins_its_seed() {
+        let millis = |value| PauseLength::Milliseconds {
+            milliseconds: NonZeroU32::new(value).unwrap(),
+        };
+        let recipe = |variation| GagRecipe::OneMoreTime {
+            version: 1,
+            plays: NonZeroU32::new(5).unwrap(),
+            gap: millis(1000),
+            shorten: millis(100),
+            variation,
+        };
+        let gaps = |recipe: GagRecipe| -> Vec<u32> {
+            let rate = crate::FrameRate::new(30, 1).unwrap();
+            match &recipe.expand(false, rate).unwrap()[1] {
+                SemanticInstruction::SetRepeat {
+                    gaps: Some(gaps), ..
+                } => gaps
+                    .iter()
+                    .map(|gap| match gap {
+                        PauseLength::Milliseconds { milliseconds } => milliseconds.get(),
+                        PauseLength::Frames { .. } => unreachable!(),
+                    })
+                    .collect(),
+                other => panic!("{other:?}"),
+            }
+        };
+        let plain = gaps(recipe(None));
+        assert_eq!(plain, vec![1000, 900, 800, 700]);
+        let seeded = Some(GagVariation {
+            percent: 20,
+            seed: 7,
+        });
+        let varied = gaps(recipe(seeded));
+        // The same seed always resolves the same gaps; another seed differs.
+        assert_eq!(gaps(recipe(seeded)), varied);
+        assert_ne!(
+            gaps(recipe(Some(GagVariation {
+                percent: 20,
+                seed: 8
+            }))),
+            varied
+        );
+        assert_ne!(varied, plain);
+        for (varied, plain) in varied.iter().zip(&plain) {
+            assert!(varied.abs_diff(*plain) <= plain / 5, "{varied} vs {plain}");
+        }
+        assert!(
+            recipe(seeded).label().ends_with("varied ±20% (seed 7)"),
+            "{}",
+            recipe(seeded).label()
+        );
+        let wire = serde_json::to_value(recipe(seeded)).unwrap();
+        assert_eq!(
+            wire["variation"],
+            serde_json::json!({"percent":20,"seed":7})
+        );
+        assert!(
+            serde_json::to_value(recipe(None))
+                .unwrap()
+                .get("variation")
+                .is_none()
+        );
+        let rate = crate::FrameRate::new(30, 1).unwrap();
+        assert!(
+            recipe(Some(GagVariation {
+                percent: 51,
+                seed: 1
+            }))
+            .expand(false, rate)
+            .is_err()
+        );
     }
 }

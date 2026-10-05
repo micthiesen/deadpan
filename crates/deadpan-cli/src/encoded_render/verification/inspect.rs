@@ -4,14 +4,22 @@ use std::{
     time::{Duration, Instant},
 };
 
+use deadpan_encode::{EncodeContract, HdrTransfer};
 use deadpan_source::{
     DecodeControl, DecodeLimits, Mp4Inspection, Mp4PacketReader, Mp4TrackInspection, Mp4TrackKind,
 };
 
-use super::{VerificationLimits, VerificationProgress, VerificationReport, VerificationStage};
+use super::{
+    ContentLightEvidence, VerificationLimits, VerificationProgress, VerificationReport,
+    VerificationStage,
+};
 use crate::{encoded_render::protocol::EncodedManifest, render_worker::worker::check_control};
 
 mod audio;
+#[cfg(all(test, target_os = "macos"))]
+mod hdr_tests;
+mod light;
+pub(super) use light::DecodedLight;
 mod pictures;
 
 type Result<T> = std::result::Result<T, String>;
@@ -52,11 +60,17 @@ pub(crate) fn inspect(
     limits.validate()?;
     manifest.validate()?;
     let native = manifest.contract.native_contract()?;
-    // Progressive H.264 stores complete 16x16 macroblocks before applying its
-    // visible crop. Visible dimensions are still checked against the contract.
-    let pixels = u64::from(native.raster()[0]).div_ceil(16)
-        * 16
-        * (u64::from(native.raster()[1]).div_ceil(16) * 16);
+    // Progressive H.264 stores complete 16x16 macroblocks and HEVC complete
+    // coding tree blocks (at most 64x64) before applying the visible crop.
+    // Visible dimensions are still checked against the contract.
+    let block = if native.video_format().is_hdr() {
+        64
+    } else {
+        16
+    };
+    let pixels = u64::from(native.raster()[0]).div_ceil(block)
+        * block
+        * (u64::from(native.raster()[1]).div_ceil(block) * block);
     let context = Context {
         file,
         manifest,
@@ -75,9 +89,20 @@ pub(crate) fn inspect(
         .map_err(|e| e.to_string())?;
     let movie = packets.inspection().clone();
     let (video, sound) = container(&movie, manifest)?;
-    let keys = packet_scan(&context, &mut packets, video, sound, &mut progress)?;
+    let (keys, reorder_delay) = packet_scan(&context, &mut packets, video, sound, &mut progress)?;
     drop(packets);
-    let video_result = pictures::inspect(&context, video, &keys, &mut progress)?;
+    let video_result = pictures::inspect(
+        &context,
+        video,
+        &keys,
+        native.video_format().is_hdr().then_some(reorder_delay),
+        &mut progress,
+    )?;
+    let content_light = match (video.content_light, video_result.light) {
+        (Some(declared), Some(decoded)) => Some(ContentLightEvidence::new(declared, decoded)?),
+        (None, None) => None,
+        _ => return Err("content light declaration and decoded measurement disagree".into()),
+    };
     let manual = audio::inspect(
         &context,
         sound,
@@ -117,6 +142,7 @@ pub(crate) fn inspect(
         manual_physical_samples: manual.physical_samples,
         ordinary_first_sample: ordinary.first_sample,
         ordinary_physical_samples: ordinary.physical_samples,
+        content_light,
     };
     report.validate(limits)?;
     Ok(report)
@@ -193,14 +219,7 @@ fn container<'a>(
             && video.media_duration == Some(video_ticks)
             && video.timing_duration == video_ticks
             && u64::from(video.sample_count) == native.video_frames()
-            && video.avc.is_some_and(|avc| avc.profile == 100)
-            && video.color.is_some_and(|color| {
-                color.primaries == 1
-                    && color.transfer == 1
-                    && color.matrix == 1
-                    && !color.full_range
-                    && color.range_byte == 0
-            })
+            && sample_description(video, &native)?
             && video
                 .pixel_aspect_ratio
                 .is_none_or(|ratio| ratio[0] == ratio[1]),
@@ -227,13 +246,63 @@ fn container<'a>(
     Ok((video, sound))
 }
 
+/// Codec configuration, `colr` and static HDR boxes for the contract format.
+/// SDR is H.264 High `avc1` with limited Rec.709 and no HDR boxes. HDR is
+/// HEVC Main10 `hvc1` (4:2:0, 10-bit) with limited BT.2020 NCL and the PQ or
+/// HLG transfer. PQ carries exactly the contract `mdcv` (or none) and a
+/// `clli`; HLG carries neither box.
+fn sample_description(video: &Mp4TrackInspection, native: &EncodeContract) -> Result<bool> {
+    let colr = |transfer: u16, primaries_matrix: u16| {
+        video.color.is_some_and(|color| {
+            color.primaries == primaries_matrix
+                && color.transfer == transfer
+                && color.matrix == primaries_matrix
+                && !color.full_range
+                && color.range_byte == 0
+        })
+    };
+    let Some(hdr) = native.hdr() else {
+        return Ok(video.avc.is_some_and(|avc| avc.profile == 100)
+            && video.hevc.is_none()
+            && video.mastering.is_none()
+            && video.content_light.is_none()
+            && colr(1, 1));
+    };
+    let main10 = video.avc.is_none()
+        && video.hevc.is_some_and(|hevc| {
+            hevc.profile_space == 0
+                && hevc.profile_idc == 2
+                && hevc.chroma_format_idc == 1
+                && hevc.bit_depth_luma == 10
+                && hevc.bit_depth_chroma == 10
+        });
+    let mastering = video
+        .mastering
+        .map(|m| (m.primaries, m.white_point, m.max_luminance, m.min_luminance))
+        == hdr
+            .signal
+            .mastering
+            .map(|m| (m.primaries, m.white_point, m.max_luminance, m.min_luminance));
+    Ok(main10
+        && mastering
+        && match hdr.signal.transfer {
+            HdrTransfer::Pq => {
+                colr(16, 9)
+                    && video.content_light.is_some_and(|light| {
+                        light.max_fall <= light.max_cll && light.max_cll <= 10_000
+                    })
+            }
+            HdrTransfer::Hlg => colr(18, 9) && video.content_light.is_none(),
+        })
+}
+
 fn packet_scan(
     context: &Context<'_>,
     reader: &mut Mp4PacketReader,
     video: &Mp4TrackInspection,
     sound: &Mp4TrackInspection,
     progress: &mut impl FnMut(VerificationProgress) -> Result<()>,
-) -> Result<Vec<bool>> {
+) -> Result<(Vec<bool>, u32)> {
     let native = context.manifest.contract.native_contract()?;
     let frames = usize::try_from(native.video_frames())
         .map_err(|_| "picture count exceeds address space")?;
@@ -247,6 +316,9 @@ fn packet_scan(
     let total = u64::from(video.sample_count) + u64::from(sound.sample_count);
     let mut counts = [0_u64; 2];
     let mut completed = 0_u64;
+    // Largest decode-order index minus presentation index: the number of
+    // frames a picture waits for reordering. pts >= dts bounds it by the edit.
+    let mut reorder_delay = 0_u64;
     while let Some(packet) = reader
         .next_packet(context.control()?)
         .map_err(|e| e.to_string())?
@@ -274,18 +346,47 @@ fn packet_scan(
                 "duplicate or out-of-range video presentation timestamp",
             )?;
             seen[index] = true;
-            let h264 = packet
-                .h264
-                .ok_or("video packet lacks admitted AVC observations")?;
-            require(
-                h264.idr_nal_count + h264.non_idr_vcl_nal_count > 0
-                    && if packet.table_sync {
-                        h264.idr_nal_count > 0 && h264.non_idr_vcl_nal_count == 0
-                    } else {
-                        h264.idr_nal_count == 0
-                    },
-                "sync table differs from actual IDR picture NALs",
-            )?;
+            reorder_delay = reorder_delay
+                .max(counts[0].saturating_sub(u64::try_from(index).map_err(|_| "index overflow")?));
+            if native.video_format().is_hdr() {
+                let hevc = packet
+                    .hevc
+                    .filter(|_| packet.h264.is_none())
+                    .ok_or("video packet lacks admitted HEVC observations")?;
+                // The encoder strips VideoToolbox's Dolby Vision RPUs (type
+                // 62); an unspecified 62/63 NAL must never reach a verified file.
+                require(
+                    hevc.nal_types & (3_u64 << 62) == 0,
+                    "HEVC packet carries Dolby Vision or unspecified NAL type 62/63",
+                )?;
+                // Sync samples are IDR-only access units, so a fresh decoder
+                // has no leading pictures to skip; other samples carry no IRAP.
+                require(
+                    hevc.irap_nal_count + hevc.non_irap_vcl_nal_count > 0
+                        && if packet.table_sync {
+                            hevc.idr_nal_count > 0
+                                && hevc.irap_nal_count == hevc.idr_nal_count
+                                && hevc.non_irap_vcl_nal_count == 0
+                        } else {
+                            hevc.irap_nal_count == 0
+                        },
+                    "sync table differs from actual HEVC IDR picture NALs",
+                )?;
+            } else {
+                let h264 = packet
+                    .h264
+                    .filter(|_| packet.hevc.is_none())
+                    .ok_or("video packet lacks admitted AVC observations")?;
+                require(
+                    h264.idr_nal_count + h264.non_idr_vcl_nal_count > 0
+                        && if packet.table_sync {
+                            h264.idr_nal_count > 0 && h264.non_idr_vcl_nal_count == 0
+                        } else {
+                            h264.idr_nal_count == 0
+                        },
+                    "sync table differs from actual IDR picture NALs",
+                )?;
+            }
             keys[index] = packet.table_sync;
             counts[0] += 1;
         } else if packet.track_index == sound.index {
@@ -298,7 +399,8 @@ fn packet_scan(
                     && timing.dts == timing.pts
                     && remaining > 0
                     && i128::from(packet.duration) == remaining.min(1024)
-                    && packet.h264.is_none(),
+                    && packet.h264.is_none()
+                    && packet.hevc.is_none(),
                 "AAC packet clock or exact final duration differs",
             )?;
             counts[1] += 1;
@@ -324,5 +426,6 @@ fn packet_scan(
             && keys.first() == Some(&true),
         "incomplete packet presentation inventory or opening IDR",
     )?;
-    Ok(keys)
+    let reorder_delay = u32::try_from(reorder_delay).map_err(|_| "reorder delay overflow")?;
+    Ok((keys, reorder_delay))
 }

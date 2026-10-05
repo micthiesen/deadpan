@@ -77,7 +77,7 @@ retains each stream's index, codec, original time base and available probe-level
 start, duration, sample-rate and channel-count observations. It does not decode
 audio, establish exact sample bounds or claim an audio stream is ready for use.
 `AVDISCARD_ALL` alone is not a decode barrier during FFmpeg probing. The format
-codec allowlist contains only `h264,ffv1`; pinned FFmpeg propagates that allowlist
+codec allowlist contains only `h264,ffv1,hevc`; pinned FFmpeg propagates that allowlist
 to probe decoder initialization and rejects AAC before opening its decoder.
 Audio-bearing fixtures therefore emit expected AAC-not-on-whitelist diagnostics.
 The measured fixtures are H.264 in MP4 and FFV1 in Matroska; this is not
@@ -85,7 +85,11 @@ qualification of every profile/container combination. Other video codecs require
 further fixtures and explicit admission. No audio decode or VideoToolbox
 acceleration is implemented here.
 
-The boundary admits progressive eight-bit three-component SDR input with explicit
+The single HDR interpretation (PQ/HLG, BT.2020, ten-bit 4:2:0 HEVC Main10 or
+H.264 High10 in MP4, with optional exact static metadata) and the sixteen-bit
+`next_rgba16` and ten-bit `next_yuv420p10` outputs are described in
+[source admission](../../docs/SOURCE_ADMISSION.md#hdr-sources) and tested by
+`tests/hdr_decode.rs`. Otherwise the boundary admits progressive eight-bit three-component SDR input with explicit
 range, matrix, transfer and primaries. RGB must be full-range GBR; YUV supports
 BT.709, BT.601 and BT.2020 nonconstant matrices. Supported transfers are BT.709,
 sRGB and linear, with BT.709/BT.2020/P3-D65 primaries retained for the shared

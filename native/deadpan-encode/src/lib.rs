@@ -134,6 +134,35 @@ pub struct EncoderInfo {
     pub maximum_moov_bytes: u64,
 }
 
+/// Selected video encoder and declared stream properties, queried from the
+/// native codec context and output stream. Separate from `EncoderInfo` so the
+/// frozen SDR info/report serialization is unchanged. Integer color fields are
+/// libavutil enum values. `mastering_display`/`content_light` record that the
+/// static metadata was attached to the stream for the MP4 `mdcv`/`clli` boxes.
+/// None of this is emitted-bitstream or finished-file evidence.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct VideoCodecInfo {
+    pub format: VideoFormat,
+    pub encoder: String,
+    pub profile: i32,
+    pub profile_name: String,
+    pub pix_fmt: String,
+    pub color_primaries: i32,
+    pub color_trc: i32,
+    pub colorspace: i32,
+    pub color_range: i32,
+    pub chroma_location: i32,
+    /// MP4 sample-entry tag after the muxer header (`avc1` or `hvc1`).
+    pub codec_tag: String,
+    pub mastering_display: bool,
+    pub content_light: bool,
+    /// HEVC NAL units of unspecified types 62/63 (VideoToolbox's Dolby
+    /// Vision 8.4 RPUs on HLG) removed before muxing; zero for H.264.
+    #[serde(default)]
+    pub removed_unspecified_nal_units: u64,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct EncodeReport {
@@ -156,11 +185,15 @@ pub struct EncodeReport {
 pub struct EncodedOutput {
     file: File,
     report: EncodeReport,
+    video: VideoCodecInfo,
 }
 
 impl EncodedOutput {
     pub fn report(&self) -> &EncodeReport {
         &self.report
+    }
+    pub fn video_codec(&self) -> &VideoCodecInfo {
+        &self.video
     }
     /// The descriptor is rewound; the caller still owns verification and publication.
     pub fn into_parts(self) -> (File, EncodeReport) {
@@ -210,6 +243,7 @@ pub struct EncoderSession<'a> {
     contract: EncodeContract,
     limits: EncodeLimits,
     info: EncoderInfo,
+    video: VideoCodecInfo,
     progress: progress::Progress,
     control: Control<'a>,
 }
@@ -229,12 +263,14 @@ impl<'a> EncoderSession<'a> {
         };
         control.remaining_millis()?;
         let (inner, info) = ffi::Encoder::open(output, &contract, limits, &control)?;
+        let video = inner.video_codec(&contract, false)?;
         control.check()?;
         Ok(Self {
             inner,
             contract,
             limits,
             info,
+            video,
             progress: progress::Progress::default(),
             control,
         })
@@ -245,6 +281,9 @@ impl<'a> EncoderSession<'a> {
     }
     pub fn info(&self) -> &EncoderInfo {
         &self.info
+    }
+    pub fn video_codec(&self) -> &VideoCodecInfo {
+        &self.video
     }
     pub const fn accepted_pictures(&self) -> u64 {
         self.progress.pictures
@@ -265,6 +304,8 @@ impl<'a> EncoderSession<'a> {
     }
 
     /// Consume exactly one tight limited-range Y/Cb/Cr frame at its output PTS.
+    /// SDR: 8-bit I420 (Y 16..=235, C 16..=240), `w*h*3/2` bytes. HDR: planar
+    /// 10-bit little-endian u16 samples (Y 64..=940, C 64..=960), `w*h*3` bytes.
     pub fn push_picture(
         &mut self,
         ordinal: u64,
@@ -300,14 +341,42 @@ impl<'a> EncoderSession<'a> {
             })
     }
 
-    pub fn finish(mut self) -> Result<EncodedOutput, EncodeError> {
+    /// Finish an SDR or HLG session. A PQ session must use `finish_with_light`.
+    pub fn finish(self) -> Result<EncodedOutput, EncodeError> {
+        self.finish_with_light(None)
+    }
+
+    /// Finish with CTA-861.3 content light levels computed by the host over
+    /// every emitted picture. PQ requires `Some`; SDR and HLG require `None`.
+    /// A rejected argument poisons the session like every other failure.
+    pub fn finish_with_light(
+        mut self,
+        light: Option<ContentLight>,
+    ) -> Result<EncodedOutput, EncodeError> {
         let inner = &mut self.inner;
         let control = &self.control;
-        let report = self.progress.finish(&self.contract, || {
+        let contract = &self.contract;
+        let limits = self.limits;
+        let (report, video) = self.progress.finish(contract, || {
+            let pq = contract.video_format() == VideoFormat::HevcMain10Rec2100Pq;
+            match light {
+                Some(_) if !pq => {
+                    return Err(EncodeError::Configuration(
+                        "content light is admitted only for PQ output",
+                    ));
+                }
+                None if pq => {
+                    return Err(EncodeError::Configuration(
+                        "PQ output requires host-computed content light",
+                    ));
+                }
+                Some(light) => light.validate()?,
+                None => {}
+            }
             control.check()?;
-            let report = inner.finish(&self.contract, self.limits, control)?;
+            let result = inner.finish(contract, limits, light, control)?;
             control.check()?;
-            Ok(report)
+            Ok(result)
         })?;
         let mut file = self.inner.into_file();
         self.control.check()?;
@@ -319,7 +388,11 @@ impl<'a> EncoderSession<'a> {
         }
         file.seek(SeekFrom::Start(0))?;
         self.control.check()?;
-        Ok(EncodedOutput { file, report })
+        Ok(EncodedOutput {
+            file,
+            report,
+            video,
+        })
     }
 }
 

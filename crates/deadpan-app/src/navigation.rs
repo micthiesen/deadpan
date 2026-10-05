@@ -62,6 +62,9 @@ pub enum BeatEdit {
     Delete,
     HoldDuration(deadpan_core::FrameDuration),
     Retime(retime::RetimeInput),
+    /// `:pitch +3st`: shift the selected beat's pitch by whole semitones at
+    /// its current speed, with pitch-preserving processing (0 removes it).
+    Pitch(i8),
     /// `:audio-lag +80ms`: the selected Source's sound plays this much later
     /// (or earlier) than its picture, as an explicit link offset.
     AudioLag {
@@ -168,6 +171,19 @@ pub enum Action {
     Reverse {
         length: duration::DurationInput,
         bounce: bool,
+    },
+    /// `:repeat N role=audio|video [overflow=trim]`: repeat one role of the
+    /// Visual range over its beat without inserting time.
+    RoleRepeat {
+        role: deadpan_core::MediaRole,
+        plays: std::num::NonZeroU32,
+        trim: bool,
+    },
+    /// `:jcut D` / `:lcut D`: move the sound's cut at the cursor's seam
+    /// earlier or later by `D` while the picture still cuts at the cursor.
+    SplitEdit {
+        kind: deadpan_core::SplitEditKind,
+        length: duration::DurationInput,
     },
     /// `:tail [D] [effect=…]`: a hanging effect tail on the selected pause,
     /// or a new tail pause at the cursor.

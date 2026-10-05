@@ -130,13 +130,46 @@ conceal a preparation error. Gain precedes the shared limiter and its halo/cache
 calculations. Muted dependencies still need source admission, including cache
 hits; gain mute does not grant silence/tail policy.
 
+## Saturation
+
+`AudioTreatmentStage` admits two stages, `ClipGain` and `Saturation`, and a
+recipe serializes their order: each present stage is listed exactly once and
+no absent stage is listed (`MAX_AUDIO_TREATMENT_STAGES` is 2). `Saturation {
+drive }` holds an exact `GainDb` drive from 0 through 24 dB. Its transfer is
+the memoryless soft clipper `tanh(drive · x)`: small signals gain the drive,
+peaks approach ±1, digital silence stays exact silence, and because it keeps no
+state it evaluates identically at any read or tile boundary in preview and
+export. A new stage is appended after clip gain (specification §10.2 order);
+a recipe authored with `Saturation` first trims after the clipper.
+
+Owners are evaluated innermost first. Between nonlinear stages, gain factors
+(trim, envelopes and Repeat escalation, which enters before the owner's own
+stages) still add exactly in Q32 millidecibels; each saturation closes the gain
+accumulated before it. Without a saturation stage the chain is the previous
+single exact gain sum, bit for bit. Saturation applies to each voice (the
+Original, a placed sound, a beat sound) through its owners before mixing and the
+shared limiter, not to a summed group bus. Mute still yields exact silence.
+
+`:saturate 12dB` and `:saturate off` change the captured beat as one semantic
+`SetAudio { change: saturation }` instruction (recorded in macros and repeated
+by `.`); a single Repeat play is edited directly. While recording, `+`/`-`,
+`:gain N` and `:gain +=N` record `SetAudio` trim and step changes. The
+inspector lists the drive and its order; the gain section names it. Evidence:
+`saturation_is_an_ordered_bounded_stage_with_a_closed_wire`,
+`saturation_shapes_each_owner_output_inner_first_in_its_serialized_order` (real
+decoded PCM against an independent oracle in both orders), the
+`audio-treatments` replay and the `saturation` preview/export fixture. Oversampled
+shaping remains open: at high drive the memoryless clipper aliases.
+
 ## Native editor and qualification
 
 The [native integration design](GAIN_EDITOR_DESIGN.md) records captured command
 targets, service-issued proposals, source admission and same-window audition.
 Normal `+`/`-` adjusts the selected beat by counted 3 dB steps, with Placed sounds
 retaining event precedence. Original and catalog Sound focus cannot change a
-retained beat. `:gain -3.125` sets absolute trim; `:gain-mute` toggles true mute;
+retained beat. `:gain -3.125` (or `:gain +6dB`; the unit is optional) sets
+absolute trim and `:gain +=3dB` / `-=3dB` change it relative to the current
+trim; `:gain-mute` toggles true mute;
 `:gain` or the inspector opens the complete existing recipe without changing it.
 Command entry captures a result, including an absent target, before typing begins.
 

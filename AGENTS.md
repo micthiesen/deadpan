@@ -266,8 +266,25 @@ before filtering into linear Rec.2020 `Rgba16Float`; preserve negative working
 values until the explicit SDR display transform. Its encoded `Rgba8Unorm`
 display texture is registered with egui without a second implicit sRGB decode.
 Keep the registered target alive, release registrations on resize/shutdown,
-and admit one picture submission at a time. This does not qualify HDR, physical
+and admit one picture submission at a time. This does not qualify physical
 display color, editorial effects, playback or an encoded export path.
+
+[Automatic HDR output](docs/HDR_OUTPUT.md): working 1.0 is 203 cd/m² (BT.2408
+reference white) for SDR, captions and HDR alike. PQ decodes to absolute light
+/ 203; HLG applies the 1,000 cd/m² γ 1.2 OOTF. HDR Originals are only HEVC
+Main10 `hvc1` or H.264 High10, 10-bit 4:2:0 limited BT.2020 NCL with PQ/HLG;
+decode them to RGBA64 (`sample_bits` 16), never to 8-bit, for pictures. One
+`decide_output_color` per committed revision chooses the branch from receipts:
+HDR only when every registered/picture source shares the basis transfer and no
+still, accepted or generated footage exists; otherwise SDR with each HDR source
+tone-mapped (BT.2408-style shoulder above a 0.9 knee: 203 cd/m² white lands at
+0.95, the declared peak at 1.0). Preview and export both apply its
+`ColorPipeline`; SDR-only output stays bit-identical. An SDR basis never yields
+HDR. HDR encodes HEVC Main10 P010 with tags on context and every frame; PQ
+writes the single consistent source `mdcv` and a `clli` measured from the coded
+pictures, never copied; HLG writes neither. Preview is a labelled tone-mapped
+SDR simulation; EDR presentation remains open. The store re-derives the branch
+and mastering volume from receipts before admitting a render decision.
 
 The [SDR encoder pixel boundary](docs/SDR_ENCODER_PIXELS.md) reads the composed
 linear Rec.2020 working target, never the already encoded display texture.
@@ -1948,6 +1965,16 @@ sizes without a pointer scroll. Reselecting the active comparison preserves its
 generation and heard position. Cancellation preserves the accepted picture and restores
 entry context only in the same session and revision. See
 [gain contracts](docs/AUDIO_GAIN.md).
+
+Audio treatments serialize their stage order (`ClipGain`, `Saturation`; each
+present stage exactly once). Evaluate owners innermost first: gains between
+nonlinear stages add exactly in Q32 and each saturation closes the gain before
+it; without saturation the chain remains one exact sum. Decide pitch-preserving
+processing only with `PitchPolicy::processes(unity_rate)`: a nonzero `Shift`
+processes even at unity speed, so never test `== Preserve && scale != 1`.
+J/L-cuts are one Roll plus a cutaway whose span comes from the pre-Roll affine
+picture map; `Cutaway.removed` is a video-only delete that shows the background
+and records the removed pictures. See [role edits](docs/ROLE_EDITS.md).
 
 Measured gain waveforms belong to the captured committed beat before effects,
 independently of Before/Draft mix audition. Keep signed stereo extrema, exact

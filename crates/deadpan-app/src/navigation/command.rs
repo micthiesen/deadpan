@@ -32,7 +32,12 @@ pub enum Entry {
     RoomTone,
     HoldSilence,
     Gain(Option<deadpan_core::GainDb>),
+    /// `:gain +=3dB` / `:gain -=3dB`: change the trim by a signed amount.
+    GainStep(i32),
     GainMute,
+    /// `:saturate 12dB` sets the selected beat's drive; `:saturate off`
+    /// removes the stage.
+    Saturate(Option<deadpan_core::Saturation>),
     Scope(ScopeChoice),
     /// Tenths of one percent, independent of authored or export gain.
     Monitor(u16),
@@ -52,6 +57,21 @@ pub enum Entry {
     TrackCancel,
     /// `:zoom` and `:creep`: authored framing on the selected beat.
     Zoom(super::zoom::ZoomInput),
+    /// `:gag-inspect NAME [parameters]`: list a recipe's expansion without
+    /// applying it.
+    GagInspect(super::gag::GagInput),
+    /// `:select role=audio|video|linked`: the media role the next Visual
+    /// delete acts on.
+    SelectRole(deadpan_core::MediaRole),
+    /// `:delete role=audio|video`: delete one role over the Visual range.
+    DeleteRole(deadpan_core::MediaRole),
+    /// `:recipe-save a`: keep the selected group, with its parts and
+    /// attachments, as local recipe a in this project.
+    RecipeSave(char),
+    /// `:recipe a`: insert a copy of local recipe a at the cursor.
+    Recipe(char),
+    /// `:recipe-inspect a`: list what local recipe a inserts.
+    RecipeInspect(char),
     /// `:caption`: a line of text over the selected beat or Edit range.
     Caption(super::caption::CaptionInput),
     Empty,
@@ -172,6 +192,13 @@ pub fn parse(input: &str) -> Result<Entry, String> {
     if verb == "trim" {
         return super::trim::parse(words).map(Entry::Trim);
     }
+    if verb == "roll" {
+        return super::trim::parse_roll(words).map(Entry::Trim);
+    }
+    if verb == "pitch" {
+        return super::retime::parse_pitch(words)
+            .map(|semitones| Entry::Action(Action::Edit(BeatEdit::Pitch(semitones))));
+    }
     if verb == "retime" || verb == "wrap-retime" {
         return super::retime::parse(words, verb == "wrap-retime")
             .map(|input| Entry::Action(Action::Edit(BeatEdit::Retime(input))));
@@ -213,6 +240,10 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         let arguments: Vec<&str> = words.collect();
         return super::gag::parse(&arguments).map(|input| Entry::Action(Action::Gag(input)));
     }
+    if verb == "gag-inspect" {
+        let arguments: Vec<&str> = words.collect();
+        return super::gag::parse(&arguments).map(Entry::GagInspect);
+    }
     if verb == "cutaway" {
         let arguments: Vec<&str> = words.collect();
         return super::cutaway::parse(&arguments)
@@ -226,6 +257,16 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         let bounce = verb == "ping-pong";
         return super::hold_effects::parse_reverse(&arguments, bounce)
             .map(|length| Entry::Action(Action::Reverse { length, bounce }));
+    }
+    if verb == "jcut" || verb == "lcut" {
+        let arguments: Vec<&str> = words.collect();
+        let kind = if verb == "jcut" {
+            deadpan_core::SplitEditKind::J
+        } else {
+            deadpan_core::SplitEditKind::L
+        };
+        return super::hold_effects::parse_split(&arguments)
+            .map(|length| Entry::Action(Action::SplitEdit { kind, length }));
     }
     if verb == "bleep" {
         let arguments: Vec<&str> = words.collect();
@@ -243,6 +284,9 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         return super::hold_effects::parse_tail(&arguments)
             .map(|(length, effect)| Entry::Action(Action::Tail { length, effect }));
     }
+    if verb == "repeat" && words.clone().any(|word| word.starts_with("role=")) {
+        return role_repeat(words);
+    }
     if verb == "repeat" {
         let arguments: Vec<&str> = words.clone().collect();
         if let Some(input) = super::escalation::parse(&arguments)? {
@@ -252,6 +296,28 @@ pub fn parse(input: &str) -> Result<Entry, String> {
     let argument = words.next();
     if words.next().is_some() {
         return Err("Extra arguments are not supported by this command.".into());
+    }
+    if let Some(role) = argument.and_then(|argument| argument.strip_prefix("role="))
+        && (verb == "select" || verb == "delete")
+    {
+        let role = match role {
+            "audio" => deadpan_core::MediaRole::Audio,
+            "video" => deadpan_core::MediaRole::Video,
+            "linked" if verb == "select" => deadpan_core::MediaRole::Linked,
+            _ => {
+                return Err(if verb == "select" {
+                    "Use :select role=audio, role=video or role=linked."
+                } else {
+                    "Use :delete role=audio or :delete role=video over a Visual range; plain :delete removes linked time."
+                }
+                .into());
+            }
+        };
+        return Ok(if verb == "select" {
+            Entry::SelectRole(role)
+        } else {
+            Entry::DeleteRole(role)
+        });
     }
     let action = match verb.as_str() {
         "register" => {
@@ -264,6 +330,17 @@ pub fn parse(input: &str) -> Result<Entry, String> {
             return Ok(Entry::Action(Action::SelectRegister(
                 char::from(name.as_bytes()[0]).to_ascii_lowercase(),
             )));
+        }
+        "recipe-save" | "recipe" | "recipe-inspect" => {
+            let name = argument
+                .filter(|value| value.len() == 1 && value.as_bytes()[0].is_ascii_alphabetic())
+                .ok_or("Use :recipe-save a, :recipe a or :recipe-inspect a with one register letter a–z.")?;
+            let name = char::from(name.as_bytes()[0]).to_ascii_lowercase();
+            return Ok(match verb.as_str() {
+                "recipe-save" => Entry::RecipeSave(name),
+                "recipe" => Entry::Recipe(name),
+                _ => Entry::RecipeInspect(name),
+            });
         }
         "framing-save" => {
             let name = argument
@@ -305,10 +382,29 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         "jump-back" => Action::JumpHistory { forward: false },
         "jump-forward" => Action::JumpHistory { forward: true },
         "gain" => {
-            return argument
-                .map(crate::gain::parse_db)
-                .transpose()
-                .map(Entry::Gain);
+            let Some(argument) = argument else {
+                return Ok(Entry::Gain(None));
+            };
+            if let Some((negative, amount)) = argument
+                .strip_prefix("+=")
+                .map(|amount| (false, amount))
+                .or_else(|| argument.strip_prefix("-=").map(|amount| (true, amount)))
+            {
+                let step = crate::gain::parse_db(strip_db(amount))?.millidecibels();
+                return Ok(Entry::GainStep(if negative { -step } else { step }));
+            }
+            return crate::gain::parse_db(strip_db(argument)).map(|value| Entry::Gain(Some(value)));
+        }
+        "saturate" => {
+            const USAGE: &str = "Use :saturate 12dB to drive the selected beat into a soft clipper (0 to 24 dB), or :saturate off to remove it.";
+            let argument = argument.ok_or(USAGE)?;
+            if argument.eq_ignore_ascii_case("off") {
+                return Ok(Entry::Saturate(None));
+            }
+            let drive = crate::gain::parse_db(strip_db(argument)).map_err(|_| USAGE.to_owned())?;
+            return deadpan_core::Saturation::new(drive)
+                .map(|stage| Entry::Saturate(Some(stage)))
+                .map_err(|_| USAGE.to_owned());
         }
         "gain-mute" if argument.is_none() => return Ok(Entry::GainMute),
         "monitor" => return monitor(argument).map(Entry::Monitor),
@@ -415,6 +511,56 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         return Err("This command takes no arguments.".into());
     }
     Ok(Entry::Action(action))
+}
+
+const ROLE_REPEAT_USAGE: &str = "Use :repeat 3 role=audio or :repeat 3 role=video over a Visual range inside one beat; add overflow=trim to cut repeats at the beat's end.";
+
+/// `:repeat [N] role=audio|video [overflow=trim]`.
+fn role_repeat<'a>(words: impl Iterator<Item = &'a str>) -> Result<Entry, String> {
+    let mut plays = None;
+    let mut role = None;
+    let mut trim = None;
+    for word in words {
+        match word.split_once('=') {
+            Some(("role", value)) if role.is_none() => {
+                role = Some(match value {
+                    "audio" => deadpan_core::MediaRole::Audio,
+                    "video" => deadpan_core::MediaRole::Video,
+                    _ => return Err(ROLE_REPEAT_USAGE.into()),
+                });
+            }
+            Some(("overflow", "trim")) if trim.is_none() => trim = Some(true),
+            Some(("extend", "hold")) => {
+                return Err("extend=hold is not available yet: a role repeat cannot add picture time. Use overflow=trim, fewer plays, or a linked :repeat.".into());
+            }
+            None if plays.is_none()
+                && !word.is_empty()
+                && word.bytes().all(|b| b.is_ascii_digit()) =>
+            {
+                plays = Some(
+                    word.parse::<u32>()
+                        .ok()
+                        .and_then(std::num::NonZeroU32::new)
+                        .ok_or(ROLE_REPEAT_USAGE)?,
+                );
+            }
+            _ => return Err(ROLE_REPEAT_USAGE.into()),
+        }
+    }
+    Ok(Entry::Action(Action::RoleRepeat {
+        role: role.ok_or(ROLE_REPEAT_USAGE)?,
+        plays: plays.unwrap_or(std::num::NonZeroU32::new(2).expect("constant plays")),
+        trim: trim.unwrap_or(false),
+    }))
+}
+
+/// Typed decibel values accept an optional `dB` unit (specification §6.4).
+fn strip_db(value: &str) -> &str {
+    value
+        .strip_suffix("dB")
+        .or_else(|| value.strip_suffix("db"))
+        .or_else(|| value.strip_suffix("DB"))
+        .unwrap_or(value)
 }
 
 const AUDIO_LAG_USAGE: &str = "Use :audio-lag +80ms (sound later), :audio-lag -2f (sound earlier) or :audio-lag 0 to realign the selected beat's sound with its picture.";
@@ -692,6 +838,28 @@ mod tests {
             Ok(Entry::Gain(Some(deadpan_core::GainDb::new(-4125).unwrap())))
         );
         assert_eq!(parse("gain-mute"), Ok(Entry::GainMute));
+        assert_eq!(
+            parse(":gain +6dB"),
+            Ok(Entry::Gain(Some(deadpan_core::GainDb::new(6000).unwrap())))
+        );
+        assert_eq!(parse(":gain +=3dB"), Ok(Entry::GainStep(3000)));
+        assert_eq!(parse(":gain -=1.5"), Ok(Entry::GainStep(-1500)));
+        assert_eq!(
+            parse(":saturate 12dB"),
+            Ok(Entry::Saturate(Some(
+                deadpan_core::Saturation::new(deadpan_core::GainDb::new(12_000).unwrap()).unwrap()
+            )))
+        );
+        assert_eq!(parse(":saturate off"), Ok(Entry::Saturate(None)));
+        for input in [
+            "saturate",
+            "saturate -3dB",
+            "saturate 24.001",
+            "gain +=x",
+            "gain 6dBx",
+        ] {
+            assert!(parse(input).is_err(), "{input}");
+        }
         for input in [
             "gain 3 extra",
             "gain NaN",
@@ -699,6 +867,109 @@ mod tests {
             "gain 24.001",
             "gain-mute true",
         ] {
+            assert!(parse(input).is_err(), "{input}");
+        }
+    }
+
+    #[test]
+    fn role_repeats_name_their_role_and_overflow_explicitly() {
+        use deadpan_core::MediaRole;
+        let three = std::num::NonZeroU32::new(3).unwrap();
+        assert_eq!(
+            parse(":repeat 3 role=audio"),
+            Ok(Entry::Action(Action::RoleRepeat {
+                role: MediaRole::Audio,
+                plays: three,
+                trim: false
+            }))
+        );
+        assert_eq!(
+            parse(":repeat role=video overflow=trim 3"),
+            Ok(Entry::Action(Action::RoleRepeat {
+                role: MediaRole::Video,
+                plays: three,
+                trim: true
+            }))
+        );
+        for input in [
+            "repeat 3 role=both",
+            "repeat 3 role=audio extend=hold",
+            "repeat 0 role=audio",
+            "repeat 3 role=audio overflow=wrap",
+        ] {
+            assert!(parse(input).is_err(), "{input}");
+        }
+    }
+
+    #[test]
+    fn roles_are_selected_and_deleted_explicitly() {
+        use deadpan_core::MediaRole;
+        assert_eq!(
+            parse(":select role=audio"),
+            Ok(Entry::SelectRole(MediaRole::Audio))
+        );
+        assert_eq!(
+            parse(":select role=linked"),
+            Ok(Entry::SelectRole(MediaRole::Linked))
+        );
+        assert_eq!(
+            parse(":delete role=video"),
+            Ok(Entry::DeleteRole(MediaRole::Video))
+        );
+        assert_eq!(parse(":select"), Ok(Entry::Action(Action::VisualMoment)));
+        for input in [
+            "select role=both",
+            "delete role=linked",
+            "delete role=audio extra",
+        ] {
+            assert!(parse(input).is_err(), "{input}");
+        }
+    }
+
+    #[test]
+    fn local_recipes_name_one_register() {
+        assert_eq!(parse(":recipe-save A"), Ok(Entry::RecipeSave('a')));
+        assert_eq!(parse(":recipe b"), Ok(Entry::Recipe('b')));
+        assert_eq!(parse(":recipe-inspect c"), Ok(Entry::RecipeInspect('c')));
+        for input in ["recipe", "recipe ab", "recipe-save 1", "recipe a b"] {
+            assert!(parse(input).is_err(), "{input}");
+        }
+    }
+
+    #[test]
+    fn roll_opens_trim_with_its_whole_frame_amount() {
+        let Ok(Entry::Trim(input)) = parse(":roll +2f") else {
+            panic!("roll parses as Trim")
+        };
+        assert_eq!(input.control, deadpan_core::SourceTrimControl::Roll);
+        assert_eq!(input.intent.roll_frames, 2);
+        assert_eq!(
+            parse(":roll +2f"),
+            parse("trim edge=roll delta=+2f mode=ripple")
+        );
+        for input in ["roll", "roll 2s", "roll +2f extra"] {
+            assert!(parse(input).is_err(), "{input}");
+        }
+    }
+
+    #[test]
+    fn split_edits_take_one_optional_length() {
+        use deadpan_core::SplitEditKind;
+        assert_eq!(
+            parse(":jcut"),
+            Ok(Entry::Action(Action::SplitEdit {
+                kind: SplitEditKind::J,
+                length: DurationInput::parse("6f").unwrap(),
+            }))
+        );
+        assert_eq!(
+            parse(":lcut 200ms"),
+            Ok(Entry::Action(Action::SplitEdit {
+                kind: SplitEditKind::L,
+                length: DurationInput::parse("200ms").unwrap(),
+            }))
+        );
+        for input in ["jcut 0f", "lcut 6f extra", "jcut soon"] {
             assert!(parse(input).is_err(), "{input}");
         }
     }
@@ -829,6 +1100,11 @@ mod tests {
             parse(":zoom 1.35 target=current curve=step"),
             Ok(Entry::Zoom(input)) if input.target == super::super::zoom::TargetChoice::Current
         ));
+        assert!(matches!(
+            parse("zoom 1.35 target=face:2 curve=step"),
+            Ok(Entry::Zoom(input)) if input.target == super::super::zoom::TargetChoice::Face(2)
+        ));
+        assert!(parse("zoom 1.35 target=face:0").is_err());
         assert!(matches!(parse("creep from=1 to=1.4"), Ok(Entry::Zoom(_))));
         assert!(matches!(parse("ZOOM off"), Ok(Entry::Zoom(_))));
         assert!(parse("zoom").is_err());

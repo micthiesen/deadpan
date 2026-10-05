@@ -432,6 +432,7 @@ mod tests {
                 mode: deadpan_encode::EncoderMode::Hardware,
                 b_frames: deadpan_encode::BFramePolicy::None,
             },
+            color_policy: deadpan_core::ColorPolicy::SdrRec709,
         }
         .contract()
         .unwrap();

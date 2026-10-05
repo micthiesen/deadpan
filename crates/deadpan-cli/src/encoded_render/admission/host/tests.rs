@@ -153,6 +153,7 @@ emit({'event': 'cancelled', 'protocol': 2, 'identity': request['identity']})
             cancellation_token: CancellationToken::new("guarded-cancel").unwrap(),
             raster: [320, 180],
             frame_rate: [30000, 1001],
+            color_policy: deadpan_core::ColorPolicy::SdrRec709,
         },
         AdmissionLimits::default(),
         &AtomicBool::new(false),

@@ -92,6 +92,15 @@ fn repeat_instruction_hint(
                 "ungroup selected neutral Sequence".into()
             };
         }
+        RepeatableEdit::Parameter(instruction) => {
+            let text = applied_text(instruction).unwrap_or_else(|| "the last edit".into());
+            let mut chars = text.chars();
+            let first = chars
+                .next()
+                .map(|c| c.to_lowercase().to_string())
+                .unwrap_or_default();
+            return format!("repeat: {first}{}", chars.as_str());
+        }
         RepeatableEdit::SetRepeatPlays { plays } => {
             return if selection != crate::navigation::EditSelection::None {
                 "repeat unavailable: clear Visual range".into()
@@ -247,6 +256,36 @@ pub(super) fn applied_text(instruction: &deadpan_core::SemanticInstruction) -> O
             return Some(format!("Added a {} tail", effect.name()));
         }
         I::SetFraming { .. } => return Some("Framed the beat".into()),
+        I::SetAudio { change } => return Some(audio_change_text(*change)),
+        I::RoleRepeat { role, plays, .. } => {
+            return Some(match role {
+                deadpan_core::MediaRole::Audio => {
+                    format!("Repeated the range's sound ×{plays} over its beat; no time added")
+                }
+                _ => format!("Repeated the range's picture ×{plays} over its beat; no time added"),
+            });
+        }
+        I::DeleteRole { role } => {
+            return Some(match role {
+                deadpan_core::MediaRole::Audio => {
+                    "Deleted the range's sound; its picture and time stay".into()
+                }
+                _ => {
+                    "Deleted the range's picture to the background; its sound and time stay".into()
+                }
+            });
+        }
+        I::SplitEdit { kind, length } => {
+            return Some(match kind {
+                deadpan_core::SplitEditKind::J => {
+                    format!("J-cut: the next sound starts {} early", pause_text(*length))
+                }
+                deadpan_core::SplitEditKind::L => format!(
+                    "L-cut: this sound runs on {} under the next picture",
+                    pause_text(*length)
+                ),
+            });
+        }
         I::Group { selector, label } => {
             return (!matches!(selector, SemanticSelector::VisualSelection))
                 .then(|| format!("Grouped {} as {label:?}", selector_text(selector)));
@@ -289,6 +328,29 @@ impl Mirror {
         {
             self.snapshot = Some(incoming);
         }
+    }
+}
+
+/// What a recorded audio change does, with its exact value.
+pub(super) fn audio_change_text(change: deadpan_core::AudioChange) -> String {
+    use deadpan_core::AudioChange;
+    match change {
+        AudioChange::Trim { gain } => format!("Gain set to {} dB", crate::gain::format_db(gain)),
+        AudioChange::Step { millidecibels } => {
+            let sign = if millidecibels < 0 { "-" } else { "+" };
+            let magnitude = millidecibels.unsigned_abs();
+            let fraction = format!("{:03}", magnitude % 1000);
+            let fraction = fraction.trim_end_matches('0');
+            let point = if fraction.is_empty() { "" } else { "." };
+            format!(
+                "Gain changed by {sign}{}{point}{fraction} dB",
+                magnitude / 1000
+            )
+        }
+        AudioChange::Saturation { drive: Some(drive) } => {
+            format!("Saturation drive {} dB", crate::gain::format_db(drive))
+        }
+        AudioChange::Saturation { drive: None } => "Saturation removed".into(),
     }
 }
 

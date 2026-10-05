@@ -365,7 +365,7 @@ fn selected_context_keeps_full_phase_mapping_and_captures_only_its_audible_exten
         context
     );
     let mut wire = serde_json::to_value(context).unwrap();
-    assert_eq!(wire["schema_version"], json!(7));
+    assert_eq!(wire["schema_version"], json!(8));
     wire["schema_version"] = json!(1);
     assert!(FrozenAudioContext::from_json(&wire.to_string()).is_err());
     let escaped = wire
@@ -398,7 +398,7 @@ fn ingress_rejects_open_or_inconsistent_inventory() {
         FrozenAudioContext::capture(&fixture(AudioSample(0), SourceAudioMapping::FitBeat)).unwrap();
     let mut value: Value = serde_json::from_str(&context.to_json().unwrap()).unwrap();
     let baseline = value.clone();
-    value["schema_version"] = json!(8);
+    value["schema_version"] = json!(9);
     assert_eq!(
         FrozenAudioContext::from_json(&value.to_string())
             .unwrap_err()
@@ -447,8 +447,8 @@ fn ingress_rejects_open_or_inconsistent_inventory() {
         DocumentErrorCode::LimitExceeded
     );
     let duplicate = context.to_json().unwrap().replacen(
-        "\"schema_version\":7",
-        "\"schema_version\":7,\"schema_version\":7",
+        "\"schema_version\":8",
+        "\"schema_version\":8,\"schema_version\":8",
         1,
     );
     assert!(FrozenAudioContext::from_json(&duplicate).is_err());
@@ -749,7 +749,7 @@ fn dormant_context_keeps_input_asset_offset_and_distinguishes_absent_audio() {
         context
     );
     let wire = serde_json::to_value(&context).unwrap();
-    assert_eq!(wire["schema_version"], json!(7));
+    assert_eq!(wire["schema_version"], json!(8));
     for version in 1..=4 {
         let mut forged = wire.clone();
         forged["schema_version"] = json!(version);
@@ -833,5 +833,55 @@ fn reverse_tone_and_live_tail_need_context_schema_seven() {
                 "schema {version} must refuse {audio:?}"
             );
         }
+    }
+}
+
+#[test]
+fn pitch_shifts_and_saturation_need_context_schema_8_and_validate_their_shape() {
+    let before = fixture(AudioSample(0), SourceAudioMapping::FitBeat);
+    let shifted = edit(
+        &before,
+        Command::WrapRetime {
+            node: node("source"),
+            id: node("shift"),
+            duration: match &before.nodes()[&node("source")].kind {
+                NodeKind::Source { source } => source.duration,
+                _ => unreachable!(),
+            },
+            pitch: PitchPolicy::Shift { semitones: 4 },
+        },
+    );
+    let driven = edit(
+        &shifted,
+        Command::SetAudioTreatments {
+            node: node("shift"),
+            treatments: AudioTreatments::default()
+                .with_saturation(Some(Saturation::new(GainDb::new(6_000).unwrap()).unwrap()))
+                .unwrap(),
+        },
+    );
+    let context = FrozenAudioContext::capture(&driven).unwrap();
+    assert_eq!(
+        FrozenAudioContext::from_json(&context.to_json().unwrap()).unwrap(),
+        context
+    );
+    let wire = serde_json::to_value(&context).unwrap();
+    assert_eq!(wire["schema_version"], json!(8));
+    let mut old = wire.clone();
+    old["schema_version"] = json!(7);
+    assert!(FrozenAudioContext::from_json(&old.to_string()).is_err());
+    for (pitch, purpose) in [
+        (json!({"shift":{"semitones":25}}), json!("edit")),
+        (json!({"shift":{"semitones":0}}), json!("edit")),
+        (json!({"shift":{"semitones":2}}), json!("partition")),
+        (json!({"shift":{"semitones":2,"x":1}}), json!("edit")),
+    ] {
+        let mut bad = wire.clone();
+        bad["layout"]["nodes"]["shift"]["kind"]["pitch"] = pitch.clone();
+        bad["layout"]["nodes"]["shift"]["kind"]["purpose"] = purpose;
+        assert!(
+            FrozenAudioContext::from_json(&bad.to_string()).is_err(),
+            "{pitch}"
+        );
     }
 }

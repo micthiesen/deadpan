@@ -71,6 +71,21 @@ pub struct Fixture {
     pub notes: Vec<String>,
     /// Independently derived caption text shown at an output frame.
     pub captions: Vec<(u64, Vec<&'static str>)>,
+    /// Independently derived waveform properties of limited-bus windows.
+    pub signals: Vec<Signal>,
+}
+
+/// One left-channel window of the limited audition bus and what it must show.
+#[derive(Debug, Clone)]
+pub struct Signal {
+    pub start: i64,
+    pub count: i64,
+    /// Zero crossings per second, within a relative tolerance.
+    pub crossings_per_second: Option<(f64, f64)>,
+    /// Peak over RMS strictly inside this range (a sine is 1.414).
+    pub crest: Option<(f64, f64)>,
+    /// Absolute peak strictly inside this range.
+    pub peak: Option<(f64, f64)>,
 }
 
 fn original(source_ordinal: u64) -> Expected {
@@ -368,6 +383,7 @@ impl Project {
             audio: Vec::new(),
             notes,
             captions: Vec::new(),
+            signals: Vec::new(),
         })
     }
 }
@@ -742,6 +758,7 @@ pub fn cutaway(dir: &Path) -> Result<Fixture> {
                 asset: asset.clone(),
                 selection: ordinal_span(document, &asset, 90, 96)?,
                 fit: CutawayFit::Hold,
+                removed: false,
             }],
         })
     })?;
@@ -1078,6 +1095,76 @@ pub fn one_more_time(dir: &Path) -> Result<Fixture> {
         (80_128, false),
         (96_000, true),
     ];
+    Ok(fixture)
+}
+
+/// `:gag one-more-time plays=3 gap=12f shorten=6f vary=25% seed=7` on Edit
+/// [12, 24): seeded variation resolves each gap once from the pinned seed
+/// (`GagVariation::vary`), so the stored gap Holds, pictures and clicks follow
+/// those exact lengths in preview and export alike.
+pub fn one_more_time_varied(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "one-more-time-varied")?;
+    project.shorten()?;
+    project.split_root(12)?;
+    let document = project.split_root(24)?;
+    let beat = root_child_at(&document, 12)?.0;
+    let saved = project.run_semantic(
+        json!([{"type":"gag","recipe":{"recipe":"one_more_time","version":1,"plays":3,
+            "gap":{"unit":"frames","frames":12},"shorten":{"unit":"frames","frames":6},
+            "variation":{"percent":25,"seed":7}}}]),
+        12,
+        Some(&beat),
+    )?;
+    let (group, _) = root_child_at(&saved, 12)?;
+    let label = &saved.nodes()[&group].label;
+    if !label.ends_with("varied ±25% (seed 7)") {
+        return Err(format!("unexpected gag label {label:?}").into());
+    }
+    let variation = deadpan_core::GagVariation {
+        percent: 25,
+        seed: 7,
+    };
+    let gaps = [
+        u64::from(variation.vary(12, 0)),
+        u64::from(variation.vary(6, 1)),
+    ];
+    if gaps == [12, 6] {
+        return Err("seed 7 left both gaps unchanged".into());
+    }
+    let mut expectations = vec![(0, base(0)), (11, base(11))];
+    let mut start = 12u64;
+    let mut starts = Vec::new();
+    for gap in [Some(gaps[0]), Some(gaps[1]), None] {
+        starts.push(start);
+        expectations.extend([
+            (start, original(24)),
+            (start + 6, original(30)),
+            (start + 11, original(35)),
+        ]);
+        if let Some(gap) = gap {
+            expectations.extend([(start + 12, original(35)), (start + 11 + gap, original(35))]);
+        }
+        start += 12 + gap.unwrap_or(0);
+    }
+    expectations.extend([(start, original(36)), (start + 5, original(41))]);
+    let mut fixture = project.finish(
+        vec!["Seeded variation", "Saved gags"],
+        expectations,
+        vec![format!("seeded gaps {gaps:?}")],
+    )?;
+    // B(f) = round(f · 1601.6) on the 48 kHz grid; each play's click is
+    // 9,562 samples after its start; each gap's middle is silent.
+    let boundary = |frame: u64| -> i64 { ((frame * 16_016 + 5) / 10) as i64 };
+    fixture.audio = starts
+        .iter()
+        .map(|start| (boundary(*start) + 9_562 - 100, true))
+        .chain(
+            starts
+                .iter()
+                .zip(gaps)
+                .map(|(start, gap)| (boundary(start + 12 + gap / 2) - 128, false)),
+        )
+        .collect();
     Ok(fixture)
 }
 
@@ -1616,10 +1703,331 @@ pub fn bleep(dir: &Path) -> Result<Fixture> {
     Ok(fixture)
 }
 
+/// Two 12-frame 1 kHz tone pauses at -10 dBFS (`HoldAudio::Tone`, exact
+/// synthesized sines) inserted before the base: Edit [0, 12) and [12, 24).
+fn tone_pauses(project: &mut Project) -> Result<ProjectDocument> {
+    project.shorten()?;
+    for (at, name) in [(0, "tone-a"), (12, "tone-b")] {
+        project.apply(|project, document, revision| {
+            let at = ProjectFrame(at);
+            let identities = match document.insert_time_target(at)?.split {
+                Some(split) => project.fresh(split.required_ids)?,
+                None => Vec::new(),
+            };
+            Ok(Command::InsertTime {
+                at,
+                hold: HoldRecipe {
+                    picture_context: None,
+                    duration: FrameDuration::new(12)?,
+                    video: HoldVideo::Background,
+                    audio: HoldAudio::Tone {
+                        frequency_hz: 1_000,
+                        level: GainDb::new(-10_000)?,
+                    },
+                },
+                id: node(name)?,
+                identities: SplitIdentities { nodes: identities },
+                timing: AudioTimingId {
+                    allocation: revision.clone(),
+                    ordinal: 0,
+                },
+            })
+        })?;
+    }
+    project.document()
+}
+
+/// Pictures of a tone-pause fixture: background, then the base from Edit 24.
+fn tone_expectations() -> Vec<(u64, Expected)> {
+    let mut expectations = vec![(0, Expected::Background), (23, Expected::Background)];
+    expectations.extend(
+        [24u64, 41, 53]
+            .into_iter()
+            .map(|frame| (frame, base(frame - 24))),
+    );
+    expectations
+}
+
+/// A window well inside tone pause `index` (0 or 1): 4,096 samples from 4
+/// frames into it, clear of its 2 ms ramps.
+fn tone_window(index: i64) -> (i64, i64) {
+    (((index * 12 + 4) * 16_016 + 5) / 10, 4_096)
+}
+
+/// `:saturate 12dB` on the first of two -10 dBFS 1 kHz tone pauses, through
+/// the headless semantic path. tanh(3.98 · 0.316 · sin) flattens the sine:
+/// peak 0.851 and crest factor 1.288, against the untouched second tone's
+/// peak 0.316 and crest 1.414.
+pub fn saturation(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "saturation")?;
+    tone_pauses(&mut project)?;
+    let saved = project.run_semantic(
+        json!([{"type":"set_audio","change":{"type":"saturation","drive":12000}}]),
+        0,
+        Some(&node("tone-a")?),
+    )?;
+    let treatments = &saved.nodes()[&node("tone-a")?].audio_treatments;
+    if treatments.order() != [deadpan_core::AudioTreatmentStage::Saturation]
+        || treatments
+            .saturation()
+            .map(|stage| stage.drive().millidecibels())
+            != Some(12_000)
+    {
+        return Err(format!("unexpected treatments {treatments:?}").into());
+    }
+    let mut fixture = project.finish(vec!["Saturation"], tone_expectations(), Vec::new())?;
+    let ((a, count), (b, _)) = (tone_window(0), tone_window(1));
+    fixture.signals = vec![
+        Signal {
+            start: a,
+            count,
+            crossings_per_second: Some((2_000.0, 0.03)),
+            crest: Some((1.26, 1.32)),
+            peak: Some((0.83, 0.87)),
+        },
+        Signal {
+            start: b,
+            count,
+            crossings_per_second: Some((2_000.0, 0.03)),
+            crest: Some((1.39, 1.44)),
+            peak: Some((0.30, 0.33)),
+        },
+    ];
+    Ok(fixture)
+}
+
+/// `:pitch +12st` on the first of two 1 kHz tone pauses: a unity-speed
+/// Retime shifting it one octave on the pitch-preserving processor. Its zero
+/// crossings double (about 4,000 per second) while the untouched second tone
+/// stays at 2,000; timing and pictures are unchanged.
+pub fn pitch_shift(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "pitch-shift")?;
+    tone_pauses(&mut project)?;
+    let saved = project.apply(|_, _, _| {
+        Ok(Command::WrapRetime {
+            node: node("tone-a")?,
+            id: NodeId::new("shift").expect("constant identity"),
+            duration: FrameDuration::new(12).expect("positive duration"),
+            pitch: PitchPolicy::Shift { semitones: 12 },
+        })
+    })?;
+    if saved.duration()?.frames() != BASE_FRAMES as i64 + 24 {
+        return Err("a pitch shift changed the duration".into());
+    }
+    let mut fixture = project.finish(
+        vec!["Pitch shift", "Stretch / pitch"],
+        tone_expectations(),
+        Vec::new(),
+    )?;
+    let ((a, count), (b, _)) = (tone_window(0), tone_window(1));
+    fixture.signals = vec![
+        Signal {
+            start: a,
+            count,
+            crossings_per_second: Some((4_000.0, 0.05)),
+            crest: None,
+            peak: None,
+        },
+        Signal {
+            start: b,
+            count,
+            crossings_per_second: Some((2_000.0, 0.03)),
+            crest: None,
+            peak: None,
+        },
+    ];
+    Ok(fixture)
+}
+
+/// Keep Original [10, 24) then [33, 49) as a 30-frame edit and `:jcut 6f` at
+/// their cut (Edit 14). The second beat's sound starts 6 frames early, so the
+/// click at Original sample 48,000 (Original frame 29.97, in that beat's
+/// handle) sounds at Edit frame 10.97 (sample 17,570) while the first beat's
+/// pictures still show until Edit 14. Without the J-cut nothing sounds there.
+pub fn j_cut(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "j-cut")?;
+    project.delete_range(49, 120)?;
+    project.delete_range(24, 33)?;
+    let document = project.delete_range(0, 10)?;
+    let right = root_child_at(&document, 14)?;
+    if right.1 != 14 || document.duration()?.frames() != 30 {
+        return Err("unexpected J-cut base".into());
+    }
+    let saved = project.run_semantic(
+        json!([{"type":"split_edit","kind":"j","length":{"unit":"frames","frames":6}}]),
+        14,
+        None,
+    )?;
+    if saved.duration()?.frames() != 30 || root_child_at(&saved, 8)?.1 != 8 {
+        return Err("the J-cut did not roll the cut to Edit 8".into());
+    }
+    let expectations = [0u64, 7, 8, 10, 13, 14, 20, 29]
+        .into_iter()
+        .map(|frame| {
+            (
+                frame,
+                original(if frame < 14 { 10 + frame } else { 19 + frame }),
+            )
+        })
+        .collect();
+    let mut fixture = project.finish(vec!["Premature sound (J-cut)"], expectations, Vec::new())?;
+    fixture.audio = vec![(6_400, false), (17_408, true)];
+    Ok(fixture)
+}
+
+/// Keep Original [10, 28) then [80, 92) and `:lcut 6f` at their cut (Edit
+/// 18). The first beat's sound runs on 6 frames under the second beat's
+/// pictures, reaching the click at Original frame 29.97 (in its handle) at
+/// Edit frame 19.97 (sample 31,980). Without the L-cut nothing sounds there.
+pub fn l_cut(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "l-cut")?;
+    project.delete_range(92, 120)?;
+    project.delete_range(28, 80)?;
+    let document = project.delete_range(0, 10)?;
+    if root_child_at(&document, 18)?.1 != 18 || document.duration()?.frames() != 30 {
+        return Err("unexpected L-cut base".into());
+    }
+    let saved = project.run_semantic(
+        json!([{"type":"split_edit","kind":"l","length":{"unit":"frames","frames":6}}]),
+        18,
+        None,
+    )?;
+    if saved.duration()?.frames() != 30 || root_child_at(&saved, 24)?.1 != 24 {
+        return Err("the L-cut did not roll the cut to Edit 24".into());
+    }
+    let expectations = [0u64, 17, 18, 20, 23, 24, 29]
+        .into_iter()
+        .map(|frame| {
+            (
+                frame,
+                original(if frame < 18 { 10 + frame } else { 62 + frame }),
+            )
+        })
+        .collect();
+    let mut fixture = project.finish(vec!["Lingering sound (L-cut)"], expectations, Vec::new())?;
+    fixture.audio = vec![(20_000, false), (31_744, true)];
+    Ok(fixture)
+}
+
+/// `:select role=audio` + `d` over Edit [15, 20), then `:select role=video` +
+/// `d` over [23, 27), through the headless semantic path: the click at Edit
+/// sample 28,781 is silenced while its pictures stay, and Edit 23..27 show
+/// the background while time and every other picture stay.
+pub fn role_delete(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "role-delete")?;
+    project.shorten()?;
+    let saved = project.run_semantic(
+        json!([
+            {"type":"begin_selection"},
+            {"type":"move_frames","forward":true,"count":5},
+            {"type":"delete_role","role":"audio"},
+            {"type":"move_frames","forward":true,"count":3},
+            {"type":"begin_selection"},
+            {"type":"move_frames","forward":true,"count":4},
+            {"type":"delete_role","role":"video"}
+        ]),
+        15,
+        None,
+    )?;
+    if saved.duration()?.frames() != BASE_FRAMES as i64 {
+        return Err("a role-only delete changed the duration".into());
+    }
+    let expectations = [0u64, 15, 17, 19, 22, 23, 26, 27, 29]
+        .into_iter()
+        .map(|frame| {
+            (
+                frame,
+                if (23..27).contains(&frame) {
+                    Expected::Background
+                } else {
+                    base(frame)
+                },
+            )
+        })
+        .collect();
+    let mut fixture = project.finish(
+        vec!["Role-only delete and `audio-shift`", "`:select role=audio`"],
+        expectations,
+        Vec::new(),
+    )?;
+    fixture.audio = vec![(20_000, false), (28_672, false)];
+    Ok(fixture)
+}
+
+/// `:repeat 2 role=video` over Edit [5, 8) and `:repeat 3 role=audio` over
+/// [15, 20), through the headless semantic path. No time is added: Edit 8..11
+/// show Original 17..19 again while their sound continues, and the click at
+/// Edit sample 28,781 sounds again 5 frames (8,008 samples) and 10 frames
+/// later as root sound events of the same Original audio, over the muted beat;
+/// a later ripple delete of Edit [0, 3) moves pictures, mute and repeats 3
+/// frames earlier together.
+pub fn role_repeat(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "role-repeat")?;
+    project.shorten()?;
+    let saved = project.run_semantic(
+        json!([
+            {"type":"begin_selection"},
+            {"type":"move_frames","forward":true,"count":3},
+            {"type":"role_repeat","role":"video","plays":2},
+            {"type":"move_frames","forward":true,"count":7},
+            {"type":"begin_selection"},
+            {"type":"move_frames","forward":true,"count":5},
+            {"type":"role_repeat","role":"audio","plays":3}
+        ]),
+        5,
+        None,
+    )?;
+    if saved.duration()?.frames() != BASE_FRAMES as i64
+        || saved.sounds().len() != 2
+        || !saved.beat_sounds().is_empty()
+    {
+        return Err(format!(
+            "unexpected role repeat: {} frames, {} root sounds",
+            saved.duration()?.frames(),
+            saved.sounds().len()
+        )
+        .into());
+    }
+    // A later ripple delete of Edit [0, 3) moves everything, including the
+    // root repeats, 3 frames (B(3) = 4,805 samples) earlier.
+    let deleted = project.delete_range(0, 3)?;
+    if deleted.sounds().len() != 2 {
+        return Err("the ripple delete dropped a repeated sound".into());
+    }
+    let mut expectations: Vec<(u64, Expected)> = [0u64, 1, 2, 4, 8, 12, 17, 26]
+        .into_iter()
+        .map(|frame| (frame, base(frame + 3)))
+        .collect();
+    expectations.extend([(5, base(5)), (6, base(6)), (7, base(7))]);
+    let mut fixture = project.finish(
+        vec![
+            "Audio-only / video-only repeat (§6.5)",
+            "Word / syllable stutter",
+        ],
+        expectations,
+        Vec::new(),
+    )?;
+    fixture.audio = vec![
+        (28_681 - 4_805, true),
+        (36_689 - 4_805, true),
+        (44_697 - 4_805, true),
+        (35_195, false),
+        (19_195, false),
+    ];
+    Ok(fixture)
+}
+
 /// Build every fixture, each in its own subdirectory of `dir`.
 pub fn all(dir: &Path) -> Result<Vec<Fixture>> {
     type Builder = fn(&Path) -> Result<Fixture>;
-    let builders: [(&str, Builder); 24] = [
+    let builders: [(&str, Builder); 31] = [
+        ("saturation", saturation),
+        ("role-repeat", role_repeat),
+        ("role-delete", role_delete),
+        ("one-more-time-varied", one_more_time_varied),
+        ("pitch-shift", pitch_shift),
+        ("j-cut", j_cut),
+        ("l-cut", l_cut),
         ("bleep", bleep),
         ("lift", lift),
         ("are-we-done", are_we_done),
@@ -1645,8 +2053,34 @@ pub fn all(dir: &Path) -> Result<Vec<Fixture>> {
         ("gain-trim", gain_trim),
         ("sound-event", sound_event),
     ];
+    // DEADPAN_PREVIEW_EXPORT_ONLY=a,b builds only the named fixtures, for a
+    // focused rerun; the full run always builds all of them.
+    let only = std::env::var("DEADPAN_PREVIEW_EXPORT_ONLY").ok();
+    let only: Option<Vec<&str>> = only.as_deref().map(|names| names.split(',').collect());
+    if let Some(names) = &only {
+        if std::env::var_os("CI").is_some() {
+            return Err(
+                "DEADPAN_PREVIEW_EXPORT_ONLY must not be set in CI; it skips fixtures".into(),
+            );
+        }
+        if let Some(unknown) = names
+            .iter()
+            .find(|name| !builders.iter().any(|(known, _)| known == *name))
+        {
+            return Err(
+                format!("DEADPAN_PREVIEW_EXPORT_ONLY names unknown fixture {unknown}").into(),
+            );
+        }
+        eprintln!(
+            "DEADPAN_PREVIEW_EXPORT_ONLY: building {} of {} fixtures; {} SKIPPED. Record results only from a full run.",
+            names.len(),
+            builders.len(),
+            builders.len() - names.len()
+        );
+    }
     builders
         .into_iter()
+        .filter(|(name, _)| only.as_ref().is_none_or(|names| names.contains(name)))
         .map(|(name, build)| {
             build(&dir.join(name)).map_err(|error| format!("{name}: {error}").into())
         })

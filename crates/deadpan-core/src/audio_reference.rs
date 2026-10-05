@@ -1182,8 +1182,7 @@ impl FrozenAudioLayout {
                     ..
                 } => {
                     if mode != ProjectionMode::Affine
-                        && *pitch == PitchPolicy::Preserve
-                        && mapping.duration() != self.nodes[parent].duration
+                        && pitch.processes(mapping.duration() == self.nodes[parent].duration)
                     {
                         return Err(invalid("frozen support scope crosses an opaque Preserve"));
                     }
@@ -1295,9 +1294,9 @@ impl FrozenAudioLayout {
                 &parent_node.kind,
                 FrozenAudioKind::Retime {
                     mapping,
-                    pitch: PitchPolicy::Preserve,
+                    pitch,
                     ..
-                } if mapping.duration() != parent_node.duration
+                } if pitch.processes(mapping.duration() == parent_node.duration)
             ) {
                 return Err(invalid("audio binding scope crosses an opaque Preserve"));
             }
@@ -1668,6 +1667,21 @@ fn validate_node(node: &FrozenAudioNode) -> Result<(), DocumentError> {
         if !allowed && node.edges.get(boundary) != AudioEdgePolicy::Automatic {
             return Err(invalid("frozen edge policy is unsupported by its node"));
         }
+    }
+    if let FrozenAudioKind::Retime {
+        pitch: crate::PitchPolicy::Shift { semitones },
+        purpose,
+        ..
+    } = &node.kind
+        && (crate::PitchPolicy::shifted(*semitones).ok()
+            != Some(crate::PitchPolicy::Shift {
+                semitones: *semitones,
+            })
+            || *purpose == RetimePurpose::Partition)
+    {
+        return Err(invalid(
+            "a frozen pitch shift is a nonzero whole number of semitones within ±24 on an ordinary Retime",
+        ));
     }
     if let FrozenAudioKind::Retime {
         purpose: RetimePurpose::Partition,

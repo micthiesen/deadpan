@@ -74,6 +74,34 @@ pub struct RenderEngineeringPolicy {
 #[serde(rename_all = "snake_case")]
 pub enum RenderAutomaticAlgorithm {
     AutomaticSdrV1,
+    /// HEVC Main10 BT.2100 PQ/HLG output for a revision whose automatic color
+    /// branch is HDR. Same frozen probe/fallback graph and settings as
+    /// AutomaticSdrV1 except the HDR probe fixture and video bitrate x1.25.
+    AutomaticHdrV1,
+}
+
+impl RenderAutomaticAlgorithm {
+    /// The only algorithm admitted for one committed output branch. An SDR
+    /// branch (including a tone-mapped HDR-basis fallback) stays AutomaticSdrV1.
+    pub const fn for_output(color: deadpan_core::ColorPolicy) -> Self {
+        match color {
+            deadpan_core::ColorPolicy::SdrRec709 => Self::AutomaticSdrV1,
+            deadpan_core::ColorPolicy::HdrRec2020Pq | deadpan_core::ColorPolicy::HdrRec2020Hlg => {
+                Self::AutomaticHdrV1
+            }
+        }
+    }
+
+    pub fn admits_output(self, color: deadpan_core::ColorPolicy) -> bool {
+        Self::for_output(color) == self
+    }
+
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::AutomaticSdrV1 => "automatic_sdr_v1",
+            Self::AutomaticHdrV1 => "automatic_hdr_v1",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

@@ -433,3 +433,31 @@ fn tampered_qualification_payload_and_missing_receipt_fail_reopen() -> Result {
     }
     Ok(())
 }
+
+#[test]
+fn output_color_reads_every_registered_receipt_even_when_unused() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let (_path, mut store) = project(scratch.path())?;
+    assert_eq!(
+        store.output_color(&store.snapshot()?)?.reason,
+        deadpan_core::OutputColorReason::SdrSources
+    );
+    // A registered PQ picture that no beat shows still counts: the branch
+    // never depends on which assets a viewer happened to load or show.
+    let original = retain(&mut store, "hdr-pq-av.mp4")?;
+    let decoded = decode(&store, &original)?;
+    let register = request(&store, &original, "register-hdr", "hdr", None)?;
+    store.register_source(&register, &decoded, None, limits(), &active())?;
+    let document = store.snapshot()?;
+    assert_eq!(document.duration()?.frames(), 0);
+    let decision = store.output_color(&document)?;
+    assert_eq!(decision.output, ColorPolicy::SdrRec709);
+    assert_eq!(
+        decision.reason,
+        deadpan_core::OutputColorReason::HdrSourceInSdrBasis
+    );
+    assert!(decision.hdr_sources);
+    // The fixture declares a 1,000 cd/m² mastering volume.
+    assert_eq!(decision.tone_map_peak_nits, 1_000);
+    Ok(())
+}

@@ -43,6 +43,7 @@ fn contract() -> RenderContract {
         project_audio_start: AudioSample(11_211),
         project_audio_end: AudioSample(16_016),
         relative_aspect_error: ExactRatio::new(23, 9_570).unwrap(),
+        mastering_display: None,
     }
 }
 
@@ -347,9 +348,28 @@ fn contract_rejects_forged_clock_geometry_and_unsupported_color() {
         |value| value.raster[1] = 0,
         |value| value.canvas[0] = 0,
         |value| value.relative_aspect_error = ExactRatio::ZERO,
-        |value| value.color_policy = ColorPolicy::HdrRec2020Pq,
+        |value| {
+            value.color_policy = ColorPolicy::SdrRec709;
+            value.mastering_display = Some(deadpan_core::MasteringDisplay {
+                primaries: [[35_400, 14_600], [8_500, 39_850], [6_550, 2_300]],
+                white_point: [15_635, 16_450],
+                max_luminance: 10_000_000,
+                min_luminance: 50,
+            });
+        },
     ];
     contract().validate().unwrap();
+    // HDR pictures are encodable, but the raw diagnostic sink stays SDR-only.
+    for policy in [ColorPolicy::HdrRec2020Pq, ColorPolicy::HdrRec2020Hlg] {
+        let mut hdr = contract();
+        hdr.color_policy = policy;
+        hdr.validate_for_encoding().unwrap();
+        assert!(hdr.validate().is_err());
+        assert_eq!(
+            hdr.frame_bytes().unwrap(),
+            2 * contract().frame_bytes().unwrap()
+        );
+    }
     for change in changes {
         let mut invalid = contract();
         change(&mut invalid);

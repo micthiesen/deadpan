@@ -1,14 +1,15 @@
-# Native SDR encoding boundary
+# Native encoding boundary
 
-`native/deadpan-encode` accepts composed limited-range Rec.709 I420 and finite
-48 kHz planar stereo PCM. It writes one private H.264/AAC MP4 through an owned
+`native/deadpan-encode` accepts composed limited-range Rec.709 I420 (SDR) or
+planar 10-bit BT.2020 NCL PQ/HLG pictures (HDR), and finite 48 kHz planar stereo
+PCM. It writes one private H.264/AAC or HEVC Main10/AAC MP4 through an owned
 read/write file descriptor. It has no project, source decoder, GPU, audio device,
 destination path or publication authority.
 
 The [encoded render child](ENCODED_RENDER.md) now streams real committed pictures
 and canonical audio directly into this library. Independent production verification
 of the encoded candidate and publication remain required. The complete
-audio/effects graph and HDR also remain open.
+audio/effects graph and HDR host integration also remain open.
 
 ## Exact input and policy
 
@@ -45,6 +46,75 @@ generic codec-open failures. A video packet with PTS before DTS fails with
 timestamps. Capacity, I/O, invalid input and control failures cannot become
 capability evidence through their message text. These kinds do not authorize
 automatic fallback; a future host policy must separately qualify its choice.
+
+## HDR HEVC Main10 contract
+
+`EncodeContract::new_hdr_v1(raster, rate, frames, samples, mode, b_frames,
+HdrSignal)` reuses every SDR v1 admission rule, clock, GOP, movie timescale,
+B-frame request and AAC target. Frozen `HDR_POLICY_VERSION_V1` changes only the
+video bitrate: `(sdr_v1_bitrate * 5 + 2) / 4` in u64 arithmetic. `new_v1`,
+`SDR_POLICY_VERSION_V1` and the SDR serialization are unchanged; HDR contracts
+serialize one additional `hdr` object (`policy_version` and the signal).
+`video_format()` distinguishes `H264Rec709I420`, `HevcMain10Rec2100Pq` and
+`HevcMain10Rec2100Hlg`; HDR `picture_bytes()` is `2*(w*h*3/2)`.
+
+HDR input is tight planar 4:2:0 little-endian u16 samples in the low 10 bits:
+Y (w*h), Cb (w/2*h/2), Cr. Both Rust and native admission require limited range
+(Y 64..=940, Cb/Cr 64..=960); any other code, including 941..1023 headroom and
+anything above 1023, fails as invalid input and poisons the session. Native code
+packs P010LE (`code << 6`, interleaved CbCr) for `hevc_videotoolbox` with the
+`main10` profile option. The codec context and every AVFrame declare BT.2020
+primaries, BT.2020 NCL, SMPTE ST 2084 or ARIB STD-B67, limited range and left
+chroma; VideoToolbox derives emitted VUI from the frame attachments, so the
+frame tags are required. The stream uses the `hvc1` sample entry (parameter sets
+only in `hvcC`).
+
+Static metadata follows the shared design units. `MasteringDisplay` has R,G,B
+`primaries` and `white_point` in 1/50000 and `max_luminance`/`min_luminance` in
+1/10000 cd/m²; validation requires positive CIE xy points with x+y<=1, a
+counter-clockwise R,G,B triangle enclosing the white point, max in
+50..=10000 cd/m², min <= 50 cd/m² and min < max. `ContentLight { max_cll,
+max_fall }` is in cd/m², at most 10000, with FALL <= CLL (zero means unknown).
+HLG is metadata-free: an HLG signal with mastering is rejected, and HLG/SDR
+finish refuses content light. A PQ session must call
+`EncoderSession::finish_with_light(Some(light))` with host-computed MaxCLL/
+MaxFALL; the native finish attaches mastering (when configured) and content
+light to the output stream's coded side data immediately before the trailer,
+where the pinned `movenc` writes `mdcv` and `clli` in the `hvc1` sample entry.
+Pinned VideoToolbox inserts no mastering/content-light SEI, so these container
+boxes are the only static metadata in the file.
+
+VideoToolbox attaches a Dolby Vision profile 8.4 RPU (HEVC NAL type 62) to every
+HLG picture. Deadpan neither authors nor qualifies Dolby Vision, and its files
+carry no `dvcC` record, so the native adapter removes NAL types 62 and 63 from
+each Annex B packet before muxing, retaining every other NAL byte for byte, and
+reports the count as `VideoCodecInfo.removed_unspecified_nal_units` (46 for the
+46-picture hardware HLG test file, 0 for PQ). Source admission still rejects
+those NAL types, so a verified output proves it is plain HLG.
+
+`EncoderSession::video_codec()` and `EncodedOutput::video_codec()` return a
+separate `VideoCodecInfo` (encoder, profile, pixel format, libavutil color enums,
+stream tag and metadata attachment flags), admitted against the contract. It
+is separate from `EncoderInfo`/`EncodeReport`, whose fields and serialization are
+unchanged; HDR `EncoderInfo.video_profile` is 2 (HEVC Main10) instead of 100.
+The base C structs keep ABI version 1. HDR uses additive entry points
+(`dp_encode_open_hdr`, `dp_encode_finish_hdr`, `dp_encode_query_video`) with
+extension structs versioned by `DP_ENCODE_HDR_ABI_VERSION` 1.
+
+`probe::HdrEncoderProbe` mirrors the SDR probe's clocks and audio markers with
+known 10-bit codes: black, 0.1, 10, 203 and 1000 cd/m² neutral patches, BT.2020
+primaries at reference-white signal level, an ordinal bit strip, a moving
+secondary block and a luma ramp. Its PQ contract declares BT.2020/D65
+1000 cd/m² mastering and fixed `clli` 1000/203 values for metadata round trips.
+
+On the measured M5 Max (macOS 26.5.2), hardware and OS software HEVC Main10 both
+exist and succeed for PQ and HLG, with and without the B-frame request. Unlike
+hardware H.264, HEVC B-frame attempts emitted reordered packets with no PTS
+before DTS; the rejection remains in place. OS software PQ declared `topleft`
+chroma location in its VUI despite left-sited input, while hardware PQ/HLG and
+software HLG declared `left`; software PQ therefore needs verifier rejection or a
+separate decision. See the
+[HEVC Main10 qualification](qualification/hevc-main10-encoding-2026-10-05.md).
 
 ## File, work and cancellation limits
 

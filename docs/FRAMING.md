@@ -206,12 +206,13 @@ revision guard as Camera. The construction is pure and unit-tested in
 | `:zoom S [target=…] [curve=step]` | Smash zoom. On the whole beat with a target: `Follow { target, scale: S, fallback }`, a live step onto the target. Otherwise a static pose at scale `S`. |
 | `:zoom S curve=linear\|smoothstep` | An eased change from the current pose, as `:creep to=S`. |
 | `:creep [from=S] [to=S] [target=…] [curve=smoothstep\|linear]` | An envelope from the current center at `from` (default: the current scale) to `to` (default 1.35). |
+| `:zoom S target=face:N …`, `:creep … target=face:N` | Face `N` (1 to 64, left to right) proposed in the displayed picture, saved as a target together with the framing ([face proposals](#face-proposals)). |
 | `:zoom off` | Abrupt return: no framing on the whole beat, or a step out to the full picture over the Edit range. |
 
 `target=current` (and `,z`) means the target the beat already follows, else the
 only saved target covering the displayed picture; several refuse and name them.
-`target=center` is the Original's center; any other value is a target id or
-label (quote labels with spaces). A whole-beat step with a target follows it
+`target=center` is the Original's center; `target=face:N` is a face proposal
+(below); any other value is a target id or label (quote labels with spaces). A whole-beat step with a target follows it
 live. An eased or ranged edit uses a fixed point: the target's center exactly
 as a follow would resolve it (`deadpan_plan::follow_pose`) at the frame where a
 step lands (the range's first frame) or where a creep arrives (its last frame).
@@ -250,6 +251,52 @@ refusal to flatten a path, `:zoom off`, a ranged punch-in at exact frames,
 refusal of `,c` on a path, black punctuation, a recorded `:zoom` replayed after
 Undo, and the two-target refusal of `,z` followed by a quoted-label `:zoom`.
 
+### Face proposals
+
+`target=face:N` (specification §6.4 `:zoom 1.35 target=face:2 curve=step`)
+names the `N`th face Apple Vision's face rectangle detector proposes in the
+stopped picture, counted from 1 left to right (then top to bottom). Detection
+proposes; it never edits. The command is captured and its picture displayed
+exactly as for any `:zoom`/`:creep`; the app then sends one `DetectFaces`
+command for that indexed Original picture and keeps editing while the project
+service's face job runs (`deadpan-track detect-faces`, see
+[tracking](TRACKING.md#face-detection-mode)). The footer says
+`Finding faces in the displayed picture for face:N…`.
+
+When the detection finishes, the command applies only if its session,
+revision, Visual/Edit range, selected beat, Repeat scope, cursor and Sequence
+scope are exactly those captured when it started, and the job reports the same
+session, revision, asset and picture. Then face `N` becomes an ordinary
+untracked target (`face-K` id, `Face N` label; the label adds the id if
+`Face N` is taken) over the same span Camera's `n` gives a drawn rectangle:
+from the analysed picture to the next stored shot boundary or the end of the
+measured video. Its region is the face rectangle in millionths; it has no
+samples, corrections or provenance (core `TargetRule` is closed to tracking).
+The framing is built exactly as `target=ID` would build it for that target, and
+the target and the framing are committed as **one** `Compound` transaction
+(`SetTarget` then `SetFraming`) expecting the entry revision: one history entry,
+one Undo removes both. The message reads `Framing saved: 1.350× following
+Face 2. Face 2 is a new target from face detection; one Undo removes both.`
+
+Refusals make no edit: no face in the picture (`No faces were found in this
+picture.`), `face:N` beyond the count (`face:3 is out of range: this picture
+has 2 faces (face:1–face:2), numbered left to right.`), any context change
+while detecting, a picture that is not an Original moment, detection
+unavailable or failed (worker missing, unsupported platform, worker/protocol
+error), `face:0`/`face:65` (command line), recording a macro, and a single
+Repeat play (scoped Camera targets; frame the face from an ordinary beat
+first). A whole-beat step follows the face target live; pictures of the beat
+before the analysed picture lie outside the target's span and use the
+follow's fallback center. Eased and ranged forms sample the target where they
+land, so a range starting before the analysed picture refuses as "not visible".
+
+The `faces` replay drives the real command line and project service: the real
+installed worker finds no face in the replay fixture and refuses; then (with
+only the worker's reported faces scripted) a delayed detection keeps the
+editor responsive, `face:2` saves `Face 2` and follows it at 1.35×, one Undo
+removes both, a cursor move during detection refuses the stale completion,
+`face:3` of two refuses with the count and `face:0` is refused at entry.
+
 ## Framing presets
 
 `:framing-save a` keeps the selected beat's framing (an off-center stare from
@@ -274,7 +321,8 @@ recipe boundary and migration fixture.
 
 Saved region targets, keyboard region creation, following and selected-target
 tracking are implemented (above, [targets](TARGETS.md), [tracking](TRACKING.md)).
-Point targets, face/region detection, renaming targets, pointer dragging of
+Point targets, face proposals in Camera's numbered picker (only `target=face:N`
+uses them now), general region detection, renaming targets, pointer dragging of
 rectangles, a live follow whose scale changes over time (a creep that tracks a
 moving target), and follow centers corrected for a letterboxed canvas remain
 required. Centered per-play scale

@@ -32,6 +32,7 @@ mod framing;
 mod gap_override;
 mod generated;
 mod group_selection;
+mod hdr;
 mod insert_time;
 #[cfg(test)]
 mod legacy_audio_binding_v20;
@@ -47,6 +48,7 @@ mod marks;
 mod move_range;
 mod occurrence;
 mod occurrence_edit;
+mod output_color;
 mod picture_context;
 mod register;
 mod repeat_escalation;
@@ -96,6 +98,7 @@ pub use exact::ExactRatio;
 pub use framing::*;
 pub use generated::*;
 pub use group_selection::{GroupSelectionIdentities, GroupSelectionPlan, validate_group_label};
+pub use hdr::*;
 pub use insert_time::{
     InsertTimeSplit, InsertTimeTarget, SequenceRangeEdit, SourceReplacement, SourceSpliceInterior,
 };
@@ -103,6 +106,7 @@ pub use marks::*;
 pub use move_range::{MoveRangeDestination, SequenceRangeMove};
 pub use occurrence::*;
 pub use occurrence_edit::{OccurrenceEdit, OccurrenceIdentities};
+pub use output_color::*;
 pub use picture_context::*;
 pub use register::{RegisterName, RegisterValue};
 pub use repeat_escalation::*;

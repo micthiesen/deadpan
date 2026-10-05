@@ -10,6 +10,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+use deadpan_core::{ColorPolicy, ContentLight, MasteringDisplay};
 use deadpan_source::{
     ChromaLocation, ColorMatrix, ColorPrimaries, ColorRange, ColorTransfer, DecodeControl,
     DecodeLimits, Mp4Inspection, Mp4TrackInspection, Mp4TrackKind, SourceDecoder,
@@ -19,6 +20,9 @@ use deadpan_source::{
 use serde::Serialize;
 
 use super::{VerifyError, metrics::I420};
+
+/// HEVC profile identifier of Main10 in both hvcC and the pinned decoder.
+const HEVC_MAIN10: u8 = 2;
 
 const MAX_CALL: Duration = Duration::from_secs(60);
 /// Retained decoded audio across simultaneously open windows (about 64 MiB).
@@ -45,14 +49,34 @@ fn open(path: &Path) -> Result<File, VerifyError> {
     Ok(file)
 }
 
-fn limits(raster: [u32; 2], frames: u64) -> DecodeLimits {
+fn limits(raster: [u32; 2], frames: u64, hdr: bool) -> DecodeLimits {
+    // Complete 16x16 H.264 macroblocks, or HEVC coding tree blocks of at most
+    // 64x64, are stored before the visible crop.
+    let block = if hdr { 64 } else { 16 };
     DecodeLimits {
         // Room for extra pictures so they are reported rather than refused.
         max_frames: frames.saturating_mul(2).saturating_add(16).min(10_000_000),
-        // Complete 16x16 macroblocks are stored before the visible crop.
-        max_pixels: (u64::from(raster[0]).div_ceil(16) * 16)
-            * (u64::from(raster[1]).div_ceil(16) * 16),
+        max_pixels: (u64::from(raster[0]).div_ceil(block) * block)
+            * (u64::from(raster[1]).div_ceil(block) * block),
         ..DecodeLimits::default()
+    }
+}
+
+/// The committed output branch the movie must carry.
+#[derive(Clone, Copy, Debug)]
+pub(super) struct ExpectedColor {
+    pub policy: ColorPolicy,
+    /// PQ only: the mastering volume the contract retained, if any.
+    pub mastering: Option<MasteringDisplay>,
+}
+
+impl ExpectedColor {
+    pub const fn hdr(&self) -> Option<ColorTransfer> {
+        match self.policy {
+            ColorPolicy::SdrRec709 => None,
+            ColorPolicy::HdrRec2020Pq => Some(ColorTransfer::Pq),
+            ColorPolicy::HdrRec2020Hlg => Some(ColorTransfer::Hlg),
+        }
     }
 }
 
@@ -60,12 +84,17 @@ pub(super) fn inspect(
     path: &Path,
     raster: [u32; 2],
     frames: u64,
+    hdr: bool,
     cancelled: &AtomicBool,
     deadline: Instant,
 ) -> Result<Mp4Inspection, VerifyError> {
     let file = open(path)?;
-    inspect_mp4(&file, limits(raster, frames), control(cancelled, deadline)?)
-        .map_err(|error| VerifyError::Movie(error.to_string()))
+    inspect_mp4(
+        &file,
+        limits(raster, frames, hdr),
+        control(cancelled, deadline)?,
+    )
+    .map_err(|error| VerifyError::Movie(error.to_string()))
 }
 
 pub(super) fn track(movie: &Mp4Inspection, kind: Mp4TrackKind) -> Option<&Mp4TrackInspection> {
@@ -108,13 +137,29 @@ pub(super) fn edits(movie: &Mp4Inspection, track: &Mp4TrackInspection) -> EditSu
 }
 
 /// Container color tags and the decoder's interpretation, which must match
-/// the contract's progressive limited Rec.709 with left-sited chroma.
+/// the contract's branch: progressive limited Rec.709 H.264 for SDR, or
+/// limited BT.2020 NCL PQ/HLG HEVC Main10 (`hvc1`) for HDR, always with
+/// left-sited chroma. HDR-only observations are omitted for SDR movies.
 #[derive(Clone, Debug, Default, Serialize)]
 pub struct ColorObservation {
     pub container: Option<[u16; 3]>,
     pub container_full_range: Option<bool>,
     pub decoded: Option<String>,
     pub chroma_location: Option<String>,
+    /// `hvc1` or `avc1`, reported for HDR movies.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sample_entry: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hevc_profile_idc: Option<u8>,
+    /// Decoder profile of the first picture (HEVC Main10 is 2), HDR only.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub decoder_profile: Option<i32>,
+    /// Container `mdcv`, HDR only.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mastering: Option<MasteringDisplay>,
+    /// Container `clli`, HDR only.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub content_light: Option<ContentLight>,
     pub problems: Vec<String>,
 }
 
@@ -127,6 +172,9 @@ pub struct PictureAnomaly {
 
 pub(super) struct PictureStream {
     pub decoded: u64,
+    /// Decoded pictures were classified as the wrong dynamic range for the
+    /// committed branch and therefore not compared.
+    pub wrong_branch: bool,
     pub anomalies: Vec<PictureAnomaly>,
     pub color: ColorObservation,
 }
@@ -145,9 +193,148 @@ pub(super) struct PictureGrid {
     pub rate: (u32, u32),
 }
 
+/// Container (sample description, `colr`, `mdcv`, `clli`) checks for the
+/// committed branch. The SDR checks are unchanged from the original harness.
+fn container_color(
+    track: Option<&Mp4TrackInspection>,
+    expected: ExpectedColor,
+    color: &mut ColorObservation,
+) {
+    if let Some(described) = track.and_then(|track| track.color) {
+        color.container = Some([described.primaries, described.transfer, described.matrix]);
+        color.container_full_range = Some(described.full_range);
+    }
+    let Some(transfer) = expected.hdr() else {
+        match track.and_then(|track| track.color) {
+            Some(described)
+                if [described.primaries, described.transfer, described.matrix] == [1, 1, 1]
+                    && !described.full_range => {}
+            Some(_) => color
+                .problems
+                .push("container color tags are not limited-range Rec.709".into()),
+            None => color
+                .problems
+                .push("movie has no container color description".into()),
+        }
+        return;
+    };
+    let transfer_code = if transfer == ColorTransfer::Pq {
+        16
+    } else {
+        18
+    };
+    match track.and_then(|track| track.color) {
+        Some(described)
+            if [described.primaries, described.transfer, described.matrix]
+                == [9, transfer_code, 9]
+                && !described.full_range => {}
+        Some(_) => color.problems.push(format!(
+            "container color tags are not limited-range BT.2020 NCL with transfer {transfer_code}"
+        )),
+        None => color
+            .problems
+            .push("movie has no container color description".into()),
+    }
+    let Some(track) = track else {
+        return;
+    };
+    color.sample_entry = match (track.hevc, track.avc) {
+        (Some(_), None) => Some("hvc1"),
+        (None, Some(_)) => Some("avc1"),
+        _ => None,
+    };
+    match track.hevc {
+        Some(hevc) => {
+            color.hevc_profile_idc = Some(hevc.profile_idc);
+            if hevc.profile_idc != HEVC_MAIN10
+                || hevc.bit_depth_luma != 10
+                || hevc.bit_depth_chroma != 10
+                || hevc.chroma_format_idc != 1
+            {
+                color.problems.push(format!(
+                    "hvcC is not ten-bit 4:2:0 Main10: profile {}, depth {}/{}, chroma format {}",
+                    hevc.profile_idc,
+                    hevc.bit_depth_luma,
+                    hevc.bit_depth_chroma,
+                    hevc.chroma_format_idc
+                ));
+            }
+        }
+        None => color
+            .problems
+            .push("HDR movie video is not an hvc1 HEVC track".into()),
+    }
+    color.mastering = track.mastering.map(|value| MasteringDisplay {
+        primaries: value.primaries,
+        white_point: value.white_point,
+        max_luminance: value.max_luminance,
+        min_luminance: value.min_luminance,
+    });
+    color.content_light = track.content_light.map(|value| ContentLight {
+        max_cll: value.max_cll,
+        max_fall: value.max_fall,
+    });
+    if transfer == ColorTransfer::Pq {
+        if color.mastering != expected.mastering {
+            color.problems.push(format!(
+                "container mdcv {:?} differs from the committed mastering volume {:?}",
+                color.mastering, expected.mastering
+            ));
+        }
+        if color.content_light.is_none() {
+            color
+                .problems
+                .push("PQ movie has no clli content light box".into());
+        }
+    } else if color.mastering.is_some() || color.content_light.is_some() {
+        color
+            .problems
+            .push("HLG movie carries mdcv or clli static metadata".into());
+    }
+}
+
+/// Decoded interpretation checks for the committed branch.
+fn decoded_color(
+    info: &deadpan_source::SourceStreamInfo,
+    expected: ExpectedColor,
+    color: &mut ColorObservation,
+) {
+    color.decoded = Some(format!("{:?}", info.color));
+    match expected.hdr() {
+        None => {
+            if info.color.range != ColorRange::Limited
+                || info.color.matrix != ColorMatrix::Bt709
+                || info.color.transfer != ColorTransfer::Bt709
+                || info.color.primaries != ColorPrimaries::Bt709
+            {
+                color
+                    .problems
+                    .push("decoded color interpretation is not limited-range Rec.709".into());
+            }
+        }
+        Some(transfer) => {
+            if info.color.range != ColorRange::Limited
+                || info.color.matrix != ColorMatrix::Bt2020NonConstant
+                || info.color.transfer != transfer
+                || info.color.primaries != ColorPrimaries::Bt2020
+            {
+                color.problems.push(format!(
+                    "decoded color interpretation is not limited-range BT.2020 NCL {transfer:?}"
+                ));
+            }
+            if info.codec != "hevc" {
+                color
+                    .problems
+                    .push(format!("decoded HDR codec is {}, not hevc", info.codec));
+            }
+        }
+    }
+}
+
 pub(super) fn pictures(
     path: &Path,
     grid: PictureGrid,
+    expected: ExpectedColor,
     track: Option<&Mp4TrackInspection>,
     cancelled: &AtomicBool,
     deadline: Instant,
@@ -159,35 +346,34 @@ pub(super) fn pictures(
         rate,
     } = grid;
     let file = open(path)?;
-    let mut decoder =
-        SourceDecoder::open(file, limits(raster, frames), control(cancelled, deadline)?)
-            .map_err(|error| VerifyError::Movie(error.to_string()))?;
+    let hdr = expected.hdr();
+    let mut decoder = SourceDecoder::open(
+        file,
+        limits(raster, frames, hdr.is_some()),
+        control(cancelled, deadline)?,
+    )
+    .map_err(|error| VerifyError::Movie(error.to_string()))?;
     let info = decoder.info().clone();
     let mut color = ColorObservation::default();
-    if let Some(described) = track.and_then(|track| track.color) {
-        color.container = Some([described.primaries, described.transfer, described.matrix]);
-        color.container_full_range = Some(described.full_range);
-        if [described.primaries, described.transfer, described.matrix] != [1, 1, 1]
-            || described.full_range
-        {
-            color
-                .problems
-                .push("container color tags are not limited-range Rec.709".into());
-        }
-    } else {
-        color
-            .problems
-            .push("movie has no container color description".into());
-    }
-    color.decoded = Some(format!("{:?}", info.color));
-    if info.color.range != ColorRange::Limited
-        || info.color.matrix != ColorMatrix::Bt709
-        || info.color.transfer != ColorTransfer::Bt709
-        || info.color.primaries != ColorPrimaries::Bt709
-    {
-        color
-            .problems
-            .push("decoded color interpretation is not limited-range Rec.709".into());
+    container_color(track, expected, &mut color);
+    decoded_color(&info, expected, &mut color);
+    if info.color.transfer.is_hdr() != hdr.is_some() {
+        // Eight-bit and ten-bit pictures cannot be compared code for code.
+        color.problems.push(format!(
+            "movie pictures are {} but the committed branch is {:?}; pictures were not compared",
+            if info.color.transfer.is_hdr() {
+                "HDR"
+            } else {
+                "SDR"
+            },
+            expected.policy
+        ));
+        return Ok(PictureStream {
+            decoded: 0,
+            wrong_branch: true,
+            anomalies: Vec::new(),
+            color,
+        });
     }
     if [info.width, info.height] != raster || info.rotation_quarter_turns != 0 {
         return Err(VerifyError::Timing(format!(
@@ -201,13 +387,42 @@ pub(super) fn pictures(
     let mut anomalies = Vec::new();
     let mut decoded = 0_u64;
     let mut next = 0_u64;
-    while let Some(frame) = decoder
-        .next_i420(control(cancelled, deadline)?)
-        .map_err(|error| VerifyError::Movie(error.to_string()))?
-    {
+    loop {
+        let (metadata, picture) = if hdr.is_some() {
+            let Some(frame) = decoder
+                .next_yuv420p10(control(cancelled, deadline)?)
+                .map_err(|error| VerifyError::Movie(error.to_string()))?
+            else {
+                break;
+            };
+            let picture = I420::from_tight_p10(frame.width, frame.height, &frame.samples)
+                .ok_or_else(|| {
+                    VerifyError::Movie("decoded picture is not tight yuv420p10".into())
+                })?;
+            (frame.metadata, picture)
+        } else {
+            let Some(frame) = decoder
+                .next_i420(control(cancelled, deadline)?)
+                .map_err(|error| VerifyError::Movie(error.to_string()))?
+            else {
+                break;
+            };
+            let picture = I420::from_tight(frame.width, frame.height, &frame.i420)
+                .ok_or_else(|| VerifyError::Movie("decoded picture is not tight I420".into()))?;
+            (frame.metadata, picture)
+        };
         let index = decoded;
         decoded += 1;
-        let pts = frame.metadata.source.pts;
+        if hdr.is_some() && color.decoder_profile.is_none() {
+            color.decoder_profile = Some(metadata.decoder_profile);
+            if metadata.decoder_profile != i32::from(HEVC_MAIN10) {
+                color.problems.push(format!(
+                    "decoder reports HEVC profile {}, not Main10",
+                    metadata.decoder_profile
+                ));
+            }
+        }
+        let pts = metadata.source.pts;
         let mut anomaly = |problem: String| {
             anomalies.push(PictureAnomaly {
                 decoded_index: index,
@@ -215,8 +430,8 @@ pub(super) fn pictures(
                 problem,
             });
         };
-        if frame.metadata.chroma_location != ChromaLocation::Left {
-            let location = format!("{:?}", frame.metadata.chroma_location);
+        if metadata.chroma_location != ChromaLocation::Left {
+            let location = format!("{:?}", metadata.chroma_location);
             if color.chroma_location.as_deref() != Some(location.as_str()) {
                 color
                     .problems
@@ -251,8 +466,6 @@ pub(super) fn pictures(
             anomaly(format!("output ordinals {next}..{ordinal} are missing"));
         }
         next = ordinal + 1;
-        let picture = I420::from_tight(frame.width, frame.height, &frame.i420)
-            .ok_or_else(|| VerifyError::Movie("decoded picture is not tight I420".into()))?;
         visit(ordinal, picture)?;
     }
     if next < frames {
@@ -264,6 +477,7 @@ pub(super) fn pictures(
     }
     Ok(PictureStream {
         decoded,
+        wrong_branch: false,
         anomalies,
         color,
     })

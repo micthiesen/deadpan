@@ -340,9 +340,11 @@ fn run_request(
         &request.context,
         matches!(request.operation, RenderOperation::Start { .. }),
     )?;
-    if matches!(request.operation, RenderOperation::Start { .. }) {
-        output_summary(&document)?;
-    }
+    let algorithm = if matches!(request.operation, RenderOperation::Start { .. }) {
+        Some(committed_output_summary(&store, &document)?.algorithm)
+    } else {
+        None
+    };
     if cancelled.load(Ordering::Acquire) {
         return Err(PublicRenderError::new(
             "Cancelled",
@@ -354,7 +356,12 @@ fn run_request(
     let admission = match request.operation {
         RenderOperation::Start { destination } => workflow.start(
             &mut store,
-            start_request(&request.context, destination, Instant::now())?,
+            start_request(
+                &request.context,
+                algorithm.ok_or_else(|| PublicRenderError::invalid("missing output summary"))?,
+                destination,
+                Instant::now(),
+            )?,
         ),
         RenderOperation::RetryCheckpoint {
             job_id,

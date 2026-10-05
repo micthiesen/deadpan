@@ -27,6 +27,31 @@ pub struct Mp4AvcConfiguration {
     pub nal_length_bytes: u8,
 }
 
+/// Admitted hvcC fields. Admission requires profile space 0, Main10
+/// (profile_idc 2), 4:2:0 (chroma_format_idc 1), ten-bit luma and chroma,
+/// a 1, 2 or 4 byte NAL length and complete nonempty VPS/SPS/PPS arrays.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Mp4HevcConfiguration {
+    pub profile_space: u8,
+    pub tier: u8,
+    pub profile_idc: u8,
+    pub level_idc: u8,
+    pub chroma_format_idc: u8,
+    pub bit_depth_luma: u8,
+    pub bit_depth_chroma: u8,
+    pub nal_length_bytes: u8,
+    pub vps_count: u8,
+    pub sps_count: u8,
+    pub pps_count: u8,
+    /// Prefix and suffix SEI units carried in the configuration.
+    pub sei_count: u8,
+    /// First SPS `pic_width/height_in_luma_samples` (the decoder's allocation
+    /// size) and its conformance-window cropped size. Every SPS is checked
+    /// against the decode dimension and pixel limits before decoding.
+    pub sps_coded_size: [u32; 2],
+    pub sps_cropped_size: [u32; 2],
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Mp4ColorDescription {
     pub primaries: u16,
@@ -61,7 +86,13 @@ pub struct Mp4TrackInspection {
     /// Exact sum of stts runs in media ticks, independently of mdhd's declaration.
     pub timing_duration: u64,
     pub avc: Option<Mp4AvcConfiguration>,
+    /// hvc1 tracks only; `avc` is then None.
+    pub hevc: Option<Mp4HevcConfiguration>,
     pub color: Option<Mp4ColorDescription>,
+    /// `mdcv` box, converted from its stored G, B, R primary order to R, G, B.
+    pub mastering: Option<MasteringDisplay>,
+    /// `clli` box.
+    pub content_light: Option<ContentLight>,
     pub pixel_aspect_ratio: Option<[u32; 2]>,
     pub sample_audio_channels: Option<u32>,
     pub sample_audio_rate: Option<u32>,
@@ -180,7 +211,10 @@ fn summary(layout: &Mp4Layout) -> Result<Mp4Inspection> {
                 .count,
             timing_duration: track.timing_duration,
             avc: track.avc,
+            hevc: track.hevc,
             color: track.color,
+            mastering: track.mastering,
+            content_light: track.content_light,
             pixel_aspect_ratio: track.pixel_aspect_ratio,
             sample_audio_channels: track.audio_channels,
             sample_audio_rate: track.audio_sample_rate,
@@ -268,6 +302,23 @@ pub struct Mp4H264Packet {
     pub non_idr_vcl_nal_count: u32,
 }
 
+/// Two-byte HEVC NAL headers of one hvc1 sample. IRAP presence does not
+/// prove a decodable picture or a closed GOP.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Mp4HevcPacket {
+    pub nal_count: u32,
+    /// Bit n means a NAL header declared nal_unit_type n (0..=63).
+    pub nal_types: u64,
+    /// nal_unit_type 16..=23 (BLA, IDR, CRA and reserved IRAP).
+    pub irap_nal_count: u32,
+    /// nal_unit_type 19 or 20 (IDR_W_RADL, IDR_N_LP).
+    pub idr_nal_count: u32,
+    /// nal_unit_type 0..=9 (non-IRAP VCL).
+    pub non_irap_vcl_nal_count: u32,
+    /// nal_unit_type 32..=34 (VPS, SPS, PPS) repeated in-band.
+    pub parameter_set_nal_count: u32,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Mp4PacketObservation {
     pub track_index: u32,
@@ -288,6 +339,8 @@ pub struct Mp4PacketObservation {
     pub table_sync: bool,
     /// NAL headers only. IDR presence does not prove a valid picture or closed GOP.
     pub h264: Option<Mp4H264Packet>,
+    /// hvc1 tracks only; `h264` is then None.
+    pub hevc: Option<Mp4HevcPacket>,
 }
 
 #[derive(Default)]
@@ -533,6 +586,15 @@ fn next_packet(
             )?),
             None => None,
         };
+        let hevc = match track.hevc {
+            Some(hevc) => Some(hevc_nal_headers(
+                reader,
+                cursor.offset,
+                length,
+                hevc.nal_length_bytes,
+            )?),
+            None => None,
+        };
         let packet = Mp4PacketObservation {
             track_index: u32::try_from(*track_index).map_err(|_| limit("track index overflow"))?,
             track_id: track.id.ok_or_else(|| invalid("missing track identity"))?,
@@ -545,6 +607,7 @@ fn next_packet(
             presentation,
             table_sync,
             h264,
+            hevc,
         };
         cursor.dts = cursor
             .dts
@@ -655,6 +718,68 @@ fn nal_headers(
     require(
         packet.nal_count > 0 && at == end,
         "empty or incomplete AVC packet",
+    )?;
+    Ok(packet)
+}
+
+fn hevc_nal_headers(
+    reader: &mut Reader<'_>,
+    offset: u64,
+    length: u32,
+    width: u8,
+) -> Result<Mp4HevcPacket> {
+    require(matches!(width, 1 | 2 | 4), "invalid HEVC NAL length width")?;
+    let end = offset
+        .checked_add(u64::from(length))
+        .ok_or_else(|| invalid("HEVC packet extent overflow"))?;
+    require(end <= reader.length, "HEVC packet leaves input descriptor")?;
+    let mut used = 0;
+    let mut packet = Mp4HevcPacket {
+        nal_count: 0,
+        nal_types: 0,
+        irap_nal_count: 0,
+        idr_nal_count: 0,
+        non_irap_vcl_nal_count: 0,
+        parameter_set_nal_count: 0,
+    };
+    let mut at = offset;
+    while at < end {
+        reader.check()?;
+        if packet.nal_count == 4096 {
+            return Err(limit("HEVC packet exceeds 4096 NAL units"));
+        }
+        require(
+            u64::from(width) <= end - at,
+            "truncated HEVC packet NAL length",
+        )?;
+        let length = match width {
+            1 => u32::from(packet_bytes::<1>(reader, at, &mut used)?[0]),
+            2 => u32::from(u16::from_be_bytes(packet_bytes(reader, at, &mut used)?)),
+            4 => u32::from_be_bytes(packet_bytes(reader, at, &mut used)?),
+            _ => unreachable!("NAL width validated"),
+        };
+        at += u64::from(width);
+        require(
+            length >= 2 && u64::from(length) <= end - at,
+            "HEVC NAL escapes its packet",
+        )?;
+        let header = packet_bytes::<2>(reader, at, &mut used)?;
+        require(
+            header[0] & 0x81 == 0 && header[1] >> 3 == 0 && header[1] & 7 != 0,
+            "invalid or multilayer HEVC NAL header",
+        )?;
+        let kind = (header[0] >> 1) & 63;
+        packet.nal_count += 1;
+        packet.nal_types |= 1_u64 << kind;
+        packet.irap_nal_count += u32::from((16..=23).contains(&kind));
+        packet.idr_nal_count += u32::from(matches!(kind, 19 | 20));
+        packet.non_irap_vcl_nal_count += u32::from(kind <= 9);
+        packet.parameter_set_nal_count += u32::from((32..=34).contains(&kind));
+        at += u64::from(length);
+    }
+    require(
+        packet.nal_count > 0 && at == end,
+        "empty or incomplete HEVC packet",
     )?;
     Ok(packet)
 }

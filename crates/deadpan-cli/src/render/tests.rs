@@ -11,6 +11,10 @@ use std::sync::atomic::AtomicBool;
 type TestResult<T = ()> = Result<T, Box<dyn std::error::Error>>;
 
 fn document() -> TestResult<ProjectDocument> {
+    document_with(ColorPolicy::SdrRec709)
+}
+
+fn document_with(color_policy: ColorPolicy) -> TestResult<ProjectDocument> {
     let empty = ProjectDocument::new(
         ProjectId::new("render-project")?,
         RevisionId::new("initial")?,
@@ -18,7 +22,7 @@ fn document() -> TestResult<ProjectDocument> {
             width: 319,
             height: 181,
             frame_rate: FrameRate::new(30_000, 1001)?,
-            color_policy: ColorPolicy::SdrRec709,
+            color_policy,
         },
         NodeId::new("root")?,
     )?;
@@ -60,8 +64,20 @@ fn public_start_uses_automatic_policy_and_fresh_independent_identities() {
         project_id: deadpan_core::ProjectId::new("project").unwrap(),
         revision_id: deadpan_core::RevisionId::new("revision").unwrap(),
     };
-    let first = start_request(&context, "/tmp/first.mp4".into(), Instant::now()).unwrap();
-    let second = start_request(&context, "/tmp/second.mp4".into(), Instant::now()).unwrap();
+    let first = start_request(
+        &context,
+        RenderAutomaticAlgorithm::AutomaticSdrV1,
+        "/tmp/first.mp4".into(),
+        Instant::now(),
+    )
+    .unwrap();
+    let second = start_request(
+        &context,
+        RenderAutomaticAlgorithm::AutomaticSdrV1,
+        "/tmp/second.mp4".into(),
+        Instant::now(),
+    )
+    .unwrap();
     assert_eq!(first.revision, context.revision_id);
     assert!(first.range.is_none());
     assert!(first.policy.is_automatic());
@@ -91,7 +107,13 @@ fn public_start_uses_automatic_policy_and_fresh_independent_identities() {
         "/tmp/.deadpan-bad.mp4",
     ] {
         assert!(
-            start_request(&context, path.into(), Instant::now()).is_err(),
+            start_request(
+                &context,
+                RenderAutomaticAlgorithm::AutomaticSdrV1,
+                path.into(),
+                Instant::now()
+            )
+            .is_err(),
             "{path}"
         );
     }
@@ -100,7 +122,7 @@ fn public_start_uses_automatic_policy_and_fresh_independent_identities() {
 #[test]
 fn public_summary_preserves_authored_geometry_and_origin_based_samples() -> TestResult {
     let document = document()?;
-    let summary = output_summary(&document)?;
+    let summary = output_summary(&document, &crate::picture::OutputColorDecision::sdr())?;
     assert_eq!(summary.canvas, [319, 181]);
     assert_eq!(summary.raster, [318, 180]);
     assert_eq!(summary.frame_count, 128);
@@ -122,6 +144,43 @@ fn public_summary_preserves_authored_geometry_and_origin_based_samples() -> Test
         RETAINED_NAMESPACE_BYTES
     );
     assert_eq!(limits.timeout, RENDER_TIMEOUT);
+    Ok(())
+}
+
+#[test]
+fn public_summary_selects_the_algorithm_from_the_committed_color_branch() -> TestResult {
+    use crate::picture::{OutputColorDecision, OutputColorReason};
+    let document = document()?;
+    let sdr = output_summary(&document, &OutputColorDecision::sdr())?;
+    assert_eq!(sdr.algorithm, RenderAutomaticAlgorithm::AutomaticSdrV1);
+    assert_eq!(sdr.color_policy, ColorPolicy::SdrRec709);
+    // An HDR decision cannot belong to an SDR basis.
+    let hlg = OutputColorDecision {
+        output: ColorPolicy::HdrRec2020Hlg,
+        reason: OutputColorReason::HdrSources,
+        hdr_sources: true,
+        tone_map_peak_nits: 1_000,
+        ignored_content_light: false,
+        mastering: None,
+    };
+    assert_eq!(
+        output_summary(&document, &hlg).unwrap_err().code,
+        "RenderColorUnsupported"
+    );
+    let document = document_with(ColorPolicy::HdrRec2020Hlg)?;
+    let summary = output_summary(&document, &hlg)?;
+    assert_eq!(summary.algorithm, RenderAutomaticAlgorithm::AutomaticHdrV1);
+    assert_eq!(summary.color_policy, ColorPolicy::HdrRec2020Hlg);
+    assert_eq!(summary.tone_map_peak_nits, 1_000);
+    // A tone-mapped SDR fallback from an HDR basis keeps AutomaticSdrV1.
+    let fallback = OutputColorDecision {
+        output: ColorPolicy::SdrRec709,
+        reason: OutputColorReason::SdrSourceMixed,
+        ..hlg
+    };
+    let summary = output_summary(&document, &fallback)?;
+    assert_eq!(summary.algorithm, RenderAutomaticAlgorithm::AutomaticSdrV1);
+    assert_eq!(summary.color_reason, OutputColorReason::SdrSourceMixed);
     Ok(())
 }
 
@@ -166,7 +225,12 @@ fn retry_builders_keep_original_job_policy_and_reject_foreign_context() -> TestR
     let document = document()?;
     let mut store = ProjectStore::create(&root.path().join("retry.deadpan"), &document)?;
     let context = RenderContext::from_document(&document);
-    let start = start_request(&context, root.path().join("output.mp4"), Instant::now())?;
+    let start = start_request(
+        &context,
+        RenderAutomaticAlgorithm::AutomaticSdrV1,
+        root.path().join("output.mp4"),
+        Instant::now(),
+    )?;
     let intent = RenderIntent {
         schema_version: 2,
         job_id: start.identity.job_id.clone(),

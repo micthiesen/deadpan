@@ -7,8 +7,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     AudioTimingId, Command, EditError, EditErrorCode, ExactFrameRange, ExactRatio, FrameDuration,
-    FrameRange, MAX_DOCUMENT_NODES, NodeId, NodeKind, PitchPolicy, ProjectDocument, ProjectFrame,
-    RetimePurpose, SplitIdentities,
+    FrameRange, MAX_DOCUMENT_NODES, NodeId, NodeKind, ProjectDocument, ProjectFrame, RetimePurpose,
+    SplitIdentities,
 };
 
 /// Both addresses refer to the original document. A seam retains its slot even
@@ -531,8 +531,8 @@ fn island_owners(
                     return Err(limit("move physical-owner traversal"));
                 }
                 if !matches!(&document.nodes()[&id].kind,
-                    NodeKind::Retime { duration, mapping, pitch: PitchPolicy::Preserve, .. }
-                        if *duration != mapping.duration())
+                    NodeKind::Retime { duration, mapping, pitch, .. }
+                        if pitch.processes(*duration == mapping.duration()))
                 {
                     subtree.extend(document.children(&id).cloned());
                 }

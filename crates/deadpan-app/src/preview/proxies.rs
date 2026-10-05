@@ -219,6 +219,7 @@ fn ineligible_reason(reason: &deadpan_media::proxy::ProxyIneligible) -> String {
         ProxyIneligible::IrregularDurations => "some of its pictures last longer or shorter than the gap to the next picture, which a proxy file cannot reproduce exactly".into(),
         ProxyIneligible::MissingDuration => "its last picture has no measured duration".into(),
         ProxyIneligible::Empty => "it has no pictures".into(),
+        ProxyIneligible::HighDynamicRange => "it is HDR, which the eight-bit seek proxy cannot represent".into(),
     }
 }
 

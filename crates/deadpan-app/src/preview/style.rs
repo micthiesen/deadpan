@@ -229,6 +229,28 @@ pub(super) fn proxy_badge(painter: &egui::Painter, picture: egui::Rect) {
     painter.galley(chip.min + padding, galley, MUTED);
 }
 
+/// The viewing condition of an HDR-bearing project, in the picture's
+/// top-left corner: HDR output shown tone-mapped on this SDR viewer, or SDR
+/// output whose HDR sources are tone-mapped (spec 17.5 requires the label).
+pub(super) fn color_badge(painter: &egui::Painter, picture: egui::Rect, label: &str) {
+    if picture.width() < 160.0 || picture.height() < 40.0 {
+        return;
+    }
+    let galley = painter.layout_no_wrap(label.to_owned(), egui::FontId::proportional(11.0), MUTED);
+    let padding = egui::vec2(6.0, 2.0);
+    let size = galley.size() + padding * 2.0;
+    let chip =
+        egui::Rect::from_min_size(egui::pos2(picture.left() + 8.0, picture.top() + 8.0), size);
+    painter.rect(
+        chip,
+        4.0,
+        Color32::from_rgba_unmultiplied(0x17, 0x19, 0x1d, 0xd0),
+        egui::Stroke::new(1.0, BORDER),
+        egui::StrokeKind::Inside,
+    );
+    painter.galley(chip.min + padding, galley, MUTED);
+}
+
 pub(super) fn keycap(ui: &mut egui::Ui, text: &str) {
     keycap_frame().show(ui, |ui| {
         ui.label(RichText::new(text).monospace().size(11.0));

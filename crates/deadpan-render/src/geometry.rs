@@ -1,6 +1,11 @@
 use crate::{
-    FrameMetadata, RenderError, Rgba8Frame, Rotation, source_to_working, working_to_display,
+    ColorPipeline, FrameMetadata, RenderError, Rgba8Frame, Rotation, SampleDepth,
+    source_to_working_with, working_to_display_with,
 };
+
+/// RGBA64 sources sample the nearest texel when the bilinear fraction lies
+/// within this distance of it (see picture.wgsl `TEXEL_SNAP`).
+const TEXEL_SNAP: f64 = 1.0 / 1024.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FitMode {
@@ -77,13 +82,42 @@ pub fn reference_pixel(
     reference_pixel_with_geometry(frame, &geometry, x, y)
 }
 
-/// CPU color/filter reference for the same spatial geometry used by a framed GPU draw.
+/// CPU color/filter reference for the same spatial geometry used by a framed
+/// GPU draw, under the default SDR color pipeline.
 pub fn reference_pixel_with_geometry(
     frame: &Rgba8Frame,
     geometry: &PictureGeometry,
     x: u32,
     y: u32,
 ) -> Result<[u8; 4], RenderError> {
+    reference_pixel_with_pipeline(frame, geometry, ColorPipeline::default(), x, y)
+}
+
+/// [`reference_pixel_with_geometry`] under an explicit color pipeline: the
+/// SDR preview code of the composite (8-bit sRGB-encoded Rec.709).
+pub fn reference_pixel_with_pipeline(
+    frame: &Rgba8Frame,
+    geometry: &PictureGeometry,
+    pipeline: ColorPipeline,
+    x: u32,
+    y: u32,
+) -> Result<[u8; 4], RenderError> {
+    let working = reference_working_with_geometry(frame, geometry, pipeline, x, y)?;
+    let rgb = working_to_display_with(pipeline, working).map(|value| (value * 255.0).round() as u8);
+    Ok([rgb[0], rgb[1], rgb[2], 255])
+}
+
+/// Independent f64 working-composite reference (linear Rec.2020, working 1.0
+/// = 203 cd/m^2) for one output pixel: per-texel source interpretation, the
+/// SDR branch's per-source tone map, premultiplied bilinear interpolation and
+/// compositing over black. Uncovered pixels are black.
+pub fn reference_working_with_geometry(
+    frame: &Rgba8Frame,
+    geometry: &PictureGeometry,
+    pipeline: ColorPipeline,
+    x: u32,
+    y: u32,
+) -> Result<[f64; 3], RenderError> {
     if geometry.source_metadata != *frame.metadata() {
         return Err(RenderError::FramingGeometry);
     }
@@ -91,11 +125,20 @@ pub fn reference_pixel_with_geometry(
         return Err(RenderError::Dimensions);
     }
     let Some(uv) = geometry.pixel_uv(x, y) else {
-        return Ok([0, 0, 0, 255]);
+        return Ok([0.0; 3]);
     };
     let metadata = frame.metadata();
-    let sx = uv[0] * f64::from(metadata.width) - 0.5;
-    let sy = uv[1] * f64::from(metadata.height) - 0.5;
+    let mut sx = uv[0] * f64::from(metadata.width) - 0.5;
+    let mut sy = uv[1] * f64::from(metadata.height) - 0.5;
+    if frame.sample_depth() == SampleDepth::Sixteen {
+        // Same texel snap as the RGBA64 shader path.
+        for coordinate in [&mut sx, &mut sy] {
+            let nearest = coordinate.round();
+            if (*coordinate - nearest).abs() < TEXEL_SNAP {
+                *coordinate = nearest;
+            }
+        }
+    }
     let fx = sx - sx.floor();
     let fy = sy - sy.floor();
     let mut working = [0.0; 3];
@@ -104,15 +147,14 @@ pub fn reference_pixel_with_geometry(
             // Clamp-to-edge after source interpretation; dimensions are bounded.
             let px = (sx.floor() + dx).clamp(0.0, f64::from(metadata.width - 1)) as u32;
             let py = (sy.floor() + dy).clamp(0.0, f64::from(metadata.height - 1)) as u32;
-            let rgba = frame.pixel(px, py).map(|value| f64::from(value) / 255.0);
-            let rgb = source_to_working([rgba[0], rgba[1], rgba[2]], metadata.color);
+            let rgba = frame.normalized(px, py);
+            let rgb = source_to_working_with(pipeline, [rgba[0], rgba[1], rgba[2]], metadata.color);
             for channel in 0..3 {
                 working[channel] += rgb[channel] * rgba[3] * wx * wy;
             }
         }
     }
-    let rgb = working_to_display(working).map(|value| (value * 255.0).round() as u8);
-    Ok([rgb[0], rgb[1], rgb[2], 255])
+    Ok(working)
 }
 
 #[cfg(test)]

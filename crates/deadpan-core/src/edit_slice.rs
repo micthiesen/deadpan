@@ -120,6 +120,77 @@ impl<'de> Deserialize<'de> for CapturedEditSlice {
     }
 }
 
+/// Audio-only repeats (`:repeat N role=audio`) are root sound events of the
+/// Original's own audio over a mute range of the beat. A copy captures the
+/// mute but not root sounds, so its paste would be silent where the repeats
+/// were: refuse a capture that would take a muted stretch while leaving
+/// behind a sound of the Original heard over it. Placed catalog sounds
+/// (audio-only assets) and sounds over unmuted beats are unaffected.
+fn refuse_left_behind_repeats(
+    document: &ProjectDocument,
+    children: &[NodeId],
+    durations: &BTreeMap<NodeId, FrameDuration>,
+    parent_start: ProjectFrame,
+    range: FrameRange,
+) -> Result<(), EditError> {
+    if document.sounds().is_empty() {
+        return Ok(());
+    }
+    // Captured muted stretches, in absolute Edit frames.
+    let mut muted = Vec::new();
+    let mut start = parent_start.0;
+    for child in children {
+        let length = durations[child].frames();
+        if start < range.end().0
+            && start + length > range.start().0
+            && let Some(clip) = document.nodes()[child].audio_treatments.clip_gain()
+        {
+            for local in clip.mute_ranges() {
+                let low = local.start().checked_add(ExactRatio::integer(start));
+                let high = local.end().checked_add(ExactRatio::integer(start));
+                if let (Ok(low), Ok(high)) = (low, high) {
+                    muted.push((low, high));
+                }
+            }
+        }
+        start += length;
+    }
+    if muted.is_empty() {
+        return Ok(());
+    }
+    let rate = document.presentation_basis().frame_rate;
+    let (first, last) = (
+        ExactRatio::integer(range.start().0),
+        ExactRatio::integer(range.end().0),
+    );
+    for event in document.sounds().values() {
+        let from_original = document
+            .assets()
+            .get(&event.source.asset)
+            .is_some_and(|asset| asset.video.is_some());
+        if !from_original {
+            continue;
+        }
+        let heard = event
+            .mapping
+            .selection_frames_with_offset(FrameDuration::ZERO, event.offset, rate)
+            .map_err(DocumentError::from)?;
+        let overlaps = |low: ExactRatio, high: ExactRatio| {
+            heard.start.compare(high).is_lt() && heard.end.compare(low).is_gt()
+        };
+        if overlaps(first, last) && muted.iter().any(|(low, high)| overlaps(*low, *high)) {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                format!(
+                    "this selection includes \"{}\", a sound repeated from the Original over a muted beat; a copy would keep the mute but leave the repeat behind. Undo or delete the repeat first, or select around it",
+                    event.label
+                ),
+            ));
+        }
+    }
+    Ok(())
+}
+
 impl CapturedEditSlice {
     pub(crate) fn check_destination(&self, document: &ProjectDocument) -> Result<(), EditError> {
         if self.project_id() != document.project_id() {
@@ -204,6 +275,7 @@ impl CapturedEditSlice {
                 .map_err(DocumentError::from)?
             }
         };
+        refuse_left_behind_repeats(document, children, &durations, parent_start, range)?;
         let mut offset = parent_start.0;
         let mut parts = Vec::new();
         let mut selected = BTreeSet::new();
@@ -392,6 +464,70 @@ impl CapturedEditSlice {
             .as_ref()
             .expect("normalized slice selector")
     }
+    /// A readable outline of the captured structure for inspection before
+    /// reuse: each part's root with its kind, label and length, and the
+    /// direct children of a captured group. Nothing is resolved or applied.
+    pub fn outline(&self) -> Vec<String> {
+        let describe = |id: &NodeId| -> String {
+            let Some(node) = self.0.nodes.get(id) else {
+                return format!("{id} (missing)");
+            };
+            let kind = match &node.kind {
+                NodeKind::Source { source } => {
+                    format!("Original moment, {} f", source.duration.frames())
+                }
+                NodeKind::Sequence { children } => format!("group of {} beats", children.len()),
+                NodeKind::Hold { recipe } => format!("pause, {} f", recipe.duration.frames()),
+                NodeKind::Repeat { iterations, .. } => format!("Repeat ×{}", iterations.len()),
+                NodeKind::Retime {
+                    purpose: crate::RetimePurpose::Partition,
+                    duration,
+                    ..
+                } => format!("fragment, {} f", duration.frames()),
+                NodeKind::Retime { duration, .. } => {
+                    format!("speed change, {} f", duration.frames())
+                }
+            };
+            let mut extras = Vec::new();
+            if node.framing.is_some() {
+                extras.push("framed");
+            }
+            if !node.audio_treatments.is_empty() {
+                extras.push("gain/saturation");
+            }
+            if !node.cutaways.is_empty() {
+                extras.push("cutaways");
+            }
+            if !node.captions.is_empty() {
+                extras.push("captions");
+            }
+            let extras = if extras.is_empty() {
+                String::new()
+            } else {
+                format!(" · {}", extras.join(", "))
+            };
+            format!("“{}” · {kind}{extras}", node.label)
+        };
+        let mut lines = Vec::new();
+        for part in &self.0.parts {
+            lines.push(format!(
+                "{} · {} f in the copy",
+                describe(&part.root),
+                part.mapping.duration().frames()
+            ));
+            if let Some(NodeKind::Sequence { children }) =
+                self.0.nodes.get(&part.root).map(|node| &node.kind)
+            {
+                lines.extend(
+                    children
+                        .iter()
+                        .map(|child| format!("  {}", describe(child))),
+                );
+            }
+        }
+        lines
+    }
+
     pub fn duration(&self) -> FrameDuration {
         self.0.range.duration()
     }
@@ -621,8 +757,8 @@ fn capture_audio(
     while let Some(id) = pending.pop() {
         affected.insert(id.clone());
         if !matches!(&document.nodes()[id].kind,
-                NodeKind::Retime { duration, mapping, pitch: PitchPolicy::Preserve, .. }
-                if *duration != mapping.duration())
+                NodeKind::Retime { duration, mapping, pitch, .. }
+                if pitch.processes(*duration == mapping.duration()))
         {
             pending.extend(document.children(id));
         }

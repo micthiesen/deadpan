@@ -32,7 +32,9 @@ pub const MAX_GAIN_MUTE_RANGES: usize = 64;
 /// Document/plan integration must charge these independent aggregate limits.
 pub const MAX_GAIN_LAYERS: usize = 16;
 pub const MAX_GAIN_RECORDS: usize = 100_000;
-pub const MAX_AUDIO_TREATMENT_STAGES: usize = 1;
+pub const MAX_AUDIO_TREATMENT_STAGES: usize = 2;
+/// Saturation drive is authored in exact millidecibels from 0 through 24 dB, the authored gain ceiling.
+pub const MAX_SATURATION_DRIVE_MILLIDECIBELS: i32 = 24_000;
 /// Standalone JSON input/output cap. Enclosing documents and commands must also
 /// impose their own byte limit when they deserialize these types directly.
 pub const MAX_AUDIO_TREATMENTS_JSON_BYTES: usize = 512 * 1024;
@@ -54,7 +56,7 @@ impl fmt::Display for GainError {
             Self::TimeRange => "gain ranges require nonnegative increasing exact owner times",
             Self::Segments => "gain segments must increase from the range start to its exact end",
             Self::StageOrder => {
-                "treatment order must contain ClipGain exactly when its recipe exists"
+                "treatment order must list each present stage (ClipGain, Saturation) exactly once"
             }
             Self::Limit => "gain exceeds its declared collection or aggregate record limit",
             Self::Overflow => "gain arithmetic exceeds its bounded numeric representation",
@@ -368,12 +370,44 @@ impl ClipGain {
     }
 }
 
-/// The only admitted treatment stage. The order is serialized, never inferred
-/// from a UI widget's position; a future stage needs a new closed vocabulary.
+/// The admitted treatment stages. The order is serialized, never inferred
+/// from a UI widget's position (specification §10.2); a future stage needs a
+/// new closed vocabulary.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AudioTreatmentStage {
     ClipGain,
+    Saturation,
+}
+
+/// Intentional nonlinear drive (specification §8.3 "Saturation"): the signal
+/// is multiplied by the drive and passed through `tanh`, a memoryless soft
+/// clipper whose output stays within ±1 before later stages and the master
+/// limiter. Being stateless, it evaluates identically at any read boundary.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "wire::SaturationWire", into = "wire::SaturationWire")]
+pub struct Saturation {
+    drive: GainDb,
+}
+
+impl Saturation {
+    pub fn new(drive: GainDb) -> Result<Self, GainError> {
+        if !(0..=MAX_SATURATION_DRIVE_MILLIDECIBELS).contains(&drive.millidecibels()) {
+            return Err(GainError::ValueRange);
+        }
+        Ok(Self { drive })
+    }
+    pub const fn drive(self) -> GainDb {
+        self.drive
+    }
+    /// The linear drive factor applied before the soft clipper.
+    pub fn drive_factor(self) -> f64 {
+        10_f64.powf(f64::from(self.drive.millidecibels()) / 20_000.0)
+    }
+    /// One sample through the stage.
+    pub fn shape(self, sample: f64) -> f64 {
+        (sample * self.drive_factor()).tanh()
+    }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -384,6 +418,7 @@ pub enum AudioTreatmentStage {
 pub struct AudioTreatments {
     order: Vec<AudioTreatmentStage>,
     clip_gain: Option<ClipGain>,
+    saturation: Option<Saturation>,
 }
 
 impl AudioTreatments {
@@ -391,7 +426,20 @@ impl AudioTreatments {
         order: Vec<AudioTreatmentStage>,
         clip_gain: Option<ClipGain>,
     ) -> Result<Self, GainError> {
-        let result = Self { order, clip_gain };
+        Self::with_stages(order, clip_gain, None)
+    }
+    /// Every stage recipe with its explicit order: each present stage is
+    /// listed exactly once and no absent stage is listed.
+    pub fn with_stages(
+        order: Vec<AudioTreatmentStage>,
+        clip_gain: Option<ClipGain>,
+        saturation: Option<Saturation>,
+    ) -> Result<Self, GainError> {
+        let result = Self {
+            order,
+            clip_gain,
+            saturation,
+        };
         result.validate()?;
         Ok(result)
     }
@@ -399,6 +447,7 @@ impl AudioTreatments {
         Self {
             order: vec![AudioTreatmentStage::ClipGain],
             clip_gain: Some(clip_gain),
+            saturation: None,
         }
     }
     pub fn order(&self) -> &[AudioTreatmentStage] {
@@ -407,24 +456,57 @@ impl AudioTreatments {
     pub fn clip_gain(&self) -> Option<&ClipGain> {
         self.clip_gain.as_ref()
     }
+    pub fn saturation(&self) -> Option<Saturation> {
+        self.saturation
+    }
     pub fn is_empty(&self) -> bool {
-        self.clip_gain.is_none()
+        self.clip_gain.is_none() && self.saturation.is_none()
+    }
+    /// The same recipe with `saturation` replaced or removed. A new stage is
+    /// appended after the existing ones, so it follows clip gain by default
+    /// (specification §10.2); removing it keeps the remaining order.
+    pub fn with_saturation(&self, saturation: Option<Saturation>) -> Result<Self, GainError> {
+        let mut order: Vec<_> = self
+            .order
+            .iter()
+            .copied()
+            .filter(|stage| *stage != AudioTreatmentStage::Saturation || saturation.is_some())
+            .collect();
+        if saturation.is_some() && !order.contains(&AudioTreatmentStage::Saturation) {
+            order.push(AudioTreatmentStage::Saturation);
+        }
+        Self::with_stages(order, self.clip_gain.clone(), saturation)
+    }
+    /// The same recipe with `clip_gain` replaced, keeping the existing order
+    /// and placing a new clip-gain stage first.
+    pub fn with_clip_gain(&self, clip_gain: ClipGain) -> Result<Self, GainError> {
+        let mut order = self.order.clone();
+        if !order.contains(&AudioTreatmentStage::ClipGain) {
+            order.insert(0, AudioTreatmentStage::ClipGain);
+        }
+        Self::with_stages(order, Some(clip_gain), self.saturation)
     }
     pub fn validate(&self) -> Result<(), GainError> {
         if self.order.len() > MAX_AUDIO_TREATMENT_STAGES {
             return Err(GainError::Limit);
         }
-        match (self.order.as_slice(), self.clip_gain.is_some()) {
-            ([], false) | ([AudioTreatmentStage::ClipGain], true) => {}
-            _ => return Err(GainError::StageOrder),
+        let listed = |stage| self.order.iter().filter(|value| **value == stage).count();
+        if listed(AudioTreatmentStage::ClipGain) != usize::from(self.clip_gain.is_some())
+            || listed(AudioTreatmentStage::Saturation) != usize::from(self.saturation.is_some())
+        {
+            return Err(GainError::StageOrder);
         }
         if let Some(gain) = &self.clip_gain {
             gain.validate()?;
+        }
+        if let Some(saturation) = self.saturation {
+            Saturation::new(saturation.drive)?;
         }
         Ok(())
     }
     pub fn record_count(&self) -> usize {
         self.clip_gain.as_ref().map_or(0, ClipGain::record_count)
+            + usize::from(self.saturation.is_some())
     }
     /// Preserve existing effects when a physical owner gains a nonnegative
     /// whole-frame prefix: old material and every authored key move together.

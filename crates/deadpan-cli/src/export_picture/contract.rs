@@ -1,8 +1,8 @@
 //! Geometry and exact output timestamps captured from one committed session.
 
 use deadpan_core::{
-    AudioSample, ColorPolicy, ExactRatio, FrameRange, FrameRate, PresentationBasis, ProjectFrame,
-    ProjectId, RevisionId, TimeError,
+    AudioSample, ColorPolicy, ExactRatio, FrameRange, FrameRate, MasteringDisplay,
+    PresentationBasis, ProjectFrame, ProjectId, RevisionId, TimeError,
 };
 use deadpan_media::source_import_timing::nearest_even_dimension;
 use deadpan_render::validate_working_readback_dimensions;
@@ -81,17 +81,22 @@ pub struct ExportPictureContract {
     project_audio_start: AudioSample,
     project_audio_end: AudioSample,
     relative_aspect_error: ExactRatio,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    mastering_display: Option<MasteringDisplay>,
 }
 
 impl ExportPictureContract {
     /// Capture exact output geometry and clocks from an immutable project view.
     /// This allocates no renderer and does not admit decoded media or an output file.
     pub fn capture(session: &ProjectPictureSession) -> Result<Self, ExportPictureError> {
+        let color = session.color_decision();
         Self::from_captured(
             session.project_id(),
             session.revision(),
             session.basis(),
             session.range(),
+            color.output,
+            color.mastering,
         )
     }
 
@@ -100,13 +105,25 @@ impl ExportPictureContract {
         revision_id: &RevisionId,
         basis: &PresentationBasis,
         range: FrameRange,
+        color_policy: ColorPolicy,
+        mastering_display: Option<MasteringDisplay>,
     ) -> Result<Self, ExportPictureError> {
         if range.start().0 < 0 || range.duration().frames() == 0 {
             return Err(ExportPictureError::Range);
         }
-        if basis.color_policy != ColorPolicy::SdrRec709 {
+        // The automatic branch may only keep the basis transfer or fall back
+        // to tone-mapped SDR; an SDR basis can never produce HDR.
+        if color_policy != ColorPolicy::SdrRec709 && color_policy != basis.color_policy {
             return Err(ExportPictureError::InvalidContract(
-                "HDR output requires a qualified tone-mapping/output path",
+                "HDR output must use the Original's qualified transfer",
+            ));
+        }
+        if mastering_display.is_some()
+            && (color_policy != ColorPolicy::HdrRec2020Pq
+                || !mastering_display.is_some_and(|volume| volume.is_valid()))
+        {
+            return Err(ExportPictureError::InvalidContract(
+                "only PQ output carries a valid mastering display volume",
             ));
         }
         validate_working_readback_dimensions(basis.width, basis.height)?;
@@ -142,7 +159,7 @@ impl ExportPictureContract {
             canvas: [basis.width, basis.height],
             raster,
             frame_rate,
-            color_policy: basis.color_policy,
+            color_policy,
             time_base: OutputTimeBase {
                 numerator: 1,
                 denominator: frame_rate.numerator(),
@@ -152,7 +169,13 @@ impl ExportPictureContract {
             project_audio_start,
             project_audio_end,
             relative_aspect_error,
+            mastering_display,
         })
+    }
+
+    /// PQ output's retained source mastering volume, if any.
+    pub const fn mastering_display(&self) -> Option<MasteringDisplay> {
+        self.mastering_display
     }
 
     pub fn project_id(&self) -> &ProjectId {

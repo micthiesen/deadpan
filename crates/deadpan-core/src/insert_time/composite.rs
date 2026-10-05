@@ -7,8 +7,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use crate::{
     AudioBindingState, AudioPlacementTemplate, AudioReanchorStep, AudioRecipeKind, AudioTimingId,
     BeatNode, EditError, ExactFrameRange, ExactRatio, MAX_AUDIO_BINDING_ENTRIES,
-    MAX_AUDIO_BINDING_TERMS, MAX_DOCUMENT_NODES, NodeId, NodeKind, PitchPolicy, ProjectDocument,
-    ProjectFrame, RevisionId,
+    MAX_AUDIO_BINDING_TERMS, MAX_DOCUMENT_NODES, NodeId, NodeKind, ProjectDocument, ProjectFrame,
+    RevisionId,
 };
 
 pub(super) struct Insertion<'a> {
@@ -132,8 +132,8 @@ pub(crate) fn repeat_interior_owners(
         let node = &document.nodes()[id];
         let preserve = matches!(
             &node.kind,
-            NodeKind::Retime { duration, mapping, pitch: PitchPolicy::Preserve, .. }
-                if mapping.duration() != *duration
+            NodeKind::Retime { duration, mapping, pitch, .. }
+                if pitch.processes(mapping.duration() == *duration)
         );
         if !preserve {
             pending.extend(document.children(id));
@@ -180,8 +180,8 @@ pub(crate) fn shifted_owners(
         let node = &document.nodes()[id];
         let preserve = matches!(
             &node.kind,
-            NodeKind::Retime { duration, mapping, pitch: PitchPolicy::Preserve, .. }
-                if mapping.duration() != *duration
+            NodeKind::Retime { duration, mapping, pitch, .. }
+                if pitch.processes(mapping.duration() == *duration)
         );
         if !preserve {
             pending.extend(document.children(id));

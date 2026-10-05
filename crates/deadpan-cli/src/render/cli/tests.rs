@@ -283,6 +283,7 @@ fn requested_cancel_pumps_actual_capture_and_releases_the_writer_without_media_c
     let mut workflow = RenderWorkflow::new(&store, current_runtime_config(package.clone())?)?;
     let mut request = start_request(
         &context,
+        RenderAutomaticAlgorithm::AutomaticSdrV1,
         root.path().join("not-created.mp4"),
         Instant::now(),
     )?;

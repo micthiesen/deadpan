@@ -156,7 +156,7 @@ impl<'plan> AudioStage<'plan> {
         else {
             return Err(PlanError::InvalidPlan("audio stage is not a retime"));
         };
-        if *pitch != PitchPolicy::Preserve || *scale == ExactRatio::ONE {
+        if !pitch.processes(*scale == ExactRatio::ONE) {
             return Err(PlanError::InvalidPlan(
                 "audio stage is not nonunity Preserve",
             ));
@@ -1071,10 +1071,7 @@ impl<'plan> AudioSignal<'plan> {
                     pitch,
                     purpose,
                 } => {
-                    if stop_at_preserve
-                        && *pitch == PitchPolicy::Preserve
-                        && *scale != ExactRatio::ONE
-                    {
+                    if stop_at_preserve && pitch.processes(*scale == ExactRatio::ONE) {
                         break (
                             AudioSignalContent::Stage(AudioStage::for_node(
                                 self.plan,

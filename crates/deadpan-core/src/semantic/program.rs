@@ -256,6 +256,43 @@ pub enum SemanticInstruction {
     SetFraming {
         framing: Option<Box<crate::Framing>>,
     },
+    /// `+`/`-`, `:gain` and `:saturate` on the selected direct child: change
+    /// its clip-gain trim or its saturation stage, keeping every other
+    /// treatment and the authored stage order.
+    SetAudio {
+        change: AudioChange,
+    },
+    /// A split edit at the cursor's seam between two adjacent source beats
+    /// (`:jcut 6f`, `:lcut 6f`). The sound's cut moves `length` earlier (J:
+    /// the next beat's sound starts under the current picture) or later (L:
+    /// the current beat's sound continues under the next picture) while the
+    /// picture still changes at the cursor: one Roll of the seam plus a
+    /// cutaway that keeps the pictures, as one transaction. Both beats need
+    /// enough source handle; the planner refuses a shortened edit.
+    SplitEdit {
+        kind: SplitEditKind,
+        length: PauseLength,
+    },
+    /// A role-only delete of the Visual time range inside one direct child
+    /// (`:delete role=audio|video`, specification §6.5): audio becomes a
+    /// silent mute range of that beat, or video becomes a removed-picture
+    /// cutaway exposing the background. Neither moves later content.
+    DeleteRole {
+        role: crate::MediaRole,
+    },
+    /// An audio-only or video-only repeat of the Visual time range inside
+    /// one beat (`:repeat 3 role=audio`, specification §6.5). Audio: the
+    /// range's own sound plays `plays` times in total as sample-timed root
+    /// sound events, muting the host's sound under the repeats. Video: a
+    /// looping cutaway repeats its pictures while the host's sound continues.
+    /// No picture time is inserted; repeats past the beat refuse unless
+    /// `trim` cuts them at its end.
+    RoleRepeat {
+        role: crate::MediaRole,
+        plays: NonZeroU32,
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        trim: bool,
+    },
     /// Set the selected direct-child Repeat's total count. Visual selection is
     /// incompatible with this node parameter edit, including an empty range.
     SetRepeatPlays {
@@ -372,6 +409,59 @@ impl SemanticInstruction {
                 matches!(selector, SemanticSelector::Motion { motion } if backward_end(motion))
             }
             _ => false,
+        }
+    }
+}
+
+/// Which role leads across a split edit.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SplitEditKind {
+    /// Premature sound: the incoming sound starts before the picture changes.
+    J,
+    /// Lingering sound: the outgoing sound continues over the next picture.
+    L,
+}
+
+impl SplitEditKind {
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::J => "J-cut",
+            Self::L => "L-cut",
+        }
+    }
+}
+
+/// One recorded change to a beat's audio treatments.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+pub enum AudioChange {
+    /// Set the clip-gain trim (`:gain 6dB`).
+    Trim { gain: crate::GainDb },
+    /// Change the clip-gain trim by a signed amount (`+`, `-`, `:gain +=3dB`).
+    Step { millidecibels: i32 },
+    /// Set the saturation drive, or remove the stage (`:saturate`).
+    Saturation {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        drive: Option<crate::GainDb>,
+    },
+}
+
+impl AudioChange {
+    /// The beat's treatments after this change.
+    pub fn apply(
+        self,
+        current: &crate::AudioTreatments,
+    ) -> Result<crate::AudioTreatments, crate::GainError> {
+        let clip = || current.clip_gain().cloned().unwrap_or_default();
+        match self {
+            Self::Trim { gain } => current.with_clip_gain(clip().with_trim(gain)),
+            Self::Step { millidecibels } => {
+                current.with_clip_gain(clip().adjust_trim(millidecibels)?)
+            }
+            Self::Saturation { drive } => {
+                current.with_saturation(drive.map(crate::Saturation::new).transpose()?)
+            }
         }
     }
 }

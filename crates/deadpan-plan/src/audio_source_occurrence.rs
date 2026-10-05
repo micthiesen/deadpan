@@ -226,7 +226,7 @@ impl RenderPlan {
         let mut stages = 0usize;
         for edge in edges.iter().rev() {
             let parent = &self.nodes[edge.parent];
-            if matches!(parent.kind, CompiledKind::Retime { pitch: PitchPolicy::Preserve, scale, .. } if scale != ExactRatio::ONE)
+            if matches!(parent.kind, CompiledKind::Retime { pitch, scale, .. } if pitch.processes(scale == ExactRatio::ONE))
             {
                 stages += 1;
                 // Each projection checks all retained nested scopes. Bound the

@@ -107,6 +107,7 @@ fn main() -> Result<()> {
                 cancellation_token: cancellation_token.clone(),
                 raster: captured.raster(),
                 frame_rate: [rate.numerator(), rate.denominator()],
+                color_policy: captured.color_policy(),
             },
             AdmissionLimits::default(),
             &cancelled,

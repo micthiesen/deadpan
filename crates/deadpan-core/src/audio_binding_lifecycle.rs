@@ -8,7 +8,7 @@ use crate::{
     AudioPlacementTemplate, AudioRecipeKind, AudioReferenceClock, AudioRepeatArgument,
     AudioRepeatValue, AudioTimingId, DocumentError, DocumentErrorCode, FrozenAudioKind,
     FrozenAudioLayout, MAX_AUDIO_BINDING_ENTRIES, MAX_DOCUMENT_DEPTH, MAX_DOCUMENT_NODES, NodeId,
-    NodeKind, OwnedAudioBinding, PitchPolicy, ProjectDocument,
+    NodeKind, OwnedAudioBinding, ProjectDocument,
 };
 
 /// Capture the current sampling lattice of every previously unbound physical
@@ -41,8 +41,7 @@ pub(crate) fn has_unbound_recipes(document: &ProjectDocument) -> bool {
             pitch,
             ..
         } => {
-            *pitch == PitchPolicy::Preserve
-                && mapping.duration() != *duration
+            pitch.processes(mapping.duration() == *duration)
                 && !document.audio_bindings().bindings().contains_key(id)
         }
         NodeKind::Repeat { gap, .. } => {
@@ -286,8 +285,8 @@ impl Capture<'_> {
                     let node = &document.nodes()[id];
                     let preserve = matches!(
                         &node.kind,
-                        NodeKind::Retime { duration, mapping, pitch: PitchPolicy::Preserve, .. }
-                            if mapping.duration() != *duration
+                        NodeKind::Retime { duration, mapping, pitch, .. }
+                            if pitch.processes(mapping.duration() == *duration)
                     );
                     self.capture_node(id, depth, preserve)?;
                     match &node.kind {

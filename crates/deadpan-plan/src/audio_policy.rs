@@ -3,7 +3,7 @@
 
 use std::ops::Range;
 
-use deadpan_core::{AudioSample, ExactRatio, MAX_DOCUMENT_DEPTH, PitchPolicy, TimeError};
+use deadpan_core::{AudioSample, ExactRatio, MAX_DOCUMENT_DEPTH, TimeError};
 
 use super::{
     AudioBound, AudioBoundDomain, AudioContent, AudioDomain, AudioQueryLimits, AudioRetimeStage,
@@ -224,8 +224,9 @@ fn endpoint_grid(
     }
     work.spend(retimes.len())?;
     Ok(!retimes.iter().any(|retime| {
-        retime.pitch == PitchPolicy::Preserve
-            && retime.child_frames_per_local_frame != ExactRatio::ONE
+        retime
+            .pitch
+            .processes(retime.child_frames_per_local_frame == ExactRatio::ONE)
     }))
 }
 

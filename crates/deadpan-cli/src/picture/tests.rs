@@ -3,9 +3,9 @@ use std::fs;
 use std::path::PathBuf;
 
 use deadpan_core::{
-    AssetRecord, BeatNode, CapturedCanvas, CapturedFit, Command, CommandRequest, ExactRatio,
-    FrameDuration, Framing, FramingPose, HoldAudio, HoldRecipe, HoldVideo, NodeId, NodeKind,
-    PitchPolicy, PresentationBasis, SourceFrameIndex, SourceTimeBase, SourceTimestamp,
+    AssetRecord, BeatNode, CapturedCanvas, CapturedFit, ColorPolicy, Command, CommandRequest,
+    ExactRatio, FrameDuration, Framing, FramingPose, HoldAudio, HoldRecipe, HoldVideo, NodeId,
+    NodeKind, PitchPolicy, PresentationBasis, SourceFrameIndex, SourceTimeBase, SourceTimestamp,
     SplitIdentities, Subtree, TerminalProvenance,
 };
 use deadpan_media::audio_session::{AudioSession, AudioSessionLimits};
@@ -558,11 +558,11 @@ fn blank_and_background_are_explicit_and_ranges_hdr_and_bounds_reject() -> Resul
     ));
     for policy in [ColorPolicy::HdrRec2020Pq, ColorPolicy::HdrRec2020Hlg] {
         let hdr_path = scratch.path().join(format!("{policy:?}.deadpan"));
-        let _store = ProjectStore::create(&hdr_path, &initial(policy))?;
-        assert!(matches!(
-            ProjectPictureSession::open_revision(&hdr_path, &revision("initial"), None, &active()),
-            Err(ProjectPictureError::HdrUnsupported)
-        ));
+        let store = ProjectStore::create(&hdr_path, &initial(policy))?;
+        // An HDR basis without any qualified HDR source never produces HDR.
+        let decision = committed_color(&store, &store.snapshot()?)?;
+        assert_eq!(decision.output, ColorPolicy::SdrRec709);
+        assert_eq!(decision.reason, OutputColorReason::NoHdrSource);
     }
     for (width, height) in [(0, 2), (2, 0), (8193, 2), (8192, 8192)] {
         assert!(matches!(

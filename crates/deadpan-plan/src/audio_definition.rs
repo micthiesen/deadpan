@@ -1,8 +1,6 @@
 //! Authored definition outputs, explicitly distinct from project occurrences.
 
-use deadpan_core::{
-    AudioSample, ExactRatio, FrameDuration, InstancePath, MIX_SAMPLE_RATE, NodeId, PitchPolicy,
-};
+use deadpan_core::{AudioSample, ExactRatio, FrameDuration, InstancePath, MIX_SAMPLE_RATE, NodeId};
 use serde::{Deserialize, Serialize};
 
 use super::audio::EnvelopeConstraint;
@@ -142,14 +140,8 @@ impl<'plan> AudioDefinition<'plan> {
         match (&self.plan.nodes[self.root].kind, &self.gap) {
             (CompiledKind::Repeat { .. }, Some(_)) => {}
             (CompiledKind::Source { .. } | CompiledKind::Hold { .. }, None) => {}
-            (
-                CompiledKind::Retime {
-                    pitch: PitchPolicy::Preserve,
-                    scale,
-                    ..
-                },
-                None,
-            ) if *scale != ExactRatio::ONE => {}
+            (CompiledKind::Retime { pitch, scale, .. }, None)
+                if pitch.processes(*scale == ExactRatio::ONE) => {}
             _ => {
                 return Err(PlanError::InvalidAudioRootPlacement(
                     "definition must be a Source, Hold, Repeat gap or nonunity Preserve",

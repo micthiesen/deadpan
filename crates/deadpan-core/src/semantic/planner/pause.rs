@@ -359,6 +359,58 @@ where
         Ok(())
     }
 
+    /// `SetAudio`: the selected direct child's clip gain or saturation, as
+    /// the native `+`/`-`, `:gain` and `:saturate` author it.
+    pub(super) fn set_audio(
+        &mut self,
+        trace_index: usize,
+        change: crate::AudioChange,
+    ) -> Result<(), EditError> {
+        if self.context.visual_selection.is_some() {
+            return Err(invalid(
+                "clear the Visual selection before changing a beat's gain or saturation",
+            ));
+        }
+        let selected = self.context.selected_child.clone().ok_or_else(|| {
+            EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "select a beat before changing its gain or saturation",
+            )
+        })?;
+        if !self.child_indices.contains_key(&selected) {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "the beat must be a direct child of the current Sequence",
+            ));
+        }
+        let current = &self.current.nodes()[&selected].audio_treatments;
+        let treatments = change.apply(current).map_err(crate::audio_gain::invalid)?;
+        if &treatments == current {
+            return Err(invalid("the beat already has that gain and saturation"));
+        }
+        self.charge_step(false)?;
+        let SemanticAllocation::ParameterEdit { new_revision } =
+            (self.allocate)(SemanticAllocationRequest::ParameterEdit {
+                step_index: self.steps.len(),
+            })?
+        else {
+            return Err(invalid("an audio change requires a parameter allocation"));
+        };
+        self.reserve_revision(&new_revision)?;
+        let edit = LeafEdit::new(
+            new_revision,
+            Command::SetAudioTreatments {
+                node: selected.clone(),
+                treatments,
+            },
+        )?;
+        self.commit_leaf(edit)?;
+        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
+        self.trace[trace_index].resolved_selection =
+            Some(SliceCaptureSelection::Child { node: selected });
+        Ok(())
+    }
+
     /// `SetRoomTone`: the selected Hold loops the exact audio of an Original
     /// moment from a register, as the native room-tone sheet authors it.
     pub(super) fn set_room_tone(
@@ -499,6 +551,7 @@ where
                 asset: asset.clone(),
                 selection,
                 fit,
+                removed: false,
             },
         );
         self.charge_step(false)?;

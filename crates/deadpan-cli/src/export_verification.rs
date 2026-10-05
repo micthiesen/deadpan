@@ -1,9 +1,11 @@
 //! Deterministic preview-versus-export content verification.
 //!
 //! For one committed revision, reference pictures come from the shared
-//! committed picture path (`ProjectPictureSession` plus the shared Metal SDR
+//! committed picture path (`ProjectPictureSession` plus the shared Metal
 //! pipeline, read back from the linear working target and converted at the
-//! SDR encoder pixel boundary), and reference audio comes from the limited
+//! encoder pixel boundary of the revision's automatic output branch: SDR
+//! Rec.709 I420, or ten-bit Rec.2100 PQ/HLG for an HDR branch, compared in
+//! ten-bit signal code values), and reference audio comes from the limited
 //! canonical bus that audition also uses. The emitted movie is decoded with the
 //! qualified source decoders at the same output coordinates. The comparison is
 //! a diagnostic report: it never admits, publishes or edits anything.
@@ -13,24 +15,27 @@
 //! measured lag fails. See docs/PREVIEW_EXPORT_VERIFICATION.md.
 
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, BTreeSet},
     ops::Range,
     path::{Path, PathBuf},
     sync::atomic::{AtomicBool, Ordering},
     time::Instant,
 };
 
-use deadpan_core::{AudioSample, ProjectFrame, RevisionId};
+use deadpan_core::{AudioSample, ColorPolicy, ContentLight, ProjectFrame, RevisionId};
+use deadpan_render::FrameLight;
 use deadpan_source::Mp4TrackKind;
 use deadpan_store::{AccessMode, ProjectStore};
 use serde::Serialize;
 
 use crate::{
     audio::OfflineAudioSession,
+    encoded_render::worker::ContentLightAccumulator,
     export_picture::{
-        ExportPictureContract, ExportPictureSession, ExportPictureSource, OutputFrameOrdinal,
+        ExportPictureContract, ExportPictureFrame, ExportPictureSession, ExportPictureSource,
+        OutputFrameOrdinal,
     },
-    picture::ProjectPictureSession,
+    picture::{OutputColorDecision, ProjectPictureSession},
 };
 
 mod audio_check;
@@ -39,10 +44,12 @@ pub mod metrics;
 mod movie;
 
 pub use audio_check::{AudioCheck, OffsetStatus, compare_audio};
-use metrics::{I420, PlaneMetrics};
+pub use metrics::{I420, PlaneMetrics};
 pub use movie::{AudioGap, AudioStream, ColorObservation, EditSummary, PictureAnomaly};
 
-pub const REPORT_SCHEMA_VERSION: u32 = 1;
+/// Version 2 adds the output branch decision, picture depth, HDR container
+/// observations and HDR light cross-check; SDR gates are unchanged.
+pub const REPORT_SCHEMA_VERSION: u32 = 2;
 /// Largest lag searched for audio alignment. It exceeds both measured AAC
 /// timing failures (1,024 and 1,088 samples) with margin.
 pub const MAX_ALIGNMENT_LAG: i64 = 2048;
@@ -126,14 +133,23 @@ pub enum AudioSelection {
 /// Documented defaults; see docs/PREVIEW_EXPORT_VERIFICATION.md for rationale.
 #[derive(Clone, Copy, Debug, PartialEq, Serialize)]
 pub struct Thresholds {
+    /// Eight-bit SDR luma PSNR (peak 255).
     pub min_luma_psnr_db: f64,
     pub min_chroma_psnr_db: f64,
-    /// Gross mismatch: mean absolute difference of 8x8 luma thumbnails.
+    /// Ten-bit HDR luma PSNR in PQ or HLG signal codes (peak 1023).
+    pub min_hdr_luma_psnr_db: f64,
+    pub min_hdr_chroma_psnr_db: f64,
+    /// Gross mismatch: mean absolute difference of 8x8 luma thumbnails, in
+    /// eight-bit-equivalent codes (ten-bit codes divided by four).
     pub max_thumbnail_mad: f64,
+    /// HDR local structure: largest difference of 4x4-cell luma means, in
+    /// ten-bit PQ/HLG codes. Catches small wrong regions (a missing caption)
+    /// that whole-picture PSNR dilutes. SDR reports the value without a gate.
+    pub max_hdr_local_luma_error: f64,
     /// A neighboring reference frame must not beat the own frame by more.
     pub neighbor_psnr_margin_db: f64,
     /// Black detection: decoded mean luma at or below while reference is above
-    /// `black_reference_min_luma`.
+    /// `black_reference_min_luma`, both in eight-bit-equivalent codes.
     pub black_max_luma: f64,
     pub black_reference_min_luma: f64,
     /// Windows and blocks whose reference RMS is below this are silent.
@@ -157,7 +173,10 @@ impl Default for Thresholds {
         Self {
             min_luma_psnr_db: 32.0,
             min_chroma_psnr_db: 32.0,
+            min_hdr_luma_psnr_db: 30.0,
+            min_hdr_chroma_psnr_db: 40.0,
             max_thumbnail_mad: 4.0,
+            max_hdr_local_luma_error: 40.0,
             neighbor_psnr_margin_db: 0.5,
             black_max_luma: 20.0,
             black_reference_min_luma: 32.0,
@@ -196,6 +215,15 @@ pub struct VerificationReport {
     pub frame_rate: [u32; 2],
     pub canvas: [u32; 2],
     pub raster: [u32; 2],
+    /// The revision's automatic SDR/HDR branch (output policy, reason, HDR
+    /// source peak used for tone mapping and the retained PQ mastering
+    /// volume), shared by preview and export.
+    pub output_color: OutputColorDecision,
+    /// Compared code depth: 8 (SDR I420) or 10 (HDR PQ/HLG yuv420p10).
+    pub picture_bits: u8,
+    /// PQ only: CTA-861.3 light of the references against the movie's clli.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hdr_light: Option<LightCheck>,
     pub movie: MovieSummary,
     pub thresholds: Thresholds,
     pub pictures: Vec<PictureCheck>,
@@ -244,10 +272,24 @@ pub struct PictureCheck {
     pub reference_mean_luma: f64,
     pub decoded_mean_luma: f64,
     pub thumbnail_mad: f64,
+    /// Largest 4x4-cell luma mean difference, in codes of the compared depth.
+    pub local_luma_error: f64,
     pub previous_luma_psnr_db: Option<f64>,
     pub next_luma_psnr_db: Option<f64>,
     pub flags: Vec<&'static str>,
     pub passed: bool,
+}
+
+/// MaxCLL/MaxFALL recomputed from the reference pictures' clipped linear
+/// light, rounded up to whole cd/m² as the encoder host does. Compared with
+/// the container `clli` only when every output frame was rendered.
+#[derive(Debug, Serialize)]
+pub struct LightCheck {
+    pub frames_measured: u64,
+    pub complete: bool,
+    pub reference: ContentLight,
+    pub container: Option<ContentLight>,
+    pub matches: Option<bool>,
 }
 
 #[derive(Debug, Default, Serialize)]
@@ -257,6 +299,7 @@ pub struct Summary {
     pub min_luma_psnr_db: Option<f64>,
     pub min_chroma_psnr_db: Option<f64>,
     pub max_thumbnail_mad: Option<f64>,
+    pub max_local_luma_error: Option<f64>,
     /// Smallest margin between a picture's own luma PSNR and its best neighbor.
     pub min_neighbor_margin_db: Option<f64>,
     pub audio_windows_checked: usize,
@@ -298,6 +341,7 @@ pub fn verify(
     };
     let pictures =
         ProjectPictureSession::open_revision(&request.package, &revision, None, cancelled)?;
+    let output_color = pictures.color_decision();
     let document_sha256 =
         deadpan_jobs::render::document_sha256(pictures.document(), cancelled, deadline)
             .map_err(|error| VerifyError::Request(error.to_string()))?;
@@ -316,8 +360,21 @@ pub fn verify(
     let selected = select_frames(&request.frames, frame_count)?;
     let windows = select_windows(&request.audio, total_samples)?;
 
+    let expected_color = movie::ExpectedColor {
+        policy: contract.color_policy(),
+        mastering: contract.mastering_display(),
+    };
+    let hdr = expected_color.hdr().is_some();
+    let picture_bits = if hdr { 10 } else { 8 };
     let movie_bytes = std::fs::metadata(&request.movie)?.len();
-    let inspection = movie::inspect(&request.movie, raster, frame_count, cancelled, deadline)?;
+    let inspection = movie::inspect(
+        &request.movie,
+        raster,
+        frame_count,
+        hdr,
+        cancelled,
+        deadline,
+    )?;
     let video_track = movie::track(&inspection, Mp4TrackKind::Video);
     let audio_track = movie::track(&inspection, Mp4TrackKind::Audio);
     let video_edits = video_track.map(|track| movie::edits(&inspection, track));
@@ -370,33 +427,23 @@ pub fn verify(
     // Pictures: stream decoded frames, rendering references for n-1, n, n+1.
     let mut references: BTreeMap<u64, (I420, Provenance)> = BTreeMap::new();
     let mut checks = Vec::new();
-    let reference = |session: &mut ExportPictureSession,
-                     references: &mut BTreeMap<u64, (I420, Provenance)>,
-                     ordinal: u64|
+    let mut light = ContentLightAccumulator::default();
+    let mut lit: BTreeSet<u64> = BTreeSet::new();
+    let mut reference = |session: &mut ExportPictureSession,
+                         references: &mut BTreeMap<u64, (I420, Provenance)>,
+                         ordinal: u64|
      -> Result<(), VerifyError> {
         if references.contains_key(&ordinal) {
             return Ok(());
         }
         let frame = session.prepare(OutputFrameOrdinal(ordinal), cancelled, deadline)?;
-        let pixels = frame.pixels();
-        let mut bytes = Vec::with_capacity(pixels.bytes().len());
-        bytes.extend_from_slice(pixels.y_plane());
-        bytes.extend_from_slice(pixels.cb_plane());
-        bytes.extend_from_slice(pixels.cr_plane());
-        let planes = I420::from_tight(pixels.width(), pixels.height(), &bytes)
-            .ok_or_else(|| VerifyError::Renderer("reference picture is not tight I420".into()))?;
-        let provenance = match frame.source() {
-            ExportPictureSource::Original { asset, id, pts, .. } => Provenance::Original {
-                asset: asset.as_str().to_owned(),
-                source_frame: id.0,
-                source_pts: pts.ticks,
-            },
-            ExportPictureSource::Generated { id, pts, .. } => Provenance::Generated {
-                source_frame: id.0,
-                source_pts: pts.ticks,
-            },
-            ExportPictureSource::Background => Provenance::Background,
-        };
+        let (planes, frame_light) = reference_planes(&frame, hdr)?;
+        if let Some(frame_light) = frame_light
+            && lit.insert(ordinal)
+        {
+            light.add(frame_light);
+        }
+        let provenance = provenance(&frame);
         drop(frame);
         references.insert(ordinal, (planes, provenance));
         Ok(())
@@ -408,6 +455,7 @@ pub fn verify(
             frames: frame_count,
             rate: (rate.numerator(), rate.denominator()),
         },
+        expected_color,
         video_track,
         cancelled,
         deadline,
@@ -432,7 +480,42 @@ pub fn verify(
             Ok(())
         },
     )?;
-    if stream.decoded != frame_count {
+    let hdr_light = (contract.color_policy() == ColorPolicy::HdrRec2020Pq).then(|| {
+        let measured = u64::try_from(lit.len()).unwrap_or(u64::MAX);
+        let complete = measured == frame_count;
+        let container = stream.color.content_light;
+        LightCheck {
+            frames_measured: measured,
+            complete,
+            reference: {
+                let value = light.finish();
+                ContentLight {
+                    max_cll: value.max_cll,
+                    max_fall: value.max_fall,
+                }
+            },
+            container,
+            matches: None,
+        }
+    });
+    let hdr_light = hdr_light.map(|mut check| {
+        if check.complete
+            && let Some(container) = check.container
+        {
+            let matches = container == check.reference;
+            check.matches = Some(matches);
+            if !matches {
+                failures.push(format!(
+                    "container clli {container:?} differs from the reference pictures' light {:?}",
+                    check.reference
+                ));
+            }
+        }
+        check
+    });
+    if stream.wrong_branch {
+        // Reported once as a color problem below; no picture was compared.
+    } else if stream.decoded != frame_count {
         failures.push(format!(
             "movie decoded {} pictures; the committed range has {frame_count}",
             stream.decoded
@@ -560,6 +643,9 @@ pub fn verify(
         frame_rate: [rate.numerator(), rate.denominator()],
         canvas: contract.canvas(),
         raster,
+        output_color,
+        picture_bits,
+        hdr_light,
         movie: MovieSummary {
             path: request.movie.clone(),
             bytes: movie_bytes,
@@ -578,6 +664,102 @@ pub fn verify(
         audio: audio_checks,
         summary,
     })
+}
+
+/// Reference planes at the branch boundary: eight-bit I420 for SDR, ten-bit
+/// Rec.2100 (with its CTA-861.3 light) for HDR. A frame from the other
+/// branch is a renderer fault, never compared.
+fn reference_planes(
+    frame: &ExportPictureFrame,
+    hdr: bool,
+) -> Result<(I420, Option<FrameLight>), VerifyError> {
+    match (frame.pixels().sdr(), frame.pixels().hdr()) {
+        (Some(pixels), None) if !hdr => {
+            let mut bytes = Vec::with_capacity(pixels.bytes().len());
+            bytes.extend_from_slice(pixels.y_plane());
+            bytes.extend_from_slice(pixels.cb_plane());
+            bytes.extend_from_slice(pixels.cr_plane());
+            let planes =
+                I420::from_tight(pixels.width(), pixels.height(), &bytes).ok_or_else(|| {
+                    VerifyError::Renderer("reference picture is not tight I420".into())
+                })?;
+            Ok((planes, None))
+        }
+        (None, Some((pixels, light))) if hdr => {
+            let planes = I420::from_tight_p10_le(pixels.width(), pixels.height(), pixels.bytes())
+                .ok_or_else(|| {
+                VerifyError::Renderer("reference picture is not tight yuv420p10".into())
+            })?;
+            Ok((planes, Some(light)))
+        }
+        _ => Err(VerifyError::Renderer(
+            "reference pixels differ from the contract's output branch".into(),
+        )),
+    }
+}
+
+fn provenance(frame: &ExportPictureFrame) -> Provenance {
+    match frame.source() {
+        ExportPictureSource::Original { asset, id, pts, .. } => Provenance::Original {
+            asset: asset.as_str().to_owned(),
+            source_frame: id.0,
+            source_pts: pts.ticks,
+        },
+        ExportPictureSource::Generated { id, pts, .. } => Provenance::Generated {
+            source_frame: id.0,
+            source_pts: pts.ticks,
+        },
+        ExportPictureSource::Background => Provenance::Background,
+    }
+}
+
+/// One reference picture of a committed revision, exactly as `verify`
+/// renders it, for diagnostics and qualification fixtures.
+#[derive(Debug)]
+pub struct ReferencePicture {
+    pub output_color: OutputColorDecision,
+    pub color_policy: ColorPolicy,
+    pub planes: I420,
+    /// HDR only: the frame's clipped linear light statistics.
+    pub light: Option<FrameLight>,
+    pub provenance: Provenance,
+}
+
+/// Render the reference for output frames `ordinals` of `revision` through
+/// the shared picture session and the branch's encoder pixel boundary.
+pub fn reference_pictures(
+    package: &Path,
+    revision: &RevisionId,
+    ordinals: &[u64],
+    cancelled: &AtomicBool,
+    deadline: Instant,
+) -> Result<Vec<ReferencePicture>, VerifyError> {
+    let pictures = ProjectPictureSession::open_revision(package, revision, None, cancelled)?;
+    let output_color = pictures.color_decision();
+    let contract = ExportPictureContract::capture(&pictures)?;
+    let hdr = contract.color_policy() != ColorPolicy::SdrRec709;
+    let renderer = crate::render_worker::worker::metal_renderer(cancelled, deadline)
+        .map_err(VerifyError::Renderer)?;
+    let mut session = ExportPictureSession::new(pictures, renderer, cancelled, deadline)?;
+    let mut rendered = Vec::with_capacity(ordinals.len());
+    for &ordinal in ordinals {
+        if ordinal >= contract.frame_count() {
+            return Err(VerifyError::Request(format!(
+                "frame {ordinal} is outside the committed {} output frames",
+                contract.frame_count()
+            )));
+        }
+        let frame = session.prepare(OutputFrameOrdinal(ordinal), cancelled, deadline)?;
+        let (planes, light) = reference_planes(&frame, hdr)?;
+        rendered.push(ReferencePicture {
+            output_color,
+            color_policy: contract.color_policy(),
+            planes,
+            light,
+            provenance: provenance(&frame),
+        });
+    }
+    Ok(rendered)
 }
 
 fn select_frames(selection: &FrameSelection, count: u64) -> Result<Vec<u64>, VerifyError> {
@@ -693,8 +875,9 @@ fn compare_picture(
     references: &mut BTreeMap<u64, (I420, Provenance)>,
     thresholds: &Thresholds,
 ) -> PictureCheck {
+    let peak = decoded.peak();
     let luma_psnr = |other: Option<&(I420, Provenance)>| {
-        other.map(|(picture, _)| metrics::plane_metrics(&picture.y, &decoded.y).psnr_db)
+        other.map(|(picture, _)| metrics::plane_metrics(&picture.y, &decoded.y, peak).psnr_db)
     };
     let previous = ordinal
         .checked_sub(1)
@@ -704,22 +887,35 @@ fn compare_picture(
         .remove(&ordinal)
         .expect("selected reference is rendered before comparison");
     let planes = [
-        metrics::plane_metrics(&reference.y, &decoded.y),
-        metrics::plane_metrics(&reference.cb, &decoded.cb),
-        metrics::plane_metrics(&reference.cr, &decoded.cr),
+        metrics::plane_metrics(&reference.y, &decoded.y, peak),
+        metrics::plane_metrics(&reference.cb, &decoded.cb, peak),
+        metrics::plane_metrics(&reference.cr, &decoded.cr, peak),
     ];
+    let (min_luma, min_chroma) = if decoded.bits > 8 {
+        (
+            thresholds.min_hdr_luma_psnr_db,
+            thresholds.min_hdr_chroma_psnr_db,
+        )
+    } else {
+        (thresholds.min_luma_psnr_db, thresholds.min_chroma_psnr_db)
+    };
     let thumbnail_mad = metrics::thumbnail_mad(&reference.thumbnail(), &decoded.thumbnail());
+    let local_luma_error =
+        metrics::max_local_error(&reference.local_cells(), &decoded.local_cells());
     let reference_mean_luma = reference.mean_luma();
     let decoded_mean_luma = decoded.mean_luma();
     let mut flags = Vec::new();
-    if planes[0].psnr_db < thresholds.min_luma_psnr_db {
+    if planes[0].psnr_db < min_luma {
         flags.push("luma_psnr");
     }
-    if planes[1].psnr_db.min(planes[2].psnr_db) < thresholds.min_chroma_psnr_db {
+    if planes[1].psnr_db.min(planes[2].psnr_db) < min_chroma {
         flags.push("chroma_psnr");
     }
     if thumbnail_mad > thresholds.max_thumbnail_mad {
         flags.push("gross_structural_mismatch");
+    }
+    if decoded.bits > 8 && local_luma_error > thresholds.max_hdr_local_luma_error {
+        flags.push("local_structure_mismatch");
     }
     if decoded_mean_luma <= thresholds.black_max_luma
         && reference_mean_luma > thresholds.black_reference_min_luma
@@ -744,6 +940,7 @@ fn compare_picture(
         reference_mean_luma,
         decoded_mean_luma,
         thumbnail_mad,
+        local_luma_error,
         previous_luma_psnr_db: previous,
         next_luma_psnr_db: next,
         passed: flags.is_empty(),
@@ -770,6 +967,7 @@ fn summarize(pictures: &[PictureCheck], audio: &[AudioCheck]) -> Summary {
                 .map(|check| check.planes[1].psnr_db.min(check.planes[2].psnr_db)),
         ),
         max_thumbnail_mad: maximum(&mut pictures.iter().map(|check| check.thumbnail_mad)),
+        max_local_luma_error: maximum(&mut pictures.iter().map(|check| check.local_luma_error)),
         min_neighbor_margin_db: minimum(&mut pictures.iter().filter_map(|check| {
             [check.previous_luma_psnr_db, check.next_luma_psnr_db]
                 .into_iter()

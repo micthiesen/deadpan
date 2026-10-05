@@ -21,6 +21,8 @@
 #include <libavformat/version.h>
 #include <libavutil/avutil.h>
 #include <libavutil/error.h>
+#include <libavutil/mastering_display_metadata.h>
+#include <libavutil/pixdesc.h>
 #include <libavutil/mem.h>
 #include <libavutil/opt.h>
 #include <libavutil/version.h>
@@ -52,6 +54,8 @@ typedef struct {
 struct dp_encode_session {
     int fd;
     dp_encode_config config;
+    dp_encode_hdr_config hdr;
+    int hdr_enabled;
     dp_encode_info info;
     AVFormatContext *format;
     AVCodecContext *video;
@@ -73,6 +77,7 @@ struct dp_encode_session {
     uint64_t audio_samples;
     uint64_t audio_frames;
     uint64_t video_packets;
+    uint64_t removed_unspecified_nal_units;
     uint64_t audio_packets;
     uint64_t packet_bytes;
     uint64_t video_duration_from_contract_packets;
@@ -238,6 +243,24 @@ static int validate_config(dp_encode_session *s) {
     return 1;
 }
 
+static int validate_hdr(dp_encode_session *s) {
+    if (!s->hdr_enabled) return 1;
+    const dp_encode_hdr_config *h = &s->hdr;
+    if (h->abi_version != DP_ENCODE_HDR_ABI_VERSION ||
+        (h->transfer != DP_ENCODE_TRANSFER_PQ && h->transfer != DP_ENCODE_TRANSFER_HLG) ||
+        h->has_mastering > 1 || (h->transfer == DP_ENCODE_TRANSFER_HLG && h->has_mastering))
+        return fail(s, "invalid_config", "HDR transfer or metadata presence is not admitted");
+    if (!h->has_mastering) return 1;
+    const uint16_t *points[4] = {h->primaries[0], h->primaries[1], h->primaries[2], h->white_point};
+    for (int i = 0; i < 4; ++i)
+        if (points[i][0] == 0 || points[i][1] == 0 || (uint32_t)points[i][0] + points[i][1] > 50000U)
+            return fail(s, "invalid_config", "mastering chromaticity must be a positive CIE xy point");
+    if (h->max_luminance < 500000U || h->max_luminance > 100000000U ||
+        h->min_luminance > 500000U || h->min_luminance >= h->max_luminance)
+        return fail(s, "invalid_config", "mastering luminance exceeds ST 2086 bounds");
+    return 1;
+}
+
 static int validate_descriptor(dp_encode_session *s) {
     struct stat metadata;
     int flags = fcntl(s->fd, F_GETFL);
@@ -374,11 +397,26 @@ static int dict_number(dp_encode_session *s, AVDictionary **options, const char 
     return error < 0 ? ff_failure(s, "set numeric encoder option", error) : 1;
 }
 
+static enum AVColorPrimaries picture_primaries(const dp_encode_session *s) {
+    return s->hdr_enabled ? AVCOL_PRI_BT2020 : AVCOL_PRI_BT709;
+}
+
+static enum AVColorTransferCharacteristic picture_transfer(const dp_encode_session *s) {
+    if (!s->hdr_enabled) return AVCOL_TRC_BT709;
+    return s->hdr.transfer == DP_ENCODE_TRANSFER_PQ ? AVCOL_TRC_SMPTE2084 : AVCOL_TRC_ARIB_STD_B67;
+}
+
+static enum AVColorSpace picture_matrix(const dp_encode_session *s) {
+    return s->hdr_enabled ? AVCOL_SPC_BT2020_NCL : AVCOL_SPC_BT709;
+}
+
 static int open_codec(dp_encode_session *s, int audio) {
-    const AVCodec *implementation = avcodec_find_encoder_by_name(audio ? "aac" : "h264_videotoolbox");
+    const char *video_name = s->hdr_enabled ? "hevc_videotoolbox" : "h264_videotoolbox";
+    const char *video_label = s->hdr_enabled ? "VideoToolbox HEVC" : "VideoToolbox H264";
+    const AVCodec *implementation = avcodec_find_encoder_by_name(audio ? "aac" : video_name);
     if (implementation == NULL)
         return fail(s, audio ? "audio_encoder_unavailable" : "video_encoder_unavailable",
-            "required %s encoder is unavailable", audio ? "native AAC" : "VideoToolbox H264");
+            "required %s encoder is unavailable", audio ? "native AAC" : video_label);
     AVCodecContext *codec = avcodec_alloc_context3(implementation);
     if (codec == NULL) return fail(s, "allocation_failure", "allocate encoder context");
     if (audio) s->audio = codec; else s->video = codec;
@@ -398,11 +436,11 @@ static int open_codec(dp_encode_session *s, int audio) {
         }
     } else {
         codec->width = (int)s->config.width; codec->height = (int)s->config.height;
-        codec->pix_fmt = AV_PIX_FMT_YUV420P;
+        codec->pix_fmt = s->hdr_enabled ? AV_PIX_FMT_P010LE : AV_PIX_FMT_YUV420P;
         /* VT consumes its private profile option but does not write this
          * generic requested field back. Keep both declarations coherent;
-         * only independent emitted-bitstream inspection proves High profile. */
-        codec->profile = AV_PROFILE_H264_HIGH;
+         * only independent emitted-bitstream inspection proves the profile. */
+        codec->profile = s->hdr_enabled ? AV_PROFILE_HEVC_MAIN_10 : AV_PROFILE_H264_HIGH;
         codec->time_base = (AVRational){1, (int)s->config.fps_num};
         codec->framerate = (AVRational){(int)s->config.fps_num, (int)s->config.fps_den};
         codec->gop_size = (int)s->config.gop_frames;
@@ -411,14 +449,14 @@ static int open_codec(dp_encode_session *s, int audio) {
         codec->sample_aspect_ratio = (AVRational){1, 1};
         codec->field_order = AV_FIELD_PROGRESSIVE;
         codec->color_range = AVCOL_RANGE_MPEG;
-        codec->color_primaries = AVCOL_PRI_BT709;
-        codec->color_trc = AVCOL_TRC_BT709;
-        codec->colorspace = AVCOL_SPC_BT709;
+        codec->color_primaries = picture_primaries(s);
+        codec->color_trc = picture_transfer(s);
+        codec->colorspace = picture_matrix(s);
         codec->chroma_sample_location = AVCHROMA_LOC_LEFT;
         codec->flags |= AV_CODEC_FLAG_CLOSED_GOP | AV_CODEC_FLAG_FRAME_DURATION;
         if (!dict_option(s, &options, "allow_sw", s->config.mode ? "1" : "0") ||
             !dict_option(s, &options, "require_sw", s->config.mode ? "1" : "0") ||
-            !dict_option(s, &options, "profile", "high")) goto done;
+            !dict_option(s, &options, "profile", s->hdr_enabled ? "main10" : "high")) goto done;
     }
     if (!check_control(s)) goto done;
     int error = avcodec_open2(codec, implementation, &options);
@@ -428,7 +466,7 @@ static int open_codec(dp_encode_session *s, int audio) {
          * retain their ordinary failure category; their prose is not policy. */
         if (!audio && error == AVERROR_ENCODER_NOT_FOUND)
             fail(s, "video_encoder_unavailable",
-                "open selected VideoToolbox H264 encoder: encoder not found (FFmpeg %d)", error);
+                "open selected %s encoder: encoder not found (FFmpeg %d)", video_label, error);
         else
             ff_failure(s, "open selected encoder", error);
         goto done;
@@ -446,9 +484,11 @@ static int open_codec(dp_encode_session *s, int audio) {
             fail(s, "encoder_unsupported", "AAC encoder changed the exact PCM contract"); goto done;
         }
     } else if (codec->width != (int)s->config.width || codec->height != (int)s->config.height ||
-               codec->pix_fmt != AV_PIX_FMT_YUV420P ||
+               codec->pix_fmt != (s->hdr_enabled ? AV_PIX_FMT_P010LE : AV_PIX_FMT_YUV420P) ||
+               codec->color_primaries != picture_primaries(s) || codec->color_trc != picture_transfer(s) ||
+               codec->colorspace != picture_matrix(s) || codec->color_range != AVCOL_RANGE_MPEG ||
                av_cmp_q(codec->time_base, (AVRational){1, (int)s->config.fps_num}) != 0) {
-        fail(s, "encoder_unsupported", "H264 encoder changed the picture layout or clock"); goto done;
+        fail(s, "encoder_unsupported", "%s encoder changed the picture layout, color or clock", video_label); goto done;
     }
     AVStream *stream = avformat_new_stream(s->format, NULL);
     if (stream == NULL) { fail(s, "allocation_failure", "allocate MP4 stream"); goto done; }
@@ -457,6 +497,8 @@ static int open_codec(dp_encode_session *s, int audio) {
     if (!audio) { stream->avg_frame_rate = codec->framerate; stream->sample_aspect_ratio = codec->sample_aspect_ratio; }
     error = avcodec_parameters_from_context(stream->codecpar, codec);
     if (error < 0) { ff_failure(s, "copy encoder stream parameters", error); goto done; }
+    /* Parameter sets live only in hvcC for hvc1 (VT global header). */
+    if (!audio && s->hdr_enabled) stream->codecpar->codec_tag = MKTAG('h', 'v', 'c', '1');
     success = 1;
 done:
     av_dict_free(&options);
@@ -471,10 +513,12 @@ static int allocate_inputs(dp_encode_session *s) {
     s->picture->width = s->video->width; s->picture->height = s->video->height;
     s->picture->format = s->video->pix_fmt;
     s->picture->sample_aspect_ratio = (AVRational){1, 1};
+    /* VT derives emitted VUI from each frame's attachments, not only from
+     * the codec context, so every frame carries the complete declaration. */
     s->picture->color_range = AVCOL_RANGE_MPEG;
-    s->picture->color_primaries = AVCOL_PRI_BT709;
-    s->picture->color_trc = AVCOL_TRC_BT709;
-    s->picture->colorspace = AVCOL_SPC_BT709;
+    s->picture->color_primaries = picture_primaries(s);
+    s->picture->color_trc = picture_transfer(s);
+    s->picture->colorspace = picture_matrix(s);
     s->picture->chroma_location = AVCHROMA_LOC_LEFT;
     int error = av_frame_get_buffer(s->picture, 32);
     if (error < 0) return ff_failure(s, "allocate aligned picture", error);
@@ -507,8 +551,9 @@ static void observe_info(dp_encode_session *s) {
     s->info.audio_bitrate = s->audio->bit_rate < 0 ? 0 : (uint64_t)s->audio->bit_rate;
 }
 
-int dp_encode_open(int fd, const dp_encode_config *config, const dp_encode_control *control,
-                    dp_encode_session **session, dp_encode_info *info, dp_encode_error *error) {
+static int open_session(int fd, const dp_encode_config *config, const dp_encode_hdr_config *hdr,
+                        const dp_encode_control *control, dp_encode_session **session,
+                        dp_encode_info *info, dp_encode_error *error) {
     if (session != NULL) *session = NULL;
     if (info != NULL) memset(info, 0, sizeof(*info));
     dp_encode_session *s = calloc(1, sizeof(*s));
@@ -524,7 +569,8 @@ int dp_encode_open(int fd, const dp_encode_config *config, const dp_encode_contr
     if (!begin_call(s, control, error)) goto done;
     if (config == NULL || session == NULL || info == NULL) { fail(s, "invalid_config", "missing encoder configuration or result"); goto done; }
     s->config = *config;
-    if (!validate_config(s) || !validate_descriptor(s) || !runtime_valid(s)) goto done;
+    if (hdr != NULL) { s->hdr = *hdr; s->hdr_enabled = 1; }
+    if (!validate_config(s) || !validate_hdr(s) || !validate_descriptor(s) || !runtime_valid(s)) goto done;
     int code = avformat_alloc_output_context2(&s->format, NULL, "mp4", PRIVATE_URL);
     if (code < 0 || s->format == NULL) { ff_failure(s, "allocate MP4 muxer", code < 0 ? code : AVERROR(ENOMEM)); goto done; }
     s->format->opaque = s;
@@ -565,8 +611,91 @@ done:
     return success;
 }
 
+int dp_encode_open(int fd, const dp_encode_config *config, const dp_encode_control *control,
+                    dp_encode_session **session, dp_encode_info *info, dp_encode_error *error) {
+    return open_session(fd, config, NULL, control, session, info, error);
+}
+
+int dp_encode_open_hdr(int fd, const dp_encode_config *config, const dp_encode_hdr_config *hdr,
+                       const dp_encode_control *control, dp_encode_session **session,
+                       dp_encode_info *info, dp_encode_error *error) {
+    if (hdr == NULL) {
+        if (session != NULL) *session = NULL;
+        if (info != NULL) memset(info, 0, sizeof(*info));
+        if (error != NULL) { memset(error, 0, sizeof(*error));
+            (void)snprintf(error->code, sizeof(error->code), "invalid_config");
+            (void)snprintf(error->message, sizeof(error->message), "HDR open requires an HDR configuration"); }
+        return 0;
+    }
+    return open_session(fd, config, hdr, control, session, info, error);
+}
+
+/* Remove HEVC NAL units of the unspecified types 62 and 63 from one
+ * Annex B packet (pinned videotoolboxenc emits start codes; the MP4 muxer
+ * converts to hvc1 length prefixes). VideoToolbox attaches Dolby Vision
+ * profile 8.4 RPUs (type 62) to HLG output; Deadpan neither authors nor
+ * qualifies Dolby Vision, and a file without a dvcC record must not carry
+ * them. Every other NAL unit, with its start code, is retained byte for byte. */
+static size_t start_code(const uint8_t *data, size_t size, size_t at, size_t *length) {
+    for (; at + 3 <= size; ++at) {
+        if (data[at] == 0 && data[at + 1] == 0) {
+            if (data[at + 2] == 1) { *length = 3; return at; }
+            if (at + 4 <= size && data[at + 2] == 0 && data[at + 3] == 1) { *length = 4; return at; }
+        }
+    }
+    *length = 0;
+    return size;
+}
+
+/* Pure in-place filter, exported for tests. Returns 1 and the new size, or 0
+ * when the buffer is not Annex B (a length-prefixed packet, whose first
+ * bytes are never a start code in pinned videotoolboxenc output, is refused
+ * rather than reinterpreted), contains an empty NAL unit, or would be empty. */
+int dp_encode_strip_unspecified_hevc_nal_units(uint8_t *data, size_t size, size_t *new_size,
+                                               uint64_t *removed) {
+    size_t length = 0, write = 0;
+    *new_size = size;
+    *removed = 0;
+    if (data == NULL || size == 0 || start_code(data, size, 0, &length) != 0) return 0;
+    for (size_t at = 0; at < size;) {
+        size_t prefix = 0, next_length = 0;
+        (void)start_code(data, size, at, &prefix);
+        if (at + prefix >= size) return 0;
+        size_t next = start_code(data, size, at + prefix, &next_length);
+        if (next == at + prefix) return 0;
+        int type = (data[at + prefix] >> 1) & 63;
+        if (type == 62 || type == 63) {
+            ++*removed;
+        } else {
+            if (write != at) memmove(data + write, data + at, next - at);
+            write += next - at;
+        }
+        at = next;
+    }
+    if (write == 0) return 0;
+    *new_size = write;
+    return 1;
+}
+
+static int strip_unspecified_nal_units(dp_encode_session *s) {
+    AVPacket *p = s->packet;
+    if (!s->hdr_enabled) return 1;
+    int code = av_packet_make_writable(p);
+    if (code < 0) return ff_failure(s, "copy encoded packet", code);
+    size_t size = 0;
+    uint64_t removed = 0;
+    if (!dp_encode_strip_unspecified_hevc_nal_units(p->data, (size_t)p->size, &size, &removed))
+        return fail(s, "invalid_packet", "HEVC packet is not well-formed Annex B or holds only unspecified NAL units");
+    if (removed) {
+        s->removed_unspecified_nal_units += removed;
+        av_shrink_packet(p, (int)size);
+    }
+    return 1;
+}
+
 static int packet_valid(dp_encode_session *s, int audio) {
     AVPacket *p = s->packet;
+    if (!audio && p->size > 0 && !strip_unspecified_nal_units(s)) return 0;
     AVCodecContext *codec = audio ? s->audio : s->video;
     uint64_t total = s->video_packets + s->audio_packets;
     if (p->size <= 0 || (uint64_t)p->size > s->config.maximum_packet_bytes ||
@@ -592,18 +721,19 @@ static int packet_valid(dp_encode_session *s, int audio) {
         (__int128)p->pts + p->duration > end + priming)
         return fail(s, "invalid_packet", "encoder packet timing exceeds bounded delay or interval");
     if (!audio && (p->pts < 0 || p->pts % s->config.fps_den != 0 || p->duration != s->config.fps_den))
-        return fail(s, "invalid_packet", "H264 packet changed the authored frame clock");
+        return fail(s, "invalid_packet", "video packet changed the authored frame clock");
     /* Retain the actual rejected encoder timestamps. This is an observation
      * about the selected path, not permission to rewrite timing or switch it.
      * Check before admitting this packet or handing it to the MP4 muxer. */
     if (!audio && p->pts < p->dts)
         return fail(s, "video_timestamp_order",
-            "H264 packet PTS (%" PRId64 ") precedes DTS (%" PRId64 ")", p->pts, p->dts);
+            "%s packet PTS (%" PRId64 ") precedes DTS (%" PRId64 ")",
+            s->hdr_enabled ? "HEVC" : "H264", p->pts, p->dts);
     if (!audio) {
         uint64_t ordinal = (uint64_t)p->pts / s->config.fps_den;
         uint8_t bit = (uint8_t)(1U << (ordinal % 8));
         if (s->video_seen[ordinal / 8] & bit)
-            return fail(s, "invalid_packet", "H264 encoder emitted a duplicate presentation ordinal");
+            return fail(s, "invalid_packet", "video encoder emitted a duplicate presentation ordinal");
         s->video_seen[ordinal / 8] |= bit;
     }
     for (int index = 0; index < p->side_data_elems; ++index) {
@@ -668,12 +798,55 @@ static int video_is_next(dp_encode_session *s) {
                          (int64_t)s->audio_samples, s->audio->time_base) <= 0;
 }
 
+static uint16_t read_sample(const uint8_t *bytes, uint64_t index) {
+    return (uint16_t)(bytes[2 * index] | (bytes[2 * index + 1] << 8));
+}
+
+static void write_p010(uint8_t *destination, uint16_t code) {
+    uint16_t shifted = (uint16_t)(code << 6);
+    destination[0] = (uint8_t)(shifted & 0xff);
+    destination[1] = (uint8_t)(shifted >> 8);
+}
+
+/* Planar little-endian 10-bit Y/Cb/Cr -> P010LE (Y plane, interleaved CbCr),
+ * each sample in the high 10 bits. Every code must be limited range. */
+static int pack_p010(dp_encode_session *s, const uint8_t *bytes) {
+    uint32_t width = s->config.width, height = s->config.height;
+    uint64_t pixels = (uint64_t)width * height;
+    uint64_t chroma_pixels = pixels / 4;
+    for (uint32_t row = 0; row < height; ++row) {
+        if (!check_control(s)) return 0;
+        uint8_t *line = s->picture->data[0] + (size_t)row * (size_t)s->picture->linesize[0];
+        for (uint32_t x = 0; x < width; ++x) {
+            uint16_t code = read_sample(bytes, (uint64_t)row * width + x);
+            if (code < 64 || code > 940)
+                return fail(s, "invalid_pixels", "10-bit luma code %u is outside limited range", code);
+            write_p010(line + 2 * (size_t)x, code);
+        }
+    }
+    uint32_t chroma_width = width / 2;
+    for (uint32_t row = 0; row < height / 2; ++row) {
+        if (!check_control(s)) return 0;
+        uint8_t *line = s->picture->data[1] + (size_t)row * (size_t)s->picture->linesize[1];
+        for (uint32_t x = 0; x < chroma_width; ++x) {
+            uint64_t index = (uint64_t)row * chroma_width + x;
+            uint16_t cb = read_sample(bytes, pixels + index);
+            uint16_t cr = read_sample(bytes, pixels + chroma_pixels + index);
+            if (cb < 64 || cb > 960 || cr < 64 || cr > 960)
+                return fail(s, "invalid_pixels", "10-bit chroma code is outside limited range");
+            write_p010(line + 4 * (size_t)x, cb);
+            write_p010(line + 4 * (size_t)x + 2, cr);
+        }
+    }
+    return 1;
+}
+
 int dp_encode_push_picture(dp_encode_session *s, uint64_t ordinal, int64_t pts, int64_t duration,
                            const uint8_t *bytes, uint64_t length, const dp_encode_control *control,
                            dp_encode_error *error) {
     if (!begin_call(s, control, error)) return s == NULL ? 0 : end_call(s, 0);
     int success = 0;
-    uint64_t expected_length = (uint64_t)s->config.width * s->config.height * 3 / 2;
+    uint64_t expected_length = (uint64_t)s->config.width * s->config.height * 3 / 2 * (s->hdr_enabled ? 2U : 1U);
     if (bytes == NULL || length != expected_length || ordinal != s->video_frames ||
         ordinal >= s->config.video_frames || pts != (int64_t)(ordinal * s->config.fps_den) ||
         duration != s->config.fps_den || !video_is_next(s)) {
@@ -684,6 +857,9 @@ int dp_encode_push_picture(dp_encode_session *s, uint64_t ordinal, int64_t pts, 
     }
     int code = av_frame_make_writable(s->picture);
     if (code < 0) { ff_failure(s, "make encoder picture writable", code); goto done; }
+    if (s->hdr_enabled) {
+        if (!pack_p010(s, bytes)) goto done;
+    } else {
     uint64_t offset = 0;
     for (int plane = 0; plane < 3; ++plane) {
         uint32_t width = plane == 0 ? s->config.width : s->config.width / 2;
@@ -698,6 +874,7 @@ int dp_encode_push_picture(dp_encode_session *s, uint64_t ordinal, int64_t pts, 
             memcpy(s->picture->data[plane] + (size_t)row * (size_t)s->picture->linesize[plane], bytes + offset, width);
             offset += width;
         }
+    }
     }
     s->picture->pts = pts; s->picture->duration = duration;
     s->picture->flags &= ~(AV_FRAME_FLAG_INTERLACED | AV_FRAME_FLAG_TOP_FIELD_FIRST);
@@ -741,11 +918,55 @@ done:
     return end_call(s, success);
 }
 
+static int attach_static_metadata(dp_encode_session *s, const dp_encode_content_light *light) {
+    AVCodecParameters *par = s->video_stream->codecpar;
+    if (av_packet_side_data_get(par->coded_side_data, par->nb_coded_side_data,
+                                AV_PKT_DATA_MASTERING_DISPLAY_METADATA) != NULL ||
+        av_packet_side_data_get(par->coded_side_data, par->nb_coded_side_data,
+                                AV_PKT_DATA_CONTENT_LIGHT_LEVEL) != NULL)
+        return fail(s, "encoder_unsupported", "encoder supplied its own static HDR metadata");
+    if (s->hdr.has_mastering) {
+        AVPacketSideData *side = av_packet_side_data_new(&par->coded_side_data, &par->nb_coded_side_data,
+            AV_PKT_DATA_MASTERING_DISPLAY_METADATA, sizeof(AVMasteringDisplayMetadata), 0);
+        if (side == NULL) return fail(s, "allocation_failure", "allocate mastering display metadata");
+        AVMasteringDisplayMetadata *m = (AVMasteringDisplayMetadata *)side->data;
+        memset(m, 0, sizeof(*m));
+        for (int primary = 0; primary < 3; ++primary)
+            for (int axis = 0; axis < 2; ++axis)
+                m->display_primaries[primary][axis] = av_make_q(s->hdr.primaries[primary][axis], 50000);
+        m->white_point[0] = av_make_q(s->hdr.white_point[0], 50000);
+        m->white_point[1] = av_make_q(s->hdr.white_point[1], 50000);
+        m->max_luminance = av_make_q((int)s->hdr.max_luminance, 10000);
+        m->min_luminance = av_make_q((int)s->hdr.min_luminance, 10000);
+        m->has_primaries = 1; m->has_luminance = 1;
+    }
+    AVPacketSideData *side = av_packet_side_data_new(&par->coded_side_data, &par->nb_coded_side_data,
+        AV_PKT_DATA_CONTENT_LIGHT_LEVEL, sizeof(AVContentLightMetadata), 0);
+    if (side == NULL) return fail(s, "allocation_failure", "allocate content light metadata");
+    AVContentLightMetadata *cll = (AVContentLightMetadata *)side->data;
+    memset(cll, 0, sizeof(*cll));
+    cll->MaxCLL = light->max_cll; cll->MaxFALL = light->max_fall;
+    return 1;
+}
+
 int dp_encode_finish(dp_encode_session *s, const dp_encode_control *control,
                      dp_encode_report *report, dp_encode_error *error) {
+    return dp_encode_finish_hdr(s, NULL, control, report, error);
+}
+
+int dp_encode_finish_hdr(dp_encode_session *s, const dp_encode_content_light *light,
+                         const dp_encode_control *control, dp_encode_report *report,
+                         dp_encode_error *error) {
     if (report != NULL) memset(report, 0, sizeof(*report));
     if (!begin_call(s, control, error)) return s == NULL ? 0 : end_call(s, 0);
     int success = 0;
+    int pq = s->hdr_enabled && s->hdr.transfer == DP_ENCODE_TRANSFER_PQ;
+    if ((light != NULL) != pq) {
+        fail(s, "invalid_config", "content light is required for PQ and absent otherwise"); goto done;
+    }
+    if (light != NULL && (light->max_cll > 10000 || light->max_fall > light->max_cll)) {
+        fail(s, "invalid_config", "content light exceeds 10000 cd/m2 or MaxFALL exceeds MaxCLL"); goto done;
+    }
     if (report == NULL || s->video_frames != s->config.video_frames || s->audio_samples != s->config.audio_samples) {
         fail(s, "incomplete_input", "finish requires every authored frame and sample exactly once"); goto done;
     }
@@ -757,6 +978,9 @@ int dp_encode_finish(dp_encode_session *s, const dp_encode_control *control,
     int code = av_interleaved_write_frame(s->format, NULL);
     if (code < 0) { ff_failure(s, "flush interleaved packets", code); goto done; }
     if (!check_control(s)) goto done;
+    /* Pinned movenc writes mdcv/clli from coded side data while writing moov,
+     * which happens at the trailer for this non-fragmented fast-start file. */
+    if (pq && !attach_static_metadata(s, light)) goto done;
     s->trailer_active = 1;
     code = av_write_trailer(s->format);
     s->trailer_active = 0;
@@ -784,6 +1008,37 @@ done:
     success = end_call(s, success);
     if (success) s->finished = 1;
     return success;
+}
+
+static void copy_name(char *destination, size_t size, const char *name) {
+    (void)snprintf(destination, size, "%s", name == NULL ? "" : name);
+}
+
+int dp_encode_query_video(const dp_encode_session *s, dp_encode_video_info *video) {
+    if (s == NULL || video == NULL || s->video == NULL || s->video_stream == NULL) return 0;
+    memset(video, 0, sizeof(*video));
+    const AVCodecContext *c = s->video;
+    const AVCodecParameters *par = s->video_stream->codecpar;
+    video->abi_version = DP_ENCODE_HDR_ABI_VERSION;
+    video->profile = c->profile;
+    video->pix_fmt = c->pix_fmt;
+    video->color_primaries = c->color_primaries;
+    video->color_trc = c->color_trc;
+    video->colorspace = c->colorspace;
+    video->color_range = c->color_range;
+    video->chroma_location = c->chroma_sample_location;
+    video->mastering_side_data = av_packet_side_data_get(par->coded_side_data, par->nb_coded_side_data,
+        AV_PKT_DATA_MASTERING_DISPLAY_METADATA) != NULL;
+    video->content_light_side_data = av_packet_side_data_get(par->coded_side_data, par->nb_coded_side_data,
+        AV_PKT_DATA_CONTENT_LIGHT_LEVEL) != NULL;
+    video->removed_unspecified_nal_units = s->removed_unspecified_nal_units;
+    copy_name(video->encoder, sizeof(video->encoder), c->codec == NULL ? NULL : c->codec->name);
+    copy_name(video->profile_name, sizeof(video->profile_name), avcodec_profile_name(c->codec_id, c->profile));
+    copy_name(video->pix_fmt_name, sizeof(video->pix_fmt_name), av_get_pix_fmt_name(c->pix_fmt));
+    if (par->codec_tag != 0)
+        for (int byte = 0; byte < 4; ++byte)
+            video->codec_tag[byte] = (char)((par->codec_tag >> (8 * byte)) & 0xff);
+    return 1;
 }
 
 void dp_encode_close(dp_encode_session *s) {

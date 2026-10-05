@@ -14,8 +14,8 @@ use serde_json::value::RawValue;
 use crate::{
     DocumentError, DocumentErrorCode, ExactFrameRange, ExactRatio, FrameDuration, FrozenAudioKind,
     FrozenAudioLayout, InstancePath, IterationId, MAX_DOCUMENT_DEPTH, MAX_DOCUMENT_JSON_BYTES,
-    MAX_DOCUMENT_NODES, MIX_SAMPLE_RATE, NodeId, NodeKind, PitchPolicy, ProjectDocument,
-    RepeatInstance, RevisionId, TimeError,
+    MAX_DOCUMENT_NODES, MIX_SAMPLE_RATE, NodeId, NodeKind, ProjectDocument, RepeatInstance,
+    RevisionId, TimeError,
 };
 
 pub const MAX_AUDIO_BINDING_TERMS: usize = 256;
@@ -548,13 +548,17 @@ fn clock_scope<'a>(
             let FrozenAudioKind::Retime {
                 child,
                 mapping,
-                pitch: PitchPolicy::Preserve,
+                pitch,
                 ..
             } = &node.kind
             else {
                 return Err(invalid("point clock owner is not Preserve"));
             };
-            if mapping.duration() == node.duration {
+            if !pitch.preserves() {
+                return Err(invalid("point clock owner is not Preserve"));
+            }
+            // A unity-rate stage owns an input clock only when it shifts pitch.
+            if !pitch.processes(mapping.duration() == node.duration) {
                 return Err(invalid("unity Retime has no input preparation clock"));
             }
             Ok(ClockScope {
@@ -660,7 +664,7 @@ fn physical(kind: &FrozenAudioKind, duration: FrameDuration) -> bool {
     matches!(
         kind,
         FrozenAudioKind::Source { .. } | FrozenAudioKind::Hold { .. }
-    ) || matches!(kind, FrozenAudioKind::Retime { mapping, pitch: PitchPolicy::Preserve, .. } if mapping.duration() != duration)
+    ) || matches!(kind, FrozenAudioKind::Retime { mapping, pitch, .. } if pitch.processes(mapping.duration() == duration))
 }
 
 impl AudioPlacementTemplate {
@@ -1496,7 +1500,7 @@ impl AudioBindingState {
             }
             if kind == AudioRecipeKind::Node
                 && !matches!(node.kind, NodeKind::Source { .. } | NodeKind::Hold { .. })
-                && !matches!(&node.kind, NodeKind::Retime { duration, mapping, pitch: PitchPolicy::Preserve, .. } if mapping.duration() != *duration)
+                && !matches!(&node.kind, NodeKind::Retime { duration, mapping, pitch, .. } if pitch.processes(mapping.duration() == *duration))
             {
                 return Err(invalid("audio binding owner is not a physical recipe"));
             }

@@ -48,7 +48,7 @@ pub struct ExpectedStream {
 }
 
 impl ExpectedStream {
-    fn validate(&self) -> Result<(), String> {
+    pub(crate) fn validate(&self) -> Result<(), String> {
         if !(1..=MAX_DIMENSION).contains(&self.width)
             || !(1..=MAX_DIMENSION).contains(&self.height)
             || self.time_base_num == 0

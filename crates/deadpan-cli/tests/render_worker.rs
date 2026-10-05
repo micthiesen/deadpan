@@ -111,6 +111,7 @@ fn contract(document: &ProjectDocument) -> RenderContract {
         project_audio_start: AudioSample(0),
         project_audio_end: AudioSample(3_203),
         relative_aspect_error: ExactRatio::ZERO,
+        mastering_display: None,
     }
 }
 

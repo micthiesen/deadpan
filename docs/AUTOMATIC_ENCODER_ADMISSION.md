@@ -1,12 +1,14 @@
-# Automatic SDR encoder admission
+# Automatic SDR/HDR encoder admission
 
 `encoded_render::admission::qualify` runs deterministic probes on the current
 helper at the requested output raster and rational frame rate. It returns an
 owned `QualifiedEncoder` containing the selected probe's private bytes and the
 complete decision record. Consuming that capability through
 `QualifiedEncoder::encode` runs one project encoding attempt bound to the
-qualified runtime and SDR controls. Admission does not change a project or
-durable Render job. Public native/headless Render remains open.
+qualified runtime and its frozen controls. Admission does not change a project
+or durable Render job. `AdmissionRequest.color_policy` names the committed
+revision's output branch: SDR runs the H.264 probe below; PQ/HLG run the HEVC
+Main10 probe described under [HDR admission](#hdr-admission-automatichdrv1).
 
 ## Probe and selection
 
@@ -33,6 +35,60 @@ capacity, deadline, cancellation, protocol and generic native errors stop the
 search. Diagnostic text never chooses a path. A later supervision fault
 invalidates a typed native claim. Unconfirmed cleanup takes precedence and
 cannot become a successful cancellation or an eligible rejection.
+
+## HDR admission (AutomaticHdrV1)
+
+A revision whose automatic color branch (`ProjectPictureSession::color_decision`,
+`picture::committed_color`) is PQ or HLG renders under `AutomaticHdrV1`. An SDR
+branch, including a tone-mapped fallback from an HDR basis, keeps
+`AutomaticSdrV1` byte-for-byte. The algorithm is chosen at job creation from
+the branch (`render::output_summary`/`committed_output_summary` report it with
+the color policy, reason, `hdr_sources`, tone-map peak and PQ mastering volume)
+and `capture_intent` refuses an automatic intent whose algorithm does not match
+the captured contract's color.
+
+The HDR probe uses `deadpan_encode::probe::HdrEncoderProbe`: the SDR probe's
+clocks, GOP-derived length, shapes and audio markers with planar 10-bit
+limited-range BT.2020 NCL codes for the transfer. `ProbeSpec.color_policy`
+(serde default SDR, omitted when SDR) selects it, so SDR specs, recipe hashes
+and retained decisions keep their exact bytes. Each transfer has its own recipe
+domain: `deadpan-encoder-admission-probe-hdr-pq-v1` or `...-hdr-hlg-v1`, over
+the HDR `ProbeConfig` (version 1, doubled picture bytes). The probe contract
+carries the HDR color policy and, for PQ only, `HDR_PROBE_MASTERING`.
+
+The PQ probe declares CTA-861.3 light computed like the project host: exact
+per-pixel max(R,G,B) of its input codes (each shape owns whole 2x2 cells, so
+nearest chroma is exact), MaxCLL the brightest pixel and MaxFALL the largest
+frame mean, rounded up to whole cd/m². Measured: 1005/168 (320x180, 30000/1001),
+1005/166 (1920x1080, 30000/1001) and 1005/169 (3840x2160, 60/1). The fixed `HDR_PROBE_CONTENT_LIGHT`
+(1000/203) would understate the 1004.19 cd/m² peak, so the worker does not use
+it. HLG and SDR pass no light.
+
+The content oracle (schema 2) decodes with `next_yuv420p10` and compares every
+10-bit plane with the exact input codes. Its limits are the SDR limits scaled to
+10-bit codes: maximum 192 (SDR 48 x 4), MAE 6.000 (1.500 x 4) and MSE 256.000
+(16.000 x 16) per plane and per frame. Schema 1 SDR limits are unchanged. The
+encode report must show `video_profile` 2 (HEVC Main10) instead of 100;
+`abi_version` stays 1. Settings resolve through `RenderSdrSettings::automatic`,
+where `automatic_hdr_v1` equals `automatic_sdr_v1` except video bitrate
+`(sdr * 5 + 2) / 4`. PQ probe verification reports carry the verifier's
+`content_light` evidence; SDR and HLG reports omit it.
+
+The fallback graph is frozen per algorithm, and `AutomaticHdrV1` deliberately
+uses the SDR table: hardware TargetTwo, hardware None after an exact PTS<DTS
+rejection, then software. A finished-file verification failure, for example
+OS software PQ declaring top-left chroma, is an `Output` rejection and never an
+eligible fallback. For HEVC the verifier's `maximum_b_run` is the packet reorder
+delay, bounded by the same B-frame policy.
+
+Measured on the M5 Max (2026-10-05), see
+[the qualification record](qualification/hdr-automatic-admission-2026-10-05.md):
+supervised admission selected hardware TargetTwo on the first probe for PQ and
+HLG at 320x180 and 1920x1080 (30000/1001) and 3840x2160 (60/1). SDR kept its
+measured hardware TargetTwo PTS<DTS rejection followed by hardware None. The
+largest 10-bit errors over all PQ/HLG hardware/software and B-frame
+combinations were maximum 73 (Y, hardware 320x180), worst-frame MAE 0.640 and
+MSE 12.219, well inside the limits.
 
 ## Verification and ownership
 
@@ -143,9 +199,9 @@ worker work while Queued. The writer atomically records the decision with the
 Encoding transition before the worker consumes its live capability. Both stages
 poll session ownership and drain owned processes when that ownership is revoked.
 Cold encoding retries qualify again; checkpoint verification and publication
-reconciliation retain the original decision. Native and public headless Render
-controls still need to expose this shared workflow. Full mastering/effects, HDR,
-quality policy and the supported hardware/OS release matrix remain open.
+reconciliation retain the original decision. Full mastering/effects, HDR
+listening/viewing qualification, quality policy and the supported hardware/OS
+release matrix remain open.
 
 See [probe qualification](qualification/encoder-admission-2026-09-30.md),
 [runtime-bound project qualification](qualification/encoder-runtime-2026-09-30.md)

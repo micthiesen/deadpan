@@ -181,7 +181,8 @@ preview. Unchanged previews use the existing committed revision. Render progress
 cancel, errors and final movie/report paths remain separate from editor feedback.
 Later editing or Undo cannot change the captured render.
 
-The shared public adapter derives the full range and `AutomaticSdrV1` policy,
+The shared public adapter derives the full range and the automatic algorithm of
+the committed color branch (`AutomaticSdrV1` or `AutomaticHdrV1`),
 allocates fresh operation identities and chooses the current executable's private
 worker dispatch. [Headless Render](HEADLESS.md#automatic-render) exposes start,
 bounded stored status, checkpoint retry, fresh encoding and reconciliation. A
@@ -198,7 +199,8 @@ Owner loss cannot trigger local fallback or replay. See
 [open-project commands](LIVE_PROJECT.md) for transport and observation limits.
 
 The native UI exposes new rendering, live cancellation and the saved-render
-browser below. Full mastering/effects, HDR and release qualification remain open.
+browser below. Full mastering/effects, HDR viewing and release qualification
+remain open.
 
 ## Native saved-render browser
 
@@ -257,6 +259,19 @@ historical output, resolved controls and original encoding owner must agree
 before verification. The verifier may run on a different current runtime while
 publication provenance preserves the original encoder's observations.
 
+`AutomaticHdrV1` decisions use the same grammar. `validate_for` requires the
+algorithm to admit `output.color_policy` (SDR with `AutomaticSdrV1`, PQ/HLG with
+`AutomaticHdrV1`) and every probe spec to use that color. The output contract
+gains `mastering_display` (PQ only, valid volume, omitted when absent); probe
+specs gain `color_policy` (omitted for SDR); probe content uses schema 2 with
+10-bit errors; PQ probe verification retains `content_light`. Every new field
+is optional and skipped when absent, so retained SDR decisions keep their exact
+bytes (a unit test pins the measured fixture's SHA-256). The store admits an
+output color equal to the immutable basis color or SDR from an HDR basis
+(tone-mapped fallback); it never admits HDR from an SDR basis or a changed HDR
+transfer. Publication provenance records the decision's algorithm as
+`encoder_selection`.
+
 A checkpoint retry or destination reconciliation never selects an encoder.
 It resolves the decision through `checkpoint.encoding_attempt_id` and runs
 fresh file verification. A cold retry allocates a new attempt and qualifies
@@ -281,5 +296,5 @@ an edited Source project and an accepted Generated project.
 Destination publication has a separate durable journal and explicit reconciliation
 protocol. It requires a new live verifier result; a stored Verified row alone
 never authorizes adoption of destination bytes. Full recovery acceptance,
-mastering/effects, HDR and release qualification
+mastering/effects, HDR viewing and release qualification
 remain required; no DP requirement or delivery gate is completed here.

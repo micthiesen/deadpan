@@ -356,6 +356,16 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
         SemanticAllocationRequest::ParameterEdit { .. } => SemanticAllocation::ParameterEdit {
             new_revision: crate::new_revision()?,
         },
+        SemanticAllocationRequest::Sound { .. } => SemanticAllocation::Sound {
+            new_revision: crate::new_revision()?,
+            id: deadpan_core::SoundId::new(uuid::Uuid::new_v4().to_string())?,
+        },
+        SemanticAllocationRequest::Roll { needs_wrapper, .. } => SemanticAllocation::Roll {
+            new_revision: crate::new_revision()?,
+            wrapper: needs_wrapper
+                .then(|| NodeId::new(uuid::Uuid::new_v4().to_string()))
+                .transpose()?,
+        },
         SemanticAllocationRequest::InsertPause {
             required_split_ids, ..
         } => SemanticAllocation::InsertPause {

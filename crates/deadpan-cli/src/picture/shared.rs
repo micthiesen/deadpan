@@ -70,6 +70,8 @@ pub fn source_to_render_frame(
                 ColorTransfer::Bt709 => Transfer::Rec709,
                 ColorTransfer::Srgb => Transfer::Srgb,
                 ColorTransfer::Linear => Transfer::Linear,
+                ColorTransfer::Pq => Transfer::Pq,
+                ColorTransfer::Hlg => Transfer::Hlg,
             },
             primaries: match info.color.primaries {
                 ColorPrimaries::Bt709 => Primaries::Rec709,
@@ -82,7 +84,17 @@ pub fn source_to_render_frame(
             time_base: SourceTimeBase::new(info.time_base_num, info.time_base_den)?,
         },
     };
-    Ok(Rgba8Frame::new(metadata, decoded.rgba)?)
+    // HDR sources arrive as RGBA64 so ten-bit PQ/HLG codes reach the shared
+    // renderer unquantized; an eight-bit HDR picture is analysis-only.
+    match (decoded.sample_bits, info.color.transfer) {
+        (8, ColorTransfer::Bt709 | ColorTransfer::Srgb | ColorTransfer::Linear) => {
+            Ok(Rgba8Frame::new(metadata, decoded.rgba)?)
+        }
+        (16, _) => Ok(Rgba8Frame::new_rgba16(metadata, decoded.rgba)?),
+        _ => Err(ProjectPictureError::Limits(
+            "HDR source pictures require sixteen-bit decoded samples",
+        )),
+    }
 }
 
 /// Preserve every sampled provider-to-root scope, including identities and the

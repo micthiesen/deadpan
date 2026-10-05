@@ -8,7 +8,7 @@ use std::process::ExitCode;
 use std::sync::{Arc, atomic::AtomicBool};
 use std::time::{Duration, Instant};
 
-use deadpan_core::AudioSample;
+use deadpan_core::{AudioSample, ColorPolicy};
 use deadpan_encode::{AUDIO_FRAME_SAMPLES, EncodeError, EncodeLimits, EncoderSession, NextInput};
 use deadpan_jobs::{CancellationToken, Sha256, WorkspaceArtifact, WorkspaceRef};
 use deadpan_render::Yuv420Policy;
@@ -247,6 +247,7 @@ fn prepare(
             )
         })?;
     let mut completed_inputs = 0_u64;
+    let mut light = ContentLightAccumulator::default();
     loop {
         check_control(cancelled, deadline)?;
         match encoder.next_input().map_err(encoder_failure)? {
@@ -268,7 +269,7 @@ fn prepare(
                     || timing.pts() != pts
                     || timing.duration() != duration
                     || [pixels.width(), pixels.height()] != captured.raster()
-                    || pixels.policy() != Yuv420Policy::Rec709LimitedLeft
+                    || !pixels_match_policy(pixels, captured.color_policy())
                     || u64::try_from(pixels.bytes().len()).ok()
                         != Some(
                             picture
@@ -280,6 +281,9 @@ fn prepare(
                         EncodedFailureKind::Contract,
                         "prepared encoder picture changed its captured contract",
                     ));
+                }
+                if let Some((_, frame_light)) = pixels.hdr() {
+                    light.add(frame_light);
                 }
                 encoder
                     .push_picture(ordinal, pts, duration, pixels.bytes())
@@ -354,7 +358,14 @@ fn prepare(
             "encoded render ended before every captured input",
         ));
     }
-    let (mut output, report) = encoder.finish().map_err(encoder_failure)?.into_parts();
+    // PQ outputs carry MaxCLL/MaxFALL measured from these exact pictures,
+    // never copied from the source; SDR and HLG outputs carry none.
+    let content_light =
+        (captured.color_policy() == ColorPolicy::HdrRec2020Pq).then(|| light.finish());
+    let (mut output, report) = encoder
+        .finish_with_light(content_light)
+        .map_err(encoder_failure)?
+        .into_parts();
     check_control(cancelled, deadline)?;
     let hash = hash_movie(
         &mut output,
@@ -572,3 +583,48 @@ fn document_failure(error: crate::render_worker::RenderWorkerError) -> EncodedFa
 
 #[cfg(test)]
 mod tests;
+
+fn pixels_match_policy(pixels: &crate::export_picture::ExportPixels, policy: ColorPolicy) -> bool {
+    use deadpan_render::Yuv420P10Policy;
+    match (policy, pixels) {
+        (ColorPolicy::SdrRec709, crate::export_picture::ExportPixels::Sdr(pixels)) => {
+            pixels.policy() == Yuv420Policy::Rec709LimitedLeft
+        }
+        (ColorPolicy::HdrRec2020Pq, crate::export_picture::ExportPixels::Hdr { pixels, .. }) => {
+            pixels.policy() == Yuv420P10Policy::Rec2100PqLimitedLeft
+        }
+        (ColorPolicy::HdrRec2020Hlg, crate::export_picture::ExportPixels::Hdr { pixels, .. }) => {
+            pixels.policy() == Yuv420P10Policy::Rec2100HlgLimitedLeft
+        }
+        _ => false,
+    }
+}
+
+/// CTA-861.3 aggregation: MaxCLL is the brightest pixel's max(R,G,B) and
+/// MaxFALL the brightest frame-average of max(R,G,B), both in cd/m², over
+/// the clipped linear light actually coded. Values round up to whole cd/m².
+#[derive(Debug, Default, Clone, Copy)]
+pub(crate) struct ContentLightAccumulator {
+    max_cll: f64,
+    max_fall: f64,
+}
+
+impl ContentLightAccumulator {
+    pub(crate) fn add(&mut self, light: deadpan_render::FrameLight) {
+        if light.max_nits.is_finite() {
+            self.max_cll = self.max_cll.max(light.max_nits);
+        }
+        if light.mean_nits.is_finite() {
+            self.max_fall = self.max_fall.max(light.mean_nits);
+        }
+    }
+
+    pub(crate) fn finish(self) -> deadpan_encode::ContentLight {
+        let whole = |value: f64| value.ceil().clamp(0.0, 10_000.0) as u16;
+        let max_cll = whole(self.max_cll);
+        deadpan_encode::ContentLight {
+            max_cll,
+            max_fall: whole(self.max_fall).min(max_cll),
+        }
+    }
+}

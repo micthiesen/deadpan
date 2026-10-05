@@ -108,9 +108,27 @@ pub struct Workspace {
     /// Loaded when the project opens and replaced when shot analysis is
     /// saved; like the other analyses it never changes with revisions.
     pub shot_analysis: Option<Arc<OriginalShots>>,
+    /// Receipt-derived automatic SDR/HDR branch of this committed revision.
+    pub color: deadpan_cli::picture::OutputColorDecision,
 }
 
 impl Workspace {
+    /// The committed revision's automatic SDR/HDR branch, derived by the
+    /// project service from the store's receipts for every registered
+    /// picture asset (loaded or not) exactly as export derives it.
+    pub fn color_decision(&self) -> deadpan_cli::picture::OutputColorDecision {
+        self.color
+    }
+
+    /// Viewing-condition label for an HDR-bearing project, None for SDR-only
+    /// projects.
+    pub fn color_label(&self) -> Option<&'static str> {
+        use deadpan_cli::picture::ColorDecisionPipeline;
+        self.color
+            .hdr_sources
+            .then(|| self.color.pipeline().preview_label(true))
+    }
+
     /// The same committed workspace with a newly saved transcript.
     pub fn with_transcript(&self, transcript: Arc<OriginalTranscript>) -> Self {
         Self {
@@ -153,8 +171,10 @@ impl Workspace {
             transcript,
             speech_activity,
             shot_analysis,
+            color,
         } = self;
         Self {
+            color: *color,
             session: *session,
             path: path.clone(),
             document: Arc::clone(document),

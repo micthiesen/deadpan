@@ -47,6 +47,115 @@ impl DeadpanApp {
         self.apply_recorded_instruction(target, instruction);
     }
 
+    /// `:jcut` / `:lcut`: one Roll of the seam at the cursor and a cutaway
+    /// that keeps its pictures, as one recorded instruction.
+    pub(super) fn apply_split_edit(
+        &mut self,
+        kind: deadpan_core::SplitEditKind,
+        length: DurationInput,
+    ) {
+        self.cancel_repeats("a split edit was requested");
+        let target = self.capture_macro_target();
+        let instruction = self.pause_instruction(|rate| {
+            Ok(SemanticInstruction::SplitEdit {
+                kind,
+                length: length.pause_length(rate)?,
+            })
+        });
+        self.apply_recorded_instruction(target, instruction);
+    }
+
+    /// `:select role=`: the role the next Visual `d` deletes.
+    pub(super) fn select_role(&mut self, role: deadpan_core::MediaRole) {
+        if self.view != View::Sequence {
+            self.error = Some("Choose a role in Your edit; the Original is never edited.".into());
+            return;
+        }
+        self.edit_role = role;
+        self.edit_role_context = (role != deadpan_core::MediaRole::Linked)
+            .then(|| {
+                self.workspace
+                    .as_ref()
+                    .map(|workspace| (workspace.session, self.sequence_scope.clone()))
+            })
+            .flatten();
+        self.message = Some(match role {
+            deadpan_core::MediaRole::Audio => "Audio role: d silences the Visual range's sound and keeps its picture and time. :select role=linked restores cuts.".into(),
+            deadpan_core::MediaRole::Video => "Video role: d removes the Visual range's picture to the background and keeps its sound and time. :select role=linked restores cuts.".into(),
+            deadpan_core::MediaRole::Linked => "Linked role: d removes picture and sound together and closes the time.".into(),
+        });
+    }
+
+    /// A chosen role belongs to one project session, group and Your edit;
+    /// replacing the project, changing group or showing the Original returns
+    /// it to linked, so a later `d` or `r` cannot act on one role by surprise.
+    pub(super) fn reconcile_edit_role(&mut self) {
+        if self.edit_role == deadpan_core::MediaRole::Linked {
+            return;
+        }
+        let current = self
+            .workspace
+            .as_ref()
+            .map(|workspace| (workspace.session, self.sequence_scope.clone()));
+        if self.view != View::Sequence
+            || self.scoped.is_some()
+            || current.is_none()
+            || current != self.edit_role_context
+        {
+            self.edit_role = deadpan_core::MediaRole::Linked;
+            self.edit_role_context = None;
+            self.message = Some(
+                "Role selection ended with the context change; d and r act on linked picture and sound again."
+                    .into(),
+            );
+        }
+    }
+
+    /// `:delete role=audio|video` or a Visual `d` under a chosen role: one
+    /// recorded role-only delete inside one beat.
+    pub(super) fn delete_role(
+        &mut self,
+        role: deadpan_core::MediaRole,
+        target: Result<macros::Capture, String>,
+    ) {
+        if self.edit_selection() == navigation::EditSelection::None {
+            self.error = Some(format!(
+                "Select a range inside one beat with v first, then delete its {}.",
+                if role == deadpan_core::MediaRole::Audio {
+                    "sound"
+                } else {
+                    "picture"
+                }
+            ));
+            return;
+        }
+        self.cancel_repeats("a role-only delete was requested");
+        self.apply_recorded_instruction(target, Ok(SemanticInstruction::DeleteRole { role }));
+    }
+
+    /// `:repeat N role=audio|video`: one recorded role repeat of the Visual
+    /// range inside one beat.
+    pub(super) fn role_repeat(
+        &mut self,
+        role: deadpan_core::MediaRole,
+        plays: std::num::NonZeroU32,
+        trim: bool,
+        target: Result<macros::Capture, String>,
+    ) {
+        if self.edit_selection() == navigation::EditSelection::None {
+            self.error = Some(
+                "Select a range inside one beat with v first, then repeat its sound or picture."
+                    .into(),
+            );
+            return;
+        }
+        self.cancel_repeats("a role repeat was requested");
+        self.apply_recorded_instruction(
+            target,
+            Ok(SemanticInstruction::RoleRepeat { role, plays, trim }),
+        );
+    }
+
     pub(super) fn apply_tail(&mut self, length: Option<DurationInput>, effect: TailEffect) {
         self.cancel_repeats("a tail was requested");
         let target = self.capture_macro_target();

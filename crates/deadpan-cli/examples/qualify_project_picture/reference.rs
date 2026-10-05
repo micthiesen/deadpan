@@ -18,6 +18,8 @@ fn linear(code: u8, transfer: Transfer) -> f64 {
         Transfer::Rec709 if value < 0.081 => value / 4.5,
         Transfer::Rec709 => ((value + 0.099) / 1.099).powf(1.0 / 0.45),
         Transfer::Linear => value,
+        // HDR transfers are outside this SDR oracle; NaN fails every comparison.
+        Transfer::Pq | Transfer::Hlg => f64::NAN,
     }
 }
 

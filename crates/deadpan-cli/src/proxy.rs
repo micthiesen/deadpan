@@ -320,7 +320,7 @@ pub fn build_proxy_with_plan(
         frames,
         &plan,
         remaining(started)?,
-    );
+    )?;
     // One VideoToolbox proxy session per user at a time, across processes:
     // its encoder service has hung under many concurrent sessions.
     let _slot = cache.encoder_slot(control.cancelled)?;

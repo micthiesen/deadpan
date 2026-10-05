@@ -8,12 +8,19 @@
 //! revision the command was entered at, so an edit made meanwhile refuses the
 //! save instead of being overwritten. Session replacement and shutdown cancel
 //! the job and wait until it has drained.
+//!
+//! Face proposals run on a second bounded job thread the same way: one
+//! indexed picture, the supervised `deadpan-track detect-faces` worker, and
+//! admitted faces published as proposals. Nothing is saved until the person
+//! uses one (`:zoom … target=face:N`), which saves the face as a target and
+//! frames the beat toward it in one undoable transaction.
 
 #[cfg(any(test, feature = "ui-harness"))]
 use std::sync::Arc;
 use std::time::Instant;
 
-use deadpan_core::{AttentionTarget, RevisionId, TargetId, TargetRegion};
+use deadpan_cli::faces::DetectedFace;
+use deadpan_core::{AssetId, AttentionTarget, Framing, NodeId, RevisionId, TargetId, TargetRegion};
 
 /// A user command for targets. Every variant names the session it was issued
 /// in; `ticket` identifies its reply in [`Update::reply`].
@@ -38,6 +45,52 @@ pub enum Operation {
     },
     /// Cancel the job started with ticket `job`.
     Cancel { ticket: u64, session: u64, job: u64 },
+    /// Propose faces in one indexed picture of `asset` in the background.
+    /// Detection never edits; [`FaceJob`] reports the proposals.
+    DetectFaces {
+        ticket: u64,
+        session: u64,
+        revision: RevisionId,
+        asset: AssetId,
+        pts: i64,
+    },
+    /// Save a chosen face as target `id` and set `node`'s framing toward it
+    /// in one undoable transaction expecting `revision`.
+    SaveFramed {
+        ticket: u64,
+        session: u64,
+        revision: RevisionId,
+        scope: crate::project::SequenceScope,
+        cursor: deadpan_core::ProjectFrame,
+        node: NodeId,
+        id: TargetId,
+        target: Box<AttentionTarget>,
+        framing: Option<Box<Framing>>,
+    },
+}
+
+/// The latest face detection of this session: proposals only.
+#[derive(Clone, Debug)]
+pub struct FaceJob {
+    pub ticket: u64,
+    pub session: u64,
+    /// The head revision the picture was resolved against.
+    pub revision: RevisionId,
+    pub asset: AssetId,
+    /// The indexed picture analysed.
+    pub pts: i64,
+    /// None while detection runs.
+    pub outcome: Option<FaceOutcome>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum FaceOutcome {
+    /// Admitted proposals, ordered left to right, then top to bottom.
+    Found(Vec<DetectedFace>),
+    /// The detector or Original is missing; nothing was proposed.
+    Unavailable(String),
+    Failed(String),
+    Cancelled,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -128,6 +181,7 @@ pub struct Update {
     /// The latest independent command's ticket and refusal, if any.
     pub reply: Option<(u64, Option<String>)>,
     pub saved: Option<Saved>,
+    pub faces: Option<FaceJob>,
 }
 
 /// How the project service tracks. Production always uses the worker
@@ -141,6 +195,46 @@ pub enum Backend {
     /// real; only the Vision worker is replaced by deterministic observations.
     #[cfg(any(test, feature = "ui-harness"))]
     Scripted(Arc<ScriptQueue>),
+    /// Test and replay seam for face proposals: picture resolution, the
+    /// verified Original copy and the host's face admission are real; each
+    /// detection takes the next run, and only `Faces` runs replace the Vision
+    /// worker. Tracking uses the installed worker.
+    #[cfg(any(test, feature = "ui-harness"))]
+    ScriptedFaces(Arc<FaceScript>),
+}
+
+/// Face detection runs in order, one per start; the last one repeats.
+#[cfg(any(test, feature = "ui-harness"))]
+#[derive(Debug)]
+pub struct FaceScript(std::sync::Mutex<std::collections::VecDeque<FaceRun>>);
+
+#[cfg(any(test, feature = "ui-harness"))]
+#[derive(Clone, Debug)]
+pub enum FaceRun {
+    /// The installed `deadpan-track` worker with Apple Vision.
+    #[cfg_attr(not(feature = "ui-harness"), allow(dead_code, reason = "replay only"))]
+    Worker,
+    /// Report these faces after `delay`, through the host's admission.
+    Faces {
+        faces: Vec<DetectedFace>,
+        delay: std::time::Duration,
+    },
+}
+
+#[cfg(any(test, feature = "ui-harness"))]
+impl FaceScript {
+    pub fn new(runs: impl IntoIterator<Item = FaceRun>) -> Self {
+        Self(std::sync::Mutex::new(runs.into_iter().collect()))
+    }
+
+    pub fn next(&self) -> Option<FaceRun> {
+        let mut runs = self.0.lock().unwrap_or_else(|error| error.into_inner());
+        if runs.len() > 1 {
+            runs.pop_front()
+        } else {
+            runs.front().cloned()
+        }
+    }
 }
 
 /// Scripted runs in order, one per start; the last one repeats.

@@ -207,6 +207,9 @@ fn coalesced_owner_render(d: &mut Driver<'_>, output: &Path) -> Result<(), Strin
     let limits = deadpan_cli::render::default_limits().map_err(|error| error.to_string())?;
     let request = deadpan_cli::render::start_request(
         &deadpan_cli::render::RenderContext::from_document(&workspace.document),
+        deadpan_jobs::render::RenderAutomaticAlgorithm::for_output(
+            workspace.color_decision().output,
+        ),
         output.join("coalesced-owner.mp4"),
         Instant::now(),
     )

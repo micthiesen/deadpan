@@ -11,9 +11,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use deadpan_core::{
-    AssetId, CapturedFraming, ColorPolicy, FrameRange, FrameRate, GeneratedArtifact,
-    IndexedSourceFrame, IterationId, ProjectDocument, ProjectFrame, ProjectId, RevisionId,
-    SourceFrameId, SourceQualificationId,
+    AssetId, CapturedFraming, FrameRange, FrameRate, GeneratedArtifact, IndexedSourceFrame,
+    IterationId, ProjectDocument, ProjectFrame, ProjectId, RevisionId, SourceFrameId,
+    SourceQualificationId,
 };
 use deadpan_media::source_session::{
     IndexMeasurement, SourceSession, SourceSessionError, SourceSessionLimits,
@@ -29,6 +29,12 @@ pub use shared::{
 };
 mod generated;
 pub use generated::open_generated_picture;
+mod color;
+pub use color::{
+    AssetColor, AssetTransfer, ColorDecisionPipeline, DEFAULT_HDR_PEAK_NITS,
+    MIN_TRUSTED_CONTENT_LIGHT_NITS, OutputColorDecision, OutputColorReason, asset_color,
+    decide_output_color,
+};
 #[cfg(test)]
 mod tests;
 
@@ -45,8 +51,6 @@ pub enum ProjectPictureError {
         frame: ProjectFrame,
         range: FrameRange,
     },
-    #[error("HDR picture preparation requires a qualified tone-mapping/output path")]
-    HdrUnsupported,
     #[error("still-image picture preparation is not qualified for asset {0}")]
     StillUnsupported(AssetId),
     #[error("legacy accepted picture lacks qualified generated evidence for asset {0}")]
@@ -244,6 +248,7 @@ pub struct ProjectPictureSession {
     retained: Option<RetainedSource>,
     stats: PictureSessionStats,
     admission: SourceAdmission,
+    color: OutputColorDecision,
 }
 
 impl ProjectPictureSession {
@@ -272,9 +277,7 @@ impl ProjectPictureSession {
         let document = store.snapshot_at(revision)?;
         check_cancel(cancelled)?;
         let basis = document.presentation_basis();
-        if basis.color_policy != ColorPolicy::SdrRec709 {
-            return Err(ProjectPictureError::HdrUnsupported);
-        }
+        let color = committed_color(&store, &document)?;
         validate_raster(basis.width, basis.height)?;
         let plan = RenderPlan::compile(&document)?;
         let range = range.unwrap_or(FrameRange::new(
@@ -298,7 +301,13 @@ impl ProjectPictureSession {
             retained: None,
             stats: PictureSessionStats::default(),
             admission,
+            color,
         })
+    }
+
+    /// The automatic SDR/HDR branch shared by preview and export of this revision.
+    pub const fn color_decision(&self) -> OutputColorDecision {
+        self.color
     }
 
     pub fn plan(&self) -> &RenderPlan {
@@ -585,6 +594,15 @@ impl ProjectPictureSession {
         self.stats.source_open_us += elapsed_us(opened);
         Ok(self.retained.as_mut().expect("source admitted"))
     }
+}
+
+/// Decide the revision's branch from each registered video asset's stored
+/// receipt. Legacy assets without a qualified receipt count as SDR.
+pub fn committed_color(
+    store: &ProjectStore,
+    document: &ProjectDocument,
+) -> Result<OutputColorDecision, ProjectPictureError> {
+    Ok(store.output_color(document)?)
 }
 
 fn elapsed_us(started: std::time::Instant) -> u64 {

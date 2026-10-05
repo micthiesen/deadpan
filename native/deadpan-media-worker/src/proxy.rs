@@ -81,7 +81,8 @@ fn check_source(info: &SourceStreamInfo, request: &ProxyRequest) -> Result<(), S
         || info.sample_aspect_num != request.sar_num
         || info.sample_aspect_den != request.sar_den
         || info.rotation_quarter_turns != request.rotation_quarter_turns
-        || ProxyTransfer::of(info.color.transfer) != request.transfer
+        // An HDR Original has no proxy transfer and is refused explicitly.
+        || ProxyTransfer::of(info.color.transfer) != Some(request.transfer)
         || ProxyPrimaries::of(info.color.primaries) != request.primaries
     {
         return Err("decoded Original differs from the planned stream".into());

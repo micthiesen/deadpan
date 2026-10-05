@@ -51,7 +51,7 @@ impl StageAudio {
                 u64::try_from(rate.numerator()).map_err(|_| TimeError::Overflow)?,
                 u64::try_from(rate.denominator()).map_err(|_| TimeError::Overflow)?,
             )?,
-            0,
+            i32::from(projection.stage().descriptor().pitch.semitones()),
         )?;
         let reservation = self.reserve(input_frames, output_frames, control)?;
         control

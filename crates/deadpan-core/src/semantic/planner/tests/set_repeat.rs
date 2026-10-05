@@ -589,6 +589,7 @@ fn cutaways_belong_only_to_source_and_hold_beats() {
             crate::SourceSpan::new(stamp(0), stamp(2)).unwrap(),
         ),
         fit: crate::CutawayFit::Hold,
+        removed: false,
     }])
     .unwrap();
     let with = |node: &str| {

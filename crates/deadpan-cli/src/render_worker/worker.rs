@@ -188,7 +188,9 @@ fn prepare(
                     .timing(ordinal)
                     .map_err(|error| error.to_string())?
             || [pixels.width(), pixels.height()] != captured.raster()
-            || pixels.policy() != Yuv420Policy::Rec709LimitedLeft
+            || pixels
+                .sdr()
+                .is_none_or(|pixels| pixels.policy() != Yuv420Policy::Rec709LimitedLeft)
             || u64::try_from(pixels.bytes().len()).ok() != Some(frame_bytes)
         {
             return Err("prepared encoder picture changed its captured contract".to_owned());

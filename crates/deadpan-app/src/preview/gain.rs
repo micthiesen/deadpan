@@ -242,9 +242,60 @@ impl DeadpanApp {
         });
     }
 
+    /// A gain or saturation change of the captured whole beat as one
+    /// semantic instruction: recorded while a macro records, repeatable
+    /// with `.`, and one Undo either way.
+    pub(super) fn record_audio_change(
+        &mut self,
+        target: Option<Result<Target, String>>,
+        macro_target: Option<Result<super::macros::Capture, String>>,
+        change: deadpan_core::AudioChange,
+    ) {
+        let checked = target
+            .unwrap_or_else(|| Err("No beat was captured on command entry.".into()))
+            .and_then(|target| {
+                if target.scoped.is_some() {
+                    return Err("Recording changes a whole beat's gain; leave the play scope with :scope all.".into());
+                }
+                change
+                    .apply(&target.entry)
+                    .map_err(|error| error.to_string())
+                    .and_then(|treatments| {
+                        if treatments == target.entry {
+                            Err("The beat already has that gain and saturation. No edit was made."
+                                .into())
+                        } else {
+                            Ok(())
+                        }
+                    })
+            });
+        if let Err(error) = checked {
+            self.error = Some(error);
+            return;
+        }
+        let capture = macro_target
+            .unwrap_or_else(|| Err("Open the command again to capture its selected beat.".into()));
+        self.apply_recorded_instruction(
+            capture,
+            Ok(deadpan_core::SemanticInstruction::SetAudio { change }),
+        );
+    }
+
     pub(super) fn gain_step(&mut self, delta: i32, context: &egui::Context) {
         if self.pane == Pane::Sounds || self.event_focused() {
             self.sound_action(navigation::SoundAction::GainStep(delta), context);
+            return;
+        }
+        if self.macros.recording() {
+            let target = Some(self.capture_gain_target());
+            let capture = Some(self.capture_macro_target());
+            self.record_audio_change(
+                target,
+                capture,
+                deadpan_core::AudioChange::Step {
+                    millidecibels: delta,
+                },
+            );
             return;
         }
         let result = self.capture_gain_target().and_then(|target| {
@@ -301,6 +352,70 @@ impl DeadpanApp {
             .and_then(|target| {
                 let mut edit = GainEdit::new(target.entry.clone());
                 edit.set_muted(!edit.muted())?;
+                Ok((target, edit.recipe().clone()))
+            });
+        match result {
+            Ok((target, recipe)) => self.commit_gain(target, recipe),
+            Err(error) => self.error = Some(error),
+        }
+    }
+
+    /// `:gain +=3dB`: a relative trim change on the captured beat.
+    pub(super) fn gain_step_captured(
+        &mut self,
+        target: Option<Result<Target, String>>,
+        delta: i32,
+    ) {
+        let result = target
+            .unwrap_or_else(|| Err("No gain target was captured on command entry.".into()))
+            .and_then(|target| {
+                let mut edit = GainEdit::new(target.entry.clone());
+                edit.adjust_trim(delta)?;
+                Ok((target, edit.recipe().clone()))
+            });
+        match result {
+            Ok((target, recipe)) => self.commit_gain(target, recipe),
+            Err(error) => self.error = Some(error),
+        }
+    }
+
+    /// `:saturate 12dB` / `:saturate off`: the captured beat's saturation
+    /// stage, after its clip gain, as one Undo. A whole beat in the current
+    /// group is changed through the semantic path, so `.` repeats it and a
+    /// macro records it; one play inside a Repeat is edited directly.
+    pub(super) fn saturate_command(
+        &mut self,
+        target: Option<Result<Target, String>>,
+        macro_target: Option<Result<super::macros::Capture, String>>,
+        stage: Option<deadpan_core::Saturation>,
+    ) {
+        if let Some(Ok(captured)) = &target
+            && captured.scoped.is_none()
+        {
+            self.record_audio_change(
+                target,
+                macro_target,
+                deadpan_core::AudioChange::Saturation {
+                    drive: stage.map(deadpan_core::Saturation::drive),
+                },
+            );
+            return;
+        }
+        if self.macros.recording() {
+            self.error = Some(
+                "Recording changes a whole beat's saturation; leave the play scope with :scope all."
+                    .into(),
+            );
+            return;
+        }
+        let result = target
+            .unwrap_or_else(|| Err("No beat was captured on command entry.".into()))
+            .and_then(|target| {
+                let mut edit = GainEdit::new(target.entry.clone());
+                if stage.is_none() && edit.saturation().is_none() {
+                    return Err("This beat has no saturation. No edit was made.".into());
+                }
+                edit.set_saturation(stage)?;
                 Ok((target, edit.recipe().clone()))
             });
         match result {
@@ -970,6 +1085,13 @@ impl DeadpanApp {
             edit.envelopes().len(),
             edit.mute_ranges().len()
         ));
+        ui.weak(match edit.saturation() {
+            Some(saturation) => format!(
+                "Saturation {} dB drive · :saturate off removes it",
+                crate::gain::format_db(saturation.drive())
+            ),
+            None => "No saturation · :saturate 12dB drives a soft clipper".into(),
+        });
     }
 }
 

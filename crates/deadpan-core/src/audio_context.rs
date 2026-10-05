@@ -17,7 +17,7 @@ use crate::{
 
 /// Schema 7 adds reversed and tone Hold audio, the tail effect, and live
 /// tails without a retained source input. Older schemas reject all of them.
-const AUDIO_CONTEXT_SCHEMA: u32 = 7;
+const AUDIO_CONTEXT_SCHEMA: u32 = 8;
 
 /// Full authored audio input. Source mapping and signed mix offset are retained
 /// because their effective placement need not fit SourceAudioMapping::Placement.
@@ -348,6 +348,24 @@ impl FrozenAudioContext {
                     ));
                 }
             }
+        }
+        if self.schema_version < 8
+            && (self.layout.nodes().values().any(|node| {
+                matches!(
+                    node.kind,
+                    FrozenAudioKind::Retime {
+                        pitch: crate::PitchPolicy::Shift { .. },
+                        ..
+                    }
+                )
+            }) || self
+                .audio_treatments
+                .values()
+                .any(|treatments| treatments.saturation().is_some()))
+        {
+            return Err(invalid(
+                "a schema-7 or older audio context cannot contain pitch shifts or saturation",
+            ));
         }
         self.validate_treatments()?;
         if self.inputs.len() > MAX_DOCUMENT_NODES || self.assets.len() > MAX_DOCUMENT_ASSETS {

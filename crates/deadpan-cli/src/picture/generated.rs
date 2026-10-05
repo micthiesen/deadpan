@@ -33,9 +33,8 @@ pub fn open_generated_picture(
     artifact: &GeneratedArtifact,
     cancelled: &AtomicBool,
 ) -> Result<SourceSession, ProjectPictureError> {
-    if document.presentation_basis().color_policy != deadpan_core::ColorPolicy::SdrRec709 {
-        return Err(ProjectPictureError::HdrUnsupported);
-    }
+    // Generated footage is always SDR sRGB. In an HDR-basis project its
+    // presence makes the automatic branch SDR (see `decide_output_color`).
     let deadline = Instant::now() + OPEN_TIMEOUT;
     let remaining = || {
         check_cancel(cancelled)?;

@@ -111,6 +111,66 @@ fn check(fixture: &Fixture) -> Result {
             if *loud { "loud" } else { "quiet" }
         );
     }
+    for signal in &fixture.signals {
+        // Limited inspection reads at most 256 samples per request.
+        let mut left: Vec<f64> = Vec::new();
+        let mut at = signal.start;
+        while at < signal.start + signal.count {
+            let end = (at + 256).min(signal.start + signal.count);
+            let audio = success(&[
+                "inspect-audio",
+                path,
+                "--samples",
+                &at.to_string(),
+                &end.to_string(),
+                "--limited",
+            ])?;
+            left.extend(
+                audio["audio"]["samples"]
+                    .as_array()
+                    .ok_or("limited samples")?
+                    .iter()
+                    .filter_map(|pair| pair.get(0).and_then(Value::as_f64)),
+            );
+            at = end;
+        }
+        assert_eq!(left.len() as i64, signal.count, "{}", fixture.name);
+        let crossings = left
+            .windows(2)
+            .filter(|pair| (pair[0] < 0.0) != (pair[1] < 0.0))
+            .count() as f64
+            * 48_000.0
+            / signal.count as f64;
+        let peak = left
+            .iter()
+            .fold(0.0_f64, |peak, value| peak.max(value.abs()));
+        let rms = (left.iter().map(|value| value * value).sum::<f64>() / left.len() as f64).sqrt();
+        let crest = peak / rms;
+        if let Some((expected, tolerance)) = signal.crossings_per_second {
+            assert!(
+                (crossings / expected - 1.0).abs() <= tolerance,
+                "{} at {}: {crossings} crossings/s, expected {expected}",
+                fixture.name,
+                signal.start
+            );
+        }
+        if let Some((low, high)) = signal.crest {
+            assert!(
+                crest > low && crest < high,
+                "{} at {}: crest {crest}, expected ({low}, {high})",
+                fixture.name,
+                signal.start
+            );
+        }
+        if let Some((low, high)) = signal.peak {
+            assert!(
+                peak > low && peak < high,
+                "{} at {}: peak {peak}, expected ({low}, {high})",
+                fixture.name,
+                signal.start
+            );
+        }
+    }
     let past = fixture.frames.to_string();
     assert!(
         !recipes::cli(&["inspect-plan", path, "--frame", &past])?

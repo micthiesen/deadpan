@@ -6,19 +6,46 @@ use std::{
     time::{Duration, Instant},
 };
 
-use deadpan_encode::probe::EncoderProbe;
+use deadpan_core::ColorPolicy;
 use deadpan_source::{
     DecodeControl, DecodeLimits, SourceDecoder,
     audio::{AudioDecodeLimits, AudioDecodeMode, AudioDecoder},
 };
 use serde::{Deserialize, Serialize};
 
-use super::ProbeSpec;
+use super::{ProbeGenerator, ProbeSpec};
 use crate::render_worker::worker::check_control;
 
-const MAXIMUM_PLANE_ERROR: u8 = 48;
-const MAXIMUM_MAE_MILLI: u32 = 1_500;
-const MAXIMUM_MSE_MILLI: u32 = 16_000;
+/// Frozen decoded-picture error limits in code values of one content schema.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct ContentLimits {
+    maximum: u16,
+    mae_milli: u32,
+    mse_milli: u32,
+}
+
+/// Schema 1: 8-bit SDR I420 codes.
+const SDR_LIMITS: ContentLimits = ContentLimits {
+    maximum: 48,
+    mae_milli: 1_500,
+    mse_milli: 16_000,
+};
+/// Schema 2: 10-bit HDR codes. The SDR limits scaled by 4 (codes) and 16
+/// (squared codes), i.e. the same tolerance relative to full scale. Mirrored
+/// in deadpan_jobs::render::admission::HDR_PROBE_CONTENT_LIMITS.
+const HDR_LIMITS: ContentLimits = ContentLimits {
+    maximum: 192,
+    mae_milli: 6_000,
+    mse_milli: 256_000,
+};
+
+fn schema(color: ColorPolicy) -> (u32, ContentLimits) {
+    if color == ColorPolicy::SdrRec709 {
+        (1, SDR_LIMITS)
+    } else {
+        (2, HDR_LIMITS)
+    }
+}
 const MARKER_RADIUS: u64 = 64;
 const MINIMUM_MARKER_PEAK: f32 = 0.15;
 
@@ -36,7 +63,9 @@ pub struct ProbeContentReport {
     pub schema_version: u32,
     pub video_frames: u64,
     pub plane_samples: [u64; 3],
-    pub maximum_plane_error: [u8; 3],
+    /// Code values of the schema's bit depth (8-bit SDR, 10-bit HDR). The
+    /// wider integer serializes identically for SDR evidence.
+    pub maximum_plane_error: [u16; 3],
     pub absolute_plane_error: [u64; 3],
     pub squared_plane_error: [u64; 3],
     pub worst_frame_mean_absolute_error_milli: [u32; 3],
@@ -50,10 +79,11 @@ impl ProbeContentReport {
     pub fn validate(&self, spec: &ProbeSpec) -> Result<(), String> {
         let generator = spec.generator()?;
         let config = generator.config();
+        let (version, limits) = schema(spec.color_policy);
         let pixels = u64::from(config.raster[0]) * u64::from(config.raster[1]);
         let plane_samples =
             [pixels, pixels / 4, pixels / 4].map(|samples| samples * config.video_frames);
-        if self.schema_version != 1
+        if self.schema_version != version
             || self.video_frames != config.video_frames
             || self.plane_samples != plane_samples
             || self.audio_samples != config.audio_samples
@@ -64,13 +94,14 @@ impl ProbeContentReport {
         }
         for plane in 0..3 {
             validate_plane(
+                limits,
                 self.plane_samples[plane],
                 self.maximum_plane_error[plane],
                 self.absolute_plane_error[plane],
                 self.squared_plane_error[plane],
             )?;
-            if self.worst_frame_mean_absolute_error_milli[plane] > MAXIMUM_MAE_MILLI
-                || self.worst_frame_mean_squared_error_milli[plane] > MAXIMUM_MSE_MILLI
+            if self.worst_frame_mean_absolute_error_milli[plane] > limits.mae_milli
+                || self.worst_frame_mean_squared_error_milli[plane] > limits.mse_milli
                 || self.worst_frame_mean_absolute_error_milli[plane]
                     < milli(self.absolute_plane_error[plane], self.plane_samples[plane])?
                 || self.worst_frame_mean_squared_error_milli[plane]
@@ -109,7 +140,7 @@ pub(super) fn inspect(
     let generator = spec.generator()?;
     let config = generator.config();
     let mut report = ProbeContentReport {
-        schema_version: 1,
+        schema_version: schema(spec.color_policy).0,
         video_frames: config.video_frames,
         plane_samples: [0; 3],
         maximum_plane_error: [0; 3],
@@ -128,6 +159,7 @@ pub(super) fn inspect(
     inspect_pictures(
         file,
         &generator,
+        schema(spec.color_policy).1,
         maximum_bytes,
         maximum_packets,
         cancelled,
@@ -148,6 +180,84 @@ pub(super) fn inspect(
     Ok(report)
 }
 
+/// Declared CTA-861.3 light of a PQ probe, measured like the project host:
+/// per-pixel max(R,G,B) in cd/m² before subsampling and coding, MaxCLL the
+/// largest pixel and MaxFALL the largest frame mean, each rounded up to whole
+/// cd/m². Every probe shape owns whole 2x2 luma cells with one Cb/Cr sample,
+/// so each pixel's exact input R'G'B' is its cell's codes through the BT.2020
+/// NCL matrix (clamped to [0, 1], then the PQ EOTF). The fixture's brightest
+/// pixel is about 1004.2 cd/m², above the fixed HDR_PROBE_CONTENT_LIGHT
+/// MaxCLL of 1000 that it would otherwise understate. SDR and HLG return None.
+pub(super) fn declared_light(
+    generator: &ProbeGenerator,
+    cancelled: &AtomicBool,
+    deadline: Instant,
+) -> Result<Option<deadpan_encode::ContentLight>, String> {
+    let ProbeGenerator::Hdr(probe) = generator else {
+        return Ok(None);
+    };
+    if probe.transfer() != deadpan_encode::HdrTransfer::Pq {
+        return Ok(None);
+    }
+    let config = generator.config();
+    let width = usize::try_from(config.raster[0]).map_err(|_| "probe width overflow")?;
+    let height = usize::try_from(config.raster[1]).map_err(|_| "probe height overflow")?;
+    let (columns, rows) = (width / 2, height / 2);
+    let mut bytes = Vec::new();
+    bytes
+        .try_reserve_exact(usize::try_from(config.picture_bytes).map_err(|_| "probe bytes")?)
+        .map_err(|error| error.to_string())?;
+    bytes.resize(bytes.capacity(), 0);
+    let code = |bytes: &[u8], index: usize| {
+        f64::from(u16::from_le_bytes([bytes[2 * index], bytes[2 * index + 1]]))
+    };
+    // A probe uses only a handful of distinct cell codes; cache their light.
+    let mut cache = std::collections::HashMap::<[u64; 3], f64>::new();
+    let (mut max_cll, mut max_fall) = (0.0_f64, 0.0_f64);
+    for ordinal in 0..config.video_frames {
+        check_control(cancelled, deadline)?;
+        generator
+            .fill_picture(ordinal, &mut bytes)
+            .map_err(|error| error.to_string())?;
+        let (cb_base, cr_base) = (width * height, width * height + columns * rows);
+        let mut total = 0.0_f64;
+        for row in 0..rows {
+            for column in 0..columns {
+                let site = row * columns + column;
+                let [cb, cr] = [cb_base, cr_base].map(|base| code(&bytes, base + site));
+                for [x, y] in [[0, 0], [1, 0], [0, 1], [1, 1]] {
+                    let luma = code(&bytes, (row * 2 + y) * width + column * 2 + x);
+                    let light = *cache
+                        .entry([luma, cb, cr].map(f64::to_bits))
+                        .or_insert_with(|| {
+                            let luma = (luma - 64.0) / 876.0;
+                            let (cb, cr) = ((cb - 512.0) / 896.0, (cr - 512.0) / 896.0);
+                            let red = luma + 2.0 * (1.0 - 0.2627) * cr;
+                            let blue = luma + 2.0 * (1.0 - 0.0593) * cb;
+                            let green =
+                                (luma - 0.2627 * red - 0.0593 * blue) / (1.0 - 0.2627 - 0.0593);
+                            deadpan_render::pq_eotf(red.max(green).max(blue).clamp(0.0, 1.0))
+                        });
+                    max_cll = max_cll.max(light);
+                    total += light;
+                }
+            }
+        }
+        // Exact for raster sizes below 2^53 pixels.
+        #[allow(clippy::cast_precision_loss)]
+        let pixels = (width * height) as f64;
+        max_fall = max_fall.max(total / pixels);
+    }
+    // Bounded to [0, 10000] before conversion.
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let whole = |value: f64| value.ceil().clamp(0.0, 10_000.0) as u16;
+    let max_cll = whole(max_cll);
+    Ok(Some(deadpan_encode::ContentLight {
+        max_cll,
+        max_fall: whole(max_fall).min(max_cll),
+    }))
+}
+
 fn control(cancelled: &AtomicBool, deadline: Instant) -> Result<DecodeControl<'_>, String> {
     check_control(cancelled, deadline)?;
     Ok(DecodeControl {
@@ -158,9 +268,11 @@ fn control(cancelled: &AtomicBool, deadline: Instant) -> Result<DecodeControl<'_
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 fn inspect_pictures(
     file: &File,
-    generator: &EncoderProbe,
+    generator: &ProbeGenerator,
+    limits_policy: ContentLimits,
     maximum_bytes: u64,
     maximum_packets: u64,
     cancelled: &AtomicBool,
@@ -187,31 +299,64 @@ fn inspect_pictures(
     .map_err(|error| error.to_string())?;
     let length =
         usize::try_from(config.picture_bytes).map_err(|_| "probe picture exceeds address space")?;
-    let mut expected = Vec::new();
-    expected
+    let mut input = Vec::new();
+    input
         .try_reserve_exact(length)
         .map_err(|error| error.to_string())?;
-    expected.resize(length, 0);
+    input.resize(length, 0);
     let luma = usize::try_from(u64::from(config.raster[0]) * u64::from(config.raster[1]))
         .map_err(|_| "probe raster exceeds address space")?;
-    let boundaries = [0, luma, luma + luma / 4, length];
+    let samples_per_picture = luma + luma / 2;
+    let boundaries = [0, luma, luma + luma / 4, samples_per_picture];
+    let hdr = matches!(generator, ProbeGenerator::Hdr(_));
+    let mut expected: Vec<u16> = Vec::new();
+    expected
+        .try_reserve_exact(samples_per_picture)
+        .map_err(|error| error.to_string())?;
+    let mut actual: Vec<u16> = Vec::new();
+    actual
+        .try_reserve_exact(samples_per_picture)
+        .map_err(|error| error.to_string())?;
     for ordinal in 0..config.video_frames {
         check_control(cancelled, deadline)?;
         generator
-            .fill_picture(ordinal, &mut expected)
+            .fill_picture(ordinal, &mut input)
             .map_err(|error| error.to_string())?;
-        let frame = decoder
-            .next_i420(control(cancelled, deadline)?)
-            .map_err(|error| error.to_string())?
-            .ok_or("probe picture decode ended early")?;
+        expected.clear();
+        if hdr {
+            expected.extend(
+                input
+                    .chunks_exact(2)
+                    .map(|bytes| u16::from_le_bytes([bytes[0], bytes[1]])),
+            );
+        } else {
+            expected.extend(input.iter().copied().map(u16::from));
+        }
+        actual.clear();
+        let (width, height, metadata) = if hdr {
+            let frame = decoder
+                .next_yuv420p10(control(cancelled, deadline)?)
+                .map_err(|error| error.to_string())?
+                .ok_or("probe picture decode ended early")?;
+            actual.extend_from_slice(&frame.samples);
+            (frame.width, frame.height, frame.metadata)
+        } else {
+            let frame = decoder
+                .next_i420(control(cancelled, deadline)?)
+                .map_err(|error| error.to_string())?
+                .ok_or("probe picture decode ended early")?;
+            actual.extend(frame.i420.iter().copied().map(u16::from));
+            (frame.width, frame.height, frame.metadata)
+        };
         let pts = i64::try_from(ordinal * u64::from(config.frame_rate[1]))
             .map_err(|_| "probe picture clock overflow")?;
-        if [frame.width, frame.height] != config.raster
-            || frame.i420.len() != length
-            || frame.metadata.source.pts != pts
-            || frame.metadata.source.reported_duration != Some(i64::from(config.frame_rate[1]))
-            || frame.metadata.decode_error_flags != 0
-            || frame.metadata.corrupt
+        if [width, height] != config.raster
+            || expected.len() != samples_per_picture
+            || actual.len() != samples_per_picture
+            || metadata.source.pts != pts
+            || metadata.source.reported_duration != Some(i64::from(config.frame_rate[1]))
+            || metadata.decode_error_flags != 0
+            || metadata.corrupt
         {
             return Err("probe content decode changed picture identity".into());
         }
@@ -219,13 +364,13 @@ fn inspect_pictures(
             let range = boundaries[plane]..boundaries[plane + 1];
             let (maximum, absolute, squared) = errors(
                 &expected[range.clone()],
-                &frame.i420[range],
+                &actual[range],
                 cancelled,
                 deadline,
             )?;
             let samples = u64::try_from(boundaries[plane + 1] - boundaries[plane])
                 .map_err(|_| "probe plane exceeds address space")?;
-            validate_plane(samples, maximum, absolute, squared)
+            validate_plane(limits_policy, samples, maximum, absolute, squared)
                 .map_err(|error| format!("{error}; frame={ordinal}, plane={plane}, max={maximum}, absolute={absolute}, squared={squared}, samples={samples}"))?;
             report.plane_samples[plane] += samples;
             report.maximum_plane_error[plane] = report.maximum_plane_error[plane].max(maximum);
@@ -237,22 +382,29 @@ fn inspect_pictures(
                 report.worst_frame_mean_squared_error_milli[plane].max(milli(squared, samples)?);
         }
     }
-    if decoder
-        .next_i420(control(cancelled, deadline)?)
-        .map_err(|error| error.to_string())?
-        .is_some()
-    {
+    let extra = if hdr {
+        decoder
+            .next_yuv420p10(control(cancelled, deadline)?)
+            .map_err(|error| error.to_string())?
+            .is_some()
+    } else {
+        decoder
+            .next_i420(control(cancelled, deadline)?)
+            .map_err(|error| error.to_string())?
+            .is_some()
+    };
+    if extra {
         return Err("probe content decode has extra pictures".into());
     }
     Ok(())
 }
 
 fn errors(
-    expected: &[u8],
-    actual: &[u8],
+    expected: &[u16],
+    actual: &[u16],
     cancelled: &AtomicBool,
     deadline: Instant,
-) -> Result<(u8, u64, u64), String> {
+) -> Result<(u16, u64, u64), String> {
     if expected.len() != actual.len() || expected.is_empty() {
         return Err("probe plane lengths differ".into());
     }
@@ -279,10 +431,16 @@ fn milli(error: u64, samples: u64) -> Result<u32, String> {
         .map_err(|_| "probe error statistic overflow".into())
 }
 
-fn validate_plane(samples: u64, maximum: u8, absolute: u64, squared: u64) -> Result<(), String> {
-    if maximum > MAXIMUM_PLANE_ERROR
-        || milli(absolute, samples)? > MAXIMUM_MAE_MILLI
-        || milli(squared, samples)? > MAXIMUM_MSE_MILLI
+fn validate_plane(
+    limits: ContentLimits,
+    samples: u64,
+    maximum: u16,
+    absolute: u64,
+    squared: u64,
+) -> Result<(), String> {
+    if maximum > limits.maximum
+        || milli(absolute, samples)? > limits.mae_milli
+        || milli(squared, samples)? > limits.mse_milli
         || u128::from(absolute) > u128::from(samples) * u128::from(maximum)
         || u128::from(squared) > u128::from(absolute) * u128::from(maximum)
         || squared < absolute
@@ -297,7 +455,7 @@ fn validate_plane(samples: u64, maximum: u8, absolute: u64, squared: u64) -> Res
 
 fn inspect_audio(
     file: &File,
-    generator: &EncoderProbe,
+    generator: &ProbeGenerator,
     maximum_bytes: u64,
     maximum_packets: u64,
     cancelled: &AtomicBool,
@@ -358,7 +516,7 @@ fn inspect_audio(
 
 fn observe_sample(
     report: &mut ProbeContentReport,
-    generator: &EncoderProbe,
+    generator: &ProbeGenerator,
     coordinate: u64,
     channel: usize,
     value: f32,
@@ -390,6 +548,7 @@ mod tests {
                 mode: deadpan_encode::EncoderMode::Hardware,
                 b_frames: deadpan_encode::BFramePolicy::None,
             },
+            color_policy: ColorPolicy::SdrRec709,
         };
         let generator = spec.generator().unwrap();
         let config = generator.config();
@@ -417,12 +576,18 @@ mod tests {
 
     #[test]
     fn content_error_limits_reject_bad_single_planes_and_inconsistent_claims() {
-        assert!(validate_plane(1000, 4, 1500, 4000).is_ok());
-        assert!(validate_plane(1000, 49, 49, 2401).is_err());
-        assert!(validate_plane(1000, 4, 1501, 4000).is_err());
-        assert!(validate_plane(1000, 48, 1000, 16001).is_err());
-        assert!(validate_plane(1000, 0, 1, 1).is_err());
-        assert!(validate_plane(1000, 3, 1000, 999).is_err());
+        let limits = SDR_LIMITS;
+        assert!(validate_plane(limits, 1000, 4, 1500, 4000).is_ok());
+        assert!(validate_plane(limits, 1000, 49, 49, 2401).is_err());
+        assert!(validate_plane(limits, 1000, 4, 1501, 4000).is_err());
+        assert!(validate_plane(limits, 1000, 48, 1000, 16001).is_err());
+        assert!(validate_plane(limits, 1000, 0, 1, 1).is_err());
+        assert!(validate_plane(limits, 1000, 3, 1000, 999).is_err());
+        // 10-bit HDR codes: four times the code range, sixteen times squared.
+        assert!(validate_plane(HDR_LIMITS, 1000, 192, 6000, 256_000).is_ok());
+        assert!(validate_plane(HDR_LIMITS, 1000, 193, 193, 37_249).is_err());
+        assert!(validate_plane(HDR_LIMITS, 1000, 16, 6001, 96_016).is_err());
+        assert!(validate_plane(HDR_LIMITS, 1000, 192, 1400, 256_001).is_err());
     }
 
     #[test]
@@ -463,10 +628,10 @@ mod tests {
     #[test]
     fn worst_frame_errors_cannot_be_hidden_by_whole_movie_averages() {
         let (spec, mut report) = fixture();
-        report.worst_frame_mean_squared_error_milli[2] = MAXIMUM_MSE_MILLI + 1;
+        report.worst_frame_mean_squared_error_milli[2] = SDR_LIMITS.mse_milli + 1;
         assert!(report.validate(&spec).is_err());
         let (spec, mut report) = fixture();
-        report.worst_frame_mean_absolute_error_milli[0] = MAXIMUM_MAE_MILLI + 1;
+        report.worst_frame_mean_absolute_error_milli[0] = SDR_LIMITS.mae_milli + 1;
         assert!(report.validate(&spec).is_err());
     }
 

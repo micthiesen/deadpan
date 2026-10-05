@@ -167,17 +167,23 @@ impl DeadpanApp {
             revision: workspace.document.revision_id().clone(),
             package: workspace.path.clone(),
         };
-        match deadpan_cli::render::output_summary(&workspace.document) {
+        match deadpan_cli::render::output_summary(&workspace.document, &workspace.color_decision())
+        {
             Ok(summary) => {
                 self.render.summary = Some((
                     capture.context.clone(),
                     capture.revision.clone(),
                     format!(
-                        "{} × {} · {} · {} frames · SDR H.264 / AAC",
+                        "{} × {} · {} · {} frames · {}",
                         summary.raster[0],
                         summary.raster[1],
                         frame_rate_label(summary.frame_rate),
                         summary.frame_count,
+                        match summary.color_policy {
+                            deadpan_core::ColorPolicy::SdrRec709 => "SDR H.264 / AAC",
+                            deadpan_core::ColorPolicy::HdrRec2020Pq => "HDR PQ HEVC Main10 / AAC",
+                            deadpan_core::ColorPolicy::HdrRec2020Hlg => "HDR HLG HEVC Main10 / AAC",
+                        },
                     ),
                 ))
             }
@@ -300,12 +306,21 @@ impl DeadpanApp {
             );
             return;
         }
+        let algorithm = self.workspace.as_deref().map_or(
+            deadpan_jobs::render::RenderAutomaticAlgorithm::AutomaticSdrV1,
+            |workspace| {
+                deadpan_jobs::render::RenderAutomaticAlgorithm::for_output(
+                    workspace.color_decision().output,
+                )
+            },
+        );
         let prepared = (|| {
             let request = deadpan_cli::render::start_request(
                 &deadpan_cli::render::RenderContext {
                     project_id: capture.context.project.clone(),
                     revision_id: capture.revision.clone(),
                 },
+                algorithm,
                 path.clone(),
                 Instant::now(),
             )

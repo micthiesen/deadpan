@@ -15,7 +15,9 @@ native app drives the same host code ([in the app](#in-the-app)).
 | [`deadpan_analysis::tracking`](../crates/deadpan-analysis/src/tracking.rs) | Pure, serde-serializable `TrackedPath` / `TrackSample` / `TrackState`, `NormalizedRect` with rotation mapping, the versioned `deadpan-track-1` policy, shot-boundary range ends, all-or-nothing corrections and range-local re-tracking. No I/O. |
 | [`deadpan_analysis::tracking` mapping](../crates/deadpan-analysis/src/tracking/target.rs) | `TrackedPath::to_target` and `retrack_target`: the exact mapping to a core `AttentionTarget`, compaction to its bounds, provenance. |
 | [`deadpan_jobs::tracking`](../crates/deadpan-jobs/src/tracking.rs) | Versioned, strictly framed worker protocol and the `TrackingProtocol` adapter for the shared `SupervisedProcess`. |
-| [`deadpan-track`](../native/deadpan-track/) | Process-isolated worker executable: pinned descriptor-only FFmpeg decoding through `deadpan-source`, Vision `VNTrackObjectRequest` through `objc2-vision`. |
+| [`deadpan-track`](../native/deadpan-track/) | Process-isolated worker executable: pinned descriptor-only FFmpeg decoding through `deadpan-source`, Vision `VNTrackObjectRequest` through `objc2-vision`; with the argument `detect-faces`, `VNDetectFaceRectanglesRequest` on one picture ([face detection mode](#face-detection-mode)). |
+| [`deadpan_jobs::faces`](../crates/deadpan-jobs/src/faces.rs) | The separately versioned face-detection protocol and its `FaceProtocol` adapter. |
+| [`deadpan_cli::faces`](../crates/deadpan-cli/src/faces.rs) | Host face detection (picture resolution, verified copy, supervision, strict admission), `face_target` and the `detect-faces` command. |
 | [`deadpan_cli::tracking`](../crates/deadpan-cli/src/tracking.rs) | Host attempt (range resolution against the qualified index, the asset's video span and stored shots; verified source copy; supervision; artifact snapshot; exact decoded/observation check; policy), saving and correcting targets, and the `track` / `track-correct` commands. |
 
 ## Coordinates and time
@@ -188,6 +190,71 @@ All `unsafe` is in
 [`native/deadpan-track/src/vision.rs`](../native/deadpan-track/src/vision.rs),
 one documented block per framework call; the rest of the worker denies it.
 
+## Face detection mode
+
+Face proposals (specification §6.4 `target=face:2`, §7.6 numbered detected
+regions) reuse this worker and its isolation, not its tracking policy. The host
+launches `deadpan-track detect-faces` (the only accepted argument; any other
+argument list exits 2) and speaks a separate protocol,
+[`deadpan_jobs::faces`](../crates/deadpan-jobs/src/faces.rs) version 1, over the
+same 256 KiB length-framed transport: one `DetectFaces` message names the
+verified source copy below `input/` (copied exactly as for tracking, by the
+shared `copy_verified_original`), the expected stream and the exact PTS of one
+indexed picture, with a timeout of at most one hour; `Cancel` with the
+attempt's token, or end of stdin, cancels. The worker re-verifies length and
+SHA-256, opens the pinned decoder, seeks, decodes metadata up to the picture
+(which must exist at exactly that PTS), converts only that picture to BGRA and
+runs one `VNDetectFaceRectanglesRequest` on a fresh `VNImageRequestHandler`
+(revision as Vision reports it: 3 on macOS 26). More than 64 observations is
+an error, never a truncation. Boxes are mapped as tracking maps them (lower-left
+to top-left origin, coded to displayed orientation, clipped to the picture,
+discarded below the minimum extent), confidences clamped to `[0, 1]`, exact
+duplicates dropped, and sorted by left edge, then top edge, then size. The
+faces travel inline in `Completed { pts, faces, runtime, timings }`; there is
+no artifact.
+
+The host's `FaceProtocol` requires the attempt's identity and the requested
+PTS; `admit_faces` requires at most 64 valid rectangles (the same checked
+`NormalizedRect` deserialization), finite confidences in `[0, 1]` and a
+strictly increasing order, so face numbers are deterministic. Every face source,
+including the app's test seam, passes this admission. The picture is the one
+displayed at the requested PTS (the last indexed picture at or before it),
+inside the asset's measured video span; the receipt must be the one the head
+binds. Detection opens the project read-only and never edits.
+
+```sh
+deadpan-cli detect-faces <project.deadpan> --at <pts> [--asset <id>]
+```
+
+prints the content identity, asset, head revision, stream, analysed PTS and
+picture ordinal, runtime and timings, and `faces` numbered from 1 with region
+and confidence. Errors use `FaceDetectionUnavailable`, `FaceDetectionCancelled`,
+`FaceDetectionFailed` and `InvalidInput`. Saving a face is the app's
+`target=face:N` command ([face proposals](FRAMING.md#face-proposals)); in the
+app the service runs one face job at a time on its own bounded thread, beside
+the tracking job, and close, open and shutdown cancel and drain it like
+tracking.
+
+Evidence: [`native/deadpan-track/tests/faces.rs`](../native/deadpan-track/tests/faces.rs)
+runs the real worker on
+[`two-drawn-faces.mkv`](../native/deadpan-track/tests/fixtures/two-drawn-faces.mkv)
+(11,548 bytes, SHA-256
+`563904e45b81ee8c80200e222fb26470089fbe62477f77072f17e8953de1e958`, produced by
+[`generate_faces_fixture.py`](../native/deadpan-track/tests/generate_faces_fixture.py)
+with Pillow and the development ffmpeg 9.0.1 CLI): four 480×270 FFV1 pictures,
+two shaded cartoon heads in pictures 0–1 and only the background in 2–3. These
+are **drawn**, not people. On Apple M5 Max, macOS 26.5.2, Vision found both heads
+in picture 0, left (confidence 0.651) before right (0.804), with centers within a
+few pixels of the drawn faces, and nothing in picture 2. With release binaries,
+`detect-faces --asset clip` printed the same two faces at `--at 0` and `--at 30`
+(the picture displayed at 30 ms is picture 0) and none at `--at 83` (picture 2),
+in 62–82 ms per command including worker launch, 47–66 ms of it in Vision
+(one request per process, so setup is included) and about 1 ms decoding. The test also covers face numbering
+and out-of-range refusals, the target mapping, a picture before the first one,
+cancellation before launch and an expired deadline. Protocol tests cover
+request bounds, identity and picture binding, ordering, duplicates, confidence
+bounds and the 64-face limit.
+
 ## Commands
 
 ```sh
@@ -359,5 +426,7 @@ mostly the unoptimized BGRA copy. The upscale is a measurement input only
 * Each attempt copies the whole Original into its workspace.
 * `deadpan-jobs` depends on `deadpan-analysis` for `NormalizedRect` in the
   protocol; moving the wire type was optional and not done.
-* Point targets, face/region proposals and stabilization consumers of a path
-  remain open.
+* Point targets, face proposals in Camera's numbered picker, general (non-face)
+  region proposals and stabilization consumers of a path remain open. Face
+  detection quality on real people (lighting, profile, occlusion, small faces)
+  is unmeasured: the fixture is drawn.
