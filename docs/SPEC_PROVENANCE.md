@@ -51,6 +51,15 @@ an unchanged historical 1.0 copy for old links; it is not an updated reading
 edition. Preserve the archive unchanged. Record later deliberate product revisions
 here. Implementation status remains separate in [REQUIREMENTS.md](REQUIREMENTS.md).
 
+On 2026-10-05 the owner decided that Deadpan is a personal application with
+no Apple developer account: it is not distributed, needs no Developer ID
+signing, notarization or stapling, and is signed ad hoc or, when a stable
+signature is needed, with the owner's local signing identity from dotfiles
+(the same mechanism as Kestrel). The distribution row, §15.2 updater testing,
+§26.6 clean-machine wording, §27.3 packaging and DP-22 were revised to match.
+Licensing notices and the SBOM remain, since the bundle still ships
+third-party code.
+
 Source archive SHA-256: `7c44444cdbabaa7196910fb7affefc03f0c920169f2ffa2a710ea6bccd236046`.
 
 | File | Bytes | SHA-256 |

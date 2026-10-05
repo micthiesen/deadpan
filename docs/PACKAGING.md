@@ -3,9 +3,10 @@
 `cargo xtask bundle` builds a self-contained, relocatable `Deadpan.app` for
 Apple Silicon macOS 15 or later. It is groundwork for DP-22 and Gate F: the
 bundle runs from any location without Cargo, the FFmpeg developer prefix,
-Homebrew or a separately installed downloader. It is ad hoc signed unless a
-Developer ID identity is supplied, and it is not notarized. Gatekeeper rejects
-it on other Macs, so it is not yet a distribution.
+Homebrew or a separately installed downloader. Deadpan is a personal app with
+no Apple developer account (owner decision 2026-10-05): the bundle is ad hoc
+signed, or signed with the dotfiles local signing identity when a stable
+signature is needed, and is never notarized or distributed.
 
 ## Build
 
@@ -272,7 +273,20 @@ Entitlements are minimal:
 | App, CLI, workers, FFmpeg | None | Not sandboxed. Metal, Core Audio, Vision and outbound HTTPS need no hardened-runtime exception. whisper.cpp and wgpu compile Metal shaders through the system compiler, not JIT. All libraries carry the same signature, so library validation stays on. |
 | yt-dlp | None | Measured on 2026-10-04 with the hardened runtime, ad hoc, and no entitlements: `downloader status --probe`, the scrubbed `bundle-verify` and a real YouTube metadata fetch and import all passed. Under a Developer ID, library validation may reject the Python modules that the PyInstaller one-file executable extracts and loads, because their builder signed them, not this team. Ad hoc signing cannot show this. If the first Developer ID run fails there, add `com.apple.security.cs.disable-library-validation` for yt-dlp only, with that failure as evidence. |
 | Deno | Deno's own: allow-jit, allow-unsigned-executable-memory, disable-executable-page-protection, allow-dyld-environment-variables, disable-library-validation | Kept from the upstream signature. V8 needs JIT. These exceptions apply only to the Deno process, never to Deadpan. |
-## Developer ID and notarization (requires the owner)
+## Personal signing
+
+When a feature needs a stable designated requirement (for example macOS privacy
+permissions that should survive rebuilds), sign with the dotfiles local signing
+identity, the same one Kestrel uses. Run `make maintain` in `~/.dotfiles` once so
+`~/Library/Keychains/dotfiles-signing.keychain-db` holds the identity, then pass
+its certificate ("Michael Dotfiles Local Signing") to `--identity`. The
+GPL-codec refusal applies only to Developer ID identities, so a personally signed
+build keeps the AI runtime's ffmpeg.
+
+## Developer ID and notarization (not used)
+
+Deadpan is not distributed, so this path is unused. It is kept, scripted but
+never run, only in case that decision changes.
 
 This Mac has no Developer ID identity. A distributable build requires the owner
 to supply:

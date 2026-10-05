@@ -109,7 +109,15 @@ fn parse(arguments: &[String]) -> Result<Options> {
     if options.identity.as_deref() == Some("-") {
         return Err("omit --identity for ad hoc signing".into());
     }
-    if options.identity.is_some() && options.ai_runtime && !options.allow_gpl_ai_codec {
+    // Only a Developer ID build is a distribution; personal identities (such
+    // as the dotfiles local signing certificate) keep the GPL tools in place.
+    if options
+        .identity
+        .as_deref()
+        .is_some_and(|identity| identity.contains("Developer ID"))
+        && options.ai_runtime
+        && !options.allow_gpl_ai_codec
+    {
         return Err("the AI runtime's ffmpeg/ffprobe are GPL-2.0-or-later (libx264); a Developer ID build distributes them only with the owner's explicit --allow-gpl-ai-codec, or pass --without-ai-runtime (docs/PACKAGING.md)".into());
     }
     Ok(options)
@@ -760,7 +768,7 @@ pub fn run(arguments: &[String]) -> Result<()> {
     );
     if !notarized {
         println!(
-            "bundle: not notarized. Distribution requires --identity \"Developer ID Application: NAME (TEAM)\" and --notary-profile PROFILE; see docs/PACKAGING.md"
+            "bundle: not notarized. Deadpan is a personal app and needs no notarization; sign with --identity (e.g. the dotfiles local signing certificate) when a stable signature is needed. See docs/PACKAGING.md"
         );
     }
     Ok(())

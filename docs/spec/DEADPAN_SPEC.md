@@ -48,7 +48,7 @@ Examples: repeat a word three times; insert 1.5 seconds of silence after a sente
 | Project storage | SQLite is authoritative inside a `.deadpan` directory package. New native projects live in the user's Documents/Deadpan library, independent of the launch directory. Original and accepted generated media remain separate from evictable caches. |
 | Import | Choose one original through bundled yt-dlp and its required JavaScript support, or local video import. Separately import audio-only sound effects; never add a second source video to a V1 project. |
 | Output | One Render action; automatic YouTube-oriented encoding from project and source characteristics. |
-| Distribution | Signed, notarized, self-contained application; app-managed model downloads, with an offline pack distribution path. |
+| Distribution | Self-contained personal application, ad hoc signed or signed with the owner's local signing identity; no Developer ID signing or notarization. App-managed model downloads, with an offline pack distribution path. |
 
 The UI stack is a design choice supported by egui's native winit/wgpu integration, not a claim that it removes the need to engineer a native-quality interface. [S01]
 
@@ -838,7 +838,7 @@ Bundle yt-dlp plus compatible EJS support and a supported JavaScript runtime, in
 
 Invoke absolute, app-controlled executable paths with argument arrays, never shell interpolation. Ignore user/global yt-dlp configuration. Disable third-party plugin discovery. Keep extractor/runtime versions visible in diagnostics. Downloader updates use app-verified signed manifests, compatibility checks, and rollback; do not let a helper overwrite itself inside the signed application bundle.
 
-Store updated signed helpers in a controlled versioned Application Support location when necessary, validate their provenance, and keep the bundled baseline. Test this under macOS signing/notarization rules rather than treating updater execution as an ordinary file copy.
+Store updated signed helpers in a controlled versioned Application Support location when necessary, validate their provenance, and keep the bundled baseline. Test this under the bundle's actual macOS code-signing rules rather than treating updater execution as an ordinary file copy.
 
 ## 15.3 URL behavior
 
@@ -1392,7 +1392,7 @@ Include one-source onboarding into Documents/Deadpan from different launch direc
 
 ## 26.6 Clean-machine release test
 
-Install the signed/notarized distribution on a supported Mac with no Homebrew, system Python setup, FFmpeg, yt-dlp, Deno, Xcode command-line tools, or preexisting model cache. Import local media, import a permitted YouTube source, download the approved model through the app, generate/accept a hold, save, restart, disconnect networking, reopen, and render.
+Install the self-contained bundle on a supported Mac with no Homebrew, system Python setup, FFmpeg, yt-dlp, Deno, Xcode command-line tools, or preexisting model cache. Import local media, import a permitted YouTube source, download the approved model through the app, generate/accept a hold, save, restart, disconnect networking, reopen, and render.
 
 Also test the full offline distribution from initial launch with networking disabled. Verify every nested executable/library loads under hardened runtime. A build that works only on the developer's machine does not pass.
 
@@ -1400,7 +1400,7 @@ Also test the full offline distribution from initial launch with networking disa
 
 ## 27.1 Application distribution
 
-Ship an Apple Silicon `.app` in a signed distribution container. Sign nested executables and libraries, enable the appropriate hardened runtime settings, notarize, and staple where applicable. Use the minimum entitlements required by the actual runtimes; do not add broad exceptions preemptively. Apple's notarization documentation is the distribution reference. [S32]
+Ship an Apple Silicon `.app` for personal use. Sign nested executables and libraries inside out, ad hoc or with the owner's local signing identity when a stable designated requirement is needed (for example to keep macOS privacy permissions across rebuilds), and enable the hardened runtime. Deadpan is not distributed: no Developer ID signing, notarization or stapling is required. Use the minimum entitlements required by the actual runtimes; do not add broad exceptions preemptively.
 
 Publish checksums, third-party notices, build/toolchain provenance, and a software bill of materials. App, helper, and model updates have separate version identities and rollback rules. No surprise auto-update changes the model or renderer used by an already committed export without recording the new version.
 
@@ -1474,7 +1474,7 @@ The implementation tracker must map every requirement to code, tests, and a demo
 | DP-19 | Cache integrity and accepted-media portability. | Eviction/reference/offline-project tests. |
 | DP-20 | Focused single-Original native UI with visible keyboard teaching, visual slice placement and accessibility. | Design-target comparison, source/destination preview inspection, accessibility inspection and keyboard acceptance. |
 | DP-21 | CLI/JSON API with revision checks and dry-run. | Headless/GUI parity and conflict tests. |
-| DP-22 | Signed/notarized zero-manual-setup distribution. | Clean-machine online and offline acceptance. |
+| DP-22 | Self-contained zero-manual-setup personal bundle (no Developer ID signing or notarization). | Clean-machine online and offline acceptance. |
 | DP-23 | License/SBOM/privacy/security requirements. | Release audit and malicious-input tests. |
 | DP-24 | Measured performance budgets and diagnostics. | Published reproducible hardware benchmark report. |
 
@@ -1516,7 +1516,7 @@ Exit criterion: actual local generations meet documented duration/seam contracts
 
 ## Gate F — Complete import, export, and distribution
 
-Integrate single-video yt-dlp/EJS/Deno acquisition, Original provenance and baseline initialization, external audio-only import, safe updates, automatic render policy, HDR/SDR color tests, codec/mux verification, licensing notices, signed runtime bundles, notarization, and clean-machine installation. Finish Documents library creation, migration/recovery and disk-full/permission flows while preserving generic legacy projects.
+Integrate single-video yt-dlp/EJS/Deno acquisition, Original provenance and baseline initialization, external audio-only import, safe updates, automatic render policy, HDR/SDR color tests, codec/mux verification, licensing notices, signed runtime bundles, and clean-machine installation. Finish Documents library creation, migration/recovery and disk-full/permission flows while preserving generic legacy projects.
 
 Exit criterion: the full keyboard-only source-URL-to-final-MP4 workflow runs from the distributed application with no external setup.
 

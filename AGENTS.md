@@ -51,8 +51,12 @@ content hash, and to their expected signer, never to the bundle's manifest
 alone. The managed Application Support root is the update location. Keep
 entitlements per process and minimal and add one only with measured failure
 evidence.
-Never weaken the app for a helper's runtime. An ad hoc bundle is not a
-notarized distribution or clean-machine evidence.
+Never weaken the app for a helper's runtime. Deadpan is a personal app with no
+Apple developer account (owner decision 2026-10-05): never require Developer ID
+signing or notarization. Sign ad hoc, or with the dotfiles local signing
+identity (`~/.dotfiles/scripts/macos-sign.py`, as Kestrel does) when a feature
+needs a stable designated requirement. A bundle build is not clean-machine
+evidence.
 
 - Preserve the editor's timing decisions. Use exact typed frame, sample, and source coordinates, half-open ranges, rational frame rates, checked arithmetic, and origin-based sample boundaries. Never accumulate rounded durations. Three plays means three total plays, with gaps only between them; a Hold inserts exactly its authored frames and preserves subsequent original speech.
 - Framing reshapes the Original without changing its timing. Evaluate camera paths in their declared owner clock and compose them from provider to root on the canonical canvas. Preserve intermediate clips, curve ownership and the distinction between source-percent motion and canvas-percent values. A pause retains the cropped view entering its parent; inherited group framing stays live and applies once. Captured geometry belongs to the Hold recipe independently of provider changes and new Camera settings. Temporary Camera state is visibly unsaved; Enter commits once and Escape restores the entry state. Never replace an existing path with a static pose as an incidental consequence of opening Camera.
@@ -1736,7 +1740,7 @@ requires complete provenance, candidate relevance, and explicit store admission.
 
 For native startup or lifecycle changes, also run `cargo run -p deadpan-app -- --smoke-test` on supported Apple Silicon macOS. This checks startup and the shutdown callback, not media or accessibility qualification. Choose interactive checks for affected behavior when they add evidence; do not repeat them mechanically for unrelated changes. Add relevant media, persistence, worker, accessibility, or packaging checks as those systems are implemented. Record skipped checks and exact failures in the delivery report. [Development](docs/DEVELOPMENT.md) describes the workflow.
 
-For authorized scoped work in this personal project, implement, review, verify, commit, and push to `main` using `git push`. Preserve concurrent changes and do not include unrelated files. Release publishing, signing, notarization, and external service actions need their applicable authorization; pushing source is not product release qualification.
+For authorized scoped work in this personal project, implement, review, verify, commit, and push to `main` using `git push`. Preserve concurrent changes and do not include unrelated files. Release publishing and external service actions need their applicable authorization; pushing source is not product release qualification.
 
 Update these living instructions when implementation establishes a durable convention. Keep detailed procedures in the relevant documentation. Preserve the imported 1.0 package in docs/spec/archive/1.0 byte-for-byte; integrate explicitly authorized product revisions into the current normative docs/spec/DEADPAN_SPEC.md and update docs/SPEC_PROVENANCE.md. Current user direction and the current specification take precedence over archived designs.
 
