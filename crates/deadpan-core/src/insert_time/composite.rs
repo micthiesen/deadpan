@@ -60,6 +60,18 @@ pub(crate) fn prepare_suffix(
     timing: &AudioTimingId,
 ) -> Result<ProjectDocument, EditError> {
     let affected = shifted_owners(document, parent, slot)?;
+    prepare_owners(document, &affected, at, total, timing)
+}
+
+/// Capture the old entries of `affected` owners in the pre-edit root window
+/// `[at, total)` before changing the tree, so each keeps its own clock.
+pub(crate) fn prepare_owners(
+    document: &ProjectDocument,
+    affected: &BTreeSet<NodeId>,
+    at: ProjectFrame,
+    total: i64,
+    timing: &AudioTimingId,
+) -> Result<ProjectDocument, EditError> {
     let captured =
         crate::audio_binding_lifecycle::capture_for_composite_insertion(document, timing.clone())?;
     let mut working = document.clone();
@@ -85,14 +97,14 @@ pub(crate) fn prepare_suffix(
         append_steps(
             &mut working.audio_bindings.bindings,
             captured.node_placements,
-            &affected,
+            affected,
             window,
             &mut entries,
         )?;
         append_steps(
             &mut working.audio_bindings.gap_bindings,
             captured.gap_placements,
-            &affected,
+            affected,
             window,
             &mut entries,
         )?;
@@ -100,6 +112,31 @@ pub(crate) fn prepare_suffix(
     crate::audio_binding_lifecycle::prune(&mut working);
     working.audio_bindings.validate_for(&working)?;
     Ok(working)
+}
+
+/// Every physical owner inside `repeat`, including the Repeat itself for its
+/// default gap. Descent stops below a Preserve stage, as for a suffix.
+pub(crate) fn repeat_interior_owners(
+    document: &ProjectDocument,
+    repeat: &NodeId,
+) -> Result<BTreeSet<NodeId>, EditError> {
+    let mut pending = vec![repeat];
+    let mut affected = BTreeSet::new();
+    while let Some(id) = pending.pop() {
+        if affected.len() >= MAX_DOCUMENT_NODES || !affected.insert(id.clone()) {
+            return Err(super::limit("Repeat interior traversal"));
+        }
+        let node = &document.nodes()[id];
+        let preserve = matches!(
+            &node.kind,
+            NodeKind::Retime { duration, mapping, pitch: PitchPolicy::Preserve, .. }
+                if mapping.duration() != *duration
+        );
+        if !preserve {
+            pending.extend(document.children(id));
+        }
+    }
+    Ok(affected)
 }
 
 pub(crate) fn shifted_owners(

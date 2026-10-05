@@ -122,6 +122,57 @@ impl DeadpanApp {
         );
     }
 
+    /// `:repeat [N] gap=… gain-step=… zoom-step=…`: change the selected
+    /// Repeat's plays, gaps and escalation, or wrap a plain beat first, as
+    /// one recorded instruction and one Undo.
+    pub(super) fn repeat_change(&mut self, input: crate::navigation::escalation::EscalationInput) {
+        self.cancel_repeats("a Repeat change was requested");
+        let target = self.capture_macro_target();
+        let instruction = (|| {
+            let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
+            let rate = workspace.document.presentation_basis().frame_rate;
+            let selected = self
+                .selected_beat
+                .as_ref()
+                .ok_or("Select a beat or Repeat in the current group first.")?;
+            let (plays_now, escalation_now) = match workspace
+                .document
+                .nodes()
+                .get(selected)
+                .map(|node| &node.kind)
+            {
+                Some(deadpan_core::NodeKind::Repeat {
+                    iterations,
+                    escalation,
+                    ..
+                }) => (Some(iterations.len()), *escalation),
+                _ => (None, None),
+            };
+            let plays = input.plays.or(plays_now).ok_or(
+                "Give a total play count to wrap this beat, for example :repeat 3 gap=120ms.",
+            )?;
+            let gaps = input.gap.map(|gap| gap.lengths(plays, rate)).transpose()?;
+            let escalation = if input.changes_escalation() {
+                Some(
+                    input
+                        .apply(escalation_now)?
+                        .unwrap_or(deadpan_core::RepeatEscalation {
+                            gain_step: deadpan_core::GainDb::UNITY,
+                            zoom: None,
+                        }),
+                )
+            } else {
+                None
+            };
+            Ok(SemanticInstruction::SetRepeat {
+                plays: input.plays.and_then(NonZeroU32::new),
+                gaps,
+                escalation,
+            })
+        })();
+        self.apply_recorded_instruction(target, instruction);
+    }
+
     pub(super) fn repeat_action(&mut self, selector: SemanticSelector, plays: NonZeroU32) {
         self.reconcile_repeat_prefix();
         let target = self.repeat_prefix_target.take().map_or_else(

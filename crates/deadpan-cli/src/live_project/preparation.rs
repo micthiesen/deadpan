@@ -9,6 +9,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use deadpan_core::{AssetId, ProjectId, RevisionId, SourceQualificationId};
+use deadpan_media::audio_index::AudioLayoutInterpretation;
 use deadpan_media::audio_session::{AudioSession, AudioSessionLimits};
 use deadpan_media::source_index::SourceContentIdentity;
 use deadpan_media::source_input::VerifiedSourceInput;
@@ -87,8 +88,26 @@ impl PreparationOwnership {
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum SourceStreams {
     VideoOnly {},
-    VideoAndAudio { audio_stream: u32 },
-    AudioOnly { stream: u32 },
+    VideoAndAudio {
+        audio_stream: u32,
+    },
+    /// `interpretation` is the explicit speaker reading (`mono` or
+    /// `stereo_left_right`) of channels that declare no layout. Such a sound
+    /// is refused without it; a declared layout needs and keeps none.
+    AudioOnly {
+        stream: u32,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        interpretation: Option<AudioLayoutInterpretation>,
+    },
+}
+
+impl SourceStreams {
+    pub fn interpretation(self) -> Option<AudioLayoutInterpretation> {
+        match self {
+            Self::AudioOnly { interpretation, .. } => interpretation,
+            Self::VideoOnly {} | Self::VideoAndAudio { .. } => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -446,10 +465,16 @@ fn qualify(
         SourceStreams::VideoAndAudio {
             audio_stream: stream,
         }
-        | SourceStreams::AudioOnly { stream } => Some(open_audio(bytes, stream, cancelled)?),
+        | SourceStreams::AudioOnly { stream, .. } => Some(open_audio(bytes, stream, cancelled)?),
         SourceStreams::VideoOnly {} => None,
     };
-    finish_qualification(original, video.as_ref(), audio.as_ref(), cancelled)
+    finish_qualification(
+        original,
+        video.as_ref(),
+        audio.as_ref(),
+        streams.interpretation(),
+        cancelled,
+    )
 }
 
 /// Qualify an Original the way native creation chooses its streams: the
@@ -468,7 +493,7 @@ pub(crate) fn qualify_primary(
         .first()
         .map(|stream| open_audio(bytes, stream.stream_index, cancelled))
         .transpose()?;
-    finish_qualification(original, Some(&video), audio.as_ref(), cancelled)
+    finish_qualification(original, Some(&video), audio.as_ref(), None, cancelled)
 }
 
 fn verified_input(
@@ -524,9 +549,10 @@ fn finish_qualification(
     original: PreparedOriginalSnapshot,
     video: Option<&SourceSession>,
     audio: Option<&AudioSession>,
+    interpretation: Option<AudioLayoutInterpretation>,
     cancelled: &AtomicBool,
 ) -> Result<PreparedSourceRegistration, LiveError> {
-    let decoded = DecodedSourceQualification::from_sessions(video, audio)
+    let decoded = DecodedSourceQualification::for_registration(video, audio, interpretation)
         .map_err(|error| LiveError::store(error.into()))?;
     PreparedSourceRegistration::from_decoded(original, &decoded, cancelled)
         .map_err(LiveError::store)

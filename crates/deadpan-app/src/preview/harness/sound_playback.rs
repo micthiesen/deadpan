@@ -18,16 +18,49 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         ),
         (
             DialogKind::ImportSound,
+            Some(fixtures.join("pcm-stereo-48000.wav")),
+        ),
+        (
+            DialogKind::ImportSound,
             Some(fixtures.join("pcm-mono-44100.wav")),
         ),
     ]);
-    for count in 1..=2 {
+    unlabelled_wav_needs_a_choice(d)?;
+    use crate::project::AudioLayoutInterpretation as Choice;
+    for (count, choice) in [(1, Choice::StereoLeftRight), (2, Choice::Mono)] {
+        scenarios::choose_sound_interpretation(d, Some(choice))?;
+        let before = d
+            .app()
+            .sound_rows
+            .iter()
+            .map(|row| row.0.clone())
+            .collect::<Vec<_>>();
         d.click("Add sound…  ⌘I")?;
         d.wait_for(
             "Sound registration commits a qualified catalog descriptor",
             |app| app.sound_rows.len() == count && !app.service.is_busy() && !app.importing(),
         )?;
         d.settled()?;
+        // The catalog is ordered by label, not by registration.
+        let asset = d
+            .app()
+            .sound_rows
+            .iter()
+            .map(|row| row.0.clone())
+            .find(|asset| !before.contains(asset))
+            .ok_or("The new sound is missing from the catalog")?;
+        let retained = d
+            .app()
+            .workspace
+            .as_ref()
+            .and_then(|workspace| workspace.sources.get(&asset))
+            .and_then(|source| source.receipt.snapshot().audio_interpretation());
+        d.check(
+            "The registered sound retains the explicitly chosen speaker interpretation",
+            retained == Some(choice),
+            json!({"interpretation": choice.wire_name()}),
+            json!({"interpretation": retained.map(|choice| choice.wire_name())}),
+        )?;
     }
     let sounds = d.app().sound_rows.clone();
     d.command("sequence")?;
@@ -459,4 +492,46 @@ fn update(
 fn inject(d: &mut Driver<'_>, update: Update, label: &str) -> Result<(), String> {
     d.app_mut().feedback.playback_updates.push_back(update);
     d.capture(label)
+}
+
+/// Adding a plain WAV while the choice is "Ask" refuses the registration with
+/// guidance naming the applicable choice, and changes nothing.
+fn unlabelled_wav_needs_a_choice(d: &mut Driver<'_>) -> Result<(), String> {
+    let revision = d.revision();
+    d.click("Add sound…  ⌘I")?;
+    d.wait_for(
+        "An unlabelled WAV is refused without a speaker choice",
+        |app| {
+            !app.service.is_busy()
+                && app
+                    .import
+                    .as_ref()
+                    .is_some_and(|import| import.stage == crate::project::ImportStage::Failed)
+        },
+    )?;
+    d.settled()?;
+    // The rail reveals a new refusal with its ordinary scroll animation.
+    for _ in 0..12 {
+        d.step("The refusal scrolls into view in the rail", false)?;
+    }
+    let error = d
+        .app()
+        .import
+        .as_ref()
+        .and_then(|import| import.error.clone())
+        .unwrap_or_default();
+    let paint = scenarios::text_paint_visibility(d, "no declared speaker layout");
+    d.check(
+        "An unlabelled sound is refused with its explicit choice named, and nothing is registered",
+        d.app().sound_rows.is_empty()
+            && d.revision() == revision
+            && error.contains("2 channel(s) with no declared speaker layout")
+            && error.contains("Stereo L/R (stereo_left_right)")
+            && !error.contains("Mono (mono)")
+            && !paint.is_empty()
+            && paint.iter().all(|item| item["fully_visible"] == true),
+        json!({"sounds":0,"revision":revision,"guidance":"Stereo L/R (stereo_left_right)"}),
+        json!({"error":error,"paint":paint,"sounds":d.app().sound_rows.len()}),
+    )?;
+    d.capture("Unlabelled WAV refused until its speaker interpretation is chosen")
 }

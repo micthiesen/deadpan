@@ -4,7 +4,8 @@ Core 23/database 29 retain a sparse `gap_overrides` map beside play overrides.
 Each entry maps a Repeat and the stable preceding play ID to an independently
 owned ordinary subtree. The shared default gap remains a Hold recipe. This is
 the structural prerequisite for inserting Original moments or extra time inside
-one selected gap; general cursor splice and native gap controls remain open.
+one selected gap; general cursor splice remains open. Native `:repeat gap=`
+sets gap durations; editing one gap's content in place remains open.
 
 `SetGapOverride` replaces one gap with a supplied fresh subtree. Its meaning is
 replacement, so it does not claim the identity of the old default-gap content.
@@ -18,6 +19,24 @@ new node and timing identities; the current document supplies the recipe. Its
 occurrence form first isolates outer repeated ancestors. The new Hold retains
 the current captured picture context and gap-edge choices. Surrounding Repeat
 framing and effects remain on the Repeat, outside the independent branch.
+
+`SetRepeatGaps { node, gap, branches, timing }` sets the default gap and
+replaces the gaps after named plays with fresh independent Holds in one
+retained-clock transaction, like `SetRepeatPlays`: it captures unbound clocks,
+reanchors the suffix once on its pre-edit clock when the Repeat's duration
+changes, and also reanchors every entry inside the Repeat after its first
+play, because later plays and gaps move with the gaps before them. Each moved
+play keeps its own pre-edit clock: at 30000/1001 a play moved from frame 8 to
+frame 9 keeps its samples at B(9) = 14,414 rather than accumulating one
+rounding to 14,415 (`ntsc_gap_changes_move_each_play_and_the_suffix_as_identical_samples`).
+It transforms root sounds once and keeps total plays and stable identities.
+The request is the complete gap set: branches it does not name are removed,
+including a final play's dormant branch, so `gap=500ms` after a ladder resets
+every gap. A branch must follow a play that is not the last, and each Hold
+needs a positive duration and a fresh identity. Restating the current gaps
+changes nothing (`repeat_gaps_unchanged`); the planner then spends no revision.
+Default-gap sound permissions end when that gap is removed or replaced. Native
+`:repeat gap=` and the One More Time recipe author it ([gags](GAGS.md)).
 
 The branch follows its preceding stable play through reorder. A final play owns
 its branch but renders no trailing gap. Growth or reorder can expose it again;

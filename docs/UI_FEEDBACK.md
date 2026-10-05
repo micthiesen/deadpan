@@ -11,6 +11,32 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+`cargo xtask replays` now replays every scenario from one harness build (see
+[All scenarios](#all-scenarios)). On 2026-10-04 with three jobs it ran 43
+scenarios (two fixture-only skips) in about 14 minutes wall, 5,838 checks; the
+`render` scenario failed once only because a concurrent rebuild replaced the
+running binary, which the runner now prevents by running a private copy. That run fixed two
+failures from `6754271a`: footer hints now keep their tier (`x` cut frame stays
+at 960×640 beside new shot hints, see [workspace](NATIVE_WORKSPACE.md)), and
+inspector/gain scrollers reveal focused controls immediately, because an
+animated reveal was cancelled by a still-decaying wheel scroll. Sound replays
+choose the explicit speaker interpretation that plain WAVs now require, and
+`sound-playback` checks the refusal without one.
+
+The `recipes` replay drives the Section 8 additions through the production
+router and project service: `:gag one-more-time` and `:gag nothing-happens`,
+`:repeat 3 gap=6f gap-step=-2f gain-step=3dB` with its inspector gap row, `,m`
+on a beat and on a Visual range, the `,r` picker's prefilled `:cutaway` entry
+and register list, `:audio-lag` with its inspector offset, a Camera off-center
+stare saved with `:framing-save` and applied with `:macro`, and `:sound-cut` on
+a placed catalog sound, each with one Undo; `:repeat gap=5f` and `gap=0` reset
+the whole ladder and restating it makes no edit. Through `cargo xtask replays
+--scenario recipes,editing,gags,macros` it passes 75 checks (with the Kestrel
+audit, 10,890,672 cases) alongside 59, 15 and 375; its named captures were
+inspected. The `editing`
+replay now checks that `:repeat 4 gap=6f gain-step=3dB` changes count, gap and
+step together instead of refusing.
+
 The [workspace design pass](qualification/ui-design-pass-2026-10-04.md) moves the
 interface to installed SF Pro/SF Mono, removes an unpainted header band,
 restructures the inspector, header, rail and tabs, fits footer keys to two
@@ -430,6 +456,30 @@ For every meaningful UI change:
 Do not automatically bless new screenshot baselines. A comparison can detect
 change; it cannot decide that the new layout is good. Do not weaken an assertion
 or substitute fake content to make an application failure pass.
+
+## All scenarios
+
+`cargo xtask replays [--scenario a,b] [--output NEW_DIR] [--jobs N]` builds the
+ui-harness app once and replays each scenario as its own
+`--ui-check --scenario NAME --output DIR/NAME` process, so one failure cannot
+hide another. The scenario list comes from the built harness
+(`--ui-check --list-scenarios`); scenarios that need an explicit `--project`
+fixture are reported as skipped. Right after the build it copies `deadpan-app`
+and the helpers it locates beside itself (`deadpan-media-worker`,
+`deadpan-transcribe`, `deadpan-track`) into `DIR/bin` and runs every scenario
+from that copy, recording each copy's SHA-256 in `summary.json`, so a
+concurrent rebuild cannot replace a running replay's binary. The default output is a new
+`$TMPDIR/deadpan-replays-UNIX_SECONDS` directory. The run prints each scenario's
+status, wall seconds, check count and layout-retry warnings (frames that settled
+only on a second retry and runs of consecutive retrying frames), writes
+`summary.json` and per-scenario `NAME.log`, and exits nonzero when any scenario
+fails a check, reports a failure finding or a failed timing sample, or exits
+unsuccessfully. Warnings still need reading in each report.
+
+`--jobs` (1 to 8, default 1) runs scenarios concurrently against shared CPU and
+GPU; rerun a timeout or timing failure alone before treating it as a product
+failure. Run this for meaningful UI milestones, in addition to inspecting the
+affected frames; it does not replace release performance mode or the full gate.
 
 ## Replay the actual interface
 

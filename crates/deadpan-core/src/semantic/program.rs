@@ -10,6 +10,8 @@ pub const MAX_SEMANTIC_PROGRAM_INSTRUCTIONS: usize = 1024;
 pub const MAX_SEMANTIC_PROGRAM_BYTES: usize = 128 * 1024;
 pub const MAX_SEMANTIC_INSTRUCTION_FUEL: usize = 4096;
 pub const MAX_SEMANTIC_CALL_DEPTH: usize = 16;
+/// Bound on the gaps one `SetRepeat` instruction authors.
+pub const MAX_SEMANTIC_REPEAT_GAPS: usize = 64;
 
 /// A relative destination in the current ordinary Sequence. Beat motions use
 /// the explicit selected child when present, independently of the cursor.
@@ -224,6 +226,26 @@ pub enum SemanticInstruction {
     SetRepeatPlays {
         plays: NonZeroU32,
     },
+    /// `:repeat [N] gap=… gain-step=… zoom-step=…` on the selected direct
+    /// child, as one transaction. A Repeat changes its total plays, gaps and
+    /// escalation; any other beat is first wrapped in a Repeat of `plays`.
+    /// `gaps` gives the default silent freeze gap and then the gaps after the
+    /// second and later plays as independent Holds. Given gaps are the complete
+    /// set: earlier independent gap Holds end, and an empty list removes every
+    /// gap. A step-free escalation removes the escalation. Omitted parts are kept.
+    SetRepeat {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        plays: Option<NonZeroU32>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        gaps: Option<Vec<PauseLength>>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        escalation: Option<crate::RepeatEscalation>,
+    },
+    /// Give the selected direct-child Hold room tone from the exact audio of
+    /// the Original moment held in `register`.
+    SetRoomTone {
+        register: RegisterName,
+    },
     CutFrames {
         operation: FrameCut,
         register: RegisterName,
@@ -346,6 +368,30 @@ impl SemanticProgram {
             }
             if let SemanticInstruction::Group { label, .. } = instruction {
                 crate::validate_group_label(label)?;
+            }
+            if let SemanticInstruction::SetRepeat {
+                plays,
+                gaps,
+                escalation,
+            } = instruction
+            {
+                if plays.is_none() && gaps.is_none() && escalation.is_none() {
+                    return Err(EditError::new(
+                        EditErrorCode::InvalidCommand,
+                        "a Repeat change needs plays, gaps or escalation",
+                    ));
+                }
+                if gaps
+                    .as_ref()
+                    .is_some_and(|gaps| gaps.len() > MAX_SEMANTIC_REPEAT_GAPS)
+                {
+                    return Err(EditError::new(
+                        EditErrorCode::LimitExceeded,
+                        format!(
+                            "one instruction sets at most {MAX_SEMANTIC_REPEAT_GAPS} Repeat gaps"
+                        ),
+                    ));
+                }
             }
             if let SemanticInstruction::Call { register, .. } = instruction
                 && *register == RegisterName::unnamed()

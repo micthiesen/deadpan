@@ -59,6 +59,8 @@ The 16-key bound also applies to each composed operator-plus-motion path.
 | `shot.next`, `shot.previous` | `]s` / `[s`: start of the next / previous detected shot occurrence, in Original and Your edit; counts move further and compose after `y`, `d`, `r` |
 | `ai.generate` | `,a`: generate AI pictures for the selected pause (Hold) in Your edit, in the background; Normal Edit only, no count. `:generate`, `:cancel-ai`, `:preview-ai`, `:accept-ai` and `:discard-ai` complete the workflow |
 | `repeat.escalating` | `,e`: wrap the selected beat or Visual range in three plays, each 3 dB louder and 0.08 closer, as one Undo |
+| `gain.mute` | `,m`: mute the Visual range inside the selected beat as a mute range, or toggle the whole beat's mute (`:gain-mute`); Your edit only, no count |
+| `cutaway.pick` | `,r`: open `:cutaway register=` on a register holding a copied Original moment, listing the others; Your edit only, no count |
 | `object.inner_shot`, `object.around_shot` | `iS` / `aS`: Visual shot occurrence at the Edit cursor (hard cuts carry no transition handles, so they match); also compose after `y`, `d`, `r` |
 | `first`, `last` | Start and end |
 | `undo` | Undo; native undo/redo alternatives remain fixed |

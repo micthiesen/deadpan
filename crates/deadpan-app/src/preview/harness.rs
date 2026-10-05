@@ -26,6 +26,7 @@ mod moment;
 mod nested_pause;
 mod original_layout;
 mod original_playback;
+mod recipes;
 mod registers;
 mod render;
 mod repeat_input;

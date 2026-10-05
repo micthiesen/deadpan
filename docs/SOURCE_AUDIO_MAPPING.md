@@ -57,7 +57,15 @@ Example command body for one second at 30000/1001 fps, delayed by ten frames:
 
 Use this inside the normal revision-checked [headless command](HEADLESS.md)
 envelope. Preview, commit, undo and redo use the same store transaction path.
-This is an authored mapping operation; no UI control or audio renderer is added.
+
+Native `:audio-lag +80ms`, `:audio-lag -2f` and `:audio-lag 0` set the signed
+offset of the Source under the selected beat (through neutral Split
+Partitions), keeping its mapping, picture and timing: the sound plays that much
+later or earlier than its picture, clipped to the beat. Durations convert once
+to 48 kHz samples. As for every generic stream-mapping change, a changed offset
+clears the Source's common edit window, so Slip and Trim then refuse that
+Source. The inspector shows the offset beside the link, for example
+`Linked · sound 50.0 ms late`.
 
 Database schema 19 migrates schemas 1 through 18 directly to core schema 13 JSON.
 Frozen source wires preserve pre-schema-11 audio mappings as `fit_beat`, including

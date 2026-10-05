@@ -43,6 +43,11 @@ complete ownership and edit contract remains required product work.
 
 ## Native root placement
 
+A catalog sound whose file declares no speaker layout, such as a plain WAV,
+needs an explicit **Unlabelled channels** choice when it is added; see
+[speaker interpretation](SOURCE_REGISTRATION.md#explicit-speaker-interpretation).
+Audition, placement and export then use that persisted reading.
+
 Choose an audio-only catalog sound and use `,s` or `:sound-place` to place its
 complete measured span at the retained Your edit cursor. The destination uses
 the project-origin 48 kHz sample boundary, independently of Original browsing
@@ -62,6 +67,7 @@ store transactions as structural edits:
 | `+` / `-`, with an optional count | Change the selected event's gain by 3 dB per step. |
 | `:sound-gain -3.125` | Set exact gain, with at most three decimal places, within -96 through +24 dB. |
 | Soft / Hard or `:sound-edges soft\|hard` | Set both event endpoints to Automatic or Hard. |
+| `:sound-cut` | Bed drop: end the selected event abruptly at the Edit cursor. Its mapping becomes a selected placement whose exact local selection ends at that frame boundary, with a Hard end edge; onset, source phase and gain stay. The cursor must lie strictly inside the audible sound; routed events refuse. |
 | `dd` or `:sound-delete` | Remove the selected event. |
 | `:sound-allow` / `:sound-silence` | Grant or revoke this sound's permission in the concrete silent pause under the Edit frame. |
 | `u` / Ctrl-R | Use ordinary durable undo/redo. |

@@ -69,6 +69,31 @@ fn check(fixture: &Fixture) -> Result {
             fixture.name, sample["sample"]["picture"]
         );
     }
+    for (start, loud) in &fixture.audio {
+        let end = (start + 256).to_string();
+        let audio = success(&[
+            "inspect-audio",
+            path,
+            "--samples",
+            &start.to_string(),
+            &end,
+            "--limited",
+        ])?;
+        assert_eq!(audio["audio"]["revision_id"], fixture.revision.as_str());
+        let peak = audio["audio"]["samples"]
+            .as_array()
+            .ok_or("limited samples")?
+            .iter()
+            .flat_map(|pair| pair.as_array().into_iter().flatten())
+            .filter_map(Value::as_f64)
+            .fold(0.0_f64, |peak, value| peak.max(value.abs()));
+        assert!(
+            if *loud { peak > 0.5 } else { peak < 0.01 },
+            "{} audio at {start}: peak {peak}, expected {}",
+            fixture.name,
+            if *loud { "loud" } else { "quiet" }
+        );
+    }
     let past = fixture.frames.to_string();
     assert!(
         !recipes::cli(&["inspect-plan", path, "--frame", &past])?

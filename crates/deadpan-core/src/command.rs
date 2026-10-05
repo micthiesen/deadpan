@@ -321,6 +321,17 @@ define_commands! {
         plays: u32,
         timing: crate::AudioTimingId,
     },
+    /// Set a Repeat's complete gap set in one transaction: the default gap and
+    /// independent Holds after the named plays; other explicit branches end.
+    /// Total plays and stable play identities survive, and every moved entry
+    /// inside the Repeat and after it keeps its pre-edit sampling clock.
+    SetRepeatGaps {
+        node: NodeId,
+        gap: Option<HoldRecipe>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        branches: Vec<crate::RepeatGapHold>,
+        timing: crate::AudioTimingId,
+    },
     /// Map the complete selected child's output into a new authored duration.
     WrapRetime {
         node: NodeId,
@@ -871,7 +882,9 @@ pub fn apply(
         Command::GroupSelection { .. } => {
             crate::group_selection::apply(input, &request.command, context)?
         }
-        Command::RepeatSelection { .. } | Command::SetRepeatPlays { .. } => {
+        Command::RepeatSelection { .. }
+        | Command::SetRepeatPlays { .. }
+        | Command::SetRepeatGaps { .. } => {
             crate::repeat_selection::apply(input, &request.command, context)?
         }
         Command::ApplySourceTrim { .. } => {
@@ -1376,6 +1389,7 @@ pub(crate) fn reduce(
         | Command::MoveRange { .. }
         | Command::RepeatSelection { .. }
         | Command::SetRepeatPlays { .. }
+        | Command::SetRepeatGaps { .. }
         | Command::GroupSelection { .. }
         | Command::SpliceSourceAt { .. } => {
             return Err(EditError::new(
@@ -2488,6 +2502,7 @@ fn description(command: &Command) -> &'static str {
         Command::SetRepeat { .. } => "Set repeat parameters",
         Command::RepeatSelection { .. } => "Repeat selection",
         Command::SetRepeatPlays { .. } => "Set repeat plays",
+        Command::SetRepeatGaps { .. } => "Set repeat gaps",
         Command::WrapRetime { .. } => "Wrap retime",
         Command::SetRetime { .. } => "Set retime parameters",
         Command::InsertPlays { .. } => "Insert repeat plays",

@@ -553,9 +553,16 @@ impl AudioSourceProvider for RegisteredSources {
             );
             self.check_control(cancelled)?;
             let session = session?;
-            let prepared = PreparedSource::new_controlled(session, expected, || {
-                self.check_control(cancelled)
-            })?;
+            // The receipt's persisted explicit interpretation, when the
+            // stream declares no speaker layout, is the only layout choice.
+            let layout = receipt
+                .snapshot()
+                .audio_layout()
+                .ok_or_else(|| unavailable("source has no qualified audio index"))?;
+            let prepared =
+                PreparedSource::with_layout_controlled(session, expected, layout, || {
+                    self.check_control(cancelled)
+                })?;
             self.check_control(cancelled)?;
             self.retained.insert(
                 asset.clone(),

@@ -19,7 +19,7 @@ use deadpan_store::original_media::{
 };
 use deadpan_store::source_registration::PreparedSourceRegistration;
 
-use super::ImportMedia;
+use super::{AudioLayoutInterpretation, ImportMedia};
 
 /// Default decoder admission allows at most 64 GiB. Reject larger originals before copying.
 pub(super) fn original_limits() -> OriginalMediaLimits {
@@ -33,7 +33,12 @@ pub(super) fn original_limits() -> OriginalMediaLimits {
 #[derive(Clone, Copy)]
 pub(super) enum Streams {
     Import(ImportMedia),
-    Exact { video: bool, audio: Option<u32> },
+    /// Reproduce an existing receipt, including its explicit interpretation.
+    Exact {
+        video: bool,
+        audio: Option<u32>,
+        interpretation: Option<AudioLayoutInterpretation>,
+    },
 }
 
 pub(super) enum Work {
@@ -154,11 +159,11 @@ fn qualify(
                 .first()
                 .map(|stream| stream.stream_index)
         }),
-        Streams::Import(ImportMedia::Audio { stream }) => Some(stream),
-        Streams::Import(ImportMedia::FirstAudio) => None,
+        Streams::Import(ImportMedia::Audio { stream, .. }) => Some(stream),
+        Streams::Import(ImportMedia::FirstAudio { .. }) => None,
         Streams::Exact { audio, .. } => audio,
     };
-    let audio = if matches!(streams, Streams::Import(ImportMedia::FirstAudio)) {
+    let audio = if matches!(streams, Streams::Import(ImportMedia::FirstAudio { .. })) {
         Some(AudioSession::open_first_input(
             input,
             audio_limits,
@@ -169,7 +174,21 @@ fn qualify(
             .map(|stream| AudioSession::open_input(input, stream, audio_limits, &job.cancelled))
             .transpose()?
     };
-    let decoded = DecodedSourceQualification::from_sessions(video.as_ref(), audio.as_ref())?;
+    let decoded = match streams {
+        // A new registration needs an explicit reading of undeclared speakers.
+        Streams::Import(media) => DecodedSourceQualification::for_registration(
+            video.as_ref(),
+            audio.as_ref(),
+            media.interpretation(),
+        )?,
+        Streams::Exact { interpretation, .. } => {
+            DecodedSourceQualification::from_sessions_interpreted(
+                video.as_ref(),
+                audio.as_ref(),
+                interpretation,
+            )?
+        }
+    };
     Ok(PreparedSourceRegistration::from_decoded(
         original,
         &decoded,

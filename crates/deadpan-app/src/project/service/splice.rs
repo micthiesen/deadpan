@@ -218,6 +218,7 @@ impl Service {
                 .snapshot()
                 .audio()
                 .map(|audio| audio.stream().stream_index),
+            interpretation: source.receipt.snapshot().audio_interpretation(),
         };
         let record = self
             .writer()?

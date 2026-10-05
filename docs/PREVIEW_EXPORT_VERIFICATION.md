@@ -41,7 +41,11 @@ report. Unusable inputs fail with `ExportVerificationMovie`,
   encode, frame order, timing, color tagging and mux fidelity. The independent
   check of recipe semantics is the per-frame provenance (Original asset,
   source frame and PTS; Generated frame; Background) asserted against
-  expectations derived by hand from each recipe in the fixtures.
+  expectations derived by hand from each recipe in the fixtures. Sound
+  recipes add the same kind of independent check: hand-derived 256-sample
+  windows of the limited bus that must be loud (peak above 0.5) or quiet
+  (below 0.01), for example the click moved by an audio lag, silenced by a
+  mute range or repeated by a room-tone loop.
 - **Audio** comes from `OfflineAudioSession`, the limited canonical bus that
   audition also plays (`LimitedAudio`, before monitor gain), read on the
   absolute project sample grid `[B(start), B(end))`. It is likewise the bus the

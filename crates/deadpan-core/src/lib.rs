@@ -101,7 +101,7 @@ pub use picture_context::*;
 pub use register::{RegisterName, RegisterValue};
 pub use repeat_escalation::*;
 pub use repeat_layout::*;
-pub use repeat_selection::{RepeatSelectionIdentities, RepeatSelectionPlan};
+pub use repeat_selection::{RepeatGapHold, RepeatSelectionIdentities, RepeatSelectionPlan};
 pub use scoped_edit::{
     PreparedScopedEdit, RepeatEditBranch, RepeatEditStep, ScopedEditRequirements, ScopedNodeEdit,
     ScopedNodeTarget, prepare_scoped_edit,

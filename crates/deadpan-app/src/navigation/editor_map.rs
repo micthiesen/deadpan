@@ -106,6 +106,8 @@ pub enum BindingId {
     PlaceSound,
     GainUp,
     GainDown,
+    Mute,
+    CutawayPicker,
     Camera,
     PunchIn,
     Creep,
@@ -126,7 +128,7 @@ pub enum BindingId {
 }
 
 impl BindingId {
-    pub const ALL: [Self; 71] = [
+    pub const ALL: [Self; 73] = [
         Self::FramePrevious,
         Self::FrameNext,
         Self::BeatPrevious,
@@ -181,6 +183,8 @@ impl BindingId {
         Self::PlaceSound,
         Self::GainUp,
         Self::GainDown,
+        Self::Mute,
+        Self::CutawayPicker,
         Self::Camera,
         Self::PunchIn,
         Self::Creep,
@@ -255,6 +259,8 @@ impl BindingId {
             Self::PlaceSound => "sound.place",
             Self::GainUp => "gain.up",
             Self::GainDown => "gain.down",
+            Self::Mute => "gain.mute",
+            Self::CutawayPicker => "cutaway.pick",
             Self::Camera => "camera",
             Self::PunchIn => "punch_in",
             Self::Creep => "creep",
@@ -659,6 +665,8 @@ impl Rule {
             Action::Sound(SoundAction::Place) => I::PlaceSound,
             Action::GainStep(step) if step > 0 => I::GainUp,
             Action::GainStep(_) => I::GainDown,
+            Action::Mute => I::Mute,
+            Action::CutawayPicker => I::CutawayPicker,
             Action::Framing(FramingAction::EnterCamera) => I::Camera,
             Action::Framing(FramingAction::PunchIn) => I::PunchIn,
             Action::Framing(FramingAction::Creep) => I::Creep,
@@ -1247,6 +1255,9 @@ fn enabled(id: BindingId, visual: bool, domain: RoutingDomain) -> bool {
     }
     if id == BindingId::GenerateAi {
         return domain == RoutingDomain::Edit && !visual;
+    }
+    if matches!(id, BindingId::Mute | BindingId::CutawayPicker) {
+        return domain == RoutingDomain::Edit;
     }
     !matches!(
         (id, visual),
@@ -2036,6 +2047,18 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
             Action::Framing(FramingAction::Creep),
             C::Refuse("Use framing actions without a count."),
             "creep",
+        ),
+        (
+            Key::M,
+            Action::Mute,
+            C::Refuse("Mute once, without a count."),
+            "mute",
+        ),
+        (
+            Key::R,
+            Action::CutawayPicker,
+            C::Refuse("Pick one cutaway register, without a count."),
+            "reaction cutaway",
         ),
     ] {
         add(

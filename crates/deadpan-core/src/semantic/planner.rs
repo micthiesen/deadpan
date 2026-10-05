@@ -23,6 +23,7 @@ use super::{MAX_SEMANTIC_CALL_DEPTH, MAX_SEMANTIC_INSTRUCTION_FUEL};
 mod content;
 mod group;
 mod pause;
+pub use pause::copied_moment_audio;
 mod repeat;
 mod selection;
 
@@ -84,6 +85,11 @@ pub enum SemanticAllocationRequest {
     SetRepeatPlays {
         step_index: usize,
     },
+    /// A gap change with one fresh node per independent gap Hold.
+    SetRepeatGaps {
+        step_index: usize,
+        branches: usize,
+    },
     /// A parameter-only edit, such as a new Repeat's escalation.
     ParameterEdit {
         step_index: usize,
@@ -126,6 +132,10 @@ pub enum SemanticAllocation {
     },
     SetRepeatPlays {
         new_revision: RevisionId,
+    },
+    SetRepeatGaps {
+        new_revision: RevisionId,
+        nodes: Vec<NodeId>,
     },
     ParameterEdit {
         new_revision: RevisionId,
@@ -232,6 +242,17 @@ pub fn pause_unavailable() -> EditError {
     )
 }
 
+/// Where a new silent freeze pause goes, which decides the picture it holds.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PauseSite {
+    /// A pause inserted at an Edit boundary holds the picture before it.
+    Boundary { at: ProjectFrame },
+    /// A gap of `repeat` holds the last picture of its first play, shown at
+    /// `frame`. Composition at and above the Repeat stays live on the gap and
+    /// must not be captured again.
+    RepeatGap { repeat: NodeId, frame: ProjectFrame },
+}
+
 /// The frozen picture a pause inserted at a boundary shows, resolved by the
 /// host from the staged document's picture before that boundary.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -261,7 +282,7 @@ pub fn plan_semantic_with_speech(
     allocate: impl FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
     resolve_original: impl FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
     resolve_speech: impl FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
-    resolve_pause: impl FnMut(&ProjectDocument, ProjectFrame) -> Result<PauseProvider, EditError>,
+    resolve_pause: impl FnMut(&ProjectDocument, PauseSite) -> Result<PauseProvider, EditError>,
 ) -> Result<SemanticPlan, EditError> {
     program.validate()?;
     document.validate()?;
@@ -393,7 +414,7 @@ where
     F: FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
     R: FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
     S: FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
-    P: FnMut(&ProjectDocument, ProjectFrame) -> Result<PauseProvider, EditError>,
+    P: FnMut(&ProjectDocument, PauseSite) -> Result<PauseProvider, EditError>,
 {
     /// Project speech through the current staged document once per change.
     fn ensure_speech(&mut self) -> Result<(), EditError> {
@@ -548,6 +569,16 @@ where
                 SemanticInstruction::SetRepeatPlays { plays } => {
                     self.set_repeat_plays(index, plays.get())?;
                 }
+                SemanticInstruction::SetRepeat {
+                    plays,
+                    gaps,
+                    escalation,
+                } => {
+                    self.set_repeat(index, *plays, gaps.as_deref(), *escalation)?;
+                }
+                SemanticInstruction::SetRoomTone { register } => {
+                    self.set_room_tone(index, *register)?;
+                }
                 SemanticInstruction::Gag { recipe } => {
                     // The expansion runs as ordinary instructions on the
                     // staged document, with their own trace entries and fuel.
@@ -566,7 +597,9 @@ where
                         ));
                     }
                     let visual = self.context.visual_selection.is_some();
-                    let expansion = SemanticProgram::new(recipe.expand(visual)?)?;
+                    let expansion = SemanticProgram::new(
+                        recipe.expand(visual, self.current.presentation_basis().frame_rate)?,
+                    )?;
                     self.execute(&expansion)?;
                 }
                 SemanticInstruction::InsertPause { length, black } => {
@@ -668,6 +701,15 @@ where
                 } => 2,
                 // A recipe stages at most three leaves.
                 SemanticInstruction::Gag { .. } => 2,
+                SemanticInstruction::SetRepeat {
+                    plays,
+                    gaps,
+                    escalation,
+                } => {
+                    usize::from(plays.is_some())
+                        + usize::from(gaps.is_some())
+                        + usize::from(escalation.is_some())
+                }
                 _ => usize::from(matches!(
                     instruction,
                     SemanticInstruction::CutFrames { .. }
@@ -677,6 +719,7 @@ where
                         | SemanticInstruction::Cut { .. }
                         | SemanticInstruction::Repeat { .. }
                         | SemanticInstruction::SetRepeatPlays { .. }
+                        | SemanticInstruction::SetRoomTone { .. }
                         | SemanticInstruction::Group { .. }
                         | SemanticInstruction::Ungroup
                         | SemanticInstruction::YankBeat { .. }

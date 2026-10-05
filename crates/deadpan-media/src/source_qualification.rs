@@ -15,7 +15,7 @@ use deadpan_source::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::audio_index::AudioIndexSnapshot;
+use crate::audio_index::{AudioChannelLayout, AudioIndexSnapshot, AudioLayoutInterpretation};
 use crate::audio_session::AudioSession;
 use crate::source_import_timing::{
     BasisCandidate, GeometryCandidate, ImportTiming, ImportTimingError, derive_import_timing,
@@ -50,6 +50,10 @@ pub enum SourceQualificationError {
     Time(#[from] TimeError),
     #[error(transparent)]
     Json(#[from] serde_json::Error),
+    /// A sound whose channels carry no declared speaker layout needs the
+    /// registering person's explicit interpretation; the message says which.
+    #[error("{0}")]
+    AudioLayoutInterpretation(String),
 }
 
 /// Evidence captured from sessions that actually decoded the selected streams.
@@ -124,9 +128,68 @@ impl DecodedSourceQualification {
             origin_seconds,
             video,
             audio: audio.map(|session| session.index().clone()),
+            audio_interpretation: None,
         };
         snapshot.validate()?;
         Ok(Self { snapshot })
+    }
+
+    /// Qualification for registration, with the registering person's explicit
+    /// speaker interpretation. A declared native layout needs none, and a
+    /// choice cannot override it, so the choice is not retained there. An
+    /// audio-only registration (a sound) whose channels declare no layout is
+    /// refused without a matching choice: audition and export could otherwise
+    /// only fail later, and the channel count alone never decides speakers.
+    /// An Original video keeps its existing audio admission when no choice is
+    /// given.
+    pub fn for_registration(
+        video: Option<&SourceSession>,
+        audio: Option<&AudioSession>,
+        interpretation: Option<AudioLayoutInterpretation>,
+    ) -> Result<Self, SourceQualificationError> {
+        let layout = audio.map(|session| session.index().stream().channel_layout);
+        let interpretation = match (layout, interpretation) {
+            (Some(AudioChannelLayout::Unspecified { channels }), Some(choice)) => {
+                if choice.channels() != channels {
+                    return Err(SourceQualificationError::AudioLayoutInterpretation(
+                        format!(
+                            "This sound has {channels} channel(s) with no declared speaker layout, so {} ({} channel(s)) cannot describe it. {}",
+                            choice.label(),
+                            choice.channels(),
+                            interpretation_guidance(channels)
+                        ),
+                    ));
+                }
+                Some(choice)
+            }
+            (Some(AudioChannelLayout::Unspecified { channels }), None) if video.is_none() => {
+                return Err(SourceQualificationError::AudioLayoutInterpretation(
+                    format!(
+                        "This sound has {channels} channel(s) with no declared speaker layout. {}",
+                        interpretation_guidance(channels)
+                    ),
+                ));
+            }
+            _ => None,
+        };
+        Self::from_sessions_interpreted(video, audio, interpretation)
+    }
+
+    /// Reproduce an existing receipt's qualification, including its retained
+    /// explicit interpretation. Unlike [`Self::for_registration`], this does
+    /// not refuse an undeclared layout without one; validation still rejects
+    /// a choice for a declared layout or a different channel count.
+    pub fn from_sessions_interpreted(
+        video: Option<&SourceSession>,
+        audio: Option<&AudioSession>,
+        interpretation: Option<AudioLayoutInterpretation>,
+    ) -> Result<Self, SourceQualificationError> {
+        let mut decoded = Self::from_sessions(video, audio)?;
+        if interpretation.is_some() {
+            decoded.snapshot.audio_interpretation = interpretation;
+            decoded.snapshot.validate()?;
+        }
+        Ok(decoded)
     }
 
     pub fn snapshot(&self) -> &SourceQualificationSnapshot {
@@ -146,6 +209,11 @@ pub struct SourceQualificationSnapshot {
     origin_seconds: ExactRatio,
     video: Option<QualifiedVideoSnapshot>,
     audio: Option<AudioIndexSnapshot>,
+    /// The registering person's explicit speaker interpretation of an audio
+    /// stream that declares no layout. Absent for declared layouts, and absent
+    /// from the canonical bytes then, so earlier receipts keep their identity.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    audio_interpretation: Option<AudioLayoutInterpretation>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -179,6 +247,15 @@ struct SnapshotWire {
     video: Option<VideoWire>,
     #[serde(deserialize_with = "required_option")]
     audio: Option<AudioIndexSnapshot>,
+    /// Omitted for declared layouts; never an explicit null.
+    #[serde(default, deserialize_with = "present_interpretation")]
+    audio_interpretation: Option<AudioLayoutInterpretation>,
+}
+
+fn present_interpretation<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Option<AudioLayoutInterpretation>, D::Error> {
+    AudioLayoutInterpretation::deserialize(deserializer).map(Some)
 }
 
 #[derive(Deserialize)]
@@ -204,6 +281,24 @@ impl SourceQualificationSnapshot {
 
     pub fn audio(&self) -> Option<&AudioIndexSnapshot> {
         self.audio.as_ref()
+    }
+
+    /// The registering person's explicit interpretation, when the stream
+    /// declares no speaker layout.
+    pub fn audio_interpretation(&self) -> Option<AudioLayoutInterpretation> {
+        self.audio_interpretation
+    }
+
+    /// The speaker layout audio preparation must use: the explicit
+    /// interpretation when one was chosen, otherwise the declared layout
+    /// (which may still be unspecified and is then refused by preparation).
+    pub fn audio_layout(&self) -> Option<AudioChannelLayout> {
+        self.audio.as_ref().map(|audio| {
+            self.audio_interpretation.map_or(
+                audio.stream().channel_layout,
+                AudioLayoutInterpretation::layout,
+            )
+        })
     }
 
     pub fn derive_timing(
@@ -260,6 +355,7 @@ impl SourceQualificationSnapshot {
                 interpretation: video.interpretation,
             }),
             audio: wire.audio,
+            audio_interpretation: wire.audio_interpretation,
         };
         snapshot.validate()?;
         Ok(snapshot)
@@ -307,6 +403,16 @@ impl SourceQualificationSnapshot {
                 &mut BoundedWriter::new(MAX_SOURCE_INDEX_JSON_BYTES, false),
             )?;
         }
+        if let Some(choice) = self.audio_interpretation
+            && !matches!(
+                self.audio.as_ref().map(|audio| audio.stream().channel_layout),
+                Some(AudioChannelLayout::Unspecified { channels }) if channels == choice.channels()
+            )
+        {
+            return Err(SourceQualificationError::Metadata(
+                "speaker interpretation needs an undeclared layout with matching channels",
+            ));
+        }
         // Timing validation requires measured video terminal duration and one
         // contiguous available audio span. It never invents priming trims.
         let measured_origin = self.derive_timing(FrameRate::new(1, 1)?)?.origin_seconds;
@@ -320,6 +426,23 @@ impl SourceQualificationSnapshot {
             &mut BoundedWriter::new(MAX_SOURCE_QUALIFICATION_JSON_BYTES, false),
         )?;
         Ok(())
+    }
+}
+
+/// Name the explicit choice that applies, or say that none does.
+fn interpretation_guidance(channels: u32) -> String {
+    let choices = AudioLayoutInterpretation::for_channels(channels)
+        .map(|choice| format!("{} ({})", choice.label(), choice.wire_name()))
+        .collect::<Vec<_>>();
+    if choices.is_empty() {
+        format!(
+            "Deadpan offers no explicit interpretation for {channels} unlabelled channels; export the sound with a declared channel layout (for example WAVE_FORMAT_EXTENSIBLE or MP4) and add it again."
+        )
+    } else {
+        format!(
+            "Choose its speaker interpretation explicitly: {}. Then add it again; Deadpan never guesses speakers from the channel count.",
+            choices.join(" or ")
+        )
     }
 }
 

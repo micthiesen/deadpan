@@ -258,6 +258,43 @@ impl DeadpanApp {
         }
     }
 
+    /// `,m`: mute the Visual range inside the selected beat, or toggle the
+    /// whole beat's mute when no range is selected. One Undo either way.
+    pub(super) fn mute_key(&mut self) {
+        let range = self.selected_edit_range();
+        let rows = &self.beat_rows;
+        let result = self.capture_gain_target().and_then(|target| {
+            let mut edit = GainEdit::new(target.entry.clone());
+            let Some(range) = range else {
+                edit.set_muted(!edit.muted())?;
+                return Ok((target, edit.recipe().clone()));
+            };
+            if target.scoped.is_some() {
+                return Err("Mute a range in the whole beat: leave the play scope with :scope all, or clear the Visual range to mute this play.".into());
+            }
+            let row = rows
+                .iter()
+                .find(|row| row.id == target.node)
+                .ok_or("Select a beat in the current group first.")?;
+            let (start, end) = (range.start().0, range.end().0);
+            let (first, last) = (row.start as i64, (row.start + row.frames) as i64);
+            if start < first || end > last || start == end {
+                return Err("Select a range inside one beat to mute it; a mute range belongs to that beat.".into());
+            }
+            let local = deadpan_core::GainRange::new(
+                deadpan_core::ExactRatio::integer(start - first),
+                deadpan_core::ExactRatio::integer(end - first),
+            )
+            .map_err(|error| error.to_string())?;
+            edit.add_mute_range(local)?;
+            Ok((target, edit.recipe().clone()))
+        });
+        match result {
+            Ok((target, recipe)) => self.commit_gain(target, recipe),
+            Err(error) => self.error = Some(error),
+        }
+    }
+
     pub(super) fn gain_mute(&mut self, target: Option<Result<Target, String>>) {
         let result = target
             .unwrap_or_else(|| Err("No gain target was captured on command entry.".into()))
@@ -669,6 +706,8 @@ impl DeadpanApp {
             // comparison/Apply row painted and reachable after resize.
             egui::ScrollArea::vertical()
                 .id_salt("gain-draft-scroll")
+                // Focus reveals apply at once; see the inspector scroller.
+                .animated(false)
                 .max_height((ui.available_height() - 54.0).max(30.0))
                 .auto_shrink([false, false])
                 .show(ui, |ui| {

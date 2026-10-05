@@ -117,6 +117,15 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
                 new_revision: revision(&format!("leaf-{step_index}")),
             }
         }
+        SemanticAllocationRequest::SetRepeatGaps {
+            step_index,
+            branches,
+        } => SemanticAllocation::SetRepeatGaps {
+            new_revision: revision(&format!("leaf-{step_index}")),
+            nodes: (0..branches)
+                .map(|n| node(&format!("gap-{step_index}-{n}")))
+                .collect(),
+        },
         SemanticAllocationRequest::ParameterEdit { step_index } => {
             SemanticAllocation::ParameterEdit {
                 new_revision: revision(&format!("leaf-{step_index}")),
@@ -761,7 +770,9 @@ fn cumulative_document_and_capture_budgets_refuse_before_another_leaf_allocation
             },
             resolve_original: no_original,
             resolve_speech: |_: &ProjectDocument| Err(speech_unavailable()),
-            resolve_pause: |_: &ProjectDocument, _: ProjectFrame| Err(super::pause_unavailable()),
+            resolve_pause: |_: &ProjectDocument, _: super::PauseSite| {
+                Err(super::pause_unavailable())
+            },
             speech: None,
         };
         let error = planner.execute(&program(vec![cut(1, 'a')])).unwrap_err();

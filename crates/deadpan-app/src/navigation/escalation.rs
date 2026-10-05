@@ -1,15 +1,95 @@
-//! `:repeat [N] gain-step=3dB zoom-step=0.08 [progression=multiply]`: set a
-//! selected Repeat's per-play escalation.
+//! `:repeat [N] gap=120ms [gap-step=-40ms] gain-step=3dB zoom-step=0.08
+//! [progression=multiply]`: change a selected Repeat's plays, gaps and
+//! per-play escalation together, or wrap a plain beat first.
 
-use deadpan_core::{ExactRatio, GainDb, ZoomProgression, ZoomStep};
+use deadpan_core::{ExactRatio, FrameRate, GainDb, PauseLength, ZoomProgression, ZoomStep};
 
-pub const USAGE: &str = "Use :repeat 3 gain-step=3dB zoom-step=0.08 on a selected Repeat; add progression=multiply to compound the zoom. gain-step=0dB or zoom-step=0 removes that step.";
+use super::duration::DurationInput;
 
-/// Requested escalation. Unnamed parameters keep their current values.
+pub const USAGE: &str = "Use :repeat 3 gap=120ms gain-step=3dB zoom-step=0.08 on a selected beat or Repeat. gap= sets every gap (gap=0 removes them all); gap-step=-40ms makes each later gap 40 ms shorter. progression=multiply compounds the zoom; gain-step=0dB or zoom-step=0 removes that step.";
+
+/// The most gaps one `gap-step` ladder authors, matching the core bound.
+const MAX_GAPS: u32 = deadpan_core::MAX_SEMANTIC_REPEAT_GAPS as u32;
+
+/// Requested gaps: the first gap, and how much each later gap adds.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GapInput {
+    pub first: DurationInput,
+    /// `(shorter, amount)`: each later gap is `amount` shorter or longer.
+    pub step: Option<(bool, DurationInput)>,
+}
+
+impl GapInput {
+    /// Exact gap lengths for a Repeat of `plays`, each rounded once. A zero
+    /// first gap without a step removes the gaps.
+    pub fn lengths(self, plays: u32, rate: FrameRate) -> Result<Vec<PauseLength>, String> {
+        let zero = match self.first {
+            DurationInput::Frames(frames) => frames == deadpan_core::FrameDuration::ZERO,
+            DurationInput::Seconds(seconds) => seconds == ExactRatio::ZERO,
+        };
+        let Some((shorter, step)) = self.step else {
+            return if zero {
+                Ok(Vec::new())
+            } else {
+                Ok(vec![self.first.pause_length(rate)?])
+            };
+        };
+        let count = plays.saturating_sub(1).max(1);
+        if count > MAX_GAPS {
+            return Err(format!(
+                "A gap-step ladder sets at most {MAX_GAPS} gaps ({} plays); use fewer plays or a single gap= without gap-step.",
+                MAX_GAPS + 1
+            ));
+        }
+        (0..count)
+            .map(|index| {
+                let value = match (self.first, step) {
+                    (DurationInput::Frames(first), DurationInput::Frames(step)) => {
+                        let offset = i64::from(index)
+                            .checked_mul(step.frames())
+                            .ok_or("gap-step overflows")?;
+                        let frames = if shorter {
+                            first.frames().checked_sub(offset)
+                        } else {
+                            first.frames().checked_add(offset)
+                        }
+                        .filter(|frames| *frames > 0)
+                        .ok_or("Every gap must stay positive; use a smaller gap-step.")?;
+                        DurationInput::Frames(
+                            deadpan_core::FrameDuration::new(frames).map_err(|e| e.to_string())?,
+                        )
+                    }
+                    (DurationInput::Seconds(first), DurationInput::Seconds(step)) => {
+                        let offset = step
+                            .checked_mul(ExactRatio::integer(i64::from(index)))
+                            .map_err(|e| e.to_string())?;
+                        let seconds = if shorter {
+                            first.checked_sub(offset)
+                        } else {
+                            first.checked_add(offset)
+                        }
+                        .map_err(|e| e.to_string())?;
+                        if seconds.compare_integer(0).is_le() {
+                            return Err(
+                                "Every gap must stay positive; use a smaller gap-step.".into()
+                            );
+                        }
+                        DurationInput::Seconds(seconds)
+                    }
+                    _ => return Err("Give gap and gap-step in the same unit.".into()),
+                };
+                value.pause_length(rate)
+            })
+            .collect()
+    }
+}
+
+/// Requested Repeat change. Unnamed parameters keep their current values.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct EscalationInput {
-    /// The total plays the command names; it must match the selected Repeat.
+    /// Total plays: a new count for a Repeat, or the plays of a new wrapper.
     pub plays: Option<u32>,
+    pub gap: Option<GapInput>,
     pub gain_step: Option<GainDb>,
     /// A grid-rounded zoom step; `Some(None)` removes the zoom progression.
     pub zoom_step: Option<Option<ExactRatio>>,
@@ -17,6 +97,11 @@ pub struct EscalationInput {
 }
 
 impl EscalationInput {
+    /// Whether the command names any escalation parameter.
+    pub fn changes_escalation(&self) -> bool {
+        self.gain_step.is_some() || self.zoom_step.is_some() || self.progression.is_some()
+    }
+
     /// Merge into a Repeat's current escalation; `None` when nothing remains.
     pub fn apply(
         self,
@@ -95,12 +180,15 @@ pub fn parse(arguments: &[&str]) -> Result<Option<EscalationInput>, String> {
     }
     let mut input = EscalationInput {
         plays,
+        gap: None,
         gain_step: None,
         zoom_step: None,
         progression: None,
     };
     let mut zoom_step = None;
     let mut progression = None;
+    let mut gap = None;
+    let mut gap_step = None;
     for parameter in parameters {
         let (key, value) = parameter.split_once('=').ok_or(USAGE)?;
         match key {
@@ -115,19 +203,36 @@ pub fn parse(arguments: &[&str]) -> Result<Option<EscalationInput>, String> {
                     _ => return Err("progression is add or multiply.".into()),
                 });
             }
-            "gap" => {
-                return Err(
-                    "Changing a Repeat's gap is not supported yet; :repeat sets plays and escalation."
-                        .into(),
-                );
+            "gap" if gap.is_none() => {
+                gap = Some(if value == "0" {
+                    DurationInput::Frames(deadpan_core::FrameDuration::ZERO)
+                } else {
+                    DurationInput::parse(value)?
+                });
             }
-            "gain-step" | "zoom-step" | "progression" => {
+            "gap-step" if gap_step.is_none() => {
+                let (shorter, amount) = match value.strip_prefix('-') {
+                    Some(amount) => (true, amount),
+                    None => (false, value.strip_prefix('+').unwrap_or(value)),
+                };
+                gap_step = Some((shorter, DurationInput::parse(amount)?));
+            }
+            "gain-step" | "zoom-step" | "progression" | "gap" | "gap-step" => {
                 return Err(format!("{key} is given twice."));
             }
             _ => return Err(format!("Unknown :repeat parameter {key}. {USAGE}")),
         }
     }
     input.progression = progression;
+    input.gap = match (gap, gap_step) {
+        (Some(first), step) => Some(GapInput { first, step }),
+        (None, Some(_)) => {
+            return Err(
+                "gap-step needs a first gap, for example gap=500ms gap-step=-200ms.".into(),
+            );
+        }
+        (None, None) => None,
+    };
     if let Some(step) = zoom_step {
         // Zero (or ×1 when multiplying) removes the zoom progression.
         let unchanged = match progression.unwrap_or_default() {
@@ -252,7 +357,9 @@ mod tests {
                 .is_err()
         );
         for bad in [
-            vec!["gap=120ms"],
+            vec!["gap=120"],
+            vec!["gap=1ms", "gap=2ms"],
+            vec!["gap-step=-1f"],
             vec!["gain-step=3"],
             vec!["gain-step=0.0005dB"],
             vec!["gain-step=30dB"],
@@ -291,5 +398,75 @@ mod tests {
             EscalationInput::fields(None),
             [("Escalation", "None".to_owned())]
         );
+    }
+}
+
+#[cfg(test)]
+mod gap_tests {
+    use super::*;
+
+    fn rate() -> FrameRate {
+        FrameRate::new(30, 1).unwrap()
+    }
+
+    fn milliseconds(value: u32) -> PauseLength {
+        PauseLength::Milliseconds {
+            milliseconds: std::num::NonZeroU32::new(value).unwrap(),
+        }
+    }
+
+    #[test]
+    fn gaps_parse_with_steps_and_resolve_each_length_once() {
+        let input = parse(&["3", "gap=120ms", "gain-step=3dB", "zoom-step=0.08"])
+            .unwrap()
+            .unwrap();
+        assert_eq!(input.plays, Some(3));
+        assert_eq!(
+            input.gap.unwrap().lengths(3, rate()).unwrap(),
+            [milliseconds(120)]
+        );
+        let ladder = parse(&["gap=500ms", "gap-step=-200ms"]).unwrap().unwrap();
+        assert!(!ladder.changes_escalation());
+        assert_eq!(
+            ladder.gap.unwrap().lengths(3, rate()).unwrap(),
+            [milliseconds(500), milliseconds(300)]
+        );
+        assert!(ladder.gap.unwrap().lengths(4, rate()).is_ok());
+        assert!(
+            ladder.gap.unwrap().lengths(5, rate()).is_err(),
+            "a gap may not shrink to nothing"
+        );
+        let frames = parse(&["gap=6f", "gap-step=+2f"]).unwrap().unwrap();
+        assert_eq!(
+            frames.gap.unwrap().lengths(3, rate()).unwrap(),
+            [
+                PauseLength::Frames {
+                    frames: std::num::NonZeroU32::new(6).unwrap()
+                },
+                PauseLength::Frames {
+                    frames: std::num::NonZeroU32::new(8).unwrap()
+                }
+            ]
+        );
+        for zero in ["gap=0f", "gap=0", "gap=0ms"] {
+            let removed = parse(&[zero]).unwrap().unwrap();
+            assert_eq!(
+                removed.gap.unwrap().lengths(3, rate()).unwrap(),
+                [],
+                "{zero}"
+            );
+        }
+        // A ladder longer than the bound refuses instead of truncating.
+        let long = parse(&["gap=500f", "gap-step=-1f"]).unwrap().unwrap();
+        assert!(long.gap.unwrap().lengths(65, rate()).is_ok());
+        assert!(
+            long.gap
+                .unwrap()
+                .lengths(66, rate())
+                .unwrap_err()
+                .contains("at most 64")
+        );
+        let mixed = parse(&["gap=6f", "gap-step=-10ms"]).unwrap().unwrap();
+        assert!(mixed.gap.unwrap().lengths(3, rate()).is_err());
     }
 }

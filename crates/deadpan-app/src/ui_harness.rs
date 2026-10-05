@@ -29,6 +29,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "shots",
     "cutaway",
     "gags",
+    "recipes",
     "zoom",
     "original-layout",
     "original-layout-long",
@@ -118,10 +119,9 @@ impl Options {
         if baseline.is_some() && mode != RunMode::Visual {
             return Err("Baseline comparison requires visual mode".into());
         }
-        let fixture_scenario = matches!(
-            scenario.as_deref(),
-            Some("generated-picture" | "ai-pause-ready")
-        );
+        let fixture_scenario = scenario
+            .as_deref()
+            .is_some_and(|name| PROJECT_FIXTURE_SCENARIOS.contains(&name));
         if project.is_some() && !fixture_scenario {
             return Err(
                 "--project is reserved for --scenario generated-picture or ai-pause-ready".into(),
@@ -204,10 +204,33 @@ fn binary_sha256() -> Option<String> {
         .then(|| digest.to_owned())
 }
 
+/// Scenarios that replay an explicit `--project` fixture instead of the
+/// built-in Original; ordinary runs report them as skipped.
+pub(crate) const PROJECT_FIXTURE_SCENARIOS: &[&str] = &["generated-picture", "ai-pause-ready"];
+
+/// One scenario per line for tools such as `cargo xtask replays`. A
+/// scenario that needs an explicit fixture carries a tab and `project`.
+fn scenario_list() -> String {
+    SCENARIOS
+        .iter()
+        .map(|name| {
+            if PROJECT_FIXTURE_SCENARIOS.contains(name) {
+                format!("{name}\tproject\n")
+            } else {
+                format!("{name}\n")
+            }
+        })
+        .collect()
+}
+
 pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
+    if arguments == ["--list-scenarios"] {
+        print!("{}", scenario_list());
+        return Ok(());
+    }
     if arguments == ["--help"] {
         println!(
-            "Usage: deadpan-app --ui-check --output NEW_DIRECTORY [--mode visual|performance] [--scenario NAME] [--hz 60|120] [--kestrel-source Shortcuts.swift] [--baseline PRIOR_DIRECTORY] [--retain-projects]\n\nScenarios: {}\nVisual mode writes report.json, report.html and actual offscreen PNG frames.\nPerformance mode submits full UI + picture GPU work without screenshot readback.\nUse --release for performance. Projects use private temporary storage by default.\n--retain-projects keeps each scenario's Documents root under output/projects/NAME for native QA after replay exits.\nGenerated picture replay requires --scenario generated-picture --project /absolute/accepted.deadpan, exported by the real bundle qualification test with DEADPAN_GENERATED_PICTURE_FIXTURE_ROOT. It opens the generic compatibility fixture without editing it.\nai-pause-ready requires --project /absolute/project.deadpan whose last edit accepted real AI pictures; it replays a private copy.\nNative pickers are scripted; audio output and the desktop are not opened.",
+            "Usage: deadpan-app --ui-check --output NEW_DIRECTORY [--mode visual|performance] [--scenario NAME] [--hz 60|120] [--kestrel-source Shortcuts.swift] [--baseline PRIOR_DIRECTORY] [--retain-projects]\n       deadpan-app --ui-check --list-scenarios\n\nScenarios: {}\nVisual mode writes report.json, report.html and actual offscreen PNG frames.\nPerformance mode submits full UI + picture GPU work without screenshot readback.\nUse --release for performance. Projects use private temporary storage by default.\n--retain-projects keeps each scenario's Documents root under output/projects/NAME for native QA after replay exits.\nGenerated picture replay requires --scenario generated-picture --project /absolute/accepted.deadpan, exported by the real bundle qualification test with DEADPAN_GENERATED_PICTURE_FIXTURE_ROOT. It opens the generic compatibility fixture without editing it.\nai-pause-ready requires --project /absolute/project.deadpan whose last edit accepted real AI pictures; it replays a private copy.\nNative pickers are scripted; audio output and the desktop are not opened.",
             SCENARIOS.join(", ")
         );
         return Ok(());
@@ -384,6 +407,23 @@ pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn scenario_list_names_every_scenario_once_and_marks_fixture_replays() {
+        let list = scenario_list();
+        let lines = list.lines().collect::<Vec<_>>();
+        assert_eq!(lines.len(), SCENARIOS.len());
+        for (line, name) in lines.iter().zip(SCENARIOS) {
+            let (listed, tag) = line.split_once('\t').unwrap_or((line, ""));
+            assert_eq!(listed, *name);
+            assert_eq!(tag == "project", PROJECT_FIXTURE_SCENARIOS.contains(name));
+        }
+        assert!(
+            PROJECT_FIXTURE_SCENARIOS
+                .iter()
+                .all(|name| SCENARIOS.contains(name))
+        );
+    }
+
     #[test]
     fn generated_picture_requires_a_dedicated_explicit_project() {
         let arguments = |tail: &[&str]| {

@@ -46,7 +46,8 @@ impl PreparedSource {
 
     /// Interpret unspecified source channels using an explicit host choice.
     /// A native source layout cannot be overridden and channel counts must
-    /// agree. This does not persist an authored override or provide its UI.
+    /// agree. Registration persists the chosen interpretation with the source
+    /// receipt (`SourceQualificationSnapshot::audio_layout`).
     /// Cache provenance must include this chosen layout and [`crate::MATRIX_ID`]
     /// as well as the complete source index and resampling recipe.
     pub fn with_layout(
@@ -58,7 +59,10 @@ impl PreparedSource {
         Self::with_layout_controlled(session, expected, layout, || check_cancel(cancelled))
     }
 
-    fn with_layout_controlled(
+    /// [`Self::with_layout`] under the caller's existing cancellation and
+    /// deadline check. Hosts pass a receipt's persisted explicit
+    /// interpretation here; a declared native layout passes through unchanged.
+    pub fn with_layout_controlled(
         session: AudioSession,
         expected: &AudioIndexSnapshot,
         layout: AudioChannelLayout,

@@ -1,5 +1,5 @@
 use super::*;
-use deadpan_media::source_import_timing::derive_source_audio_moment;
+use deadpan_media::source_import_timing::{derive_source_audio_moment, derive_source_moment};
 
 #[test]
 fn inward_audio_ranges_use_measured_pts_and_native_sample_clock() {
@@ -21,6 +21,44 @@ fn inward_audio_ranges_use_measured_pts_and_native_sample_clock() {
     let audio = indexed_audio(-60, 44_100, &[120]);
     let whole = derive_source_audio_moment(&video, &audio, 0..2).unwrap();
     assert_eq!((whole.start().ticks, whole.end().ticks), (-60, 60));
+}
+
+/// Room tone authored from a copied moment's Source (`SetRoomTone`, Nothing
+/// Happens) must hear exactly the inward range the native room-tone sheet
+/// derives from measured picture PTS, at any project rate.
+#[test]
+fn copied_moment_sources_yield_the_same_inward_audio_range() {
+    let asset = deadpan_core::AssetId::new("original").unwrap();
+    for (video, audio) in [
+        (
+            indexed_video(1, &[1, 1, 3], SourceTimeBase::new(1, 1000).unwrap()),
+            indexed_audio(0, 44_100, &[441]),
+        ),
+        (
+            indexed_video(-2, &[1, 3], SourceTimeBase::new(1, 1000).unwrap()),
+            indexed_audio(-60, 44_100, &[120]),
+        ),
+    ] {
+        let frames = u64::try_from(video.index().frames().len()).unwrap();
+        for rate in [
+            deadpan_core::FrameRate::new(30_000, 1001).unwrap(),
+            deadpan_core::FrameRate::new(24, 1).unwrap(),
+        ] {
+            for start in 0..frames {
+                for end in start + 1..=frames {
+                    let expected = derive_source_audio_moment(&video, &audio, start..end);
+                    let source = derive_source_moment(&video, Some(&audio), start..end, rate)
+                        .unwrap()
+                        .source_node(asset.clone());
+                    let actual = deadpan_core::copied_moment_audio(&source).map(|audio| audio.span);
+                    match expected {
+                        Ok(span) => assert_eq!(actual.unwrap(), span, "{start}..{end} at {rate:?}"),
+                        Err(_) => assert!(actual.is_err(), "{start}..{end} at {rate:?}"),
+                    }
+                }
+            }
+        }
+    }
 }
 
 #[test]

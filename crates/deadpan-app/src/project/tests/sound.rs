@@ -26,6 +26,7 @@ pub(super) fn catalog(harness: &Harness) -> Arc<Workspace> {
             expected_revision: ready.document.revision_id().clone(),
             path: fixture("../audio-fixtures/pcm-stereo-48000.wav"),
             stream: None,
+            interpretation: Some(AudioLayoutInterpretation::StereoLeftRight),
             ownership: OriginalOwnership::Managed,
         },
     );
@@ -615,6 +616,7 @@ fn catalog_at_rate(
             expected_revision: before.document.revision_id().clone(),
             path: fixture("../audio-fixtures/pcm-stereo-48000.wav"),
             stream: None,
+            interpretation: Some(AudioLayoutInterpretation::StereoLeftRight),
             ownership: OriginalOwnership::Managed,
         },
     );

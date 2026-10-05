@@ -115,9 +115,62 @@ low-level opening transient (second-generation AAC); with sound-event blocks at
   export. The fixture uses a WAVE_FORMAT_EXTENSIBLE header with an explicit
   FL/FR mask.
 
+## Section 8 increment (same day)
+
+Seven more fixtures, run with the same command on the same machine after an
+independent review (3 passed in 34.1 s; the earlier nine are unchanged and
+still pass):
+
+| Fixture | Construction | Frames |
+| --- | --- | --- |
+| one-more-time | `:gag one-more-time plays=3 gap=12f shorten=6f` saved and run as macro `m` through headless `macro` (native planner, gap-picture resolver and store admission): Repeat of Edit [12, 24), freeze gaps of 12 then 6 frames holding Original 35 | 72 |
+| repeat-gaps-steps | the recorded `:repeat 3 gap=200ms,120ms gain-step=3dB zoom-step=0.08` (`SetRepeat` with plays, gaps and escalation) on Edit [12, 24) through the same macro path; gaps round once to 6 and 4 frames | 64 |
+| nothing-happens | `:gag nothing-happens register=r tone=12f silence=12f` at Edit 15 through the macro path, register `r` holding the Original moment [28, 31) as a native copy stores it; room tone from `copied_moment_audio`, then silence | 54 |
+| audio-lag | `SetSourceAudioMapping` offset +2,400 samples on the Source under Edit [10, 20) | 30 |
+| bed-drop | the sound-event sound cut at Edit 12 by `SoundEvent::cut_at` (the native `:sound-cut` construction): selected placement [0, 2) frames, Hard end | 30 |
+| mute-range | mute range [25, 35) on the whole, unshortened Original | 120 |
+| off-center | static pose 1.5x centered at (0.35, 0.40) on the base beat | 30 |
+
+Besides picture provenance, these fixtures assert independently derived sound
+on the limited bus before export (`inspect-audio --limited`, 256-sample
+windows, loud above 0.5 peak, quiet below 0.01):
+
+- One More Time and the gap/step Repeat: each play's click sounds 9,562
+  samples after that play's own rounded start (B(12), B(36), B(54) and B(12),
+  B(30), B(46)), and the gaps between plays are silent.
+- Nothing Happens: the moment hears source samples [44,845, 49,649); its
+  4,804-sample loop repeats the click every 4,708 samples from the Hold origin
+  24,024 (27,179, 31,887, 36,595, 41,303), the silence Hold is quiet, and the
+  Original's click moves 24 frames later.
+- Audio lag moves the click exactly 2,400 samples; the bed drop stops at
+  19,219.2 instead of about 24,000; the mute range silences the click at
+  48,000 while the click at 191,992 still sounds.
+
+| Fixture | Pictures | Min Y PSNR dB | Min Cb/Cr PSNR dB | Max thumbnail MAD | Min neighbor margin dB | Audio windows (signal) | Gated blocks | Min block SNR dB | Max block level dB | Offset status | Render s | Verify s | Passed |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| one-more-time | 72 | 62.2 | 58.3 | 0.019 | 0.0 | 2 (2) | 3 | 38.2 | 0.04 | verified_zero ×2 | 1.56 | 0.69 | yes |
+| repeat-gaps-steps | 64 | 53.4 | 58.3 | 0.036 | 0.0 | 2 (2) | 3 | 30.4 | 0.06 | verified_zero ×2 | 1.50 | 0.75 | yes |
+| nothing-happens | 54 | 62.2 | 58.3 | 0.019 | 0.0 | 2 (2) | 5 | 39.7 | 0.02 | verified_zero ×2 | 1.32 | 0.58 | yes |
+| audio-lag | 30 | 62.2 | 57.7 | 0.019 | 37.6 | 1 (1) | 1 | 55.6 | 0.00 | verified_zero | 1.08 | 0.32 | yes |
+| bed-drop | 30 | 62.2 | 57.7 | 0.019 | 37.6 | 1 (1) | 8 | 8.0 | 0.14 | verified_zero | 1.13 | 0.39 | yes |
+| mute-range | 120 | 59.8 | 57.6 | 0.031 | 35.5 | 4 (2) | 3 | 3.2 | 0.52 | verified_zero, not_applicable ×2, verified_zero | 1.48 | 0.86 | yes |
+| off-center | 30 | 54.8 | 60.8 | 0.039 | 33.7 | 1 (1) | 1 | 55.2 | 0.01 | verified_zero | 1.09 | 0.34 | yes |
+
+No preview/export mismatch was found. The mute-range windows around the muted
+click carry no signal and pass the silent-window gate (no decoded sample above
+-50 dBFS); its 3.2 dB minimum block SNR is the whole-Original opening transient
+already measured above. The review also found that a gap change moved later
+plays without retaining their clocks: at 30000/1001 a play moved from frame 8
+to 9 by a second gap edit landed at sample 14,415 instead of B(9) = 14,414.
+`SetRepeatGaps` now reanchors every interior entry after the first play, and
+`ntsc_gap_changes_move_each_play_and_the_suffix_as_identical_samples`
+(deadpan-audio, decoded PCM) checks identical samples per play across three
+successive gap edits and their inverses. The `recipes` native replay drives
+these operations through the production router (75 checks).
+
 ## Not covered
 
 Accepted Generated Holds (no headless accepted fixture exists without the
-development model runtime), room tone, tails, gain envelopes and mutes,
+development model runtime), tails, gain envelopes,
 per-play overrides, native key paths, odd canvases, nonzero export ranges,
 HDR, longer or higher-resolution media, and physical display/listening.

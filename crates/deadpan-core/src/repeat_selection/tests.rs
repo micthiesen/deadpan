@@ -87,9 +87,9 @@ fn wrapped(
 }
 fn request(document: &ProjectDocument, command: Command) -> CommandRequest {
     let new_revision = match &command {
-        Command::RepeatSelection { timing, .. } | Command::SetRepeatPlays { timing, .. } => {
-            timing.allocation.clone()
-        }
+        Command::RepeatSelection { timing, .. }
+        | Command::SetRepeatPlays { timing, .. }
+        | Command::SetRepeatGaps { timing, .. } => timing.allocation.clone(),
         _ => revision("setup"),
     };
     CommandRequest {
@@ -718,5 +718,168 @@ fn invalid_identity_context_counts_and_wire_are_atomic() {
     let mut wire = serde_json::to_value(wrapped(&document, "root", child("a"), 2)).unwrap();
     wire["identities"]["unknown"] = serde_json::json!(true);
     assert!(serde_json::from_value::<Command>(wire).is_err());
+    assert_eq!(document, original);
+}
+
+fn silence(duration: i64) -> HoldRecipe {
+    HoldRecipe {
+        duration: frames(duration),
+        picture_context: None,
+        video: HoldVideo::Background,
+        audio: HoldAudio::Silence,
+    }
+}
+
+fn gaps(
+    document: &ProjectDocument,
+    gap: Option<i64>,
+    branches: &[(u32, &str, i64)],
+    allocation: &str,
+) -> Command {
+    let iterations = repeat(document).1;
+    Command::SetRepeatGaps {
+        node: node("wrapped"),
+        gap: gap.map(silence),
+        branches: branches
+            .iter()
+            .map(|(position, id, duration)| RepeatGapHold {
+                after: iterations.at(*position).unwrap(),
+                id: node(id),
+                hold: silence(*duration),
+            })
+            .collect(),
+        timing: AudioTimingId {
+            allocation: revision(allocation),
+            ordinal: 0,
+        },
+    }
+}
+
+#[test]
+fn gap_setter_shortens_later_gaps_with_independent_holds_and_moves_the_suffix_once() {
+    let document = with_sound(tree(
+        &["wrapped", "suffix"],
+        vec![
+            ("wrapped", repeated("a", 3, None)),
+            ("a", hold(10)),
+            ("suffix", hold(40)),
+        ],
+    ));
+    let sound = SoundId::new("effect").unwrap();
+    let before = repeat(&document).1.clone();
+    // Three plays, then 6 frames after the first and 3 after the second.
+    let after = edit(
+        &document,
+        gaps(&document, Some(6), &[(1, "gap-2", 3)], "gaps"),
+    );
+    assert_eq!(after.durations().unwrap()[&node("wrapped")], frames(39));
+    assert_eq!(repeat(&after).1, &before, "stable plays survive");
+    assert!(matches!(
+        &after.nodes()[&node("wrapped")].kind,
+        NodeKind::Repeat { gap: Some(gap), .. } if gap == &silence(6)
+    ));
+    assert_eq!(
+        after.gap_overrides()[&node("wrapped")].get(&before.at(1).unwrap()),
+        Some(&node("gap-2"))
+    );
+    assert_eq!(after.nodes()[&node("gap-2")].label, "Gap");
+    assert_eq!(
+        after.sound_routes()[&sound].edits[0].operation,
+        RootSoundOperation::Insert {
+            at: ProjectFrame(30),
+            duration: frames(9)
+        }
+    );
+    assert!(
+        !after.audio_bindings().bindings()[&node("suffix")]
+            .reanchors
+            .is_empty(),
+        "the suffix keeps its pre-edit sampling clock"
+    );
+    // The request is the complete gap set: a default alone retires the
+    // ladder's branch, so the old gap after play 2 shows the default again.
+    let reset = edit(&after, gaps(&after, Some(5), &[], "reset"));
+    assert_eq!(reset.durations().unwrap()[&node("wrapped")], frames(40));
+    assert!(!reset.nodes().contains_key(&node("gap-2")));
+    assert!(reset.gap_overrides().get(&node("wrapped")).is_none());
+    // No gap at all removes the default and every branch.
+    let ladder = edit(&reset, gaps(&reset, Some(2), &[(1, "gap-3", 1)], "ladder"));
+    assert_eq!(ladder.durations().unwrap()[&node("wrapped")], frames(33));
+    let removed = edit(&ladder, gaps(&ladder, None, &[], "no-gaps"));
+    assert_eq!(removed.durations().unwrap()[&node("wrapped")], frames(30));
+    assert!(!removed.nodes().contains_key(&node("gap-3")));
+    // Restating the current set changes nothing beyond the revision.
+    let iterations = repeat(&ladder).1.clone();
+    assert!(ladder.repeat_gaps_unchanged(
+        &node("wrapped"),
+        Some(&silence(2)),
+        &[(iterations.at(1).unwrap(), silence(1))]
+    ));
+    assert!(!ladder.repeat_gaps_unchanged(&node("wrapped"), Some(&silence(2)), &[]));
+    let same = edit(&ladder, gaps(&ladder, Some(2), &[(1, "gap-4", 1)], "same"));
+    let mut expected = ladder.clone();
+    expected.revision_id = revision("same");
+    assert_eq!(same, expected);
+}
+
+#[test]
+fn gap_setter_retires_only_replaced_default_gap_permissions_and_refuses_invalid_targets() {
+    let mut document = with_sound(tree(
+        &["wrapped", "suffix"],
+        vec![
+            ("wrapped", repeated("a", 3, Some(silence(2)))),
+            ("a", hold(10)),
+            ("suffix", hold(40)),
+        ],
+    ));
+    let sound = SoundId::new("effect").unwrap();
+    let iterations = repeat(&document).1.clone();
+    let gap_after = |position| SoundHoldIssuer::RepeatGap {
+        instance: InstancePath {
+            node: node("wrapped"),
+            repeats: vec![],
+        },
+        gap_after: iterations.at(position).unwrap(),
+    };
+    document.sound_allowances.insert(
+        sound.clone(),
+        SoundHoldAllowances::try_from(vec![gap_after(0), gap_after(1)]).unwrap(),
+    );
+    document.validate().unwrap();
+    let after = edit(
+        &document,
+        gaps(&document, Some(4), &[(1, "short", 1)], "gaps"),
+    );
+    assert_eq!(
+        after.sound_allowances()[&sound],
+        SoundHoldAllowances::try_from(vec![gap_after(0)]).unwrap()
+    );
+    let original = document.clone();
+    for (command, code) in [
+        (
+            gaps(&document, Some(4), &[(2, "last", 1)], "last"),
+            EditErrorCode::SelectionUnavailable,
+        ),
+        (
+            gaps(&document, Some(4), &[(0, "x", 1), (0, "y", 1)], "twice"),
+            EditErrorCode::InvalidCommand,
+        ),
+        (
+            gaps(&document, Some(4), &[(0, "a", 1)], "reused"),
+            EditErrorCode::IdentityConflict,
+        ),
+        (
+            gaps(&document, Some(4), &[(0, "zero", 0)], "zero"),
+            EditErrorCode::InvalidCommand,
+        ),
+    ] {
+        let Err(error) = std::panic::catch_unwind(|| {
+            crate::apply(&document, &request(&document, command.clone()))
+        })
+        .unwrap_or_else(|_| panic!("{command:?} panicked")) else {
+            panic!("{command:?} was admitted")
+        };
+        assert_eq!(error.code, code, "{command:?}");
+    }
     assert_eq!(document, original);
 }

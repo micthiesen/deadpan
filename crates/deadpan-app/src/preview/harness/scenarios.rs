@@ -21,6 +21,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "shots" => super::shots::run(d),
         "cutaway" => super::cutaway::run(d),
         "gags" => super::gags::run(d),
+        "recipes" => super::recipes::run(d),
         "zoom" => super::zoom::run(d),
         "original-layout" | "original-layout-long" => super::original_layout::run(d),
         "place-slice" => super::splice::run(d),
@@ -490,22 +491,58 @@ fn escalation(d: &mut Driver<'_>, original: u64) -> Result<(), String> {
     )?;
     d.capture("Escalated Repeat")?;
     let escalated = d.revision();
-    d.command("repeat 4 gain-step=3dB")?;
-    d.wait_for("Mismatched count refused", |app| {
-        app.project_error
-            .as_deref()
-            .is_some_and(|error| error.contains("has 3 plays"))
-    })?;
+    // Count, gap and steps change together as one recorded instruction.
+    d.command("repeat 4 gap=6f gain-step=3dB")?;
+    d.changed(&escalated)?;
+    d.settled()?;
+    let workspace = d.app().workspace.clone().ok_or("No project")?;
+    let changed = match &workspace.document.nodes()[&repeat].kind {
+        NodeKind::Repeat {
+            iterations,
+            gap: Some(gap),
+            escalation: Some(escalation),
+            ..
+        } => {
+            iterations.len() == 4
+                && gap.duration.frames() == 6
+                && escalation.gain_step.millidecibels() == 3000
+        }
+        _ => false,
+    };
     d.check(
-        "A mismatched count refuses with guidance and no edit",
-        d.revision() == escalated
-            && d.app()
-                .project_error
-                .as_deref()
-                .is_some_and(|error| error.contains("has 3 plays")),
-        json!({"revision":escalated,"error":"has 3 plays"}),
-        json!({"revision":d.revision(),"error":d.app().project_error}),
+        "A Repeat change sets count, gap and steps together",
+        changed && d.app().sequence_length() == original * 4 + 3 * 6,
+        json!({"plays":4,"gap_frames":6,"frames":original * 4 + 18}),
+        json!({"frames":d.app().sequence_length(),"message":d.app().message,"error":d.app().project_error}),
     )?;
+    d.capture("Repeat with gaps")?;
+    let gapped = d.revision();
+    d.key(Key::U)?;
+    d.changed(&gapped)?;
+    let restored = match &d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("No project")?
+        .document
+        .nodes()[&repeat]
+        .kind
+    {
+        NodeKind::Repeat {
+            iterations,
+            gap,
+            escalation,
+            ..
+        } => iterations.len() == 3 && gap.is_none() && escalation.is_some(),
+        _ => false,
+    };
+    d.check(
+        "One undo restores the three-play escalated Repeat",
+        restored && d.app().sequence_length() == original * 3,
+        json!({"plays":3,"gap":null}),
+        json!({"frames":d.app().sequence_length()}),
+    )?;
+    let escalated = d.revision();
     d.key(Key::U)?;
     d.changed(&escalated)?;
     let restored = match &d
@@ -568,7 +605,7 @@ fn editing(d: &mut Driver<'_>) -> Result<(), String> {
         json!(original * 3),
         json!(d.app().sequence_length()),
     )?;
-    d.click("Plays or escalation…  Enter")?;
+    d.click("Plays, gaps or escalation…  Enter")?;
     let before = d.revision();
     replace_text(d, "repeat 2")?;
     d.changed(&before)?;
@@ -1442,6 +1479,124 @@ fn visible_help_markers(d: &Driver<'_>) -> Vec<(String, [f32; 4])> {
             )
         })
         .collect()
+}
+
+/// Choose the explicit speaker interpretation for unlabelled sound channels
+/// through the real "Sound import options" disclosure and its combo box,
+/// with pointer input only. Plain WAV fixtures declare no layout, so every
+/// sound registration replay states its choice before Add sound.
+pub(super) fn choose_sound_interpretation(
+    d: &mut Driver<'_>,
+    choice: Option<crate::project::AudioLayoutInterpretation>,
+) -> Result<(), String> {
+    let text = |choice: Option<crate::project::AudioLayoutInterpretation>| match choice {
+        None => "Not chosen".to_owned(),
+        Some(choice) => format!("{}, {} ch", choice.label(), choice.channels()),
+    };
+    let combo = |d: &Driver<'_>, value: &str| {
+        let matches = d
+            .harness
+            .root()
+            .children_recursive()
+            .filter(|node| {
+                let access = node.accesskit_node();
+                access.role() == egui::accesskit::Role::ComboBox
+                    && access.value().as_deref() == Some(value)
+                    && !access.is_disabled()
+                    && node.rect().is_positive()
+            })
+            .map(|node| node.rect())
+            .collect::<Vec<_>>();
+        // Retained accessibility geometry alone proves no paint: require the
+        // selected text itself to be painted unclipped and uncovered.
+        let paint = text_paint_visibility(d, value);
+        match matches.as_slice() {
+            [rect]
+                if !paint.is_empty() && paint.iter().all(|item| item["fully_visible"] == true) =>
+            {
+                Some(*rect)
+            }
+            _ => None,
+        }
+    };
+    let current = text(d.app().sound_interpretation);
+    let opened = combo(d, &current).is_none() && d.rect("Unlabelled channels").is_err();
+    if opened {
+        d.click("Sound import options")?;
+        d.settled()?;
+    }
+    // The expanded disclosure can extend below a short rail; wheel it into view.
+    for attempt in 0..6 {
+        if combo(d, &current).is_some() {
+            break;
+        }
+        let heading = d.rect("Original and sounds pane")?;
+        let point = egui::pos2(heading.center().x, d.harness.ctx.content_rect().center().y);
+        d.events(
+            &format!("Wheel the rail to the sound interpretation choice, attempt {attempt}"),
+            vec![
+                egui::Event::PointerMoved(point),
+                egui::Event::MouseWheel {
+                    unit: egui::MouseWheelUnit::Point,
+                    delta: egui::vec2(0.0, -80.0),
+                    phase: egui::TouchPhase::Move,
+                    modifiers: egui::Modifiers::NONE,
+                },
+            ],
+        )?;
+        for _ in 0..8 {
+            d.step("Rail scroll settles", false)?;
+        }
+    }
+    let rect = combo(d, &current).ok_or("The unlabelled-channel choice is not visible")?;
+    d.click_at("Unlabelled channels choice", rect.center())?;
+    // The popup's first sizing pass exposes provisional disabled controls;
+    // click only the option's enabled, painted geometry.
+    let option = text(choice);
+    let mut target = None;
+    for attempt in 0..=4 {
+        let candidates = d
+            .harness
+            .root()
+            .children_recursive()
+            .filter(|node| {
+                let access = node.accesskit_node();
+                (access.label().as_deref() == Some(option.as_str())
+                    || access.value().as_deref() == Some(option.as_str()))
+                    && access.role() != egui::accesskit::Role::ComboBox
+                    && !access.is_disabled()
+                    && !access.is_hidden()
+                    && node.rect().is_positive()
+            })
+            .map(|node| node.rect())
+            .collect::<Vec<_>>();
+        let painted = text_paint_visibility(d, &option)
+            .iter()
+            .any(|item| item["fully_visible"] == true);
+        if let [rect] = candidates.as_slice()
+            && painted
+        {
+            target = Some(*rect);
+            break;
+        }
+        if attempt < 4 {
+            d.step("Settle the unlabelled-channel popup", false)?;
+        }
+    }
+    let target = target.ok_or_else(|| format!("Popup option {option:?} was not painted"))?;
+    d.click_at(&option, target.center())?;
+    d.settled()?;
+    // Leave the rail as it was so later layout checks see their usual state.
+    if opened {
+        d.click("Sound import options")?;
+        d.settled()?;
+    }
+    d.check(
+        "The sound interpretation is chosen explicitly through the import options",
+        d.app().sound_interpretation == choice,
+        json!({"interpretation": choice.map(|choice| choice.wire_name())}),
+        json!({"interpretation": d.app().sound_interpretation.map(|choice| choice.wire_name())}),
+    )
 }
 
 #[cfg(test)]

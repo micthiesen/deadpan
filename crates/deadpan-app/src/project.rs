@@ -11,6 +11,7 @@ use deadpan_core::{
     ProjectDocument, ProjectFrame, ProjectId, RevisionId, SoundId, SourceAudio, SourceFrameIndex,
     SourceQualificationId,
 };
+pub use deadpan_media::audio_index::AudioLayoutInterpretation;
 use deadpan_plan::RenderPlan;
 use deadpan_store::original_media::{OriginalImportHandle, OriginalMediaRecord, OriginalOwnership};
 use deadpan_store::single_source::SingleSourceState;
@@ -194,11 +195,36 @@ impl Workspace {
     }
 }
 
+/// `interpretation` is the person's explicit speaker reading of a sound
+/// whose channels declare no layout; such a sound is refused without it.
 #[derive(Clone, Copy, Debug)]
 pub enum ImportMedia {
     Video,
-    FirstAudio,
-    Audio { stream: u32 },
+    FirstAudio {
+        interpretation: Option<AudioLayoutInterpretation>,
+    },
+    Audio {
+        stream: u32,
+        interpretation: Option<AudioLayoutInterpretation>,
+    },
+}
+
+impl ImportMedia {
+    pub fn sound(stream: Option<u32>, interpretation: Option<AudioLayoutInterpretation>) -> Self {
+        stream.map_or(Self::FirstAudio { interpretation }, |stream| Self::Audio {
+            stream,
+            interpretation,
+        })
+    }
+
+    pub fn interpretation(self) -> Option<AudioLayoutInterpretation> {
+        match self {
+            Self::Video => None,
+            Self::FirstAudio { interpretation } | Self::Audio { interpretation, .. } => {
+                interpretation
+            }
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -453,6 +479,11 @@ pub enum ProjectSoundEdit {
         at: ProjectFrame,
         allowed: bool,
     },
+    /// End the sound at this Edit frame boundary with a hard edge.
+    Cut {
+        id: SoundId,
+        at: ProjectFrame,
+    },
     Delete {
         id: SoundId,
     },
@@ -505,11 +536,6 @@ pub enum ProjectEdit {
         host: NodeId,
         cutaways: Vec<deadpan_core::Cutaway>,
     },
-    /// Set a selected Repeat's per-play escalation without changing timing.
-    Escalate {
-        node: NodeId,
-        input: crate::navigation::escalation::EscalationInput,
-    },
     Delete {
         node: NodeId,
     },
@@ -517,6 +543,11 @@ pub enum ProjectEdit {
     DeleteRange {
         parent: NodeId,
         range: deadpan_core::FrameRange,
+    },
+    /// Set the signed sound offset of the Source under this beat.
+    AudioLag {
+        node: NodeId,
+        offset: deadpan_core::AudioSample,
     },
     HoldDuration {
         node: NodeId,
@@ -591,6 +622,8 @@ pub enum ProjectRequest {
         expected_revision: RevisionId,
         path: PathBuf,
         stream: Option<u32>,
+        /// Explicit speaker reading for channels without a declared layout.
+        interpretation: Option<AudioLayoutInterpretation>,
         ownership: OriginalOwnership,
     },
     /// Retained for generic host fixtures and compatibility; native New uses

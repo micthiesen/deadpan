@@ -22,6 +22,9 @@ Matroska, fragmented/encrypted/compressed container structures and unqualified
 metadata grammars are rejected before FFmpeg parsing. Other codecs, custom/ambisonic layouts, unsupported
 sample formats, corrupt frames and changed stream contracts fail explicitly.
 Unspecified channel slots remain unspecified; they are not assigned speakers.
+A sound registered from such a file carries the person's explicit speaker
+interpretation in its receipt instead; see
+[source registration](SOURCE_REGISTRATION.md#explicit-speaker-interpretation).
 
 Declared packet sizes and table counts are checked before FFmpeg can allocate
 from them. The guard uses positional reads with aggregate header, atom, depth,

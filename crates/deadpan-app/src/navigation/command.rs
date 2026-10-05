@@ -230,6 +230,14 @@ pub fn parse(input: &str) -> Result<Entry, String> {
                 char::from(name.as_bytes()[0]).to_ascii_lowercase(),
             )));
         }
+        "framing-save" => {
+            let name = argument
+                .filter(|value| value.len() == 1 && value.as_bytes()[0].is_ascii_alphabetic())
+                .ok_or("Use :framing-save a to keep the selected beat's framing in register a; apply it with @a.")?;
+            return Ok(Entry::Action(Action::SaveFraming(
+                char::from(name.as_bytes()[0]).to_ascii_lowercase(),
+            )));
+        }
         "mark" | "jump" | "unmark" => {
             let letter = argument
                 .filter(|value| value.len() == 1 && value.as_bytes()[0].is_ascii_alphabetic())
@@ -270,7 +278,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         "gain-mute" if argument.is_none() => return Ok(Entry::GainMute),
         "monitor" => return monitor(argument).map(Entry::Monitor),
         "sound-place" | "sounds" | "sound-at" | "sound-gain" | "sound-edges" | "sound-delete"
-        | "sound-allow" | "sound-silence" => {
+        | "sound-allow" | "sound-silence" | "sound-cut" => {
             return super::sound::parse(&verb, argument)
                 .map(|sound| Entry::Action(Action::Sound(sound)));
         }
@@ -307,6 +315,11 @@ pub fn parse(input: &str) -> Result<Entry, String> {
             return Ok(Entry::Action(Action::Edit(BeatEdit::HoldDuration(
                 duration,
             ))));
+        }
+        "audio-lag" => {
+            return audio_lag(argument).map(|(earlier, amount)| {
+                Entry::Action(Action::Edit(BeatEdit::AudioLag { earlier, amount }))
+            });
         }
         "insert" => Action::Insert,
         "play" => Action::Playback,
@@ -355,6 +368,23 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         return Err("This command takes no arguments.".into());
     }
     Ok(Entry::Action(action))
+}
+
+const AUDIO_LAG_USAGE: &str = "Use :audio-lag +80ms (sound later), :audio-lag -2f (sound earlier) or :audio-lag 0 to realign the selected beat's sound with its picture.";
+
+/// `:audio-lag [+|-]DURATION` or `0`: the signed sound offset of a Source.
+fn audio_lag(argument: Option<&str>) -> Result<(bool, Option<DurationInput>), String> {
+    let value = argument.ok_or(AUDIO_LAG_USAGE)?;
+    if value == "0" {
+        return Ok((false, None));
+    }
+    let (earlier, magnitude) = match value.strip_prefix('-') {
+        Some(rest) => (true, rest),
+        None => (false, value.strip_prefix('+').unwrap_or(value)),
+    };
+    let amount =
+        DurationInput::parse(magnitude).map_err(|error| format!("{error} {AUDIO_LAG_USAGE}"))?;
+    Ok((earlier, Some(amount)))
 }
 
 fn audition_context<'a>(arguments: impl Iterator<Item = &'a str>) -> Result<Entry, String> {
@@ -777,7 +807,7 @@ mod tests {
             "repeat +2",
             "repeat 2.5",
             "repeat 4294967296",
-            "repeat 3 gap=120ms",
+            "repeat 3 gap=120",
             "repeat 3 volume=2",
             "wrap-repeat 2 gain-step=3dB",
             "delete 2",
@@ -788,6 +818,55 @@ mod tests {
             "help extra",
             "source extra",
             "::delete",
+        ] {
+            assert!(parse(input).is_err(), "{input}");
+        }
+    }
+
+    #[test]
+    fn framing_presets_save_to_one_named_register() {
+        assert_eq!(
+            parse(":framing-save S"),
+            Ok(Entry::Action(Action::SaveFraming('s')))
+        );
+        for input in [
+            "framing-save",
+            "framing-save ab",
+            "framing-save \"",
+            "framing-save 1",
+        ] {
+            assert!(parse(input).is_err(), "{input}");
+        }
+    }
+
+    #[test]
+    fn audio_lag_takes_one_signed_duration_or_zero() {
+        assert_eq!(
+            parse(":audio-lag +80ms"),
+            Ok(Entry::Action(Action::Edit(BeatEdit::AudioLag {
+                earlier: false,
+                amount: Some(DurationInput::parse("80ms").unwrap())
+            })))
+        );
+        assert_eq!(
+            parse("audio-lag -2f"),
+            Ok(Entry::Action(Action::Edit(BeatEdit::AudioLag {
+                earlier: true,
+                amount: Some(DurationInput::parse("2f").unwrap())
+            })))
+        );
+        assert_eq!(
+            parse("audio-lag 0"),
+            Ok(Entry::Action(Action::Edit(BeatEdit::AudioLag {
+                earlier: false,
+                amount: None
+            })))
+        );
+        for input in [
+            "audio-lag",
+            "audio-lag 80",
+            "audio-lag +-2f",
+            "audio-lag 2f 3f",
         ] {
             assert!(parse(input).is_err(), "{input}");
         }

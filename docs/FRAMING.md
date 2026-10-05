@@ -250,6 +250,17 @@ refusal to flatten a path, `:zoom off`, a ranged punch-in at exact frames,
 refusal of `,c` on a path, black punctuation, a recorded `:zoom` replayed after
 Undo, and the two-target refusal of `,z` followed by a quoted-label `:zoom`.
 
+## Framing presets
+
+`:framing-save a` keeps the selected beat's framing (an off-center stare from
+Camera, a zoom, a creep or a follow) as a one-instruction macro
+`SetFraming { framing }` in register `a`. Select another beat and press `@a` or
+`:macro a` to apply it as one Undo; it replaces that beat's framing exactly as a
+recorded `,z` or `,c` does. Envelopes are in owner progress, so a creep preset
+spans the whole new beat; a follow preset needs its target. Presets live in the
+persisted register bank and list in `:registers` as macros; there is no
+separate named preset store yet.
+
 ## Storage and remaining work
 
 Database 24 introduced core 18. Frozen core 17 rejects the new framing vocabulary even

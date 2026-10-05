@@ -227,6 +227,11 @@ pub struct DeadpanApp {
     linked_import: bool,
     audio_import: bool,
     sound_stream: Option<u32>,
+    /// Explicit speaker reading for sounds whose channels declare no layout.
+    /// None refuses such a sound with guidance; it is never guessed.
+    sound_interpretation: Option<crate::project::AudioLayoutInterpretation>,
+    /// The import error last scrolled into view in the rail.
+    revealed_import_error: Option<String>,
     last_committed: Option<deadpan_core::RevisionId>,
     semantic: semantic::Mirror,
     beat_rows: Arc<Vec<BeatRow>>,
@@ -391,6 +396,8 @@ impl DeadpanApp {
             linked_import: false,
             audio_import: false,
             sound_stream: None,
+            sound_interpretation: None,
+            revealed_import_error: None,
             last_committed: None,
             semantic: semantic::Mirror::default(),
             beat_rows: Arc::new(Vec::new()),
@@ -1129,9 +1136,7 @@ impl DeadpanApp {
                         .as_ref()
                         .map(|w| w.document.revision_id().clone()),
                     media: if kind == DialogKind::ImportSound || self.audio_import {
-                        self.sound_stream.map_or(ImportMedia::FirstAudio, |stream| {
-                            ImportMedia::Audio { stream }
-                        })
+                        ImportMedia::sound(self.sound_stream, self.sound_interpretation)
                     } else {
                         ImportMedia::Video
                     },
@@ -1216,10 +1221,10 @@ impl DeadpanApp {
                         expected_revision,
                         path,
                         stream: match intent.media {
-                            ImportMedia::Audio { stream } => Some(stream),
-                            ImportMedia::FirstAudio => None,
-                            ImportMedia::Video => None,
+                            ImportMedia::Audio { stream, .. } => Some(stream),
+                            ImportMedia::FirstAudio { .. } | ImportMedia::Video => None,
                         },
+                        interpretation: intent.media.interpretation(),
                         ownership: if intent.linked {
                             OriginalOwnership::Linked { bookmark: None }
                         } else {
@@ -1339,6 +1344,10 @@ impl DeadpanApp {
             self.repeat_command(Some(target), plays, matches!(edit, BeatEdit::Repeat(_)));
             return;
         }
+        if let BeatEdit::Escalate(input) = edit {
+            self.repeat_change(input);
+            return;
+        }
         if let BeatEdit::InsertHold(input) | BeatEdit::InsertBlack(input) = edit {
             let black = matches!(edit, BeatEdit::InsertBlack(_));
             let Some(workspace) = &self.workspace else {
@@ -1414,7 +1423,7 @@ impl DeadpanApp {
                 ProjectEdit::Split { node, at }
             }
             BeatEdit::Repeat(plays) => ProjectEdit::Repeat { node, plays },
-            BeatEdit::Escalate(input) => ProjectEdit::Escalate { node, input },
+            BeatEdit::Escalate(_) => unreachable!("Repeat changes handled above"),
             BeatEdit::Cutaway(input) => match self.cutaway_edit(&node, input) {
                 Ok(edit) => edit,
                 Err(error) => {
@@ -1425,6 +1434,20 @@ impl DeadpanApp {
             BeatEdit::WrapRepeat(_) => unreachable!("Repeat continuation handled above"),
             BeatEdit::Delete => unreachable!("deletion captured above"),
             BeatEdit::HoldDuration(duration) => ProjectEdit::HoldDuration { node, duration },
+            BeatEdit::AudioLag { earlier, amount } => {
+                let rate = workspace.document.presentation_basis().frame_rate;
+                let samples = match amount.map(|amount| amount.samples(rate)).transpose() {
+                    Ok(samples) => samples.map_or(0, |samples| samples.0),
+                    Err(error) => {
+                        self.error = Some(error);
+                        return;
+                    }
+                };
+                ProjectEdit::AudioLag {
+                    node,
+                    offset: deadpan_core::AudioSample(if earlier { -samples } else { samples }),
+                }
+            }
             BeatEdit::Retime(input) => ProjectEdit::Retime {
                 node,
                 speed: input.speed,
@@ -1823,6 +1846,9 @@ impl DeadpanApp {
             Action::Marks => self.open_marks(context),
             Action::Sound(action) => self.sound_action(action, context),
             Action::GainStep(delta) => self.gain_step(delta, context),
+            Action::Mute => self.mute_key(),
+            Action::CutawayPicker => self.pick_cutaway(context),
+            Action::SaveFraming(name) => self.save_framing_preset(name),
             Action::Framing(action) => self.framing_action(action, context),
             Action::New => self.begin_dialog(DialogKind::CreateProject, context, false),
             Action::NewFromUrl => self.open_youtube(context),
@@ -3210,6 +3236,7 @@ impl DeadpanApp {
                     }
                 }
                 if let Some(hint) = self.delete_hint() { ui.colored_label(style::LAVENDER, hint); }
+                if let Some(hint) = self.cutaway_hint() { ui.colored_label(style::LAVENDER, hint); }
                 if let Some(hint) = self.frame_delete_hint() { ui.colored_label(style::LAVENDER, hint); }
             } else {
                 ui.horizontal_wrapped(|ui| {
@@ -3254,17 +3281,20 @@ impl DeadpanApp {
                         hints.push((":scope".into(), "all / play N".into()));
                         self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
                     } else if self.view == View::Sequence {
-                        // Priority order: the footer keeps as many as fit.
+                        // Tiers decide what survives the two rows (see
+                        // key_labels::Tier); this order is the painted order.
                         let selection = self.edit_selection();
                         self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " ", "frame");
                         self.add_editor_pair_hint(&mut hints, EditorKey::BeatNext, EditorKey::BeatPrevious, " ", "beat");
                         let words = self.workspace.as_ref().is_some_and(|workspace| workspace.transcript.is_some());
                         let pauses = self.workspace.as_ref().is_some_and(|workspace| workspace.speech_activity.is_some());
+                        hints.tier(key_labels::Tier::Context);
                         if words { self.add_editor_pair_hint(&mut hints, EditorKey::WordNext, EditorKey::WordPrevious, " ", "word"); }
                         if pauses { self.add_editor_pair_hint(&mut hints, EditorKey::PauseNext, EditorKey::PausePrevious, " ", "pauses"); }
                         let shots = self.workspace.as_ref().is_some_and(|workspace| workspace.shot_analysis.is_some());
                         if shots { self.add_editor_pair_hint(&mut hints, EditorKey::ShotNext, EditorKey::ShotPrevious, " ", "shots"); }
                         if self.ai_hold().is_some() { self.add_editor_hint(&mut hints, EditorKey::GenerateAi, "AI pictures"); }
+                        hints.tier(key_labels::Tier::Core);
                         self.add_editor_hint(&mut hints, EditorKey::Visual, if selection == navigation::EditSelection::Object { if self.edit_range.active { "retain object" } else { "select time" } } else if self.edit_range.active { "finish range" } else { "select range" });
                         self.add_editor_hint(&mut hints, EditorKey::Repeat, if selection == navigation::EditSelection::None { "repeat beat" } else if selection == navigation::EditSelection::Object { "repeat object" } else { "repeat range" });
                         match selection {
@@ -3273,12 +3303,17 @@ impl DeadpanApp {
                             navigation::EditSelection::Empty => self.add_editor_hint(&mut hints, EditorKey::CutRange, "empty range"),
                             navigation::EditSelection::None => self.add_editor_hint(&mut hints, EditorKey::CutBeat, "cut beat"),
                         };
+                        // Without a selection the cursor's frame is a cut target too.
+                        if selection == navigation::EditSelection::None && self.pane != Pane::Sources {
+                            self.add_editor_hint(&mut hints, EditorKey::CutFrames, "cut frame");
+                        }
                         self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
                         // Parameter entry: :hold, :repeat, :retime and the rest.
                         self.add_editor_hint(&mut hints, EditorKey::Command, "command");
                         if self.pane != Pane::Sources && let Some(label) = self.repeat_hint() { self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label); }
                         self.add_editor_hint(&mut hints, EditorKey::Copy, if self.copied.is_pending() { "copy pending…" } else if selection == navigation::EditSelection::None { "copy beat" } else if selection == navigation::EditSelection::Object { "copy object" } else { "copy range" });
                         if self.copied.selected_content().is_some() { self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", if selection == navigation::EditSelection::Object { "replace object" } else if self.selected_edit_range().is_some() { "replace range" } else { "paste after / before" }); }
+                        hints.tier(key_labels::Tier::Context);
                         if self.selected_group() { self.add_editor_hint(&mut hints, EditorKey::EnterGroup, "open group"); }
                         if !self.sequence_scope.groups().is_empty() { self.add_editor_hint(&mut hints, EditorKey::LeaveGroup, "parent"); }
                         if selection != navigation::EditSelection::None {
@@ -3291,6 +3326,7 @@ impl DeadpanApp {
                             self.add_editor_hint(&mut hints, EditorKey::InnerGroup, "group contents");
                             self.add_editor_hint(&mut hints, EditorKey::AroundGroup, "whole group");
                         }
+                        hints.tier(key_labels::Tier::More);
                         self.add_editor_hint(&mut hints, EditorKey::Split, "split");
                         self.add_editor_hint(&mut hints, EditorKey::Hold, "pause");
                         self.add_editor_hint(&mut hints, EditorKey::Camera, "camera");
@@ -3299,15 +3335,16 @@ impl DeadpanApp {
                         self.add_editor_hint(&mut hints, EditorKey::RegisterSelect, "register");
                         self.add_editor_hint(&mut hints, EditorKey::Group, "name group");
                         if selection == navigation::EditSelection::None && self.pane != Pane::Sources {
-                            self.add_editor_hint(&mut hints, EditorKey::CutFrames, "cut frame");
                             self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "+ letter: record macro");
                             self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: run macro");
                         }
                     } else {
                         self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " ", "frame");
+                        hints.tier(key_labels::Tier::Context);
                         if self.workspace.as_ref().is_some_and(|workspace| workspace.transcript.is_some()) { self.add_editor_pair_hint(&mut hints, EditorKey::WordNext, EditorKey::WordPrevious, " ", "word"); }
                         if self.workspace.as_ref().is_some_and(|workspace| workspace.speech_activity.is_some()) { self.add_editor_pair_hint(&mut hints, EditorKey::PauseNext, EditorKey::PausePrevious, " ", "pauses"); }
                         if self.workspace.as_ref().is_some_and(|workspace| workspace.shot_analysis.is_some()) { self.add_editor_pair_hint(&mut hints, EditorKey::ShotNext, EditorKey::ShotPrevious, " ", "shots"); }
+                        hints.tier(key_labels::Tier::Core);
                         if self.focused_workflow() && !self.beat_rows.is_empty() { self.add_editor_pair_hint(&mut hints, EditorKey::BeatNext, EditorKey::BeatPrevious, " ", "edit beat"); }
                         self.add_editor_hint(&mut hints, EditorKey::Visual, if self.moment.active { "finish selection" } else { "select moment" });
                         self.add_editor_hint(&mut hints, EditorKey::Copy, "copy moment");
@@ -3315,7 +3352,9 @@ impl DeadpanApp {
                         hints.push((":sequence".into(), if self.focused_workflow() { "Your edit" } else { "Sequence" }.into()));
                         if self.workspace.is_some() && self.selected_source.is_some() { self.add_editor_hint(&mut hints, EditorKey::Insert, if self.focused_workflow() { "reuse all" } else { "insert source" }); }
                     }
+                    hints.tier(key_labels::Tier::Context);
                     self.add_editor_hint(&mut hints, EditorKey::PaneNext, "pane");
+                    hints.tier(key_labels::Tier::Core);
                     if !hints.iter().any(|(_, description)| description == "command") {
                         self.add_editor_hint(&mut hints, EditorKey::Command, "command");
                     }
@@ -3528,7 +3567,17 @@ impl DeadpanApp {
                                     ui.selectable_value(&mut self.sound_stream, None, "Automatic: first audio");
                                     for stream in 0..=32 { ui.selectable_value(&mut self.sound_stream, Some(stream), format!("Index {stream}")); }
                                 });
+                                ui.label("Unlabelled channels");
+                                let choice = |value: Option<crate::project::AudioLayoutInterpretation>| match value {
+                                    None => "Not chosen".to_owned(),
+                                    Some(choice) => format!("{}, {} ch", choice.label(), choice.channels()),
+                                };
+                                egui::ComboBox::from_id_salt("sound-interpretation").selected_text(choice(self.sound_interpretation)).show_ui(ui, |ui| {
+                                    ui.selectable_value(&mut self.sound_interpretation, None, choice(None));
+                                    for option in crate::project::AudioLayoutInterpretation::ALL { ui.selectable_value(&mut self.sound_interpretation, Some(option), choice(Some(option))); }
+                                });
                                 ui.small("Automatic selects the first actual audio stream. Advanced indices refer to the container, not the audio-track order.");
+                                ui.small("Unlabelled channels: how to hear a file that declares no speaker layout, such as a plain WAV. Not chosen refuses such a file; Deadpan never guesses speakers from the channel count. A declared layout is used as is.");
                                 ui.small("Admitted: PCM16 WAV or qualified MP4 audio.");
                             }
                             ui.checkbox(&mut self.linked_import, "Link to original location");
@@ -3545,7 +3594,19 @@ impl DeadpanApp {
                         ui.label(egui::RichText::new(match import.stage {
                             ImportStage::Retaining => "Retaining original…", ImportStage::Decoding => "Qualifying media…", ImportStage::PreparingInsertion => "Preparing reuse…", ImportStage::Registering => "Saving source…", ImportStage::Complete if completed_sound => "Sound added", ImportStage::Complete => "Source ready", ImportStage::Cancelled => "Import cancelled", ImportStage::Failed => "Import failed",
                         }).size(12.0));
-                        if let Some(error) = &import.error { ui.colored_label(ui.visuals().error_fg_color, error); }
+                        if let Some(error) = &import.error {
+                            let response = ui.colored_label(ui.visuals().error_fg_color, error);
+                            // Reveal a new refusal below the fold until it has
+                            // been fully shown once; a discarded layout pass
+                            // cannot consume the reveal.
+                            if self.revealed_import_error.as_ref() != Some(error) {
+                                if ui.clip_rect().contains_rect(response.rect) {
+                                    self.revealed_import_error = Some(error.clone());
+                                } else {
+                                    response.scroll_to_me(None);
+                                }
+                            }
+                        }
                         if self.importing() && ui.button("Cancel import").clicked() { self.submit(ProjectRequest::CancelImport); }
                     }
                     if matches!(profile, Some(SingleSourceState::Ready { .. })) {
@@ -3691,6 +3752,56 @@ impl DeadpanApp {
             .find(|row| Some(&row.id) == self.selected_beat.as_ref())?;
         let node = workspace.document.nodes().get(&row.id)?;
         let mut description = inspector::Inspector::describe(node, row.start, row.frames);
+        // A split fragment shows its Source's sound offset (`:audio-lag`).
+        if !matches!(node.kind, deadpan_core::NodeKind::Source { .. })
+            && let Some((host, _)) = deadpan_core::cutaway_host(&workspace.document, &row.id)
+            && let Some(deadpan_core::NodeKind::Source { source }) =
+                workspace.document.nodes().get(&host).map(|host| &host.kind)
+            && source.audio_offset.0 != 0
+        {
+            let samples = source.audio_offset.0;
+            description.fields.push((
+                "Sound offset",
+                format!(
+                    "{:.1} ms {}",
+                    samples.unsigned_abs() as f64 / 48.0,
+                    if samples > 0 { "late" } else { "early" }
+                ),
+            ));
+        }
+        // Independent gap Holds replace the default gap after their play.
+        if let deadpan_core::NodeKind::Repeat {
+            iterations, gap, ..
+        } = &node.kind
+            && let Some(branches) = workspace.document.gap_overrides().get(&row.id)
+            && let Some(field) = description
+                .fields
+                .iter_mut()
+                .find(|(label, _)| *label == "Between plays")
+        {
+            let shown = iterations.len().saturating_sub(1).min(8);
+            let gaps: Vec<String> = (0..shown)
+                .filter_map(|position| iterations.at(position))
+                .map(|after| match branches.get(&after) {
+                    Some(branch) => match workspace.document.nodes().get(branch).map(|n| &n.kind) {
+                        Some(deadpan_core::NodeKind::Hold { recipe }) => {
+                            format!("{} f", recipe.duration.frames())
+                        }
+                        _ => "edited".into(),
+                    },
+                    None => gap.as_ref().map_or_else(
+                        || "none".into(),
+                        |gap| format!("{} f", gap.duration.frames()),
+                    ),
+                })
+                .collect();
+            let more = if iterations.len().saturating_sub(1) > shown {
+                " …"
+            } else {
+                ""
+            };
+            field.1 = format!("{}{more}", gaps.join(" · "));
+        }
         // A follow names its target by label, never by its internal id.
         if let Some(deadpan_core::Framing {
             value: deadpan_core::FramingValue::Follow { target, scale, .. },
@@ -3808,8 +3919,13 @@ impl DeadpanApp {
                     self.pane = Pane::Inspector;
                 }
                 ui.separator();
+                // Focus reveals set the offset at once: an animated reveal is
+                // queued for the next frame, where a still-decaying wheel
+                // scroll over the inspector cancels it and leaves the newly
+                // focused control hidden below the fold.
                 egui::ScrollArea::vertical()
                     .id_salt("inspector-details")
+                    .animated(false)
                     .show(ui, |ui| {
                         ui.horizontal(|ui| {
                             egui::Frame::new()
@@ -4341,9 +4457,11 @@ impl DeadpanApp {
                         (format!("{} / {} · Visual or after {}/{}/{}", key(EditorKey::InnerGroup), key(EditorKey::AroundGroup), key(EditorKey::YankOperator), key(EditorKey::CutOperator), key(EditorKey::RepeatOperator)), "Select exact group contents or the whole group. An explicitly selected Sequence wins; otherwise use the containing nonroot group. Visual finish retains the object; moving while extending changes it into a time range. Whole-group edits return to the outer parent. Empty contents can receive a paste; an all-empty child forest still has exact owners. Macros and dot resolve the object in their current context.".to_owned()),
                         (":repeat 3".to_owned(), "Set total plays on the captured Repeat, preserving its gaps and surviving plays; wrap a different selected beat. Clear Visual selection first. Recording keeps the effective wrap or count-change instruction; dot reapplies a count change to the newly selected Repeat.".to_owned()),
                         (":cutaway register=r fit=hold|loop|gap".to_owned(), "Show a copied Original moment over the Edit range (or the whole selected beat) while that beat's sound continues. A short moment holds its last picture, loops or lets the beat show through. The cutaway belongs to the beat and moves, splits and copies with it. :cutaway clear removes cutaways there. One Undo.".to_owned()),
-                        (":gag long-answer · escalator · non-sequitur".to_owned(), "Apply a built-in gag as one Undo: long-answer inserts a silent pause at the cursor and creeps in on it (pause=1.5s creep=1.35); escalator repeats the selected beat louder and closer each play (plays=3 gain-step=3dB zoom-step=0.08); non-sequitur cuts to register=r and straight back. The result is an ordinary group labelled with the recipe, its version and parameters: edit any part, or ungroup to detach it.".to_owned()),
-                        (key(EditorKey::EscalatingRepeat), "Wrap the selected beat or Visual range in three plays, each 3 dB louder and 0.08 closer than the last, as one Undo. Adjust it with :repeat 3 gain-step= zoom-step=.".to_owned()),
-                        (":repeat 3 gain-step=3dB zoom-step=0.08".to_owned(), "Escalate the selected Repeat: each play after the first adds the gain step and grows the centered picture scale by the zoom step (progression=multiply compounds it). The count must match the Repeat's plays; omitted steps keep their values and 0dB or 0 removes one. Timing and gaps are unchanged; one Undo.".to_owned()),
+                        (":gag long-answer · escalator · non-sequitur · one-more-time · nothing-happens".to_owned(), "Apply a built-in gag as one Undo: long-answer inserts a silent pause at the cursor and creeps in on it (pause=1.5s creep=1.35); escalator repeats the selected beat louder and closer each play (plays=3 gain-step=3dB zoom-step=0.08); non-sequitur cuts to register=r and straight back; one-more-time repeats the selected beat with a silent held gap that gets shorter each play (plays=3 gap=500ms shorten=200ms); nothing-happens holds the picture at the cursor with room tone from the Original moment in register=r, then cuts to true silence (tone=1s silence=1s). The result is an ordinary group labelled with the recipe, its version and parameters: edit any part, or ungroup to detach it.".to_owned()),
+                        (key(EditorKey::EscalatingRepeat), "Wrap the selected beat or Visual range in three plays, each 3 dB louder and 0.08 closer than the last, as one Undo. Adjust it with :repeat 3 gap= gain-step= zoom-step=.".to_owned()),
+                        (key(EditorKey::Mute), "Mute the Visual range inside the selected beat as a mute range, or toggle the whole beat's mute without a range (same as :gain-mute). The beat keeps its timing; one Undo.".to_owned()),
+                        (key(EditorKey::CutawayPicker), "Pick a reaction: opens :cutaway register= on a register holding a copied Original moment and lists the others. Enter shows it over the selected beat or Visual range while the beat's sound continues.".to_owned()),
+                        (":repeat 3 gap=120ms gain-step=3dB zoom-step=0.08".to_owned(), "Change the selected Repeat, or wrap a plain beat, in one Undo: the count sets total plays; gap= sets every gap between plays to a silent hold of the play's last picture (gap=0 removes them all; gap-step=-40ms makes each later gap 40 ms shorter as its own pause, up to 64 gaps); each play after the first adds the gain step and grows the centered picture scale by the zoom step (progression=multiply compounds it). Omitted parts keep their values and 0dB or 0 removes a step. Recordable in macros.".to_owned()),
                         (":wrap-repeat 3".to_owned(), "Always add an enclosing Repeat around the captured Visual range or selected beat, including nesting. Command entry captures the target; stale or missing targets refuse.".to_owned()),
                         (":retime 0.75 pitch=preserve".to_owned(), "Slow the selected beat to 0.75× input speed. Use pitch=tape to let pitch follow speed. Exact fractions such as 3/4 work too. The command shows its resolved duration before Enter; Escape cancels entry.".to_owned()),
                         (":wrap-retime 2 pitch=tape".to_owned(), "Always add an enclosing speed stage. :retime instead updates an existing ordinary Retime, preserving its child and input range. Split fragments are wrapped without changing their retained clocks.".to_owned()),
@@ -4355,6 +4473,9 @@ impl DeadpanApp {
                         (format!("Beat {} · :gain -3", key_labels::aliases_pair(&bindings, EditorKey::GainUp, EditorKey::GainDown, "/")), "Change the selected beat by 3 dB per count, or enter exact absolute trim. Existing envelopes stay intact. Placed sounds take precedence when focused; Original and catalog sound focus never change a retained beat.".to_owned()),
                         (":gain · :gain-mute".to_owned(), "Open a reversible gain draft, or toggle true mute. The draft edits exact owner-output envelopes and mute ranges. Before/Draft compares the same full-mix loop at its heard sample. Tab moves through fields and buttons. Enter on the heading applies once; Escape cancels.".to_owned()),
                         (":sound-edges soft / hard".to_owned(), "Set both endpoint fade policies on the selected sound. Gain and edge changes retain its timeline cuts.".to_owned()),
+                        (":framing-save a".to_owned(), "Keep the selected beat's framing (an off-center stare, a zoom or a creep) as a reusable preset in register a. Select another beat and press @a or :macro a to apply it as one Undo; it replaces that beat's framing.".to_owned()),
+                        (":sound-cut".to_owned(), "Bed drop: end the selected placed sound abruptly at the Edit cursor with a hard edge. Its onset, source phase and gain stay; one Undo. Sounds that follow timeline cuts refuse.".to_owned()),
+                        (":audio-lag +80ms / -2f / 0".to_owned(), "Offset the selected beat's sound from its picture: later with +, earlier with -, 0 realigns. The beat keeps its picture and timing; the inspector shows the offset beside the link.".to_owned()),
                         (":sound-allow / :sound-silence".to_owned(), "Allow or silence the selected sound in the identified pause at the retained Edit cursor. Exact occurrence only; never fills a timing gap.".to_owned()),
                         (":room-tone".to_owned(), format!("Select a pause after copying a quiet Original range with {}, {}, {}. The draft shows exact source samples: Space auditions, Shift+Space loops, Tab moves through controls, Enter applies and Escape cancels. Reopening starts from the saved range; Use copied Original range explicitly replaces it.", key(EditorKey::Visual), key_labels::aliases_pair(&bindings, EditorKey::FramePrevious, EditorKey::FrameNext, "/"), key(EditorKey::Copy))),
                         (":hold-silence".to_owned(), "Restore the selected ordinary pause to silence in one undoable edit. Explicit per-sound permissions remain separate. Room-tone changes preserve the pause's picture and duration.".to_owned()),

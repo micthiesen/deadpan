@@ -343,6 +343,115 @@ fn audio_only_capture_keeps_original_clock_without_creating_picture_evidence() {
 }
 
 #[test]
+fn unlabelled_sound_channels_need_an_explicit_retained_interpretation() {
+    use deadpan_media::audio_index::{AudioChannelLayout, AudioLayoutInterpretation as Choice};
+    use deadpan_media::source_qualification::SourceQualificationError;
+    let stereo = audio(
+        input(
+            "deadpan-source/tests/audio-fixtures",
+            "pcm-stereo-48000.wav",
+        ),
+        0,
+    );
+    let mono = audio(
+        input("deadpan-source/tests/audio-fixtures", "pcm-mono-44100.wav"),
+        0,
+    );
+    assert_eq!(
+        stereo.index().stream().channel_layout,
+        AudioChannelLayout::Unspecified { channels: 2 }
+    );
+    // A sound registration refuses silence about speakers and a wrong count.
+    for choice in [None, Some(Choice::Mono)] {
+        let Err(SourceQualificationError::AudioLayoutInterpretation(message)) =
+            DecodedSourceQualification::for_registration(None, Some(&stereo), choice)
+        else {
+            panic!("an unlabelled stereo sound needs its explicit interpretation");
+        };
+        assert!(
+            message.contains("Stereo L/R (stereo_left_right)"),
+            "{message}"
+        );
+        assert!(!message.contains("Mono (mono)"), "{message}");
+    }
+    assert!(matches!(
+        DecodedSourceQualification::for_registration(
+            None,
+            Some(&mono),
+            Some(Choice::StereoLeftRight)
+        ),
+        Err(SourceQualificationError::AudioLayoutInterpretation(_))
+    ));
+    // The chosen reading is retained beside the unchanged measurement and
+    // survives the canonical round trip; it changes the receipt bytes.
+    let plain = DecodedSourceQualification::from_sessions(None, Some(&stereo)).unwrap();
+    let chosen = DecodedSourceQualification::for_registration(
+        None,
+        Some(&stereo),
+        Some(Choice::StereoLeftRight),
+    )
+    .unwrap();
+    let bytes = chosen.snapshot().to_json().unwrap();
+    assert_ne!(bytes, plain.snapshot().to_json().unwrap());
+    assert!(
+        !String::from_utf8_lossy(&plain.snapshot().to_json().unwrap())
+            .contains("audio_interpretation")
+    );
+    let restored = SourceQualificationSnapshot::from_json(&bytes).unwrap();
+    assert_eq!(restored.audio().unwrap(), stereo.index());
+    assert_eq!(
+        restored.audio_interpretation(),
+        Some(Choice::StereoLeftRight)
+    );
+    assert_eq!(
+        restored.audio_layout(),
+        Some(AudioChannelLayout::Native {
+            channels: 2,
+            mask: 3
+        })
+    );
+    assert_eq!(
+        plain.snapshot().audio_layout(),
+        Some(AudioChannelLayout::Unspecified { channels: 2 })
+    );
+    let mono_chosen =
+        DecodedSourceQualification::for_registration(None, Some(&mono), Some(Choice::Mono))
+            .unwrap();
+    assert_eq!(
+        mono_chosen.snapshot().audio_layout(),
+        Some(AudioChannelLayout::Native {
+            channels: 1,
+            mask: 4
+        })
+    );
+    // Persisted bytes cannot attach a reading to the wrong channel count.
+    let mut value: Value = serde_json::from_slice(&bytes).unwrap();
+    value["audio_interpretation"] = json!("mono");
+    assert!(SourceQualificationSnapshot::from_json(&serde_json::to_vec(&value).unwrap()).is_err());
+    value["audio_interpretation"] = Value::Null;
+    assert!(SourceQualificationSnapshot::from_json(&serde_json::to_vec(&value).unwrap()).is_err());
+    value["audio_interpretation"] = json!("surround");
+    assert!(SourceQualificationSnapshot::from_json(&serde_json::to_vec(&value).unwrap()).is_err());
+    // A declared layout is used as is: the choice is not retained there, and
+    // an Original video keeps its existing admission without one.
+    let (video, declared) = av("cfr-bframes.mp4");
+    assert!(matches!(
+        declared.index().stream().channel_layout,
+        AudioChannelLayout::Native { .. }
+    ));
+    let original = DecodedSourceQualification::for_registration(
+        Some(&video),
+        Some(&declared),
+        Some(Choice::StereoLeftRight),
+    )
+    .unwrap();
+    assert_eq!(original.snapshot().audio_interpretation(), None);
+    let mut value: Value = serde_json::from_slice(&original.snapshot().to_json().unwrap()).unwrap();
+    value["audio_interpretation"] = json!("stereo_left_right");
+    assert!(SourceQualificationSnapshot::from_json(&serde_json::to_vec(&value).unwrap()).is_err());
+}
+
+#[test]
 fn sessions_from_different_originals_cannot_make_a_live_qualification() {
     let (video, _) = av("offset-bframes.mp4");
     let (_, audio) = av("cfr-bframes.mp4");

@@ -5,10 +5,46 @@
 use std::sync::Arc;
 
 use deadpan_core::{
-    AssetId, CapturedCanvas, CapturedFit, CapturedFraming, FrameDuration, HoldVideo, PauseProvider,
-    ProjectDocument, ProjectFrame, SourceFrameIndex, SourceTimestamp,
+    AssetId, CapturedCanvas, CapturedFit, CapturedFraming, FrameDuration, HoldVideo, NodeId,
+    PauseProvider, PauseSite, ProjectDocument, ProjectFrame, SourceFrameIndex, SourceTimestamp,
 };
-use deadpan_plan::{Picture, RenderPlan};
+use deadpan_plan::{Picture, PictureSample, RenderPlan};
+
+type IndexLookup<'a> = dyn FnMut(&AssetId) -> Result<Arc<SourceFrameIndex>, String> + 'a;
+
+/// Resolve the picture a pause at `site` holds.
+pub fn site_provider(
+    document: &ProjectDocument,
+    plan: &RenderPlan,
+    site: &PauseSite,
+    index: &mut IndexLookup<'_>,
+) -> Result<PauseProvider, String> {
+    match site {
+        PauseSite::Boundary { at } => pause_provider(document, plan, *at, index),
+        PauseSite::RepeatGap { repeat, frame } => {
+            gap_provider(document, plan, repeat, *frame, index)
+        }
+    }
+}
+
+/// The picture a gap of `repeat` holds: its play's picture at `frame`, with
+/// the composition below the Repeat captured. The Repeat's own framing and
+/// escalation, and everything above it, stay live on the gap.
+pub fn gap_provider(
+    document: &ProjectDocument,
+    plan: &RenderPlan,
+    repeat: &NodeId,
+    frame: ProjectFrame,
+    index: &mut IndexLookup<'_>,
+) -> Result<PauseProvider, String> {
+    let sample = plan.picture(frame).map_err(|error| error.to_string())?;
+    let scope = sample
+        .framing
+        .iter()
+        .position(|scope| &scope.instance.node == repeat)
+        .ok_or("The play's picture is not inside the selected Repeat.")?;
+    freeze(document, &sample, scope, index)
+}
 
 /// Resolve the provider for a pause at `at` in `document`, compiled as `plan`.
 /// `index` supplies the measured picture index of a shown asset.
@@ -16,7 +52,7 @@ pub fn pause_provider(
     document: &ProjectDocument,
     plan: &RenderPlan,
     at: ProjectFrame,
-    index: &mut dyn FnMut(&AssetId) -> Result<Arc<SourceFrameIndex>, String>,
+    index: &mut IndexLookup<'_>,
 ) -> Result<PauseProvider, String> {
     if plan.duration() == FrameDuration::ZERO {
         return Ok(PauseProvider {
@@ -31,13 +67,8 @@ pub fn pause_provider(
     let sample = plan
         .picture(ProjectFrame(if at.0 == 0 { 0 } else { at.0 - 1 }))
         .map_err(|error| error.to_string())?;
-    let picture = &sample.picture;
-    match picture {
-        Picture::Source { asset, .. } | Picture::Freeze { asset, .. } => {
-            let index = index(asset)?;
-            let selected = picture
-                .select_source_frame(&index)
-                .map_err(|error| error.to_string())?;
+    match &sample.picture {
+        Picture::Source { .. } | Picture::Freeze { .. } => {
             // The new Hold is a child of the selected Sequence. Retain only
             // composition below that parent. The parent and its ancestors
             // stay live on the Hold and must not be captured a second time.
@@ -48,7 +79,27 @@ pub fn pause_provider(
                     scope.instance.node == insertion_parent && scope.instance.repeats.is_empty()
                 })
                 .ok_or("The stopped picture has no selected Sequence scope.")?;
-            let lower = &sample.framing[..parent];
+            freeze(document, &sample, parent, index)
+        }
+        _ => freeze(document, &sample, 0, index),
+    }
+}
+
+/// Freeze `sample`, capturing its framing scopes below `scope`.
+fn freeze(
+    document: &ProjectDocument,
+    sample: &PictureSample,
+    scope: usize,
+    index: &mut IndexLookup<'_>,
+) -> Result<PauseProvider, String> {
+    let picture = &sample.picture;
+    match picture {
+        Picture::Source { asset, .. } | Picture::Freeze { asset, .. } => {
+            let index = index(asset)?;
+            let selected = picture
+                .select_source_frame(&index)
+                .map_err(|error| error.to_string())?;
+            let lower = &sample.framing[..scope];
             // Even an unframed view retains its canvas and letterboxing. Fitting
             // the raw source directly into a later canvas is not equivalent to
             // fitting the already composed view into that canvas.

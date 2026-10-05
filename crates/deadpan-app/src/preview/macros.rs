@@ -327,6 +327,7 @@ impl DeadpanApp {
                 )
                 | Action::Edit(BeatEdit::WrapRepeat(_))
                 | Action::Edit(BeatEdit::Repeat(_))
+                | Action::Edit(BeatEdit::Escalate(_))
                 | Action::CopyMoment
                 | Action::PasteMoment { .. }
                 | Action::RepeatLast
@@ -339,7 +340,7 @@ impl DeadpanApp {
                 | Action::Invalid(_)
                 | Action::OfferInsert
         ) {
-            self.error = Some("This action cannot be recorded yet. Macros support pauses, punch-ins and creeps, frame, beat, word, sentence, pause and shot motions, group boundaries, word, sentence, pause and shot objects, Visual selections, cuts, copies, Repeat wraps and count changes, grouping, ungrouping, register pastes and named calls. Save or cancel recording first.".into());
+            self.error = Some("This action cannot be recorded yet. Macros support pauses, punch-ins and creeps, frame, beat, word, sentence, pause and shot motions, group boundaries, word, sentence, pause and shot objects, Visual selections, cuts, copies, Repeat wraps, count, gap and escalation changes, gags, grouping, ungrouping, register pastes and named calls. Save or cancel recording first.".into());
             return false;
         }
         if matches!(
@@ -371,6 +372,7 @@ impl DeadpanApp {
                 )
                 | Action::Edit(BeatEdit::WrapRepeat(_))
                 | Action::Edit(BeatEdit::Repeat(_))
+                | Action::Edit(BeatEdit::Escalate(_))
                 | Action::CopyMoment
                 | Action::PasteMoment { .. }
                 | Action::RepeatLast
@@ -554,6 +556,66 @@ impl DeadpanApp {
                     owns_cursor: true,
                 });
                 self.message = Some("Saving macro…".into());
+            }
+            Ok(())
+        })();
+        if let Err(error) = result {
+            self.error = Some(error);
+        }
+    }
+
+    /// `:framing-save a`: save the selected beat's framing as a one-step
+    /// macro, so `@a` applies the same framing to another selected beat.
+    pub(super) fn save_framing_preset(&mut self, name: char) {
+        let result = (|| {
+            if self.macros.recording() {
+                return Err("Save or cancel the recording before saving a framing preset.".into());
+            }
+            if self.macros.is_pending() || self.service.is_busy() {
+                return Err("Wait for the pending action before saving a framing preset.".into());
+            }
+            let register = RegisterName::new(name).map_err(|error| error.to_string())?;
+            let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
+            let node = self
+                .selected_beat
+                .as_ref()
+                .ok_or("Select a framed beat in Your edit first.")?;
+            let framing = workspace
+                .document
+                .nodes()
+                .get(node)
+                .and_then(|node| node.framing.clone())
+                .ok_or(
+                    "The selected beat has no framing to save. Frame it with ,f, ,z or ,c first.",
+                )?;
+            let capture = self.capture_macro_target()?;
+            let program = Arc::new(
+                SemanticProgram::new(vec![SemanticInstruction::SetFraming {
+                    framing: Some(Box::new(framing)),
+                }])
+                .map_err(|error| error.to_string())?,
+            );
+            let Some(serial) = self.next_serial() else {
+                return Ok(());
+            };
+            let operation = protocol::Operation::Save {
+                id: capture.id(serial),
+                register: register.as_char(),
+                program,
+            };
+            if self.submit(ProjectRequest::Macro(operation.clone())) {
+                self.macros.pending = Some(Pending {
+                    operation,
+                    capture,
+                    instruction: None,
+                    summary: None,
+                    owns_cursor: true,
+                });
+                self.message = Some(format!(
+                    "Saving framing preset @{}; apply it to another beat with @{}.",
+                    register.as_char(),
+                    register.as_char()
+                ));
             }
             Ok(())
         })();

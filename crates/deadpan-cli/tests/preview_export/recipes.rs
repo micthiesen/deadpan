@@ -24,10 +24,11 @@ use deadpan_core::{
     AssetId, AttentionTarget, AudioEdgePolicy, AudioSample, AudioTimingId, AudioTreatments,
     ClipGain, Command, Cutaway, CutawayFit, ExactRatio, ExactSourceSpan, FrameDuration, FrameRange,
     Framing, FramingClock, FramingCurve, FramingPose, FramingValue, GainDb, HoldAudio, HoldRecipe,
-    HoldVideo, NodeId, NodeKind, PitchPolicy, ProjectDocument, ProjectFrame, RepeatEscalation,
-    RetimePurpose, RevisionId, SoundEvent, SoundId, SoundOverflowPolicy, SourceAudio,
-    SourceAudioMapping, SourcePoint, SourceSpan, SourceTimestamp, SplitIdentities, TargetId,
-    TargetRegion, TargetSample, TrackState, WrapAnchorPolicy, ZoomProgression, ZoomStep,
+    HoldVideo, NodeId, NodeKind, PitchPolicy, ProjectDocument, ProjectFrame, RegisterName,
+    RegisterValue, RepeatEscalation, RetimePurpose, RevisionId, SoundEvent, SoundId,
+    SoundOverflowPolicy, SourceAudio, SourceAudioMapping, SourcePoint, SourceSpan, SourceTimestamp,
+    SplitIdentities, TargetId, TargetRegion, TargetSample, TrackState, WrapAnchorPolicy,
+    ZoomProgression, ZoomStep,
 };
 use deadpan_store::{AccessMode, ProjectStore};
 use serde_json::{Value, json};
@@ -61,6 +62,11 @@ pub struct Fixture {
     /// Row names in docs/SECTION8_COVERAGE.md this fixture demonstrates.
     pub section8_rows: Vec<&'static str>,
     pub expectations: Vec<(u64, Expected)>,
+    /// Independently derived sound: `(start, loud)` for 256-sample windows of
+    /// the limited audition bus on the absolute 48 kHz Edit grid. Loud windows
+    /// hold the click or a placed sound (peak above 0.5); quiet ones are
+    /// silent (peak below 0.01).
+    pub audio: Vec<(i64, bool)>,
     /// Recipe choices made while building, such as a refused pitch policy.
     pub notes: Vec<String>,
 }
@@ -281,6 +287,60 @@ impl Project {
         })
     }
 
+    /// Save `instructions` as macro `m` and run it once through the headless
+    /// semantic path the native app shares: the same planner, pause-picture
+    /// resolver and store admission, committed as one Compound.
+    fn run_semantic(
+        &mut self,
+        instructions: Value,
+        cursor: i64,
+        selected_child: Option<&NodeId>,
+    ) -> Result<ProjectDocument> {
+        let bank = |project: &Self| -> Result<(ProjectDocument, u64)> {
+            let inspected = success(&["macro", "inspect", project.path()])?;
+            Ok((
+                project.document()?,
+                inspected["bank_version"]
+                    .as_u64()
+                    .ok_or("macro inspect reports its bank version")?,
+            ))
+        };
+        let send = |project: &Self, name: &str, request: Value| -> Result {
+            let path = project.directory.join(name);
+            fs::write(&path, serde_json::to_vec(&request)?)?;
+            success(&[
+                "macro",
+                project.path(),
+                "--json",
+                path.to_str().ok_or("UTF-8")?,
+            ])?;
+            Ok(())
+        };
+        let (document, version) = bank(self)?;
+        send(
+            self,
+            "macro-save.json",
+            json!({"protocol":1,"project_id":document.project_id(),
+                "expected_revision":document.revision_id(),"expected_bank_version":version,
+                "operation":{"type":"save","register":"m","program":{"instructions":instructions}}}),
+        )?;
+        let (document, version) = bank(self)?;
+        let before = document.revision_id().clone();
+        send(
+            self,
+            "macro-run.json",
+            json!({"protocol":1,"project_id":document.project_id(),
+                "expected_revision":document.revision_id(),"expected_bank_version":version,
+                "operation":{"type":"run","register":"m","parent":document.root(),
+                    "cursor":cursor,"selected_child":selected_child,"count":1}}),
+        )?;
+        let saved = self.document()?;
+        if saved.revision_id() == &before {
+            return Err("the semantic run committed no revision".into());
+        }
+        Ok(saved)
+    }
+
     fn finish(
         self,
         section8_rows: Vec<&'static str>,
@@ -303,6 +363,7 @@ impl Project {
             frames,
             section8_rows,
             expectations,
+            audio: Vec::new(),
             notes,
         })
     }
@@ -779,49 +840,130 @@ pub fn gain_trim(dir: &Path) -> Result<Fixture> {
     )
 }
 
+/// An off-center stare: the whole base beat framed by a static 1.5x pose
+/// centered at (0.35, 0.40), as Camera and `:framing-save` presets author it.
+/// Pictures keep their Original frames.
+pub fn off_center(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "off-center")?;
+    project.shorten()?;
+    let pose = FramingPose::new(ratio(7, 20)?, ratio(2, 5)?, ratio(3, 2)?)?;
+    project.apply(|_, document, _| {
+        Ok(Command::SetFraming {
+            node: root_child_at(document, 0)?.0,
+            framing: Some(Framing::static_pose(pose)?),
+        })
+    })?;
+    let expectations = [0u64, 10, 20, 29]
+        .into_iter()
+        .map(|frame| (frame, base(frame)))
+        .collect();
+    project.finish(vec!["Off-center stare"], expectations, Vec::new())
+}
+
+/// `,m` over Edit [25, 35) of the whole, unshortened Original: a mute range
+/// in the beat's own frames that silences the click at sample 48,000 while
+/// the click at 191,992 still sounds. Pictures and timing are unchanged.
+pub fn mute_range(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "mute-range")?;
+    project.apply(|_, document, _| {
+        Ok(Command::SetAudioTreatments {
+            node: root_child_at(document, 0)?.0,
+            treatments: AudioTreatments::from_clip_gain(ClipGain::new(
+                GainDb::UNITY,
+                false,
+                Vec::new(),
+                vec![deadpan_core::GainRange::new(
+                    ExactRatio::integer(25),
+                    ExactRatio::integer(35),
+                )?],
+            )?),
+        })
+    })?;
+    let expectations = [0u64, 25, 30, 35, 119]
+        .into_iter()
+        .map(|frame| (frame, original(frame)))
+        .collect();
+    let mut fixture = project.finish(
+        vec!["Sudden silence", "`,m` mute"],
+        expectations,
+        Vec::new(),
+    )?;
+    fixture.audio = vec![(47_872, false), (191_872, true)];
+    Ok(fixture)
+}
+
 /// Edit frame at which the catalog sound starts (an exact 48 kHz sample:
 /// 10 · 48000 · 1001 / 30000 = 16016).
 pub const SOUND_FRAME: i64 = 10;
 
-/// Rewrite a canonical 44-byte PCM WAVE header as WAVE_FORMAT_EXTENSIBLE with
-/// an explicit front-left/front-right channel mask. A plain WAVE header leaves
-/// the speaker layout unspecified, which audition and export both refuse
-/// rather than guessing stereo from the channel count.
-fn declared_stereo(bytes: &[u8]) -> Result<Vec<u8>> {
-    if bytes.len() < 44
-        || &bytes[0..4] != b"RIFF"
-        || &bytes[8..16] != b"WAVEfmt "
-        || bytes[16..20] != 16_u32.to_le_bytes()
-        || bytes[20..24] != [1, 0, 2, 0]
-        || &bytes[36..40] != b"data"
-    {
-        return Err("expected a canonical 16-byte-fmt stereo PCM WAVE file".into());
-    }
-    let mut declared = Vec::with_capacity(bytes.len() + 24);
-    declared.extend_from_slice(b"RIFF");
-    declared.extend_from_slice(&u32::try_from(bytes.len() + 16)?.to_le_bytes());
-    declared.extend_from_slice(b"WAVEfmt ");
-    declared.extend_from_slice(&40_u32.to_le_bytes());
-    declared.extend_from_slice(&0xfffe_u16.to_le_bytes());
-    declared.extend_from_slice(&bytes[22..36]);
-    declared.extend_from_slice(&22_u16.to_le_bytes());
-    declared.extend_from_slice(&bytes[34..36]);
-    declared.extend_from_slice(&3_u32.to_le_bytes());
-    // KSDATAFORMAT_SUBTYPE_PCM in WAVE GUID byte order.
-    declared.extend_from_slice(&[
-        1, 0, 0, 0, 0, 0, 0x10, 0, 0x80, 0, 0, 0xaa, 0, 0x38, 0x9b, 0x71,
-    ]);
-    declared.extend_from_slice(&bytes[36..]);
-    Ok(declared)
-}
-
-/// Register `pcm-stereo-48000.wav` (with a declared stereo mask) as an audio-only catalog asset and place
+/// Register the plain `pcm-stereo-48000.wav`, explicitly interpreted as stereo
+/// L/R, as an audio-only catalog asset and place
 /// it whole as a root sound starting at Edit frame 10. Pictures are unchanged.
 pub fn sound_event(dir: &Path) -> Result<Fixture> {
     let mut project = Project::create(dir, "sound-event")?;
     project.shorten()?;
+    place_click_sound(&mut project)?;
+    let expectations = [0u64, 9, 10, 15, 29]
+        .into_iter()
+        .map(|frame| (frame, base(frame)))
+        .collect();
+    let mut fixture = project.finish(
+        vec!["Bed drop", "Wrongly triumphant sting"],
+        expectations,
+        Vec::new(),
+    )?;
+    fixture.audio = vec![(15_744, false), (16_128, true), (21_504, true)];
+    Ok(fixture)
+}
+
+/// `:sound-cut` with the Edit cursor at frame 12: the placed sound of
+/// [`sound_event`] (about 5 frames from frame 10) ends exactly at that frame
+/// boundary, sample 19,219.2, with a hard edge. Its local selection becomes
+/// [0, 2) frames on the unchanged natural-rate mapping and onset. Pictures
+/// are unchanged.
+pub fn bed_drop(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "bed-drop")?;
+    project.shorten()?;
+    place_click_sound(&mut project)?;
+    project.apply(|_, document, _| {
+        // The same `SoundEvent::cut_at` the native `:sound-cut` commits.
+        let id = SoundId::new("click")?;
+        let event = document.sounds()[&id]
+            .cut_at(ProjectFrame(12), document.presentation_basis().frame_rate)?;
+        let SourceAudioMapping::SelectedPlacement { selection, .. } = event.mapping else {
+            return Err("the cut sound has a selected placement".into());
+        };
+        if selection.end != ExactRatio::integer(12 - SOUND_FRAME)
+            || event.end_edge != AudioEdgePolicy::Hard
+        {
+            return Err(format!("unexpected cut {:?}", event.mapping).into());
+        }
+        Ok(Command::SetSound { id, event })
+    })?;
+    let expectations = [0u64, 10, 12, 15, 29]
+        .into_iter()
+        .map(|frame| (frame, base(frame)))
+        .collect();
+    let mut fixture = project.finish(vec!["Bed drop", "`:sound-cut`"], expectations, Vec::new())?;
+    // The sound plays from sample 16,016 and stops at 19,219.2 instead of
+    // running on to about 24,000; the base click at 28,781 is untouched.
+    fixture.audio = vec![
+        (16_128, true),
+        (18_944, true),
+        (19_456, false),
+        (21_504, false),
+        (28_672, true),
+    ];
+    Ok(fixture)
+}
+
+/// Register `pcm-stereo-48000.wav` and place it whole as root sound `click`
+/// at Edit frame [`SOUND_FRAME`]. The plain WAVE header declares no speaker
+/// layout, so registration states the explicit stereo L/R interpretation that
+/// audition and export then use; nothing is guessed from the channel count.
+fn place_click_sound(project: &mut Project) -> Result {
     let wav = project.directory.join("sound.wav");
-    fs::write(&wav, declared_stereo(&fs::read(sound_media())?)?)?;
+    fs::copy(sound_media(), &wav)?;
     let retained = success(&[
         "project",
         "retain-original",
@@ -844,7 +986,7 @@ pub fn sound_event(dir: &Path) -> Result<Fixture> {
                 "label": "Click sound",
                 "insertion": null
             },
-            "streams": {"type": "audio_only", "stream": 0}
+            "streams": {"type": "audio_only", "stream": 0, "interpretation": "stereo_left_right"}
         }))?,
     )?;
     success(&[
@@ -886,22 +1028,248 @@ pub fn sound_event(dir: &Path) -> Result<Fixture> {
             },
         })
     })?;
-    let expectations = [0u64, 9, 10, 15, 29]
+    Ok(())
+}
+
+/// `:gag one-more-time plays=3 gap=12f shorten=6f` on Edit [12, 24)
+/// (Original 24..36), through the headless semantic path: three plays with
+/// silent freeze gaps of 12 and then 6 frames, each holding the play's last
+/// picture (Original 35), grouped: 12 + 3·12 + 12 + 6 + 6 = 72 frames.
+pub fn one_more_time(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "one-more-time")?;
+    project.shorten()?;
+    project.split_root(12)?;
+    let document = project.split_root(24)?;
+    let beat = root_child_at(&document, 12)?.0;
+    let saved = project.run_semantic(
+        json!([{"type":"gag","recipe":{"recipe":"one_more_time","version":1,"plays":3,
+            "gap":{"unit":"frames","frames":12},"shorten":{"unit":"frames","frames":6}}}]),
+        12,
+        Some(&beat),
+    )?;
+    let (group, _) = root_child_at(&saved, 12)?;
+    let label = &saved.nodes()[&group].label;
+    if label != "One More Time · v1 · 3 plays, gap 12f shortening by 6f" {
+        return Err(format!("unexpected gag label {label:?}").into());
+    }
+    let mut expectations = vec![(0, base(0)), (11, base(11))];
+    for (start, gap) in [(12u64, Some(12u64)), (36, Some(6)), (54, None)] {
+        expectations.extend([
+            (start, original(24)),
+            (start + 6, original(30)),
+            (start + 11, original(35)),
+        ]);
+        if let Some(gap) = gap {
+            expectations.extend([(start + 12, original(35)), (start + 11 + gap, original(35))]);
+        }
+    }
+    expectations.extend([(66, original(36)), (71, original(41))]);
+    let mut fixture = project.finish(vec!["One More Time"], expectations, Vec::new())?;
+    // Each play holds the click 9,562 samples after its start (base click
+    // 28,781 less B(12) = 19,219), at the play's own rounded start: B(12),
+    // B(36) = 57,658 and B(54) = 86,486. The gaps between are silent.
+    fixture.audio = vec![
+        (28_672, true),
+        (45_056, false),
+        (67_072, true),
+        (80_128, false),
+        (96_000, true),
+    ];
+    Ok(fixture)
+}
+
+/// `:repeat 3 gap=200ms,120ms gain-step=3dB zoom-step=0.08` as the native
+/// command records it (`SetRepeat` with plays, gaps and escalation) on Edit
+/// [12, 24), through the headless semantic path. 200 ms and 120 ms round once
+/// to 6 and 4 frames: 12 + 3·12 + 6 + 4 + 6 = 64 frames. Gaps hold Original 35.
+pub fn repeat_gaps_steps(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "repeat-gaps-steps")?;
+    project.shorten()?;
+    project.split_root(12)?;
+    let document = project.split_root(24)?;
+    let beat = root_child_at(&document, 12)?.0;
+    let escalation = serde_json::to_value(RepeatEscalation {
+        gain_step: GainDb::new(3_000)?,
+        zoom: Some(ZoomStep {
+            step: grid_step()?,
+            progression: ZoomProgression::Add,
+        }),
+    })?;
+    let saved = project.run_semantic(
+        json!([{"type":"set_repeat","plays":3,
+            "gaps":[{"unit":"milliseconds","milliseconds":200},{"unit":"milliseconds","milliseconds":120}],
+            "escalation":escalation}]),
+        12,
+        Some(&beat),
+    )?;
+    let (repeat, _) = root_child_at(&saved, 12)?;
+    let NodeKind::Repeat {
+        gap: Some(gap),
+        escalation: Some(escalation),
+        ..
+    } = &saved.nodes()[&repeat].kind
+    else {
+        return Err("the beat was wrapped with gap and escalation".into());
+    };
+    if gap.duration.frames() != 6 || escalation.gain_step.millidecibels() != 3000 {
+        return Err(format!("unexpected Repeat {gap:?} {escalation:?}").into());
+    }
+    let mut expectations = vec![(0, base(0)), (11, base(11))];
+    for (start, gap) in [(12u64, Some(6u64)), (30, Some(4)), (46, None)] {
+        expectations.extend([
+            (start, original(24)),
+            (start + 6, original(30)),
+            (start + 11, original(35)),
+        ]);
+        if let Some(gap) = gap {
+            expectations.extend([(start + 12, original(35)), (start + 11 + gap, original(35))]);
+        }
+    }
+    expectations.extend([(58, original(36)), (63, original(41))]);
+    let mut fixture = project.finish(
+        vec![
+            "`:repeat 3 gap=120ms gain-step=3dB zoom-step=0.08`",
+            "Escalation",
+        ],
+        expectations,
+        Vec::new(),
+    )?;
+    // Clicks 9,562 samples into plays at B(12), B(30) = 48,048 and
+    // B(46) = 73,674; silent gaps [38,438, 48,048) and [67,267, 73,674).
+    fixture.audio = vec![
+        (28_672, true),
+        (43_008, false),
+        (57_600, true),
+        (70_144, false),
+        (83_200, true),
+    ];
+    Ok(fixture)
+}
+
+/// `:gag nothing-happens register=r tone=12f silence=12f` at Edit 15,
+/// through the headless semantic path (planner, pause-picture resolver,
+/// `copied_moment_audio` and store admission). Register `r` holds the
+/// Original moment [28, 31) exactly as a native `"ry` copy stores it. Two
+/// 12-frame freezes of Original 26 follow, the first looping room tone from
+/// that moment's audio, the second true silence: 30 + 24 = 54 frames.
+pub fn nothing_happens(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "nothing-happens")?;
+    project.shorten()?;
+    {
+        let mut store = ProjectStore::open(&project.package, AccessMode::ReadWrite)?;
+        let document = store.snapshot()?;
+        let record = &document.assets()[&project.asset];
+        store.save_register(
+            document.project_id(),
+            document.revision_id(),
+            RegisterName::new('r')?,
+            RegisterValue::Original {
+                revision: document.revision_id().clone(),
+                asset: project.asset.clone(),
+                qualification: record
+                    .source_qualification
+                    .clone()
+                    .ok_or("the Original is qualified")?,
+                ordinals: 28..31,
+            },
+        )?;
+    }
+    let saved = project.run_semantic(
+        json!([{"type":"gag","recipe":{"recipe":"nothing_happens","version":1,
+            "tone":{"unit":"frames","frames":12},"silence":{"unit":"frames","frames":12},
+            "register":"r"}}]),
+        15,
+        None,
+    )?;
+    let (group, _) = root_child_at(&saved, 15)?;
+    let parts: Vec<String> = match &saved.nodes()[&group].kind {
+        NodeKind::Sequence { children } => children
+            .iter()
+            .map(|child| format!("{:?}", saved.nodes()[child].kind))
+            .collect(),
+        _ => Vec::new(),
+    };
+    if parts.len() != 2 || !parts[0].contains("RoomTone") || !parts[1].contains("Silence") {
+        return Err(format!("unexpected Nothing Happens parts {parts:?}").into());
+    }
+    let expectations = vec![
+        (0, base(0)),
+        (14, original(26)),
+        (15, original(26)),
+        (26, original(26)),
+        (27, original(26)),
+        (38, original(26)),
+        (39, original(27)),
+        (53, original(41)),
+    ];
+    let mut fixture = project.finish(
+        vec!["Nothing Happens", "Room tone", "Frozen stare"],
+        expectations,
+        Vec::new(),
+    )?;
+    // Moment [28, 31) hears source samples [44,845, 49,649): In rounds up
+    // from 44,844.8, Out down from 49,649.6. The 4,804-sample loop holds the
+    // click at 48,000, 3,155 samples in, and repeats every 4,708 samples
+    // (less its 96-sample crossfade) from the Hold origin B(15) = 24,024:
+    // clicks at 27,179, 31,887, 36,595 and 41,303. The silence Hold,
+    // [43,243.2, 62,462.4), is digital silence, and the Original's own click
+    // moves 24 frames (38,438.4 samples) later, to 67,219.
+    fixture.audio = vec![
+        (23_552, false),
+        (27_136, true),
+        (31_744, true),
+        (36_352, true),
+        (41_216, true),
+        (43_520, false),
+        (52_480, false),
+        (61_952, false),
+        (67_072, true),
+    ];
+    Ok(fixture)
+}
+
+/// `:audio-lag +50ms` on the base beat over Edit [10, 20): its Source's
+/// sound plays 2,400 samples after its picture (the click moves 1.5 frames
+/// later, still inside the beat). Pictures are unchanged.
+pub fn audio_lag(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "audio-lag")?;
+    project.shorten()?;
+    project.split_root(10)?;
+    project.split_root(20)?;
+    project.apply(|_, document, _| {
+        let (beat, _) = root_child_at(document, 10)?;
+        let (host, _) = source_host(document, &beat)?;
+        let NodeKind::Source { source } = &document.nodes()[&host].kind else {
+            return Err("the beat hosts no Source".into());
+        };
+        Ok(Command::SetSourceAudioMapping {
+            node: host,
+            mapping: source.audio_mapping,
+            offset: AudioSample(2_400),
+        })
+    })?;
+    let expectations = [0u64, 9, 10, 17, 19, 20, 29]
         .into_iter()
         .map(|frame| (frame, base(frame)))
         .collect();
-    project.finish(
-        vec!["Bed drop", "Wrongly triumphant sting"],
-        expectations,
-        Vec::new(),
-    )
+    let mut fixture = project.finish(vec!["Audio lag"], expectations, Vec::new())?;
+    // The click at Edit sample 28,781 of the base plays exactly 2,400 later.
+    fixture.audio = vec![(28_672, false), (30_976, true)];
+    Ok(fixture)
 }
 
 /// Build every fixture, each in its own subdirectory of `dir`.
 pub fn all(dir: &Path) -> Result<Vec<Fixture>> {
     type Builder = fn(&Path) -> Result<Fixture>;
-    let builders: [(&str, Builder); 9] = [
+    let builders: [(&str, Builder); 16] = [
         ("repeat-with-gap", repeat_with_gap),
+        ("one-more-time", one_more_time),
+        ("repeat-gaps-steps", repeat_gaps_steps),
+        ("nothing-happens", nothing_happens),
+        ("audio-lag", audio_lag),
+        ("bed-drop", bed_drop),
+        ("mute-range", mute_range),
+        ("off-center", off_center),
         ("freeze-hold", freeze_hold),
         ("black-pause", black_pause),
         ("retime-half", retime_half),

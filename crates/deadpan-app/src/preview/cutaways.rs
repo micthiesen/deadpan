@@ -119,3 +119,64 @@ impl DeadpanApp {
         })
     }
 }
+
+impl DeadpanApp {
+    /// Registers that hold an Original moment, with the default copy first.
+    pub(super) fn cutaway_registers(&self) -> Vec<(char, String)> {
+        self.copied
+            .entries()
+            .filter_map(|(name, content)| match content {
+                copied::Content::Original(moment) => Some((
+                    name,
+                    format!("[{}..{})", moment.ordinals.start, moment.ordinals.end),
+                )),
+                _ => None,
+            })
+            .collect()
+    }
+
+    /// `,r`: open `:cutaway register=` on the register that will be used,
+    /// listing every register that holds an Original moment.
+    pub(super) fn pick_cutaway(&mut self, context: &egui::Context) {
+        if self.view != View::Sequence {
+            self.error = Some("Select a beat in Your edit, then pick a reaction with ,r.".into());
+            return;
+        }
+        let registers = self.cutaway_registers();
+        let Some(first) = registers.first() else {
+            self.error = Some("No register holds an Original moment. View the Original, select it with v and copy it with y (\"r y names register r).".into());
+            return;
+        };
+        let name = self
+            .copied
+            .selected()
+            .filter(|name| registers.iter().any(|(entry, _)| entry == name))
+            .unwrap_or(first.0);
+        self.open_command(format!("cutaway register={name}"), context);
+    }
+
+    /// Command-entry guidance for `:cutaway`: the registers it can show.
+    pub(super) fn cutaway_hint(&self) -> Option<String> {
+        let verb = self.command.trim_start().trim_start_matches(':');
+        if !verb
+            .split_whitespace()
+            .next()
+            .is_some_and(|verb| verb.eq_ignore_ascii_case("cutaway"))
+        {
+            return None;
+        }
+        let registers = self.cutaway_registers();
+        Some(if registers.is_empty() {
+            "No register holds an Original moment yet; copy one from the Original with v, y.".into()
+        } else {
+            let listed: Vec<String> = registers
+                .iter()
+                .map(|(name, range)| format!("{name} {range}"))
+                .collect();
+            format!(
+                "Original moments: {} · change the letter, then Enter",
+                listed.join(" · ")
+            )
+        })
+    }
+}

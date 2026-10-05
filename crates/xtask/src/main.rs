@@ -5,11 +5,14 @@
 //! build-directory hygiene. `cargo xtask hygiene` runs only that check.
 //! `cargo xtask bundle` assembles a relocatable `Deadpan.app`;
 //! `bundle-audit` and `bundle-verify` check one (docs/PACKAGING.md).
+//! `cargo xtask replays` builds the ui-harness app once and replays every
+//! UI scenario in its own report directory (docs/UI_FEEDBACK.md).
 
 use std::path::Path;
 use std::process::{Command, ExitCode};
 
 mod bundle;
+mod replays;
 mod target_hygiene;
 
 fn main() -> ExitCode {
@@ -23,7 +26,8 @@ fn main() -> ExitCode {
         Some("bundle") => bundle::run(rest),
         Some("bundle-audit") => bundle::audit_command(rest),
         Some("bundle-verify") => bundle::verify::run(rest),
-        _ => Err("usage: cargo xtask gate | hygiene | bundle --output <dir> | bundle-audit <Deadpan.app> | bundle-verify <Deadpan.app>".into()),
+        Some("replays") => replays::run(rest),
+        _ => Err("usage: cargo xtask gate | hygiene | replays [--scenario a,b] [--output <new dir>] [--jobs N] | bundle --output <dir> | bundle-audit <Deadpan.app> | bundle-verify <Deadpan.app>".into()),
     };
     match result {
         Ok(()) => ExitCode::SUCCESS,

@@ -10,6 +10,7 @@ use std::{
 use deadpan_core::{
     AssetId, ExactRatio, FrameRate, FrameRateOrigin, GeometryOrigin, NodeId, NodeKind, SourceVideo,
 };
+use deadpan_media::audio_index::{AudioChannelLayout, AudioLayoutInterpretation};
 use deadpan_store::{AccessMode, ProjectStore};
 use rusqlite::Connection;
 use serde_json::{Value, json};
@@ -228,7 +229,7 @@ fn offset_av_and_audio_only_register_exact_measured_placements() -> Result {
                 "../../../native/deadpan-source/tests/audio-fixtures/pcm-mono-44100.wav"
             )
             .as_slice(),
-            json!({"type":"audio_only","stream":0}),
+            json!({"type":"audio_only","stream":0,"interpretation":"mono"}),
             "30/1",
             31,
         ),
@@ -280,6 +281,10 @@ fn offset_av_and_audio_only_register_exact_measured_placements() -> Result {
             assert_eq!(
                 receipt.snapshot().audio().unwrap().stream().sample_rate,
                 44100
+            );
+            assert_eq!(
+                receipt.snapshot().audio_interpretation(),
+                Some(AudioLayoutInterpretation::Mono)
             );
         }
         store.validate()?;
@@ -460,6 +465,104 @@ fn explicit_geometry_cli_previews_then_changes_only_canvas_and_keeps_version_gua
             .snapshot()?
             .presentation_basis(),
         before.presentation_basis()
+    );
+    Ok(())
+}
+
+#[test]
+fn unlabelled_wav_needs_an_explicit_interpretation_that_audio_preparation_then_uses() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = scratch.path().join("plain-wav.deadpan");
+    create(&package, "30/1")?;
+    let original = retain(
+        &package,
+        &scratch.path().join("source.wav"),
+        include_bytes!("../../../native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav"),
+        false,
+    )?;
+    let mut input = request(
+        &package,
+        original,
+        json!({"type":"audio_only","stream":0}),
+        "registered",
+    )?;
+    // Without a choice, and with a choice for another channel count, nothing
+    // is written and the refusal names the applicable choice.
+    for (streams, chosen) in [
+        (json!({"type":"audio_only","stream":0}), None),
+        (
+            json!({"type":"audio_only","stream":0,"interpretation":"mono"}),
+            Some("Mono"),
+        ),
+    ] {
+        input["streams"] = streams;
+        let path = save(scratch.path(), &input)?;
+        for dry_run in [true, false] {
+            let error = registration(&package, &path, dry_run, false)?;
+            assert_eq!(error["error"]["code"], "AudioLayoutInterpretationRequired");
+            let message = error["error"]["message"].as_str().unwrap();
+            assert!(message.contains("2 channel(s) with no declared speaker layout"));
+            assert!(message.contains("Stereo L/R (stereo_left_right)"));
+            assert_eq!(
+                chosen.is_some(),
+                message.contains("Mono (1 channel(s)) cannot")
+            );
+            assert_eq!(counts(&package)?, (1, 0, 0));
+        }
+    }
+    input["streams"] = json!({"type":"invented"});
+    let path = save(scratch.path(), &input)?;
+    assert_eq!(
+        registration(&package, &path, false, false)?["error"]["code"],
+        "InvalidInput"
+    );
+    input["streams"] = json!({"type":"audio_only","stream":0,"interpretation":"surround"});
+    let path = save(scratch.path(), &input)?;
+    assert_eq!(
+        registration(&package, &path, false, false)?["error"]["code"],
+        "InvalidInput"
+    );
+    input["streams"] = json!({"type":"audio_only","stream":0,"interpretation":"stereo_left_right"});
+    let path = save(scratch.path(), &input)?;
+    registration(&package, &path, false, true)?;
+    let store = ProjectStore::open(&package, AccessMode::ReadOnly)?;
+    let document = store.snapshot()?;
+    let asset = &document.assets()[&AssetId::new("imported-asset")?];
+    let receipt = store.source_qualification(asset.source_qualification.as_ref().unwrap())?;
+    // The measured stream still declares nothing; the choice is retained
+    // beside it, never written over the measurement.
+    assert_eq!(
+        receipt.snapshot().audio().unwrap().stream().channel_layout,
+        AudioChannelLayout::Unspecified { channels: 2 }
+    );
+    assert_eq!(
+        receipt.snapshot().audio_interpretation(),
+        Some(AudioLayoutInterpretation::StereoLeftRight)
+    );
+    assert_eq!(
+        receipt.snapshot().audio_layout(),
+        Some(AudioChannelLayout::Native {
+            channels: 2,
+            mask: 3
+        })
+    );
+    drop(store);
+    // Preparation reads the persisted interpretation instead of refusing the
+    // undeclared layout (formerly AudioLayoutUnsupported).
+    let audio = success(&[
+        "inspect-audio",
+        package.to_str().unwrap(),
+        "--samples",
+        "0",
+        "256",
+    ])?;
+    assert_eq!(audio["protocol"], 1);
+    // Stereo L/R keeps the two channels separate: the fixture's opening
+    // left/right impulse pair stays on its own side.
+    assert_eq!(audio["audio"]["samples"][0], json!([0.75, -1.0]));
+    assert_eq!(
+        audio["audio"]["samples"][1],
+        json!([-0.75, 0.999969482421875])
     );
     Ok(())
 }

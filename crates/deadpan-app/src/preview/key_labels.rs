@@ -69,7 +69,62 @@ pub(super) fn hint(ui: &mut egui::Ui, key: &str, description: &str) {
     );
 }
 
-pub(super) type Hints = Vec<(String, String)>;
+/// Footer teaching priority. When the two footer rows cannot hold every hint
+/// a context offers, no hint of a higher tier is dropped to keep one of a
+/// lower tier; within a tier the caller's order decides. Kept hints paint in
+/// the caller's order, so related keys stay together at every width.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(super) enum Tier {
+    /// The context's own motions, the edits that act on its current target
+    /// (the selection, or the cursor's frame and beat without one), Undo,
+    /// command entry and the way out of a mode.
+    Core,
+    /// Keys that exist because of the current state: analysis motions,
+    /// group navigation, text objects, pane switching.
+    Context,
+    /// Every other verb; Help lists them all.
+    More,
+}
+
+/// Contextual footer hints, each `(key path, description)` with its [`Tier`].
+/// Pushes take the tier set by the latest [`Hints::tier`] call (initially
+/// [`Tier::Core`]).
+#[derive(Debug, Default)]
+pub(super) struct Hints {
+    entries: Vec<(String, String)>,
+    tiers: Vec<Tier>,
+    current: Option<Tier>,
+}
+
+impl Hints {
+    pub(super) fn new() -> Self {
+        Self::default()
+    }
+
+    /// Tier for the hints pushed after this call.
+    pub(super) fn tier(&mut self, tier: Tier) {
+        self.current = Some(tier);
+    }
+
+    pub(super) fn push(&mut self, hint: (String, String)) {
+        self.entries.push(hint);
+        self.tiers.push(self.current.unwrap_or(Tier::Core));
+    }
+
+    pub(super) fn iter(&self) -> std::slice::Iter<'_, (String, String)> {
+        self.entries.iter()
+    }
+}
+
+impl FromIterator<(String, String)> for Hints {
+    fn from_iter<I: IntoIterator<Item = (String, String)>>(iter: I) -> Self {
+        let mut hints = Self::new();
+        for hint in iter {
+            hints.push(hint);
+        }
+        hints
+    }
+}
 
 fn hint_size(ui: &egui::Ui, width: f32, key: &str, description: &str) -> egui::Vec2 {
     let margin = frame().total_margin().sum();
@@ -93,9 +148,10 @@ fn hint_size(ui: &egui::Ui, width: f32, key: &str, description: &str) -> egui::V
 }
 
 /// Footer teaching shows the most important contextual keys that fit in the
-/// row budget, in the caller's priority order, and always ends with the
-/// complete reference shortcut. No individual key path is shortened; a hint
-/// that does not fit is left to the reference and the action controls.
+/// row budget, choosing by [`Tier`] and then caller order, paints them in the
+/// caller's order and always ends with the complete reference shortcut. No
+/// individual key path is shortened; a hint that does not fit is left to the
+/// reference and the action controls.
 pub(super) fn footer_hints(ui: &mut egui::Ui, hints: &Hints, help: &str, budget: f32) {
     let width = ui.max_rect().width().max(1.0);
     // A wrapping row reports its full width as available; measure the
@@ -103,9 +159,9 @@ pub(super) fn footer_hints(ui: &mut egui::Ui, hints: &Hints, help: &str, budget:
     let start = (ui.cursor().min.x - ui.max_rect().min.x).max(0.0);
     // The caller's final reference hint is mandatory; keep its own wording
     // when every other hint fits.
-    let (optional, reference) = match hints.split_last() {
+    let (optional, reference) = match hints.entries.split_last() {
         Some((last, rest)) if last.0 == help => (rest, Some(last.1.as_str())),
-        _ => (hints.as_slice(), None),
+        _ => (hints.entries.as_slice(), None),
     };
     let sizes: Vec<_> = optional
         .iter()
@@ -127,11 +183,14 @@ pub(super) fn footer_hints(ui: &mut egui::Ui, hints: &Hints, help: &str, budget:
         total + row
     };
     let more = hint_size(ui, width, help, "all editor keys");
+    let mut order = (0..optional.len()).collect::<Vec<_>>();
+    order.sort_by_key(|index| (hints.tiers[*index], *index));
     let mut chosen = Vec::with_capacity(optional.len());
-    for index in 0..optional.len() {
-        chosen.push(index);
+    for index in order {
+        let slot = chosen.partition_point(|kept| *kept < index);
+        chosen.insert(slot, index);
         if height(&chosen, more) > budget {
-            chosen.pop();
+            chosen.remove(slot);
         }
     }
     for index in &chosen {
@@ -356,6 +415,56 @@ mod tests {
                 assert!(painted.contains(&bindings.key_label(id).as_str()));
             }
         }
+    }
+
+    #[test]
+    fn a_core_hint_listed_last_outranks_earlier_lower_tiers_and_keeps_its_place() {
+        let context = egui::Context::default();
+        style::apply(&context);
+        let mut hints = Hints::new();
+        hints.push(("h l".into(), "frame".into()));
+        hints.tier(Tier::More);
+        for index in 0..24 {
+            hints.push((format!(",{index}"), format!("extra action {index}")));
+        }
+        hints.tier(Tier::Context);
+        hints.push(("]s [s".into(), "shots".into()));
+        hints.tier(Tier::Core);
+        hints.push(("x".into(), "cut frame".into()));
+        hints.push(("?".into(), "keys".into()));
+        let mut output = context.run_ui(
+            egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(
+                    egui::Pos2::ZERO,
+                    egui::vec2(960.0, 640.0),
+                )),
+                ..Default::default()
+            },
+            |ui| {
+                ui.horizontal_wrapped(|ui| {
+                    ui.label("Edit 20 / 120");
+                    footer_hints(ui, &hints, "?", 54.0);
+                });
+            },
+        );
+        output.textures_delta.clear();
+        let painted = output
+            .shapes
+            .iter()
+            .filter_map(|clipped| match &clipped.shape {
+                egui::Shape::Text(text) => Some(text.galley.text().to_owned()),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        let position = |text: &str| painted.iter().position(|painted| painted == text);
+        // Lower tiers yield first; the reference still closes the footer.
+        assert!(position("cut frame").is_some() && position("shots").is_some());
+        assert!(position("extra action 23").is_none());
+        assert!(position("all editor keys").is_some());
+        // Painting keeps the caller's order rather than the priority order.
+        assert!(position("frame") < position("shots"));
+        assert!(position("shots") < position("cut frame"));
+        assert!(position("cut frame") < position("all editor keys"));
     }
 
     #[test]

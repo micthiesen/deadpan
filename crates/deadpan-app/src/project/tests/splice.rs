@@ -460,6 +460,7 @@ fn abandon_does_not_cancel_unrelated_import_and_commit_receipt_survives_refresh_
             expected_revision: before.document.revision_id().clone(),
             path: fixture("../audio-fixtures/pcm-stereo-48000.wav"),
             stream: None,
+            interpretation: Some(AudioLayoutInterpretation::StereoLeftRight),
             ownership: OriginalOwnership::Managed,
         },
     );

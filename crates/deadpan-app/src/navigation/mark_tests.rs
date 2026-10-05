@@ -171,6 +171,10 @@ fn marks_reject_counts_overflow_conflicting_prefixes_and_invalid_names() {
             vec![Key::Comma],
             vec![Key::Num3, Key::R],
         ] {
+            if prefix == Key::M && earlier == [Key::Comma] {
+                // `,m` is the comma-family mute, not a mark prefix.
+                continue;
+            }
             let mut bindings = Bindings::default();
             for key in earlier {
                 bindings.key(key, Modifiers::NONE, false, false);

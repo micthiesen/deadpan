@@ -255,6 +255,14 @@ impl DeadpanApp {
             }
             SoundAction::Move(at) => return Ok(Some(ProjectSoundEdit::Move { id, at })),
             SoundAction::Delete => return Ok(Some(ProjectSoundEdit::Delete { id })),
+            SoundAction::Cut => {
+                let at = ProjectFrame(
+                    i64::try_from(self.sequence_cursor)
+                        .map_err(|_| "Edit cursor exceeds the supported range.")?,
+                );
+                crate::project::sound::cut(workspace, &id, at)?;
+                return Ok(Some(ProjectSoundEdit::Cut { id, at }));
+            }
             SoundAction::Gain(value) => (value, event.start_edge, event.end_edge),
             SoundAction::GainStep(delta) => (
                 event
@@ -548,6 +556,10 @@ pub(super) fn command_hint(command: &str) -> Option<&'static str> {
         "sound-gain" => Some("Gain: −96 to +24 dB · up to 3 decimal places"),
         "sound-edges" => Some("Edges: soft or hard · retained timing stays intact"),
         "sound-delete" => Some("Remove selected sound · picture time stays intact"),
+        "sound-cut" => {
+            Some("End selected sound at the Edit cursor · hard edge · onset and phase kept")
+        }
+        "audio-lag" => Some("Sound offset from picture: +80ms later, -2f earlier, 0 realigns"),
         "sound-allow" | "sound-silence" => {
             Some("Captured Edit-cursor pause · selected sound only · no timing gaps filled")
         }

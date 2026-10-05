@@ -81,7 +81,7 @@ where
     F: FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
     R: FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
     S: FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
-    P: FnMut(&ProjectDocument, ProjectFrame) -> Result<super::PauseProvider, EditError>,
+    P: FnMut(&ProjectDocument, super::PauseSite) -> Result<super::PauseProvider, EditError>,
 {
     pub(super) fn finish_selection(&mut self) -> Result<(), EditError> {
         match self

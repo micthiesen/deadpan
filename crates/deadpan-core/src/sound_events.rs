@@ -19,6 +19,59 @@ use crate::{
 };
 
 pub const MAX_DOCUMENT_SOUNDS: usize = 64;
+
+impl SoundEvent {
+    /// A bed drop: end this sound abruptly at Edit frame boundary `at`,
+    /// keeping its onset, source phase, gain and start edge. The mapping
+    /// becomes a selected placement whose exact local selection ends at that
+    /// boundary in the sound's own frame clock, with a Hard end edge. `at`
+    /// must lie strictly inside the audible sound.
+    pub fn cut_at(
+        &self,
+        at: crate::ProjectFrame,
+        rate: crate::FrameRate,
+    ) -> Result<Self, EditError> {
+        let invalid = |message: &str| EditError::new(EditErrorCode::InvalidCommand, message);
+        let time = |error: crate::TimeError| EditError::from(DocumentError::from(error));
+        let selected = self
+            .mapping
+            .selection_frames_with_offset(FrameDuration::ZERO, self.offset, rate)
+            .map_err(time)?;
+        let at = crate::ExactRatio::integer(at.0);
+        if !selected.start.compare(at).is_lt() || !at.compare(selected.end).is_lt() {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "move the Edit cursor inside the selected sound, then cut it there",
+            ));
+        }
+        let (start, frames, local) = match self.mapping {
+            SourceAudioMapping::FitBeat => {
+                return Err(invalid("this sound has no natural-rate placement"));
+            }
+            SourceAudioMapping::Duration { frames } => {
+                (crate::ExactRatio::ZERO, frames, crate::ExactRatio::ZERO)
+            }
+            SourceAudioMapping::Placement { start, frames } => (start, frames, start),
+            SourceAudioMapping::SelectedPlacement {
+                start,
+                frames,
+                selection,
+            } => (start, frames, selection.start),
+        };
+        // Absolute selected frames are the local selection plus the offset.
+        let shift = selected.start.checked_sub(local).map_err(time)?;
+        let end = at.checked_sub(shift).map_err(time)?;
+        let mut cut = self.clone();
+        cut.mapping = SourceAudioMapping::SelectedPlacement {
+            start,
+            frames,
+            selection: crate::ExactFrameRange { start: local, end },
+        };
+        cut.end_edge = AudioEdgePolicy::Hard;
+        Ok(cut)
+    }
+}
+
 pub const MIN_SOUND_GAIN_MILLIDECIBELS: i32 = -96_000;
 pub const MAX_SOUND_GAIN_MILLIDECIBELS: i32 = 24_000;
 
@@ -289,6 +342,7 @@ pub(crate) fn validate_command(
                 | Command::MoveRange { .. }
                 | Command::RepeatSelection { .. }
                 | Command::SetRepeatPlays { .. }
+                | Command::SetRepeatGaps { .. }
                 | Command::Delete { .. }
         )
         || matches!(command, Command::Split { node, .. } if node != document.root())
@@ -463,6 +517,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::SetRepeat { .. }
         | Command::RepeatSelection { .. }
         | Command::SetRepeatPlays { .. }
+        | Command::SetRepeatGaps { .. }
         | Command::WrapRetime { .. }
         | Command::SetRetime { .. }
         | Command::InsertPlays { .. }
@@ -716,6 +771,72 @@ mod beat_sound_tests {
         ] {
             let mut de = serde_json::Deserializer::from_str(&map);
             assert!(super::beat_sounds_map(&mut de).is_err());
+        }
+    }
+}
+
+#[cfg(test)]
+mod cut_tests {
+    use super::*;
+    use crate::{
+        AssetId, ExactRatio, FrameRate, ProjectFrame, SourceSpan, SourceTimeBase, SourceTimestamp,
+    };
+
+    #[test]
+    fn a_cut_ends_the_sound_at_the_exact_frame_boundary_with_a_hard_edge() {
+        let rate = FrameRate::new(30_000, 1001).unwrap();
+        let time_base = SourceTimeBase::new(1, 48_000).unwrap();
+        let span = SourceSpan::new(
+            SourceTimestamp {
+                ticks: 0,
+                time_base,
+            },
+            SourceTimestamp {
+                ticks: 8_008,
+                time_base,
+            },
+        )
+        .unwrap();
+        let event = SoundEvent {
+            owner: NodeId::new("root").unwrap(),
+            label: "Bed".into(),
+            source: SourceAudio {
+                asset: AssetId::new("bed").unwrap(),
+                span,
+            },
+            mapping: SourceAudioMapping::natural_rate(span, rate).unwrap(),
+            // Frame 2's sample boundary, 0.2 samples before the exact frame.
+            offset: AudioSample(3_203),
+            gain_millidecibels: -3_000,
+            start_edge: AudioEdgePolicy::Automatic,
+            end_edge: AudioEdgePolicy::Automatic,
+            overflow: SoundOverflowPolicy::Reject,
+        };
+        let cut = event.cut_at(ProjectFrame(4), rate).unwrap();
+        let selected = cut
+            .mapping
+            .selection_frames_with_offset(FrameDuration::ZERO, cut.offset, rate)
+            .unwrap();
+        assert_eq!(selected.end, ExactRatio::integer(4));
+        assert_eq!(cut.end_edge, AudioEdgePolicy::Hard);
+        assert_eq!(
+            (cut.offset, cut.gain_millidecibels, cut.start_edge),
+            (event.offset, event.gain_millidecibels, event.start_edge)
+        );
+        // Cutting again inside the shorter sound keeps the same onset.
+        let shorter = cut.cut_at(ProjectFrame(3), rate).unwrap();
+        assert_eq!(
+            shorter
+                .mapping
+                .selection_frames_with_offset(FrameDuration::ZERO, shorter.offset, rate)
+                .unwrap()
+                .end,
+            ExactRatio::integer(3)
+        );
+        // Outside or at the edges of the audible sound refuses.
+        for frame in [1, 7, 4] {
+            let source = if frame == 4 { &cut } else { &event };
+            assert!(source.cut_at(ProjectFrame(frame), rate).is_err(), "{frame}");
         }
     }
 }

@@ -499,16 +499,11 @@ impl Service {
                 expected_revision,
                 path,
                 stream,
+                interpretation,
                 ownership,
             } => {
                 self.check_context(expected_session, &expected_revision)?;
-                self.import(
-                    path,
-                    stream.map_or(ImportMedia::FirstAudio, |stream| ImportMedia::Audio {
-                        stream,
-                    }),
-                    ownership,
-                )
+                self.import(path, ImportMedia::sound(stream, interpretation), ownership)
             }
             #[cfg(test)]
             ProjectRequest::Create(path) => self.open(path, true),
@@ -747,6 +742,17 @@ impl Service {
                     },
                 )
             }
+            ProjectSoundEdit::Cut { id, at } => {
+                let event = super::sound::cut(workspace, &id, at)?;
+                (
+                    Command::SetSound {
+                        id: id.clone(),
+                        event,
+                    },
+                    Some(id),
+                    "Sound cut at the Edit cursor and saved",
+                )
+            }
             ProjectSoundEdit::Delete { id } => {
                 if !workspace.document.sounds().contains_key(&id) {
                     return Err("The selected sound no longer exists.".into());
@@ -932,13 +938,13 @@ impl Service {
             ProjectEdit::Split { node, .. }
             | ProjectEdit::Repeat { node, .. }
             | ProjectEdit::WrapRepeat { node, .. }
-            | ProjectEdit::Escalate { node, .. }
             | ProjectEdit::SetCutaways { node, .. }
             | ProjectEdit::Retime { node, .. }
             | ProjectEdit::SetFraming { node, .. }
             | ProjectEdit::SetAudioTreatments { node, .. }
             | ProjectEdit::Delete { node }
             | ProjectEdit::HoldDuration { node, .. }
+            | ProjectEdit::AudioLag { node, .. }
             | ProjectEdit::HoldAudio { node, .. } => node,
         };
         let view = scope.resolve(workspace)?;
@@ -954,8 +960,8 @@ impl Service {
             ProjectEdit::SetFraming { .. }
                 | ProjectEdit::HoldAudio { .. }
                 | ProjectEdit::SetAudioTreatments { .. }
-                | ProjectEdit::Escalate { .. }
                 | ProjectEdit::SetCutaways { .. }
+                | ProjectEdit::AudioLag { .. }
         );
         let mut retime_message = None;
         let new_revision = revision();
@@ -1043,39 +1049,6 @@ impl Service {
                     },
                     selected,
                     "Cutaways updated and saved",
-                )
-            }
-            ProjectEdit::Escalate { node, input } => {
-                let NodeKind::Repeat {
-                    iterations,
-                    escalation,
-                    ..
-                } = &document.nodes()[&node].kind
-                else {
-                    return Err("Select a Repeat to set its escalation. Wrap a beat first with :repeat N or rr.".into());
-                };
-                let plays = iterations.len();
-                if input.plays.is_some_and(|requested| requested != plays) {
-                    return Err(format!(
-                        "This Repeat has {plays} plays. Change the count with :repeat N first, then set escalation for those plays."
-                    ));
-                }
-                let current = *escalation;
-                let escalation = input.apply(current)?;
-                if escalation == current {
-                    self.message =
-                        Some("This Repeat already has that escalation. No edit was made.".into());
-                    return Ok(());
-                }
-                if let Some(escalation) = &escalation {
-                    escalation
-                        .validate(plays)
-                        .map_err(|error| error.to_string())?;
-                }
-                (
-                    Command::SetRepeatEscalation { node, escalation },
-                    selected,
-                    "Repeat escalation updated and saved",
                 )
             }
             ProjectEdit::Scoped { .. }
@@ -1192,6 +1165,39 @@ impl Service {
                     },
                     selected,
                     "Beat deleted and saved",
+                )
+            }
+            ProjectEdit::AudioLag { node, offset } => {
+                let (host, _) = deadpan_core::cutaway_host(document, &node).ok_or(
+                    "Audio lag belongs to a source beat. Open a group with Enter and select one there.",
+                )?;
+                let NodeKind::Source { source } = &document.nodes()[&host].kind else {
+                    return Err("Audio lag needs a beat of the Original; this is a pause.".into());
+                };
+                if source.audio.is_none() {
+                    return Err("This beat has no sound to offset.".into());
+                }
+                if source.edit_window.is_some() && source.audio_offset != offset {
+                    // An offset gives the sound its own clock, so the common
+                    // picture/sound window that Slip and Trim need ends.
+                    retime_message = Some(
+                        "Sound offset saved. Slip and Trim no longer apply to this beat because its sound no longer shares the picture's clock; Undo restores them."
+                            .into(),
+                    );
+                }
+                if source.audio_offset == offset {
+                    self.message =
+                        Some("The sound already has that offset. No edit was made.".into());
+                    return Ok(());
+                }
+                (
+                    Command::SetSourceAudioMapping {
+                        node: host,
+                        mapping: source.audio_mapping,
+                        offset,
+                    },
+                    selected,
+                    "Sound offset updated and saved",
                 )
             }
             ProjectEdit::HoldDuration { node, duration } => (
@@ -1594,6 +1600,7 @@ impl Service {
                 .snapshot()
                 .audio()
                 .map(|audio| audio.stream().stream_index),
+            interpretation: source.receipt.snapshot().audio_interpretation(),
         };
         let record = self
             .writer()?

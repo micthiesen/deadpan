@@ -289,6 +289,21 @@ pub fn nudge(workspace: &Workspace, id: &SoundId, frames: i64) -> Result<SoundEv
     Ok(event)
 }
 
+/// A bed drop: end the sound abruptly at Edit frame boundary `at`, keeping
+/// its onset, source phase and gain. The selection ends exactly at that frame
+/// boundary in the sound's own exact frame clock, and the end edge is Hard so
+/// no fade softens the cut.
+pub fn cut(workspace: &Workspace, id: &SoundId, at: ProjectFrame) -> Result<SoundEvent, String> {
+    if workspace.document.sound_routes().contains_key(id) {
+        return Err("This sound follows timeline cuts. Cutting a routed sound is not supported yet; no edit was made.".into());
+    }
+    let event = movable(workspace, id)?
+        .cut_at(at, workspace.document.presentation_basis().frame_rate)
+        .map_err(|error| error.message)?;
+    validate_placement(workspace, &event)?;
+    Ok(event)
+}
+
 fn movable(workspace: &Workspace, id: &SoundId) -> Result<SoundEvent, String> {
     let event = workspace
         .document

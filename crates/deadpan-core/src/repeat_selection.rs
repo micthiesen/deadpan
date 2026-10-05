@@ -7,10 +7,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::insert_time::{composite, sequence_range};
 use crate::{
-    AudioTimingId, BeatNode, Command, DocumentError, EditError, EditErrorCode, FrameDuration,
-    FrameRange, IterationOrder, MAX_DOCUMENT_NODES, NodeId, NodeKind, ProjectDocument,
-    ProjectFrame, RepeatLayout, RevisionId, RootSoundOperation, SliceCaptureSelection,
-    SplitIdentities, WrapAnchorPolicy,
+    AudioEdgePolicies, AudioTimingId, BeatNode, Command, DocumentError, EditError, EditErrorCode,
+    FrameDuration, FrameRange, HoldRecipe, IterationId, IterationOrder, MAX_DOCUMENT_NODES, NodeId,
+    NodeKind, ProjectDocument, ProjectFrame, RepeatLayout, RevisionId, RootSoundOperation,
+    SliceCaptureSelection, SplitIdentities, Subtree, WrapAnchorPolicy,
 };
 
 #[cfg(test)]
@@ -24,6 +24,16 @@ pub struct RepeatSelectionIdentities {
     pub repeat: NodeId,
     pub group: Option<NodeId>,
     pub split: SplitIdentities,
+}
+
+/// An independent Hold that replaces the rendered gap after one stable play.
+/// The caller supplies its fresh node identity; the recipe is ordinary data.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RepeatGapHold {
+    pub after: IterationId,
+    pub id: NodeId,
+    pub hold: HoldRecipe,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -175,6 +185,15 @@ pub(crate) fn root_operation(
             let plan = plays_plan(document, node, *plays)?;
             (plan.range, plan.output_duration)
         }
+        Command::SetRepeatGaps {
+            node,
+            gap,
+            branches,
+            timing,
+        } => {
+            let (plan, _) = gaps_plan(document, node, gap.as_ref(), branches, &timing.allocation)?;
+            (plan.range, plan.output_duration)
+        }
         _ => return Err(invalid("expected a retained-clock Repeat command")),
     };
     let new_end = ProjectFrame(
@@ -218,6 +237,12 @@ pub(crate) fn apply(
             plays,
             timing,
         } => set_plays(document, node, *plays, timing, context),
+        Command::SetRepeatGaps {
+            node,
+            gap,
+            branches,
+            timing,
+        } => set_gaps(document, node, gap.as_ref(), branches, timing, context),
         _ => Err(invalid("expected a retained-clock Repeat command")),
     }
 }
@@ -377,6 +402,289 @@ fn set_plays(
     finish(&working, result, &command)
 }
 
+/// Validate the gap request and resolve the Repeat's new output duration by
+/// reducing a trial copy. Branches name distinct plays that are followed by a
+/// rendered gap; a final play's dormant gap is not a target.
+fn gaps_plan(
+    document: &ProjectDocument,
+    node: &NodeId,
+    gap: Option<&HoldRecipe>,
+    branches: &[RepeatGapHold],
+    allocation: &RevisionId,
+) -> Result<(PlaysPlan, ProjectDocument), EditError> {
+    let parent = document
+        .parent_of(node)
+        .ok_or_else(|| unavailable("Repeat needs a Sequence parent"))?;
+    let (slot, range) = child_range(document, &parent, node)?;
+    let NodeKind::Repeat { iterations, .. } = &document.nodes()[node].kind else {
+        return Err(EditError::new(
+            EditErrorCode::WrongNodeKind,
+            "set-repeat-gaps requires an existing Repeat",
+        ));
+    };
+    if !u32::try_from(branches.len()).is_ok_and(|count| count < iterations.len()) {
+        return Err(invalid("a Repeat has one fewer gap than plays"));
+    }
+    let mut used: BTreeSet<_> = document.nodes().keys().collect();
+    used.extend(document.audio_lineage().values().map(|value| &value.origin));
+    for layout in document.audio_bindings().timings.values() {
+        used.extend(layout.nodes().keys());
+        used.extend(layout.audio_lineage().values().map(|value| &value.origin));
+    }
+    let mut seen = BTreeSet::new();
+    for branch in branches {
+        if !seen.insert(&branch.after) {
+            return Err(invalid("each gap can be replaced once"));
+        }
+        if iterations
+            .position(&branch.after)
+            .is_none_or(|position| position + 1 >= iterations.len())
+        {
+            return Err(unavailable(
+                "a replaced gap must follow a play that is not the last",
+            ));
+        }
+        if branch.hold.duration == FrameDuration::ZERO {
+            return Err(invalid("a replaced gap needs a positive duration"));
+        }
+        if !used.insert(&branch.id) {
+            return Err(EditError::new(
+                EditErrorCode::IdentityConflict,
+                "gap Hold identities must be fresh and distinct",
+            ));
+        }
+    }
+    if gap.is_some_and(|gap| gap.duration == FrameDuration::ZERO) {
+        return Err(invalid(
+            "a default gap needs a positive duration; omit it to remove the gap",
+        ));
+    }
+    // Only the structural duration matters here. Sound relations transform in
+    // the enclosing transaction, so they must not constrain the trial tree.
+    let mut trial = document.clone();
+    trial.sounds.clear();
+    trial.sound_routes.clear();
+    trial.sound_allowances.clear();
+    reduce_gaps(&mut trial, node, gap, branches, allocation)?;
+    crate::audio_binding_lifecycle::prune(&mut trial);
+    let output_duration = trial.durations()?[node];
+    checked_total(document, range.duration(), output_duration)?;
+    Ok((
+        PlaysPlan {
+            parent,
+            slot,
+            range,
+            output_duration,
+        },
+        trial,
+    ))
+}
+
+/// The plain structural change: the default gap, then each independent Hold.
+fn reduce_gaps(
+    document: &mut ProjectDocument,
+    node: &NodeId,
+    gap: Option<&HoldRecipe>,
+    branches: &[RepeatGapHold],
+    allocation: &RevisionId,
+) -> Result<(), EditError> {
+    let NodeKind::Repeat { iterations, .. } = &document.nodes()[node].kind else {
+        unreachable!("gap plan admitted a Repeat")
+    };
+    let plays = iterations.len();
+    let edges = AudioEdgePolicies {
+        node_start: document.nodes()[node].audio_edges.repeat_gap_start,
+        node_end: document.nodes()[node].audio_edges.repeat_gap_end,
+        ..Default::default()
+    };
+    crate::command::reduce(
+        document,
+        &Command::SetRepeat {
+            node: node.clone(),
+            plays,
+            gap: gap.cloned(),
+        },
+        allocation,
+    )?;
+    // The request is the complete gap set: branches it does not name end,
+    // including a final play's dormant one, and expose the default gap.
+    let unnamed: Vec<_> = document
+        .gap_overrides()
+        .get(node)
+        .into_iter()
+        .flat_map(|entries| entries.iter())
+        .map(|(after, _)| after.clone())
+        .filter(|after| branches.iter().all(|branch| &branch.after != after))
+        .collect();
+    for after in unnamed {
+        crate::command::reduce(
+            document,
+            &Command::ClearGapOverride {
+                node: node.clone(),
+                iteration: after,
+            },
+            allocation,
+        )?;
+    }
+    for branch in branches {
+        let mut hold = BeatNode::hold("Gap", branch.hold.clone());
+        hold.audio_edges = edges;
+        crate::command::reduce(
+            document,
+            &Command::SetGapOverride {
+                node: node.clone(),
+                iteration: branch.after.clone(),
+                subtree: Subtree {
+                    root: branch.id.clone(),
+                    nodes: [(branch.id.clone(), hold)].into(),
+                    overrides: Default::default(),
+                    gap_overrides: Default::default(),
+                },
+            },
+            allocation,
+        )?;
+    }
+    Ok(())
+}
+
+/// Absolute end of `repeat`'s first play, which no gap change can move.
+fn first_play_end(
+    document: &ProjectDocument,
+    repeat: &NodeId,
+    start: ProjectFrame,
+) -> Result<ProjectFrame, EditError> {
+    let NodeKind::Repeat {
+        child,
+        iterations,
+        gap,
+        ..
+    } = &document.nodes()[repeat].kind
+    else {
+        unreachable!("gap plan admitted a Repeat")
+    };
+    let durations = document.durations()?;
+    let layout = RepeatLayout::compile_with_gap_overrides(
+        iterations,
+        child,
+        document.overrides().get(repeat),
+        gap.as_ref().map_or(FrameDuration::ZERO, |gap| gap.duration),
+        document.gap_overrides().get(repeat),
+        &durations,
+    )?;
+    let first = iterations.at(0).expect("positive Repeat plays");
+    let play = layout.play(&first).expect("validated Repeat layout");
+    start
+        .0
+        .checked_add(play.start)
+        .and_then(|value| value.checked_add(play.duration.frames()))
+        .map(ProjectFrame)
+        .ok_or_else(overflow)
+}
+
+impl ProjectDocument {
+    /// Whether `SetRepeatGaps` would leave `node`'s gaps exactly as they are:
+    /// the same default recipe and, after each named play, an existing
+    /// independent Hold with the same recipe, with no other branch.
+    pub fn repeat_gaps_unchanged(
+        &self,
+        node: &NodeId,
+        gap: Option<&HoldRecipe>,
+        branches: &[(IterationId, HoldRecipe)],
+    ) -> bool {
+        let Some(NodeKind::Repeat { gap: current, .. }) = self.nodes().get(node).map(|n| &n.kind)
+        else {
+            return false;
+        };
+        let existing: Vec<_> = self
+            .gap_overrides()
+            .get(node)
+            .into_iter()
+            .flat_map(|entries| entries.iter())
+            .collect();
+        current.as_ref() == gap
+            && existing.len() == branches.len()
+            && branches.iter().all(|(after, hold)| {
+                existing.iter().any(|(existing, root)| {
+                    *existing == after
+                        && matches!(
+                            self.nodes().get(*root).map(|node| &node.kind),
+                            Some(NodeKind::Hold { recipe }) if recipe == hold
+                        )
+                })
+            })
+    }
+}
+
+fn set_gaps(
+    document: &ProjectDocument,
+    node: &NodeId,
+    gap: Option<&HoldRecipe>,
+    branches: &[RepeatGapHold],
+    timing: &AudioTimingId,
+    context: crate::command::EditContext<'_>,
+) -> Result<ProjectDocument, EditError> {
+    let (plan, _) = gaps_plan(document, node, gap, branches, context.allocation)?;
+    validate_timing(document, timing, context.allocation)?;
+    let requested: Vec<_> = branches
+        .iter()
+        .map(|branch| (branch.after.clone(), branch.hold.clone()))
+        .collect();
+    if document.repeat_gaps_unchanged(node, gap, &requested) {
+        return Ok(document.clone());
+    }
+    let NodeKind::Repeat { iterations, .. } = &document.nodes()[node].kind else {
+        unreachable!()
+    };
+    let iterations = iterations.clone();
+    let mut working = document.clone();
+    working.audio_bindings = crate::capture_unbound_audio_bindings(document, timing.clone())?;
+    // Later plays and gaps inside the Repeat move with the gaps before them.
+    // Like the suffix, each keeps its own pre-edit sample clock: capture every
+    // interior entry after the first play once, before the tree changes.
+    let first_end = first_play_end(document, node, plan.range.start())?;
+    if first_end < plan.range.end() {
+        let interior_timing = next_timing(&working, timing)?;
+        working = composite::prepare_owners(
+            &working,
+            &composite::repeat_interior_owners(&working, node)?,
+            first_end,
+            plan.range.end().0,
+            &interior_timing,
+        )?;
+    }
+    if plan.output_duration != plan.range.duration()
+        && plan.range.end().0 < document.duration()?.frames()
+    {
+        let suffix_timing = next_timing(&working, timing)?;
+        working = composite::prepare_suffix(
+            &working,
+            &plan.parent,
+            plan.slot + 1,
+            plan.range.end(),
+            document.duration()?.frames(),
+            &suffix_timing,
+        )?;
+    }
+    let mut result = working.clone();
+    reduce_gaps(&mut result, node, gap, branches, context.allocation)?;
+    // A replaced branch takes its captured clock with it.
+    crate::audio_binding_lifecycle::prune(&mut result);
+    if let Some(allowances) = context.allowances {
+        // Permissions for a default gap end when that gap stops being the
+        // default: when it is removed or replaced by an independent Hold.
+        allowances.retire_repeat_gaps(node, |after| {
+            gap.is_some() && branches.iter().all(|branch| &branch.after != after)
+        })?;
+        allowances.resize_repeat(node, &iterations)?;
+    }
+    let command = Command::SetRepeat {
+        node: node.clone(),
+        plays: iterations.len(),
+        gap: gap.cloned(),
+    };
+    finish(&working, result, &command)
+}
+
 fn finish(
     before: &ProjectDocument,
     mut result: ProjectDocument,
@@ -491,16 +799,15 @@ fn next_timing(
     document: &ProjectDocument,
     base: &AudioTimingId,
 ) -> Result<AudioTimingId, EditError> {
-    Ok(AudioTimingId {
-        allocation: base.allocation.clone(),
-        ordinal: if document.audio_bindings().timings.contains_key(base) {
-            base.ordinal
-                .checked_add(1)
-                .ok_or_else(|| limit("Repeat requires a second timing identity"))?
-        } else {
-            base.ordinal
-        },
-    })
+    // The first ordinal of this allocation that no retained layout uses yet.
+    let mut next = base.clone();
+    while document.audio_bindings().timings.contains_key(&next) {
+        next.ordinal = next
+            .ordinal
+            .checked_add(1)
+            .ok_or_else(|| limit("Repeat requires another timing identity"))?;
+    }
+    Ok(next)
 }
 
 fn invalid(message: &str) -> EditError {

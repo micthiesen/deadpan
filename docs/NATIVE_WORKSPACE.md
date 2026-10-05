@@ -40,6 +40,18 @@ Keycaps and their labels reserve their complete measured width together,
 so narrow layouts wrap the pair instead of clipping the last shortcuts.
 See the [footer qualification](qualification/footer-layout-2026-09-27.md).
 
+Contextual footer keys fit two rows and always end with the Help reference.
+Each hint has a tier (`key_labels::Tier`): **Core** for the context's motions,
+the edits that act on its current target (the selection, or without one the
+cursor's beat and frame, so both `dd` and `x`), Undo, command entry and a mode's
+exit; **Context** for keys that exist because of current state (word, pause and
+shot motions, AI pictures, group navigation, text objects, pane switching); and
+**More** for every other verb. When the rows cannot hold everything, no hint is
+dropped to keep a lower-tier one; within a tier the listed order decides. Kept
+hints paint in the listed order. A new hint chooses its tier rather than a
+position, so newly available analysis keys cannot push a context's own edit
+keys out at the minimum window.
+
 Each new command field starts with its caret at the prefilled text's end and
 fresh local editing state. A prior command's caret, selection and undo history
 cannot redirect an immediate text suffix. This also applies to inspector

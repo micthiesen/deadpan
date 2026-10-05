@@ -294,10 +294,10 @@ pub fn plan_program(
                 .map_err(Clone::clone)?
                 .project(staged)
         },
-        |staged, at| {
+        |staged, site| {
             let plan = deadpan_plan::RenderPlan::compile(staged)
                 .map_err(|error| pause_error(&error.to_string()))?;
-            crate::pause::pause_provider(staged, &plan, at, &mut |asset| {
+            crate::pause::site_provider(staged, &plan, &site, &mut |asset| {
                 if let Some((_, index)) = indexes.iter().find(|(known, _)| known == asset) {
                     return Ok(Arc::clone(index));
                 }
@@ -347,6 +347,12 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
         SemanticAllocationRequest::SetRepeatPlays { .. } => SemanticAllocation::SetRepeatPlays {
             new_revision: crate::new_revision()?,
         },
+        SemanticAllocationRequest::SetRepeatGaps { branches, .. } => {
+            SemanticAllocation::SetRepeatGaps {
+                new_revision: crate::new_revision()?,
+                nodes: nodes(branches)?,
+            }
+        }
         SemanticAllocationRequest::ParameterEdit { .. } => SemanticAllocation::ParameterEdit {
             new_revision: crate::new_revision()?,
         },

@@ -79,10 +79,10 @@ impl Inspector {
                     "Repeat",
                     "↻",
                     Some((
-                        "Plays or escalation…",
+                        "Plays, gaps or escalation…",
                         format!("repeat {}", iterations.len()),
                     )),
-                    "Set total plays, or escalate each play with gain-step=3dB zoom-step=0.08. Wrap repeat adds a new enclosing Repeat.",
+                    "Set total plays, a held gap between plays with gap=120ms (gap-step=-40ms shortens each later gap), or escalate each play with gain-step=3dB zoom-step=0.08. Wrap repeat adds a new enclosing Repeat.",
                 )
             }
             NodeKind::Source { source } => {
@@ -104,13 +104,20 @@ impl Inspector {
                     }
                     .into(),
                 ));
+                let link = match source.link {
+                    LinkRelation::Linked => "Linked",
+                    LinkRelation::Independent => "Independent",
+                };
                 fields.push((
                     "Link",
-                    match source.link {
-                        LinkRelation::Linked => "Linked",
-                        LinkRelation::Independent => "Independent",
-                    }
-                    .into(),
+                    match source.audio_offset.0 {
+                        0 => link.into(),
+                        samples => format!(
+                            "{link} · sound {:.1} ms {}",
+                            samples.unsigned_abs() as f64 / 48.0,
+                            if samples > 0 { "late" } else { "early" }
+                        ),
+                    },
                 ));
                 (
                     "Source",

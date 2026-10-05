@@ -64,6 +64,16 @@ the fixture (`368c01df…`). The rest of the AI workflow is command-only
 preview only after register choice, macro, Visual and pending-key owners have
 none left to clear, and never cancels a generation.
 
+`,m` (`gain.mute`) and `,r` (`cutaway.pick`) join the comma family on
+2026-10-04. Both are unmodified, Your edit only (Normal and Visual), refuse a
+count, do not repeat while held and yield to native text and composition; `m`
+alone keeps its mark prefix and `r` its Repeat operator. `,m` mutes the Visual
+range inside the selected beat or toggles the whole beat; `,r` opens captured
+`:cutaway register=` entry. The `recipes` replay's production audit passed all
+62 reservations over 10,890,672 routing cases with no conflicts; no local
+Kestrel source was found (`live_source_sha256` null), so the checked fixture
+(`source-sha256=368c01df…`) is the reference.
+
 Catalog placement uses `,s` with no count or key-repeat activation. In Placed
 sounds and its inspector, `h/l`, `j/k`, Enter, `+/-` and `dd` act on the event.
 Logical Plus accepts no modifier or Shift; Minus accepts no modifier so the

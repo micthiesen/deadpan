@@ -150,6 +150,10 @@ impl StoreError {
             Self::SourceBasisAdmissionUnavailable => "SourceBasisAdmissionUnavailable",
             Self::SourceRegistration(_) => "SourceRegistrationInvalid",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::SourceQualification(
+                deadpan_media::source_qualification::SourceQualificationError::AudioLayoutInterpretation(_),
+            ) => "AudioLayoutInterpretationRequired",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::SourceQualification(_) => "SourceQualificationInvalid",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::GeneratedMedia(error) => error.code(),

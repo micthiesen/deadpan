@@ -60,6 +60,12 @@ pub enum BeatEdit {
     Delete,
     HoldDuration(deadpan_core::FrameDuration),
     Retime(retime::RetimeInput),
+    /// `:audio-lag +80ms`: the selected Source's sound plays this much later
+    /// (or earlier) than its picture, as an explicit link offset.
+    AudioLag {
+        earlier: bool,
+        amount: Option<duration::DurationInput>,
+    },
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
@@ -137,6 +143,15 @@ pub enum Action {
     Ungroup,
     /// `,e`: wrap the selected beat or Visual range in an escalating Repeat.
     EscalatingRepeat,
+    /// `,m`: mute the Visual range inside the selected beat, or toggle the
+    /// whole beat's mute.
+    Mute,
+    /// `,r`: pick a register holding an Original moment for a reaction
+    /// cutaway over the selected beat or Visual range.
+    CutawayPicker,
+    /// `:framing-save a`: keep the selected beat's framing as a reusable
+    /// preset, a one-instruction macro applied with `@a`.
+    SaveFraming(char),
     /// AI pause pictures for the selected Hold (`,a`, `:generate`, …).
     Ai(AiAction),
     /// `:gag NAME`: apply a built-in recipe.

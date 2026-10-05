@@ -34,6 +34,69 @@ impl AudioChannelLayout {
     }
 }
 
+/// A host's explicit reading of a stream whose container declares channels but
+/// no speaker layout, such as a plain PCM WAV. It is chosen by the person
+/// registering the sound and persisted with its qualification; it is never
+/// inferred from the channel count. A declared native layout cannot be
+/// overridden. Each interpretation names one exact native layout.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AudioLayoutInterpretation {
+    /// One unlabelled channel heard as a front-center mono speaker.
+    Mono,
+    /// Two unlabelled channels heard as front left, then front right.
+    StereoLeftRight,
+}
+
+impl AudioLayoutInterpretation {
+    pub const ALL: [Self; 2] = [Self::Mono, Self::StereoLeftRight];
+
+    pub fn channels(self) -> u32 {
+        match self {
+            Self::Mono => 1,
+            Self::StereoLeftRight => 2,
+        }
+    }
+
+    /// The exact native layout this interpretation stands for.
+    pub fn layout(self) -> AudioChannelLayout {
+        match self {
+            // FFmpeg AV_CH_FRONT_CENTER and AV_CH_FRONT_LEFT | AV_CH_FRONT_RIGHT.
+            Self::Mono => AudioChannelLayout::Native {
+                channels: 1,
+                mask: 1 << 2,
+            },
+            Self::StereoLeftRight => AudioChannelLayout::Native {
+                channels: 2,
+                mask: 0b11,
+            },
+        }
+    }
+
+    /// Short user-facing name.
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Mono => "Mono",
+            Self::StereoLeftRight => "Stereo L/R",
+        }
+    }
+
+    /// Wire name, as used in requests (`mono`, `stereo_left_right`).
+    pub fn wire_name(self) -> &'static str {
+        match self {
+            Self::Mono => "mono",
+            Self::StereoLeftRight => "stereo_left_right",
+        }
+    }
+
+    /// Interpretations that apply to this many unlabelled channels.
+    pub fn for_channels(channels: u32) -> impl Iterator<Item = Self> {
+        Self::ALL
+            .into_iter()
+            .filter(move |choice| choice.channels() == channels)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct AudioStreamDescriptor {

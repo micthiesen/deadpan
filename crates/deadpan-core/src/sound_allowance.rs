@@ -353,6 +353,24 @@ impl SoundAllowanceEdit {
         Ok(())
     }
 
+    /// Remove default-gap permissions of `repeat` whose gap no longer renders
+    /// its default recipe. Node issuers inside branches are unaffected.
+    pub(crate) fn retire_repeat_gaps(
+        &mut self,
+        repeat: &NodeId,
+        keep: impl Fn(&IterationId) -> bool,
+    ) -> Result<(), EditError> {
+        self.values.retain(|_, allowances| {
+            allowances.0.retain(|issuer| {
+                !matches!(issuer, SoundHoldIssuer::RepeatGap { instance, gap_after }
+                    if &instance.node == repeat && !keep(gap_after))
+            });
+            !allowances.is_empty()
+        });
+        validate_limits(&self.values)?;
+        Ok(())
+    }
+
     pub(crate) fn restore(mut self, document: &mut ProjectDocument) -> Result<(), EditError> {
         self.values.retain(|sound, allowances| {
             if !document.sounds.contains_key(sound) {

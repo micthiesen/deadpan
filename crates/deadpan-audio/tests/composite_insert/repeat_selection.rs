@@ -149,3 +149,86 @@ fn resizing_repeated_range_preserves_surviving_pcm_and_suffix() {
     retained(&after, &mut provider, 8008, &suffix);
     assert_eq!(after.duration().unwrap(), frames(10));
 }
+
+fn set_gaps(
+    before: &ProjectDocument,
+    name: &str,
+    gap: Option<i64>,
+    branches: &[(u32, &str, i64)],
+) -> ProjectDocument {
+    let NodeKind::Repeat { iterations, .. } = &before.nodes()[&id("new-repeat")].kind else {
+        panic!("wrapped Repeat")
+    };
+    let iterations = iterations.clone();
+    edit(
+        before,
+        name,
+        Command::SetRepeatGaps {
+            node: id("new-repeat"),
+            gap: gap.map(|duration| super::gap(duration, HoldAudio::Silence)),
+            branches: branches
+                .iter()
+                .map(|(after, node, duration)| RepeatGapHold {
+                    after: iterations.at(*after).unwrap(),
+                    id: id(node),
+                    hold: super::gap(*duration, HoldAudio::Silence),
+                })
+                .collect(),
+            timing: AudioTimingId {
+                allocation: revision(name),
+                ordinal: 0,
+            },
+        },
+    )
+}
+
+fn assert_silent(document: &ProjectDocument, provider: &mut Provider, start: i64, count: usize) {
+    let samples = pcm(document, provider, start, count);
+    assert!(
+        samples.iter().flatten().all(|sample| *sample == 0.0),
+        "silence at {start}"
+    );
+}
+
+/// At 30000/1001 a frame is 1,601.6 samples, so shifting a play by whole
+/// frames moves its rounded start by a varying number of samples. Every play
+/// must still be the identical retained samples, placed at its new rounded
+/// start, with silent gaps and an exactly retained suffix.
+#[test]
+fn ntsc_gap_changes_move_each_play_and_the_suffix_as_identical_samples() {
+    let before = document(ntsc(), &["voice"], vec![("voice", source(ntsc(), 8))]);
+    let repeated = wrap(&before, 1, 3, 3);
+    let mut provider = Provider::new();
+    // B(1)=1602, B(3)=4805: one play is 3,203 samples.
+    let body = pcm(&before, &mut provider, 1602, 3203);
+    let prefix = pcm(&before, &mut provider, 0, 1602);
+    let suffix = pcm(&before, &mut provider, 4805, 8008);
+    // Plays at frames 1, 5 and 8 after a 2-frame gap then a 1-frame gap:
+    // B(5)=8008, B(8)=12813, B(10)=16016; gaps [4805, 8008) and [11211, 12813).
+    let gapped = set_gaps(&repeated, "gaps", Some(2), &[(1, "short", 1)]);
+    assert_eq!(gapped.duration().unwrap(), frames(15));
+    retained(&gapped, &mut provider, 0, &prefix);
+    for start in [1602, 8008, 12813] {
+        retained(&gapped, &mut provider, start, &body);
+    }
+    assert_silent(&gapped, &mut provider, 4805, 3203);
+    assert_silent(&gapped, &mut provider, 11211, 1602);
+    retained(&gapped, &mut provider, 16016, &suffix);
+    // Changing the gaps again moves the same samples: plays at frames 1, 6
+    // and 9 (B(6)=9610, B(9)=14414), suffix at B(11)=17618. Without
+    // reanchoring the interior, play 3 accumulated one rounding and landed
+    // at 14,415 (12,813 + 1,602) instead of its own clock's 14,414.
+    let wider = set_gaps(&gapped, "wider", Some(3), &[(1, "shorter", 1)]);
+    assert!(!wider.nodes().contains_key(&id("short")));
+    for start in [1602, 9610, 14414] {
+        retained(&wider, &mut provider, start, &body);
+    }
+    retained(&wider, &mut provider, 17618, &suffix);
+    // Removing every gap restores the original play and suffix samples.
+    let none = set_gaps(&wider, "none", None, &[]);
+    assert_eq!(none.duration().unwrap(), frames(12));
+    for start in [1602, 4805, 8008] {
+        retained(&none, &mut provider, start, &body);
+    }
+    retained(&none, &mut provider, 11211, &suffix);
+}

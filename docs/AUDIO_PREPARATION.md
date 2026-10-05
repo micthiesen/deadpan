@@ -76,10 +76,17 @@ No coefficients depend on content amplitude, peak level, or selected word.
 `PreparedSource::new` requires a native layout. `with_layout` allows a host to
 explicitly interpret unspecified channels, with matching channel count; it
 cannot contradict a native layout. It never infers speakers from channel count.
-The committed PCM WAV fixtures genuinely have unspecified decoder metadata, so
-tests supply the speaker declarations from their known synthetic fixture recipe.
-The raw index remains unchanged. Persisting that choice as a user edit and
-providing its UI are still required before application use.
+`with_layout_controlled` does the same under the caller's cancellation and
+deadline check. The committed PCM WAV fixtures genuinely have unspecified
+decoder metadata; the raw index remains unchanged.
+
+The registering person's choice is persisted with the source receipt (see
+[source registration](SOURCE_REGISTRATION.md#explicit-speaker-interpretation)).
+Playback and headless/export preparation pass
+`SourceQualificationSnapshot::audio_layout()` to `with_layout`: the explicit
+interpretation when one was chosen, otherwise the declared layout, which this
+section's automatic admission may still refuse. Cache provenance already
+includes the chosen layout.
 
 ## Source binding and integration
 

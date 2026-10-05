@@ -163,6 +163,8 @@ impl Service {
                             SemanticInstruction::Paste { .. } => "Paste register",
                             SemanticInstruction::Repeat { .. } => "Wrap Repeat",
                             SemanticInstruction::SetRepeatPlays { .. } => "Set Repeat plays",
+                            SemanticInstruction::SetRepeat { .. } => "Change Repeat",
+                            SemanticInstruction::SetRoomTone { .. } => "Set room tone",
                             SemanticInstruction::Group { .. } => "Group beats",
                             SemanticInstruction::Ungroup => "Ungroup beats",
                             SemanticInstruction::Gag { .. } => "Apply gag",

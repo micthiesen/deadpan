@@ -163,6 +163,13 @@ pub(super) fn selector_text(selector: &SemanticSelector) -> String {
     }
 }
 
+fn pause_text(length: deadpan_core::PauseLength) -> String {
+    match length {
+        deadpan_core::PauseLength::Frames { frames } => format!("{frames}f"),
+        deadpan_core::PauseLength::Milliseconds { milliseconds } => format!("{milliseconds}ms"),
+    }
+}
+
 /// The footer message after an applied editor operator.
 pub(super) fn applied_text(instruction: &deadpan_core::SemanticInstruction) -> Option<String> {
     use deadpan_core::SemanticInstruction as I;
@@ -183,6 +190,37 @@ pub(super) fn applied_text(instruction: &deadpan_core::SemanticInstruction) -> O
                 .then(|| format!("Repeated {} ×{plays}{escalated}", selector_text(selector)));
         }
         I::Gag { recipe } => return Some(format!("Applied {}", recipe.name())),
+        I::SetRepeat {
+            plays,
+            gaps,
+            escalation,
+        } => {
+            let mut parts = Vec::new();
+            if let Some(plays) = plays {
+                parts.push(format!("{plays} plays"));
+            }
+            if let Some(gaps) = gaps {
+                parts.push(if gaps.is_empty() {
+                    "no gap".to_owned()
+                } else {
+                    let lengths: Vec<_> = gaps.iter().map(|gap| pause_text(*gap)).collect();
+                    format!("gaps {}", lengths.join(", "))
+                });
+            }
+            if let Some(escalation) = escalation {
+                parts.push(
+                    if escalation.gain_step == deadpan_core::GainDb::UNITY
+                        && escalation.zoom.is_none()
+                    {
+                        "no escalation".to_owned()
+                    } else {
+                        "escalation".to_owned()
+                    },
+                );
+            }
+            return Some(format!("Repeat set: {}", parts.join("; ")));
+        }
+        I::SetRoomTone { .. } => return Some("Room tone applied".into()),
         I::InsertPause { .. } => return Some("Inserted a pause".into()),
         I::SetFraming { .. } => return Some("Framed the beat".into()),
         I::Group { selector, label } => {

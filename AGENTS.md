@@ -916,6 +916,17 @@ for qualified limits and rejected grammars.
 
 The setup workflow's TypeScript/Bun/mitools/Biome defaults do not apply to this Rust-native product. The maintained Rust sibling `beastie` supplies the initial workspace conventions; consult maintained siblings for evolving personal tooling patterns. [Dependency decisions](docs/DEPENDENCIES.md) records the pins and qualification boundaries. Do not introduce Bun, Node, Python, or shell setup as an end-user requirement. Future model workers use an app-managed private runtime selected through measurement.
 
+`SetRepeatGaps` follows the `SetRepeatPlays` retained-clock pattern: capture
+unbound clocks, reanchor the suffix once when duration changes and every
+interior entry after the first play (moved plays keep their own clocks), transform
+root sounds once and keep stable plays. The request is the complete gap set:
+named gaps become fresh independent Holds and unnamed branches end. Semantic `SetRepeat { plays, gaps, escalation }` backs
+`:repeat N gap= gain-step=` and wraps a plain beat first. Gap freezes resolve
+through `PauseSite::RepeatGap`, capturing composition below the Repeat only.
+Room tone from a copied moment uses `copied_moment_audio`, which must equal the
+native sheet's PTS-to-sample inward derivation (media test enforces it). See
+[gags](docs/GAGS.md) and [editable gaps](docs/REPEAT_GAP_BRANCHES.md).
+
 Rapid explicit Repeat wraps may retain sixteen UI-owned waiting intents behind
 one submitted command. Rebuild each successor only after adopting the exact
 same-session committed wrapper, revision and Sequence scope. Never dispatch from
@@ -1323,6 +1334,9 @@ that reservation bounded and keep production deadlines and PCM assertions
 intact. `Engine::drop` and `Stopped` alone do not establish worker teardown.
 
 Use the [UI feedback loop](docs/UI_FEEDBACK.md) for every meaningful UI change.
+Meaningful UI milestones also run `cargo xtask replays`, which replays every
+scenario from one harness build and fails on any failed scenario; the full gate
+remains separate.
 Add or update a scenario that replays real keyboard, pointer, wheel or text events
 through the application, then run visual mode and inspect its contact sheets and
 affected full-size frames against the [design targets](docs/design/README.md).

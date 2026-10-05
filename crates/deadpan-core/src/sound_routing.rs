@@ -368,7 +368,9 @@ impl RootSoundEditCapture {
         }
         if matches!(
             command,
-            Command::RepeatSelection { .. } | Command::SetRepeatPlays { .. }
+            Command::RepeatSelection { .. }
+                | Command::SetRepeatPlays { .. }
+                | Command::SetRepeatGaps { .. }
         ) {
             return match crate::repeat_selection::root_operation(document, command)? {
                 Some(operation) => Self::prepare_operation(document, operation).map(Some),

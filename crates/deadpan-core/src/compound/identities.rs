@@ -150,6 +150,9 @@ fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mu
         Command::Insert { subtree, .. }
         | Command::SetPlayOverride { subtree, .. }
         | Command::SetGapOverride { subtree, .. } => nodes.extend(subtree.nodes.keys()),
+        Command::SetRepeatGaps { branches, .. } => {
+            nodes.extend(branches.iter().map(|branch| &branch.id));
+        }
         Command::ImportSource { insertion, .. } => nodes.extend(insertion.iter().map(|v| &v.node)),
         Command::EditOccurrence {
             identities, edit, ..

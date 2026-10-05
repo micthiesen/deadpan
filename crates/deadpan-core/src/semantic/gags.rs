@@ -36,6 +36,23 @@ pub enum GagRecipe {
         version: u32,
         register: RegisterName,
     },
+    /// The selected beat or range played `plays` times, with a silent freeze
+    /// gap after each play but the last that is `shorten` shorter than the one
+    /// before it. Both lengths share one unit.
+    OneMoreTime {
+        version: u32,
+        plays: NonZeroU32,
+        gap: PauseLength,
+        shorten: PauseLength,
+    },
+    /// A held picture whose room tone, taken from the Original moment in
+    /// `register`, cuts to true silence while the picture keeps holding.
+    NothingHappens {
+        version: u32,
+        tone: PauseLength,
+        silence: PauseLength,
+        register: RegisterName,
+    },
 }
 
 /// The only version of each recipe so far.
@@ -47,6 +64,8 @@ impl GagRecipe {
             Self::LongAnswer { .. } => "The Long Answer",
             Self::Escalator { .. } => "The Escalator",
             Self::NonSequitur { .. } => "The Non-Sequitur",
+            Self::OneMoreTime { .. } => "One More Time",
+            Self::NothingHappens { .. } => "Nothing Happens",
         }
     }
 
@@ -54,7 +73,9 @@ impl GagRecipe {
         match self {
             Self::LongAnswer { version, .. }
             | Self::Escalator { version, .. }
-            | Self::NonSequitur { version, .. } => *version,
+            | Self::NonSequitur { version, .. }
+            | Self::OneMoreTime { version, .. }
+            | Self::NothingHappens { version, .. } => *version,
         }
     }
 
@@ -63,12 +84,29 @@ impl GagRecipe {
         let decimal = |value: ExactRatio| value.numerator() as f64 / value.denominator() as f64;
         let parameters = match self {
             Self::LongAnswer { pause, scale, .. } => {
-                let pause = match pause {
-                    PauseLength::Frames { frames } => format!("{frames}f"),
-                    PauseLength::Milliseconds { milliseconds } => format!("{milliseconds}ms"),
-                };
-                format!("pause {pause}, creep to {:.3}×", decimal(*scale))
+                format!("pause {}, creep to {:.3}×", length(*pause), decimal(*scale))
             }
+            Self::OneMoreTime {
+                plays,
+                gap,
+                shorten,
+                ..
+            } => format!(
+                "{plays} plays, gap {} shortening by {}",
+                length(*gap),
+                length(*shorten)
+            ),
+            Self::NothingHappens {
+                tone,
+                silence,
+                register,
+                ..
+            } => format!(
+                "room tone {} from register {}, then {} silence",
+                length(*tone),
+                register.as_char(),
+                length(*silence)
+            ),
             Self::Escalator {
                 plays,
                 gain_step,
@@ -84,16 +122,74 @@ impl GagRecipe {
         format!("{} · v{} · {parameters}", self.name(), self.version())
     }
 
-    /// Whether the recipe frames and groups a pause it inserts, which must
+    /// Whether the recipe edits and groups a pause it inserts, which must
     /// therefore be a direct child of the current group.
     pub fn frames_its_pause(&self) -> bool {
-        matches!(self, Self::LongAnswer { .. })
+        matches!(self, Self::LongAnswer { .. } | Self::NothingHappens { .. })
+    }
+
+    /// The gap lengths of One More Time, each resolved once from its exact
+    /// authored value: `gap - k·shorten` after play `k + 1`.
+    fn gaps(
+        plays: NonZeroU32,
+        gap: PauseLength,
+        shorten: PauseLength,
+    ) -> Result<Vec<PauseLength>, EditError> {
+        let invalid = |message: &str| EditError::new(EditErrorCode::InvalidCommand, message);
+        if plays.get() < 2 {
+            return Err(invalid("One More Time needs at least two plays"));
+        }
+        if plays.get() - 1 > crate::MAX_SEMANTIC_REPEAT_GAPS as u32 {
+            return Err(EditError::new(
+                EditErrorCode::LimitExceeded,
+                format!(
+                    "One More Time sets at most {} gaps, so at most {} plays",
+                    crate::MAX_SEMANTIC_REPEAT_GAPS,
+                    crate::MAX_SEMANTIC_REPEAT_GAPS + 1
+                ),
+            ));
+        }
+        let (first, step, frames) = match (gap, shorten) {
+            (PauseLength::Frames { frames: a }, PauseLength::Frames { frames: b }) => {
+                (a.get(), b.get(), true)
+            }
+            (
+                PauseLength::Milliseconds { milliseconds: a },
+                PauseLength::Milliseconds { milliseconds: b },
+            ) => (a.get(), b.get(), false),
+            _ => return Err(invalid("give gap and shorten in the same unit")),
+        };
+        (0..plays.get() - 1)
+            .map(|index| {
+                let value = u64::from(index) * u64::from(step);
+                u32::try_from(u64::from(first).saturating_sub(value))
+                    .ok()
+                    .and_then(NonZeroU32::new)
+                    .map(|value| {
+                        if frames {
+                            PauseLength::Frames { frames: value }
+                        } else {
+                            PauseLength::Milliseconds {
+                                milliseconds: value,
+                            }
+                        }
+                    })
+                    .ok_or_else(|| {
+                        invalid("every gap must stay positive; shorten less or use fewer plays")
+                    })
+            })
+            .collect()
     }
 
     /// The ordinary instructions this recipe stands for, ending with the
     /// pinning group. `visual` uses an active Visual range instead of the
-    /// selected beat where the recipe acts on content.
-    pub fn expand(&self, visual: bool) -> Result<Vec<SemanticInstruction>, EditError> {
+    /// selected beat where the recipe acts on content; `rate` resolves pause
+    /// lengths for the cursor motions some recipes make between their parts.
+    pub fn expand(
+        &self,
+        visual: bool,
+        rate: crate::FrameRate,
+    ) -> Result<Vec<SemanticInstruction>, EditError> {
         if self.version() != GAG_RECIPE_VERSION {
             return Err(EditError::new(
                 EditErrorCode::InvalidCommand,
@@ -105,6 +201,12 @@ impl GagRecipe {
             ));
         }
         let invalid = |message: &str| EditError::new(EditErrorCode::InvalidCommand, message);
+        let content = if visual {
+            SemanticSelector::VisualSelection
+        } else {
+            SemanticSelector::SelectedBeat
+        };
+        let mut group = SemanticSelector::SelectedBeat;
         let mut instructions = match self {
             Self::LongAnswer { pause, scale, .. } => {
                 let start = FramingPose::identity();
@@ -130,11 +232,7 @@ impl GagRecipe {
                 zoom_step,
                 ..
             } => vec![SemanticInstruction::Repeat {
-                selector: if visual {
-                    SemanticSelector::VisualSelection
-                } else {
-                    SemanticSelector::SelectedBeat
-                },
+                selector: content,
                 plays: *plays,
                 escalation: Some(RepeatEscalation {
                     gain_step: *gain_step,
@@ -148,12 +246,83 @@ impl GagRecipe {
                 register: *register,
                 before: false,
             }],
+            Self::OneMoreTime {
+                plays,
+                gap,
+                shorten,
+                ..
+            } => vec![
+                SemanticInstruction::Repeat {
+                    selector: content,
+                    plays: *plays,
+                    escalation: None,
+                },
+                SemanticInstruction::SetRepeat {
+                    plays: None,
+                    gaps: Some(Self::gaps(*plays, *gap, *shorten)?),
+                    escalation: None,
+                },
+            ],
+            Self::NothingHappens {
+                tone,
+                silence,
+                register,
+                ..
+            } => {
+                // Room tone first, then silence after it; the cursor returns
+                // to the start and the group spans both pauses.
+                let frames = |length: PauseLength| -> Result<NonZeroU32, EditError> {
+                    let frames = length.resolve(rate)?.frames();
+                    u32::try_from(frames)
+                        .ok()
+                        .and_then(NonZeroU32::new)
+                        .ok_or_else(|| invalid("pause length exceeds the motion range"))
+                };
+                let tone_frames = frames(*tone)?;
+                let total = tone_frames
+                    .checked_add(frames(*silence)?.get())
+                    .ok_or_else(|| invalid("pause length exceeds the motion range"))?;
+                group = SemanticSelector::Motion {
+                    motion: crate::SemanticMotion::Frames {
+                        forward: true,
+                        count: total,
+                    },
+                };
+                vec![
+                    SemanticInstruction::InsertPause {
+                        length: *tone,
+                        black: false,
+                    },
+                    SemanticInstruction::SetRoomTone {
+                        register: *register,
+                    },
+                    SemanticInstruction::MoveFrames {
+                        forward: true,
+                        count: tone_frames,
+                    },
+                    SemanticInstruction::InsertPause {
+                        length: *silence,
+                        black: false,
+                    },
+                    SemanticInstruction::MoveFrames {
+                        forward: false,
+                        count: tone_frames,
+                    },
+                ]
+            }
         };
         instructions.push(SemanticInstruction::Group {
-            selector: SemanticSelector::SelectedBeat,
+            selector: group,
             label: self.label(),
         });
         Ok(instructions)
+    }
+}
+
+fn length(value: PauseLength) -> String {
+    match value {
+        PauseLength::Frames { frames } => format!("{frames}f"),
+        PauseLength::Milliseconds { milliseconds } => format!("{milliseconds}ms"),
     }
 }
 
@@ -170,7 +339,8 @@ mod tests {
             },
             scale: ExactRatio::new(27, 20).unwrap(),
         };
-        let expanded = recipe.expand(false).unwrap();
+        let rate = crate::FrameRate::new(30, 1).unwrap();
+        let expanded = recipe.expand(false, rate).unwrap();
         assert!(matches!(
             expanded[0],
             SemanticInstruction::InsertPause { .. }
@@ -189,7 +359,7 @@ mod tests {
             register: RegisterName::new('r').unwrap(),
         };
         assert!(
-            future.expand(false).is_err(),
+            future.expand(false, rate).is_err(),
             "unknown versions never expand"
         );
         let wire = serde_json::to_string(&recipe).unwrap();

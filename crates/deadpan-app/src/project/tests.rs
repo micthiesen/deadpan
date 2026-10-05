@@ -1173,14 +1173,50 @@ fn sounds_are_audio_only_catalog_entries_and_bad_streams_leave_the_edit_intact()
     harness.finish(harness.job());
     let ready = complete(&harness.service);
     let source = fixture("../audio-fixtures/pcm-stereo-48000.wav");
-    let request = |stream| ProjectRequest::ImportSound {
+    let request = |stream, interpretation| ProjectRequest::ImportSound {
         expected_session: ready.session,
         expected_revision: ready.document.revision_id().clone(),
         path: source.clone(),
         stream,
+        interpretation,
         ownership: OriginalOwnership::Managed,
     };
-    assert!(command(&harness.service, request(None)).error.is_none());
+    // The plain WAV declares no speaker layout: without the person's explicit
+    // interpretation the sound is refused with guidance and nothing changes.
+    assert!(
+        command(&harness.service, request(None, None))
+            .error
+            .is_none()
+    );
+    harness.finish(harness.job());
+    let job = harness.job();
+    let id = job.id;
+    let result = worker::prepare(job);
+    assert!(result.is_err());
+    harness.replies.send(worker::Reply { id, result }).unwrap();
+    let refused = wait(&harness.service, |update| {
+        update
+            .import
+            .as_ref()
+            .is_some_and(|status| status.stage == ImportStage::Failed)
+    });
+    let guidance = refused.import.unwrap().error.unwrap();
+    assert!(
+        guidance.contains("2 channel(s) with no declared speaker layout")
+            && guidance.contains("Stereo L/R (stereo_left_right)"),
+        "{guidance}"
+    );
+    let unchanged = refused.workspace.unwrap();
+    assert_eq!(*unchanged.document, *ready.document);
+    assert_eq!(unchanged.sources.len(), ready.sources.len());
+    assert!(
+        command(
+            &harness.service,
+            request(None, Some(AudioLayoutInterpretation::StereoLeftRight))
+        )
+        .error
+        .is_none()
+    );
     harness.finish(harness.job());
     harness.finish(harness.job());
     let sound = wait(&harness.service, |update| {
@@ -1202,6 +1238,10 @@ fn sounds_are_audio_only_catalog_entries_and_bad_streams_leave_the_edit_intact()
         .values()
         .find(|source| source.sound_audition.is_some())
         .unwrap();
+    assert_eq!(
+        sound_source.receipt.snapshot().audio_interpretation(),
+        Some(AudioLayoutInterpretation::StereoLeftRight)
+    );
     let sound_view = sound_source.sound_audition.as_ref().unwrap();
     assert_eq!(sound_view.asset(), &sound_source.asset);
     assert_eq!(sound_view.qualification_id(), sound_source.receipt.id());
@@ -1225,7 +1265,7 @@ fn sounds_are_audio_only_catalog_entries_and_bad_streams_leave_the_edit_intact()
             .count(),
         1
     );
-    let stale = command(&harness.service, request(Some(1)));
+    let stale = command(&harness.service, request(Some(1), None));
     assert!(stale.error.unwrap().contains("Project changed"));
     let failed = command(
         &harness.service,
@@ -1234,6 +1274,7 @@ fn sounds_are_audio_only_catalog_entries_and_bad_streams_leave_the_edit_intact()
             expected_revision: sound.document.revision_id().clone(),
             path: source,
             stream: Some(1),
+            interpretation: None,
             ownership: OriginalOwnership::Managed,
         },
     );
@@ -1259,6 +1300,7 @@ fn sounds_are_audio_only_catalog_entries_and_bad_streams_leave_the_edit_intact()
                 expected_revision: sound.document.revision_id().clone(),
                 path: fixture("cfr-bframes.mp4"),
                 stream: None,
+                interpretation: None,
                 ownership: OriginalOwnership::Managed,
             }
         )
@@ -1761,7 +1803,10 @@ fn explicit_audio_import_is_measured_and_invalid_selected_stream_fails() {
     service
         .submit(ProjectRequest::Import {
             path: audio.clone(),
-            media: ImportMedia::Audio { stream: 0 },
+            media: ImportMedia::Audio {
+                stream: 0,
+                interpretation: Some(AudioLayoutInterpretation::StereoLeftRight),
+            },
             ownership: OriginalOwnership::Managed,
         })
         .unwrap();
@@ -1788,7 +1833,10 @@ fn explicit_audio_import_is_measured_and_invalid_selected_stream_fails() {
     service
         .submit(ProjectRequest::Import {
             path: audio,
-            media: ImportMedia::Audio { stream: 99 },
+            media: ImportMedia::Audio {
+                stream: 99,
+                interpretation: None,
+            },
             ownership: OriginalOwnership::Managed,
         })
         .unwrap();

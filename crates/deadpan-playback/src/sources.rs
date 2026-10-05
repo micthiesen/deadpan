@@ -515,7 +515,13 @@ impl AudioSourceProvider for Sources {
                 audio_limits,
                 cancelled,
             )?;
-            let prepared = PreparedSource::new(session, expected, cancelled)?;
+            // A receipt's explicit speaker interpretation, persisted at
+            // registration, admits an otherwise undeclared layout.
+            let layout = receipt
+                .snapshot()
+                .audio_layout()
+                .ok_or_else(|| unavailable("source has no qualified audio index"))?;
+            let prepared = PreparedSource::with_layout(session, expected, layout, cancelled)?;
             check_cancel(cancelled)?;
             self.cache.insert(
                 asset.clone(),

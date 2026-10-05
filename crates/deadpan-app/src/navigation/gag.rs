@@ -1,5 +1,6 @@
-//! `:gag long-answer|escalator|non-sequitur [parameters]`: apply a built-in
-//! recipe at the cursor or selected beat as one Undo.
+//! `:gag long-answer|escalator|non-sequitur|one-more-time|nothing-happens
+//! [parameters]`: apply a built-in recipe at the cursor or selected beat as
+//! one Undo.
 
 use std::num::NonZeroU32;
 
@@ -7,7 +8,7 @@ use deadpan_core::{ExactRatio, GainDb, RegisterName};
 
 use super::duration::DurationInput;
 
-pub const USAGE: &str = "Use :gag long-answer [pause=1.5s] [creep=1.35], :gag escalator [plays=3] [gain-step=3dB] [zoom-step=0.08] or :gag non-sequitur [register=r].";
+pub const USAGE: &str = "Use :gag long-answer [pause=1.5s] [creep=1.35], :gag escalator [plays=3] [gain-step=3dB] [zoom-step=0.08], :gag non-sequitur [register=r], :gag one-more-time [plays=3] [gap=500ms] [shorten=200ms] or :gag nothing-happens [register=r] [tone=1s] [silence=1s].";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GagInput {
@@ -21,6 +22,16 @@ pub enum GagInput {
         zoom_step: ExactRatio,
     },
     NonSequitur {
+        register: RegisterName,
+    },
+    OneMoreTime {
+        plays: NonZeroU32,
+        gap: DurationInput,
+        shorten: DurationInput,
+    },
+    NothingHappens {
+        tone: DurationInput,
+        silence: DurationInput,
         register: RegisterName,
     },
 }
@@ -48,6 +59,26 @@ impl GagInput {
             Self::NonSequitur { register } => {
                 deadpan_core::GagRecipe::NonSequitur { version, register }
             }
+            Self::OneMoreTime {
+                plays,
+                gap,
+                shorten,
+            } => deadpan_core::GagRecipe::OneMoreTime {
+                version,
+                plays,
+                gap: gap.pause_length(rate)?,
+                shorten: shorten.pause_length(rate)?,
+            },
+            Self::NothingHappens {
+                tone,
+                silence,
+                register,
+            } => deadpan_core::GagRecipe::NothingHappens {
+                version,
+                tone: tone.pause_length(rate)?,
+                silence: silence.pause_length(rate)?,
+                register,
+            },
         })
     }
 }
@@ -105,13 +136,33 @@ pub fn parse(arguments: &[&str]) -> Result<GagInput, String> {
             }
         }
         "non-sequitur" => GagInput::NonSequitur {
-            register: take("register").map_or(Ok(RegisterName::unnamed()), |value| {
-                let mut chars = value.chars();
-                match (chars.next(), chars.next()) {
-                    (Some(name), None) => RegisterName::new(name).map_err(|error| error.message),
-                    _ => Err("register= takes one letter.".into()),
-                }
-            })?,
+            register: register(take("register"))?,
+        },
+        "one-more-time" => GagInput::OneMoreTime {
+            plays: take("plays")
+                .map(|value| {
+                    value
+                        .parse::<u32>()
+                        .ok()
+                        .and_then(NonZeroU32::new)
+                        .filter(|plays| plays.get() >= 2)
+                        .ok_or("plays must be an integer of at least 2.")
+                })
+                .transpose()?
+                .unwrap_or(NonZeroU32::new(3).expect("constant plays")),
+            gap: take("gap").map_or(Ok(DurationInput::half_seconds(1)), DurationInput::parse)?,
+            shorten: take("shorten").map_or(
+                Ok(DurationInput::Seconds(
+                    ExactRatio::new(1, 5).expect("constant ratio"),
+                )),
+                DurationInput::parse,
+            )?,
+        },
+        "nothing-happens" => GagInput::NothingHappens {
+            register: register(take("register"))?,
+            tone: take("tone").map_or(Ok(DurationInput::half_seconds(2)), DurationInput::parse)?,
+            silence: take("silence")
+                .map_or(Ok(DurationInput::half_seconds(2)), DurationInput::parse)?,
         },
         other => return Err(format!("Unknown gag {other}. {USAGE}")),
     };
@@ -119,6 +170,17 @@ pub fn parse(arguments: &[&str]) -> Result<GagInput, String> {
         return Err(format!("{key} does not apply to this gag. {USAGE}"));
     }
     Ok(input)
+}
+
+/// `register=r`: one register letter, or the unnamed register when absent.
+fn register(value: Option<&str>) -> Result<RegisterName, String> {
+    value.map_or(Ok(RegisterName::unnamed()), |value| {
+        let mut chars = value.chars();
+        match (chars.next(), chars.next()) {
+            (Some(name), None) => RegisterName::new(name).map_err(|error| error.message),
+            _ => Err("register= takes one letter.".into()),
+        }
+    })
 }
 
 pub(super) fn decimal(value: &str) -> Result<ExactRatio, String> {
@@ -165,9 +227,36 @@ mod tests {
                 register: RegisterName::new('r').unwrap()
             }
         );
+        assert_eq!(
+            parse(&["one-more-time"]).unwrap(),
+            GagInput::OneMoreTime {
+                plays: NonZeroU32::new(3).unwrap(),
+                gap: DurationInput::parse("500ms").unwrap(),
+                shorten: DurationInput::parse("200ms").unwrap(),
+            }
+        );
+        let rate = deadpan_core::FrameRate::new(30, 1).unwrap();
+        assert!(matches!(
+            parse(&["one-more-time", "plays=4", "gap=12f", "shorten=3f"])
+                .unwrap()
+                .recipe(rate)
+                .unwrap(),
+            deadpan_core::GagRecipe::OneMoreTime { plays, .. } if plays.get() == 4
+        ));
+        assert_eq!(
+            parse(&["nothing-happens", "register=t", "tone=12f"]).unwrap(),
+            GagInput::NothingHappens {
+                tone: DurationInput::parse("12f").unwrap(),
+                silence: DurationInput::parse("1s").unwrap(),
+                register: RegisterName::new('t').unwrap(),
+            }
+        );
         for bad in [
             vec![],
             vec!["shrug"],
+            vec!["one-more-time", "plays=1"],
+            vec!["one-more-time", "creep=1.2"],
+            vec!["nothing-happens", "register=tt"],
             vec!["long-answer", "plays=3"],
             vec!["long-answer", "pause=1s", "pause=2s"],
             vec!["escalator", "plays=0"],

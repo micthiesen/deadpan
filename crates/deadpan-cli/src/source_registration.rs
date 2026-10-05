@@ -121,7 +121,7 @@ pub(super) fn run(package: &Path, request: &Path, dry_run: bool) -> Result<(), C
         Streams::VideoAndAudio {
             audio_stream: stream,
         }
-        | Streams::AudioOnly { stream } => Some(AudioSession::open_input(
+        | Streams::AudioOnly { stream, .. } => Some(AudioSession::open_input(
             bytes,
             stream,
             audio_limits,
@@ -129,8 +129,12 @@ pub(super) fn run(package: &Path, request: &Path, dry_run: bool) -> Result<(), C
         )?),
         Streams::VideoOnly {} => None,
     };
-    let decoded = DecodedSourceQualification::from_sessions(video.as_ref(), audio.as_ref())
-        .map_err(StoreError::from)?;
+    let decoded = DecodedSourceQualification::for_registration(
+        video.as_ref(),
+        audio.as_ref(),
+        envelope.streams.interpretation(),
+    )
+    .map_err(StoreError::from)?;
     if dry_run {
         let preview = store.preview_source_registration(&input, &decoded, limits, &cancelled)?;
         write_json(&serde_json::json!({"protocol":1,"committed":false,"preview":preview}))

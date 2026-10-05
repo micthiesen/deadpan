@@ -15,6 +15,10 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         .canonicalize()
         .map_err(|error| error.to_string())?;
     d.app_mut().dialogs = Dialogs::scripted(vec![(DialogKind::ImportSound, Some(fixture))]);
+    scenarios::choose_sound_interpretation(
+        d,
+        Some(crate::project::AudioLayoutInterpretation::StereoLeftRight),
+    )?;
     d.click("Add sound…  ⌘I")?;
     d.wait_for("Sound is qualified in the real catalog", |app| {
         app.sound_rows.len() == 1 && !app.service.is_busy() && !app.importing()

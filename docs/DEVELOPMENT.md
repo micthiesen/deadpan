@@ -141,6 +141,24 @@ cargo run -p deadpan-app --features ui-harness --locked -- --ui-check --output /
 cargo run -p deadpan-app --release --features ui-harness --locked -- --ui-check --mode performance --output /tmp/deadpan-ui-performance-NEW
 ```
 
+For a meaningful UI milestone, replay every scenario through one debug harness
+build, each in its own process and report directory:
+
+```sh
+cargo xtask replays                                  # all scenarios, one at a time
+cargo xtask replays --scenario room-tone,delete-range --jobs 3 --output /tmp/deadpan-replays-NEW
+```
+
+It lists scenarios from the built harness (`deadpan-app --ui-check
+--list-scenarios`), prints PASS/FAIL, seconds, check counts and layout-retry
+warnings per scenario, writes `summary.json` beside the per-scenario reports and
+`NAME.log` files, and exits nonzero on any failure. Fixture-only scenarios
+(`generated-picture`, `ai-pause-ready`) are reported as skipped. Scenarios run
+a private copy of the app and its beside-executable helpers under `NEW_DIR/bin`,
+with their SHA-256 in `summary.json`, so concurrent rebuilds of `target/debug`
+cannot affect a run. More than one job shortens the run but shares CPU and GPU, so rerun a timing
+failure alone before diagnosing it. See [UI feedback](UI_FEEDBACK.md#all-scenarios).
+
 Visual mode is the normal agent UI loop. It must use the production widgets,
 event routing, real project service and shared GPU video path. Read the report,
 inspect the contact sheets and affected full-size frames, then fix defects and
