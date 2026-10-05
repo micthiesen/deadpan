@@ -18,6 +18,8 @@ pub enum DialogKind {
     /// Generic/legacy host media registration.
     ImportMedia,
     Render,
+    /// An explicit Netscape cookies file for one YouTube import.
+    Cookies,
 }
 
 pub struct SaveMovie {
@@ -224,6 +226,12 @@ fn native_dialog(kind: DialogKind, save: Option<SaveMovie>) -> Result<DialogFutu
                 .set_directory(crate::library::ProjectLibrary::documents()?.root())
                 .set_can_create_directories(false)
                 .pick_folder(),
+        ),
+        DialogKind::Cookies => Box::pin(
+            rfd::AsyncFileDialog::new()
+                .set_title("Choose a cookies file (Netscape format) for this import")
+                .add_filter("Cookies file", &["txt"])
+                .pick_file(),
         ),
         DialogKind::ImportSound => Box::pin(
             rfd::AsyncFileDialog::new()

@@ -1570,6 +1570,16 @@ cumulative geometry, independently of core collection limits. See
 [captured framing](docs/CAPTURED_FRAMING.md) and
 [framing](docs/FRAMING.md) for current bounds, migration and remaining work.
 
+Camera targets: preview a Follow with `deadpan_plan::follow_pose` and re-resolve
+every outer follow, replacing the poses atomically; never approximate it from
+the fallback. Center nudges are refused while following; only `t` releases it.
+Target saves and tracking use `ProjectRequest::Target` with independent replies.
+A tracking job captures session and head at command entry, prepares read-only
+on its own thread and saves expecting that head; close and shutdown drain it.
+Camera and scoped inspection continue only on a revision whose exact target
+receipt (session, base, revision) they were open on. See
+[targets](docs/TARGETS.md#in-the-native-app).
+
 Framing's integer evaluator delegates to `evaluate_exact` for bounded evaluation
 of derived rational owner extents. Keep segment selection exact; do not first
 form a potentially overflowing local/duration quotient or duration-times-endpoint

@@ -1,9 +1,9 @@
 # YouTube import
 
 DP-14 creates a new [single-Original](SINGLE_ORIGINAL.md) project from one
-YouTube video. This page covers the headless implementation: URL rules, the
-pinned downloader helpers, acquisition, assembly, provenance and failures. The
-native New-from-URL interface and signed helper bundling remain open.
+YouTube video. This page covers URL rules, the pinned downloader helpers,
+acquisition, assembly, provenance and failures, headless and in the native app.
+Signed helper bundling remains open.
 
 ```sh
 deadpan-cli downloader install                 # pinned yt-dlp + Deno, verified
@@ -16,6 +16,85 @@ deadpan-cli project original-provenance /abs/clip.deadpan BLAKE3_DIGEST
 You are responsible for having the rights to use an imported video. Remixing
 or parody does not resolve copyright by itself. Deadpan does not bypass DRM:
 formats YouTube marks as DRM-protected are never selected.
+
+## In the app
+
+The empty start surface follows the product board's "Choose one Original"
+panel: Choose video (`⌘N`), a YouTube URL field with Start project, and Open
+project (`⌘O`). Over an open project the same step opens as a sheet (`⌘⇧N`,
+`:youtube`, File > New from YouTube URL…); that project stays open until the
+new one is ready.
+
+1. Type or paste a URL. Text, paste, selection and IME are native. The line
+   below the field shows the normalized video ID or the exact refusal (for
+   example "This is a playlist; choose a specific video from it."), and Start
+   project is disabled until the URL is supported. Enter on a refused URL
+   starts nothing.
+2. Enter (or Start project) inspects the video. If the helpers are missing, an
+   explanation offers Install downloader (75.6 MB) with the pinned versions,
+   the 118.1 MB installed size and SHA-256 verification. Nothing is installed
+   until that button or Enter is chosen; Esc declines. A finished install
+   continues the same import.
+3. The details show title, uploader, length, upload date, license, the selected
+   picture (`1920 × 1080 · 24 fps · H.264 (avc1.640028)`) and sound
+   (`AAC (mp4a.40.2) · 44.1 kHz · 130 kb/s`), the download size and the
+   destination, `Documents/Deadpan/<title>.deadpan` (or `<title> 2.deadpan`),
+   with the rights notice. Nothing has been transferred and no package exists.
+   Details wait at most 10 minutes for confirmation: the private directory
+   holds the cookie copy and YouTube's stream URLs expire, so an unconfirmed
+   inspection is dropped with `YouTubeConfirmationExpired` and Enter checks the
+   video again.
+4. Download and create (Enter) shows the stages: video details, downloading
+   (percent and bytes), assembling, checking and retaining the Original, and
+   opening. Esc cancels any stage until the Ready package is published; the job
+   tears down its helper group and private directory and no package is left.
+   Publication is one atomic rename, so an Esc that arrives after it cannot
+   remove the project: the step says "Esc can no longer cancel; opening…", and
+   notes when the project was already complete as Esc was pressed.
+5. If another project took the confirmed name meanwhile, even at the final
+   rename, the finished project moves to the next free name (`<title> 2`); the
+   download is never discarded for a name collision.
+6. The Ready package opens through the ordinary Open path, like a local new
+   project, and the status line reads `Created “<title>” from YouTube as <name>`.
+   If Open is refused or the project service stays busy for 60 s,
+   `ProjectOpenFailed` names the complete package and offers Open project…;
+   the URL is cleared so Enter cannot download it again. Closing the window
+   cancels running work and never opens a package that finishes meanwhile; a
+   complete one stays in the library.
+
+An optional cookies file is chosen explicitly with Choose cookies file… (a
+native picker); it is never read from a browser. Age-restricted and sign-in
+refusals point at that row. A picker result that arrives while an import runs
+is not applied, and Enter waits while the picker is open. Failures keep the
+library's stable code with a plain title, its message and next-step guidance in
+app terms; a finished failure or cancellation is cleared when the project
+session changes.
+
+Only plain Enter and Escape act on the step. Command chords beside the field
+keep their ordinary meaning (`⌘N`, `⌘O`, `⌘I`, `⌘⇧N`), including as native menu
+key equivalents, while running work keeps the whole keyboard. The footer shows
+only the start or step keys on the empty start surface and while the step owns
+the keyboard. Starting from YouTube is refused, with the same reasons as a local
+New, while a macro records, an import prepares, a render workflow is unfinished
+or an AI pause generation runs.
+
+[`youtube.rs`](../crates/deadpan-app/src/youtube.rs) owns one job thread at a
+time, outside the UI thread and the project service. The library is split in
+two phases for it: [`acquire::inspect`](../crates/deadpan-cli/src/youtube/acquire.rs)
+verifies helpers, fetches and validates metadata and keeps the locked private
+workspace, inspected JSON and cookie copy in an `Inspected` value;
+`acquire::download_and_create` consumes it after confirmation. Declining drops
+it, removing all of them. `create_from_url` composes both for the CLI. The
+job's first destination comes from the sanitized title as one bounded file-name
+component in the library (separators become single spaces; an empty result
+falls back to `YouTube <ID>`), and the library's no-replace rename still
+refuses a name taken in the meantime. Window close cancels the job and waits
+for its teardown; app exit waits up to 10 s. The [preview layer](../crates/deadpan-app/src/preview/youtube.rs)
+routes only plain Enter and Escape to the step; a focused button keeps its own
+activation and composition owns its keys.
+
+No thumbnail is fetched or shown: the app has no JPEG/WebP decoder, and the
+title, length and streams identify the video before transfer.
 
 ## URLs
 
@@ -131,7 +210,7 @@ formats. It runs in the private download directory with the relative template
 `--quiet`. Free space for the downloads plus the assembled copy (and, beside the
 package, for retention) is checked before transfer when sizes are known, and
 again before assembly. A watchdog bounds the download directory to 16 GiB and
-reports progress. The inspected metadata file and the cookie copy are deleted as
+reports progress every 0.5 s. The inspected metadata file and the cookie copy are deleted as
 soon as the transfer ends. Each file must exist, be a regular nonempty file and match a declared
 size exactly. Package creation has not happened yet, so a failed or cancelled
 transfer leaves nothing behind.
@@ -200,7 +279,8 @@ IDs with codec, geometry, frame rate, bitrate and exact downloaded byte length,
 and the assembly method. Text is bounded and free of control characters, URLs
 must be HTTPS, and each record is at most 64 KiB; validation rechecks stored
 rows. Credentials, cookies and request headers are never recorded. Remote titles
-are untrusted display text: they label the asset and file but never form a path.
+are untrusted display text: they label the asset and file but never form a path;
+the app derives one sanitized library file name from them.
 
 ## Cookies
 
@@ -252,6 +332,25 @@ line in the message.
   runs `create_from_url` with a stand-in yt-dlp and the real worker, store and
   decoders, and checks the Ready profile, managed original, asset label, cookie
   handling and provenance.
+- [`youtube/tests.rs`](../crates/deadpan-app/src/youtube/tests.rs) drives the
+  app job with a scripted downloader that creates the project from a fixture
+  through the real single-Original path: explicit confirmation before any
+  package, decline and mid-transfer cancellation leaving nothing, the explicit
+  install continuing the import, codes and guidance, one job at a time,
+  drained shutdown, expiry of unconfirmed details, a destination taken during
+  the build moving to `<title> 2`, and a package published after Escape still
+  opening. `single_original` tests the same collision at the final rename. Router, validation, library naming and command tests
+  cover the keys and text.
+- The `youtube` [UI replay](UI_FEEDBACK.md#implemented-scenarios) uses the same
+  scripted downloader with production input, widgets, project service and Metal:
+  start card at both sizes, `⌘⇧N`, live refusal, paste, install offer, details,
+  decline, 40% progress and cancel, an age-restricted refusal, a chosen cookies
+  file, success opening the project, and the sheet over an open project.
+- Real app-job run, 2026-10-04, debug build:
+  `DEADPAN_REAL_YOUTUBE_URL='https://youtu.be/Z4C82eyhwgU?si=share' cargo test -p deadpan-app real_url_import`
+  ran the pinned helpers and media worker through `Jobs`: details after 2.7 s,
+  confirmation, transfer, assembly at 5.7 s and a valid Ready project after
+  16.7 s in a temporary library. The test returns early without the variable.
 - Real run, 2026-10-04, Apple Silicon macOS, debug build: after `downloader
   install` (4.5 s) and `downloader status --probe` (`matches_pins: true`),
   `create-from-url 'https://youtu.be/Z4C82eyhwgU?si=share'` ("Caminandes 2:
@@ -268,7 +367,7 @@ line in the message.
 
 ## Remaining work
 
-- Native New-from-URL with title/thumbnail confirmation, progress and cancel.
+- A thumbnail in the confirmation step (needs an image decoder for the app).
 - Helpers shipped and signed in the application bundle, signed update
   manifests, compatibility checks and rollback; Linux and Intel builds.
 - VP9/AV1 and above-1080p originals need decoder qualification first.

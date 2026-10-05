@@ -117,7 +117,16 @@ The host gives native controls, text and IME priority before an editor command
 can run. Platform menu shortcuts and logical-symbol handling remain explicit
 in the outer router. A physical Kestrel reservation is checked before logical
 normalization, even when the delivered logical key differs. Camera, Trim,
-Gain, room-tone and Place slice keep their own mode routers.
+Gain, room-tone and Place slice keep their own mode routers. Camera's keys,
+including the target keys `n` (new rectangle), `t` (follow), `c` (correct
+here) and Shift+`T` (track), are fixed in its router and not part of the
+configurable trie; `:track` and `:track-cancel` are ordinary commands.
+
+Native Command shortcuts are fixed: `⌘N` (choose video), `⌘⇧N` (start from a
+YouTube URL, also `:youtube`), `⌘O`, `⌘I`, `⌘E`, `⌘Z` and `⌘⇧Z`. The YouTube
+URL step has its own router ahead of the editor: plain Enter runs its current
+step unless a native button is focused, plain Escape cancels or leaves it, and
+held keys, modifiers and composition never act. Neither is configurable.
 
 Mark names resolve before ordinary editor actions. `mx`, `'d` and uppercase
 names remain marks. Escape, Tab and native menu actions retain their defined

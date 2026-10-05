@@ -104,6 +104,8 @@ pub struct CameraFields {
     fields: [Field; 3],
     ids: [Id; 3],
     validation: Result<FramingPose, String>,
+    /// A followed target supplies the center: only Scale is editable.
+    centers_locked: bool,
 }
 
 impl CameraFields {
@@ -119,6 +121,21 @@ impl CameraFields {
             fields,
             ids,
             validation,
+            centers_locked: false,
+        }
+    }
+
+    /// Lock the center fields while a target supplies the center.
+    pub fn set_centers_locked(&mut self, locked: bool) {
+        self.centers_locked = locked;
+    }
+
+    /// The fields Tab may focus.
+    pub fn focusable_ids(&self) -> &[Id] {
+        if self.centers_locked {
+            &self.ids[2..]
+        } else {
+            &self.ids
         }
     }
 
@@ -176,7 +193,10 @@ impl CameraFields {
             for (index, field) in self.fields.iter_mut().enumerate() {
                 ui.label(field.component.label());
                 let width = ui.available_width().min(FIELD_WIDTH);
-                let response = ui.add(
+                let enabled = !(self.centers_locked
+                    && matches!(field.component, Component::CenterX | Component::CenterY));
+                let response = ui.add_enabled(
+                    enabled,
                     TextEdit::singleline(&mut field.text)
                         .id(field.id)
                         .desired_width(width)
@@ -277,6 +297,7 @@ impl CameraFields {
 
     /// IDs are stable for this Camera component and can be captured before
     /// drawing when keyboard routing precedes widget processing.
+    #[cfg(test)]
     pub fn ids(&self) -> &[Id] {
         &self.ids
     }

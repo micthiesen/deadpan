@@ -940,66 +940,15 @@ impl RenderPlan {
         if captured_geometry {
             return;
         }
-        let (asset, point) = match picture {
-            Picture::Source {
-                asset,
-                point,
-                selection,
-                ..
-            } => {
-                // An endpoint-held picture shows the selection's last moment.
-                let last = selection
-                    .end()
-                    .ticks
-                    .checked_sub(ExactRatio::new(1, 1_000_000).expect("constant ratio"));
-                match last {
-                    Ok(last) if !point.ticks.compare(last).is_lt() => (
-                        asset,
-                        SourcePoint {
-                            ticks: last,
-                            time_base: point.time_base,
-                        },
-                    ),
-                    _ => (asset, *point),
-                }
-            }
-            Picture::Freeze { asset, point } => (asset, *point),
-            _ => return,
+        let Some((asset, point)) = picture.follow_point() else {
+            return;
         };
         for &(index, target, scale) in follows.iter().rev() {
             let Some(found) = self.targets.get(target) else {
                 continue;
             };
-            if &found.asset != asset {
-                continue;
-            }
-            let Some((region, _)) = found.region_at(point) else {
-                continue;
-            };
-            let half = ExactRatio::new(1, 2).expect("constant ratio");
-            let mapped = framing[index + 1..].iter().rev().try_fold(
-                region.center_ratio(),
-                |position, layer| -> Option<[ExactRatio; 2]> {
-                    let Some(pose) = layer.pose else {
-                        return Some(position);
-                    };
-                    let through = |value: ExactRatio, center: ExactRatio| {
-                        value
-                            .checked_sub(center)
-                            .and_then(|offset| offset.checked_mul(pose.scale))
-                            .and_then(|offset| offset.checked_add(half))
-                            .ok()
-                    };
-                    Some([
-                        through(position[0], pose.center_x)?,
-                        through(position[1], pose.center_y)?,
-                    ])
-                },
-            );
-            if let Some([x, y]) = mapped
-                && let Ok(pose) = deadpan_core::FramingPose::new(x, y, scale)
-                && let Ok(pose) = pose.quantized()
-            {
+            let inner = framing[index + 1..].iter().rev().map(|layer| layer.pose);
+            if let Some(pose) = follow_pose(found, asset, point, inner, scale) {
                 framing[index].pose = Some(pose);
             }
         }
@@ -1229,6 +1178,48 @@ impl RenderPlan {
             lookup,
         })
     }
+}
+
+/// The pose a `Follow` layer resolves to: the target's region center at
+/// `point`, carried outward through every inner layer's pose (innermost
+/// first, `p' = (p - center) * scale + 1/2` per axis), at `scale`, quantized
+/// to the framing grid. `None` where the picture is not the target's asset,
+/// lies outside its span, or the centered pose is out of range; the layer then
+/// keeps its fallback. Hosts previewing a changed inner pose use this to
+/// re-resolve a follow exactly as the plan does.
+pub fn follow_pose(
+    target: &deadpan_core::AttentionTarget,
+    asset: &AssetId,
+    point: SourcePoint,
+    inner: impl IntoIterator<Item = Option<deadpan_core::FramingPose>>,
+    scale: ExactRatio,
+) -> Option<deadpan_core::FramingPose> {
+    if &target.asset != asset {
+        return None;
+    }
+    let (region, _) = target.region_at(point)?;
+    let half = ExactRatio::new(1, 2).expect("constant ratio");
+    let [x, y] = inner
+        .into_iter()
+        .try_fold(region.center_ratio(), |position, pose| {
+            let Some(pose) = pose else {
+                return Some(position);
+            };
+            let through = |value: ExactRatio, center: ExactRatio| {
+                value
+                    .checked_sub(center)
+                    .and_then(|offset| offset.checked_mul(pose.scale))
+                    .and_then(|offset| offset.checked_add(half))
+                    .ok()
+            };
+            Some([
+                through(position[0], pose.center_x)?,
+                through(position[1], pose.center_y)?,
+            ])
+        })?;
+    deadpan_core::FramingPose::new(x, y, scale)
+        .and_then(|pose| pose.quantized())
+        .ok()
 }
 
 /// First element for which a monotonic predicate is false, with measured work.

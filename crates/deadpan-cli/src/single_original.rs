@@ -8,7 +8,7 @@
 //! Source state and any retained bytes; it never claims a ready Original.
 
 use std::fs::{self, File};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 
 use deadpan_core::{AssetId, NodeId, ProjectDocument, ProjectId, RevisionId};
@@ -86,42 +86,89 @@ pub fn create(
     cancelled: &AtomicBool,
     retained: impl FnOnce(&ProjectStore, &OriginalMediaRecord) -> Result<(), CliError>,
 ) -> Result<CreatedOriginal, CliError> {
+    create_at_free_name(package, &|_| None, source, label, cancelled, retained)
+        .map(|(_, created)| created)
+}
+
+/// Like [`create`], but a name taken before the build or at the final
+/// no-replace rename moves to the candidate `next` returns for the taken
+/// path, so a finished build is never discarded for a name collision.
+/// Candidates must be `.deadpan` siblings of `package`. Returns the path that
+/// holds the Ready project.
+pub fn create_at_free_name(
+    package: &Path,
+    next: &dyn Fn(&Path) -> Option<PathBuf>,
+    source: &Path,
+    label: &str,
+    cancelled: &AtomicBool,
+    retained: impl FnOnce(&ProjectStore, &OriginalMediaRecord) -> Result<(), CliError>,
+) -> Result<(PathBuf, CreatedOriginal), CliError> {
+    /// Bounds a pathological stream of racing creators.
+    const MAX_CANDIDATES: usize = 1000;
     if !source.is_absolute() {
         return Err(CliError::Usage("The Original path must be absolute".into()));
     }
-    if package.extension().and_then(|extension| extension.to_str()) != Some("deadpan") {
+    let parent = match package.parent() {
+        Some(parent) if !parent.as_os_str().is_empty() => parent.to_owned(),
+        _ => PathBuf::from("."),
+    };
+    let admissible = |candidate: &Path| {
+        candidate
+            .extension()
+            .and_then(|extension| extension.to_str())
+            == Some("deadpan")
+            && candidate.parent().map_or(Path::new("."), |parent| {
+                if parent.as_os_str().is_empty() {
+                    Path::new(".")
+                } else {
+                    parent
+                }
+            }) == parent
+    };
+    if !admissible(package) {
         return Err(CliError::Usage(
             "The project path must end in .deadpan".into(),
         ));
     }
-    if fs::symlink_metadata(package).is_ok() {
-        return Err(CliError::Usage(format!(
-            "{} already exists",
-            package.display()
-        )));
-    }
-    let parent = match package.parent() {
-        Some(parent) if !parent.as_os_str().is_empty() => parent,
-        _ => Path::new("."),
+    let taken = |path: &Path| CliError::Usage(format!("{} already exists", path.display()));
+    let mut target = package.to_owned();
+    let mut candidates = 0;
+    // A candidate that is not admissible is never used.
+    let mut advance = |current: &Path| -> Option<PathBuf> {
+        candidates += 1;
+        (candidates <= MAX_CANDIDATES)
+            .then(|| next(current))
+            .flatten()
+            .filter(|candidate| admissible(candidate))
     };
+    while fs::symlink_metadata(&target).is_ok() {
+        target = advance(&target).ok_or_else(|| taken(&target))?;
+    }
     let staging = parent.join(format!(".{}.creating.deadpan", uuid::Uuid::new_v4()));
     let built = build(&staging, source, label, cancelled, retained);
     let published = built.and_then(|created| {
-        rustix::fs::renameat_with(
-            rustix::fs::CWD,
-            &staging,
-            rustix::fs::CWD,
-            package,
-            rustix::fs::RenameFlags::NOREPLACE,
-        )
-        .map_err(|error| CliError::Io(error.into()))?;
-        File::open(parent)?.sync_all()?;
+        loop {
+            match rustix::fs::renameat_with(
+                rustix::fs::CWD,
+                &staging,
+                rustix::fs::CWD,
+                &target,
+                rustix::fs::RenameFlags::NOREPLACE,
+            ) {
+                Ok(()) => break,
+                Err(rustix::io::Errno::EXIST) => {
+                    target = advance(&target).ok_or_else(|| taken(&target))?;
+                }
+                Err(error) => return Err(CliError::Io(error.into())),
+            }
+        }
+        File::open(&parent)?.sync_all()?;
         Ok(created)
     });
     if published.is_err() {
         let _ = fs::remove_dir_all(&staging);
     }
-    published
+    published.map(|created| (target, created))
 }
 
 fn build(
@@ -191,6 +238,54 @@ pub(crate) fn run(package: &Path, source: &Path) -> Result<(), CliError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_name_taken_during_the_build_moves_to_the_next_candidate() {
+        let source = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../native/deadpan-source/tests/fixtures/cfr-bframes.mp4")
+            .canonicalize()
+            .unwrap();
+        let directory = tempfile::tempdir().unwrap();
+        let first = directory.path().join("Clip.deadpan");
+        let second = directory.path().join("Clip 2.deadpan");
+        let third = directory.path().join("Clip 3.deadpan");
+        // "Clip 2" is taken before the build; "Clip" is taken while it runs.
+        fs::create_dir(&second).unwrap();
+        let next = |taken: &Path| {
+            [&first, &second, &third]
+                .into_iter()
+                .skip_while(|candidate| candidate.as_path() != taken)
+                .nth(1)
+                .cloned()
+        };
+        let (published, created) = create_at_free_name(
+            &first,
+            &next,
+            &source,
+            "Clip",
+            &AtomicBool::new(false),
+            |_, _| Ok(fs::create_dir(&first)?),
+        )
+        .unwrap();
+        assert_eq!(published, third);
+        assert!(matches!(
+            created.single_source,
+            SingleSourceState::Ready { .. }
+        ));
+        assert_eq!(fs::read_dir(&first).unwrap().count(), 0);
+        assert_eq!(fs::read_dir(&second).unwrap().count(), 0);
+        // No staging package is left behind.
+        assert_eq!(fs::read_dir(directory.path()).unwrap().count(), 3);
+
+        // Without candidates the collision is refused and nothing remains.
+        let taken = directory.path().join("Taken.deadpan");
+        let error = create(&taken, &source, "Taken", &AtomicBool::new(false), |_, _| {
+            Ok(fs::create_dir(&taken)?)
+        })
+        .unwrap_err();
+        assert!(matches!(error, CliError::Usage(message) if message.ends_with("already exists")));
+        assert_eq!(fs::read_dir(directory.path()).unwrap().count(), 4);
+    }
 
     #[test]
     fn labels_are_bounded_single_line_text() {

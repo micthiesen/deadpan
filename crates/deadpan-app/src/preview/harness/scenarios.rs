@@ -8,6 +8,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "workspace" => workspace(d),
         "editing" => editing(d),
         "camera" => camera(d),
+        "targets" => super::targets::run(d),
         "menus" => menus(d),
         "delayed-preview" => delayed(d),
         "rapid-input" => rapid(d),

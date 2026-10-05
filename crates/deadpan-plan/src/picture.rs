@@ -61,6 +61,37 @@ pub enum Picture {
 }
 
 impl Picture {
+    /// The asset and exact source time a `Follow` layer evaluates its target
+    /// at, or `None` for pictures that show no Original moment. An
+    /// endpoint-held Source picture shows its selection's last moment.
+    pub fn follow_point(&self) -> Option<(&AssetId, SourcePoint)> {
+        match self {
+            Picture::Source {
+                asset,
+                point,
+                selection,
+                ..
+            } => {
+                let last = selection
+                    .end()
+                    .ticks
+                    .checked_sub(ExactRatio::new(1, 1_000_000).expect("constant ratio"));
+                Some(match last {
+                    Ok(last) if !point.ticks.compare(last).is_lt() => (
+                        asset,
+                        SourcePoint {
+                            ticks: last,
+                            time_base: point.time_base,
+                        },
+                    ),
+                    _ => (asset, *point),
+                })
+            }
+            Picture::Freeze { asset, point } => Some((asset, *point)),
+            _ => None,
+        }
+    }
+
     /// Select an original presentation frame using a measured source index.
     /// Asset and exact timestamp clock must match. Sources retain their authored
     /// span and endpoint policy; Freeze points must be inside the measured index.

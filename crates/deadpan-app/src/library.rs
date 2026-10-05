@@ -61,13 +61,72 @@ impl ProjectLibrary {
         }
         Err(format!("No unused project name is available for {stem}"))
     }
+
+    /// The first unused `<name>.deadpan` (or `<name> N.deadpan`) path in the
+    /// library for untrusted display text such as a remote title. The text is
+    /// reduced to one bounded file-name component; it never forms a path. A
+    /// creator must still refuse an existing package at its own exclusive
+    /// creation boundary, since this check cannot reserve the name.
+    pub fn unused_package(&self, name: &str, fallback: &str) -> Result<PathBuf, String> {
+        std::fs::create_dir_all(&self.root).map_err(|error| {
+            format!(
+                "Cannot create project library {}: {error}",
+                self.root.display()
+            )
+        })?;
+        let stem = match file_stem(name) {
+            Some(stem) => stem,
+            None => file_stem(fallback).unwrap_or_else(|| "Untitled".into()),
+        };
+        for ordinal in 1..=10_000_u32 {
+            let name = if ordinal == 1 {
+                format!("{stem}.deadpan")
+            } else {
+                format!("{stem} {ordinal}.deadpan")
+            };
+            let path = self.root.join(name);
+            match std::fs::symlink_metadata(&path) {
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(path),
+                Err(error) => {
+                    return Err(format!("Cannot inspect {}: {error}", path.display()));
+                }
+                Ok(_) => continue,
+            }
+        }
+        Err(format!("No unused project name is available for {stem}"))
+    }
+}
+
+/// The first free `<stem> N.deadpan` sibling of `first` (N from 2), for a
+/// creator whose chosen name was taken. The creator's no-replace rename still
+/// decides; calling again after another collision finds the next one.
+pub fn next_free_package(first: &Path) -> Option<PathBuf> {
+    let stem = first.file_stem()?.to_str()?;
+    let parent = first.parent()?;
+    (2..=10_000_u32)
+        .map(|ordinal| parent.join(format!("{stem} {ordinal}.deadpan")))
+        .find(|candidate| std::fs::symlink_metadata(candidate).is_err())
 }
 
 fn project_stem(source: &Path) -> String {
-    let original = source.file_stem().unwrap_or_default().to_string_lossy();
+    file_stem(&source.file_stem().unwrap_or_default().to_string_lossy())
+        .unwrap_or_else(|| "Untitled".into())
+}
+
+/// One bounded file-name component, or None when nothing usable remains.
+fn file_stem(original: &str) -> Option<String> {
     let mut result = String::new();
     for character in original.chars() {
         let character = if character.is_control() || matches!(character, '/' | '\\' | ':') {
+            ' '
+        } else {
+            character
+        };
+        // A separator next to a space (`Title: Subtitle`) leaves one space.
+        if character.is_whitespace() && result.ends_with(' ') {
+            continue;
+        }
+        let character = if character.is_whitespace() {
             ' '
         } else {
             character
@@ -79,11 +138,7 @@ fn project_stem(source: &Path) -> String {
     }
     let result =
         result.trim_matches(|character: char| character.is_whitespace() || character == '.');
-    if result.is_empty() {
-        "Untitled".into()
-    } else {
-        result.into()
-    }
+    (!result.is_empty()).then(|| result.into())
 }
 
 #[cfg(target_os = "macos")]
@@ -159,6 +214,53 @@ mod tests {
         assert_eq!(
             project_stem(Path::new("/clips/My interview.mp4")),
             "My interview"
+        );
+    }
+
+    #[test]
+    fn remote_titles_become_one_unused_library_name() {
+        let scratch = tempfile::tempdir().unwrap();
+        let library = ProjectLibrary::from_documents(scratch.path().join("Documents")).unwrap();
+        let root = scratch.path().join("Documents/Deadpan");
+        assert_eq!(
+            library
+                .unused_package("Caminandes 2: Gran Dillama", "YouTube Z4C82eyhwgU")
+                .unwrap(),
+            root.join("Caminandes 2 Gran Dillama.deadpan")
+        );
+        std::fs::create_dir(root.join("Caminandes 2 Gran Dillama.deadpan")).unwrap();
+        assert_eq!(
+            library
+                .unused_package("Caminandes 2: Gran Dillama", "YouTube Z4C82eyhwgU")
+                .unwrap(),
+            root.join("Caminandes 2 Gran Dillama 2.deadpan")
+        );
+        for hostile in ["../../escape", "..", "/", " . "] {
+            let path = library
+                .unused_package(hostile, "YouTube Z4C82eyhwgU")
+                .unwrap();
+            assert_eq!(path.parent(), Some(root.as_path()), "{hostile}");
+        }
+        assert_eq!(
+            library
+                .unused_package("...", "YouTube Z4C82eyhwgU")
+                .unwrap(),
+            root.join("YouTube Z4C82eyhwgU.deadpan")
+        );
+    }
+
+    #[test]
+    fn taken_names_move_to_the_next_free_sibling() {
+        let scratch = tempfile::tempdir().unwrap();
+        let first = scratch.path().join("Clip.deadpan");
+        assert_eq!(
+            next_free_package(&first),
+            Some(scratch.path().join("Clip 2.deadpan"))
+        );
+        std::fs::create_dir(scratch.path().join("Clip 2.deadpan")).unwrap();
+        assert_eq!(
+            next_free_package(&first),
+            Some(scratch.path().join("Clip 3.deadpan"))
         );
     }
 

@@ -47,6 +47,14 @@ impl State {
         self.ticket
     }
 
+    /// A generation job is still running for this session.
+    pub(super) fn generation_running(&self) -> bool {
+        self.update
+            .as_ref()
+            .and_then(|update| update.job.as_ref())
+            .is_some_and(|job| job.running())
+    }
+
     #[cfg(feature = "ui-harness")]
     pub(crate) fn job(&self) -> Option<&Job> {
         self.update.as_ref()?.job.as_ref()

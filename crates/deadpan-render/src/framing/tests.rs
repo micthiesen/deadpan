@@ -569,3 +569,23 @@ fn retained_geometry_limits_and_cumulative_precision_fail_before_sampling() {
         Err(RenderError::FramingGeometry)
     ));
 }
+
+#[test]
+fn unclipped_source_projection_and_its_inverse_agree_outside_the_picture() {
+    let g = geometry(&[layer(3, 4, ExactRatio::integer(2))]);
+    // Centered on 3/4 at 2x: source x 0.75 is the canvas center.
+    assert_eq!(
+        g.source_to_canvas_unclipped([0.75, 0.5]).unwrap(),
+        [0.5, 0.5]
+    );
+    // A clipped point keeps its exact position for drawing.
+    assert_eq!(g.source_to_canvas([0.1, 0.5]).unwrap(), None);
+    let outside = g.source_to_canvas_unclipped([0.1, 0.5]).unwrap();
+    assert!((outside[0] - (-0.8)).abs() < 1e-12);
+    for point in [[0.75, 0.5], [0.1, 0.9], [1.4, -0.2]] {
+        let canvas = g.source_to_canvas_unclipped(point).unwrap();
+        let back = g.canvas_to_source(canvas).unwrap();
+        assert!((back[0] - point[0]).abs() < 1e-12 && (back[1] - point[1]).abs() < 1e-12);
+    }
+    assert!(g.source_to_canvas_unclipped([f64::NAN, 0.0]).is_err());
+}

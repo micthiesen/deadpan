@@ -1,11 +1,13 @@
 # Authored framing and Camera
 
-Static and enveloped framing are implemented, with a native temporary Camera
-preview. This does not complete DP-08,
+Static, enveloped and followed framing are implemented, with a native temporary
+Camera preview that also picks, draws, follows, corrects and tracks
+[attention targets](TARGETS.md). This does not complete DP-08,
 the creative-operation gate, or preview/export acceptance. The full
-[specification](spec/DEADPAN_SPEC.md) remains normative. The new
+[specification](spec/DEADPAN_SPEC.md) remains normative. The
 [Camera board](design/boards/camera-framing-board-v1.png) is a visual target;
-its saved targets and region editor are still required work.
+its `Save as` name field and target-picker dropdown are not implemented
+(Camera names new targets `Target N`).
 
 ## Authored operation
 
@@ -104,8 +106,12 @@ selection, navigation scope and cursor changes revoke the draft.
 | `h/j/k/l` | Move the center by 1% of the upright uncropped source width/height. |
 | `H/J/K/L` | Move by 5% of the same source dimensions. |
 | `+` / `-` | Multiply scale by 1.05 or its reciprocal. Counts repeat the operation. |
-| `f` | Toggle the numbered source-target picker. Digits pick targets there; they are counts in Adjust. |
-| `r` | Reset the temporary framing to neutral. Later adjustments create a new static pose. |
+| `f` | Toggle the numbered picker: saved targets covering this picture, then the center and corners. Digits pick there; they are counts in Adjust. |
+| `t` | Follow the picked saved target (`FramingValue::Follow`, the current scale, fallback = the current pose); `t` again stops following at the pose shown. |
+| `n` | Draw a new target rectangle (below). |
+| `c` | Correct the picked or followed target at this picture (below). |
+| `T` | Track the picked or followed target in the background ([tracking](TRACKING.md#in-the-app)). |
+| `r` | Reset the temporary framing to neutral. Later adjustments create a new static pose; a follow stops. |
 | `Enter` | Apply one typed revision-guarded edit. Unchanged framing creates no history entry. |
 | `Escape` | Discard the draft and restore the entry operation. |
 | `,z` | Commit a constant 1.35× punch at the current center, replacing a prior curve. |
@@ -117,10 +123,62 @@ the whole candidate curve before preview or commit. It evaluates that candidate
 through the same core helper used by the committed picture plan. Reset and the
 two named gag commands have explicit replacement semantics.
 
-The target picker currently provides deterministic center/corner positions. These
-are upright source points projected through descendants into the selected
-operation's input canvas. Clipped targets are unavailable, never silently clamped
-or renamed as detected faces. Numeric center fields use **canvas percentages**;
+The picker lists, in the order of specification section 7.6, saved targets whose
+asset is the displayed picture's and whose span covers its source time, then the
+center and four corners of the upright Original. Digits reach the first nine
+entries; later entries (the last corners first) have no number and are listed
+in the inspector only. Saved targets are drawn as
+rectangles at `region_at` of the picture's exact source time, colored and labelled
+by how that region was obtained: `drawn` (the initial rectangle), `corrected`,
+`tracked`, `interpolated` or `lost · holding`. All entries are upright source
+points projected through descendants into the selected operation's input canvas.
+Clipped targets are unavailable, never silently clamped or renamed as detected
+faces. Picking a saved target centers the draft on it statically and selects it
+for `t`, `c` and `T`.
+
+### Following a target
+
+`t` turns the draft into `Follow { target, scale, fallback }` with the draft's
+scale and the current pose as fallback. Camera also opens on an existing follow:
+the target supplies the center and `+`/`-` (or the Scale field) change the follow
+scale; the fallback keeps its exact center and scales by the same factor.
+Center nudges (`h/j/k/l`, center fields, a fixed picker point) are refused with
+a message while following; the center fields are disabled. `t` stops following
+and keeps the pose on screen, which Enter saves as a static pose. Picking another
+saved target while following switches the follow's target, an explicit target
+change rather than a hidden crop coordinate. Following an enveloped beat replaces
+its curve only on this explicit request, and the inspector says so.
+
+The preview resolves the follow exactly as the committed plan does
+(`deadpan_plan::follow_pose`: the target's center at the picture's source time,
+carried through every inner operation), then re-resolves every outer follow that
+sees the changed operation, and replaces those poses atomically on the retained
+picture. Escape restores every operation's entry pose. The `targets` replay
+checks that the committed picture's pose equals the Camera preview exactly.
+
+### Keyboard target rectangles
+
+`n` opens a rectangle centered on what the viewer shows, a quarter of the
+visible source in each dimension. `c` opens the target's rectangle at this
+picture. Tab moves between the Center, Width and Height fields; arrows or
+`h/j/k/l` change the focused part by 1% of the upright source, Shift by 5%, and
+counts repeat. Width and Height grow with Right/Up and shrink with Left/Down,
+never below 1%; centers stay inside the picture. Enter saves; Escape returns to
+framing without an edit. The mouse is not required and not yet supported.
+
+A new target is one undoable `SetTarget` with a fresh `target-N` id and
+`Target N` label. Its span starts at the displayed picture's indexed PTS (the
+rectangle is the region selected there, as the core model requires) and ends at
+the next stored shot boundary of the Original, or at the end of its measured
+video when no shot analysis is stored. A correction of an untracked target
+replaces its initial rectangle at the span start or stores a manual correction
+at this picture; a correction of a tracked target re-tracks only its range in
+the background.
+
+Target saves keep Camera open: a revision created by this Camera's own target
+save (matched by session, base revision and saved revision) rebuilds the session
+from the new picture and carries the draft pose, reset, follow and picked target
+over. Any other revision change still revokes the draft. Numeric center fields use **canvas percentages**;
 movement keys use **uncropped source percentages**. These differ when aspect or
 descendant framing differs. Derived spatial values quantize once at the declared
 Q32 numeric boundary.
@@ -144,8 +202,12 @@ Database 25 now stores core 19 and freezes core 18 before admitting captured Hol
 geometry. See [the capture contract](CAPTURED_FRAMING.md) for its stricter legacy
 recipe boundary and migration fixture.
 
-Saved named manual point/region targets, keyboard region creation, actual detection
-and source-time tracking, centered per-play scale escalation is in [Repeat escalation](REPEAT_ESCALATION.md); target-centered escalation, nested native selection, full
+Saved region targets, keyboard region creation, following and selected-target
+tracking are implemented (above, [targets](TARGETS.md), [tracking](TRACKING.md)).
+Point targets, face/region detection, renaming targets, pointer dragging of
+rectangles, the `,z` target punch-in and `:zoom … target=`, and follow centers
+corrected for a letterboxed canvas remain required. Centered per-play scale
+escalation is in [Repeat escalation](REPEAT_ESCALATION.md); target-centered escalation, nested native selection, full
 framed Ungroup, arbitrary temporal envelopes, captions, cutaways, and the remaining
 Section 8 picture operations remain required. [Captured framing](CAPTURED_FRAMING.md)
 retains the cropped composition for native Source/Freeze pause insertion, separately

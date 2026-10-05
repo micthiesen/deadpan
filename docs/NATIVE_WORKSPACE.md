@@ -251,12 +251,23 @@ Pointer-button input batches defer shortcut and command submission routing until
 widgets resolve their focus changes. Text still reaches the widgets; ordinary
 key-only navigation and hovering are unaffected.
 
-`⌘N` chooses a new Original, `⌘O` opens an existing project, and `⌘I` adds sound
-in a Ready V1 project or chooses the Original for an incomplete project. Legacy
-projects retain generic import. `,i` reuses the whole Original after the
+`⌘N` chooses a new Original, `⌘⇧N` starts one from a YouTube URL, `⌘O` opens an
+existing project, and `⌘I` adds sound in a Ready V1 project or chooses the
+Original for an incomplete project. Legacy projects retain generic import.
+With no project open, the viewer shows one start card with Choose video, the
+YouTube URL field and Open project, and no transport controls. Over an open
+project, `⌘⇧N`/`:youtube` shows the URL step as a sheet. While its field is
+focused, its sheet is open or its import runs, the step owns the keyboard: text,
+paste and IME stay native, plain Enter runs the current step and Escape cancels
+or leaves it, and other editor bindings are suspended. Command chords (`⌘N`, `⌘O`,
+`⌘I`, `⌘⇧N`) and their menu items keep working beside an idle step; running work
+keeps the whole keyboard. An install offer or a refusal also takes Enter/Escape
+while visible. The footer then teaches only the start or step keys. The import job, its
+confirmation before transfer and the final Open are described in
+[YouTube import](YOUTUBE_IMPORT.md#in-the-app). `,i` reuses the whole Original after the
 selected child or at the current group's end. `/` searches; `?` opens keyboard help;
 `:` opens command entry with
-`insert`, `split`, `undo`, `redo`, `new`, `open`, `import`, `source`, `sequence`, `enter`, `parent`, `help`,
+`insert`, `split`, `undo`, `redo`, `new`, `youtube` (`new-url`), `open`, `import`, `source`, `sequence`, `enter`, `parent`, `help`,
 `sound-place`, `sounds`, `sound-at`, `sound-gain`, `sound-edges`, `sound-delete`,
 `sound-allow`, `sound-silence`.
 In Original, `v` starts/finishes a half-open temporal range, `h/l` adjusts its

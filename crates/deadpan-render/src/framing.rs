@@ -442,6 +442,35 @@ impl PictureGeometry {
         self.project(self.output, upright)
     }
 
+    /// Normalized output-canvas position of an upright source point, without
+    /// clipping: drawing a source region whose corners leave the visible
+    /// picture still needs those corners. Finite points only.
+    pub fn source_to_canvas_unclipped(&self, upright: [f64; 2]) -> Result<[f64; 2], RenderError> {
+        if !upright.iter().all(|v| v.is_finite()) {
+            return Err(RenderError::FramingPoint);
+        }
+        let [x, y, width, height] = self.output.source.0;
+        Ok([
+            (x + upright[0] * width) / f64::from(self.canvas[0]),
+            (y + upright[1] * height) / f64::from(self.canvas[1]),
+        ])
+    }
+
+    /// The upright source point shown at a normalized output-canvas position,
+    /// possibly outside `[0, 1]` where the canvas shows no picture.
+    pub fn canvas_to_source(&self, canvas: [f64; 2]) -> Result<[f64; 2], RenderError> {
+        let [x, y, width, height] = self.output.source.0;
+        let point = [
+            (canvas[0] * f64::from(self.canvas[0]) - x) / width,
+            (canvas[1] * f64::from(self.canvas[1]) - y) / height,
+        ];
+        if point.iter().all(|v| v.is_finite()) {
+            Ok(point)
+        } else {
+            Err(RenderError::FramingPoint)
+        }
+    }
+
     /// Inverse UV is anchored at the first covered pixel center, avoiding large
     /// translated rectangles in shader arithmetic. No per-pixel snapping occurs.
     pub(crate) fn sampling_parameters(&self) -> Result<[[f32; 4]; 2], RenderError> {

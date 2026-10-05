@@ -663,6 +663,8 @@ pub struct UrlImport<'a> {
 
 #[derive(Debug, Serialize)]
 pub struct CreatedFromUrl {
+    /// The package that holds the Ready project.
+    pub package: PathBuf,
     pub created: CreatedOriginal,
     pub provenance: RemoteOriginalProvenance,
 }
@@ -757,20 +759,59 @@ fn original_file_name(title: &str, id: &VideoId) -> String {
     }
 }
 
-/// Metadata, transfer, assembly and single-Original project creation.
-pub fn create_from_url(
-    import: &UrlImport<'_>,
-    events: &mut dyn FnMut(Value) -> Result<(), CliError>,
-) -> Result<CreatedFromUrl, CliError> {
-    let id = normalize(import.url).map_err(ImportError::from)?;
-    if import.package.exists() {
-        return Err(CliError::Usage(format!(
-            "{} already exists",
-            import.package.display()
-        )));
+/// Inputs for metadata inspection, before any transfer or package creation.
+pub struct Inspection<'a> {
+    pub url: &'a str,
+    pub cookies: Option<&'a Path>,
+    pub helpers: &'a Helpers,
+    pub limits: ImportLimits,
+    pub cancelled: &'a AtomicBool,
+}
+
+/// One inspected video, ready to download once the user confirms.
+///
+/// It owns the locked private workspace, the inspected metadata JSON that the
+/// download reuses and any private cookie copy. Dropping it (for example when
+/// the user declines) removes all of them; nothing has been transferred and no
+/// package exists.
+pub struct Inspected {
+    id: VideoId,
+    metadata: VideoMetadata,
+    estimate: Option<u64>,
+    info: Vec<u8>,
+    workspace: Workspace,
+    cookies: Option<PrivateCookies>,
+}
+
+impl Inspected {
+    pub fn video_id(&self) -> &VideoId {
+        &self.id
     }
+
+    pub fn metadata(&self) -> &VideoMetadata {
+        &self.metadata
+    }
+
+    /// Declared or approximate bytes of both selected streams, when known.
+    pub fn estimated_bytes(&self) -> Option<u64> {
+        self.estimate
+    }
+}
+
+/// Progress events are reported at most this often during the transfer.
+const PROGRESS_INTERVAL: Duration = Duration::from_millis(500);
+
+/// Run `--dump-single-json` and validate the result for one video.
+///
+/// Playlists, live streams, inadmissible formats and size bounds are refused
+/// here, before any media transfer or package creation.
+pub fn inspect(
+    request: &Inspection<'_>,
+    events: &mut dyn FnMut(Value) -> Result<(), CliError>,
+) -> Result<Inspected, CliError> {
+    let id = normalize(request.url).map_err(ImportError::from)?;
     let workspace = Workspace::new()?;
-    let cookies = import
+    let cookies = request
         .cookies
         .map(|path| PrivateCookies::copy(path, &workspace))
         .transpose()?;
@@ -779,39 +820,39 @@ pub fn create_from_url(
     events(
         serde_json::json!({ "event": "fetching_metadata", "video_id": id.as_str(), "source_url": id.watch_url() }),
     )?;
-    import.helpers.recheck()?;
+    request.helpers.recheck()?;
     let run = run_helper(
         HelperCommand {
-            executable: &import.helpers.yt_dlp,
-            arguments: &metadata_arguments(import.helpers, cookie_path, &id),
+            executable: &request.helpers.yt_dlp,
+            arguments: &metadata_arguments(request.helpers, cookie_path, &id),
             private: workspace.path(),
             current_dir: &workspace.path().join("work"),
-            max_stdout: import.limits.max_metadata_bytes,
+            max_stdout: request.limits.max_metadata_bytes,
             overflow: ImportError::new(
                 "YouTubeMetadataTooLarge",
                 "the video's metadata exceeded its size bound",
             ),
-            timeout: import.limits.metadata_timeout,
+            timeout: request.limits.metadata_timeout,
         },
-        import.cancelled,
+        request.cancelled,
         || Ok(()),
     )?;
     if !run.status.success() {
         return Err(classify_failure(&run.stderr).into());
     }
-    let metadata = parse_metadata(&run.stdout, &id, &import.limits)?;
+    let metadata = parse_metadata(&run.stdout, &id, &request.limits)?;
     let selection = &metadata.selection;
     let estimate = [&selection.video, &selection.audio]
         .iter()
         .map(|f| f.declared_bytes.or(f.approximate_bytes))
         .sum::<Option<u64>>();
-    if estimate.is_some_and(|bytes| bytes > import.limits.max_download_bytes) {
+    if estimate.is_some_and(|bytes| bytes > request.limits.max_download_bytes) {
         return Err(ImportError::new(
             "YouTubeTooLarge",
             format!(
                 "the selected streams need about {} bytes; imports are limited to {} bytes",
                 estimate.unwrap_or(0),
-                import.limits.max_download_bytes
+                request.limits.max_download_bytes
             ),
         )
         .into());
@@ -823,7 +864,55 @@ pub fn create_from_url(
         "license": metadata.license, "selection": selection, "estimated_bytes": estimate,
         "notice": "You are responsible for having the rights to use this video.",
     }))?;
+    Ok(Inspected {
+        id,
+        metadata,
+        estimate,
+        info: run.stdout,
+        workspace,
+        cookies,
+    })
+}
 
+/// Names another sibling package when the given one is taken.
+pub type Alternatives<'a> = &'a dyn Fn(&Path) -> Option<PathBuf>;
+
+/// Inputs for the transfer and project creation of an inspected video.
+pub struct Acquisition<'a> {
+    pub package: &'a Path,
+    /// Another sibling name when `package` is taken, even at the final
+    /// rename; `None` refuses a taken path. The download is never discarded
+    /// for a name another creator took first.
+    pub alternatives: Option<Alternatives<'a>>,
+    pub helpers: &'a Helpers,
+    pub media_worker: &'a Path,
+    pub limits: ImportLimits,
+    pub cancelled: &'a AtomicBool,
+}
+
+/// Download exactly the inspected streams, assemble them and create the
+/// single-Original project at `package`.
+pub fn download_and_create(
+    inspected: Inspected,
+    import: &Acquisition<'_>,
+    events: &mut dyn FnMut(Value) -> Result<(), CliError>,
+) -> Result<CreatedFromUrl, CliError> {
+    let Inspected {
+        id,
+        metadata,
+        estimate,
+        info: metadata_json,
+        workspace,
+        cookies,
+    } = inspected;
+    if import.alternatives.is_none() && fs::symlink_metadata(import.package).is_ok() {
+        return Err(CliError::Usage(format!(
+            "{} already exists",
+            import.package.display()
+        )));
+    }
+    let cookie_path = cookies.as_ref().map(PrivateCookies::path);
+    let selection = &metadata.selection;
     if let Some(estimate) = estimate {
         // Downloads, then the assembled copy beside them, then retention.
         require_space(workspace.path(), estimate.saturating_mul(2))?;
@@ -837,8 +926,8 @@ pub fn create_from_url(
         .create_new(true)
         .mode(0o600)
         .open(&info)
-        .and_then(|mut file| file.write_all(&run.stdout))?;
-    drop(run);
+        .and_then(|mut file| file.write_all(&metadata_json))?;
+    drop(metadata_json);
     let directory = workspace.path().join("download");
     let mut reported = Instant::now();
     let limit = import.limits.max_download_bytes;
@@ -868,7 +957,7 @@ pub fn create_from_url(
                     format!("the download exceeded {limit} bytes"),
                 ));
             }
-            if reported.elapsed() >= Duration::from_secs(2) {
+            if reported.elapsed() >= PROGRESS_INTERVAL {
                 reported = Instant::now();
                 // Progress output failure does not stop the transfer.
                 let _ = events(
@@ -990,17 +1079,56 @@ pub fn create_from_url(
     };
     provenance.validate()?;
     events(serde_json::json!({ "event": "creating_project", "package": import.package }))?;
-    let created = single_original::create(
+    let (package, created) = single_original::create_at_free_name(
         import.package,
+        import.alternatives.unwrap_or(&|_| None),
         &original,
         &metadata.title,
         import.cancelled,
         |store, record| Ok(store.save_original_provenance(record.object().content(), &provenance)?),
     )?;
     Ok(CreatedFromUrl {
+        package,
         created,
         provenance,
     })
+}
+
+/// Metadata, transfer, assembly and single-Original project creation in one
+/// call, without a confirmation step between inspection and transfer.
+pub fn create_from_url(
+    import: &UrlImport<'_>,
+    events: &mut dyn FnMut(Value) -> Result<(), CliError>,
+) -> Result<CreatedFromUrl, CliError> {
+    normalize(import.url).map_err(ImportError::from)?;
+    if import.package.exists() {
+        return Err(CliError::Usage(format!(
+            "{} already exists",
+            import.package.display()
+        )));
+    }
+    let inspected = inspect(
+        &Inspection {
+            url: import.url,
+            cookies: import.cookies,
+            helpers: import.helpers,
+            limits: import.limits,
+            cancelled: import.cancelled,
+        },
+        events,
+    )?;
+    download_and_create(
+        inspected,
+        &Acquisition {
+            package: import.package,
+            alternatives: None,
+            helpers: import.helpers,
+            media_worker: import.media_worker,
+            limits: import.limits,
+            cancelled: import.cancelled,
+        },
+        events,
+    )
 }
 
 fn usage() -> CliError {
@@ -1058,7 +1186,7 @@ pub(crate) fn run(arguments: &[&str]) -> Result<(), CliError> {
 }
 
 /// The isolated media worker installed beside this executable.
-fn media_worker() -> Result<PathBuf, CliError> {
+pub fn media_worker() -> Result<PathBuf, CliError> {
     let worker = std::env::current_exe()?
         .parent()
         .map(|directory| directory.join("deadpan-media-worker"))

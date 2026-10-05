@@ -490,3 +490,108 @@ fn transfer_failures_are_classified_and_create_no_project() {
     );
     assert!(!package.exists());
 }
+
+#[test]
+fn inspection_waits_for_confirmation_and_declining_transfers_nothing() {
+    let directory = tempfile::tempdir().unwrap();
+    let package = directory.path().join("never.deadpan");
+    let good = metadata(vec![
+        video_format("137", "avc1.640028", 1080, 24.0, "https"),
+        audio_format("140", "mp4a.40.2", 129.0, -1),
+    ]);
+    // Any second run (a transfer) leaves evidence and fails.
+    let body = format!(
+        "case \"$*\" in *--dump-single-json*) cat <<'JSON'\n{good}\nJSON\n;; *) touch '{}/transferred'; exit 1;; esac",
+        directory.path().display()
+    );
+    let helpers = stub(directory.path(), &body);
+    let cookies = directory.path().join("cookies.txt");
+    fs::write(&cookies, "# Netscape HTTP Cookie File\n").unwrap();
+    let cancelled = AtomicBool::new(false);
+    let mut events = Vec::new();
+    let inspected = inspect(
+        &Inspection {
+            url: "https://www.youtube.com/watch?v=Z4C82eyhwgU&list=PLx",
+            cookies: Some(&cookies),
+            helpers: &helpers,
+            limits: ImportLimits::default(),
+            cancelled: &cancelled,
+        },
+        &mut |event| {
+            events.push(event);
+            Ok(())
+        },
+    )
+    .unwrap();
+    assert_eq!(inspected.video_id().as_str(), "Z4C82eyhwgU");
+    assert_eq!(inspected.metadata().title, "Caminandes2");
+    assert_eq!(inspected.metadata().selection.video.format_id, "137");
+    assert_eq!(inspected.estimated_bytes(), Some(1100));
+    assert_eq!(
+        events
+            .iter()
+            .map(|event| event["event"].as_str().unwrap())
+            .collect::<Vec<_>>(),
+        ["fetching_metadata", "metadata"]
+    );
+    // The private workspace, with its cookie copy, lives until confirmation.
+    let arguments = fs::read_to_string(directory.path().join("arguments")).unwrap();
+    let copy = PathBuf::from(
+        arguments
+            .lines()
+            .skip_while(|line| *line != "--cookies")
+            .nth(1)
+            .unwrap(),
+    );
+    assert!(copy.exists());
+    let private = inspected.workspace.path().to_owned();
+    drop(inspected);
+    assert!(!copy.exists());
+    assert!(!private.exists());
+    assert!(!directory.path().join("transferred").exists());
+    assert!(!package.exists());
+    assert!(cookies.exists());
+}
+
+#[test]
+fn confirming_an_inspection_refuses_an_existing_package_before_transfer() {
+    let directory = tempfile::tempdir().unwrap();
+    let package = directory.path().join("taken.deadpan");
+    fs::create_dir(&package).unwrap();
+    let good = metadata(vec![
+        video_format("137", "avc1.640028", 1080, 24.0, "https"),
+        audio_format("140", "mp4a.40.2", 129.0, -1),
+    ]);
+    let body = format!(
+        "case \"$*\" in *--dump-single-json*) cat <<'JSON'\n{good}\nJSON\n;; *) touch '{}/transferred'; exit 1;; esac",
+        directory.path().display()
+    );
+    let helpers = stub(directory.path(), &body);
+    let cancelled = AtomicBool::new(false);
+    let inspected = inspect(
+        &Inspection {
+            url: "https://youtu.be/Z4C82eyhwgU",
+            cookies: None,
+            helpers: &helpers,
+            limits: ImportLimits::default(),
+            cancelled: &cancelled,
+        },
+        &mut |_| Ok(()),
+    )
+    .unwrap();
+    let error = download_and_create(
+        inspected,
+        &Acquisition {
+            package: &package,
+            alternatives: None,
+            helpers: &helpers,
+            media_worker: Path::new("/nonexistent/deadpan-media-worker"),
+            limits: ImportLimits::default(),
+            cancelled: &cancelled,
+        },
+        &mut |_| Ok(()),
+    )
+    .unwrap_err();
+    assert!(matches!(error, CliError::Usage(message) if message.contains("already exists")));
+    assert!(!directory.path().join("transferred").exists());
+}

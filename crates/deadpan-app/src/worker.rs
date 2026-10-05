@@ -116,6 +116,9 @@ pub struct Picture {
     pub framing_gap: bool,
     /// Static captured composition before current Hold and ancestor framing.
     pub picture_context: Option<Arc<deadpan_core::CapturedFraming>>,
+    /// The asset and exact source time `Follow` layers and target overlays
+    /// evaluate at; None for pictures that show no Original moment.
+    pub follow_point: Option<(AssetId, deadpan_core::SourcePoint)>,
 }
 
 pub struct Reply {
@@ -504,6 +507,7 @@ fn perform(
         canvas: None,
         framing: Vec::new(),
         framing_gap: false,
+        follow_point: None,
         picture_context: None,
     })
 }
@@ -604,6 +608,10 @@ fn media_picture(
                 .identity;
             let mut picture =
                 registered_picture(media, registered, frame, canvas, cancelled, retained)?;
+            picture.follow_point = sample
+                .picture
+                .follow_point()
+                .map(|(asset, point)| (asset.clone(), point));
             picture.framing = sample.framing;
             picture.framing_gap = sample.gap_after.is_some();
             picture.picture_context = sample.picture_context;
@@ -656,6 +664,7 @@ fn background_picture(canvas: Option<(u32, u32)>) -> Picture {
         canvas,
         framing: Vec::new(),
         framing_gap: false,
+        follow_point: None,
         picture_context: None,
     }
 }
@@ -720,6 +729,7 @@ fn generated_picture(
         canvas,
         framing: Vec::new(),
         framing_gap: false,
+        follow_point: None,
         picture_context: None,
     })
 }
@@ -861,6 +871,7 @@ fn registered_picture(
         canvas,
         framing: Vec::new(),
         framing_gap: false,
+        follow_point: None,
         picture_context: None,
     })
 }

@@ -34,6 +34,7 @@ mod slip;
 mod sound;
 mod speech_activity;
 mod splice;
+mod targets;
 mod trim;
 
 const TIMEOUT: Duration = Duration::from_secs(20);
@@ -693,6 +694,7 @@ fn shutdown_finishes_an_admitted_command_before_releasing_the_store() {
         std::thread::spawn(|| {}),
         None,
         Default::default(),
+        Default::default(),
     );
     assert!(!service.is_busy());
     let update = service
@@ -940,6 +942,7 @@ impl Harness {
                 results,
                 worker,
                 library,
+                Default::default(),
                 Default::default(),
             )
         });

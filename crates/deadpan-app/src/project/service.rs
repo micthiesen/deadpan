@@ -46,6 +46,7 @@ mod semantic;
 mod shots;
 mod slip;
 mod splice;
+mod targets;
 mod transcripts;
 mod trim;
 
@@ -123,10 +124,12 @@ struct Service {
     // Kept across session replacement until the shared worker drains its reply.
     host_preparing: Option<(u64, Arc<AtomicBool>)>,
     generation: generation::State,
+    targets: targets::State,
     #[cfg(test)]
     render_preview_refresh_failure: bool,
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(super) fn run(
     shared: Arc<Shared>,
     requests: Receiver<ProjectRequest>,
@@ -135,6 +138,7 @@ pub(super) fn run(
     worker: JoinHandle<()>,
     library: Option<ProjectLibrary>,
     backend: super::generation::Backend,
+    tracking: super::targets::Backend,
 ) {
     let mut service = Service {
         shared,
@@ -191,6 +195,7 @@ pub(super) fn run(
         host: None,
         host_preparing: None,
         generation: generation::State::new(backend),
+        targets: targets::State::new(tracking),
         #[cfg(test)]
         render_preview_refresh_failure: false,
     };
@@ -207,6 +212,7 @@ pub(super) fn run(
         let changed = shutdown_changed
             | service.pump_render()
             | service.pump_generation()
+            | service.pump_tracking()
             | service.finish_session_change();
         if changed {
             service.reconcile_slip();
@@ -220,6 +226,7 @@ pub(super) fn run(
             && service.pending_session_change.is_none()
             && service.render.is_none()
             && !service.generation.active()
+            && !service.targets.active()
         {
             break;
         }
@@ -346,6 +353,7 @@ impl Service {
             activity_save: self.activity_save.clone(),
             shot_save: self.shot_save.clone(),
             generation: self.generation_update(),
+            targets: self.targets_update(),
         };
         *self
             .shared
@@ -450,6 +458,10 @@ impl Service {
                 self.generation_command(operation);
                 return Ok(());
             }
+            ProjectRequest::Target(operation) => {
+                self.target_command(operation);
+                return Ok(());
+            }
             request => request,
         };
         if let ProjectRequest::RenderHistory(request) = request {
@@ -472,6 +484,7 @@ impl Service {
                 unreachable!("analysis annotations use independent feedback")
             }
             ProjectRequest::Render(_) => unreachable!("render commands use their own feedback"),
+            ProjectRequest::Target(_) => unreachable!("targets use independent feedback"),
             ProjectRequest::RenderHistory(_) => {
                 unreachable!("render history queries use their own feedback")
             }

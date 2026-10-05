@@ -34,6 +34,7 @@ pub mod slice;
 pub mod slip;
 pub mod sound;
 pub mod splice;
+pub mod targets;
 #[cfg(test)]
 mod tests;
 pub mod trim;
@@ -278,6 +279,8 @@ pub struct ProjectUpdate {
     pub shot_save: Option<TranscriptSave>,
     /// AI pause jobs and Ready candidates, independent of editor feedback.
     pub generation: Option<generation::Update>,
+    /// Target saves and tracking, independent of editor feedback.
+    pub targets: Option<targets::Update>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -562,6 +565,8 @@ pub enum ProjectRequest {
     Marks(marks::Request),
     /// AI pause generation. Only Accept edits the project.
     Generation(generation::GenerationOperation),
+    /// Target saves and background tracking.
+    Target(targets::Operation),
     Render(ProjectRenderRequest),
     RenderHistory(render_history::Request),
     /// Source first: native projects are always allocated in Documents/Deadpan.
@@ -697,6 +702,16 @@ impl ProjectService {
         library: Option<ProjectLibrary>,
         backend: generation::Backend,
     ) -> io::Result<Self> {
+        Self::start_with_tracking(wake, library, backend, targets::Backend::Environment)
+    }
+
+    /// Production always uses both `Environment` backends.
+    pub(crate) fn start_with_tracking(
+        wake: Arc<dyn Fn() + Send + Sync>,
+        library: Option<ProjectLibrary>,
+        backend: generation::Backend,
+        tracking: targets::Backend,
+    ) -> io::Result<Self> {
         let shared = Arc::new(Shared {
             busy: AtomicBool::new(false),
             preview_active: AtomicBool::new(false),
@@ -724,7 +739,11 @@ impl ProjectService {
         let state = shared.clone();
         std::thread::Builder::new()
             .name("deadpan-project".into())
-            .spawn(move || service::run(state, receive, jobs, results, worker, library, backend))?;
+            .spawn(move || {
+                service::run(
+                    state, receive, jobs, results, worker, library, backend, tracking,
+                )
+            })?;
         Ok(Self { requests, shared })
     }
 

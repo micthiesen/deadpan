@@ -38,6 +38,7 @@ pub mod slip;
 mod sound;
 pub mod splice;
 pub mod trim;
+pub mod youtube;
 pub use sound::SoundAction;
 #[cfg(any(test, feature = "ui-harness"))]
 pub mod shortcut_audit;
@@ -116,6 +117,8 @@ pub enum Action {
         selector: deadpan_core::SemanticSelector,
     },
     New,
+    /// Start a project from one YouTube video URL (`⌘⇧N`, `:youtube`).
+    NewFromUrl,
     Open,
     Import,
     Render,
@@ -862,6 +865,7 @@ impl Bindings {
             self.clear();
             return match (key, modifiers.shift) {
                 (Key::N, false) => Some(Action::New),
+                (Key::N, true) => Some(Action::NewFromUrl),
                 (Key::O, false) => Some(Action::Open),
                 (Key::I, false) => Some(Action::Import),
                 (Key::E, false) if !text => Some(Action::Render),
@@ -1994,6 +1998,10 @@ mod tests {
         ] {
             let mut bindings = Bindings::default();
             for text in [false, true] {
+                assert_eq!(
+                    bindings.key(Key::N, command | Modifiers::SHIFT, text, false),
+                    Some(Action::NewFromUrl)
+                );
                 for (key, expected) in [
                     (Key::N, Action::New),
                     (Key::O, Action::Open),

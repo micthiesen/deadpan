@@ -14,6 +14,7 @@ use muda::{Menu, MenuEvent, MenuId, MenuItem, PredefinedMenuItem, Submenu};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum MenuCommand {
     New,
+    NewFromUrl,
     Open,
     Import,
     Close,
@@ -27,8 +28,9 @@ pub enum MenuCommand {
     Quit,
 }
 
-const COMMANDS: [(&str, MenuCommand); 12] = [
+const COMMANDS: [(&str, MenuCommand); 13] = [
     ("deadpan.file.new", MenuCommand::New),
+    ("deadpan.file.new-url", MenuCommand::NewFromUrl),
     ("deadpan.file.open", MenuCommand::Open),
     ("deadpan.file.import", MenuCommand::Import),
     ("deadpan.file.close", MenuCommand::Close),
@@ -80,7 +82,7 @@ impl MenuState {
 
     pub fn enabled(&self, command: MenuCommand) -> bool {
         match command {
-            MenuCommand::New | MenuCommand::Open => self.ready,
+            MenuCommand::New | MenuCommand::NewFromUrl | MenuCommand::Open => self.ready,
             MenuCommand::Import => self.ready && self.project && !self.importing,
             MenuCommand::Close | MenuCommand::Render | MenuCommand::Renders => {
                 self.ready && self.project
@@ -119,6 +121,14 @@ impl MenuBar {
     pub fn install(repaint: impl Fn() + Send + Sync + 'static) -> Result<Self, String> {
         let error = |error: muda::Error| error.to_string();
         let new = item("deadpan.file.new", "New Project…", command_key(Code::KeyN));
+        let new_url = item(
+            "deadpan.file.new-url",
+            "New from YouTube URL…",
+            Some(Accelerator::new(
+                Modifiers::META | Modifiers::SHIFT,
+                Code::KeyN,
+            )),
+        );
         let open = item(
             "deadpan.file.open",
             "Open Project…",
@@ -162,6 +172,7 @@ impl MenuBar {
             true,
             &[
                 &new,
+                &new_url,
                 &open,
                 &PredefinedMenuItem::separator(),
                 &import,
@@ -205,6 +216,7 @@ impl MenuBar {
             events,
             items: vec![
                 (MenuCommand::New, new),
+                (MenuCommand::NewFromUrl, new_url),
                 (MenuCommand::Open, open),
                 (MenuCommand::Import, import.clone()),
                 (MenuCommand::Close, close),
@@ -300,6 +312,7 @@ mod tests {
             ..state()
         };
         assert!(empty.enabled(MenuCommand::New));
+        assert!(empty.enabled(MenuCommand::NewFromUrl));
         assert!(empty.enabled(MenuCommand::ViewOriginal));
         assert!(!empty.enabled(MenuCommand::Import));
         assert!(!empty.enabled(MenuCommand::Render));

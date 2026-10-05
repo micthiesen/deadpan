@@ -41,10 +41,12 @@ mod slip;
 mod sound_placement;
 mod sound_playback;
 mod splice;
+mod targets;
 mod telemetry;
 mod transcript;
 mod trim;
 mod wake;
+mod youtube;
 
 use telemetry::{Event, InputOrigins, Outcome, PictureTelemetry};
 use wake::RepaintWake;
@@ -66,6 +68,8 @@ pub(super) struct Feedback {
     pub release_junction: Option<crate::worker::EditJunctionReply>,
     pub simulate_playback: bool,
     pub playback_updates: std::collections::VecDeque<deadpan_playback::Update>,
+    /// The scripted downloader behind the `youtube` replay's job seam.
+    pub youtube: Option<Arc<crate::youtube::scripted::Scripted>>,
     events: Vec<Event<Ticket>>,
 }
 
@@ -228,7 +232,12 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
             let fixture = fixture.as_path();
             let keymap = keymap::startup(name, &documents)?;
             let models = documents.join("Models");
+            let cookies = documents
+                .parent()
+                .ok_or("Replay Documents root has no parent")?
+                .join("cookies.txt");
             let library = crate::library::ProjectLibrary::from_documents(documents)?;
+            let youtube_library = library.clone();
             let mut construction_error = None;
             let wake = Arc::new(RepaintWake::default());
             // The wrapper lets construction failures become evidence rather than a
@@ -264,13 +273,18 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                         )
                         .map_err(|e| e.to_string())?;
                         let repaint = context.egui_ctx.clone();
-                        app.service = ProjectService::start_with(
+                        app.service = ProjectService::start_with_tracking(
                             Arc::new(move || repaint.request_repaint()),
                             Some(library),
                             if name == "ai-pause" {
                                 ai_pause::backend()
                             } else {
                                 crate::project::generation::Backend::Environment
+                            },
+                            if name == "targets" {
+                                targets::backend()
+                            } else {
+                                crate::project::targets::Backend::Environment
                             },
                         )
                         .map_err(|e| e.to_string())?;
@@ -279,6 +293,30 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                             Some(fixture.to_owned()),
                         )]);
                         app.feedback.simulate_playback = true;
+                        if name == "youtube" {
+                            // Only the downloader is scripted: the job, URL
+                            // step, project creation and Open are real.
+                            std::fs::write(&cookies, "# Netscape HTTP Cookie File\n")
+                                .map_err(|error| error.to_string())?;
+                            let downloader = Arc::new(crate::youtube::scripted::Scripted::new(
+                                fixture.to_owned(),
+                                false,
+                            ));
+                            let repaint = context.egui_ctx.clone();
+                            app.youtube = super::youtube::Flow::new(crate::youtube::Jobs::new(
+                                downloader.clone(),
+                                Some(youtube_library.clone()),
+                                Arc::new(move || repaint.request_repaint()),
+                            ));
+                            app.feedback.youtube = Some(downloader);
+                            // ⌘N and ⌘O from the focused field reach their
+                            // pickers (cancelled), then the cookies file.
+                            app.dialogs = Dialogs::scripted(vec![
+                                (DialogKind::CreateProject, None),
+                                (DialogKind::OpenProject, None),
+                                (DialogKind::Cookies, Some(cookies.clone())),
+                            ]);
+                        }
                         // Replay never sees models installed on this Mac.
                         app.transcription.set_models_root(models.clone());
                         Ok(app)
@@ -326,20 +364,23 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
             let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 driver.step("Initial workspace", true)?;
                 if name == "generated-picture" {
-                    driver.click("Open project  ⌘O")?;
+                    driver.click("Open project…  ⌘O")?;
                     driver.wait_for("Accepted compatibility fixture opened", |app| {
                         app.workspace.is_some() && !app.service.is_busy()
                     })?;
                     return generated_picture::run(&mut driver);
                 }
                 if name == "ai-pause-ready" {
-                    driver.click("Open project  ⌘O")?;
+                    driver.click("Open project…  ⌘O")?;
                     driver.wait_for("AI pause fixture copy opened", |app| {
                         app.workspace.is_some() && !app.service.is_busy()
                     })?;
                     return ai_pause::ready(&mut driver);
                 }
-                driver.click("New project  ⌘N")?;
+                if name == "youtube" {
+                    return youtube::run(&mut driver);
+                }
+                driver.click("Choose video…  ⌘N")?;
                 driver.wait_for("Original initialized and displayed", |app| {
                     app.workspace.as_ref().is_some_and(|w| {
                         matches!(w.single_source, Some(SingleSourceState::Ready { .. }))

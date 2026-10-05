@@ -91,7 +91,7 @@ pub fn default_root() -> Result<PathBuf, CliError> {
     Ok(home.join("Library/Application Support/Deadpan/helpers"))
 }
 
-fn supported_platform() -> Result<(), CliError> {
+pub fn supported_platform() -> Result<(), CliError> {
     if cfg!(all(target_os = "macos", target_arch = "aarch64")) {
         Ok(())
     } else {

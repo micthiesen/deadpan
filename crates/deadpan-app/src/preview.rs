@@ -59,15 +59,17 @@ mod slip;
 mod sound_events;
 mod splice;
 mod style;
+mod targets;
 mod thumbnails;
 mod transcript;
 mod trim;
+mod youtube;
 
 const SEARCH_ID: &str = "source-search";
 const COMMAND_ID: &str = "command-input";
 const TRANSCRIPT_SEARCH_ID: &str = "transcript-search";
 /// Focused text fields that own keyboard input instead of editor bindings.
-const TEXT_INPUT_IDS: [&str; 3] = [SEARCH_ID, COMMAND_ID, TRANSCRIPT_SEARCH_ID];
+const TEXT_INPUT_IDS: [&str; 4] = [SEARCH_ID, COMMAND_ID, TRANSCRIPT_SEARCH_ID, youtube::URL_ID];
 const MAX_TARGET_PIXELS: f64 = 1920.0 * 1080.0;
 const SOURCE_INSERT_HINT: &str = "The Original stays intact. Switch to Your edit (:sequence) to reshape it, or reuse the full Original with :insert.";
 
@@ -141,6 +143,8 @@ pub struct DeadpanApp {
     thumbnails: thumbnails::Thumbnails,
     transcription: transcript::Transcription,
     shots: shots::ShotJob,
+    /// New-from-URL: one YouTube import job and its URL step.
+    youtube: youtube::Flow,
     /// The native menu bar, present only for native launches.
     #[cfg(target_os = "macos")]
     menu: Option<crate::menu::MenuBar>,
@@ -169,6 +173,7 @@ pub struct DeadpanApp {
     trim_abandon: VecDeque<crate::project::trim::ProposalId>,
     trim_picture_pending: bool,
     ai: ai_pause::State,
+    targets: targets::State,
     splice: Option<splice::Draft>,
     splice_abandon: Option<crate::project::splice::ProposalId>,
     sound_cursor: u64,
@@ -297,6 +302,14 @@ impl DeadpanApp {
             thumbnails,
             transcription: transcript::Transcription::default(),
             shots: shots::ShotJob::default(),
+            youtube: youtube::Flow::new(crate::youtube::Jobs::new(
+                Arc::new(crate::youtube::Pinned::new(None)),
+                None,
+                {
+                    let repaint = context.egui_ctx.clone();
+                    Arc::new(move || repaint.request_repaint())
+                },
+            )),
             #[cfg(target_os = "macos")]
             menu: None,
             target: None,
@@ -323,6 +336,7 @@ impl DeadpanApp {
             trim_prefix_target: None,
             trim_abandon: VecDeque::new(),
             ai: ai_pause::State::default(),
+            targets: targets::State::default(),
             trim_picture_pending: false,
             splice: None,
             splice_abandon: None,
@@ -711,6 +725,16 @@ impl DeadpanApp {
                             .is_some_and(|next| next.asset != i.asset)
                 });
             self.workspace = update.workspace;
+            self.receive_targets(update.targets.take());
+            // A target save changes only the revision. Camera continues on
+            // the revision its own save created; the picture is not cleared.
+            let target_save = self.targets.saved().is_some_and(|saved| {
+                Some(saved.session) == new_session
+                    && Some(&saved.base) == old_revision.as_ref()
+                    && Some(&saved.revision) == new_revision.as_ref()
+            });
+            let saved_target = self.targets.saved().filter(|_| target_save).cloned();
+            // Rebase scoped inspection first: a scoped Camera compares against it.
             self.reconcile_scoped(
                 scoped_before.as_ref(),
                 update
@@ -718,7 +742,15 @@ impl DeadpanApp {
                     .as_ref()
                     .and_then(|commit| commit.scoped.as_ref()),
                 update.marks.saved.as_ref(),
+                saved_target.as_ref(),
             );
+            if target_save
+                && old_session == new_session
+                && let Some(revision) = new_revision.clone()
+                && self.camera_follows_target_save(Some(&revision))
+            {
+                self.rebase_camera(revision);
+            }
             self.semantic.receive(
                 update.semantic,
                 self.workspace
@@ -940,7 +972,12 @@ impl DeadpanApp {
                     // Slip's final layout pass owns its next stopped picture.
                     self.slip_picture_pending = true;
                 } else {
-                    self.request_picture(!preserve_picture);
+                    // A rebasing Camera keeps its draft across this request.
+                    let camera = self.camera.take_if(|camera| camera.rebasing());
+                    self.request_picture(!preserve_picture && !target_save);
+                    if camera.is_some() {
+                        self.camera = camera;
+                    }
                 }
             } else if ai_picture && self.trim.is_none() && self.slip.is_none() {
                 self.request_picture(false);
@@ -1040,6 +1077,12 @@ impl DeadpanApp {
         }
         match self.dialogs.start(kind, context) {
             Ok(()) => {
+                // Choosing or opening another project leaves an idle URL sheet.
+                if matches!(kind, DialogKind::CreateProject | DialogKind::OpenProject)
+                    && !self.youtube.active()
+                {
+                    self.youtube.modal = false;
+                }
                 self.dialog_intent = Some(DialogIntent {
                     session: self.workspace.as_ref().map(|w| w.session),
                     revision: self
@@ -1097,6 +1140,16 @@ impl DeadpanApp {
         };
         match result.kind {
             DialogKind::Render => unreachable!("Render uses its captured destination intent"),
+            DialogKind::Cookies => {
+                // A running import already copied its cookies (or none).
+                if self.youtube.active() {
+                    self.message = Some(
+                        "The cookies file was not applied because an import is running.".into(),
+                    );
+                } else {
+                    self.youtube.cookies = Some(path);
+                }
+            }
             DialogKind::CreateProject => {
                 self.submit(ProjectRequest::CreateFromSource { path });
             }
@@ -1385,6 +1438,7 @@ impl DeadpanApp {
         self.trim_prefix_target = None;
         self.hold_command_target = Some(self.capture_hold_command());
         self.ai.command = Some(self.ai_capture());
+        self.targets.command = Some(self.capture_track());
         self.sound_command_target = self.capture_sound_command(&command);
         self.cancel_repeats("command entry was opened");
         self.pause_playback();
@@ -1718,6 +1772,7 @@ impl DeadpanApp {
             Action::GainStep(delta) => self.gain_step(delta, context),
             Action::Framing(action) => self.framing_action(action, context),
             Action::New => self.begin_dialog(DialogKind::CreateProject, context, false),
+            Action::NewFromUrl => self.open_youtube(context),
             Action::Open => self.begin_dialog(DialogKind::OpenProject, context, false),
             Action::Import => self.begin_dialog(self.import_dialog_kind(), context, false),
             Action::Insert => self.insert(),
@@ -2054,6 +2109,9 @@ impl DeadpanApp {
         }
         if self.room_tone.is_some() {
             self.room_tone_keyboard(context);
+            return None;
+        }
+        if self.youtube_keyboard(context) {
             return None;
         }
         if help_scroll::defer_popup_input(
@@ -2419,6 +2477,7 @@ impl DeadpanApp {
         let slip_target = self.slip_command_target.take();
         let trim_target = self.trim_command_target.take();
         let ai_target = self.ai.command.take();
+        let track_target = self.targets.command.take();
         self.trim_prefix_target = None;
         let placement_target = self.placement_command_target.take();
         let copy_register = self.copy_command_register.take();
@@ -2610,6 +2669,11 @@ impl DeadpanApp {
             Ok(navigation::command::Entry::Action(Action::Ai(action))) => {
                 self.ai_action(action, ai_target);
             }
+            Ok(navigation::command::Entry::Track {
+                target,
+                through_shots,
+            }) => self.track_command(track_target, target, through_shots),
+            Ok(navigation::command::Entry::TrackCancel) => self.track_cancel(),
             Ok(navigation::command::Entry::Action(action)) => self.action(action, context),
             Ok(navigation::command::Entry::Source) => self.show_original(context),
             Ok(navigation::command::Entry::Sequence) => self.show_edit(context),
@@ -2700,6 +2764,7 @@ impl DeadpanApp {
             }
             match command {
                 MenuCommand::New => self.action(Action::New, context),
+                MenuCommand::NewFromUrl => self.action(Action::NewFromUrl, context),
                 MenuCommand::Open => self.action(Action::Open, context),
                 MenuCommand::Import => self.action(Action::Import, context),
                 MenuCommand::Close => {
@@ -2741,7 +2806,15 @@ impl DeadpanApp {
                 && !self.macros.recording()
                 && !self.macros.is_pending()
                 && self.bindings.pending().is_empty()
-                && !text_input_active(context, self.command_open),
+                // The YouTube URL field leaves ⌘N/⌘O/⌘I/⌘⇧N available.
+                && !self.command_open
+                && !context.memory(|m| {
+                    TEXT_INPUT_IDS
+                        .iter()
+                        .filter(|id| **id != youtube::URL_ID)
+                        .any(|id| m.has_focus(egui::Id::new(id)))
+                })
+                && !self.youtube_blocks_menu(),
             project: self.workspace.is_some(),
             importing: self.importing(),
             can_undo: self
@@ -2836,6 +2909,7 @@ impl DeadpanApp {
                             ui.menu_button("File", |ui| {
                                 for (label, action) in [
                                     ("New project…  ⌘N", Action::New),
+                                    ("New from YouTube URL…  ⌘⇧N", Action::NewFromUrl),
                                     ("Open project…  ⌘O", Action::Open),
                                     (
                                         match self.import_dialog_kind() {
@@ -2991,6 +3065,10 @@ impl DeadpanApp {
                 self.camera_footer(ui);
                 return;
             }
+            if !self.command_open && self.youtube_footer_shown(ui.ctx()) {
+                self.youtube_footer(ui);
+                return;
+            }
             if self.gain.is_some() {
                 ui.horizontal_wrapped(|ui| {
                     ui.colored_label(style::LAVENDER, "GAIN DRAFT · UNSAVED");
@@ -3003,6 +3081,7 @@ impl DeadpanApp {
                 return;
             }
             self.ai_footer(ui);
+            self.tracking_footer(ui);
             let pending = self.bindings.pending();
             let mode = if self.command_open { "COMMAND" } else if text_input_active(ui.ctx(), false) { "TEXT" } else if (self.moment.active && self.view == View::Source) || (self.edit_range.active && self.view == View::Sequence) { "VISUAL" } else if pending.is_empty() { "NORMAL" } else { "PENDING" };
             ui.horizontal_wrapped(|ui| {
@@ -3554,7 +3633,24 @@ impl DeadpanApp {
             .iter()
             .find(|row| Some(&row.id) == self.selected_beat.as_ref())?;
         let node = workspace.document.nodes().get(&row.id)?;
-        Some(inspector::Inspector::describe(node, row.start, row.frames))
+        let mut description = inspector::Inspector::describe(node, row.start, row.frames);
+        // A follow names its target by label, never by its internal id.
+        if let Some(deadpan_core::Framing {
+            value: deadpan_core::FramingValue::Follow { target, scale, .. },
+            ..
+        }) = &node.framing
+            && let Some(field) = description
+                .fields
+                .iter_mut()
+                .find(|(label, _)| *label == "Framing")
+        {
+            let scale = scale.numerator() as f64 / scale.denominator() as f64;
+            *field = (
+                "Follows",
+                format!("{} · {scale:.2}×", self.target_label(target)),
+            );
+        }
+        Some(description)
     }
 
     fn retime_hint(&self) -> Option<Result<String, String>> {
@@ -3793,6 +3889,7 @@ impl DeadpanApp {
                                 }
                             });
                         });
+                        self.targets_inspector(ui);
                     });
             });
     }
@@ -3845,7 +3942,12 @@ impl DeadpanApp {
             if self.camera.is_some() {
                 ui.label(egui::RichText::new("CAMERA · Draft preview").color(style::LAVENDER));
             }
-            let controls_height = if self.gain.is_some() {
+            // The empty start surface has no transport or moment controls; its
+            // card uses the whole viewer.
+            let start_surface = self.workspace.is_none() && self.raw_source.is_none();
+            let controls_height = if start_surface {
+                0.0
+            } else if self.gain.is_some() {
                 54.0
             } else if self.camera.is_some() {
                 76.0
@@ -3909,8 +4011,12 @@ impl DeadpanApp {
                     ui.painter().image(target.texture, painted, egui::Rect::from_min_max(egui::Pos2::ZERO, egui::pos2(1.0, 1.0)), egui::Color32::WHITE);
                 }
                 else { ui.painter().rect_filled(canvas, 0.0, egui::Color32::BLACK); }
+            } else if self.workspace.is_none() && self.raw_source.is_none() && !self.presentation.loading() {
+                // The empty start surface: one card to choose, paste or open.
+                ui.painter().rect_filled(rect, 2.0, style::CANVAS);
+                self.start_card(ui, rect);
             } else {
-                let message = if self.presentation.loading() { "Preparing picture…" } else if self.presentation.error().is_some() { "Picture unavailable" } else if self.workspace.is_none() && self.raw_source.is_none() { "Start with one video. Make it strange." } else if self.view == View::Sequence { "Your edit is empty" } else if self.selected_source.is_some() && self.source_length() == 0 { "Audio source · no picture" } else { "Choose the Original to begin" };
+                let message = if self.presentation.loading() { "Preparing picture…" } else if self.presentation.error().is_some() { "Picture unavailable" } else if self.view == View::Sequence { "Your edit is empty" } else if self.selected_source.is_some() && self.source_length() == 0 { "Audio source · no picture" } else { "Choose the Original to begin" };
                 ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, message, egui::FontId::proportional(18.0), style::MUTED);
             }
             ui.painter().rect_stroke(rect, 2.0, egui::Stroke::new(1.0, if self.pane == Pane::Viewer { style::LAVENDER } else { style::BORDER }), egui::StrokeKind::Inside);
@@ -3919,7 +4025,7 @@ impl DeadpanApp {
                 let mut response = ui.add(egui::Label::new(egui::RichText::new(&label).size(11.5).color(style::MUTED)).truncate()).on_hover_text(&label);
                 if let Some(summary) = &self.summary { response = response.on_hover_text(format!("Measured source: {} × {} pixels; original PTS [{}, {}), clock {}/{} seconds per tick.", summary.info.width, summary.info.height, summary.first_pts, summary.terminal_pts, summary.info.time_base_num, summary.info.time_base_den)); }
                 if let Some(source_frame) = self.presentation.displayed_source_frame() { response.on_hover_text(format!("Original source frame {}", u128::from(source_frame.0) + 1)); }
-            } else { ui.label(egui::RichText::new("Stopped-frame inspection").size(11.5).color(style::MUTED)); }
+            } else if !start_surface { ui.label(egui::RichText::new("Stopped-frame inspection").size(11.5).color(style::MUTED)); }
             if let Some(workspace) = &self.workspace && let Some(original) = workspace.original_duration {
                 // These clocks are read-only. At minimum height, reserve text
                 // height instead of the ordinary 28-point button row.
@@ -3937,15 +4043,11 @@ impl DeadpanApp {
             }
             if self.camera.is_some() {
                 ui.weak("Apply or cancel Camera to resume navigation and playback.");
-            } else {
+            } else if !start_surface {
                 if self.gain.is_none() { self.moment_controls(ui); }
                 self.playback_controls(ui);
                 ui.horizontal_wrapped(|ui| {
-                if self.workspace.is_none() && self.raw_source.is_none() {
-                    if ui.button("New project  ⌘N").clicked() { self.begin_dialog(DialogKind::CreateProject, ui.ctx(), false); }
-                    if ui.button("Open project  ⌘O").clicked() { self.begin_dialog(DialogKind::OpenProject, ui.ctx(), false); }
-                    ui.weak("Saved in Documents/Deadpan");
-                } else if self.view == View::Source && !self.focused_workflow()
+                if self.view == View::Source && !self.focused_workflow()
                     && ui.add_enabled(self.workspace.is_some() && self.selected_source.is_some() && !self.service.is_busy(), egui::Button::new(format!("Insert source  {}", self.editor_key(EditorKey::Insert))).wrap().fill(style::SELECTED)).on_hover_text("Insert the whole source after the selected beat in the current group. This creates an undoable edit.").clicked() { self.insert();
                 }
                 });
@@ -4136,6 +4238,7 @@ impl DeadpanApp {
                     ui.label(style::section_title("START & MOVE", true));
                     for (key, description) in [
                         ("⌘N / ⌘O".to_owned(), "Choose one Original / open a project. New projects live in Documents/Deadpan.".to_owned()),
+                        ("⌘⇧N · :youtube".to_owned(), "Start a project from one YouTube video URL. Its details appear before anything downloads; Enter confirms and Esc cancels.".to_owned()),
                         (key(EditorKey::Playback), format!("Play / pause the focused sound, Original, or Your edit. During preparation, {} cancels. Pause retains the exact heard sample; navigation stops playback.", key(EditorKey::Playback))),
                         (key(EditorKey::Audition), format!("Loop the complete selected sound. In Original or Your edit, loop the selected moment, Edit range or beat with 500ms before and 750ms after, bounded by that domain. {} pauses and resumes the loop.", key(EditorKey::Playback))),
                         (":audition-context lead=500ms follow=750ms".to_owned(), "Set loop lead-in and follow-through. Use 0ms for an exact selection. Seconds, milliseconds and project frames are accepted.".to_owned()),
@@ -4196,7 +4299,10 @@ impl DeadpanApp {
                         (format!("Sound {} / :sound-delete", key(EditorKey::CutBeat)), "Remove only the selected placed sound. Undo restores it. Focus Beats to cut picture time.".to_owned()),
                         (key(EditorKey::Camera), "Camera preview on the selected beat. Parent framing stays live. h/j/k/l move 1% of the uncropped Original; uppercase moves 5%.".to_owned()),
                         ("Camera + / −".to_owned(), "Scale by ×1.05 or its reciprocal. Counts repeat: 3+ is three steps.".to_owned()),
-                        ("Camera f · 1–5".to_owned(), "Toggle center/corner targets, then choose by number. Digits are counts outside the picker.".to_owned()),
+                        ("Camera f · 1–9".to_owned(), "Toggle the numbered picker: saved targets at this picture first, then the center and corners. Choose by number. Digits are counts outside the picker.".to_owned()),
+                        ("Camera t".to_owned(), "Follow the chosen saved target: it supplies the center at every picture; + / − change the follow scale. t again stops following at the pose shown. Enter saves.".to_owned()),
+                        ("Camera n · c".to_owned(), "Draw a new target rectangle, or correct the chosen target at this picture. Tab moves between center, width and height; arrows or h/j/k/l change 1%, Shift 5%, counts repeat; Enter saves one undoable edit; Escape returns to framing.".to_owned()),
+                        ("Camera T · :track ID".to_owned(), "Track a saved target through the Original in the background, stopping at the next stored shot boundary. :track ID through-shots crosses cuts; :track-cancel stops. Correcting a tracked target re-tracks only from that picture to its next correction.".to_owned()),
                         ("Camera r · Enter · Esc".to_owned(), "Reset the draft, apply once, or restore entry framing. Normal adjustments preserve an existing curve.".to_owned()),
                         (key_labels::aliases_pair(&bindings, EditorKey::PunchIn, EditorKey::Creep, " / "), "One undoable 1.35× punch / whole-beat smoothstep creep to 1.35×. These replace an existing framing curve.".to_owned()),
                         (":hold-duration 11f".to_owned(), "Set a selected Hold to exactly 11 project frames.".to_owned()),
@@ -4281,6 +4387,7 @@ impl eframe::App for DeadpanApp {
             self.receive_trim_media();
             self.reconcile_transcription(&context);
             self.reconcile_shots(&context);
+            self.reconcile_youtube(&context);
             if self.close_pending {
                 self.junction_pictures.clear();
             }
@@ -4299,7 +4406,8 @@ impl eframe::App for DeadpanApp {
             self.stop_playback();
             self.cancel_gain_waveform();
             self.service.shutdown();
-            if !self.service.is_shutdown_complete() {
+            let youtube_drained = self.youtube_drained();
+            if !self.service.is_shutdown_complete() || !youtube_drained {
                 context.send_viewport_cmd(egui::ViewportCommand::CancelClose);
                 context.request_repaint_after(Duration::from_millis(16));
                 self.message = Some(
@@ -4392,6 +4500,7 @@ impl eframe::App for DeadpanApp {
             self.splice.is_some(),
             self.slip.is_some(),
             self.trim.is_some(),
+            self.youtube_footer_key(&context),
         );
         if self.trim.is_some() {
             self.trim_workspace(ui);
@@ -4425,6 +4534,7 @@ impl eframe::App for DeadpanApp {
             }
             self.render_windows(&context);
             self.marks_window(&context);
+            self.youtube_window(&context);
         }
         if input_scope
             != (
@@ -4477,6 +4587,7 @@ impl eframe::App for DeadpanApp {
                 self.splice.is_some(),
                 self.slip.is_some(),
                 self.trim.is_some(),
+                self.youtube_footer_key(&context),
             )
         {
             context.request_discard("workspace footer mode changed after input");
@@ -4540,6 +4651,8 @@ impl eframe::App for DeadpanApp {
         self.thumbnails.shutdown();
         self.transcription.shutdown();
         self.shots.shutdown();
+        // Cancel and drain the import so no helper or private files outlive it.
+        self.youtube.jobs.shutdown(Duration::from_secs(10));
         // No GPU wait on the UI. Submitted targets keep their queue callback
         // owner if shutdown ends the display before its final frame can drain.
         self.junction_pictures.clear();
@@ -4558,6 +4671,8 @@ impl Drop for DeadpanApp {
         self.trim_abandon.clear();
         self.playback.shutdown();
         self.service.shutdown();
+        // A no-op after on_exit; otherwise drain the import before its files go.
+        self.youtube.jobs.shutdown(Duration::from_secs(10));
         self.worker.shutdown();
         self.endpoint_worker.shutdown();
         self.junction_pictures.clear();
@@ -4609,6 +4724,7 @@ fn sound_action_allowed(action: Action) -> bool {
     matches!(
         action,
         Action::New
+            | Action::NewFromUrl
             | Action::Open
             | Action::Import
             | Action::Render

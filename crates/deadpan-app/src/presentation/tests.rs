@@ -90,6 +90,7 @@ fn picture(id: u64) -> Picture {
         canvas: None,
         framing: Vec::new(),
         framing_gap: false,
+        follow_point: None,
         picture_context: None,
     }
 }
@@ -482,6 +483,7 @@ fn background_and_empty_sequence_do_not_invent_source_frame_identity() {
                 canvas: Some((1920, 1080)),
                 framing: Vec::new(),
                 framing_gap: false,
+                follow_point: None,
                 picture_context: None,
             },
         );
@@ -1058,4 +1060,50 @@ fn slip_lifecycle_rejects_old_replies_before_replacement_dispatch() {
         state.stable_sequence_ticket(7, &RevisionId::new("new-head").unwrap(), ProjectFrame(19),),
         Some(current)
     );
+}
+
+#[test]
+fn camera_sets_several_operations_atomically_or_not_at_all() {
+    let mut state = Presentation {
+        requested: Some(project_request(20, 1, "r1", false)),
+        ..Default::default()
+    };
+    let (mut value, inner) = camera_picture();
+    let outer = deadpan_core::InstancePath {
+        node: deadpan_core::NodeId::new("group").unwrap(),
+        repeats: Vec::new(),
+    };
+    let mut layer = value.framing[0].clone();
+    layer.instance = outer.clone();
+    value.framing.push(layer);
+    accept(&mut state, ticket(1, 1), value);
+    state.presented();
+    let pose = deadpan_core::FramingPose {
+        scale: deadpan_core::ExactRatio::integer(2),
+        ..Default::default()
+    };
+    let missing = deadpan_core::InstancePath {
+        node: deadpan_core::NodeId::new("absent").unwrap(),
+        repeats: Vec::new(),
+    };
+    // One absent scope refuses the whole batch without changing the picture.
+    assert!(
+        state
+            .set_framing_poses(
+                ticket(1, 1),
+                &[(inner.clone(), Some(pose)), (missing, Some(pose))]
+            )
+            .is_err()
+    );
+    assert!(!state.needs_render());
+    assert_eq!(state.picture().unwrap().framing[0].pose, None);
+    state
+        .set_framing_poses(
+            ticket(1, 1),
+            &[(inner.clone(), Some(pose)), (outer.clone(), Some(pose))],
+        )
+        .unwrap();
+    assert!(state.needs_render());
+    let framing = &state.picture().unwrap().framing;
+    assert_eq!((framing[0].pose, framing[1].pose), (Some(pose), Some(pose)));
 }

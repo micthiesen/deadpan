@@ -34,7 +34,37 @@ pub enum Entry {
         lead: DurationInput,
         follow: DurationInput,
     },
+    /// Track a saved target by id or label, or the one the selected beat
+    /// follows. Without `through_shots` tracking stops at the first stored
+    /// shot boundary and needs a shot analysis.
+    Track {
+        target: Option<String>,
+        through_shots: bool,
+    },
+    TrackCancel,
     Empty,
+}
+
+/// `:track [ID or label] [through-shots]`. Labels may contain spaces.
+fn track<'a>(words: impl Iterator<Item = &'a str>) -> Result<Entry, String> {
+    let mut words: Vec<&str> = words.collect();
+    let through_shots = words
+        .last()
+        .is_some_and(|last| last.eq_ignore_ascii_case("through-shots"));
+    if through_shots {
+        words.pop();
+    }
+    if words
+        .iter()
+        .any(|word| word.eq_ignore_ascii_case("through-shots"))
+    {
+        return Err("Put through-shots last: :track target-1 through-shots.".into());
+    }
+    let target = (!words.is_empty()).then(|| words.join(" "));
+    Ok(Entry::Track {
+        target,
+        through_shots,
+    })
 }
 
 pub fn parse(input: &str) -> Result<Entry, String> {
@@ -71,6 +101,15 @@ pub fn parse(input: &str) -> Result<Entry, String> {
     }
     if verb == "audition-context" {
         return audition_context(words);
+    }
+    if verb == "track" {
+        return track(words);
+    }
+    if verb == "track-cancel" {
+        return match words.next() {
+            None => Ok(Entry::TrackCancel),
+            Some(_) => Err("Use :track-cancel without arguments.".into()),
+        };
     }
     if verb == "trim" {
         return super::trim::parse(words).map(Entry::Trim);
@@ -243,6 +282,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         "undo" => Action::Undo,
         "redo" => Action::Redo,
         "new" => Action::New,
+        "youtube" | "new-url" => Action::NewFromUrl,
         "open" => Action::Open,
         "import" => Action::Import,
         "render" => Action::Render,
@@ -320,6 +360,46 @@ fn monitor(argument: Option<&str>) -> Result<u16, String> {
         return Err(invalid());
     }
     Ok(tenths)
+}
+
+#[cfg(test)]
+mod track_tests {
+    use super::*;
+
+    #[test]
+    fn track_commands_name_a_target_and_explicit_shot_crossing() {
+        assert_eq!(
+            parse(":track"),
+            Ok(Entry::Track {
+                target: None,
+                through_shots: false
+            })
+        );
+        assert_eq!(
+            parse("track target-2"),
+            Ok(Entry::Track {
+                target: Some("target-2".into()),
+                through_shots: false
+            })
+        );
+        assert_eq!(
+            parse(":track Target 2 through-shots"),
+            Ok(Entry::Track {
+                target: Some("Target 2".into()),
+                through_shots: true
+            })
+        );
+        assert_eq!(
+            parse(":track through-shots"),
+            Ok(Entry::Track {
+                target: None,
+                through_shots: true
+            })
+        );
+        assert!(parse(":track through-shots target-1").is_err());
+        assert_eq!(parse(":track-cancel"), Ok(Entry::TrackCancel));
+        assert!(parse(":track-cancel now").is_err());
+    }
 }
 
 #[cfg(test)]
@@ -680,6 +760,8 @@ mod tests {
             ("undo", Entry::Action(Action::Undo)),
             ("redo", Entry::Action(Action::Redo)),
             ("new", Entry::Action(Action::New)),
+            (":youtube", Entry::Action(Action::NewFromUrl)),
+            ("new-url", Entry::Action(Action::NewFromUrl)),
             ("open", Entry::Action(Action::Open)),
             ("import", Entry::Action(Action::Import)),
             (":render", Entry::Action(Action::Render)),

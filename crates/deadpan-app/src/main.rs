@@ -15,6 +15,7 @@ mod transport;
 #[cfg(feature = "ui-harness")]
 mod ui_harness;
 mod worker;
+mod youtube;
 
 use std::cell::Cell;
 use std::rc::Rc;

@@ -53,7 +53,8 @@ impl Service {
             self.render_command(request);
             return true;
         }
-        let outcome = if self.render.is_some() || self.generation.active() {
+        let outcome = if self.render.is_some() || self.generation.active() || self.targets.active()
+        {
             self.defer_session_change(request)
         } else {
             self.command(request).map(|()| true)
@@ -111,6 +112,7 @@ impl Service {
         self.cancel();
         self.cancel_render_for_transition();
         self.cancel_generation();
+        self.cancel_tracking();
         Ok(false)
     }
 
@@ -452,6 +454,7 @@ impl Service {
         self.cancel();
         self.cancel_render_for_transition();
         self.cancel_generation();
+        self.cancel_tracking();
         true
     }
 
@@ -480,8 +483,8 @@ impl Service {
         if self.pending_session_change.is_none() {
             return false;
         }
-        // The AI job's worker must be reaped and its outcome recorded first.
-        if self.generation.active() {
+        // The AI and tracking jobs must be reaped and their outcomes recorded first.
+        if self.generation.active() || self.targets.active() {
             return false;
         }
         if self

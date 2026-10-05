@@ -14,6 +14,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "workspace",
     "editing",
     "camera",
+    "targets",
     "menus",
     "delayed-preview",
     "rapid-input",
@@ -52,6 +53,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "trim",
     "render",
     "generated-picture",
+    "youtube",
 ];
 
 pub(crate) struct Options {

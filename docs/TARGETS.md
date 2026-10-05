@@ -66,11 +66,41 @@ A document refuses framing that follows a missing target, so `DeleteTarget`
 refuses while framing still follows it. Camera on a follow layer changes its
 scale and the fallback; the target supplies the center.
 
+## In the native app
+
+Camera picks, draws, follows and corrects targets ([framing](FRAMING.md#native-interaction)):
+
+- `f` lists saved targets covering the stopped picture before the center and
+  corners; digits pick one. The viewer draws each at `region_at` of the
+  picture's exact source time with its state (`drawn`, `corrected`, `tracked`,
+  `interpolated`, `lost · holding`).
+- `n` draws a new rectangle with the keyboard (Tab: center, width, height;
+  arrows or `h/j/k/l`, Shift for 5%, counts) and Enter saves it as one undoable
+  `SetTarget` with a fresh `target-N` id and `Target N` label, no samples and no
+  provenance. Its span starts at the displayed picture's indexed PTS, where the
+  rectangle was selected, and ends at the next stored shot boundary of the
+  Original, or at the end of the measured video without a shot analysis. This
+  matches tracking, which starts from the selected picture and stops at the
+  next cut; pictures earlier in the same shot are outside the target and a
+  follow keeps its fallback there.
+- `t` follows the picked target; `c` corrects it at this picture; `T` tracks it.
+  A correction of an untracked target replaces the initial rectangle at the
+  span start or adds a manual correction at that picture. A correction of a
+  tracked target re-tracks only the correction's range
+  ([tracking](TRACKING.md#in-the-app)).
+
+Saves are ordinary revisions with no node and no picture time: the cursor,
+selection and Repeat scope stay where they are, Camera continues on the saved
+revision, and Undo removes or restores the target. The beat inspector names a
+followed target by its label (`Follows Target 1 · 1.10×`) and lists every saved
+target with its state at the current picture and whole-span summary.
+
 ## Limits
 
 Target regions are in source picture coordinates. When the canvas aspect
 differs from the source's, the innermost layer's input is the fitted canvas,
-and follow centers are not yet corrected for that letterbox. Headless tracking
-creates and corrects targets (`track --save`, `track-correct`; see
-[tracking](TRACKING.md)); keyboard target creation and the Camera picker
-integration remain open ([framing](FRAMING.md)).
+and follow centers are not yet corrected for that letterbox. Targets are
+created and corrected headlessly (`track --save`, `track-correct`; see
+[tracking](TRACKING.md)) and in Camera. Point targets, renaming and deleting
+targets in the app, pointer rectangle dragging and face/region proposals remain
+open.

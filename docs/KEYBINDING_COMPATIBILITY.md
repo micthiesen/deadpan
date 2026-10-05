@@ -72,6 +72,17 @@ focused buttons keep native Enter/Space activation. Tab and Shift+Tab stay
 inside the modal. Composition and held activation keys cannot apply a draft.
 The same router is included in the reservation audit and `room-tone` replay.
 
+Camera's target keys are unmodified `n`, `t`, `c` and Shift+`T`; in its
+rectangle editor Tab, arrows, `h/j/k/l` (Shift for 5%), digits, Enter and
+Escape act on the rectangle. None is a modified chord, so none can claim a
+Kestrel reservation, all of which include Control, Option or Command. Held
+repeats of the new keys are ignored. `:track` and `:track-cancel` are command
+words, not keys. The 2026-10-04 audit after this change passed all 62
+reservations over 10,890,672 routing cases with no conflicts; no local Kestrel
+source was found to compare (`live_source_sha256` null), so the checked fixture
+(`source-sha256=368c01df…`) is the reference. The `targets` replay covers the
+keys through the production router.
+
 Beat gain uses the same logical `+` / `-` keys for counted 3 dB steps, with
 Placed sounds taking precedence. Camera keeps its scale keys; Original and
 catalog Sound focus cannot edit a retained beat. `:gain VALUE`, `:gain-mute`
@@ -475,6 +486,16 @@ shortcut. Unknown app scopes or physical keycodes in a refreshed fixture fail
 validation until reviewed. Option-number inputs cannot become Deadpan counts;
 Shift-only logical digits still work on keyboard layouts that require Shift.
 Logical punctuation such as `,`, `:`, and `?` retains layout-aware routing.
+
+New from YouTube URL uses `⌘⇧N` (mask 12 on keycode 45), which Kestrel does not
+reserve: its only N chords are `⌘N` scoped to Ghostty, `⌥N` and Hyper+N. The URL
+step's own router acts only on plain Enter and Escape; Command chords beside its
+field keep their ordinary routing. On 2026-10-04 the `youtube` replay ran the
+audit twice. The default run compares against the checked-in fixture only, so its
+report records no live digest. The run with `--kestrel-source` compared the live
+`Shortcuts.swift`, whose digest matched the fixture (`368c01df…`). Both passed
+10,890,672 production routing cases against the 62 reserved bindings with no
+conflict.
 
 Kestrel intercepts physical key positions, while egui routes logical keys. This
 audit uses the registry's ANSI positions and verifies Deadpan's input semantics;

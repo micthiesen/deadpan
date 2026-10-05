@@ -731,7 +731,8 @@ pub struct TrackOutcome {
     pub head: deadpan_core::ProjectDocument,
 }
 
-fn engine_label(runtime: &RuntimeReport) -> String {
+/// Tracker provenance for a run: engine, request revision and level.
+pub fn engine_label(runtime: &RuntimeReport) -> String {
     format!(
         "{} {} {}",
         runtime.engine, runtime.request_revision, runtime.tracking_level
@@ -797,7 +798,7 @@ pub fn track_project(
 }
 
 /// Samples a target may hold beside the project's other targets.
-fn sample_budget(document: &deadpan_core::ProjectDocument, id: &TargetId) -> usize {
+pub fn sample_budget(document: &deadpan_core::ProjectDocument, id: &TargetId) -> usize {
     let others: usize = document
         .targets()
         .iter()

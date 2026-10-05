@@ -5,7 +5,8 @@ Apple Vision's object tracker and can save the result as an
 [attention target](TARGETS.md). Tracking itself never edits the project; saving
 is an ordinary reversible `SetTarget` edit. Section 11.3 of the
 [specification](spec/DEADPAN_SPEC.md) is normative; this records the implemented
-boundary. Requirement DP-11 remains Partial (see [requirements](REQUIREMENTS.md)).
+boundary. Requirement DP-11 remains Partial (see [requirements](REQUIREMENTS.md)). The
+native app drives the same host code ([in the app](#in-the-app)).
 
 ## Pieces
 
@@ -230,6 +231,48 @@ tracking failures `TrackingFailed`; commit refusals keep their store or live
 project codes. The worker must be installed beside the executable
 (`target/<profile>/deadpan-track`; it is a default workspace member).
 
+## In the app
+
+The native project service runs tracking on one bounded job thread per
+project, like AI pause generation, and never on the writer, the UI or audio
+threads ([service](../crates/deadpan-app/src/project/service/targets.rs)).
+
+- Commands: in Camera, `T` tracks the picked or followed target; `:track`
+  tracks the target the selected beat follows, `:track ID` or `:track Label`
+  names one, and a final `through-shots` crosses cuts explicitly.
+  `:track-cancel` cancels. Without `through-shots` a stored shot analysis is
+  required (the app detects shots automatically); without one the job reports
+  that tracking cannot stop at cuts and saves nothing. `:track` refuses a target
+  that already has samples or corrections: correct it instead.
+- Each command captures session and head revision at entry. The job thread
+  opens the package read-only, runs `prepare_tracking` (refusing a head that
+  differs from the captured one), then `track` with the installed
+  `deadpan-track` worker (`TrackingRuntime::beside_current_executable`; a
+  missing worker is reported as unavailable). Progress is the worker's
+  percentage. The writer then maps the path with `to_target` (keeping the
+  target's label) and commits `SetTarget` expecting the captured revision, so
+  any edit made while tracking refuses the save, as `track --save` does.
+- Corrections: `c` in Camera on a tracked target opens its rectangle at the
+  displayed picture; Enter runs a job over exactly `correction_range(at)`
+  (no shot stop) and saves `retrack_target` expecting the entry head. Earlier
+  pictures keep their positions. An untracked target's correction is saved
+  directly without tracking.
+- One job runs at a time; a second start is refused. Cancellation is explicit
+  and cooperative. Closing, opening another project and shutdown cancel the job
+  and wait until it has drained before releasing the project. Outcomes
+  (saved positions, cancelled, failed with the reason, unavailable) appear in
+  the inspector; the footer shows progress. Camera stays open while tracking and
+  continues on the saved revision.
+
+Test seam: with `test` or `ui-harness`, `targets::Backend::Scripted` replaces
+only the Vision worker with deterministic confident observations moving at a
+fixed speed. Range resolution against the stored shots, the verified copy, the
+policy, compaction and the revision-guarded save stay real. Service tests cover
+the shot requirement, stops at a stored cut, the entry-head guard, single-range
+corrections, a second start, worker failure, cancellation and close draining.
+The `targets` replay drives creation, picking, following, tracking and
+correction through the production keys.
+
 ## Evidence
 
 [`native/deadpan-track/tests/worker.rs`](../native/deadpan-track/tests/worker.rs)
@@ -310,8 +353,9 @@ mostly the unoptimized BGRA copy. The upscale is a measurement input only
 * Saving while the app holds the project goes through the authenticated live
   endpoint; that path is the shared `dispatch_short` route and is not exercised
   by these tests.
-* App integration (target creation, a correction UI, Camera picker) and
-  incremental scheduling by visible cursor neighbourhood (Section 11.4).
+* The app's real-worker path (`deadpan-track` beside the app binary) is not
+  exercised by app tests or replay, which use the scripted seam. Incremental
+  scheduling by visible cursor neighbourhood (Section 11.4) remains open.
 * Each attempt copies the whole Original into its workspace.
 * `deadpan-jobs` depends on `deadpan-analysis` for `NormalizedRect` in the
   protocol; moving the wire type was optional and not done.

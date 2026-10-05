@@ -1,11 +1,23 @@
 //! Native Camera integration. The document stays immutable while presentation
-//! replaces one evaluated operation on its already decoded picture.
+//! replaces evaluated operations on its already decoded picture.
+//!
+//! Camera also owns attention targets at the stopped picture: the numbered
+//! picker lists saved targets covering the picture before the center and
+//! corners; `t` makes the framing follow the selected target; `n` draws a new
+//! target rectangle and `c` corrects the selected one with the keyboard; `T`
+//! tracks it in the background. A target save continues the same Camera on
+//! the revision it created; any other revision change revokes the draft.
 
 use crate::navigation::FramingAction;
 use crate::navigation::camera::{
-    CameraDraft, CameraEffect, CameraKey, CameraPanSteps, CameraPhase,
+    CameraDraft, CameraEffect, CameraKey, CameraPanSteps, CameraPhase, RegionField,
 };
-use deadpan_core::{ExactRatio, Framing, FramingCurve, FramingPose, FramingValue, InstancePath};
+use crate::project::targets::{Operation, TrackMode};
+use deadpan_core::{
+    AttentionTarget, ExactRatio, Framing, FramingClock, FramingCurve, FramingPose, FramingValue,
+    InstancePath, SourceSpan, SourceTimestamp, TARGET_UNITS, TargetCorrection, TargetId,
+    TargetRegion, TargetSource,
+};
 use deadpan_render::FramingLayer;
 
 use super::*;
@@ -111,6 +123,38 @@ pub(super) struct CameraPending {
     scoped: Option<crate::project::scoped::Target>,
 }
 
+/// One numbered picker entry: a saved target covering this picture, or a
+/// fixed source point.
+pub(super) struct PickerTarget {
+    number: Option<u8>,
+    label: String,
+    saved: Option<(TargetId, TargetRegion, TargetSource)>,
+    /// The fixed upright source point, for the center and corners.
+    point: Option<[f64; 2]>,
+    /// Upright source point projected into the selected operation's input.
+    /// None where a descendant operation clipped it.
+    center: Option<[ExactRatio; 2]>,
+}
+
+/// A temporary follow of a saved target. Scale changes keep the target's
+/// center; `base_*` relate later scales to the fallback pose.
+#[derive(Clone, Debug, PartialEq)]
+pub(super) struct FollowDraft {
+    target: TargetId,
+    /// The draft center while following. Nudges are refused instead of
+    /// silently diverging from the target-supplied center.
+    center: [ExactRatio; 2],
+    base_scale: ExactRatio,
+    base_fallback: FramingPose,
+    clock: FramingClock,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(super) enum RegionPurpose {
+    New,
+    Correct { id: TargetId, at: i64 },
+}
+
 pub(super) struct CameraSession {
     session: u64,
     revision: RevisionId,
@@ -121,15 +165,29 @@ pub(super) struct CameraSession {
     cursor: u64,
     entry: Option<Framing>,
     entry_pose: Option<FramingPose>,
+    /// Every operation's entry pose, restored on Escape: Camera may also
+    /// re-resolve outer follows that see this operation.
+    entry_layers: Vec<(InstancePath, Option<FramingPose>)>,
     draft: CameraDraft,
     steps: CameraPanSteps,
-    targets: Vec<(u8, &'static str, Option<[ExactRatio; 2]>)>,
+    picker: Vec<PickerTarget>,
     committing: bool,
     fields: super::camera_fields::CameraFields,
     field_keys: Vec<CameraKey>,
     field_error: Option<String>,
     local_position: ExactRatio,
     duration: deadpan_core::FrameDuration,
+    /// This operation's index in the picture's provider-to-root layers.
+    layer: usize,
+    /// The asset and indexed PTS of the displayed Original picture.
+    picture: Option<(AssetId, i64)>,
+    follow: Option<FollowDraft>,
+    selected_target: Option<TargetId>,
+    region_purpose: Option<RegionPurpose>,
+    /// The ticket of a target command Camera waits for.
+    saving: Option<u64>,
+    /// Continuing on the revision this Camera's own target save created.
+    rebase: Option<RevisionId>,
 }
 
 fn projected_ratio(value: f64) -> Result<ExactRatio, String> {
@@ -149,19 +207,31 @@ fn projected_point(value: [f64; 2]) -> Result<[ExactRatio; 2], String> {
     Ok([projected_ratio(value[0])?, projected_ratio(value[1])?])
 }
 
+fn units(value: f64) -> u32 {
+    (value * f64::from(TARGET_UNITS))
+        .round()
+        .clamp(0.0, f64::from(TARGET_UNITS)) as u32
+}
+
 /// Move the entire authored camera path, including cubic controls. Editing a
-/// currently evaluated pose must not silently collapse an existing creep.
+/// currently evaluated pose must not silently collapse an existing creep. A
+/// followed entry reaches here only after an explicit release (`t`); it then
+/// becomes the static pose shown.
 fn adjusted_framing(
     entry: Option<&Framing>,
     from: FramingPose,
     to: FramingPose,
     reset: bool,
 ) -> Result<Option<Framing>, String> {
-    if !reset && from == to {
+    let released = matches!(
+        entry.map(|entry| &entry.value),
+        Some(FramingValue::Follow { .. })
+    );
+    if !reset && from == to && !released {
         return Ok(entry.cloned());
     }
-    if reset || entry.is_none() {
-        return if to == FramingPose::identity() {
+    if reset || entry.is_none() || released {
+        return if to == FramingPose::identity() && (reset || entry.is_none()) {
             Ok(None)
         } else {
             Framing::static_pose(to)
@@ -203,10 +273,7 @@ fn adjusted_framing(
     let mut framing = entry.expect("nonempty entry checked").clone();
     match &mut framing.value {
         FramingValue::Static { pose } => transform(pose)?,
-        // Camera sessions refuse followed framing at entry.
-        FramingValue::Follow { .. } => {
-            return Err("Camera cannot adjust a followed framing.".into());
-        }
+        FramingValue::Follow { .. } => unreachable!("released follows become static above"),
         FramingValue::Envelope { envelope } => {
             transform(&mut envelope.initial)?;
             for segment in &mut envelope.segments {
@@ -220,6 +287,173 @@ fn adjusted_framing(
     }
     framing.validate().map_err(|error| error.to_string())?;
     Ok(Some(framing))
+}
+
+/// The follow a draft pose describes: the target supplies the center; the
+/// scale is the draft's; the fallback keeps its center and scales with it.
+fn followed_framing(follow: &FollowDraft, pose: FramingPose) -> Result<Framing, String> {
+    if [pose.center_x, pose.center_y] != follow.center {
+        return Err(
+            "The followed target supplies the center. Press t to stop following, then move.".into(),
+        );
+    }
+    let factor = pose
+        .scale
+        .checked_div(follow.base_scale)
+        .map_err(|error| error.to_string())?;
+    // Only the scale changes: the fallback keeps its exact authored center.
+    let scaled = FramingPose {
+        scale: follow
+            .base_fallback
+            .scale
+            .checked_mul(factor)
+            .map_err(|error| error.to_string())?,
+        ..follow.base_fallback
+    }
+    .quantized()
+    .map_err(|error| error.to_string())?;
+    let fallback = FramingPose {
+        scale: scaled.scale,
+        ..follow.base_fallback
+    };
+    let framing = Framing {
+        clock: follow.clock,
+        value: FramingValue::Follow {
+            target: follow.target.clone(),
+            scale: pose.scale,
+            fallback,
+        },
+    };
+    framing.validate().map_err(|error| error.to_string())?;
+    Ok(framing)
+}
+
+/// Every operation of `picture` from `layer` outward whose pose depends on
+/// `framing` at `layer`: the operation itself, then each outer follow, which
+/// sees the subject where inner operations put it. Resolution matches the
+/// committed plan (`deadpan_plan::follow_pose`); a pause's captured geometry
+/// keeps follows on their fallbacks.
+fn layer_poses(
+    document: &deadpan_core::ProjectDocument,
+    picture: &crate::worker::Picture,
+    layer: usize,
+    framing: Option<&Framing>,
+    local_position: ExactRatio,
+    duration: deadpan_core::FrameDuration,
+) -> Result<Vec<(InstancePath, Option<FramingPose>)>, String> {
+    let mut poses: Vec<Option<FramingPose>> =
+        picture.framing.iter().map(|layer| layer.pose).collect();
+    if layer >= poses.len() {
+        return Err("The Camera scope is absent from this picture.".into());
+    }
+    let captured = picture.picture_context.is_some();
+    let resolve = |target: &TargetId,
+                   scale: ExactRatio,
+                   fallback: FramingPose,
+                   inner: &[Option<FramingPose>]| {
+        if captured {
+            return fallback;
+        }
+        picture
+            .follow_point
+            .as_ref()
+            .and_then(|(asset, point)| {
+                deadpan_plan::follow_pose(
+                    document.targets().get(target)?,
+                    asset,
+                    *point,
+                    inner.iter().copied(),
+                    scale,
+                )
+            })
+            .unwrap_or(fallback)
+    };
+    poses[layer] = match framing {
+        Some(Framing {
+            value:
+                FramingValue::Follow {
+                    target,
+                    scale,
+                    fallback,
+                },
+            ..
+        }) => Some(resolve(target, *scale, *fallback, &poses[..layer])),
+        Some(framing) => Some(
+            framing
+                .evaluate(local_position, duration)
+                .map_err(|error| error.to_string())?,
+        ),
+        None => None,
+    };
+    let mut changed = vec![(picture.framing[layer].instance.clone(), poses[layer])];
+    for index in layer + 1..poses.len() {
+        let outer = &picture.framing[index];
+        if outer.escalation {
+            continue;
+        }
+        if let Some(Framing {
+            value:
+                FramingValue::Follow {
+                    target,
+                    scale,
+                    fallback,
+                },
+            ..
+        }) = document
+            .nodes()
+            .get(&outer.instance.node)
+            .and_then(|node| node.framing.as_ref())
+        {
+            poses[index] = Some(resolve(target, *scale, *fallback, &poses[..index]));
+            changed.push((outer.instance.clone(), poses[index]));
+        }
+    }
+    Ok(changed)
+}
+
+/// `target` with `region` from indexed picture `at`: the initial rectangle at
+/// the span start, otherwise a manual correction there.
+fn corrected(target: &AttentionTarget, at: i64, region: TargetRegion) -> AttentionTarget {
+    let mut corrected = target.clone();
+    if at == target.span.start().ticks {
+        corrected.region = region;
+    } else {
+        let index = corrected
+            .corrections
+            .partition_point(|correction| correction.at < at);
+        if corrected
+            .corrections
+            .get(index)
+            .is_some_and(|correction| correction.at == at)
+        {
+            corrected.corrections[index].region = region;
+        } else {
+            corrected
+                .corrections
+                .insert(index, TargetCorrection { at, region });
+        }
+    }
+    corrected
+}
+
+/// The smallest unused `target-N` id and its `Target N` label.
+fn fresh_target(document: &deadpan_core::ProjectDocument) -> Result<(TargetId, String), String> {
+    let labels: std::collections::BTreeSet<_> = document
+        .targets()
+        .values()
+        .map(|target| target.label.to_ascii_lowercase())
+        .collect();
+    for number in 1..=deadpan_core::MAX_DOCUMENT_TARGETS + 1 {
+        let id = TargetId::new(format!("target-{number}")).map_err(|error| error.to_string())?;
+        let label = format!("Target {number}");
+        if !document.targets().contains_key(&id) && !labels.contains(&label.to_ascii_lowercase()) {
+            return Ok((id, label));
+        }
+    }
+    Err(format!(
+        "This project already has {} targets, the most it can hold.",
+        deadpan_core::MAX_DOCUMENT_TARGETS
+    ))
 }
 
 impl CameraSession {
@@ -261,38 +495,92 @@ impl CameraSession {
             &render_layers,
         )
         .map_err(|error| error.to_string())?;
-        let index = index + usize::from(picture.framing_gap);
+        let geometry_index = index + usize::from(picture.framing_gap);
         let steps = geometry
-            .source_steps(index)
+            .source_steps(geometry_index)
             .map_err(|error| error.to_string())?;
-        let mut targets = Vec::new();
-        for (number, label, point) in [
-            (1, "Center", [0.5, 0.5]),
-            (2, "Top left", [0.0, 0.0]),
-            (3, "Top right", [1.0, 0.0]),
-            (4, "Bottom left", [0.0, 1.0]),
-            (5, "Bottom right", [1.0, 1.0]),
-        ] {
-            let projected = geometry
-                .source_to_input(index, point)
+        let project = |point: [f64; 2]| -> Result<Option<[ExactRatio; 2]>, String> {
+            geometry
+                .source_to_input(geometry_index, point)
                 .map_err(|error| error.to_string())?
                 .map(projected_point)
-                .transpose()?;
-            targets.push((number, label, projected));
+                .transpose()
+        };
+        // Saved targets first, then the center and corners (specification
+        // section 7.6). Digits reach the first nine.
+        let mut picker = Vec::new();
+        for shown in app.targets_at_picture() {
+            let center = shown
+                .region
+                .center
+                .map(|value| f64::from(value) / f64::from(TARGET_UNITS));
+            // One degenerate projection must not block Camera for the picture.
+            picker.push(PickerTarget {
+                number: None,
+                label: shown.label,
+                saved: Some((shown.id, shown.region, shown.source)),
+                point: None,
+                center: project(center).ok().flatten(),
+            });
+        }
+        for (label, point) in [
+            ("Center", [0.5, 0.5]),
+            ("Top left", [0.0, 0.0]),
+            ("Top right", [1.0, 0.0]),
+            ("Bottom left", [0.0, 1.0]),
+            ("Bottom right", [1.0, 1.0]),
+        ] {
+            picker.push(PickerTarget {
+                number: None,
+                label: label.into(),
+                saved: None,
+                point: Some(point),
+                center: project(point)?,
+            });
+        }
+        for (position, entry) in picker.iter_mut().enumerate().take(9) {
+            entry.number = u8::try_from(position + 1).ok();
         }
         let entry = workspace.document.nodes()[&pending.node].framing.clone();
-        if let Some(Framing {
-            value: FramingValue::Follow { target, .. },
-            ..
-        }) = &entry
-        {
-            // Its center comes from the tracked subject; nudging a fixed pose
-            // would not show on screen.
-            return Err(format!(
-                "This beat follows target {target}; Camera cannot adjust a followed framing yet."
-            ));
-        }
         let entry_pose = layer.pose;
+        let follow = match &entry {
+            Some(Framing {
+                clock,
+                value:
+                    FramingValue::Follow {
+                        target,
+                        scale,
+                        fallback,
+                    },
+            }) => {
+                // The target supplies the center; Camera adjusts the scale.
+                let shown = entry_pose.unwrap_or(*fallback);
+                Some(FollowDraft {
+                    target: target.clone(),
+                    center: [shown.center_x, shown.center_y],
+                    base_scale: *scale,
+                    base_fallback: *fallback,
+                    clock: *clock,
+                })
+            }
+            _ => None,
+        };
+        let draft_pose = match &follow {
+            Some(follow) => FramingPose {
+                center_x: follow.center[0],
+                center_y: follow.center[1],
+                scale: follow.base_scale,
+            },
+            None => entry_pose.unwrap_or_default(),
+        };
+        let indexed = picture.follow_point.as_ref().and_then(|(asset, _)| {
+            let index = workspace.sources.get(asset)?.video_index.as_ref()?;
+            let frame = index
+                .frames()
+                .iter()
+                .find(|frame| frame.identity == picture.id)?;
+            Some((asset.clone(), frame.pts))
+        });
         Ok(Self {
             session: pending.session,
             revision: pending.revision,
@@ -301,25 +589,40 @@ impl CameraSession {
             scoped: pending.scoped,
             ticket,
             cursor: pending.cursor,
+            selected_target: follow.as_ref().map(|follow| follow.target.clone()),
+            follow,
             entry,
             entry_pose,
-            draft: CameraDraft::new(entry_pose.unwrap_or_default())
-                .map_err(|error| error.to_string())?,
+            entry_layers: picture
+                .framing
+                .iter()
+                .filter(|layer| !layer.escalation)
+                .map(|layer| (layer.instance.clone(), layer.pose))
+                .collect(),
+            draft: CameraDraft::new(draft_pose).map_err(|error| error.to_string())?,
             steps: CameraPanSteps {
                 horizontal: projected_point(steps[0])?,
                 vertical: projected_point(steps[1])?,
             },
-            targets,
+            picker,
             committing: false,
-            fields: super::camera_fields::CameraFields::new(entry_pose.unwrap_or_default()),
+            fields: super::camera_fields::CameraFields::new(draft_pose),
             field_keys: Vec::new(),
             field_error: None,
             local_position: layer.local_position,
             duration: layer.duration,
+            layer: index,
+            picture: indexed,
+            region_purpose: None,
+            saving: None,
+            rebase: None,
         })
     }
 
     fn framing(&self, pose: FramingPose, reset: bool) -> Result<Option<Framing>, String> {
+        if !reset && let Some(follow) = &self.follow {
+            return followed_framing(follow, pose).map(Some);
+        }
         adjusted_framing(
             self.entry.as_ref(),
             self.entry_pose.unwrap_or_default(),
@@ -340,6 +643,79 @@ impl CameraSession {
             },
         }
     }
+
+    /// Replay evidence: the target-related draft state.
+    #[cfg(feature = "ui-harness")]
+    pub(crate) fn harness_state(&self) -> serde_json::Value {
+        serde_json::json!({
+            "revision": self.revision.as_str(),
+            "phase": format!("{:?}", self.draft.phase()),
+            "pose": format!("{:?}", self.draft.pose()),
+            "region": self.draft.region().map(|region| {
+                let region = region.region();
+                serde_json::json!({"center": region.center, "size": region.size})
+            }),
+            "field": self.draft.region().map(|region| region.field().label()),
+            "follow": self.follow.as_ref().map(|follow| follow.target.as_str().to_owned()),
+            "selected": self.selected_target.as_ref().map(|id| id.as_str().to_owned()),
+            "saving": self.saving.is_some(),
+            "rebasing": self.rebase.is_some(),
+            "picker": self
+                .picker
+                .iter()
+                .map(|entry| serde_json::json!({"number": entry.number, "label": entry.label, "available": entry.center.is_some()}))
+                .collect::<Vec<_>>(),
+        })
+    }
+
+    /// Continuing on the revision this Camera's own target save created.
+    pub(super) fn rebasing(&self) -> bool {
+        self.rebase.is_some()
+    }
+
+    /// Input waits while Camera saves, commits or continues on a new revision.
+    fn blocked(&self) -> bool {
+        self.committing || self.saving.is_some() || self.rebase.is_some()
+    }
+
+    /// The saved target `t`, `c` and `T` act on.
+    fn acting_target(&self) -> Option<&TargetId> {
+        self.follow
+            .as_ref()
+            .map(|follow| &follow.target)
+            .or(self.selected_target.as_ref())
+    }
+
+    /// Whether this framing replaces an existing camera curve.
+    fn replaces_curve(&self) -> bool {
+        !self.draft.reset_requested()
+            && self.follow.is_some()
+            && matches!(
+                self.entry.as_ref().map(|entry| &entry.value),
+                Some(FramingValue::Envelope { .. })
+            )
+    }
+}
+
+/// Scoped targets match across this Camera's own target save, which changes
+/// nothing but the revision.
+fn same_scoped(
+    old: Option<&crate::project::scoped::Target>,
+    new: Option<&crate::project::scoped::Target>,
+) -> bool {
+    match (old, new) {
+        (None, None) => true,
+        (Some(old), Some(new)) => {
+            old.session == new.session
+                && old.project == new.project
+                && old.scope == new.scope
+                && old.root == new.root
+                && old.target == new.target
+                && old.presentation == new.presentation
+                && old.cursor == new.cursor
+        }
+        _ => false,
+    }
 }
 
 impl DeadpanApp {
@@ -351,19 +727,17 @@ impl DeadpanApp {
         if !self.inspected_target_matches(&camera.scope.node, camera.scoped.as_ref()) {
             return Err("Camera's captured beat or play changed. Open Camera again.".into());
         }
-        if camera.committing || !camera.fields.is_valid() || camera.field_error.is_some() {
+        if camera.blocked() || !camera.fields.is_valid() || camera.field_error.is_some() {
             return Err(camera
                 .field_error
                 .clone()
                 .or_else(|| camera.fields.error_message().map(str::to_owned))
                 .unwrap_or_else(|| "Finish the Camera edit before rendering.".into()));
         }
-        let mut draft = camera.draft.clone();
-        let framing = match draft.input(CameraKey::Commit, Some(camera.steps)) {
-            CameraEffect::Unchanged => return Ok(None),
-            CameraEffect::Commit { pose, reset } => camera.framing(pose, reset)?,
-            _ => return Err("Finish choosing a Camera target before rendering.".into()),
-        };
+        if camera.draft.phase() != CameraPhase::Adjust {
+            return Err("Finish choosing a Camera target before rendering.".into());
+        }
+        let framing = camera.framing(camera.draft.pose(), camera.draft.reset_requested())?;
         if framing == camera.entry {
             return Ok(None);
         }
@@ -431,6 +805,7 @@ impl DeadpanApp {
     }
 
     pub(super) fn finish_camera_entry(&mut self, context: &egui::Context) {
+        self.finish_camera_rebase(context);
         let Some(pending) = self.camera_pending.as_ref() else {
             return;
         };
@@ -524,6 +899,141 @@ impl DeadpanApp {
         }
     }
 
+    /// Continue Camera on the revision its own target save created, once that
+    /// revision's picture is displayed: rebuild the session from the new
+    /// picture and carry the draft, follow and target selection over.
+    fn finish_camera_rebase(&mut self, context: &egui::Context) {
+        let Some(camera) = &self.camera else {
+            return;
+        };
+        let Some(revision) = camera.rebase.clone() else {
+            return;
+        };
+        let frame = ProjectFrame(
+            self.sequence_cursor
+                .min(self.sequence_length().saturating_sub(1)) as i64,
+        );
+        let Some(ticket) =
+            self.presentation
+                .stable_sequence_ticket(camera.session, &revision, frame)
+        else {
+            if !self.presentation.loading() && !self.presentation.needs_render() {
+                self.camera = None;
+                self.service.set_preview_active(false);
+                self.error = Some(
+                    "The target was saved, but Camera could not show the saved picture. Press the Camera key again."
+                        .into(),
+                );
+            } else {
+                context.request_repaint();
+            }
+            return;
+        };
+        let old = self.camera.take().expect("camera checked");
+        let scoped = match &old.scoped {
+            Some(_) => match self.scoped_target() {
+                Ok(current) if same_scoped(old.scoped.as_ref(), current.as_ref()) => current,
+                _ => {
+                    self.error = Some(
+                        "The target was saved; this play's scope changed, so Camera closed.".into(),
+                    );
+                    return;
+                }
+            },
+            None => None,
+        };
+        let pending = CameraPending {
+            action: FramingAction::EnterCamera,
+            session: old.session,
+            revision,
+            node: old.scope.node.clone(),
+            cursor: old.cursor,
+            navigation_scope: old.navigation_scope.clone(),
+            scoped,
+        };
+        let mut session = match CameraSession::from_picture(self, pending, ticket) {
+            Ok(session) => session,
+            Err(error) => {
+                self.error = Some(format!("The target was saved; Camera closed: {error}"));
+                return;
+            }
+        };
+        let saved = self
+            .targets
+            .saved()
+            .map(|saved| saved.id.clone())
+            .filter(|_| old.saving.is_some());
+        let targets = self
+            .workspace
+            .as_ref()
+            .map(|workspace| workspace.document.targets().clone())
+            .unwrap_or_default();
+        session.selected_target = saved
+            .or(old.selected_target.clone())
+            .filter(|id| targets.contains_key(id));
+        // A follow chosen in this Camera continues if its target remains.
+        session.follow = match (&old.follow, &session.follow) {
+            (Some(follow), _) if targets.contains_key(&follow.target) => {
+                let mut follow = follow.clone();
+                if let Some(entry) = &session.follow
+                    && entry.target == follow.target
+                {
+                    follow.center = entry.center;
+                }
+                Some(follow)
+            }
+            (None, Some(_)) if old.entry == session.entry => None,
+            (_, entry) => entry.clone(),
+        };
+        let entry_pose = session.draft.pose();
+        session.draft = old.draft.rebased(entry_pose);
+        if let Some(follow) = &session.follow {
+            // The target supplies the center; keep the draft's scale.
+            let pose = FramingPose {
+                center_x: follow.center[0],
+                center_y: follow.center[1],
+                scale: session.draft.pose().scale,
+            };
+            session.draft.set_pose(pose);
+        }
+        session.fields.sync(session.draft.pose());
+        let poses = self.workspace.as_ref().and_then(|workspace| {
+            let picture = self.presentation.picture()?;
+            let framing = session
+                .framing(session.draft.pose(), session.draft.reset_requested())
+                .ok()?;
+            layer_poses(
+                &workspace.document,
+                picture,
+                session.layer,
+                framing.as_ref(),
+                session.local_position,
+                session.duration,
+            )
+            .ok()
+        });
+        if let Some(poses) = poses {
+            // A follow's center comes from the (possibly re-tracked) target.
+            if let Some(follow) = &mut session.follow
+                && let Some((_, Some(shown))) = poses.first()
+            {
+                follow.center = [shown.center_x, shown.center_y];
+                let pose = FramingPose {
+                    center_x: shown.center_x,
+                    center_y: shown.center_y,
+                    scale: session.draft.pose().scale,
+                };
+                session.draft.set_pose(pose);
+                session.fields.sync(session.draft.pose());
+            }
+            let _ = self.presentation.set_framing_poses(session.ticket, &poses);
+        }
+        self.service.set_preview_active(true);
+        self.camera = Some(session);
+        self.pane = Pane::Viewer;
+        context.request_repaint();
+    }
+
     fn submit_framing(&mut self, camera: &CameraSession, framing: Option<Framing>) -> bool {
         if framing == camera.entry {
             self.message = Some("Framing is unchanged; no edit was made.".into());
@@ -542,19 +1052,70 @@ impl DeadpanApp {
         self.camera_pending = None;
         if let Some(camera) = self.camera.take()
             && !camera.committing
+            && camera.rebase.is_none()
         {
             // A newer picture/session already owns presentation if this fails.
-            let _ =
-                self.presentation
-                    .set_framing_pose(camera.ticket, &camera.scope, camera.entry_pose);
+            let _ = self
+                .presentation
+                .set_framing_poses(camera.ticket, &camera.entry_layers);
         }
         self.bindings.clear();
+    }
+
+    /// Whether a revision change is exactly this Camera's own target save,
+    /// so Camera continues on it instead of revoking the draft.
+    pub(super) fn camera_follows_target_save(&self, new_revision: Option<&RevisionId>) -> bool {
+        let (Some(camera), Some(workspace), Some(saved)) =
+            (&self.camera, &self.workspace, self.targets.saved())
+        else {
+            return false;
+        };
+        !camera.committing
+            && camera.rebase.is_none()
+            && workspace.session == camera.session
+            && saved.session == camera.session
+            && saved.base == camera.revision
+            && Some(&saved.revision) == new_revision
+            && workspace.document.revision_id() == &saved.revision
+            && self.view == View::Sequence
+            && self.sequence_scope == camera.navigation_scope
+            && self.sequence_cursor == camera.cursor
+            && match &camera.scoped {
+                None => {
+                    self.scoped.is_none() && self.selected_beat.as_ref() == Some(&camera.scope.node)
+                }
+                Some(old) => self
+                    .scoped_target()
+                    .is_ok_and(|current| same_scoped(Some(old), current.as_ref())),
+            }
+    }
+
+    /// Mark Camera as continuing on `revision`. Call before the revision's
+    /// picture is requested, which would otherwise revoke the draft.
+    pub(super) fn rebase_camera(&mut self, revision: RevisionId) {
+        if let Some(camera) = &mut self.camera {
+            camera.rebase = Some(revision);
+        }
     }
 
     pub(super) fn reconcile_camera(&mut self) {
         let Some(camera) = &self.camera else {
             return;
         };
+        if camera.rebase.is_some() {
+            let valid = self.view == View::Sequence
+                && self.sequence_scope == camera.navigation_scope
+                && self.sequence_cursor == camera.cursor
+                && self.workspace.as_ref().is_some_and(|workspace| {
+                    workspace.session == camera.session
+                        && Some(workspace.document.revision_id()) == camera.rebase.as_ref()
+                });
+            if !valid {
+                self.camera = None;
+                self.bindings.clear();
+            }
+            return;
+        }
         let valid = self.view == View::Sequence
             && self.sequence_scope == camera.navigation_scope
             && self.sequence_cursor == camera.cursor
@@ -575,20 +1136,53 @@ impl DeadpanApp {
         }
     }
 
+    /// A refused target command lets Camera continue editing.
+    pub(super) fn camera_target_reply(&mut self, ticket: u64, refusal: Option<&str>) {
+        // A later command's reply also answers the save. Its success needs no
+        // flag: the saved receipt alone continues Camera on its revision.
+        if let Some(camera) = &mut self.camera
+            && let Some(saving) = camera.saving
+            && (ticket > saving || (ticket == saving && refusal.is_some()))
+        {
+            camera.saving = None;
+        }
+    }
+
     pub(super) fn camera_input(&mut self, key: CameraKey, context: &egui::Context) {
         let Some(camera) = &mut self.camera else {
             return;
         };
-        if camera.committing {
+        if camera.blocked() {
+            if key == CameraKey::Cancel && !camera.committing && camera.rebase.is_none() {
+                // Escape always leaves; a target save in flight still lands.
+                self.cancel_camera();
+                return;
+            }
+            if camera.saving.is_some() || camera.rebase.is_some() {
+                self.message = Some("Saving the target…".into());
+            }
             return;
         }
-        if key == CameraKey::Commit && (!camera.fields.is_valid() || camera.field_error.is_some()) {
+        if key == CameraKey::Commit
+            && camera.draft.phase() == CameraPhase::Adjust
+            && (!camera.fields.is_valid() || camera.field_error.is_some())
+        {
             self.error = Some(
                 camera
                     .field_error
                     .clone()
                     .or_else(|| camera.fields.error_message().map(str::to_owned))
                     .unwrap_or_else(|| "Correct the Camera fields before applying framing.".into()),
+            );
+            return;
+        }
+        if camera.follow.is_some()
+            && camera.draft.phase() == CameraPhase::Adjust
+            && matches!(key, CameraKey::Pan { .. })
+        {
+            self.error = Some(
+                "The followed target supplies the center. Press t to stop following, then move."
+                    .into(),
             );
             return;
         }
@@ -610,19 +1204,68 @@ impl DeadpanApp {
             camera.fields.sync(camera.draft.pose());
             camera.field_error = None;
         }
+        if let CameraEffect::Reset(_) = effect {
+            // Reset replaces the operation with a static pose; it stops a follow.
+            camera.follow = None;
+        }
         self.camera_effect(effect, context);
+    }
+
+    /// Show `pose` on the retained picture, re-resolving outer follows.
+    fn camera_preview(&mut self, pose: FramingPose, reset: bool) -> Result<(), String> {
+        let camera = self.camera.as_ref().ok_or("Camera is closed.")?;
+        let framing = camera.framing(pose, reset)?;
+        let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
+        let picture = self
+            .presentation
+            .picture()
+            .ok_or("The Camera picture is no longer available.")?;
+        let poses = layer_poses(
+            &workspace.document,
+            picture,
+            camera.layer,
+            framing.as_ref(),
+            camera.local_position,
+            camera.duration,
+        )?;
+        self.presentation.set_framing_poses(camera.ticket, &poses)
+    }
+
+    fn restore_camera_entry(&mut self) {
+        if let Some(camera) = &self.camera {
+            let _ = self
+                .presentation
+                .set_framing_poses(camera.ticket, &camera.entry_layers);
+        }
     }
 
     fn camera_effect(&mut self, effect: CameraEffect, context: &egui::Context) {
         match effect {
             CameraEffect::None | CameraEffect::RefreshTargets | CameraEffect::TargetsClosed => {}
             CameraEffect::Unchanged => {
-                self.cancel_camera();
-                self.message = Some("Framing is unchanged; no edit was made.".into());
+                // A follow started or stopped at the same pose still changes
+                // the authored framing.
+                let changed = self.camera.as_ref().and_then(|camera| {
+                    camera
+                        .framing(camera.draft.pose(), false)
+                        .ok()
+                        .filter(|framing| *framing != camera.entry)
+                });
+                if let Some(framing) = changed {
+                    self.camera_commit(framing);
+                } else {
+                    self.cancel_camera();
+                    self.message = Some("Framing is unchanged; no edit was made.".into());
+                }
             }
             CameraEffect::CycleField { reverse } => {
                 if let Some(camera) = &self.camera {
-                    cycle_camera_focus(context, camera.draft.phase(), camera.fields.ids(), reverse);
+                    cycle_camera_focus(
+                        context,
+                        camera.draft.phase(),
+                        camera.fields.focusable_ids(),
+                        reverse,
+                    );
                 }
             }
             CameraEffect::AdjustField { direction, count } => {
@@ -641,60 +1284,29 @@ impl DeadpanApp {
             }
             CameraEffect::SelectTarget(number) => self.camera_target(number, context),
             CameraEffect::PoseChanged(pose) | CameraEffect::Reset(pose) => {
-                let Some(camera) = &self.camera else {
-                    return;
-                };
-                match camera.framing(pose, camera.draft.reset_requested()) {
-                    Ok(framing) => {
-                        let evaluated = framing
-                            .as_ref()
-                            .map(|framing| framing.evaluate(camera.local_position, camera.duration))
-                            .transpose()
-                            .map_err(|error| error.to_string());
-                        if let Err(error) = evaluated.and_then(|pose| {
-                            self.presentation
-                                .set_framing_pose(camera.ticket, &camera.scope, pose)
-                        }) {
-                            self.error = Some(error);
-                        } else {
-                            self.error = None;
-                        }
-                    }
+                let reset = self
+                    .camera
+                    .as_ref()
+                    .is_some_and(|camera| camera.draft.reset_requested());
+                match self.camera_preview(pose, reset) {
+                    Ok(()) => self.error = None,
                     Err(error) => self.error = Some(error),
                 }
             }
             CameraEffect::Commit { pose, reset } => {
-                let Some(mut camera) = self.camera.take() else {
+                let Some(camera) = self.camera.as_ref() else {
                     return;
                 };
                 match camera.framing(pose, reset) {
                     Ok(framing) if framing == camera.entry => {
-                        let _ = self.presentation.set_framing_pose(
-                            camera.ticket,
-                            &camera.scope,
-                            camera.entry_pose,
-                        );
+                        self.restore_camera_entry();
+                        self.camera = None;
                         self.message = Some("Framing is unchanged; no edit was made.".into());
                     }
-                    Ok(framing) => {
-                        if self.submit_framing(&camera, framing) {
-                            camera.committing = true;
-                            self.service.set_preview_active(true);
-                            self.camera = Some(camera);
-                        } else {
-                            let _ = self.presentation.set_framing_pose(
-                                camera.ticket,
-                                &camera.scope,
-                                camera.entry_pose,
-                            );
-                        }
-                    }
+                    Ok(framing) => self.camera_commit(framing),
                     Err(error) => {
-                        let _ = self.presentation.set_framing_pose(
-                            camera.ticket,
-                            &camera.scope,
-                            camera.entry_pose,
-                        );
+                        self.restore_camera_entry();
+                        self.camera = None;
                         self.error = Some(error);
                     }
                 }
@@ -703,27 +1315,78 @@ impl DeadpanApp {
                 self.cancel_camera();
                 context.memory_mut(|memory| memory.request_focus(pane_id(Pane::Viewer)));
             }
+            CameraEffect::RequestRegion { correction } => self.camera_open_region(correction),
+            CameraEffect::ToggleFollow => self.camera_toggle_follow(),
+            CameraEffect::Track => self.camera_track(),
+            CameraEffect::RegionChanged(_) => {}
+            CameraEffect::RegionClosed => {
+                if let Some(camera) = &mut self.camera {
+                    camera.region_purpose = None;
+                }
+            }
+            CameraEffect::RegionCommit(region) => self.camera_save_region(region),
             CameraEffect::Rejected(error) => self.error = Some(error.to_string()),
         }
         context.request_repaint();
+    }
+
+    fn camera_commit(&mut self, framing: Option<Framing>) {
+        let Some(mut camera) = self.camera.take() else {
+            return;
+        };
+        if self.submit_framing(&camera, framing) {
+            camera.committing = true;
+            self.service.set_preview_active(true);
+            self.camera = Some(camera);
+        } else {
+            let _ = self
+                .presentation
+                .set_framing_poses(camera.ticket, &camera.entry_layers);
+        }
     }
 
     fn camera_target(&mut self, number: u8, context: &egui::Context) {
         let Some(camera) = &mut self.camera else {
             return;
         };
-        let Some((_, _, Some(center))) = camera.targets.iter().find(|target| target.0 == number)
+        let Some(entry) = camera
+            .picker
+            .iter()
+            .find(|target| target.number == Some(number))
         else {
+            camera.draft.target_unavailable(number);
+            self.error = Some(format!("There is no target {number} at this picture."));
+            return;
+        };
+        let Some(center) = entry.center else {
             camera.draft.target_unavailable(number);
             self.error = Some("That target is outside the selected beat's visible input.".into());
             return;
         };
+        let saved = entry.saved.as_ref().map(|(id, _, _)| id.clone());
+        let label = entry.label.clone();
+        if camera.follow.is_some() && saved.is_none() {
+            camera.draft.target_unavailable(number);
+            self.error = Some(
+                "This beat follows a target. Press t to stop following before choosing a fixed point."
+                    .into(),
+            );
+            return;
+        }
         let pose = FramingPose {
             center_x: center[0],
             center_y: center[1],
             ..camera.draft.pose()
         };
+        // Switching subjects while following is an explicit target change of
+        // the follow, never a hidden crop coordinate.
+        let previous_follow = camera.follow.clone();
+        if let (Some(follow), Some(id)) = (&mut camera.follow, &saved) {
+            follow.target = id.clone();
+            follow.center = center;
+        }
         if let Err(error) = camera.framing(pose, camera.draft.reset_requested()) {
+            camera.follow = previous_follow;
             self.error = Some(error);
             return;
         }
@@ -731,8 +1394,372 @@ impl DeadpanApp {
         if matches!(effect, CameraEffect::PoseChanged(_)) {
             camera.fields.sync(camera.draft.pose());
             camera.field_error = None;
+            if let Some(follow) = &mut camera.follow {
+                follow.center = [camera.draft.pose().center_x, camera.draft.pose().center_y];
+            }
         }
+        if saved.is_some() {
+            camera.selected_target = saved;
+            self.message = Some(if camera.follow.is_some() {
+                format!("Now following {label}. Enter saves this target change.")
+            } else {
+                format!("Centered on {label}. t follows it; c corrects it here; T tracks it.")
+            });
+        }
+        let following = camera.follow.is_some();
+        let unchanged = effect == CameraEffect::None;
         self.camera_effect(effect, context);
+        if following && unchanged {
+            // Same pose, new subject: the follow's target still changed.
+            let pose = self.camera.as_ref().map(|camera| camera.draft.pose());
+            if let Some(pose) = pose
+                && let Err(error) = self.camera_preview(pose, false)
+            {
+                self.error = Some(error);
+            }
+        }
+    }
+
+    fn camera_toggle_follow(&mut self) {
+        let result = (|| -> Result<String, String> {
+            let shown = self
+                .camera
+                .as_ref()
+                .and_then(|camera| {
+                    self.presentation
+                        .picture()?
+                        .framing
+                        .get(camera.layer)
+                        .map(|layer| layer.pose)
+                })
+                .flatten();
+            let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
+            let picture_asset = self
+                .presentation
+                .picture()
+                .and_then(|picture| picture.follow_point.as_ref())
+                .map(|(asset, _)| asset.clone());
+            let camera = self.camera.as_mut().ok_or("Camera is closed.")?;
+            if let Some(follow) = camera.follow.take() {
+                // Release at the pose on screen, so nothing jumps.
+                let pose = shown.unwrap_or_else(|| camera.draft.pose());
+                camera.draft.set_pose(pose);
+                camera.fields.sync(camera.draft.pose());
+                camera.field_error = None;
+                let label = workspace
+                    .document
+                    .targets()
+                    .get(&follow.target)
+                    .map_or_else(|| follow.target.to_string(), |target| target.label.clone());
+                return Ok(format!(
+                    "Stopped following {label}. Enter saves this static framing; Escape keeps the entry framing."
+                ));
+            }
+            let id = camera.selected_target.clone().ok_or(
+                "Pick a saved target first: press f, then its number. Press n to draw a new one.",
+            )?;
+            let target = workspace
+                .document
+                .targets()
+                .get(&id)
+                .ok_or("The selected target no longer exists.")?;
+            if picture_asset.as_ref() != Some(&target.asset) {
+                return Err(format!(
+                    "{} belongs to another video than this picture.",
+                    target.label
+                ));
+            }
+            let pose = camera.draft.pose();
+            camera.follow = Some(FollowDraft {
+                target: id,
+                center: [pose.center_x, pose.center_y],
+                base_scale: pose.scale,
+                base_fallback: pose,
+                clock: FramingClock::OwnerOutput,
+            });
+            if let Err(error) = camera.framing(pose, false) {
+                camera.follow = None;
+                return Err(error);
+            }
+            let mut message = format!(
+                "Following {} at {:.2}×. +/- change the scale; Enter saves; t stops following.",
+                target.label,
+                pose.scale.numerator() as f64 / pose.scale.denominator() as f64
+            );
+            if camera.replaces_curve() {
+                message.push_str(" This replaces the beat's camera curve.");
+            }
+            Ok(message)
+        })();
+        match result {
+            Ok(message) => {
+                self.message = Some(message);
+                let pose = self
+                    .camera
+                    .as_ref()
+                    .map(|camera| (camera.draft.pose(), camera.draft.reset_requested()));
+                if let Some((pose, reset)) = pose {
+                    match self.camera_preview(pose, reset) {
+                        Ok(()) => self.error = None,
+                        Err(error) => self.error = Some(error),
+                    }
+                }
+            }
+            Err(error) => self.error = Some(error),
+        }
+    }
+
+    /// Start a rectangle: a new target centered on what the viewer shows, or
+    /// the acting target's rectangle at this picture for a correction.
+    fn camera_open_region(&mut self, correction: bool) {
+        let result = (|| -> Result<(TargetRegion, RegionPurpose), String> {
+            let camera = self.camera.as_ref().ok_or("Camera is closed.")?;
+            let (_, at) = camera.picture.clone().ok_or(
+                "Targets are drawn on Original pictures; this picture shows no Original moment.",
+            )?;
+            if correction {
+                let id = camera
+                    .acting_target()
+                    .cloned()
+                    .ok_or("Pick the target to correct first: press f, then its number.")?;
+                let shown = self
+                    .targets_at_picture()
+                    .into_iter()
+                    .find(|shown| shown.id == id)
+                    .ok_or_else(|| {
+                        format!("{} does not cover this picture.", self.target_label(&id))
+                    })?;
+                return Ok((shown.region, RegionPurpose::Correct { id, at }));
+            }
+            let picture = self
+                .presentation
+                .picture()
+                .ok_or("Wait for the stopped picture.")?;
+            let frame = picture.frame.as_ref().ok_or("This beat has no picture.")?;
+            let (width, height) = picture.canvas.ok_or("Camera requires Your edit.")?;
+            let geometry = deadpan_render::PictureGeometry::composed(
+                frame.metadata(),
+                picture.picture_context.as_deref(),
+                [width, height],
+                [width, height],
+                FitMode::Fit,
+                &render_layers(picture)?,
+            )
+            .map_err(|error| error.to_string())?;
+            let center = geometry
+                .canvas_to_source([0.5, 0.5])
+                .map_err(|error| error.to_string())?;
+            let corner = geometry
+                .canvas_to_source([0.0, 0.0])
+                .map_err(|error| error.to_string())?;
+            // A quarter of what the viewer shows, at least 1% of the source.
+            let size = [
+                ((center[0] - corner[0]).abs() / 2.0).clamp(0.01, 1.0),
+                ((center[1] - corner[1]).abs() / 2.0).clamp(0.01, 1.0),
+            ];
+            Ok((
+                TargetRegion {
+                    center: [units(center[0]), units(center[1])],
+                    size: [units(size[0]).max(1), units(size[1]).max(1)],
+                },
+                RegionPurpose::New,
+            ))
+        })();
+        match result {
+            Ok((region, purpose)) => {
+                let Some(camera) = &mut self.camera else {
+                    return;
+                };
+                let effect = camera.draft.open_region(region);
+                if let CameraEffect::Rejected(error) = effect {
+                    self.error = Some(error.to_string());
+                    return;
+                }
+                camera.region_purpose = Some(purpose);
+                self.error = None;
+                self.message = None;
+            }
+            Err(error) => self.error = Some(error),
+        }
+    }
+
+    /// Enter on a rectangle: save a new target or a correction. A correction
+    /// of a tracked target re-tracks only the range it governs.
+    fn camera_save_region(&mut self, region: TargetRegion) {
+        let result = (|| -> Result<(), String> {
+            let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
+            let camera = self.camera.as_ref().ok_or("Camera is closed.")?;
+            let (asset, at) = camera
+                .picture
+                .clone()
+                .ok_or("This picture shows no Original moment.")?;
+            let session = camera.session;
+            let revision = camera.revision.clone();
+            match camera
+                .region_purpose
+                .clone()
+                .ok_or("No rectangle is open.")?
+            {
+                RegionPurpose::New => {
+                    let (id, label) = fresh_target(&workspace.document)?;
+                    let target = AttentionTarget {
+                        label,
+                        asset: asset.clone(),
+                        span: self.target_span(&asset, at)?,
+                        region,
+                        samples: Vec::new(),
+                        corrections: Vec::new(),
+                        provenance: None,
+                    };
+                    let ticket = self
+                        .submit_target(Operation::Save {
+                            ticket: 0,
+                            session,
+                            revision,
+                            id,
+                            target: Box::new(target),
+                        })
+                        .ok_or_else(|| self.error.clone().unwrap_or_default())?;
+                    if let Some(camera) = &mut self.camera {
+                        camera.saving = Some(ticket);
+                    }
+                }
+                RegionPurpose::Correct { id, at } => {
+                    let target = workspace
+                        .document
+                        .targets()
+                        .get(&id)
+                        .ok_or("The target no longer exists.")?;
+                    if target.samples.is_empty() {
+                        // Nothing tracked to invalidate. Later pictures of an
+                        // untracked target are corrected by tracking it first,
+                        // so a manual keyframe never blocks `T` or `:track`.
+                        if at != target.span.start().ticks {
+                            return Err(format!(
+                                "{} is not tracked yet. Track it with T first, or correct it at its first picture.",
+                                target.label
+                            ));
+                        }
+                        let target = corrected(target, at, region);
+                        let ticket = self
+                            .submit_target(Operation::Save {
+                                ticket: 0,
+                                session,
+                                revision,
+                                id,
+                                target: Box::new(target),
+                            })
+                            .ok_or_else(|| self.error.clone().unwrap_or_default())?;
+                        if let Some(camera) = &mut self.camera {
+                            camera.saving = Some(ticket);
+                        }
+                    } else {
+                        if self.targets.running().is_some() {
+                            return Err(
+                                "A target is already tracking. Cancel it with :track-cancel first."
+                                    .into(),
+                            );
+                        }
+                        let label = target.label.clone();
+                        self.submit_target(Operation::Track {
+                            ticket: 0,
+                            session,
+                            revision,
+                            id,
+                            mode: TrackMode::Correct { at, region },
+                        })
+                        .ok_or_else(|| self.error.clone().unwrap_or_default())?;
+                        // Camera stays open; the result is saved when ready.
+                        if let Some(camera) = &mut self.camera {
+                            camera.draft.close_region();
+                            camera.region_purpose = None;
+                        }
+                        self.message = Some(format!(
+                            "Re-tracking {label} from this picture in the background; earlier pictures keep their positions."
+                        ));
+                    }
+                }
+            }
+            Ok(())
+        })();
+        if let Err(error) = result
+            && !error.is_empty()
+        {
+            self.error = Some(error);
+        }
+    }
+
+    /// A new target's source range: from the displayed picture to the end of
+    /// its stored shot, or to the end of the video without a shot analysis.
+    fn target_span(&self, asset: &AssetId, at: i64) -> Result<SourceSpan, String> {
+        let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
+        let video = workspace
+            .document
+            .assets()
+            .get(asset)
+            .and_then(|record| record.video)
+            .ok_or("This video has no measured picture span.")?;
+        let time_base = video.start().time_base;
+        let index = workspace
+            .sources
+            .get(asset)
+            .and_then(|source| source.video_index.as_ref())
+            .ok_or("This video has no qualified picture index.")?;
+        let frames = index.frames();
+        let ordinal = frames
+            .iter()
+            .position(|frame| frame.pts == at)
+            .ok_or("The displayed picture is not in the video's index.")?;
+        let original = workspace
+            .single_source
+            .as_ref()
+            .and_then(|state| match state {
+                deadpan_store::single_source::SingleSourceState::Ready { asset, .. } => Some(asset),
+                _ => None,
+            });
+        let shot_end = workspace
+            .shot_analysis
+            .as_ref()
+            .filter(|_| original == Some(asset))
+            .and_then(|shots| {
+                shots
+                    .analysis
+                    .boundaries()
+                    .into_iter()
+                    .find(|boundary| *boundary > ordinal)
+            })
+            .and_then(|boundary| frames.get(boundary))
+            .map(|frame| frame.pts);
+        let end = shot_end.unwrap_or(video.end().ticks).min(video.end().ticks);
+        if end <= at {
+            return Err("No picture time remains after this picture for a target.".into());
+        }
+        SourceSpan::new(
+            SourceTimestamp {
+                ticks: at,
+                time_base,
+            },
+            SourceTimestamp {
+                ticks: end,
+                time_base,
+            },
+        )
+        .map_err(|error| error.to_string())
+    }
+
+    fn camera_track(&mut self) {
+        let result = (|| -> Result<(), String> {
+            let camera = self.camera.as_ref().ok_or("Camera is closed.")?;
+            let id = camera
+                .acting_target()
+                .cloned()
+                .ok_or("Pick the target to track first: press f, then its number.")?;
+            let (session, revision) = (camera.session, camera.revision.clone());
+            self.start_tracking(session, revision, id, false)
+        })();
+        if let Err(error) = result {
+            self.error = Some(error);
+        }
     }
 
     pub(super) fn camera_field_focused(&self, context: &egui::Context) -> bool {
@@ -788,6 +1815,34 @@ impl DeadpanApp {
         let painter = ui.painter().with_clip_rect(canvas);
         let center = canvas.center();
         let stroke = egui::Stroke::new(1.0, style::LAVENDER);
+        let to_screen = |point: [f64; 2]| {
+            canvas.min
+                + egui::vec2(
+                    point[0] as f32 * canvas.width(),
+                    point[1] as f32 * canvas.height(),
+                )
+        };
+        let source_rect = |region: &TargetRegion| -> Option<egui::Rect> {
+            let unit = f64::from(TARGET_UNITS);
+            let [cx, cy] = region.center.map(|value| f64::from(value) / unit);
+            let [w, h] = region.size.map(|value| f64::from(value) / unit);
+            let min = geometry
+                .source_to_canvas_unclipped([cx - w / 2.0, cy - h / 2.0])
+                .ok()?;
+            let max = geometry
+                .source_to_canvas_unclipped([cx + w / 2.0, cy + h / 2.0])
+                .ok()?;
+            Some(egui::Rect::from_min_max(to_screen(min), to_screen(max)))
+        };
+        let badge = |at: egui::Pos2, text: &str, fill: egui::Color32| {
+            let font = egui::FontId::monospace(11.0);
+            let galley = painter.layout_no_wrap(text.to_owned(), font, style::CANVAS);
+            let size = galley.size() + egui::vec2(8.0, 4.0);
+            let min = at.clamp(canvas.min, canvas.max - size);
+            let rect = egui::Rect::from_min_size(min, size);
+            painter.rect_filled(rect, 3.0, fill);
+            painter.galley(rect.min + egui::vec2(4.0, 2.0), galley, style::CANVAS);
+        };
         painter.line_segment(
             [center - egui::vec2(7.0, 0.0), center + egui::vec2(7.0, 0.0)],
             stroke,
@@ -796,20 +1851,59 @@ impl DeadpanApp {
             [center - egui::vec2(0.0, 7.0), center + egui::vec2(0.0, 7.0)],
             stroke,
         );
-        if camera.draft.phase() == CameraPhase::TargetPicker {
-            for (number, point) in [
-                (1, [0.5, 0.5]),
-                (2, [0.0, 0.0]),
-                (3, [1.0, 0.0]),
-                (4, [0.0, 1.0]),
-                (5, [1.0, 1.0]),
-            ] {
+        let picking = camera.draft.phase() == CameraPhase::TargetPicker;
+        let correcting = match &camera.region_purpose {
+            Some(RegionPurpose::Correct { id, .. }) => Some(id),
+            _ => None,
+        };
+        // Saved targets at this picture's source time, with tracking state.
+        for shown in self.targets_at_picture() {
+            if correcting == Some(&shown.id) {
+                continue;
+            }
+            let Some(rect) = source_rect(&shown.region) else {
+                continue;
+            };
+            let color = super::targets::source_color(shown.source);
+            let selected = camera.acting_target() == Some(&shown.id);
+            let followed = camera
+                .follow
+                .as_ref()
+                .is_some_and(|follow| follow.target == shown.id);
+            painter.rect_stroke(
+                rect,
+                2.0,
+                egui::Stroke::new(if selected { 2.5 } else { 1.5 }, color),
+                egui::StrokeKind::Middle,
+            );
+            let number = camera
+                .picker
+                .iter()
+                .find(|entry| {
+                    entry
+                        .saved
+                        .as_ref()
+                        .is_some_and(|(id, _, _)| id == &shown.id)
+                })
+                .and_then(|entry| entry.number);
+            let mut text = match number.filter(|_| picking) {
+                Some(number) => format!("{number} {}", shown.label),
+                None => shown.label.clone(),
+            };
+            text.push_str(" · ");
+            text.push_str(super::targets::source_label(shown.source));
+            if followed {
+                text.push_str(" · following");
+            }
+            badge(rect.left_top() - egui::vec2(0.0, 18.0), &text, color);
+        }
+        if picking {
+            for entry in &camera.picker {
+                let (Some(number), Some(point)) = (entry.number, entry.point) else {
+                    continue;
+                };
                 if let Ok(Some(point)) = geometry.source_to_canvas(point) {
-                    let anchor = canvas.min
-                        + egui::vec2(
-                            point[0] as f32 * canvas.width(),
-                            point[1] as f32 * canvas.height(),
-                        );
+                    let anchor = to_screen(point);
                     let badge = anchor.clamp(
                         canvas.min + egui::vec2(12.0, 12.0),
                         canvas.max - egui::vec2(12.0, 12.0),
@@ -825,6 +1919,64 @@ impl DeadpanApp {
                     );
                 }
             }
+        }
+        // The rectangle under keyboard edit, its focused part emphasized.
+        if let Some(region) = camera.draft.region()
+            && let Some(rect) = source_rect(&region.region())
+        {
+            let color = style::CURSOR;
+            painter.rect_filled(rect, 0.0, color.gamma_multiply(0.08));
+            painter.rect_stroke(
+                rect,
+                0.0,
+                egui::Stroke::new(1.5, color),
+                egui::StrokeKind::Middle,
+            );
+            for corner in [
+                rect.left_top(),
+                rect.right_top(),
+                rect.left_bottom(),
+                rect.right_bottom(),
+            ] {
+                painter.rect_filled(
+                    egui::Rect::from_center_size(corner, egui::vec2(7.0, 7.0)),
+                    1.0,
+                    color,
+                );
+            }
+            let heavy = egui::Stroke::new(3.5, color);
+            match region.field() {
+                RegionField::Center => {
+                    let c = rect.center();
+                    painter.line_segment(
+                        [c - egui::vec2(10.0, 0.0), c + egui::vec2(10.0, 0.0)],
+                        heavy,
+                    );
+                    painter.line_segment(
+                        [c - egui::vec2(0.0, 10.0), c + egui::vec2(0.0, 10.0)],
+                        heavy,
+                    );
+                }
+                RegionField::Width => {
+                    painter.line_segment([rect.left_top(), rect.left_bottom()], heavy);
+                    painter.line_segment([rect.right_top(), rect.right_bottom()], heavy);
+                }
+                RegionField::Height => {
+                    painter.line_segment([rect.left_top(), rect.right_top()], heavy);
+                    painter.line_segment([rect.left_bottom(), rect.right_bottom()], heavy);
+                }
+            }
+            let title = match &camera.region_purpose {
+                Some(RegionPurpose::Correct { id, .. }) => {
+                    format!(
+                        "Correct {} · {}",
+                        self.target_label(id),
+                        region.field().label()
+                    )
+                }
+                _ => format!("New target · {}", region.field().label()),
+            };
+            badge(rect.left_top() - egui::vec2(0.0, 18.0), &title, color);
         }
     }
 
@@ -847,9 +1999,13 @@ impl DeadpanApp {
                 .map_or("Selected beat", |node| node.label.as_str());
             ui.label(format!("{label} · {}", self.beat_scope_label()));
             ui.label(if camera.committing {
-                "Saving framing…"
+                "Saving framing…".to_owned()
+            } else if camera.saving.is_some() || camera.rebase.is_some() {
+                "Saving target…".to_owned()
+            } else if let Some(follow) = &camera.follow {
+                format!("Following {} · unsaved", self.target_label(&follow.target))
             } else {
-                "Draft · unsaved"
+                "Draft · unsaved".to_owned()
             });
             if camera.draft.count_overflowed() {
                 ui.colored_label(ui.visuals().error_fg_color, "Count too large");
@@ -860,22 +2016,62 @@ impl DeadpanApp {
                 ui.spinner();
                 ui.weak("Updating picture");
             }
+            if let Some(job) = self.targets.running() {
+                ui.separator();
+                ui.spinner();
+                ui.colored_label(style::LAVENDER, Self::tracking_line(job));
+                ui.ctx()
+                    .request_repaint_after(std::time::Duration::from_millis(250));
+            }
         });
-        ui.horizontal_wrapped(|ui| {
-            if camera.draft.phase() == CameraPhase::TargetPicker {
-                style::key_hint(ui, "1–5", "source target");
+        ui.horizontal_wrapped(|ui| match camera.draft.phase() {
+            CameraPhase::TargetPicker => {
+                let last = camera
+                    .picker
+                    .iter()
+                    .filter_map(|entry| entry.number)
+                    .max()
+                    .unwrap_or(1);
+                style::key_hint(ui, &format!("1–{last}"), "target");
                 style::key_hint(ui, "f", "back");
-            } else {
-                style::key_hint(ui, "h j k l", "move 1%");
-                style::key_hint(ui, "H J K L", "move 5%");
+                style::key_hint(ui, "r", "reset");
+                style::key_hint(ui, "Esc", "cancel");
+            }
+            CameraPhase::Region => {
+                style::key_hint(ui, "Tab", "center / width / height");
+                style::key_hint(ui, "←→↑↓ hjkl", "1%");
+                style::key_hint(ui, "HJKL", "5%");
+                style::key_hint(ui, "3→", "three steps");
+                style::key_hint(ui, "Enter", "save");
+                style::key_hint(ui, "Esc", "back");
+            }
+            _ => {
+                if camera.follow.is_none() {
+                    style::key_hint(ui, "h j k l", "move 1%");
+                    style::key_hint(ui, "H J K L", "move 5%");
+                }
                 style::key_hint(ui, "+ −", "scale ×1.05");
                 style::key_hint(ui, "3+", "three steps");
                 style::key_hint(ui, "f", "targets");
+                style::key_hint(ui, "n", "new target");
+                if camera.acting_target().is_some() {
+                    style::key_hint(
+                        ui,
+                        "t",
+                        if camera.follow.is_some() {
+                            "stop following"
+                        } else {
+                            "follow"
+                        },
+                    );
+                    style::key_hint(ui, "c", "correct here");
+                    style::key_hint(ui, "T", "track");
+                }
                 style::key_hint(ui, "Tab", "fields");
                 style::key_hint(ui, "Enter", "apply");
+                style::key_hint(ui, "r", "reset");
+                style::key_hint(ui, "Esc", "cancel");
             }
-            style::key_hint(ui, "r", "reset");
-            style::key_hint(ui, "Esc", "cancel");
         });
         if let Some(error) = self
             .error
@@ -884,6 +2080,8 @@ impl DeadpanApp {
             .or(self.presentation.error())
         {
             ui.colored_label(ui.visuals().error_fg_color, error);
+        } else if let Some(message) = self.message.as_deref() {
+            ui.weak(message);
         }
     }
 
@@ -896,6 +2094,33 @@ impl DeadpanApp {
             .presentation
             .picture()
             .is_some_and(|picture| picture.picture_context.is_some());
+        let shown_targets: std::collections::BTreeMap<TargetId, TargetSource> = self
+            .targets_at_picture()
+            .into_iter()
+            .map(|shown| (shown.id, shown.source))
+            .collect();
+        let all_targets: Vec<(TargetId, String, String)> = self
+            .workspace
+            .as_ref()
+            .map(|workspace| {
+                workspace
+                    .document
+                    .targets()
+                    .iter()
+                    .map(|(id, target)| {
+                        (
+                            id.clone(),
+                            target.label.clone(),
+                            super::targets::summary(target),
+                        )
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+        let follow_label = camera
+            .follow
+            .as_ref()
+            .map(|follow| self.target_label(&follow.target));
         let mut proposed = None;
         let mut requested = None;
         let mut target = None;
@@ -905,11 +2130,48 @@ impl DeadpanApp {
                 pane_heading(ui, "FRAMING", camera.fields.owns_focus(ui.ctx()));
                 ui.label(egui::RichText::new("Camera · temporary preview").color(style::LAVENDER));
                 ui.separator();
-                ui.add_enabled_ui(!camera.committing, |ui| {
+                ui.add_enabled_ui(!camera.blocked(), |ui| {
                     egui::ScrollArea::vertical().id_salt("camera-inspector").show(ui, |ui| {
                         ui.label(format!("Scope: {}", self.beat_scope_label()));
                         ui.add_space(8.0);
-                        ui.add_enabled_ui(camera.draft.phase() == CameraPhase::Adjust, |ui| {
+                        if let Some(region) = camera.draft.region() {
+                            let title = match &camera.region_purpose {
+                                Some(RegionPurpose::Correct { id, .. }) => format!("CORRECT {}", self.target_label(id).to_uppercase()),
+                                _ => "NEW TARGET".to_owned(),
+                            };
+                            ui.label(style::section_title(&title, true));
+                            let [x, y, w, h] = super::targets::region_text(&region.region());
+                            for (field, label, value) in [
+                                (RegionField::Center, "Center", format!("{x}, {y}")),
+                                (RegionField::Width, "Width", w),
+                                (RegionField::Height, "Height", h),
+                            ] {
+                                let focused = region.field() == field;
+                                egui::Frame::new()
+                                    .fill(if focused { style::SELECTED } else { egui::Color32::TRANSPARENT })
+                                    .corner_radius(4)
+                                    .inner_margin(egui::Margin::symmetric(6, 3))
+                                    .show(ui, |ui| {
+                                        ui.horizontal(|ui| {
+                                            ui.label(egui::RichText::new(label).color(if focused { style::CURSOR } else { style::MUTED }));
+                                            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                                                ui.label(egui::RichText::new(value).monospace());
+                                            });
+                                        });
+                                    });
+                            }
+                            ui.weak("Percent of the upright Original picture. Tab moves between center, width and height; arrows or h/j/k/l change the focused part by 1%, Shift by 5%; counts repeat.");
+                            ui.add_space(4.0);
+                            if camera.saving.is_some() {
+                                ui.horizontal(|ui| { ui.spinner(); ui.label("Saving target…"); });
+                            }
+                            if ui.add(style::action(match camera.region_purpose { Some(RegionPurpose::Correct { .. }) => "Save correction", _ => "Save target" }, "Enter").fill(style::SELECTED).min_size(egui::vec2(ui.available_width(), 30.0))).clicked() { requested = Some(CameraKey::Commit); }
+                            if ui.add_sized([ui.available_width(), 28.0], style::action("Back to framing", "Esc")).clicked() { requested = Some(CameraKey::Cancel); }
+                            ui.separator();
+                        }
+                        let adjusting = camera.draft.phase() == CameraPhase::Adjust;
+                        camera.fields.set_centers_locked(camera.follow.is_some());
+                        ui.add_enabled_ui(adjusting, |ui| {
                             proposed = camera.fields.show(ui);
                         });
                         for key in std::mem::take(&mut camera.field_keys) {
@@ -935,33 +2197,79 @@ impl DeadpanApp {
                             ui.colored_label(ui.visuals().error_fg_color, error);
                         }
                         ui.add_space(8.0);
-                        ui.weak(if camera.draft.phase() == CameraPhase::TargetPicker {
-                            "Choose 1–5 or press f to return to adjustment."
-                        } else {
-                            "Tab moves through fields. Up/Down changes 1%. Enter finishes a field; Enter in the viewer applies the edit."
+                        ui.weak(match camera.draft.phase() {
+                            CameraPhase::TargetPicker => "Choose a number or press f to return to adjustment.",
+                            CameraPhase::Region => "Finish the rectangle, or press Escape to return to framing.",
+                            _ if camera.follow.is_some() => "The followed target supplies the center. Scale changes keep following it.",
+                            _ => "Tab moves through fields. Up/Down changes 1%. Enter finishes a field; Enter in the viewer applies the edit.",
                         });
+                        // Apply and Cancel stay above the target lists.
+                        ui.add_space(8.0);
+                        let valid = camera.fields.is_valid() && camera.field_error.is_none() && adjusting;
+                        if ui.add_enabled(valid, style::action("Apply", "Enter").fill(style::SELECTED).min_size(egui::vec2(ui.available_width(), 30.0))).clicked() { requested = Some(CameraKey::Commit); }
+                        if ui.add_sized([ui.available_width(), 28.0], style::action("Cancel", "Esc")).clicked() { requested = Some(CameraKey::Cancel); }
+                        if ui.add(style::action("Reset framing", "r")).clicked() { requested = Some(CameraKey::Reset); }
                         ui.separator();
-                        let curve = !camera.draft.reset_requested() && matches!(camera.entry.as_ref().map(|entry| &entry.value), Some(FramingValue::Envelope { .. }));
-                        if curve { ui.label("Existing curve preserved"); ui.weak("Adjustments move and scale its full path. Reset replaces the curve."); }
-                        else { ui.label("Static framing"); }
+                        if let Some(label) = &follow_label {
+                            ui.label(style::semibold(format!("Follows {label}")));
+                            ui.weak("Centered on the target at each picture's Original time. Outside its range the framing holds its fallback pose.");
+                            if camera.replaces_curve() {
+                                ui.colored_label(style::WARNING, "Saving replaces the beat's camera curve.");
+                            }
+                        } else {
+                            let curve = !camera.draft.reset_requested() && matches!(camera.entry.as_ref().map(|entry| &entry.value), Some(FramingValue::Envelope { .. }));
+                            if curve { ui.label("Existing curve preserved"); ui.weak("Adjustments move and scale its full path. Reset replaces the curve."); }
+                            else { ui.label("Static framing"); }
+                        }
                         if captured {
                             ui.label("Captured view retained");
                             ui.weak("Camera changes this view. Reset keeps its captured crop.");
                         }
-                        if ui.add(style::action(if camera.draft.phase() == CameraPhase::TargetPicker { "Close source targets" } else { "Choose source target" }, "f")).clicked() { requested = Some(CameraKey::RefreshTargets); }
+                        if ui.add(style::action(if camera.draft.phase() == CameraPhase::TargetPicker { "Close targets" } else { "Choose target" }, "f")).clicked() { requested = Some(CameraKey::RefreshTargets); }
                         if camera.draft.phase() == CameraPhase::TargetPicker {
-                            for (number, label, center) in &camera.targets {
-                                let response = ui.add_enabled(center.is_some(), egui::Button::new(format!("{number}  {label}")).min_size(egui::vec2(ui.available_width(), 28.0)));
-                                if response.clicked() { target = Some(*number); }
-                                if center.is_none() { response.on_hover_text("This point was clipped by a descendant operation."); }
+                            for entry in &camera.picker {
+                                let text = match (entry.number, &entry.saved) {
+                                    (Some(number), Some((_, _, source))) => format!("{number}  {} · {}", entry.label, super::targets::source_label(*source)),
+                                    (Some(number), None) => format!("{number}  {}", entry.label),
+                                    (None, _) => format!("    {}", entry.label),
+                                };
+                                let response = ui.add_enabled(entry.center.is_some() && entry.number.is_some(), egui::Button::new(text).min_size(egui::vec2(ui.available_width(), 28.0)));
+                                if response.clicked() { target = entry.number; }
+                                if entry.center.is_none() { response.on_hover_text("This point was clipped by a descendant operation."); }
                             }
-                            ui.weak("Center and corners of the upright Original. These are manual positions.");
+                            ui.weak("Saved targets at this picture, then the center and corners of the upright Original.");
                         }
-                        ui.add_space(12.0);
-                        let valid = camera.fields.is_valid() && camera.field_error.is_none() && camera.draft.phase() == CameraPhase::Adjust;
-                        if ui.add_enabled(valid, style::action("Apply", "Enter").fill(style::SELECTED).min_size(egui::vec2(ui.available_width(), 30.0))).clicked() { requested = Some(CameraKey::Commit); }
-                        if ui.add_sized([ui.available_width(), 28.0], style::action("Cancel", "Esc")).clicked() { requested = Some(CameraKey::Cancel); }
-                        if ui.add(style::action("Reset framing", "r")).clicked() { requested = Some(CameraKey::Reset); }
+                        ui.add_space(8.0);
+                        ui.label(style::section_title("TARGETS", false));
+                        if all_targets.is_empty() {
+                            ui.weak("No saved targets yet.");
+                        }
+                        for (id, label, summary) in &all_targets {
+                            let selected = camera.acting_target() == Some(id);
+                            egui::Frame::new()
+                                .fill(if selected { style::SELECTED } else { egui::Color32::TRANSPARENT })
+                                .corner_radius(4)
+                                .inner_margin(egui::Margin::symmetric(6, 3))
+                                .show(ui, |ui| {
+                                    ui.set_min_width(ui.available_width());
+                                    ui.horizontal_wrapped(|ui| {
+                                        ui.label(style::semibold(label));
+                                        match shown_targets.get(id) {
+                                            Some(source) => { ui.label(egui::RichText::new(super::targets::source_label(*source)).size(12.0).color(super::targets::source_color(*source))); }
+                                            None => { ui.label(egui::RichText::new("not at this picture").size(12.0).color(style::MUTED)); }
+                                        }
+                                    });
+                                    ui.label(egui::RichText::new(summary).size(12.0).color(style::MUTED));
+                                });
+                        }
+                        ui.add_enabled_ui(adjusting, |ui| {
+                            if ui.add(style::row_action(ui, "New target here", "n")).clicked() { requested = Some(CameraKey::NewRegion); }
+                            let acting = camera.acting_target().is_some();
+                            if ui.add_enabled(acting, style::row_action(ui, if camera.follow.is_some() { "Stop following" } else { "Follow selected target" }, "t")).clicked() { requested = Some(CameraKey::Follow); }
+                            if ui.add_enabled(acting, style::row_action(ui, "Correct target here", "c")).clicked() { requested = Some(CameraKey::Correct); }
+                            if ui.add_enabled(acting && self.targets.running().is_none(), style::row_action(ui, "Track selected target", "T")).clicked() { requested = Some(CameraKey::Track); }
+                        });
+                        self.tracking_status(ui);
                         ui.add_space(8.0);
                         ui.weak("Timing stays put. Uncovered picture is black.");
                     });
@@ -1268,25 +2576,87 @@ mod tests {
     }
 
     #[test]
-    fn a_followed_framing_is_never_replaced_by_a_camera_pose() {
-        let follow = Framing {
-            clock: deadpan_core::FramingClock::OwnerOutput,
-            value: FramingValue::Follow {
-                target: deadpan_core::TargetId::new("speaker").unwrap(),
-                scale: ExactRatio::integer(2),
-                fallback: FramingPose::identity(),
-            },
+    fn a_follow_changes_scale_keeps_its_target_and_releases_only_explicitly() {
+        let target = deadpan_core::TargetId::new("speaker").unwrap();
+        let fallback = pose(30, 150);
+        let follow = FollowDraft {
+            target: target.clone(),
+            center: [
+                ExactRatio::new(2, 5).unwrap(),
+                ExactRatio::new(1, 2).unwrap(),
+            ],
+            base_scale: ExactRatio::integer(2),
+            base_fallback: fallback,
+            clock: FramingClock::OwnerOutput,
         };
-        let moved = FramingPose {
-            scale: ExactRatio::integer(3),
-            ..FramingPose::identity()
-        };
-        assert!(adjusted_framing(Some(&follow), FramingPose::identity(), moved, false).is_err());
-        // An unchanged draft keeps the follow exactly.
+        let scaled =
+            FramingPose::new(follow.center[0], follow.center[1], ExactRatio::integer(3)).unwrap();
+        let framing = followed_framing(&follow, scaled).unwrap();
         assert_eq!(
-            adjusted_framing(Some(&follow), moved, moved, false).unwrap(),
-            Some(follow)
+            framing.value,
+            FramingValue::Follow {
+                target,
+                scale: ExactRatio::integer(3),
+                // The fallback keeps its center and scales by the same 3/2.
+                fallback: pose(30, 225),
+            }
         );
+        // The target supplies the center: a nudge is refused, not converted.
+        let nudged = FramingPose {
+            center_x: ExactRatio::new(1, 2).unwrap(),
+            ..scaled
+        };
+        assert!(followed_framing(&follow, nudged).is_err());
+        // An explicit release saves the pose shown, never the old follow.
+        let released = adjusted_framing(Some(&framing), scaled, scaled, false)
+            .unwrap()
+            .unwrap();
+        assert_eq!(released.value, FramingValue::Static { pose: scaled });
+        assert_eq!(
+            adjusted_framing(Some(&framing), scaled, FramingPose::identity(), true).unwrap(),
+            None
+        );
+    }
+
+    #[test]
+    fn corrections_replace_the_initial_rectangle_or_insert_in_order() {
+        let time_base = deadpan_core::SourceTimeBase::new(1, 1000).unwrap();
+        let stamp = |ticks| SourceTimestamp { ticks, time_base };
+        let region = |x| TargetRegion {
+            center: [x, 500_000],
+            size: [100_000, 100_000],
+        };
+        let target = AttentionTarget {
+            label: "Target 1".into(),
+            asset: AssetId::new("asset").unwrap(),
+            span: SourceSpan::new(stamp(0), stamp(1000)).unwrap(),
+            region: region(1),
+            samples: Vec::new(),
+            corrections: vec![TargetCorrection {
+                at: 500,
+                region: region(2),
+            }],
+            provenance: None,
+        };
+        assert_eq!(corrected(&target, 0, region(9)).region, region(9));
+        let inserted = corrected(&target, 200, region(3));
+        assert_eq!(
+            inserted
+                .corrections
+                .iter()
+                .map(|c| c.at)
+                .collect::<Vec<_>>(),
+            [200, 500]
+        );
+        let replaced = corrected(&target, 500, region(4));
+        assert_eq!(
+            replaced.corrections,
+            [TargetCorrection {
+                at: 500,
+                region: region(4)
+            }]
+        );
+        assert_eq!(replaced.region, region(1));
     }
 
     #[test]

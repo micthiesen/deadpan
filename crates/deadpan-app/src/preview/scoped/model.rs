@@ -185,6 +185,32 @@ impl State {
         true
     }
 
+    /// A target-only save changes no structure: keep this inspector on the
+    /// revision it created, exactly as for a mark-only save.
+    pub fn rebase_target(
+        &mut self,
+        workspace: &Workspace,
+        saved: &crate::project::targets::Saved,
+    ) -> bool {
+        if workspace.session != saved.session
+            || self.session != saved.session
+            || workspace.document.revision_id() != &saved.revision
+            || self.index.document.project_id() != workspace.document.project_id()
+        {
+            return false;
+        }
+        if self.index.document.revision_id() == &saved.revision {
+            return true;
+        }
+        if self.index.document.revision_id() != &saved.base {
+            return false;
+        }
+        let index = Arc::make_mut(&mut self.index);
+        index.document = workspace.document.clone();
+        index.plan = workspace.plan.clone();
+        true
+    }
+
     pub fn matches_workspace(&self, workspace: &Workspace) -> bool {
         self.matches_identity(workspace.session, &workspace.document)
     }
