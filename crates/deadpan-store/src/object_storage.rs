@@ -982,6 +982,97 @@ impl ObjectStorage {
         })
     }
 
+    /// Verifies the named object completely. One that fails verification is
+    /// moved aside to `.damaged-blake3-<digest>-<uuid>` in the same directory,
+    /// keeping its bytes for diagnosis, so a verified copy can take its name.
+    /// Returns the quarantine name, or None when the object is missing or
+    /// intact. Call only after the replacement source has been verified.
+    pub(crate) fn quarantine_damaged(
+        &self,
+        identity: ObjectIdentity<'_>,
+        limits: ObjectLimits,
+        control: ObjectControl<'_>,
+    ) -> Result<Option<String>, ObjectStorageError> {
+        let expected = object_reference(identity)?;
+        let directories = match self.inner.open_directories() {
+            Err(ObjectStorageError::MissingStorageComponent(_)) => return Ok(None),
+            directories => directories?,
+        };
+        let name = object_name(expected.content());
+        let Some(object) =
+            self.inner
+                .open_object_optional(&directories.generated, &name, &expected)?
+        else {
+            return Ok(None);
+        };
+        match self.inner.verify_open_object_controlled(
+            object,
+            &expected,
+            limits,
+            io::sink(),
+            control,
+            || {},
+        ) {
+            Ok(_) => return Ok(None),
+            Err(
+                ObjectStorageError::HashMismatch { .. }
+                | ObjectStorageError::LengthMismatch { .. }
+                | ObjectStorageError::TooLarge { .. }
+                | ObjectStorageError::WritableObject(_)
+                | ObjectStorageError::MultipleLinks(_)
+                | ObjectStorageError::NotRegularFile(_),
+            ) => {}
+            Err(error) => return Err(error),
+        }
+        control.check()?;
+        let damaged = format!(".damaged-{name}-{}", uuid::Uuid::new_v4());
+        renameat_with(
+            &directories.generated,
+            name.as_str(),
+            &directories.generated,
+            damaged.as_str(),
+            RenameFlags::NOREPLACE,
+        )
+        .map_err(|source| ObjectStorageError::System {
+            operation: "quarantine damaged object",
+            source,
+        })?;
+        sync_directory(&directories.generated, "synchronize quarantined object")?;
+        Ok(Some(damaged))
+    }
+
+    /// The byte length of the named regular object, or None when it or its
+    /// namespace is missing. This hashes nothing: it tells a host whether a
+    /// retained object is plausibly present, never that its bytes verify.
+    pub(crate) fn probe(
+        &self,
+        identity: ObjectIdentity<'_>,
+    ) -> Result<Option<u64>, ObjectStorageError> {
+        let expected = object_reference(identity)?;
+        let directories = match self.inner.open_directories() {
+            Err(ObjectStorageError::MissingStorageComponent(_)) => return Ok(None),
+            directories => directories?,
+        };
+        let Some(object) = self.inner.open_object_optional(
+            &directories.generated,
+            &object_name(expected.content()),
+            &expected,
+        )?
+        else {
+            return Ok(None);
+        };
+        let state = fstat(&object).map_err(|source| ObjectStorageError::System {
+            operation: "inspect retained object",
+            source,
+        })?;
+        if !FileType::from_raw_mode(state.st_mode).is_file() {
+            return Err(ObjectStorageError::NotRegularFile(
+                expected.content().clone(),
+            ));
+        }
+        Ok(Some(u64::try_from(state.st_size).unwrap_or(0)))
+    }
+
     /// Only the render write worker calls this. Read-only handles never create
     /// the namespace or the lock. All retained writes hold this guard through
     /// publication and its final durability checks.
@@ -1835,7 +1926,7 @@ impl ObjectStorageError {
 
 fn io_error_code(error: &io::Error) -> &'static str {
     match error.kind() {
-        io::ErrorKind::StorageFull => "DiskFull",
+        io::ErrorKind::StorageFull | io::ErrorKind::QuotaExceeded => "DiskFull",
         io::ErrorKind::ReadOnlyFilesystem => "ProjectReadOnly",
         io::ErrorKind::PermissionDenied => "PermissionDenied",
         _ => "IoFailure",

@@ -26,7 +26,7 @@ PROMPT = ("Locked camera. The person maintains the same identity, pose, expressi
 EVIDENCE = Path(__file__).resolve().parent / "evidence/2026-09-20-smoke"
 
 
-def runtime_paths(config, check_cancel):
+def runtime_paths(config, check_cancel, hash_assets=True):
     exact_keys(config, ["runtime_source", "model_cache", "ffmpeg", "ffprobe"])
     paths = {key: Path(value) for key, value in config.items()}
     if any(not path.is_absolute() for path in paths.values()):
@@ -46,6 +46,13 @@ def runtime_paths(config, check_cancel):
     for asset in receipt["assets"]:
         check_cancel()
         path = roots[asset["repository"]] / asset["path"]
+        if not hash_assets:
+            # A pack installer already hashed every file; check presence and size.
+            if not path.is_file() or path.is_symlink() or path.stat().st_size != asset["size"]:
+                raise ValueError(f"model data missing or of the wrong size: {asset['path']}")
+            verified_assets.append({"repository": asset["repository"], "path": asset["path"],
+                                    "size": asset["size"], "sha256": asset["sha256"]})
+            continue
         digest, length = hashlib.sha256(), 0
         with path.open("rb") as stream:
             while data := stream.read(1024 * 1024):
@@ -221,3 +228,32 @@ def generate(paths, request, context, input_bytes, output, stage, check_cancel, 
         json.dump(report, stream, indent=2)
         stream.write("\n")
     return output / "native.mp4", provenance_path, report
+
+
+def check_runtime(config):
+    """A model pack smoke test: the pinned runtime imports from its verified
+    source, Metal runs, and every model file is present with a readable
+    safetensors header. No inference; the installer already hashed the files."""
+    started = time.monotonic()
+    paths = runtime_paths(config, lambda: None, hash_assets=False)
+    import mlx.core as mx
+    from ltx_core_mlx.text_encoders.gemma.encoders.base_encoder import GemmaLanguageModel  # noqa: F401
+    from ltx_pipelines_mlx.keyframe_interpolation import KeyframeInterpolationPipeline  # noqa: F401
+    sources = loaded_sources(paths["runtime_source"], paths["source_manifest"])
+    values = mx.arange(1024, dtype=mx.float32)
+    total = (values * values).sum().item()
+    if int(total) != 357389824:
+        raise ValueError("Metal arithmetic check failed")
+    tensors = 0
+    for root in [paths["model"], paths["gemma"]]:
+        for path in sorted(root.glob("*.safetensors")):
+            with path.open("rb") as stream:
+                length = int.from_bytes(stream.read(8), "little")
+                if not 2 <= length <= 100 * 1024 * 1024:
+                    raise ValueError(f"unreadable safetensors header: {path.name}")
+                header = json.loads(stream.read(length))
+            tensors += sum(1 for key in header if key != "__metadata__")
+    return {"schema_version": 1, "runtime_commit": RUNTIME_COMMIT, "device": str(mx.default_device()),
+            "python": sys.version.split()[0], "mlx": mx.__version__,
+            "verified_assets": len(paths["verified_assets"]), "safetensors_tensors": tensors,
+            "loaded_ltx_sources": len(sources), "seconds": round(time.monotonic() - started, 3)}

@@ -7,9 +7,11 @@ acceptance. It replaces the developer examples as the host path; the examples
 remain qualification harnesses. Generation only proposes pictures. Only
 acceptance edits the project, as one undoable command.
 
-The only provider is the development LTX-2.3 q4 MLX runtime qualified in
-[`tools/model-qualification`](../tools/model-qualification/README.md). It is a
-developer runtime, not a distributed or installed one.
+The only provider is the LTX-2.3 q4 MLX route qualified in
+[`tools/model-qualification`](../tools/model-qualification/README.md). A
+packaged `Deadpan.app` carries its private runtime and takes the weights from
+the installed `ltx-2.3-q4-bridge` [model pack](MODEL_PACKS.md); development
+builds may still point at a developer runtime ([Runtime](#runtime)).
 
 ## Library chain
 
@@ -81,6 +83,7 @@ the footer teach the actions:
 | Preview | `:preview-ai`; Esc leaves it once nothing else owns Esc | Show the candidate's pictures in the viewer at the edit cursor |
 | Accept | `:accept-ai` | One undoable edit; the pause stays selected |
 | Discard | `:discard-ai` | Hide the candidate for this session; nothing is written |
+| Install the model pack | Install AI models…, `:models` | Open the Models panel on the bridge pack; shown when it is not installed |
 
 `project::generation` defines the requests and published state, and
 `project/service/generation.rs` runs them:
@@ -156,16 +159,45 @@ with real bundles (`ai-pause-ready` replay and the opt-in service test).
 - UI replay: `ai-pause` (scripted worker) and `ai-pause-ready --project` (a
   copy of that accepted project). See [UI feedback](UI_FEEDBACK.md).
 
-## Development runtime
+## Runtime
 
-`BridgeRuntime::from_environment` locates each part and reports every missing
-one in a single error beginning "AI pauses need the development model runtime:".
+`BridgeRuntime::from_environment` resolves the runtime for the running
+executable (`generation::runtime::lookup`):
+
+| Lookup | When | Python, LTX source, worker, ffmpeg/ffprobe | Model data |
+| --- | --- | --- | --- |
+| Bundled | Packaged `Deadpan.app` | `Contents/Resources/ai-runtime/{python/bin/python3.12, ltx-2-mlx, worker/worker.py, bin/ffmpeg, bin/ffprobe}` | The installed `ltx-2.3-q4-bridge` pack in the models root |
+| PackagedExplicit | Packaged app with `DEADPAN_DEVELOPER_BRIDGE=1` | Explicitly set `DEADPAN_BRIDGE_*` only | `DEADPAN_BRIDGE_MODEL_CACHE` |
+| Development | Cargo builds and developer wrappers | `DEADPAN_BRIDGE_*`, then development defaults (below) | `DEADPAN_BRIDGE_MODEL_CACHE`, else the installed pack, else the qualification cache |
+
+The bundled lookup reads no environment variable, default, Homebrew path or
+checkout. It also requires the macOS version the runtime's MLX build targets
+(`runtime.json` `minimum_macos`, currently 26.0; the macOS 15 MLX build was
+measured 2.2 times slower, see [dependencies](DEPENDENCIES.md#private-ai-runtime)). Its errors begin "AI pauses are not ready:"; when only the pack is
+missing the error says so (`needs_model_pack`) and names its size and how to
+install it, which the inspector turns into an install offer. A damaged bundle
+names each missing part. The bundled runtime is described in
+[Packaging](PACKAGING.md#ai-runtime); the worker it runs is the same adapter,
+launched `python -I -B` (no user site, no bytecode writes into the signed
+bundle) with a cleared environment and the offline variables. `doctor` reports
+the lookup, the bundled runtime's `runtime.json` identity, the resolved paths,
+readiness and anything missing.
+
+`BridgeRuntime::check` runs `worker.py --check`, the bridge pack's smoke test:
+it verifies the 139 pinned source files, imports the pipeline and Gemma
+encoder modules from them, runs a Metal calculation, checks every receipt
+file's size and parses every safetensors header, without inference.
+
+### Development runtime
+
+Development builds locate each part and report every missing one in a single
+error beginning "AI pauses need the development model runtime:".
 
 | Variable | Default |
 | --- | --- |
 | `DEADPAN_BRIDGE_RUNTIME_SOURCE` | `~/Library/Caches/Deadpan/ltx-runtime/ltx-2-mlx-3392d759…`, else `/private/tmp/deadpan-ltx2src-3392/ltx-2-mlx-3392d759…` |
 | `DEADPAN_BRIDGE_PYTHON` | `<runtime source>/.venv/bin/python3` |
-| `DEADPAN_BRIDGE_MODEL_CACHE` | `~/Library/Caches/Deadpan/ltx-qualification` |
+| `DEADPAN_BRIDGE_MODEL_CACHE` | the installed bridge pack, else `~/Library/Caches/Deadpan/ltx-qualification` |
 | `DEADPAN_BRIDGE_FFMPEG` / `DEADPAN_BRIDGE_FFPROBE` | `/opt/homebrew/bin/ffmpeg` / `ffprobe` |
 | `DEADPAN_BRIDGE_WORKER` | `tools/model-qualification/worker.py` in the build's checkout |
 
@@ -262,5 +294,6 @@ pictures only; acceptance does not change the Hold's audio), candidate
 thumbnails in the inspector, a Generate entry inside scoped Repeat/Retime
 inspection, routing the headless commands through an open project's writer,
 composed framing in conditioning, source/colour context qualification, native
-physical-input, VoiceOver and real-window checks of the AI controls, and a
-distributed runtime and model installation.
+physical-input, VoiceOver and real-window checks of the AI controls, the
+§13.4 qualification corpus and bake-off, a Developer ID/notarized run of the
+bundled runtime, and the clean-machine download-and-generate test of §26.6.

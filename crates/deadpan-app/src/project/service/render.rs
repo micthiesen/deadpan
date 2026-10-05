@@ -22,6 +22,7 @@ pub(super) struct PreparedOpen {
     pub workspace: Workspace,
     pub registers: Arc<super::super::registers::Bank>,
     pub message: String,
+    pub report: Arc<super::super::OpenReport>,
 }
 
 pub(super) enum PendingSessionChange {
@@ -51,6 +52,17 @@ impl Service {
         }
         if let ProjectRequest::Render(request) = request {
             self.render_command(request);
+            return true;
+        }
+        #[cfg(any(test, feature = "ui-harness"))]
+        if matches!(request, ProjectRequest::Edit { .. })
+            && self.shared.storage_failure.swap(false, Ordering::AcqRel)
+        {
+            let error = display(StoreError::Io(std::io::Error::from(
+                std::io::ErrorKind::StorageFull,
+            )));
+            self.error = Some(error);
+            self.message = None;
             return true;
         }
         let outcome = if self.render.is_some() || self.generation.active() || self.targets.active()

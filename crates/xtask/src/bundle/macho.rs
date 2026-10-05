@@ -33,6 +33,41 @@ pub fn is_macho(path: &Path) -> Result<bool> {
     }
 }
 
+/// Whether a Mach-O file (thin or the first slice of a universal file) is a
+/// main executable (`MH_EXECUTE`), whose `@executable_path` is its own folder.
+pub fn is_executable(path: &Path) -> Result<bool> {
+    use std::io::{Read, Seek, SeekFrom};
+    const MH_EXECUTE: u32 = 2;
+    let mut file = fs::File::open(path).map_err(|e| format!("{}: {e}", path.display()))?;
+    let mut header = [0u8; 16];
+    if file.read_exact(&mut header).is_err() {
+        return Ok(false);
+    }
+    let offset = match header[..4] {
+        [0xca, 0xfe, 0xba, 0xbe] => {
+            // fat_header, then the first fat_arch (big-endian): offset at +8.
+            let mut arch = [0u8; 20];
+            file.seek(SeekFrom::Start(8)).map_err(|e| e.to_string())?;
+            file.read_exact(&mut arch).map_err(|e| e.to_string())?;
+            u64::from(u32::from_be_bytes([arch[8], arch[9], arch[10], arch[11]]))
+        }
+        _ => 0,
+    };
+    file.seek(SeekFrom::Start(offset))
+        .map_err(|e| e.to_string())?;
+    file.read_exact(&mut header).map_err(|e| e.to_string())?;
+    let file_type = match header[..4] {
+        [0xcf, 0xfa, 0xed, 0xfe] | [0xce, 0xfa, 0xed, 0xfe] => {
+            u32::from_le_bytes([header[12], header[13], header[14], header[15]])
+        }
+        [0xfe, 0xed, 0xfa, 0xcf] | [0xfe, 0xed, 0xfa, 0xce] => {
+            u32::from_be_bytes([header[12], header[13], header[14], header[15]])
+        }
+        _ => return Ok(false),
+    };
+    Ok(file_type == MH_EXECUTE)
+}
+
 /// Install names from `otool -D` text: one per architecture of a library;
 /// architecture headers end in `:`.
 pub fn parse_install_names(text: &str) -> BTreeSet<String> {
@@ -291,6 +326,12 @@ pub fn audit(app: &Path, build_markers: &[String]) -> Result<Audit> {
         problems: Vec::new(),
         embedded_build_paths: Vec::new(),
     };
+    // dyld also searches the run paths of the images that loaded a library,
+    // so an unresolved @rpath reference is retried against its loaders' search
+    // directories after every image is known.
+    let mut searches: BTreeMap<PathBuf, Vec<PathBuf>> = BTreeMap::new();
+    let mut loaders: BTreeMap<PathBuf, BTreeSet<PathBuf>> = BTreeMap::new();
+    let mut deferred: Vec<(PathBuf, PathBuf, String)> = Vec::new();
     for path in bundle_files(&app)? {
         let metadata = fs::symlink_metadata(&path).map_err(|e| e.to_string())?;
         if metadata.file_type().is_symlink() {
@@ -306,7 +347,11 @@ pub fn audit(app: &Path, build_markers: &[String]) -> Result<Audit> {
             continue;
         }
         let relative = path.strip_prefix(&app).unwrap_or(&path).to_owned();
-        let in_macos = path.parent() == Some(contents.join("MacOS").as_path());
+        // Executables elsewhere (the AI runtime's Python and FFmpeg) are
+        // their own process roots: `@executable_path` is their folder and the
+        // main executable's search paths do not apply.
+        let in_macos =
+            path.parent() == Some(contents.join("MacOS").as_path()) || is_executable(&path)?;
         let own_rpaths = rpaths(&path)?;
         let executable_directory = if in_macos {
             path.parent().unwrap().to_owned()
@@ -337,15 +382,23 @@ pub fn audit(app: &Path, build_markers: &[String]) -> Result<Audit> {
                 )),
             }
         }
+        // Only the app's own libraries inherit its search paths; libraries
+        // of a nested program resolve through their loaders below.
+        let inherits_main = !in_macos && path.starts_with(contents.join("Frameworks"));
         let search: Vec<PathBuf> = own_rpaths
             .iter()
             .chain(
-                if in_macos { None } else { Some(&main_rpaths) }
-                    .into_iter()
-                    .flatten(),
+                if inherits_main {
+                    Some(&main_rpaths)
+                } else {
+                    None
+                }
+                .into_iter()
+                .flatten(),
             )
             .filter_map(|rpath| expand(rpath))
             .collect();
+        searches.insert(path.clone(), search.clone());
         let dependencies = dependencies(&path)?;
         let mut bundled = Vec::new();
         for reference in &dependencies {
@@ -363,12 +416,18 @@ pub fn audit(app: &Path, build_markers: &[String]) -> Result<Audit> {
             // Resolve symbolic links too, so a link cannot leave the bundle.
             let resolved = resolved.map(|file| fs::canonicalize(&file).unwrap_or(file));
             match resolved {
-                Some(file) if file.starts_with(&app) => bundled.push(
-                    file.strip_prefix(&app)
-                        .unwrap_or(&file)
-                        .display()
-                        .to_string(),
-                ),
+                Some(file) if file.starts_with(&app) => {
+                    bundled.push(
+                        file.strip_prefix(&app)
+                            .unwrap_or(&file)
+                            .display()
+                            .to_string(),
+                    );
+                    loaders.entry(file).or_default().insert(path.clone());
+                }
+                None if reference.starts_with("@rpath/") => {
+                    deferred.push((path.clone(), relative.clone(), reference.clone()));
+                }
                 Some(file) => audit.problems.push(format!(
                     "{}: {reference} resolves outside the bundle to {}",
                     relative.display(),
@@ -397,6 +456,39 @@ pub fn audit(app: &Path, build_markers: &[String]) -> Result<Audit> {
             dependencies: dependencies.len(),
             bundled,
         });
+    }
+    for (image, relative, reference) in deferred {
+        let rest = reference.trim_start_matches("@rpath/");
+        let mut seen = BTreeSet::new();
+        let mut queue: Vec<PathBuf> = loaders.get(&image).into_iter().flatten().cloned().collect();
+        let mut resolved = None;
+        while let Some(loader) = queue.pop() {
+            if !seen.insert(loader.clone()) {
+                continue;
+            }
+            resolved = searches
+                .get(&loader)
+                .into_iter()
+                .flatten()
+                .map(|directory| lexical_normalize(&directory.join(rest)))
+                .find(|candidate| candidate.is_file());
+            if resolved.is_some() {
+                break;
+            }
+            queue.extend(loaders.get(&loader).into_iter().flatten().cloned());
+        }
+        match resolved.map(|file| fs::canonicalize(&file).unwrap_or(file)) {
+            Some(file) if file.starts_with(&app) => {}
+            Some(file) => audit.problems.push(format!(
+                "{}: {reference} resolves outside the bundle to {}",
+                relative.display(),
+                file.display()
+            )),
+            None => audit.problems.push(format!(
+                "{}: {reference} is not a system library and does not resolve inside the bundle",
+                relative.display()
+            )),
+        }
     }
     Ok(audit)
 }
@@ -567,6 +659,74 @@ mod tests {
                 .trim(),
             "42"
         );
+        assert!(is_executable(&executable).unwrap());
+        assert!(!is_executable(&frameworks.join("libfoo.1.dylib")).unwrap());
+
+        // A nested program (like the AI runtime's Python) is its own process
+        // root: its @executable_path search path resolves beside it.
+        let tool = app.join("Contents/Resources/tool");
+        fs::create_dir_all(tool.join("bin")).unwrap();
+        fs::create_dir_all(tool.join("lib")).unwrap();
+        // libnested loads libinner through @rpath without a run path of its
+        // own; dyld resolves it through the loading program's run path.
+        let inner_library = tool.join("lib/libinner.dylib");
+        compile(
+            &clang,
+            &[
+                "-dynamiclib",
+                "-o",
+                &path(inner_library.clone()),
+                "-install_name",
+                "@rpath/libinner.dylib",
+                &path(source.join("foo.c")),
+            ],
+        );
+        let nested_library = tool.join("lib/libnested.dylib");
+        compile(
+            &clang,
+            &[
+                "-dynamiclib",
+                "-o",
+                &path(nested_library.clone()),
+                "-install_name",
+                "@rpath/libnested.dylib",
+                &path(source.join("bar.c")),
+                &path(inner_library.clone()),
+            ],
+        );
+        compile(
+            &clang,
+            &[
+                "-o",
+                &path(tool.join("bin/tool")),
+                &path(source.join("main.c")),
+                &path(nested_library.clone()),
+                "-Wl,-rpath,@executable_path/../lib",
+            ],
+        );
+        let nested = super::audit(&app, &[]).unwrap();
+        assert!(nested.problems.is_empty(), "{:?}", nested.problems);
+        assert_eq!(nested.images.len(), 6);
+        // Without any loader's run path the inner reference does not resolve.
+        run_tool(
+            "install_name_tool",
+            &[
+                "-delete_rpath".as_ref(),
+                "@executable_path/../lib".as_ref(),
+                tool.join("bin/tool").as_os_str(),
+            ],
+        )
+        .unwrap();
+        let unresolved = super::audit(&app, &[]).unwrap();
+        assert!(
+            unresolved
+                .problems
+                .iter()
+                .any(|p| p.contains("@rpath/libnested.dylib is not a system library")),
+            "{:?}",
+            unresolved.problems
+        );
+        fs::remove_dir_all(&tool).unwrap();
 
         // An rpath that leaves the bundle is a problem.
         let libfoo = frameworks.join("libfoo.1.dylib");

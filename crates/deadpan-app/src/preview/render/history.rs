@@ -21,9 +21,17 @@ pub(in crate::preview) struct History {
     error: Option<String>,
     prior_focus: Option<egui::Id>,
     return_focus: Option<(u64, egui::Id)>,
+    /// Opens on one job's attempts, such as an interrupted render's.
+    start: Option<RequestId>,
 }
 
 impl History {
+    /// Open the browser on this job's attempts, with Back to all jobs.
+    pub(in crate::preview) fn request_attempts(&mut self, job: RequestId) {
+        self.start = Some(job);
+        self.requested = true;
+    }
+
     #[cfg(feature = "ui-harness")]
     pub(in crate::preview) fn ready_for_check(&self) -> bool {
         self.open && self.page.is_some() && !self.loading()
@@ -127,8 +135,16 @@ impl DeadpanApp {
                 session: workspace.session,
                 project: workspace.document.project_id().clone(),
             };
+            let start = self.render.history.start.take();
             if self.render.history.context.as_ref() != Some(&captured) {
                 self.render.history = History::default();
+            }
+            if let Some(job) = start {
+                self.render.history.back = vec![Query::Jobs { after: None }];
+                self.render.history.query = Some(Query::Attempts {
+                    job,
+                    after_ordinal: 0,
+                });
             }
             self.render.history.context = Some(captured);
             self.render.history.open = true;

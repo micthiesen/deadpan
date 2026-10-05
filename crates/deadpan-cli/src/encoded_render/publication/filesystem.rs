@@ -54,10 +54,19 @@ impl FsError {
     }
 
     fn new(code: &'static str, operation: &'static str, source: impl Into<io::Error>) -> Self {
+        let source = source.into();
+        // Name the conditions a person can act on: free space or fix access.
+        // Every filesystem stage (copy, report, durability) can hit these.
+        let code = match (code, source.kind()) {
+            (_, io::ErrorKind::StorageFull | io::ErrorKind::QuotaExceeded) => "destination_full",
+            (_, io::ErrorKind::ReadOnlyFilesystem) => "destination_read_only",
+            ("destination_io", io::ErrorKind::PermissionDenied) => "destination_permission_denied",
+            (code, _) => code,
+        };
         Self {
             code,
             operation,
-            source: source.into(),
+            source,
             published: false,
             partial_path: None,
         }

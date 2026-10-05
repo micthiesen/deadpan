@@ -1,0 +1,360 @@
+{
+  "schema": 1,
+  "runtime_id": "ltx-mlx",
+  "runtime_version": "0.15.8+deadpan1",
+  "platform_floor": "26.0",
+  "python": {
+    "version": "3.12.13",
+    "release": "20260325",
+    "url": "https://github.com/astral-sh/python-build-standalone/releases/download/20260325/cpython-3.12.13%2B20260325-aarch64-apple-darwin-install_only_stripped.tar.gz",
+    "sha256": "c33a34853ae48d54fbac15cbb84ad67ccd8a639ce2cef866ecf474ebd02f1286",
+    "license": "PSF-2.0"
+  },
+  "ltx_source": {
+    "repository": "https://github.com/dgrauet/ltx-2-mlx",
+    "commit": "3392d75934120b7e69eefbe55893f7ef82be92a4",
+    "license": "MIT",
+    "license_sha256": "b1865d0e24b5adf6c91de99c33067992ecfd3895b152ad50911e2e7747e28778",
+    "uv_lock_sha256": "ae86eddcaacdf1d5e2709470b9960ba7647dab252512d209d7f33cec00572823"
+  },
+  "x264": {
+    "repository": "https://code.videolan.org/videolan/x264.git",
+    "version": "r3222",
+    "commit": "b35605ace3ddf7c1a5d67a2eb553f034aef41d55",
+    "tree": "0700538866963f968154ea768289bf100350e84e",
+    "license": "GPL-2.0-or-later"
+  },
+  "ffmpeg": {
+    "version": "8.0.3",
+    "commit": "8ae0b34901ba60a802f183ee75a250a9fc3e09a5",
+    "archive_url": "https://ffmpeg.org/releases/ffmpeg-8.0.3.tar.xz",
+    "archive_sha256": "6136812ea6d4e68bdba27e33c2a94382711cdf4f8602ffef056ff792bd6f9818",
+    "license": "GPL-2.0-or-later"
+  },
+  "wheels": [
+    {
+      "name": "annotated-doc",
+      "version": "0.0.4",
+      "filename": "annotated_doc-0.0.4-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/1e/d3/26bf1008eb3d2daa8ef4cacc7f3bfdc11818d111f7e2d0201bc6e3b49d45/annotated_doc-0.0.4-py3-none-any.whl",
+      "sha256": "571ac1dc6991c450b25a9c2d84a3705e2ae7a53467b5d111c24fa8baabbed320",
+      "bytes": 5303,
+      "license": "MIT"
+    },
+    {
+      "name": "anyio",
+      "version": "4.12.1",
+      "filename": "anyio-4.12.1-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/38/0e/27be9fdef66e72d64c0cdc3cc2823101b80585f8119b5c112c2e8f5f7dab/anyio-4.12.1-py3-none-any.whl",
+      "sha256": "d405828884fc140aa80a3c667b8beed277f1dfedec42ba031bd6ac3db606ab6c",
+      "bytes": 113592,
+      "license": "MIT"
+    },
+    {
+      "name": "certifi",
+      "version": "2026.2.25",
+      "filename": "certifi-2026.2.25-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/9a/3c/c17fb3ca2d9c3acff52e30b309f538586f9f5b9c9cf454f3845fc9af4881/certifi-2026.2.25-py3-none-any.whl",
+      "sha256": "027692e4402ad994f1c42e52a4997a9763c646b73e4096e4d5d6db8af1d6f0fa",
+      "bytes": 153684,
+      "license": "MPL-2.0"
+    },
+    {
+      "name": "click",
+      "version": "8.3.1",
+      "filename": "click-8.3.1-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/98/78/01c019cdb5d6498122777c1a43056ebb3ebfeef2076d9d026bfe15583b2b/click-8.3.1-py3-none-any.whl",
+      "sha256": "981153a64e25f12d547d3426c367a4857371575ee7ad18df2a6183ab0545b2a6",
+      "bytes": 108274,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "filelock",
+      "version": "3.25.2",
+      "filename": "filelock-3.25.2-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/a4/a5/842ae8f0c08b61d6484b52f99a03510a3a72d23141942d216ebe81fefbce/filelock-3.25.2-py3-none-any.whl",
+      "sha256": "ca8afb0da15f229774c9ad1b455ed96e85a81373065fb10446672f64444ddf70",
+      "bytes": 26759,
+      "license": "MIT"
+    },
+    {
+      "name": "fsspec",
+      "version": "2026.2.0",
+      "filename": "fsspec-2026.2.0-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/e6/ab/fb21f4c939bb440104cc2b396d3be1d9b7a9fd3c6c2a53d98c45b3d7c954/fsspec-2026.2.0-py3-none-any.whl",
+      "sha256": "98de475b5cb3bd66bedd5c4679e87b4fdfe1a3bf4d707b151b3c07e58c9a2437",
+      "bytes": 202505,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "h11",
+      "version": "0.16.0",
+      "filename": "h11-0.16.0-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl",
+      "sha256": "63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86",
+      "bytes": 37515,
+      "license": "MIT"
+    },
+    {
+      "name": "hf-xet",
+      "version": "1.4.2",
+      "filename": "hf_xet-1.4.2-cp37-abi3-macosx_11_0_arm64.whl",
+      "url": "https://files.pythonhosted.org/packages/64/2e/af4475c32b4378b0e92a587adb1aa3ec53e3450fd3e5fe0372a874531c00/hf_xet-1.4.2-cp37-abi3-macosx_11_0_arm64.whl",
+      "sha256": "e9b38d876e94d4bdcf650778d6ebbaa791dd28de08db9736c43faff06ede1b5a",
+      "bytes": 3559664,
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "httpcore",
+      "version": "1.0.9",
+      "filename": "httpcore-1.0.9-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/7e/f5/f66802a942d491edb555dd61e3a9961140fd64c90bce1eafd741609d334d/httpcore-1.0.9-py3-none-any.whl",
+      "sha256": "2d400746a40668fc9dec9810239072b40b4484b640a8c38fd654a024c7a1bf55",
+      "bytes": 78784,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "httpx",
+      "version": "0.28.1",
+      "filename": "httpx-0.28.1-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/2a/39/e50c7c3a983047577ee07d2a9e53faf5a69493943ec3f6a384bdc792deb2/httpx-0.28.1-py3-none-any.whl",
+      "sha256": "d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad",
+      "bytes": 73517,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "huggingface-hub",
+      "version": "1.7.1",
+      "filename": "huggingface_hub-1.7.1-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/6f/75/ca21955d6117a394a482c7862ce96216239d0e3a53133ae8510727a8bcfa/huggingface_hub-1.7.1-py3-none-any.whl",
+      "sha256": "38c6cce7419bbde8caac26a45ed22b0cea24152a8961565d70ec21f88752bfaa",
+      "bytes": 616308,
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "idna",
+      "version": "3.11",
+      "filename": "idna-3.11-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/0e/61/66938bbb5fc52dbdf84594873d5b51fb1f7c7794e9c0f5bd885f30bc507b/idna-3.11-py3-none-any.whl",
+      "sha256": "771a87f49d9defaf64091e6e6fe9c18d4833f140bd19464795bc32d966ca37ea",
+      "bytes": 71008,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "jinja2",
+      "version": "3.1.6",
+      "filename": "jinja2-3.1.6-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl",
+      "sha256": "85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67",
+      "bytes": 134899,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "markdown-it-py",
+      "version": "4.0.0",
+      "filename": "markdown_it_py-4.0.0-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/94/54/e7d793b573f298e1c9013b8c4dade17d481164aa517d1d7148619c2cedbf/markdown_it_py-4.0.0-py3-none-any.whl",
+      "sha256": "87327c59b172c5011896038353a81343b6754500a08cd7a4973bb48c6d578147",
+      "bytes": 87321,
+      "license": "MIT"
+    },
+    {
+      "name": "markupsafe",
+      "version": "3.0.3",
+      "filename": "markupsafe-3.0.3-cp312-cp312-macosx_11_0_arm64.whl",
+      "url": "https://files.pythonhosted.org/packages/9a/81/7e4e08678a1f98521201c3079f77db69fb552acd56067661f8c2f534a718/markupsafe-3.0.3-cp312-cp312-macosx_11_0_arm64.whl",
+      "sha256": "1872df69a4de6aead3491198eaf13810b565bdbeec3ae2dc8780f14458ec73ce",
+      "bytes": 12020,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "mdurl",
+      "version": "0.1.2",
+      "filename": "mdurl-0.1.2-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl",
+      "sha256": "84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8",
+      "bytes": 9979,
+      "license": "MIT"
+    },
+    {
+      "name": "mlx",
+      "version": "0.32.2",
+      "filename": "mlx-0.32.2-cp312-cp312-macosx_26_0_arm64.whl",
+      "url": "https://files.pythonhosted.org/packages/0b/eb/af6b1a8b45f24d22e4735c52e0696c66233bd477e1b9e9dbbef225bdf88b/mlx-0.32.2-cp312-cp312-macosx_26_0_arm64.whl",
+      "sha256": "68560fd648c5bb900aa6f6765cd74c5a8abaf092d97d73584a57b7545966c227",
+      "bytes": 619488,
+      "license": "MIT"
+    },
+    {
+      "name": "mlx-arsenal",
+      "version": "0.2.4",
+      "filename": "mlx_arsenal-0.2.4-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/40/82/25dbd22d4dd5b59e2ba2963a838511a10ade8d4ad7ad5b58e0d8f61c87ac/mlx_arsenal-0.2.4-py3-none-any.whl",
+      "sha256": "ef170885bdd5267ac565722f09e6634d6ddc496f7a50a9965cdee44b7353922e",
+      "bytes": 34435,
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "mlx-lm",
+      "version": "0.31.1",
+      "filename": "mlx_lm-0.31.1-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/3b/8e/2e40713fc673d7268e32222752919075c0024b02635af56531d9ee8317b5/mlx_lm-0.31.1-py3-none-any.whl",
+      "sha256": "bfc3e08e919b87bebb6fe2dbea980ece8ae8ee7132b31421aa0923c4286ecfa0",
+      "bytes": 393971,
+      "license": "MIT"
+    },
+    {
+      "name": "mlx-metal",
+      "version": "0.32.2",
+      "filename": "mlx_metal-0.32.2-py3-none-macosx_26_0_arm64.whl",
+      "url": "https://files.pythonhosted.org/packages/dd/cd/4e50bf325100e7165e13d025f264362bf0009196269f9eaf87f2c6e738a2/mlx_metal-0.32.2-py3-none-macosx_26_0_arm64.whl",
+      "sha256": "e6abeac9ac5265830c9c1541b6f96e9be37a85c2446763a46ad466c63a3837ab",
+      "bytes": 64367860,
+      "license": "MIT"
+    },
+    {
+      "name": "numpy",
+      "version": "2.4.3",
+      "filename": "numpy-2.4.3-cp312-cp312-macosx_14_0_arm64.whl",
+      "url": "https://files.pythonhosted.org/packages/ba/d1/780400e915ff5638166f11ca9dc2c5815189f3d7cf6f8759a1685e586413/numpy-2.4.3-cp312-cp312-macosx_14_0_arm64.whl",
+      "sha256": "abdce0f71dcb4a00e4e77f3faf05e4616ceccfe72ccaa07f47ee79cda3b7b0f4",
+      "bytes": 5203489,
+      "license": "BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0"
+    },
+    {
+      "name": "packaging",
+      "version": "26.0",
+      "filename": "packaging-26.0-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/b7/b9/c538f279a4e237a006a2c98387d081e9eb060d203d8ed34467cc0f0b9b53/packaging-26.0-py3-none-any.whl",
+      "sha256": "b36f1fef9334a5588b4166f8bcd26a14e521f2b55e6b9de3aaa80d3ff7a37529",
+      "bytes": 74366,
+      "license": "Apache-2.0 OR BSD-2-Clause"
+    },
+    {
+      "name": "pillow",
+      "version": "12.1.1",
+      "filename": "pillow-12.1.1-cp312-cp312-macosx_11_0_arm64.whl",
+      "url": "https://files.pythonhosted.org/packages/d6/71/5026395b290ff404b836e636f51d7297e6c83beceaa87c592718747e670f/pillow-12.1.1-cp312-cp312-macosx_11_0_arm64.whl",
+      "sha256": "adebb5bee0f0af4909c30db0d890c773d1a92ffe83da908e2e9e720f8edf3984",
+      "bytes": 4657601,
+      "license": "MIT-CMU"
+    },
+    {
+      "name": "protobuf",
+      "version": "6.33.6",
+      "filename": "protobuf-6.33.6-cp39-abi3-macosx_10_9_universal2.whl",
+      "url": "https://files.pythonhosted.org/packages/5c/01/a3c3ed5cd186f39e7880f8303cc51385a198a81469d53d0fdecf1f64d929/protobuf-6.33.6-cp39-abi3-macosx_10_9_universal2.whl",
+      "sha256": "9720e6961b251bde64edfdab7d500725a2af5280f3f4c87e57c0208376aa8c3a",
+      "bytes": 427737,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "name": "pygments",
+      "version": "2.19.2",
+      "filename": "pygments-2.19.2-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/c7/21/705964c7812476f378728bdf590ca4b771ec72385c533964653c68e86bdc/pygments-2.19.2-py3-none-any.whl",
+      "sha256": "86540386c03d588bb81d44bc3928634ff26449851e99741617ecb9037ee5ec0b",
+      "bytes": 1225217,
+      "license": "BSD-2-Clause"
+    },
+    {
+      "name": "pyyaml",
+      "version": "6.0.3",
+      "filename": "pyyaml-6.0.3-cp312-cp312-macosx_11_0_arm64.whl",
+      "url": "https://files.pythonhosted.org/packages/89/a0/6cf41a19a1f2f3feab0e9c0b74134aa2ce6849093d5517a0c550fe37a648/pyyaml-6.0.3-cp312-cp312-macosx_11_0_arm64.whl",
+      "sha256": "fc09d0aa354569bc501d4e787133afc08552722d3ab34836a80547331bb5d4a0",
+      "bytes": 173973,
+      "license": "MIT"
+    },
+    {
+      "name": "regex",
+      "version": "2026.2.28",
+      "filename": "regex-2026.2.28-cp312-cp312-macosx_11_0_arm64.whl",
+      "url": "https://files.pythonhosted.org/packages/9e/06/3ef1ac6910dc3295ebd71b1f9bfa737e82cfead211a18b319d45f85ddd09/regex-2026.2.28-cp312-cp312-macosx_11_0_arm64.whl",
+      "sha256": "9b65d33a17101569f86d9c5966a8b1d7fbf8afdda5a8aa219301b0a80f58cf7d",
+      "bytes": 289200,
+      "license": "Apache-2.0 AND CNRI-Python"
+    },
+    {
+      "name": "rich",
+      "version": "14.3.3",
+      "filename": "rich-14.3.3-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/14/25/b208c5683343959b670dc001595f2f3737e051da617f66c31f7c4fa93abc/rich-14.3.3-py3-none-any.whl",
+      "sha256": "793431c1f8619afa7d3b52b2cdec859562b950ea0d4b6b505397612db8d5362d",
+      "bytes": 310458,
+      "license": "MIT"
+    },
+    {
+      "name": "safetensors",
+      "version": "0.7.0",
+      "filename": "safetensors-0.7.0-cp38-abi3-macosx_11_0_arm64.whl",
+      "url": "https://files.pythonhosted.org/packages/e8/00/374c0c068e30cd31f1e1b46b4b5738168ec79e7689ca82ee93ddfea05109/safetensors-0.7.0-cp38-abi3-macosx_11_0_arm64.whl",
+      "sha256": "94fd4858284736bb67a897a41608b5b0c2496c9bdb3bf2af1fa3409127f20d57",
+      "bytes": 447058,
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "sentencepiece",
+      "version": "0.2.1",
+      "filename": "sentencepiece-0.2.1-cp312-cp312-macosx_11_0_arm64.whl",
+      "url": "https://files.pythonhosted.org/packages/19/84/42eb3ce4796777a1b5d3699dfd4dca85113e68b637f194a6c8d786f16a04/sentencepiece-0.2.1-cp312-cp312-macosx_11_0_arm64.whl",
+      "sha256": "d9381351182ff9888cc80e41c632e7e274b106f450de33d67a9e8f6043da6f76",
+      "bytes": 1253645,
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "shellingham",
+      "version": "1.5.4",
+      "filename": "shellingham-1.5.4-py2.py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/e0/f9/0595336914c5619e5f28a1fb793285925a8cd4b432c9da0a987836c7f822/shellingham-1.5.4-py2.py3-none-any.whl",
+      "sha256": "7ecfff8f2fd72616f7481040475a65b2bf8af90a56c89140852d1120324e8686",
+      "bytes": 9755,
+      "license": "ISC"
+    },
+    {
+      "name": "tokenizers",
+      "version": "0.22.2",
+      "filename": "tokenizers-0.22.2-cp39-abi3-macosx_11_0_arm64.whl",
+      "url": "https://files.pythonhosted.org/packages/2e/47/174dca0502ef88b28f1c9e06b73ce33500eedfac7a7692108aec220464e7/tokenizers-0.22.2-cp39-abi3-macosx_11_0_arm64.whl",
+      "sha256": "1e418a55456beedca4621dbab65a318981467a2b188e982a23e117f115ce5001",
+      "bytes": 2981472,
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "tqdm",
+      "version": "4.67.3",
+      "filename": "tqdm-4.67.3-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/16/e1/3079a9ff9b8e11b846c6ac5c8b5bfb7ff225eee721825310c91b3b50304f/tqdm-4.67.3-py3-none-any.whl",
+      "sha256": "ee1e4c0e59148062281c49d80b25b67771a127c85fc9676d3be5f243206826bf",
+      "bytes": 78374,
+      "license": "MPL-2.0 AND MIT"
+    },
+    {
+      "name": "transformers",
+      "version": "5.3.0",
+      "filename": "transformers-5.3.0-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/b8/88/ae8320064e32679a5429a2c9ebbc05c2bf32cefb6e076f9b07f6d685a9b4/transformers-5.3.0-py3-none-any.whl",
+      "sha256": "50ac8c89c3c7033444fb3f9f53138096b997ebb70d4b5e50a2e810bf12d3d29a",
+      "bytes": 10661827,
+      "license": "Apache-2.0"
+    },
+    {
+      "name": "typer",
+      "version": "0.24.1",
+      "filename": "typer-0.24.1-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/4a/91/48db081e7a63bb37284f9fbcefda7c44c277b18b0e13fbc36ea2335b71e6/typer-0.24.1-py3-none-any.whl",
+      "sha256": "112c1f0ce578bfb4cab9ffdabc68f031416ebcc216536611ba21f04e9aa84c9e",
+      "bytes": 56085,
+      "license": "MIT"
+    },
+    {
+      "name": "typing-extensions",
+      "version": "4.15.0",
+      "filename": "typing_extensions-4.15.0-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/18/67/36e9267722cc04a6b9f15c7f3441c2363321a3ea07da7ae0c0707beb2a9c/typing_extensions-4.15.0-py3-none-any.whl",
+      "sha256": "f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548",
+      "bytes": 44614,
+      "license": "PSF-2.0"
+    }
+  ]
+}

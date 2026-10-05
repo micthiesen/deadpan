@@ -20,6 +20,12 @@ pub enum Entry {
     Sequence,
     Help,
     Renders,
+    /// `:relink`: locate a missing Original by choosing its file.
+    Relink,
+    /// `:recovery`: show what opening this project recovered.
+    Recovery,
+    /// `:models`: open the model pack panel.
+    Models,
     Splice,
     Slip(i64),
     Trim(super::trim::TrimInput),
@@ -379,13 +385,16 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         "import" => Action::Import,
         "render" => Action::Render,
         "source" | "sequence" | "help" | "registers" | "renders" | "splice" | "room-tone"
-        | "hold-silence"
+        | "hold-silence" | "relink" | "recovery" | "models"
             if argument.is_none() =>
         {
             return Ok(match verb.as_str() {
                 "source" => Entry::Source,
                 "sequence" => Entry::Sequence,
                 "renders" => Entry::Renders,
+                "relink" => Entry::Relink,
+                "recovery" => Entry::Recovery,
+                "models" => Entry::Models,
                 "splice" => Entry::Splice,
                 "room-tone" => Entry::RoomTone,
                 "hold-silence" => Entry::HoldSilence,
@@ -393,7 +402,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
             });
         }
         "source" | "sequence" | "help" | "registers" | "renders" | "splice" | "room-tone"
-        | "hold-silence" => {
+        | "hold-silence" | "relink" | "recovery" | "models" => {
             return Err("This command takes no arguments.".into());
         }
         _ => {
@@ -972,6 +981,9 @@ mod tests {
             ("import", Entry::Action(Action::Import)),
             (":render", Entry::Action(Action::Render)),
             (":renders", Entry::Renders),
+            (":relink", Entry::Relink),
+            ("recovery", Entry::Recovery),
+            (":models", Entry::Models),
             (":splice", Entry::Splice),
             ("source", Entry::Source),
             ("sequence", Entry::Sequence),
@@ -987,6 +999,8 @@ mod tests {
             "room-tone 12f",
             "hold-silence all",
             "renders current",
+            "relink /tmp/clip.mp4",
+            "models ltx",
             "splice 12",
         ] {
             assert!(parse(input).is_err(), "{input}");

@@ -18,6 +18,7 @@ use std::process::Command;
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
+pub mod ai_runtime;
 pub mod macho;
 pub mod notices;
 pub mod spdx;
@@ -32,7 +33,7 @@ const MAIN_EXECUTABLE: &str = "deadpan-app";
 const DENO_TEAM: &str = "2H4KBF436B";
 const HELPER_MANIFEST_SCHEMA: u32 = 1;
 
-const USAGE: &str = "usage: cargo xtask bundle --output <directory> [--helpers-from <managed-helper-root>] [--identity <signing identity>] [--notary-profile <keychain profile>] [--allow-dirty] [--no-build]";
+const USAGE: &str = "usage: cargo xtask bundle --output <directory> [--helpers-from <managed-helper-root>] [--identity <signing identity>] [--notary-profile <keychain profile>] [--allow-dirty] [--no-build] [--without-ai-runtime] [--ai-runtime-cache <directory>] [--ltx-checkout <directory>] [--allow-gpl-ai-codec]";
 
 struct Options {
     output: PathBuf,
@@ -41,6 +42,13 @@ struct Options {
     notary_profile: Option<String>,
     allow_dirty: bool,
     build: bool,
+    /// Bundle the private AI runtime (default).
+    ai_runtime: bool,
+    ai_runtime_cache: Option<PathBuf>,
+    ltx_checkout: Option<PathBuf>,
+    /// The owner's explicit decision to distribute the runtime's GPL
+    /// ffmpeg/ffprobe under a Developer ID (specification §27.2).
+    allow_gpl_ai_codec: bool,
 }
 
 fn parse(arguments: &[String]) -> Result<Options> {
@@ -51,6 +59,10 @@ fn parse(arguments: &[String]) -> Result<Options> {
         notary_profile: None,
         allow_dirty: false,
         build: true,
+        ai_runtime: true,
+        ai_runtime_cache: None,
+        ltx_checkout: None,
+        allow_gpl_ai_codec: false,
     };
     let mut output = None;
     let mut rest = arguments;
@@ -65,6 +77,17 @@ fn parse(arguments: &[String]) -> Result<Options> {
             "--helpers-from" => options.helpers_from = Some(PathBuf::from(value()?)),
             "--identity" => options.identity = Some(value()?),
             "--notary-profile" => options.notary_profile = Some(value()?),
+            "--ai-runtime-cache" => options.ai_runtime_cache = Some(PathBuf::from(value()?)),
+            "--ltx-checkout" => options.ltx_checkout = Some(PathBuf::from(value()?)),
+            "--without-ai-runtime" | "--allow-gpl-ai-codec" => {
+                if flag == "--without-ai-runtime" {
+                    options.ai_runtime = false;
+                } else {
+                    options.allow_gpl_ai_codec = true;
+                }
+                rest = tail;
+                continue;
+            }
             "--no-build" => {
                 options.build = false;
                 rest = tail;
@@ -85,6 +108,9 @@ fn parse(arguments: &[String]) -> Result<Options> {
     }
     if options.identity.as_deref() == Some("-") {
         return Err("omit --identity for ad hoc signing".into());
+    }
+    if options.identity.is_some() && options.ai_runtime && !options.allow_gpl_ai_codec {
+        return Err("the AI runtime's ffmpeg/ffprobe are GPL-2.0-or-later (libx264); a Developer ID build distributes them only with the owner's explicit --allow-gpl-ai-codec, or pass --without-ai-runtime (docs/PACKAGING.md)".into());
     }
     Ok(options)
 }
@@ -641,6 +667,25 @@ pub fn run(arguments: &[String]) -> Result<()> {
             .collect()
     };
 
+    let ai = if options.ai_runtime {
+        let cache = match &options.ai_runtime_cache {
+            Some(cache) => cache.clone(),
+            None => PathBuf::from(std::env::var_os("HOME").ok_or("HOME is not set")?)
+                .join("Library/Caches/Deadpan/build-inputs"),
+        };
+        let started = std::time::Instant::now();
+        let built = ai_runtime::build(&workspace, &cache, options.ltx_checkout.as_deref())?;
+        println!(
+            "bundle: AI runtime {} ({:.0} MiB) ready in {:.1} s",
+            built.runtime.display(),
+            built.report["bytes"].as_f64().unwrap_or(0.0) / 1_048_576.0,
+            started.elapsed().as_secs_f64()
+        );
+        Some(built)
+    } else {
+        None
+    };
+
     let staging = output_directory.join(format!(".{APP_NAME}.staging-{}", std::process::id()));
     if staging.exists() {
         fs::remove_dir_all(&staging).map_err(|e| e.to_string())?;
@@ -657,6 +702,7 @@ pub fn run(arguments: &[String]) -> Result<()> {
         &executables,
         &staging,
         &source,
+        ai.as_ref(),
     )
     .and_then(|summary| {
         if let (Some(identity), Some(profile)) = (&options.identity, &options.notary_profile) {
@@ -761,6 +807,7 @@ fn assemble(
     built: &BTreeMap<String, PathBuf>,
     staging: &Path,
     source: &SourceState,
+    ai: Option<&ai_runtime::Built>,
 ) -> Result<String> {
     let app = staging.join(APP_NAME);
     let contents = app.join("Contents");
@@ -814,6 +861,11 @@ fn assemble(
             return Err(format!("copied {} does not match its pin", helper.name));
         }
     }
+    // The private AI runtime, assembled from pinned inputs.
+    let ai_directory = match ai {
+        Some(built) => Some(ai_runtime::install(built, &contents)?),
+        None => None,
+    };
     // Copies carry no quarantine, provenance or Finder metadata.
     strip_attributes(&app)?;
 
@@ -905,6 +957,21 @@ fn assemble(
     for library in &libraries {
         signer.sign(library, None, None)?;
     }
+    let ai_code = match &ai_directory {
+        Some(directory) => {
+            // No entitlements: measured unnecessary for MLX/Metal and Python
+            // under the hardened runtime (docs/PACKAGING.md).
+            let signed = ai_runtime::sign(directory, &|path, identifier| {
+                signer.sign(path, identifier, None)
+            })?;
+            println!(
+                "bundle: AI runtime signed ({} libraries, {} executables)",
+                signed.0, signed.1
+            );
+            Some(signed)
+        }
+        None => None,
+    };
     for executable in executables
         .iter()
         .filter(|path| !path.ends_with(MAIN_EXECUTABLE))
@@ -975,13 +1042,19 @@ fn assemble(
         &ffmpeg,
         &shipped_helpers,
     )?;
+    if let Some(built) = ai {
+        ai_runtime::write_notices(built, workspace, &notices_directory)?;
+    }
     let version = crates
         .iter()
         .find(|item| item.name == MAIN_EXECUTABLE)
         .map(|item| item.version.clone())
         .unwrap_or_default();
     let timestamp = now();
-    let native = native_components(workspace, &crates)?;
+    let mut native = native_components(workspace, &crates)?;
+    if let (Some(built), Some(directory)) = (ai, &ai_directory) {
+        native.extend(ai_runtime::sbom_components(built, directory)?);
+    }
     let sbom = notices::sbom(
         &version,
         &timestamp,
@@ -1013,9 +1086,24 @@ fn assemble(
         "ffmpeg_configuration": configuration,
         "signature": signer.kind(),
         "notarization": if options.notary_profile.is_some() { "requested" } else { "none" },
+        "ai_runtime": ai.map(|built| json!({
+            "runtime_id": built.report["runtime_id"],
+            "runtime_version": built.report["runtime_version"],
+            "cache_key": built.report["cache_key"],
+            "python": built.report["python"]["version"],
+            "wheels": built.report["wheels"].as_array().map_or(0, Vec::len),
+            "ltx_commit": built.report["ltx_source"]["commit"],
+            "ffmpeg_configuration": built.report["ffmpeg"]["configuration"],
+            "gpl_programs": ["Contents/Resources/ai-runtime/bin/ffmpeg", "Contents/Resources/ai-runtime/bin/ffprobe"],
+            "gpl_distribution_approved": options.allow_gpl_ai_codec,
+        })),
         "limitations": [
             "Not notarized unless Deadpan.release.json beside the bundle says so.",
-            "Models and the AI bridge runtime are not bundled.",
+            if ai.is_some() {
+                "Model weights are not bundled; they install as verified model packs. The AI runtime's ffmpeg/ffprobe are GPL-2.0-or-later (libx264)."
+            } else {
+                "Built without the AI runtime; AI pauses are unavailable."
+            },
             "Downloader updates (signed manifests and rollback) are not implemented.",
         ],
     });
@@ -1050,8 +1138,20 @@ fn assemble(
         ));
     }
     check_staged_helpers(&app, staging)?;
+    let ai_check = match &ai_directory {
+        Some(directory) => {
+            let checked = ai_runtime::check_staged(directory, staging)?;
+            println!("bundle: staged AI runtime runs: {checked}");
+            format!(
+                ", AI runtime {} libraries and {} executables",
+                ai_code.map_or(0, |code| code.0),
+                ai_code.map_or(0, |code| code.1)
+            )
+        }
+        None => ", no AI runtime".into(),
+    };
     Ok(format!(
-        "bundle: {} Mach-O files audited, {} crates in notices ({} without a license file), signature {}",
+        "bundle: {} Mach-O files audited, {} crates in notices ({} without a license file), signature {}{ai_check}",
         audit.images.len(),
         crates.len(),
         missing.len(),

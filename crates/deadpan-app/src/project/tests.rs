@@ -20,6 +20,7 @@ mod macros;
 mod marks;
 mod moment;
 mod pause;
+mod recovery;
 mod registers;
 mod render;
 mod render_history;
@@ -673,6 +674,7 @@ fn shutdown_finishes_an_admitted_command_before_releasing_the_store() {
         slip_commit_refresh_failure: AtomicBool::new(false),
         trim_commit_refresh_failure: AtomicBool::new(false),
         workspace_refresh_failure: AtomicBool::new(false),
+        storage_failure: AtomicBool::new(false),
         update: Mutex::new(None),
         wake: Arc::new(|| {}),
     });
@@ -749,6 +751,7 @@ fn held_shared() -> Arc<Shared> {
         slip_commit_refresh_failure: AtomicBool::new(false),
         trim_commit_refresh_failure: AtomicBool::new(false),
         workspace_refresh_failure: AtomicBool::new(false),
+        storage_failure: AtomicBool::new(false),
         update: Mutex::new(None),
         wake: Arc::new(|| {}),
     })
@@ -872,7 +875,16 @@ fn native_open_refuses_schemas1_through38_without_writes_or_backups() {
         let opened = command(&service, ProjectRequest::Open(path.clone()));
         assert_eq!(
             opened.error,
-            Some(deadpan_store::StoreError::UnsupportedSchema(version).to_string())
+            Some(crate::recovery::describe_store_error(
+                &deadpan_store::StoreError::UnsupportedSchema(version)
+            ))
+        );
+        assert!(
+            opened
+                .error
+                .as_deref()
+                .unwrap()
+                .contains("Nothing was changed")
         );
         assert!(opened.workspace.is_none());
         assert!(opened.committed.is_none());
@@ -892,7 +904,9 @@ fn unsupported_native_open_retains_the_current_project_and_its_active_preparatio
     let failed = command(&harness.service, ProjectRequest::Open(path.clone()));
     assert_eq!(
         failed.error,
-        Some(deadpan_store::StoreError::UnsupportedSchema(16).to_string())
+        Some(crate::recovery::describe_store_error(
+            &deadpan_store::StoreError::UnsupportedSchema(16)
+        ))
     );
     assert!(failed.committed.is_none());
     let preparation = failed.import.unwrap();
@@ -1029,6 +1043,7 @@ impl Harness {
             slip_commit_refresh_failure: AtomicBool::new(false),
             trim_commit_refresh_failure: AtomicBool::new(false),
             workspace_refresh_failure: AtomicBool::new(false),
+            storage_failure: AtomicBool::new(false),
             update: Mutex::new(None),
             wake: Arc::new(|| {}),
         });

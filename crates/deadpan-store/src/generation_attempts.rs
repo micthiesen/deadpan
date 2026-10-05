@@ -1516,8 +1516,24 @@ impl ProjectStore {
     }
 }
 
-pub(crate) fn recover_nonterminal(connection: &mut Connection) -> Result<usize, StoreError> {
+pub(crate) fn recover_nonterminal(
+    connection: &mut Connection,
+) -> Result<Vec<crate::recovery::InterruptedGeneration>, StoreError> {
     let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+    let interrupted = transaction
+        .prepare(&format!(
+            "SELECT a.request_id,a.attempt_id,r.hold_id FROM generation_attempts a
+             JOIN generation_requests r ON r.request_id=a.request_id
+             WHERE a.state IN ({NONTERMINAL_STATES}) ORDER BY a.request_id,a.ordinal"
+        ))?
+        .query_map([], |row| {
+            Ok(crate::recovery::InterruptedGeneration {
+                request_id: row.get(0)?,
+                attempt_id: row.get(1)?,
+                hold_id: row.get(2)?,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
     let changed = transaction.execute(
         &format!(
             "UPDATE generation_attempts SET
@@ -1528,8 +1544,12 @@ pub(crate) fn recover_nonterminal(connection: &mut Connection) -> Result<usize, 
         ),
         [],
     )?;
+    // Inside one immediate transaction the selected and updated sets are the
+    // same rows; report what was listed rather than refusing to open.
+    debug_assert_eq!(changed, interrupted.len());
+    let _ = changed;
     transaction.commit()?;
-    Ok(changed)
+    Ok(interrupted)
 }
 
 #[derive(Debug, Clone)]

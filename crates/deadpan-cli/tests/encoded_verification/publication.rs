@@ -249,3 +249,126 @@ fn destination_or_report_mutation_cannot_publish_a_successful_movie() {
         fixture.assert_project_unchanged();
     }
 }
+
+/// A private filled APFS image, detached on drop.
+#[cfg(target_os = "macos")]
+struct FullVolume {
+    mount: PathBuf,
+    filler: PathBuf,
+    _scratch: tempfile::TempDir,
+}
+
+#[cfg(target_os = "macos")]
+impl FullVolume {
+    fn new() -> Self {
+        use std::process::Command;
+        let scratch = tempfile::tempdir().unwrap();
+        let image = scratch.path().join("volume.dmg");
+        let mount = scratch.path().join("mount");
+        fs::create_dir(&mount).unwrap();
+        let created = Command::new("hdiutil")
+            .args([
+                "create", "-quiet", "-size", "16m", "-fs", "APFS", "-layout", "NONE",
+            ])
+            .args(["-volname", "deadpan-export"])
+            .arg(&image)
+            .output()
+            .unwrap();
+        assert!(created.status.success(), "{created:?}");
+        let attached = Command::new("hdiutil")
+            .args([
+                "attach",
+                "-quiet",
+                "-nobrowse",
+                "-noautoopen",
+                "-mountpoint",
+            ])
+            .arg(&mount)
+            .arg(&image)
+            .output()
+            .unwrap();
+        assert!(attached.status.success(), "{attached:?}");
+        let mount = mount.canonicalize().unwrap();
+        let filler = mount.join("filler");
+        let mut file = File::create(&filler).unwrap();
+        // APFS can release space shortly after a write fails; keep filling
+        // until a new 4 KiB file is refused.
+        let mut full = false;
+        // APFS can keep releasing space under load; give it time to settle.
+        for round in 0..64 {
+            if round > 0 {
+                std::thread::sleep(std::time::Duration::from_millis(50));
+            }
+            for chunk in [1 << 20, 64 << 10, 4 << 10, 512] {
+                let bytes = vec![0x5a_u8; chunk];
+                while file
+                    .write_all(&bytes)
+                    .and_then(|()| file.sync_data())
+                    .is_ok()
+                {}
+            }
+            let probe = mount.join("probe");
+            let refused = File::create(&probe)
+                .and_then(|mut probe| probe.write_all(&[0; 4096]).and_then(|()| probe.sync_all()));
+            let _ = fs::remove_file(&probe);
+            if matches!(&refused, Err(error) if error.kind() == std::io::ErrorKind::StorageFull) {
+                full = true;
+                break;
+            }
+        }
+        assert!(full, "the volume never stayed full");
+        Self {
+            mount,
+            filler,
+            _scratch: scratch,
+        }
+    }
+}
+
+#[cfg(target_os = "macos")]
+impl Drop for FullVolume {
+    fn drop(&mut self) {
+        let _ = std::process::Command::new("hdiutil")
+            .args(["detach", "-quiet", "-force"])
+            .arg(&self.mount)
+            .output();
+    }
+}
+
+/// Real ENOSPC at the destination: no movie appears, nothing reads as
+/// published, and the verified candidate publishes once space returns.
+#[cfg(target_os = "macos")]
+#[test]
+fn a_full_destination_volume_publishes_nothing_and_keeps_the_candidate() {
+    let fixture = Fixture::new("nonzero");
+    let volume = FullVolume::new();
+    let destination = volume.mount.join("result.mp4");
+    let mut failure = publish(
+        verified(&fixture),
+        &fixture.package,
+        &destination,
+        &NOT_CANCELLED,
+        deadline(),
+        |_| {},
+    )
+    .unwrap_err();
+    assert!(!destination.exists(), "{}", failure.error);
+    assert_eq!(failure.error.code, "destination_full", "{}", failure.error);
+    assert_retained(&mut failure.candidate, &fixture);
+    fixture.assert_project_unchanged();
+    fs::remove_file(&volume.filler).unwrap();
+    let retry = publish(
+        failure.candidate,
+        &fixture.package,
+        &destination,
+        &NOT_CANCELLED,
+        deadline(),
+        |_| {},
+    )
+    .unwrap();
+    assert!(matches!(retry, PublicationOutcome::Published(_)));
+    assert_eq!(
+        fs::read(&destination).unwrap(),
+        fs::read(&fixture.movie_path).unwrap()
+    );
+}

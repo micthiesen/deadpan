@@ -149,8 +149,58 @@ fn runtime() -> serde_json::Value {
         "workers": workers,
         "ffmpeg": ffmpeg,
         "models_root": crate::models::default_root().ok(),
-        "models": "downloaded on request into the models root; none ship in the bundle",
-        "ai_bridge_runtime": crate::generation::runtime::lookup().describe(),
+        "models": models(),
+        "ai_runtime": ai_runtime(),
+    })
+}
+
+/// Approved model packs and whether each is installed in the models root.
+#[cfg(target_os = "macos")]
+fn models() -> serde_json::Value {
+    let Ok(root) = crate::models::default_root() else {
+        return serde_json::Value::Null;
+    };
+    let store = deadpan_models::packs::PackStore::new(root);
+    serde_json::Value::Array(
+        deadpan_models::packs::approved_packs()
+            .into_iter()
+            .map(|manifest| {
+                serde_json::json!({
+                    "pack_id": manifest.pack_id,
+                    "pack_version": manifest.pack_version,
+                    "bytes": manifest.total_bytes(),
+                    "installed": store.installed(&manifest).ok().flatten().map(|pack| pack.directory),
+                })
+            })
+            .collect(),
+    )
+}
+
+/// Where AI pauses would find their runtime and model data, and what is
+/// missing. Presence only: the worker verifies every pinned file per attempt.
+#[cfg(target_os = "macos")]
+fn ai_runtime() -> serde_json::Value {
+    use crate::generation::runtime::{BridgeRuntime, Lookup, lookup};
+    let lookup = lookup();
+    let bundled = match &lookup {
+        Lookup::Bundled { runtime } => Some(runtime.clone()),
+        _ => None,
+    };
+    let identity = bundled.as_ref().and_then(|runtime| {
+        let bytes = std::fs::read(runtime.join("runtime.json")).ok()?;
+        serde_json::from_slice::<serde_json::Value>(&bytes).ok()
+    });
+    let resolved = BridgeRuntime::from_environment();
+    serde_json::json!({
+        "lookup": lookup.describe(),
+        "bundled": bundled,
+        "identity": identity,
+        "ready": resolved.is_ok(),
+        "python": resolved.as_ref().ok().map(|runtime| &runtime.python),
+        "worker": resolved.as_ref().ok().map(|runtime| &runtime.worker_script),
+        "ffmpeg": resolved.as_ref().ok().map(|runtime| &runtime.ffmpeg),
+        "model_data": resolved.as_ref().ok().map(|runtime| &runtime.model_cache),
+        "missing": resolved.as_ref().err().map(|error| &error.missing),
     })
 }
 

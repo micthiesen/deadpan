@@ -343,6 +343,12 @@ impl Thumbnails {
         }
     }
 
+    /// Media became available again (a relinked Original): drop remembered
+    /// failures and textures so visible cards decode afresh.
+    pub fn reset(&mut self) {
+        self.release_all();
+    }
+
     fn release_all(&mut self) {
         self.worker.cancel();
         self.pending = None;

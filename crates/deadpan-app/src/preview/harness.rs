@@ -24,12 +24,14 @@ mod hold_effects;
 mod keymap;
 mod macros;
 mod marks;
+mod model_packs;
 mod moment;
 mod nested_pause;
 mod original_layout;
 mod original_playback;
 mod proxy;
 mod recipes;
+mod recovery;
 mod registers;
 mod render;
 mod repeat_input;
@@ -75,6 +77,8 @@ pub(super) struct Feedback {
     pub playback_updates: std::collections::VecDeque<deadpan_playback::Update>,
     /// The scripted downloader behind the `youtube` replay's job seam.
     pub youtube: Option<Arc<crate::youtube::scripted::Scripted>>,
+    /// The video the replay created its project from.
+    pub original_fixture: Option<std::path::PathBuf>,
     events: Vec<Event<Ticket>>,
 }
 
@@ -310,6 +314,7 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                             Some(fixture.to_owned()),
                         )]);
                         app.feedback.simulate_playback = true;
+                        app.feedback.original_fixture = Some(fixture.to_owned());
                         app.use_proxy_locations(
                             Some(
                                 deadpan_cli::proxy::cache::ProxyCache::at(&replay_root.join("Caches/Proxies"))
@@ -342,7 +347,18 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                             ]);
                         }
                         // Replay never sees models installed on this Mac.
-                        app.transcription.set_models_root(models.clone());
+                        app.models.manager.set_root(models.clone());
+                        if name == "model-packs" {
+                            // Only the installer is scripted: the panel, its
+                            // gating, the store's state and its receipts are real.
+                            app.models
+                                .manager
+                                .set_backend(model_packs::backend());
+                            app.dialogs = Dialogs::scripted(vec![
+                                (DialogKind::CreateProject, Some(fixture.to_owned())),
+                                (DialogKind::ModelPackFolder, Some(models.join("offline"))),
+                            ]);
+                        }
                         Ok(app)
                     })();
                     match result {
@@ -428,6 +444,8 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                     gain::run(&mut driver)
                 } else if name == "ai-pause" {
                     ai_pause::run(&mut driver)
+                } else if name == "model-packs" {
+                    model_packs::run(&mut driver)
                 } else {
                     scenarios::run(name, &mut driver)
                 }

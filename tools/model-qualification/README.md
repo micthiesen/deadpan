@@ -1,9 +1,14 @@
 # Local model qualification
 
-This directory contains a development adapter and measurement evidence. The app
-does not install or invoke it yet. It requires an already assembled, pinned
-private development environment and model data. It is not an end-user setup
-procedure or a selected shipping runtime.
+This directory contains the worker adapter and measurement evidence. Packaged
+apps ship the adapter files inside their private runtime
+(`Contents/Resources/ai-runtime/worker`, built by
+[`tools/ai-runtime`](../ai-runtime/build.py)) and run it with the installed
+`ltx-2.3-q4-bridge` model pack ([AI pauses](../../docs/AI_HOLDS.md#runtime)).
+Development builds run it from this checkout with a developer environment.
+`worker.py --check --runtime-config <file>` is the model pack smoke test: it
+verifies the pinned sources, imports the pipeline, runs Metal and reads every
+model header without inference. The probes below remain developer harnesses.
 
 ## Supervised bridge probe
 

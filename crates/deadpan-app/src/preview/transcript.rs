@@ -4,7 +4,7 @@
 //! installed, a background job prepares analysis PCM from a read-only store,
 //! runs the isolated worker and hands the validated transcript to the project
 //! service, which saves it outside history. Installing the pack is an explicit
-//! action that shows its size and license first. The rail shows the sentences
+//! action in the Models panel, which shows its size and license first. The rail shows the sentences
 //! around the Original cursor, marks the current word and approximate words,
 //! and moves the Original cursor to a clicked word or search match.
 
@@ -15,7 +15,7 @@ use deadpan_analysis::{Transcript, picture_at, picture_seconds};
 use deadpan_cli::transcription::transcribe;
 use deadpan_core::ProjectFrame;
 use deadpan_jobs::transcription::Language;
-use deadpan_models::packs::{InstallProgress, Operation, PackManifest, PackStore, approved_packs};
+use deadpan_models::packs::{Operation, PackManifest, approved_packs};
 use deadpan_store::TranscriptKey;
 
 use super::*;
@@ -24,10 +24,6 @@ use super::*;
 const CONTEXT_SEGMENTS: usize = 4;
 
 enum Event {
-    Installing(InstallProgress),
-    Installed,
-    InstallFailed(String),
-    InstallCancelled,
     Progress(u8),
     /// Speech activity of the same PCM; `last` when no transcript follows.
     Detected {
@@ -49,11 +45,8 @@ mod activity;
 enum Status {
     /// Not yet checked for this project session.
     Unchecked,
+    /// No installed pack; the rail offers the Models panel.
     NeedsModel,
-    Installing {
-        completed: u64,
-        total: u64,
-    },
     Preparing,
     Transcribing(u8),
     /// Waiting for the service to store this attempt.
@@ -70,8 +63,9 @@ pub(super) struct Transcription {
     search: String,
     matches: Vec<Range<usize>>,
     current_match: Option<usize>,
-    /// Model storage; None is the global Application Support directory.
-    models_root: Option<std::path::PathBuf>,
+    /// The Models panel's change count last checked, so a finished install
+    /// or removal re-checks the pack.
+    seen_pack_changes: u64,
     /// A finished transcript not yet admitted by a busy project service.
     unsaved: Option<(TranscriptKey, Arc<Transcript>)>,
     attempts: u64,
@@ -104,7 +98,7 @@ impl Default for Transcription {
             search: String::new(),
             matches: Vec::new(),
             current_match: None,
-            models_root: None,
+            seen_pack_changes: 0,
             unsaved: None,
             chosen: None,
             edit_speech: None,
@@ -118,26 +112,17 @@ impl Default for Transcription {
 }
 
 impl Transcription {
-    /// A new project session cancels its transcription. A model install
-    /// belongs to every project, so it continues and reports here.
+    /// A new project session cancels its transcription. Model installs
+    /// belong to the Models panel and continue.
     fn reset(&mut self, session: Option<u64>) {
-        let installing = matches!(self.status, Status::Installing { .. });
-        if !installing {
-            self.cancel.store(true, Ordering::Release);
-        }
+        self.cancel.store(true, Ordering::Release);
         let previous = std::mem::take(self);
         *self = Self {
             session,
-            models_root: previous.models_root,
+            seen_pack_changes: previous.seen_pack_changes,
             attempts: previous.attempts,
             ..Self::default()
         };
-        if installing {
-            self.status = previous.status;
-            self.events = previous.events;
-            self.cancel = previous.cancel;
-            self.thread = previous.thread;
-        }
     }
 
     pub(super) fn receive_save(&mut self, save: Option<crate::project::TranscriptSave>) {
@@ -150,19 +135,6 @@ impl Transcription {
         if let Some(error) = save.error {
             self.status = Status::Failed(format!("the transcript was not saved: {error}"));
         }
-    }
-
-    /// Use a private model directory, for example an empty one in replay.
-    #[cfg(feature = "ui-harness")]
-    pub(super) fn set_models_root(&mut self, root: std::path::PathBuf) {
-        self.models_root = Some(root);
-    }
-
-    fn pack_store(&self) -> Option<PackStore> {
-        self.models_root
-            .clone()
-            .or_else(|| deadpan_cli::models::default_root().ok())
-            .map(PackStore::new)
     }
 
     /// Cancel and wait briefly, so the supervised worker is stopped and its
@@ -196,7 +168,6 @@ impl Transcription {
         match self.status {
             Status::Unchecked => "unchecked",
             Status::NeedsModel => "needs_model",
-            Status::Installing { .. } => "installing",
             Status::Preparing => "preparing",
             Status::Transcribing(_) => "transcribing",
             Status::Saving(_) => "saving",
@@ -226,24 +197,6 @@ impl DeadpanApp {
             .and_then(|events| events.try_recv().ok())
         {
             match event {
-                Event::Installing(progress) => {
-                    self.transcription.status = Status::Installing {
-                        completed: progress.completed_bytes,
-                        total: progress.total_bytes,
-                    };
-                }
-                Event::Installed => {
-                    self.transcription.events = None;
-                    self.transcription.status = Status::Unchecked;
-                }
-                Event::InstallCancelled => {
-                    self.transcription.events = None;
-                    self.transcription.status = Status::NeedsModel;
-                }
-                Event::InstallFailed(error) => {
-                    self.transcription.events = None;
-                    self.transcription.status = Status::Failed(error);
-                }
                 Event::Progress(percent) => {
                     self.transcription.status = Status::Transcribing(percent);
                 }
@@ -264,6 +217,15 @@ impl DeadpanApp {
                 }
             }
             context.request_repaint();
+        }
+        // A pack installed or removed in the Models panel: check again.
+        let changes = self.models.manager.changes();
+        if self.transcription.seen_pack_changes != changes {
+            self.transcription.seen_pack_changes = changes;
+            if self.transcription.status == Status::NeedsModel {
+                self.transcription.status = Status::Unchecked;
+            }
+            self.transcription.activity.recheck();
         }
         self.save_transcript(session, context);
         self.save_activity(session, context);
@@ -289,8 +251,7 @@ impl DeadpanApp {
         if self.transcription.status != Status::Unchecked || self.transcription.events.is_some() {
             return;
         }
-        let (Some(pack), Some(store)) = (transcription_pack(), self.transcription.pack_store())
-        else {
+        let (Some(pack), Some(store)) = (transcription_pack(), self.models.manager.store()) else {
             self.transcription.status = Status::Failed("Model storage is unavailable.".into());
             return;
         };
@@ -416,49 +377,10 @@ impl DeadpanApp {
         }
     }
 
-    fn install_transcription_model(&mut self, context: &egui::Context) {
-        let (Some(pack), Some(store)) = (transcription_pack(), self.transcription.pack_store())
-        else {
-            self.transcription.status = Status::Failed("Model storage is unavailable.".into());
-            return;
-        };
-        let (sender, receiver) = mpsc::channel();
-        let cancel = Arc::new(AtomicBool::new(false));
-        self.transcription.cancel = Arc::clone(&cancel);
-        self.transcription.events = Some(receiver);
-        self.transcription.status = Status::Installing {
-            completed: 0,
-            total: pack.total_bytes(),
-        };
-        let repaint = context.clone();
-        let spawned = std::thread::Builder::new()
-            .name("deadpan-model-install".into())
-            .spawn(move || {
-                let progress_sender = sender.clone();
-                let progress_repaint = repaint.clone();
-                let result =
-                    deadpan_cli::models::install_pack(&store, &pack, &cancel, |progress| {
-                        let _ = progress_sender.send(Event::Installing(progress));
-                        progress_repaint.request_repaint();
-                    });
-                let _ = sender.send(match result {
-                    Ok(_) => Event::Installed,
-                    Err(_) if cancel.load(Ordering::Acquire) => Event::InstallCancelled,
-                    Err(error) => Event::InstallFailed(error.to_string()),
-                });
-                repaint.request_repaint();
-            });
-        match spawned {
-            Ok(thread) => self.transcription.thread = Some(thread),
-            Err(error) => {
-                self.transcription.events = None;
-                self.transcription.status = Status::Failed(error.to_string());
-            }
-        }
-    }
-
-    fn cancel_transcription_job(&mut self) {
-        self.transcription.cancel.store(true, Ordering::Release);
+    /// Open the Models panel on the transcription pack.
+    pub(super) fn offer_transcription_model(&mut self, context: &egui::Context) {
+        let pack = transcription_pack().map(|pack| pack.pack_id);
+        self.open_models(pack.as_deref(), context);
     }
 
     /// Move the Original cursor to the picture presented when a word begins.
@@ -696,34 +618,15 @@ impl DeadpanApp {
                 });
             }
             Status::NeedsModel => {
-                let size = transcription_pack().map_or(0, |pack| pack.total_bytes());
+                let pack = transcription_pack();
+                let size = pack.as_ref().map_or(0, PackManifest::total_bytes);
                 ui.weak(format!(
-                    "Transcription runs on this Mac. It needs a {} MB English model (MIT license), downloaded once.",
-                    size.div_ceil(1_000_000)
+                    "Transcription runs on this Mac. It needs a {} English model (MIT license), downloaded once.",
+                    crate::model_packs::format_bytes(size)
                 ));
-                if ui
-                    .add(style::row_action(ui, "Install model…", ""))
-                    .on_hover_text("Download, verify and install the whisper base.en model. Projects keep working offline afterwards.")
-                    .clicked()
-                {
-                    self.install_transcription_model(ui.ctx());
-                }
-            }
-            Status::Installing { completed, total } => {
-                ui.add(
-                    egui::ProgressBar::new(completed as f32 / total.max(1) as f32)
-                        .desired_height(6.0)
-                        .text(format!(
-                            "Installing model · {} / {} MB",
-                            completed / 1_000_000,
-                            total / 1_000_000
-                        )),
-                );
-                if ui
-                    .add(style::row_action(ui, "Cancel install", ""))
-                    .clicked()
-                {
-                    self.cancel_transcription_job();
+                let id = pack.map(|pack| pack.pack_id).unwrap_or_default();
+                if self.model_pack_offer(ui, &id, "Install model…", ":models") {
+                    self.offer_transcription_model(ui.ctx());
                 }
             }
             Status::Transcribing(percent) => {
@@ -1047,9 +950,8 @@ impl DeadpanApp {
     fn words_not_ready(&self) -> String {
         match &self.transcription.status {
             Status::NeedsModel => {
-                "Words are not ready. Install the transcription model in the Original rail.".into()
+                "Words are not ready. Install the transcription model with :models.".into()
             }
-            Status::Installing { .. } => "Words are not ready while the model installs.".into(),
             Status::Unchecked | Status::Preparing | Status::Transcribing(_) | Status::Saving(_) => {
                 "Words are not ready while the Original is transcribed.".into()
             }
@@ -1067,9 +969,8 @@ impl DeadpanApp {
         }
         match &self.transcription.status {
             Status::NeedsModel => {
-                "Pauses are not ready. Install the transcription model in the Original rail.".into()
+                "Pauses are not ready. Install the transcription model with :models.".into()
             }
-            Status::Installing { .. } => "Pauses are not ready while the model installs.".into(),
             Status::Unchecked | Status::Preparing | Status::Transcribing(_) | Status::Saving(_) => {
                 "Pauses are not ready while the Original's speech is analysed.".into()
             }

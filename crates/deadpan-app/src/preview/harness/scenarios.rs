@@ -43,6 +43,9 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "slip" => super::slip::run(d),
         "trim" => super::trim::run(d),
         "render" => super::render::run(d),
+        "recovery" => super::recovery::crash(d),
+        "relink" => super::recovery::relink(d),
+        "storage-failure" => super::recovery::storage_failure(d),
         _ => Err(format!("Unknown scenario {name}")),
     }
 }

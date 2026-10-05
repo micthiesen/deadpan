@@ -123,10 +123,29 @@ def finished_artifact(output, path, reference, maximum, check_cancel):
         os.close(descriptor)
 
 
+def check(runtime_config):
+    """`--check`: a model pack smoke test without the framed protocol."""
+    for key in ["HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE", "HF_HUB_DISABLE_TELEMETRY", "PYTHONNOUSERSITE"]:
+        os.environ[key] = "1"
+    with runtime_config.open("rb") as stream:
+        runtime_bytes = stream.read(64 * 1024 + 1)
+    if len(runtime_bytes) > 64 * 1024:
+        raise ValueError("runtime configuration exceeds its budget")
+    from mlx_backend import check_runtime
+    report = check_runtime(strict_json(runtime_bytes))
+    report["adapter_sources_sha256"] = ADAPTER_SOURCES
+    sys.stdout.write(json.dumps(report) + "\n")
+
+
 def run():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--runtime-config", required=True, type=Path)
+    parser.add_argument("--check", action="store_true",
+                        help="verify the runtime and model data, then exit; no protocol")
     args = parser.parse_args()
+    if args.check:
+        check(args.runtime_config)
+        return
     protocol = WorkerProtocol.from_fds()
     # Native extensions and subprocesses inherit stderr for ordinary stdout.
     os.dup2(2, 1)

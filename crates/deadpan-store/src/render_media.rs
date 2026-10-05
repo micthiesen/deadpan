@@ -638,7 +638,7 @@ impl RenderMediaError {
             Self::LengthMismatch { .. } => "RenderMediaLengthMismatch",
             Self::Storage(error) => error.code(),
             Self::Io { source, .. } => match source.kind() {
-                io::ErrorKind::StorageFull => "DiskFull",
+                io::ErrorKind::StorageFull | io::ErrorKind::QuotaExceeded => "DiskFull",
                 io::ErrorKind::ReadOnlyFilesystem => "ProjectReadOnly",
                 io::ErrorKind::PermissionDenied => "PermissionDenied",
                 _ => "IoFailure",

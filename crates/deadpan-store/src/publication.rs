@@ -859,8 +859,11 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
     }
     Ok(())
 }
-pub(crate) fn recover_nonterminal(connection: &mut Connection) -> Result<(), StoreError> {
+pub(crate) fn recover_nonterminal(
+    connection: &mut Connection,
+) -> Result<Vec<crate::recovery::InterruptedPublication>, StoreError> {
     let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+    let mut interrupted = Vec::new();
     let ids = transaction
         .prepare("SELECT publication_id FROM render_publication_operations WHERE active=1")?
         .query_map([], |row| row.get::<_, String>(0))?
@@ -868,7 +871,7 @@ pub(crate) fn recover_nonterminal(connection: &mut Connection) -> Result<(), Sto
     for id in ids {
         let mut record = read_record(
             &transaction,
-            &RequestId::new(id).map_err(|e| invalid(e.to_string()))?,
+            &RequestId::new(id.clone()).map_err(|e| invalid(e.to_string()))?,
         )?;
         let outcome = if record.observed_movie_commit {
             PublicationOutcome::PublishedUnconfirmed
@@ -885,9 +888,13 @@ pub(crate) fn recover_nonterminal(connection: &mut Connection) -> Result<(), Sto
                 record.operation.operation_id.as_str()
             ],
         )?;
+        interrupted.push(crate::recovery::InterruptedPublication {
+            publication_id: id,
+            movie_committed: record.observed_movie_commit,
+        });
     }
     transaction.commit()?;
-    Ok(())
+    Ok(interrupted)
 }
 
 #[cfg(test)]

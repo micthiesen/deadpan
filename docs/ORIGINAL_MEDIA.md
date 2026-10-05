@@ -25,7 +25,14 @@ unsafe system call; it follows Apple's [clone API contract](https://github.com/a
 Linked retention records an absolute path, optional bounded opaque bookmark,
 and complete content identity. The current path API requires UTF-8, rejects
 parent traversal and final symlinks, and does not resolve bookmarks itself.
-Native bookmark creation/resolution and document dialogs remain open.
+Native bookmark creation/resolution remains open.
+
+`original_availability` reports from metadata alone whether the bytes a
+snapshot would read are present, so a project opens with a missing Original
+and says so. `prepare_restore` republishes a missing managed copy from a file
+whose content must match the registered identity; it is verified before
+publication, so different media publishes nothing. The native `:relink` flow
+uses it, or `prepare_relink` for a linked original. See [recovery](RECOVERY.md).
 
 `relink_original` requires the expected monotonic location version and verifies
 the entire replacement file. Identical content can gain a new path/bookmark;

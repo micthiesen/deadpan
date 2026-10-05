@@ -17,8 +17,7 @@ use serde_json::Value;
 
 use super::{APP_NAME, Result, build_markers, macho, print_audit, run_tool, workspace_root};
 
-const USAGE: &str =
-    "usage: cargo xtask bundle-verify <Deadpan.app> [--fixture <absolute video>] [--keep]";
+const USAGE: &str = "usage: cargo xtask bundle-verify <Deadpan.app> [--fixture <absolute video>] [--ai-models-from <folder or archive>] [--keep]";
 
 struct Scrubbed {
     home: String,
@@ -78,11 +77,16 @@ pub fn run(arguments: &[String]) -> Result<()> {
     let mut app = None;
     let mut fixture = None;
     let mut keep = false;
+    let mut models_from = None;
     let mut rest = arguments;
     while let Some((flag, tail)) = rest.split_first() {
         match (flag.as_str(), tail) {
             ("--fixture", [value, tail @ ..]) => {
                 fixture = Some(PathBuf::from(value));
+                rest = tail;
+            }
+            ("--ai-models-from", [value, tail @ ..]) => {
+                models_from = Some(PathBuf::from(value));
                 rest = tail;
             }
             ("--keep", tail) => {
@@ -132,7 +136,8 @@ pub fn run(arguments: &[String]) -> Result<()> {
         home: home.display().to_string(),
         work: work.clone(),
     };
-    let result = exercise(&scrubbed, &app, &fixture).and(negative(&scrubbed, &root, &app));
+    let result = exercise(&scrubbed, &app, &fixture, models_from.as_deref())
+        .and(negative(&scrubbed, &root, &app));
     if keep || result.is_err() {
         println!("verify: kept {}", root.display());
     } else {
@@ -141,7 +146,12 @@ pub fn run(arguments: &[String]) -> Result<()> {
     result
 }
 
-fn exercise(scrubbed: &Scrubbed, app: &Path, fixture: &Path) -> Result<()> {
+fn exercise(
+    scrubbed: &Scrubbed,
+    app: &Path,
+    fixture: &Path,
+    models_from: Option<&Path>,
+) -> Result<()> {
     let mut failures = Vec::new();
     let macos = app.join("Contents/MacOS");
     let cli = macos.join("deadpan-cli");
@@ -311,18 +321,7 @@ fn exercise(scrubbed: &Scrubbed, app: &Path, fixture: &Path) -> Result<()> {
         &mut failures,
     );
 
-    let doctor = scrubbed.json(&cli, &["doctor"])?;
-    check(
-        doctor["runtime"]["packaged"] == true
-            && doctor["runtime"]["ai_bridge_runtime"]
-                .as_str()
-                .is_some_and(|text| text.contains("no AI runtime")),
-        format!(
-            "packaged: AI development runtime disabled ({})",
-            doctor["runtime"]["ai_bridge_runtime"]
-        ),
-        &mut failures,
-    );
+    ai_runtime_checks(scrubbed, app, &cli, models_from, &mut failures)?;
 
     if failures.is_empty() {
         println!("verify: all positive checks passed");
@@ -330,6 +329,99 @@ fn exercise(scrubbed: &Scrubbed, app: &Path, fixture: &Path) -> Result<()> {
     } else {
         Err(format!("{} verification checks failed", failures.len()))
     }
+}
+
+/// The bundled AI runtime: doctor locates it inside the copy and ignores the
+/// environment; Python, MLX, Metal and the GPL ffmpeg run under the hardened
+/// runtime from the scrubbed environment. With `models_from`, the bridge pack
+/// is imported offline into the isolated home through the bundled CLI, which
+/// smoke-tests it with the bundled runtime, and doctor then reports it ready.
+fn ai_runtime_checks(
+    scrubbed: &Scrubbed,
+    app: &Path,
+    cli: &Path,
+    models_from: Option<&Path>,
+    failures: &mut Vec<String>,
+) -> Result<()> {
+    let runtime = app.join("Contents").join(super::ai_runtime::DIRECTORY);
+    let doctor = scrubbed.json(cli, &["doctor"])?;
+    let ai = &doctor["runtime"]["ai_runtime"];
+    let inside = |value: &Value| {
+        value
+            .as_str()
+            .is_some_and(|path| Path::new(path).starts_with(app))
+    };
+    check(
+        doctor["runtime"]["packaged"] == true && inside(&ai["bundled"]),
+        format!("doctor: bundled AI runtime at {}", ai["bundled"]),
+        failures,
+    );
+    check(
+        ai["identity"]["runtime_id"] == "ltx-mlx"
+            && ai["identity"]["runtime_version"] == "0.15.8+deadpan1",
+        format!("doctor: AI runtime identity {}", ai["identity"]),
+        failures,
+    );
+    if models_from.is_none() {
+        let missing = ai["missing"].as_array().cloned().unwrap_or_default();
+        check(
+            ai["ready"] == false
+                && missing.len() == 1
+                && missing[0]
+                    .as_str()
+                    .is_some_and(|line| line.starts_with("install the AI model pack")),
+            format!("doctor: only the model pack is missing ({missing:?})"),
+            failures,
+        );
+    }
+    let staged = super::ai_runtime::check_staged(&runtime, &scrubbed.work);
+    check(
+        staged.is_ok(),
+        format!("bundled Python imports MLX and LTX, runs Metal, ffmpeg has libx264: {staged:?}"),
+        failures,
+    );
+    if let Some(source) = models_from {
+        let source = source.to_str().ok_or("non-UTF-8 models path")?;
+        let started = std::time::Instant::now();
+        let (success, stdout, stderr) = scrubbed.run(
+            cli,
+            &[
+                "models",
+                "import",
+                "ltx-2.3-q4-bridge",
+                source,
+                "--accept-license",
+            ],
+        )?;
+        let passed = stdout
+            .lines()
+            .any(|line| line.contains("\"smoke_test_passed\""));
+        check(
+            success && passed,
+            format!(
+                "models import ltx-2.3-q4-bridge with the bundled smoke test in {:.1} s: {}{}",
+                started.elapsed().as_secs_f64(),
+                stdout
+                    .lines()
+                    .rev()
+                    .find(|line| line.contains("smoke_test_passed"))
+                    .unwrap_or_default(),
+                stderr.trim()
+            ),
+            failures,
+        );
+        let doctor = scrubbed.json(cli, &["doctor"])?;
+        let ai = &doctor["runtime"]["ai_runtime"];
+        check(
+            ai["ready"] == true && inside(&ai["python"]) && inside(&ai["ffmpeg"]),
+            format!(
+                "doctor: AI pauses ready with model data at {}",
+                ai["model_data"]
+            ),
+            failures,
+        );
+    }
+    Ok(())
 }
 
 /// Damages one copied bundle.
@@ -391,6 +483,34 @@ fn negative(scrubbed: &Scrubbed, root: &Path, app: &Path) -> Result<()> {
         check(
             reported || label.starts_with("tampered"),
             format!("{label}: doctor reports the bundled problem"),
+            &mut failures,
+        );
+    }
+    // A changed byte in the AI runtime breaks the bundle's sealed resources.
+    let directory = root.join("negative-ai");
+    fs::create_dir_all(&directory).map_err(|e| e.to_string())?;
+    let copy = directory.join(APP_NAME);
+    run_tool("ditto", &[app.as_os_str(), copy.as_os_str()])?;
+    let source = copy
+        .join("Contents")
+        .join(super::ai_runtime::DIRECTORY)
+        .join("worker/worker.py");
+    if source.is_file() {
+        let mut bytes = fs::read(&source).map_err(|e| e.to_string())?;
+        bytes.extend_from_slice(b"\n# tampered\n");
+        fs::write(&source, bytes).map_err(|e| e.to_string())?;
+        let verified = run_tool(
+            "codesign",
+            &[
+                "--verify".as_ref(),
+                "--deep".as_ref(),
+                "--strict".as_ref(),
+                copy.as_os_str(),
+            ],
+        );
+        check(
+            verified.is_err(),
+            "tampered AI worker: codesign --verify --deep --strict refuses the bundle",
             &mut failures,
         );
     }

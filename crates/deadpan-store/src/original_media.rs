@@ -154,6 +154,19 @@ impl OriginalMediaRecord {
     }
 }
 
+/// Metadata-only presence of an original's bytes; see `original_availability`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(tag = "state", rename_all = "snake_case")]
+pub enum OriginalAvailability {
+    /// A regular file of the registered length exists. Its bytes are verified
+    /// only when a snapshot reads them.
+    Present,
+    /// Nothing exists where the bytes belong (moved, deleted or offline).
+    Missing,
+    /// Something exists but cannot be the registered content.
+    Unreadable { reason: String },
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OriginalOwnership {
     Managed,
@@ -294,6 +307,13 @@ impl PreparedOriginalRetention {
         self.guard.recheck(&self.handle.storage)?;
         self.handle.check_live(cancelled)
     }
+}
+
+/// A verified managed copy awaiting the writer, plus the name a damaged copy
+/// was moved to, if one was.
+pub struct PreparedOriginalRestore {
+    pub retention: PreparedOriginalRetention,
+    pub quarantined: Option<String>,
 }
 
 /// Verified replacement location awaiting the owning writer's versioned update.
@@ -528,6 +548,87 @@ impl OriginalImportHandle {
         })
     }
 
+    /// Restores a missing or damaged project-managed copy from a file the
+    /// person chose. The chosen file is hashed first and must match the
+    /// registered BLAKE3 identity and SHA-256, so different media is refused
+    /// before anything is written and the refusal names the chosen file. A
+    /// retained copy that then fails its own verification is moved aside
+    /// (`quarantine_damaged`) and replaced. Commit the result with
+    /// `retain_prepared_original`, which keeps the record and its location
+    /// version. A linked-only original uses `prepare_relink`.
+    pub fn prepare_restore(
+        &self,
+        record: &OriginalMediaRecord,
+        path: &Path,
+        limits: OriginalMediaLimits,
+        cancelled: &AtomicBool,
+    ) -> Result<PreparedOriginalRestore, StoreError> {
+        self.check_live(cancelled)?;
+        record.validate()?;
+        if !record.managed {
+            return Err(OriginalMediaError::InvalidRecord(
+                "only a project-managed original copy can be restored; relink a linked original",
+            )
+            .into());
+        }
+        validate_path(path)?;
+        let control = limits.control(cancelled)?.with_closed(&self.closed);
+        if record.object.byte_length() > limits.maximum_bytes {
+            return Err(OriginalMediaError::ByteLimit.into());
+        }
+        let file = open_source(path)?;
+        let chosen = inspect_original(&file, limits, &control, io::sink())?;
+        if chosen.object != record.object || chosen.sha256 != record.sha256 {
+            return Err(OriginalMediaError::IdentityMismatch.into());
+        }
+        confirm_source_path(path, &file, &chosen.state)?;
+        let object_limits =
+            ObjectLimits::new(limits.maximum_bytes).map_err(OriginalMediaError::from)?;
+        let quarantined = self
+            .storage
+            .quarantine_damaged(
+                record.object.identity()?,
+                object_limits,
+                control.object_control(),
+            )
+            .map_err(OriginalMediaError::from)?;
+        let method = self
+            .storage
+            .promote_file_controlled(
+                &file,
+                record.object.identity()?,
+                object_limits,
+                control.object_control(),
+            )
+            .map_err(OriginalMediaError::from)?;
+        let (guard, published_sha256) = self
+            .storage
+            .guard_controlled(
+                record.object.identity()?,
+                object_limits,
+                control.object_control(),
+            )
+            .map_err(OriginalMediaError::from)?;
+        if published_sha256 != record.sha256 {
+            return Err(OriginalMediaError::IdentityMismatch.into());
+        }
+        control.check()?;
+        self.check_live(cancelled)?;
+        Ok(PreparedOriginalRestore {
+            retention: PreparedOriginalRetention {
+                handle: self.clone(),
+                record: record.clone(),
+                method: match method {
+                    PromotionMethod::Existing => OriginalRetentionMethod::Existing,
+                    PromotionMethod::Cloned => OriginalRetentionMethod::Cloned,
+                    PromotionMethod::Copied => OriginalRetentionMethod::Copied,
+                },
+                guard: OriginalFreshnessGuard::Managed(guard),
+            },
+            quarantined,
+        })
+    }
+
     /// Verifies retained bytes into an immutable snapshot on the worker. The
     /// supplied record is checked against SQLite only when the writer admits it.
     pub fn snapshot_original(
@@ -696,6 +797,50 @@ impl ProjectStore {
         content: &OriginalContentId,
     ) -> Result<Option<OriginalMediaRecord>, StoreError> {
         read_record(&self.connection, content)
+    }
+
+    /// Whether the bytes a snapshot would read are plausibly present, from
+    /// metadata alone. Snapshots still verify every byte; this lets a host
+    /// open a project with a missing Original and say so instead of failing
+    /// later inside a decoder. A managed copy is what snapshots read, so a
+    /// managed record reports that copy even when a link also exists.
+    pub fn original_availability(
+        &self,
+        record: &OriginalMediaRecord,
+    ) -> Result<OriginalAvailability, StoreError> {
+        record.validate()?;
+        let expected = record.object.byte_length();
+        let found = if record.managed {
+            self.original_storage
+                .probe(record.object.identity()?)
+                .map_err(OriginalMediaError::from)?
+        } else {
+            let link = record
+                .linked
+                .as_ref()
+                .ok_or(OriginalMediaError::MissingRecord)?;
+            match std::fs::symlink_metadata(link.path()) {
+                Err(error) if error.kind() == io::ErrorKind::NotFound => None,
+                Err(error) => {
+                    return Ok(OriginalAvailability::Unreadable {
+                        reason: error.to_string(),
+                    });
+                }
+                Ok(metadata) if !metadata.file_type().is_file() => {
+                    return Ok(OriginalAvailability::Unreadable {
+                        reason: "the linked location is not a regular file".into(),
+                    });
+                }
+                Ok(metadata) => Some(metadata.len()),
+            }
+        };
+        Ok(match found {
+            None => OriginalAvailability::Missing,
+            Some(length) if length == expected => OriginalAvailability::Present,
+            Some(length) => OriginalAvailability::Unreadable {
+                reason: format!("the file has {length} bytes; the Original has {expected}"),
+            },
+        })
     }
 
     /// Keyset paging bounds UI/headless inventory memory independently of project size.
@@ -1132,7 +1277,14 @@ impl OriginalMediaError {
             Self::Deadline => "OriginalDeadline",
             Self::Io(e) if e.kind() == io::ErrorKind::NotFound => "OriginalOffline",
             Self::Io(e) if e.kind() == io::ErrorKind::PermissionDenied => "PermissionDenied",
-            Self::Io(e) if e.kind() == io::ErrorKind::StorageFull => "DiskFull",
+            Self::Io(e)
+                if matches!(
+                    e.kind(),
+                    io::ErrorKind::StorageFull | io::ErrorKind::QuotaExceeded
+                ) =>
+            {
+                "DiskFull"
+            }
             Self::Io(_) => "IoFailure",
             Self::Storage(e) => match e {
                 ObjectStorageError::Cancelled => "OriginalCancelled",

@@ -7,10 +7,12 @@ mod keymap_file;
 mod library;
 #[cfg(target_os = "macos")]
 mod menu;
+mod model_packs;
 mod navigation;
 mod presentation;
 mod preview;
 mod project;
+mod recovery;
 mod transport;
 #[cfg(feature = "ui-harness")]
 mod ui_harness;
@@ -83,6 +85,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         keymap::Startup::from_file(keymap_file::load())
     };
+    let opens_project = project.is_some() || preview_source.is_some();
     let exited = Rc::new(Cell::new(false));
     let exit_observer = Rc::clone(&exited);
     let options = eframe::NativeOptions {
@@ -123,6 +126,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 project,
                 keymap,
             )?;
+            if !smoke_test {
+                // Offer the project an earlier launch left open, unless one
+                // was named explicitly on the command line.
+                match recovery::LaunchJournal::user() {
+                    Ok(journal) => app.use_launch_journal(journal, !opens_project),
+                    Err(error) => eprintln!("Crash recovery is unavailable: {error}"),
+                }
+            }
             #[cfg(target_os = "macos")]
             app.install_menu(&context.egui_ctx)?;
             Ok(Box::new(app))

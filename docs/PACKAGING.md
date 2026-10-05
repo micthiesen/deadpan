@@ -25,6 +25,10 @@ cargo xtask bundle-verify /tmp/deadpan-bundle/Deadpan.app
 | `--notary-profile PROFILE` | After Developer ID signing, notarize, staple and assess the staged bundle before publishing it. Requires `--identity`. |
 | `--allow-dirty` | Permit `--identity` builds from a working tree with uncommitted or untracked changes. They are refused otherwise; ad hoc builds warn. Either way `build-provenance.json` records the state. |
 | `--no-build` | Reuse the executables in `<cargo target>/bundle/release`. |
+| `--without-ai-runtime` | Leave out the private AI runtime; AI pauses are then unavailable. |
+| `--ai-runtime-cache DIR` | Build-input cache for the AI runtime (default `~/Library/Caches/Deadpan/build-inputs`). |
+| `--ltx-checkout DIR` | Copy the pinned LTX source from this checkout (each file is still verified) instead of fetching the commit from GitHub. |
+| `--allow-gpl-ai-codec` | The owner's decision to distribute the runtime's GPL `ffmpeg`/`ffprobe`; required with `--identity` unless `--without-ai-runtime`. |
 
 The build runs `cargo build --release --locked --bins
 --message-format=json-render-diagnostics` for `deadpan-app`, `deadpan-cli`,
@@ -66,6 +70,7 @@ build-time tool only.
 | `Contents/MacOS/deadpan-cli`, `deadpan-media-worker`, `deadpan-transcribe`, `deadpan-track` | Helper tools. Workers already resolve beside the running executable, so no lookup changed. |
 | `Contents/Frameworks/lib{avcodec.62,avformat.62,avutil.60,swresample.6,swscale.9}.dylib` | The transitive pinned LGPL FFmpeg 8.0.3 libraries the executables load. |
 | `Contents/Resources/helpers/{yt-dlp,deno}/<version>/` and `manifest.json` | Read-only downloader baseline. |
+| `Contents/Resources/ai-runtime/` | Private AI runtime: `python/` (CPython 3.12.13 with the locked wheels), `ltx-2-mlx/` (139 pinned source files), `worker/`, `bin/{ffmpeg,ffprobe}` (GPL) and `runtime.json`. See [AI runtime](#ai-runtime). |
 | `Contents/Resources/Notices/` | `THIRD_PARTY_NOTICES.txt`, FFmpeg, yt-dlp, yt-dlp-ejs and Deno upstream notices, SPDX texts, `sbom.cdx.json`. |
 | `Contents/Resources/build-provenance.json` | Commit, tracked-change flag, rustc, Xcode, SDK, FFmpeg configuration, signature kind and limitations. |
 | `Contents/Resources/Assets.car`, `Deadpan.icns` | Layered icon and ICNS fallback. |
@@ -123,16 +128,89 @@ from `tools/build-app.py` therefore keep development behavior.
   `~/Library/Application Support/Deadpan/helpers` root. An explicit
   `--root`/`--helpers` names a managed root only. `downloader install` always
   writes the managed root, which remains the update location (§15.2).
-- Models: whisper.cpp and other packs stay in
-  `~/Library/Application Support/Deadpan/Models`, downloaded on request. None
-  ship in the bundle.
-- AI bridge runtime: a packaged app has none and ignores all `DEADPAN_BRIDGE_*`
-  variables and development defaults. That includes Homebrew FFmpeg, the
-  checkout's worker script, and the `/private/tmp` and cache locations. A
-  developer may opt in with `DEADPAN_DEVELOPER_BRIDGE=1`, after which only
-  explicitly set `DEADPAN_BRIDGE_*` variables are used. Development builds and
-  developer wrappers keep the variables and defaults. `doctor` reports which
-  mode applies.
+- Models: whisper.cpp, the AI pause weights and other packs stay in
+  `~/Library/Application Support/Deadpan/Models`, installed on explicit request
+  by download or offline import ([model packs](MODEL_PACKS.md)). None ship in
+  the bundle.
+- AI bridge runtime: a packaged app uses only its own
+  `Contents/Resources/ai-runtime` and the `ltx-2.3-q4-bridge` pack installed in
+  the models root. It ignores all `DEADPAN_BRIDGE_*` variables and development
+  defaults, including Homebrew FFmpeg, the checkout's worker script, and the
+  `/private/tmp` and cache locations. A developer may opt in with
+  `DEADPAN_DEVELOPER_BRIDGE=1`, after which only explicitly set
+  `DEADPAN_BRIDGE_*` variables are used. Development builds and developer
+  wrappers keep the variables and defaults. `doctor` reports the lookup, the
+  bundled runtime's identity and whether AI pauses are ready.
+## AI runtime
+
+The standard download carries the private model runtime (specification
+§14.1): `cargo xtask bundle` runs
+[`tools/ai-runtime/build.py`](../tools/ai-runtime/build.py), which assembles it
+from the pins in [`pins.json`](../tools/ai-runtime/pins.json) into the
+build-input cache and prints its location; the bundle copies it with `ditto` to
+`Contents/Resources/ai-runtime`. Every input is verified before use: the
+python-build-standalone archive and each wheel by SHA-256 (wheel hashes from the
+qualified checkout's `uv.lock`), the 139 LTX source files against
+`ltx-source-manifest.json`, x264 by Git commit and tree, FFmpeg by archive
+hash. The wheels are installed offline (`pip --no-index --no-deps
+--only-binary=:all:`), then `pip`, `ensurepip`, Tcl/Tk, IDLE, tests, headers,
+manual pages and console scripts are removed and all bytecode is compiled once
+with checked hashes, so the runtime never writes into the signed bundle (the
+worker runs `python -I -B`). Absolute `LC_RPATH` entries left by upstream
+wheel builds are deleted. The cache is keyed by the pins, the builder and the
+worker sources; a full assembly took 54 s (52 s of it the static GPL
+`ffmpeg`/`ffprobe` build) and a cached reuse a few seconds.
+
+**Size.** The runtime is 494 MiB on disk: Python and packages 447 MiB
+(MLX and its Metal library 203 MiB, transformers 98 MiB, 94 MiB of
+precompiled bytecode), `ffmpeg`/`ffprobe` 43 MiB, LTX source 3.2 MiB. The
+2026-10-05 bundle is 710.1 MiB on disk and 288.5 MB as a `ditto` ZIP, against
+206.0 MiB and 115.3 MB without it. That is practical for one application
+download, while the 36.2 GB of weights are not: they stay a separately
+accepted, resumable [model pack](MODEL_PACKS.md). Bundling also follows §27.3
+("only application-signed runtime updates introduce executable code"): a
+downloadable runtime pack would be new executable code outside the app's
+signature. The MLX wheels are the macOS 26 builds, measured 2.2 times faster
+than the macOS 15 builds on the reference Mac, so AI pauses require macOS 26
+while the app keeps its macOS 15 floor
+([decision](DEPENDENCIES.md#private-ai-runtime)).
+
+**Signing.** Inside out with the hardened runtime, after the FFmpeg libraries:
+59 libraries and extension modules (`.so`, `.dylib`, including Pillow's and
+MLX's bundled libraries) without an identifier, then the three executables
+`python3.12`, `ffmpeg` and `ffprobe` as `dev.deadpan.Deadpan.ai.<name>`. No
+entitlements: under the ad hoc hardened runtime, Python loaded every
+extension module, MLX compiled and ran its Metal kernels and the worker ran a
+full generation (below). MLX's Metal kernels go through the system Metal
+compiler, not CPU JIT memory, so neither `allow-jit` nor
+`allow-unsigned-executable-memory` was needed. Under a Developer ID every
+nested file is signed by the same team, so library validation should hold;
+this has not run. The audit treats any `MH_EXECUTE` image as its own process
+root (`@executable_path` is its folder), so Python's
+`@executable_path/../lib` search path is checked like the app's.
+
+**Checks before publication.** The staged bundle's Python, run with a cleared
+environment, must resolve its own `sys.prefix`, import MLX, NumPy, Pillow,
+`mlx_lm`, safetensors and the LTX pipeline, and compute on the GPU; the staged
+`ffmpeg` must list `libx264rgb`.
+
+**GPL programs.** `ffmpeg` and `ffprobe` in `ai-runtime/bin` are a separate
+GPL-2.0-or-later build (FFmpeg 8.0.3 with static x264 r3222) that the worker
+runs for the model's CRF-33 H.264 conditioning and lossless `libx264rgb`
+intermediates ([why](DEPENDENCIES.md#private-ai-runtime)). They are separate
+executables, never linked into Deadpan, and distinct from the LGPL libraries in
+`Contents/Frameworks`. `--identity` builds refuse to include them unless the
+owner passes `--allow-gpl-ai-codec`; `build-provenance.json` records
+`gpl_distribution_approved`. Before public distribution the owner must decide
+this, and how the corresponding source is offered.
+
+**Notices.** `Notices/AI_RUNTIME_NOTICES.txt` lists every component with
+version, SPDX expression (validated like the crates'), source URL and hash, the
+GPL statement with exact source and configuration, and every modified file.
+`Notices/ai-runtime/` holds CPython's `LICENSE.txt`, each wheel's shipped
+license files, ltx-2-mlx's `LICENSE` and the x264/FFmpeg GPL texts. The SBOM
+adds the runtime components and the shipped executables' hashes.
+
 ## Downloader baseline
 
 The build copies the helpers only after the release `deadpan-cli downloader
@@ -314,12 +392,22 @@ Positive checks:
 - `project create-original` from
   `native/deadpan-source/tests/fixtures/cfr-bframes.mp4`, then `render` to an
   MP4;
-- `doctor` reports a packaged app with the AI runtime disabled.
+- `doctor` locates the bundled AI runtime inside the copy with its
+  `runtime.json` identity and, without a model pack, reports only the pack as
+  missing;
+- the copied runtime's Python imports MLX and the LTX pipeline and computes on
+  the GPU from the scrubbed environment, and its `ffmpeg` has libx264;
+- with `--ai-models-from <folder or .tar>`, the copy's own CLI imports the
+  bridge pack into the isolated home (`--accept-license`), its smoke test runs
+  through the bundled runtime, and `doctor` then reports AI pauses ready with
+  every path inside the copy.
 
 Negative checks run on separate copies, with the managed fallback present:
 
 - a byte flipped in the bundled yt-dlp;
-- `Contents/Resources/helpers` deleted.
+- `Contents/Resources/helpers` deleted;
+- a changed byte in the AI worker, which `codesign --verify --deep --strict`
+  must refuse.
 
 In both cases `downloader status` must refuse the bundled baseline, `--probe`
 must fail with `DownloaderHelperInvalid`, and for the deleted directory
@@ -372,6 +460,19 @@ signature, commit `0dda7a8f` plus uncommitted changes (recorded as
 - An earlier build, before the review fixes, was rejected by `spctl --assess`,
   as expected for an ad hoc signature.
 
+### 2026-10-05 AI runtime result
+
+Same Mac with macOS 26.5.2, ad hoc, uncommitted tree. `bundle` audited 74
+Mach-O files with no problems and signed 59 runtime libraries and 3 runtime
+executables without entitlements; the bundle is 710.1 MiB (288.5 MB ZIP).
+`bundle-verify --ai-models-from ~/Library/Caches/Deadpan/ltx-qualification`
+passed every positive and negative check, including the doctor and runtime
+checks above, an offline import of the 36.2 GB bridge pack by the copy's own
+CLI with the bundled smoke test in 12.4 s, and the tampered-worker refusal. A
+separate scrubbed run of the copied app generated, accepted and rendered an AI
+pause (76.8–98.9 s of generation depending on load)
+([record](qualification/ai-runtime-2026-10-05.md)).
+
 Not verified:
 
 - a quarantined download, a second Mac or a clean user account;
@@ -389,9 +490,8 @@ This is not the clean-machine release test in specification §26.6.
 - Clean-machine online and offline acceptance under quarantine (§26.6).
 - Downloader updates: signed manifests, compatibility checks, rollback, and
   selection of a newer managed version over the baseline.
-- A private AI runtime (python-build-standalone with pinned wheels, or MLX),
-  nested signing and an offline model-pack path. Generation currently requires
-  the explicit development runtime.
+- The owner's GPL decision for the AI runtime's `ffmpeg`/`ffprobe` and a
+  Developer ID/notarized run of the nested Python code (library validation).
 - The app update mechanism and separate app, helper and model version identities.
 - An FFmpeg source-hosting or written-offer decision, and aggregated Deno and V8
   notices.

@@ -60,6 +60,7 @@ fn manifest(bytes: &[u8]) -> PackManifest {
     let mut manifest = approved_packs().remove(0);
     manifest.pack_id = "test-pack".into();
     manifest.files = vec![PackFile {
+        license: None,
         name: "model.bin".into(),
         url: "https://huggingface.co/example/model.bin".into(),
         sha256: sha2::Sha256::digest(bytes)
@@ -82,7 +83,7 @@ fn payload() -> Vec<u8> {
 #[test]
 fn the_approved_whisper_pack_is_valid_and_pinned() {
     let packs = approved_packs();
-    assert_eq!(packs.len(), 1);
+    assert_eq!(packs.len(), 2);
     let whisper = &packs[0];
     assert_eq!(whisper.pack_id, "whisper-base-en");
     assert_eq!(whisper.pack_version, "2");
@@ -102,14 +103,85 @@ fn the_approved_whisper_pack_is_valid_and_pinned() {
         whisper.files[1].sha256,
         "2aa269b785eeb53a82983a20501ddf7c1d9c48e33ab63a41391ac6c9f7fb6987"
     );
-    assert!(whisper.license.redistribution);
+    assert!(whisper.licenses[0].redistribution);
+    assert!(!whisper.acceptance_required());
+    assert!(whisper.check_acceptance(&[]).is_ok());
+}
+
+#[test]
+fn the_approved_bridge_pack_matches_the_qualified_receipt() {
+    let pack = approved_pack("ltx-2.3-q4-bridge").unwrap();
+    assert!(pack.supports(Operation::BridgeHold));
+    assert_eq!(pack.files.len(), 31);
+    assert_eq!(pack.total_bytes(), 36_152_862_913);
+    // The worker verifies the same assets from its pinned receipt.
+    let receipt: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../tools/model-qualification/evidence/2026-09-20-smoke/download-manifest.json"
+    ))
+    .unwrap();
+    let assets = receipt["assets"].as_array().unwrap();
+    assert_eq!(assets.len(), pack.files.len());
+    for (asset, file) in assets.iter().zip(&pack.files) {
+        assert!(file.name.ends_with(&format!(
+            "/{}/{}",
+            asset["revision"].as_str().unwrap(),
+            asset["path"].as_str().unwrap()
+        )));
+        assert_eq!(file.sha256, asset["sha256"].as_str().unwrap());
+        assert_eq!(file.bytes, asset["size"].as_u64().unwrap());
+        assert_eq!(file.url, asset["url"].as_str().unwrap());
+    }
+    // Two separately accepted license layers with their compiled texts.
+    let ids = pack.license_ids();
+    assert_eq!(ids, ["ltx-2", "gemma"]);
+    assert!(
+        pack.licenses
+            .iter()
+            .all(|license| license.acceptance_required)
+    );
+    let ltx = license_text(pack.licenses[0].text.as_deref().unwrap()).unwrap();
+    assert!(ltx.starts_with("                         LTX-2 Community License Agreement"));
+    assert!(
+        license_text(pack.licenses[1].text.as_deref().unwrap())
+            .unwrap()
+            .contains("Gemma Terms of Use")
+    );
+    assert_eq!(
+        pack.license_bytes(&pack.licenses[0]) + pack.license_bytes(&pack.licenses[1]),
+        pack.total_bytes()
+    );
+    assert!(matches!(
+        pack.check_acceptance(&["ltx-2".into()]),
+        Err(PackError::LicenseNotAccepted { title }) if title == "Gemma Terms of Use"
+    ));
+    assert!(pack.check_acceptance(&ids).is_ok());
+    // The compiled texts are the recorded bytes; the LTX text is the pack's
+    // own LICENSE file.
+    let digest = |text: &str| -> String {
+        sha2::Sha256::digest(text.as_bytes())
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect()
+    };
+    let sources: serde_json::Value =
+        serde_json::from_str(include_str!("../../../../models/licenses/sources.json")).unwrap();
+    for source in sources["files"].as_array().unwrap() {
+        let text = license_text(source["path"].as_str().unwrap()).unwrap();
+        assert_eq!(digest(text), source["sha256"].as_str().unwrap());
+    }
+    let license_file = pack
+        .files
+        .iter()
+        .find(|file| file.name.ends_with("/LICENSE"))
+        .unwrap();
+    assert_eq!(digest(ltx), license_file.sha256);
 }
 
 #[test]
 fn manifests_require_https_approved_hosts_safe_names_and_hashes() {
     let base = manifest(b"x");
     type Change = fn(&mut PackManifest);
-    let cases: [(&str, Change); 7] = [
+    let cases: [(&str, Change); 9] = [
         ("http", |m| {
             m.files[0].url = "http://huggingface.co/a".into()
         }),
@@ -124,6 +196,8 @@ fn manifests_require_https_approved_hosts_safe_names_and_hashes() {
             m.files.push(file);
         }),
         ("identity", |m| m.pack_version = ".hidden".into()),
+        ("traversal", |m| m.files[0].name = "a/../b".into()),
+        ("absolute", |m| m.files[0].name = "/etc/passwd".into()),
     ];
     for (label, change) in cases {
         let mut candidate = base.clone();
@@ -131,6 +205,47 @@ fn manifests_require_https_approved_hosts_safe_names_and_hashes() {
         assert!(candidate.validate().is_err(), "{label}");
     }
     assert!(base.validate().is_ok());
+    let mut nested = base.clone();
+    nested.files[0].name = "encoder/0123abcd/model.safetensors".into();
+    assert!(nested.validate().is_ok());
+    // Names that collide with staging files or with another file's directory.
+    for name in ["receipt.json", "model.bin.part"] {
+        let mut candidate = base.clone();
+        candidate.files[0].name = name.into();
+        assert!(candidate.validate().is_err(), "{name}");
+    }
+    let mut shadowed = base.clone();
+    let mut inner = shadowed.files[0].clone();
+    inner.name = "model.bin/inner.bin".into();
+    shadowed.files.push(inner);
+    assert!(shadowed.validate().is_err());
+
+    let licensing: [(&str, Change); 5] = [
+        ("unknown file license", |m| {
+            m.files[0].license = Some("other".into())
+        }),
+        ("unassigned with several", |m| {
+            let mut second = m.licenses[0].clone();
+            second.id = "second".into();
+            m.licenses.push(second);
+        }),
+        ("duplicate license", |m| {
+            let second = m.licenses[0].clone();
+            m.licenses.push(second);
+            m.files[0].license = Some(m.licenses[0].id.clone());
+        }),
+        ("missing text", |m| {
+            m.licenses[0].text = Some("absent.txt".into())
+        }),
+        ("plain http link", |m| {
+            m.licenses[0].url = "http://example.com".into()
+        }),
+    ];
+    for (label, change) in licensing {
+        let mut candidate = base.clone();
+        change(&mut candidate);
+        assert!(candidate.validate().is_err(), "{label}");
+    }
 }
 
 #[test]
@@ -144,6 +259,7 @@ fn install_verifies_stages_and_activates_one_complete_version() {
     let staged = store
         .stage(
             &manifest,
+            &[],
             &Memory::new(bytes.clone()),
             plenty,
             &AtomicBool::new(false),
@@ -181,6 +297,7 @@ fn interrupted_downloads_resume_and_range_ignoring_servers_restart() {
     let error = store
         .stage(
             &manifest,
+            &[],
             &transport,
             plenty,
             &AtomicBool::new(false),
@@ -191,6 +308,7 @@ fn interrupted_downloads_resume_and_range_ignoring_servers_restart() {
     let staged = store
         .stage(
             &manifest,
+            &[],
             &transport,
             plenty,
             &AtomicBool::new(false),
@@ -211,11 +329,25 @@ fn interrupted_downloads_resume_and_range_ignoring_servers_restart() {
     *restart.fail_after.lock().unwrap() = Some(500_000);
     assert!(
         store
-            .stage(&manifest, &restart, plenty, &AtomicBool::new(false), |_| {})
+            .stage(
+                &manifest,
+                &[],
+                &restart,
+                plenty,
+                &AtomicBool::new(false),
+                |_| {}
+            )
             .is_err()
     );
     let staged = store
-        .stage(&manifest, &restart, plenty, &AtomicBool::new(false), |_| {})
+        .stage(
+            &manifest,
+            &[],
+            &restart,
+            plenty,
+            &AtomicBool::new(false),
+            |_| {},
+        )
         .unwrap();
     assert_eq!(
         std::fs::read(staged.file("model.bin").unwrap()).unwrap(),
@@ -234,6 +366,7 @@ fn corrupt_space_starved_and_cancelled_installs_never_activate() {
     let error = store
         .stage(
             &manifest,
+            &[],
             &Memory::new(corrupt),
             plenty,
             &AtomicBool::new(false),
@@ -246,6 +379,7 @@ fn corrupt_space_starved_and_cancelled_installs_never_activate() {
     store
         .stage(
             &manifest,
+            &[],
             &transport,
             plenty,
             &AtomicBool::new(false),
@@ -258,6 +392,7 @@ fn corrupt_space_starved_and_cancelled_installs_never_activate() {
     let error = starved
         .stage(
             &manifest,
+            &[],
             &Memory::new(bytes.clone()),
             |_| Ok(10),
             &AtomicBool::new(false),
@@ -273,6 +408,7 @@ fn corrupt_space_starved_and_cancelled_installs_never_activate() {
     let error = cancelled
         .stage(
             &manifest,
+            &[],
             &Memory::new(bytes),
             plenty,
             &AtomicBool::new(true),
@@ -292,6 +428,7 @@ fn a_tampered_receipt_or_truncated_file_is_not_installed() {
     let staged = store
         .stage(
             &manifest,
+            &[],
             &Memory::new(bytes),
             plenty,
             &AtomicBool::new(false),
@@ -374,7 +511,7 @@ fn cancelling_a_stalled_download_returns_promptly_and_keeps_its_bytes() {
     });
     let started = Instant::now();
     let error = store
-        .stage(&manifest, &Stalling(bytes), plenty, &cancelled, |_| {})
+        .stage(&manifest, &[], &Stalling(bytes), plenty, &cancelled, |_| {})
         .unwrap_err();
     assert!(matches!(error, PackError::Cancelled), "{error}");
     assert!(started.elapsed() < Duration::from_secs(5));
@@ -407,6 +544,7 @@ fn unexpected_resume_offsets_restart_and_installs_are_exclusive() {
     let error = store
         .stage(
             &manifest,
+            &[],
             &transport,
             plenty,
             &AtomicBool::new(false),
@@ -423,6 +561,7 @@ fn unexpected_resume_offsets_restart_and_installs_are_exclusive() {
     let staged = store
         .stage(
             &manifest,
+            &[],
             &transport,
             plenty,
             &AtomicBool::new(false),
@@ -434,6 +573,7 @@ fn unexpected_resume_offsets_restart_and_installs_are_exclusive() {
     // The staged pack holds the install lock until it is activated.
     let second = store.stage(
         &manifest,
+        &[],
         &Memory::new(bytes.clone()),
         plenty,
         &AtomicBool::new(false),
@@ -454,6 +594,7 @@ fn a_new_version_copies_identical_files_from_an_installed_one() {
     let staged = store
         .stage(
             &first,
+            &[],
             &Memory::new(bytes.clone()),
             plenty,
             &AtomicBool::new(false),
@@ -467,6 +608,7 @@ fn a_new_version_copies_identical_files_from_an_installed_one() {
     let mut second = first.clone();
     second.pack_version = "2".into();
     second.files.push(PackFile {
+        license: None,
         name: "extra.bin".into(),
         url: "https://huggingface.co/example/extra.bin".into(),
         sha256: sha2::Sha256::digest(&extra)
@@ -477,7 +619,14 @@ fn a_new_version_copies_identical_files_from_an_installed_one() {
     });
     let transport = Memory::new(extra.clone());
     let staged = store
-        .stage(&second, &transport, plenty, &AtomicBool::new(false), |_| {})
+        .stage(
+            &second,
+            &[],
+            &transport,
+            plenty,
+            &AtomicBool::new(false),
+            |_| {},
+        )
         .unwrap();
     // Only the new file was downloaded.
     assert_eq!(*transport.offsets.lock().unwrap(), [0]);
@@ -503,6 +652,7 @@ fn a_new_version_copies_identical_files_from_an_installed_one() {
     let transport = Memory::new(bytes.clone());
     let staged = store.stage(
         &third,
+        &[],
         &Memory::new(extra.clone()),
         plenty,
         &AtomicBool::new(false),
@@ -512,10 +662,419 @@ fn a_new_version_copies_identical_files_from_an_installed_one() {
     // which here serves the wrong bytes.
     assert!(staged.is_err());
     let staged = store
-        .stage(&third, &transport, plenty, &AtomicBool::new(false), |_| {})
+        .stage(
+            &third,
+            &[],
+            &transport,
+            plenty,
+            &AtomicBool::new(false),
+            |_| {},
+        )
         .unwrap();
     assert_eq!(
         std::fs::read(staged.file("model.bin").unwrap()).unwrap(),
         bytes
     );
+}
+
+fn accepting(mut manifest: PackManifest) -> PackManifest {
+    manifest.licenses[0].acceptance_required = true;
+    manifest
+}
+
+#[test]
+fn a_license_requiring_acceptance_refuses_before_any_byte() {
+    let root = tempfile::tempdir().unwrap();
+    let store = PackStore::new(root.path().to_path_buf());
+    let bytes = payload();
+    let manifest = accepting(manifest(&bytes));
+    let transport = Memory::new(bytes.clone());
+    let error = store
+        .stage(
+            &manifest,
+            &[],
+            &transport,
+            plenty,
+            &AtomicBool::new(false),
+            |_| {},
+        )
+        .unwrap_err();
+    assert!(
+        matches!(error, PackError::LicenseNotAccepted { .. }),
+        "{error}"
+    );
+    assert!(transport.offsets.lock().unwrap().is_empty());
+    assert!(!store.staging(&manifest).exists());
+    let source = tempfile::tempdir().unwrap();
+    std::fs::write(source.path().join("model.bin"), &bytes).unwrap();
+    let error = store
+        .import(
+            &manifest,
+            &[],
+            &ImportSource::Directory(source.path().into()),
+            plenty,
+            &AtomicBool::new(false),
+            |_| {},
+        )
+        .unwrap_err();
+    assert!(
+        matches!(error, PackError::LicenseNotAccepted { .. }),
+        "{error}"
+    );
+
+    let staged = store
+        .stage(
+            &manifest,
+            &manifest.license_ids(),
+            &transport,
+            plenty,
+            &AtomicBool::new(false),
+            |_| {},
+        )
+        .unwrap();
+    let installed = store.activate(staged).unwrap();
+    let receipt: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(installed.directory.join(RECEIPT)).unwrap()).unwrap();
+    assert_eq!(receipt["accepted_licenses"], serde_json::json!(["mit"]));
+    assert_eq!(receipt["origin"], "download");
+}
+
+/// A two-file pack whose second file lives in a subdirectory.
+fn nested(bytes: &[u8], extra: &[u8]) -> PackManifest {
+    let mut manifest = manifest(bytes);
+    manifest.files.push(PackFile {
+        license: None,
+        name: "encoder/rev/extra.bin".into(),
+        url: "https://huggingface.co/example/extra.bin".into(),
+        sha256: sha2::Sha256::digest(extra)
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect(),
+        bytes: extra.len() as u64,
+    });
+    manifest
+}
+
+#[test]
+fn offline_folders_install_verified_copies_and_refuse_tampering() {
+    let root = tempfile::tempdir().unwrap();
+    let store = PackStore::new(root.path().to_path_buf());
+    let bytes = payload();
+    let extra: Vec<u8> = (0..5_000_u32).map(|i| (i % 13) as u8).collect();
+    let manifest = nested(&bytes, &extra);
+    let source = tempfile::tempdir().unwrap();
+    std::fs::write(source.path().join("model.bin"), &bytes).unwrap();
+    let folder = ImportSource::at(source.path()).unwrap();
+    assert_eq!(folder, ImportSource::Directory(source.path().into()));
+
+    // An incomplete folder names what is missing and stages nothing usable.
+    let error = store
+        .import(
+            &manifest,
+            &[],
+            &folder,
+            plenty,
+            &AtomicBool::new(false),
+            |_| {},
+        )
+        .unwrap_err();
+    assert!(
+        matches!(&error, PackError::ImportIncomplete { missing: 1, example } if example == "encoder/rev/extra.bin"),
+        "{error}"
+    );
+
+    // A tampered file of the right size is refused and removed from staging.
+    std::fs::create_dir_all(source.path().join("encoder/rev")).unwrap();
+    let mut tampered = extra.clone();
+    tampered[7] ^= 1;
+    std::fs::write(source.path().join("encoder/rev/extra.bin"), &tampered).unwrap();
+    let error = store
+        .import(
+            &manifest,
+            &[],
+            &folder,
+            plenty,
+            &AtomicBool::new(false),
+            |_| {},
+        )
+        .unwrap_err();
+    assert!(matches!(error, PackError::Verification { .. }), "{error}");
+    assert!(store.installed(&manifest).unwrap().is_none());
+
+    // A symbolic link is never followed out of the source folder.
+    std::fs::remove_file(source.path().join("encoder/rev/extra.bin")).unwrap();
+    let outside = tempfile::NamedTempFile::new().unwrap();
+    std::fs::write(outside.path(), &extra).unwrap();
+    std::os::unix::fs::symlink(outside.path(), source.path().join("encoder/rev/extra.bin"))
+        .unwrap();
+    assert!(matches!(
+        store.import(
+            &manifest,
+            &[],
+            &folder,
+            plenty,
+            &AtomicBool::new(false),
+            |_| {}
+        ),
+        Err(PackError::ImportIncomplete { .. })
+    ));
+
+    std::fs::remove_file(source.path().join("encoder/rev/extra.bin")).unwrap();
+    std::fs::write(source.path().join("encoder/rev/extra.bin"), &extra).unwrap();
+    let mut seen = Vec::new();
+    let staged = store
+        .import(
+            &manifest,
+            &[],
+            &folder,
+            plenty,
+            &AtomicBool::new(false),
+            |p| seen.push(p.completed_bytes),
+        )
+        .unwrap();
+    assert_eq!(seen.last(), Some(&manifest.total_bytes()));
+    let installed = store.activate(staged).unwrap();
+    assert_eq!(
+        std::fs::read(installed.file("encoder/rev/extra.bin").unwrap()).unwrap(),
+        extra
+    );
+    let receipt: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(installed.directory.join(RECEIPT)).unwrap()).unwrap();
+    assert_eq!(receipt["origin"], "import");
+    // The source folder is untouched.
+    assert_eq!(
+        std::fs::read(source.path().join("model.bin")).unwrap(),
+        bytes
+    );
+}
+
+#[test]
+fn exported_archives_import_and_hostile_archives_are_refused() {
+    let root = tempfile::tempdir().unwrap();
+    let store = PackStore::new(root.path().to_path_buf());
+    let bytes = payload();
+    let extra: Vec<u8> = (0..5_000_u32).map(|i| (i % 13) as u8).collect();
+    let manifest = nested(&bytes, &extra);
+    let transport = Memory::new(bytes.clone());
+    let source = tempfile::tempdir().unwrap();
+    std::fs::create_dir_all(source.path().join("encoder/rev")).unwrap();
+    std::fs::write(source.path().join("model.bin"), &bytes).unwrap();
+    std::fs::write(source.path().join("encoder/rev/extra.bin"), &extra).unwrap();
+    let staged = store
+        .import(
+            &manifest,
+            &[],
+            &ImportSource::Directory(source.path().into()),
+            plenty,
+            &AtomicBool::new(false),
+            |_| {},
+        )
+        .unwrap();
+    store.activate(staged).unwrap();
+    drop(transport);
+
+    let archives = tempfile::tempdir().unwrap();
+    let archive = archives.path().join("pack.tar");
+    store
+        .export(&manifest, &archive, &AtomicBool::new(false), |_| {})
+        .unwrap();
+    // The system tar reads it, so other tools can produce the same layout.
+    let listing = std::process::Command::new("tar")
+        .arg("-tf")
+        .arg(&archive)
+        .output()
+        .unwrap();
+    assert_eq!(
+        String::from_utf8(listing.stdout).unwrap(),
+        "test-pack/2/model.bin\ntest-pack/2/encoder/rev/extra.bin\n"
+    );
+
+    // Export never replaces an existing file.
+    let error = store
+        .export(&manifest, &archive, &AtomicBool::new(false), |_| {})
+        .unwrap_err();
+    assert!(matches!(error, PackError::Io(_)), "{error}");
+
+    let other = PackStore::new(archives.path().join("models"));
+    let staged = other
+        .import(
+            &manifest,
+            &[],
+            &ImportSource::at(&archive).unwrap(),
+            plenty,
+            &AtomicBool::new(false),
+            |_| {},
+        )
+        .unwrap();
+    let installed = other.activate(staged).unwrap();
+    assert_eq!(
+        std::fs::read(installed.file("model.bin").unwrap()).unwrap(),
+        bytes
+    );
+    other.remove(&manifest).unwrap();
+
+    // An archive the system tar wrote from the plain folder layout imports too.
+    let plain = archives.path().join("plain.tar");
+    let status = std::process::Command::new("tar")
+        .arg("-cf")
+        .arg(&plain)
+        .arg("-C")
+        .arg(source.path())
+        .args(["model.bin", "encoder"])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    let staged = other
+        .import(
+            &manifest,
+            &[],
+            &ImportSource::Archive(plain),
+            plenty,
+            &AtomicBool::new(false),
+            |_| {},
+        )
+        .unwrap();
+    other.discard(staged).unwrap();
+
+    // A matching member that is a symbolic link is refused.
+    let linked = tempfile::tempdir().unwrap();
+    std::fs::create_dir_all(linked.path().join("encoder/rev")).unwrap();
+    std::fs::write(linked.path().join("model.bin"), &bytes).unwrap();
+    std::os::unix::fs::symlink("/etc/hosts", linked.path().join("encoder/rev/extra.bin")).unwrap();
+    let hostile = archives.path().join("hostile.tar");
+    assert!(
+        std::process::Command::new("tar")
+            .arg("-cf")
+            .arg(&hostile)
+            .arg("-C")
+            .arg(linked.path())
+            .args(["model.bin", "encoder"])
+            .status()
+            .unwrap()
+            .success()
+    );
+    let error = other
+        .import(
+            &manifest,
+            &[],
+            &ImportSource::Archive(hostile),
+            plenty,
+            &AtomicBool::new(false),
+            |_| {},
+        )
+        .unwrap_err();
+    assert!(
+        matches!(
+            error,
+            PackError::Verification {
+                reason: "archive entry is not a regular file",
+                ..
+            }
+        ),
+        "{error}"
+    );
+
+    // A flipped byte inside a member fails its hash; a corrupted header fails
+    // its checksum. Neither activates anything.
+    let mut damaged = std::fs::read(&archive).unwrap();
+    let offset = damaged.windows(4).position(|w| w == [0, 1, 2, 3]).unwrap();
+    damaged[offset + 100] ^= 1;
+    let damaged_path = archives.path().join("damaged.tar");
+    std::fs::write(&damaged_path, &damaged).unwrap();
+    let error = other
+        .import(
+            &manifest,
+            &[],
+            &ImportSource::Archive(damaged_path.clone()),
+            plenty,
+            &AtomicBool::new(false),
+            |_| {},
+        )
+        .unwrap_err();
+    assert!(matches!(error, PackError::Verification { .. }), "{error}");
+    let mut header = std::fs::read(&archive).unwrap();
+    header[10] ^= 1;
+    std::fs::write(&damaged_path, &header).unwrap();
+    let error = other
+        .import(
+            &manifest,
+            &[],
+            &ImportSource::Archive(damaged_path),
+            plenty,
+            &AtomicBool::new(false),
+            |_| {},
+        )
+        .unwrap_err();
+    assert!(
+        matches!(
+            error,
+            PackError::Verification {
+                reason: "archive header checksum is wrong",
+                ..
+            }
+        ),
+        "{error}"
+    );
+    // A truncated archive is incomplete.
+    let truncated = archives.path().join("truncated.tar");
+    std::fs::write(&truncated, &std::fs::read(&archive).unwrap()[..2048]).unwrap();
+    assert!(
+        other
+            .import(
+                &manifest,
+                &[],
+                &ImportSource::Archive(truncated),
+                plenty,
+                &AtomicBool::new(false),
+                |_| {}
+            )
+            .is_err()
+    );
+    assert!(other.installed(&manifest).unwrap().is_none());
+}
+
+#[test]
+fn pack_state_reports_partial_bytes_and_discard_clears_them() {
+    let root = tempfile::tempdir().unwrap();
+    let store = PackStore::new(root.path().to_path_buf());
+    let bytes = payload();
+    let manifest = manifest(&bytes);
+    assert_eq!(store.state(&manifest).unwrap(), PackState::Absent);
+    let transport = Memory::new(bytes.clone());
+    *transport.fail_after.lock().unwrap() = Some(1_000_000);
+    assert!(
+        store
+            .stage(
+                &manifest,
+                &[],
+                &transport,
+                plenty,
+                &AtomicBool::new(false),
+                |_| {}
+            )
+            .is_err()
+    );
+    assert_eq!(
+        store.state(&manifest).unwrap(),
+        PackState::Partial { bytes: 1_000_000 }
+    );
+    assert_eq!(
+        store.remaining_bytes(&manifest),
+        bytes.len() as u64 - 1_000_000
+    );
+    store.discard_partial(&manifest).unwrap();
+    assert_eq!(store.state(&manifest).unwrap(), PackState::Absent);
+}
+
+#[test]
+fn archive_numbers_accept_octal_and_base_256() {
+    assert_eq!(archive_octal(b"00000001750\0"), 1000);
+    let mut big = [0_u8; 12];
+    big[4..].copy_from_slice(&12_000_000_000_u64.to_be_bytes());
+    big[0] = 0x80;
+    assert_eq!(archive_octal(&big), 12_000_000_000);
+}
+
+fn archive_octal(field: &[u8]) -> u64 {
+    archive::test_octal(field)
 }

@@ -557,6 +557,7 @@ impl DeadpanApp {
             }
             Some(Outcome::Ready(_)) | None => {}
         }
+        self.ai_model_offer(ui);
         if ui
             .add_enabled(
                 ready && !other_running,
@@ -576,6 +577,51 @@ impl DeadpanApp {
             .size(12.0)
             .color(style::MUTED),
         );
+    }
+
+    /// Without the installed AI model pack, its size and the way to install
+    /// it. Generation still reports exactly why it cannot run.
+    fn ai_model_offer(&mut self, ui: &mut egui::Ui) {
+        let pack_id = deadpan_cli::generation::runtime::BRIDGE_PACK;
+        self.models.manager.refresh_if_stale(Duration::from_secs(5));
+        if self.models.manager.installed(pack_id) {
+            return;
+        }
+        let Some(pack) = self.models.manager.pack(pack_id) else {
+            return;
+        };
+        let installing = self.models.manager.installing(pack_id).is_some();
+        if !installing {
+            let partial = match self.models.manager.state(pack_id) {
+                Some(Ok(deadpan_models::packs::PackState::Partial { bytes })) => {
+                    format!(" ({} downloaded)", crate::model_packs::format_bytes(*bytes))
+                }
+                _ => String::new(),
+            };
+            let licenses = match pack
+                .licenses
+                .iter()
+                .filter(|license| license.acceptance_required)
+                .count()
+            {
+                0 => "no license to accept".to_owned(),
+                1 => "one license to accept".to_owned(),
+                2 => "two licenses to accept".to_owned(),
+                count => format!("{count} licenses to accept"),
+            };
+            ui.label(
+                egui::RichText::new(format!(
+                    "AI pictures need the AI model pack: a {} download{partial}, {licenses}, about {} of memory while running.",
+                    crate::model_packs::format_bytes(pack.total_bytes()),
+                    crate::model_packs::format_bytes(pack.memory_bytes)
+                ))
+                .size(12.0)
+                .color(style::MUTED),
+            );
+        }
+        if self.model_pack_offer(ui, pack_id, "Install AI models…", ":models") {
+            self.open_models(Some(pack_id), ui.ctx());
+        }
     }
 
     /// A status row while a job runs or a preview is shown.

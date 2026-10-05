@@ -20,6 +20,12 @@ pub enum DialogKind {
     Render,
     /// An explicit Netscape cookies file for one YouTube import.
     Cookies,
+    /// The moved or restored file of a missing Original.
+    RelinkOriginal,
+    /// A folder holding a model pack's files, for an offline install.
+    ModelPackFolder,
+    /// An uncompressed tar archive of a model pack, for an offline install.
+    ModelPackArchive,
 }
 
 pub struct SaveMovie {
@@ -231,6 +237,23 @@ fn native_dialog(kind: DialogKind, save: Option<SaveMovie>) -> Result<DialogFutu
             rfd::AsyncFileDialog::new()
                 .set_title("Choose a cookies file (Netscape format) for this import")
                 .add_filter("Cookies file", &["txt"])
+                .pick_file(),
+        ),
+        DialogKind::RelinkOriginal => Box::pin(
+            rfd::AsyncFileDialog::new()
+                .set_title("Locate the missing Original (its content must be identical)")
+                .pick_file(),
+        ),
+        DialogKind::ModelPackFolder => Box::pin(
+            rfd::AsyncFileDialog::new()
+                .set_title("Choose a folder holding the model pack's files")
+                .set_can_create_directories(false)
+                .pick_folder(),
+        ),
+        DialogKind::ModelPackArchive => Box::pin(
+            rfd::AsyncFileDialog::new()
+                .set_title("Choose a model pack archive (.tar)")
+                .add_filter("Uncompressed tar archive", &["tar"])
                 .pick_file(),
         ),
         DialogKind::ImportSound => Box::pin(

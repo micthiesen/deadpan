@@ -86,7 +86,7 @@ fn read_bounded(reader: impl Read) -> Result<Vec<u8>, String> {
 }
 
 #[cfg(target_os = "macos")]
-fn application_support_directory() -> Result<PathBuf, String> {
+pub(crate) fn application_support_directory() -> Result<PathBuf, String> {
     use objc2_foundation::{NSFileManager, NSSearchPathDirectory, NSSearchPathDomainMask};
 
     objc2::rc::autoreleasepool(|_| {
@@ -109,7 +109,7 @@ fn application_support_directory() -> Result<PathBuf, String> {
 }
 
 #[cfg(not(target_os = "macos"))]
-fn application_support_directory() -> Result<PathBuf, String> {
+pub(crate) fn application_support_directory() -> Result<PathBuf, String> {
     Err("The startup user keymap location is supported only on macOS".into())
 }
 

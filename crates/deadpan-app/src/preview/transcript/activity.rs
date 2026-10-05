@@ -25,8 +25,6 @@ enum ActivityStatus {
     Unchecked,
     /// The installed pack predates pause detection.
     NeedsModel,
-    /// The updated pack is being installed from this section.
-    Installing,
     Detecting,
     /// Waiting for the service to store this attempt.
     Saving(u64),
@@ -46,10 +44,8 @@ impl ActivityJob {
     pub(super) fn not_ready(&self) -> Option<String> {
         Some(match &self.status {
             ActivityStatus::NeedsModel => {
-                "Pauses need the updated transcription model. Update it in the Original rail."
-                    .into()
+                "Pauses need the updated transcription model. Update it with :models.".into()
             }
-            ActivityStatus::Installing => "Pauses are not ready while the model updates.".into(),
             ActivityStatus::Detecting | ActivityStatus::Saving(_) => {
                 "Pauses are not ready while the Original's speech is analysed.".into()
             }
@@ -58,6 +54,13 @@ impl ActivityJob {
             }
             ActivityStatus::Unchecked | ActivityStatus::Ready => return None,
         })
+    }
+
+    /// A pack changed in the Models panel: check a missing model again.
+    pub(super) fn recheck(&mut self) {
+        if self.status == ActivityStatus::NeedsModel {
+            self.status = ActivityStatus::Unchecked;
+        }
     }
 
     pub(super) fn start(&mut self) {
@@ -159,19 +162,8 @@ impl DeadpanApp {
         }
         let idle = self.transcription.events.is_none();
         let job = &mut self.transcription.activity;
-        match job.status {
-            ActivityStatus::Ready => job.status = ActivityStatus::Unchecked,
-            // An install started here finishes when its job ends; the
-            // transcript status still holds an install failure this frame.
-            ActivityStatus::Installing if idle => {
-                job.status = match &self.transcription.status {
-                    Status::Failed(error) => ActivityStatus::Failed(format!(
-                        "the updated model was not installed: {error}"
-                    )),
-                    _ => ActivityStatus::Unchecked,
-                };
-            }
-            _ => {}
+        if job.status == ActivityStatus::Ready {
+            job.status = ActivityStatus::Unchecked;
         }
         if job.status != ActivityStatus::Unchecked
             || job.unsaved.is_some()
@@ -183,8 +175,7 @@ impl DeadpanApp {
         {
             return;
         }
-        let (Some(pack), Some(store)) = (transcription_pack(), self.transcription.pack_store())
-        else {
+        let (Some(pack), Some(store)) = (transcription_pack(), self.models.manager.store()) else {
             self.transcription.activity.status =
                 ActivityStatus::Failed("Model storage is unavailable.".into());
             return;
@@ -277,23 +268,15 @@ impl DeadpanApp {
                     ui.weak("Detecting pauses…");
                 });
             }
-            ActivityStatus::Installing => {
-                ui.horizontal(|ui| {
-                    ui.spinner();
-                    ui.weak("Installing the updated model…");
-                });
-            }
             ActivityStatus::NeedsModel if self.transcription.status == Status::Ready => {
                 ui.weak(
                     "Pause detection needs the updated model pack, which adds the 0.9 MB Silero speech detector (MIT license).",
                 );
-                if ui
-                    .add(style::row_action(ui, "Update model…", ""))
-                    .on_hover_text("Download, verify and install the updated pack. An installed transcription model is reused, not downloaded again.")
-                    .clicked()
-                {
-                    self.transcription.activity.status = ActivityStatus::Installing;
-                    self.install_transcription_model(ui.ctx());
+                let id = transcription_pack()
+                    .map(|pack| pack.pack_id)
+                    .unwrap_or_default();
+                if self.model_pack_offer(ui, &id, "Update model…", ":models") {
+                    self.offer_transcription_model(ui.ctx());
                 }
             }
             ActivityStatus::Failed(error) => {

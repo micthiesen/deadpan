@@ -29,6 +29,7 @@ pub mod original_provenance;
 pub mod publication;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod publication_durability;
+pub mod recovery;
 pub mod registers;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod render_jobs;
@@ -114,6 +115,11 @@ pub struct ProjectStore {
     writer_package: Option<host_owner::PackageAnchor>,
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     writer_owner: Option<host_owner::OwnerState>,
+    /// What this writable open recovered; empty for read-only and new stores.
+    recovery: recovery::OpenRecovery,
+    /// This writer recorded `.writer.session` and removes it on close.
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    session_marker: bool,
     // Explicitly unlocked on drop so a briefly inherited descriptor in a spawned
     // child cannot extend this writer's ownership beyond the store lifetime.
     _writer_lock: Option<File>,
@@ -127,6 +133,14 @@ impl Drop for ProjectStore {
         self.generated_read_closed.store(true, Ordering::Release);
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         self.render_closed.store(true, Ordering::Release);
+        // A clean close removes the marker before releasing the lock, so the
+        // next writer can tell this session ended normally.
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        if self.session_marker
+            && let Some(anchor) = &self.writer_package
+        {
+            let _ = anchor.end_session();
+        }
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         if let Some(owner) = &mut self.writer_owner {
             owner.close(
@@ -317,13 +331,40 @@ impl ProjectStore {
             writer_package,
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             writer_owner: None,
+            recovery: recovery::OpenRecovery::default(),
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            session_marker: false,
             _writer_lock: Some(lock),
+        })
+        .map(|mut store| {
+            store.begin_writer_session();
+            store
         })
     }
 
     pub fn open(path: &Path, mode: AccessMode) -> Result<Self, StoreError> {
         validate_extension(path)?;
         let package = fs::canonicalize(path)?;
+        // A WAL database needs writable shared memory even to read, so a
+        // read-only volume refuses both modes. Say so instead of reporting
+        // SQLite's generic open failure.
+        if read_only_filesystem(&package) {
+            if mode == AccessMode::ReadWrite {
+                return Err(StoreError::ReadOnlyLocation(package));
+            }
+            return Self::open_package(package.clone(), mode).map_err(|error| match error {
+                StoreError::Database(rusqlite::Error::SqliteFailure(failure, _))
+                    if failure.code == rusqlite::ErrorCode::CannotOpen =>
+                {
+                    StoreError::ReadOnlyLocation(package)
+                }
+                error => error,
+            });
+        }
+        Self::open_package(package, mode)
+    }
+
+    fn open_package(package: PathBuf, mode: AccessMode) -> Result<Self, StoreError> {
         let database = package.join("project.sqlite");
         require_regular_file(&database)?;
         // Probe the format read-only before acquiring writable state or enabling WAL.
@@ -410,6 +451,9 @@ impl ProjectStore {
             writer_package,
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             writer_owner: None,
+            recovery: recovery::OpenRecovery::default(),
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            session_marker: false,
             _writer_lock: lock,
         };
         let audit = store.validate_with(validation::HistoryMode::Receipt)?;
@@ -430,13 +474,94 @@ impl ProjectStore {
                 )?;
                 transaction.commit()?;
             }
-            generation_attempts::recover_nonterminal(&mut store.connection)?;
+            // Read the previous writer's evidence first, but replace its
+            // marker only after recovery succeeds: a failed or crashed
+            // recovery leaves the earlier evidence for the next writer.
+            let mut found = recovery::OpenRecovery {
+                unclean_previous_writer: store.previous_writer(),
+                ..Default::default()
+            };
+            let generations = generation_attempts::recover_nonterminal(&mut store.connection)?;
+            found.interrupted_generation_count = generations.len();
+            found.interrupted_generations = generations
+                .into_iter()
+                .take(recovery::MAX_REPORTED_ATTEMPTS)
+                .collect();
             #[cfg(any(target_os = "macos", target_os = "linux"))]
-            render_jobs::recover_nonterminal(&mut store.connection)?;
-            #[cfg(any(target_os = "macos", target_os = "linux"))]
-            publication::recover_nonterminal(&mut store.connection)?;
+            {
+                let renders = render_jobs::recover_nonterminal(&mut store.connection)?;
+                found.interrupted_render_count = renders.len();
+                found.interrupted_renders = renders
+                    .into_iter()
+                    .take(recovery::MAX_REPORTED_ATTEMPTS)
+                    .collect();
+                let publications = publication::recover_nonterminal(&mut store.connection)?;
+                found.interrupted_publication_count = publications.len();
+                found.interrupted_publications = publications
+                    .into_iter()
+                    .take(recovery::MAX_REPORTED_ATTEMPTS)
+                    .collect();
+            }
+            found.record_error = store.recovery.record_error.take();
+            // Keep unacknowledged findings across writers, so a headless
+            // open in between cannot swallow what the app must report.
+            store.recovery = recovery::retain_pending(&store.package, found);
+            store.begin_writer_session();
         }
         Ok(store)
+    }
+
+    /// What writable opens found and recovered and nobody has acknowledged,
+    /// including earlier opens. Read-only opens and new packages report
+    /// nothing.
+    pub fn open_recovery(&self) -> &recovery::OpenRecovery {
+        &self.recovery
+    }
+
+    /// The person has seen the recovery report: forget the retained findings.
+    pub fn acknowledge_recovery(&mut self) -> Result<(), StoreError> {
+        self.require_writer()?;
+        recovery::clear_pending(&self.package)?;
+        self.recovery = recovery::OpenRecovery::default();
+        Ok(())
+    }
+
+    /// A marker left by a writer of this package that never closed.
+    fn previous_writer(&mut self) -> Option<recovery::PreviousWriter> {
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        if let Some(anchor) = &self.writer_package {
+            match anchor.read_session() {
+                Ok(host_owner::SessionEvidence::Unclean(marker)) => {
+                    return Some(recovery::PreviousWriter { marker });
+                }
+                Ok(_) => {}
+                Err(error) => {
+                    self.recovery.record_error = Some(error.to_string());
+                    return Some(recovery::PreviousWriter {
+                        marker: format!("unreadable writer marker: {error}"),
+                    });
+                }
+            }
+        }
+        None
+    }
+
+    /// Records this writer's marker. A marker that cannot be written (for
+    /// example on a full disk) never prevents opening.
+    fn begin_writer_session(&mut self) {
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        if let Some(anchor) = &self.writer_package {
+            match anchor.write_session(&anchor.session_marker(&recovery::writer_marker())) {
+                Ok(()) => self.session_marker = true,
+                Err(error) => {
+                    let error = format!("this session's crash marker was not recorded: {error}");
+                    self.recovery.record_error = Some(match self.recovery.record_error.take() {
+                        Some(earlier) => format!("{earlier}; {error}"),
+                        None => error,
+                    });
+                }
+            }
+        }
     }
 
     /// Install the host's resolver so ordinary writes keep current
@@ -730,6 +855,20 @@ fn acquire_lock(package: &Path) -> Result<File, StoreError> {
         Err(std::fs::TryLockError::WouldBlock) => Err(StoreError::AlreadyOpen),
         Err(std::fs::TryLockError::Error(error)) => Err(StoreError::Io(error)),
     }
+}
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+fn read_only_filesystem(path: &Path) -> bool {
+    rustix::fs::statvfs(path).is_ok_and(|volume| {
+        volume
+            .f_flag
+            .contains(rustix::fs::StatVfsMountFlags::RDONLY)
+    })
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux")))]
+fn read_only_filesystem(_path: &Path) -> bool {
+    false
 }
 
 fn read_snapshot(connection: &Connection) -> Result<ProjectDocument, StoreError> {

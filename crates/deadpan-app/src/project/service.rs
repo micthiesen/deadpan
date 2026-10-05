@@ -37,6 +37,7 @@ mod headless;
 mod macros;
 mod marks;
 mod moment;
+mod recovery;
 mod registers;
 mod render;
 mod render_history;
@@ -125,6 +126,14 @@ struct Service {
     host_preparing: Option<(u64, Arc<AtomicBool>)>,
     generation: generation::State,
     targets: targets::State,
+    /// Recovery report and original presence for the current session.
+    opened: Option<Arc<super::OpenReport>>,
+    /// Persistent "Not saved" alert for the current session.
+    storage: Option<crate::recovery::StorageAlert>,
+    storage_watch: recovery::StorageWatch,
+    /// One relink on the import worker, kept until its reply drains.
+    relinking: Option<recovery::Relinking>,
+    relink: Option<super::RelinkStatus>,
     #[cfg(test)]
     render_preview_refresh_failure: bool,
 }
@@ -196,6 +205,11 @@ pub(super) fn run(
         host_preparing: None,
         generation: generation::State::new(backend),
         targets: targets::State::new(tracking),
+        opened: None,
+        storage: None,
+        storage_watch: Default::default(),
+        relinking: None,
+        relink: None,
         #[cfg(test)]
         render_preview_refresh_failure: false,
     };
@@ -344,6 +358,7 @@ pub(super) fn run(
 impl Service {
     fn publish(&mut self) {
         self.observe_semantic();
+        self.observe_storage();
         let update = ProjectUpdate {
             workspace: self.workspace.clone(),
             import: self.import.clone(),
@@ -392,6 +407,13 @@ impl Service {
             shot_save: self.shot_save.clone(),
             generation: self.generation_update(),
             targets: self.targets_update(),
+            opened: self.opened.clone().filter(|report| {
+                self.workspace
+                    .as_ref()
+                    .is_some_and(|workspace| workspace.session == report.session)
+            }),
+            storage: self.current_storage_alert(),
+            relink: self.relink.clone(),
         };
         *self
             .shared
@@ -571,6 +593,19 @@ impl Service {
             #[cfg(test)]
             ProjectRequest::Create(path) => self.open(path, true),
             ProjectRequest::Open(path) => self.open(path, false),
+            ProjectRequest::AcknowledgeRecovery { expected_session } => {
+                if self.session == expected_session && self.workspace.is_some() {
+                    self.writer()?.acknowledge_recovery().map_err(display)?;
+                }
+                Ok(())
+            }
+            ProjectRequest::RelinkOriginal {
+                ticket,
+                expected_session,
+                content,
+                expected_version,
+                path,
+            } => self.relink_original(ticket, expected_session, &content, expected_version, path),
             ProjectRequest::Close => {
                 self.cancel();
                 self.host = None;
@@ -865,12 +900,16 @@ impl Service {
             .ok_or("Project session identities exhausted")?;
         let workspace = snapshot(&store, next, package.canonicalize().map_err(display)?, None)?;
         let registers = registers::restore(&store, next)?;
+        let report = Arc::new(recovery::open_report(&store, &workspace));
         let host = headless::Host::bind(&mut store)?;
         self.cancel();
         self.host = Some(host);
         self.store = Some(store);
         self.workspace = Some(Arc::new(workspace));
         self.session = next;
+        self.opened = Some(report);
+        self.storage = None;
+        self.storage_watch = Default::default();
         self.cached = None;
         self.clear_copied_slice();
         self.registers = Some(registers);
@@ -1399,6 +1438,7 @@ impl Service {
             .ok_or("Project session identities exhausted")?;
         let workspace = snapshot(&store, next, path.canonicalize().map_err(display)?, None)?;
         let registers = registers::restore(&store, next)?;
+        let report = Arc::new(recovery::open_report(&store, &workspace));
         let message = match migration {
             Some(migration) if migration.backup.is_some() => format!(
                 "Project opened. Upgraded schema {} to {}; original database backup: {}",
@@ -1414,6 +1454,7 @@ impl Service {
             workspace,
             registers,
             message,
+            report,
         }))
     }
 
@@ -1431,6 +1472,9 @@ impl Service {
         self.registers = Some(prepared.registers);
         self.import = None;
         self.message = Some(prepared.message);
+        self.opened = Some(prepared.report);
+        self.storage = None;
+        self.storage_watch = Default::default();
         self.clear_marks();
         Ok(())
     }
@@ -1702,6 +1746,9 @@ impl Service {
     }
 
     fn result(&mut self, reply: Reply) {
+        let Some(reply) = self.relink_result(reply) else {
+            return;
+        };
         let Some(reply) = self.host_preparation_result(reply) else {
             return;
         };
@@ -1725,8 +1772,8 @@ impl Service {
             return;
         }
         let outcome = match reply.result {
-            Ok(Prepared::Host(_)) => {
-                Err("Import worker returned an unrelated host operation".into())
+            Ok(Prepared::Host(_) | Prepared::Restored(_) | Prepared::Relinked(_)) => {
+                Err("Import worker returned an unrelated operation".into())
             }
             Err(error) => Err(error),
             Ok(Prepared::Retained(prepared)) => {
@@ -2115,6 +2162,11 @@ fn node() -> NodeId {
     NodeId::new(uuid::Uuid::new_v4().to_string()).expect("UUID is a valid node identity")
 }
 
-fn display(error: impl std::fmt::Display) -> String {
+/// Store failures get their person-facing explanation and suggested action;
+/// disk-full and permission failures also raise the persistent alert.
+fn display<E: std::fmt::Display + 'static>(error: E) -> String {
+    if let Some(store) = (&error as &dyn std::any::Any).downcast_ref::<StoreError>() {
+        return crate::recovery::describe_store_error(store);
+    }
     error.to_string()
 }

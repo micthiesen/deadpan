@@ -21,6 +21,10 @@ pub enum StoreError {
     AlreadyOpen,
     #[error("This project was opened read-only")]
     ReadOnly,
+    #[error(
+        "The project is on a read-only volume ({0}); copy it to a writable folder, such as Documents/Deadpan, to open it"
+    )]
+    ReadOnlyLocation(PathBuf),
     #[error("Project host ownership is unavailable: {0}")]
     HostOwner(&'static str),
     #[error("Unsupported database schema {0}; the project has not been rewritten")]
@@ -119,7 +123,7 @@ impl StoreError {
             Self::RenderMedia(error) => error.code(),
             Self::PackageAlreadyExists(_) => "PackageAlreadyExists",
             Self::AlreadyOpen => "ProjectAlreadyOpen",
-            Self::ReadOnly => "ProjectReadOnly",
+            Self::ReadOnly | Self::ReadOnlyLocation(_) => "ProjectReadOnly",
             Self::HostOwner(_) => "HostOwnerUnavailable",
             Self::UnsupportedSchema(_) => "SchemaUnsupported",
             Self::MigrationRequired(_) => "MigrationRequired",
@@ -170,7 +174,7 @@ impl StoreError {
                 _ => "ProjectFailure",
             },
             Self::Io(error) => match error.kind() {
-                std::io::ErrorKind::StorageFull => "DiskFull",
+                std::io::ErrorKind::StorageFull | std::io::ErrorKind::QuotaExceeded => "DiskFull",
                 std::io::ErrorKind::ReadOnlyFilesystem => "ProjectReadOnly",
                 std::io::ErrorKind::PermissionDenied => "PermissionDenied",
                 _ => "IoFailure",

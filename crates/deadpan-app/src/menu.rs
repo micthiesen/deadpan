@@ -25,10 +25,11 @@ pub enum MenuCommand {
     ViewOriginal,
     ViewEdit,
     Keys,
+    Models,
     Quit,
 }
 
-const COMMANDS: [(&str, MenuCommand); 13] = [
+const COMMANDS: [(&str, MenuCommand); 14] = [
     ("deadpan.file.new", MenuCommand::New),
     ("deadpan.file.new-url", MenuCommand::NewFromUrl),
     ("deadpan.file.open", MenuCommand::Open),
@@ -41,6 +42,7 @@ const COMMANDS: [(&str, MenuCommand); 13] = [
     ("deadpan.view.original", MenuCommand::ViewOriginal),
     ("deadpan.view.edit", MenuCommand::ViewEdit),
     ("deadpan.help.keys", MenuCommand::Keys),
+    ("deadpan.app.models", MenuCommand::Models),
     ("deadpan.app.quit", MenuCommand::Quit),
 ];
 
@@ -89,7 +91,7 @@ impl MenuState {
             }
             MenuCommand::Undo => self.ready && self.can_undo,
             MenuCommand::Redo => self.ready && self.can_redo,
-            MenuCommand::ViewOriginal => self.ready,
+            MenuCommand::ViewOriginal | MenuCommand::Models => self.ready,
             MenuCommand::ViewEdit => self.ready && self.project,
             MenuCommand::Keys => self.help_allowed,
             MenuCommand::Quit => true,
@@ -147,6 +149,8 @@ impl MenuBar {
         let original = item("deadpan.view.original", "Original", None);
         let edit = item("deadpan.view.edit", "Your Edit", None);
         let keys = item("deadpan.help.keys", "Keyboard Reference", None);
+        // Packs are global, so the panel needs no project.
+        let models = item("deadpan.app.models", "Models…", None);
         // Quit asks the window to close so unfinished project work completes
         // through the app's ordinary close path.
         let quit = item("deadpan.app.quit", "Quit Deadpan", command_key(Code::KeyQ));
@@ -156,6 +160,8 @@ impl MenuBar {
             true,
             &[
                 &PredefinedMenuItem::about(Some("About Deadpan"), None),
+                &PredefinedMenuItem::separator(),
+                &models,
                 &PredefinedMenuItem::separator(),
                 &PredefinedMenuItem::services(None),
                 &PredefinedMenuItem::separator(),
@@ -227,6 +233,7 @@ impl MenuBar {
                 (MenuCommand::ViewOriginal, original),
                 (MenuCommand::ViewEdit, edit),
                 (MenuCommand::Keys, keys),
+                (MenuCommand::Models, models),
                 (MenuCommand::Quit, quit),
             ],
             import,
@@ -314,6 +321,7 @@ mod tests {
         assert!(empty.enabled(MenuCommand::New));
         assert!(empty.enabled(MenuCommand::NewFromUrl));
         assert!(empty.enabled(MenuCommand::ViewOriginal));
+        assert!(empty.enabled(MenuCommand::Models));
         assert!(!empty.enabled(MenuCommand::Import));
         assert!(!empty.enabled(MenuCommand::Render));
         assert!(!empty.enabled(MenuCommand::ViewEdit));

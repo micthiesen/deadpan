@@ -77,7 +77,7 @@ Current crates:
 - `crates/deadpan-store`: authoritative SQLite packages, immutable revisions, atomic writes, durable undo/redo, generation request relevance, persistent attempts and restart recovery, and database checkpoints.
 - `crates/deadpan-plan`: immutable indexed picture mappings and bounded audio spans through structural beats, retaining original source identities, exact transforms and absolute sample boundaries; no decoding or DSP.
 - `crates/deadpan-jobs`: bounded worker protocol, pure attempt lifecycle, process supervision, contained artifact snapshots, and exact bridge-generation planning. The real MLX adapter in `tools/model-qualification` is a development harness; app inference remains open.
-- `crates/deadpan-models`: native bridge bundle qualification, retained inputs, measured source spans, and immutable host provenance. Model installation, app scheduling, audition, and application integration remain open.
+- `crates/deadpan-models`: native bridge bundle qualification, retained inputs, measured source spans, immutable host provenance, and verified model packs (approved manifests, license layers, resumable download, offline folder/tar import and export). Audition and the remaining application integration remain open.
 - `crates/deadpan-media`: shared verified source snapshots, measured video/audio indexes, exact video seeks and bounded private PCM caches, plus isolated conversion, strict helper reports and private BLAKE3 output. No database or authored-state mutation.
 - `native/deadpan-source`: separate persistent descriptor-only FFmpeg video/audio decoders, raw metadata, owned RGBA and original-rate interleaved f32. Unsafe code stays in this narrow adapter; unsupported interpretations fail explicitly.
 - `native/deadpan-dsp`: bounded owned planar PCM and the canonical pinned stretch schedule through a safe Rust/C++ boundary. Construct it on a preparation worker; no device output or media decoding.
@@ -90,7 +90,7 @@ Current crates:
 - `native/deadpan-media-worker`: process-isolated FFmpeg conversion, intra-only VideoToolbox preview-proxy encoding and independent decode verification through bounded descriptor-only AVIO. Only the documented FFI call permits unsafe Rust. Requires the explicitly selected pinned LGPL FFmpeg development prefix.
 - `native/deadpan-encode`: bounded descriptor-only H.264/AAC MP4 encoder over composed I420 and canonical stereo PCM. Exact clocks, explicit hardware/software attempts, one shared deadline and restricted fast-start readback; no project, decoding, verification or publication ownership.
 - `native/deadpan-process`: checked worker/leader teardown and Darwin group-membership adapter; unsafe is denied except for its documented bounded libproc call. Higher layers continue to forbid unsafe.
-- `crates/deadpan-app`: native `egui`/`eframe` project workspace using Metal. One service owns the writable store, one import worker prepares media, and a separate bounded preview worker consumes immutable workspaces. Native dialogs, source registration, explicit insertion, history, current-depth Camera previews, limited Original/edit/sound audition and automatic SDR Render with explicit preview decisions are implemented. Full editing, mastered playback, complete export qualification and native render recovery remain open.
+- `crates/deadpan-app`: native `egui`/`eframe` project workspace using Metal. One service owns the writable store, one import worker prepares media, and a separate bounded preview worker consumes immutable workspaces. Native dialogs, source registration, explicit insertion, history, current-depth Camera previews, limited Original/edit/sound audition and automatic SDR Render with explicit preview decisions are implemented, as are crash-recovery reporting, missing-Original relink and storage-failure alerts ([recovery](docs/RECOVERY.md)). Full editing, mastered playback, complete export qualification, rotating backups and release migration remain open.
 - `crates/deadpan-cli`: versioned headless project/command API, reused by `deadpan-app --headless`, and the per-user preview-proxy builder and cache.
 - `crates/deadpan-analysis`: pure analysis annotations; validated word-timed transcripts and Silero speech activity with energy-refined pauses, both with exact Original timing, and per-picture shot change measurements. See [transcription](docs/TRANSCRIPTION.md), [speech activity](docs/SPEECH_ACTIVITY.md) and [shot detection](docs/SHOT_DETECTION.md).
 - `native/deadpan-transcribe`: process-isolated whisper.cpp worker. Its only `unsafe` is the documented abort-callback adapter; never use whisper-rs's `set_abort_callback_safe`, which aborts every encode.
@@ -661,8 +661,33 @@ writer. Close/switch/shutdown must pump reliable completions while the old write
 is alive. Separate render status from editor command feedback. Native Render
 captures preview decisions after field input and uses the exact durable commit
 receipt. Closed-project headless Render owns its writer through cleanup; bounded
-output failures and signals request cancellation without bypassing drain. Native
-persisted-job recovery remains open.
+output failures and signals request cancellation without bypassing drain. Writable
+open reports interrupted render, publication and generation attempts; the native
+recovery report opens Renders on the interrupted job, whose explicit actions retry.
+Nothing retries automatically.
+
+Recovery follows [the recovery contract](docs/RECOVERY.md). Every writable store
+records `.writer.session` (with the package identity) and removes it on drop
+before unlocking. Read a found marker before reconciling attempts, write this
+writer's marker only after recovery succeeds, ignore markers naming another
+package, and never fail an open because evidence cannot be read or written.
+Never infer a crash from a lock file, WAL or PID alone. Writable opens merge
+their findings into `Reports/recovery-pending.json` until a host calls
+`acknowledge_recovery`. The native launch journal lists each running instance's
+PID, launch identity and project path; offer only records whose process is gone,
+remove only your own record, and record a clean exit only after the service has
+drained. Tests, replay and smoke runs never read the user's journal. Opening
+never fails for missing media: report presence from metadata
+(`original_availability`) and verify bytes only where they are read or on
+`:relink`. Restore a managed copy (`prepare_restore`) or a linked location
+(`prepare_relink`) only from identical content, hashing the chosen file before
+anything is published; move a failed-verification copy aside rather than
+deleting it. Storage failures are classified from the message headline
+(`storage_code`), never a thread-local; the service raises the "Not saved" alert
+at its single publish choke point, and the header must never say "Saved" while
+it stands. Recovery and close questions own input above every draft. Qualify
+storage failures with real disk images (`hdiutil`) proven full, not only
+injected errors.
 
 Open-project commands use the [authenticated writer endpoint](docs/LIVE_PROJECT.md).
 Bind discovery to the actual package and held writer; revoke it before unlocking.
@@ -755,6 +780,18 @@ until the host has stopped and reaped the worker. Progress stays in memory.
 Candidate receipts record a trusted host validator's declaration; metadata alone
 does not establish durable file ownership, media validity, or acceptability.
 See [attempt storage](docs/GENERATION_ATTEMPTS.md).
+
+A packaged app runs AI pauses only through its bundled
+`Contents/Resources/ai-runtime` (assembled by `tools/ai-runtime/build.py` from
+verified pins) and the installed `ltx-2.3-q4-bridge` pack; never fall back to
+environment variables, Homebrew or a checkout there. Change runtime inputs only
+through `tools/ai-runtime/pins.json`, keep the wheel set equal to the qualified
+`uv.lock` environment, sign every nested Mach-O and keep the audit strict. The
+runtime's `ffmpeg`/`ffprobe` are GPL: Developer ID builds need the owner's
+`--allow-gpl-ai-codec`. Model packs install only after the user accepts every
+license that requires it; never download silently. Offline import verifies
+every file, reads archive names only to match manifest paths and refuses links.
+See [model packs](docs/MODEL_PACKS.md) and [packaging](docs/PACKAGING.md#ai-runtime).
 
 Protocol-2 bridge workers declare native footage and provenance, never the final
 sampled master. Qualify the complete bundle against persisted intent with

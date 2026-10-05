@@ -101,8 +101,11 @@ const HELP: &str = "Deadpan headless commands:
   downloader install [--root <dir>]
   downloader status [--root <dir>] [--probe]
   models list [--root <dir>]
-  models install <pack> [--root <dir>]
-  models remove <pack> [--root <dir>]
+  models license <pack>
+  models install <pack> [--accept-license] [--root <dir>]
+  models import <pack> <folder-or-archive.tar> [--accept-license] [--root <dir>]
+  models export <pack> <archive.tar> [--root <dir>]
+  models remove <pack> [--partial] [--root <dir>]
   transcribe <project.deadpan> [--model <ggml.bin> --sha256 <hex>] [--vad-model <ggml-silero.bin> --vad-sha256 <hex>] [--language <auto|xx>] [--asset <id>]
   transcript <project.deadpan> [--search <words>] [--asset <id>]
   pauses <project.deadpan> [--asset <id>]
@@ -124,7 +127,7 @@ cookies come only from an explicit file. You are responsible for having the righ
 Audio inspection returns at most 256 stereo samples at the explicitly selected processing stage.
 Domain inspection reads raw physical context; signed START/END use its captured root grid.
 Definition inspection reads a local-zero point grid, not final timeline allocation.
-AI pauses use the development model runtime located by DEADPAN_BRIDGE_* variables (docs/AI_HOLDS.md); generation proposes pictures and only accept-hold edits the project.
+AI pauses use Deadpan.app's bundled runtime and the installed ltx-2.3-q4-bridge model pack (development builds: DEADPAN_BRIDGE_* variables; docs/AI_HOLDS.md); generation proposes pictures and only accept-hold edits the project.
 Placement inspection evaluates the selected revision's recipe on an explicit signed root clock.";
 
 #[derive(Debug, thiserror::Error)]
@@ -234,6 +237,15 @@ impl CliError {
             Self::ModelPack(deadpan_models::packs::PackError::Busy) => "ModelPackBusy",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::ModelPack(deadpan_models::packs::PackError::Space { .. }) => "ModelPackSpace",
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::ModelPack(deadpan_models::packs::PackError::LicenseNotAccepted { .. }) => {
+                "ModelPackLicense"
+            }
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            Self::ModelPack(
+                deadpan_models::packs::PackError::ImportIncomplete { .. }
+                | deadpan_models::packs::PackError::Verification { .. },
+            ) => "ModelPackVerification",
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             Self::ModelPack(_) => "ModelPackFailed",
             #[cfg(any(target_os = "macos", target_os = "linux"))]

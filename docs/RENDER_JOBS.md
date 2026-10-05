@@ -7,7 +7,9 @@ retaining a completed encode and retrying verification after restart. A shared
 workflow coordinator connects these stages to the native project service.
 Native controls and headless commands use this coordinator. Commands for an
 open native project route through its [authenticated owner](LIVE_PROJECT.md).
-Native persisted-job recovery and scheduling remain open.
+Writable open lists the attempts it interrupted, and the native
+[recovery report](RECOVERY.md) opens Renders on that job for an explicit retry.
+Automatic retry and scheduling remain open.
 The [publication journal](RENDER_PUBLICATION.md#durable-publication-journal)
 uses these checkpoints for explicit destination reconciliation.
 

@@ -14,8 +14,8 @@ use deadpan_media::source_input::VerifiedSourceInput;
 use deadpan_media::source_qualification::DecodedSourceQualification;
 use deadpan_media::source_session::{SourceSession, SourceSessionLimits};
 use deadpan_store::original_media::{
-    OriginalImportHandle, OriginalMediaLimits, OriginalMediaRecord, OriginalOwnership,
-    PreparedOriginalRetention,
+    LinkedOriginal, OriginalImportHandle, OriginalMediaLimits, OriginalMediaRecord,
+    OriginalOwnership, PreparedOriginalRelink, PreparedOriginalRetention,
 };
 use deadpan_store::source_registration::PreparedSourceRegistration;
 
@@ -51,6 +51,16 @@ pub(super) enum Work {
         record: OriginalMediaRecord,
         streams: Streams,
     },
+    /// Republish a missing managed copy from a file with identical content.
+    Restore {
+        record: OriginalMediaRecord,
+        path: PathBuf,
+    },
+    /// Point a linked original at a moved file with identical content.
+    Relink {
+        record: OriginalMediaRecord,
+        location: LinkedOriginal,
+    },
 }
 
 pub(super) struct Job {
@@ -64,6 +74,8 @@ pub(super) enum Prepared {
     Host(Result<Box<preparation::PreparedOperation>, LiveError>),
     Retained(Box<PreparedOriginalRetention>),
     Qualified(Box<PreparedSourceRegistration>),
+    Restored(Box<deadpan_store::original_media::PreparedOriginalRestore>),
+    Relinked(Box<PreparedOriginalRelink>),
 }
 
 pub(super) struct Reply {
@@ -106,14 +118,43 @@ pub(super) fn prepare(job: Job) -> Result<Prepared, String> {
             .prepare_retention(path, ownership.clone(), original_limits(), &job.cancelled)
             .map(Box::new)
             .map(Prepared::Retained)
-            .map_err(|error| error.to_string()),
+            .map_err(|error| crate::recovery::describe_store_error(&error)),
         Work::Qualify {
             ref record,
             streams,
         } => qualify(&job, record, streams)
             .map(Box::new)
             .map(Prepared::Qualified)
-            .map_err(|error| error.to_string()),
+            .map_err(
+                |error| match error.downcast_ref::<deadpan_store::StoreError>() {
+                    Some(store) => crate::recovery::describe_store_error(store),
+                    None => error.to_string(),
+                },
+            ),
+        Work::Restore {
+            ref record,
+            ref path,
+        } => job
+            .handle
+            .prepare_restore(record, path, original_limits(), &job.cancelled)
+            .map(Box::new)
+            .map(Prepared::Restored)
+            .map_err(|error| crate::recovery::describe_store_error(&error)),
+        Work::Relink {
+            ref record,
+            ref location,
+        } => job
+            .handle
+            .prepare_relink(
+                record,
+                record.version(),
+                location.clone(),
+                original_limits(),
+                &job.cancelled,
+            )
+            .map(Box::new)
+            .map(Prepared::Relinked)
+            .map_err(|error| crate::recovery::describe_store_error(&error)),
     }
 }
 

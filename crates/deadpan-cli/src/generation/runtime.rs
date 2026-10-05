@@ -1,25 +1,26 @@
-//! The development bridge runtime: the private Python environment, the pinned
-//! LTX source checkout and model data, FFmpeg, the worker adapter and the
-//! media worker that qualifies its output.
+//! The bridge runtime: the private Python environment, the pinned LTX source,
+//! the model pack, FFmpeg, the worker adapter and the media worker that
+//! qualifies its output.
 //!
-//! This is a developer runtime located through environment variables, not a
-//! distributed one. Each variable has a development default:
+//! A packaged `Deadpan.app` carries the runtime in
+//! `Contents/Resources/ai-runtime` (built by `cargo xtask bundle` from
+//! `tools/ai-runtime`) and takes the model data from the installed
+//! `ltx-2.3-q4-bridge` pack in the models root. It never reads
+//! `DEADPAN_BRIDGE_*` variables, development defaults, Homebrew or the
+//! checkout, unless a developer opts in with `DEADPAN_DEVELOPER_BRIDGE=1`; the
+//! packaged app then uses only explicitly set variables (docs/PACKAGING.md).
+//!
+//! Development builds and developer wrapper bundles locate a development
+//! runtime through environment variables, each with a default:
 //!
 //! | Variable | Default |
 //! | --- | --- |
 //! | `DEADPAN_BRIDGE_PYTHON` | `<runtime source>/.venv/bin/python3` |
 //! | `DEADPAN_BRIDGE_RUNTIME_SOURCE` | `~/Library/Caches/Deadpan/ltx-runtime/ltx-2-mlx-<commit>`, else the original `/private/tmp` checkout |
-//! | `DEADPAN_BRIDGE_MODEL_CACHE` | `~/Library/Caches/Deadpan/ltx-qualification` |
+//! | `DEADPAN_BRIDGE_MODEL_CACHE` | the installed bridge pack, else `~/Library/Caches/Deadpan/ltx-qualification` |
 //! | `DEADPAN_BRIDGE_FFMPEG` | `/opt/homebrew/bin/ffmpeg` |
 //! | `DEADPAN_BRIDGE_FFPROBE` | `/opt/homebrew/bin/ffprobe` |
 //! | `DEADPAN_BRIDGE_WORKER` | `tools/model-qualification/worker.py` in this checkout |
-//!
-//! A packaged `Deadpan.app` carries no AI runtime and ignores all of this by
-//! default, so it never silently depends on a build machine's checkout,
-//! Homebrew installation or inherited variables. A developer may opt in with
-//! `DEADPAN_DEVELOPER_BRIDGE=1`; the packaged app then uses only explicitly
-//! set `DEADPAN_BRIDGE_*` variables, never the defaults (docs/PACKAGING.md).
-//! Developer wrapper bundles keep the development behavior.
 //!
 //! `deadpan-media-worker` must be installed beside the current executable.
 //! The worker verifies the runtime source tree and every model file against
@@ -27,6 +28,10 @@
 
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::AtomicBool;
+use std::time::Duration;
+
+use deadpan_models::packs::{PackStore, approved_pack};
 
 pub const PYTHON: &str = "DEADPAN_BRIDGE_PYTHON";
 pub const RUNTIME_SOURCE: &str = "DEADPAN_BRIDGE_RUNTIME_SOURCE";
@@ -36,40 +41,109 @@ pub const FFPROBE: &str = "DEADPAN_BRIDGE_FFPROBE";
 pub const WORKER: &str = "DEADPAN_BRIDGE_WORKER";
 /// Explicit developer opt-in to the bridge variables inside a packaged app.
 pub const DEVELOPER_OPT_IN: &str = "DEADPAN_DEVELOPER_BRIDGE";
+/// The model pack that supplies the bridge model data.
+pub const BRIDGE_PACK: &str = "ltx-2.3-q4-bridge";
+/// The bundled runtime below `Contents`.
+pub const BUNDLED_RUNTIME: &str = "Resources/ai-runtime";
+/// Bundled runtime layout, relative to its directory.
+pub const BUNDLED_PYTHON: &str = "python/bin/python3.12";
+pub const BUNDLED_SOURCE: &str = "ltx-2-mlx";
+pub const BUNDLED_WORKER: &str = "worker/worker.py";
+pub const BUNDLED_FFMPEG: &str = "bin/ffmpeg";
+pub const BUNDLED_FFPROBE: &str = "bin/ffprobe";
 
 /// How the bridge runtime may be located in this process.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Lookup {
     /// Development build: variables, then development defaults.
     Development,
     /// Packaged app with the developer opt-in: explicit variables only.
     PackagedExplicit,
-    /// Packaged app: no AI runtime.
-    PackagedDisabled,
+    /// Packaged app: the runtime inside the bundle and the installed pack.
+    Bundled { runtime: PathBuf },
 }
 
 impl Lookup {
-    pub fn describe(self) -> &'static str {
+    pub fn describe(&self) -> &'static str {
         match self {
             Self::Development => {
                 "development runtime from DEADPAN_BRIDGE_* variables and development defaults"
             }
             Self::PackagedExplicit => {
-                "developer opt-in: explicit DEADPAN_BRIDGE_* variables only; not bundled"
+                "developer opt-in: explicit DEADPAN_BRIDGE_* variables only; the bundled runtime is ignored"
             }
-            Self::PackagedDisabled => "not bundled; the packaged application has no AI runtime",
+            Self::Bundled { .. } => {
+                "bundled private runtime with the installed model pack; environment variables are ignored"
+            }
         }
     }
 }
 
 /// The lookup for the running executable.
 pub fn lookup() -> Lookup {
-    if crate::bundle::packaged_contents().is_none() {
-        Lookup::Development
-    } else if std::env::var_os(DEVELOPER_OPT_IN).is_some_and(|value| value == "1") {
-        Lookup::PackagedExplicit
-    } else {
-        Lookup::PackagedDisabled
+    match crate::bundle::packaged_contents() {
+        None => Lookup::Development,
+        Some(_) if std::env::var_os(DEVELOPER_OPT_IN).is_some_and(|value| value == "1") => {
+            Lookup::PackagedExplicit
+        }
+        Some(contents) => Lookup::Bundled {
+            runtime: contents.join(BUNDLED_RUNTIME),
+        },
+    }
+}
+
+/// The installed bridge pack's directory, which holds both pinned snapshots.
+pub fn installed_pack(models_root: &Path) -> Option<PathBuf> {
+    let manifest = approved_pack(BRIDGE_PACK)?;
+    PackStore::new(models_root.to_path_buf())
+        .installed(&manifest)
+        .ok()
+        .flatten()
+        .map(|installed| installed.directory)
+}
+
+/// `major.minor` of a version string such as `26.5.2`.
+fn major_minor(version: &str) -> Option<(u32, u32)> {
+    let mut parts = version.trim().split('.');
+    let major = parts.next()?.parse().ok()?;
+    let minor = parts.next().map_or(Some(0), |minor| minor.parse().ok())?;
+    Some((major, minor))
+}
+
+/// The running macOS version, from the system's own version file.
+pub fn current_macos() -> Option<(u32, u32)> {
+    let text = std::fs::read_to_string("/System/Library/CoreServices/SystemVersion.plist").ok()?;
+    let key = "<key>ProductVersion</key>";
+    let rest = &text[text.find(key)? + key.len()..];
+    let value = rest.split("<string>").nth(1)?.split("</string>").next()?;
+    major_minor(value)
+}
+
+/// The bundled runtime's MLX build targets a minimum macOS (`runtime.json`
+/// `minimum_macos`); on an older system AI pauses are unavailable rather than
+/// failing inside the worker.
+pub fn os_requirement(runtime: &Path, current: Option<(u32, u32)>) -> Option<String> {
+    let minimum = std::fs::read(runtime.join("runtime.json"))
+        .ok()
+        .and_then(|bytes| serde_json::from_slice::<serde_json::Value>(&bytes).ok())
+        .and_then(|identity| identity["minimum_macos"].as_str().map(str::to_owned));
+    // A bundled runtime without a readable requirement is damaged.
+    let Some((minimum, required)) =
+        minimum.and_then(|minimum| major_minor(&minimum).map(|required| (minimum, required)))
+    else {
+        return Some(format!(
+            "the bundled AI runtime's identity is missing or unreadable at {} (reinstall Deadpan)",
+            runtime.join("runtime.json").display()
+        ));
+    };
+    match current {
+        Some(current) if current >= required => None,
+        Some((major, minor)) => Some(format!(
+            "AI pauses need macOS {minimum} or later; this Mac runs macOS {major}.{minor}"
+        )),
+        None => Some(format!(
+            "AI pauses need macOS {minimum} or later; this Mac's version is unknown"
+        )),
     }
 }
 
@@ -92,6 +166,8 @@ pub const MODEL_DIRECTORIES: [&str; 2] = [
     "mlx_gemma_default_text_encoder/86cc6a8dedbc456dd0e4af01a9d09f396f77e558",
 ];
 pub const MEDIA_WORKER: &str = "deadpan-media-worker";
+/// A runtime check imports MLX and the LTX modules and reads headers only.
+const CHECK_DEADLINE: Duration = Duration::from_secs(300);
 
 /// Absolute paths to every part of the development runtime.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -107,14 +183,25 @@ pub struct BridgeRuntime {
 
 /// The runtime pieces that are missing, in user terms.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
-#[error("AI pauses need the development model runtime: {}", missing.join("; "))]
+#[error("{}: {}", if *bundled { "AI pauses are not ready" } else { "AI pauses need the development model runtime" }, missing.join("; "))]
 pub struct RuntimeError {
     pub missing: Vec<String>,
+    /// The packaged runtime was used; only an install can fix a missing pack.
+    pub bundled: bool,
+    /// The model pack is the missing piece.
+    pub needs_model_pack: bool,
 }
 
 impl BridgeRuntime {
-    /// Locate the runtime from `DEADPAN_BRIDGE_*` and their defaults.
+    /// Locate the runtime for this process: the bundled runtime in a
+    /// packaged app, otherwise `DEADPAN_BRIDGE_*` and their defaults. Model
+    /// data comes from the bridge pack in the default models root.
     pub fn from_environment() -> Result<Self, RuntimeError> {
+        Self::from_environment_in(crate::models::default_root().ok().as_deref())
+    }
+
+    /// As [`Self::from_environment`] with an explicit models root.
+    pub fn from_environment_in(models_root: Option<&Path>) -> Result<Self, RuntimeError> {
         let executable_directory = std::env::current_exe()
             .ok()
             .and_then(|path| path.parent().map(Path::to_path_buf));
@@ -122,7 +209,8 @@ impl BridgeRuntime {
             |name| std::env::var_os(name),
             std::env::var_os("HOME").map(PathBuf::from),
             executable_directory.as_deref(),
-            lookup(),
+            &lookup(),
+            models_root,
         )
     }
 
@@ -133,24 +221,61 @@ impl BridgeRuntime {
         home: Option<PathBuf>,
         executable_directory: Option<&Path>,
     ) -> Result<Self, RuntimeError> {
-        Self::resolve_with(variable, home, executable_directory, Lookup::Development)
+        Self::resolve_with(
+            variable,
+            home,
+            executable_directory,
+            &Lookup::Development,
+            None,
+        )
     }
 
-    /// As [`Self::resolve`] under an explicit [`Lookup`].
+    /// The runtime for this process with explicit model data, such as a
+    /// staged pack that a smoke test checks before activation.
+    pub fn with_model_data(model_data: &Path) -> Result<Self, RuntimeError> {
+        let executable_directory = std::env::current_exe()
+            .ok()
+            .and_then(|path| path.parent().map(Path::to_path_buf));
+        Self::resolve_inner(
+            |name| std::env::var_os(name),
+            std::env::var_os("HOME").map(PathBuf::from),
+            executable_directory.as_deref(),
+            &lookup(),
+            None,
+            Some(model_data),
+        )
+    }
+
+    /// As [`Self::resolve`] under an explicit [`Lookup`] and models root.
     pub fn resolve_with(
         variable: impl Fn(&str) -> Option<OsString>,
         home: Option<PathBuf>,
         executable_directory: Option<&Path>,
-        lookup: Lookup,
+        lookup: &Lookup,
+        models_root: Option<&Path>,
     ) -> Result<Self, RuntimeError> {
-        if lookup == Lookup::PackagedDisabled {
-            return Err(RuntimeError {
-                missing: vec![format!(
-                    "this packaged Deadpan has no AI model runtime (developers: set {DEVELOPER_OPT_IN}=1 with explicit DEADPAN_BRIDGE_* paths)"
-                )],
-            });
+        Self::resolve_inner(
+            variable,
+            home,
+            executable_directory,
+            lookup,
+            models_root,
+            None,
+        )
+    }
+
+    fn resolve_inner(
+        variable: impl Fn(&str) -> Option<OsString>,
+        home: Option<PathBuf>,
+        executable_directory: Option<&Path>,
+        lookup: &Lookup,
+        models_root: Option<&Path>,
+        model_data: Option<&Path>,
+    ) -> Result<Self, RuntimeError> {
+        if let Lookup::Bundled { runtime } = lookup {
+            return Self::bundled(runtime, executable_directory, models_root, model_data);
         }
-        let development_defaults = lookup == Lookup::Development;
+        let development_defaults = *lookup == Lookup::Development;
         let mut missing = Vec::new();
         let chosen = |name: &str, default: Option<PathBuf>| {
             variable(name)
@@ -179,10 +304,14 @@ impl BridgeRuntime {
                     .as_ref()
                     .map(|source| source.join(".venv/bin/python3"))
             });
-        let model_cache = chosen(
-            MODEL_CACHE,
-            home.map(|home| home.join("Library/Caches/Deadpan/ltx-qualification")),
-        );
+        let model_cache = model_data.map(Path::to_path_buf).or_else(|| {
+            chosen(
+                MODEL_CACHE,
+                models_root.and_then(installed_pack).or_else(|| {
+                    home.map(|home| home.join("Library/Caches/Deadpan/ltx-qualification"))
+                }),
+            )
+        });
         let ffmpeg = chosen(FFMPEG, Some("/opt/homebrew/bin/ffmpeg".into()));
         let ffprobe = chosen(FFPROBE, Some("/opt/homebrew/bin/ffprobe".into()));
         let worker_script = chosen(WORKER, Some(DEFAULT_WORKER.into()));
@@ -256,8 +385,134 @@ impl BridgeRuntime {
         if missing.is_empty() {
             Ok(runtime)
         } else {
-            Err(RuntimeError { missing })
+            Err(RuntimeError {
+                missing,
+                bundled: false,
+                needs_model_pack: false,
+            })
         }
+    }
+
+    /// The runtime inside a packaged bundle and the installed model pack. No
+    /// variable, default or other location is consulted.
+    fn bundled(
+        runtime: &Path,
+        executable_directory: Option<&Path>,
+        models_root: Option<&Path>,
+        model_data: Option<&Path>,
+    ) -> Result<Self, RuntimeError> {
+        let mut missing = Vec::new();
+        let mut part = |label: &str, path: PathBuf, directory: bool| {
+            let found =
+                std::fs::metadata(&path).is_ok_and(|metadata| metadata.is_dir() == directory);
+            if !found {
+                missing.push(format!(
+                    "the bundled {label} is missing at {} (reinstall Deadpan)",
+                    path.display()
+                ));
+            }
+            path
+        };
+        let python = part("Python", runtime.join(BUNDLED_PYTHON), false);
+        let runtime_source = part("LTX source", runtime.join(BUNDLED_SOURCE), true);
+        let worker_script = part("worker", runtime.join(BUNDLED_WORKER), false);
+        let ffmpeg = part("ffmpeg", runtime.join(BUNDLED_FFMPEG), false);
+        let ffprobe = part("ffprobe", runtime.join(BUNDLED_FFPROBE), false);
+        let media_worker = part(
+            "media worker",
+            executable_directory
+                .map(|directory| directory.join(MEDIA_WORKER))
+                .unwrap_or_default(),
+            false,
+        );
+        if let Some(problem) = os_requirement(runtime, current_macos()) {
+            missing.push(problem);
+        }
+        let model_cache = model_data
+            .map(Path::to_path_buf)
+            .or_else(|| models_root.and_then(installed_pack));
+        let needs_model_pack = model_cache.is_none();
+        if needs_model_pack {
+            let size = approved_pack(BRIDGE_PACK)
+                .map_or(0, |pack| pack.total_bytes())
+                .div_ceil(100_000_000);
+            missing.push(format!(
+                "install the AI model pack ({}.{} GB) from Models… or with `deadpan-cli models install {BRIDGE_PACK} --accept-license`",
+                size / 10,
+                size % 10
+            ));
+        }
+        if missing.is_empty() {
+            Ok(Self {
+                python,
+                runtime_source,
+                model_cache: model_cache.unwrap_or_default(),
+                ffmpeg,
+                ffprobe,
+                worker_script,
+                media_worker,
+            })
+        } else {
+            Err(RuntimeError {
+                missing,
+                bundled: true,
+                needs_model_pack,
+            })
+        }
+    }
+
+    /// Run the worker's `--check`: the pinned source imports, Metal runs and
+    /// every model file is present with a readable header. Used as a model
+    /// pack's smoke test before activation; it runs no inference.
+    pub fn check(&self, cancelled: &AtomicBool) -> Result<serde_json::Value, String> {
+        use crate::youtube::runner::{HelperCommand, Workspace, run_helper};
+        let workspace = Workspace::new().map_err(|error| error.to_string())?;
+        let configuration = workspace.path().join("runtime.json");
+        std::fs::write(&configuration, self.worker_configuration())
+            .map_err(|error| error.to_string())?;
+        let arguments: Vec<OsString> = vec![
+            "-I".into(),
+            "-B".into(),
+            self.worker_script.clone().into_os_string(),
+            "--runtime-config".into(),
+            configuration.into_os_string(),
+            "--check".into(),
+        ];
+        let run = run_helper(
+            HelperCommand {
+                executable: &self.python,
+                arguments: &arguments,
+                private: workspace.path(),
+                current_dir: workspace.path(),
+                max_stdout: 64 * 1024,
+                overflow: crate::youtube::ImportError::new(
+                    "ModelPackFailed",
+                    "the AI runtime check printed too much",
+                ),
+                timeout: CHECK_DEADLINE,
+            },
+            cancelled,
+            || Ok(()),
+        )
+        .map_err(|error| error.to_string())?;
+        if !run.status.success() {
+            let tail: String = run
+                .stderr
+                .lines()
+                .rev()
+                .take(6)
+                .collect::<Vec<_>>()
+                .into_iter()
+                .rev()
+                .collect::<Vec<_>>()
+                .join("\n");
+            return Err(format!(
+                "the AI runtime check failed ({}): {tail}",
+                run.status
+            ));
+        }
+        serde_json::from_slice(&run.stdout)
+            .map_err(|error| format!("the AI runtime check printed no report: {error}"))
     }
 
     /// The worker's `--runtime-config` document.
@@ -278,7 +533,7 @@ mod tests {
     use super::*;
     use std::collections::BTreeMap;
 
-    fn file(path: &Path) {
+    pub(super) fn file(path: &Path) {
         std::fs::create_dir_all(path.parent().unwrap()).unwrap();
         std::fs::write(path, b"").unwrap();
     }
@@ -370,26 +625,184 @@ mod tests {
         assert_eq!(error.missing.len(), 7);
     }
 
+    /// A bundled runtime layout and, optionally, an installed bridge pack.
+    fn bundled_layout(root: &Path, with_pack: bool) -> (PathBuf, PathBuf, PathBuf) {
+        let runtime = root.join("Deadpan.app/Contents").join(BUNDLED_RUNTIME);
+        for file in [
+            BUNDLED_PYTHON,
+            BUNDLED_WORKER,
+            BUNDLED_FFMPEG,
+            BUNDLED_FFPROBE,
+        ] {
+            self::file(&runtime.join(file));
+        }
+        std::fs::create_dir_all(runtime.join(BUNDLED_SOURCE)).unwrap();
+        std::fs::write(runtime.join("runtime.json"), r#"{"minimum_macos": "15.0"}"#).unwrap();
+        let executables = root.join("Deadpan.app/Contents/MacOS");
+        file(&executables.join(MEDIA_WORKER));
+        let models = root.join("Models");
+        if with_pack {
+            let manifest = approved_pack(BRIDGE_PACK).unwrap();
+            let directory = models.join(&manifest.pack_id).join(&manifest.pack_version);
+            for pack_file in &manifest.files {
+                let path = directory.join(&pack_file.name);
+                std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+                std::fs::File::create(&path)
+                    .unwrap()
+                    .set_len(pack_file.bytes)
+                    .unwrap();
+            }
+            let receipt = serde_json::json!({
+                "pack_id": manifest.pack_id, "pack_version": manifest.pack_version,
+                "files": manifest.files.iter().map(|f| serde_json::json!({
+                    "name": f.name, "sha256": f.sha256, "bytes": f.bytes})).collect::<Vec<_>>(),
+            });
+            std::fs::write(directory.join("receipt.json"), receipt.to_string()).unwrap();
+        }
+        (runtime, executables, models)
+    }
+
+    #[test]
+    fn a_packaged_app_uses_only_its_bundled_runtime_and_installed_pack() {
+        let root = tempfile::tempdir().unwrap();
+        let (runtime, executables, models) = bundled_layout(root.path(), true);
+        // Variables naming another runtime are ignored entirely.
+        let elsewhere = root.path().join("elsewhere");
+        let variables = BTreeMap::from([
+            (RUNTIME_SOURCE, elsewhere.clone()),
+            (PYTHON, elsewhere.join("python")),
+            (MODEL_CACHE, elsewhere.clone()),
+            (FFMPEG, elsewhere.join("ffmpeg")),
+            (WORKER, elsewhere.join("worker.py")),
+        ]);
+        let lookup = Lookup::Bundled {
+            runtime: runtime.clone(),
+        };
+        let resolved = BridgeRuntime::resolve_with(
+            environment(&variables),
+            Some(root.path().into()),
+            Some(&executables),
+            &lookup,
+            Some(&models),
+        )
+        .unwrap();
+        assert_eq!(resolved.python, runtime.join(BUNDLED_PYTHON));
+        assert_eq!(resolved.runtime_source, runtime.join(BUNDLED_SOURCE));
+        assert_eq!(resolved.worker_script, runtime.join(BUNDLED_WORKER));
+        assert_eq!(resolved.ffmpeg, runtime.join(BUNDLED_FFMPEG));
+        assert_eq!(resolved.model_cache, models.join(BRIDGE_PACK).join("1"));
+        for directory in MODEL_DIRECTORIES {
+            assert!(resolved.model_cache.join(directory).is_dir());
+        }
+
+        // Without the pack the error says how to install it, and nothing else.
+        let empty = root.path().join("no-models");
+        let error = BridgeRuntime::resolve_with(
+            environment(&variables),
+            None,
+            Some(&executables),
+            &lookup,
+            Some(&empty),
+        )
+        .unwrap_err();
+        assert!(error.bundled && error.needs_model_pack);
+        assert_eq!(error.missing.len(), 1, "{error}");
+        assert!(
+            error
+                .to_string()
+                .starts_with("AI pauses are not ready: install the AI model pack (36.2 GB)"),
+            "{error}"
+        );
+        for absent in [
+            "/opt/homebrew",
+            "model-qualification",
+            "/private/tmp",
+            "elsewhere",
+        ] {
+            assert!(!error.to_string().contains(absent), "{absent} in {error}");
+        }
+
+        // A damaged bundle names its missing parts.
+        std::fs::remove_file(runtime.join(BUNDLED_FFMPEG)).unwrap();
+        let error =
+            BridgeRuntime::resolve_with(|_| None, None, Some(&executables), &lookup, Some(&models))
+                .unwrap_err();
+        assert!(!error.needs_model_pack);
+        assert!(
+            error.missing[0].starts_with("the bundled ffmpeg is missing"),
+            "{error}"
+        );
+    }
+
+    #[test]
+    fn the_bundled_runtime_names_its_minimum_macos() {
+        let root = tempfile::tempdir().unwrap();
+        // Without a readable identity the bundle is damaged: fail closed.
+        assert!(
+            os_requirement(root.path(), Some((26, 0)))
+                .is_some_and(|problem| problem.contains("identity is missing"))
+        );
+        std::fs::write(
+            root.path().join("runtime.json"),
+            r#"{"minimum_macos": "x"}"#,
+        )
+        .unwrap();
+        assert!(os_requirement(root.path(), Some((26, 0))).is_some());
+        std::fs::write(
+            root.path().join("runtime.json"),
+            r#"{"minimum_macos": "26.0"}"#,
+        )
+        .unwrap();
+        assert_eq!(os_requirement(root.path(), Some((26, 5))), None);
+        assert_eq!(os_requirement(root.path(), Some((27, 0))), None);
+        assert_eq!(
+            os_requirement(root.path(), Some((15, 7))).as_deref(),
+            Some("AI pauses need macOS 26.0 or later; this Mac runs macOS 15.7")
+        );
+        assert!(os_requirement(root.path(), None).is_some());
+        assert_eq!(major_minor("26.5.2"), Some((26, 5)));
+        assert_eq!(major_minor("15"), Some((15, 0)));
+        assert!(current_macos().is_some_and(|(major, _)| major >= 15));
+    }
+
+    #[test]
+    fn development_builds_prefer_an_installed_pack_over_the_qualification_cache() {
+        let root = tempfile::tempdir().unwrap();
+        let (_, _, models) = bundled_layout(root.path(), true);
+        let error = BridgeRuntime::resolve_with(
+            |_| None,
+            Some(root.path().join("home")),
+            None,
+            &Lookup::Development,
+            Some(&models),
+        )
+        .unwrap_err();
+        assert!(
+            !error
+                .missing
+                .iter()
+                .any(|line| line.starts_with("model data")),
+            "{error}"
+        );
+        assert!(
+            !error
+                .missing
+                .iter()
+                .any(|line| line.contains("pinned model snapshot"))
+        );
+    }
+
     #[test]
     fn bundles_use_only_explicit_variables() {
         let root = tempfile::tempdir().unwrap();
-        // Without the opt-in, even explicit variables are ignored.
         let source = root.path().join("source");
         let variables = BTreeMap::from([(RUNTIME_SOURCE, source.clone())]);
-        let error = BridgeRuntime::resolve_with(
-            environment(&variables),
-            Some(root.path().into()),
-            None,
-            Lookup::PackagedDisabled,
-        )
-        .unwrap_err();
-        assert_eq!(error.missing.len(), 1);
-        assert!(error.missing[0].contains(DEVELOPER_OPT_IN));
         let error = BridgeRuntime::resolve_with(
             |_| None,
             Some(root.path().into()),
             None,
-            Lookup::PackagedExplicit,
+            &Lookup::PackagedExplicit,
+            None,
         )
         .unwrap_err();
         let message = error.to_string();
@@ -410,7 +823,8 @@ mod tests {
             environment(&variables),
             None,
             None,
-            Lookup::PackagedExplicit,
+            &Lookup::PackagedExplicit,
+            None,
         )
         .unwrap_err();
         assert!(!error.to_string().contains("Python environment not found"));

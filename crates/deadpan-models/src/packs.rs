@@ -8,6 +8,11 @@
 //! complete version directory into place, so earlier installed versions remain
 //! the known-good fallback until explicitly removed. Packs live in a global
 //! directory shared by projects, and removing one never touches project media.
+//!
+//! A pack may also be imported offline from a folder or an uncompressed tar
+//! archive that holds its files; every imported byte is verified exactly like a
+//! download. Licenses that require acceptance must be accepted by the caller
+//! before any byte is staged, and the receipt records that acceptance.
 
 use std::fs::{File, OpenOptions};
 use std::io::{self, Read, Seek, SeekFrom, Write};
@@ -20,27 +25,64 @@ use serde::{Deserialize, Serialize};
 use sha2::Digest;
 use thiserror::Error;
 
-pub const MANIFEST_SCHEMA: u32 = 1;
+pub mod archive;
+
+pub const MANIFEST_SCHEMA: u32 = 2;
 /// Largest single pack file accepted from a manifest.
 pub const MAX_FILE_BYTES: u64 = 16 * 1024 * 1024 * 1024;
-const MAX_FILES: usize = 16;
+const MAX_FILES: usize = 64;
+const MAX_LICENSES: usize = 8;
 const MAX_TEXT_BYTES: usize = 512;
+const MAX_TERMS_BYTES: usize = 2048;
+/// Deepest relative file path a pack may name, in components.
+const MAX_PATH_COMPONENTS: usize = 4;
+/// The HTTP identity of pack downloads.
+pub const USER_AGENT: &str = "OpenAI File Downloader, XaiImageApiFetch/1.0";
 /// Space kept free beyond the remaining download.
-const FREE_SPACE_MARGIN: u64 = 256 * 1024 * 1024;
+pub const FREE_SPACE_MARGIN: u64 = 256 * 1024 * 1024;
 const RECEIPT: &str = "receipt.json";
 const ALLOWED_HOSTS: [&str; 1] = ["huggingface.co"];
 
+/// Full license texts the approved manifests name, compiled into the build.
+const LICENSE_TEXTS: [(&str, &str); 2] = [
+    (
+        "ltx-2-community-license.txt",
+        include_str!("../../../models/licenses/ltx-2-community-license.txt"),
+    ),
+    (
+        "gemma-terms-of-use.txt",
+        include_str!("../../../models/licenses/gemma-terms-of-use.txt"),
+    ),
+];
+
+/// The full text of a license a manifest names in `text`.
+pub fn license_text(name: &str) -> Option<&'static str> {
+    LICENSE_TEXTS
+        .iter()
+        .find(|(file, _)| *file == name)
+        .map(|(_, text)| *text)
+}
+
+/// The approved pack with this identifier, any version.
+pub fn approved_pack(pack_id: &str) -> Option<PackManifest> {
+    approved_packs()
+        .into_iter()
+        .find(|pack| pack.pack_id == pack_id)
+}
+
 /// The packs this build accepts.
 pub fn approved_packs() -> Vec<PackManifest> {
-    [include_str!("../../../models/packs/whisper-base-en-2.json")]
-        .into_iter()
-        .map(|text| {
-            let manifest: PackManifest =
-                serde_json::from_str(text).expect("approved manifest parses");
-            manifest.validate().expect("approved manifest validates");
-            manifest
-        })
-        .collect()
+    [
+        include_str!("../../../models/packs/whisper-base-en-2.json"),
+        include_str!("../../../models/packs/ltx-2.3-q4-bridge-1.json"),
+    ]
+    .into_iter()
+    .map(|text| {
+        let manifest: PackManifest = serde_json::from_str(text).expect("approved manifest parses");
+        manifest.validate().expect("approved manifest validates");
+        manifest
+    })
+    .collect()
 }
 
 #[derive(Debug, Error)]
@@ -57,6 +99,10 @@ pub enum PackError {
     Cancelled,
     #[error("another installation of this model pack is running")]
     Busy,
+    #[error("the {title} must be accepted before installing this pack")]
+    LicenseNotAccepted { title: String },
+    #[error("the offline source lacks {missing} of this pack's files, for example {example}")]
+    ImportIncomplete { missing: usize, example: String },
     #[error(transparent)]
     Io(#[from] io::Error),
     #[error(transparent)]
@@ -69,25 +115,46 @@ pub enum Operation {
     Transcribe,
     /// Voice activity detection: one speech probability per analysis hop.
     SpeechActivity,
+    /// Generated pictures between two boundary frames (an AI pause).
+    BridgeHold,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct PackFile {
+    /// A relative path of safe components, such as `model.bin` or
+    /// `text_encoder/<revision>/model.safetensors`.
     pub name: String,
     pub url: String,
     pub sha256: String,
     pub bytes: u64,
+    /// The `PackLicense::id` covering this file; required when a pack has
+    /// more than one license.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub license: Option<String>,
 }
 
+/// One license layer of a pack: model weights, a text encoder or tokenizer.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct PackLicense {
+    /// Short identifier, unique within the pack.
     pub id: String,
+    pub title: String,
+    /// SPDX identifier or `LicenseRef-…`.
+    pub spdx: String,
     pub attribution: String,
     pub url: String,
+    /// The compiled full text (see [`license_text`]), when Deadpan carries one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+    /// A plain summary of the terms that matter to a user, shown before
+    /// installation. It never replaces the full text.
+    pub terms: String,
     pub redistribution: bool,
     pub access: String,
+    /// The user must explicitly accept this license before installation.
+    pub acceptance_required: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -103,7 +170,7 @@ pub struct PackManifest {
     pub operations: Vec<Operation>,
     pub languages: Vec<String>,
     pub files: Vec<PackFile>,
-    pub license: PackLicense,
+    pub licenses: Vec<PackLicense>,
     pub memory_bytes: u64,
     pub temporary_bytes: u64,
     pub qualification_report: String,
@@ -122,6 +189,14 @@ fn text(value: &str) -> bool {
     !value.trim().is_empty()
         && value.len() <= MAX_TEXT_BYTES
         && !value.chars().any(char::is_control)
+}
+
+/// A relative path of safe identifier components.
+fn relative_path(value: &str) -> bool {
+    let components: Vec<&str> = value.split('/').collect();
+    value.len() <= 256
+        && components.len() <= MAX_PATH_COMPONENTS
+        && components.iter().all(|component| identifier(component))
 }
 
 fn sha256(value: &str) -> bool {
@@ -157,24 +232,70 @@ impl PackManifest {
         if self.operations.is_empty() {
             return fail("pack supports no operation");
         }
-        let license = &self.license;
-        if ![
-            &license.id,
-            &license.attribution,
-            &license.url,
-            &license.access,
-        ]
-        .into_iter()
-        .all(|value| text(value))
-        {
-            return fail("license fields must be bounded text");
+        if self.licenses.is_empty() || self.licenses.len() > MAX_LICENSES {
+            return fail("pack license count outside its bound");
+        }
+        for (index, license) in self.licenses.iter().enumerate() {
+            if !identifier(&license.id)
+                || self.licenses[..index]
+                    .iter()
+                    .any(|other| other.id == license.id)
+            {
+                return fail("license identifiers must be unique safe identifiers");
+            }
+            if ![
+                &license.title,
+                &license.spdx,
+                &license.attribution,
+                &license.url,
+                &license.access,
+            ]
+            .into_iter()
+            .all(|value| text(value))
+                || license.terms.trim().is_empty()
+                || license.terms.len() > MAX_TERMS_BYTES
+                || license.terms.chars().any(|c| c.is_control() && c != '\n')
+            {
+                return fail("license fields must be bounded text");
+            }
+            if !license.url.starts_with("https://") {
+                return fail("license links must use HTTPS");
+            }
+            if license
+                .text
+                .as_deref()
+                .is_some_and(|name| license_text(name).is_none())
+            {
+                return fail("license text is not compiled into this build");
+            }
         }
         if self.files.is_empty() || self.files.len() > MAX_FILES {
             return fail("pack file count outside its bound");
         }
         for (index, file) in self.files.iter().enumerate() {
-            if !identifier(&file.name) {
-                return fail("pack file names must be safe identifiers");
+            if !relative_path(&file.name) {
+                return fail("pack file names must be safe relative paths");
+            }
+            // Staging writes `<name>.part` and the receipt beside the files;
+            // a file may not also be another file's directory.
+            if file.name == RECEIPT
+                || file.name.ends_with(".part")
+                || self.files.iter().any(|other| {
+                    other.name.len() > file.name.len()
+                        && other.name.starts_with(&file.name)
+                        && other.name.as_bytes()[file.name.len()] == b'/'
+                })
+            {
+                return fail("pack file names collide with staging or other files");
+            }
+            match &file.license {
+                Some(id) if !self.licenses.iter().any(|license| &license.id == id) => {
+                    return fail("pack file names an unknown license");
+                }
+                None if self.licenses.len() > 1 => {
+                    return fail("a pack with several licenses must assign each file one");
+                }
+                _ => {}
             }
             if self.files[..index]
                 .iter()
@@ -201,6 +322,50 @@ impl PackManifest {
 
     pub fn total_bytes(&self) -> u64 {
         self.files.iter().map(|file| file.bytes).sum()
+    }
+
+    /// Bytes of the files one license covers.
+    pub fn license_bytes(&self, license: &PackLicense) -> u64 {
+        self.files
+            .iter()
+            .filter(|file| {
+                file.license.as_deref().unwrap_or(&self.licenses[0].id) == license.id.as_str()
+            })
+            .map(|file| file.bytes)
+            .sum()
+    }
+
+    /// Whether any license must be accepted before installation.
+    pub fn acceptance_required(&self) -> bool {
+        self.licenses
+            .iter()
+            .any(|license| license.acceptance_required)
+    }
+
+    /// Refuse when a license requiring acceptance is not in `accepted`.
+    pub fn check_acceptance(&self, accepted: &[String]) -> Result<(), PackError> {
+        match self
+            .licenses
+            .iter()
+            .find(|license| license.acceptance_required && !accepted.contains(&license.id))
+        {
+            Some(license) => Err(PackError::LicenseNotAccepted {
+                title: license.title.clone(),
+            }),
+            None => Ok(()),
+        }
+    }
+
+    /// Every license identifier, for a caller that has shown and accepted all.
+    pub fn license_ids(&self) -> Vec<String> {
+        self.licenses
+            .iter()
+            .map(|license| license.id.clone())
+            .collect()
+    }
+
+    pub fn supports(&self, operation: Operation) -> bool {
+        self.operations.contains(&operation)
     }
 
     /// The recognizer model of a transcription pack: its first file.
@@ -264,6 +429,11 @@ impl StagedPack {
     pub fn manifest(&self) -> &PackManifest {
         &self.manifest
     }
+
+    /// The verified staging directory, laid out like the installed pack.
+    pub fn directory(&self) -> &Path {
+        &self.directory
+    }
 }
 
 /// An active installed pack whose receipt matches its approved manifest.
@@ -289,6 +459,45 @@ struct Receipt {
     pack_id: String,
     pack_version: String,
     files: Vec<ReceiptFile>,
+    /// License identifiers the user accepted before installation.
+    #[serde(default)]
+    accepted_licenses: Vec<String>,
+    /// `download` or `import`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    origin: Option<String>,
+}
+
+/// Where an offline installation reads a pack's files.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ImportSource {
+    /// A folder holding each file at its manifest path, either directly or
+    /// below `<pack_id>/<pack_version>/` (the layout `export` writes).
+    Directory(PathBuf),
+    /// An uncompressed (ustar/pax) tar archive with the same layout.
+    Archive(PathBuf),
+}
+
+impl ImportSource {
+    /// A directory, or a file read as a tar archive.
+    pub fn at(path: &Path) -> Result<Self, PackError> {
+        let metadata = std::fs::metadata(path)?;
+        Ok(if metadata.is_dir() {
+            Self::Directory(path.to_path_buf())
+        } else {
+            Self::Archive(path.to_path_buf())
+        })
+    }
+}
+
+/// What the store holds of one pack version.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PackState {
+    Installed(Box<InstalledPack>),
+    /// Staged or partially downloaded bytes an install would resume from.
+    Partial {
+        bytes: u64,
+    },
+    Absent,
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -309,6 +518,41 @@ pub struct PackStore {
 impl PackStore {
     pub fn new(root: PathBuf) -> Self {
         Self { root }
+    }
+
+    pub fn root(&self) -> &Path {
+        &self.root
+    }
+
+    /// Installed, partially staged, or absent.
+    pub fn state(&self, manifest: &PackManifest) -> Result<PackState, PackError> {
+        if let Some(installed) = self.installed(manifest)? {
+            return Ok(PackState::Installed(Box::new(installed)));
+        }
+        let staging = self.staging(manifest);
+        let bytes: u64 = manifest
+            .files
+            .iter()
+            .map(|file| {
+                std::fs::metadata(staging.join(part(&file.name)))
+                    .or_else(|_| std::fs::metadata(staging.join(&file.name)))
+                    .map_or(0, |metadata| metadata.len().min(file.bytes))
+            })
+            .sum();
+        Ok(if bytes > 0 {
+            PackState::Partial { bytes }
+        } else {
+            PackState::Absent
+        })
+    }
+
+    /// Bytes still needed on this volume to finish installing.
+    pub fn remaining_bytes(&self, manifest: &PackManifest) -> u64 {
+        match self.state(manifest) {
+            Ok(PackState::Installed(_)) => 0,
+            Ok(PackState::Partial { bytes }) => manifest.total_bytes().saturating_sub(bytes),
+            _ => manifest.total_bytes(),
+        }
     }
 
     fn active(&self, manifest: &PackManifest) -> PathBuf {
@@ -379,12 +623,14 @@ impl PackStore {
     pub fn stage(
         &self,
         manifest: &PackManifest,
+        accepted_licenses: &[String],
         transport: &dyn Transport,
         available_space: impl Fn(&Path) -> io::Result<u64>,
         cancelled: &AtomicBool,
         mut progress: impl FnMut(InstallProgress),
     ) -> Result<StagedPack, PackError> {
         manifest.validate()?;
+        manifest.check_acceptance(accepted_licenses)?;
         let lock = self.lock(manifest)?;
         let staging = self.staging(manifest);
         std::fs::create_dir_all(&staging)?;
@@ -409,10 +655,13 @@ impl PackStore {
         let mut completed = 0;
         for file in &manifest.files {
             let finished = staging.join(&file.name);
+            if let Some(parent) = finished.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
             // A finished file may come from an earlier manifest with the same
             // name and size; reuse it only after its hash matches.
             if std::fs::metadata(&finished).is_ok_and(|metadata| metadata.len() == file.bytes)
-                && verify_file(file, &finished, cancelled).is_ok()
+                && verify_file(file, &finished, cancelled, |_| {}).is_ok()
             {
                 completed += file.bytes;
                 progress(InstallProgress {
@@ -426,7 +675,7 @@ impl PackStore {
             // exact file; copy it instead of downloading it again. The copy
             // is verified like a download and discarded when it differs.
             if self.copy_installed(manifest, file, &partial)?
-                && verify_file(file, &partial, cancelled).is_ok()
+                && verify_file(file, &partial, cancelled, |_| {}).is_ok()
             {
                 std::fs::rename(&partial, &finished)?;
                 completed += file.bytes;
@@ -445,14 +694,28 @@ impl PackStore {
                     total_bytes: total,
                 });
             })?;
-            verify_file(file, &partial, cancelled)?;
+            verify_file(file, &partial, cancelled, |_| {})?;
             std::fs::rename(&partial, &finished)?;
             completed += file.bytes;
         }
+        self.staged(manifest, accepted_licenses, "download", staging, lock)
+    }
+
+    /// Write the receipt of a completely verified staging directory.
+    fn staged(
+        &self,
+        manifest: &PackManifest,
+        accepted_licenses: &[String],
+        origin: &str,
+        staging: PathBuf,
+        lock: File,
+    ) -> Result<StagedPack, PackError> {
         let receipt = Receipt {
             pack_id: manifest.pack_id.clone(),
             pack_version: manifest.pack_version.clone(),
             files: receipt_files(manifest),
+            accepted_licenses: accepted_licenses.to_vec(),
+            origin: Some(origin.into()),
         };
         write_synced(
             &staging.join(RECEIPT),
@@ -463,6 +726,201 @@ impl PackStore {
             directory: staging,
             _lock: lock,
         })
+    }
+
+    /// Stage a pack offline from a folder or tar archive. Every file must be
+    /// present with its exact size and SHA-256; anything else in the source is
+    /// ignored. Folder files are cloned on the same APFS volume.
+    pub fn import(
+        &self,
+        manifest: &PackManifest,
+        accepted_licenses: &[String],
+        source: &ImportSource,
+        available_space: impl Fn(&Path) -> io::Result<u64>,
+        cancelled: &AtomicBool,
+        mut progress: impl FnMut(InstallProgress),
+    ) -> Result<StagedPack, PackError> {
+        manifest.validate()?;
+        manifest.check_acceptance(accepted_licenses)?;
+        let lock = self.lock(manifest)?;
+        let staging = self.staging(manifest);
+        std::fs::create_dir_all(&staging)?;
+        let total = manifest.total_bytes();
+        let mut completed = 0;
+        match source {
+            ImportSource::Directory(directory) => {
+                let mut sources = Vec::new();
+                let mut missing = Vec::new();
+                for file in &manifest.files {
+                    match import_candidate(manifest, directory, file) {
+                        Some(path) => sources.push((file, path)),
+                        None => missing.push(file.name.clone()),
+                    }
+                }
+                if let Some(example) = missing.first() {
+                    return Err(PackError::ImportIncomplete {
+                        missing: missing.len(),
+                        example: example.clone(),
+                    });
+                }
+                // Clones on the staging volume need no space; copies do.
+                let staging_device = device(&staging)?;
+                let required: u64 = sources
+                    .iter()
+                    .filter(|(_, path)| device(path).ok() != Some(staging_device))
+                    .map(|(file, _)| file.bytes)
+                    .sum::<u64>()
+                    + FREE_SPACE_MARGIN;
+                let available = available_space(&staging)?;
+                if available < required {
+                    return Err(PackError::Space {
+                        required,
+                        available,
+                    });
+                }
+                for (file, path) in sources {
+                    if cancelled.load(Ordering::Acquire) {
+                        return Err(PackError::Cancelled);
+                    }
+                    let finished = staging.join(&file.name);
+                    let partial = staging.join(part(&file.name));
+                    if let Some(parent) = finished.parent() {
+                        std::fs::create_dir_all(parent)?;
+                    }
+                    let _ = std::fs::remove_file(&partial);
+                    // On APFS this clones rather than duplicating the bytes.
+                    std::fs::copy(&path, &partial)?;
+                    verify_file(file, &partial, cancelled, |bytes| {
+                        progress(InstallProgress {
+                            completed_bytes: completed + bytes,
+                            total_bytes: total,
+                        });
+                    })?;
+                    std::fs::rename(&partial, &finished)?;
+                    completed += file.bytes;
+                }
+            }
+            ImportSource::Archive(path) => {
+                let required = total + FREE_SPACE_MARGIN;
+                let available = available_space(&staging)?;
+                if available < required {
+                    return Err(PackError::Space {
+                        required,
+                        available,
+                    });
+                }
+                let mut found = vec![false; manifest.files.len()];
+                archive::read(
+                    path,
+                    cancelled,
+                    |entry| {
+                        let Some(index) = manifest.files.iter().position(|file| {
+                            entry.path == file.name
+                                || entry.path
+                                    == format!(
+                                        "{}/{}/{}",
+                                        manifest.pack_id, manifest.pack_version, file.name
+                                    )
+                        }) else {
+                            return Ok(archive::Action::Skip);
+                        };
+                        let file = &manifest.files[index];
+                        if !entry.regular {
+                            return Err(PackError::Verification {
+                                file: file.name.clone(),
+                                reason: "archive entry is not a regular file",
+                            });
+                        }
+                        if found[index] {
+                            return Err(PackError::Verification {
+                                file: file.name.clone(),
+                                reason: "archive holds this file twice",
+                            });
+                        }
+                        if entry.size != file.bytes {
+                            return Err(PackError::Verification {
+                                file: file.name.clone(),
+                                reason: "size differs from its manifest",
+                            });
+                        }
+                        found[index] = true;
+                        let finished = staging.join(&file.name);
+                        if let Some(parent) = finished.parent() {
+                            std::fs::create_dir_all(parent)?;
+                        }
+                        // Never write through whatever an earlier attempt left.
+                        let partial = staging.join(part(&file.name));
+                        match std::fs::remove_file(&partial) {
+                            Err(error) if error.kind() != io::ErrorKind::NotFound => {
+                                return Err(error.into());
+                            }
+                            _ => {}
+                        }
+                        Ok(archive::Action::Extract(partial))
+                    },
+                    |extracted| {
+                        let file = manifest
+                            .files
+                            .iter()
+                            .find(|file| staging.join(part(&file.name)) == extracted)
+                            .ok_or(PackError::Manifest("extracted an unknown file"))?;
+                        verify_file(file, extracted, cancelled, |bytes| {
+                            progress(InstallProgress {
+                                completed_bytes: completed + bytes,
+                                total_bytes: total,
+                            });
+                        })?;
+                        std::fs::rename(extracted, staging.join(&file.name))?;
+                        completed += file.bytes;
+                        Ok(())
+                    },
+                )?;
+                let missing: Vec<&PackFile> = manifest
+                    .files
+                    .iter()
+                    .zip(&found)
+                    .filter(|(_, found)| !**found)
+                    .map(|(file, _)| file)
+                    .collect();
+                if let Some(example) = missing.first() {
+                    return Err(PackError::ImportIncomplete {
+                        missing: missing.len(),
+                        example: example.name.clone(),
+                    });
+                }
+            }
+        }
+        self.staged(manifest, accepted_licenses, "import", staging, lock)
+    }
+
+    /// Write one installed pack as an uncompressed tar archive that `import`
+    /// accepts on another Mac (an offline pack). The archive is published by
+    /// rename only after every file was written.
+    pub fn export(
+        &self,
+        manifest: &PackManifest,
+        destination: &Path,
+        cancelled: &AtomicBool,
+        progress: impl FnMut(InstallProgress),
+    ) -> Result<(), PackError> {
+        let installed = self.installed(manifest)?.ok_or(PackError::Manifest(
+            "the pack is not installed, so it cannot be exported",
+        ))?;
+        let entries: Vec<(String, PathBuf, u64)> = manifest
+            .files
+            .iter()
+            .map(|file| {
+                (
+                    format!(
+                        "{}/{}/{}",
+                        manifest.pack_id, manifest.pack_version, file.name
+                    ),
+                    installed.directory.join(&file.name),
+                    file.bytes,
+                )
+            })
+            .collect();
+        archive::write(destination, &entries, cancelled, progress)
     }
 
     /// Copy a same-named file of exact size from another installed version of
@@ -488,6 +946,9 @@ impl PackStore {
                 .is_ok_and(|metadata| metadata.is_file() && metadata.len() == file.bytes);
             if !regular {
                 continue;
+            }
+            if let Some(parent) = partial.parent() {
+                std::fs::create_dir_all(parent)?;
             }
             let _ = std::fs::remove_file(partial);
             // On APFS this clones rather than duplicating the bytes.
@@ -523,6 +984,16 @@ impl PackStore {
         Ok(())
     }
 
+    /// Discard staged and partially downloaded bytes of one version.
+    pub fn discard_partial(&self, manifest: &PackManifest) -> Result<(), PackError> {
+        manifest.validate()?;
+        let _lock = self.lock(manifest)?;
+        match std::fs::remove_dir_all(self.staging(manifest)) {
+            Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
+            result => Ok(result?),
+        }
+    }
+
     /// Remove one installed version. Project media never lives here.
     pub fn remove(&self, manifest: &PackManifest) -> Result<(), PackError> {
         manifest.validate()?;
@@ -535,6 +1006,27 @@ impl PackStore {
 
 fn part(name: &str) -> String {
     format!("{name}.part")
+}
+
+fn device(path: &Path) -> io::Result<u64> {
+    use std::os::unix::fs::MetadataExt;
+    Ok(std::fs::metadata(path)?.dev())
+}
+
+/// A regular file of exact size at one of the accepted import locations.
+fn import_candidate(manifest: &PackManifest, directory: &Path, file: &PackFile) -> Option<PathBuf> {
+    [
+        directory.join(&file.name),
+        directory
+            .join(&manifest.pack_id)
+            .join(&manifest.pack_version)
+            .join(&file.name),
+    ]
+    .into_iter()
+    .find(|candidate| {
+        std::fs::symlink_metadata(candidate)
+            .is_ok_and(|metadata| metadata.is_file() && metadata.len() == file.bytes)
+    })
 }
 
 fn receipt_files(manifest: &PackManifest) -> Vec<ReceiptFile> {
@@ -660,7 +1152,12 @@ pub fn read_in_background(mut body: Box<dyn Read + Send>) -> mpsc::Receiver<io::
     receiver
 }
 
-fn verify_file(file: &PackFile, path: &Path, cancelled: &AtomicBool) -> Result<(), PackError> {
+fn verify_file(
+    file: &PackFile,
+    path: &Path,
+    cancelled: &AtomicBool,
+    mut progress: impl FnMut(u64),
+) -> Result<(), PackError> {
     let mut input = File::open(path)?;
     if input.metadata()?.len() != file.bytes {
         return Err(PackError::Verification {
@@ -670,6 +1167,7 @@ fn verify_file(file: &PackFile, path: &Path, cancelled: &AtomicBool) -> Result<(
     }
     let mut hasher = sha2::Sha256::new();
     let mut buffer = vec![0_u8; 1 << 20];
+    let mut hashed = 0;
     loop {
         if cancelled.load(Ordering::Acquire) {
             return Err(PackError::Cancelled);
@@ -679,7 +1177,12 @@ fn verify_file(file: &PackFile, path: &Path, cancelled: &AtomicBool) -> Result<(
             break;
         }
         hasher.update(&buffer[..read]);
+        hashed += read as u64;
+        if hashed % (64 << 20) < read as u64 {
+            progress(hashed);
+        }
     }
+    progress(hashed);
     let digest: String = hasher
         .finalize()
         .iter()
@@ -718,7 +1221,7 @@ pub struct HttpsTransport {
 
 impl Default for HttpsTransport {
     fn default() -> Self {
-        Self::with_user_agent(concat!("Deadpan/", env!("CARGO_PKG_VERSION")))
+        Self::with_user_agent(USER_AGENT)
     }
 }
 

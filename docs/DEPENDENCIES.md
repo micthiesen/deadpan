@@ -161,6 +161,90 @@ source archive in the notices and SBOM. The build refuses a prefix that is not
 source-hosting or written-offer decision is still required before public
 distribution.
 
+## Private AI runtime
+
+`cargo xtask bundle` ships the AI pause runtime inside the application
+(specification §14.1–§14.2) from pins in
+[`tools/ai-runtime/pins.json`](../tools/ai-runtime/pins.json), assembled by
+[`tools/ai-runtime/build.py`](../tools/ai-runtime/build.py) on the build Mac.
+Python is a build-time tool; nothing is installed or compiled on a user's Mac,
+and the runtime never uses the user's Python, packages or environment.
+
+| Component | Pin | License | Role |
+| --- | --- | --- | --- |
+| CPython 3.12.13 (python-build-standalone 20260325, `aarch64-apple-darwin-install_only_stripped`) | archive SHA-256 `c33a3485…f1286` | PSF-2.0 (plus the bundled libraries CPython's `LICENSE.txt` lists) | Interpreter; `pip`, `ensurepip`, Tcl/Tk, IDLE, tests, headers and manual pages removed after install |
+| ltx-2-mlx (`ltx-core-mlx`, `ltx-pipelines-mlx` 0.15.8) | commit `3392d75934120b7e69eefbe55893f7ef82be92a4`, 139 files checked against `ltx-source-manifest.json`, `LICENSE` SHA-256 pinned | MIT | Model code, on the import path through a relative `.pth` |
+| 36 wheels below | per-wheel SHA-256 from that checkout's `uv.lock` (SHA-256 `ae86edd…72823`), selected for cp312 arm64 at a macOS 26.0 floor | per row | Installed offline with `pip --no-index --no-deps --only-binary=:all:` |
+| x264 r3222 | commit `b35605ace3ddf7c1a5d67a2eb553f034aef41d55`, tree `0700538866963f968154ea768289bf100350e84e` | GPL-2.0-or-later | Static library in the runtime's `ffmpeg` |
+| FFmpeg 8.0.3 programs | the existing archive pin, configured `--enable-gpl --enable-libx264 --disable-autodetect --enable-zlib --disable-network` | GPL-2.0-or-later | `ffmpeg`/`ffprobe` the worker runs for the model's CRF-33 H.264 conditioning and lossless `libx264rgb` intermediates |
+
+The wheel set is exactly the 38-package environment the qualified checkout's
+`uv sync --frozen` produced (`runtime-inventory.json`), minus the two editable
+LTX packages, and every binary wheel has the same platform tag uv chose on
+macOS 26 (`build.py pins --lock <uv.lock>` regenerates it). `mlx` and
+`mlx-metal` publish separate `macosx_14_0`, `macosx_15_0` and `macosx_26_0`
+builds. Measured on 2026-10-05 (M5 Max, macOS 26.5.2, same project, Hold,
+seed and otherwise identical bundled runtime), the `macosx_15_0` build took
+254.6 s in the worker against 113.2 s for `macosx_26_0` (a first bundled run
+with the 15.0 build took 178.5 s; the development environment with the 26.0
+build took 106.1 s). The runtime therefore pins the 26.0 builds and declares
+`minimum_macos: 26.0` in `runtime.json`; on an older macOS the app reports
+"AI pauses need macOS 26.0 or later" instead of launching the worker. The rest
+of the app keeps its macOS 15 floor. Upstream wheels are unmodified except that
+absolute `LC_RPATH` entries left by their CI builds (Pillow's
+`/Users/runner/...`) are deleted so nothing can load from outside the bundle;
+every Mach-O is re-signed.
+
+| Wheel | Version | License | File |
+| --- | --- | --- | --- |
+| annotated-doc | 0.0.4 | MIT | `annotated_doc-0.0.4-py3-none-any.whl` |
+| anyio | 4.12.1 | MIT | `anyio-4.12.1-py3-none-any.whl` |
+| certifi | 2026.2.25 | MPL-2.0 | `certifi-2026.2.25-py3-none-any.whl` |
+| click | 8.3.1 | BSD-3-Clause | `click-8.3.1-py3-none-any.whl` |
+| filelock | 3.25.2 | MIT | `filelock-3.25.2-py3-none-any.whl` |
+| fsspec | 2026.2.0 | BSD-3-Clause | `fsspec-2026.2.0-py3-none-any.whl` |
+| h11 | 0.16.0 | MIT | `h11-0.16.0-py3-none-any.whl` |
+| hf-xet | 1.4.2 | Apache-2.0 | `hf_xet-1.4.2-cp37-abi3-macosx_11_0_arm64.whl` |
+| httpcore | 1.0.9 | BSD-3-Clause | `httpcore-1.0.9-py3-none-any.whl` |
+| httpx | 0.28.1 | BSD-3-Clause | `httpx-0.28.1-py3-none-any.whl` |
+| huggingface-hub | 1.7.1 | Apache-2.0 | `huggingface_hub-1.7.1-py3-none-any.whl` |
+| idna | 3.11 | BSD-3-Clause | `idna-3.11-py3-none-any.whl` |
+| jinja2 | 3.1.6 | BSD-3-Clause | `jinja2-3.1.6-py3-none-any.whl` |
+| markdown-it-py | 4.0.0 | MIT | `markdown_it_py-4.0.0-py3-none-any.whl` |
+| markupsafe | 3.0.3 | BSD-3-Clause | `markupsafe-3.0.3-cp312-cp312-macosx_11_0_arm64.whl` |
+| mdurl | 0.1.2 | MIT | `mdurl-0.1.2-py3-none-any.whl` |
+| mlx | 0.32.2 | MIT | `mlx-0.32.2-cp312-cp312-macosx_26_0_arm64.whl` |
+| mlx-arsenal | 0.2.4 | Apache-2.0 | `mlx_arsenal-0.2.4-py3-none-any.whl` |
+| mlx-lm | 0.31.1 | MIT | `mlx_lm-0.31.1-py3-none-any.whl` |
+| mlx-metal | 0.32.2 | MIT | `mlx_metal-0.32.2-py3-none-macosx_26_0_arm64.whl` |
+| numpy | 2.4.3 | BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0 | `numpy-2.4.3-cp312-cp312-macosx_14_0_arm64.whl` |
+| packaging | 26.0 | Apache-2.0 OR BSD-2-Clause | `packaging-26.0-py3-none-any.whl` |
+| pillow | 12.1.1 | MIT-CMU | `pillow-12.1.1-cp312-cp312-macosx_11_0_arm64.whl` |
+| protobuf | 6.33.6 | BSD-3-Clause | `protobuf-6.33.6-cp39-abi3-macosx_10_9_universal2.whl` |
+| pygments | 2.19.2 | BSD-2-Clause | `pygments-2.19.2-py3-none-any.whl` |
+| pyyaml | 6.0.3 | MIT | `pyyaml-6.0.3-cp312-cp312-macosx_11_0_arm64.whl` |
+| regex | 2026.2.28 | Apache-2.0 AND CNRI-Python | `regex-2026.2.28-cp312-cp312-macosx_11_0_arm64.whl` |
+| rich | 14.3.3 | MIT | `rich-14.3.3-py3-none-any.whl` |
+| safetensors | 0.7.0 | Apache-2.0 | `safetensors-0.7.0-cp38-abi3-macosx_11_0_arm64.whl` |
+| sentencepiece | 0.2.1 | Apache-2.0 | `sentencepiece-0.2.1-cp312-cp312-macosx_11_0_arm64.whl` |
+| shellingham | 1.5.4 | ISC | `shellingham-1.5.4-py2.py3-none-any.whl` |
+| tokenizers | 0.22.2 | Apache-2.0 | `tokenizers-0.22.2-cp39-abi3-macosx_11_0_arm64.whl` |
+| tqdm | 4.67.3 | MPL-2.0 AND MIT | `tqdm-4.67.3-py3-none-any.whl` |
+| transformers | 5.3.0 | Apache-2.0 | `transformers-5.3.0-py3-none-any.whl` |
+| typer | 0.24.1 | MIT | `typer-0.24.1-py3-none-any.whl` |
+| typing-extensions | 4.15.0 | PSF-2.0 | `typing_extensions-4.15.0-py3-none-any.whl` |
+
+**GPL programs.** x264 has no LGPL-compatible substitute for the model's
+upstream CRF-33 conditioning round trip, which the adapter must not silently
+bypass, nor for the lossless RGB H.264 intermediate the host converter admits.
+The runtime therefore carries a separate GPL build of the `ffmpeg` and
+`ffprobe` programs. They run as separate processes and are distinct from the
+LGPL libraries the application links. Specification §27.2 requires the owner
+to decide this before distribution: `--identity` builds refuse to include the
+runtime without `--allow-gpl-ai-codec`, and `build-provenance.json` records the
+decision. Replacing them would need a re-qualified conditioning route (for
+example VideoToolbox H.264) and an FFV1 intermediate admitted by the converter.
+
 ## Measured media candidates
 
 [The 2026-09-20 native report](qualification/media-2026-09-20.md) records exact
@@ -289,7 +373,7 @@ Keep this log current; a selection in the spec is not a tested integration.
 | AI baseline | Distilled LTX-Video 2B on a supported MPS path | Real hold corpus, exact seams/duration, usable-output latency and memory by hardware tier. |
 | AI comparison | Pinned LTX MLX implementation and compatible weights | Same corpus, runtime/code/weight licenses, precision and endpoint support. |
 | Import | yt-dlp + EJS + Deno | Permitted-source import on a clean Mac, pinning, safe updates, interrupted downloads. |
-| Private runtime | python-build-standalone + pinned wheels if selected | Offline assembly, isolation, nested signing, no first-launch pip or user runtime. |
+| Private runtime | python-build-standalone + pinned wheels (selected; [above](#private-ai-runtime)) | Offline assembly, isolation, nested signing and a scrubbed-environment generation pass on the build Mac; Developer ID library validation, notarization and a clean Mac remain. |
 | Distribution | Apple Silicon app, signed helpers and model manifests | Relocatable hardened bundle, notices and CycloneDX SBOM are built by `cargo xtask bundle` ([packaging](PACKAGING.md)); Developer ID signing, notarization, online/offline clean-machine checks and model manifests remain. |
 
 Do not add unused dependencies or placeholder crates to imply coverage. The

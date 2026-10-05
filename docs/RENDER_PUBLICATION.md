@@ -169,3 +169,9 @@ This boundary does not implement native Render controls, public headless render
 commands, complete mastering/effects, HDR or release qualification.
 The generated-picture receipt flag is available for a future nonblocking upload
 disclosure reminder; it does not set any upload-service metadata.
+
+Destination I/O failures that a person can act on carry their own codes:
+`destination_full` (ENOSPC), `destination_read_only` and
+`destination_permission_denied`; other I/O keeps `destination_io`. A real full
+APFS destination publishes no movie and retains the verified candidate for a
+retry ([recovery](RECOVERY.md#storage-failures)).

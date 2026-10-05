@@ -470,8 +470,11 @@ pub fn run_worker(
     let mut process = match WorkerProcess::spawn(
         ProcessSpec {
             executable: runtime.python.clone(),
+            // -B: the bundled runtime is signed and read-only; its bytecode
+            // is precompiled.
             arguments: vec![
                 "-I".into(),
+                "-B".into(),
                 runtime.worker_script.clone().into_os_string(),
                 "--runtime-config".into(),
                 runtime_config.into_os_string(),

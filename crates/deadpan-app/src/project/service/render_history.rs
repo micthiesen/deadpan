@@ -44,8 +44,12 @@ impl Service {
             return Err(context_changed());
         }
         let store = self.store.as_ref().ok_or_else(context_changed)?;
-        read_page(store, &request.query)
-            .map_err(|failure| error("RenderHistoryQueryFailed", failure))
+        read_page(store, &request.query).map_err(|failure| {
+            error(
+                "RenderHistoryQueryFailed",
+                crate::recovery::describe_store_error(&failure),
+            )
+        })
     }
 
     /// Called only after admit_render has checked the captured session, ticket

@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "files": [
+    {
+      "path": "ltx-2-community-license.txt",
+      "title": "LTX-2 Community License Agreement (license date January 5, 2026)",
+      "source": "https://huggingface.co/dgrauet/ltx-2.3-mlx-q4/resolve/56a5866d638ecfe37c54d348e88938235185c2d4/LICENSE",
+      "retrieved": "2026-09-20",
+      "sha256": "e28ef68d90e17b06308e4c5cba5c9a967b70c3d67f87ddc3dfc46a312cb6a134",
+      "note": "Byte-identical to the pack's own LICENSE file (pinned in the bridge pack manifest)."
+    },
+    {
+      "path": "gemma-terms-of-use.txt",
+      "title": "Gemma Terms of Use (last modified April 1, 2026)",
+      "source": "https://ai.google.dev/gemma/terms",
+      "retrieved": "2026-10-05",
+      "sha256": "6d4742f89f0f19a13acacd26ca9a2d53e542b94de717ce1d5d5e44f4fc41a3dc",
+      "note": "Plain text extracted from the HTML page's article body; markup and the page footer removed, wording unchanged."
+    }
+  ]
+}

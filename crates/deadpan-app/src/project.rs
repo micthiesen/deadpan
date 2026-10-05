@@ -307,6 +307,65 @@ pub struct ProjectUpdate {
     pub generation: Option<generation::Update>,
     /// Target saves and tracking, independent of editor feedback.
     pub targets: Option<targets::Update>,
+    /// What opening this session recovered and which originals are missing.
+    /// Retained for the session; replaced after a relink.
+    pub opened: Option<Arc<OpenReport>>,
+    /// Persistent "Not saved" state after a disk-full or permission failure,
+    /// independent of the next command's error.
+    pub storage: Option<crate::recovery::StorageAlert>,
+    /// The latest Original relink, matched by its request ticket.
+    pub relink: Option<RelinkStatus>,
+}
+
+/// What a writable open recovered, plus the presence of every registered
+/// original's bytes. Operational; nothing here is authored history.
+#[derive(Debug)]
+pub struct OpenReport {
+    pub session: u64,
+    pub path: PathBuf,
+    pub recovery: deadpan_store::recovery::OpenRecovery,
+    pub originals: Vec<OriginalStatus>,
+}
+
+impl OpenReport {
+    pub fn missing(&self) -> impl Iterator<Item = &OriginalStatus> {
+        self.originals.iter().filter(|status| {
+            !matches!(
+                status.availability,
+                deadpan_store::original_media::OriginalAvailability::Present
+            )
+        })
+    }
+
+    /// Something the person should hear about on opening.
+    pub fn needs_attention(&self) -> bool {
+        !self.recovery.is_clean() || self.missing().next().is_some()
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct OriginalStatus {
+    pub label: String,
+    /// The single-original project's Original, as opposed to a sound.
+    pub primary: bool,
+    pub record: OriginalMediaRecord,
+    pub availability: deadpan_store::original_media::OriginalAvailability,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RelinkStatus {
+    pub ticket: u64,
+    pub session: u64,
+    pub label: String,
+    pub state: RelinkState,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RelinkState {
+    Verifying,
+    /// The verified file now supplies the original's bytes.
+    Restored,
+    Failed(String),
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -651,6 +710,21 @@ pub enum ProjectRequest {
     Create(PathBuf),
     Open(PathBuf),
     Close,
+    /// The person has seen this session's recovery report; the store may
+    /// forget its retained findings. Never an edit.
+    AcknowledgeRecovery {
+        expected_session: u64,
+    },
+    /// Locate a missing original: a managed copy is restored from the chosen
+    /// file and a linked one is relinked to it. Either way the file must have
+    /// exactly the registered content.
+    RelinkOriginal {
+        ticket: u64,
+        expected_session: u64,
+        content: deadpan_store::original_media::OriginalContentId,
+        expected_version: u64,
+        path: PathBuf,
+    },
     Import {
         path: PathBuf,
         media: ImportMedia,
@@ -741,6 +815,9 @@ struct Shared {
     trim_commit_refresh_failure: AtomicBool,
     #[cfg(test)]
     workspace_refresh_failure: AtomicBool,
+    /// Replay/tests: refuse the next authored edit as a full disk would.
+    #[cfg(any(test, feature = "ui-harness"))]
+    storage_failure: AtomicBool,
     update: Mutex<Option<ProjectUpdate>>,
     wake: Arc<dyn Fn() + Send + Sync>,
 }
@@ -800,6 +877,8 @@ impl ProjectService {
             trim_commit_refresh_failure: AtomicBool::new(false),
             #[cfg(test)]
             workspace_refresh_failure: AtomicBool::new(false),
+            #[cfg(any(test, feature = "ui-harness"))]
+            storage_failure: AtomicBool::new(false),
             update: Mutex::new(None),
             wake,
         });
@@ -874,6 +953,13 @@ impl ProjectService {
     /// UI confirms that all temporary editors have closed.
     pub fn set_preview_active(&self, active: bool) {
         self.shared.preview_active.store(active, Ordering::Release);
+    }
+
+    /// The next authored edit fails exactly as a full disk refuses a commit.
+    /// Real ENOSPC is qualified by the store and service disk-image tests.
+    #[cfg(feature = "ui-harness")]
+    pub fn inject_storage_failure_for_check(&self) {
+        self.shared.storage_failure.store(true, Ordering::Release);
     }
 
     #[cfg(feature = "ui-harness")]

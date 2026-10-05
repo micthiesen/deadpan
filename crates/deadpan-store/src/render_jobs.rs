@@ -919,8 +919,11 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
     admission::validate_all_outputs(connection, &intents, &documents)
 }
 
-pub(crate) fn recover_nonterminal(connection: &mut Connection) -> Result<(), StoreError> {
+pub(crate) fn recover_nonterminal(
+    connection: &mut Connection,
+) -> Result<Vec<crate::recovery::InterruptedRender>, StoreError> {
     let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+    let mut interrupted = Vec::new();
     // Open performs the full audit before entering recovery. Re-read only the
     // bounded active set here, avoiding another pass over historical reports.
     validate_runtime(&transaction)?;
@@ -943,7 +946,16 @@ pub(crate) fn recover_nonterminal(connection: &mut Connection) -> Result<(), Sto
         advance(&mut attempt, RenderAttemptState::Interrupted)?;
         attempt.diagnostic=Some(RenderDiagnostic{code:"InterruptedOnOpen".into(),detail:"Writable reopen interrupted abandoned render work; retry explicitly. Retained checkpoints remain available.".into()});
         write_attempt(&transaction, &attempt)?;
+        interrupted.push(crate::recovery::InterruptedRender {
+            job_id: attempt.job_id.as_str().into(),
+            attempt_id: attempt.attempt_id.as_str().into(),
+            ordinal: attempt.ordinal,
+            checkpoint_attempt_id: attempt
+                .checkpoint_attempt_id
+                .as_ref()
+                .map(|id| id.as_str().into()),
+        });
     }
     transaction.commit()?;
-    Ok(())
+    Ok(interrupted)
 }

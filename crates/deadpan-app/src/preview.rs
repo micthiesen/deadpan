@@ -45,10 +45,12 @@ mod inspector;
 mod key_labels;
 mod macros;
 mod marks;
+mod model_packs;
 mod moment;
 mod operators;
 mod playback;
 mod proxies;
+mod recovery;
 mod render;
 mod repeat_queue;
 mod repeats;
@@ -251,6 +253,8 @@ pub struct DeadpanApp {
     error: Option<String>,
     project_error: Option<String>,
     message: Option<String>,
+    recovery: recovery::RecoveryUi,
+    models: model_packs::Models,
 }
 
 impl DeadpanApp {
@@ -418,6 +422,8 @@ impl DeadpanApp {
             error: None,
             project_error: None,
             message: keymap.failed.then_some(keymap.status),
+            recovery: recovery::RecoveryUi::default(),
+            models: model_packs::Models::default(),
         };
         app.worker.set_proxy_cache(app.proxies.cache.clone());
         if let Some(path) = initial_project {
@@ -844,6 +850,11 @@ impl DeadpanApp {
             }
             self.render_job = update.render;
             self.receive_render_history(update.render_history);
+            self.receive_recovery(
+                update.opened.take(),
+                update.storage.take(),
+                update.relink.take(),
+            );
             self.project_error = update.error;
             self.message = update.message;
             if let Some(note) = zoom_note {
@@ -1142,6 +1153,8 @@ impl DeadpanApp {
                 DialogKind::ImportMedia => "Import media",
                 DialogKind::Render => "Render",
                 DialogKind::Cookies => "Choose cookies",
+                DialogKind::RelinkOriginal => "Locate Original",
+                DialogKind::ModelPackFolder | DialogKind::ModelPackArchive => "Choose model pack",
             };
             self.refuse_while_busy(action);
             return;
@@ -1210,10 +1223,17 @@ impl DeadpanApp {
         })
     }
 
-    fn receive_dialog(&mut self) {
+    fn receive_dialog(&mut self, context: &egui::Context) {
         let Some(result) = self.dialogs.take_result() else {
             return;
         };
+        if matches!(
+            result.kind,
+            DialogKind::ModelPackFolder | DialogKind::ModelPackArchive
+        ) {
+            self.receive_model_source(result.path, result.error, context);
+            return;
+        }
         if let Some(error) = result.error {
             if result.kind == DialogKind::Render {
                 self.render_dialog_failed(error);
@@ -1248,6 +1268,10 @@ impl DeadpanApp {
             }
             DialogKind::OpenProject => {
                 self.submit(ProjectRequest::Open(path));
+            }
+            DialogKind::RelinkOriginal => self.receive_relink_dialog(path),
+            DialogKind::ModelPackFolder | DialogKind::ModelPackArchive => {
+                unreachable!("model pack sources return to the Models panel")
             }
             DialogKind::InitializeSource | DialogKind::ImportSound => {
                 let Some(intent) = intent else {
@@ -2240,11 +2264,19 @@ impl DeadpanApp {
         if !self.bindings.macro_pending() {
             self.macro_prefix_target = None;
         }
+        // A recovery or close question owns input above every draft, so its
+        // Escape can never cancel the draft it is asking about.
+        if self.recovery_keyboard(context) {
+            return None;
+        }
         if self.trim.is_some() {
             self.trim_keyboard(context);
             return None;
         }
         if self.marks_keyboard(context) {
+            return None;
+        }
+        if self.models_keyboard(context) {
             return None;
         }
         if self.render_keyboard(context) {
@@ -2853,6 +2885,9 @@ impl DeadpanApp {
                 self.help_open = true;
             }
             Ok(navigation::command::Entry::Renders) => self.render.history.requested = true,
+            Ok(navigation::command::Entry::Models) => self.open_models(None, context),
+            Ok(navigation::command::Entry::Relink) => self.locate_original(context),
+            Ok(navigation::command::Entry::Recovery) => self.show_recovery_report(),
             Ok(navigation::command::Entry::Splice) => self.open_captured_splice(
                 context,
                 placement_target.unwrap_or_else(|| {
@@ -2938,6 +2973,7 @@ impl DeadpanApp {
                 MenuCommand::ViewOriginal => self.show_original(context),
                 MenuCommand::ViewEdit => self.show_edit(context),
                 MenuCommand::Keys => self.action(Action::Help, context),
+                MenuCommand::Models => self.open_models(None, context),
                 MenuCommand::Quit => context.send_viewport_cmd(egui::ViewportCommand::Close),
             }
         }
@@ -2963,6 +2999,7 @@ impl DeadpanApp {
                 && self.trim.is_none()
                 && !self.render.blocking()
                 && !self.marks.open
+                && !self.models.open
                 && !self.help_open
                 && !self.macros.recording()
                 && !self.macros.is_pending()
@@ -3196,6 +3233,10 @@ impl DeadpanApp {
                                 || self.trim.is_some()
                             {
                                 ui.colored_label(style::LAVENDER, "Draft preview");
+                            } else if self.recovery.storage.is_some() {
+                                // Never "Saved" after a refused transaction.
+                                ui.colored_label(style::ERROR, "Not saved")
+                                    .on_hover_text("The last action was refused by storage; the last saved edit is intact");
                             } else if self.workspace.is_some() {
                                 ui.colored_label(style::SAVED, "Saved")
                                     .on_hover_text("Current committed revision is saved locally");
@@ -3467,6 +3508,7 @@ impl DeadpanApp {
             .error
             .as_deref()
             .or(self.project_error.as_deref())
+            .or(self.missing_original_notice())
             .or(self.presentation.error())
         {
             let detail = match repeat_status.as_deref() {
@@ -4641,6 +4683,7 @@ impl DeadpanApp {
                         (format!("{} / Ctrl R", key(EditorKey::Undo)), "Undo / redo. Native ⌘Z / ⌘Shift Z also work.".to_owned()),
                         ("⌘E / :render".to_owned(), "Render the saved full edit with automatic SDR output settings. Finish or cancel Trim or Slip first. For an unsaved Camera, Gain or Room tone preview, choose Commit preview and render, Discard preview and render, or Keep editing.".to_owned()),
                         (":renders".to_owned(), "Browse saved renders and destinations. Save a retained movie again, render its saved edit again, or check its previous destination. Tab moves between controls; Escape returns to editing.".to_owned()),
+                        (":models".to_owned(), "Install, resume, cancel or remove the models AI pauses and transcription use, also in the Deadpan menu. Each pack shows its size, free space, memory and licenses before anything downloads; licenses that need acceptance are accepted there. Install from a folder or .tar works offline. Tab moves between controls; Escape closes and an install keeps running.".to_owned()),
                     ] { help_binding(ui, &key, &description); }
                     ui.separator();
                     for (key, description) in [
@@ -4691,7 +4734,11 @@ impl eframe::App for DeadpanApp {
                 self.editor_key(EditorKey::Playback)
             ));
         }
-        self.close_pending |= context.input(|i| i.viewport().close_requested());
+        if context.input(|i| i.viewport().close_requested())
+            && (self.close_pending || !self.hold_close_for_previews(&context))
+        {
+            self.close_pending = true;
+        }
         self.reconcile_repeats(&context);
         let previous_pane = self.pane;
         // A layout retry reuses this frame's external state. In particular it
@@ -4706,6 +4753,7 @@ impl eframe::App for DeadpanApp {
             self.reconcile_render(&context);
             self.receive_gain_waveform();
             self.receive_trim_media();
+            self.reconcile_models(&context);
             self.reconcile_transcription(&context);
             self.reconcile_shots(&context);
             self.reconcile_proxies(&context);
@@ -4760,7 +4808,7 @@ impl eframe::App for DeadpanApp {
                 return;
             }
         } else if first_pass {
-            self.receive_dialog();
+            self.receive_dialog(&context);
         }
         // A writer completion may select its edited content while the user is
         // entering the next command. Preserve text focus so submission can
@@ -4856,8 +4904,11 @@ impl eframe::App for DeadpanApp {
             }
             self.render_windows(&context);
             self.marks_window(&context);
+            self.models_window(&context);
             self.youtube_window(&context);
         }
+        // Drawn even over Trim, whose close question it may be asking.
+        self.recovery_windows(&context);
         if input_scope
             != (
                 self.pane,
@@ -4972,6 +5023,8 @@ impl eframe::App for DeadpanApp {
         self.endpoint_worker.shutdown();
         self.thumbnails.shutdown();
         self.transcription.shutdown();
+        // Cancel a model install; partial bytes stay for Resume.
+        self.models.manager.shutdown(Duration::from_secs(3));
         self.shots.shutdown();
         self.proxies.shutdown();
         // Cancel and drain the import so no helper or private files outlive it.
@@ -4982,6 +5035,9 @@ impl eframe::App for DeadpanApp {
         self.splice = None;
         self.slip = None;
         self.forget_target();
+        // Only a drained writer is a clean exit. A system Quit can reach here
+        // without the window's close path; leave the journal open otherwise.
+        self.record_clean_exit_after_drain(Duration::from_secs(3));
         self.exited.set(true);
     }
 }

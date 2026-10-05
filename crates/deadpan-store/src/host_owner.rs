@@ -103,6 +103,149 @@ impl PackageAnchor {
     }
 }
 
+/// A writer records `.writer.session` once it has opened and removes it when
+/// the store closes. Finding one while acquiring the lock means the previous
+/// writer ended without closing: a crash, a kill or a power loss.
+const SESSION_NAME: &str = ".writer.session";
+/// Bound on what an unclean marker may report back.
+pub(crate) const MAX_SESSION_MARKER_BYTES: usize = 1024;
+
+/// What a writer found at `.writer.session` before writing its own marker.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum SessionEvidence {
+    /// The previous writer closed cleanly.
+    Clean,
+    /// The previous writer of this package never closed.
+    Unclean(String),
+    /// A marker written for a different package: this package was copied while
+    /// its writer was open. The copy did not crash, so nothing is reported.
+    Copied,
+}
+
+const SESSION_TEMPORARY_PREFIX: &str = ".writer-session-";
+
+impl PackageAnchor {
+    /// The marker text, binding it to this package's device and inode.
+    pub(crate) fn session_marker(&self, prefix: &str) -> String {
+        format!(
+            "{prefix} package={}:{}",
+            self.identity.device, self.identity.inode
+        )
+    }
+
+    /// Reads a marker left by an earlier writer without changing it. Call only
+    /// while holding the writer lock.
+    pub(crate) fn read_session(&self) -> Result<SessionEvidence, StoreError> {
+        let state = match statat(&self.directory, SESSION_NAME, AtFlags::SYMLINK_NOFOLLOW) {
+            Err(rustix::io::Errno::NOENT) => return Ok(SessionEvidence::Clean),
+            Err(error) => return Err(io(error)),
+            Ok(state) => state,
+        };
+        if !FileType::from_raw_mode(state.st_mode).is_file() {
+            // A link, directory or other entry is reported, never followed.
+            return Ok(SessionEvidence::Unclean(
+                "unreadable writer marker (not a regular file)".into(),
+            ));
+        }
+        let file = File::from(
+            openat(
+                &self.directory,
+                SESSION_NAME,
+                OFlags::RDONLY | OFlags::NOFOLLOW | OFlags::NONBLOCK | OFlags::CLOEXEC,
+                Mode::empty(),
+            )
+            .map_err(io)?,
+        );
+        let mut bytes = Vec::new();
+        file.take(MAX_SESSION_MARKER_BYTES as u64)
+            .read_to_end(&mut bytes)?;
+        let marker = String::from_utf8_lossy(&bytes).trim().to_owned();
+        let here = format!("package={}:{}", self.identity.device, self.identity.inode);
+        Ok(
+            match marker
+                .split_whitespace()
+                .find(|part| part.starts_with("package="))
+            {
+                Some(package) if package != here => SessionEvidence::Copied,
+                _ => SessionEvidence::Unclean(marker),
+            },
+        )
+    }
+
+    /// Atomically replaces any marker with this writer's, after removing
+    /// temporary markers an interrupted writer left behind. Call only while
+    /// holding the writer lock.
+    pub(crate) fn write_session(&self, marker: &str) -> Result<(), StoreError> {
+        self.remove_session_temporaries();
+        if let Ok(state) = statat(&self.directory, SESSION_NAME, AtFlags::SYMLINK_NOFOLLOW)
+            && FileType::from_raw_mode(state.st_mode).is_dir()
+        {
+            return Err(invalid(
+                "a directory occupies the writer session marker name",
+            ));
+        }
+        let temporary_name = format!("{SESSION_TEMPORARY_PREFIX}{}.tmp", uuid::Uuid::new_v4());
+        let mut temporary = File::from(
+            openat(
+                &self.directory,
+                temporary_name.as_str(),
+                OFlags::WRONLY
+                    | OFlags::CREATE
+                    | OFlags::EXCL
+                    | OFlags::NOFOLLOW
+                    | OFlags::NONBLOCK
+                    | OFlags::CLOEXEC,
+                PRIVATE_FILE,
+            )
+            .map_err(io)?,
+        );
+        let written = (|| {
+            let bytes = marker.as_bytes();
+            temporary.write_all(&bytes[..bytes.len().min(MAX_SESSION_MARKER_BYTES)])?;
+            temporary.sync_all()?;
+            renameat(
+                &self.directory,
+                temporary_name.as_str(),
+                &self.directory,
+                SESSION_NAME,
+            )
+            .map_err(io)?;
+            fsync(&self.directory).map_err(io)
+        })();
+        if let Err(error) = written {
+            let _ = unlinkat(&self.directory, temporary_name.as_str(), AtFlags::empty());
+            return Err(error);
+        }
+        Ok(())
+    }
+
+    /// Best effort: only regular files with the temporary marker name.
+    fn remove_session_temporaries(&self) {
+        let Ok(directory) = rustix::fs::Dir::read_from(&self.directory) else {
+            return;
+        };
+        for entry in directory.flatten() {
+            let name = entry.file_name().to_string_lossy().into_owned();
+            if name.starts_with(SESSION_TEMPORARY_PREFIX)
+                && name.ends_with(".tmp")
+                && statat(&self.directory, name.as_str(), AtFlags::SYMLINK_NOFOLLOW)
+                    .is_ok_and(|state| FileType::from_raw_mode(state.st_mode).is_file())
+            {
+                let _ = unlinkat(&self.directory, name.as_str(), AtFlags::empty());
+            }
+        }
+    }
+
+    /// Removes this writer's marker; the next writer then sees a clean close.
+    pub(crate) fn end_session(&self) -> Result<(), StoreError> {
+        match unlinkat(&self.directory, SESSION_NAME, AtFlags::empty()) {
+            Ok(()) | Err(rustix::io::Errno::NOENT) => {}
+            Err(error) => return Err(io(error)),
+        }
+        fsync(&self.directory).map_err(io)
+    }
+}
+
 pub(crate) struct OwnerState {
     token: Arc<OwnerToken>,
     // Retaining the descriptor prevents inode reuse from impersonating this
