@@ -92,6 +92,7 @@ Current crates:
 - `native/deadpan-process`: checked worker/leader teardown and Darwin group-membership adapter; unsafe is denied except for its documented bounded libproc call. Higher layers continue to forbid unsafe.
 - `crates/deadpan-app`: native `egui`/`eframe` project workspace using Metal. One service owns the writable store, one import worker prepares media, and a separate bounded preview worker consumes immutable workspaces. Native dialogs, source registration, explicit insertion, history, current-depth Camera previews, limited Original/edit/sound audition and automatic SDR Render with explicit preview decisions are implemented, as are crash-recovery reporting, missing-Original relink and storage-failure alerts ([recovery](docs/RECOVERY.md)). Full editing, mastered playback, complete export qualification, rotating backups and release migration remain open.
 - `crates/deadpan-cli`: versioned headless project/command API, reused by `deadpan-app --headless`, and the per-user preview-proxy builder and cache.
+- `crates/deadpan-chaos`: development-only stable mutation fuzzing, allocation bounds and child-process crash isolation for the Gate G [adversarial suite](docs/ADVERSARIAL.md). Name new fuzz tests `adversarial_*`, seed them from real fixtures, register campaign entries in `cargo xtask chaos`, and add a regression test for every minimized failure.
 - `crates/deadpan-analysis`: pure analysis annotations; validated word-timed transcripts and Silero speech activity with energy-refined pauses, both with exact Original timing, and per-picture shot change measurements. See [transcription](docs/TRANSCRIPTION.md), [speech activity](docs/SPEECH_ACTIVITY.md) and [shot detection](docs/SHOT_DETECTION.md).
 - `native/deadpan-transcribe`: process-isolated whisper.cpp worker. Its only `unsafe` is the documented abort-callback adapter; never use whisper-rs's `set_abort_callback_safe`, which aborts every encode.
 - `native/deadpan-track`: process-isolated Apple Vision selected-target tracking worker over the verified Original through `deadpan-source`. `unsafe` stays in its documented `vision.rs` adapter; tracking policy and the path-to-target mapping are pure in `deadpan-analysis`; tracking never edits, and only `track --save`/`track-correct` commit a reversible `SetTarget`. See [tracking](docs/TRACKING.md).
@@ -486,7 +487,7 @@ and workspace delivery order. Keep the first child's identity separate from the
 complete result interval. See
 [atomic moves](docs/ATOMIC_MOVES.md).
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 45 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings with exact picture selections and dormant linked audio, audio edge policies, transparent Retime partitions, owned timing bindings with exact local-origin translations, retained framing clocks, root sound routes, owner-local BeatSound maps and independent sound clock journals, and binds qualified assets to immutable source receipts. Database schema 64 is current (59 added transcripts; 60 speech activity; 61 shot analysis; 62 remote-original provenance; 63 revision patches; 64 keyframe metadata and history receipts). Refuse schemas 1 through 63 before writer acquisition, backups, recovery or document parsing. Retain current history validation, checkpoints, accepted-media recovery and the frozen audio-context codecs still referenced by current documents. Historical qualification reports apply to their recorded revisions. See [development formats](docs/DEVELOPMENT_FORMATS.md).
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 45 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings with exact picture selections and dormant linked audio, audio edge policies, transparent Retime partitions, owned timing bindings with exact local-origin translations, retained framing clocks, root sound routes, owner-local BeatSound maps and independent sound clock journals, and binds qualified assets to immutable source receipts. Database schema 65 is current (59 added transcripts; 60 speech activity; 61 shot analysis; 62 remote-original provenance; 63 revision patches; 64 keyframe metadata and history receipts; 65 the register bank digest over version and slots, checked on every bank read). Refuse schemas 1 through 64 before writer acquisition, backups, recovery or document parsing. Retain current history validation, checkpoints, accepted-media recovery and the frozen audio-context codecs still referenced by current documents. Historical qualification reports apply to their recorded revisions. See [development formats](docs/DEVELOPMENT_FORMATS.md).
 
 Audio placement offsets map current physical-local coordinates into retained
 historical-local coordinates. Rebase lattice, phase-term and reanchor templates
@@ -1075,6 +1076,15 @@ text at its admitted Enter/Escape, then resume the suffix in order on the next
 outer frame, never on a layout retry. Preserve whole-batch IME ownership.
 Headless/worker and replay paths never read personal keymaps.
 See [bindings](docs/KEYMAP.md).
+
+Native accessibility: whatever egui focuses must have an AccessKit node in
+that pass, or the macOS adapter aborts. Tab skips panes the layout does not
+draw, focus on an undrawn pane moves to a drawn one, and painted panes carry
+spoken values (live only for the current pane, never while a key is held or
+during playback). Replays and tests never read the Mac's Reduce motion or
+Increase contrast settings; they apply explicit preferences. Use
+`RichText::weak()` or `style::muted` for secondary text so Increase contrast
+can raise it. See the [accessibility record](docs/qualification/accessibility-2026-10-05.md).
 
 Project registers save Original descriptors, complete Edited captures and typed
 Macro programs in an independent SQLite bank, without timeline revisions. Named copies and cuts update the

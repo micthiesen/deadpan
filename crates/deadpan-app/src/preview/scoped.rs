@@ -348,7 +348,7 @@ impl DeadpanApp {
             let (breadcrumb, rows, choice) = match details {
                 Ok(details) => details,
                 Err(error) => {
-                    ui.colored_label(style::MUTED, error);
+                    ui.colored_label(style::muted(ui), error);
                     return;
                 }
             };
@@ -358,8 +358,11 @@ impl DeadpanApp {
                     let label = format!("{} · {}", row.label, self.beat_scope_label());
                     ui.horizontal(|ui| {
                         ui.weak("GAIN OWNER");
-                        ui.add(egui::Label::new(&label).truncate())
-                            .on_hover_text(label);
+                        accessibility::full_text(
+                            ui.add(egui::Label::new(&label).truncate()),
+                            &label,
+                        )
+                        .on_hover_text(label);
                     });
                 }
                 return;
@@ -376,8 +379,11 @@ impl DeadpanApp {
                         self.scoped_leave(ui.ctx());
                     }
                     let label = breadcrumb.join(" › ");
-                    ui.add(egui::Label::new(egui::RichText::new(&label).strong()).truncate())
-                        .on_hover_text(label)
+                    accessibility::full_text(
+                        ui.add(egui::Label::new(egui::RichText::new(&label).strong()).truncate()),
+                        &label,
+                    )
+                    .on_hover_text(label)
                 })
                 .inner;
             if pane_focus(

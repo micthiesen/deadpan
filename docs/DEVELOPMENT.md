@@ -42,7 +42,13 @@ the repository root:
 cargo xtask gate
 ```
 
-It runs build-directory hygiene, then `cargo fmt --all -- --check`, workspace
+The adversarial tests (`adversarial_*`) run in deterministic regression mode
+within these workspace tests. For a time-bounded fuzzing campaign, a sanitized
+decoder campaign or the full long-project stress, run `cargo xtask chaos`,
+`cargo xtask chaos --sanitize` or `cargo xtask chaos --stress`; see
+[the adversarial suite](ADVERSARIAL.md).
+
+The gate runs build-directory hygiene, then `cargo fmt --all -- --check`, workspace
 Clippy with `-D warnings`, `deadpan-app` Clippy with `ui-harness`, and the
 workspace and `ui-harness` tests (nextest when installed, then doc tests;
 otherwise `cargo test`). CI runs the same commands individually:

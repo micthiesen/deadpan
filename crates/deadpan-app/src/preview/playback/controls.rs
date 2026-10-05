@@ -82,7 +82,7 @@ impl Controls {
                 ))
                 .monospace()
                 .size(10.0)
-                .color(style::MUTED),
+                .weak(),
                 width,
             )
         });
@@ -97,7 +97,7 @@ impl Controls {
                 )
             })
             .size(10.5)
-            .color(style::MUTED),
+            .weak(),
             width,
         );
         let button_size =

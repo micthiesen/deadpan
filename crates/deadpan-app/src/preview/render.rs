@@ -500,6 +500,7 @@ impl DeadpanApp {
             let proposal = proposal.clone();
             let mut decision = None;
             let modal = egui::Modal::new(egui::Id::new("render-preview-decision")).show(context, |ui| {
+                super::accessibility::dialog(ui, "Render your preview?");
                 ui.set_max_width(440.0);
                 ui.heading("Render your preview?");
                 ui.label("Render uses a saved revision. Choose what happens to this unsaved preview.");

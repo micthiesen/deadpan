@@ -901,6 +901,7 @@ checksum = "0c87e182de0887fd5361989c677c4e8f5000cd9491d6d563161a8f3a5519fc7f"
 name = "deadpan-analysis"
 version = "0.1.0"
 dependencies = [
+ "deadpan-chaos",
  "deadpan-core",
  "proptest",
  "serde",
@@ -932,6 +933,7 @@ dependencies = [
  "image",
  "muda",
  "objc2 0.6.4",
+ "objc2-app-kit 0.3.2",
  "objc2-foundation 0.3.2",
  "rfd",
  "rusqlite",
@@ -960,11 +962,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "deadpan-chaos"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+]
+
+[[package]]
 name = "deadpan-cli"
 version = "0.1.0"
 dependencies = [
  "deadpan-analysis",
  "deadpan-audio",
+ "deadpan-chaos",
  "deadpan-core",
  "deadpan-encode",
  "deadpan-filesystem",
@@ -996,6 +1006,7 @@ dependencies = [
 name = "deadpan-core"
 version = "0.1.0"
 dependencies = [
+ "deadpan-chaos",
  "proptest",
  "serde",
  "serde_json",
@@ -1044,6 +1055,7 @@ name = "deadpan-jobs"
 version = "0.1.0"
 dependencies = [
  "deadpan-analysis",
+ "deadpan-chaos",
  "deadpan-core",
  "deadpan-native-process",
  "rustix 1.1.5",
@@ -1059,6 +1071,7 @@ name = "deadpan-media"
 version = "0.1.0"
 dependencies = [
  "blake3",
+ "deadpan-chaos",
  "deadpan-core",
  "deadpan-native-process",
  "deadpan-plan",
@@ -1077,6 +1090,7 @@ version = "0.1.0"
 dependencies = [
  "blake3",
  "cc",
+ "deadpan-chaos",
  "deadpan-cli",
  "deadpan-core",
  "deadpan-jobs",
@@ -1095,6 +1109,7 @@ name = "deadpan-models"
 version = "0.1.0"
 dependencies = [
  "blake3",
+ "deadpan-chaos",
  "deadpan-core",
  "deadpan-jobs",
  "deadpan-media",
@@ -1176,6 +1191,7 @@ version = "0.1.0"
 dependencies = [
  "blake3",
  "cc",
+ "deadpan-chaos",
  "deadpan-core",
  "tempfile",
  "thiserror 2.0.20",
@@ -1187,11 +1203,13 @@ version = "0.1.0"
 dependencies = [
  "blake3",
  "deadpan-analysis",
+ "deadpan-chaos",
  "deadpan-core",
  "deadpan-fileclone",
  "deadpan-jobs",
  "deadpan-media",
  "deadpan-native-process",
+ "deadpan-plan",
  "rusqlite",
  "rustix 1.1.5",
  "serde",

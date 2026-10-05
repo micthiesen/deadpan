@@ -346,6 +346,7 @@ impl DeadpanApp {
         let name = project_name(&offer.project);
         let mut reopen = false;
         let modal = egui::Modal::new(egui::Id::new(LAUNCH_ID)).show(context, |ui| {
+            super::accessibility::dialog(ui, "Deadpan did not close normally");
             ui.set_max_width(460.0);
             ui.heading("Deadpan did not close normally");
             ui.label(format!(
@@ -389,6 +390,7 @@ impl DeadpanApp {
         let mut locate = false;
         let mut renders = false;
         let modal = egui::Modal::new(egui::Id::new(REPORT_ID)).show(context, |ui| {
+            super::accessibility::dialog(ui, "Project recovery report");
             ui.set_max_width(500.0);
             ui.heading(if recovery.unclean_previous_writer.is_some() {
                 "Project recovered"
@@ -524,6 +526,7 @@ impl DeadpanApp {
         };
         let mut discard = false;
         let modal = egui::Modal::new(egui::Id::new(CLOSE_ID)).show(context, |ui| {
+            super::accessibility::dialog(ui, "Close with unsaved previews?");
             ui.set_max_width(440.0);
             ui.heading("Close with unsaved previews?");
             ui.label("Every saved edit is already in the project. These open previews were never saved and will be discarded:");

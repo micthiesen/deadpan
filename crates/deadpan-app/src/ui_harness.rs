@@ -67,6 +67,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "storage-failure",
     "generated-picture",
     "youtube",
+    "accessibility",
 ];
 
 pub(crate) struct Options {

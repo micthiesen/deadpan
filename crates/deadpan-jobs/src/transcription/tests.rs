@@ -353,3 +353,19 @@ fn speech_detection_messages_round_trip() {
     value["language"] = serde_json::json!("en");
     assert!(serde_json::from_value::<HostMessage>(value).is_err());
 }
+
+#[test]
+fn adversarial_transcription_frames() {
+    let cancel = TranscriptionProtocol::from_request(&transcribe())
+        .unwrap()
+        .cancellation();
+    crate::adversarial::protocol::<TranscriptionProtocol>(
+        "jobs-transcription-protocol",
+        vec![transcribe(), cancel, detect()],
+        vec![
+            completed("output/transcript.json", 100, MODEL),
+            detected("output/probabilities.f32", 64, VAD),
+        ],
+        |reader| read_host(reader),
+    );
+}

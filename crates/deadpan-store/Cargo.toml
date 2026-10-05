@@ -32,6 +32,8 @@ deadpan-fileclone.workspace = true
 sha2.workspace = true
 
 [dev-dependencies]
+deadpan-plan.workspace = true
+deadpan-chaos.workspace = true
 deadpan-native-process.workspace = true
 
 [lints]

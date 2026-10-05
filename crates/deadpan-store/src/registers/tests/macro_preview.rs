@@ -123,6 +123,7 @@ fn preview_and_save_reject_the_same_stale_context_names_and_exhausted_version_wi
         .connection
         .execute("UPDATE register_state SET version=?1", [i64::MAX])
         .unwrap();
+    crate::registers::reseal_for_test(&writer.connection).unwrap();
     let before = cells(&writer);
     let preview = reader
         .preview_macro(

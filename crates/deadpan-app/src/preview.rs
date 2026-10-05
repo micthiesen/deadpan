@@ -23,6 +23,7 @@ use crate::project::{
 };
 use crate::worker::{PreviewWorker, ProjectView, SourceSummary, Ticket, Work};
 
+mod accessibility;
 mod ai_pause;
 mod camera;
 mod camera_fields;
@@ -124,6 +125,8 @@ pub struct DeadpanApp {
     #[cfg(feature = "ui-harness")]
     feedback: harness::Feedback,
     smoke_frames: Option<u8>,
+    /// Reduce motion / Increase contrast; fixed outside the native app.
+    display: accessibility::Display,
     close_pending: bool,
     exited: Rc<Cell<bool>>,
     worker: PreviewWorker,
@@ -306,6 +309,7 @@ impl DeadpanApp {
             #[cfg(feature = "ui-harness")]
             feedback: harness::Feedback::default(),
             smoke_frames: smoke_test.then_some(0),
+            display: accessibility::Display::fixed(),
             close_pending: false,
             exited,
             worker,
@@ -2023,7 +2027,13 @@ impl DeadpanApp {
                 if self.sound_focused() {
                     self.stop_playback();
                 }
-                self.pane = self.pane.cycle_visible(reverse, self.inspector_visible());
+                // Skip panes the current layout does not draw (the start
+                // screen has no Placed sounds), so focus never names a
+                // missing control.
+                let inspector = self.inspector_visible();
+                self.pane = self.pane.cycle_available(reverse, inspector, |pane| {
+                    accessibility::pane_drawn(context, pane)
+                });
                 if self.pane == Pane::Sounds {
                     self.focus_events(context);
                 }
@@ -2994,6 +3004,12 @@ impl DeadpanApp {
         }
     }
 
+    /// Follow the macOS Reduce motion and Increase contrast settings. Only the
+    /// native app calls this; replays keep the fixed workspace style.
+    pub fn follow_system_display(&mut self) {
+        self.display.follow_system();
+    }
+
     /// Replace the application menu bar. Native launches only; replay and
     /// tests keep the in-window File menu.
     #[cfg(target_os = "macos")]
@@ -3219,7 +3235,7 @@ impl DeadpanApp {
                     });
                     columns[1].with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
                         ui.add_space(6.0);
-                        ui.add(egui::Label::new(style::semibold(&title)).truncate())
+                        accessibility::full_text(ui.add(egui::Label::new(style::semibold(&title)).truncate()), &title)
                             .on_hover_text(&title);
                     });
                     // Start from one natural row, not the cached panel height.
@@ -3287,7 +3303,7 @@ impl DeadpanApp {
                             ui.add_space(6.0);
                             if self.service.is_busy() || self.repeat_queue.active() {
                                 ui.weak("Working");
-                                ui.spinner();
+                                crate::preview::accessibility::busy(ui);
                             } else if self.camera.is_some()
                                 || self.slip.is_some()
                                 || self.trim.is_some()
@@ -3295,8 +3311,12 @@ impl DeadpanApp {
                                 ui.colored_label(style::LAVENDER, "Draft preview");
                             } else if self.recovery.storage.is_some() {
                                 // Never "Saved" after a refused transaction.
-                                ui.colored_label(style::ERROR, "Not saved")
+                                // A fixed ID, so a busy spinner before it cannot
+                                // turn it into a new, re-announced node.
+                                let response = ui.push_id("header-save-state", |ui| ui.colored_label(style::ERROR, "Not saved"))
+                                    .inner
                                     .on_hover_text("The last action was refused by storage; the last saved edit is intact");
+                                accessibility::live(&response, true);
                             } else if self.workspace.is_some() {
                                 ui.colored_label(style::SAVED, "Saved")
                                     .on_hover_text("Current committed revision is saved locally");
@@ -3358,7 +3378,7 @@ impl DeadpanApp {
                     }).monospace());
                     ui.separator();
                 }
-                if self.presentation.loading() || self.presentation.needs_render() { ui.spinner(); ui.weak("Updating picture"); }
+                if self.presentation.loading() || self.presentation.needs_render() { crate::preview::accessibility::busy(ui); ui.weak("Updating picture"); }
                 if self.sound_focused() {
                     ui.weak("Catalog audition");
                 } else if self.event_focused() {
@@ -3370,9 +3390,9 @@ impl DeadpanApp {
                         ui.colored_label(style::LAVENDER, label);
                     } else if self.scoped.is_some() {
                         let label = self.beat_scope_label();
-                        ui.add(egui::Label::new(&label).truncate()).on_hover_text(label);
+                        accessibility::full_text(ui.add(egui::Label::new(&label).truncate()), &label).on_hover_text(label);
                     } else if let Some(beat) = self.beat_rows.iter().find(|beat| Some(&beat.id) == self.selected_beat.as_ref()) {
-                        ui.add(egui::Label::new(format!("{} · {}", beat.label, self.beat_scope_label())).truncate()).on_hover_text(format!("{} · {} · {} frames · {}", beat.label, beat.kind, beat.frames, self.beat_scope_label()));
+                        { let text = format!("{} · {}", beat.label, self.beat_scope_label()); accessibility::full_text(ui.add(egui::Label::new(&text).truncate()), &text) }.on_hover_text(format!("{} · {} · {} frames · {}", beat.label, beat.kind, beat.frames, self.beat_scope_label()));
                     } else { ui.weak("No beat selected"); }
                 } else { ui.weak("Unchanged source"); }
                 ui.colored_label(style::LAVENDER, format!("Focus: {}", if self.pane == Pane::Sources && self.focused_workflow() { "Original / sounds" } else { pane_name(self.pane) }));
@@ -3569,6 +3589,7 @@ impl DeadpanApp {
 
     fn notice(&self, ui: &mut egui::Ui) {
         let repeat_status = self.repeat_queue.status();
+        let mut urgent = false;
         let text = if self.command_open || (self.camera.is_some() && !self.sound_focused()) {
             None
         } else if let Some(error) = self
@@ -3583,6 +3604,7 @@ impl DeadpanApp {
                 Some(status) => format!("{}; {status}", error.trim_end_matches('.')),
                 None => error.to_owned(),
             };
+            urgent = true;
             Some(
                 egui::RichText::new(format!("Could not complete action: {detail}"))
                     .color(ui.visuals().error_fg_color),
@@ -3591,7 +3613,7 @@ impl DeadpanApp {
             repeat_status
                 .as_ref()
                 .or(self.message.as_ref())
-                .map(|message| egui::RichText::new(message).color(style::MUTED).size(12.0))
+                .map(|message| egui::RichText::new(message).weak().size(12.0))
         };
         // A bottom panel normally starts with last frame's height. Measure this
         // notice before anchoring it so a new or newly wrapped error is visible
@@ -3625,7 +3647,16 @@ impl DeadpanApp {
             .frame(frame)
             .show(ui, |ui| {
                 if let Some(galley) = galley {
-                    ui.add(egui::Label::new(galley));
+                    // Saved, refused and finished-work notices are spoken
+                    // as they appear; refusals interrupt.
+                    // A fixed ID: the notice stays one live region, so only
+                    // a changed message is announced.
+                    let response = ui
+                        .push_id("workspace-notice-text", |ui| {
+                            ui.add(egui::Label::new(galley))
+                        })
+                        .inner;
+                    accessibility::live(&response, urgent);
                 }
             });
     }
@@ -3685,7 +3716,7 @@ impl DeadpanApp {
                             if let Some(explanation) = self.proxies.explanation() { response = response.on_hover_text(explanation); }
                             if response.clicked() { self.select_source(asset.clone()); }
                         }
-                        ui.label(egui::RichText::new("Your starting point stays intact.").size(12.0).color(style::MUTED));
+                        ui.label(egui::RichText::new("Your starting point stays intact.").size(12.0).weak());
                         ui.add_space(8.0);
                         self.reuse_heading(ui);
                         if ui.add(style::row_action(ui, "Browse", ":source")).clicked()
@@ -3698,6 +3729,7 @@ impl DeadpanApp {
                     } else {
                         let search_hint = format!("Find source  {}", self.editor_key(EditorKey::Search));
                         let search = ui.add(egui::TextEdit::singleline(&mut self.source_search).id(egui::Id::new(SEARCH_ID)).hint_text(search_hint).desired_width(f32::INFINITY));
+                        accessibility::name(&search, "Find source");
                         if search.has_focus() { self.pane = Pane::Sources; }
                         retain_text_escape(ui, SEARCH_ID);
                         if search.changed() { self.filter_sources(); }
@@ -3720,6 +3752,7 @@ impl DeadpanApp {
                         ui.label(style::section_title("SOUND EFFECTS", false));
                         let search_hint = format!("Find sound  {}", self.editor_key(EditorKey::Search));
                         let search = ui.add(egui::TextEdit::singleline(&mut self.source_search).id(egui::Id::new(SEARCH_ID)).hint_text(search_hint).desired_width(f32::INFINITY));
+                        accessibility::name(&search, "Find sound");
                         if search.has_focus() { self.pane = Pane::Sources; }
                         retain_text_escape(ui, SEARCH_ID);
                         if search.changed() { self.filter_sources(); }
@@ -3819,7 +3852,7 @@ impl DeadpanApp {
                 if let Some(beat) = self.beat_rows.iter().find(|beat| self.selected_beat.as_ref() == Some(&beat.id)) {
                     ui.horizontal(|ui| {
                         ui.weak("GAIN OWNER");
-                        ui.add(egui::Label::new(format!("{} · {} f · {}", beat.label, beat.frames, self.beat_scope_label())).truncate())
+                        { let text = format!("{} · {} f · {}", beat.label, beat.frames, self.beat_scope_label()); accessibility::full_text(ui.add(egui::Label::new(&text).truncate()), &text) }
                             .on_hover_text(&beat.label);
                     });
                 }
@@ -4159,7 +4192,7 @@ impl DeadpanApp {
                                     Some(egui::TextWrapMode::Truncate),
                                 )
                                 .on_hover_text(&data.label);
-                                ui.label(egui::RichText::new(data.kind).color(style::MUTED));
+                                ui.label(egui::RichText::new(data.kind).weak());
                             });
                         });
                         ui.add_space(8.0);
@@ -4192,7 +4225,7 @@ impl DeadpanApp {
                         ui.label(
                             egui::RichText::new(format!("Project clock {frame_rate}. {}", data.note))
                                 .size(12.0)
-                                .color(style::MUTED),
+                                .weak(),
                         );
                         if data.kind == "Hold" {
                             self.ai_inspector(ui, ready);
@@ -4299,7 +4332,7 @@ impl DeadpanApp {
                 for (index, (label, view)) in [(if self.focused_workflow() { "Original" } else { "Source" }, View::Source), (if self.focused_workflow() { "Your edit" } else { "Sequence" }, View::Sequence)].into_iter().enumerate() {
                     let corners = if index == 0 { egui::CornerRadius { nw: 5, sw: 5, ne: 0, se: 0 } } else { egui::CornerRadius { nw: 0, sw: 0, ne: 5, se: 5 } };
                     let selected = self.view == view;
-                    let text = if selected { style::semibold(label).color(style::LAVENDER) } else { egui::RichText::new(label).color(style::MUTED) };
+                    let text = if selected { style::semibold(label).color(style::LAVENDER) } else { egui::RichText::new(label).weak() };
                     if ui.add_enabled(view == View::Source || self.workspace.is_some(), egui::Button::new(text).min_size(egui::vec2(92.0, 28.0)).corner_radius(corners).selected(selected)).clicked() {
                         self.stop_playback();
                         self.selected_sound = None;
@@ -4389,7 +4422,7 @@ impl DeadpanApp {
             }
             self.render_picture(ui.ctx(), canvas.size());
             let displayed_label = self.presentation.displayed_label();
-            response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Image, true, displayed_label.as_deref().unwrap_or("No picture displayed")));
+            response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Image, true, displayed_label.as_deref().unwrap_or(if start_surface { "Picture viewer: no project open" } else { "No picture displayed" })));
             if self.presentation.has_displayed() && !(self.view == View::Sequence && self.sequence_length() == 0) {
                 if let Some(target) = &self.target {
                     // The retained texture includes its own composition and
@@ -4411,15 +4444,15 @@ impl DeadpanApp {
                 self.start_card(ui, rect);
             } else {
                 let message = if self.presentation.loading() { "Preparing picture…" } else if self.presentation.error().is_some() { "Picture unavailable" } else if self.view == View::Sequence { "Your edit is empty" } else if self.selected_source.is_some() && self.source_length() == 0 { "Audio source · no picture" } else { "Choose the Original to begin" };
-                ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, message, egui::FontId::proportional(18.0), style::MUTED);
+                ui.painter().text(rect.center(), egui::Align2::CENTER_CENTER, message, egui::FontId::proportional(18.0), style::muted(ui));
             }
-            ui.painter().rect_stroke(rect, 2.0, egui::Stroke::new(1.0, if self.pane == Pane::Viewer { style::LAVENDER } else { style::BORDER }), egui::StrokeKind::Inside);
+            ui.painter().rect_stroke(rect, 2.0, egui::Stroke::new(1.0, if self.pane == Pane::Viewer { style::LAVENDER } else { accessibility::border(ui.ctx()) }), egui::StrokeKind::Inside);
             self.camera_overlay(ui, canvas);
             if let Some(label) = displayed_label {
-                let mut response = ui.add(egui::Label::new(egui::RichText::new(&label).size(11.5).color(style::MUTED)).truncate()).on_hover_text(&label);
+                let mut response = accessibility::full_text(ui.add(egui::Label::new(egui::RichText::new(&label).size(11.5).weak()).truncate()), &label).on_hover_text(&label);
                 if let Some(summary) = &self.summary { response = response.on_hover_text(format!("Measured source: {} × {} pixels; original PTS [{}, {}), clock {}/{} seconds per tick.", summary.info.width, summary.info.height, summary.first_pts, summary.terminal_pts, summary.info.time_base_num, summary.info.time_base_den)); }
                 if let Some(source_frame) = self.presentation.displayed_source_frame() { response.on_hover_text(format!("Original source frame {}", u128::from(source_frame.0) + 1)); }
-            } else if !start_surface { ui.label(egui::RichText::new("Stopped-frame inspection").size(11.5).color(style::MUTED)); }
+            } else if !start_surface { ui.label(egui::RichText::new("Stopped-frame inspection").size(11.5).weak()); }
             if let Some(workspace) = &self.workspace && let Some(original) = workspace.original_duration {
                 // These clocks are read-only. At minimum height, reserve text
                 // height instead of the ordinary 28-point button row.
@@ -4432,7 +4465,7 @@ impl DeadpanApp {
                     egui::Frame::new().fill(style::SELECTED).corner_radius(4).inner_margin(egui::Margin::symmetric(6, 1)).show(ui, |ui| {
                         ui.label(egui::RichText::new(format!("{:+} f", edit.frames() - original.frames())).monospace().color(style::LAVENDER));
                     });
-                    ui.label(egui::RichText::new(format!("project clock · {}", frame_rate_label(workspace.document.presentation_basis().frame_rate))).size(10.0).color(style::MUTED));
+                    ui.label(egui::RichText::new(format!("project clock · {}", frame_rate_label(workspace.document.presentation_basis().frame_rate))).size(10.0).weak());
                 }).response.on_hover_text("Both durations use the same project-frame clock. Original includes the measured picture/audio stream union; source browsing counts decoded picture frames separately.");
             }
             if self.camera.is_some() {
@@ -4679,6 +4712,7 @@ impl DeadpanApp {
                     for (key, description) in [
                         ("⌘N / ⌘O".to_owned(), "Choose one Original / open a project. New projects live in Documents/Deadpan.".to_owned()),
                         ("⌘⇧N · :youtube".to_owned(), "Start a project from one YouTube video URL. Its details appear before anything downloads; Enter confirms and Esc cancels.".to_owned()),
+                        ("⌘+ / ⌘− / ⌘0".to_owned(), "Larger / smaller / default interface scale. Deadpan also follows the macOS Reduce motion and Increase contrast settings.".to_owned()),
                         (key(EditorKey::Playback), format!("Play / pause the focused sound, Original, or Your edit. During preparation, {} cancels. Pause retains the exact heard sample; navigation stops playback.", key(EditorKey::Playback))),
                         (key(EditorKey::Audition), format!("Loop the complete selected sound. In Original or Your edit, loop the selected moment, Edit range or beat with 500ms before and 750ms after, bounded by that domain. {} pauses and resumes the loop.", key(EditorKey::Playback))),
                         (":audition-context lead=500ms follow=750ms".to_owned(), "Set loop lead-in and follow-through. Use 0ms for an exact selection. Seconds, milliseconds and project frames are accepted.".to_owned()),
@@ -4814,6 +4848,9 @@ impl eframe::App for DeadpanApp {
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let context = ui.ctx().clone();
         let first_pass = context.current_pass_index() == 0;
+        if first_pass {
+            self.display.poll(&context);
+        }
         // Cards record the thumbnails they show during this layout pass.
         self.thumbnails
             .begin(self.workspace.as_ref().map(|workspace| workspace.session));
@@ -5102,6 +5139,11 @@ impl eframe::App for DeadpanApp {
                 context.request_repaint();
             }
         }
+        self.repair_focus(&context);
+        self.describe_panes(&context);
+        // Last: every focus change of this pass is final, and AccessKit
+        // rejects a tree whose focus names a control that was not drawn.
+        accessibility::guard_focus(&context);
         self.service.set_preview_active(
             self.camera.is_some()
                 || self.camera_pending.is_some()
@@ -5273,12 +5315,15 @@ fn inspector_value(ui: &mut egui::Ui, label: &str, value: &str) {
         let (rect, _) = ui.allocate_exact_size(egui::vec2(104.0, 18.0), egui::Sense::hover());
         ui.put(
             rect,
-            egui::Label::new(egui::RichText::new(label).size(12.0).color(style::MUTED))
+            egui::Label::new(egui::RichText::new(label).size(12.0).weak())
                 .truncate()
                 .halign(egui::Align::Min),
         );
-        ui.add(egui::Label::new(egui::RichText::new(value).monospace().size(11.5)).truncate())
-            .on_hover_text(format!("{label}: {value}"));
+        accessibility::full_text(
+            ui.add(egui::Label::new(egui::RichText::new(value).monospace().size(11.5)).truncate()),
+            value,
+        )
+        .on_hover_text(format!("{label}: {value}"));
     });
 }
 
@@ -5406,6 +5451,7 @@ fn pointer_focus_transition(events: &[egui::Event]) -> bool {
 }
 fn pane_focus(ui: &egui::Ui, pane: Pane, rect: egui::Rect, label: &str) -> egui::Response {
     let response = ui.interact(rect, pane_id(pane), egui::Sense::click());
+    accessibility::record_drawn_pane(ui.ctx(), pane);
     response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Button, true, label));
     if response.clicked() {
         response.request_focus();

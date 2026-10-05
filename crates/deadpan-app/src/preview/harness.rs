@@ -10,6 +10,7 @@ use serde_json::{Value, json};
 use super::*;
 use crate::ui_harness::{Options, gpu::Offscreen, report::*};
 
+mod accessibility;
 mod ai_pause;
 mod audio_treatments;
 mod captions;
@@ -427,6 +428,9 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                 }
                 if name == "youtube" {
                     return youtube::run(&mut driver);
+                }
+                if name == "accessibility" {
+                    return accessibility::run(&mut driver);
                 }
                 driver.click("Choose video…  ⌘N")?;
                 driver.wait_for("Original initialized and displayed", |app| {

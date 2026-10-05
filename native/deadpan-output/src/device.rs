@@ -9,9 +9,9 @@ use cpal::{
     traits::{DeviceTrait, HostTrait, StreamTrait},
 };
 
-use crate::{DeviceReport, Feed, SAMPLE_RATE, channel};
-
-const REPORT_CAPACITY: usize = 256;
+use crate::{
+    DeviceReport, Feed, QUEUE_PACKETS, SAMPLE_RATE, channel_with_capacity, report_capacity,
+};
 
 /// A read-only inventory of the default output configuration, before opening it.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -57,6 +57,7 @@ pub struct DeviceOutput {
     stream: cpal::Stream,
     feed: Feed,
     reports: rtrb::Consumer<DeviceReport>,
+    report_capacity: usize,
     dropped_reports: Arc<AtomicU64>,
     errors: Arc<AtomicU64>,
     info: DeviceInfo,
@@ -66,7 +67,16 @@ impl DeviceOutput {
     /// Admit only an already active 48 kHz stereo float configuration. No
     /// requested buffer-size change, custom device rate, or implicit downmix.
     /// The stream remains paused until `start_device`, allowing prefill first.
+    /// Uses the default `QUEUE_PACKETS` PCM depth.
     pub fn open_default() -> Result<Self, DeviceError> {
+        Self::open_default_with_queue(QUEUE_PACKETS)
+    }
+
+    /// As `open_default`, with an explicit PCM depth (see
+    /// `AUDITION_QUEUE_PACKETS`). The delivery-report ring is always sized by
+    /// `report_capacity` for the device's smallest supported callback, so a
+    /// controller stall of `STARVATION_WINDOW_FRAMES` cannot lose telemetry.
+    pub fn open_default_with_queue(packets: usize) -> Result<Self, DeviceError> {
         let host = cpal::default_host();
         let default = host
             .default_output_device()
@@ -81,10 +91,11 @@ impl DeviceOutput {
         {
             return Err(DeviceError::Unsupported(info));
         }
-        let (feed, mut callback) = channel()?;
+        let (feed, mut callback) = channel_with_capacity(packets)?;
         let callback_fault = feed.fault_signal();
         let error_fault = callback_fault.clone();
-        let (mut reports, consumer) = rtrb::RingBuffer::new(REPORT_CAPACITY);
+        let capacity = report_capacity(info.buffer_range.map(|(min, _)| min));
+        let (mut reports, consumer) = rtrb::RingBuffer::new(capacity);
         let dropped_reports = Arc::new(AtomicU64::new(0));
         let dropped = dropped_reports.clone();
         let errors = Arc::new(AtomicU64::new(0));
@@ -125,6 +136,7 @@ impl DeviceOutput {
             stream,
             feed,
             reports: consumer,
+            report_capacity: capacity,
             dropped_reports,
             errors,
             info,
@@ -141,6 +153,14 @@ impl DeviceOutput {
     }
     pub fn pop_report(&mut self) -> Option<DeviceReport> {
         self.reports.pop().ok()
+    }
+    /// Reports published and not yet popped. A drain bounded by this snapshot
+    /// is finite even while the callback keeps publishing.
+    pub fn pending_reports(&self) -> usize {
+        self.reports.slots()
+    }
+    pub fn report_capacity(&self) -> usize {
+        self.report_capacity
     }
     pub fn dropped_reports(&self) -> u64 {
         self.dropped_reports.load(Ordering::Relaxed)
@@ -251,6 +271,7 @@ pub enum DeviceError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::channel;
 
     #[test]
     fn clock_never_extrapolates_beyond_submitted_content() {

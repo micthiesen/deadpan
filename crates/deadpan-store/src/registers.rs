@@ -202,9 +202,9 @@ pub(crate) fn create_tables(connection: &Connection) -> Result<(), StoreError> {
     connection.execute_batch(
         "CREATE TABLE register_state (
             singleton INTEGER PRIMARY KEY CHECK(singleton=1),
-            version INTEGER NOT NULL CHECK(version>=0)
+            version INTEGER NOT NULL CHECK(version>=0),
+            bank_digest TEXT NOT NULL CHECK(length(CAST(bank_digest AS BLOB))=64)
         ) STRICT;
-        INSERT INTO register_state VALUES(1,0);
         CREATE TABLE register_contents (
             id TEXT PRIMARY KEY,
             capture_revision TEXT REFERENCES revisions(id),
@@ -220,6 +220,56 @@ pub(crate) fn create_tables(connection: &Connection) -> Result<(), StoreError> {
             content_id TEXT NOT NULL REFERENCES register_contents(id)
         ) STRICT;",
     )?;
+    connection.execute(
+        "INSERT INTO register_state(singleton,version,bank_digest) VALUES(1,0,?1)",
+        [bank_digest(0, std::iter::empty())],
+    )?;
+    Ok(())
+}
+
+/// Integrity digest of the bank's slot table and version: SHA-256 over a
+/// domain tag, the version and every `name:content-id` slot in name order.
+/// Content rows are already addressed by their own digests, so this binds
+/// which content each name holds and which version the bank is at. A lost,
+/// added, renamed or retargeted slot row, or a changed version, no longer
+/// matches. Like the history receipt chain it is unkeyed: it detects
+/// corruption and partial tampering, not a consistent rewrite by a writer.
+fn bank_digest<'a>(version: u64, slots: impl Iterator<Item = (char, &'a str)>) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(b"deadpan-register-bank-v1\n");
+    hasher.update(version.to_string().as_bytes());
+    hasher.update(b"\n");
+    for (name, id) in slots {
+        let mut buffer = [0_u8; 4];
+        hasher.update(name.encode_utf8(&mut buffer).as_bytes());
+        hasher.update(b":");
+        hasher.update(id.as_bytes());
+        hasher.update(b"\n");
+    }
+    hasher
+        .finalize()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
+
+/// Test support: recompute the stored digest after a deliberate direct edit,
+/// so a test can reach the checks behind the digest.
+#[cfg(test)]
+pub(crate) fn reseal_for_test(connection: &Connection) -> Result<(), StoreError> {
+    let version: i64 =
+        connection.query_row("SELECT version FROM register_state", [], |r| r.get(0))?;
+    let slots: Vec<(String, String)> = connection
+        .prepare("SELECT name,content_id FROM registers ORDER BY name")?
+        .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
+        .collect::<Result<_, _>>()?;
+    let digest = bank_digest(
+        u64::try_from(version).unwrap_or(0),
+        slots
+            .iter()
+            .map(|(name, id)| (name.chars().next().unwrap_or('?'), id.as_str())),
+    );
+    connection.execute("UPDATE register_state SET bank_digest=?1", [digest])?;
     Ok(())
 }
 
@@ -233,7 +283,8 @@ pub(crate) fn check_stored_sizes(connection: &Connection) -> Result<(), StoreErr
         return Err(invalid("invalid register row count"));
     }
     let malformed: bool = connection.query_row(
-        "SELECT EXISTS(SELECT 1 FROM register_state WHERE singleton!=1 OR typeof(version)!='integer' OR version<0)
+        "SELECT EXISTS(SELECT 1 FROM register_state WHERE singleton!=1 OR typeof(version)!='integer' OR version<0
+            OR typeof(bank_digest)!='text' OR length(CAST(bank_digest AS BLOB))!=64 OR bank_digest GLOB '*[^0-9a-f]*')
         OR EXISTS(SELECT 1 FROM registers WHERE typeof(name)!='text' OR length(CAST(name AS BLOB))!=1
             OR NOT (name='\"' OR name GLOB '[a-z]') OR typeof(content_id)!='text'
             OR length(CAST(content_id AS BLOB))!=64 OR content_id GLOB '*[^0-9a-f]*')
@@ -313,10 +364,10 @@ fn read_bank_contents(
 ) -> Result<(RegisterBank, BTreeMap<String, CanonicalContent>), StoreError> {
     check_stored_sizes(connection)?;
     let project = crate::read_head_project(connection)?.project_id().clone();
-    let version: i64 = connection.query_row(
-        "SELECT version FROM register_state WHERE singleton=1",
+    let (version, stored_digest): (i64, String) = connection.query_row(
+        "SELECT version,bank_digest FROM register_state WHERE singleton=1",
         [],
-        |r| r.get(0),
+        |r| Ok((r.get(0)?, r.get(1)?)),
     )?;
     let version = u64::try_from(version).map_err(|_| invalid("invalid register version"))?;
     let mut values = BTreeMap::new();
@@ -350,6 +401,7 @@ fn read_bank_contents(
         );
     }
     let mut entries = BTreeMap::new();
+    let mut slots = Vec::new();
     let mut statement =
         connection.prepare("SELECT name,content_id FROM registers ORDER BY name")?;
     let mut rows = statement.query([])?;
@@ -365,6 +417,13 @@ fn read_bank_contents(
             .get(&id)
             .ok_or_else(|| invalid("register content is missing"))?;
         entries.insert(name, Arc::clone(&value.value));
+        slots.push((name.as_char(), id));
+    }
+    slots.sort();
+    if bank_digest(version, slots.iter().map(|(name, id)| (*name, id.as_str()))) != stored_digest {
+        return Err(invalid(
+            "register bank digest disagrees with its slots and version",
+        ));
     }
     Ok((RegisterBank { version, entries }, values))
 }
@@ -649,10 +708,20 @@ pub(crate) fn write_prepared_bank(
         "DELETE FROM register_contents WHERE id NOT IN (SELECT content_id FROM registers)",
         [],
     )?;
+    let digest = bank_digest(
+        prepared.bank.version,
+        prepared
+            .slots
+            .iter()
+            .map(|(name, id)| (name.as_char(), id.as_str())),
+    );
     connection.execute(
-        "UPDATE register_state SET version=?1 WHERE singleton=1",
-        [i64::try_from(prepared.bank.version)
-            .map_err(|_| invalid("register versions are exhausted"))?],
+        "UPDATE register_state SET version=?1,bank_digest=?2 WHERE singleton=1",
+        params![
+            i64::try_from(prepared.bank.version)
+                .map_err(|_| invalid("register versions are exhausted"))?,
+            digest
+        ],
     )?;
     check_stored_sizes(connection)
 }

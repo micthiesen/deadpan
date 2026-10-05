@@ -533,7 +533,7 @@ impl DeadpanApp {
                             }
                             ui.monospace(command);
                         }
-                        Err(reason) => { ui.colored_label(style::MUTED, reason); }
+                        Err(reason) => { ui.colored_label(style::muted(ui), reason); }
                     }
                     ui.small("Move the Edit cursor to a pause to choose it. Only this sound's permission changes.");
                     ui.separator();

@@ -24,7 +24,10 @@ const REFRESH: Duration = Duration::from_secs(2);
 pub(super) struct Models {
     pub(super) manager: Manager,
     pub(super) open: bool,
-    /// The pack whose first control takes focus when the panel opens.
+    /// The pack whose first control takes focus when the panel opens. With
+    /// no pack, or when that pack draws no primary control, Close takes focus,
+    /// so keyboard and assistive focus start inside the panel while the list
+    /// stays at its top.
     pub(super) focus: Option<String>,
     focus_pending: bool,
     /// Show the list from its top on the next frame.
@@ -73,6 +76,7 @@ fn purpose(pack: &PackManifest) -> &'static str {
 
 /// The status line under a pack's title.
 pub(super) fn state_line(
+    ui: &egui::Ui,
     pack: &PackManifest,
     state: Option<&Result<PackState, String>>,
 ) -> (String, egui::Color32) {
@@ -88,7 +92,7 @@ pub(super) fn state_line(
             style::WARNING,
         ),
         Some(Ok(PackState::Absent)) | None => {
-            (format!("Not installed · {size} download"), style::MUTED)
+            (format!("Not installed · {size} download"), style::muted(ui))
         }
         Some(Err(error)) => (format!("Pack state unavailable: {error}"), style::ERROR),
     }
@@ -102,7 +106,7 @@ impl DeadpanApp {
         self.models.manager.refresh();
         self.models.open = true;
         self.models.focus = focus.map(str::to_owned);
-        self.models.focus_pending = focus.is_some();
+        self.models.focus_pending = true;
         self.models.scroll_top = focus.is_none();
         self.models.error = None;
         context.request_repaint();
@@ -218,6 +222,7 @@ impl DeadpanApp {
         let picker_open = self.dialogs.is_open();
         let mut close = false;
         let modal = egui::Modal::new(egui::Id::new("models-window")).show(context, |ui| {
+            super::accessibility::dialog(ui, "Models");
             ui.set_width(width);
             ui.label(style::section_title("MODELS", true));
             ui.add_space(4.0);
@@ -225,7 +230,7 @@ impl DeadpanApp {
                 egui::RichText::new(
                     "Models run on this Mac and are shared by every project. Nothing downloads until you choose Install; every file is verified before use.",
                 )
-                .color(style::MUTED),
+                .weak(),
             );
             let storage = match (self.models.manager.root(), self.models.manager.free_space()) {
                 (Ok(root), Some(Ok(free))) => {
@@ -237,7 +242,7 @@ impl DeadpanApp {
                 (Ok(root), None) => format!("Stored in {}", root.display()),
                 (Err(error), _) => format!("Model storage is unavailable: {error}"),
             };
-            ui.label(egui::RichText::new(storage).size(11.5).color(style::MUTED));
+            ui.label(egui::RichText::new(storage).size(11.5).weak());
             ui.add_space(6.0);
             let mut list = egui::ScrollArea::vertical()
                 .id_salt("model-packs")
@@ -259,6 +264,12 @@ impl DeadpanApp {
             ui.add_space(4.0);
             ui.horizontal(|ui| {
                 let button = ui.add(style::action("Close", "Esc"));
+                // Opening on the whole list, or a requested pack that drew no
+                // primary control, focuses Close.
+                if self.models.focus_pending {
+                    self.models.focus_pending = false;
+                    button.request_focus();
+                }
                 reveal(&button);
                 if button.clicked() {
                     close = true;
@@ -266,7 +277,7 @@ impl DeadpanApp {
                 ui.label(
                     egui::RichText::new("Tab moves between controls · Space or Enter activates")
                         .size(11.0)
-                        .color(style::MUTED),
+                        .weak(),
                 );
             });
         });
@@ -308,15 +319,17 @@ impl DeadpanApp {
                 if self.models.focus.as_deref() == Some(&id) {
                     style::LAVENDER
                 } else {
-                    style::BORDER
+                    accessibility::border(ui.ctx())
                 },
             ))
             .corner_radius(6)
             .inner_margin(egui::Margin::same(12))
             .show(ui, |ui| {
                 ui.set_width(ui.available_width());
+                // Repeated control names are heard with their pack.
+                accessibility::group(ui, &pack.title);
                 ui.label(style::semibold(&pack.title).size(14.0));
-                let (line, color) = state_line(pack, state.as_ref());
+                let (line, color) = state_line(ui, pack, state.as_ref());
                 ui.colored_label(color, line);
                 ui.label(
                     egui::RichText::new(format!(
@@ -325,7 +338,7 @@ impl DeadpanApp {
                         format_bytes(pack.memory_bytes)
                     ))
                     .size(12.0)
-                    .color(style::MUTED),
+                    .weak(),
                 );
                 let accepted = self.models.accepted.entry(id.clone()).or_default();
                 for license in &pack.licenses {
@@ -339,12 +352,12 @@ impl DeadpanApp {
                     ui.label(
                         egui::RichText::new(&license.attribution)
                             .size(11.5)
-                            .color(style::MUTED),
+                            .weak(),
                     );
                     ui.label(
                         egui::RichText::new(&license.access)
                             .size(11.5)
-                            .color(style::MUTED),
+                            .weak(),
                     );
                     let link = ui.hyperlink_to(format!("License source: {}", license.url), &license.url);
                     claim(&link, false);
@@ -435,7 +448,7 @@ impl DeadpanApp {
                     );
                     if job.cancelling {
                         ui.horizontal(|ui| {
-                            ui.spinner();
+                            crate::preview::accessibility::busy(ui);
                             ui.weak("Cancelling; downloaded bytes are kept for Resume…");
                         });
                     } else if job.installing() {
@@ -461,7 +474,7 @@ impl DeadpanApp {
                         if blocker.starts_with("Not enough") {
                             style::WARNING
                         } else {
-                            style::MUTED
+                            style::muted(ui)
                         },
                         blocker,
                     );
@@ -512,8 +525,8 @@ impl DeadpanApp {
                 if let Some(outcome) = &outcome {
                     let (text, color) = match &outcome.ending {
                         Ending::Installed => ("Installed and tested.".to_owned(), style::SAVED),
-                        Ending::Removed => ("Removed. Projects are unchanged.".to_owned(), style::MUTED),
-                        Ending::Discarded => ("Partial download discarded.".to_owned(), style::MUTED),
+                        Ending::Removed => ("Removed. Projects are unchanged.".to_owned(), style::muted(ui)),
+                        Ending::Discarded => ("Partial download discarded.".to_owned(), style::muted(ui)),
                         Ending::Cancelled => (
                             match current {
                                 Some(PackState::Partial { bytes }) => format!(
@@ -522,7 +535,7 @@ impl DeadpanApp {
                                 ),
                                 _ => "Cancelled.".to_owned(),
                             },
-                            style::MUTED,
+                            style::muted(ui),
                         ),
                         Ending::Failed(error) => (format!("Install failed: {error}"), style::ERROR),
                     };

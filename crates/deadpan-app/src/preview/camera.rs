@@ -2532,12 +2532,12 @@ impl DeadpanApp {
                 style::keycap(ui, &count.to_string());
             }
             if self.presentation.needs_render() {
-                ui.spinner();
+                crate::preview::accessibility::busy(ui);
                 ui.weak("Updating picture");
             }
             if let Some(job) = self.targets.running() {
                 ui.separator();
-                ui.spinner();
+                crate::preview::accessibility::busy(ui);
                 ui.colored_label(style::LAVENDER, Self::tracking_line(job));
                 ui.ctx()
                     .request_repaint_after(std::time::Duration::from_millis(250));
@@ -2672,7 +2672,7 @@ impl DeadpanApp {
                                     .inner_margin(egui::Margin::symmetric(6, 3))
                                     .show(ui, |ui| {
                                         ui.horizontal(|ui| {
-                                            ui.label(egui::RichText::new(label).color(if focused { style::CURSOR } else { style::MUTED }));
+                                            ui.label(egui::RichText::new(label).color(if focused { style::CURSOR } else { style::muted(ui) }));
                                             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                                                 ui.label(egui::RichText::new(value).monospace());
                                             });
@@ -2682,7 +2682,7 @@ impl DeadpanApp {
                             ui.weak("Percent of the upright Original picture. Tab moves between center, width and height; arrows or h/j/k/l change the focused part by 1%, Shift by 5%; counts repeat.");
                             ui.add_space(4.0);
                             if camera.saving.is_some() {
-                                ui.horizontal(|ui| { ui.spinner(); ui.label("Saving target…"); });
+                                ui.horizontal(|ui| { crate::preview::accessibility::busy(ui); ui.label("Saving target…"); });
                             }
                             if ui.add(style::action(match camera.region_purpose { Some(RegionPurpose::Correct { .. }) => "Save correction", _ => "Save target" }, "Enter").fill(style::SELECTED).min_size(egui::vec2(ui.available_width(), 30.0))).clicked() { requested = Some(CameraKey::Commit); }
                             if ui.add_sized([ui.available_width(), 28.0], style::action("Back to framing", "Esc")).clicked() { requested = Some(CameraKey::Cancel); }
@@ -2775,10 +2775,10 @@ impl DeadpanApp {
                                         ui.label(style::semibold(label));
                                         match shown_targets.get(id) {
                                             Some(source) => { ui.label(egui::RichText::new(super::targets::source_label(*source)).size(12.0).color(super::targets::source_color(*source))); }
-                                            None => { ui.label(egui::RichText::new("not at this picture").size(12.0).color(style::MUTED)); }
+                                            None => { ui.label(egui::RichText::new("not at this picture").size(12.0).weak()); }
                                         }
                                     });
-                                    ui.label(egui::RichText::new(summary).size(12.0).color(style::MUTED));
+                                    ui.label(egui::RichText::new(summary).size(12.0).weak());
                                 });
                         }
                         ui.add_enabled_ui(adjusting, |ui| {

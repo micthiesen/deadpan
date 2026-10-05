@@ -603,6 +603,11 @@ impl DeadpanApp {
                 "Monitor {:.1}%. Pause to change volume. Does not change export gain.",
                 self.monitor_gain * 100.0
             ));
+        // The slider's 0–1 gain is spoken as the percentage :monitor uses.
+        accessibility::spoken_value(
+            &monitor,
+            &format!("{:.1} percent monitor volume", self.monitor_gain * 100.0),
+        );
         self.monitor_control = Some(monitor.id);
     }
 
@@ -658,7 +663,7 @@ impl DeadpanApp {
         let place_key = self.editor_key(EditorKey::PlaceSound);
         let frame = egui::Frame::new()
             .fill(style::PANEL)
-            .stroke(egui::Stroke::new(1.0, style::BORDER))
+            .stroke(egui::Stroke::new(1.0, accessibility::border(ui.ctx())))
             .corner_radius(6)
             .inner_margin(8);
         let width = (ui.available_width() - frame.total_margin().sum().x).max(1.0);
@@ -683,7 +688,7 @@ impl DeadpanApp {
             .color(if active && !preparing {
                 style::SAVED
             } else {
-                style::MUTED
+                style::muted(ui)
             }),
             egui::TextWrapMode::Wrap,
             (width - title.size().x - ui.spacing().item_spacing.x).max(1.0),
@@ -707,7 +712,7 @@ impl DeadpanApp {
         let note = text(
             egui::RichText::new("Source-local audio · picture stays in place")
                 .size(10.5)
-                .color(style::MUTED),
+                .weak(),
             egui::TextWrapMode::Wrap,
             width,
         );

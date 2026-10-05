@@ -69,6 +69,9 @@ an older successful write remains in its slot, while only the matching pending
 reply may consume the current selection. Failed writes preserve the most recent
 durable bank. Older snapshots and replies from a closed session cannot restore
 stale contents. A saved cut also retains its independent durable receipt.
+The stored bank carries a [digest](TIMING_STORAGE.md#register-bank-digest-database-schema-65)
+of its version and slot table, checked on open, validation and every read, so
+a lost, renamed or retargeted slot is refused rather than silently changed.
 
 Copy replies must still match their full historical provenance. Cuts publish
 their contents only after the atomic deletion and register save. A saved cut's

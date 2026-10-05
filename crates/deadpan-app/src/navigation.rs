@@ -92,6 +92,24 @@ impl Pane {
         }
     }
 
+    /// Like [`Self::cycle_visible`], also skipping panes `drawn` rejects.
+    /// The Viewer is always available.
+    pub fn cycle_available(
+        self,
+        reverse: bool,
+        inspector: bool,
+        drawn: impl Fn(Self) -> bool,
+    ) -> Self {
+        let mut pane = self;
+        for _ in 0..5 {
+            pane = pane.cycle_visible(reverse, inspector);
+            if pane == Self::Viewer || drawn(pane) {
+                return pane;
+            }
+        }
+        Self::Viewer
+    }
+
     pub fn cycle_visible(self, reverse: bool, inspector: bool) -> Self {
         if !inspector {
             return if self == Self::Inspector {
@@ -2244,6 +2262,38 @@ mod tests {
         assert_eq!(Pane::Sequence.visible(false), Pane::Sequence);
         assert_eq!(Pane::Sounds.visible(false), Pane::Sounds);
         assert_eq!(Pane::Sounds.visible(true), Pane::Sounds);
+    }
+
+    #[test]
+    fn tab_skips_panes_the_layout_does_not_draw() {
+        // The start screen draws no Placed sounds or Inspector. Its focus
+        // cycle must not name them: AccessKit requires the focused control.
+        let start = |pane: Pane| !matches!(pane, Pane::Sounds | Pane::Inspector);
+        assert_eq!(
+            Pane::Sequence.cycle_available(false, false, start),
+            Pane::Sources
+        );
+        assert_eq!(
+            Pane::Sources.cycle_available(true, false, start),
+            Pane::Sequence
+        );
+        assert_eq!(
+            Pane::Viewer.cycle_available(false, true, start),
+            Pane::Sequence
+        );
+        let all = |_: Pane| true;
+        for pane in [Pane::Sources, Pane::Viewer, Pane::Sequence, Pane::Sounds] {
+            for reverse in [false, true] {
+                assert_eq!(
+                    pane.cycle_available(reverse, true, all),
+                    pane.cycle_visible(reverse, true)
+                );
+            }
+        }
+        assert_eq!(
+            Pane::Sources.cycle_available(false, true, |_| false),
+            Pane::Viewer
+        );
     }
 
     #[test]

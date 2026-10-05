@@ -230,6 +230,24 @@ and is not keyed, so it is not authentication against someone with write
 access to the package, who could equally have rewritten history before
 receipts existed. Validation remains an integrity check, as before.
 
+## Register bank digest (database schema 65)
+
+Named registers are operational state outside the timeline history, so the
+history chain does not cover them. Register contents were already addressed by
+the SHA-256 of their canonical JSON. The 2026-10-05
+[adversarial run](qualification/adversarial-2026-10-05.md) showed that the slot
+table and bank version were not covered: a lost, renamed or retargeted slot row
+or a changed version still validated. `register_state.bank_digest` now stores a
+SHA-256 over a domain tag, the bank version and every `name:content-id` slot in
+name order. Every bank write updates version, slots and digest in its
+transaction, and every bank read recomputes the digest, so opening (which reads
+the bank during receipt validation), `project validate --quick`,
+`project validate` and checkpoint publication refuse a mismatch as
+`Registers`. Version semantics are unchanged: it is the cache identity
+`register_version` reports and advances on every durable bank write; the
+digest binds it to the slots it describes. The trust model is the history
+chain's: unkeyed corruption and partial-tamper detection, not authentication.
+
 ## Qualification
 
 `crates/deadpan-audio/tests/timing_representation.rs` runs random edit

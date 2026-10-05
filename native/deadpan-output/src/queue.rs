@@ -10,10 +10,26 @@ use std::sync::atomic::{AtomicU8, AtomicU64, Ordering};
 
 use rtrb::{Consumer, Producer, RingBuffer};
 
+use crate::SAMPLE_RATE;
+
 pub const PACKET_FRAMES: usize = 256;
 /// PCM packet capacity. One additional ring slot is reserved for explicit EOS.
 pub const QUEUE_PACKETS: usize = 32;
 const QUEUE_SLOTS: usize = QUEUE_PACKETS + 1;
+/// Prepared output must survive a non-realtime controller/preparation stall of
+/// this length without starving the device. The device callback keeps running
+/// at realtime priority while ordinary threads are descheduled under load.
+pub const STARVATION_WINDOW_FRAMES: usize = 4 * SAMPLE_RATE as usize;
+/// PCM capacity for application audition: the full starvation window. Each
+/// packet is fixed storage (about 2 KiB), so this is about 1.5 MiB per channel.
+pub const AUDITION_QUEUE_PACKETS: usize = STARVATION_WINDOW_FRAMES.div_ceil(PACKET_FRAMES);
+const _: () = assert!(AUDITION_QUEUE_PACKETS * PACKET_FRAMES >= STARVATION_WINDOW_FRAMES);
+/// Upper bound for `channel_with_capacity`.
+pub const MAX_QUEUE_PACKETS: usize = 4 * AUDITION_QUEUE_PACKETS;
+/// Stale-packet cleanup per callback stays bounded independently of depth.
+/// Cleanup that needs more continues on later callbacks, reporting `Playing`
+/// or `Paused` with zero content until it reaches the current generation.
+const STALE_DISCARDS_PER_CALLBACK: usize = QUEUE_SLOTS;
 pub const MAX_CALLBACK_FRAMES: usize = 8192;
 const MAX_GENERATION: u64 = u64::MAX >> 1;
 static LAST_CHANNEL: AtomicU64 = AtomicU64::new(0);
@@ -86,6 +102,8 @@ pub enum FeedError {
     GenerationExhausted,
     #[error("audio channel identities are exhausted")]
     ChannelIdentitiesExhausted,
+    #[error("audio queue capacity must be 1 through MAX_QUEUE_PACKETS packets")]
+    InvalidCapacity,
 }
 
 struct Shared {
@@ -389,10 +407,20 @@ pub struct Callback {
 }
 
 /// Allocates the bounded ring and shared state; initial generation zero is paused.
+/// Holds `QUEUE_PACKETS` PCM packets plus one EOS slot.
 pub fn channel() -> Result<(Feed, Callback), FeedError> {
+    channel_with_capacity(QUEUE_PACKETS)
+}
+
+/// Like `channel`, with `packets` PCM packets plus one reserved EOS slot.
+/// Allocation happens here, never on the callback.
+pub fn channel_with_capacity(packets: usize) -> Result<(Feed, Callback), FeedError> {
+    if packets == 0 || packets > MAX_QUEUE_PACKETS {
+        return Err(FeedError::InvalidCapacity);
+    }
     let channel = allocate_channel(&LAST_CHANNEL)?;
     let generation = Generation { channel, serial: 0 };
-    let (producer, consumer) = RingBuffer::new(QUEUE_SLOTS);
+    let (producer, consumer) = RingBuffer::new(packets + 1);
     let shared = Arc::new(Shared {
         channel,
         control: AtomicU64::new(0),
@@ -536,7 +564,7 @@ impl Callback {
                 // queue concurrently. Matching/future packets are not discarded.
                 if let Ok(packet) = self.consumer.peek() {
                     if packet.generation() < self.generation
-                        && report.discarded_packets >= QUEUE_SLOTS
+                        && report.discarded_packets >= STALE_DISCARDS_PER_CALLBACK
                     {
                         break;
                     }

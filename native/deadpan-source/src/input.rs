@@ -5,6 +5,8 @@ use crate::audio::AudioDecodeLimits;
 use crate::{ContentLight, DecodeControl, DecodeLimits, MasteringDisplay, SourceDecodeError};
 use std::{fs::File, os::unix::fs::FileExt, sync::atomic::Ordering, time::Instant};
 
+#[cfg(test)]
+mod adversarial;
 mod inspection;
 use inspection::{MovieHeader, TrackHeader};
 pub use inspection::{

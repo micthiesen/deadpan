@@ -150,7 +150,7 @@ impl DeadpanApp {
             let label = if empty_destination { "Empty edit · no pictures or audio".into() } else { self.presentation.displayed_label().unwrap_or_else(|| "Preparing picture…".into()) };
             let in_slice = !draft.before && draft.prepared.as_ref().is_some_and(|prepared| prepared.range.start().0 <= draft.cursor as i64 && (draft.cursor as i64) < prepared.range.end().0);
             let requested = if empty_destination { "Inserting this group adds structure without picture or audio time.".into() } else if empty_structure && matches!(draft.focus, Focus::In | Focus::Out) { "Empty source group · destination picture retained".into() } else if viewing_endpoint { if draft.edited_source() { "Copied Edit clock · endpoint inspection".into() } else { "Original clock · endpoint inspection".into() } } else if draft.cursor == draft.frames() { format!("Requested terminal Edit boundary {} · displaying the final picture", draft.cursor) } else { format!("Requested Edit picture {} · {}", u128::from(draft.cursor) + 1, if in_slice { "inside inserted slice" } else if draft.site == Site::Removal { "removal context" } else { "destination context" }) };
-            let picture_text = [egui::RichText::new(title).strong(), egui::RichText::new(&label), egui::RichText::new(requested).color(style::MUTED)].map(|text| {
+            let picture_text = [egui::RichText::new(title).strong(), egui::RichText::new(&label), egui::RichText::new(requested).weak()].map(|text| {
                 egui::WidgetText::from(text).into_galley(ui, Some(egui::TextWrapMode::Wrap), picture_width, egui::TextStyle::Body)
             });
             let picture_height = (height - picture_text.iter().map(|text| text.size().y).sum::<f32>() - 3.0 * ui.spacing().item_spacing.y).max(1.0);
@@ -300,7 +300,7 @@ impl Footer {
                         text.push((
                             "Timing unchanged · compare framing and sound at the same Edit frames"
                                 .into(),
-                            style::MUTED,
+                            style::muted(ui),
                         ));
                     } else if comparison
                         .windows(
@@ -310,7 +310,7 @@ impl Footer {
                         )
                         .is_ok_and(|(_, shortened)| shortened)
                     {
-                        text.push(("Context ends at other move join".into(), style::MUTED));
+                        text.push(("Context ends at other move join".into(), style::muted(ui)));
                     }
                 }
             } else if let Some(removed) = prepared.removed {
@@ -347,11 +347,11 @@ impl Footer {
                     "Preparing proposed picture and sound…"
                 }
                 .into(),
-                style::MUTED,
+                style::muted(ui),
             ));
         }
         if draft.applying {
-            text.push(("Saving the exact proposed slice…".into(), style::MUTED));
+            text.push(("Saving the exact proposed slice…".into(), style::muted(ui)));
         }
         for note in [
             draft.comparison_note.as_deref(),

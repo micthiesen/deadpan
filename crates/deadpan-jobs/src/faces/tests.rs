@@ -153,3 +153,19 @@ fn the_face_order_is_left_then_top_then_size() {
         [(0.2, 0.3), (0.2, 0.7), (0.6, 0.1)]
     );
 }
+
+#[test]
+fn adversarial_face_frames() {
+    let cancel = FaceProtocol::from_request(&detect())
+        .unwrap()
+        .cancellation();
+    crate::adversarial::protocol::<FaceProtocol>(
+        "jobs-faces-protocol",
+        vec![detect(), cancel],
+        vec![completed(
+            1_000,
+            vec![face(0.1, 0.2, 0.9), face(0.5, 0.5, 0.4)],
+        )],
+        |reader| read_host(reader),
+    );
+}

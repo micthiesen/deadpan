@@ -412,3 +412,106 @@ fn loop_faults_invalid_windows_and_overflow_are_explicit() {
     assert_eq!(devices.lock().unwrap().len(), 3);
     assert_eq!(engine.poll(), None);
 }
+
+/// A controller descheduled for seconds (CPU load, background jobs) must not
+/// stop audition. The device keeps consuming prepared PCM and publishing one
+/// report per callback; on resumption the controller drains every report and
+/// publishes the exact heard sample. Previously a 256-record drain bound and
+/// an 8192-frame PCM queue turned such a stall into a failure.
+#[test]
+fn controller_starvation_keeps_playing_with_exact_heard_clock() {
+    const CALLBACK: u64 = 5_333_333;
+    let permit = crate::tests::resources::pcm();
+    let directory = tempfile::tempdir().unwrap();
+    let mut store =
+        ProjectStore::create(&directory.path().join("project.deadpan"), &empty()).unwrap();
+    register(&mut store);
+    let snapshot = snapshot(&store, 1);
+    // A lap no longer than one producer batch is copied rather than re-read,
+    // so even an unoptimized test build prepares far faster than real time.
+    const LAP: usize = 4_096;
+    let window = Window::new(AudioSample(0), AudioSample(LAP as i64), true).unwrap();
+    let lap = canonical(&snapshot, &Target::Sequence, 0, LAP as u32);
+    assert!(lap.iter().any(|value| value.abs() > 0.0001));
+    let (engine, devices) = engine(&permit);
+    engine
+        .play_window(1, snapshot, Target::Sequence, window, AudioSample(0), 0.25)
+        .unwrap();
+    let device = playing_device(&engine, &devices, 0);
+    let hooks = &engine.shared.controller_hooks;
+    let mut chunk = 0_u64;
+    let render = |device: &Fake, chunk: &mut u64| {
+        let at = *chunk;
+        let (report, pcm) = device.render(256, at * CALLBACK, 10_000_000 + at * CALLBACK);
+        assert_eq!(report.status, RenderStatus::Playing, "callback {at}");
+        assert_eq!(report.first_sample, Some(at as i64 * 256));
+        for (frame, actual) in pcm.chunks_exact(2).enumerate() {
+            let offset = (at as usize * 256 + frame) % LAP;
+            assert_eq!(actual, [lap[offset * 2] * 0.25, lap[offset * 2 + 1] * 0.25]);
+        }
+        *chunk += 1;
+    };
+    // Paced like a device until preparation has filled well over two seconds
+    // ahead of delivery. The controller observes every report meanwhile.
+    let stall_frames = 2 * 48_000;
+    let deadline = Instant::now() + Duration::from_secs(20);
+    while hooks.submitted_frames.load(Ordering::Acquire) < chunk * 256 + stall_frames + 4_096 {
+        assert!(Instant::now() < deadline, "preparation never got ahead");
+        render(&device, &mut chunk);
+        device
+            .now
+            .store(10_000_000 + (chunk - 1) * CALLBACK, Ordering::Release);
+        thread::sleep(Duration::from_micros(5_333));
+    }
+    hooks.stall.store(true, Ordering::Release);
+    assert!(wait(|| hooks.stalled.load(Ordering::Acquire)));
+    // Two seconds of callbacks while the controller is descheduled: more than
+    // the former 256-record drain bound and the former 8192-frame PCM queue.
+    let first_stalled = chunk;
+    for _ in 0..stall_frames / 256 {
+        render(&device, &mut chunk);
+    }
+    assert!(chunk - first_stalled > 256);
+    // Also exceed the controller's one-second wall-clock report watchdog.
+    thread::sleep(Duration::from_millis(1_500));
+    device.now.store(
+        10_000_000 + (chunk - 1) * CALLBACK + 1_000_000,
+        Ordering::Release,
+    );
+    let expected = AudioSample((chunk as i64 - 1) * 256 + 48);
+    hooks.stall.store(false, Ordering::Release);
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        let heard = update(&engine, Phase::Playing).sample.unwrap();
+        assert!(heard <= expected);
+        if heard == expected {
+            break;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "delivery did not reach {expected:?}"
+        );
+    }
+    // Playback continues normally after the stall.
+    for _ in 0..8 {
+        render(&device, &mut chunk);
+        device
+            .now
+            .store(10_000_000 + (chunk - 1) * CALLBACK, Ordering::Release);
+        let expected = AudioSample((chunk as i64 - 1) * 256);
+        let deadline = Instant::now() + Duration::from_secs(5);
+        loop {
+            let heard = update(&engine, Phase::Playing).sample.unwrap();
+            if heard == expected {
+                break;
+            }
+            assert!(
+                Instant::now() < deadline,
+                "delivery did not reach {expected:?}"
+            );
+        }
+    }
+    assert_eq!(engine.diagnostics().faults, 0);
+    engine.stop();
+    update(&engine, Phase::Stopped);
+}

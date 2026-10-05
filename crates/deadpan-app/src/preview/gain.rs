@@ -786,11 +786,13 @@ impl DeadpanApp {
                         egui::vec2(title_width, 20.0),
                         egui::Layout::left_to_right(egui::Align::Center),
                         |ui| {
-                            ui.add(
-                                egui::Label::new(
-                                    egui::RichText::new(format!("Gain · {}", draft.label)).strong(),
-                                )
-                                .truncate(),
+                            let title = format!("Gain · {}", draft.label);
+                            accessibility::full_text(
+                                ui.add(
+                                    egui::Label::new(egui::RichText::new(&title).strong())
+                                        .truncate(),
+                                ),
+                                &title,
                             )
                             .on_hover_text(&draft.label);
                         },

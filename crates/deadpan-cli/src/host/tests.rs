@@ -445,3 +445,114 @@ fn accept_returns_would_block_while_a_spawn_owns_descriptor_creation() -> TestRe
     })?;
     Ok(())
 }
+
+/// Gate G: mutated frames sent to a real bound endpoint over its socket. The
+/// endpoint must answer with a typed error or dispatch, never panic or hang,
+/// and may dispatch only requests carrying the true owner secret. Dispatched
+/// payloads then pass through the semantic live-project decoder. Selector
+/// byte is ignored. See docs/ADVERSARIAL.md.
+#[test]
+fn adversarial_live_endpoint_frames() -> TestResult {
+    use deadpan_chaos::{Target, Verdict, fuzz, reject};
+    let temp = tempfile::tempdir()?;
+    let path = temp.path().join("project.deadpan");
+    let mut writer = store(&path)?;
+    let endpoint = std::cell::RefCell::new(Endpoint::bind(&mut writer)?);
+    let discovery = discovery(&path);
+    let payloads = [
+        serde_json::json!({"schema_version":1,"operation":{"operation":"inspect"}}),
+        serde_json::json!({"schema_version":1,"operation":{"operation":"execute","project_id":"host-project","command":{"command":"migrate"}}}),
+        serde_json::json!({"schema_version":1,"operation":{"operation":"execute","project_id":"host-project","command":{"command":"history","direction":"undo","expected_revision":"initial","new_revision":"undone","dry_run":true}}}),
+        serde_json::json!({"schema_version":1,"operation":{"operation":"render","request":{
+            "schema_version":1,"request_id":"render-request",
+            "context":{"project_id":"host-project","revision_id":"initial"},
+            "operation":{"operation":"start","destination":"/tmp/deadpan-live-test.mp4"}}}}),
+    ];
+    let seeds = payloads
+        .iter()
+        .map(|payload| {
+            let mut value = request(&discovery);
+            value.payload = payload.clone();
+            let mut bytes = vec![0];
+            bytes.extend(deadpan_chaos::frame(&serde_json::to_vec(&value).unwrap()));
+            bytes
+        })
+        .collect();
+    let report = fuzz(
+        Target::frames("cli-live-endpoint")
+            .iterations(300)
+            .max_case_time(Duration::from_secs(8)),
+        seeds,
+        |input| {
+            let (_, stream_bytes) = deadpan_chaos::select(input);
+            let mut stream = connect(&discovery);
+            stream
+                .set_write_timeout(Some(Duration::from_secs(2)))
+                .map_err(|error| error.to_string())?;
+            // The endpoint may refuse early and close; a failed write is fine.
+            let _ = stream.write_all(stream_bytes);
+            let _ = stream.shutdown(std::net::Shutdown::Write);
+            let deadline = Instant::now() + Duration::from_secs(6);
+            let mut reader = wire::Reader::default();
+            let mut available = MAX_BUFFER_BYTES;
+            let mut endpoint = endpoint.borrow_mut();
+            let mut verdict = None;
+            while Instant::now() < deadline {
+                for incoming in endpoint.poll() {
+                    let authentic =
+                        String::from_utf8_lossy(stream_bytes).contains(&discovery.secret);
+                    if !authentic {
+                        return Err("endpoint dispatched a request without the owner secret".into());
+                    }
+                    verdict = Some(
+                        match crate::live_project::Request::from_value(incoming.payload) {
+                            Ok(_) => Verdict::Accepted,
+                            Err(error) => reject(format!("{}: {}", error.code, error.message))?,
+                        },
+                    );
+                    endpoint
+                        .respond(
+                            incoming.ticket,
+                            serde_json::json!({"receipt":"adversarial"}),
+                        )
+                        .map_err(|error| error.to_string())?;
+                }
+                match reader.poll(
+                    &mut stream,
+                    &mut wire::Budget::new(),
+                    &mut available,
+                    deadline,
+                ) {
+                    Ok(Some(bytes)) => {
+                        let response: Response =
+                            serde_json::from_slice(&bytes).map_err(|error| {
+                                format!("endpoint sent an invalid response: {error}")
+                            })?;
+                        if serde_json::to_string(&response)
+                            .unwrap_or_default()
+                            .contains(&discovery.secret)
+                        {
+                            return Err("endpoint response leaked the owner secret".into());
+                        }
+                        return Ok(verdict.unwrap_or_else(|| match &response.result {
+                            ResponseResult::Error { error } => {
+                                Verdict::Rejected(error.code.clone())
+                            }
+                            _ => Verdict::Rejected("response without dispatch".into()),
+                        }));
+                    }
+                    Ok(None) => thread::yield_now(),
+                    // The endpoint closed without a response (for example on a
+                    // truncated header); a clean close is a rejection.
+                    Err(error) => {
+                        return Ok(verdict
+                            .unwrap_or_else(|| Verdict::Rejected(format!("closed: {error}"))));
+                    }
+                }
+            }
+            Err("endpoint neither answered nor closed before the deadline".into())
+        },
+    );
+    report.assert_clean();
+    Ok(())
+}

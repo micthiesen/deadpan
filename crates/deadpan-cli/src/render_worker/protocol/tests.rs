@@ -572,3 +572,16 @@ fn classifier_binds_progress_and_completed_evidence_to_the_request() {
         );
     }
 }
+
+#[test]
+fn adversarial_render_worker_frames() {
+    let cancel = RenderProtocol::from_request(&request())
+        .unwrap()
+        .cancellation();
+    crate::adversarial::protocol::<RenderProtocol>(
+        "cli-render-protocol",
+        vec![request(), cancel],
+        vec![completed(manifest())],
+        |reader| read_host_message(reader),
+    );
+}

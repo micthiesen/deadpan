@@ -451,13 +451,9 @@ impl DeadpanApp {
             .is_some_and(|running| running.hold != hold);
         if let Some(job) = job.as_ref().filter(|job| job.running()) {
             ui.horizontal(|ui| {
-                ui.spinner();
+                crate::preview::accessibility::busy(ui);
                 ui.label(style::semibold("In progress"));
-                ui.label(
-                    egui::RichText::new(elapsed(job))
-                        .monospace()
-                        .color(style::MUTED),
-                );
+                ui.label(egui::RichText::new(elapsed(job)).monospace().weak());
             });
             match job.phase.steps().filter(|(_, total)| *total > 0) {
                 Some((completed, total)) => {
@@ -478,7 +474,7 @@ impl DeadpanApp {
             ui.label(
                 egui::RichText::new("The current picture stays until you accept.")
                     .size(12.0)
-                    .color(style::MUTED),
+                    .weak(),
             );
             // Escape never cancels a long generation; cancellation is explicit.
             if ui
@@ -501,7 +497,7 @@ impl DeadpanApp {
             ui.label(
                 egui::RichText::new("Ready does not change your edit.")
                     .size(12.0)
-                    .color(style::MUTED),
+                    .weak(),
             );
             let previewing = self.ai.preview.is_some();
             let (label, key) = if previewing {
@@ -535,24 +531,24 @@ impl DeadpanApp {
             ui.label(
                 egui::RichText::new("Undo restores the previous picture.")
                     .size(12.0)
-                    .color(style::MUTED),
+                    .weak(),
             );
             return;
         }
         match job.as_ref().and_then(|job| job.outcome.as_ref()) {
             Some(Outcome::Unavailable(reason)) => {
                 ui.colored_label(style::WARNING, "AI pauses are unavailable on this Mac");
-                ui.label(egui::RichText::new(reason).size(12.0).color(style::MUTED));
+                ui.label(egui::RichText::new(reason).size(12.0).weak());
             }
             Some(Outcome::Failed(reason)) => {
                 ui.colored_label(style::ERROR, "Generation failed; the pause is unchanged");
-                ui.label(egui::RichText::new(reason).size(12.0).color(style::MUTED));
+                ui.label(egui::RichText::new(reason).size(12.0).weak());
             }
             Some(Outcome::Cancelled) => {
                 ui.label(
                     egui::RichText::new("Cancelled. The pause is unchanged.")
                         .size(12.0)
-                        .color(style::MUTED),
+                        .weak(),
                 );
             }
             Some(Outcome::Ready(_)) | None => {}
@@ -575,7 +571,7 @@ impl DeadpanApp {
                 "Proposes pictures from both sides of this pause. Nothing changes until you accept."
             })
             .size(12.0)
-            .color(style::MUTED),
+            .weak(),
         );
     }
 
@@ -616,7 +612,7 @@ impl DeadpanApp {
                     crate::model_packs::format_bytes(pack.memory_bytes)
                 ))
                 .size(12.0)
-                .color(style::MUTED),
+                .weak(),
             );
         }
         if self.model_pack_offer(ui, pack_id, "Install AI models…", ":models") {
@@ -642,7 +638,7 @@ impl DeadpanApp {
                 if previewing {
                     ui.separator();
                 }
-                ui.spinner();
+                crate::preview::accessibility::busy(ui);
                 let steps = job
                     .phase
                     .steps()

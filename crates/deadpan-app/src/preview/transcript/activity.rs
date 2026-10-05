@@ -264,7 +264,7 @@ impl DeadpanApp {
         match self.transcription.activity.status.clone() {
             ActivityStatus::Detecting => {
                 ui.horizontal(|ui| {
-                    ui.spinner();
+                    crate::preview::accessibility::busy(ui);
                     ui.weak("Detecting pauses…");
                 });
             }

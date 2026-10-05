@@ -464,6 +464,9 @@ pub enum RemuxReply {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[global_allocator]
+    static ALLOCATOR: deadpan_chaos::CountingAllocator = deadpan_chaos::CountingAllocator;
     use deadpan_core::{BridgeInterpolation, FrameDuration, FrameRate};
 
     fn report(video: VideoContract) -> ConversionReport {
@@ -726,5 +729,73 @@ mod tests {
         measured.slice_crc = true;
         measured.output_bytes = MAX_FILE_BYTES + 1;
         assert!(measured.validate_canonical(&video).is_err());
+    }
+
+    /// Gate G: the conversion helper's argv request and its stderr reply are
+    /// both untrusted across the process boundary. Selector 0 parses a
+    /// request as the worker does; selector 1 parses a reply as the host does
+    /// and validates it against the request it answers.
+    #[test]
+    fn adversarial_helper_requests_and_reports() {
+        use deadpan_chaos::{Target, Verdict, fuzz, reject, select};
+        let request = conversion(video());
+        let worker_request = WorkerRequest::Convert(request.clone());
+        let prefixed = |selector: u8, bytes: Vec<u8>| {
+            let mut input = vec![selector];
+            input.extend(bytes);
+            input
+        };
+        let seeds = vec![
+            prefixed(0, serde_json::to_vec(&worker_request).unwrap()),
+            prefixed(
+                0,
+                serde_json::to_vec(&WorkerRequest::Bridge(bridge())).unwrap(),
+            ),
+            prefixed(
+                1,
+                serde_json::to_vec(&WorkerReply::Success {
+                    report: report(video()),
+                })
+                .unwrap(),
+            ),
+            prefixed(
+                1,
+                serde_json::to_vec(&WorkerReply::Failure {
+                    code: "x".into(),
+                    message: "y".into(),
+                })
+                .unwrap(),
+            ),
+        ];
+        let report = fuzz(
+            Target::json("media-helper-protocol").iterations(1000),
+            seeds,
+            |input| {
+                let (selector, body) = select(input);
+                if selector % 2 == 0 {
+                    match serde_json::from_slice::<WorkerRequest>(body) {
+                        Ok(request) => match request.validate() {
+                            Ok(()) => Ok(Verdict::Accepted),
+                            Err(error) => reject(error),
+                        },
+                        Err(error) => reject(error),
+                    }
+                } else {
+                    match serde_json::from_slice::<WorkerReply>(body) {
+                        Ok(WorkerReply::Success { report }) => {
+                            match report.validate_worker(&worker_request) {
+                                Ok(()) => Ok(Verdict::Accepted),
+                                Err(error) => reject(error),
+                            }
+                        }
+                        Ok(WorkerReply::Failure { .. }) => {
+                            Ok(Verdict::Rejected("failure reply".into()))
+                        }
+                        Err(error) => reject(error),
+                    }
+                }
+            },
+        );
+        report.assert_clean();
     }
 }

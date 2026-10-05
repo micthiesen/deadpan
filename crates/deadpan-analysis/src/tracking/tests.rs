@@ -807,3 +807,62 @@ proptest! {
         }
     }
 }
+
+/// Gate G: a tracking worker's artifact is untrusted JSON. Parsing and the
+/// tracking policy must end in typed errors or a bounded path, never panic
+/// on hostile floats, PTS orders or counts.
+#[test]
+fn adversarial_tracker_artifacts() {
+    use deadpan_chaos::{Target, Verdict, fuzz, reject};
+    let observations: Vec<RawObservation> = (0..12)
+        .map(|ordinal| {
+            if ordinal % 5 == 4 {
+                failed(ordinal * 10)
+            } else {
+                seen(ordinal * 10, moving(ordinal), 0.9)
+            }
+        })
+        .collect();
+    let seeds = vec![
+        serde_json::to_vec(&RawTrack {
+            decoded: pictures(12),
+            observations: observations.clone(),
+        })
+        .unwrap(),
+        serde_json::to_vec(&RawTrack {
+            decoded: pictures(3),
+            observations: observations[..2].to_vec(),
+        })
+        .unwrap(),
+    ];
+    let report = fuzz(
+        Target::json("analysis-tracker-artifact").iterations(800),
+        seeds,
+        |input| {
+            let raw: RawTrack = match serde_json::from_slice(input) {
+                Ok(raw) => raw,
+                Err(error) => return reject(error),
+            };
+            if raw.decoded.len() > 100_000 {
+                return Ok(Verdict::Rejected("oversized artifact".into()));
+            }
+            let end = raw.decoded.last().copied().unwrap_or(0).saturating_add(10);
+            match TrackedPath::track(
+                TrackPolicy::default(),
+                16.0 / 9.0,
+                &raw.decoded,
+                end,
+                TrackStop::RangeEnd,
+                Keyframe {
+                    pts: raw.decoded.first().copied().unwrap_or(0),
+                    region: moving(0),
+                },
+                &raw.observations,
+            ) {
+                Ok(_) => Ok(Verdict::Accepted),
+                Err(error) => reject(error),
+            }
+        },
+    );
+    report.assert_clean();
+}

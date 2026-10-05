@@ -622,3 +622,16 @@ fn long_exports_require_enough_gops_and_actual_requested_reordering() {
     value.video_edit_media_time = 0;
     value.validate(VerificationLimits::default()).unwrap();
 }
+
+#[test]
+fn adversarial_verification_frames() {
+    let cancel = VerificationProtocol::from_request(&request())
+        .unwrap()
+        .cancellation();
+    crate::adversarial::protocol::<VerificationProtocol>(
+        "cli-verification-protocol",
+        vec![request(), cancel],
+        vec![completed(report())],
+        |reader| read_host(reader),
+    );
+}

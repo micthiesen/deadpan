@@ -173,7 +173,10 @@ impl HelpScroll {
             .min_height(140.0)
             .max_height(available)
             .show(context, |ui| {
-                ui.weak(HINT);
+                // Spoken when Help opens: the keyboard stays with Help until
+                // Escape, while focus remains on the pane it returns to.
+                let hint = ui.weak(HINT);
+                super::accessibility::live(&hint, false);
                 ui.separator();
                 let mut area = egui::ScrollArea::vertical()
                     .id_salt("keys-reference-scroll")

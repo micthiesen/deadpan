@@ -22,6 +22,7 @@ rustix = { workspace = true, features = ["fs"] }
 ureq = { version = "=3.4.2", default-features = false, features = ["rustls", "platform-verifier"] }
 
 [dev-dependencies]
+deadpan-chaos.workspace = true
 deadpan-store.workspace = true
 tempfile.workspace = true
 

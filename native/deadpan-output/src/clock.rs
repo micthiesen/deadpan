@@ -3,10 +3,32 @@
 //! extrapolates through a missing report. Host timestamps remain estimates of
 //! playback, not measurements at the speaker.
 
-use crate::{Generation, MAX_CALLBACK_FRAMES, RenderReport, RenderStatus, SAMPLE_RATE};
+use crate::{
+    Generation, MAX_CALLBACK_FRAMES, RenderReport, RenderStatus, SAMPLE_RATE,
+    STARVATION_WINDOW_FRAMES,
+};
 
 const NANOS_PER_SECOND: u128 = 1_000_000_000;
 pub const DELIVERY_CLOCK_INTERVALS: usize = 64;
+/// Smallest callback size assumed when sizing the delivery-report ring. Used
+/// as a floor for reported buffer ranges and when the backend reports none.
+pub const MIN_REPORT_CALLBACK_FRAMES: u32 = 8;
+/// Records beyond the starvation window: covers callbacks that arrive while a
+/// drain is in progress and the terminal callbacks after a window-long stall.
+pub const REPORT_CAPACITY_MARGIN: usize = 256;
+
+/// Delivery-report ring capacity for a device whose smallest callback is
+/// `min_callback_frames`. Every callback publishes one report, so this many
+/// records cover `STARVATION_WINDOW_FRAMES` of consumer starvation. Reports
+/// are never merged: each retains its own host playback timestamp, which the
+/// `DeliveryClock` validates and maps independently. Overflow beyond this
+/// documented window remains an explicit loss, never a silent drop.
+pub fn report_capacity(min_callback_frames: Option<u32>) -> usize {
+    let frames = min_callback_frames
+        .unwrap_or(MIN_REPORT_CALLBACK_FRAMES)
+        .max(MIN_REPORT_CALLBACK_FRAMES) as usize;
+    STARVATION_WINDOW_FRAMES.div_ceil(frames) + REPORT_CAPACITY_MARGIN
+}
 
 /// One bounded telemetry record, also constructible by a headless device.
 #[derive(Debug, Clone, Copy)]
@@ -283,4 +305,25 @@ fn deadline(playback_ns: u64, frames: usize) -> Result<u64, ClockError> {
     playback_ns
         .checked_add(u64::try_from(duration).map_err(|_| ClockError::TimestampOverflow)?)
         .ok_or(ClockError::TimestampOverflow)
+}
+
+#[cfg(test)]
+mod report_capacity_tests {
+    use super::*;
+
+    #[test]
+    fn report_ring_covers_the_starvation_window_at_the_smallest_callback() {
+        // A typical 512-frame device: four seconds is 375 callbacks.
+        assert_eq!(report_capacity(Some(512)), 375 + REPORT_CAPACITY_MARGIN);
+        // CoreAudio commonly advertises 14 or 15 frames as its range minimum.
+        assert_eq!(report_capacity(Some(14)), 13_715 + REPORT_CAPACITY_MARGIN);
+        // Unknown and tiny ranges use the documented floor, never zero.
+        let floor =
+            STARVATION_WINDOW_FRAMES / MIN_REPORT_CALLBACK_FRAMES as usize + REPORT_CAPACITY_MARGIN;
+        assert_eq!(report_capacity(None), floor);
+        assert_eq!(report_capacity(Some(0)), floor);
+        assert_eq!(report_capacity(Some(1)), floor);
+        // Worst-case storage stays a few MiB of preallocated fixed records.
+        assert!(floor * std::mem::size_of::<DeviceReport>() < 4 << 20);
+    }
 }

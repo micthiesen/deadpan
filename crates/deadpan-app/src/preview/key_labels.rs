@@ -3,10 +3,10 @@
 
 use super::*;
 
-fn frame() -> egui::Frame {
+fn frame(context: &egui::Context) -> egui::Frame {
     egui::Frame::new()
         .fill(style::PANEL)
-        .stroke(egui::Stroke::new(1.0, style::BORDER))
+        .stroke(egui::Stroke::new(1.0, accessibility::border(context)))
         .corner_radius(3)
         .inner_margin(egui::Margin::symmetric(5, 2))
 }
@@ -22,7 +22,7 @@ fn text(ui: &egui::Ui, value: egui::RichText, width: f32) -> Arc<egui::Galley> {
 
 /// A whole path remains visible, including paths wider than a footer/help row.
 pub(super) fn keycap(ui: &mut egui::Ui, key: &str) {
-    let frame = frame();
+    let frame = frame(ui.ctx());
     let width = ui.max_rect().width().max(1.0);
     let galley = text(
         ui,
@@ -40,13 +40,11 @@ pub(super) fn keycap(ui: &mut egui::Ui, key: &str) {
 /// Preserve the compact default layout; measure an oversized path and its
 /// description before allocating a wrapped, stacked hint in the same pass.
 pub(super) fn hint(ui: &mut egui::Ui, key: &str, description: &str) {
-    let frame = frame();
+    let frame = frame(ui.ctx());
     let margin = frame.total_margin().sum();
     let width = ui.max_rect().width().max(1.0);
     let key_text = egui::RichText::new(key).monospace().size(11.0);
-    let description_text = egui::RichText::new(description)
-        .color(style::MUTED)
-        .size(11.0);
+    let description_text = egui::RichText::new(description).weak().size(11.0);
     let natural_key = text(ui, key_text.clone(), f32::INFINITY);
     let natural_description = text(ui, description_text.clone(), f32::INFINITY);
     if natural_key.size().x + margin.x + 4.0 + natural_description.size().x <= width {
@@ -127,7 +125,7 @@ impl FromIterator<(String, String)> for Hints {
 }
 
 fn hint_size(ui: &egui::Ui, width: f32, key: &str, description: &str) -> egui::Vec2 {
-    let margin = frame().total_margin().sum();
+    let margin = frame(ui.ctx()).total_margin().sum();
     let key_text = egui::RichText::new(key).monospace().size(11.0);
     let description_text = egui::RichText::new(description).size(11.0);
     let key = text(ui, key_text.clone(), f32::INFINITY);

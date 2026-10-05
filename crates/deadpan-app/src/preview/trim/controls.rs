@@ -287,7 +287,7 @@ impl DeadpanApp {
             }
             let hint_height = (feedback_ui.text_style_height(&egui::TextStyle::Small) + 4.0).min(layout.feedback.height());
             feedback_ui.painter().text(layout.feedback.left_top(), egui::Align2::LEFT_TOP,
-                "Feedback · Up/Down scroll · PgUp/PgDn · Home/End", egui::TextStyle::Small.resolve(feedback_ui.style()), style::MUTED);
+                "Feedback · Up/Down scroll · PgUp/PgDn · Home/End", egui::TextStyle::Small.resolve(feedback_ui.style()), style::muted(ui));
             let scroll_rect = egui::Rect::from_min_max(layout.feedback.min + egui::vec2(0.0, hint_height), layout.feedback.max);
             let mut scroll_ui = region_ui(&mut feedback_ui, "feedback-lines", scroll_rect);
             let scroll_id = scroll_ui.make_persistent_id("trim-feedback");

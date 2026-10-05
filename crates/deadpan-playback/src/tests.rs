@@ -11,7 +11,7 @@ use deadpan_media::audio_session::{AudioSession, AudioSessionLimits};
 use deadpan_media::source_index::SourceContentIdentity;
 use deadpan_media::source_qualification::DecodedSourceQualification;
 use deadpan_media::source_session::{SourceSession, SourceSessionLimits};
-use deadpan_output::{Callback, DeviceReport, Feed, RenderStatus, channel};
+use deadpan_output::{Callback, DeviceReport, Feed, RenderStatus};
 use deadpan_plan::RenderPlan;
 use deadpan_store::ProjectStore;
 use deadpan_store::original_media::{OriginalMediaLimits, OriginalOwnership};
@@ -232,6 +232,12 @@ impl Device for FakeDevice {
     fn pop_report(&mut self) -> Option<DeviceReport> {
         self.shared.reports.lock().unwrap().pop_front()
     }
+    fn pending_reports(&self) -> usize {
+        self.shared.reports.lock().unwrap().len()
+    }
+    fn report_capacity(&self) -> usize {
+        deadpan_output::report_capacity(Some(256))
+    }
     fn now_ns(&self) -> Option<u64> {
         Some(self.shared.now.load(Ordering::Acquire))
     }
@@ -248,7 +254,9 @@ fn engine(permit: &Arc<resources::PcmPermit>) -> (Engine, Arc<Mutex<Vec<Arc<Fake
     let engine = Engine::with_factory(
         resources::repaint(permit),
         Box::new(move || {
-            let (feed, callback) = channel().unwrap();
+            let (feed, callback) =
+                deadpan_output::channel_with_capacity(deadpan_output::AUDITION_QUEUE_PACKETS)
+                    .unwrap();
             let shared = Arc::new(Fake {
                 callback: Mutex::new(callback),
                 reports: Mutex::new(VecDeque::new()),

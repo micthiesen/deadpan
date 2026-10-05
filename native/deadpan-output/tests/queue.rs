@@ -2,7 +2,8 @@ use std::sync::mpsc;
 use std::thread;
 
 use deadpan_output::{
-    FeedError, MAX_CALLBACK_FRAMES, PACKET_FRAMES, QUEUE_PACKETS, RenderStatus, channel,
+    AUDITION_QUEUE_PACKETS, FeedError, MAX_CALLBACK_FRAMES, MAX_QUEUE_PACKETS, PACKET_FRAMES,
+    QUEUE_PACKETS, RenderStatus, STARVATION_WINDOW_FRAMES, channel, channel_with_capacity,
 };
 
 fn frame(at: usize) -> [f32; 2] {
@@ -204,6 +205,62 @@ fn stale_cleanup_is_bounded_and_does_not_latch_starvation_before_matching_pcm() 
     assert_eq!(report.status, RenderStatus::Playing);
     assert_eq!(report.discarded_packets, 1);
     assert_eq!(report.first_sample, Some(1000));
+    assert_eq!(output, [0.8, -0.8, 0.8, -0.8]);
+}
+
+#[test]
+fn audition_depth_holds_the_starvation_window_and_bounds_stale_cleanup_per_callback() {
+    assert!(matches!(
+        channel_with_capacity(0),
+        Err(FeedError::InvalidCapacity)
+    ));
+    assert!(matches!(
+        channel_with_capacity(MAX_QUEUE_PACKETS + 1),
+        Err(FeedError::InvalidCapacity)
+    ));
+    let (mut feed, mut callback) = channel_with_capacity(AUDITION_QUEUE_PACKETS).unwrap();
+    let old = feed.restart(0).unwrap();
+    let packet = [[0.25, -0.25]; PACKET_FRAMES];
+    for _ in 0..AUDITION_QUEUE_PACKETS {
+        feed.submit(old, &packet).unwrap();
+    }
+    assert_eq!(feed.submit(old, &packet), Err(FeedError::Full));
+    feed.finish(old).unwrap();
+    feed.activate(old).unwrap();
+    // The whole window plays back contiguously without producer involvement.
+    let mut output = vec![0.0; MAX_CALLBACK_FRAMES * 2];
+    let mut rendered = 0;
+    while rendered < STARVATION_WINDOW_FRAMES {
+        let report = callback.render(&mut output);
+        assert_eq!(report.first_sample, Some(rendered as i64));
+        assert!(matches!(
+            report.status,
+            RenderStatus::Playing | RenderStatus::Ended
+        ));
+        rendered += report.rendered_frames;
+    }
+    // Refill completely, then revoke: cleanup proceeds in bounded steps.
+    let (mut feed, mut callback) = channel_with_capacity(AUDITION_QUEUE_PACKETS).unwrap();
+    let old = feed.restart(0).unwrap();
+    for _ in 0..AUDITION_QUEUE_PACKETS {
+        feed.submit(old, &[[0.2; 2]]).unwrap();
+    }
+    feed.activate(old).unwrap();
+    let new = feed.restart(5_000).unwrap();
+    let mut discarded = 0;
+    let mut output = [7.0; 4];
+    while discarded < AUDITION_QUEUE_PACKETS {
+        let report = callback.render(&mut output);
+        assert_eq!(report.status, RenderStatus::Paused);
+        assert!(report.discarded_packets <= QUEUE_PACKETS + 1);
+        assert_eq!(output, [0.0; 4]);
+        discarded += report.discarded_packets;
+    }
+    assert_eq!(discarded, AUDITION_QUEUE_PACKETS);
+    feed.submit(new, &[[0.8, -0.8]; 2]).unwrap();
+    feed.activate(new).unwrap();
+    let report = callback.render(&mut output);
+    assert_eq!(report.first_sample, Some(5_000));
     assert_eq!(output, [0.8, -0.8, 0.8, -0.8]);
 }
 

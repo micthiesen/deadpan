@@ -1,0 +1,20 @@
+[package]
+name = "deadpan-chaos"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+description = "Development-only stable-Rust mutation fuzzing, allocation accounting and child-process crash isolation for the adversarial suite"
+
+[dependencies]
+serde_json.workspace = true
+
+# The counting allocator is the crate's only `unsafe`: a documented
+# `GlobalAlloc` forwarding wrapper over `System`. Everything else stays safe.
+[lints.rust]
+unsafe_code = "deny"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }

@@ -572,6 +572,7 @@ impl DeadpanApp {
         }
         let width = (context.content_rect().width() - 64.0).clamp(280.0, 520.0);
         egui::Modal::new(egui::Id::new("youtube-sheet")).show(context, |ui| {
+            super::accessibility::dialog(ui, "New project from YouTube");
             ui.set_width(width);
             ui.label(style::section_title("NEW PROJECT FROM YOUTUBE", true));
             ui.add_space(4.0);
@@ -579,7 +580,7 @@ impl DeadpanApp {
                 egui::RichText::new(
                     "The whole video becomes the Original of a new project. This project stays as it is.",
                 )
-                .color(style::MUTED),
+                .weak(),
             );
             ui.add_space(8.0);
             self.youtube_steps(ui);
@@ -634,7 +635,7 @@ impl DeadpanApp {
             .show(&mut child, |ui| {
                 egui::Frame::new()
                     .fill(style::PANEL)
-                    .stroke(egui::Stroke::new(1.0, style::BORDER))
+                    .stroke(egui::Stroke::new(1.0, accessibility::border(ui.ctx())))
                     .corner_radius(6)
                     .inner_margin(egui::Margin::same(margin))
                     .show(ui, |ui| {
@@ -680,7 +681,7 @@ impl DeadpanApp {
                         ui.label(
                             egui::RichText::new("The full video becomes your starting edit.")
                                 .size(14.0)
-                                .color(style::MUTED),
+                                .weak(),
                         );
                         ui.add_space(if compact { 4.0 } else { 12.0 });
                         let choose = ui.add(
@@ -702,7 +703,7 @@ impl DeadpanApp {
                             ui.label(
                                 egui::RichText::new("Library location: Documents / Deadpan")
                                     .size(12.0)
-                                    .color(style::MUTED),
+                                    .weak(),
                             );
                             ui.with_layout(
                                 egui::Layout::right_to_left(egui::Align::Center),
@@ -749,7 +750,7 @@ impl DeadpanApp {
                         ui.label(
                             egui::RichText::new("Import cancelled. No project was created.")
                                 .size(12.0)
-                                .color(style::MUTED),
+                                .weak(),
                         );
                     }
                     _ => {}
@@ -758,7 +759,7 @@ impl DeadpanApp {
             Status::Working(Stage::CheckingDownloader | Stage::FetchingDetails) => {
                 self.youtube_url_line(ui);
                 ui.horizontal(|ui| {
-                    ui.add(egui::Spinner::new().size(14.0));
+                    crate::preview::accessibility::busy(ui);
                     ui.label(match status {
                         Status::Working(Stage::CheckingDownloader) => "Checking the downloader…",
                         _ => "Fetching title, length and streams… Nothing downloads yet.",
@@ -792,7 +793,7 @@ impl DeadpanApp {
                         job::megabytes(progress.total)
                     ))
                     .size(12.0)
-                    .color(style::MUTED),
+                    .weak(),
                 );
                 if ui.add(style::action("Cancel install", "Esc")).clicked() {
                     self.youtube.jobs.cancel();
@@ -800,7 +801,7 @@ impl DeadpanApp {
             }
             Status::Cancelling => {
                 ui.horizontal(|ui| {
-                    ui.add(egui::Spinner::new().size(14.0));
+                    crate::preview::accessibility::busy(ui);
                     ui.label("Stopping and removing partial files…");
                 });
             }
@@ -814,7 +815,7 @@ impl DeadpanApp {
                 egui::RichText::new(format!("youtube.com/watch?v={id}"))
                     .monospace()
                     .size(12.0)
-                    .color(style::MUTED),
+                    .weak(),
             );
         }
     }
@@ -855,7 +856,7 @@ impl DeadpanApp {
                         "Paste a link to one video. Its details appear before anything downloads.",
                     )
                     .size(12.0)
-                    .color(style::MUTED),
+                    .weak(),
                 );
             }
             Some(Ok(id)) => {
@@ -866,7 +867,9 @@ impl DeadpanApp {
                 );
             }
             Some(Err(reason)) => {
-                ui.label(egui::RichText::new(reason).size(12.0).color(style::ERROR));
+                let response = ui.label(egui::RichText::new(reason).size(12.0).color(style::ERROR));
+                // Spoken when typing makes the URL invalid, without interrupting.
+                accessibility::live(&response, false);
             }
         }
         ui.horizontal(|ui| {
@@ -887,7 +890,11 @@ impl DeadpanApp {
                     None => "Cookies (optional, for signed-in videos): none".into(),
                 })
                 .size(12.0)
-                .color(if wanted { style::WARNING } else { style::MUTED }),
+                .color(if wanted {
+                    style::WARNING
+                } else {
+                    style::muted(ui)
+                }),
             );
             if name.is_some() {
                 if ui.small_button("Remove cookies").clicked() {
@@ -912,18 +919,15 @@ impl DeadpanApp {
             .inner_margin(egui::Margin::same(10))
             .show(ui, |ui| {
                 ui.set_width(ui.available_width());
-                ui.label(style::semibold(failure_title(failure)).color(style::ERROR));
+                let title = ui.label(style::semibold(failure_title(failure)).color(style::ERROR));
+                accessibility::live(&title, true);
                 ui.label(egui::RichText::new(sentence(&failure.message)).size(12.0));
-                ui.label(
-                    egui::RichText::new(failure.guidance())
-                        .size(12.0)
-                        .color(style::MUTED),
-                );
+                ui.label(egui::RichText::new(failure.guidance()).size(12.0).weak());
                 ui.label(
                     egui::RichText::new(&failure.code)
                         .monospace()
                         .size(10.5)
-                        .color(style::MUTED),
+                        .weak(),
                 );
                 ui.horizontal_wrapped(|ui| {
                     if failure.code == "ProjectOpenFailed"
@@ -962,7 +966,7 @@ impl DeadpanApp {
                         job::megabytes(job::INSTALLED_BYTES)
                     ))
                     .size(12.0)
-                    .color(style::MUTED),
+                    .weak(),
                 );
                 ui.horizontal_wrapped(|ui| {
                     if ui
@@ -1015,7 +1019,7 @@ impl DeadpanApp {
                 &date[6..]
             ));
         }
-        ui.label(egui::RichText::new(byline.join(" · ")).color(style::MUTED));
+        ui.label(egui::RichText::new(byline.join(" · ")).weak());
         ui.add_space(4.0);
         let picture = job::picture_summary(preview);
         let sound = job::sound_summary(preview);
@@ -1111,7 +1115,7 @@ impl DeadpanApp {
                             ui.painter().circle_stroke(
                                 center,
                                 4.5,
-                                egui::Stroke::new(1.0, style::BORDER),
+                                egui::Stroke::new(1.0, accessibility::border(ui.ctx())),
                             );
                         }
                     }
@@ -1123,7 +1127,7 @@ impl DeadpanApp {
                     let text = egui::RichText::new(label).color(if index <= current {
                         style::TEXT
                     } else {
-                        style::MUTED
+                        style::muted(ui)
                     });
                     ui.label(if index == current {
                         text.strong()
@@ -1144,12 +1148,7 @@ impl DeadpanApp {
                 && let Some((fraction, detail)) = &download_detail
             {
                 ui.add(egui::ProgressBar::new(*fraction).desired_height(6.0));
-                ui.label(
-                    egui::RichText::new(detail)
-                        .monospace()
-                        .size(11.5)
-                        .color(style::MUTED),
-                );
+                ui.label(egui::RichText::new(detail).monospace().size(11.5).weak());
             }
         }
         if opening {
@@ -1166,7 +1165,7 @@ impl DeadpanApp {
             ui.label(
                 egui::RichText::new("The project is complete. Esc can no longer cancel; opening…")
                     .size(12.0)
-                    .color(style::MUTED),
+                    .weak(),
             );
         } else if ui.add(style::action("Cancel", "Esc")).clicked() {
             self.youtube.jobs.cancel();
@@ -1181,17 +1180,20 @@ fn divider(ui: &mut egui::Ui, word: &str) {
     let galley = ui.painter().layout_no_wrap(
         word.to_owned(),
         egui::FontId::proportional(12.0),
-        style::MUTED,
+        style::muted(ui),
     );
     let gap = galley.size().x / 2.0 + 8.0;
     let y = rect.center().y;
-    let stroke = egui::Stroke::new(1.0, style::BORDER);
+    let stroke = egui::Stroke::new(1.0, accessibility::border(ui.ctx()));
     ui.painter()
         .hline(rect.left()..=rect.center().x - gap, y, stroke);
     ui.painter()
         .hline(rect.center().x + gap..=rect.right(), y, stroke);
-    ui.painter()
-        .galley(rect.center() - galley.size() / 2.0, galley, style::MUTED);
+    ui.painter().galley(
+        rect.center() - galley.size() / 2.0,
+        galley,
+        style::muted(ui),
+    );
 }
 
 #[cfg(test)]

@@ -444,3 +444,69 @@ fn legacy_v1_wire_shape_is_unchanged() {
     .concat();
     assert_eq!(wire, expected);
 }
+
+/// Gate G: mutated generation frame streams read by both sides end in a
+/// typed `CodecError` or validated messages, never a panic. Selector 0 reads
+/// host messages, 1 reads worker messages. See docs/ADVERSARIAL.md.
+#[test]
+fn adversarial_generation_frames() {
+    use deadpan_chaos::{Target, fuzz, read_stream, select};
+    fn frames(selector: u8, messages: &[serde_json::Value]) -> Vec<u8> {
+        let mut bytes = vec![selector];
+        for message in messages {
+            bytes.extend(deadpan_chaos::frame(&serde_json::to_vec(message).unwrap()));
+        }
+        bytes
+    }
+    let hosts = [
+        serde_json::to_value(request()).unwrap(),
+        serde_json::to_value(bridge_request()).unwrap(),
+    ];
+    let workers = [
+        serde_json::to_value(WorkerMessage::Completed {
+            protocol: ProtocolVersion::V1,
+            identity: identity(),
+            candidate: candidate(),
+        })
+        .unwrap(),
+        serde_json::to_value(WorkerMessage::CompletedBridge {
+            protocol: ProtocolVersion::V2,
+            identity: identity(),
+            candidate: native_candidate(),
+        })
+        .unwrap(),
+        serde_json::to_value(WorkerMessage::Progress {
+            protocol: ProtocolVersion::V1,
+            identity: identity(),
+            stage: WorkerStage::Inference,
+            progress: StageProgress::new(7, 23).unwrap(),
+        })
+        .unwrap(),
+    ];
+    let mut seeds = vec![frames(0, &hosts), frames(1, &workers)];
+    seeds.extend(
+        hosts
+            .iter()
+            .map(|host| frames(0, std::slice::from_ref(host))),
+    );
+    seeds.extend(
+        workers
+            .iter()
+            .map(|worker| frames(1, std::slice::from_ref(worker))),
+    );
+    let report = fuzz(Target::frames("jobs-generation-protocol"), seeds, |input| {
+        let (selector, stream) = select(input);
+        read_stream(stream, 64, |reader| {
+            if selector % 2 == 0 {
+                deadpan_jobs::read_host_message(reader)
+                    .map(|message| message.map(|_| ()))
+                    .map_err(|error| error.to_string())
+            } else {
+                deadpan_jobs::read_worker_message(reader)
+                    .map(|message| message.map(|_| ()))
+                    .map_err(|error| error.to_string())
+            }
+        })
+    });
+    report.assert_clean();
+}

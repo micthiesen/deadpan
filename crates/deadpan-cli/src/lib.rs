@@ -2,6 +2,8 @@
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod activity;
+#[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
+mod adversarial;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod audio;
 pub mod bundle;

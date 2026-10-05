@@ -328,3 +328,76 @@ fn cancellation_is_checked_before_spawning_the_worker() {
     assert!(matches!(error, ConversionError::Cancelled));
     assert!(cancelled.load(Ordering::Acquire));
 }
+
+/// Gate G: the real isolated conversion helper decodes hostile media.
+/// Mutations damage MP4 payloads in place (and occasionally anywhere), so
+/// inputs reach FFmpeg decoding inside the worker process. The host must
+/// get a typed worker failure or a contract-valid result; a `Protocol`
+/// error means the worker crashed, aborted or replied malformed, which a
+/// well-behaved helper never does. See docs/ADVERSARIAL.md.
+#[test]
+fn adversarial_conversion_helper_inputs() {
+    use deadpan_chaos::{Target, Verdict, fuzz};
+    use sha2::Digest as _;
+    let fixtures: Vec<Fixture> = ["rgb1_24", "rgb2_24_audio", "rgb25_24", "rgb30_30000_1001"]
+        .into_iter()
+        .map(fixture)
+        .collect();
+    let seeds = fixtures
+        .iter()
+        .enumerate()
+        .map(|(index, fixture)| {
+            [vec![u8::try_from(index).unwrap()], read_fixture(fixture)].concat()
+        })
+        .collect();
+    let report = fuzz(
+        Target::bytes("media-worker-conversion")
+            .iterations(40)
+            .max_input_bytes(512 * 1024)
+            .max_case_time(std::time::Duration::from_secs(40))
+            .minimize_budget(40),
+        seeds,
+        |input| {
+            let Some((selector, media)) = input.split_first() else {
+                return Ok(Verdict::Rejected("empty".into()));
+            };
+            if media.is_empty() {
+                return Ok(Verdict::Rejected("empty".into()));
+            }
+            let fixture = &fixtures[usize::from(*selector) % fixtures.len()];
+            let mut request = request(fixture);
+            request.input_byte_length = media.len() as u64;
+            request.limits.max_input_bytes = media.len() as u64 + 1;
+            let identity = InputIdentity {
+                sha256: sha2::Sha256::digest(media).into(),
+            };
+            let cancelled = AtomicBool::new(false);
+            match canonicalize(
+                Path::new(env!("CARGO_BIN_EXE_deadpan-media-worker")),
+                &mut Cursor::new(media.to_vec()),
+                identity,
+                &request,
+                &cancelled,
+            ) {
+                Ok(media) => {
+                    media
+                        .report()
+                        .validate_canonical(&request.video)
+                        .map_err(|error| {
+                            format!("accepted output violates its contract: {error}")
+                        })?;
+                    Ok(Verdict::Accepted)
+                }
+                Err(ConversionError::Worker { code, .. }) => Ok(Verdict::Rejected(code)),
+                Err(ConversionError::Contract(error)) => {
+                    Ok(Verdict::Rejected(format!("contract: {error}")))
+                }
+                Err(ConversionError::Protocol(message)) => {
+                    Err(format!("worker crashed or replied malformed: {message}"))
+                }
+                Err(other) => Err(format!("unexpected host failure: {other}")),
+            }
+        },
+    );
+    report.assert_clean();
+}

@@ -292,4 +292,31 @@ mod tests {
         );
         assert!(SourceIndexSnapshot::from_json(bytes.as_bytes()).is_err());
     }
+
+    /// Gate G: stored measured indexes are untrusted cache data; hostile
+    /// JSON must end in a typed error or an index that re-encodes exactly.
+    #[test]
+    fn adversarial_index_snapshot_json() {
+        use deadpan_chaos::{Target, Verdict, fuzz, reject};
+        let seeds = vec![snapshot().to_json().unwrap()];
+        let report = fuzz(
+            Target::json("media-source-index").iterations(800),
+            seeds,
+            |input| match SourceIndexSnapshot::from_json(input) {
+                Ok(snapshot) => {
+                    let encoded = snapshot
+                        .to_json()
+                        .map_err(|error| format!("re-encode: {error}"))?;
+                    let again = SourceIndexSnapshot::from_json(&encoded)
+                        .map_err(|error| format!("accepted index does not round-trip: {error}"))?;
+                    if again != snapshot {
+                        return Err("index round trip changed the value".into());
+                    }
+                    Ok(Verdict::Accepted)
+                }
+                Err(error) => reject(error),
+            },
+        );
+        report.assert_clean();
+    }
 }

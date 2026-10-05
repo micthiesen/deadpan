@@ -1078,3 +1078,227 @@ fn archive_numbers_accept_octal_and_base_256() {
 fn archive_octal(field: &[u8]) -> u64 {
     archive::test_octal(field)
 }
+
+fn files_under(directory: &Path) -> Vec<PathBuf> {
+    let mut found = Vec::new();
+    if let Ok(entries) = std::fs::read_dir(directory) {
+        for entry in entries.filter_map(Result::ok) {
+            let path = entry.path();
+            let kind = entry.file_type();
+            found.push(path.clone());
+            if kind.is_ok_and(|kind| kind.is_dir()) {
+                found.extend(files_under(&path));
+            }
+        }
+    }
+    found
+}
+
+/// One ustar header block (with a valid checksum) followed by padded data.
+fn ustar(name: &str, kind: u8, link: &str, data: &[u8]) -> Vec<u8> {
+    let mut header = [0_u8; 512];
+    header[..name.len().min(100)].copy_from_slice(&name.as_bytes()[..name.len().min(100)]);
+    header[100..108].copy_from_slice(b"0000644\0");
+    header[108..116].copy_from_slice(b"0000000\0");
+    header[116..124].copy_from_slice(b"0000000\0");
+    header[124..136].copy_from_slice(format!("{:011o}\0", data.len()).as_bytes());
+    header[136..148].copy_from_slice(b"00000000000\0");
+    header[156] = kind;
+    header[157..157 + link.len().min(100)].copy_from_slice(&link.as_bytes()[..link.len().min(100)]);
+    header[257..263].copy_from_slice(b"ustar\0");
+    header[263..265].copy_from_slice(b"00");
+    repair_checksum(&mut header);
+    let mut bytes = header.to_vec();
+    bytes.extend_from_slice(data);
+    bytes.resize(bytes.len().div_ceil(512) * 512, 0);
+    bytes
+}
+
+fn repair_checksum(header: &mut [u8]) {
+    header[148..156].copy_from_slice(b"        ");
+    let sum: u32 = header.iter().map(|byte| u32::from(*byte)).sum();
+    header[148..156].copy_from_slice(format!("{sum:06o}\0 ").as_bytes());
+}
+
+/// Recomputes every reachable header checksum so mutations reach the member
+/// grammar instead of stopping at the checksum.
+fn repair_archive(input: &[u8]) -> Vec<u8> {
+    let mut bytes = input.to_vec();
+    let mut offset = 0;
+    while offset + 512 <= bytes.len() {
+        let block = &mut bytes[offset..offset + 512];
+        if block.iter().all(|byte| *byte == 0) {
+            break;
+        }
+        repair_checksum(block);
+        let size = std::str::from_utf8(&block[124..135])
+            .ok()
+            .and_then(|text| {
+                u64::from_str_radix(text.trim_matches(|c: char| c == '\0' || c == ' '), 8).ok()
+            })
+            .unwrap_or(0);
+        offset = offset
+            .saturating_add(512)
+            .saturating_add(usize::try_from(size.div_ceil(512) * 512).unwrap_or(usize::MAX));
+    }
+    bytes
+}
+
+/// Gate G: hostile offline pack archives. Import must refuse with a typed
+/// `PackError`, or stage exactly the manifest's verified bytes; nothing may
+/// be written outside the pack store, and no link may be staged.
+#[test]
+fn adversarial_pack_archives() {
+    use deadpan_chaos::{Target, Verdict, fuzz, reject};
+    let bytes: Vec<u8> = (0..20_000_u32).map(|i| (i % 251) as u8).collect();
+    let extra: Vec<u8> = (0..3_000_u32).map(|i| (i % 13) as u8).collect();
+    let manifest = nested(&bytes, &extra);
+    let root = tempfile::tempdir().unwrap();
+    let store = PackStore::new(root.path().join("installed"));
+    let source = tempfile::tempdir().unwrap();
+    std::fs::create_dir_all(source.path().join("encoder/rev")).unwrap();
+    std::fs::write(source.path().join("model.bin"), &bytes).unwrap();
+    std::fs::write(source.path().join("encoder/rev/extra.bin"), &extra).unwrap();
+    let staged = store
+        .import(
+            &manifest,
+            &[],
+            &ImportSource::Directory(source.path().into()),
+            plenty,
+            &AtomicBool::new(false),
+            |_| {},
+        )
+        .unwrap();
+    store.activate(staged).unwrap();
+    let exported = root.path().join("pack.tar");
+    store
+        .export(&manifest, &exported, &AtomicBool::new(false), |_| {})
+        .unwrap();
+    let mut seeds = vec![std::fs::read(&exported).unwrap()];
+    let plain = root.path().join("plain.tar");
+    let status = std::process::Command::new("tar")
+        .arg("-cf")
+        .arg(&plain)
+        .arg("-C")
+        .arg(source.path())
+        .args(["model.bin", "encoder"])
+        .status()
+        .unwrap();
+    assert!(status.success());
+    seeds.push(std::fs::read(&plain).unwrap());
+    // Hostile member shapes: traversal, absolute paths, links, pax and GNU
+    // long-name overrides, each followed by the end marker.
+    let end = vec![0_u8; 1024];
+    for member in [
+        ustar("../escape.bin", b'0', "", &bytes[..100]),
+        ustar("/tmp/deadpan-absolute.bin", b'0', "", &bytes[..100]),
+        ustar("test-pack/2/../../model.bin", b'0', "", &bytes),
+        ustar("model.bin", b'2', "/etc/passwd", &[]),
+        ustar("model.bin", b'1', "../outside", &[]),
+        ustar("encoder", b'5', "", &[]),
+        [
+            ustar("pax", b'x', "", b"30 path=../../escape/model.bin\n"),
+            ustar("model.bin", b'0', "", &bytes),
+        ]
+        .concat(),
+        [
+            ustar("././@LongLink", b'L', "", b"../../long/model.bin\0"),
+            ustar("model.bin", b'0', "", &bytes),
+        ]
+        .concat(),
+        [
+            ustar("model.bin", b'0', "", &bytes),
+            ustar("model.bin", b'0', "", &bytes),
+        ]
+        .concat(),
+    ] {
+        seeds.push([member, end.clone()].concat());
+    }
+    let cases = tempfile::tempdir().unwrap();
+    let counter = std::cell::Cell::new(0_u32);
+    let report = fuzz(
+        Target::bytes("models-pack-archive")
+            .iterations(300)
+            .max_input_bytes(256 * 1024),
+        seeds,
+        |input| {
+            counter.set(counter.get() + 1);
+            let case = cases.path().join(format!("case-{}", counter.get()));
+            std::fs::create_dir_all(&case).unwrap();
+            let archive = case.join("input.tar");
+            // Even lengths repair header checksums; odd lengths keep the raw
+            // mutation so checksum validation itself stays under test.
+            let input = if input.len() % 2 == 0 {
+                repair_archive(input)
+            } else {
+                input.to_vec()
+            };
+            std::fs::write(&archive, &input).unwrap();
+            let target = PackStore::new(case.join("models"));
+            let outcome = target.import(
+                &manifest,
+                &[],
+                &ImportSource::Archive(archive.clone()),
+                plenty,
+                &AtomicBool::new(false),
+                |_| {},
+            );
+            let verdict = match outcome {
+                Ok(staged) => {
+                    let installed = target
+                        .activate(staged)
+                        .map_err(|error| format!("activate: {error}"))?;
+                    for (name, expected) in
+                        [("model.bin", &bytes), ("encoder/rev/extra.bin", &extra)]
+                    {
+                        let path = installed
+                            .file(name)
+                            .ok_or("installed pack lacks a manifest file")?;
+                        if std::fs::read(&path).map_err(|error| error.to_string())? != *expected {
+                            return Err(format!("installed {name} differs from its manifest"));
+                        }
+                    }
+                    Verdict::Accepted
+                }
+                Err(error) => reject(error)?,
+            };
+            for path in files_under(&case) {
+                if path != archive && !path.starts_with(case.join("models")) {
+                    return Err(format!(
+                        "import wrote outside the pack store: {}",
+                        path.display()
+                    ));
+                }
+                if std::fs::symlink_metadata(&path).is_ok_and(|meta| meta.file_type().is_symlink())
+                {
+                    return Err(format!("import staged a link: {}", path.display()));
+                }
+            }
+            let _ = std::fs::remove_dir_all(&case);
+            Ok(verdict)
+        },
+    );
+    report.assert_clean();
+}
+
+/// Gate G: pack manifests are compiled in today, but receipts and future
+/// catalogs are parsed from disk; hostile JSON must fail validation cleanly.
+#[test]
+fn adversarial_pack_manifests() {
+    use deadpan_chaos::{Target, Verdict, fuzz, reject};
+    let directory = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../models/packs");
+    let seeds = deadpan_chaos::seeds_from_dir(&directory);
+    assert_eq!(seeds.len(), 2);
+    let report = fuzz(
+        Target::json("models-pack-manifest").iterations(600),
+        seeds,
+        |input| match serde_json::from_slice::<PackManifest>(input) {
+            Ok(manifest) => match manifest.validate() {
+                Ok(()) => Ok(Verdict::Accepted),
+                Err(error) => reject(error),
+            },
+            Err(error) => reject(error),
+        },
+    );
+    report.assert_clean();
+}

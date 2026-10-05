@@ -536,4 +536,27 @@ mod tests {
         assert!(matches!(result, Err(AudioIndexError::Limit)));
         assert_eq!(checkpoints, 3);
     }
+
+    /// Gate G: stored audio indexes are untrusted cache data.
+    #[test]
+    fn adversarial_audio_index_json() {
+        use deadpan_chaos::{Target, Verdict, fuzz, reject};
+        let seeds = vec![measured().to_json().unwrap()];
+        let report = fuzz(
+            Target::json("media-audio-index").iterations(800),
+            seeds,
+            |input| match AudioIndexSnapshot::from_json(input) {
+                Ok(snapshot) => {
+                    let encoded = snapshot
+                        .to_json()
+                        .map_err(|error| format!("re-encode: {error}"))?;
+                    AudioIndexSnapshot::from_json(&encoded)
+                        .map_err(|error| format!("accepted index does not round-trip: {error}"))?;
+                    Ok(Verdict::Accepted)
+                }
+                Err(error) => reject(error),
+            },
+        );
+        report.assert_clean();
+    }
 }

@@ -3,7 +3,7 @@
 use eframe::egui;
 
 use super::thumbnails::Painted;
-use super::{BeatRow, NodeId, fit_rect, paint_cursor, style};
+use super::{BeatRow, NodeId, accessibility, fit_rect, paint_cursor, style};
 
 /// Logical height of an ordinary card thumbnail; textures render at this
 /// height times the display scale and are fitted into smaller cards.
@@ -27,7 +27,7 @@ fn paint_thumbnail(ui: &egui::Ui, rect: egui::Rect, painted: Option<Painted>) {
     painter.rect_stroke(
         rect,
         4.0,
-        egui::Stroke::new(1.0, style::BORDER),
+        egui::Stroke::new(1.0, accessibility::border(ui.ctx())),
         egui::StrokeKind::Inside,
     );
 }
@@ -75,7 +75,7 @@ pub(super) fn original(
             .selectable(false),
     );
     content.add(
-        egui::Label::new(egui::RichText::new(detail).size(11.0).color(style::MUTED))
+        egui::Label::new(egui::RichText::new(detail).size(11.0).weak())
             .truncate()
             .selectable(false),
     );
@@ -238,7 +238,7 @@ fn beat_card(
         0.0,
         egui::TextFormat {
             font_id: egui::FontId::proportional(12.0),
-            color: style::MUTED,
+            color: style::muted(ui),
             valign: egui::Align::Center,
             ..Default::default()
         },
@@ -249,7 +249,7 @@ fn beat_card(
             egui::RichText::new(format!("{}–{}", beat.start, beat.start + beat.frames))
                 .monospace()
                 .size(11.5)
-                .color(style::MUTED),
+                .weak(),
         )
         .truncate()
         .selectable(false),
@@ -281,7 +281,7 @@ fn workspace_card(
             if selected {
                 style::LAVENDER
             } else {
-                style::BORDER
+                accessibility::border(ui.ctx())
             },
         ),
         egui::StrokeKind::Inside,

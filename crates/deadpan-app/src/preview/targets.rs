@@ -407,7 +407,7 @@ impl DeadpanApp {
             return;
         };
         ui.horizontal_wrapped(|ui| {
-            ui.spinner();
+            crate::preview::accessibility::busy(ui);
             ui.colored_label(style::LAVENDER, Self::tracking_line(job));
             style::key_hint(ui, ":track-cancel", "cancel");
         });
@@ -423,7 +423,7 @@ impl DeadpanApp {
         if job.running() {
             // Wrap: a long label must never widen the fixed inspector.
             ui.horizontal_wrapped(|ui| {
-                ui.spinner();
+                crate::preview::accessibility::busy(ui);
                 ui.label(Self::tracking_line(&job));
             });
             if let crate::project::targets::Phase::Tracking(percent) = job.phase {
@@ -450,7 +450,10 @@ impl DeadpanApp {
                 style::SAVED,
                 format!("{} tracked · {samples} positions saved", job.label),
             ),
-            Some(Outcome::Cancelled) => (style::MUTED, format!("Tracking {} cancelled", job.label)),
+            Some(Outcome::Cancelled) => (
+                style::muted(ui),
+                format!("Tracking {} cancelled", job.label),
+            ),
             Some(Outcome::Failed(reason)) => (
                 style::ERROR,
                 format!("Tracking {} failed: {reason}", job.label),
@@ -486,7 +489,7 @@ impl DeadpanApp {
                     self.editor_key(EditorKey::Camera)
                 ))
                 .size(12.0)
-                .color(style::MUTED),
+                .weak(),
             );
         }
         for (id, label, summary) in &targets {
@@ -496,7 +499,7 @@ impl DeadpanApp {
                     egui::RichText::new(id.as_str())
                         .monospace()
                         .size(11.0)
-                        .color(style::MUTED),
+                        .weak(),
                 );
                 if let Some(source) = shown.get(id) {
                     ui.label(
@@ -506,7 +509,7 @@ impl DeadpanApp {
                     );
                 }
             });
-            ui.label(egui::RichText::new(summary).size(12.0).color(style::MUTED));
+            ui.label(egui::RichText::new(summary).size(12.0).weak());
         }
         if !targets.is_empty() {
             ui.horizontal_wrapped(|ui| {

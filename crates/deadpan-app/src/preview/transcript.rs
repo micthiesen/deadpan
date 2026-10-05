@@ -613,7 +613,7 @@ impl DeadpanApp {
         match self.transcription.status.clone() {
             Status::Unchecked | Status::Preparing => {
                 ui.horizontal(|ui| {
-                    ui.spinner();
+                    crate::preview::accessibility::busy(ui);
                     ui.weak("Preparing the Original’s audio…");
                 });
             }
@@ -742,7 +742,7 @@ impl DeadpanApp {
         if approximate > 0 {
             caption.push_str(&format!(" · {approximate} approximate in grey"));
         }
-        ui.label(egui::RichText::new(caption).size(11.0).color(style::MUTED));
+        ui.label(egui::RichText::new(caption).size(11.0).weak());
         if let Some(word) = clicked {
             self.jump_to_word(word);
         }
@@ -826,7 +826,7 @@ impl DeadpanApp {
                 runs.len()
             ))
             .size(11.0)
-            .color(style::MUTED),
+            .weak(),
         );
         if let Some(index) = clicked {
             self.sequence_cursor = runs[index].range.start().0 as u64;
@@ -906,7 +906,7 @@ fn phrase(ui: &mut egui::Ui, entries: &[Entry<'_>]) -> Option<usize> {
         let mut format = egui::TextFormat {
             font_id: egui::FontId::proportional(12.5),
             color: if entry.approximate {
-                style::MUTED
+                style::muted(ui)
             } else {
                 style::TEXT
             },

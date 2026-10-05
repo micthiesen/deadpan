@@ -464,8 +464,13 @@ impl DeadpanApp {
                 self.request_picture(false);
             }
             let label = range_label(range.as_ref(), self.moment.active, &self.bindings);
-            ui.add(egui::Label::new(egui::RichText::new(&label).color(style::LAVENDER)).truncate())
-                .on_hover_text(label);
+            accessibility::full_text(
+                ui.add(
+                    egui::Label::new(egui::RichText::new(&label).color(style::LAVENDER)).truncate(),
+                ),
+                &label,
+            )
+            .on_hover_text(label);
         } else if self.view == View::Sequence
             && let Some(copied) = self.copied.selected_content()
         {

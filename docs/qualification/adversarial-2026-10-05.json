@@ -1,0 +1,660 @@
+{
+ "campaign-2026-10-05": {
+  "revision": "61e834a7728bbc27878b262dc9aaa62829f0d03b",
+  "dirty_worktree": true,
+  "minutes": 10.0,
+  "sanitize": false,
+  "elapsed_s": 604.64656675,
+  "executions": 52705716,
+  "targets": 33,
+  "failing_targets": 1,
+  "failed_runs": 1,
+  "runs": [
+   {
+    "entry": "source-containers",
+    "binary_sha256": "ac8a5a4cffcab4049b40b6168b762f429628690f0a0260ef37c5bb9606e8d36e",
+    "exit": 0,
+    "seconds": 54.540545959
+   },
+   {
+    "entry": "source-native-decode",
+    "binary_sha256": "ff8f15b61258467c324d36f5cb464c9477392f4b901831e8396d551c2f7a56c4",
+    "exit": 0,
+    "seconds": 54.530345541
+   },
+   {
+    "entry": "core-json",
+    "binary_sha256": "50ed88320b5fcee9002798eb72555c95bdc920d2907f01d479dd8125557e2018",
+    "exit": 0,
+    "seconds": 55.357112208
+   },
+   {
+    "entry": "store-tamper",
+    "binary_sha256": "17ec922c05487556eb9958b6e61a065b30158410354a359b786c011fa11fd0a0",
+    "exit": 101,
+    "seconds": 55.035804583
+   },
+   {
+    "entry": "jobs-protocols",
+    "binary_sha256": "9e052ea238dd9b34da7b979d792ee1b87944e6c166e024cc6d541a5484d68563",
+    "exit": 0,
+    "seconds": 55.97742575
+   },
+   {
+    "entry": "jobs-generation",
+    "binary_sha256": "40ff29093465b391d4e9d402ce67e061e0b459b555b4281d37592f0b2f70a428",
+    "exit": 0,
+    "seconds": 55.263172875
+   },
+   {
+    "entry": "cli-boundaries",
+    "binary_sha256": "47bdebe789bd8eaf7cdda70edf321028b77c6ae4c2ba6d1cdf9bce1e5192f83c",
+    "exit": 0,
+    "seconds": 55.23891775
+   },
+   {
+    "entry": "media-json",
+    "binary_sha256": "0db82d243aac797e00c650ce4c65bfd400b61b7b7abbf532ccbdd9daaaccc687",
+    "exit": 0,
+    "seconds": 54.710618875
+   },
+   {
+    "entry": "media-worker",
+    "binary_sha256": "e7a056344cb86e535b5aaa8ccb3eaea62dc733b2eafe38e99868b82d819362d0",
+    "exit": 0,
+    "seconds": 54.615504292
+   },
+   {
+    "entry": "model-packs",
+    "binary_sha256": "3aee2b0fa190337347ec09fa5a5dd3789524cbd8e0cef2b51d8e86211178bfd8",
+    "exit": 0,
+    "seconds": 54.685841958
+   },
+   {
+    "entry": "analysis-json",
+    "binary_sha256": "503c1473a8d10134e7ad2e1d3619c884737b151541e6c66b5f6e9c69174c4bfc",
+    "exit": 0,
+    "seconds": 54.645298042
+   }
+  ],
+  "reports": [
+   {
+    "target": "source-ffv1-config",
+    "seed": "0xea3e1bf50ce1e313",
+    "executions": 12733205,
+    "accepted": 89882,
+    "rejected": 12643323,
+    "distinct_classes": 4,
+    "corpus": 1415,
+    "max_case_ms": 0.240083,
+    "max_alloc_bytes": 134,
+    "failures": []
+   },
+   {
+    "target": "source-container-video",
+    "seed": "0xf912fe3832a29884",
+    "executions": 218777,
+    "accepted": 14434,
+    "rejected": 204343,
+    "distinct_classes": 151,
+    "corpus": 399,
+    "max_case_ms": 32.639375,
+    "max_alloc_bytes": 2784,
+    "failures": []
+   },
+   {
+    "target": "source-container-audio",
+    "seed": "0x13702b037b13c869",
+    "executions": 262444,
+    "accepted": 38903,
+    "rejected": 223541,
+    "distinct_classes": 116,
+    "corpus": 741,
+    "max_case_ms": 35.054625,
+    "max_alloc_bytes": 2254,
+    "failures": []
+   },
+   {
+    "target": "source-hevc-sps",
+    "seed": "0xbaf03beed72b6fbe",
+    "executions": 16099476,
+    "accepted": 8922362,
+    "rejected": 7177114,
+    "distinct_classes": 8,
+    "corpus": 2048,
+    "max_case_ms": 0.15479099999999998,
+    "max_alloc_bytes": 140,
+    "failures": []
+   },
+   {
+    "target": "source-codec-config",
+    "seed": "0x7231ea693b3c26d0",
+    "executions": 253238,
+    "accepted": 37406,
+    "rejected": 215832,
+    "distinct_classes": 32,
+    "corpus": 632,
+    "max_case_ms": 35.191874999999996,
+    "max_alloc_bytes": 118162,
+    "failures": []
+   },
+   {
+    "target": "source-native-decode",
+    "seed": "0xba92f7f0bde8490d",
+    "executions": 6158,
+    "accepted": 342,
+    "rejected": 5816,
+    "distinct_classes": 12,
+    "corpus": 40,
+    "max_case_ms": 26.892375,
+    "max_alloc_bytes": null,
+    "failures": []
+   },
+   {
+    "target": "core-document",
+    "seed": "0xa4388609d5338018",
+    "executions": 201880,
+    "accepted": 18,
+    "rejected": 201862,
+    "distinct_classes": 15050,
+    "corpus": 2048,
+    "max_case_ms": 17.245292,
+    "max_alloc_bytes": 1574538,
+    "failures": []
+   },
+   {
+    "target": "core-audio-context",
+    "seed": "0xc750f6e3ad04385b",
+    "executions": 494345,
+    "accepted": 23,
+    "rejected": 494322,
+    "distinct_classes": 39511,
+    "corpus": 2048,
+    "max_case_ms": 9.288,
+    "max_alloc_bytes": 1050288,
+    "failures": []
+   },
+   {
+    "target": "core-edit-slice",
+    "seed": "0xdf2f2ed22f7f50c2",
+    "executions": 291801,
+    "accepted": 79,
+    "rejected": 291722,
+    "distinct_classes": 17889,
+    "corpus": 2048,
+    "max_case_ms": 79.97,
+    "max_alloc_bytes": 1252161,
+    "failures": []
+   },
+   {
+    "target": "core-command",
+    "seed": "0x26d33e3ba10b1e8e",
+    "executions": 460677,
+    "accepted": 922,
+    "rejected": 459755,
+    "distinct_classes": 35706,
+    "corpus": 2048,
+    "max_case_ms": 32.214833,
+    "max_alloc_bytes": 16975716,
+    "failures": []
+   },
+   {
+    "target": "core-audio-layout",
+    "seed": "0x16dc3487ed5482e6",
+    "executions": 94586,
+    "accepted": 30,
+    "rejected": 94556,
+    "distinct_classes": 587,
+    "corpus": 606,
+    "max_case_ms": 39.571458,
+    "max_alloc_bytes": 524361,
+    "failures": []
+   },
+   {
+    "target": "core-register-value",
+    "seed": "0x06a9d12533ed8ce0",
+    "executions": 85878,
+    "accepted": 50,
+    "rejected": 85828,
+    "distinct_classes": 6982,
+    "corpus": 2048,
+    "max_case_ms": 87.751125,
+    "max_alloc_bytes": 16955308,
+    "failures": []
+   },
+   {
+    "target": "core-patch",
+    "seed": "0x841dda478b924e5d",
+    "executions": 401057,
+    "accepted": 535,
+    "rejected": 400522,
+    "distinct_classes": 25858,
+    "corpus": 2048,
+    "max_case_ms": 15.070459,
+    "max_alloc_bytes": 8864784,
+    "failures": []
+   },
+   {
+    "target": "store-database-bytes",
+    "seed": "0xf8194b2ec05b10de",
+    "executions": 13650,
+    "accepted": 157,
+    "rejected": 13493,
+    "distinct_classes": 159,
+    "corpus": 162,
+    "max_case_ms": 119.730625,
+    "max_alloc_bytes": 450485,
+    "failures": []
+   },
+   {
+    "target": "store-row-tamper",
+    "seed": "0xb8c46e1c9cba9807",
+    "executions": 4246,
+    "accepted": 237,
+    "rejected": 4007,
+    "distinct_classes": 138,
+    "corpus": 189,
+    "max_case_ms": 106.547083,
+    "max_alloc_bytes": 450483,
+    "failures": [
+     {
+      "artifact": "/Users/michael/Code/deadpan/target/chaos/campaign-2026-10-05/crashes/store-row-tamper/d51c5495117a05b1.bin",
+      "class": "invariant: tampered package validated with a changed register value",
+      "detail": "tampered package validated with a changed register value",
+      "input_len": 4
+     }
+    ]
+   },
+   {
+    "target": "jobs-tracking-protocol",
+    "seed": "0x52ca32faa8cabf80",
+    "executions": 953209,
+    "accepted": 281221,
+    "rejected": 671988,
+    "distinct_classes": 19,
+    "corpus": 2048,
+    "max_case_ms": 13.449875,
+    "max_alloc_bytes": 13387884,
+    "failures": []
+   },
+   {
+    "target": "jobs-transcription-protocol",
+    "seed": "0x12391fc5885bb98f",
+    "executions": 1134299,
+    "accepted": 336505,
+    "rejected": 797794,
+    "distinct_classes": 17,
+    "corpus": 2048,
+    "max_case_ms": 14.605208,
+    "max_alloc_bytes": 13641836,
+    "failures": []
+   },
+   {
+    "target": "jobs-faces-protocol",
+    "seed": "0x62f7c2fe4405ff29",
+    "executions": 696766,
+    "accepted": 192093,
+    "rejected": 504673,
+    "distinct_classes": 16,
+    "corpus": 2048,
+    "max_case_ms": 33.7295,
+    "max_alloc_bytes": 11330993,
+    "failures": []
+   },
+   {
+    "target": "jobs-generation-protocol",
+    "seed": "0x19a62a97d09540c1",
+    "executions": 1035081,
+    "accepted": 300280,
+    "rejected": 734801,
+    "distinct_classes": 7,
+    "corpus": 2048,
+    "max_case_ms": 8.270541,
+    "max_alloc_bytes": null,
+    "failures": []
+   },
+   {
+    "target": "cli-ytdlp-metadata",
+    "seed": "0xf145d53a03887e8f",
+    "executions": 62132,
+    "accepted": 12706,
+    "rejected": 49426,
+    "distinct_classes": 13,
+    "corpus": 227,
+    "max_case_ms": 142.372792,
+    "max_alloc_bytes": 8554155,
+    "failures": []
+   },
+   {
+    "target": "cli-encoded-protocol",
+    "seed": "0xf04fe5e0cb9fb2c1",
+    "executions": 639695,
+    "accepted": 163093,
+    "rejected": 476602,
+    "distinct_classes": 23,
+    "corpus": 2048,
+    "max_case_ms": 12.177292,
+    "max_alloc_bytes": 6261072,
+    "failures": []
+   },
+   {
+    "target": "cli-admission-probe-protocol",
+    "seed": "0x3e6d8b0e375fa545",
+    "executions": 950457,
+    "accepted": 280366,
+    "rejected": 670091,
+    "distinct_classes": 17,
+    "corpus": 2048,
+    "max_case_ms": 16.77275,
+    "max_alloc_bytes": 13905116,
+    "failures": []
+   },
+   {
+    "target": "cli-verification-protocol",
+    "seed": "0xdf4d7f14c0310836",
+    "executions": 477354,
+    "accepted": 129122,
+    "rejected": 348232,
+    "distinct_classes": 23,
+    "corpus": 2045,
+    "max_case_ms": 15.16075,
+    "max_alloc_bytes": 13256770,
+    "failures": []
+   },
+   {
+    "target": "cli-render-protocol",
+    "seed": "0xa7278810b694cc87",
+    "executions": 801710,
+    "accepted": 224369,
+    "rejected": 577341,
+    "distinct_classes": 19,
+    "corpus": 2048,
+    "max_case_ms": 16.823916,
+    "max_alloc_bytes": 14198779,
+    "failures": []
+   },
+   {
+    "target": "cli-live-endpoint",
+    "seed": "0xeabd6c7976c6ba58",
+    "executions": 333230,
+    "accepted": 2110,
+    "rejected": 331120,
+    "distinct_classes": 2221,
+    "corpus": 2048,
+    "max_case_ms": 7.367417,
+    "max_alloc_bytes": 67110604,
+    "failures": []
+   },
+   {
+    "target": "media-source-index",
+    "seed": "0x7a2ffdfab216ddba",
+    "executions": 1827895,
+    "accepted": 79,
+    "rejected": 1827816,
+    "distinct_classes": 167844,
+    "corpus": 2048,
+    "max_case_ms": 7.865749999999999,
+    "max_alloc_bytes": 1821133,
+    "failures": []
+   },
+   {
+    "target": "media-helper-protocol",
+    "seed": "0xcf3ba36350f580b1",
+    "executions": 2864625,
+    "accepted": 33,
+    "rejected": 2864592,
+    "distinct_classes": 224171,
+    "corpus": 2048,
+    "max_case_ms": 2.517209,
+    "max_alloc_bytes": 1048638,
+    "failures": []
+   },
+   {
+    "target": "media-audio-index",
+    "seed": "0x183d066a5b7e4f51",
+    "executions": 2465667,
+    "accepted": 85,
+    "rejected": 2465582,
+    "distinct_classes": 242441,
+    "corpus": 2048,
+    "max_case_ms": 9.944292,
+    "max_alloc_bytes": 1350337,
+    "failures": []
+   },
+   {
+    "target": "media-worker-conversion",
+    "seed": "0x8757f92fdb95a05b",
+    "executions": 7958,
+    "accepted": 1370,
+    "rejected": 6588,
+    "distinct_classes": 4,
+    "corpus": 29,
+    "max_case_ms": 68.023917,
+    "max_alloc_bytes": null,
+    "failures": []
+   },
+   {
+    "target": "models-pack-manifest",
+    "seed": "0x2a8241e58b0c2353",
+    "executions": 1282823,
+    "accepted": 124,
+    "rejected": 1282699,
+    "distinct_classes": 131381,
+    "corpus": 2048,
+    "max_case_ms": 13.670166,
+    "max_alloc_bytes": null,
+    "failures": []
+   },
+   {
+    "target": "models-pack-archive",
+    "seed": "0xeac08a6b007549b8",
+    "executions": 14685,
+    "accepted": 227,
+    "rejected": 14458,
+    "distinct_classes": 15,
+    "corpus": 29,
+    "max_case_ms": 144.571167,
+    "max_alloc_bytes": null,
+    "failures": []
+   },
+   {
+    "target": "analysis-transcript",
+    "seed": "0xd0bb7c77073ea240",
+    "executions": 3183361,
+    "accepted": 48,
+    "rejected": 3183313,
+    "distinct_classes": 107482,
+    "corpus": 2048,
+    "max_case_ms": 2.6358330000000003,
+    "max_alloc_bytes": null,
+    "failures": []
+   },
+   {
+    "target": "analysis-tracker-artifact",
+    "seed": "0x223403e300fad043",
+    "executions": 2353351,
+    "accepted": 99,
+    "rejected": 2353252,
+    "distinct_classes": 164538,
+    "corpus": 2048,
+    "max_case_ms": 7.618791,
+    "max_alloc_bytes": null,
+    "failures": []
+   }
+  ]
+ },
+ "sanitized-2026-10-05": {
+  "revision": "61e834a7728bbc27878b262dc9aaa62829f0d03b",
+  "dirty_worktree": true,
+  "minutes": 3.0,
+  "sanitize": true,
+  "elapsed_s": 180.265022709,
+  "executions": 37970238,
+  "targets": 6,
+  "failing_targets": 0,
+  "failed_runs": 0,
+  "runs": [
+   {
+    "entry": "source-containers",
+    "binary_sha256": "2e7b8b670ffb42ead31cfae9555a1b879901801e706d774c1a1206919da6088e",
+    "exit": 0,
+    "seconds": 90.118003
+   },
+   {
+    "entry": "source-native-decode",
+    "binary_sha256": "1bd2762d43c4d0902c532c0fe8291f31a5dc531ae64c420adbe3f94b89006c10",
+    "exit": 0,
+    "seconds": 90.125785166
+   }
+  ],
+  "reports": [
+   {
+    "target": "source-ffv1-config",
+    "seed": "0xea3e189f2ba206ab",
+    "executions": 14831029,
+    "accepted": 120739,
+    "rejected": 14710290,
+    "distinct_classes": 4,
+    "corpus": 1897,
+    "max_case_ms": 4.837083,
+    "max_alloc_bytes": 134,
+    "failures": []
+   },
+   {
+    "target": "source-container-video",
+    "seed": "0xf912fd5215e3929c",
+    "executions": 414259,
+    "accepted": 36075,
+    "rejected": 378184,
+    "distinct_classes": 170,
+    "corpus": 756,
+    "max_case_ms": 17.2555,
+    "max_alloc_bytes": 2784,
+    "failures": []
+   },
+   {
+    "target": "source-container-audio",
+    "seed": "0x137028695c508329",
+    "executions": 464722,
+    "accepted": 85811,
+    "rejected": 378911,
+    "distinct_classes": 117,
+    "corpus": 1475,
+    "max_case_ms": 17.631041,
+    "max_alloc_bytes": 2254,
+    "failures": []
+   },
+   {
+    "target": "source-hevc-sps",
+    "seed": "0xbaf03884f06441fe",
+    "executions": 21766169,
+    "accepted": 13555875,
+    "rejected": 8210294,
+    "distinct_classes": 8,
+    "corpus": 2048,
+    "max_case_ms": 4.594792,
+    "max_alloc_bytes": 140,
+    "failures": []
+   },
+   {
+    "target": "source-codec-config",
+    "seed": "0x7231e9031c7b00c0",
+    "executions": 492466,
+    "accepted": 159527,
+    "rejected": 332939,
+    "distinct_classes": 32,
+    "corpus": 2048,
+    "max_case_ms": 17.678417,
+    "max_alloc_bytes": 118270,
+    "failures": []
+   },
+   {
+    "target": "source-native-decode",
+    "seed": "0xba92f45298050de5",
+    "executions": 1593,
+    "accepted": 81,
+    "rejected": 1512,
+    "distinct_classes": 12,
+    "corpus": 36,
+    "max_case_ms": 74.227667,
+    "max_alloc_bytes": null,
+    "failures": []
+   }
+  ]
+ },
+ "stress-full": {
+  "audio_spans": 607,
+  "beats": 10000,
+  "commit_max_s": 0.30089725,
+  "commit_p50_s": 0.037491,
+  "commit_p95_s": 0.109749125,
+  "commits": 300,
+  "frames": 169734,
+  "nodes": 10089,
+  "package_bytes": 146112512,
+  "peak_alloc_bytes": 213527198,
+  "refused": {},
+  "revisions": 229,
+  "stages_s": {
+   "audio_queries": 0.000844041,
+   "commit_p95": 0.109749125,
+   "create": 0.310264791,
+   "history_reads": 0.361434542,
+   "picture_lookups": 0.000914,
+   "plan_compile": 0.018276,
+   "reopen": 0.385815333,
+   "validate_full": 14.000528917,
+   "validate_receipt": 0.375014291
+  }
+ },
+ "host": {
+  "cpu": "Apple M5 Max",
+  "macos": "26.5.2",
+  "rust": "1.97.1",
+  "ffmpeg_prefix": "pinned LGPL FFmpeg 8.0.3 developer prefix"
+ },
+ "store-tamper-recheck": {
+  "revision": "61e834a7728bbc27878b262dc9aaa62829f0d03b",
+  "dirty_worktree": true,
+  "minutes": 6.0,
+  "elapsed_s": 360.832508166,
+  "executions": 92674,
+  "targets": 2,
+  "failing_targets": 0,
+  "failed_runs": 0,
+  "runs": [
+   {
+    "entry": "store-tamper",
+    "binary_sha256": "b136e35a88d55bb5fb41c70515b3449eab37efff0df4cbb7ff9b2bf6605c0c3e",
+    "exit": 0,
+    "seconds": 360.78801325
+   }
+  ],
+  "reports": [
+   {
+    "target": "store-database-bytes",
+    "seed": "0xf8194831861db3a6",
+    "executions": 73494,
+    "accepted": 390,
+    "rejected": 73104,
+    "distinct_classes": 579,
+    "corpus": 586,
+    "max_case_ms": 257.87987499999997,
+    "max_alloc_bytes": 450549,
+    "failures": []
+   },
+   {
+    "target": "store-row-tamper",
+    "seed": "0xb8c46d03daf019cf",
+    "executions": 19180,
+    "accepted": 463,
+    "rejected": 18717,
+    "distinct_classes": 606,
+    "corpus": 661,
+    "max_case_ms": 344.940792,
+    "max_alloc_bytes": 450548,
+    "failures": []
+   }
+  ]
+ }
+}

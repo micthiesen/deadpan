@@ -163,3 +163,16 @@ fn completions_must_match_the_attempt_scope_and_picture_counts() {
     ));
     assert!(TrackingProtocol::from_request(&protocol.cancellation()).is_err());
 }
+
+#[test]
+fn adversarial_tracking_frames() {
+    let cancel = TrackingProtocol::from_request(&track())
+        .unwrap()
+        .cancellation();
+    crate::adversarial::protocol::<TrackingProtocol>(
+        "jobs-tracking-protocol",
+        vec![track(), cancel],
+        vec![completed("output/observations.json", 30, 15)],
+        |reader| read_host(reader),
+    );
+}

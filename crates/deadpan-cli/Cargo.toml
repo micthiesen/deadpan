@@ -40,6 +40,7 @@ flate2 = "=1.1.10"
 image = { version = "=0.25.10", default-features = false, features = ["png"] }
 
 [dev-dependencies]
+deadpan-chaos.workspace = true
 tempfile.workspace = true
 rusqlite.workspace = true
 deadpan-native-process.workspace = true

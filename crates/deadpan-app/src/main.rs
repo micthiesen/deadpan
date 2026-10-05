@@ -127,6 +127,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 keymap,
             )?;
             if !smoke_test {
+                app.follow_system_display();
                 // Offer the project an earlier launch left open, unless one
                 // was named explicitly on the command line.
                 match recovery::LaunchJournal::user() {

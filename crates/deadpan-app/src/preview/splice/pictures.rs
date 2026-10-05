@@ -128,7 +128,7 @@ impl Display {
                     egui::Align2::CENTER_CENTER,
                     text,
                     egui::FontId::proportional(12.0),
-                    style::MUTED,
+                    style::muted(ui),
                 );
                 text.into()
             };
@@ -745,7 +745,7 @@ impl JunctionDisplay {
                     egui::Align2::CENTER_CENTER,
                     text,
                     egui::FontId::proportional(13.0),
-                    style::MUTED,
+                    style::muted(ui),
                 );
                 text.to_owned()
             };
@@ -1227,7 +1227,7 @@ fn paint_junction_visual(ui: &egui::Ui, rect: egui::Rect, visual: &JunctionVisua
                 egui::Align2::CENTER_CENTER,
                 label,
                 egui::FontId::proportional(14.0),
-                style::MUTED,
+                style::muted(ui),
             );
         }
         JunctionVisual::Background => {}

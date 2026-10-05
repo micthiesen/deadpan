@@ -460,6 +460,7 @@ impl DeadpanApp {
         egui::Modal::new(egui::Id::new("room-tone-sheet"))
             .frame(egui::Frame::popup(&context.style_of(egui::Theme::Dark)).inner_margin(24).corner_radius(10))
             .show(context, |ui| {
+                super::accessibility::dialog(ui, "Room tone for pause");
                 ui.set_width(width);
                 let heading = ui.horizontal(|ui| {
                     ui.heading("Room tone for pause");

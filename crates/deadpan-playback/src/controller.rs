@@ -177,6 +177,19 @@ pub(crate) struct Shared {
     counters: Counters,
     #[cfg(test)]
     pub preparation_observer: Mutex<Option<preparation::Observer>>,
+    #[cfg(test)]
+    pub controller_hooks: ControllerHooks,
+}
+
+/// Test-only controller instrumentation. `stall` parks the controller thread
+/// at the top of its loop, standing in for descheduling under CPU load while
+/// the device callback keeps running.
+#[cfg(test)]
+#[derive(Default)]
+pub(crate) struct ControllerHooks {
+    pub stall: AtomicBool,
+    pub stalled: AtomicBool,
+    pub submitted_frames: AtomicU64,
 }
 
 impl Shared {
@@ -321,6 +334,8 @@ impl Engine {
             counters: Counters::default(),
             #[cfg(test)]
             preparation_observer: Mutex::new(None),
+            #[cfg(test)]
+            controller_hooks: ControllerHooks::default(),
         });
         let prep_shared = shared.clone();
         thread::Builder::new()
@@ -476,6 +491,10 @@ pub(crate) trait Device {
     fn pause(&mut self) -> Result<(), String>;
     fn check_route(&self) -> Result<(), String>;
     fn pop_report(&mut self) -> Option<DeviceReport>;
+    /// Reports already published and not yet popped.
+    fn pending_reports(&self) -> usize;
+    /// Fixed delivery-report ring capacity, for loss diagnostics.
+    fn report_capacity(&self) -> usize;
     fn now_ns(&self) -> Option<u64>;
     fn dropped_reports(&self) -> u64;
     fn error_flags(&self) -> u64;
@@ -499,6 +518,12 @@ impl Device for deadpan_output::DeviceOutput {
     fn pop_report(&mut self) -> Option<DeviceReport> {
         self.pop_report()
     }
+    fn pending_reports(&self) -> usize {
+        self.pending_reports()
+    }
+    fn report_capacity(&self) -> usize {
+        self.report_capacity()
+    }
     fn now_ns(&self) -> Option<u64> {
         self.clock_now_ns()
     }
@@ -511,7 +536,10 @@ impl Device for deadpan_output::DeviceOutput {
 }
 #[cfg(target_os = "macos")]
 fn open_device() -> Result<Box<dyn Device>, String> {
-    deadpan_output::DeviceOutput::open_default()
+    // Prepared PCM and delivery telemetry both cover the documented controller
+    // starvation window, so a descheduled controller neither starves the
+    // device nor loses the reports that define the heard clock.
+    deadpan_output::DeviceOutput::open_default_with_queue(deadpan_output::AUDITION_QUEUE_PACKETS)
         .map(|device| Box::new(device) as Box<dyn Device>)
         .map_err(|e| e.to_string())
 }
@@ -605,9 +633,16 @@ impl Active {
             shared.counters.faults.fetch_add(1, Ordering::Relaxed);
             return Err("audio device faulted".into());
         }
-        if self.device.dropped_reports() != 0 {
+        let dropped = self.device.dropped_reports();
+        if dropped != 0 {
             shared.counters.faults.fetch_add(1, Ordering::Relaxed);
-            return Err("audio delivery reports were lost".into());
+            return Err(format!(
+                "audio delivery reports were lost: {dropped} dropped after the controller \
+                 left all {} retained reports undrained (sized for {} ms of starvation)",
+                self.device.report_capacity(),
+                deadpan_output::STARVATION_WINDOW_FRAMES as u64 * 1000
+                    / u64::from(deadpan_output::SAMPLE_RATE),
+            ));
         }
         if self.last_route.elapsed() >= Duration::from_millis(250) {
             self.device.check_route()?;
@@ -615,7 +650,15 @@ impl Active {
         }
         // Always drain, including old preparation/paused and terminal records.
         // Only this active generation contributes to the heard-position clock.
-        for _ in 0..256 {
+        // Drain the complete inventory published before this tick, however
+        // long the controller was descheduled. The bound is the ring capacity,
+        // so the loop is finite while the callback keeps publishing; later
+        // records stay queued in order for the next tick. Genuine overflow is
+        // reported by the device's dropped-record counter above. Watchdogs
+        // compare against instants captured with their observations, so
+        // descheduling between draining and checking cannot fabricate a stall.
+        let drained_at = Instant::now();
+        for _ in 0..self.device.pending_reports() {
             let Some(report) = self.device.pop_report() else {
                 break;
             };
@@ -629,7 +672,7 @@ impl Active {
             if self.terminal_report {
                 continue;
             }
-            self.last_report = Instant::now();
+            self.last_report = drained_at;
             let terminal = matches!(
                 report.render.status,
                 RenderStatus::Ended | RenderStatus::Starved
@@ -648,31 +691,38 @@ impl Active {
                 shared.wake.notify_all();
             }
         }
-        if self.device.pop_report().is_some() {
-            return Err("audio report drain exceeded its bounded inventory".into());
-        }
         if !self.terminal_report {
             self.supply(shared)?;
         }
+        #[cfg(test)]
+        shared
+            .controller_hooks
+            .submitted_frames
+            .store(self.queued as u64, Ordering::Release);
         if self.activated {
             let now = self
                 .device
                 .now_ns()
                 .ok_or("audio stream clock is unavailable")?;
+            let read_at = Instant::now();
             if let Some((previous, progressed)) = self.last_clock {
                 if now < previous {
                     return Err("audio stream clock moved backwards".into());
                 }
-                if now == previous && progressed.elapsed() > Duration::from_secs(1) {
+                if now == previous
+                    && read_at.saturating_duration_since(progressed) > Duration::from_secs(1)
+                {
                     return Err("audio stream clock stopped advancing".into());
                 }
                 if now > previous {
-                    self.last_clock = Some((now, Instant::now()));
+                    self.last_clock = Some((now, read_at));
                 }
             } else {
-                self.last_clock = Some((now, Instant::now()));
+                self.last_clock = Some((now, read_at));
             }
-            if !self.terminal_report && self.last_report.elapsed() > Duration::from_secs(1) {
+            if !self.terminal_report
+                && drained_at.saturating_duration_since(self.last_report) > Duration::from_secs(1)
+            {
                 return Err("audio device stopped reporting delivery".into());
             }
             match self
@@ -789,6 +839,19 @@ impl Active {
 fn run(shared: Arc<Shared>, mut factory: Factory) {
     let mut active: Option<Active> = None;
     loop {
+        #[cfg(test)]
+        while shared.controller_hooks.stall.load(Ordering::Acquire) {
+            shared
+                .controller_hooks
+                .stalled
+                .store(true, Ordering::Release);
+            thread::sleep(Duration::from_millis(1));
+        }
+        #[cfg(test)]
+        shared
+            .controller_hooks
+            .stalled
+            .store(false, Ordering::Release);
         let (intent, shutdown) = {
             let mut state = shared.lock();
             (state.intent.take(), state.shutdown)

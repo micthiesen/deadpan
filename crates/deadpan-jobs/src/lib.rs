@@ -6,6 +6,8 @@
 //! scheduling remain host responsibilities. A worker's completed manifest is
 //! untrusted until the host validates it and explicitly advances the lifecycle.
 
+#[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
+mod adversarial;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod artifact;
 #[cfg(any(target_os = "macos", target_os = "linux"))]

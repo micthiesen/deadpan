@@ -8,7 +8,11 @@ connects canonical pre-master `StageAudio` samples to this output.
 ## Queue and clock contract
 
 One preparation/controller thread owns `Feed`; one callback owns `Callback`.
-Construction allocates 32 PCM slots plus one reserved terminal slot. Each PCM packet contains at most 256
+`channel()` allocates 32 PCM slots plus one reserved terminal slot;
+`channel_with_capacity(n)` allocates `n` (at most `MAX_QUEUE_PACKETS`). Audition
+uses `AUDITION_QUEUE_PACKETS` (750 packets, about 1.5 MiB), which holds the
+4-second `STARVATION_WINDOW_FRAMES`: the realtime callback keeps playing through
+a non-realtime controller/preparation stall of that length. Each PCM packet contains at most 256
 stereo float frames by value. PCM must be finite and within magnitude one.
 Admission rejects invalid data; it never normalizes, clips or limits it.
 Failed admission leaves the contiguous 48 kHz sample cursor unchanged. Explicit
@@ -29,7 +33,7 @@ Initial construction has an empty queue and can be prefilled before starting.
 
 The callback handles partial packets, arbitrary interleaved buffer partitions,
 bounded stale-packet cleanup and EOS. At most 33 stale packets are discarded per
-call; matching packet work is additionally bounded by the 8,192-frame output
+call, independently of queue depth; deeper stale queues finish over later calls; matching packet work is additionally bounded by the 8,192-frame output
 limit. Cleanup can produce a silent buffer while preparation catches up.
 An underrun preserves any already copied prefix, silences the suffix and latches
 `Starved`. Late PCM never resumes against a drifting device clock. The controller
@@ -72,9 +76,17 @@ still unqualified.
 `DeviceReport` records the callback's generation, submitted content prefix,
 silence, status, discarded packets, host callback/playback timestamps and measured
 timestamp-validation/kernel-render cost. Timing excludes telemetry publication
-and upstream/driver work; it is not a full callback deadline. A bounded
-256-record ring drops telemetry on overflow
-and increments a counter without blocking audio. `sample_at` maps the stream
+and upstream/driver work; it is not a full callback deadline. Every callback
+publishes exactly one record into a preallocated ring sized by
+`report_capacity`: the starvation window divided by the device's smallest
+supported callback (floored at 8 frames; 8 when unknown) plus 256 records of
+margin, so a 512-frame device keeps 631 records and the worst case is about
+2 MiB. Records are never merged: each retains its own host playback timestamp,
+which `DeliveryClock` validates (monotonic, at most one sample of overlap) and
+maps independently; merging would replace later timestamps with extrapolation.
+Overflow beyond the documented window drops telemetry and increments a counter
+without blocking audio; consumers must treat any drop as lost reports.
+`pending_reports` lets a consumer drain exactly the published inventory. `sample_at` maps the stream
 clock only inside the reported content prefix. Consumers must match the active
 generation and stream first; it never extrapolates across silence or a seek.
 CPAL's playback timestamp is a latency estimate, not evidence of acoustic

@@ -45,6 +45,8 @@ rfd = { version = "=0.17.2", default-features = false }
 muda = { version = "=0.21.0", default-features = false }
 objc2 = { version = "=0.6.4", default-features = false, features = ["std"] }
 objc2-foundation = { version = "=0.3.2", default-features = false, features = ["std", "NSBundle", "NSFileManager", "NSArray", "NSURL", "NSString", "NSPathUtilities"] }
+# Read the Reduce motion and Increase contrast display accommodations.
+objc2-app-kit = { version = "=0.3.2", default-features = false, features = ["std", "NSAccessibility", "NSWorkspace"] }
 
 [dev-dependencies]
 blake3.workspace = true

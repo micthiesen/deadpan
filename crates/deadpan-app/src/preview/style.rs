@@ -7,12 +7,26 @@ pub(super) const PANEL: Color32 = Color32::from_rgb(0x20, 0x23, 0x29);
 pub(super) const TEXT: Color32 = Color32::from_rgb(0xe9, 0xeb, 0xf4);
 pub(super) const MUTED: Color32 = Color32::from_rgb(0xaa, 0xb0, 0xbf);
 pub(super) const BORDER: Color32 = Color32::from_rgb(0x37, 0x3d, 0x49);
+/// Card and control borders under macOS Increase contrast: at least 3:1
+/// against both the canvas and panel fills.
+pub(super) const HIGH_CONTRAST_BORDER: Color32 = Color32::from_rgb(0x8a, 0x93, 0xa6);
 pub(super) const LAVENDER: Color32 = Color32::from_rgb(0xc4, 0xb5, 0xfd);
 pub(super) const SELECTED: Color32 = Color32::from_rgb(0x39, 0x37, 0x50);
 pub(super) const CURSOR: Color32 = Color32::from_rgb(0xf6, 0xd3, 0x65);
 pub(super) const SAVED: Color32 = Color32::from_rgb(0xa7, 0xf3, 0xd0);
 pub(super) const ERROR: Color32 = Color32::from_rgb(0xf8, 0x8a, 0x8a);
 pub(super) const WARNING: Color32 = Color32::from_rgb(0xf5, 0xb8, 0x6b);
+
+/// Secondary text: [`MUTED`], raised to full text colour under macOS Increase
+/// contrast. Prefer `RichText::weak()`, which resolves the same colour.
+pub(super) fn muted(ui: &egui::Ui) -> Color32 {
+    ui.visuals().weak_text_color()
+}
+
+/// Secondary text for painters without a `Ui`.
+pub(super) fn muted_in(context: &egui::Context) -> Color32 {
+    context.global_style().visuals.weak_text_color()
+}
 
 /// SF Pro weight for titles and emphasized values.
 pub(super) const SEMIBOLD: f32 = 600.0;
@@ -23,11 +37,15 @@ pub(super) fn semibold(text: impl Into<String>) -> RichText {
 
 /// Small uppercase pane and section title.
 pub(super) fn section_title(text: &str, focused: bool) -> RichText {
-    RichText::new(text)
+    let title = RichText::new(text)
         .size(11.0)
         .extra_letter_spacing(0.8)
-        .variation("wght", SEMIBOLD)
-        .color(if focused { LAVENDER } else { MUTED })
+        .variation("wght", SEMIBOLD);
+    if focused {
+        title.color(LAVENDER)
+    } else {
+        title.weak()
+    }
 }
 
 /// A word-bearing focus cue, so pane focus never depends on color alone.
@@ -119,9 +137,14 @@ pub(super) fn value_grid<'a>(
         .min_row_height(18.0)
         .show(ui, |ui| {
             for (label, value) in rows {
-                ui.label(RichText::new(label).size(12.0).color(MUTED));
-                ui.add(egui::Label::new(RichText::new(value).monospace().size(11.5)).truncate())
-                    .on_hover_text(format!("{label}: {value}"));
+                ui.label(RichText::new(label).size(12.0).weak());
+                super::accessibility::full_text(
+                    ui.add(
+                        egui::Label::new(RichText::new(value).monospace().size(11.5)).truncate(),
+                    ),
+                    value,
+                )
+                .on_hover_text(format!("{label}: {value}"));
                 ui.end_row();
             }
         });
@@ -211,8 +234,11 @@ pub(super) fn proxy_badge(painter: &egui::Painter, picture: egui::Rect) {
     if picture.width() < 80.0 || picture.height() < 40.0 {
         return;
     }
-    let galley =
-        painter.layout_no_wrap("Proxy".to_owned(), egui::FontId::proportional(11.0), MUTED);
+    let galley = painter.layout_no_wrap(
+        "Proxy".to_owned(),
+        egui::FontId::proportional(11.0),
+        muted_in(painter.ctx()),
+    );
     let padding = egui::vec2(6.0, 2.0);
     let size = galley.size() + padding * 2.0;
     let chip = egui::Rect::from_min_size(
@@ -226,7 +252,7 @@ pub(super) fn proxy_badge(painter: &egui::Painter, picture: egui::Rect) {
         egui::Stroke::new(1.0, BORDER),
         egui::StrokeKind::Inside,
     );
-    painter.galley(chip.min + padding, galley, MUTED);
+    painter.galley(chip.min + padding, galley, muted_in(painter.ctx()));
 }
 
 /// The viewing condition of an HDR-bearing project, in the picture's
@@ -236,7 +262,11 @@ pub(super) fn color_badge(painter: &egui::Painter, picture: egui::Rect, label: &
     if picture.width() < 160.0 || picture.height() < 40.0 {
         return;
     }
-    let galley = painter.layout_no_wrap(label.to_owned(), egui::FontId::proportional(11.0), MUTED);
+    let galley = painter.layout_no_wrap(
+        label.to_owned(),
+        egui::FontId::proportional(11.0),
+        muted_in(painter.ctx()),
+    );
     let padding = egui::vec2(6.0, 2.0);
     let size = galley.size() + padding * 2.0;
     let chip =
@@ -248,7 +278,7 @@ pub(super) fn color_badge(painter: &egui::Painter, picture: egui::Rect, label: &
         egui::Stroke::new(1.0, BORDER),
         egui::StrokeKind::Inside,
     );
-    painter.galley(chip.min + padding, galley, MUTED);
+    painter.galley(chip.min + padding, galley, muted_in(painter.ctx()));
 }
 
 pub(super) fn keycap(ui: &mut egui::Ui, text: &str) {
@@ -275,7 +305,7 @@ pub(super) fn key_hint(ui: &mut egui::Ui, key: &str, label: &str) {
         )
     };
     let key = galley(RichText::new(key).monospace().size(11.0));
-    let label = galley(RichText::new(label).color(MUTED).size(11.0));
+    let label = galley(RichText::new(label).weak().size(11.0));
     let frame = keycap_frame();
     let key_size = key.size() + frame.total_margin().sum();
     let size = egui::vec2(

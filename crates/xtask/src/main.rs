@@ -9,11 +9,14 @@
 //! UI scenario in its own report directory (docs/UI_FEEDBACK.md).
 //! `cargo xtask perf` runs the release Section 25 benchmark suite on copied
 //! fixtures (docs/PERFORMANCE.md).
+//! `cargo xtask chaos` runs the time-bounded Gate G adversarial campaign
+//! (docs/ADVERSARIAL.md).
 
 use std::path::Path;
 use std::process::{Command, ExitCode};
 
 mod bundle;
+mod chaos;
 mod percentile;
 mod perf;
 mod replays;
@@ -32,7 +35,8 @@ fn main() -> ExitCode {
         Some("bundle-verify") => bundle::verify::run(rest),
         Some("replays") => replays::run(rest),
         Some("perf") => perf::run(rest),
-        _ => Err("usage: cargo xtask gate | hygiene | replays [--scenario a,b] [--output <new dir>] [--jobs N] | perf [--fixture NAME=PACKAGE]... [--generate] [--ui] [--output <new dir>] | bundle --output <dir> | bundle-audit <Deadpan.app> | bundle-verify <Deadpan.app>".into()),
+        Some("chaos") => chaos::run(rest),
+        _ => Err("usage: cargo xtask gate | hygiene | replays [--scenario a,b] [--output <new dir>] [--jobs N] | perf [--fixture NAME=PACKAGE]... [--generate] [--ui] [--output <new dir>] | chaos [--minutes N] [--seed HEX] [--only a,b] [--output <new dir>] [--sanitize] [--list] | bundle --output <dir> | bundle-audit <Deadpan.app> | bundle-verify <Deadpan.app>".into()),
     };
     match result {
         Ok(()) => ExitCode::SUCCESS,

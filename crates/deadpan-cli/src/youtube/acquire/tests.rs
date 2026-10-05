@@ -595,3 +595,44 @@ fn confirming_an_inspection_refuses_an_existing_package_before_transfer() {
     assert!(matches!(error, CliError::Usage(message) if message.contains("already exists")));
     assert!(!directory.path().join("transferred").exists());
 }
+
+/// Gate G: hostile `--dump-single-json` output. yt-dlp is a pinned but
+/// external program whose output describes remote content; parsing and
+/// format selection must end in typed `ImportError`s within bounds.
+#[test]
+fn adversarial_metadata_json() {
+    use deadpan_chaos::{Target, Verdict, fuzz};
+    let formats = vec![
+        video_format("137", "avc1.640028", 1080, 30.0, "https"),
+        video_format("248", "vp9", 1080, 30.0, "https"),
+        video_format("22", "avc1.64001F", 720, 60.0, "m3u8_native"),
+        audio_format("140", "mp4a.40.2", 129.0, 10),
+        audio_format("251", "opus", 140.0, -1),
+    ];
+    let seeds = vec![
+        serde_json::to_vec(&metadata(formats.clone())).unwrap(),
+        serde_json::to_vec(&metadata(formats[..2].to_vec())).unwrap(),
+        serde_json::to_vec(&metadata(Vec::new())).unwrap(),
+    ];
+    let limits = ImportLimits::default();
+    let report = fuzz(
+        Target::json("cli-ytdlp-metadata").iterations(600),
+        seeds,
+        |input| match parse_metadata(input, &id(), &limits) {
+            Ok(metadata) => {
+                if metadata.id != id().as_str() {
+                    return Err("accepted metadata for another video".into());
+                }
+                Ok(Verdict::Accepted)
+            }
+            Err(error) if error.code.is_empty() || error.message.is_empty() => {
+                Err(format!("untyped import error {error:?}"))
+            }
+            Err(error) => Ok(Verdict::Rejected(format!(
+                "{}: {}",
+                error.code, error.message
+            ))),
+        },
+    );
+    report.assert_clean();
+}

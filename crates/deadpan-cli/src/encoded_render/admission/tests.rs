@@ -258,3 +258,16 @@ fn pq_probe_declares_its_exact_per_pixel_input_light() {
         );
     }
 }
+
+#[test]
+fn adversarial_admission_probe_frames() {
+    let cancel = ProbeProtocol::from_request(&request())
+        .unwrap()
+        .cancellation();
+    crate::adversarial::protocol::<ProbeProtocol>(
+        "cli-admission-probe-protocol",
+        vec![request(), cancel],
+        Vec::new(),
+        |reader| protocol::read_host_message(reader),
+    );
+}

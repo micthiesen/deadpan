@@ -774,3 +774,16 @@ fn completed_manifest_binds_identity_contract_artifact_and_all_host_budgets() {
     let strict_packets = EncodedProtocol::from_request(&request).unwrap();
     assert!(strict_packets.classify(&completed(manifest())).is_err());
 }
+
+#[test]
+fn adversarial_encoded_render_frames() {
+    let cancel = EncodedProtocol::from_request(&request())
+        .unwrap()
+        .cancellation();
+    crate::adversarial::protocol::<EncodedProtocol>(
+        "cli-encoded-protocol",
+        vec![request(), cancel],
+        vec![completed(manifest())],
+        |reader| read_host_message(reader),
+    );
+}

@@ -483,6 +483,7 @@ fn exhausted_version_rejects_cut_before_commit() {
         .connection
         .execute("UPDATE register_state SET version=?1", [i64::MAX])
         .unwrap();
+    crate::registers::reseal_for_test(&store.connection).unwrap();
     let bank = store.registers().unwrap();
     let before = timeline(&store);
     assert!(

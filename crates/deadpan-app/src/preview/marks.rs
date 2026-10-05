@@ -627,6 +627,7 @@ impl DeadpanApp {
         let mut action = None;
         let mut close = false;
         let modal = egui::Modal::new(egui::Id::new("marks-window")).show(context, |ui| {
+            super::accessibility::dialog(ui, "Marks");
             ui.set_width(540.0_f32.min((context.content_rect().width() - 64.0).max(240.0)));
             ui.heading("Marks");
             ui.weak("m + letter saves · ' + letter jumps · uppercase letters are separate marks");
@@ -657,7 +658,7 @@ impl DeadpanApp {
                 if ui.add_enabled(!busy && self.marks.history.target(true).is_some(), style::action("Forward", "Ctrl I")).clicked() {
                     action = Some(Action::JumpHistory { forward: true });
                 }
-                if busy { ui.spinner(); ui.weak("Resolving mark…"); }
+                if busy { crate::preview::accessibility::busy(ui); ui.weak("Resolving mark…"); }
             });
             if let Some(error) = &self.error { ui.colored_label(ui.visuals().error_fg_color, error); }
             if let Some(message) = &self.message { ui.label(message); }

@@ -156,9 +156,11 @@ includes real adjacent project context under one deadline and cumulative source,
 stage and plan-work budget. Internal bus reads remain at most 256 frames. Every
 tile cache hit rechecks complete transitive source/layout provenance; read and
 seek boundaries do not reset gain history. Monitoring gain is applied only after
-the canonical limited samples. The queue reserves 32 PCM
-packet slots and one separate terminal slot so a full valid final prefix can
-carry EOS without racing its consumer. Loop reads end at the content seam and
+the canonical limited samples. The device queue reserves
+`AUDITION_QUEUE_PACKETS` PCM packet slots (four seconds) and one separate
+terminal slot so a full valid final prefix can carry EOS without racing its
+consumer. Activation still waits only for the first 8192-frame batch, so start
+latency is unchanged; the controller keeps filling the deeper queue afterward. Loop reads end at the content seam and
 reuse the same full canonical plan, so reads and laps do not reset DSP context.
 One verified lap can be reused within the bounded batch for tiny loops. The
 device coordinate increases monotonically while the content coordinate wraps
@@ -177,6 +179,15 @@ does not extrapolate from producer progress or wall time. EOS and starvation
 may contain a future nonempty prefix; their terminal boundary becomes current
 only after that prefix's reported playback deadline. Device timestamps estimate
 delivery, not sound measured at the speaker.
+
+Controller starvation up to `STARVATION_WINDOW_FRAMES` (four seconds), such as
+descheduling under CPU load or background proxy/AI work, does not stop audition.
+The device keeps consuming queued PCM and publishing reports; on resumption each
+tick drains the complete inventory published before it (bounded by the ring
+capacity, so it terminates while callbacks continue) through `DeliveryClock`
+before any wall-clock watchdog runs, then publishes the exact heard sample.
+A longer stall truthfully starves the queue, and a dropped report fails with its
+count and the ring capacity.
 
 Foreign generations, discontinuous samples, invalid or contradictory timestamps,
 lost reports, route changes, device faults and stalled clocks stop audition.

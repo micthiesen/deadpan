@@ -18,6 +18,7 @@ requires an explicit pinned FFmpeg developer prefix; see [Development](DEVELOPME
 | rfd | 0.17.2 | MIT | macOS-only asynchronous native file/save/folder panels. Default features disabled; no shell or external dialog executable. |
 | objc2-foundation | 0.3.2 | MIT | Existing locked native dependency, now direct with narrowly selected features for safe system Documents-directory discovery through NSFileManager. No new runtime or unsafe application code. Also direct in the `deadpan-track` worker for the request `NSArray`, Vision `NSError` descriptions and the empty face-detection handler options `NSDictionary`. |
 | objc2 | 0.6.4 | MIT | Existing locked dependency, now direct for a safe autorelease pool around Documents discovery on the service thread. Only an owned Rust path leaves the pool. Also direct in the `deadpan-track` worker for Vision object ownership and a per-picture autorelease pool. |
+| objc2-app-kit | 0.3.2 | Zlib OR Apache-2.0 OR MIT | Existing locked dependency (through muda and winit), now direct in `deadpan-app` with only `NSAccessibility` and `NSWorkspace` features, to read the macOS Reduce motion and Increase contrast settings through safe bindings. The app keeps `unsafe_code = "forbid"`. |
 | muda | 0.21.0 | Apache-2.0 OR MIT | macOS-only native menu bar (default GTK features disabled). Reuses the locked objc2 0.6.4 / objc2-app-kit 0.3.2 stack; adds crossbeam-channel 0.5.17 and keyboard-types 0.8.3. Its Objective-C code stays inside the crate; the app keeps `unsafe_code = "forbid"`. |
 | ureq | 3.4.2 | MIT OR Apache-2.0 | HTTPS model-pack downloads in `deadpan-models`, whose transport the CLI also uses for pinned [downloader helper](YOUTUBE_IMPORT.md#helper-bundle) installs: rustls 0.23 with ring, rustls-platform-verifier (system trust store), HTTPS-only redirects. No other network client is linked. |
 | flate2 | 1.1.10 | MIT OR Apache-2.0 | Already locked through `png`/`ureq`; direct in `deadpan-cli` only to inflate the single entry of the hash-verified Deno release ZIP. The extracted executable is verified against its own pinned SHA-256. |
@@ -56,6 +57,13 @@ version and registry checksum. The UI enables `accesskit`, `default_fonts`, and
 `wgpu`, disables eframe's other default features, and checks for Metal at startup
 on macOS. Application UI support is not qualification of video texture interop,
 color management, accessibility, or the shared renderer.
+
+The development-only `deadpan-chaos` crate (the [adversarial suite](ADVERSARIAL.md)
+engine) adds no third-party dependency: it uses the existing `serde_json`, and
+replaces cargo-fuzz/libFuzzer, which need a nightly toolchain, with a stable
+in-repository mutation runner. It is a dev-dependency only and never ships.
+Its only `unsafe` is a documented forwarding `GlobalAlloc` wrapper over the
+system allocator used to bound per-case allocation in test binaries.
 
 `deadpan-models` adds host bundle qualification using the existing core, jobs,
 media, serialization and BLAKE3 dependencies. It adds no registry dependency or

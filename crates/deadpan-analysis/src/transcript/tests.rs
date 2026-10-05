@@ -329,3 +329,44 @@ fn word_times_map_to_the_picture_presented_at_that_instant_and_back() {
     );
     assert_eq!(picture_seconds(&index, 90), None);
 }
+
+/// Gate G: recognizer artifacts (selector 0) and stored transcripts
+/// (selector 1) are untrusted JSON; both must end in typed errors or a
+/// transcript that validates and round-trips.
+#[test]
+fn adversarial_recognizer_and_stored_transcript_json() {
+    use deadpan_chaos::{Target, Verdict, fuzz, reject, select};
+    let segments = serde_json::to_vec(&recorded()).unwrap();
+    let stored =
+        serde_json::to_vec(&Transcript::from_segments(audio(), &recorded()).unwrap()).unwrap();
+    let seeds = vec![[vec![0], segments].concat(), [vec![1], stored].concat()];
+    let report = fuzz(
+        Target::json("analysis-transcript").iterations(800),
+        seeds,
+        |input| {
+            let (selector, body) = select(input);
+            let transcript = if selector % 2 == 0 {
+                match serde_json::from_slice::<Vec<RawSegment>>(body) {
+                    Ok(segments) => match Transcript::from_segments(audio(), &segments) {
+                        Ok(transcript) => transcript,
+                        Err(error) => return reject(error),
+                    },
+                    Err(error) => return reject(error),
+                }
+            } else {
+                match serde_json::from_slice::<Transcript>(body) {
+                    Ok(transcript) => transcript,
+                    Err(error) => return reject(error),
+                }
+            };
+            let encoded = serde_json::to_vec(&transcript).map_err(|error| error.to_string())?;
+            let again: Transcript = serde_json::from_slice(&encoded)
+                .map_err(|error| format!("accepted transcript does not revalidate: {error}"))?;
+            if again != transcript {
+                return Err("transcript round trip changed the value".into());
+            }
+            Ok(Verdict::Accepted)
+        },
+    );
+    report.assert_clean();
+}

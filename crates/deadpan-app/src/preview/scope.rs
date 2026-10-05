@@ -220,7 +220,7 @@ fn draw_compact_heading(
         if sound_state.focused {
             style::LAVENDER
         } else {
-            style::MUTED
+            style::muted(ui)
         },
     ))
     .into_galley(
@@ -335,10 +335,8 @@ pub(super) fn draw_heading(
                             }
                             if ui
                                 .add(
-                                    egui::Button::new(
-                                        egui::RichText::new(label).color(style::MUTED),
-                                    )
-                                    .frame_when_inactive(false),
+                                    egui::Button::new(egui::RichText::new(label).weak())
+                                        .frame_when_inactive(false),
                                 )
                                 .on_hover_text(format!(
                                     "View {label}. {} opens a selected group; {} returns.",
