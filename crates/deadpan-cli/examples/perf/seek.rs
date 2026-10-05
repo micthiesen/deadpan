@@ -154,7 +154,25 @@ pub fn run(options: &Options) -> Result<Value> {
     }
     let stepping_sum: f64 = stepping.iter().sum();
     let warm_stats = stats(&session);
+    drop(session);
+    // Preview proxy seeks, building the proxy into a private cache root.
+    let proxy = match (options.text("proxy-cache"), options.text("worker")) {
+        (Some(root), Some(worker)) => crate::proxy::run(
+            package,
+            &deadpan_cli::proxy::cache::ProxyCache::at(std::path::Path::new(root))?,
+            std::path::Path::new(worker),
+            &mut gpu,
+            crate::proxy::Samples {
+                cold,
+                warm,
+                refine: (warm / 4).max(10),
+                seed: options.number("seed", 3)? + 1,
+            },
+        )?,
+        _ => json!({"status": "not_measured"}),
+    };
     Ok(json!({
+        "proxy": proxy,
         "package": package,
         "adapter": gpu.adapter,
         "canvas": [basis.width, basis.height],

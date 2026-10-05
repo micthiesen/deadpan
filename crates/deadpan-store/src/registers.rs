@@ -53,7 +53,7 @@ impl ProjectStore {
     /// snapshot. Available to read-only inspectors while another store writes.
     pub fn snapshot_with_registers(&self) -> Result<(ProjectDocument, RegisterBank), StoreError> {
         let transaction = self.connection.unchecked_transaction()?;
-        let document = crate::read_snapshot(&transaction)?;
+        let document = ProjectDocument::clone(&*self.documents.head(&transaction)?);
         let registers = read_bank(&transaction)?;
         Ok((document, registers))
     }
@@ -71,7 +71,7 @@ impl ProjectStore {
         let transaction = self
             .connection
             .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
-        let current = crate::read_snapshot(&transaction)?;
+        let current = crate::read_head_project(&transaction)?;
         if current.project_id() != expected_project {
             return Err(invalid("copy belongs to another project"));
         }
@@ -148,7 +148,8 @@ impl ProjectStore {
         let transaction = self
             .connection
             .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
-        let plan = crate::prepare_command(&transaction, request)?;
+        let documents = &self.documents;
+        let plan = crate::prepare_command(&transaction, documents, request)?;
         slice.validate_capture(&plan.current)?;
         let matches = match (&request.command, slice.selection()) {
             (
@@ -184,13 +185,15 @@ impl ProjectStore {
             RegisterValue::Edited { slice },
             plan.current.project_id(),
         )?;
-        let outcome = crate::write_command_plan(
+        let (outcome, next) = crate::write_command_plan(
             &transaction,
+            documents,
             plan,
             relevance,
             self.context_resolver.as_deref(),
         )?;
         transaction.commit()?;
+        documents.insert(next);
         Ok((outcome, bank))
     }
 }
@@ -309,7 +312,7 @@ fn read_bank_contents(
     connection: &Connection,
 ) -> Result<(RegisterBank, BTreeMap<String, CanonicalContent>), StoreError> {
     check_stored_sizes(connection)?;
-    let project = crate::read_snapshot(connection)?.project_id().clone();
+    let project = crate::read_head_project(connection)?.project_id().clone();
     let version: i64 = connection.query_row(
         "SELECT version FROM register_state WHERE singleton=1",
         [],
@@ -481,7 +484,7 @@ fn prepare_macro(
     name: RegisterName,
     program: Arc<SemanticProgram>,
 ) -> Result<PreparedBank, StoreError> {
-    let current = crate::read_snapshot(connection)?;
+    let current = crate::read_head_project(connection)?;
     if current.project_id() != expected_project {
         return Err(invalid("macro belongs to another project"));
     }

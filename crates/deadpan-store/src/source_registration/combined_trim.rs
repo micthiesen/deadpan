@@ -17,7 +17,7 @@ impl ProjectStore {
         request: &CommandRequest,
     ) -> Result<SourceTrimEditPreview, StoreError> {
         let transaction = self.connection.unchecked_transaction()?;
-        let current = crate::read_command_snapshot(&transaction, request)?;
+        let current = crate::read_command_snapshot(&transaction, &self.documents, request)?;
         let Command::ApplySourceTrim {
             parent,
             node,
@@ -30,13 +30,14 @@ impl ProjectStore {
         };
         let resolution = current.source_trim_edit(parent, node, right.as_ref(), *intent)?;
         let edit = if intent.is_zero() {
-            crate::ensure_unused_revision(&transaction, &request.new_revision)?;
+            crate::ensure_unused_revision(&transaction, &self.documents, &request.new_revision)?;
             validate_source_trim_edit(&transaction, &current, &current, request)?;
             None
         } else {
             Some(
                 crate::prepare_current_command_with_admission(
                     &transaction,
+                    &self.documents,
                     current,
                     request,
                     None,

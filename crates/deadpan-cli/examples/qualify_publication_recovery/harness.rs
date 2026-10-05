@@ -646,7 +646,7 @@ fn run_case(inputs: &Inputs, case: Case, report: &mut Value) -> Result {
         authored(&inputs.package)? == before,
         before.summary(),
     )?;
-    store.validate()?;
+    store.validate_full()?;
     drop(verified);
     drop(store);
     let reopened = ProjectStore::open(&inputs.package, AccessMode::ReadWrite)?;

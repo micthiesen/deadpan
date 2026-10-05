@@ -28,6 +28,8 @@ pub mod pause;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod picture;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod proxy;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod render;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod render_worker;
@@ -62,7 +64,7 @@ const HELP: &str = "Deadpan headless commands:
   project create <project.deadpan> [--fps <N/D> --size <WIDTHxHEIGHT>]
   project create-original <project.deadpan> <absolute-video>
   project create-from-url <project.deadpan> <https-youtube-url> [--cookies <file>] [--helpers <dir>]
-  project validate <project.deadpan>
+  project validate <project.deadpan> [--quick]
   project dump <project.deadpan> --json
   project undo <project.deadpan> --expected <revision> [--dry-run]
   project redo <project.deadpan> --expected <revision> [--dry-run]
@@ -779,8 +781,15 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
             summary(&store.snapshot()?)
         }
         ["project", "validate", path] => {
+            // An explicit audit recomputes every command and revision.
             let store = ProjectStore::open(Path::new(path), AccessMode::ReadOnly)?;
-            store.validate()?;
+            store.validate_full()?;
+            summary(&store.snapshot()?)
+        }
+        ["project", "validate", path, "--quick"] => {
+            // What opening checks: every stored row hashed against this
+            // build's history receipt; only revisions after it recomputed.
+            let store = ProjectStore::open(Path::new(path), AccessMode::ReadOnly)?;
             summary(&store.snapshot()?)
         }
         ["project", "dump", path, "--json"] => {

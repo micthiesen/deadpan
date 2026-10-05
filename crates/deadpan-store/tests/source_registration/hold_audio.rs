@@ -359,8 +359,8 @@ fn legacy_unqualified_hold_survives_unrelated_edits_but_cannot_author_a_new_sour
     let next = transaction.forward.apply(&legacy)?;
     let database = Connection::open(path.join("project.sqlite"))?;
     database.execute(
-        "UPDATE revisions SET document=?1 WHERE id='rename'",
-        [next.to_json()?],
+        "UPDATE revisions SET document=?1,depth=0,json_bound=length(CAST(?1 AS BLOB)) WHERE id='rename'",
+        [next.to_compact_json()?],
     )?;
     database.execute(
         "UPDATE history SET request=?1,edit=?2 WHERE revision_id='rename'",

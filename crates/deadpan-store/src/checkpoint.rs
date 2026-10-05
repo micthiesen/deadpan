@@ -255,9 +255,13 @@ impl CheckpointHandle {
             .checked_mul(page_count)
             .filter(|bytes| *bytes > 0 && *bytes <= limits.max_database_bytes)
             .ok_or(CheckpointError::TooLarge)?;
-        let captured = read_snapshot(&source)?;
+        // A recovery checkpoint must stand on its own: bound every stored
+        // value, then recompute the complete history rather than trusting the
+        // source's receipt, before publishing it.
+        crate::validation::check_stored_sizes(&source, schema::MAX_DOCUMENT_BYTES)?;
         crate::compound::check_stored_sizes(&source)?;
-        crate::validation::validate_history(&source)?;
+        let captured = read_snapshot(&source)?;
+        crate::validation::validate_history(&source, crate::validation::HistoryMode::Full)?;
         crate::registers::validate_store(&source)?;
         self.control(cancelled, deadline)?;
         self.check()?;

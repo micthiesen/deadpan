@@ -19,6 +19,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "original-moment" => super::moment::run(d),
         "transcript" => super::transcript::run(d),
         "shots" => super::shots::run(d),
+        "proxy-seek" => super::proxy::run(d),
         "cutaway" => super::cutaway::run(d),
         "gags" => super::gags::run(d),
         "recipes" => super::recipes::run(d),

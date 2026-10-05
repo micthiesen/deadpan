@@ -1856,3 +1856,531 @@ cleanup:
     }
     return success ? 0 : 1;
 }
+
+/* ---------------------------------------------------------------------------
+ * Preview proxy encoding.
+ *
+ * The Rust worker decodes the Original through the qualified deadpan-source
+ * adapter and pushes owned straight RGBA pictures in presentation order. This
+ * section scales each picture to the proxy raster, converts it to limited-range
+ * BT.709 4:2:0 and encodes every picture as an IDR with VideoToolbox H.264 into
+ * an MP4 on the output descriptor. Each packet carries exactly the Original
+ * picture's timestamp and duration in the Original's own time base; there is
+ * no reordering, so DTS equals PTS. The host independently decodes the result
+ * and compares every picture's timing with the Original's measured index.
+ * ------------------------------------------------------------------------- */
+
+#include <libavcodec/bsf.h>
+
+#define PROXY_MAX_DIMENSION 4096U
+#define PROXY_MAX_SOURCE_DIMENSION 8192U
+#define PROXY_MAX_FRAMES 10000000ULL
+#define PROXY_TIMING_QUEUE 64U
+
+typedef struct {
+    OwnedAvio io;
+    AVFormatContext *format;
+    AVCodecContext *encoder;
+    AVStream *stream;
+    AVPacket *packet;
+    AVFrame *picture;
+    struct SwsContext *scaler;
+    /* Writes the sample aspect ratio into the H.264 VUI: VideoToolbox does
+       not, and decoders compare each picture's ratio with the stream's. */
+    AVBSFContext *bsf;
+    DeadpanProxyRequest request;
+    int header_written;
+    int abandoned;
+    uint64_t pushed;
+    uint64_t packets;
+    uint64_t keyframes;
+    int64_t last_pts;
+    int64_t timing_pts[PROXY_TIMING_QUEUE];
+    int64_t timing_duration[PROXY_TIMING_QUEUE];
+    uint32_t timing_head;
+    uint32_t timing_count;
+} ProxyEncoder;
+
+static ProxyEncoder proxy;
+
+static int proxy_valid_color(uint32_t transfer, uint32_t primaries) {
+    return (transfer == AVCOL_TRC_BT709 || transfer == AVCOL_TRC_IEC61966_2_1 ||
+            transfer == AVCOL_TRC_LINEAR) &&
+           (primaries == AVCOL_PRI_BT709 || primaries == AVCOL_PRI_BT2020 ||
+            primaries == AVCOL_PRI_SMPTE432);
+}
+
+static int proxy_validate(const DeadpanProxyRequest *request) {
+    if (request->source_width == 0 || request->source_height == 0 ||
+        request->source_width > PROXY_MAX_SOURCE_DIMENSION ||
+        request->source_height > PROXY_MAX_SOURCE_DIMENSION || request->width < 2 ||
+        request->height < 2 || request->width > PROXY_MAX_DIMENSION ||
+        request->height > PROXY_MAX_DIMENSION || (request->width & 1) || (request->height & 1) ||
+        request->width > request->source_width + 1 || request->height > request->source_height + 1) {
+        return fail("invalid_request", "proxy raster is outside worker bounds");
+    }
+    if (request->time_base_num == 0 || request->time_base_den == 0 ||
+        request->time_base_num > INT_MAX || request->time_base_den > INT_MAX ||
+        request->sar_num == 0 || request->sar_den == 0 || request->sar_num > INT_MAX ||
+        request->sar_den > INT_MAX || request->rotation_quarter_turns > 3 ||
+        !proxy_valid_color(request->transfer, request->primaries)) {
+        return fail("invalid_request", "proxy clock, aspect, rotation or color is invalid");
+    }
+    if (request->frames == 0 || request->frames > PROXY_MAX_FRAMES ||
+        request->max_output_bytes == 0 || request->max_output_bytes > (uint64_t)INT64_MAX ||
+        request->timeout_ms == 0 || request->timeout_ms > 24ULL * 60ULL * 60ULL * 1000ULL ||
+        request->quality == 0 || request->quality > 100) {
+        return fail("invalid_request", "proxy frame, byte, time or quality budget is invalid");
+    }
+    return 1;
+}
+
+/* After a failure, or once the output is complete, the worker reports and
+   exits without tearing VideoToolbox down. Under heavy load a failed
+   compression session has blocked indefinitely in
+   VTCompressionSessionCompleteFrames or VTCompressionSessionInvalidate
+   (inside avcodec_free_context), which would hide the classified error behind
+   the host's stall watch. The process exit releases the session. */
+static void proxy_abandon(void) {
+    proxy.abandoned = 1;
+}
+
+static int proxy_encoder_failure(const char *operation, int error) {
+    char detail[AV_ERROR_MAX_STRING_SIZE];
+    if (av_strerror(error, detail, sizeof(detail)) < 0) {
+        (void)snprintf(detail, sizeof(detail), "FFmpeg error %d", error);
+    }
+    return fail("encoder_session_failed", "%s: %s%s%s", operation, detail,
+                state.ffmpeg_diagnostic[0] ? "; " : "", state.ffmpeg_diagnostic);
+}
+
+static void proxy_release(void) {
+    if (proxy.header_written && proxy.format != NULL) {
+        (void)av_write_trailer(proxy.format);
+    }
+    av_bsf_free(&proxy.bsf);
+    sws_freeContext(proxy.scaler);
+    av_frame_free(&proxy.picture);
+    av_packet_free(&proxy.packet);
+    avcodec_free_context(&proxy.encoder);
+    if (proxy.format != NULL) {
+        proxy.format->pb = NULL;
+        avformat_free_context(proxy.format);
+    }
+    owned_avio_close(&proxy.io);
+    memset(&proxy, 0, sizeof(proxy));
+}
+
+static int proxy_write_packets(void) {
+    for (;;) {
+        int code = avcodec_receive_packet(proxy.encoder, proxy.packet);
+        if (code == AVERROR(EAGAIN) || code == AVERROR_EOF) {
+            return 1;
+        }
+        if (code < 0) {
+            return proxy_encoder_failure("receive proxy packet", code);
+        }
+        if (proxy.timing_count == 0) {
+            av_packet_unref(proxy.packet);
+            return fail("invalid_packet", "proxy encoder emitted an unrequested picture");
+        }
+        int64_t pts = proxy.timing_pts[proxy.timing_head];
+        int64_t duration = proxy.timing_duration[proxy.timing_head];
+        proxy.timing_head = (proxy.timing_head + 1) % PROXY_TIMING_QUEUE;
+        proxy.timing_count--;
+        /* Intra-only without reordering: every packet is its own picture in
+           presentation order, so its exact clock is the queued one. */
+        if (proxy.packet->pts != pts ||
+            (proxy.packet->dts != AV_NOPTS_VALUE && proxy.packet->dts > pts) ||
+            !(proxy.packet->flags & AV_PKT_FLAG_KEY)) {
+            int64_t actual_pts = proxy.packet->pts;
+            int64_t actual_dts = proxy.packet->dts;
+            int key = (proxy.packet->flags & AV_PKT_FLAG_KEY) != 0;
+            av_packet_unref(proxy.packet);
+            return fail("invalid_packet",
+                        "proxy packet %" PRIu64 " is not an in-order intra picture: pts %" PRId64
+                        " dts %" PRId64 " key %d, expected pts %" PRId64,
+                        proxy.packets, actual_pts, actual_dts, key, pts);
+        }
+        proxy.packet->dts = pts;
+        proxy.packet->duration = duration;
+        code = av_bsf_send_packet(proxy.bsf, proxy.packet);
+        av_packet_unref(proxy.packet);
+        if (code < 0) {
+            return fail_ffmpeg("rewrite proxy packet", code);
+        }
+        for (;;) {
+            code = av_bsf_receive_packet(proxy.bsf, proxy.packet);
+            if (code == AVERROR(EAGAIN)) {
+                break;
+            }
+            if (code < 0) {
+                return fail_ffmpeg("receive rewritten proxy packet", code);
+            }
+            if (proxy.packet->pts != pts || proxy.packet->duration != duration) {
+                av_packet_unref(proxy.packet);
+                return fail("invalid_packet", "proxy packet timing changed while rewriting");
+            }
+            proxy.packet->stream_index = proxy.stream->index;
+            proxy.packet->pos = -1;
+            av_packet_rescale_ts(proxy.packet, proxy.encoder->time_base,
+                                 proxy.stream->time_base);
+            proxy.packets++;
+            proxy.keyframes++;
+            code = av_interleaved_write_frame(proxy.format, proxy.packet);
+            av_packet_unref(proxy.packet);
+            if (code < 0) {
+                return fail_ffmpeg("write proxy packet", code);
+            }
+        }
+        if (!within_deadline()) {
+            return 0;
+        }
+    }
+}
+
+int deadpan_proxy_open(int output_fd, const DeadpanProxyRequest *request,
+                       DeadpanConversionError *error) {
+    struct stat metadata;
+    uint64_t start;
+    uint64_t timeout_ns;
+    const AVCodec *codec;
+    AVDictionary *options = NULL;
+    int code;
+
+    proxy_release();
+    memset(error, 0, sizeof(*error));
+    memset(&state, 0, sizeof(state));
+    state.error = error;
+    if (!proxy_validate(request)) {
+        return 1;
+    }
+    proxy.request = *request;
+    start = monotonic_ns();
+    if (start == UINT64_MAX || !checked_mul_u64(request->timeout_ms, 1000000ULL, &timeout_ns) ||
+        !checked_add_u64(start, timeout_ns, &state.deadline_ns)) {
+        fail("invalid_request", "proxy deadline overflow");
+        return 1;
+    }
+    av_log_set_level(AV_LOG_ERROR);
+    av_log_set_callback(worker_log);
+    /* No process-wide av_max_alloc here: the qualified source decoder in this
+       process is already open with its own bounds. */
+    if (!verify_runtime()) {
+        goto failed;
+    }
+    if (fstat(output_fd, &metadata) != 0 || !S_ISREG(metadata.st_mode) || metadata.st_size != 0 ||
+        metadata.st_uid != geteuid() || (metadata.st_mode & 077) != 0) {
+        fail("invalid_descriptor", "proxy output must be a private empty regular file");
+        goto failed;
+    }
+    code = avformat_alloc_output_context2(&proxy.format, NULL, "mp4", NULL);
+    if (code < 0 || proxy.format == NULL) {
+        fail_ffmpeg("create proxy MP4 output", code < 0 ? code : AVERROR_UNKNOWN);
+        goto failed;
+    }
+    if (!owned_avio_open(&proxy.io, output_fd, 0, (int64_t)request->max_output_bytes, 1)) {
+        goto failed;
+    }
+    proxy.format->pb = proxy.io.avio;
+    proxy.format->flags |= AVFMT_FLAG_CUSTOM_IO;
+    proxy.format->interrupt_callback.callback = deadline_interrupt;
+    proxy.format->interrupt_callback.opaque = &state;
+    proxy.format->io_open = deny_external_io;
+    proxy.format->protocol_whitelist = av_strdup("");
+    if (proxy.format->protocol_whitelist == NULL) {
+        fail("resource_exhausted", "allocate FFmpeg output protocol denylist");
+        goto failed;
+    }
+    codec = avcodec_find_encoder_by_name("h264_videotoolbox");
+    if (codec == NULL) {
+        fail("video_encoder_unavailable", "VideoToolbox H.264 encoder is unavailable");
+        goto failed;
+    }
+    proxy.encoder = avcodec_alloc_context3(codec);
+    proxy.stream = avformat_new_stream(proxy.format, NULL);
+    proxy.packet = av_packet_alloc();
+    proxy.picture = av_frame_alloc();
+    if (proxy.encoder == NULL || proxy.stream == NULL || proxy.packet == NULL ||
+        proxy.picture == NULL) {
+        fail("resource_exhausted", "allocate proxy encoder");
+        goto failed;
+    }
+    proxy.encoder->width = (int)request->width;
+    proxy.encoder->height = (int)request->height;
+    proxy.encoder->pix_fmt = AV_PIX_FMT_NV12;
+    proxy.encoder->time_base = (AVRational){(int)request->time_base_num,
+                                            (int)request->time_base_den};
+    proxy.encoder->sample_aspect_ratio = (AVRational){(int)request->sar_num,
+                                                      (int)request->sar_den};
+    proxy.encoder->gop_size = 1;
+    proxy.encoder->max_b_frames = 0;
+    proxy.encoder->color_range = AVCOL_RANGE_MPEG;
+    proxy.encoder->colorspace = AVCOL_SPC_BT709;
+    proxy.encoder->color_trc = (enum AVColorTransferCharacteristic)request->transfer;
+    proxy.encoder->color_primaries = (enum AVColorPrimaries)request->primaries;
+    proxy.encoder->chroma_sample_location = AVCHROMA_LOC_LEFT;
+    proxy.encoder->flags |= AV_CODEC_FLAG_QSCALE;
+    proxy.encoder->global_quality = (int)request->quality * FF_QP2LAMBDA;
+    proxy.encoder->profile = AV_PROFILE_H264_HIGH;
+    if (av_dict_set(&options, "allow_sw", "1", 0) < 0 ||
+        av_dict_set(&options, "realtime", "0", 0) < 0) {
+        av_dict_free(&options);
+        fail("resource_exhausted", "configure proxy encoder");
+        goto failed;
+    }
+    code = avcodec_open2(proxy.encoder, codec, &options);
+    av_dict_free(&options);
+    if (code < 0) {
+        /* Under load VideoToolbox refuses new sessions (-12900 setting
+           properties); a later attempt can succeed. */
+        proxy_encoder_failure("open VideoToolbox H.264 proxy encoder", code);
+        goto failed;
+    }
+    if (proxy.encoder->max_b_frames != 0 || proxy.encoder->has_b_frames != 0) {
+        fail("encoder_unsupported", "proxy encoder enabled picture reordering");
+        goto failed;
+    }
+    proxy.stream->time_base = proxy.encoder->time_base;
+    proxy.stream->sample_aspect_ratio = proxy.encoder->sample_aspect_ratio;
+    {
+        const AVBitStreamFilter *filter = av_bsf_get_by_name("h264_metadata");
+        char ratio[32];
+        if (filter == NULL) {
+            fail("encoder_unsupported", "the h264_metadata bitstream filter is unavailable");
+            goto failed;
+        }
+        code = av_bsf_alloc(filter, &proxy.bsf);
+        if (code < 0) {
+            fail_ffmpeg("allocate proxy bitstream filter", code);
+            goto failed;
+        }
+        (void)snprintf(ratio, sizeof(ratio), "%u/%u", request->sar_num, request->sar_den);
+        code = avcodec_parameters_from_context(proxy.bsf->par_in, proxy.encoder);
+        if (code >= 0) {
+            proxy.bsf->time_base_in = proxy.encoder->time_base;
+            code = av_opt_set(proxy.bsf->priv_data, "sample_aspect_ratio", ratio, 0);
+        }
+        if (code >= 0) {
+            code = av_bsf_init(proxy.bsf);
+        }
+        if (code < 0) {
+            fail_ffmpeg("configure proxy bitstream filter", code);
+            goto failed;
+        }
+    }
+    code = avcodec_parameters_copy(proxy.stream->codecpar, proxy.bsf->par_out);
+    if (code < 0) {
+        fail_ffmpeg("copy proxy stream parameters", code);
+        goto failed;
+    }
+    proxy.stream->codecpar->sample_aspect_ratio = proxy.encoder->sample_aspect_ratio;
+    if (request->rotation_quarter_turns != 0) {
+        AVPacketSideData *side = av_packet_side_data_new(
+            &proxy.stream->codecpar->coded_side_data, &proxy.stream->codecpar->nb_coded_side_data,
+            AV_PKT_DATA_DISPLAYMATRIX, sizeof(int32_t) * 9, 0);
+        if (side == NULL) {
+            fail("resource_exhausted", "allocate proxy display matrix");
+            goto failed;
+        }
+        /* Exactly the matrix the source decoder maps to these quarter turns
+           (deadpan-source decoder.c, rotation()). */
+        static const int32_t linear[4][4] = {
+            {65536, 0, 0, 65536}, {0, 65536, -65536, 0}, {-65536, 0, 0, -65536}, {0, -65536, 65536, 0}};
+        const int32_t *turn = linear[request->rotation_quarter_turns];
+        int32_t matrix[9] = {turn[0], turn[1], 0, turn[2], turn[3], 0, 0, 0, 1 << 30};
+        memcpy(side->data, matrix, sizeof(matrix));
+    }
+    {
+        int timescale = (int)request->time_base_den;
+        if (av_dict_set_int(&options, "video_track_timescale", timescale, 0) < 0 ||
+            av_dict_set_int(&options, "movie_timescale", timescale, 0) < 0) {
+            av_dict_free(&options);
+            fail("resource_exhausted", "configure proxy MP4 clock");
+            goto failed;
+        }
+        code = avformat_write_header(proxy.format, &options);
+        av_dict_free(&options);
+    }
+    if (code < 0) {
+        fail_ffmpeg("write proxy MP4 header", code);
+        goto failed;
+    }
+    proxy.header_written = 1;
+    proxy.picture->format = AV_PIX_FMT_NV12;
+    proxy.picture->width = (int)request->width;
+    proxy.picture->height = (int)request->height;
+    proxy.picture->color_range = AVCOL_RANGE_MPEG;
+    proxy.picture->colorspace = AVCOL_SPC_BT709;
+    proxy.picture->color_trc = proxy.encoder->color_trc;
+    proxy.picture->color_primaries = proxy.encoder->color_primaries;
+    proxy.picture->chroma_location = AVCHROMA_LOC_LEFT;
+    proxy.picture->sample_aspect_ratio = proxy.encoder->sample_aspect_ratio;
+    if (av_frame_get_buffer(proxy.picture, 64) < 0) {
+        fail("resource_exhausted", "allocate proxy picture");
+        goto failed;
+    }
+    proxy.scaler = sws_getContext((int)request->source_width, (int)request->source_height,
+                                  AV_PIX_FMT_RGBA, (int)request->width, (int)request->height,
+                                  AV_PIX_FMT_NV12,
+                                  SWS_AREA | SWS_ACCURATE_RND | SWS_FULL_CHR_H_INP, NULL, NULL,
+                                  NULL);
+    if (proxy.scaler == NULL) {
+        fail("resource_exhausted", "create proxy scaler");
+        goto failed;
+    }
+    {
+        /* Input RGBA is full range; output is limited-range BT.709 Y'CbCr. */
+        const int *coefficients = sws_getCoefficients(SWS_CS_ITU709);
+        if (sws_setColorspaceDetails(proxy.scaler, coefficients, 1, coefficients, 0, 0,
+                                     1 << 16, 1 << 16) < 0) {
+            fail("ffmpeg_failure", "configure proxy color conversion");
+            goto failed;
+        }
+    }
+    proxy.last_pts = INT64_MIN;
+    if (within_deadline()) {
+        return 0;
+    }
+
+failed:
+    proxy_abandon();
+    if (error->code[0] == '\0') {
+        fail("internal_error", "proxy open failed without a classified error");
+    }
+    return 1;
+}
+
+int deadpan_proxy_push(const uint8_t *rgba, uint64_t rgba_bytes, uint64_t stride, int64_t pts,
+                       int64_t duration, DeadpanConversionError *error) {
+    int code;
+    state.error = error;
+    if (proxy.encoder == NULL || proxy.abandoned) {
+        fail("invalid_request", "proxy encoder is not open");
+        return 1;
+    }
+    if (!within_deadline()) {
+        goto failed;
+    }
+    if (proxy.pushed >= proxy.request.frames || duration <= 0 || pts <= proxy.last_pts ||
+        stride < (uint64_t)proxy.request.source_width * 4ULL ||
+        stride > (uint64_t)INT_MAX ||
+        rgba_bytes < stride * (uint64_t)proxy.request.source_height) {
+        fail("input_order", "proxy picture is out of order, unbounded or has no duration");
+        goto failed;
+    }
+    if (proxy.timing_count >= PROXY_TIMING_QUEUE) {
+        fail("invalid_packet", "proxy encoder retained too many pictures");
+        goto failed;
+    }
+    if (av_frame_make_writable(proxy.picture) < 0) {
+        fail("resource_exhausted", "prepare writable proxy picture");
+        goto failed;
+    }
+    {
+        const uint8_t *source[4] = {rgba, NULL, NULL, NULL};
+        const int source_stride[4] = {(int)stride, 0, 0, 0};
+        if (sws_scale(proxy.scaler, source, source_stride, 0, (int)proxy.request.source_height,
+                      proxy.picture->data, proxy.picture->linesize) != (int)proxy.request.height) {
+            fail("ffmpeg_failure", "scale proxy picture");
+            goto failed;
+        }
+    }
+    proxy.picture->pts = pts;
+    proxy.picture->duration = duration;
+    proxy.picture->pict_type = AV_PICTURE_TYPE_I;
+    proxy.picture->flags |= AV_FRAME_FLAG_KEY;
+    uint32_t tail = (proxy.timing_head + proxy.timing_count) % PROXY_TIMING_QUEUE;
+    proxy.timing_pts[tail] = pts;
+    proxy.timing_duration[tail] = duration;
+    proxy.timing_count++;
+    proxy.last_pts = pts;
+    proxy.pushed++;
+    code = avcodec_send_frame(proxy.encoder, proxy.picture);
+    if (code < 0) {
+        proxy_encoder_failure("send proxy picture", code);
+        goto failed;
+    }
+    if (!proxy_write_packets()) {
+        goto failed;
+    }
+    return 0;
+
+failed:
+    proxy_abandon();
+    return 1;
+}
+
+int deadpan_proxy_finish(int output_fd, DeadpanProxyReport *report,
+                         DeadpanConversionError *error) {
+    int code;
+    state.error = error;
+    memset(report, 0, sizeof(*report));
+    if (proxy.encoder == NULL || proxy.abandoned) {
+        fail("invalid_request", "proxy encoder is not open");
+        return 1;
+    }
+    if (proxy.pushed != proxy.request.frames) {
+        fail("incomplete_input", "proxy received %" PRIu64 " of %" PRIu64 " pictures",
+             proxy.pushed, proxy.request.frames);
+        goto failed;
+    }
+    code = avcodec_send_frame(proxy.encoder, NULL);
+    if (code < 0) {
+        proxy_encoder_failure("flush proxy encoder", code);
+        goto failed;
+    }
+    if (!proxy_write_packets()) {
+        goto failed;
+    }
+    /* Every packet was already drained through the one-in, one-out filter. */
+    code = av_bsf_send_packet(proxy.bsf, NULL);
+    if (code < 0) {
+        fail_ffmpeg("flush proxy bitstream filter", code);
+        goto failed;
+    }
+    code = av_bsf_receive_packet(proxy.bsf, proxy.packet);
+    if (code != AVERROR_EOF) {
+        av_packet_unref(proxy.packet);
+        fail("invalid_packet", "proxy bitstream filter retained a packet");
+        goto failed;
+    }
+    if (proxy.timing_count != 0 || proxy.packets != proxy.request.frames) {
+        fail("incomplete_output", "proxy encoder emitted %" PRIu64 " of %" PRIu64 " pictures",
+             proxy.packets, proxy.request.frames);
+        goto failed;
+    }
+    code = av_write_trailer(proxy.format);
+    proxy.header_written = 0;
+    if (code < 0) {
+        fail_ffmpeg("write proxy MP4 trailer", code);
+        goto failed;
+    }
+    avio_flush(proxy.io.avio);
+    if (proxy.io.avio->error < 0) {
+        fail_ffmpeg("flush proxy MP4 output", proxy.io.avio->error);
+        goto failed;
+    }
+    if (ftruncate(output_fd, (off_t)proxy.io.descriptor.length) != 0 || fsync(output_fd) != 0) {
+        fail("io_failure", "finalize proxy output: %s", strerror(errno));
+        goto failed;
+    }
+    report->output_bytes = (uint64_t)proxy.io.descriptor.length;
+    report->packets = proxy.packets;
+    report->keyframes = proxy.keyframes;
+    report->width = proxy.request.width;
+    report->height = proxy.request.height;
+    if (!within_deadline()) {
+        goto failed;
+    }
+    /* The output is complete and synchronized; see proxy_abandon. */
+    proxy_abandon();
+    return 0;
+
+failed:
+    proxy_abandon();
+    if (error->code[0] == '\0') {
+        fail("internal_error", "proxy finish failed without a classified error");
+    }
+    return 1;
+}

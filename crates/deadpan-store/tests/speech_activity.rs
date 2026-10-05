@@ -3,10 +3,7 @@ use std::error::Error;
 
 use deadpan_analysis::{ActivityAudio, SpeechActivity};
 use deadpan_core::{NodeId, ProjectDocument, ProjectId, RevisionId};
-use deadpan_store::{
-    AccessMode, DATABASE_SCHEMA_VERSION, MAX_SPEECH_ACTIVITY, ProjectStore, SpeechActivityKey,
-    StoreError,
-};
+use deadpan_store::{AccessMode, MAX_SPEECH_ACTIVITY, ProjectStore, SpeechActivityKey, StoreError};
 use rusqlite::Connection;
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
@@ -149,7 +146,7 @@ fn tampered_stored_activity_fails_on_read() -> Result {
 }
 
 #[test]
-fn a_schema59_package_is_read_without_activity_and_upgraded_by_its_writer() -> Result {
+fn a_schema59_package_is_refused_unchanged() -> Result {
     let scratch = tempfile::tempdir()?;
     let path = project(&scratch)?;
     {
@@ -189,41 +186,17 @@ fn a_schema59_package_is_read_without_activity_and_upgraded_by_its_writer() -> R
         )
     };
 
-    let reader = ProjectStore::open(&path, AccessMode::ReadOnly)?;
-    assert!(reader.speech_activity(&key("e"))?.is_none());
-    assert!(
-        reader
-            .speech_activity_keys_for_content("blake3:original")?
-            .is_empty()
-    );
-    drop(reader);
+    // Database 64 refuses earlier development packages without writing.
+    for mode in [AccessMode::ReadOnly, AccessMode::ReadWrite] {
+        assert!(matches!(
+            ProjectStore::open(&path, mode),
+            Err(deadpan_store::StoreError::UnsupportedSchema(59))
+        ));
+    }
+    assert!(matches!(
+        ProjectStore::migrate(&path),
+        Err(deadpan_store::StoreError::UnsupportedSchema(59))
+    ));
     assert_eq!(version(&path)?, 59);
-
-    let writer = ProjectStore::open(&path, AccessMode::ReadWrite)?;
-    assert_eq!(version(&path)?, DATABASE_SCHEMA_VERSION);
-    assert_eq!(
-        writer.transcript_keys_for_content("blake3:original")?.len(),
-        1
-    );
-    writer.save_speech_activity(&key("e"), &activity(0))?;
-    drop(writer);
-    // Opening again is a no-op upgrade.
-    let writer = ProjectStore::open(&path, AccessMode::ReadWrite)?;
-    assert_eq!(writer.speech_activity(&key("e"))?, Some(activity(0)));
-    drop(writer);
-
-    // The migration entrypoint upgrades the same way and reports it.
-    let connection = Connection::open(path.join("project.sqlite"))?;
-    connection.execute_batch(
-        "DROP TABLE original_provenance; DROP TABLE speech_activity; DROP TABLE shot_analysis; PRAGMA user_version=59;",
-    )?;
-    drop(connection);
-    let outcome = ProjectStore::migrate(&path)?;
-    assert_eq!(
-        (outcome.from_schema, outcome.to_schema),
-        (59, DATABASE_SCHEMA_VERSION)
-    );
-    assert!(outcome.backup.is_none());
-    assert_eq!(version(&path)?, DATABASE_SCHEMA_VERSION);
     Ok(())
 }

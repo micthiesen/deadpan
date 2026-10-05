@@ -87,11 +87,11 @@ Current crates:
 - `native/deadpan-fileclone`: bounded safe descriptor-clone interface around the macOS system call. The store owns copying, checksums, publication and durability.
 - `native/deadpan-filesystem`: narrow descriptor-based APFS volume UUID adapter for publication recovery. The host owns path identities, file locks, hashing and publication; unsupported filesystems fail explicitly.
 - `crates/deadpan-render`: bounded shared SDR picture pipeline, linear Rec.2020 working textures, explicit sRGB display transform, ordered framing/clipping, aspect and rotation. No decoding, document mutation or encoding.
-- `native/deadpan-media-worker`: process-isolated FFmpeg conversion and independent decode verification through bounded descriptor-only AVIO. Only the documented FFI call permits unsafe Rust. Requires the explicitly selected pinned LGPL FFmpeg development prefix.
+- `native/deadpan-media-worker`: process-isolated FFmpeg conversion, intra-only VideoToolbox preview-proxy encoding and independent decode verification through bounded descriptor-only AVIO. Only the documented FFI call permits unsafe Rust. Requires the explicitly selected pinned LGPL FFmpeg development prefix.
 - `native/deadpan-encode`: bounded descriptor-only H.264/AAC MP4 encoder over composed I420 and canonical stereo PCM. Exact clocks, explicit hardware/software attempts, one shared deadline and restricted fast-start readback; no project, decoding, verification or publication ownership.
 - `native/deadpan-process`: checked worker/leader teardown and Darwin group-membership adapter; unsafe is denied except for its documented bounded libproc call. Higher layers continue to forbid unsafe.
 - `crates/deadpan-app`: native `egui`/`eframe` project workspace using Metal. One service owns the writable store, one import worker prepares media, and a separate bounded preview worker consumes immutable workspaces. Native dialogs, source registration, explicit insertion, history, current-depth Camera previews, limited Original/edit/sound audition and automatic SDR Render with explicit preview decisions are implemented. Full editing, mastered playback, complete export qualification and native render recovery remain open.
-- `crates/deadpan-cli`: versioned headless project/command API, reused by `deadpan-app --headless`.
+- `crates/deadpan-cli`: versioned headless project/command API, reused by `deadpan-app --headless`, and the per-user preview-proxy builder and cache.
 - `crates/deadpan-analysis`: pure analysis annotations; validated word-timed transcripts and Silero speech activity with energy-refined pauses, both with exact Original timing, and per-picture shot change measurements. See [transcription](docs/TRANSCRIPTION.md), [speech activity](docs/SPEECH_ACTIVITY.md) and [shot detection](docs/SHOT_DETECTION.md).
 - `native/deadpan-transcribe`: process-isolated whisper.cpp worker. Its only `unsafe` is the documented abort-callback adapter; never use whisper-rs's `set_abort_callback_safe`, which aborts every encode.
 - `native/deadpan-track`: process-isolated Apple Vision selected-target tracking worker over the verified Original through `deadpan-source`. `unsafe` stays in its documented `vision.rs` adapter; tracking policy and the path-to-target mapping are pure in `deadpan-analysis`; tracking never edits, and only `track --save`/`track-correct` commit a reversible `SetTarget`. See [tracking](docs/TRACKING.md).
@@ -145,6 +145,29 @@ accessibility label only with successful GPU submission or an explicit backgroun
 transition. Retain the old target until a resized replacement renders successfully.
 Picture errors belong to presentation and clear on successful recovery. These
 state transitions must remain testable without a native window.
+
+Preview proxies are rebuildable caches for the main viewer's stopped seeks of
+Originals above 1080p only. Build them with the media worker's descriptor-only
+`proxy` mode under a stall watch (heartbeats, confirmed group teardown before
+a single retry with fresh staging, SIGSTOP/SIGCONT pause), one VideoToolbox
+session per user at a time (`.encoder.lock`); the worker reports before, and
+never performs, VideoToolbox teardown, whose service can stop answering. Verify every
+picture's exact PTS/duration against the receipt index plus sampled pixel
+fidelity and per-channel bias. Publish atomically into the per-user
+`~/Library/Caches/Deadpan/Proxies` through `deadpan_cli::proxy::cache`, with
+descriptor-relative operations, the cache lock and reader `flock`s; never add
+proxy rows, history or document references. Pause builds during playback,
+renders, battery, Low Power Mode and thermal pressure; honor `:proxies off`
+and remembered failures. Open proxies only while the worker is idle. A proxy
+picture is a distinct presentation identity (`PictureTier::Proxy`): show the
+Proxy chip, refine to the exact Original after `REFINE_DELAY` for the same
+ticket, show single steps exactly, and never let it satisfy Camera, Slip,
+Trim or other exact gates. Proxy pictures exist only in the app's private
+preview reader; playback, proposals, copies, candidates, thumbnails, export,
+render, verification, conditioning, tracking and analysis never read proxies
+(`export_paths_never_reach_proxies`). A failed proxy read falls back to the
+Original silently. Darwin `waitid` can report a stopped child: count only
+exits or fatal signals as exited. See [proxies](docs/PROXIES.md).
 
 Native letter marks use the shared authored ID `native-mark-{letter}` plus its
 exact single-letter label; conflicting named marks reject without writes.
@@ -344,7 +367,7 @@ Legacy Accepted providers without this evidence, Still and HDR fail explicitly.
 Preparation is off the UI/audio threads and does not provide final-render isolation,
 encoder geometry normalization, complete muxing or verified publication.
 
-Every persisted edit, undo, and redo gets a never-reused revision ID. Core inverse patches can restore exact fixture identity; the store rebases them onto fresh revisions to prevent stale commands becoming valid after undo. Store writes use one transaction for the revision, history, and cursor. Revision rows store compact JSON; only the newest, the initial and every 16th revision keep a document, and the rest are rebuilt from the nearest stored ancestor through their stored forward patches (history entry, or `revision_patches` for undo/redo) with `DocumentPatch::apply_stored`, validating only the final document. Read historical documents through `snapshot_at` or `for_each_revision_document`, never the raw column. Binding changes are granular `AudioBindingPatch` entries with exact before-values. See [timing storage](docs/TIMING_STORAGE.md). Keep `.writer.lock` held for the writable store lifetime; read-only inspection and dry runs may coexist. Take live database snapshots through SQLite's backup API, never copy only an open main database file.
+Every persisted edit, undo, and redo gets a never-reused revision ID. Core inverse patches can restore exact fixture identity; the store rebases them onto fresh revisions to prevent stale commands becoming valid after undo. Store writes use one transaction for the revision, history, cursor and history receipt. A commit writes only its patch: revision rows keep a compact document only at the initial revision and keyframes (depth 64 or a `json_bound` over the document limit), and every revision, the head included, is rebuilt from its keyframe through stored forward patches (history entry, or `revision_patches` for undo/redo) with `DocumentPatch::apply_stored_in_place`, validating only the final document. Keep each row's `depth` and `json_bound` (parent bound plus patch length plus slack) consistent; they bound reconstruction and the document size without serializing it. Read historical documents through `snapshot_at` or `for_each_revision_document`, never the raw column. The store caches validated committed documents by revision identity, inserting only after commit or outside a transaction; commits run commands with `apply_validated` inside the head's `ValidatedDocument` scope and adopt its result rather than reapplying the patch, and refresh compiles plans in the same scope. Reuse a validation only by that exact-value memo or the per-owner binding proof rule in [timing storage](docs/TIMING_STORAGE.md#validation-invariants); never skip validating a new state. Binding changes are granular `AudioBindingPatch` entries with exact before-values. See [timing storage](docs/TIMING_STORAGE.md). Keep `.writer.lock` held for the writable store lifetime; read-only inspection and dry runs may coexist. Take live database snapshots through SQLite's backup API, never copy only an open main database file.
 
 Current native and CLI whole-beat deletion uses `DeleteRipple { node, timing }` through
 ordinary Sequence ancestors. Capture downstream sample entries before removing
@@ -446,7 +469,7 @@ and workspace delivery order. Keep the first child's identity separate from the
 complete result interval. See
 [atomic moves](docs/ATOMIC_MOVES.md).
 
-Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 45 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings with exact picture selections and dormant linked audio, audio edge policies, transparent Retime partitions, owned timing bindings with exact local-origin translations, retained framing clocks, root sound routes, owner-local BeatSound maps and independent sound clock journals, and binds qualified assets to immutable source receipts. Database schema 63 is current (59 added transcripts; 60 speech activity; 61 shot analysis; 62 remote-original provenance; 63 revision patches). A writer upgrades a schema-59 through 62 package in place, after its history validates, by only creating the missing empty `speech_activity`/`shot_analysis`/`original_provenance`/`revision_patches` tables; read-only opens of one see no stored analyses or provenance. One whose history holds a timing-retaining edit cannot replay under the compact timing representation and is refused as `UnsupportedSchema` unchanged. Refuse schemas 1 through 58 before writer acquisition, backups, recovery or document parsing. Retain current history validation, checkpoints, accepted-media recovery and the frozen audio-context codecs still referenced by current documents. Historical qualification reports apply to their recorded revisions. See [development formats](docs/DEVELOPMENT_FORMATS.md).
+Repeat play IDs are scoped by Repeat node and allocation revision, with an ordinal inside that allocation. Preserve surviving IDs through resizing and reorder; allocate fresh IDs for growth and inserted subtrees. Imported initial snapshots reserve their allocation names even after plays are removed. Keep compact runs bounded and never expand a repeat merely to seek. Core schema 45 retains these runs, marks, sparse overrides, generated Hold metadata, independent source mappings with exact picture selections and dormant linked audio, audio edge policies, transparent Retime partitions, owned timing bindings with exact local-origin translations, retained framing clocks, root sound routes, owner-local BeatSound maps and independent sound clock journals, and binds qualified assets to immutable source receipts. Database schema 64 is current (59 added transcripts; 60 speech activity; 61 shot analysis; 62 remote-original provenance; 63 revision patches; 64 keyframe metadata and history receipts). Refuse schemas 1 through 63 before writer acquisition, backups, recovery or document parsing. Retain current history validation, checkpoints, accepted-media recovery and the frozen audio-context codecs still referenced by current documents. Historical qualification reports apply to their recorded revisions. See [development formats](docs/DEVELOPMENT_FORMATS.md).
 
 Audio placement offsets map current physical-local coordinates into retained
 historical-local coordinates. Rebase lattice, phase-term and reanchor templates
@@ -1270,8 +1293,15 @@ bias before exact-coordinate deduplication. Named results retain every matching
 binding ordinal within the resolved revision; do not use the representative
 target to discard other attachment owners. See [mark bindings](docs/MARK_FRAGMENTS.md).
 Current history replay checks every command, forward/inverse patch, snapshot,
-changed-ID summary and unique allocation. Preserve complete transactions for
-Undo/Redo. Retired development formats fail during schema preflight; the old
+changed-ID summary and unique allocation. Opening hashes every stored history
+row into a chain and replays only revisions after the `history_receipt` of the
+same validator build (a SHA-256 over every path crate the store reaches in
+`Cargo.lock`, the lockfile and toolchain); `validate_full`, `project validate`,
+`project migrate` and recovery checkpoints replay everything. A commit extends the receipt only
+after performing every replay check for its revision, including the receipt
+and single-original checks for changed assets; add any new per-revision open
+check to the commit path too, and never extend a receipt that does not cover
+the parent. Preserve complete transactions for Undo/Redo. Retired development formats fail during schema preflight; the old
 full-document grammar matrix is no longer an implementation obligation.
 
 Owned audio bindings contain flat timing records and bounded phase expressions,

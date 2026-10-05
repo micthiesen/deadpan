@@ -101,12 +101,13 @@ fn worker_pins_actual_revision_while_writer_keeps_editing() -> Result {
     );
     assert_eq!(fs::read_dir(package.join("Snapshots"))?.count(), 1);
     let db = Connection::open_with_flags(&receipt.path, OpenFlags::SQLITE_OPEN_READ_ONLY)?;
-    let saved: String = db.query_row(
-        "SELECT document FROM revisions JOIN state ON head_revision=revisions.id",
-        [],
-        |row| row.get(0),
-    )?;
-    assert_eq!(ProjectDocument::from_json(&saved)?, captured);
+    // The head may be stored as a patch; read it through a package around
+    // the standalone database copy.
+    let copy = tempfile::tempdir()?;
+    assert_eq!(
+        open_database_copy(&receipt.path, copy.path())?.snapshot()?,
+        captured
+    );
     assert_eq!(
         db.query_row("PRAGMA integrity_check", [], |row| row.get::<_, String>(0))?,
         "ok"
@@ -356,4 +357,24 @@ fn changed_prepared_database_is_never_published() -> Result {
         Err(CheckpointError::IdentityChanged)
     ));
     assert_empty_snapshots(&package)
+}
+
+/// Open a standalone database copy read-only inside a fresh package.
+fn open_database_copy(
+    database: &std::path::Path,
+    scratch: &std::path::Path,
+) -> std::result::Result<deadpan_store::ProjectStore, Box<dyn std::error::Error>> {
+    let package = scratch.join("database-copy.deadpan");
+    for directory in [
+        "Media/Originals",
+        "Media/Generated",
+        "Media/RenderCandidates",
+    ] {
+        std::fs::create_dir_all(package.join(directory))?;
+    }
+    std::fs::copy(database, package.join("project.sqlite"))?;
+    Ok(deadpan_store::ProjectStore::open(
+        &package,
+        deadpan_store::AccessMode::ReadOnly,
+    )?)
 }

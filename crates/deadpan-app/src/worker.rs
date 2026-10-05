@@ -26,15 +26,21 @@ use crate::project::{RegisteredSource, Workspace};
 
 const HASH_TIMEOUT: Duration = Duration::from_secs(300);
 const FRAME_TIMEOUT: Duration = Duration::from_secs(15);
+/// How long the cursor must rest on a proxy picture before the worker
+/// replaces it with the exact Original picture.
+pub const REFINE_DELAY: Duration = Duration::from_millis(150);
 
 mod endpoints;
 mod proposed;
+mod proxy;
 mod slice_view;
 pub use endpoints::{
     EditJunctionIdentity, EditJunctionInput, EditJunctionPicture, EditJunctionPictures,
     EditJunctionReply, EndpointIdentity, EndpointInput, EndpointPictures, EndpointReply,
     EndpointSourceId, EndpointWorker, JunctionExterior, JunctionRole, JunctionSide,
 };
+pub use proxy::PictureTier;
+use proxy::ProxySlot;
 use slice_view::{PictureMedia, PlanCache};
 
 #[cfg(test)]
@@ -121,6 +127,10 @@ pub struct Picture {
     pub follow_point: Option<(AssetId, deadpan_core::SourcePoint)>,
     /// Caption lines drawn over the composed picture, as in export.
     pub captions: Vec<deadpan_plan::PictureCaption>,
+    /// Whether these pixels are the exact Original picture or its preview
+    /// proxy. A proxy picture is a distinct presentation identity: it never
+    /// satisfies Camera, Slip, Trim or any other exact-picture gate.
+    pub tier: PictureTier,
 }
 
 pub struct Reply {
@@ -191,6 +201,22 @@ impl Mailbox {
         true
     }
 
+    /// Begin refining the published proxy picture of `request` if it is still
+    /// the newest request and nothing newer waits. A later submission cancels
+    /// the refinement through the same flag.
+    fn start_refinement(&mut self, request: &Request) -> bool {
+        if self.shutdown
+            || self.clear_requested
+            || self.pending.is_some()
+            || self.latest != Some(request.ticket)
+            || request.cancelled.load(Ordering::Acquire)
+        {
+            return false;
+        }
+        self.active = Some(Arc::clone(&request.cancelled));
+        true
+    }
+
     fn cancel_active(&self) {
         if let Some(active) = &self.active {
             active.store(true, Ordering::Release);
@@ -224,6 +250,8 @@ impl Mailbox {
 struct Shared {
     mailbox: Mutex<Mailbox>,
     changed: Condvar,
+    /// The per-user preview-proxy cache the main viewer may read.
+    proxy_cache: Mutex<Option<deadpan_cli::proxy::cache::ProxyCache>>,
 }
 
 pub struct PreviewWorker {
@@ -231,20 +259,27 @@ pub struct PreviewWorker {
 }
 
 impl PreviewWorker {
+    /// The main viewer's worker. Stopped committed pictures may come from a
+    /// preview proxy first and are refined to the Original once the cursor
+    /// rests for [`REFINE_DELAY`].
     pub fn new(context: egui::Context) -> std::io::Result<Self> {
-        Self::named(context, "deadpan-source-preview")
+        Self::spawn(context, "deadpan-source-preview", true)
     }
 
     /// An independent worker, such as the card thumbnail service, with its
-    /// own decoder and request slot.
+    /// own decoder and request slot. It always decodes the Original.
     pub fn named(context: egui::Context, name: &str) -> std::io::Result<Self> {
+        Self::spawn(context, name, false)
+    }
+
+    fn spawn(context: egui::Context, name: &str, proxies: bool) -> std::io::Result<Self> {
         let shared = Arc::new(Shared::default());
         let background = Arc::clone(&shared);
         // The single thread owns all file I/O, hashing, indexing and decoding.
         // Dropping the handle deliberately avoids a blocking GUI shutdown join.
         std::thread::Builder::new()
             .name(name.into())
-            .spawn(move || run(background, context))?;
+            .spawn(move || run(background, context, proxies))?;
         Ok(Self { shared })
     }
 
@@ -278,6 +313,13 @@ impl PreviewWorker {
             .cancel();
     }
 
+    /// The preview-proxy cache this worker may read for stopped seeks. Only
+    /// the main viewer's worker (`new`) uses it; others ignore it.
+    pub fn set_proxy_cache(&self, cache: Option<deadpan_cli::proxy::cache::ProxyCache>) {
+        *self.shared.proxy_cache.lock().expect("proxy cache") = cache;
+        self.shared.changed.notify_one();
+    }
+
     pub fn shutdown(&self) {
         self.shared.mailbox.lock().expect("preview mailbox").stop();
         self.shared.changed.notify_one();
@@ -297,55 +339,147 @@ impl Drop for PreviewWorker {
     }
 }
 
-fn run(shared: Arc<Shared>, context: egui::Context) {
+fn run(shared: Arc<Shared>, context: egui::Context, proxies: bool) {
     let mut session = None;
     let mut proposal = None;
+    let mut proxy = ProxySlot::default();
+    // Prepare a proxy only after a stopped interactive request, never in the
+    // gaps between playback pictures.
+    let mut idle_preparation = false;
     loop {
-        let request = {
+        if proxies {
+            proxy.set_cache(shared.proxy_cache.lock().expect("proxy cache").clone());
+        }
+        let next = {
             let mut mailbox = shared.mailbox.lock().expect("preview mailbox");
             loop {
                 if mailbox.shutdown {
                     return;
                 }
                 if std::mem::take(&mut mailbox.clear_requested) {
-                    break None;
+                    break Next::Clear;
                 }
                 if let Some(request) = mailbox.start_next() {
-                    break Some(request);
+                    break Next::Request(request);
+                }
+                // Idle: open a wanted proxy, cancellable by the next request.
+                if idle_preparation && proxy.wants_preparation() {
+                    let cancelled = Arc::new(AtomicBool::new(false));
+                    mailbox.active = Some(Arc::clone(&cancelled));
+                    break Next::Prepare(cancelled);
                 }
                 mailbox = shared.changed.wait(mailbox).expect("preview mailbox");
             }
         };
-        let Some(request) = request else {
-            // Native teardown and private snapshot deletion stay off the UI and
-            // outside the mailbox lock used for submitting the next request.
-            session = None;
-            proposal = None;
-            continue;
+        let request = match next {
+            Next::Request(request) => request,
+            Next::Clear => {
+                // Native teardown and private snapshot deletion stay off the UI
+                // and outside the mailbox lock used for submitting requests.
+                session = None;
+                proposal = None;
+                proxy = ProxySlot::default();
+                continue;
+            }
+            Next::Prepare(cancelled) => {
+                proxy.prepare(&cancelled);
+                let mut mailbox = shared.mailbox.lock().expect("preview mailbox");
+                if mailbox
+                    .active
+                    .as_ref()
+                    .is_some_and(|active| Arc::ptr_eq(active, &cancelled))
+                {
+                    mailbox.active = None;
+                }
+                continue;
+            }
         };
-        #[cfg(feature = "ui-harness")]
+        // Only stopped committed pictures of the main viewer may start with
+        // a proxy; playback, proposals, copies and candidates never do.
+        let interactive = proxies
+            && request.ticket.transport.is_none()
+            && matches!(request.work, Work::Project { .. });
+        idle_preparation = interactive;
+        let slot = interactive.then_some(&mut proxy);
         let started = Instant::now();
-        let picture = perform(&request, &mut session, &mut proposal);
-        #[cfg(feature = "ui-harness")]
-        let timing = Some(WorkerTiming {
-            started,
-            finished: Instant::now(),
-            published: None,
-        });
-        let publish = shared
-            .mailbox
-            .lock()
-            .expect("preview mailbox")
-            .publish(Reply {
-                ticket: request.ticket,
-                picture,
-                #[cfg(feature = "ui-harness")]
-                timing,
-            });
-        if publish {
-            context.request_repaint();
+        let picture = perform_with(&request, &mut session, &mut proposal, slot);
+        let refine = matches!(&picture, Ok(picture) if picture.tier == PictureTier::Proxy);
+        if !publish_reply(&shared, &context, &request, picture, started) || !refine {
+            continue;
         }
+        // Refine once the cursor rests: wait for a newer request, and decode
+        // the exact Original picture if none arrives in time.
+        let refining = {
+            let deadline = Instant::now() + REFINE_DELAY;
+            let mut mailbox = shared.mailbox.lock().expect("preview mailbox");
+            loop {
+                if mailbox.shutdown {
+                    return;
+                }
+                let now = Instant::now();
+                if mailbox.pending.is_some()
+                    || mailbox.clear_requested
+                    || mailbox.latest != Some(request.ticket)
+                {
+                    break false;
+                }
+                if now >= deadline {
+                    break mailbox.start_refinement(&request);
+                }
+                mailbox = shared
+                    .changed
+                    .wait_timeout(mailbox, deadline - now)
+                    .expect("preview mailbox")
+                    .0;
+            }
+        };
+        if !refining {
+            continue;
+        }
+        let started = Instant::now();
+        let mut picture = perform(&request, &mut session, &mut proposal);
+        if picture.is_err() && !request.cancelled.load(Ordering::Acquire) {
+            // One more attempt with a reopened decoder before the proxy
+            // picture is left showing the error.
+            picture = perform(&request, &mut session, &mut proposal);
+        }
+        publish_reply(&shared, &context, &request, picture, started);
     }
+}
+
+enum Next {
+    Request(Request),
+    Clear,
+    Prepare(Arc<AtomicBool>),
+}
+
+fn publish_reply(
+    shared: &Shared,
+    context: &egui::Context,
+    request: &Request,
+    picture: Result<Picture, String>,
+    #[cfg_attr(not(feature = "ui-harness"), allow(unused_variables))] started: Instant,
+) -> bool {
+    #[cfg(feature = "ui-harness")]
+    let timing = Some(WorkerTiming {
+        started,
+        finished: Instant::now(),
+        published: None,
+    });
+    let publish = shared
+        .mailbox
+        .lock()
+        .expect("preview mailbox")
+        .publish(Reply {
+            ticket: request.ticket,
+            picture,
+            #[cfg(feature = "ui-harness")]
+            timing,
+        });
+    if publish {
+        context.request_repaint();
+    }
+    publish
 }
 
 #[derive(PartialEq, Eq)]
@@ -399,19 +533,30 @@ struct RetainedSession {
     catalog: Option<Arc<RegisteredSource>>,
 }
 
+/// Always the exact picture; see [`perform_with`] for proxy pictures.
 fn perform(
     request: &Request,
     retained: &mut Option<RetainedSession>,
     proposal: &mut Option<PlanCache>,
 ) -> Result<Picture, String> {
+    perform_with(request, retained, proposal, None)
+}
+
+fn perform_with(
+    request: &Request,
+    retained: &mut Option<RetainedSession>,
+    proposal: &mut Option<PlanCache>,
+    proxy: Option<&mut ProxySlot>,
+) -> Result<Picture, String> {
     if let Work::Project { workspace, view } = &request.work {
-        return project_picture(
-            workspace,
+        return media_picture(
+            PictureMedia::Committed(workspace),
             &workspace.document,
             &workspace.plan,
             view,
             &request.cancelled,
             retained,
+            proxy,
         );
     }
     if let Work::Proposed {
@@ -445,6 +590,7 @@ fn perform(
             &ProjectView::Sequence { frame: *frame },
             &request.cancelled,
             retained,
+            None,
         )?;
         media
             .admitted()
@@ -512,6 +658,7 @@ fn perform(
         follow_point: None,
         picture_context: None,
         captions: Vec::new(),
+        tier: PictureTier::Original,
     })
 }
 
@@ -530,6 +677,7 @@ fn project_picture(
         view,
         cancelled,
         retained,
+        None,
     )
 }
 
@@ -540,6 +688,7 @@ fn media_picture(
     view: &ProjectView,
     cancelled: &AtomicBool,
     retained: &mut Option<RetainedSession>,
+    proxy: Option<&mut ProxySlot>,
 ) -> Result<Picture, String> {
     if cancelled.load(Ordering::Acquire) {
         return Err("Project preview was cancelled.".into());
@@ -613,7 +762,7 @@ fn media_picture(
                 .map_err(|error| error.to_string())?
                 .identity;
             let mut picture =
-                registered_picture(media, registered, frame, canvas, cancelled, retained)?;
+                registered_picture(media, registered, frame, canvas, cancelled, retained, proxy)?;
             picture.follow_point = sample
                 .picture
                 .follow_point()
@@ -626,7 +775,7 @@ fn media_picture(
         }
     };
     let registered = media_source(media, document, asset)?;
-    registered_picture(media, registered, frame, canvas, cancelled, retained)
+    registered_picture(media, registered, frame, canvas, cancelled, retained, proxy)
 }
 
 /// Admit a candidate preview against its exact committed base and compile its
@@ -674,6 +823,7 @@ fn background_picture(canvas: Option<(u32, u32)>) -> Picture {
         follow_point: None,
         picture_context: None,
         captions: Vec::new(),
+        tier: PictureTier::Original,
     }
 }
 
@@ -740,6 +890,7 @@ fn generated_picture(
         follow_point: None,
         picture_context: None,
         captions: Vec::new(),
+        tier: PictureTier::Original,
     })
 }
 
@@ -796,7 +947,27 @@ fn registered_picture(
     canvas: Option<(u32, u32)>,
     cancelled: &AtomicBool,
     retained: &mut Option<RetainedSession>,
+    proxy: Option<&mut ProxySlot>,
 ) -> Result<Picture, String> {
+    // A proxy serves a random seek; an Original decoder already positioned
+    // at or just before the target is as fast and exact, so it serves steps.
+    if let Some(slot) = proxy {
+        let key = SessionKey::Project {
+            session: media.session(),
+            asset: registered.asset.clone(),
+            receipt: registered.receipt.id().clone(),
+        };
+        // A single step (either direction) from the decoder's current picture
+        // is shown exactly, without a proxy picture flashing first.
+        let stepping = retained
+            .as_ref()
+            .is_some_and(|session| session.key == key && session.source.is_step(id));
+        if !stepping
+            && let Some(picture) = slot.picture(media, registered, id, canvas, cancelled)?
+        {
+            return Ok(picture);
+        }
+    }
     match registered_picture_once(media, registered, id, canvas, cancelled, retained) {
         Err(Served::Interrupted(_)) => {
             *retained = None;
@@ -1002,6 +1173,7 @@ fn registered_picture_once(
         follow_point: None,
         picture_context: None,
         captions: Vec::new(),
+        tier: PictureTier::Original,
     })
 }
 

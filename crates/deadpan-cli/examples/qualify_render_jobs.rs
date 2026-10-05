@@ -403,7 +403,7 @@ fn run_case(
             && authored(&case.package)? == after_edit,
         json!(after_edit),
     )?;
-    store.validate()?;
+    store.validate_full()?;
     drop(store);
     let reopened = ProjectStore::open(&case.package, AccessMode::ReadWrite)?;
     check(

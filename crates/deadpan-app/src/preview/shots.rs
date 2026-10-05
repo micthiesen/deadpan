@@ -266,6 +266,14 @@ impl DeadpanApp {
     /// again below.
     /// The Original card's detail line: its picture count and shot status.
     pub(super) fn original_detail(&mut self) -> String {
+        let detail = self.shot_detail();
+        match self.proxies.detail() {
+            Some(proxy) => format!("{detail} · {proxy}"),
+            None => detail,
+        }
+    }
+
+    fn shot_detail(&mut self) -> String {
         let frames = self.source_length();
         match self.shots.status.clone() {
             Status::Unchecked => format!("{frames} frames · finding shots"),

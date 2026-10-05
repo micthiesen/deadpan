@@ -28,6 +28,7 @@ mod moment;
 mod nested_pause;
 mod original_layout;
 mod original_playback;
+mod proxy;
 mod recipes;
 mod registers;
 mod render;
@@ -176,6 +177,13 @@ impl Feedback {
     }
 
     pub fn take_reply(&mut self, worker: &PreviewWorker) -> Option<crate::worker::Reply> {
+        // An explicitly released reply is delivered even while later replies
+        // stay held, so a replay can show one picture tier at a time.
+        if self.hold_preview
+            && let Some(reply) = self.release_reply.take()
+        {
+            return Some(reply);
+        }
         if self.hold_preview {
             if self.held_reply.is_none() {
                 self.held_reply = worker.take_reply();
@@ -240,6 +248,11 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                 .parent()
                 .ok_or("Replay Documents root has no parent")?
                 .join("cookies.txt");
+            // Proxies and their setting stay inside the replay's private root.
+            let replay_root = documents
+                .parent()
+                .ok_or("Replay Documents root has no parent")?
+                .to_owned();
             let library = crate::library::ProjectLibrary::from_documents(documents)?;
             let youtube_library = library.clone();
             let mut construction_error = None;
@@ -297,6 +310,13 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                             Some(fixture.to_owned()),
                         )]);
                         app.feedback.simulate_playback = true;
+                        app.use_proxy_locations(
+                            Some(
+                                deadpan_cli::proxy::cache::ProxyCache::at(&replay_root.join("Caches/Proxies"))
+                                    .map_err(|error| error.to_string())?,
+                            ),
+                            Some(replay_root.join("proxies.json")),
+                        );
                         if name == "youtube" {
                             // Only the downloader is scripted: the job, URL
                             // step, project creation and Open are real.

@@ -460,7 +460,7 @@ fn run_case(
             }),
         json!(attempts),
     )?;
-    store.validate()?;
+    store.validate_full()?;
     report["final_checkpoint"] = json!(checkpoint);
     report["final_status"] = serde_json::to_value(workflow.status())?;
     Ok(())

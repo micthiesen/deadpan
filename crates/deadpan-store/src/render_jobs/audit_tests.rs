@@ -151,7 +151,7 @@ fn automatic_history(attempts_per_job: u64) -> Result<Connection> {
     ];
     for document in &documents {
         connection.execute(
-            "INSERT INTO revisions(id,kind,document) VALUES(?1,'initial',?2)",
+            "INSERT INTO revisions(id,kind,document,depth,json_bound) VALUES(?1,'initial',?2,0,length(?2))",
             params![document.revision_id().as_str(), document.to_json()?],
         )?;
     }

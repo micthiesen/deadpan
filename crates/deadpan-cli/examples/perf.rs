@@ -5,6 +5,8 @@
 //!
 //! Usage:
 //!   perf seek PACKAGE [--cold N] [--warm N] [--step N] [--seed N]
+//!             [--proxy-cache NEW_DIR --worker MEDIA_WORKER]
+//!   perf proxy-build PACKAGE --proxy-cache DIR --worker MEDIA_WORKER
 //!   perf playback PACKAGE [--seconds N] [--start-frame N]
 //!   perf edit PACKAGE [--cycles N] [--seed N]
 //!   perf make-large NEW_PACKAGE [--beats N]
@@ -28,6 +30,8 @@ mod gpu;
 mod percentile;
 #[path = "perf/playback.rs"]
 mod playback;
+#[path = "perf/proxy.rs"]
+mod proxy;
 #[path = "perf/scale.rs"]
 mod scale;
 #[path = "perf/seek.rs"]
@@ -48,6 +52,7 @@ fn main() -> Result<()> {
         "edit" => edit::run(&options)?,
         "make-large" => edit::make_large(&options)?,
         "scale" => scale::run(&options)?,
+        "proxy-build" => proxy::build_stage(&options)?,
         other => return Err(format!("unknown perf stage {other}").into()),
     };
     report["stage"] = json!(stage);

@@ -17,7 +17,11 @@ use crate::protocol::{
     MAX_REQUEST_BYTES, PROTOCOL_VERSION, WorkerReply, WorkerRequest,
 };
 
+mod proxy;
 mod remux;
+pub use proxy::{
+    PROXY_STALL_TIMEOUT, ProxyEncodeOptions, encode_proxy, encode_proxy_retrying, retryable,
+};
 pub use remux::{RemuxLimits, append_for_remux, remux_av, remux_joined};
 
 const GROUP_CLEANUP_GRACE: Duration = Duration::from_millis(250);
@@ -40,6 +44,11 @@ pub enum ConversionError {
     Cancelled,
     #[error("media conversion exceeded its deadline")]
     Deadline,
+    /// The worker made no progress (output growth or heartbeat) for `stall`.
+    /// `torn_down` is true only when its process group was confirmed gone
+    /// and its leader reaped, so a retry cannot overlap it.
+    #[error("media worker made no progress for {stall:?}")]
+    Stalled { stall: Duration, torn_down: bool },
     #[error("invalid converter response: {0}")]
     Protocol(String),
     #[error("converter failed ({code}): {message}")]
@@ -244,7 +253,8 @@ fn convert_snapshot(
             .process_group(0),
     )?;
     let mut process = OwnedProcess::new(child);
-    let (status, reply) = process.collect(deadline, &output, request.limits().max_output_bytes)?;
+    let (status, reply) =
+        process.collect(deadline, &output, request.limits().max_output_bytes, None)?;
     // Every failure discards the anonymous output. A well-formed success from a
     // nonzero exit or an unclosed control pipe cannot publish bytes.
     let reply: WorkerReply = serde_json::from_slice(&reply)
@@ -410,11 +420,18 @@ impl OwnedProcess {
         self.child.wait()
     }
 
+    /// Wait for exit and the complete control reply. With a `watch`, a live
+    /// worker that neither grows its output nor sends a heartbeat for its
+    /// stall period is stopped: a hung platform encoder must not hold a
+    /// background job until its deadline. The watch's pause flag suspends
+    /// the whole group (SIGSTOP) and resumes it (SIGCONT); paused time never
+    /// counts as a stall.
     fn collect(
         &mut self,
         deadline: &Deadline<'_>,
         output: &File,
         max_output_bytes: u64,
+        watch: Option<&Watch<'_>>,
     ) -> Result<(ExitStatus, Vec<u8>), ConversionError> {
         let mut pipe = self
             .child
@@ -427,23 +444,52 @@ impl OwnedProcess {
         let mut eof = false;
         let mut exit = None;
         let mut exited_at = None;
+        let mut progress = (0_u64, Instant::now());
+        let mut suspended = false;
         loop {
             deadline.check()?;
+            let mut heartbeat = false;
             if !eof {
-                eof = drain_control(&mut pipe, &mut bytes, deadline, exited_at)?;
+                eof = drain_heartbeat(&mut pipe, &mut bytes, deadline, exited_at, &mut heartbeat)?;
             }
-            if output.metadata()?.len() > max_output_bytes {
+            let written = output.metadata()?.len();
+            if written > max_output_bytes {
                 return Err(ConversionError::Protocol(
                     "output exceeded byte budget".into(),
                 ));
             }
+            if let Some(watch) = watch
+                && exit.is_none()
+            {
+                let pause = watch
+                    .pause
+                    .is_some_and(|pause| pause.load(Ordering::Acquire));
+                if pause != suspended {
+                    deadpan_native_process::suspend_owned_group(&self.child, pause)?;
+                    suspended = pause;
+                    progress.1 = Instant::now();
+                }
+                if written != progress.0 || heartbeat || suspended {
+                    progress = (written, Instant::now());
+                } else if progress.1.elapsed() > watch.stall {
+                    // Confirm teardown here, so the caller knows whether a
+                    // retry could overlap a surviving process.
+                    let torn_down = self.stop_group().is_ok() && self.reap_leader().is_ok();
+                    return Err(ConversionError::Stalled {
+                        stall: watch.stall,
+                        torn_down,
+                    });
+                }
+            }
+            // Darwin's waitid can report a stopped (suspended) child even when
+            // asked only for exits; only an exit or a fatal signal counts.
             if exit.is_none()
                 && waitid(
                     WaitId::Pid(self.pid),
                     WaitIdOptions::EXITED | WaitIdOptions::NOHANG | WaitIdOptions::NOWAIT,
                 )
                 .map_err(io::Error::from)?
-                .is_some()
+                .is_some_and(|status| status.exited() || status.killed() || status.dumped())
             {
                 // Retain the unreaped leader until group cleanup to prevent PID
                 // reuse from signalling an unrelated group. See jobs supervisor.
@@ -465,11 +511,31 @@ impl OwnedProcess {
     }
 }
 
+/// Stall supervision of one worker run.
+pub(crate) struct Watch<'a> {
+    pub(crate) stall: Duration,
+    pub(crate) pause: Option<&'a AtomicBool>,
+}
+
+#[cfg(test)]
 fn drain_control(
     pipe: &mut impl Read,
     bytes: &mut Vec<u8>,
     deadline: &Deadline<'_>,
     exited_at: Option<Instant>,
+) -> Result<bool, ConversionError> {
+    drain_heartbeat(pipe, bytes, deadline, exited_at, &mut false)
+}
+
+/// Read available control bytes. Newlines before the reply are heartbeats:
+/// they set `heartbeat` and are not retained, so they never consume the
+/// reply budget. Replies start with `{`, so no worker mode is affected.
+fn drain_heartbeat(
+    pipe: &mut impl Read,
+    bytes: &mut Vec<u8>,
+    deadline: &Deadline<'_>,
+    exited_at: Option<Instant>,
+    heartbeat: &mut bool,
 ) -> Result<bool, ConversionError> {
     let mut buffer = [0u8; 4096];
     loop {
@@ -477,6 +543,15 @@ fn drain_control(
         match pipe.read(&mut buffer) {
             Ok(0) => return Ok(true),
             Ok(count) => {
+                let mut start = 0;
+                if bytes.is_empty() {
+                    while start < count && buffer[start] == b'\n' {
+                        start += 1;
+                    }
+                    *heartbeat |= start > 0;
+                }
+                let buffer = &buffer[start..count];
+                let count = buffer.len();
                 if count > MAX_REPLY_BYTES.saturating_sub(bytes.len()) {
                     return Err(ConversionError::Protocol(
                         "control reply exceeded byte budget".into(),
@@ -549,6 +624,70 @@ mod tests {
             "codec reaping was already attempted"
         );
         drop(process);
+    }
+
+    #[test]
+    fn a_live_worker_without_output_progress_is_stopped_as_stalled() {
+        let output = tempfile::tempfile().unwrap();
+        let child = Command::new("/bin/sleep")
+            .arg("30")
+            .stderr(Stdio::piped())
+            .process_group(0)
+            .spawn()
+            .unwrap();
+        let mut process = OwnedProcess::new(child);
+        let cancelled = AtomicBool::new(false);
+        let deadline = Deadline {
+            end: Instant::now() + Duration::from_secs(20),
+            cancelled: &cancelled,
+        };
+        let started = Instant::now();
+        let stall = Duration::from_millis(200);
+        let watch = Watch { stall, pause: None };
+        assert!(matches!(
+            process.collect(&deadline, &output, 1024, Some(&watch)),
+            Err(ConversionError::Stalled { stall: observed, torn_down: true }) if observed == stall
+        ));
+        assert!(started.elapsed() < Duration::from_secs(5));
+        assert!(process.reap_attempted, "the stalled leader was reaped");
+        drop(process);
+    }
+
+    #[test]
+    fn a_paused_worker_is_suspended_and_never_reported_as_stalled() {
+        let output = tempfile::tempfile().unwrap();
+        let child = Command::new("/bin/sh")
+            .args(["-c", "sleep 1; exit 0"])
+            .stderr(Stdio::piped())
+            .process_group(0)
+            .spawn()
+            .unwrap();
+        let mut process = OwnedProcess::new(child);
+        let cancelled = AtomicBool::new(false);
+        let deadline = Deadline {
+            end: Instant::now() + Duration::from_secs(20),
+            cancelled: &cancelled,
+        };
+        let pause = std::sync::Arc::new(AtomicBool::new(true));
+        let release = std::sync::Arc::clone(&pause);
+        let resumer = std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(1500));
+            release.store(false, Ordering::Release);
+        });
+        // Suspended for 1.5 s, then the one-second sleep runs: a run of at
+        // least 1.5 s shows the group was stopped. The stall period exceeds
+        // the shell's silent run, so only pausing is under test here.
+        let watch = Watch {
+            stall: Duration::from_secs(5),
+            pause: Some(&pause),
+        };
+        let started = Instant::now();
+        let (status, _) = process
+            .collect(&deadline, &output, 1024, Some(&watch))
+            .unwrap();
+        resumer.join().unwrap();
+        assert!(status.success());
+        assert!(started.elapsed() >= Duration::from_millis(1500));
     }
 
     impl Read for PendingPipe {

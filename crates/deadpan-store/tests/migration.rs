@@ -114,7 +114,7 @@ fn current_fixture(root: &Path, json: &str, media_sql: Option<&str>) -> Result<P
         let database = Connection::open(package.join("project.sqlite"))?;
         database.execute_batch(media_sql)?;
         database.execute(
-            "UPDATE revisions SET document=?1 WHERE id=?2",
+            "UPDATE revisions SET document=?1,json_bound=length(CAST(?1 AS BLOB)) WHERE id=?2",
             rusqlite::params![document.to_json()?, document.revision_id().as_str()],
         )?;
     } else {

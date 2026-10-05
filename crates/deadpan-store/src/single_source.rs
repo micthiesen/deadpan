@@ -2,11 +2,15 @@
 //! their broader editing vocabulary. SQLite pins one measured original and the
 //! first full-source edit as an undo floor, independently of later deletions.
 
-use std::{collections::BTreeSet, path::Path, sync::atomic::AtomicBool};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    path::Path,
+    sync::atomic::AtomicBool,
+};
 
 use deadpan_core::{
-    AssetId, BasisState, HoldVideo, NodeId, NodeKind, ProjectDocument, RevisionId, SourceNode,
-    SourceQualificationId,
+    AssetId, AssetRecord, BasisState, HoldVideo, NodeId, NodeKind, ProjectDocument, RevisionId,
+    SourceNode, SourceQualificationId,
 };
 use rusqlite::{Connection, OptionalExtension, params};
 use serde::{Deserialize, Serialize};
@@ -268,14 +272,29 @@ pub(crate) fn check_transition(
             Ok(())
         }
         Some((state @ SingleSourceState::Ready { .. }, _)) => {
-            check_ready_transition(&state, current, next)
+            check_ready_transition(&state, current.assets(), next)
         }
+    }
+}
+
+/// An undo or redo in a ready project restores the content of an earlier
+/// checked revision; recheck the same transition rule for the new revision.
+pub(crate) fn check_navigation(
+    connection: &Connection,
+    current: &ProjectDocument,
+    next: &ProjectDocument,
+) -> Result<(), StoreError> {
+    match read(connection)? {
+        Some((state @ SingleSourceState::Ready { .. }, _)) => {
+            check_ready_transition(&state, current.assets(), next)
+        }
+        _ => Ok(()),
     }
 }
 
 fn check_ready_transition(
     state: &SingleSourceState,
-    current: &ProjectDocument,
+    current_assets: &BTreeMap<AssetId, AssetRecord>,
     next: &ProjectDocument,
 ) -> Result<(), StoreError> {
     let SingleSourceState::Ready {
@@ -315,7 +334,7 @@ fn check_ready_transition(
     }
     for (id, record) in next.assets() {
         if (record.video.is_some() || record.still_image)
-            && current.assets().get(id) != Some(record)
+            && current_assets.get(id) != Some(record)
             && record.source_qualification.as_ref() != Some(qualification)
             && !generated.contains(id)
         {
@@ -327,7 +346,9 @@ fn check_ready_transition(
     Ok(())
 }
 
-pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> {
+/// Validate the profile and every chronology transition into index `from`
+/// or later; earlier revisions were proved by a matching history receipt.
+pub(crate) fn validate_store(connection: &Connection, from: usize) -> Result<(), StoreError> {
     let Some((state, floor)) = read(connection)? else {
         return Ok(());
     };
@@ -414,17 +435,17 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
     )?;
     // Check every chronology revision, including abandoned branches. An undo of
     // the baseline or later introduction of another picture cannot hide in history.
-    let mut statement =
-        connection.prepare("SELECT id,parent_id FROM revisions WHERE id!=?1 ORDER BY rowid")?;
-    let mut rows = statement.query([initial_id.as_str()])?;
-    while let Some(row) = rows.next()? {
-        let id: String = row.get(0)?;
-        let parent: String = row.get(1)?;
-        let before = crate::validation::read_revision(connection, &parent)?.document;
-        let after = crate::validation::read_revision(connection, &id)?.document;
-        check_ready_transition(&state, &before, &after)?;
-    }
-    Ok(())
+    // The rule reads only the preceding revision's assets.
+    let mut previous: Option<BTreeMap<AssetId, AssetRecord>> = None;
+    crate::validation::for_each_revision_document(connection, from.saturating_sub(1), |after| {
+        if let Some(assets) = &previous {
+            check_ready_transition(&state, assets, after)?;
+        }
+        if previous.as_ref() != Some(after.assets()) {
+            previous = Some(after.assets().clone());
+        }
+        Ok(())
+    })
 }
 
 fn matches_full_original(source: &SourceNode, expected: &SourceNode) -> bool {

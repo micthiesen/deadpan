@@ -723,10 +723,19 @@ impl DocumentPatch {
     /// document validation is left to the caller, which validates the final
     /// reconstructed revision once rather than every intermediate one.
     pub fn apply_stored(&self, document: &ProjectDocument) -> Result<ProjectDocument, EditError> {
-        self.check_bounds(document)?;
         let mut result = document.clone();
+        self.apply_stored_in_place(&mut result)?;
+        Ok(result)
+    }
+
+    /// [`Self::apply_stored`] without copying the document. On error the
+    /// document may be partly changed, so callers discard it; reconstruction
+    /// of an elided revision uses this to avoid one whole-document copy per
+    /// applied patch.
+    pub fn apply_stored_in_place(&self, result: &mut ProjectDocument) -> Result<(), EditError> {
+        self.check_bounds(result)?;
         if let Some(change) = &self.presentation {
-            if document.presentation_state() != change.before {
+            if result.presentation_state() != change.before {
                 return Err(EditError::new(
                     EditErrorCode::PatchConflict,
                     "presentation patch before-value does not match the current document",
@@ -757,10 +766,10 @@ impl DocumentPatch {
         apply_changes(&mut result.gap_overrides, &self.gap_overrides)?;
         apply_changes(&mut result.audio_lineage, &self.audio_lineage)?;
         if let Some(change) = &self.audio_bindings {
-            result.audio_bindings = change.apply(&document.audio_bindings)?;
+            result.audio_bindings = change.apply(&result.audio_bindings)?;
         }
         result.revision_id = self.to_revision.clone();
-        Ok(result)
+        Ok(())
     }
 
     pub fn inverse(&self) -> Self {
@@ -807,6 +816,47 @@ pub fn apply(
     document: &ProjectDocument,
     request: &CommandRequest,
 ) -> Result<EditTransaction, EditError> {
+    apply_with_result(document, request).map(|(edit, _)| edit)
+}
+
+/// [`apply_with_result`] on an already validated document. Validation queries
+/// on the input reuse its retained proof; the result is validated once.
+pub fn apply_validated(
+    document: &crate::ValidatedDocument,
+    request: &CommandRequest,
+) -> Result<(EditTransaction, crate::ValidatedDocument), EditError> {
+    document
+        .scope(|| apply_with_durations(document.document(), request, Some(document)))
+        .map(|(edit, result, (durations, bindings))| {
+            (
+                edit,
+                crate::ValidatedDocument::from_validation(result, durations, bindings),
+            )
+        })
+}
+
+/// [`apply`], also returning the validated result document.
+///
+/// The result is exactly `edit.forward.apply_stored(document)`: the forward
+/// patch is the complete difference of every field it carries, and the
+/// remaining identity fields (schema, project and root) never change. A host
+/// that keeps the current revision in memory can therefore adopt it without
+/// applying and validating the patch a second time.
+pub fn apply_with_result(
+    document: &ProjectDocument,
+    request: &CommandRequest,
+) -> Result<(EditTransaction, ProjectDocument), EditError> {
+    apply_with_durations(document, request, None).map(|(edit, result, _)| (edit, result))
+}
+
+type Durations = BTreeMap<NodeId, crate::FrameDuration>;
+type Validation = (Durations, crate::audio_binding::BindingProof);
+
+fn apply_with_durations(
+    document: &ProjectDocument,
+    request: &CommandRequest,
+    previous: Option<&crate::ValidatedDocument>,
+) -> Result<(EditTransaction, ProjectDocument, Validation), EditError> {
     check_revision(
         document,
         &request.project_id,
@@ -814,8 +864,14 @@ pub fn apply(
         &request.new_revision,
     )?;
     if matches!(request.command, Command::Compound { .. }) {
-        return crate::replay_compound::<EditError>(document, request, |_| Ok(()))
-            .map(|outcome| outcome.edit);
+        let outcome = crate::replay_compound::<EditError>(document, request, |_| Ok(()))?;
+        let validated = crate::ValidatedDocument::new(std::sync::Arc::new(outcome.document))?;
+        let validation = (
+            validated.durations().clone(),
+            validated.binding_proof().clone(),
+        );
+        let document = std::sync::Arc::unwrap_or_clone(validated.into_document());
+        return Ok((outcome.edit, document, validation));
     }
     // Validate caller-owned context before cloning either the document or an
     // isolated occurrence. Public structs can be constructed without serde.
@@ -1077,7 +1133,18 @@ pub fn apply(
     )?;
     result.lock_timed_basis(document)?;
     result.revision_id = request.new_revision.clone();
-    net_transaction(document, &result, description(&request.command))
+    let (edit, validation) =
+        net_transaction_with_durations(document, &result, description(&request.command), previous)?;
+    if result.schema_version != document.schema_version
+        || result.project_id != document.project_id
+        || result.root != document.root
+    {
+        return Err(EditError::new(
+            EditErrorCode::InvalidCommand,
+            "an edit cannot change the document identity outside its patch",
+        ));
+    }
+    Ok((edit, result, validation))
 }
 
 /// Build one reversible net patch. Leaf edits have already transformed sounds,
@@ -1087,10 +1154,21 @@ pub(crate) fn net_transaction(
     result: &ProjectDocument,
     description: &str,
 ) -> Result<EditTransaction, EditError> {
+    net_transaction_with_durations(document, result, description, None).map(|(edit, _)| edit)
+}
+
+/// [`net_transaction`], also returning the result's validation. With the
+/// validated `previous` input, binding owners the patch leaves unchanged reuse
+/// their proved checks; the result is otherwise validated completely.
+fn net_transaction_with_durations(
+    document: &ProjectDocument,
+    result: &ProjectDocument,
+    description: &str,
+    previous: Option<&crate::ValidatedDocument>,
+) -> Result<(EditTransaction, Validation), EditError> {
     // The entry revision was admitted and validated already; only the result
     // needs the complete (binding-inclusive) validation here.
     let before_duration = document.structural_durations()?[document.root()].frames();
-    let after_duration = result.duration()?.frames();
     let forward = DocumentPatch {
         project_id: document.project_id.clone(),
         from_revision: document.revision_id.clone(),
@@ -1117,9 +1195,24 @@ pub(crate) fn net_transaction(
             &result.audio_bindings,
         ),
     };
+    let previous = previous.filter(|previous| std::ptr::eq(previous.document().as_ref(), document));
+    let validation = match previous {
+        Some(previous) => result.validate_after(previous, forward.audio_bindings.as_ref())?,
+        None => result.validated_with_proof()?,
+    };
+    let after_duration = validation
+        .0
+        .get(result.root())
+        .copied()
+        .ok_or_else(|| EditError::new(EditErrorCode::InvalidCommand, "result root is missing"))?
+        .frames();
     let binding_changed_ids =
-        changed_audio_binding_owners(&document.audio_bindings, &result.audio_bindings);
-    Ok(EditTransaction {
+        changed_audio_binding_owners_in(&document.audio_bindings, forward.audio_bindings.as_ref());
+    debug_assert_eq!(
+        binding_changed_ids,
+        changed_audio_binding_owners(&document.audio_bindings, &result.audio_bindings)
+    );
+    let edit = EditTransaction {
         changed_ids: forward
             .nodes
             .keys()
@@ -1165,7 +1258,8 @@ pub(crate) fn net_transaction(
         // Both durations are nonnegative i64, so their difference always fits.
         duration_delta: after_duration - before_duration,
         description: description.to_owned(),
-    })
+    };
+    Ok((edit, validation))
 }
 
 /// Scoped identity transforms share the outer transaction's detached allowance
@@ -1173,6 +1267,37 @@ pub(crate) fn net_transaction(
 pub(crate) struct EditContext<'a> {
     pub(crate) allocation: &'a RevisionId,
     pub(crate) allowances: Option<&'a mut crate::sound_allowance::SoundAllowanceEdit>,
+}
+
+/// [`changed_audio_binding_owners`] from the exact binding patch between the
+/// two states: its changed owners, and owners whose binding names a changed
+/// timing table. An owner whose binding is unchanged names the same tables in
+/// both states, so scanning the previous owners suffices.
+fn changed_audio_binding_owners_in(
+    before: &crate::AudioBindingState,
+    patch: Option<&crate::AudioBindingPatch>,
+) -> BTreeSet<NodeId> {
+    let Some(patch) = patch else {
+        return BTreeSet::new();
+    };
+    let mut changed: BTreeSet<NodeId> = patch
+        .bindings
+        .keys()
+        .chain(patch.gap_bindings.keys())
+        .cloned()
+        .collect();
+    if !patch.timings.is_empty() {
+        let timings: BTreeSet<_> = patch.timings.iter().map(|change| &change.id).collect();
+        for (_, owner, binding) in before.owners() {
+            if binding
+                .placements()
+                .any(|template| timings.contains(&template.reference.timing))
+            {
+                changed.insert(owner.clone());
+            }
+        }
+    }
+    changed
 }
 
 fn changed_audio_binding_owners(

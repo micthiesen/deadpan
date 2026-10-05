@@ -102,6 +102,9 @@ pub fn report(package: &Path) -> Result<serde_json::Value, CliError> {
             "plan_compile": compile_ms,
             "anchor_index": anchor_ms,
         },
+        // Opening hashes every stored history row; only revisions after this
+        // build's receipt are recomputed.
+        "history_validation": store.open_validation(),
         "document": {
             "nodes": document.nodes().len(),
             "root_children": root_children,

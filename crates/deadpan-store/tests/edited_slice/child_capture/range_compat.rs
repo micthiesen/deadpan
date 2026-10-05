@@ -40,7 +40,7 @@ fn restore_rows(path: &Path, original: &ProjectDocument, tables: &Value) -> Resu
     for (table, sql) in [
         (
             "revisions",
-            "INSERT INTO revisions SELECT json_extract(?1,'$[0]'),json_extract(?1,'$[1]'),json_extract(?1,'$[2]'),json_extract(?1,'$[3]')",
+            "INSERT INTO revisions SELECT json_extract(?1,'$[0]'),json_extract(?1,'$[1]'),json_extract(?1,'$[2]'),json_extract(?1,'$[3]'),0,length(CAST(json_extract(?1,'$[3]') AS BLOB))",
         ),
         (
             "history",

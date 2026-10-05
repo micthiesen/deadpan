@@ -373,11 +373,45 @@ fn malformed_or_displaced_profile_is_rejected_on_reopen() -> Result {
             },
         ))?;
         drop(store);
+        // The history is certified, so these opens rely on the receipt.
+        assert_eq!(
+            ProjectStore::open(&path, AccessMode::ReadOnly)?
+                .open_validation()
+                .replayed,
+            0
+        );
         Connection::open(path.join("project.sqlite"))?.execute_batch(sql)?;
         assert!(
             ProjectStore::open(&path, AccessMode::ReadOnly).is_err(),
             "{sql}"
         );
+    }
+    Ok(())
+}
+
+#[test]
+fn initialized_projects_reopen_from_their_receipt_and_detect_qualification_tampering() -> Result {
+    for sql in [
+        "UPDATE source_qualifications SET snapshot=X'00'",
+        "UPDATE source_qualifications SET original_ref=json_set(original_ref,'$.content','blake3:00')",
+        "PRAGMA foreign_keys=OFF; DELETE FROM source_qualifications",
+        "PRAGMA foreign_keys=OFF; UPDATE source_qualifications SET id='other'",
+    ] {
+        let scratch = tempfile::tempdir()?;
+        let (path, mut store) = create(scratch.path())?;
+        let original = prepare(&mut store, "offset-bframes.mp4", true)?;
+        store.initialize_prepared_source(&initialization(), &original, &active())?;
+        drop(store);
+        // Initialization records its new profile in the receipt: reopening
+        // replays nothing.
+        let reopened = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+        assert_eq!(reopened.open_validation().replayed, 0);
+        assert_eq!(reopened.open_validation().revisions, 2);
+        drop(reopened);
+        Connection::open(path.join("project.sqlite"))?.execute_batch(sql)?;
+        for mode in [AccessMode::ReadOnly, AccessMode::ReadWrite] {
+            assert!(ProjectStore::open(&path, mode).is_err(), "{sql}");
+        }
     }
     Ok(())
 }

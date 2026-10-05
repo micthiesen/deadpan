@@ -292,8 +292,8 @@ pub fn replay_compound<E: From<EditError>>(
                 MAX_COMPOUND_DOCUMENT_BYTES,
                 "staged document work byte limit",
             )?;
-            let applied = crate::apply(&current, leaf)?;
-            let next = applied.forward.apply(&current)?;
+            // The validated result equals its forward patch applied to `current`.
+            let (_, next) = crate::apply_with_result(&current, leaf)?;
             let size = wire::size(&next, crate::MAX_DOCUMENT_JSON_BYTES)?;
             charge(
                 &mut bytes,

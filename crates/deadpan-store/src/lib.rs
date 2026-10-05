@@ -4,9 +4,11 @@
 //! change atomically. Undo restores content under a fresh revision, so an old
 //! optimistic request never becomes valid again after undo.
 
+mod audit;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod checkpoint;
 mod compound;
+mod document_cache;
 mod error;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod generated_media;
@@ -80,6 +82,10 @@ pub enum AccessMode {
 
 pub struct ProjectStore {
     connection: Connection,
+    /// Validated documents of committed revisions, including the head.
+    documents: document_cache::DocumentCache,
+    /// How opening validated the history.
+    opened: HistoryValidation,
     /// Host resolver for generation request relevance on ordinary writes.
     context_resolver: Option<Arc<dyn generation::GenerationContextResolver>>,
     package: PathBuf,
@@ -132,6 +138,29 @@ impl Drop for ProjectStore {
         if let Some(lock) = &self._writer_lock {
             // File::drop still closes the handle if explicit unlock fails.
             let _ = lock.unlock();
+        }
+    }
+}
+
+/// What a history validation proved and how.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize)]
+pub struct HistoryValidation {
+    /// Revisions in the chronology, including the initial one.
+    pub revisions: usize,
+    /// Leading revisions proved by a receipt from this validator build, after
+    /// hashing every stored row.
+    pub verified_by_receipt: usize,
+    /// Revisions whose command or navigation was recomputed.
+    pub replayed: usize,
+}
+
+impl From<&validation::HistoryAudit> for HistoryValidation {
+    fn from(audit: &validation::HistoryAudit) -> Self {
+        let revisions = audit.order.len();
+        Self {
+            revisions,
+            verified_by_receipt: audit.verified,
+            replayed: revisions - audit.verified.max(1),
         }
     }
 }
@@ -189,9 +218,12 @@ impl ProjectStore {
         schema::configure(&connection)?;
         schema::create(&mut connection)?;
         let transaction = connection.transaction()?;
-        transaction.execute(
-            "INSERT INTO revisions(id,parent_id,kind,document) VALUES (?1,NULL,'initial',?2)",
-            params![document.revision_id().as_str(), json],
+        revision_storage::insert(
+            &transaction,
+            None,
+            document,
+            "initial",
+            revision_storage::StoredPatch::Initial,
         )?;
         transaction.execute(
             "INSERT INTO state(singleton,head_revision,cursor) VALUES (1,?1,NULL)",
@@ -203,6 +235,13 @@ impl ProjectStore {
         }
         #[cfg(not(any(target_os = "macos", target_os = "linux")))]
         let _ = single_source;
+        let rows = audit::read_rows(&transaction, document.revision_id().as_str())?;
+        audit::certify(
+            &transaction,
+            1,
+            document.revision_id().as_str(),
+            audit::link(&audit::genesis(), &rows),
+        )?;
         transaction.commit()?;
         #[derive(Serialize)]
         struct Manifest<'a> {
@@ -239,8 +278,18 @@ impl ProjectStore {
         let publication_durability = Some(publication_durability::PublicationDurability::open(
             &package,
         )?);
+        let documents = document_cache::DocumentCache::default();
+        documents.insert(deadpan_core::ValidatedDocument::new(Arc::new(
+            document.clone(),
+        ))?);
         Ok(Self {
             connection,
+            documents,
+            opened: HistoryValidation {
+                revisions: 1,
+                verified_by_receipt: 1,
+                replayed: 0,
+            },
             context_resolver: None,
             package,
             mode: AccessMode::ReadWrite,
@@ -280,7 +329,7 @@ impl ProjectStore {
         // Probe the format read-only before acquiring writable state or enabling WAL.
         let probe = Connection::open_with_flags(&database, read_flags())?;
         schema::configure(&probe)?;
-        schema::check_openable_version(&probe)?;
+        schema::check_version(&probe)?;
         drop(probe);
         let lock = if mode == AccessMode::ReadWrite {
             Some(acquire_lock(&package)?)
@@ -309,7 +358,7 @@ impl ProjectStore {
         };
         let connection = Connection::open_with_flags(&database, flags)?;
         schema::configure(&connection)?;
-        let version = schema::check_openable_version(&connection)?;
+        schema::check_version(&connection)?;
         if mode == AccessMode::ReadWrite {
             connection.pragma_update(None, "journal_mode", "WAL")?;
             connection.pragma_update(None, "synchronous", "FULL")?;
@@ -332,6 +381,8 @@ impl ProjectStore {
         .map_err(render_media::RenderMediaError::from)?;
         let mut store = Self {
             connection,
+            documents: document_cache::DocumentCache::default(),
+            opened: HistoryValidation::default(),
             context_resolver: None,
             package,
             mode,
@@ -361,24 +412,24 @@ impl ProjectStore {
             writer_owner: None,
             _writer_lock: lock,
         };
-        if let Err(error) = store.validate() {
-            // Database 63 also changed how commands record retained audio
-            // timing, so an older package whose history contains such edits
-            // cannot be replayed by this build. Report the unsupported format,
-            // unchanged, rather than a history parse failure.
-            return Err(if version == schema::VERSION {
-                error
-            } else {
-                StoreError::UnsupportedSchema(version)
-            });
-        }
+        let audit = store.validate_with(validation::HistoryMode::Receipt)?;
+        store.opened = HistoryValidation::from(&audit);
         if mode == AccessMode::ReadWrite {
-            // The writer adds the speech activity, shot analysis, original
-            // provenance and revision patch tables to a schema-59 through 62
-            // package; readers of one see no stored analyses or provenance
-            // until then. Upgrade only after the existing history validates,
-            // so a package this build cannot replay is refused unchanged.
-            schema::upgrade(&store.connection)?;
+            // Record this validator's proof of the complete chronology, so the
+            // next open hashes the stored rows instead of replaying them.
+            if audit.verified < audit.order.len() {
+                let transaction = rusqlite::Transaction::new_unchecked(
+                    &store.connection,
+                    rusqlite::TransactionBehavior::Immediate,
+                )?;
+                audit::certify(
+                    &transaction,
+                    i64::try_from(audit.order.len()).unwrap_or(i64::MAX),
+                    audit.order.last().expect("nonempty chronology"),
+                    audit.chain,
+                )?;
+                transaction.commit()?;
+            }
             generation_attempts::recover_nonterminal(&mut store.connection)?;
             #[cfg(any(target_os = "macos", target_os = "linux"))]
             render_jobs::recover_nonterminal(&mut store.connection)?;
@@ -398,7 +449,20 @@ impl ProjectStore {
     }
 
     pub fn snapshot(&self) -> Result<ProjectDocument, StoreError> {
-        read_snapshot(&self.connection)
+        Ok(ProjectDocument::clone(&*self.snapshot_shared()?))
+    }
+
+    /// The current revision's validated document without copying it. The
+    /// store keeps the head in memory, so this does not parse or validate.
+    pub fn snapshot_shared(&self) -> Result<Arc<ProjectDocument>, StoreError> {
+        self.documents.head(&self.connection)
+    }
+
+    /// The current revision with its retained validation proof, so callers
+    /// can compile plans in [`deadpan_core::ValidatedDocument::scope`]
+    /// without validating the document again.
+    pub fn snapshot_validated(&self) -> Result<deadpan_core::ValidatedDocument, StoreError> {
+        self.documents.head_validated(&self.connection)
     }
 
     /// Read the authoritative current revision without decoding its document.
@@ -409,7 +473,11 @@ impl ProjectStore {
     /// Read one immutable committed revision, including an abandoned branch.
     /// This does not move the history cursor or perform writer recovery.
     pub fn snapshot_at(&self, revision: &RevisionId) -> Result<ProjectDocument, StoreError> {
-        Ok(validation::read_revision(&self.connection, revision.as_str())?.document)
+        Ok(ProjectDocument::clone(
+            &*self
+                .documents
+                .revision(&self.connection, revision.as_str())?,
+        ))
     }
 
     /// Immutable copy provenance, including captured intermediate transaction
@@ -421,7 +489,38 @@ impl ProjectStore {
         compound::read_capture(&self.connection, revision)
     }
 
+    /// Validate the package. History before this validator build's receipt is
+    /// verified by its hash chain; later revisions are recomputed.
     pub fn validate(&self) -> Result<(), StoreError> {
+        self.validate_report(false).map(|_| ())
+    }
+
+    /// Validate the package, recomputing every command and revision of the
+    /// history from its initial revision regardless of any receipt.
+    pub fn validate_full(&self) -> Result<(), StoreError> {
+        self.validate_report(true).map(|_| ())
+    }
+
+    /// Validate the package and report how much history was recomputed.
+    pub fn validate_report(&self, full: bool) -> Result<HistoryValidation, StoreError> {
+        let mode = if full {
+            validation::HistoryMode::Full
+        } else {
+            validation::HistoryMode::Receipt
+        };
+        self.validate_with(mode)
+            .map(|audit| HistoryValidation::from(&audit))
+    }
+
+    /// How opening this store validated its history.
+    pub fn open_validation(&self) -> HistoryValidation {
+        self.opened
+    }
+
+    fn validate_with(
+        &self,
+        mode: validation::HistoryMode,
+    ) -> Result<validation::HistoryAudit, StoreError> {
         let transaction = self.connection.unchecked_transaction()?;
         validation::check_stored_sizes(&transaction, schema::MAX_DOCUMENT_BYTES)?;
         compound::check_stored_sizes(&transaction)?;
@@ -455,7 +554,7 @@ impl ProjectStore {
         if foreign_keys != 0 {
             return Err(StoreError::Integrity("foreign-key violation".into()));
         }
-        validation::validate_history(&transaction)?;
+        let audit = validation::validate_history(&transaction, mode)?;
         generation::validate_store(&transaction)?;
         generation_attempts::validate_store(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -465,16 +564,16 @@ impl ProjectStore {
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         original_media::validate_store(&transaction)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
-        source_registration::validate_store(&transaction)?;
+        source_registration::validate_store(&transaction, audit.verified)?;
         #[cfg(any(target_os = "macos", target_os = "linux"))]
-        single_source::validate_store(&transaction)?;
+        single_source::validate_store(&transaction, audit.verified)?;
         registers::validate_store(&transaction)?;
-        Ok(())
+        Ok(audit)
     }
 
     pub fn preview(&self, request: &CommandRequest) -> Result<EditTransaction, StoreError> {
         let transaction = self.connection.unchecked_transaction()?;
-        let plan = prepare_command(&transaction, request)?;
+        let plan = prepare_command(&transaction, &self.documents, request)?;
         compound::require_authored(&plan)?;
         Ok(plan.edit)
     }
@@ -497,17 +596,20 @@ impl ProjectStore {
         relevance: Option<&generation::RelevancePlan>,
     ) -> Result<CommitOutcome, StoreError> {
         self.require_writer()?;
+        let documents = &self.documents;
         let transaction = self
             .connection
             .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
-        let plan = prepare_command(&transaction, request)?;
-        let outcome = write_command_plan(
+        let plan = prepare_command(&transaction, documents, request)?;
+        let (outcome, next) = write_command_plan(
             &transaction,
+            documents,
             plan,
             relevance,
             self.context_resolver.as_deref(),
         )?;
         transaction.commit()?;
+        documents.insert(next);
         Ok(outcome)
     }
 
@@ -525,8 +627,11 @@ impl ProjectStore {
             .backup(rusqlite::MAIN_DB, temporary.path(), None)?;
         let checkpoint = Connection::open_with_flags(temporary.path(), read_flags())?;
         schema::configure(&checkpoint)?;
+        // Recompute the complete history of the copy; a checkpoint never
+        // inherits the live database's receipt as proof.
+        validation::check_stored_sizes(&checkpoint, schema::MAX_DOCUMENT_BYTES)?;
         compound::check_stored_sizes(&checkpoint)?;
-        validation::validate_history(&checkpoint)?;
+        validation::validate_history(&checkpoint, validation::HistoryMode::Full)?;
         registers::validate_store(&checkpoint)?;
         drop(checkpoint);
         temporary.as_file().sync_all()?;
@@ -632,15 +737,50 @@ fn read_snapshot(connection: &Connection) -> Result<ProjectDocument, StoreError>
     Ok(validation::read_revision(connection, &head)?.document)
 }
 
+/// The project and current revision identities, without any document.
+pub(crate) struct HeadIdentity {
+    project: deadpan_core::ProjectId,
+    revision: RevisionId,
+}
+
+impl HeadIdentity {
+    pub(crate) fn project_id(&self) -> &deadpan_core::ProjectId {
+        &self.project
+    }
+    pub(crate) fn revision_id(&self) -> &RevisionId {
+        &self.revision
+    }
+}
+
+/// Every revision shares the initial revision's project identity: commands
+/// and stored patches are checked against it before they apply.
+pub(crate) fn read_head_project(connection: &Connection) -> Result<HeadIdentity, StoreError> {
+    let revision = RevisionId::new(validation::read_head(connection)?)?;
+    let project: Option<String> = connection.query_row(
+        "SELECT CASE WHEN typeof(document)='text' AND json_valid(document)
+            THEN json_extract(document,'$.project_id') END
+         FROM revisions WHERE parent_id IS NULL",
+        [],
+        |row| row.get(0),
+    )?;
+    let project = project
+        .ok_or_else(|| StoreError::Integrity("initial revision has no project identity".into()))?;
+    Ok(HeadIdentity {
+        project: deadpan_core::ProjectId::new(project)?,
+        revision,
+    })
+}
+
 /// The same optimistic guard covers command preparation and descriptive
 /// previews which may legitimately produce no EditTransaction.
 fn read_command_snapshot(
     connection: &Connection,
+    documents: &document_cache::DocumentCache,
     request: &CommandRequest,
-) -> Result<ProjectDocument, StoreError> {
+) -> Result<deadpan_core::ValidatedDocument, StoreError> {
     use deadpan_core::{EditError, EditErrorCode};
 
-    let current = read_snapshot(connection)?;
+    let current = documents.head_validated(connection)?;
     if request.project_id != *current.project_id() {
         return Err(EditError {
             code: EditErrorCode::ProjectConflict,
@@ -682,8 +822,8 @@ fn check_document_size(json: &str) -> Result<(), StoreError> {
 }
 
 struct CommandPlan {
-    current: ProjectDocument,
-    next: ProjectDocument,
+    current: Arc<ProjectDocument>,
+    next: deadpan_core::ValidatedDocument,
     edit: EditTransaction,
     request_json: String,
     edit_json: String,
@@ -692,35 +832,39 @@ struct CommandPlan {
 
 fn prepare_command(
     connection: &Connection,
+    documents: &document_cache::DocumentCache,
     request: &CommandRequest,
 ) -> Result<CommandPlan, StoreError> {
-    prepare_admitted_command(connection, request, None)
+    prepare_admitted_command(connection, documents, request, None)
 }
 
 fn prepare_admitted_command(
     connection: &Connection,
+    documents: &document_cache::DocumentCache,
     request: &CommandRequest,
     admitted: Option<&deadpan_core::GeneratedArtifact>,
 ) -> Result<CommandPlan, StoreError> {
-    prepare_command_with_admission(connection, request, admitted, None, None)
+    prepare_command_with_admission(connection, documents, request, admitted, None, None)
 }
 
 fn prepare_command_with_admission(
     connection: &Connection,
+    documents: &document_cache::DocumentCache,
     request: &CommandRequest,
     generated: Option<&deadpan_core::GeneratedArtifact>,
     source: Option<(&deadpan_core::AssetId, &deadpan_core::AssetRecord)>,
     geometry: Option<(u32, u32)>,
 ) -> Result<CommandPlan, StoreError> {
-    let current = read_command_snapshot(connection, request)?;
+    let current = read_command_snapshot(connection, documents, request)?;
     prepare_current_command_with_admission(
-        connection, current, request, generated, source, geometry,
+        connection, documents, current, request, generated, source, geometry,
     )
 }
 
 fn prepare_current_command_with_admission(
     connection: &Connection,
-    current: ProjectDocument,
+    documents: &document_cache::DocumentCache,
+    current: deadpan_core::ValidatedDocument,
     request: &CommandRequest,
     generated: Option<&deadpan_core::GeneratedArtifact>,
     source: Option<(&deadpan_core::AssetId, &deadpan_core::AssetRecord)>,
@@ -733,12 +877,13 @@ fn prepare_current_command_with_admission(
                 "compound commands require per-leaf admission".into(),
             ));
         }
-        return compound::prepare(connection, current, request);
+        return compound::prepare(connection, documents, current, request);
     }
-    let edit = deadpan_core::apply(&current, request)?;
-    ensure_unused_revision(connection, &request.new_revision)?;
-    let next = edit.forward.apply(&current)?;
-    check_document_size(&next.to_compact_json()?)?;
+    // The core validates the result once; it equals the forward patch applied
+    // to `current`, so the store neither reapplies nor revalidates it, and the
+    // document size is bounded by its stored patch (see `revision_storage`).
+    let (edit, next) = deadpan_core::apply_validated(&current, request)?;
+    ensure_unused_revision(connection, documents, &request.new_revision)?;
     let captured = slice_capture_revision(connection, request)?;
     validate_transition(
         connection,
@@ -752,12 +897,12 @@ fn prepare_current_command_with_admission(
         },
         captured.as_ref(),
     )?;
-    command_plan(current, next, edit, request, None)
+    command_plan(Arc::clone(current.document()), next, edit, request, None)
 }
 
 fn command_plan(
-    current: ProjectDocument,
-    next: ProjectDocument,
+    current: Arc<ProjectDocument>,
+    next: deadpan_core::ValidatedDocument,
     edit: EditTransaction,
     request: &CommandRequest,
     compound: Option<compound::Prepared>,
@@ -774,6 +919,33 @@ fn command_plan(
     }
     let edit_json = serde_json::to_string(&edit)?;
     check_document_size(&edit_json)?;
+    // The remaining replay checks for this revision, so that a commit can
+    // extend the history receipt: the stored edit decodes to the computed one
+    // and its inverse restores the preceding revision exactly. The preceding
+    // revision is valid, so the restored document needs no validation.
+    if serde_json::from_str::<EditTransaction>(&edit_json)? != edit {
+        return Err(StoreError::Integrity(
+            "edit changes meaning when decoded for history replay".into(),
+        ));
+    }
+    if edit.inverse.apply_stored(&next)? != *current {
+        return Err(StoreError::History(
+            "inverse does not restore the preceding revision".into(),
+        ));
+    }
+    // The adopted result must be exactly what history replay reconstructs
+    // from the stored patch, and its retained validation must equal complete
+    // validation. Debug builds (every test) check both on every commit.
+    #[cfg(debug_assertions)]
+    {
+        let replayed = edit.forward.apply_stored(&current)?;
+        assert!(
+            replayed == **next.document(),
+            "commit result differs from its stored forward patch applied to the head"
+        );
+        next.check_against_complete_validation()
+            .expect("retained validation must equal complete validation");
+    }
     Ok(CommandPlan {
         current,
         next,
@@ -887,15 +1059,29 @@ fn ensure_source_admission(
     Ok(())
 }
 
+/// Write a prepared edit. The caller commits the transaction and then records
+/// the returned document in the store's cache.
 fn write_command_plan(
     connection: &Connection,
+    documents: &document_cache::DocumentCache,
     plan: CommandPlan,
     relevance: Option<&generation::RelevancePlan>,
     resolver: Option<&dyn generation::GenerationContextResolver>,
-) -> Result<CommitOutcome, StoreError> {
+) -> Result<(CommitOutcome, deadpan_core::ValidatedDocument), StoreError> {
     compound::require_authored(&plan)?;
     generation::reconcile(connection, &plan.current, &plan.next, relevance, resolver)?;
-    insert_revision(connection, &plan.current, &plan.next, "edit", None)?;
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    source_registration::check_revision_assets(connection, &plan.current, &plan.next)?;
+    insert_revision(
+        connection,
+        documents,
+        &plan.current,
+        &plan.next,
+        "edit",
+        revision_storage::StoredPatch::Edit {
+            bytes: plan.edit_json.len(),
+        },
+    )?;
     let register_bank = match &plan.compound {
         Some(prepared) => {
             compound::write_steps(connection, plan.next.revision_id(), &prepared.steps)?;
@@ -929,11 +1115,19 @@ fn write_command_plan(
         params![plan.next.revision_id().as_str(), history_id],
     )?;
     connection.execute("DELETE FROM redo", [])?;
-    Ok(CommitOutcome {
-        revision_id: plan.next.revision_id().clone(),
-        edit: plan.edit,
-        register_bank,
-    })
+    audit::extend(
+        connection,
+        plan.current.revision_id().as_str(),
+        plan.next.revision_id().as_str(),
+    )?;
+    Ok((
+        CommitOutcome {
+            revision_id: plan.next.revision_id().clone(),
+            edit: plan.edit,
+            register_bank,
+        },
+        plan.next,
+    ))
 }
 
 /// Core edits describe authored intent. They cannot prove that a candidate was
@@ -993,13 +1187,15 @@ fn ensure_generated_admission_with(
 
 fn ensure_unused_revision(
     connection: &Connection,
+    documents: &document_cache::DocumentCache,
     revision: &RevisionId,
 ) -> Result<(), StoreError> {
-    ensure_unused_revisions(connection, &[revision])
+    ensure_unused_revisions(connection, documents, &[revision])
 }
 
 fn ensure_unused_revisions(
     connection: &Connection,
+    documents: &document_cache::DocumentCache,
     revisions: &[&RevisionId],
 ) -> Result<(), StoreError> {
     // A package may start from a nonempty imported snapshot. Its occurrence
@@ -1007,65 +1203,33 @@ fn ensure_unused_revisions(
     // rows. Retained timing layouts also own old play namespaces. Reserve all
     // of those names forever, even after every live owner is removed.
     // Subsequent command allocations use committed revision IDs.
-    let initial =
-        validation::read_revision(connection, &validation::read_initial_id(connection)?)?.document;
-    let allocations: std::collections::BTreeSet<_> = initial
-        .nodes()
-        .values()
-        .filter_map(|node| match &node.kind {
-            deadpan_core::NodeKind::Repeat { iterations, .. } => Some(iterations),
-            _ => None,
-        })
-        .flat_map(|iterations| iterations.segments().map(|(id, _, _)| id))
-        .chain(
-            initial
-                .audio_lineage()
-                .values()
-                .map(|lineage| &lineage.allocation),
-        )
-        .chain(initial.audio_bindings().allocation_ids())
-        .collect();
+    let initial = documents.initial_allocations(connection)?;
+    let allocations = &initial.names;
     let mut seen = std::collections::BTreeSet::new();
     for revision in revisions {
         let exists: bool = connection.query_row(
             "SELECT EXISTS(SELECT 1 FROM revisions WHERE id=?1 UNION ALL SELECT 1 FROM transaction_steps WHERE step_revision=?1)",
             [revision.as_str()], |row| row.get(0),
         )?;
-        if exists || allocations.contains(revision) || !seen.insert(*revision) {
+        if exists || allocations.contains(*revision) || !seen.insert(*revision) {
             return Err(StoreError::RevisionReused(revision.as_str().to_owned()));
         }
     }
     Ok(())
 }
 
-/// `patch` is the forward patch for undo/redo revisions; an edit's patch is
-/// its history entry. The parent's stored document may then be elided.
+/// Insert a revision row whose stored forward patch is described by `patch`:
+/// an edit's history entry, or an undo/redo revision's own patch row.
 fn insert_revision(
     connection: &Connection,
+    documents: &document_cache::DocumentCache,
     before: &ProjectDocument,
     after: &ProjectDocument,
     kind: &str,
-    patch: Option<&deadpan_core::DocumentPatch>,
+    patch: revision_storage::StoredPatch<'_>,
 ) -> Result<(), StoreError> {
-    ensure_unused_revision(connection, after.revision_id())?;
-    let json = after.to_compact_json()?;
-    check_document_size(&json)?;
-    connection.execute(
-        "INSERT INTO revisions(id,parent_id,kind,document) VALUES (?1,?2,?3,?4)",
-        params![
-            after.revision_id().as_str(),
-            before.revision_id().as_str(),
-            kind,
-            json
-        ],
-    )?;
-    revision_storage::after_insert(
-        connection,
-        after.revision_id(),
-        before.revision_id(),
-        kind,
-        patch,
-    )
+    ensure_unused_revision(connection, documents, after.revision_id())?;
+    revision_storage::insert(connection, Some(before.revision_id()), after, kind, patch)
 }
 
 #[cfg(test)]

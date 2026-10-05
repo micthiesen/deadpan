@@ -79,8 +79,12 @@ impl ProjectStore {
         self.require_writer()?;
         let capture_revision = placement_source_revision(&request.command)?;
         let transaction = self.connection.unchecked_transaction()?;
-        let plan = crate::prepare_command(&transaction, request)?;
-        self.admit_slice_view(plan.next, Some(plan.current), capture_revision.clone())
+        let plan = crate::prepare_command(&transaction, &self.documents, request)?;
+        self.admit_slice_view(
+            deadpan_core::ProjectDocument::clone(&plan.next),
+            Some(std::sync::Arc::unwrap_or_clone(plan.current)),
+            capture_revision.clone(),
+        )
     }
 
     /// Materialize only the copied ownership contribution in an empty neutral
@@ -92,12 +96,12 @@ impl ProjectStore {
     ) -> Result<AdmittedSliceView, StoreError> {
         self.require_writer()?;
         let transaction = self.connection.unchecked_transaction()?;
-        let current = crate::read_snapshot(&transaction)?;
+        let current = self.documents.head(&transaction)?;
         if current.project_id() != slice.project_id() {
             return Err(invalid("copied view belongs to another project"));
         }
-        crate::ensure_unused_revision(&transaction, &identities.empty_revision)?;
-        crate::ensure_unused_revision(&transaction, &identities.view_revision)?;
+        crate::ensure_unused_revision(&transaction, &self.documents, &identities.empty_revision)?;
+        crate::ensure_unused_revision(&transaction, &self.documents, &identities.view_revision)?;
         let empty = ProjectDocument::new(
             slice.project_id().clone(),
             identities.empty_revision,

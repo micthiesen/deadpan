@@ -9,6 +9,7 @@ use deadpan_media::protocol::{
     ConversionReport, MAX_REPLY_BYTES, MAX_REQUEST_BYTES, REMUX_ARGUMENT, REMUX_PROTOCOL_VERSION,
     REPORT_PROTOCOL_VERSION, RemuxReply, RemuxReport, RemuxRequest, WorkerReply, WorkerRequest,
 };
+use deadpan_media::proxy::{PROXY_ARGUMENT, ProxyReply, ProxyRequest};
 
 #[allow(unsafe_code)]
 mod ffi {
@@ -104,7 +105,54 @@ mod ffi {
         pub channels: u32,
     }
 
+    #[repr(C)]
+    pub struct ProxyRequest {
+        pub source_width: u32,
+        pub source_height: u32,
+        pub width: u32,
+        pub height: u32,
+        pub time_base_num: u32,
+        pub time_base_den: u32,
+        pub sar_num: u32,
+        pub sar_den: u32,
+        pub rotation_quarter_turns: u32,
+        pub transfer: u32,
+        pub primaries: u32,
+        pub quality: u32,
+        pub frames: u64,
+        pub max_output_bytes: u64,
+        pub timeout_ms: u64,
+    }
+
+    #[repr(C)]
+    #[derive(Default)]
+    pub struct ProxyReport {
+        pub output_bytes: u64,
+        pub packets: u64,
+        pub keyframes: u64,
+        pub width: u32,
+        pub height: u32,
+    }
+
     unsafe extern "C" {
+        fn deadpan_proxy_open(
+            output_fd: c_int,
+            request: *const ProxyRequest,
+            error: *mut Error,
+        ) -> c_int;
+        fn deadpan_proxy_push(
+            rgba: *const u8,
+            rgba_bytes: u64,
+            stride: u64,
+            pts: i64,
+            duration: i64,
+            error: *mut Error,
+        ) -> c_int;
+        fn deadpan_proxy_finish(
+            output_fd: c_int,
+            report: *mut ProxyReport,
+            error: *mut Error,
+        ) -> c_int;
         fn deadpan_remux(
             input_fd: c_int,
             output_fd: c_int,
@@ -120,6 +168,44 @@ mod ffi {
             report: *mut Report,
             error: *mut Error,
         ) -> c_int;
+    }
+
+    #[allow(unsafe_code)]
+    pub fn proxy_open(output_fd: c_int, request: &ProxyRequest, error: &mut Error) -> c_int {
+        // SAFETY: both pointers reference initialized repr(C) values borrowed
+        // for this synchronous call; the adapter copies the request and keeps
+        // only its own encoder state and the descriptor number.
+        unsafe { deadpan_proxy_open(output_fd, request, error) }
+    }
+
+    #[allow(unsafe_code)]
+    pub fn proxy_push(
+        rgba: &[u8],
+        stride: u64,
+        pts: i64,
+        duration: i64,
+        error: &mut Error,
+    ) -> c_int {
+        // SAFETY: the pointer and length describe one initialized borrowed
+        // slice that the adapter reads only during this synchronous call; it
+        // checks the length against stride times the opened source height.
+        unsafe {
+            deadpan_proxy_push(
+                rgba.as_ptr(),
+                rgba.len() as u64,
+                stride,
+                pts,
+                duration,
+                error,
+            )
+        }
+    }
+
+    #[allow(unsafe_code)]
+    pub fn proxy_finish(output_fd: c_int, report: &mut ProxyReport, error: &mut Error) -> c_int {
+        // SAFETY: both pointers reference initialized repr(C) values that remain
+        // exclusively borrowed for this synchronous call.
+        unsafe { deadpan_proxy_finish(output_fd, report, error) }
     }
 
     #[allow(unsafe_code)]
@@ -307,6 +393,28 @@ fn parse_remux(
     Ok(request)
 }
 
+fn parse_proxy(
+    argument: Option<OsString>,
+    extra: Option<OsString>,
+) -> Result<ProxyRequest, String> {
+    if extra.is_some() {
+        return Err("proxy requires exactly one JSON argument".into());
+    }
+    let encoded = argument
+        .ok_or("proxy requires exactly one JSON argument")?
+        .into_string()
+        .map_err(|_| "proxy request is not UTF-8")?;
+    if encoded.len() > MAX_REQUEST_BYTES {
+        return Err("proxy request exceeds the wire limit".into());
+    }
+    let request: ProxyRequest =
+        serde_json::from_str(&encoded).map_err(|error| format!("invalid proxy JSON: {error}"))?;
+    request.validate().map_err(|error| error.to_string())?;
+    Ok(request)
+}
+
+mod proxy;
+
 fn remux(request: &RemuxRequest) -> RemuxReply {
     let native_request = ffi::RemuxRequest {
         video_byte_length: request.video_byte_length,
@@ -391,7 +499,23 @@ fn run() -> (WorkerReply, ExitCode) {
 
 fn main() -> ExitCode {
     let mut arguments = std::env::args_os().skip(1);
-    if arguments.next().as_deref() == Some(std::ffi::OsStr::new(REMUX_ARGUMENT)) {
+    let mode = arguments.next();
+    if mode.as_deref() == Some(std::ffi::OsStr::new(PROXY_ARGUMENT)) {
+        let reply = match parse_proxy(arguments.next(), arguments.next()) {
+            Ok(request) => proxy::run(&request),
+            Err(message) => ProxyReply::Failure {
+                code: "invalid_request".into(),
+                message,
+            },
+        };
+        let success = matches!(reply, ProxyReply::Success { .. });
+        return if emit_json(serde_json::to_vec(&reply)).is_ok() && success {
+            ExitCode::SUCCESS
+        } else {
+            ExitCode::FAILURE
+        };
+    }
+    if mode.as_deref() == Some(std::ffi::OsStr::new(REMUX_ARGUMENT)) {
         let reply = match parse_remux(arguments.next(), arguments.next()) {
             Ok(request) => remux(&request),
             Err(message) => RemuxReply::Failure {

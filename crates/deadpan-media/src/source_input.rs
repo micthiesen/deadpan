@@ -55,6 +55,28 @@ impl VerifiedSourceInput {
         )?)
     }
 
+    /// Share an already verified, read-only regular file without copying it.
+    /// The caller must have checked that `file` holds exactly `identity`'s
+    /// bytes (a full hash, or a recorded hash bound to the file's unchanged
+    /// device, inode, length and modification time) and that nothing it
+    /// trusts can modify it. Decoders still check every picture against its
+    /// index. Used for preview proxies, never for Originals.
+    pub fn from_verified_file(
+        file: File,
+        identity: SourceContentIdentity,
+    ) -> Result<Self, SourceInputError> {
+        let metadata = file
+            .metadata()
+            .map_err(|error| SourceInputError::Snapshot(error.into()))?;
+        if !metadata.is_file() || metadata.len() != identity.byte_length() {
+            return Err(SourceInputError::Limits);
+        }
+        Ok(Self {
+            file: Arc::new(file),
+            identity,
+        })
+    }
+
     pub fn identity(&self) -> SourceContentIdentity {
         self.identity
     }

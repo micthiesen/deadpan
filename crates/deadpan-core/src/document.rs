@@ -1,4 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::Arc;
 use std::{error::Error, fmt};
 
 use serde::{Deserialize, Deserializer, Serialize, de};
@@ -570,7 +571,16 @@ struct DocumentWire {
 impl TryFrom<DocumentWire> for ProjectDocument {
     type Error = DocumentError;
     fn try_from(value: DocumentWire) -> Result<Self, Self::Error> {
-        let document = Self {
+        let document = Self::from_wire(value);
+        document.validate()?;
+        Ok(document)
+    }
+}
+
+impl ProjectDocument {
+    /// Unvalidated; every caller validates before exposing the document.
+    fn from_wire(value: DocumentWire) -> Self {
+        Self {
             schema_version: value.schema_version,
             project_id: value.project_id,
             revision_id: value.revision_id,
@@ -589,9 +599,7 @@ impl TryFrom<DocumentWire> for ProjectDocument {
             audio_lineage: value.audio_lineage,
             audio_bindings: value.audio_bindings,
             targets: value.targets,
-        };
-        document.validate()?;
-        Ok(document)
+        }
     }
 }
 
@@ -811,10 +819,24 @@ impl ProjectDocument {
     }
 
     pub fn validate(&self) -> Result<(), DocumentError> {
+        if validated::durations(self).is_some() {
+            return Ok(());
+        }
         self.durations().map(|_| ())
     }
     pub fn duration(&self) -> Result<FrameDuration, DocumentError> {
         self.node_duration(&self.root)
+    }
+    /// The root duration from the structural pass alone. For a validated
+    /// document this equals [`Self::duration`] without repeating the
+    /// document-wide binding, mark and effect checks.
+    pub fn structural_duration(&self) -> Result<FrameDuration, DocumentError> {
+        self.structural_durations()?
+            .get(&self.root)
+            .copied()
+            .ok_or_else(|| {
+                DocumentError::new(DocumentErrorCode::MissingNode, "root does not exist")
+            })
     }
     pub fn node_duration(&self, id: &NodeId) -> Result<FrameDuration, DocumentError> {
         self.durations()?.get(id).copied().ok_or_else(|| {
@@ -834,6 +856,9 @@ impl ProjectDocument {
 
     /// Validate once and return every authored duration for plan compilation.
     pub fn durations(&self) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
+        if let Some(durations) = validated::durations(self) {
+            return Ok(durations.as_ref().clone());
+        }
         self.durations_with_context_limits(
             crate::MAX_CAPTURED_FRAMING_RECORDS,
             crate::MAX_GAIN_RECORDS,
@@ -855,6 +880,64 @@ impl ProjectDocument {
         context_limit: usize,
         gain_limit: usize,
     ) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
+        self.validated_with_context_limits(context_limit, gain_limit, None)
+            .map(|(durations, _)| durations)
+    }
+
+    /// Complete validation of this document. With `previous`, the audio
+    /// binding owners that the patch left unchanged reuse their proved
+    /// placement checks (see `AudioBindingState::validation_work`); every
+    /// other invariant is checked over the complete document.
+    /// Complete validation, retaining the per-owner binding proof.
+    pub(crate) fn validated_with_proof(
+        &self,
+    ) -> Result<
+        (
+            BTreeMap<NodeId, FrameDuration>,
+            crate::audio_binding::BindingProof,
+        ),
+        DocumentError,
+    > {
+        self.validated_with_context_limits(
+            crate::MAX_CAPTURED_FRAMING_RECORDS,
+            crate::MAX_GAIN_RECORDS,
+            None,
+        )
+    }
+
+    pub(crate) fn validate_after(
+        &self,
+        previous: &ValidatedDocument,
+        bindings: Option<&crate::AudioBindingPatch>,
+    ) -> Result<
+        (
+            BTreeMap<NodeId, FrameDuration>,
+            crate::audio_binding::BindingProof,
+        ),
+        DocumentError,
+    > {
+        self.validated_with_context_limits(
+            crate::MAX_CAPTURED_FRAMING_RECORDS,
+            crate::MAX_GAIN_RECORDS,
+            Some((&previous.bindings, bindings)),
+        )
+    }
+
+    fn validated_with_context_limits(
+        &self,
+        context_limit: usize,
+        gain_limit: usize,
+        previous: Option<(
+            &crate::audio_binding::BindingProof,
+            Option<&crate::AudioBindingPatch>,
+        )>,
+    ) -> Result<
+        (
+            BTreeMap<NodeId, FrameDuration>,
+            crate::audio_binding::BindingProof,
+        ),
+        DocumentError,
+    > {
         let durations = self.structural_durations()?;
         crate::sound_events::validate(self, &durations)?;
         crate::sound_allowance::validate(self)?;
@@ -877,9 +960,9 @@ impl ProjectDocument {
         crate::picture_context::validate_nodes_with_limit(self.nodes.values(), context_limit)?;
         self.validate_basis_state(&durations)?;
         crate::audio_lineage::validate(self)?;
-        self.audio_bindings.validate_for(self)?;
+        let bindings = self.audio_bindings.validate_for_after(self, previous)?;
         crate::marks::validate_marks(self, &durations)?;
-        Ok(durations)
+        Ok((durations, bindings))
     }
 
     /// A hanging tail is fed by what is heard before it on the edit clock.
@@ -888,10 +971,21 @@ impl ProjectDocument {
     /// so a tail Hold or Repeat gap there is invalid. Transparent Partitions
     /// and unity Retimes keep the edit clock.
     fn validate_tails_outside_speed_stages(&self) -> Result<(), DocumentError> {
+        let speed_stage = |kind: &NodeKind| {
+            matches!(
+                kind,
+                NodeKind::Retime { duration, mapping, purpose, .. }
+                    if purpose.is_edit() && *duration != mapping.duration()
+            )
+        };
+        // Only a node below a speed stage can carry a tail into it.
+        if !self.nodes.values().any(|node| speed_stage(&node.kind)) {
+            return Ok(());
+        }
         let tail = |audio: &HoldAudio| matches!(audio, HoldAudio::Tail { .. });
-        let mut stack = vec![(self.root.clone(), false)];
+        let mut stack = vec![(&self.root, false)];
         while let Some((id, inside)) = stack.pop() {
-            let Some(node) = self.nodes.get(&id) else {
+            let Some(node) = self.nodes.get(id) else {
                 continue;
             };
             let carried = match &node.kind {
@@ -909,13 +1003,9 @@ impl ProjectDocument {
                     ),
                 ));
             }
-            let speed = matches!(
-                &node.kind,
-                NodeKind::Retime { duration, mapping, purpose, .. }
-                    if purpose.is_edit() && *duration != mapping.duration()
-            );
-            for child in self.children(&id) {
-                stack.push((child.clone(), inside || speed));
+            let speed = speed_stage(&node.kind);
+            for child in self.children(id) {
+                stack.push((child, inside || speed));
             }
         }
         Ok(())
@@ -926,6 +1016,10 @@ impl ProjectDocument {
     pub(crate) fn structural_durations(
         &self,
     ) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
+        // Complete validation returns exactly the structural durations.
+        if let Some(durations) = validated::durations(self) {
+            return Ok(durations.as_ref().clone());
+        }
         if self.schema_version != DOCUMENT_SCHEMA_VERSION {
             return Err(DocumentError::new(
                 DocumentErrorCode::UnsupportedSchema,
@@ -962,16 +1056,26 @@ impl ProjectDocument {
                 ));
             }
         }
+        // Every structural reference: primitive children plus override roots.
+        // Override owners were checked to be existing nodes above.
         let mut edge_count = 0usize;
-        for id in self.nodes.keys() {
-            edge_count = edge_count
-                .checked_add(self.children(id).count())
-                .ok_or_else(|| {
-                    DocumentError::new(
-                        DocumentErrorCode::LimitExceeded,
-                        "too many structural references",
-                    )
-                })?;
+        for count in self
+            .nodes
+            .values()
+            .map(|node| node.kind.children().len())
+            .chain(
+                self.overrides
+                    .values()
+                    .chain(self.gap_overrides.values())
+                    .map(|entries| entries.iter().count()),
+            )
+        {
+            edge_count = edge_count.checked_add(count).ok_or_else(|| {
+                DocumentError::new(
+                    DocumentErrorCode::LimitExceeded,
+                    "too many structural references",
+                )
+            })?;
             if edge_count > MAX_DOCUMENT_NODES {
                 return Err(DocumentError::new(
                     DocumentErrorCode::LimitExceeded,
@@ -998,8 +1102,9 @@ impl ProjectDocument {
                 "root must reference a Sequence",
             ));
         }
+        // Borrow identities during the walk; only the returned map owns them.
         let mut seen = BTreeSet::new();
-        let mut stack = vec![(self.root.clone(), 0usize, false)];
+        let mut stack: Vec<(&NodeId, usize, Option<&BeatNode>)> = vec![(&self.root, 0usize, None)];
         let mut durations = BTreeMap::new();
         while let Some((id, depth, visited)) = stack.pop() {
             if depth > MAX_DOCUMENT_DEPTH {
@@ -1008,14 +1113,14 @@ impl ProjectDocument {
                     "document structural depth exceeds 256 edges",
                 ));
             }
-            let node = self.nodes.get(&id).ok_or_else(|| {
-                DocumentError::new(
-                    DocumentErrorCode::MissingNode,
-                    format!("node {id} does not exist"),
-                )
-            })?;
-            if !visited {
-                if !seen.insert(id.clone()) {
+            let Some(node) = visited else {
+                let node = self.nodes.get(id).ok_or_else(|| {
+                    DocumentError::new(
+                        DocumentErrorCode::MissingNode,
+                        format!("node {id} does not exist"),
+                    )
+                })?;
+                if !seen.insert(id) {
                     return Err(DocumentError::new(
                         DocumentErrorCode::InvalidTree,
                         format!("node {id} has multiple parents or forms a cycle"),
@@ -1023,12 +1128,30 @@ impl ProjectDocument {
                 }
                 validate_label(&node.label)?;
                 node.audio_edges.validate(&node.kind)?;
-                stack.push((id.clone(), depth, true));
-                for child in self.children(&id).rev() {
-                    stack.push((child.clone(), depth + 1, false));
+                stack.push((id, depth, Some(node)));
+                // The same order as `children`: primitive, override, gap roots.
+                let overrides = self
+                    .overrides
+                    .get(id)
+                    .into_iter()
+                    .flat_map(|entries| entries.iter().map(|(_, root)| root));
+                let gaps = self
+                    .gap_overrides
+                    .get(id)
+                    .into_iter()
+                    .flat_map(|entries| entries.iter().map(|(_, root)| root));
+                let children: Vec<&NodeId> = node
+                    .kind
+                    .children()
+                    .iter()
+                    .chain(overrides)
+                    .chain(gaps)
+                    .collect();
+                for child in children.into_iter().rev() {
+                    stack.push((child, depth + 1, None));
                 }
                 continue;
-            }
+            };
             let child_duration = |id: &NodeId| -> Result<FrameDuration, DocumentError> {
                 durations.get(id).copied().ok_or_else(|| {
                     DocumentError::new(
@@ -1144,9 +1267,9 @@ impl ProjectDocument {
                     RepeatLayout::compile_with_gap_overrides(
                         iterations,
                         child,
-                        self.overrides.get(&id),
+                        self.overrides.get(id),
                         gap.as_ref().map_or(FrameDuration::ZERO, |gap| gap.duration),
-                        self.gap_overrides.get(&id),
+                        self.gap_overrides.get(id),
                         &durations,
                     )?
                     .duration()
@@ -1185,7 +1308,7 @@ impl ProjectDocument {
                     *duration
                 }
             };
-            durations.insert(id, duration);
+            durations.insert(id.clone(), duration);
         }
         if seen.len() != self.nodes.len() {
             return Err(DocumentError::new(
@@ -1611,3 +1734,175 @@ where
     }
     deserializer.deserialize_map(Visitor(std::marker::PhantomData))
 }
+
+/// A document proved valid, with the durations its validation computed.
+///
+/// The document is shared and never mutably reachable, so the proof cannot be
+/// invalidated. Inside [`ValidatedDocument::scope`], validation queries on this
+/// exact document return the retained result instead of repeating the
+/// whole-document traversal: a pure function memoized on an immutable value.
+#[derive(Debug, Clone)]
+pub struct ValidatedDocument {
+    document: Arc<ProjectDocument>,
+    durations: Arc<BTreeMap<NodeId, FrameDuration>>,
+    /// Retained per-owner audio binding work, for the next validation.
+    bindings: Arc<crate::audio_binding::BindingProof>,
+}
+
+impl ValidatedDocument {
+    /// Validate a document once.
+    pub fn new(document: Arc<ProjectDocument>) -> Result<Self, DocumentError> {
+        let (durations, bindings) = document.validated_with_context_limits(
+            crate::MAX_CAPTURED_FRAMING_RECORDS,
+            crate::MAX_GAIN_RECORDS,
+            None,
+        )?;
+        Ok(Self {
+            document,
+            durations: Arc::new(durations),
+            bindings: Arc::new(bindings),
+        })
+    }
+
+    /// A result whose complete validation produced `durations` and `bindings`.
+    pub(crate) fn from_validation(
+        document: ProjectDocument,
+        durations: BTreeMap<NodeId, FrameDuration>,
+        bindings: crate::audio_binding::BindingProof,
+    ) -> Self {
+        Self {
+            document: Arc::new(document),
+            durations: Arc::new(durations),
+            bindings: Arc::new(bindings),
+        }
+    }
+
+    pub fn document(&self) -> &Arc<ProjectDocument> {
+        &self.document
+    }
+
+    /// Apply a guarded patch and validate the result once. A stored patch
+    /// names every binding owner and timing table it changes, so unchanged
+    /// owners reuse their proved checks (see `AudioBindingState`).
+    pub fn apply_patch(&self, patch: &crate::DocumentPatch) -> Result<Self, crate::EditError> {
+        let next = patch.apply_stored(&self.document)?;
+        let (durations, bindings) = next.validate_after(self, patch.audio_bindings.as_ref())?;
+        Ok(Self::from_validation(next, durations, bindings))
+    }
+
+    /// Recompute this document's validation from scratch, outside any
+    /// retained scope, and require exactly the retained result. Hosts call
+    /// this in debug builds to check that reused validation matched the
+    /// complete one.
+    pub fn check_against_complete_validation(&self) -> Result<(), DocumentError> {
+        let (durations, bindings) = self.document.validated_with_context_limits(
+            crate::MAX_CAPTURED_FRAMING_RECORDS,
+            crate::MAX_GAIN_RECORDS,
+            None,
+        )?;
+        if durations != *self.durations || bindings != *self.bindings {
+            return Err(DocumentError::new(
+                DocumentErrorCode::InvalidTree,
+                "retained validation differs from complete validation",
+            ));
+        }
+        Ok(())
+    }
+
+    pub(crate) fn binding_proof(&self) -> &crate::audio_binding::BindingProof {
+        &self.bindings
+    }
+
+    pub(crate) fn into_document(self) -> Arc<ProjectDocument> {
+        self.document
+    }
+
+    pub fn durations(&self) -> &BTreeMap<NodeId, FrameDuration> {
+        &self.durations
+    }
+
+    /// Run `f` with this document's validation retained for queries on it.
+    pub fn scope<R>(&self, f: impl FnOnce() -> R) -> R {
+        let _guard = validated::enter(&self.document, &self.durations);
+        f()
+    }
+}
+
+impl std::ops::Deref for ValidatedDocument {
+    type Target = ProjectDocument;
+    fn deref(&self) -> &ProjectDocument {
+        &self.document
+    }
+}
+
+impl ProjectDocument {
+    /// Parse and validate once, retaining the proof.
+    pub fn from_json_validated(json: &str) -> Result<ValidatedDocument, DocumentError> {
+        if json.len() > MAX_DOCUMENT_JSON_BYTES {
+            return Err(json_limit());
+        }
+        crate::framing::preflight(json)?;
+        crate::picture_context::preflight(json)?;
+        let wire: DocumentWire = serde_json::from_str(json).map_err(DocumentError::json)?;
+        ValidatedDocument::new(Arc::new(Self::from_wire(wire)))
+    }
+}
+
+impl PartialEq for ValidatedDocument {
+    fn eq(&self, other: &Self) -> bool {
+        self.document == other.document
+    }
+}
+
+mod validated {
+    use super::*;
+    use std::cell::RefCell;
+
+    type Entry = (*const ProjectDocument, Arc<BTreeMap<NodeId, FrameDuration>>);
+
+    thread_local! {
+        static SCOPES: RefCell<Vec<Entry>> = const { RefCell::new(Vec::new()) };
+    }
+
+    pub(super) struct Guard;
+
+    impl Drop for Guard {
+        fn drop(&mut self) {
+            SCOPES.with(|scopes| {
+                scopes.borrow_mut().pop();
+            });
+        }
+    }
+
+    /// The guard lives inside `ValidatedDocument::scope`, which borrows the
+    /// shared document for the whole scope, so the address cannot be reused
+    /// by another document while the entry exists.
+    pub(super) fn enter(
+        document: &Arc<ProjectDocument>,
+        durations: &Arc<BTreeMap<NodeId, FrameDuration>>,
+    ) -> Guard {
+        SCOPES.with(|scopes| {
+            scopes
+                .borrow_mut()
+                .push((Arc::as_ptr(document), Arc::clone(durations)));
+        });
+        Guard
+    }
+
+    pub(super) fn durations(
+        document: &ProjectDocument,
+    ) -> Option<Arc<BTreeMap<NodeId, FrameDuration>>> {
+        SCOPES.with(|scopes| {
+            scopes
+                .borrow()
+                .iter()
+                .rev()
+                .find(|(pointer, _)| std::ptr::eq(*pointer, document))
+                .map(|(_, durations)| Arc::clone(durations))
+        })
+    }
+}
+
+#[cfg(test)]
+#[path = "validated_tests.rs"]
+mod validated_tests;

@@ -20,7 +20,7 @@ use crate::generation_attempts::{
     validate_bundle_receipt,
 };
 use crate::{
-    CommandPlan, CommitOutcome, ProjectStore, StoreError, prepare_admitted_command, read_snapshot,
+    CommandPlan, CommitOutcome, ProjectStore, StoreError, prepare_admitted_command,
     write_command_plan,
 };
 
@@ -46,7 +46,7 @@ impl ProjectStore {
     ) -> Result<EditTransaction, StoreError> {
         self.verify_bundle_objects(&input.expected_receipt, limits)?;
         let transaction = self.connection.unchecked_transaction()?;
-        Ok(prepare_acceptance(&transaction, input)?.edit)
+        Ok(prepare_acceptance(&transaction, &self.documents, input)?.edit)
     }
 
     /// Revalidates all retained dependencies before taking the SQLite write
@@ -59,10 +59,11 @@ impl ProjectStore {
     ) -> Result<CommitOutcome, StoreError> {
         self.require_writer()?;
         self.verify_bundle_objects(&input.expected_receipt, limits)?;
+        let documents = &self.documents;
         let transaction = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let plan = prepare_acceptance(&transaction, input)?;
+        let plan = prepare_acceptance(&transaction, documents, input)?;
         if !relevance.observations.iter().any(|observation| {
             observation.request_id == input.identity.request_id
                 && observation.after_context
@@ -72,17 +73,20 @@ impl ProjectStore {
                 "acceptance must preserve the selected request's resolved context",
             ));
         }
-        let outcome = write_command_plan(&transaction, plan, Some(relevance), None)?;
+        let (outcome, next) =
+            write_command_plan(&transaction, documents, plan, Some(relevance), None)?;
         transaction.commit()?;
+        documents.insert(next);
         Ok(outcome)
     }
 }
 
 fn prepare_acceptance(
     connection: &Connection,
+    documents: &crate::document_cache::DocumentCache,
     input: &GenerationAcceptance,
 ) -> Result<CommandPlan, StoreError> {
-    let current = read_snapshot(connection)?;
+    let current = documents.head(connection)?;
     if current.revision_id() != &input.expected_revision {
         return Err(StoreError::RevisionConflict {
             expected: input.expected_revision.as_str().into(),
@@ -191,7 +195,7 @@ fn prepare_acceptance(
             ]),
         },
     };
-    prepare_admitted_command(connection, &command, Some(&artifact))
+    prepare_admitted_command(connection, documents, &command, Some(&artifact))
 }
 
 fn asset_record(object: &GeneratedObjectRef, video: &VideoSpec, span: SourceSpan) -> AssetRecord {

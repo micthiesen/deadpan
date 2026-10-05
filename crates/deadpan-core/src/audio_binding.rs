@@ -1234,10 +1234,22 @@ impl AudioBindingState {
     }
 
     pub fn validate(&self) -> Result<(), DocumentError> {
-        self.validation_work().map(|_| ())
+        self.validation_work(None).map(|_| ())
     }
 
-    fn validation_work(&self) -> Result<Work, DocumentError> {
+    /// Validate every owner, or with `previous`, reuse each owner's proved
+    /// placement checks when the patch changed neither its binding nor any
+    /// timing table it names. Those checks are pure functions of exactly that
+    /// binding and those immutable tables, and they spend a fixed amount of
+    /// work; a reused owner spends the same amount, in the same order, and
+    /// only when the remaining budget strictly exceeds it, which is when the
+    /// original checks are guaranteed to succeed again. Every aggregate,
+    /// count and cross-owner check still runs over the complete state.
+    fn validation_work(
+        &self,
+        previous: Option<(&BindingProof, Option<&crate::AudioBindingPatch>)>,
+    ) -> Result<(Work, BindingProof), DocumentError> {
+        let mut spent_by_owner = Vec::with_capacity(self.bindings.len() + self.gap_bindings.len());
         let mut work = Work::new(MAX_AUDIO_BINDING_ENTRIES)?;
         if self.timings.len() > MAX_AUDIO_BINDING_ENTRIES
             || self.bindings.len() > MAX_AUDIO_BINDING_ENTRIES
@@ -1263,7 +1275,11 @@ impl AudioBindingState {
             if nodes > MAX_AUDIO_BINDING_ENTRIES || runs > MAX_AUDIO_BINDING_ENTRIES {
                 return Err(limit("aggregate audio timing complexity"));
             }
-            layout.validate()?;
+            // A layout is immutable and can only be constructed through
+            // admission, which builds and checks its complete index. Rebuilding
+            // that index here repeated the same pure check on every document
+            // validation (most of a 10,000-node project's validation time).
+            debug_assert!(layout.validate().is_ok());
         }
         let mut used = BTreeSet::new();
         work.spend(crate::sound_clock::reference_count(&self.sound_clocks)?)?;
@@ -1279,9 +1295,42 @@ impl AudioBindingState {
                 }
             }
         }
+        // Timing tables the patch changes, as a set: the patch's public list
+        // is not trusted to be sorted or unique.
+        let changed_timings: BTreeSet<&AudioTimingId> = previous
+            .and_then(|(_, patch)| patch)
+            .map(|patch| patch.timings.iter().map(|change| &change.id).collect())
+            .unwrap_or_default();
         let mut entries = 0usize;
-        for (kind, _, binding) in self.owners() {
-            binding_wire_size(binding)?;
+        for (kind, owner, binding) in self.owners() {
+            // An unchanged owner's proved placement work, when reusable.
+            let reused = previous.and_then(|(proof, patch)| {
+                let changed = patch.is_some_and(|patch| {
+                    let bindings = match kind {
+                        AudioRecipeKind::Node => &patch.bindings,
+                        AudioRecipeKind::RepeatGap => &patch.gap_bindings,
+                    };
+                    bindings.contains_key(owner)
+                        || binding
+                            .placements()
+                            .any(|template| changed_timings.contains(&template.reference.timing))
+                });
+                (!changed)
+                    .then(|| proof.get(kind, owner))
+                    .flatten()
+                    .filter(|spent| {
+                        work.maximum
+                            .checked_sub(work.used)
+                            .is_some_and(|remaining| remaining > *spent)
+                    })
+            });
+            #[cfg(test)]
+            if reused.is_some() {
+                REUSED_OWNERS.with(|count| count.set(count.get() + 1));
+            }
+            if reused.is_none() {
+                binding_wire_size(binding)?;
+            }
             let terms = binding
                 .resume
                 .as_ref()
@@ -1293,16 +1342,19 @@ impl AudioBindingState {
             {
                 return Err(limit("audio phase term and reanchor count"));
             }
-            for step in &binding.reanchors {
-                if let Some(window) = step.window {
-                    ExactFrameRange::new(window.start, window.end)?;
+            if reused.is_none() {
+                for step in &binding.reanchors {
+                    if let Some(window) = step.window {
+                        ExactFrameRange::new(window.start, window.end)?;
+                    }
+                    let layout = self
+                        .timings
+                        .get(&step.placement.reference.timing)
+                        .ok_or_else(|| invalid("audio timing identity is missing"))?;
+                    step.validate_anchor(layout)?;
                 }
-                let layout = self
-                    .timings
-                    .get(&step.placement.reference.timing)
-                    .ok_or_else(|| invalid("audio timing identity is missing"))?;
-                step.validate_anchor(layout)?;
             }
+            let before = work.used;
             for template in binding.placements() {
                 if template.reference.recipe != kind
                     && !(kind == AudioRecipeKind::Node
@@ -1323,21 +1375,37 @@ impl AudioBindingState {
                     .timings
                     .get(&template.reference.timing)
                     .ok_or_else(|| invalid("audio timing identity is missing"))?;
-                template.validate_with(layout, &mut work)?;
+                if reused.is_none() {
+                    template.validate_with(layout, &mut work)?;
+                }
                 used.insert(&template.reference.timing);
             }
+            if let Some(spent) = reused {
+                work.spend(spent)?;
+            }
+            spent_by_owner.push((kind, owner, work.used - before));
         }
         if used.len() != self.timings.len() {
             return Err(invalid("unreferenced audio timing record"));
         }
-        Ok(work)
+        Ok((work, BindingProof::from_owners(spent_by_owner)))
     }
 
     pub fn validate_for(&self, document: &ProjectDocument) -> Result<(), DocumentError> {
+        self.validate_for_after(document, None).map(|_| ())
+    }
+
+    /// [`Self::validate_for`], reusing unchanged owners' placement proofs from
+    /// a validated predecessor and the patch that produced this state.
+    pub(crate) fn validate_for_after(
+        &self,
+        document: &ProjectDocument,
+        previous: Option<(&BindingProof, Option<&crate::AudioBindingPatch>)>,
+    ) -> Result<BindingProof, DocumentError> {
         if self.is_empty() {
-            return Ok(());
+            return Ok(BindingProof::default());
         }
-        let mut work = self.validation_work()?;
+        let (mut work, proof) = self.validation_work(previous)?;
         if self
             .timings
             .values()
@@ -1393,10 +1461,18 @@ impl AudioBindingState {
                 }
             }
         }
-        let mut parents = BTreeMap::new();
-        for parent in document.nodes().keys() {
+        // The document's tree was validated before its bindings, so every
+        // child has one parent and the map is independent of visiting order.
+        let mut parents = std::collections::HashMap::with_capacity(document.nodes().len());
+        for (parent, node) in document.nodes() {
             work.spend(1)?;
-            for child in document.children(parent) {
+            let overrides = document
+                .overrides()
+                .get(parent)
+                .into_iter()
+                .chain(document.gap_overrides().get(parent))
+                .flat_map(|entries| entries.iter().map(|(_, root)| root));
+            for child in node.kind.children().iter().chain(overrides) {
                 parents.insert(child, parent);
             }
         }
@@ -1510,7 +1586,7 @@ impl AudioBindingState {
                 }
             }
         }
-        Ok(())
+        Ok(proof)
     }
 
     pub fn resolve(
@@ -2173,5 +2249,44 @@ mod wire_bound_tests {
         let actual = serde_json::to_vec(&binding).unwrap().len();
         assert!(actual * 2 < bound, "{actual} bytes against bound {bound}");
         binding_wire_size(&binding).unwrap();
+    }
+}
+
+#[cfg(test)]
+thread_local! {
+    /// Owners whose proved placement checks a validation reused.
+    pub(crate) static REUSED_OWNERS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
+/// Work each owner's placement checks spent when its state was validated.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct BindingProof {
+    nodes: BTreeMap<NodeId, usize>,
+    gaps: BTreeMap<NodeId, usize>,
+}
+
+impl BindingProof {
+    fn get(&self, kind: AudioRecipeKind, owner: &NodeId) -> Option<usize> {
+        match kind {
+            AudioRecipeKind::Node => self.nodes.get(owner),
+            AudioRecipeKind::RepeatGap => self.gaps.get(owner),
+        }
+        .copied()
+    }
+
+    fn from_owners(owners: Vec<(AudioRecipeKind, &NodeId, usize)>) -> Self {
+        // Owners arrive sorted within each kind, so both maps build in bulk.
+        let mut nodes = Vec::new();
+        let mut gaps = Vec::new();
+        for (kind, owner, spent) in owners {
+            match kind {
+                AudioRecipeKind::Node => nodes.push((owner.clone(), spent)),
+                AudioRecipeKind::RepeatGap => gaps.push((owner.clone(), spent)),
+            }
+        }
+        Self {
+            nodes: nodes.into_iter().collect(),
+            gaps: gaps.into_iter().collect(),
+        }
     }
 }

@@ -9,7 +9,8 @@ use std::time::Instant;
 use deadpan_core::{
     AudioTimingId, BeatNode, ColorPolicy, Command, CommandRequest, FrameDuration, FrameRate,
     HoldAudio, HoldRecipe, HoldVideo, NodeId, NodeKind, PresentationBasis, ProjectDocument,
-    ProjectFrame, ProjectId, RevisionId, SplitIdentities, Subtree, WrapAnchorPolicy,
+    ProjectFrame, ProjectId, RevisionId, SplitIdentities, Subtree, ValidatedDocument,
+    WrapAnchorPolicy,
 };
 use deadpan_plan::RenderPlan;
 use deadpan_store::{AccessMode, ProjectStore};
@@ -77,8 +78,8 @@ pub fn run(options: &Options) -> Result<Value> {
     ));
     let open_ms = ms(opened);
     let mut ids = Ids(0);
-    let mut document = store.snapshot()?;
-    let mut plan = RenderPlan::compile(&document)?;
+    let mut document = store.snapshot_validated()?;
+    let mut plan = document.scope(|| RenderPlan::compile(&document))?;
     let initial = json!({
         "nodes": document.nodes().len(),
         "root_children": root_children(&document).len(),
@@ -92,11 +93,13 @@ pub fn run(options: &Options) -> Result<Value> {
     for _ in 0..cycles {
         // Split a physical root beat at an interior frame.
         let started = Instant::now();
-        let command = (0..16).find_map(|_| {
-            let at = random.below(u64::try_from(plan.duration().frames()).ok()?);
-            split_command(&document, i64::try_from(at).ok()?, &mut ids)
-                .ok()
-                .flatten()
+        let command = document.scope(|| {
+            (0..16).find_map(|_| {
+                let at = random.below(u64::try_from(plan.duration().frames()).ok()?);
+                split_command(&document, i64::try_from(at).ok()?, &mut ids)
+                    .ok()
+                    .flatten()
+            })
         });
         if let Some(command) = command {
             let command = (ids.revision()?, command);
@@ -117,7 +120,7 @@ pub fn run(options: &Options) -> Result<Value> {
         let at = ProjectFrame(i64::try_from(
             random.below(u64::try_from(plan.duration().frames())?),
         )?);
-        match pause_command(&store, &document, &plan, at, &mut ids) {
+        match document.scope(|| pause_command(&store, &document, &plan, at, &mut ids)) {
             Ok(command) => {
                 measure(
                     &mut store,
@@ -168,8 +171,7 @@ pub fn run(options: &Options) -> Result<Value> {
             store.undo(&expected, next)?;
             undo.commit.push(ms(committed));
             let refreshed = Instant::now();
-            document = store.snapshot()?;
-            plan = RenderPlan::compile(&document)?;
+            refresh(&store, &mut document, &mut plan)?;
             undo.refresh.push(ms(refreshed));
             undo.total.push(ms(started));
         }
@@ -177,10 +179,33 @@ pub fn run(options: &Options) -> Result<Value> {
     }
     let database = std::fs::metadata(package.join("project.sqlite"))?.len()
         + std::fs::metadata(package.join("project.sqlite-wal")).map_or(0, |m| m.len());
+    // Reopen the edited history as the app and a read-only inspector would:
+    // validation, then the head document.
+    drop(store);
+    let reopened = Instant::now();
+    let writer = ProjectStore::open(package, AccessMode::ReadWrite)?;
+    let reopen_validation = writer.open_validation();
+    let reopen_ms = ms(reopened);
+    let head = Instant::now();
+    let reopened_document = writer.snapshot_shared()?;
+    let reopen_head_ms = ms(head);
+    if *reopened_document != *document {
+        return Err("reopened head differs from the last committed revision".into());
+    }
+    drop(writer);
+    let read = Instant::now();
+    let reader = ProjectStore::open(package, AccessMode::ReadOnly)?;
+    reader.snapshot_shared()?;
+    let read_only_ms = ms(read);
+    drop(reader);
     Ok(json!({
         "package": package,
         "cycles": cycles,
         "open_writable_ms": crate::round(open_ms),
+        "reopen_writable_ms": crate::round(reopen_ms),
+        "reopen_head_ms": crate::round(reopen_head_ms),
+        "reopen_validation": reopen_validation,
+        "reopen_read_only_with_head_ms": crate::round(read_only_ms),
         "initial": initial,
         "final": {
             "nodes": document.nodes().len(),
@@ -201,7 +226,7 @@ pub fn run(options: &Options) -> Result<Value> {
 /// rather than aborting the run; they are part of the evidence.
 fn measure(
     store: &mut ProjectStore,
-    document: &mut ProjectDocument,
+    document: &mut ValidatedDocument,
     plan: &mut RenderPlan,
     command: (RevisionId, Command),
     started: Instant,
@@ -222,11 +247,23 @@ fn measure(
     }
     samples.commit.push(ms(committed));
     let refreshed = Instant::now();
-    *document = store.snapshot()?;
-    *plan = RenderPlan::compile(document)?;
+    refresh(store, document, plan)?;
     samples.refresh.push(ms(refreshed));
     samples.total.push(ms(started));
     Ok(true)
+}
+
+/// Refresh as the native service does: the validated head, its plan compiled
+/// in the retained validation scope, and the workspace's owned copy.
+fn refresh(
+    store: &ProjectStore,
+    document: &mut ValidatedDocument,
+    plan: &mut RenderPlan,
+) -> Result<()> {
+    *document = store.snapshot_validated()?;
+    *plan = document.scope(|| RenderPlan::compile(document))?;
+    drop(ProjectDocument::clone(document));
+    Ok(())
 }
 
 fn root_children(document: &ProjectDocument) -> Vec<NodeId> {

@@ -412,6 +412,11 @@ fn every_used_source_requires_its_receipt_and_original_even_when_overwrite_retir
         let mut wrong_owner: serde_json::Value = serde_json::from_str(&ownership)?;
         wrong_owner["sha256"] = serde_json::to_value([0_u8; 32])?;
         let other_receipt = store.registered_source(before.revision_id(), &id(other))?;
+        let ready_row: (String, i64, i64) = database.query_row(
+            "SELECT document,depth,json_bound FROM revisions WHERE id='ready'",
+            [],
+            |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)),
+        )?;
         for fault in ["missing", "receipt", "ownership", "asset"] {
             match fault {
                 "missing" => {
@@ -436,9 +441,20 @@ fn every_used_source_requires_its_receipt_and_original_even_when_overwrite_retir
                     let mut document = serde_json::to_value(&before)?;
                     document["assets"][asset]["content_hash"] = serde_json::json!("a".repeat(64));
                     database.execute(
-                        "UPDATE revisions SET document=?1 WHERE id='ready'",
+                        "UPDATE revisions SET document=?1,depth=0,json_bound=length(CAST(?1 AS BLOB)) WHERE id='ready'",
                         [document.to_string()],
                     )?;
+                    // The open store keeps its validated head in memory; a new session
+                    // revalidates the stored revision and rejects the changed asset.
+                    assert!(matches!(
+                        ProjectStore::open(&path, AccessMode::ReadOnly),
+                        Err(StoreError::SourceRegistration(_) | StoreError::History(_))
+                    ));
+                    database.execute(
+                        "UPDATE revisions SET document=?1,depth=?2,json_bound=?3 WHERE id='ready'",
+                        rusqlite::params![ready_row.0, ready_row.1, ready_row.2],
+                    )?;
+                    continue;
                 }
                 _ => unreachable!(),
             }
@@ -487,10 +503,6 @@ fn every_used_source_requires_its_receipt_and_original_even_when_overwrite_retir
             database.execute(
                 "UPDATE original_media SET record=?1 WHERE content_id=?2",
                 rusqlite::params![ownership, content],
-            )?;
-            database.execute(
-                "UPDATE revisions SET document=?1 WHERE id='ready'",
-                [before.to_compact_json()?],
             )?;
             assert_eq!(stored(&database)?, clean);
         }

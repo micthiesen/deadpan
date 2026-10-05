@@ -457,20 +457,23 @@ fn checkpoint_reports_the_worker_snapshot_and_preserves_the_later_edit() {
             && completion_error.is_none()
             && refresh_error.is_none()
     );
-    let database = rusqlite::Connection::open_with_flags(
-        checkpoint,
-        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
-    )
-    .unwrap();
-    let document: String = database
-        .query_row(
-            "SELECT document FROM revisions JOIN state ON head_revision=revisions.id",
-            [],
-            |row| row.get(0),
-        )
-        .unwrap();
+    // The head may be stored as a patch: read the standalone database copy
+    // through a read-only package around it.
+    let copy = tempfile::tempdir().unwrap();
+    let package = copy.path().join("checkpoint-copy.deadpan");
+    for directory in [
+        "Media/Originals",
+        "Media/Generated",
+        "Media/RenderCandidates",
+    ] {
+        std::fs::create_dir_all(package.join(directory)).unwrap();
+    }
+    std::fs::copy(&checkpoint, package.join("project.sqlite")).unwrap();
     assert_eq!(
-        ProjectDocument::from_json(&document).unwrap(),
+        ProjectStore::open(&package, AccessMode::ReadOnly)
+            .unwrap()
+            .snapshot()
+            .unwrap(),
         *captured.document
     );
     assert_eq!(

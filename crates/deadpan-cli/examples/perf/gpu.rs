@@ -4,7 +4,7 @@
 use std::time::{Duration, Instant};
 
 use deadpan_cli::picture::{PreparedPicture, PreparedProjectPicture};
-use deadpan_render::{FitMode, PictureRenderer, RenderTarget};
+use deadpan_render::{FitMode, FramingLayer, PictureRenderer, RenderTarget, Rgba8Frame};
 
 use crate::Result;
 
@@ -53,6 +53,26 @@ impl Gpu {
         })
     }
 
+    /// Compose an already decoded picture (a preview proxy picture) on the
+    /// canvas, as the native viewer does, and wait for GPU completion.
+    pub fn present_frame(
+        &mut self,
+        frame: &Rgba8Frame,
+        canvas: [u32; 2],
+        layers: &[FramingLayer],
+    ) -> Result<Presented> {
+        let started = Instant::now();
+        let submission = self.renderer.render_composed(
+            frame,
+            &self.target,
+            None,
+            canvas,
+            FitMode::Fit,
+            layers,
+        )?;
+        self.complete(started, submission)
+    }
+
     pub fn present(&mut self, prepared: &PreparedProjectPicture) -> Result<Presented> {
         let started = Instant::now();
         let layers = prepared.render_layers()?;
@@ -69,6 +89,14 @@ impl Gpu {
             }
             PreparedPicture::Background => self.renderer.render_background(&self.target)?,
         };
+        self.complete(started, submission)
+    }
+
+    fn complete(
+        &mut self,
+        started: Instant,
+        submission: wgpu::SubmissionIndex,
+    ) -> Result<Presented> {
         let submit_ms = crate::ms(started);
         self.device.poll(wgpu::PollType::Wait {
             submission_index: Some(submission),

@@ -20,7 +20,7 @@ impl ProjectStore {
         request: &CommandRequest,
     ) -> Result<SourceTrimPreview, StoreError> {
         let transaction = self.connection.unchecked_transaction()?;
-        let current = crate::read_command_snapshot(&transaction, request)?;
+        let current = crate::read_command_snapshot(&transaction, &self.documents, request)?;
         let Command::TrimSource {
             parent,
             node,
@@ -34,13 +34,14 @@ impl ProjectStore {
         };
         let resolution = current.source_trim(parent, node, *edge, *delta_frames, *mode)?;
         let edit = if resolution.applied_delta_frames == 0 {
-            crate::ensure_unused_revision(&transaction, &request.new_revision)?;
+            crate::ensure_unused_revision(&transaction, &self.documents, &request.new_revision)?;
             validate_source_trim(&transaction, &current, &current, request)?;
             None
         } else {
             Some(
                 crate::prepare_current_command_with_admission(
                     &transaction,
+                    &self.documents,
                     current,
                     request,
                     None,

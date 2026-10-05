@@ -147,7 +147,7 @@ pub fn remux_joined(
             .process_group(0),
     )?;
     let mut process = OwnedProcess::new(child);
-    let (status, reply) = process.collect(&deadline, output, request.max_output_bytes)?;
+    let (status, reply) = process.collect(&deadline, output, request.max_output_bytes, None)?;
     if reply.len() > MAX_REPLY_BYTES {
         return Err(ConversionError::Protocol("oversized remux reply".into()));
     }

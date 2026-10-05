@@ -520,9 +520,12 @@ fn self_consistent_history_cannot_claim_geometry_different_from_source_evidence(
         &active(),
     )?;
     drop(store);
-    Connection::open(path.join("project.sqlite"))?.execute_batch("UPDATE revisions SET document=json_set(document,'$.presentation_basis.width',18) WHERE id='primary'; UPDATE history SET request=json_set(request,'$.command.primary.basis.width',18), edit=json_set(edit,'$.forward.presentation.after.basis.width',18,'$.inverse.presentation.before.basis.width',18) WHERE revision_id='primary';")?;
+    Connection::open(path.join("project.sqlite"))?.execute_batch("UPDATE revisions SET document=json_set(document,'$.presentation_basis.width',18) WHERE id='primary'; UPDATE history SET request=json_set(request,'$.command.primary.basis.width',18), edit=json_set(edit,'$.forward.presentation.after.basis.width',18,'$.inverse.presentation.before.basis.width',18) WHERE revision_id='primary'; UPDATE revisions SET json_bound=json_bound+64 WHERE id='primary';")?;
+    let opened = ProjectStore::open(&path, AccessMode::ReadOnly);
     assert!(
-        matches!(ProjectStore::open(&path,AccessMode::ReadOnly),Err(StoreError::SourceRegistration(message)) if message.contains("measured geometry"))
+        matches!(&opened, Err(StoreError::SourceRegistration(message)) if message.contains("measured geometry")),
+        "{:?}",
+        opened.err()
     );
     Ok(())
 }

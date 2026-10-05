@@ -1136,15 +1136,19 @@ proposed `outcome`, using the same navigation and patch validation as the write.
 The proposed revision is not reserved; the document, history, and redo stack stay
 unchanged. Dry runs may run while another process owns the writable session.
 
-`project validate` checks SQLite integrity and foreign keys, then replays all
-retained revisions, including edits abandoned after undo. It verifies command and
-patch correspondence, inverse patches, revision identities, current cursor, and
-redo order. Stored document, request, and patch JSON is limited to 64 MiB each,
-measured in bytes before SQLite returns the text. Stored identity fields are
-bounded to 128 bytes and revision kinds to the defined values before extraction.
-Validation reads a few documents
-at a time plus numeric redo IDs; its work grows with retained history. It is an
-integrity check, not an authenticity signature or a repair operation.
+`project validate` checks SQLite integrity and foreign keys, then validates all
+retained revisions, including edits abandoned after undo: command and patch
+correspondence, inverse patches, revision identities, current cursor, and redo
+order, recomputing every command. `project validate PATH --quick` performs only
+what opening does: it hashes every stored history row into a chain and
+recomputes only the revisions after the
+[history receipt](TIMING_STORAGE.md#verified-history-receipts) that this exact
+build last proved. Stored document, request, and patch JSON is
+limited to 64 MiB each, measured in bytes before SQLite returns the text. Stored
+identity fields are bounded to 128 bytes and revision kinds to the defined values
+before extraction. Validation reads a few documents at a time plus numeric redo
+IDs. It is an integrity check, not an authenticity signature or a repair
+operation.
 
 Only one writable `ProjectStore` may own a package. Read-only dumps, validation,
 and dry runs can coexist. Structural commands, history and primary-geometry

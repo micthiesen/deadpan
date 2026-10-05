@@ -63,7 +63,7 @@ impl ProjectStore {
     ) -> Result<CompoundPreview, StoreError> {
         require_compound(request)?;
         let transaction = self.connection.unchecked_transaction()?;
-        let plan = crate::prepare_command(&transaction, request)?;
+        let plan = crate::prepare_command(&transaction, &self.documents, request)?;
         let prepared = plan.compound.as_ref().expect("compound plan");
         Ok(CompoundPreview {
             edit: (!prepared.steps.is_empty()).then_some(plan.edit),
@@ -79,10 +79,11 @@ impl ProjectStore {
     ) -> Result<CompoundCommitOutcome, StoreError> {
         self.require_writer()?;
         require_compound(request)?;
+        let documents = &self.documents;
         let transaction = self
             .connection
             .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
-        let plan = crate::prepare_command(&transaction, request)?;
+        let plan = crate::prepare_command(&transaction, documents, request)?;
         let prepared = plan.compound.as_ref().expect("compound plan");
         let register_bank = prepared.registers.bank.clone();
         let committed = if prepared.steps.is_empty() {
@@ -97,12 +98,17 @@ impl ProjectStore {
         } else {
             Some(crate::write_command_plan(
                 &transaction,
+                documents,
                 plan,
                 relevance,
                 self.context_resolver.as_deref(),
             )?)
         };
         transaction.commit()?;
+        let committed = committed.map(|(outcome, next)| {
+            documents.insert(next);
+            outcome
+        });
         Ok(CompoundCommitOutcome {
             committed,
             register_bank,
@@ -279,7 +285,8 @@ fn read_capture_before(
 
 pub(crate) fn prepare(
     connection: &Connection,
-    current: ProjectDocument,
+    documents: &crate::document_cache::DocumentCache,
+    current: deadpan_core::ValidatedDocument,
     request: &CommandRequest,
 ) -> Result<CommandPlan, StoreError> {
     let Command::Compound { transaction } = &request.command else {
@@ -303,13 +310,13 @@ pub(crate) fn prepare(
                 .map(|edit| &edit.new_revision),
         )
         .collect();
-    crate::ensure_unused_revisions(connection, &allocations)?;
+    crate::ensure_unused_revisions(connection, documents, &allocations)?;
     let (outcome, steps) = execute(connection, &current, request, None)?;
     let writes = !outcome.register_writes.is_empty();
     let registers = crate::registers::prepare_writes_from(bank, &outcome.register_writes)?;
     crate::command_plan(
-        current,
-        outcome.document,
+        std::sync::Arc::clone(current.document()),
+        deadpan_core::ValidatedDocument::new(std::sync::Arc::new(outcome.document))?,
         outcome.edit,
         request,
         Some(Prepared {

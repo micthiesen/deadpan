@@ -213,6 +213,7 @@ pub(super) fn copied_picture(
         &ProjectView::Sequence { frame },
         cancelled,
         retained,
+        None,
     )?;
     view.media()
         .admitted()

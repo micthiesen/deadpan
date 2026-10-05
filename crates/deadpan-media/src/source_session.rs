@@ -364,6 +364,51 @@ impl SourceSession {
         })
     }
 
+    /// Serve pictures from already verified bytes against a supplied measured
+    /// index, without copying or measuring again. Every returned picture and
+    /// every decoded preroll picture must still equal its index entry, so a
+    /// wrong index fails rather than mislabelling pictures. It establishes no
+    /// whole-index verification: use it only where the index itself was
+    /// verified independently, such as sampling an Original while checking a
+    /// derived preview proxy.
+    pub fn open_input_indexed(
+        input: VerifiedSourceInput,
+        expected: Arc<SourceIndexSnapshot>,
+        expected_info: &SourceStreamInfo,
+        limits: SourceSessionLimits,
+        cancelled: &AtomicBool,
+    ) -> Result<Self, SourceSessionError> {
+        Self::validate_limits(input.identity(), limits)?;
+        if input.identity() != expected.content() {
+            return Err(SourceSessionError::IndexMismatch);
+        }
+        let deadline = Deadline {
+            end: Instant::now() + limits.opening_timeout,
+            cancelled,
+        };
+        let decoder =
+            SourceDecoder::open(input.decoder_file()?, limits.decode, control(&deadline)?)?;
+        if decoder.info() != expected_info || decoder.info().stream_index != expected.stream_index()
+        {
+            return Err(SourceSessionError::IndexMismatch);
+        }
+        Ok(Self {
+            decoder,
+            input,
+            decode_limits: limits.decode,
+            reopen_decoder: false,
+            index: expected,
+            maximum_seek_frames: limits.maximum_seek_frames,
+            last_frame: None,
+            measurement: None,
+        })
+    }
+
+    /// The verified private bytes this session decodes.
+    pub fn input(&self) -> &VerifiedSourceInput {
+        &self.input
+    }
+
     /// State of the complete fresh index measurement.
     pub fn measurement(&self) -> IndexMeasurement {
         self.measurement
@@ -591,6 +636,18 @@ impl SourceSession {
 
     pub fn index(&self) -> &SourceIndexSnapshot {
         &self.index
+    }
+
+    /// Whether `id` is a single step from the decoder's current picture:
+    /// the same picture, the next or the previous one in presentation order.
+    /// The next one needs no keyframe seek; the previous one does, but a
+    /// step is shown exactly rather than through a coarser tier. With
+    /// picture reordering even the next picture may decode several others.
+    pub fn is_step(&self, id: SourceFrameId) -> bool {
+        !self.reopen_decoder
+            && self
+                .last_frame
+                .is_some_and(|last| last.0.abs_diff(id.0) <= 1)
     }
 
     /// The retained index, shared rather than copied.

@@ -245,7 +245,10 @@ pub fn run(arguments: &[String]) -> Result<(), String> {
         } else {
             ("10", "200", "240")
         };
+        let worker = bin.join("deadpan-media-worker");
         for (name, package) in &media {
+            // Proxy seeks build into a private cache root, never the user's.
+            let proxies = work.join(format!("proxies-{name}"));
             let load = quiet(options.max_load);
             let mut report = stage_json(
                 &perf,
@@ -258,6 +261,10 @@ pub fn run(arguments: &[String]) -> Result<(), String> {
                     warm,
                     "--step",
                     step,
+                    "--proxy-cache",
+                    path_str(&proxies)?,
+                    "--worker",
+                    path_str(&worker)?,
                 ],
                 &output,
                 &format!("seek-{name}"),
@@ -961,6 +968,46 @@ fn targets(results: &BTreeMap<String, Value>, quick: bool) -> Value {
                     warm["p95"].as_f64().map(|ms| ms < 80.0),
                     base.clone().and(enough(warm, MIN_SEEKS)),
                 );
+                let proxy = &value["proxy"];
+                if proxy["status"] == "ready" {
+                    let warm = &proxy["warm_seek"]["total_ms"];
+                    push(
+                        "Warm seek p95 < 80 ms (preview proxy)",
+                        format!(
+                            "{fixture}: random seek through the verified intra proxy ({}), decode + Metal completion",
+                            proxy["raster"]
+                        ),
+                        warm.clone(),
+                        warm["p95"].as_f64().map(|ms| ms < 80.0),
+                        base.clone().and(enough(warm, MIN_SEEKS)),
+                    );
+                    push(
+                        "Refined Original after rest (informational)",
+                        format!(
+                            "{fixture}: proxy seek, {} ms rest, then the exact Original picture from a warm session",
+                            proxy["refinement"]["rest_ms"]
+                        ),
+                        proxy["refinement"].clone(),
+                        None,
+                        base.clone(),
+                    );
+                    push(
+                        "Proxy opening (informational)",
+                        format!(
+                            "{fixture}: first opening of a new entry hashes it once; later openings check the recorded file state"
+                        ),
+                        json!({"first_open_ms": proxy["first_open_ms"], "open_ms": proxy["open_ms"]}),
+                        None,
+                        base.clone(),
+                    );
+                    push(
+                        "Cold proxy seek (informational)",
+                        format!("{fixture}: new proxy session to first picture, page-cache-warm"),
+                        proxy["cold_seek"]["total_ms"].clone(),
+                        None,
+                        Err("session-cold but page-cache-warm; cache purge needs root".into()),
+                    );
+                }
                 let progressive = &value["cold"]["progressive"];
                 push(
                     "Cold seek completion < 300 ms (informational)",

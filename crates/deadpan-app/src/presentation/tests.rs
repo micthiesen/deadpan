@@ -93,6 +93,7 @@ fn picture(id: u64) -> Picture {
         follow_point: None,
         picture_context: None,
         captions: Vec::new(),
+        tier: PictureTier::Original,
     }
 }
 
@@ -487,6 +488,7 @@ fn background_and_empty_sequence_do_not_invent_source_frame_identity() {
                 follow_point: None,
                 picture_context: None,
                 captions: Vec::new(),
+                tier: PictureTier::Original,
             },
         );
         assert!(state.needs_render());
@@ -1108,4 +1110,55 @@ fn camera_sets_several_operations_atomically_or_not_at_all() {
     assert!(state.needs_render());
     let framing = &state.picture().unwrap().framing;
     assert_eq!((framing[0].pose, framing[1].pose), (Some(pose), Some(pose)));
+}
+
+#[test]
+fn proxy_tier_is_a_distinct_identity_and_survives_a_failed_refinement() {
+    let mut state = Presentation::default();
+    let ticket = ticket(1, 1);
+    state.request(ticket, &Work::Frame(SourceFrameId(7)));
+    let mut proxy = picture(7);
+    proxy.tier = PictureTier::Proxy;
+    accept(&mut state, ticket, proxy);
+    assert!(state.refining());
+    assert!(!state.loading(), "a proxy picture is shown, not loading");
+    state.presented();
+    assert_eq!(state.displayed_tier(), Some(PictureTier::Proxy));
+    assert_eq!(
+        state.displayed_label().as_deref(),
+        Some("Showing source frame 8 · proxy preview")
+    );
+    // The exact picture of the same request is a new presentation identity.
+    accept(&mut state, ticket, picture(7));
+    assert!(!state.refining());
+    assert!(state.needs_render());
+    state.presented();
+    assert_eq!(state.displayed_tier(), Some(PictureTier::Original));
+    assert_eq!(
+        state.displayed_label().as_deref(),
+        Some("Showing source frame 8")
+    );
+
+    // A refinement that fails keeps the proxy on screen and reports why.
+    let next = super::tests::ticket(1, 2);
+    state.request(next, &Work::Frame(SourceFrameId(9)));
+    let mut proxy = picture(9);
+    proxy.tier = PictureTier::Proxy;
+    accept(&mut state, next, proxy);
+    state.presented();
+    assert!(
+        state
+            .receive(Reply {
+                #[cfg(feature = "ui-harness")]
+                timing: None,
+                ticket: next,
+                picture: Err("Source verification failed".into()),
+            })
+            .unwrap()
+            .is_err()
+    );
+    assert_eq!(state.error(), Some("Source verification failed"));
+    assert!(state.has_displayed());
+    assert_eq!(state.displayed_tier(), Some(PictureTier::Proxy));
+    assert!(!state.refining());
 }

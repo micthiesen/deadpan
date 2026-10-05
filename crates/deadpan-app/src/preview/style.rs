@@ -204,6 +204,31 @@ pub(super) fn beat_panel(layout: Layout) -> egui::Panel {
         .frame(compact_panel())
 }
 
+/// A small quality-tier chip in the picture's top-right corner while the
+/// viewer shows preview-proxy pixels. It disappears once the exact Original
+/// picture replaces them.
+pub(super) fn proxy_badge(painter: &egui::Painter, picture: egui::Rect) {
+    if picture.width() < 80.0 || picture.height() < 40.0 {
+        return;
+    }
+    let galley =
+        painter.layout_no_wrap("Proxy".to_owned(), egui::FontId::proportional(11.0), MUTED);
+    let padding = egui::vec2(6.0, 2.0);
+    let size = galley.size() + padding * 2.0;
+    let chip = egui::Rect::from_min_size(
+        egui::pos2(picture.right() - size.x - 8.0, picture.top() + 8.0),
+        size,
+    );
+    painter.rect(
+        chip,
+        4.0,
+        Color32::from_rgba_unmultiplied(0x17, 0x19, 0x1d, 0xd0),
+        egui::Stroke::new(1.0, BORDER),
+        egui::StrokeKind::Inside,
+    );
+    painter.galley(chip.min + padding, galley, MUTED);
+}
+
 pub(super) fn keycap(ui: &mut egui::Ui, text: &str) {
     keycap_frame().show(ui, |ui| {
         ui.label(RichText::new(text).monospace().size(11.0));

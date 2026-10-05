@@ -964,7 +964,10 @@ impl DeadpanApp {
             self.presentation
                 .stable_sequence_ticket(pending.session, &pending.revision, frame)
         else {
-            if !self.presentation.loading() && !self.presentation.needs_render() {
+            if !self.presentation.loading()
+                && !self.presentation.needs_render()
+                && !self.presentation.refining()
+            {
                 self.camera_pending = None;
                 self.error =
                     Some("Camera needs a successfully displayed picture at the cursor.".into());
@@ -1199,7 +1202,10 @@ impl DeadpanApp {
             self.presentation
                 .stable_sequence_ticket(camera.session, &revision, frame)
         else {
-            if !self.presentation.loading() && !self.presentation.needs_render() {
+            if !self.presentation.loading()
+                && !self.presentation.needs_render()
+                && !self.presentation.refining()
+            {
                 self.camera = None;
                 self.service.set_preview_active(false);
                 self.error = Some(
@@ -1816,7 +1822,8 @@ impl DeadpanApp {
             let picture = self
                 .presentation
                 .picture()
-                .ok_or("Wait for the stopped picture.")?;
+                .filter(|picture| picture.tier == crate::worker::PictureTier::Original)
+                .ok_or("Wait for the exact stopped picture.")?;
             let frame = picture.frame.as_ref().ok_or("This beat has no picture.")?;
             let (width, height) = picture.canvas.ok_or("Camera requires Your edit.")?;
             let geometry = deadpan_render::PictureGeometry::composed(
@@ -2068,6 +2075,7 @@ impl DeadpanApp {
         }
         if self.presentation.needs_render()
             || self.presentation.loading()
+            || self.presentation.refining()
             || !self.presentation.can_render()
         {
             return;

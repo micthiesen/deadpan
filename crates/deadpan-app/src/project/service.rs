@@ -1900,8 +1900,13 @@ fn snapshot(
     path: PathBuf,
     previous: Option<&Workspace>,
 ) -> Result<Workspace> {
-    let document = store.snapshot().map_err(display)?;
-    let plan = RenderPlan::compile(&document).map_err(display)?;
+    // The store retains the head's validation, so compiling inside its scope
+    // does not validate the whole document again after every commit.
+    let validated = store.snapshot_validated().map_err(display)?;
+    let plan = validated
+        .scope(|| RenderPlan::compile(&validated))
+        .map_err(display)?;
+    let document = ProjectDocument::clone(&validated);
     let rate = document.presentation_basis().frame_rate;
     let mut sources = BTreeMap::new();
     for (asset, metadata) in document.assets() {

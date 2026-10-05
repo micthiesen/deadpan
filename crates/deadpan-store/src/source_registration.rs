@@ -7,6 +7,7 @@
 
 use std::collections::BTreeMap;
 use std::ops::Range;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use deadpan_core::{
@@ -290,7 +291,7 @@ impl ProjectStore {
     ) -> Result<EditTransaction, StoreError> {
         source.original.validate_for(self, cancelled)?;
         let transaction = self.connection.unchecked_transaction()?;
-        let plan = prepare_source_moment(&transaction, input, source)?;
+        let plan = prepare_source_moment(&transaction, &self.documents, input, source)?;
         source.original.recheck(cancelled)?;
         Ok(plan.edit)
     }
@@ -310,15 +311,17 @@ impl ProjectStore {
         let transaction = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let plan = prepare_source_moment(&transaction, input, source)?;
-        let outcome = crate::write_command_plan(
+        let plan = prepare_source_moment(&transaction, &self.documents, input, source)?;
+        let (outcome, next) = crate::write_command_plan(
             &transaction,
+            &self.documents,
             plan,
             relevance,
             self.context_resolver.as_deref(),
         )?;
         source.original.recheck(cancelled)?;
         transaction.commit()?;
+        self.documents.insert(next);
         Ok(outcome)
     }
 
@@ -332,7 +335,7 @@ impl ProjectStore {
     ) -> Result<EditTransaction, StoreError> {
         source.original.validate_for(self, cancelled)?;
         let transaction = self.connection.unchecked_transaction()?;
-        let plan = prepare_source_moment_interior(&transaction, input, source)?;
+        let plan = prepare_source_moment_interior(&transaction, &self.documents, input, source)?;
         source.original.recheck(cancelled)?;
         Ok(plan.edit)
     }
@@ -351,15 +354,17 @@ impl ProjectStore {
         let transaction = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let plan = prepare_source_moment_interior(&transaction, input, source)?;
-        let outcome = crate::write_command_plan(
+        let plan = prepare_source_moment_interior(&transaction, &self.documents, input, source)?;
+        let (outcome, next) = crate::write_command_plan(
             &transaction,
+            &self.documents,
             plan,
             relevance,
             self.context_resolver.as_deref(),
         )?;
         source.original.recheck(cancelled)?;
         transaction.commit()?;
+        self.documents.insert(next);
         Ok(outcome)
     }
 
@@ -373,7 +378,7 @@ impl ProjectStore {
     ) -> Result<EditTransaction, StoreError> {
         source.original.validate_for(self, cancelled)?;
         let transaction = self.connection.unchecked_transaction()?;
-        let plan = prepare_source_replacement(&transaction, input, source)?;
+        let plan = prepare_source_replacement(&transaction, &self.documents, input, source)?;
         source.original.recheck(cancelled)?;
         Ok(plan.edit)
     }
@@ -392,15 +397,17 @@ impl ProjectStore {
         let transaction = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let plan = prepare_source_replacement(&transaction, input, source)?;
-        let outcome = crate::write_command_plan(
+        let plan = prepare_source_replacement(&transaction, &self.documents, input, source)?;
+        let (outcome, next) = crate::write_command_plan(
             &transaction,
+            &self.documents,
             plan,
             relevance,
             self.context_resolver.as_deref(),
         )?;
         source.original.recheck(cancelled)?;
         transaction.commit()?;
+        self.documents.insert(next);
         Ok(outcome)
     }
 
@@ -414,7 +421,8 @@ impl ProjectStore {
     ) -> Result<EditTransaction, StoreError> {
         source.original.validate_for(self, cancelled)?;
         let transaction = self.connection.unchecked_transaction()?;
-        let plan = prepare_source_children_replacement(&transaction, input, source)?;
+        let plan =
+            prepare_source_children_replacement(&transaction, &self.documents, input, source)?;
         source.original.recheck(cancelled)?;
         Ok(plan.edit)
     }
@@ -433,15 +441,18 @@ impl ProjectStore {
         let transaction = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let plan = prepare_source_children_replacement(&transaction, input, source)?;
-        let outcome = crate::write_command_plan(
+        let plan =
+            prepare_source_children_replacement(&transaction, &self.documents, input, source)?;
+        let (outcome, next) = crate::write_command_plan(
             &transaction,
+            &self.documents,
             plan,
             relevance,
             self.context_resolver.as_deref(),
         )?;
         source.original.recheck(cancelled)?;
         transaction.commit()?;
+        self.documents.insert(next);
         Ok(outcome)
     }
 
@@ -452,7 +463,7 @@ impl ProjectStore {
         input: &PrimaryGeometryAdoption,
     ) -> Result<EditTransaction, StoreError> {
         let transaction = self.connection.unchecked_transaction()?;
-        Ok(prepare_primary_geometry(&transaction, input)?.edit)
+        Ok(prepare_primary_geometry(&transaction, &self.documents, input)?.edit)
     }
 
     pub fn adopt_primary_geometry(
@@ -464,14 +475,16 @@ impl ProjectStore {
         let transaction = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
-        let plan = prepare_primary_geometry(&transaction, input)?;
-        let outcome = crate::write_command_plan(
+        let plan = prepare_primary_geometry(&transaction, &self.documents, input)?;
+        let (outcome, next) = crate::write_command_plan(
             &transaction,
+            &self.documents,
             plan,
             relevance,
             self.context_resolver.as_deref(),
         )?;
         transaction.commit()?;
+        self.documents.insert(next);
         Ok(outcome)
     }
 
@@ -545,7 +558,7 @@ impl ProjectStore {
         let (receipt, _) = prepare_receipt(original.record(), decoded)?;
         check_cancelled(cancelled)?;
         let transaction = self.connection.unchecked_transaction()?;
-        let prepared = prepare_registration(&transaction, input, &receipt)?;
+        let prepared = prepare_registration(&transaction, &self.documents, input, &receipt)?;
         Ok(SourceRegistrationPreview {
             asset_id: prepared.asset_id,
             qualification: receipt.id,
@@ -589,7 +602,7 @@ impl ProjectStore {
         source.validate_for(self, input, cancelled)?;
         let transaction = self.connection.unchecked_transaction()?;
         check_original_binding(&transaction, &source.receipt)?;
-        let prepared = prepare_registration(&transaction, input, &source.receipt)?;
+        let prepared = prepare_registration(&transaction, &self.documents, input, &source.receipt)?;
         source.original.recheck(cancelled)?;
         Ok(SourceRegistrationPreview {
             asset_id: prepared.asset_id,
@@ -626,14 +639,20 @@ impl ProjectStore {
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
         check_original_binding(&transaction, &source.receipt)?;
-        let prepared =
-            prepare_registration_inner(&transaction, input, &source.receipt, initialize)?;
+        let prepared = prepare_registration_inner(
+            &transaction,
+            &self.documents,
+            input,
+            &source.receipt,
+            initialize,
+        )?;
         write_receipt(&transaction, &source.receipt, &source.bytes)?;
         let commit = prepared
             .plan
             .map(|plan| {
                 crate::write_command_plan(
                     &transaction,
+                    &self.documents,
                     plan,
                     relevance,
                     self.context_resolver.as_deref(),
@@ -642,9 +661,18 @@ impl ProjectStore {
             .transpose()?;
         if initialize {
             crate::single_source::finish_initialization(&transaction, input, &source.receipt)?;
+            // The new profile governs every revision the receipt covers (the
+            // initial and baseline revisions): check them now, as an open
+            // would, and record the profile so reopening does not replay.
+            crate::single_source::validate_store(&transaction, 0)?;
+            crate::audit::refresh_profile(&transaction)?;
         }
         source.original.recheck(cancelled)?;
         transaction.commit()?;
+        let commit = commit.map(|(outcome, next)| {
+            self.documents.insert(next);
+            outcome
+        });
         Ok(SourceRegistrationOutcome {
             asset_id: prepared.asset_id,
             qualification: source.receipt.id.clone(),
@@ -655,11 +683,13 @@ impl ProjectStore {
 
 fn prepare_source_moment(
     connection: &Connection,
+    documents: &crate::document_cache::DocumentCache,
     input: &SourceMomentInsertionRequest,
     source: &PreparedSourceRegistration,
 ) -> Result<CommandPlan, StoreError> {
     let (current, moment) = prepared_moment_source(
         connection,
+        documents,
         &input.expected_revision,
         &input.asset,
         &input.ordinals,
@@ -678,16 +708,18 @@ fn prepare_source_moment(
             timing: input.timing.clone(),
         },
     };
-    crate::prepare_command(connection, &request)
+    crate::prepare_command(connection, documents, &request)
 }
 
 fn prepare_source_moment_interior(
     connection: &Connection,
+    documents: &crate::document_cache::DocumentCache,
     input: &SourceMomentInteriorInsertionRequest,
     source: &PreparedSourceRegistration,
 ) -> Result<CommandPlan, StoreError> {
     let (current, moment) = prepared_moment_source(
         connection,
+        documents,
         &input.expected_revision,
         &input.asset,
         &input.ordinals,
@@ -708,16 +740,18 @@ fn prepare_source_moment_interior(
             timing: input.timing.clone(),
         },
     };
-    crate::prepare_command(connection, &request)
+    crate::prepare_command(connection, documents, &request)
 }
 
 fn prepare_source_replacement(
     connection: &Connection,
+    documents: &crate::document_cache::DocumentCache,
     input: &SourceMomentReplacementRequest,
     source: &PreparedSourceRegistration,
 ) -> Result<CommandPlan, StoreError> {
     let (current, moment) = prepared_moment_source(
         connection,
+        documents,
         &input.expected_revision,
         &input.asset,
         &input.ordinals,
@@ -725,6 +759,7 @@ fn prepare_source_replacement(
     )?;
     crate::prepare_command(
         connection,
+        documents,
         &CommandRequest {
             project_id: current.project_id().clone(),
             expected_revision: input.expected_revision.clone(),
@@ -744,11 +779,13 @@ fn prepare_source_replacement(
 
 fn prepare_source_children_replacement(
     connection: &Connection,
+    documents: &crate::document_cache::DocumentCache,
     input: &SourceMomentChildrenReplacementRequest,
     source: &PreparedSourceRegistration,
 ) -> Result<CommandPlan, StoreError> {
     let (current, moment) = prepared_moment_source(
         connection,
+        documents,
         &input.expected_revision,
         &input.asset,
         &input.ordinals,
@@ -756,6 +793,7 @@ fn prepare_source_children_replacement(
     )?;
     crate::prepare_command(
         connection,
+        documents,
         &CommandRequest {
             project_id: current.project_id().clone(),
             expected_revision: input.expected_revision.clone(),
@@ -775,12 +813,13 @@ fn prepare_source_children_replacement(
 
 fn prepared_moment_source(
     connection: &Connection,
+    documents: &crate::document_cache::DocumentCache,
     expected_revision: &RevisionId,
     asset: &AssetId,
     ordinals: &Range<u64>,
     source: &PreparedSourceRegistration,
-) -> Result<(ProjectDocument, SourceNode), StoreError> {
-    let current = crate::read_snapshot(connection)?;
+) -> Result<(Arc<ProjectDocument>, SourceNode), StoreError> {
+    let current = documents.head(connection)?;
     if current.revision_id() != expected_revision {
         return Err(StoreError::RevisionConflict {
             expected: expected_revision.as_str().into(),
@@ -859,20 +898,22 @@ fn receipt_id(
 
 fn prepare_registration(
     connection: &Connection,
+    documents: &crate::document_cache::DocumentCache,
     input: &SourceRegistration,
     receipt: &SourceQualificationReceipt,
 ) -> Result<PreparedRegistration, StoreError> {
-    prepare_registration_inner(connection, input, receipt, false)
+    prepare_registration_inner(connection, documents, input, receipt, false)
 }
 
 fn prepare_registration_inner(
     connection: &Connection,
+    documents: &crate::document_cache::DocumentCache,
     input: &SourceRegistration,
     receipt: &SourceQualificationReceipt,
     initialize: bool,
 ) -> Result<PreparedRegistration, StoreError> {
     crate::single_source::check_registration(connection, receipt, initialize)?;
-    let current = crate::read_snapshot(connection)?;
+    let current = documents.head(connection)?;
     check_revision(&current, input)?;
     let existing = current
         .assets()
@@ -953,6 +994,7 @@ fn prepare_registration_inner(
     };
     let plan = crate::prepare_command_with_admission(
         connection,
+        documents,
         &request,
         None,
         Some((&asset_id, &record)),
@@ -966,9 +1008,10 @@ fn prepare_registration_inner(
 
 fn prepare_primary_geometry(
     connection: &Connection,
+    documents: &crate::document_cache::DocumentCache,
     input: &PrimaryGeometryAdoption,
 ) -> Result<CommandPlan, StoreError> {
-    let current = crate::read_snapshot(connection)?;
+    let current = documents.head(connection)?;
     if current.revision_id() != &input.expected_revision {
         return Err(StoreError::RevisionConflict {
             expected: input.expected_revision.as_str().into(),
@@ -1006,6 +1049,7 @@ fn prepare_primary_geometry(
     };
     crate::prepare_command_with_admission(
         connection,
+        documents,
         &request,
         None,
         None,
@@ -1379,7 +1423,120 @@ pub(crate) fn validate_hold_audio_source(
     Ok(())
 }
 
-pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> {
+type ReceiptMetadata = (
+    AssetRecord,
+    Option<deadpan_core::PresentationBasis>,
+    Option<(u32, u32)>,
+);
+
+fn receipt_metadata(receipt: &SourceQualificationReceipt) -> Result<ReceiptMetadata, StoreError> {
+    // Candidate derivation may legitimately be unavailable for a source
+    // used at an explicit project basis. Retain only compact results and
+    // require them when history claims source-derived presentation.
+    let basis = receipt
+        .snapshot
+        .basis_candidate()
+        .ok()
+        .flatten()
+        .map(|candidate| candidate.basis);
+    let geometry = receipt
+        .snapshot
+        .geometry_candidate()
+        .ok()
+        .flatten()
+        .map(|candidate| (candidate.width, candidate.height));
+    Ok((receipt.asset_record(String::new())?, basis, geometry))
+}
+
+/// Every qualified asset equals its immutable receipt's measured metadata, and
+/// source-derived presentation equals the primary receipt's measurements.
+/// With `previous`, records and presentation unchanged from that already
+/// checked revision are skipped: the check is a function of each record and
+/// of the presentation state alone.
+type AssetView<'a> = (
+    &'a BTreeMap<AssetId, AssetRecord>,
+    &'a deadpan_core::BasisState,
+    &'a deadpan_core::PresentationBasis,
+);
+
+fn asset_view(document: &ProjectDocument) -> AssetView<'_> {
+    (
+        document.assets(),
+        document.basis_state(),
+        document.presentation_basis(),
+    )
+}
+
+fn check_document_assets(
+    document: &ProjectDocument,
+    previous: Option<AssetView<'_>>,
+    mut metadata: impl FnMut(&SourceQualificationId) -> Result<Option<ReceiptMetadata>, StoreError>,
+) -> Result<(), StoreError> {
+    for (asset_id, asset) in document.assets() {
+        let Some(id) = &asset.source_qualification else {
+            continue;
+        };
+        if previous.is_some_and(|(assets, _, _)| assets.get(asset_id) == Some(asset)) {
+            continue;
+        }
+        let mut expected = metadata(id)?
+            .ok_or_else(|| invalid("historical asset has no qualification receipt"))?
+            .0;
+        expected.label.clone_from(&asset.label);
+        if expected != *asset {
+            return Err(invalid(
+                "historical asset differs from immutable measured metadata",
+            ));
+        }
+    }
+    if previous.is_some_and(|(_, basis_state, presentation)| {
+        basis_state == document.basis_state() && presentation == document.presentation_basis()
+    }) {
+        return Ok(());
+    }
+    if let Some(primary) = &document.basis_state().primary {
+        let (_, basis, geometry) = metadata(&primary.qualification)?
+            .ok_or_else(|| invalid("historical primary source has no qualification receipt"))?;
+        if document.basis_state().rate_origin == FrameRateOrigin::PrimarySource
+            && basis.as_ref().map(|basis| basis.frame_rate)
+                != Some(document.presentation_basis().frame_rate)
+        {
+            return Err(invalid(
+                "source-derived project rate differs from measured cadence",
+            ));
+        }
+        if document.basis_state().geometry_origin == GeometryOrigin::PrimarySource
+            && geometry
+                != Some((
+                    document.presentation_basis().width,
+                    document.presentation_basis().height,
+                ))
+        {
+            return Err(invalid(
+                "source-derived canvas differs from measured geometry",
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// The per-revision receipt check that opening performs, for one new revision
+/// whose parent already passed it.
+pub(crate) fn check_revision_assets(
+    connection: &Connection,
+    current: &ProjectDocument,
+    next: &ProjectDocument,
+) -> Result<(), StoreError> {
+    check_document_assets(next, Some(asset_view(current)), |id| {
+        read_receipt(connection, id)?
+            .map(|receipt| receipt_metadata(&receipt))
+            .transpose()
+    })
+}
+
+/// Validate every stored receipt and the revisions from chronology index
+/// `from`; earlier revisions were proved by a matching history receipt.
+pub(crate) fn validate_store(connection: &Connection, from: usize) -> Result<(), StoreError> {
     check_stored_sizes(connection)?;
     let mut metadata = BTreeMap::new();
     let mut statement = connection.prepare("SELECT id FROM source_qualifications ORDER BY id")?;
@@ -1388,65 +1545,33 @@ pub(crate) fn validate_store(connection: &Connection) -> Result<(), StoreError> 
         let id = SourceQualificationId::new(row.get(0)?)?;
         let receipt =
             read_receipt(connection, &id)?.ok_or_else(|| invalid("qualification disappeared"))?;
-        // Candidate derivation may legitimately be unavailable for a source
-        // used at an explicit project basis. Retain only compact results and
-        // require them when history claims source-derived presentation.
-        let basis = receipt
-            .snapshot
-            .basis_candidate()
-            .ok()
-            .flatten()
-            .map(|candidate| candidate.basis);
-        let geometry = receipt
-            .snapshot
-            .geometry_candidate()
-            .ok()
-            .flatten()
-            .map(|candidate| (candidate.width, candidate.height));
-        metadata.insert(id, (receipt.asset_record(String::new())?, basis, geometry));
+        metadata.insert(id, receipt_metadata(&receipt)?);
     }
     // Include abandoned branches, not only current head or active redo. Each
     // asset carries its own receipt ID even if its alias is reused after undo.
-    crate::validation::for_each_revision_document(connection, |document| {
-        for asset in document.assets().values() {
-            let Some(id) = &asset.source_qualification else {
-                continue;
-            };
-            let mut expected = metadata
-                .get(id)
-                .ok_or_else(|| invalid("historical asset has no qualification receipt"))?
-                .0
-                .clone();
-            expected.label.clone_from(&asset.label);
-            if expected != *asset {
-                return Err(invalid(
-                    "historical asset differs from immutable measured metadata",
-                ));
-            }
-        }
-        if let Some(primary) = &document.basis_state().primary {
-            let (_, basis, geometry) = metadata
-                .get(&primary.qualification)
-                .ok_or_else(|| invalid("historical primary source has no qualification receipt"))?;
-            if document.basis_state().rate_origin == FrameRateOrigin::PrimarySource
-                && basis.as_ref().map(|basis| basis.frame_rate)
-                    != Some(document.presentation_basis().frame_rate)
-            {
-                return Err(invalid(
-                    "source-derived project rate differs from measured cadence",
-                ));
-            }
-            if document.basis_state().geometry_origin == GeometryOrigin::PrimarySource
-                && *geometry
-                    != Some((
-                        document.presentation_basis().width,
-                        document.presentation_basis().height,
-                    ))
-            {
-                return Err(invalid(
-                    "source-derived canvas differs from measured geometry",
-                ));
-            }
+    let mut previous: Option<(
+        BTreeMap<AssetId, AssetRecord>,
+        deadpan_core::BasisState,
+        deadpan_core::PresentationBasis,
+    )> = None;
+    crate::validation::for_each_revision_document(connection, from, |document| {
+        check_document_assets(
+            document,
+            previous
+                .as_ref()
+                .map(|(assets, basis_state, presentation)| (assets, basis_state, presentation)),
+            |id| Ok(metadata.get(id).cloned()),
+        )?;
+        // Keep only what the next comparison reads.
+        if previous
+            .as_ref()
+            .is_none_or(|previous| asset_view(document) != (&previous.0, &previous.1, &previous.2))
+        {
+            previous = Some((
+                document.assets().clone(),
+                document.basis_state().clone(),
+                document.presentation_basis().clone(),
+            ));
         }
         Ok(())
     })

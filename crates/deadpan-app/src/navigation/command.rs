@@ -30,6 +30,8 @@ pub enum Entry {
     Scope(ScopeChoice),
     /// Tenths of one percent, independent of authored or export gain.
     Monitor(u16),
+    /// `:proxies on|off|retry`: automatic seek proxies.
+    Proxies(ProxyCommand),
     AuditionContext {
         lead: DurationInput,
         follow: DurationInput,
@@ -304,6 +306,14 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         }
         "gain-mute" if argument.is_none() => return Ok(Entry::GainMute),
         "monitor" => return monitor(argument).map(Entry::Monitor),
+        "proxies" => {
+            return match argument {
+                Some("on") => Ok(Entry::Proxies(ProxyCommand::On)),
+                Some("off") => Ok(Entry::Proxies(ProxyCommand::Off)),
+                Some("retry") => Ok(Entry::Proxies(ProxyCommand::Retry)),
+                _ => Err("Use :proxies on, :proxies off or :proxies retry.".into()),
+            };
+        }
         "sound-place" | "sounds" | "sound-at" | "sound-gain" | "sound-edges" | "sound-delete"
         | "sound-allow" | "sound-silence" | "sound-cut" => {
             return super::sound::parse(&verb, argument)
@@ -437,6 +447,15 @@ fn audition_context<'a>(arguments: impl Iterator<Item = &'a str>) -> Result<Entr
         lead: lead.ok_or_else(invalid)?,
         follow: follow.ok_or_else(invalid)?,
     })
+}
+
+/// Automatic seek proxies: on, off (remembered per user), or retry a build
+/// that failed for this Original.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ProxyCommand {
+    On,
+    Off,
+    Retry,
 }
 
 fn monitor(argument: Option<&str>) -> Result<u16, String> {
@@ -714,6 +733,19 @@ mod tests {
             "play 2",
             "audition 2",
         ] {
+            assert!(parse(input).is_err(), "{input}");
+        }
+    }
+
+    #[test]
+    fn proxies_command_accepts_on_off_and_retry_only() {
+        assert_eq!(parse("proxies on"), Ok(Entry::Proxies(ProxyCommand::On)));
+        assert_eq!(parse("proxies off"), Ok(Entry::Proxies(ProxyCommand::Off)));
+        assert_eq!(
+            parse("proxies retry"),
+            Ok(Entry::Proxies(ProxyCommand::Retry))
+        );
+        for input in ["proxies", "proxies maybe", "proxies on now"] {
             assert!(parse(input).is_err(), "{input}");
         }
     }

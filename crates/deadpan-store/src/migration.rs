@@ -20,9 +20,9 @@ pub struct MigrationOutcome {
 
 impl ProjectStore {
     /// Validate a current package without obtaining a writer or creating a
-    /// backup. A schema-59 through 62 package is upgraded in place by a writer:
-    /// schemas 60 through 63 only add empty tables, so no backup is needed. Earlier unused
-    /// development formats have no supported migration.
+    /// backup: a read-only open, then complete history replay. Database 64
+    /// has no supported migration; every earlier development format is
+    /// refused as `UnsupportedSchema` before a writer, backup or parse.
     pub fn migrate(path: &Path) -> Result<MigrationOutcome, StoreError> {
         validate_extension(path)?;
         let package = std::fs::canonicalize(path)?;
@@ -30,16 +30,11 @@ impl ProjectStore {
         require_regular_file(&database)?;
         let probe = Connection::open_with_flags(&database, read_flags())?;
         schema::configure(&probe)?;
-        let from_schema = schema::check_openable_version(&probe)?;
+        schema::check_version(&probe)?;
         drop(probe);
-        let mode = if from_schema == schema::VERSION {
-            AccessMode::ReadOnly
-        } else {
-            AccessMode::ReadWrite
-        };
-        Self::open(path, mode)?;
+        Self::open(path, AccessMode::ReadOnly)?.validate_full()?;
         Ok(MigrationOutcome {
-            from_schema,
+            from_schema: schema::VERSION,
             to_schema: schema::VERSION,
             backup: None,
         })

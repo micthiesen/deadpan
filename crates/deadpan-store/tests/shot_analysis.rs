@@ -3,10 +3,7 @@ use std::error::Error;
 
 use deadpan_analysis::{SIGNATURE_VERSION, ShotAnalysis};
 use deadpan_core::{NodeId, ProjectDocument, ProjectId, RevisionId};
-use deadpan_store::{
-    AccessMode, DATABASE_SCHEMA_VERSION, MAX_SHOT_ANALYSES, ProjectStore, ShotAnalysisKey,
-    StoreError,
-};
+use deadpan_store::{AccessMode, MAX_SHOT_ANALYSES, ProjectStore, ShotAnalysisKey, StoreError};
 use rusqlite::Connection;
 
 type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
@@ -171,7 +168,7 @@ fn tampered_stored_shots_fail_on_read() -> Result {
 }
 
 #[test]
-fn a_schema60_package_is_read_without_shots_and_upgraded_by_its_writer() -> Result {
+fn a_schema60_package_is_refused_unchanged() -> Result {
     let scratch = tempfile::tempdir()?;
     let path = project(&scratch)?;
     let downgrade = |path: &std::path::Path| -> Result {
@@ -191,33 +188,17 @@ fn a_schema60_package_is_read_without_shots_and_upgraded_by_its_writer() -> Resu
         )
     };
     downgrade(&path)?;
-
-    let reader = ProjectStore::open(&path, AccessMode::ReadOnly)?;
-    assert!(reader.shot_analysis(&key("v"), 20)?.is_none());
-    assert!(
-        reader
-            .shot_analysis_keys_for_content("blake3:original")?
-            .is_empty()
-    );
-    reader.validate()?;
-    drop(reader);
+    // Database 64 refuses earlier development packages without writing.
+    for mode in [AccessMode::ReadOnly, AccessMode::ReadWrite] {
+        assert!(matches!(
+            ProjectStore::open(&path, mode),
+            Err(deadpan_store::StoreError::UnsupportedSchema(60))
+        ));
+    }
+    assert!(matches!(
+        ProjectStore::migrate(&path),
+        Err(deadpan_store::StoreError::UnsupportedSchema(60))
+    ));
     assert_eq!(version(&path)?, 60);
-
-    let writer = ProjectStore::open(&path, AccessMode::ReadWrite)?;
-    assert_eq!(version(&path)?, DATABASE_SCHEMA_VERSION);
-    writer.save_shot_analysis(&key("v"), &analysis(90))?;
-    drop(writer);
-    let writer = ProjectStore::open(&path, AccessMode::ReadWrite)?;
-    assert_eq!(writer.shot_analysis(&key("v"), 20)?, Some(analysis(90)));
-    drop(writer);
-
-    downgrade(&path)?;
-    let outcome = ProjectStore::migrate(&path)?;
-    assert_eq!(
-        (outcome.from_schema, outcome.to_schema),
-        (60, DATABASE_SCHEMA_VERSION)
-    );
-    assert!(outcome.backup.is_none());
-    assert_eq!(version(&path)?, DATABASE_SCHEMA_VERSION);
     Ok(())
 }

@@ -117,19 +117,32 @@ fn provenance_rejects_unretained_originals_and_unsafe_text() -> Result {
 }
 
 #[test]
-fn a_schema61_package_gains_the_provenance_table_from_its_writer() -> Result {
+fn a_schema61_package_is_refused_unchanged() -> Result {
     let scratch = tempfile::tempdir()?;
     let (path, content) = retained(&scratch)?;
     Connection::open(path.join("project.sqlite"))?
         .execute_batch("DROP TABLE original_provenance; PRAGMA user_version=61;")?;
-
-    let reader = ProjectStore::open(&path, AccessMode::ReadOnly)?;
-    assert!(reader.original_provenance(&content)?.is_none());
-    reader.validate()?;
-    drop(reader);
-
-    let writer = ProjectStore::open(&path, AccessMode::ReadWrite)?;
-    writer.save_original_provenance(&content, &provenance())?;
-    assert_eq!(writer.original_provenance(&content)?, Some(provenance()));
+    let version = |path: &std::path::Path| -> Result<u32> {
+        Ok(
+            Connection::open(path.join("project.sqlite"))?.pragma_query_value(
+                None,
+                "user_version",
+                |row| row.get(0),
+            )?,
+        )
+    };
+    let _ = content;
+    // Database 64 refuses earlier development packages without writing.
+    for mode in [AccessMode::ReadOnly, AccessMode::ReadWrite] {
+        assert!(matches!(
+            ProjectStore::open(&path, mode),
+            Err(deadpan_store::StoreError::UnsupportedSchema(61))
+        ));
+    }
+    assert!(matches!(
+        ProjectStore::migrate(&path),
+        Err(deadpan_store::StoreError::UnsupportedSchema(61))
+    ));
+    assert_eq!(version(&path)?, 61);
     Ok(())
 }

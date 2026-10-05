@@ -50,7 +50,7 @@ fn success(arguments: &[&str]) -> Result<Value> {
 fn doctor_reports_sound_document_and_database_schemas() -> Result {
     let report = success(&["doctor"])?;
     assert_eq!(report["document_schema"], 46);
-    assert_eq!(report["database_schema"], 63);
+    assert_eq!(report["database_schema"], 64);
     let partial = report["partial"].as_array().unwrap();
     for capability in [
         "schema-1-through-57-development-format-refusal",
@@ -294,7 +294,11 @@ fn headless_migration_and_plan_inspection_are_explicit_and_read_only() -> Result
     let scratch = tempfile::tempdir()?;
     let package = current_repeat_fixture(scratch.path())?;
     let path = package.to_str().unwrap();
-    success(&["project", "validate", path])?;
+    // Full replay by default; `--quick` checks what opening checks.
+    assert_eq!(
+        success(&["project", "validate", path])?,
+        success(&["project", "validate", path, "--quick"])?
+    );
     let outcome = success(&["project", "migrate", path])?;
     assert_eq!(
         outcome["migration"]["from_schema"],
@@ -725,11 +729,12 @@ fn current_migration_rejects_bad_history_without_writes_or_backup() -> Result {
     assert!(output.stdout.is_empty());
     let report: Value = serde_json::from_slice(&output.stderr)?;
     assert_eq!(report["error"]["code"], "ProjectFailure");
+    // A longer stored edit also exceeds its revision's recorded size bound.
+    let message = report["error"]["message"].as_str().unwrap();
     assert!(
-        report["error"]["message"]
-            .as_str()
-            .unwrap()
-            .contains("stored command, patches, and revision disagree")
+        message.contains("stored command, patches, and revision disagree")
+            || message.contains("revision keyframe metadata disagrees"),
+        "{message}"
     );
     assert!(report["error"]["recovery_backup"].is_null());
     assert_eq!(fs::read(database)?, before);

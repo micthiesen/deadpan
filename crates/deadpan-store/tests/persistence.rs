@@ -348,13 +348,13 @@ fn backup_contains_committed_wal_and_is_independently_readable() -> Result {
     store.commit(&insert(&store.snapshot()?, "r1", "hold")?)?;
     let checkpoint = store.checkpoint()?;
     let backup =
-        Connection::open_with_flags(checkpoint, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)?;
-    let json: String = backup.query_row(
-        "SELECT document FROM revisions JOIN state ON head_revision=revisions.id",
-        [],
-        |row| row.get(0),
-    )?;
-    assert_eq!(ProjectDocument::from_json(&json)?, store.snapshot()?);
+        Connection::open_with_flags(&checkpoint, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)?;
+    // The head may be stored as a patch; read it through a package around
+    // the standalone database copy.
+    assert_eq!(
+        open_database_copy(&checkpoint, scratch.path())?.snapshot()?,
+        store.snapshot()?
+    );
     assert_eq!(
         backup.query_row("PRAGMA integrity_check", [], |row| row.get::<_, String>(0))?,
         "ok"
@@ -523,7 +523,11 @@ fn semantic_validation_rejects_forged_history_and_state() -> Result {
         "UPDATE history SET edit=json_set(edit,'$.inverse.to_revision','unrelated') WHERE id=1",
         "UPDATE revisions SET document=json_set(document,'$.revision_id','unrelated') WHERE id='r0'",
         "UPDATE revisions SET document=json_set(document,'$.nodes.root.label','changed') WHERE id='r0'",
-        "UPDATE revisions SET document=json_set(document,'$.nodes.root.label','changed') WHERE id='r3'",
+        // The head is stored as a navigation patch rather than a document.
+        "UPDATE revisions SET document=(SELECT document FROM revisions WHERE id='r0') WHERE id='r3'",
+        "UPDATE revision_patches SET patch=json_set(patch,'$.to_revision','unrelated') WHERE revision_id='r3'",
+        "UPDATE revisions SET json_bound=0 WHERE id='r2'",
+        "UPDATE revisions SET depth=0 WHERE id='r2'",
         "UPDATE revisions SET parent_id='r1' WHERE id='r3'",
         "UPDATE redo SET history_id=1",
         "DELETE FROM redo",
@@ -1129,4 +1133,24 @@ fn imported_audio_timing_namespaces_remain_reserved_after_bindings_are_removed()
         ));
     }
     Ok(())
+}
+
+/// Open a standalone database copy read-only inside a fresh package.
+fn open_database_copy(
+    database: &std::path::Path,
+    scratch: &std::path::Path,
+) -> std::result::Result<deadpan_store::ProjectStore, Box<dyn std::error::Error>> {
+    let package = scratch.join("database-copy.deadpan");
+    for directory in [
+        "Media/Originals",
+        "Media/Generated",
+        "Media/RenderCandidates",
+    ] {
+        std::fs::create_dir_all(package.join(directory))?;
+    }
+    std::fs::copy(database, package.join("project.sqlite"))?;
+    Ok(deadpan_store::ProjectStore::open(
+        &package,
+        deadpan_store::AccessMode::ReadOnly,
+    )?)
 }

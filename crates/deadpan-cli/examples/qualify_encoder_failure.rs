@@ -116,7 +116,7 @@ fn main() -> Result {
         if after != snapshot || after_rows != original {
             return Err("qualification changed authoritative snapshot or authoring history".into());
         }
-        store.validate()?;
+        store.validate_full()?;
         Ok(())
     })();
     if let Err(error) = &result {

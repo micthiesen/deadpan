@@ -678,7 +678,7 @@ fn write_json(
 // giving the decoder crate a serialization or authored-document dependency.
 #[derive(Serialize, Deserialize)]
 #[serde(remote = "SourceStreamInfo", deny_unknown_fields)]
-struct SourceStreamInfoWire {
+pub(crate) struct SourceStreamInfoWire {
     width: u32,
     height: u32,
     stream_index: u32,

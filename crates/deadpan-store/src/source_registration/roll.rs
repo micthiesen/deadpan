@@ -18,7 +18,7 @@ impl ProjectStore {
         request: &CommandRequest,
     ) -> Result<SourceRollPreview, StoreError> {
         let transaction = self.connection.unchecked_transaction()?;
-        let current = crate::read_command_snapshot(&transaction, request)?;
+        let current = crate::read_command_snapshot(&transaction, &self.documents, request)?;
         let Command::RollSources {
             parent,
             left,
@@ -33,13 +33,14 @@ impl ProjectStore {
         };
         let resolution = current.source_roll(parent, left, right, *delta_frames)?;
         let edit = if resolution.applied_delta_frames == 0 {
-            crate::ensure_unused_revision(&transaction, &request.new_revision)?;
+            crate::ensure_unused_revision(&transaction, &self.documents, &request.new_revision)?;
             validate_source_roll(&transaction, &current, &current, request)?;
             None
         } else {
             Some(
                 crate::prepare_current_command_with_admission(
                     &transaction,
+                    &self.documents,
                     current,
                     request,
                     None,

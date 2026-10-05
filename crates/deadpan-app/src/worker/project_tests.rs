@@ -23,6 +23,9 @@ mod proposed_tests;
 #[path = "edited_slice_tests.rs"]
 mod edited_slice_tests;
 
+#[path = "proxy_tests.rs"]
+mod proxy_tests;
+
 #[test]
 fn generated_decoder_identity_preserves_edits_but_rechecks_media_interpretation() {
     use deadpan_core::{

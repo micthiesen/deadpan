@@ -48,6 +48,7 @@ mod marks;
 mod moment;
 mod operators;
 mod playback;
+mod proxies;
 mod render;
 mod repeat_queue;
 mod repeats;
@@ -145,6 +146,7 @@ pub struct DeadpanApp {
     thumbnails: thumbnails::Thumbnails,
     transcription: transcript::Transcription,
     shots: shots::ShotJob,
+    proxies: proxies::ProxyJob,
     /// New-from-URL: one YouTube import job and its URL step.
     youtube: youtube::Flow,
     /// The native menu bar, present only for native launches.
@@ -314,6 +316,7 @@ impl DeadpanApp {
             thumbnails,
             transcription: transcript::Transcription::default(),
             shots: shots::ShotJob::default(),
+            proxies: proxies::ProxyJob::default(),
             youtube: youtube::Flow::new(crate::youtube::Jobs::new(
                 Arc::new(crate::youtube::Pinned::new(None)),
                 None,
@@ -416,6 +419,7 @@ impl DeadpanApp {
             project_error: None,
             message: keymap.failed.then_some(keymap.status),
         };
+        app.worker.set_proxy_cache(app.proxies.cache.clone());
         if let Some(path) = initial_project {
             app.submit(ProjectRequest::Open(PathBuf::from(path)));
         } else if let Some(path) = initial_path {
@@ -1086,12 +1090,26 @@ impl DeadpanApp {
                     }
                 }
                 Err(_) => {
-                    if !retain_draft_display {
+                    // A failed refinement keeps its proxy picture displayed.
+                    if !retain_draft_display && !self.presentation.has_displayed() {
                         self.forget_target();
                     }
                 }
             }
         }
+    }
+
+    /// Read and build seek proxies in `cache` (and keep the setting in
+    /// `settings`) instead of the per-user locations.
+    #[cfg(feature = "ui-harness")]
+    pub(crate) fn use_proxy_locations(
+        &mut self,
+        cache: Option<deadpan_cli::proxy::cache::ProxyCache>,
+        settings: Option<PathBuf>,
+    ) {
+        self.proxies.use_settings(settings);
+        self.proxies.use_cache(cache.clone());
+        self.worker.set_proxy_cache(cache);
     }
 
     /// A user action that needs the project writer while another project
@@ -2841,6 +2859,7 @@ impl DeadpanApp {
                     Err("Open Place slice again to capture its destination.".into())
                 }),
             ),
+            Ok(navigation::command::Entry::Proxies(command)) => self.proxy_command(command),
             Ok(navigation::command::Entry::Monitor(tenths)) => {
                 self.pause_playback();
                 self.monitor_gain = f32::from(tenths) / 1000.0;
@@ -3553,7 +3572,8 @@ impl DeadpanApp {
                                     view: ProjectView::Source { asset: asset.clone(), frame: SourceFrameId(0) },
                                 })
                             });
-                            let response = cards::original(ui, label, &detail, self.selected_sound.is_none() && self.selected_source.as_ref() == Some(asset), thumbnail);
+                            let mut response = cards::original(ui, label, &detail, self.selected_sound.is_none() && self.selected_source.as_ref() == Some(asset), thumbnail);
+                            if let Some(explanation) = self.proxies.explanation() { response = response.on_hover_text(explanation); }
                             if response.clicked() { self.select_source(asset.clone()); }
                         }
                         ui.label(egui::RichText::new("Your starting point stays intact.").size(12.0).color(style::MUTED));
@@ -4268,6 +4288,9 @@ impl DeadpanApp {
                     // layout or decoded canvas waits for GPU submission.
                     let painted = fit_rect(rect, target.target.width() as f32 / target.target.height() as f32);
                     ui.painter().image(target.texture, painted, egui::Rect::from_min_max(egui::Pos2::ZERO, egui::pos2(1.0, 1.0)), egui::Color32::WHITE);
+                    if self.presentation.displayed_tier() == Some(crate::worker::PictureTier::Proxy) {
+                        style::proxy_badge(ui.painter(), painted);
+                    }
                 }
                 else { ui.painter().rect_filled(canvas, 0.0, egui::Color32::BLACK); }
             } else if self.workspace.is_none() && self.raw_source.is_none() && !self.presentation.loading() {
@@ -4527,6 +4550,7 @@ impl DeadpanApp {
                         (key(EditorKey::Audition), format!("Loop the complete selected sound. In Original or Your edit, loop the selected moment, Edit range or beat with 500ms before and 750ms after, bounded by that domain. {} pauses and resumes the loop.", key(EditorKey::Playback))),
                         (":audition-context lead=500ms follow=750ms".to_owned(), "Set loop lead-in and follow-through. Use 0ms for an exact selection. Seconds, milliseconds and project frames are accepted.".to_owned()),
                         (":monitor 25%".to_owned(), "Set monitor volume without changing the project or export gain. 0 mutes; 12.5% restores the initial level.".to_owned()),
+                        (":proxies off".to_owned(), "Turn automatic seek proxies for 4K Originals off or on (:proxies on), or try a failed one again (:proxies retry). Exact pictures and export always use the Original.".to_owned()),
                         (format!("{} · {}", bindings.key_labels(EditorKey::FramePrevious), bindings.key_labels(EditorKey::FrameNext)), format!("Move one frame in the current clock. Prefix a count: {}.", bindings.counted_label(EditorKey::FrameNext, 12))),
                         (key_labels::aliases_pair(&bindings, EditorKey::BeatNext, EditorKey::BeatPrevious, " "), "In the sound catalog, select the next / previous sound. Elsewhere select a beat at the current group depth and return to Your edit. In legacy Sources, choose a source.".to_owned()),
                         (format!("{} {} {}", key(EditorKey::WordNext), key(EditorKey::WordPrevious), key(EditorKey::WordEnd)), format!("Next word / previous word / end of the word, from the Original's transcript. Counts move further: {}. In Your edit words follow every edit; freezes, generated pictures and gaps hold none.", bindings.counted_label(EditorKey::WordNext, 3))),
@@ -4684,6 +4708,7 @@ impl eframe::App for DeadpanApp {
             self.receive_trim_media();
             self.reconcile_transcription(&context);
             self.reconcile_shots(&context);
+            self.reconcile_proxies(&context);
             self.reconcile_youtube(&context);
             if self.close_pending {
                 self.junction_pictures.clear();
@@ -4948,6 +4973,7 @@ impl eframe::App for DeadpanApp {
         self.thumbnails.shutdown();
         self.transcription.shutdown();
         self.shots.shutdown();
+        self.proxies.shutdown();
         // Cancel and drain the import so no helper or private files outlive it.
         self.youtube.jobs.shutdown(Duration::from_secs(10));
         // No GPU wait on the UI. Submitted targets keep their queue callback

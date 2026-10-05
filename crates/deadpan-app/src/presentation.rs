@@ -3,7 +3,7 @@
 use deadpan_core::{ProjectId, RevisionId, SourceFrameId};
 
 use crate::project::slice::CopiedViewId;
-use crate::worker::{Picture, ProjectView, Reply, SourceSummary, Ticket, Work};
+use crate::worker::{Picture, PictureTier, ProjectView, Reply, SourceSummary, Ticket, Work};
 
 #[cfg(test)]
 mod tests;
@@ -139,6 +139,9 @@ struct DecodedPicture {
 
 struct DisplayedPicture {
     request: RequestedPicture,
+    /// A proxy picture is a distinct presentation identity from the exact
+    /// Original picture of the same request.
+    tier: PictureTier,
     source_frame: Option<SourceFrameId>,
     canvas: Option<(u32, u32)>,
     geometry_revision: u64,
@@ -204,6 +207,8 @@ impl Presentation {
             "decoded_geometry_revision": self.decoded.as_ref().map(|picture| picture.geometry_revision),
             "decoded_framing": self.decoded.as_ref().map(|picture| format!("{:?}", picture.picture.framing)),
             "source_frame": self.displayed_source_frame().map(|frame| frame.0),
+            "decoded_tier": self.decoded.as_ref().map(|picture| format!("{:?}", picture.picture.tier)),
+            "displayed_tier": self.displayed.as_ref().map(|picture| format!("{:?}", picture.tier)),
             "loading": self.loading(), "needs_render": self.needs_render(),
             "error": self.error(),
         })
@@ -257,6 +262,9 @@ impl Presentation {
         if request.ticket != reply.ticket {
             return None;
         }
+        // A failed refinement keeps the request's proxy picture on screen;
+        // the error still says the exact picture is unavailable.
+        let retain_display = retain_display || self.refining();
         self.loading = false;
         self.error = None;
         self.render_failed = false;
@@ -300,6 +308,8 @@ impl Presentation {
         let displayed = self.displayed.as_ref()?;
         if self.requested.as_ref() != Some(&decoded.request)
             || displayed.request != decoded.request
+            || displayed.tier != PictureTier::Original
+            || decoded.picture.tier != PictureTier::Original
             || decoded.picture.frame.is_none()
         {
             return None;
@@ -342,6 +352,8 @@ impl Presentation {
         let displayed = self.displayed.as_ref()?;
         if self.requested.as_ref() != Some(&decoded.request)
             || displayed.request != decoded.request
+            || displayed.tier != PictureTier::Original
+            || decoded.picture.tier != PictureTier::Original
             || decoded.picture.frame.is_none()
         {
             return None;
@@ -454,11 +466,26 @@ impl Presentation {
         self.loading
     }
 
+    /// The current request's proxy picture arrived and its exact Original
+    /// picture is still to come. Exact-picture gates wait rather than fail.
+    pub fn refining(&self) -> bool {
+        self.decoded.as_ref().is_some_and(|decoded| {
+            decoded.picture.tier == PictureTier::Proxy
+                && self.requested.as_ref() == Some(&decoded.request)
+        })
+    }
+
+    /// The tier of the picture last submitted to the GPU.
+    pub fn displayed_tier(&self) -> Option<PictureTier> {
+        self.displayed.as_ref().map(|displayed| displayed.tier)
+    }
+
     pub fn needs_render(&self) -> bool {
         !self.render_failed
             && self.decoded.as_ref().is_some_and(|decoded| {
                 self.displayed.as_ref().is_none_or(|displayed| {
                     displayed.request != decoded.request
+                        || displayed.tier != decoded.picture.tier
                         || displayed.geometry_revision != decoded.geometry_revision
                 })
             })
@@ -483,6 +510,7 @@ impl Presentation {
         self.error = None;
         self.displayed = self.decoded.as_ref().map(|decoded| DisplayedPicture {
             request: decoded.request.clone(),
+            tier: decoded.picture.tier,
             source_frame: decoded.picture.frame.as_ref().map(|_| decoded.picture.id),
             canvas: decoded.picture.canvas,
             geometry_revision: decoded.geometry_revision,
@@ -494,7 +522,12 @@ impl Presentation {
     }
 
     pub fn displayed_label(&self) -> Option<String> {
-        self.displayed.as_ref()?.request.label()
+        let displayed = self.displayed.as_ref()?;
+        let label = displayed.request.label()?;
+        Some(match displayed.tier {
+            PictureTier::Original => label,
+            PictureTier::Proxy => format!("{label} · proxy preview"),
+        })
     }
 
     pub fn displayed_source_frame(&self) -> Option<SourceFrameId> {

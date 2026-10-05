@@ -323,7 +323,7 @@ fn existing_authored_artifact_resizes_reverts_and_navigates_durable_history() ->
     let retained = ProjectDocument::from_json(&json.to_string())?;
     let database = rusqlite::Connection::open(path.join("project.sqlite"))?;
     database.execute(
-        "UPDATE revisions SET document=?1 WHERE kind='initial'",
+        "UPDATE revisions SET document=?1,json_bound=length(CAST(?1 AS BLOB)) WHERE kind='initial'",
         [retained.to_json()?],
     )?;
     drop(database);

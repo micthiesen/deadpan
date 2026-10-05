@@ -45,6 +45,24 @@ pub fn signal_owned_group(child: &Child) -> io::Result<()> {
     }
 }
 
+/// Suspend (SIGSTOP) or resume (SIGCONT) an owned worker group.
+///
+/// The caller must create `child` as its process-group leader and retain sole
+/// reaping ownership, so the unreaped leader keeps the group identity from
+/// being reused. An exited leader is left alone. Teardown still works on a
+/// suspended group: SIGKILL ends stopped processes.
+pub fn suspend_owned_group(child: &Child, suspend: bool) -> io::Result<()> {
+    if owned_child_has_exited(child)? {
+        return Ok(());
+    }
+    let signal = if suspend { Signal::STOP } else { Signal::CONT };
+    match kill_process_group(Pid::from_child(child), signal) {
+        Ok(()) => Ok(()),
+        Err(rustix::io::Errno::SRCH) if owned_child_has_exited(child)? => Ok(()),
+        Err(error) => Err(error.into()),
+    }
+}
+
 /// Last-resort leader teardown when group cleanup could not be confirmed.
 ///
 /// The caller must retain sole reaping ownership. This checks
@@ -121,11 +139,13 @@ fn owned_child_has_exited(child: &Child) -> io::Result<bool> {
             "init is not a worker",
         ));
     }
+    // Darwin's waitid can report a stopped child even when asked only for
+    // exits; only an exit or a fatal signal counts.
     Ok(waitid(
         WaitId::Pid(pid),
         WaitIdOptions::EXITED | WaitIdOptions::NOHANG | WaitIdOptions::NOWAIT,
     )?
-    .is_some())
+    .is_some_and(|status| status.exited() || status.killed() || status.dumped()))
 }
 
 #[cfg(target_os = "macos")]
