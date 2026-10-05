@@ -74,6 +74,21 @@ range inside the selected beat or toggles the whole beat; `,r` opens captured
 Kestrel source was found (`live_source_sha256` null), so the checked fixture
 (`source-sha256=368c01df…`) is the reference.
 
+`,t` (`tail`) joins the comma family on 2026-10-04 with the same contract:
+unmodified, Your edit only (Normal and Visual), no count, no key repeat, and it
+yields to native text and composition; `t` alone has no Normal binding. It
+opens captured `:tail` entry with the selected pause's length (or `1s`) and
+`effect=reverb` ready to change, and is allowed while recording a macro (the
+command it opens records as `Tail`). The `hold-effects` replay's production
+audit passed all 62 reservations over 10,890,672 routing cases with no
+conflicts; no local Kestrel source was found (`live_source_sha256` null), so
+the checked fixture (`source-sha256=368c01df…`) is the reference. `:reverse`,
+`:ping-pong`, `:caption` and `:lift` are command-only. `,b` (`bleep`) follows
+the same contract: unmodified, Your edit only, no count, no key repeat, yielding
+to native text and composition (`b` alone stays the previous-word motion); it
+bleeps the Visual range at once and records as `Bleep`. The `hold-effects`
+replay's production audit covers it alongside `,t`.
+
 Catalog placement uses `,s` with no count or key-repeat activation. In Placed
 sounds and its inspector, `h/l`, `j/k`, Enter, `+/-` and `dd` act on the event.
 Logical Plus accepts no modifier or Shift; Minus accepts no modifier so the

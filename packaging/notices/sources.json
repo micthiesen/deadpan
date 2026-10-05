@@ -39,6 +39,12 @@
       "sha256": "f62497fffecc0852960c8d3e6934b9db86d16396e9b604072e923892cae3a588"
     },
     {
+      "path": "inter/OFL.txt",
+      "component": "Inter 4.001 variable font (embedded in deadpan-render for captions)",
+      "source": "https://github.com/google/fonts/blob/main/ofl/inter/OFL.txt (as retained in assets/brand/source/Inter-OFL.txt)",
+      "sha256": "5b9321a4298cfeb6b34354164a1c3afc3db114569984c502b9b35d988fd58c57"
+    },
+    {
       "path": "spdx/MIT.txt",
       "component": "SPDX MIT license text for crates that publish no license file",
       "source": "https://raw.githubusercontent.com/spdx/license-list-data/v3.27.0/text/MIT.txt",

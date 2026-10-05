@@ -92,6 +92,7 @@ fn picture(id: u64) -> Picture {
         framing_gap: false,
         follow_point: None,
         picture_context: None,
+        captions: Vec::new(),
     }
 }
 
@@ -485,6 +486,7 @@ fn background_and_empty_sequence_do_not_invent_source_frame_identity() {
                 framing_gap: false,
                 follow_point: None,
                 picture_context: None,
+                captions: Vec::new(),
             },
         );
         assert!(state.needs_render());

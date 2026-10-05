@@ -623,6 +623,7 @@ fn nested_retimes_preserve_exact_fractions_and_report_crop_loss() {
             pitch: PitchPolicy::Preserve,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let document = tree(
         &["outer"],
@@ -979,6 +980,7 @@ fn named_source_and_authored_local_marks_require_explicit_repeat_scope() {
                             },
                         },
                         cutaways: Vec::new(),
+                        captions: Vec::new(),
                     },
                 )]),
             },

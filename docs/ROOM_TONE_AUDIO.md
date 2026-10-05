@@ -15,7 +15,8 @@ cargo run --locked -p deadpan-cli -- inspect-audio /tmp/example.deadpan --sample
 ```
 
 The output remains `time_mapped_pcm_before_effects`. The source-only inspector
-still rejects looping, and effect tails remain unsupported by both inspectors.
+still rejects looping, reversal and effect tails; the time-mapped inspector
+renders all three ([reversed pauses and tails](REVERSE_AND_TAILS.md)).
 Room tone and digital silence retain distinct authored and rendered behavior.
 
 ## Authored policy changes
@@ -32,8 +33,9 @@ Changing Silence to RoomTone or Tail removes that Hold's now-obsolete sound
 allowances in the same reversible patch. Other Holds, plays and gaps keep their
 permissions. Explicitly choosing Silence later does not recreate removed
 permissions; Undo restores the exact prior policy and permissions together.
-Tail remains authorable vocabulary but the renderer still rejects unsupported
-tail processing. This command does not implement effects or sends.
+Tail and Reverse render through the same canonical Hold preparation as room
+tone ([reversed pauses and tails](REVERSE_AND_TAILS.md)); there are no effect
+sends.
 
 The store admits a new RoomTone/Tail choice only from the expected revision's
 qualified asset. It checks the immutable receipt, Original ownership binding,

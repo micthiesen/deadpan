@@ -317,12 +317,14 @@ struct BoundRead {
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum PreparedKey {
     Preserve(AudioStageDescriptor),
-    RoomTone {
+    /// One complete Hold or gap recipe that transforms selected source audio:
+    /// room tone, reversal or an effect tail. The content retains its full
+    /// intrinsic duration, so crops never change the canonical block.
+    Hold {
         definition: Option<AudioDefinitionSelector>,
         instance: InstancePath,
         gap_after: Option<IterationId>,
-        source: SourceAudio,
-        duration: FrameDuration,
+        content: AudioContent,
     },
 }
 
@@ -471,8 +473,10 @@ impl WorkControl<'_> {
         match content {
             AudioContent::Source { source, .. }
             | AudioContent::RoomTone { source, .. }
-            | AudioContent::Tail { source, .. } => self.admit_dependency(&source.asset),
-            AudioContent::Silence { .. } => Ok(()),
+            | AudioContent::Reverse { source, .. } => self.admit_dependency(&source.asset),
+            AudioContent::Silence { .. }
+            | AudioContent::Tone { .. }
+            | AudioContent::Tail { .. } => Ok(()),
         }
     }
 
@@ -510,6 +514,9 @@ pub struct StageAudio {
     cache: Vec<Arc<PreparedStage>>,
     sound_processing_plans: BTreeMap<AudioTimingId, Arc<RenderPlan>>,
     active_frames: u64,
+    /// Set while a live tail reads the sound before it. Other tails in that
+    /// window count as silent, so tails never feed each other or chain.
+    feeding_tail: bool,
 }
 
 /// All layouts share the controller's cache, active allocations and request
@@ -546,6 +553,7 @@ impl StageAudio {
             cache: Vec::new(),
             sound_processing_plans: BTreeMap::new(),
             active_frames: 0,
+            feeding_tail: false,
         }
     }
 
@@ -1439,15 +1447,32 @@ impl StageAudio {
                         cancelled,
                     )?
                 }
-                AudioSignalContent::Leaf(AudioContent::RoomTone { source, duration }) => {
-                    let prepared = self.prepare_room_tone(
-                        PreparedKey::RoomTone {
+                AudioSignalContent::Leaf(
+                    content @ (AudioContent::RoomTone { .. }
+                    | AudioContent::Reverse { .. }
+                    | AudioContent::Tail { .. }
+                    | AudioContent::Tone { .. }),
+                ) => {
+                    // The root sample where this occurrence's local clock is
+                    // zero, from its actual (possibly retained) sampling map:
+                    // a Split fragment or a moved gap keeps its own phase.
+                    let origin = ExactRatio::integer(span.allocated_samples.start.0)
+                        .checked_sub(
+                            span.sampling
+                                .local_at(span.allocated_samples.start)?
+                                .checked_div(span.sampling.local_frames_per_sample())?,
+                        )?
+                        .round_even()?;
+                    let prepared = self.prepare_hold(
+                        PreparedKey::Hold {
                             definition: span.definition.clone(),
                             instance: span.instance.clone(),
                             gap_after: span.gap_after.clone(),
-                            source: source.clone(),
-                            duration: *duration,
+                            content: content.clone(),
                         },
+                        Some(AudioSample(
+                            i64::try_from(origin).map_err(|_| StageAudioError::Range)?,
+                        )),
                         provider,
                         control,
                         depth + 1,
@@ -1681,9 +1706,12 @@ impl StageAudio {
         Ok(entry)
     }
 
-    fn prepare_room_tone(
+    /// `origin` is the root sample where this Hold occurrence starts, known
+    /// only on the root grid; a live tail needs it to read what precedes it.
+    fn prepare_hold(
         &mut self,
         key: PreparedKey,
+        origin: Option<AudioSample>,
         provider: &mut impl AudioSourceProvider,
         control: WorkControl<'_>,
         depth: usize,
@@ -1692,14 +1720,160 @@ impl StageAudio {
         if depth > self.limits.maximum_depth {
             return Err(StageAudioError::Limit("nested stage depth"));
         }
+        let samples_per_frame =
+            samples_per_frame(self.plan.metadata().presentation_basis.frame_rate)?;
+        if let PreparedKey::Hold {
+            content: AudioContent::Tail { duration, .. },
+            ..
+        } = &key
+            && (self.feeding_tail || origin.is_none())
+        {
+            // A tail rings only where it is heard on the edit clock. Inside
+            // another tail's input it counts as silent (tails never chain),
+            // and on a point grid (an audio definition, a retained clock or a
+            // policy query) it has no edit position and is silent. Neither
+            // substitute is cached: the root occurrence is heard in full.
+            let frames = u32::try_from(
+                samples_per_frame
+                    .checked_mul(ExactRatio::integer(duration.frames()))?
+                    .ceil()?,
+            )
+            .map_err(|_| StageAudioError::Limit("output frames"))?;
+            return Ok(Arc::new(PreparedStage {
+                plan: Arc::clone(&self.plan),
+                key,
+                block: SignalBlock {
+                    samples: vec![[0.0; 2]; frames as usize],
+                    dependencies: BTreeMap::new(),
+                    suppressed: Vec::new(),
+                    relative_depth: 0,
+                },
+            }));
+        }
         if let Some(entry) = self.cached(&key, provider, control, depth)? {
             return Ok(entry);
         }
-        let PreparedKey::RoomTone {
-            source, duration, ..
-        } = &key
-        else {
-            return Err(PlanError::InvalidPlan("room tone preparation key").into());
+        let PreparedKey::Hold { content, .. } = &key else {
+            return Err(PlanError::InvalidPlan("Hold audio preparation key").into());
+        };
+        if let AudioContent::Tone {
+            frequency_hz,
+            level,
+            duration,
+        } = content
+        {
+            // A synthesized tone reads no media and has no dependencies.
+            let output_frames = u32::try_from(
+                samples_per_frame
+                    .checked_mul(ExactRatio::integer(duration.frames()))?
+                    .ceil()?,
+            )
+            .map_err(|_| StageAudioError::Limit("output frames"))?;
+            let reservation = self.reserve(1, output_frames, control)?;
+            let result = crate::tone(
+                *frequency_hz,
+                level.millidecibels(),
+                output_frames,
+                control.cancelled,
+            )
+            .map_err(StageAudioError::from)
+            .map(|samples| SignalBlock {
+                samples,
+                dependencies: BTreeMap::new(),
+                suppressed: Vec::new(),
+                relative_depth: 0,
+            });
+            self.active_frames -= reservation;
+            return self.publish(key, result?, control);
+        }
+        if let AudioContent::Tail {
+            maximum,
+            effect,
+            duration,
+        } = content
+        {
+            let origin = origin.ok_or(PlanError::InvalidPlan("tail origin"))?;
+            let frames = |duration: FrameDuration| -> Result<u32, StageAudioError> {
+                u32::try_from(
+                    samples_per_frame
+                        .checked_mul(ExactRatio::integer(duration.frames()))?
+                        .ceil()?,
+                )
+                .map_err(|_| StageAudioError::Limit("output frames"))
+            };
+            let output_frames = frames(*duration)?;
+            let ring = frames(*maximum)?.min(output_frames);
+            // A domain read can place an occurrence at or before root zero;
+            // nothing is heard before it there.
+            let origin = AudioSample(origin.0.max(0));
+            let start = AudioSample((origin.0 - TAIL_INPUT_FRAMES).max(0));
+            let input_frames =
+                u32::try_from(origin.0 - start.0).map_err(|_| StageAudioError::Range)?;
+            let reservation = self.reserve(input_frames.max(1), output_frames, control)?;
+            let (effect, plan) = (*effect, Arc::clone(&self.plan));
+            // Owners shared with the tail apply once, to its output.
+            let shared = authored_gain::owners_at(&plan, origin, control)?;
+            let feeding = std::mem::replace(&mut self.feeding_tail, true);
+            let result = (|| {
+                // The processed Original sound heard before this occurrence:
+                // time mapping, edges, Hold gates, and the gain, mute and
+                // treatments of owners the tail does not share, in the
+                // current plan. The window counts toward this request's
+                // prepared frames through the reservation above.
+                let mut input = Vec::with_capacity(input_frames as usize);
+                let mut dependencies = Dependencies::new();
+                let mut relative_depth = 0;
+                let mut cursor = start;
+                while cursor.0 < origin.0 {
+                    // The root reader, resampler, edge and bound readers all
+                    // work in blocks of at most MAX_OUTPUT_FRAMES.
+                    let count =
+                        u32::try_from((origin.0 - cursor.0).min(i64::from(MAX_OUTPUT_FRAMES)))
+                            .map_err(|_| StageAudioError::Range)?;
+                    let block =
+                        self.read_controlled(provider, cursor, count, control, true, depth + 1)?;
+                    let heard = authored_gain::original_samples_except(
+                        &plan, &block, control, true, &shared,
+                    )?;
+                    dependencies.extend(block.dependencies);
+                    relative_depth = relative_depth.max(1 + block.relative_depth);
+                    input.extend(
+                        heard
+                            .into_iter()
+                            .map(|frame| [frame[0] as f32, frame[1] as f32]),
+                    );
+                    cursor.0 += i64::from(count);
+                }
+                let samples = if input.is_empty() {
+                    vec![[0.0; 2]; output_frames as usize]
+                } else {
+                    crate::render_tail(
+                        crate::TailRecipe::new(effect, ring, output_frames)?,
+                        &input,
+                        control.cancelled,
+                    )?
+                };
+                control.check()?;
+                Ok::<_, StageAudioError>(SignalBlock {
+                    samples,
+                    dependencies,
+                    suppressed: Vec::new(),
+                    relative_depth,
+                })
+            })();
+            self.feeding_tail = feeding;
+            self.active_frames -= reservation;
+            return self.publish(key, result?, control);
+        }
+        let (source, duration) = match content {
+            AudioContent::RoomTone { source, duration }
+            | AudioContent::Reverse { source, duration } => (source, *duration),
+            AudioContent::Source { .. }
+            | AudioContent::Silence { .. }
+            | AudioContent::Tail { .. }
+            | AudioContent::Tone { .. } => {
+                return Err(PlanError::InvalidPlan("Hold audio preparation key").into());
+            }
         };
         let source_extent = source_samples(
             SourcePoint {
@@ -1712,17 +1886,42 @@ impl StageAudio {
         let input_frames = u32::try_from(source_extent.ceil()?)
             .map_err(|_| StageAudioError::Limit("input frames"))?;
         let output_frames = u32::try_from(
-            samples_per_frame(self.plan.metadata().presentation_basis.frame_rate)?
+            samples_per_frame
                 .checked_mul(ExactRatio::integer(duration.frames()))?
                 .ceil()?,
         )
         .map_err(|_| StageAudioError::Limit("output frames"))?;
         let reservation = self.reserve(input_frames, output_frames, control)?;
+        // A reversal reads its points ending exactly at the span's end: the
+        // last point sits one 48 kHz sample before it, so the first stored
+        // point starts `extent - ceil(extent)` (zero or negative) after the
+        // span's start. Room tone starts at the span's start.
+        let shift = if matches!(content, AudioContent::Reverse { .. }) {
+            source_extent.checked_sub(ExactRatio::integer(i64::from(input_frames)))?
+        } else {
+            ExactRatio::ZERO
+        };
         let result = (|| {
-            let recipe = RoomToneRecipe::new(source_extent, output_frames)?;
             let prepared = resolve_source(provider, &self.plan, &source.asset, control.cancelled)?;
             let fingerprint = control.observe(&source.asset, prepared)?;
-            let samples = build_room_tone(source, prepared, recipe, input_frames, control)?;
+            let input = read_hold_source(source, prepared, input_frames, shift, control)?;
+            let samples = match content {
+                AudioContent::RoomTone { .. } => build_room_tone(
+                    &input,
+                    RoomToneRecipe::new(source_extent, output_frames)?,
+                    control,
+                )?,
+                AudioContent::Reverse { .. } => {
+                    crate::reverse(&input, output_frames, control.cancelled)?
+                }
+                AudioContent::Source { .. }
+                | AudioContent::Silence { .. }
+                | AudioContent::Tail { .. }
+                | AudioContent::Tone { .. } => {
+                    return Err(PlanError::InvalidPlan("Hold audio preparation key").into());
+                }
+            };
+            control.check()?;
             Ok::<_, StageAudioError>(SignalBlock {
                 samples,
                 dependencies: BTreeMap::from([(source.asset.clone(), fingerprint)]),
@@ -1926,15 +2125,20 @@ impl StageAudio {
                         cancelled,
                     )?
                 }
-                AudioSignalContent::Leaf(AudioContent::RoomTone { source, duration }) => {
-                    let prepared = self.prepare_room_tone(
-                        PreparedKey::RoomTone {
+                AudioSignalContent::Leaf(
+                    content @ (AudioContent::RoomTone { .. }
+                    | AudioContent::Reverse { .. }
+                    | AudioContent::Tail { .. }
+                    | AudioContent::Tone { .. }),
+                ) => {
+                    let prepared = self.prepare_hold(
+                        PreparedKey::Hold {
                             definition: span.definition.clone(),
                             instance: span.instance.clone(),
                             gap_after: span.gap_after.clone(),
-                            source: source.clone(),
-                            duration: *duration,
+                            content: content.clone(),
                         },
+                        None,
                         provider,
                         control,
                         depth + 1,
@@ -2022,19 +2226,23 @@ fn validate_timeout(timeout: Duration) -> Result<(), StageAudioError> {
     Ok(())
 }
 
-fn build_room_tone(
+/// The selected source span at 48 kHz from its exact start, `input_frames`
+/// long: the shared input of every source-transforming Hold recipe.
+fn read_hold_source(
     source: &SourceAudio,
     prepared: &crate::PreparedSource,
-    recipe: RoomToneRecipe,
     input_frames: u32,
+    shift: ExactRatio,
     control: WorkControl<'_>,
 ) -> Result<Vec<[f32; 2]>, StageAudioError> {
     let rate = prepared.index().stream().sample_rate;
     let selection =
         original_sample(source.span.start(), rate)?..original_sample(source.span.end(), rate)?;
+    // `shift` is in 48 kHz samples; the origin is in source samples.
     let source_recipe = ResampleRecipe::new(
         selection.clone(),
-        ExactRatio::integer(selection.start),
+        ExactRatio::integer(selection.start)
+            .checked_add(shift.checked_mul(ExactRatio::new(i128::from(rate), 48_000)?)?)?,
         AudioSample(0),
         ExactRatio::new(i128::from(rate), 48_000)?,
         AudioSample(0)..AudioSample(i64::from(input_frames)),
@@ -2054,8 +2262,16 @@ fn build_room_tone(
                 .samples,
         );
     }
+    Ok(input)
+}
+
+fn build_room_tone(
+    input: &[[f32; 2]],
+    recipe: RoomToneRecipe,
+    control: WorkControl<'_>,
+) -> Result<Vec<[f32; 2]>, StageAudioError> {
     let output_frames = recipe.output_frames();
-    let renderer = RoomTone::new(recipe, &input, control.cancelled)?;
+    let renderer = RoomTone::new(recipe, input, control.cancelled)?;
     let mut output = Vec::with_capacity(output_frames as usize);
     while output.len() < output_frames as usize {
         control.check()?;
@@ -2069,6 +2285,9 @@ fn build_room_tone(
     control.check()?;
     Ok(output)
 }
+
+/// A hanging tail is fed by at most two seconds of what precedes it.
+const TAIL_INPUT_FRAMES: i64 = 96_000;
 
 fn query_limits() -> AudioQueryLimits {
     AudioQueryLimits {
@@ -2084,8 +2303,10 @@ fn count(samples: &Range<AudioSample>) -> Result<u32, StageAudioError> {
 fn preflight(content: &AudioContent, plan: &RenderPlan) -> Result<(), StageAudioError> {
     match content {
         AudioContent::Silence { .. } => Ok(()),
-        AudioContent::RoomTone { .. } => Ok(()),
-        AudioContent::Tail { .. } => Err(StageAudioError::Unsupported("effect tails")),
+        AudioContent::RoomTone { .. }
+        | AudioContent::Reverse { .. }
+        | AudioContent::Tail { .. }
+        | AudioContent::Tone { .. } => Ok(()),
         AudioContent::Source {
             source, duration, ..
         } => {
@@ -2454,6 +2675,7 @@ mod controlled_reads {
                 },
             },
             cutaways: Vec::new(),
+            captions: Vec::new(),
         };
         let mut wire = serde_json::to_value(
             ProjectDocument::new(
@@ -2507,6 +2729,7 @@ mod controlled_reads {
                         purpose: RetimePurpose::Edit,
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
             ),
         ]))
@@ -2881,6 +3104,7 @@ mod controlled_reads {
                 },
             },
             cutaways: Vec::new(),
+            captions: Vec::new(),
         };
         let retime = |child: &str, output, selected| BeatNode {
             framing: None,
@@ -2896,6 +3120,7 @@ mod controlled_reads {
                 purpose: RetimePurpose::Edit,
             },
             cutaways: Vec::new(),
+            captions: Vec::new(),
         };
         let mut wire = serde_json::to_value(
             ProjectDocument::new(

@@ -38,7 +38,7 @@ pub use audio_sound_route::{AudioSoundRoute, AudioSoundRouteQuery, AudioSoundRou
 pub use audio_source_root::AudioRootSource;
 pub use audio_tape::{AudioSignalTape, AudioSignalTapeRun};
 
-pub use picture::{Picture, PictureFraming, PictureSample};
+pub use picture::{Picture, PictureCaption, PictureFraming, PictureSample};
 pub use plan::follow_pose;
 pub use plan::{
     AudioBound, AudioBoundDomain, AudioFadeEdge, AudioFadeQuery, AudioFadeSpan, AudioPolicyQuery,

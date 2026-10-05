@@ -83,11 +83,58 @@ impl GainSum {
     }
 }
 
+/// One gain owner occurrence: its node instance, whether it is the whole
+/// node or a Repeat's default gap, and the play a gap follows.
+pub(super) type OwnerIdentity = (
+    deadpan_core::InstancePath,
+    deadpan_plan::AudioOwnerKind,
+    Option<deadpan_core::IterationId>,
+);
+
+fn identity(owner: &deadpan_plan::AudioOwnerClock<'_>) -> OwnerIdentity {
+    (
+        owner.instance().clone(),
+        owner.kind(),
+        owner.gap_after().cloned(),
+    )
+}
+
+/// The gain owners of the sample at `at`, outer to inner.
+pub(super) fn owners_at(
+    plan: &RenderPlan,
+    at: AudioSample,
+    control: WorkControl<'_>,
+) -> Result<Vec<OwnerIdentity>, StageAudioError> {
+    if !plan.has_audio_treatments() || at.0 < 0 || at >= plan.audio_duration()? {
+        return Ok(Vec::new());
+    }
+    let query = plan.audio_gain_owners(at..AudioSample(at.0 + 1), control.query_limits()?)?;
+    control.spend_plan_work(query.work())?;
+    Ok(query
+        .spans()
+        .first()
+        .map(|span| span.owners().iter().map(identity).collect())
+        .unwrap_or_default())
+}
+
 pub(super) fn original_samples(
     plan: &RenderPlan,
     original: &ReadBlock,
     control: WorkControl<'_>,
     authored: bool,
+) -> Result<Vec<[f64; 2]>, StageAudioError> {
+    original_samples_except(plan, original, control, authored, &[])
+}
+
+/// As `original_samples`, leaving out the owners in `shared`. A tail's input
+/// omits the owners that also own the tail itself: their gain, mute and
+/// envelopes apply once, to the tail's output, at the tail's own position.
+pub(super) fn original_samples_except(
+    plan: &RenderPlan,
+    original: &ReadBlock,
+    control: WorkControl<'_>,
+    authored: bool,
+    shared: &[OwnerIdentity],
 ) -> Result<Vec<[f64; 2]>, StageAudioError> {
     if !authored || !plan.has_audio_treatments() {
         return Ok(original
@@ -123,7 +170,11 @@ pub(super) fn original_samples(
                 continue;
             }
             let mut gain = GainSum::default();
-            for owner in span.owners() {
+            for owner in span
+                .owners()
+                .iter()
+                .filter(|owner| shared.is_empty() || !shared.contains(&identity(owner)))
+            {
                 if let Some(treatment) = owner.treatments()
                     && !treatment.is_empty()
                 {

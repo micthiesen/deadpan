@@ -9,7 +9,10 @@ use deadpan_core::CapturedFraming;
 
 use crate::WorkingRgba16Frame;
 use crate::export::{allocated, readback_layout};
-use crate::{FitMode, FramingLayer, PictureGeometry, Primaries, RenderError, Rgba8Frame, Transfer};
+use crate::{
+    CaptionOverlay, FitMode, FramingLayer, PictureGeometry, Primaries, RenderError, Rgba8Frame,
+    Transfer,
+};
 use crate::{color::conversion, surface::validate_dimensions};
 
 /// Single-flight allocation ownership survives both ticket cancellation and
@@ -174,8 +177,12 @@ pub struct PictureRenderer {
     layout: wgpu::BindGroupLayout,
     interpret: wgpu::RenderPipeline,
     display: wgpu::RenderPipeline,
+    caption: wgpu::RenderPipeline,
     uniform: wgpu::Buffer,
     source: Option<wgpu::Texture>,
+    overlay: Option<wgpu::Texture>,
+    /// The identity of the caption raster currently in `overlay`.
+    overlay_identity: Option<u64>,
 }
 
 impl PictureRenderer {
@@ -228,6 +235,7 @@ impl PictureRenderer {
             "display",
             wgpu::TextureFormat::Rgba8Unorm,
         );
+        let caption = blended_pipeline(device, &pipeline_layout, &shader);
         let uniform = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Deadpan picture parameters"),
             size: 160,
@@ -243,8 +251,11 @@ impl PictureRenderer {
             layout,
             interpret,
             display,
+            caption,
             uniform,
             source: None,
+            overlay: None,
+            overlay_identity: None,
         }
     }
 
@@ -386,11 +397,56 @@ impl PictureRenderer {
         &mut self,
         target: &RenderTarget,
     ) -> Result<wgpu::SubmissionIndex, RenderError> {
+        self.render_background_captioned(target, None)
+    }
+
+    /// [`Self::render_background`] with captions drawn over the black
+    /// picture through the same composite pass as a source picture.
+    pub fn render_background_captioned(
+        &mut self,
+        target: &RenderTarget,
+        captions: Option<&CaptionOverlay>,
+    ) -> Result<wgpu::SubmissionIndex, RenderError> {
         if !Arc::ptr_eq(&self.owner, &target.owner) {
             return Err(RenderError::ForeignTarget);
         }
         if !self.is_idle()? {
             return Err(RenderError::Busy);
+        }
+        if let Some(captions) = captions {
+            let overlay = self.upload_overlay(captions, target)?;
+            let mut encoder = self
+                .device
+                .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                    label: Some("Deadpan captioned black picture"),
+                });
+            {
+                let _clear = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                    label: Some("Deadpan opaque black working picture"),
+                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                        view: &target.working_view,
+                        depth_slice: None,
+                        resolve_target: None,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                            store: wgpu::StoreOp::Store,
+                        },
+                    })],
+                    depth_stencil_attachment: None,
+                    timestamp_writes: None,
+                    occlusion_query_set: None,
+                    multiview_mask: None,
+                });
+            }
+            draw_over(&mut encoder, &self.caption, &overlay, &target.working_view);
+            let display_bindings = self.bindings(&target.working_view);
+            draw(
+                &mut encoder,
+                &self.display,
+                &display_bindings,
+                &target.display_view,
+            );
+            return Ok(self.submit(encoder));
         }
         let mut encoder = self
             .device
@@ -442,6 +498,23 @@ impl PictureRenderer {
         mode: FitMode,
         layers: &[FramingLayer],
     ) -> Result<wgpu::SubmissionIndex, RenderError> {
+        self.render_composed_captioned(frame, target, context, canvas, mode, layers, None)
+    }
+
+    /// [`Self::render_composed`] with captions composited over the framed
+    /// picture in linear working light, before the display transform and
+    /// before any working readback for encoding.
+    #[allow(clippy::too_many_arguments)]
+    pub fn render_composed_captioned(
+        &mut self,
+        frame: &Rgba8Frame,
+        target: &RenderTarget,
+        context: Option<&CapturedFraming>,
+        canvas: [u32; 2],
+        mode: FitMode,
+        layers: &[FramingLayer],
+        captions: Option<&CaptionOverlay>,
+    ) -> Result<wgpu::SubmissionIndex, RenderError> {
         if !Arc::ptr_eq(&self.owner, &target.owner) {
             return Err(RenderError::ForeignTarget);
         }
@@ -459,6 +532,9 @@ impl PictureRenderer {
             layers,
         )?;
         let parameters = parameters(frame, &geometry)?;
+        let overlay = captions
+            .map(|captions| self.upload_overlay(captions, target))
+            .transpose()?;
         if self.source.as_ref().is_none_or(|texture| {
             texture.width() != metadata.width || texture.height() != metadata.height
         }) {
@@ -496,6 +572,9 @@ impl PictureRenderer {
             &source_bindings,
             &target.working_view,
         );
+        if let Some(overlay) = &overlay {
+            draw_over(&mut encoder, &self.caption, overlay, &target.working_view);
+        }
         draw(
             &mut encoder,
             &self.display,
@@ -503,6 +582,47 @@ impl PictureRenderer {
             &target.display_view,
         );
         Ok(self.submit(encoder))
+    }
+
+    /// Upload a caption overlay matching `target` and bind it for the
+    /// composite pass. The CPU bytes may be released on return.
+    fn upload_overlay(
+        &mut self,
+        captions: &CaptionOverlay,
+        target: &RenderTarget,
+    ) -> Result<wgpu::BindGroup, RenderError> {
+        if captions.width() != target.width() || captions.height() != target.height() {
+            return Err(RenderError::CaptionRaster);
+        }
+        if self.overlay.as_ref().is_none_or(|texture| {
+            texture.width() != captions.width() || texture.height() != captions.height()
+        }) {
+            self.overlay_identity = None;
+            self.overlay = Some(self.texture(
+                captions.width(),
+                captions.height(),
+                wgpu::TextureFormat::Rgba8Unorm,
+                wgpu::TextureUsages::COPY_DST | wgpu::TextureUsages::TEXTURE_BINDING,
+                "Deadpan caption coverage upload",
+            ));
+        }
+        let overlay = self.overlay.as_ref().expect("overlay allocated");
+        // A caption usually spans many frames; its pixels are uploaded once.
+        if self.overlay_identity == Some(captions.identity()) {
+            return Ok(self.bindings(&overlay.create_view(&Default::default())));
+        }
+        self.overlay_identity = Some(captions.identity());
+        self.queue.write_texture(
+            overlay.as_image_copy(),
+            captions.bytes(),
+            wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(captions.width() * 4),
+                rows_per_image: Some(captions.height()),
+            },
+            overlay.size(),
+        );
+        Ok(self.bindings(&overlay.create_view(&Default::default())))
     }
 
     fn submit(&self, encoder: wgpu::CommandEncoder) -> wgpu::SubmissionIndex {
@@ -624,6 +744,79 @@ fn pipeline(
         multiview_mask: None,
         cache: None,
     })
+}
+
+/// The caption composite: premultiplied color over the working picture, with
+/// the working alpha (always 1) kept.
+fn blended_pipeline(
+    device: &wgpu::Device,
+    layout: &wgpu::PipelineLayout,
+    shader: &wgpu::ShaderModule,
+) -> wgpu::RenderPipeline {
+    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        label: Some("caption"),
+        layout: Some(layout),
+        vertex: wgpu::VertexState {
+            module: shader,
+            entry_point: Some("fullscreen"),
+            compilation_options: Default::default(),
+            buffers: &[],
+        },
+        primitive: Default::default(),
+        depth_stencil: None,
+        multisample: Default::default(),
+        fragment: Some(wgpu::FragmentState {
+            module: shader,
+            entry_point: Some("caption"),
+            compilation_options: Default::default(),
+            targets: &[Some(wgpu::ColorTargetState {
+                format: wgpu::TextureFormat::Rgba16Float,
+                blend: Some(wgpu::BlendState {
+                    color: wgpu::BlendComponent {
+                        src_factor: wgpu::BlendFactor::One,
+                        dst_factor: wgpu::BlendFactor::OneMinusSrcAlpha,
+                        operation: wgpu::BlendOperation::Add,
+                    },
+                    alpha: wgpu::BlendComponent {
+                        src_factor: wgpu::BlendFactor::Zero,
+                        dst_factor: wgpu::BlendFactor::One,
+                        operation: wgpu::BlendOperation::Add,
+                    },
+                }),
+                write_mask: wgpu::ColorWrites::ALL,
+            })],
+        }),
+        multiview_mask: None,
+        cache: None,
+    })
+}
+
+/// Draw over the existing contents of `target` instead of clearing it.
+fn draw_over(
+    encoder: &mut wgpu::CommandEncoder,
+    pipeline: &wgpu::RenderPipeline,
+    bindings: &wgpu::BindGroup,
+    target: &wgpu::TextureView,
+) {
+    let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+        label: Some("Deadpan caption composite pass"),
+        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+            view: target,
+            depth_slice: None,
+            resolve_target: None,
+            ops: wgpu::Operations {
+                load: wgpu::LoadOp::Load,
+                store: wgpu::StoreOp::Store,
+            },
+        })],
+        depth_stencil_attachment: None,
+        timestamp_writes: None,
+        occlusion_query_set: None,
+        multiview_mask: None,
+    });
+    pass.set_pipeline(pipeline);
+    pass.set_bind_group(0, bindings, &[]);
+    pass.draw(0..3, 0..1);
 }
 
 fn draw(

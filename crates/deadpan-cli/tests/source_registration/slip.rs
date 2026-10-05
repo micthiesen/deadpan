@@ -53,6 +53,7 @@ fn ready(directory: &Path) -> Result<PathBuf> {
                             source: timing.source_node(asset),
                         },
                         cutaways: Vec::new(),
+                        captions: Vec::new(),
                     },
                 )]),
                 overrides: Default::default(),

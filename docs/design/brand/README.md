@@ -28,7 +28,10 @@ The wordmark is Inter SemiBold, optical size 32, with outlined glyphs. SVGs and
 PDFs have real vector paths, no embedded raster artwork, live text, or font
 dependency. The unmodified Inter variable font and its SIL Open Font License
 are retained under [source](../../../assets/brand/source) for reproduction.
-That font is a design input; the developer app bundle does not include it.
+That font is a design input for the brand assets. The shared renderer
+(`deadpan-render`) also embeds this unmodified file to draw captions
+([captions](../../CAPTIONS.md)); the OFL permits embedding, and the license text
+stays beside it.
 
 ## ImageGen provenance
 

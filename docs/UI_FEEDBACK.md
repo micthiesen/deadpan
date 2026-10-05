@@ -37,6 +37,19 @@ inspected. The `editing`
 replay now checks that `:repeat 4 gap=6f gain-step=3dB` changes count, gap and
 step together instead of refusing.
 
+The `hold-effects` replay drives `:reverse 8f` and `:ping-pong 12f` (span and
+length of each pause), `,t` on no pause (prefilled `tail 1s effect=reverb`,
+then a tail pause) and on a `,h` pause switched to `delay`, `:lift` and `,b`
+over a Visual range with total time unchanged, the inspector rows and Undo (50
+checks with the Kestrel audit covering `,t` and `,b`). The `captions` replay
+places `:caption Are we done? at=top delay=4f` on a split fragment, reads the
+actual viewer target back to find white text with a dark outline only after the
+delay (compared with the same frame after `:caption clear`), checks the
+inspector row and Undo, and replays a recorded caption on another beat (34
+checks). Captures of the reverse, ping-pong, tail command, tail pause, bleep and
+delayed caption were inspected; the inspector's narrow value column truncates
+the longest Sound descriptions.
+
 The [workspace design pass](qualification/ui-design-pass-2026-10-04.md) moves the
 interface to installed SF Pro/SF Mono, removes an unpainted header band,
 restructures the inspector, header, rail and tabs, fits footer keys to two
@@ -540,7 +553,7 @@ the real app. The initial viewport is 1280×820 points at 1×. The code lives in
 | `zoom` | Waits for shot analysis. `,z` with no saved target punches in to 1.35× at the center and explains the fallback; Undo. Draws a target in Camera (`,f`, `n`, `8l`, Enter, Escape), then `,z` saves a Follow of it at 1.35× and the displayed pose centers on it. `:zoom 2 target=center curve=step` replaces it with a centered step; `:creep from=1 to=1.4 target=current` saves an eased path toward the target; a Visual-range `,z` refuses to flatten that path; `:zoom off` clears it; a Visual-range `,z` then changes exactly the range frames in the committed plan. `:hold 6f video=black` inserts six Background/Silence frames, one Undo removes them, and a recorded `:zoom 1.5 target=center` replays after Undo. Captures each framing result and the black pause. |
 | `menus` | File-menu ownership of edit keys, help opening, keyboard/wheel changes to scroll offset and painted content, text containing edit keys and punctuation, and cancellation back to the exact active pane's focus. |
 | `delayed-preview` | Holds a real decoder reply at a controlled delivery boundary, advances intent, resizes, releases the stale reply, checks newest-picture recovery, then injects a decoder failure and recovers. |
-| `rapid-input` | Requires all eight explicit Repeat wraps in one batch to commit separately, with exact nested results and per-wrap undo. Delays delivery of real writer updates to check a partial `rr` through queued commits, pointer context cancellation, sixteen-waiting capacity, explicit overflow and Escape. Checks painted notices at default/minimum sizes, 30 frame-navigation inputs, final intent and idle repaint. Restores the Original before navigation. Performance mode warms 16 back/forward inputs, then measures exactly 120 more. |
+| `rapid-input` | Requires all eight explicit Repeat wraps in one batch to commit separately, with exact nested results and per-wrap undo. Delays delivery of real writer updates to check a partial `rr` through queued commits, pointer context cancellation, sixteen-waiting capacity, explicit overflow and Escape. Holds the writer mailbox to require a visible Cmd+O refusal while a wrap is saving, then that wrap's commit. Checks painted notices at default/minimum sizes, 30 frame-navigation inputs, final intent and idle repaint. Restores the Original before navigation. Performance mode warms 16 back/forward inputs, then measures exactly 120 more. |
 | `playback-feedback` | Pointer Play/Pause/Cancel with injected preparation, delivery, stale-update and device-failure states. Requires complete error text on its first paint and wrapped errors on the first resize frame. Checks feedback and picture routing only; no device, PCM or listening claim. |
 | `large-project` | Opens a real SQLite fixture with 10,000 root Background/Silence Holds. Tests end navigation, pointer wheel/selection, minimum-size selection visibility and bounded rendered cards. Alternates near-end `j/k` 64 times visually or 160 times in performance mode. No media or large asset inventory is stressed. |
 | `edit-latency` | Dispatches cached `rr`, waits for its committed picture, then undoes; repeats with `:hold 11f` and undo. Checks one matching commit and picture completion per edit, the exact Repeat or Freeze/Silence structure, and restoration of the authored Original baseline with a fresh revision. Visual mode runs two cycles per type. Performance mode warms four cycles per type and measures 40 more per type. |
@@ -616,6 +629,13 @@ defines targets, including p95 below 8 ms from key event to command-state update
 below 50 ms for a cached ordinary edit to visible preview, and below 80 ms for a
 warm indexed seek on the primary reference machine. These remain targets until
 the corresponding real workload is measured.
+
+`cargo xtask perf --ui` runs `rapid-input`, `edit-latency` and `large-project`
+in this mode, hashes the harness binaries and gates each target on success,
+sample count and machine load; see [performance measurement](PERFORMANCE.md).
+In the [2026-10-04 run 3](qualification/performance-2026-10-04.md) all three
+pass. An earlier export of HEAD failed `rapid-input` and `large-project` in
+release because an automatic analysis save occupied the user-command slot.
 
 Name every measured interval. Event dispatch to a state change, service commit,
 GPU submission and GPU completion are different endpoints. Offscreen completion

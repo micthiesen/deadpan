@@ -63,6 +63,7 @@ fn plan_with_prefix(rate: FrameRate, prefix_frames: i64) -> RenderPlan {
                     escalation: None,
                 },
                 cutaways: Vec::new(),
+                captions: Vec::new(),
             },
         ),
         (
@@ -81,6 +82,7 @@ fn plan_with_prefix(rate: FrameRate, prefix_frames: i64) -> RenderPlan {
                     purpose: RetimePurpose::Edit,
                 },
                 cutaways: Vec::new(),
+                captions: Vec::new(),
             },
         ),
         (

@@ -420,6 +420,12 @@ define_commands! {
         node: NodeId,
         cutaways: Vec<crate::Cutaway>,
     },
+    /// Replace a beat's captions. Timing, pictures, sound and every retained
+    /// clock are unchanged.
+    SetCaptions {
+        node: NodeId,
+        captions: Vec<crate::Caption>,
+    },
     /// Replace a Repeat's per-play escalation. Timing, plays, gaps and every
     /// retained clock are unchanged.
     SetRepeatEscalation {
@@ -868,6 +874,7 @@ pub fn apply(
                     source: source.clone(),
                 },
                 cutaways: Vec::new(),
+                captions: Vec::new(),
             },
             timing,
             &request.new_revision,
@@ -921,6 +928,7 @@ pub fn apply(
                         source: source.clone(),
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
                 id,
                 identities,
@@ -951,6 +959,7 @@ pub fn apply(
                         source: source.clone(),
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
                 id,
                 identities,
@@ -980,6 +989,7 @@ pub fn apply(
                     source: source.clone(),
                 },
                 cutaways: Vec::new(),
+                captions: Vec::new(),
             },
             id,
             timing,
@@ -1526,6 +1536,7 @@ pub(crate) fn reduce(
                         escalation: None,
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
             );
         }
@@ -1605,6 +1616,7 @@ pub(crate) fn reduce(
                         purpose: crate::RetimePurpose::Edit,
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
             );
         }
@@ -1743,6 +1755,13 @@ pub(crate) fn reduce(
                 recipe.video = fallback_video(&accepted.fallback);
             }
             recipe.duration = *duration;
+            // A tail rings at most for the whole Hold; shortening the Hold
+            // shortens the permitted tail with it.
+            if let HoldAudio::Tail { maximum, .. } = &mut recipe.audio
+                && *maximum > *duration
+            {
+                *maximum = *duration;
+            }
         }
         Command::SetHoldAudio { node, audio } => {
             hold_mut(document, node)?.audio = audio.clone();
@@ -1882,6 +1901,7 @@ pub(crate) fn reduce(
                             source: insertion.source.clone(),
                         },
                         cutaways: Vec::new(),
+                        captions: Vec::new(),
                     },
                 );
             }
@@ -1893,6 +1913,9 @@ pub(crate) fn reduce(
                 })?;
             }
             node_mut(document, node)?.framing = framing.clone();
+        }
+        Command::SetCaptions { node, captions } => {
+            node_mut(document, node)?.captions = captions.clone();
         }
         Command::SetCutaways { node, cutaways } => {
             node_mut(document, node)?.cutaways = cutaways.clone();
@@ -2271,6 +2294,12 @@ fn accept_generated_hold(
                 "legacy accepted Holds have no explicit fallback and cannot accept generated media",
             ));
         }
+        HoldVideo::Reverse { .. } | HoldVideo::Play { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "this Hold already plays Original pictures; it cannot accept generated media",
+            ));
+        }
     };
     let referenced = BTreeSet::from([
         artifact.sampled_asset.clone(),
@@ -2524,6 +2553,7 @@ fn description(command: &Command) -> &'static str {
         Command::SetFraming { .. } => "Change framing",
         Command::SetRepeatEscalation { .. } => "Change Repeat escalation",
         Command::SetCutaways { .. } => "Change cutaways",
+        Command::SetCaptions { .. } => "Change captions",
         Command::SetAudioTreatments { .. } => "Change audio treatments",
         Command::AddAsset { .. } => "Register media asset",
         Command::ImportSource { .. } => "Import source media",

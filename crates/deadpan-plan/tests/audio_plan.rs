@@ -73,6 +73,7 @@ fn source(frames: i64, mapping: SourceAudioMapping, offset: i64) -> BeatNode {
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -104,6 +105,7 @@ fn retime(child: &str, frames: i64, start: i64, end: i64, pitch: PitchPolicy) ->
             pitch,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -121,6 +123,7 @@ fn repeat(child: &str, plays: u32, gap: i64) -> BeatNode {
             escalation: None,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -969,6 +972,7 @@ fn hold_policies_and_absent_source_audio_remain_distinct() {
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let doc = document(
         one_sample_per_frame(),
@@ -994,8 +998,8 @@ fn hold_policies_and_absent_source_audio_remain_distinct() {
                     hold_recipe(
                         4,
                         HoldAudio::Tail {
-                            source: source_audio(),
                             maximum: duration(3),
+                            effect: Default::default(),
                         },
                     ),
                 ),
@@ -1021,8 +1025,9 @@ fn hold_policies_and_absent_source_audio_remain_distinct() {
                 duration: duration(5)
             },
             AudioContent::Tail {
-                source: source_audio(),
-                maximum: duration(3)
+                maximum: duration(3),
+                effect: Default::default(),
+                duration: duration(4),
             },
             AudioContent::Silence {
                 reason: SilenceReason::SilentHold

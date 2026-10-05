@@ -973,6 +973,7 @@ dependencies = [
  "deadpan-models",
  "deadpan-native-process",
  "deadpan-plan",
+ "deadpan-playback",
  "deadpan-render",
  "deadpan-source",
  "deadpan-store",
@@ -1161,6 +1162,7 @@ dependencies = [
  "pollster",
  "serde_json",
  "sha2",
+ "skrifa",
  "thiserror 2.0.20",
  "wgpu",
 ]

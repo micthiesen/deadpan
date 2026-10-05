@@ -73,6 +73,7 @@ pub(super) fn nested_initial(source: bool) -> Result<ProjectDocument> {
                 },
             },
             cutaways: Vec::new(),
+            captions: Vec::new(),
         }
     } else {
         BeatNode::hold("First", silent_hold(4)?)

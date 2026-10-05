@@ -58,6 +58,7 @@ use serde::{Deserialize, Serialize};
 
 const HELP: &str = "Deadpan headless commands:
   doctor
+  doctor --project <project.deadpan>   (macOS/Linux)
   project create <project.deadpan> [--fps <N/D> --size <WIDTHxHEIGHT>]
   project create-original <project.deadpan> <absolute-video>
   project create-from-url <project.deadpan> <https-youtube-url> [--cookies <file>] [--helpers <dir>]
@@ -504,6 +505,10 @@ fn run(arguments: &[String]) -> Result<(), CliError> {
             Ok(())
         }
         ["doctor"] => write_json(&doctor::report()?),
+        #[cfg(any(target_os = "macos", target_os = "linux"))]
+        ["doctor", "--project", package] => {
+            write_json(&doctor::project_report(Path::new(package))?)
+        }
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         [
             "inspect-audio-domain",

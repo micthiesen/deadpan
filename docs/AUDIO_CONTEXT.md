@@ -2,8 +2,11 @@
 
 `FrozenAudioContext` retains the media-bearing body of one immutable audio
 context. It combines a [frozen timing layout](AUDIO_REFERENCE.md) with exact
-Source, RoomTone and Tail inputs and their full immutable asset records. The
-standalone wire uses schema 4, including [node treatments](AUDIO_GAIN.md),
+Source, RoomTone and reversed-Hold inputs and their full immutable asset
+records. The standalone wire is schema 7: schema 7 adds reversed and tone Hold
+audio, the tail effect and live tails that retain no source input; schemas 1
+through 6 reject a context containing any of them (no upgrade path; the
+project has no users). Schema 4 added [node treatments](AUDIO_GAIN.md),
 [exact audio selections](SOURCE_MOMENTS.md) and [sparse gap branches](REPEAT_GAP_BRANCHES.md).
 Schema 3 retains the previous timing/input vocabulary; schemas 1 through 3 reject
 the new treatment field even when explicitly null or empty. Schema 2 retains selected audio

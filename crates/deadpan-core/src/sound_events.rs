@@ -450,6 +450,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::SetFraming { .. }
         | Command::SetRepeatEscalation { .. }
         | Command::SetCutaways { .. }
+        | Command::SetCaptions { .. }
         | Command::SetAudioTreatments { .. }
         | Command::AddAsset { .. }
         | Command::SetCanvas { .. }

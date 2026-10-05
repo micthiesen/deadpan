@@ -43,6 +43,8 @@ image = { version = "=0.25.10", default-features = false, features = ["png"] }
 tempfile.workspace = true
 rusqlite.workspace = true
 deadpan-native-process.workspace = true
+# Real-device audition in the `perf` benchmark example (docs/PERFORMANCE.md).
+deadpan-playback.workspace = true
 
 [lints]
 workspace = true

@@ -547,9 +547,9 @@ fn a_silent_hold_voice_does_not_suppress_the_other_voice() {
 }
 
 #[test]
-fn mixed_preflight_rejects_hidden_unsupported_history_before_an_earlier_voice_reads() {
+fn a_tail_hidden_inside_a_preserve_voice_is_an_invalid_document() {
     let rate = FrameRate::new(48_000, 1).unwrap();
-    let doc = document(
+    assert_tail_in_speed_change_is_invalid(try_document(
         rate,
         &["a", "inner"],
         [
@@ -560,8 +560,8 @@ fn mixed_preflight_rejects_hidden_unsupported_history_before_an_earlier_voice_re
                 hold(
                     1024,
                     HoldAudio::Tail {
-                        source: audio(2048..3072),
                         maximum: frames(1024),
+                        effect: Default::default(),
                     },
                 ),
             ),
@@ -575,37 +575,5 @@ fn mixed_preflight_rejects_hidden_unsupported_history_before_an_earlier_voice_re
             ),
         ],
         BTreeMap::new(),
-    );
-    let plan = compile(&doc, false);
-    let voice = |name| {
-        AudioSignalTape::new(
-            &plan,
-            ExactRatio::ZERO..ratio(1024, 1),
-            vec![AudioSignalTapeRun::new(
-                ExactRatio::ZERO..ratio(1024, 1),
-                ExactRatio::ZERO..ratio(256, 1),
-                plan.audio_definition(node(name)).unwrap().signal(),
-            )],
-        )
-        .unwrap()
-    };
-    let mix = AudioSignalMix::new(
-        &plan,
-        vec![voice("a"), voice("inner")],
-        vec![AudioMixGate::new(ExactRatio::ZERO..ratio(1024, 1), vec![1])],
-    )
-    .unwrap();
-    let mut provider = FixtureProvider::new();
-    assert!(matches!(
-        StageAudio::new(Arc::clone(&plan)).read_mix(
-            &mut provider,
-            &mix,
-            SignalSample(0),
-            1,
-            TIMEOUT,
-            &AtomicBool::new(false),
-        ),
-        Err(StageAudioError::Unsupported("effect tails"))
     ));
-    assert_eq!(provider.calls, 0);
 }

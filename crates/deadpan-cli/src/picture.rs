@@ -116,11 +116,72 @@ pub struct PreparedProjectPicture {
     pub framing: Vec<PictureFraming>,
     pub picture_context: Option<Arc<CapturedFraming>>,
     pub gap_after: Option<IterationId>,
+    /// Caption lines drawn over the composed picture.
+    pub captions: Vec<deadpan_plan::PictureCaption>,
 }
 
 impl PreparedProjectPicture {
     pub fn render_layers(&self) -> Result<Vec<FramingLayer>, ProjectPictureError> {
         render_layers(&self.framing, self.gap_after.is_some())
+    }
+
+    /// The caption coverage for a `target` raster showing this canvas, or
+    /// `None` when the frame shows no caption.
+    pub fn caption_overlay(
+        &self,
+        target: [u32; 2],
+    ) -> Result<Option<deadpan_render::CaptionOverlay>, deadpan_render::RenderError> {
+        caption_overlay(&self.captions, self.canvas, target)
+    }
+}
+
+/// Shared by preview and export: the same lines, canvas and target raster
+/// give the same coverage.
+pub fn caption_overlay(
+    captions: &[deadpan_plan::PictureCaption],
+    canvas: [u32; 2],
+    target: [u32; 2],
+) -> Result<Option<deadpan_render::CaptionOverlay>, deadpan_render::RenderError> {
+    let lines: Vec<_> = captions
+        .iter()
+        .map(|caption| deadpan_render::CaptionLine {
+            text: caption.text.clone(),
+            placement: caption.placement,
+        })
+        .collect();
+    deadpan_render::CaptionOverlay::rasterize(&lines, canvas, target)
+}
+
+/// The last caption raster, reused while the lines, canvas and target stay
+/// the same: a caption usually spans many frames, so it is drawn once per
+/// change rather than once per frame. Results are identical either way.
+#[derive(Default)]
+pub struct CaptionMemo {
+    key: Option<(Vec<deadpan_plan::PictureCaption>, [u32; 2], [u32; 2])>,
+    overlay: Option<deadpan_render::CaptionOverlay>,
+}
+
+impl CaptionMemo {
+    pub fn overlay(
+        &mut self,
+        captions: &[deadpan_plan::PictureCaption],
+        canvas: [u32; 2],
+        target: [u32; 2],
+    ) -> Result<Option<&deadpan_render::CaptionOverlay>, deadpan_render::RenderError> {
+        if captions.is_empty() {
+            return Ok(None);
+        }
+        let current = self
+            .key
+            .as_ref()
+            .is_some_and(|(lines, old_canvas, old_target)| {
+                lines.as_slice() == captions && *old_canvas == canvas && *old_target == target
+            });
+        if !current {
+            self.overlay = caption_overlay(captions, canvas, target)?;
+            self.key = Some((captions.to_vec(), canvas, target));
+        }
+        Ok(self.overlay.as_ref())
     }
 }
 
@@ -136,6 +197,22 @@ enum RetainedOrigin {
     Generated(Arc<GeneratedArtifact>),
 }
 
+/// Session-local picture counters for diagnostics and benchmarks. They are
+/// observations of this session only, never authored or persisted state.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct PictureSessionStats {
+    /// Cold decoder admissions: verified snapshot, measured index and open.
+    pub source_opens: u64,
+    /// Total wall time of those admissions, in microseconds.
+    pub source_open_us: u64,
+    /// Requests served by the already retained decoder.
+    pub source_reuses: u64,
+    /// Decoded source/generated pictures returned.
+    pub decoded_frames: u64,
+    /// Authored Background/Blank pictures returned without decoding.
+    pub background_frames: u64,
+}
+
 /// One committed revision and one retained decoder/index/private input. Changing
 /// sources releases the previous session before admitting another; this is a
 /// bounded single-source cache, not a promise to retain every source offline.
@@ -149,6 +226,7 @@ pub struct ProjectPictureSession {
     range: FrameRange,
     generated: deadpan_store::generated_media::GeneratedReadHandle,
     retained: Option<RetainedSource>,
+    stats: PictureSessionStats,
 }
 
 impl ProjectPictureSession {
@@ -190,6 +268,7 @@ impl ProjectPictureSession {
             range,
             generated,
             retained: None,
+            stats: PictureSessionStats::default(),
         })
     }
 
@@ -211,6 +290,9 @@ impl ProjectPictureSession {
     pub const fn range(&self) -> FrameRange {
         self.range
     }
+    pub const fn stats(&self) -> PictureSessionStats {
+        self.stats
+    }
 
     /// Prepare one exact project frame. Structural repeats remain compact and
     /// all source lookup uses the compiled plan's endpoint and retime semantics.
@@ -229,84 +311,94 @@ impl ProjectPictureSession {
             });
         }
         let sample = self.plan.picture(frame)?;
-        let picture = match &sample.picture {
-            Picture::Source { asset, .. } | Picture::Freeze { asset, .. } => {
-                let retained = self.source(asset, cancelled)?;
-                let id = sample
-                    .picture
-                    .select_source_frame(retained.source.index().index())?
-                    .identity;
-                let decoded = retained.source.frame(id, FRAME_TIMEOUT, cancelled)?;
-                let frame = source_to_render_frame(decoded, retained.source.info())?;
-                PreparedPicture::Frame {
-                    asset: asset.clone(),
-                    qualification: match &retained.origin {
+        let picture =
+            match &sample.picture {
+                Picture::Source { asset, .. } | Picture::Freeze { asset, .. } => {
+                    let retained = self.source(asset, cancelled)?;
+                    let id = sample
+                        .picture
+                        .select_source_frame(retained.source.index().index())?
+                        .identity;
+                    let decoded = retained.source.frame(id, FRAME_TIMEOUT, cancelled)?;
+                    let frame = source_to_render_frame(decoded, retained.source.info())?;
+                    let qualification = match &retained.origin {
                         RetainedOrigin::Original(qualification) => qualification.clone(),
                         RetainedOrigin::Generated(_) => unreachable!("Original receipt admitted"),
-                    },
-                    id,
-                    frame,
-                }
-            }
-            Picture::Blank | Picture::Background => PreparedPicture::Background,
-            Picture::Still { asset } => {
-                return Err(ProjectPictureError::StillUnsupported(asset.clone()));
-            }
-            Picture::Accepted {
-                asset,
-                generated: Some(artifact),
-                ..
-            } => {
-                self.generated.check_live(cancelled)?;
-                if asset != &artifact.sampled_asset {
-                    return Err(ProjectPictureError::GeneratedEvidence(
-                        "plan asset differs from its artifact",
-                    ));
-                }
-                let origin = RetainedOrigin::Generated(artifact.clone());
-                if self
-                    .retained
-                    .as_ref()
-                    .is_none_or(|retained| retained.asset != *asset || retained.origin != origin)
-                {
-                    self.retained = None;
-                    let source = open_generated_picture(
-                        &self.generated,
-                        &self.document,
-                        artifact,
-                        cancelled,
-                    )?;
-                    self.retained = Some(RetainedSource {
+                    };
+                    self.stats.decoded_frames += 1;
+                    PreparedPicture::Frame {
                         asset: asset.clone(),
-                        origin,
-                        source,
-                    });
+                        qualification,
+                        id,
+                        frame,
+                    }
                 }
-                let retained = self.retained.as_mut().expect("generated source admitted");
-                let id = sample
-                    .picture
-                    .select_source_frame(retained.source.index().index())?
-                    .identity;
-                let decoded = retained.source.frame(id, FRAME_TIMEOUT, cancelled)?;
-                let mut frame = source_to_render_frame(decoded, retained.source.info())?;
-                if let Some(aspect) = artifact.content_aspect {
-                    frame = shared::fill_canvas_aspect(frame, aspect)?;
+                Picture::Blank | Picture::Background => {
+                    self.stats.background_frames += 1;
+                    PreparedPicture::Background
                 }
-                self.generated.check_live(cancelled)?;
-                PreparedPicture::Generated {
-                    artifact: artifact.clone(),
-                    id,
-                    frame,
+                Picture::Still { asset } => {
+                    return Err(ProjectPictureError::StillUnsupported(asset.clone()));
                 }
-            }
-            Picture::Accepted {
-                asset,
-                generated: None,
-                ..
-            } => {
-                return Err(ProjectPictureError::AcceptedUnsupported(asset.clone()));
-            }
-        };
+                Picture::Accepted {
+                    asset,
+                    generated: Some(artifact),
+                    ..
+                } => {
+                    self.generated.check_live(cancelled)?;
+                    if asset != &artifact.sampled_asset {
+                        return Err(ProjectPictureError::GeneratedEvidence(
+                            "plan asset differs from its artifact",
+                        ));
+                    }
+                    let origin = RetainedOrigin::Generated(artifact.clone());
+                    if self.retained.as_ref().is_none_or(|retained| {
+                        retained.asset != *asset || retained.origin != origin
+                    }) {
+                        self.retained = None;
+                        let opened = std::time::Instant::now();
+                        let source = open_generated_picture(
+                            &self.generated,
+                            &self.document,
+                            artifact,
+                            cancelled,
+                        )?;
+                        self.stats.source_opens += 1;
+                        self.stats.source_open_us += elapsed_us(opened);
+                        self.retained = Some(RetainedSource {
+                            asset: asset.clone(),
+                            origin,
+                            source,
+                        });
+                    } else {
+                        self.stats.source_reuses += 1;
+                    }
+                    let retained = self.retained.as_mut().expect("generated source admitted");
+                    let id = sample
+                        .picture
+                        .select_source_frame(retained.source.index().index())?
+                        .identity;
+                    let decoded = retained.source.frame(id, FRAME_TIMEOUT, cancelled)?;
+                    let mut frame = source_to_render_frame(decoded, retained.source.info())?;
+                    self.stats.decoded_frames += 1;
+                    if let Some(aspect) = artifact.content_aspect {
+                        frame = shared::fill_canvas_aspect(frame, aspect)?;
+                    }
+                    self.generated.check_live(cancelled)?;
+                    PreparedPicture::Generated {
+                        artifact: artifact.clone(),
+                        id,
+                        frame,
+                    }
+                }
+                Picture::Accepted {
+                    asset,
+                    generated: None,
+                    ..
+                } => {
+                    return Err(ProjectPictureError::AcceptedUnsupported(asset.clone()));
+                }
+            };
         check_cancel(cancelled)?;
         let basis = self.document.presentation_basis();
         Ok(PreparedProjectPicture {
@@ -319,6 +411,7 @@ impl ProjectPictureSession {
             framing: sample.framing,
             picture_context: sample.picture_context,
             gap_after: sample.gap_after,
+            captions: sample.captions,
         })
     }
 
@@ -351,8 +444,10 @@ impl ProjectPictureSession {
             }) {
                 return Err(evidence("retained decoder qualification differs"));
             }
+            self.stats.source_reuses += 1;
             return Ok(self.retained.as_mut().expect("matching retained source"));
         }
+        let opened = std::time::Instant::now();
         // Bound simultaneous complete source snapshots and indexes, including a
         // failed cold admission. Previously returned owned RGBA frames remain valid.
         self.retained = None;
@@ -422,8 +517,14 @@ impl ProjectPictureSession {
             origin: RetainedOrigin::Original(qualification.clone()),
             source,
         });
+        self.stats.source_opens += 1;
+        self.stats.source_open_us += elapsed_us(opened);
         Ok(self.retained.as_mut().expect("source admitted"))
     }
+}
+
+fn elapsed_us(started: std::time::Instant) -> u64 {
+    u64::try_from(started.elapsed().as_micros()).unwrap_or(u64::MAX)
 }
 
 fn check_cancel(cancelled: &AtomicBool) -> Result<(), ProjectPictureError> {

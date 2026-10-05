@@ -293,8 +293,10 @@ impl<'de> Visitor<'de> for Scan<'_> {
                     (Role::Scalar, Charge::None)
                 }
                 (Role::Mapping, "start" | "end") => (Role::Scalar, Charge::None),
-                (Role::Audibility, "type") => (Role::String, Charge::None),
-                (Role::Audibility, "maximum") => (Role::Scalar, Charge::None),
+                (Role::Audibility, "type" | "effect") => (Role::String, Charge::None),
+                (Role::Audibility, "maximum" | "frequency_hz" | "level") => {
+                    (Role::Scalar, Charge::None)
+                }
                 (
                     Role::Edges,
                     "node_start"
@@ -389,6 +391,9 @@ fn record_field_bit(key: &str) -> u64 {
         "origin" => 36,
         "gap_overrides" => 37,
         "editorial_edges" => 38,
+        "effect" => 39,
+        "frequency_hz" => 40,
+        "level" => 41,
         _ => return 0,
     };
     1 << ordinal

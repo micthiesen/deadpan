@@ -28,6 +28,11 @@ See [Repeat selections](REPEAT_SELECTION.md) for total-play versus motion counts
 captured targets and structural range wrapping. `:repeat N` records a count setter
 for an existing Repeat and a selected-beat wrap for another kind. Setters require
 an explicit selected direct-child Repeat and no Visual selection on replay.
+`:reverse`/`:ping-pong` record `InsertReverse`, `:tail` and the command `,t`
+opens record `Tail`, a whole-beat `:cutaway` records `SetCutaway` and a
+whole-beat `:caption` records `SetCaption`; each resolves the staged document
+when replayed ([reversed pauses and tails](REVERSE_AND_TAILS.md),
+[captions](CAPTIONS.md)). Ranged cutaways and captions refuse while recording.
 [Named grouping](GROUP_EDITING.md) retains the exact name and selector. Ungroup
 requires a selected neutral Sequence with no Visual selection. Both preserve the
 copy bank and pending register choice, and use one atomic history entry per run.

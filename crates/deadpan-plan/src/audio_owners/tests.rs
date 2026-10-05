@@ -1070,6 +1070,7 @@ fn selected_source_resume_retains_owner_clock_and_rejects_exhausted_selection() 
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let make = |moved: bool| {
         let base = if moved {

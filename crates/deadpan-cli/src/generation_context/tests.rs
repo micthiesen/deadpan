@@ -12,6 +12,7 @@ fn node(kind: NodeKind) -> BeatNode {
     BeatNode {
         framing: None,
         cutaways: Vec::new(),
+        captions: Vec::new(),
         audio_treatments: Default::default(),
         audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),

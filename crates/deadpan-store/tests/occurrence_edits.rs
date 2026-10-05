@@ -70,6 +70,7 @@ fn initial() -> Result<ProjectDocument> {
                 escalation: None,
             },
             cutaways: Vec::new(),
+            captions: Vec::new(),
         })
     };
     let mark = |owner: &str, coordinate| Mark {

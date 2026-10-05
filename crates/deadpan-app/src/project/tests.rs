@@ -661,6 +661,8 @@ fn shutdown_finishes_an_admitted_command_before_releasing_the_store() {
     let path = scratch.path().join("admitted.deadpan");
     let shared = Arc::new(Shared {
         busy: AtomicBool::new(false),
+        annotation: AtomicBool::new(false),
+        requests_held: AtomicBool::new(false),
         preview_active: AtomicBool::new(false),
         stopping: AtomicBool::new(false),
         shutdown_complete: AtomicBool::new(false),
@@ -674,7 +676,7 @@ fn shutdown_finishes_an_admitted_command_before_releasing_the_store() {
         update: Mutex::new(None),
         wake: Arc::new(|| {}),
     });
-    let (requests, receive) = mpsc::sync_channel(1);
+    let (requests, receive) = mpsc::sync_channel(REQUEST_LANES);
     let service = ProjectService {
         requests,
         shared: shared.clone(),
@@ -706,6 +708,105 @@ fn shutdown_finishes_an_admitted_command_before_releasing_the_store() {
         writer.snapshot().unwrap(),
         *update.workspace.unwrap().document
     );
+}
+
+/// Run a manually wired service on its own thread, failing instead of
+/// hanging if it never exits.
+fn run_held_service(shared: Arc<Shared>, receive: Receiver<ProjectRequest>) {
+    let (done, finished) = mpsc::channel();
+    std::thread::spawn(move || {
+        let (jobs, _receive_jobs) = mpsc::sync_channel(1);
+        let (_replies, results) = mpsc::sync_channel(1);
+        service::run(
+            shared,
+            receive,
+            jobs,
+            results,
+            std::thread::spawn(|| {}),
+            None,
+            Default::default(),
+            Default::default(),
+        );
+        done.send(()).unwrap();
+    });
+    finished
+        .recv_timeout(TIMEOUT)
+        .expect("a held request stranded the service");
+}
+
+fn held_shared() -> Arc<Shared> {
+    Arc::new(Shared {
+        busy: AtomicBool::new(false),
+        annotation: AtomicBool::new(false),
+        requests_held: AtomicBool::new(true),
+        preview_active: AtomicBool::new(false),
+        stopping: AtomicBool::new(false),
+        shutdown_complete: AtomicBool::new(false),
+        render_poll_paused: AtomicBool::new(false),
+        render_commit_refresh_failure: AtomicBool::new(false),
+        host_refresh_failure: AtomicBool::new(false),
+        splice_commit_refresh_failure: AtomicBool::new(false),
+        slip_commit_refresh_failure: AtomicBool::new(false),
+        trim_commit_refresh_failure: AtomicBool::new(false),
+        workspace_refresh_failure: AtomicBool::new(false),
+        update: Mutex::new(None),
+        wake: Arc::new(|| {}),
+    })
+}
+
+/// A replay that fails while holding the mailbox must not strand its
+/// admitted command: shutdown releases the hold and finishes it.
+#[test]
+fn shutdown_releases_and_finishes_a_held_command() {
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("held.deadpan");
+    let shared = held_shared();
+    let (requests, receive) = mpsc::sync_channel(REQUEST_LANES);
+    let service = ProjectService {
+        requests,
+        shared: shared.clone(),
+    };
+    service
+        .submit(ProjectRequest::Create(path.clone()))
+        .unwrap();
+    service.shutdown();
+    run_held_service(shared, receive);
+    assert!(!service.is_busy() && service.is_shutdown_complete());
+    let update = service.take_update().expect("held command has a result");
+    assert!(update.error.is_none(), "{:?}", update.error);
+    assert!(ProjectStore::open(&path, AccessMode::ReadWrite).is_ok());
+}
+
+/// A disconnected mailbox drains held requests in order instead of dropping
+/// them.
+#[test]
+fn disconnect_drains_held_requests() {
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("disconnected.deadpan");
+    let shared = held_shared();
+    let (requests, receive) = mpsc::sync_channel(REQUEST_LANES);
+    let service = ProjectService {
+        requests,
+        shared: shared.clone(),
+    };
+    service
+        .submit(ProjectRequest::Create(path.clone()))
+        .unwrap();
+    drop(service);
+    run_held_service(shared.clone(), receive);
+    assert!(!shared.busy.load(Ordering::Acquire));
+    let update = shared
+        .update
+        .lock()
+        .unwrap()
+        .take()
+        .expect("drained result");
+    assert!(update.error.is_none(), "{:?}", update.error);
+    assert!(
+        update.workspace.is_some(),
+        "the held Create ran before exit"
+    );
+    assert!(ProjectStore::open(&path, AccessMode::ReadWrite).is_ok());
 }
 
 fn fixture(name: &str) -> PathBuf {
@@ -916,6 +1017,8 @@ impl Harness {
     fn with_library(library: Option<ProjectLibrary>) -> Self {
         let shared = Arc::new(Shared {
             busy: AtomicBool::new(false),
+            annotation: AtomicBool::new(false),
+            requests_held: AtomicBool::new(false),
             preview_active: AtomicBool::new(false),
             stopping: AtomicBool::new(false),
             shutdown_complete: AtomicBool::new(false),
@@ -929,7 +1032,7 @@ impl Harness {
             update: Mutex::new(None),
             wake: Arc::new(|| {}),
         });
-        let (requests, receive) = mpsc::sync_channel(1);
+        let (requests, receive) = mpsc::sync_channel(REQUEST_LANES);
         let (sender, jobs) = mpsc::sync_channel(1);
         let (replies, results) = mpsc::sync_channel(1);
         let state = shared.clone();

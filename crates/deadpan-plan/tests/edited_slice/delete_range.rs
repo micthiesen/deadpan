@@ -16,6 +16,7 @@ fn window(child: &str, start: i64, end: i64) -> BeatNode {
             purpose: RetimePurpose::Partition,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 

@@ -24,6 +24,7 @@ fn plan_pauses(
             Ok(PauseProvider {
                 video: HoldVideo::Background,
                 picture_context: None,
+                audio: crate::HoldAudio::Silence,
             })
         },
     )
@@ -430,6 +431,7 @@ fn nothing_happens_holds_room_tone_then_true_silence_in_one_group() {
             Ok(PauseProvider {
                 video: HoldVideo::Background,
                 picture_context: None,
+                audio: crate::HoldAudio::Silence,
             })
         },
     )
@@ -675,4 +677,355 @@ fn restating_a_repeats_gaps_spends_no_revision() {
         "an unchanged gap set authors nothing"
     );
     assert_eq!(same.context.selected_child, Some(node("r")));
+}
+
+fn plan_with_sites(
+    document: &ProjectDocument,
+    context: SemanticContext,
+    instructions: Vec<SemanticInstruction>,
+) -> (Result<SemanticPlan, EditError>, Vec<crate::PauseSite>) {
+    let sites = std::cell::RefCell::new(Vec::new());
+    let result = plan_semantic_with_speech(
+        document,
+        &context,
+        &program(instructions),
+        SemanticRegisterBank {
+            entries: &BTreeMap::new(),
+            version: 7,
+        },
+        revision("outer"),
+        allocate,
+        no_original,
+        |_| Err(crate::speech_unavailable()),
+        |_, site| {
+            sites.borrow_mut().push(site);
+            Ok(PauseProvider {
+                video: HoldVideo::Background,
+                picture_context: None,
+                audio: crate::HoldAudio::Silence,
+            })
+        },
+    );
+    (result, sites.into_inner())
+}
+
+#[test]
+fn reverse_and_ping_pong_insert_the_host_provider_with_their_exact_lengths() {
+    let document = tree(&["a", "b"], vec![("a", hold(6)), ("b", hold(4))]);
+    let (planned, sites) = plan_with_sites(
+        &document,
+        context("root", 6),
+        vec![SemanticInstruction::InsertReverse {
+            length: frames_length(4),
+            bounce: false,
+        }],
+    );
+    let planned = planned.unwrap();
+    assert_eq!(planned.document.duration().unwrap().frames(), 14);
+    assert_eq!(
+        sites,
+        vec![crate::PauseSite::Reverse {
+            at: ProjectFrame(6),
+            frames: FrameDuration::new(4).unwrap(),
+            bounce: false
+        }]
+    );
+    // A ping-pong bounces off the last picture without showing it twice: one
+    // frame shorter than the reversed length.
+    let (planned, sites) = plan_with_sites(
+        &document,
+        context("root", 6),
+        vec![SemanticInstruction::InsertReverse {
+            length: frames_length(4),
+            bounce: true,
+        }],
+    );
+    assert_eq!(planned.unwrap().document.duration().unwrap().frames(), 13);
+    assert!(matches!(
+        sites[..],
+        [crate::PauseSite::Reverse { bounce: true, .. }]
+    ));
+    for (length, bounce, cursor) in [(1, true, 6), (7, false, 6)] {
+        let (planned, _) = plan_with_sites(
+            &document,
+            context("root", cursor),
+            vec![SemanticInstruction::InsertReverse {
+                length: frames_length(length),
+                bounce,
+            }],
+        );
+        assert!(planned.is_err(), "{length} {bounce}");
+    }
+}
+
+#[test]
+fn a_tail_sets_the_selected_hold_from_its_start_or_inserts_a_tail_pause() {
+    let document = tree(&["a", "b"], vec![("a", hold(6)), ("b", hold(4))]);
+    // With the second Hold selected, the tail rings from its start for at
+    // most its own length.
+    let mut selected = context("root", 7);
+    selected.selected_child = Some(node("b"));
+    let (planned, sites) = plan_with_sites(
+        &document,
+        selected,
+        vec![SemanticInstruction::Tail {
+            length: Some(frames_length(9)),
+            effect: crate::TailEffect::Delay,
+        }],
+    );
+    let planned = planned.unwrap();
+    assert_eq!(
+        planned.document.duration().unwrap().frames(),
+        10,
+        "no time added"
+    );
+    // Only the sound changes: no picture is resolved for the existing Hold.
+    assert!(sites.is_empty());
+    let NodeKind::Hold { recipe } = &planned.document.nodes()[&node("b")].kind else {
+        panic!("still a Hold")
+    };
+    assert_eq!(
+        recipe.audio,
+        crate::HoldAudio::Tail {
+            maximum: FrameDuration::new(4).unwrap(),
+            effect: crate::TailEffect::Delay
+        }
+    );
+    // With no selected Hold, a tail pause of the given length is inserted.
+    let (planned, sites) = plan_with_sites(
+        &document,
+        context("root", 6),
+        vec![SemanticInstruction::Tail {
+            length: Some(frames_length(5)),
+            effect: crate::TailEffect::Reverb,
+        }],
+    );
+    let planned = planned.unwrap();
+    assert_eq!(planned.document.duration().unwrap().frames(), 15);
+    assert_eq!(
+        sites,
+        vec![crate::PauseSite::Boundary {
+            at: ProjectFrame(6)
+        }]
+    );
+    let inserted = planned.context.selected_child.clone().unwrap();
+    let NodeKind::Hold { recipe } = &planned.document.nodes()[&inserted].kind else {
+        panic!("a tail pause")
+    };
+    assert_eq!(
+        recipe.audio,
+        crate::HoldAudio::Tail {
+            maximum: FrameDuration::new(5).unwrap(),
+            effect: crate::TailEffect::Reverb
+        }
+    );
+    let (planned, _) = plan_with_sites(
+        &document,
+        context("root", 6),
+        vec![SemanticInstruction::Tail {
+            length: None,
+            effect: crate::TailEffect::Reverb,
+        }],
+    );
+    assert!(planned.is_err(), "a new tail pause needs a length");
+}
+
+#[test]
+fn are_we_done_hangs_a_reverb_tail_under_a_reaction_cutaway_in_one_group() {
+    let mut document = tree(&["a", "b"], vec![("a", hold(3)), ("b", hold(4))]);
+    let asset = crate::AssetId::new("original").unwrap();
+    let clock = |denominator| crate::SourceTimeBase::new(1, denominator).unwrap();
+    let span = |end, time_base| {
+        crate::SourceSpan::new(
+            crate::SourceTimestamp {
+                ticks: 0,
+                time_base,
+            },
+            crate::SourceTimestamp {
+                ticks: end,
+                time_base,
+            },
+        )
+        .unwrap()
+    };
+    let (video, audio) = (span(90_090, clock(30_000)), span(96_000, clock(48_000)));
+    document.assets.insert(
+        asset.clone(),
+        crate::AssetRecord {
+            label: "Original".into(),
+            content_hash: "a".repeat(64),
+            audio: Some(audio),
+            video: Some(video),
+            frame_count: Some(FrameDuration::new(90).unwrap()),
+            still_image: false,
+            source_qualification: Some(crate::SourceQualificationId::new("b".repeat(64)).unwrap()),
+        },
+    );
+    document.validate().unwrap();
+    let register = name('t');
+    let bank = BTreeMap::from([(
+        register,
+        Arc::new(RegisterValue::Original {
+            revision: revision("base"),
+            asset: asset.clone(),
+            qualification: crate::SourceQualificationId::new("b".repeat(64)).unwrap(),
+            ordinals: 30..33,
+        }),
+    )]);
+    let moment = SourceNode {
+        duration: FrameDuration::new(3).unwrap(),
+        edit_window: None,
+        video: crate::SourceVideo::Stream {
+            asset: asset.clone(),
+            span: span(3003, clock(30_000)),
+        },
+        video_mapping: crate::SourceVideoMapping::FitBeat,
+        audio: None,
+        audio_mapping: crate::SourceAudioMapping::FitBeat,
+        link: crate::LinkRelation::Independent,
+        audio_offset: crate::AudioSample(0),
+    };
+    let recipe = crate::GagRecipe::AreWeDone {
+        version: crate::GAG_RECIPE_VERSION,
+        pause: frames_length(5),
+        register,
+    };
+    let planned = plan_semantic_with_speech(
+        &document,
+        &context("root", 3),
+        &program(vec![SemanticInstruction::Gag { recipe }]),
+        SemanticRegisterBank {
+            entries: &bank,
+            version: 7,
+        },
+        revision("outer"),
+        allocate,
+        |_, _| Ok(moment.clone()),
+        |_| Err(crate::speech_unavailable()),
+        |_, site| {
+            Ok(PauseProvider {
+                video: HoldVideo::Background,
+                picture_context: None,
+                audio: {
+                    assert!(matches!(site, crate::PauseSite::Boundary { .. }));
+                    crate::HoldAudio::Silence
+                },
+            })
+        },
+    )
+    .unwrap();
+    assert_eq!(planned.document.duration().unwrap().frames(), 7 + 5);
+    let group = planned.context.selected_child.clone().unwrap();
+    assert_eq!(
+        planned.document.nodes()[&group].label,
+        "Are We Done? · v1 · pause 5f with a reverb tail, reaction from register t"
+    );
+    let NodeKind::Sequence { children } = &planned.document.nodes()[&group].kind else {
+        panic!("the gag is a group")
+    };
+    let [pause] = &children[..] else {
+        panic!("one pause, got {children:?}")
+    };
+    let node = &planned.document.nodes()[pause];
+    let NodeKind::Hold { recipe } = &node.kind else {
+        panic!("the pause is a Hold")
+    };
+    assert_eq!(
+        recipe.audio,
+        crate::HoldAudio::Tail {
+            maximum: FrameDuration::new(5).unwrap(),
+            effect: crate::TailEffect::Reverb,
+        }
+    );
+    assert_eq!(node.cutaways.len(), 1);
+    assert_eq!(node.cutaways[0].range, range(0, 5));
+    assert_eq!(node.cutaways[0].fit, crate::CutawayFit::Hold);
+    assert_eq!(node.cutaways[0].asset, asset);
+    // One compound with an exact inverse.
+    let request = planned.request.as_ref().unwrap();
+    let reverted = crate::apply(&document, request)
+        .unwrap()
+        .inverse
+        .apply(&planned.document)
+        .unwrap();
+    assert_eq!(reverted.duration().unwrap().frames(), 7);
+}
+
+#[test]
+fn a_caption_lands_on_the_selected_beat_after_its_delay_in_one_leaf() {
+    let document = tree(&["a", "b"], vec![("a", hold(3)), ("b", hold(4))]);
+    let caption = |delay: u32, text: &str| SemanticInstruction::SetCaption {
+        text: text.into(),
+        placement: crate::CaptionPlacement::Top,
+        delay: NonZeroU32::new(delay).map(|frames| PauseLength::Frames { frames }),
+        reveal: NonZeroU32::new(2),
+    };
+    let mut selected = context("root", 3);
+    selected.selected_child = Some(node("b"));
+    let (planned, _) = plan_with_sites(&document, selected.clone(), vec![caption(1, "Well?")]);
+    let planned = planned.unwrap();
+    assert_eq!(
+        planned.document.duration().unwrap().frames(),
+        7,
+        "no time added"
+    );
+    assert_eq!(
+        planned.document.nodes()[&node("b")].captions,
+        vec![crate::Caption {
+            range: range(1, 4),
+            text: "Well?".into(),
+            placement: crate::CaptionPlacement::Top,
+            reveal: NonZeroU32::new(2),
+        }]
+    );
+    // A second caption at the same placement over the same frames refuses;
+    // a delay that reaches the end, or no selected beat, refuses too.
+    let (twice, _) = plan_with_sites(
+        &document,
+        selected.clone(),
+        vec![caption(1, "Well?"), caption(2, "Hello?")],
+    );
+    assert!(twice.is_err());
+    let (late, _) = plan_with_sites(&document, selected, vec![caption(4, "Late")]);
+    assert!(late.is_err());
+    let (unselected, _) = plan_with_sites(&document, context("root", 3), vec![caption(0, "x")]);
+    assert!(unselected.is_err());
+    // Invalid text never reaches the planner.
+    assert!(SemanticProgram::new(vec![caption(0, "two\nlines")]).is_err());
+}
+
+#[test]
+fn a_tail_on_a_pause_whose_picture_cannot_be_resolved_still_applies() {
+    // Accepted or still footage, or a group boundary, makes the freeze
+    // resolver fail; a tail on an existing pause never asks for a picture.
+    let document = tree(&["a", "b"], vec![("a", hold(6)), ("b", hold(4))]);
+    let mut selected = context("root", 7);
+    selected.selected_child = Some(node("b"));
+    let planned = plan_semantic_with_speech(
+        &document,
+        &selected,
+        &program(vec![SemanticInstruction::Tail {
+            length: None,
+            effect: crate::TailEffect::Reverb,
+        }]),
+        SemanticRegisterBank {
+            entries: &BTreeMap::new(),
+            version: 7,
+        },
+        revision("outer"),
+        allocate,
+        no_original,
+        |_| Err(crate::speech_unavailable()),
+        |_, _| Err(crate::pause_unavailable()),
+    )
+    .unwrap();
+    let NodeKind::Hold { recipe } = &planned.document.nodes()[&node("b")].kind else {
+        panic!("still a Hold")
+    };
+    assert!(matches!(recipe.audio, crate::HoldAudio::Tail { .. }));
+    assert_eq!(
+        recipe.video,
+        HoldVideo::Background,
+        "the picture is untouched"
+    );
 }

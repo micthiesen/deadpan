@@ -3,7 +3,7 @@
 //! authors the same InsertTime and SetFraming commands as the native edits.
 
 use super::*;
-use crate::{AudioTimingId, Framing, HoldAudio, HoldRecipe};
+use crate::{AudioTimingId, FrameDuration, Framing, HoldAudio, HoldRecipe};
 
 impl<F, R, S, P> Planner<'_, F, R, S, P>
 where
@@ -18,12 +18,238 @@ where
         length: crate::PauseLength,
         black: bool,
     ) -> Result<(), EditError> {
+        let duration = length.resolve(self.current.presentation_basis().frame_rate)?;
+        let at = self.context.cursor;
+        self.insert_hold(trace_index, duration, |planner| {
+            // Black punctuation samples no picture and captures no framing.
+            if black {
+                Ok(super::PauseProvider {
+                    video: crate::HoldVideo::Background,
+                    picture_context: None,
+                    audio: HoldAudio::Silence,
+                })
+            } else {
+                (planner.resolve_pause)(&planner.current, super::PauseSite::Boundary { at })
+            }
+        })
+    }
+
+    /// `:reverse` / `:ping-pong`: a pause that plays the `length` before the
+    /// cursor backwards, resolved by the host from the staged document.
+    pub(super) fn insert_reverse(
+        &mut self,
+        trace_index: usize,
+        length: crate::PauseLength,
+        bounce: bool,
+    ) -> Result<(), EditError> {
+        let frames = length.resolve(self.current.presentation_basis().frame_rate)?;
+        let duration = if bounce {
+            FrameDuration::new(frames.frames() - 1)
+                .ok()
+                .filter(|duration| *duration != FrameDuration::ZERO)
+                .ok_or_else(|| {
+                    EditError::new(
+                        EditErrorCode::InvalidDuration,
+                        "a ping-pong needs at least two frames to bounce over",
+                    )
+                })?
+        } else {
+            frames
+        };
+        if frames.frames() > self.context.cursor.0 {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "there is not that much before the cursor to reverse",
+            ));
+        }
+        let at = self.context.cursor;
+        self.insert_hold(trace_index, duration, |planner| {
+            (planner.resolve_pause)(
+                &planner.current,
+                super::PauseSite::Reverse { at, frames, bounce },
+            )
+        })
+    }
+
+    /// `,b` / `:bleep`: resolve the pictures of the Visual time range, cut
+    /// it, then refill its time with a pause playing those pictures forward
+    /// over a tone.
+    pub(super) fn bleep(
+        &mut self,
+        trace_index: usize,
+        register: crate::RegisterName,
+        frequency_hz: u32,
+        level: crate::GainDb,
+    ) -> Result<(), EditError> {
+        if self.context.visual_selection.is_none() {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "select the range to bleep with v first",
+            ));
+        }
+        let target = self.resolve_selector(crate::SemanticSelector::VisualSelection)?;
+        let SliceCaptureSelection::Range { range } = target.selection()?.clone() else {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "bleep a time range, not a group object",
+            ));
+        };
+        if range.duration() == FrameDuration::ZERO {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "the bleeped range is empty",
+            ));
+        }
+        // The pictures are resolved before the cut removes them.
+        let provider = (self.resolve_pause)(
+            &self.current,
+            super::PauseSite::Bleep {
+                at: range.end(),
+                frames: range.duration(),
+                frequency_hz,
+                level,
+            },
+        )?;
+        self.capture_instruction(trace_index, register, target, true)?;
+        if self.context.cursor != range.start() {
+            return Err(invalid("a bleep refills its time at the cut's join"));
+        }
+        self.insert_hold(trace_index, range.duration(), |_| Ok(provider))
+    }
+
+    /// `:lift`: cut the Visual selection, then fill its time with a silent
+    /// black pause of exactly the cut length at the join.
+    pub(super) fn lift(
+        &mut self,
+        trace_index: usize,
+        register: crate::RegisterName,
+    ) -> Result<(), EditError> {
+        if self.context.visual_selection.is_none() {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "select the range to lift with v first",
+            ));
+        }
+        self.capture_selector(
+            trace_index,
+            register,
+            crate::SemanticSelector::VisualSelection,
+            true,
+        )?;
+        let cut = self.trace[trace_index]
+            .resolved_range
+            .ok_or_else(|| invalid("a lift needs its cut range"))?;
+        let duration = cut.duration();
+        if duration == FrameDuration::ZERO {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "the lifted range is empty",
+            ));
+        }
+        let at = self.context.cursor;
+        if at != cut.start() {
+            return Err(invalid("a lift refills its time at the cut's join"));
+        }
+        self.insert_hold(trace_index, duration, |_| {
+            Ok(super::PauseProvider {
+                video: crate::HoldVideo::Background,
+                picture_context: None,
+                audio: HoldAudio::Silence,
+            })
+        })
+    }
+
+    /// `,t` / `:tail`: a hanging tail on the selected Hold, or a new freeze
+    /// pause carrying one at the cursor.
+    pub(super) fn tail(
+        &mut self,
+        trace_index: usize,
+        length: Option<crate::PauseLength>,
+        effect: crate::TailEffect,
+    ) -> Result<(), EditError> {
+        let rate = self.current.presentation_basis().frame_rate;
+        let length = length.map(|length| length.resolve(rate)).transpose()?;
+        let selected_hold = self.context.selected_child.as_ref().and_then(|selected| {
+            let index = *self.child_indices.get(selected)?;
+            match &self.current.nodes()[selected].kind {
+                NodeKind::Hold { recipe } => Some((
+                    selected.clone(),
+                    index
+                        .checked_sub(1)
+                        .map_or(self.bounds.0, |previous| self.child_ends[previous].1),
+                    recipe.duration,
+                )),
+                _ => None,
+            }
+        });
+        if self.context.visual_selection.is_some() {
+            return Err(invalid("clear the Visual selection before adding a tail"));
+        }
+        let Some((hold, start, hold_duration)) = selected_hold else {
+            let duration = length.ok_or_else(|| {
+                EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "give the new tail pause a length, for example :tail 400ms",
+                )
+            })?;
+            let at = self.context.cursor;
+            // The picture is the ordinary freeze; the tail is a live
+            // reference to what precedes the pause, so it needs no media.
+            return self.insert_hold(trace_index, duration, |planner| {
+                let mut provider =
+                    (planner.resolve_pause)(&planner.current, super::PauseSite::Boundary { at })?;
+                provider.audio = HoldAudio::Tail {
+                    maximum: duration,
+                    effect,
+                };
+                Ok(provider)
+            });
+        };
+        if start.0 == 0 {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "nothing plays before this pause to ring into it",
+            ));
+        }
+        let maximum = length.map_or(hold_duration, |length| length.min(hold_duration));
+        // Only the sound changes: no picture is resolved, so any provider
+        // (accepted, still or black) keeps its picture.
+        self.charge_step(false)?;
+        let SemanticAllocation::ParameterEdit { new_revision } =
+            (self.allocate)(SemanticAllocationRequest::ParameterEdit {
+                step_index: self.steps.len(),
+            })?
+        else {
+            return Err(invalid("a tail requires a parameter allocation"));
+        };
+        self.reserve_revision(&new_revision)?;
+        let edit = LeafEdit::new(
+            new_revision,
+            Command::SetHoldAudio {
+                node: hold.clone(),
+                audio: HoldAudio::Tail { maximum, effect },
+            },
+        )?;
+        self.commit_leaf(edit)?;
+        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
+        self.trace[trace_index].resolved_selection =
+            Some(SliceCaptureSelection::Child { node: hold });
+        Ok(())
+    }
+
+    /// Insert one pause of `duration` at the cursor whose provider the host
+    /// resolves on the staged document.
+    fn insert_hold(
+        &mut self,
+        trace_index: usize,
+        duration: FrameDuration,
+        provider: impl FnOnce(&mut Self) -> Result<super::PauseProvider, EditError>,
+    ) -> Result<(), EditError> {
         if self.context.visual_selection.is_some() {
             return Err(invalid(
                 "clear the Visual selection before inserting a pause",
             ));
         }
-        let duration = length.resolve(self.current.presentation_basis().frame_rate)?;
         let at = self.context.cursor;
         let target = self.current.insert_time_target(at)?;
         if !self.within_scope(&target.parent) {
@@ -32,15 +258,7 @@ where
                 "this boundary belongs to an enclosing group; insert the pause from that group",
             ));
         }
-        // Black punctuation samples no picture and captures no framing.
-        let provider = if black {
-            super::PauseProvider {
-                video: crate::HoldVideo::Background,
-                picture_context: None,
-            }
-        } else {
-            (self.resolve_pause)(&self.current, super::PauseSite::Boundary { at })?
-        };
+        let provider = provider(self)?;
         self.charge_step(false)?;
         let required = target.split.as_ref().map_or(0, |split| split.required_ids);
         let SemanticAllocation::InsertPause {
@@ -68,7 +286,7 @@ where
                 hold: HoldRecipe {
                     duration,
                     video: provider.video,
-                    audio: HoldAudio::Silence,
+                    audio: provider.audio,
                     picture_context: provider.picture_context,
                 },
                 id: id.clone(),
@@ -199,6 +417,187 @@ where
             Command::SetHoldAudio {
                 node: selected.clone(),
                 audio: HoldAudio::RoomTone { source: audio },
+            },
+        )?;
+        self.commit_leaf(edit)?;
+        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
+        self.trace[trace_index].resolved_selection =
+            Some(SliceCaptureSelection::Child { node: selected });
+        Ok(())
+    }
+
+    /// `SetCutaway`: the Original moment in `register` over the whole
+    /// selected direct child, as the native `:cutaway register=` places it.
+    pub(super) fn set_cutaway(
+        &mut self,
+        trace_index: usize,
+        register: crate::RegisterName,
+        fit: crate::CutawayFit,
+    ) -> Result<(), EditError> {
+        if self.context.visual_selection.is_some() {
+            return Err(invalid(
+                "clear the Visual selection before placing a cutaway",
+            ));
+        }
+        let selected = self.context.selected_child.clone().ok_or_else(|| {
+            EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "select a beat before placing a cutaway over it",
+            )
+        })?;
+        let Some(&index) = self.child_indices.get(&selected) else {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "the beat must be a direct child of the current Sequence",
+            ));
+        };
+        let start = index
+            .checked_sub(1)
+            .map_or(self.bounds.0, |previous| self.child_ends[previous].1);
+        let frames = self.child_ends[index].1.0 - start.0;
+        let (host, offset) = crate::cutaway_host(&self.current, &selected).ok_or_else(|| {
+            EditError::new(
+                EditErrorCode::WrongNodeKind,
+                "cutaways belong to a source or pause beat",
+            )
+        })?;
+        let value = if let Some(value) = self.writes.get(&register) {
+            value.clone()
+        } else {
+            let value = self.bank.get(&register).cloned();
+            self.inputs.insert(register, value.clone());
+            value.ok_or_else(|| invalid("the cutaway register is empty"))?
+        };
+        if !matches!(value.as_ref(), RegisterValue::Original { .. }) {
+            return Err(invalid(
+                "a cutaway shows a copied Original moment from its register",
+            ));
+        }
+        let source = (self.resolve_original)(&self.current, value.as_ref())?;
+        let crate::SourceVideo::Stream { asset, span } = &source.video else {
+            return Err(invalid("the copied Original moment has no picture"));
+        };
+        let selection = source
+            .video_mapping
+            .selection_in_source(*span, source.duration)
+            .map_err(crate::DocumentError::from)?;
+        let range = FrameRange::new(ProjectFrame(offset), ProjectFrame(offset + frames))
+            .map_err(crate::DocumentError::from)?;
+        let mut cutaways = self.current.nodes()[&host].cutaways.clone();
+        if cutaways.iter().any(|cutaway| {
+            cutaway.range.start() < range.end() && range.start() < cutaway.range.end()
+        }) {
+            return Err(invalid(
+                "this beat already shows a cutaway there; clear it first",
+            ));
+        }
+        let position = cutaways.partition_point(|cutaway| cutaway.range.start() < range.start());
+        cutaways.insert(
+            position,
+            crate::Cutaway {
+                range,
+                asset: asset.clone(),
+                selection,
+                fit,
+            },
+        );
+        self.charge_step(false)?;
+        let SemanticAllocation::ParameterEdit { new_revision } =
+            (self.allocate)(SemanticAllocationRequest::ParameterEdit {
+                step_index: self.steps.len(),
+            })?
+        else {
+            return Err(invalid("a cutaway requires a parameter allocation"));
+        };
+        self.reserve_revision(&new_revision)?;
+        let edit = LeafEdit::new(
+            new_revision,
+            Command::SetCutaways {
+                node: host,
+                cutaways,
+            },
+        )?;
+        self.commit_leaf(edit)?;
+        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
+        self.trace[trace_index].resolved_selection =
+            Some(SliceCaptureSelection::Child { node: selected });
+        Ok(())
+    }
+
+    /// `SetCaption`: one line of text over the selected direct child from
+    /// `delay` after its start to its end, as the native `:caption` places it.
+    pub(super) fn set_caption(
+        &mut self,
+        trace_index: usize,
+        text: &str,
+        placement: crate::CaptionPlacement,
+        delay: Option<crate::PauseLength>,
+        reveal: Option<std::num::NonZeroU32>,
+    ) -> Result<(), EditError> {
+        if self.context.visual_selection.is_some() {
+            return Err(invalid(
+                "clear the Visual selection before adding a caption",
+            ));
+        }
+        let selected = self.context.selected_child.clone().ok_or_else(|| {
+            EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "select a beat before captioning it",
+            )
+        })?;
+        let Some(&index) = self.child_indices.get(&selected) else {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "the beat must be a direct child of the current Sequence",
+            ));
+        };
+        let start = index
+            .checked_sub(1)
+            .map_or(self.bounds.0, |previous| self.child_ends[previous].1);
+        let frames = self.child_ends[index].1.0 - start.0;
+        let delay = delay
+            .map(|delay| delay.resolve(self.current.presentation_basis().frame_rate))
+            .transpose()?
+            .map_or(0, |delay| delay.frames());
+        if delay >= frames {
+            return Err(invalid(
+                "the caption delay reaches past the end of the beat",
+            ));
+        }
+        let (host, offset) = crate::cutaway_host(&self.current, &selected).ok_or_else(|| {
+            EditError::new(
+                EditErrorCode::WrongNodeKind,
+                "captions belong to a source or pause beat",
+            )
+        })?;
+        let caption = crate::Caption {
+            range: FrameRange::new(ProjectFrame(offset + delay), ProjectFrame(offset + frames))
+                .map_err(crate::DocumentError::from)?,
+            text: text.to_owned(),
+            placement,
+            reveal,
+        };
+        let mut captions = self.current.nodes()[&host].captions.clone();
+        let position =
+            captions.partition_point(|existing| existing.range.start() <= caption.range.start());
+        captions.insert(position, caption);
+        crate::caption::validate(&captions).map_err(|_| {
+            invalid("this beat already shows a caption there at that placement; clear it first")
+        })?;
+        self.charge_step(false)?;
+        let SemanticAllocation::ParameterEdit { new_revision } =
+            (self.allocate)(SemanticAllocationRequest::ParameterEdit {
+                step_index: self.steps.len(),
+            })?
+        else {
+            return Err(invalid("a caption requires a parameter allocation"));
+        };
+        self.reserve_revision(&new_revision)?;
+        let edit = LeafEdit::new(
+            new_revision,
+            Command::SetCaptions {
+                node: host,
+                captions,
             },
         )?;
         self.commit_leaf(edit)?;

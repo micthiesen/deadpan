@@ -90,6 +90,7 @@ fn fixture() -> Result<ProjectDocument> {
                     purpose: RetimePurpose::Partition,
                 },
                 cutaways: Vec::new(),
+                captions: Vec::new(),
             },
         ),
         (
@@ -120,6 +121,7 @@ fn fixture() -> Result<ProjectDocument> {
                     },
                 },
                 cutaways: Vec::new(),
+                captions: Vec::new(),
             },
         ),
     ]))?;

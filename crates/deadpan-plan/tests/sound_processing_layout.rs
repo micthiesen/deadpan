@@ -70,6 +70,7 @@ fn preserve(label: &str, child: &str, output: i64, input: i64) -> BeatNode {
             purpose: RetimePurpose::Edit,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -87,6 +88,7 @@ fn repeated(child: &str, allocation: &str, count: u32) -> BeatNode {
             escalation: None,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 

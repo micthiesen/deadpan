@@ -83,6 +83,7 @@ fn source(length: i64, audio: bool, selected: bool) -> BeatNode {
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -183,8 +184,8 @@ fn input_retains_sound_while_output_applies_only_current_silent_holds() {
                 hold(
                     2,
                     HoldAudio::Tail {
-                        source: source_audio("original"),
                         maximum: frames(2),
+                        effect: Default::default(),
                     },
                 ),
             ),
@@ -313,6 +314,7 @@ fn tape_recomputes_fractional_hold_boundaries_on_its_consuming_grid() {
                         purpose: RetimePurpose::Edit,
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
             ),
         ],
@@ -390,6 +392,7 @@ fn repeated_and_definition_issuers_survive_the_independent_provider() {
                         escalation: None,
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
             ),
         ],

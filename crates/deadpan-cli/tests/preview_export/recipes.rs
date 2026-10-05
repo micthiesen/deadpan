@@ -69,6 +69,8 @@ pub struct Fixture {
     pub audio: Vec<(i64, bool)>,
     /// Recipe choices made while building, such as a refused pitch policy.
     pub notes: Vec<String>,
+    /// Independently derived caption text shown at an output frame.
+    pub captions: Vec<(u64, Vec<&'static str>)>,
 }
 
 fn original(source_ordinal: u64) -> Expected {
@@ -365,6 +367,7 @@ impl Project {
             expectations,
             audio: Vec::new(),
             notes,
+            captions: Vec::new(),
         })
     }
 }
@@ -1258,10 +1261,373 @@ pub fn audio_lag(dir: &Path) -> Result<Fixture> {
     Ok(fixture)
 }
 
+/// `:reverse 8f` at Edit 20 (Original 32), through the headless semantic
+/// path: an 8-frame pause plays Edit [12, 20) (Original 24..32) backwards,
+/// picture and sound, then the base continues forward: 30 + 8 = 38 frames.
+pub fn reverse_hiccup(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "reverse-hiccup")?;
+    project.shorten()?;
+    let saved = project.run_semantic(
+        json!([{"type":"insert_reverse","length":{"unit":"frames","frames":8}}]),
+        20,
+        None,
+    )?;
+    let (pause, _) = root_child_at(&saved, 20)?;
+    if !matches!(
+        &saved.nodes()[&pause].kind,
+        NodeKind::Hold { recipe } if matches!(
+            (&recipe.video, &recipe.audio),
+            (HoldVideo::Reverse { .. }, HoldAudio::Reverse { .. })
+        )
+    ) {
+        return Err(format!("unexpected reverse pause {:?}", saved.nodes()[&pause].kind).into());
+    }
+    let expectations = vec![
+        (0, base(0)),
+        (19, original(31)),
+        (20, original(31)),
+        (21, original(30)),
+        (24, original(27)),
+        (27, original(24)),
+        (28, original(32)),
+        (37, original(41)),
+    ];
+    let mut fixture = project.finish(
+        vec!["Reverse hiccup", "Stretch / pitch"],
+        expectations,
+        Vec::new(),
+    )?;
+    // The pause hears source samples [38,439, 51,251) backwards: In rounds up
+    // from the exact source point 38,438.2 of B(12) = 19,219, Out down from
+    // 51,251.2 of B(20) = 32,032. Output sample n plays source 51,250 - n,
+    // so the click at 48,000 lands 3,250 samples in, at 35,282. The forward
+    // click (28,781) still plays before the pause; none follows it.
+    fixture.audio = vec![
+        (28_672, true),
+        (32_256, false),
+        (35_072, true),
+        (38_400, false),
+        (50_000, false),
+    ];
+    Ok(fixture)
+}
+
+/// `:ping-pong 12f` at Edit 24 (Original 36): Edit [12, 24) (Original
+/// 24..36) bounces back without showing Original 35 twice, an 11-frame pause
+/// of Original 34 down to 24, then the base resumes at Original 36:
+/// 30 + 11 = 41 frames.
+pub fn ping_pong(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "ping-pong")?;
+    project.shorten()?;
+    project.run_semantic(
+        json!([{"type":"insert_reverse","length":{"unit":"frames","frames":12},"bounce":true}]),
+        24,
+        None,
+    )?;
+    let expectations = vec![
+        (0, base(0)),
+        (23, original(35)),
+        (24, original(34)),
+        (25, original(33)),
+        (30, original(28)),
+        (34, original(24)),
+        (35, original(36)),
+        (40, original(41)),
+    ];
+    let mut fixture = project.finish(vec!["Ping-pong hold"], expectations, Vec::new())?;
+    // Sound under Edit [12, 23), source [38,439, 56,056), reversed from the
+    // pause start B(24) = 38,438: the click at 48,000 plays 8,055 samples in,
+    // at 46,493.
+    fixture.audio = vec![
+        (28_672, true),
+        (40_000, false),
+        (46_336, true),
+        (52_000, false),
+        (60_000, false),
+    ];
+    Ok(fixture)
+}
+
+/// `,h` then `:tail 20f` on the new pause, through the headless semantic
+/// path: a 30-frame freeze of Original 29 at Edit 18, just after the click,
+/// whose reverb of the two seconds heard before it (the processed edit, read
+/// live at render time) rings for 20 frames and fades to digital silence;
+/// the base resumes at Original 30: 60 frames.
+pub fn hanging_tail(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "hanging-tail")?;
+    project.shorten()?;
+    let saved = project.run_semantic(
+        json!([
+            {"type":"insert_pause","length":{"unit":"frames","frames":30}},
+            {"type":"tail","length":{"unit":"frames","frames":20}}
+        ]),
+        18,
+        None,
+    )?;
+    let (pause, _) = root_child_at(&saved, 18)?;
+    match &saved.nodes()[&pause].kind {
+        NodeKind::Hold { recipe }
+            if matches!(
+                recipe.audio,
+                HoldAudio::Tail { maximum, effect: deadpan_core::TailEffect::Reverb, .. }
+                    if maximum.frames() == 20
+            ) && recipe.duration.frames() == 30 => {}
+        other => return Err(format!("unexpected tail pause {other:?}").into()),
+    }
+    let expectations = vec![
+        (0, base(0)),
+        (17, original(29)),
+        (18, original(29)),
+        (47, original(29)),
+        (48, original(30)),
+        (59, original(41)),
+    ];
+    let mut fixture = project.finish(
+        vec![
+            "Hanging tail",
+            "Tails",
+            "`,t` reverb tail",
+            "`:tail 400ms effect=reverb`",
+        ],
+        expectations,
+        Vec::new(),
+    )?;
+    // The click (28,781) plays before the pause starts at B(18) = 28,829.
+    // Reverb reaches the pause after its shortest comb delay (about 1,167
+    // samples), and its 20-frame ring (32,032 samples) has faded to exact
+    // zero by 60,861; the rest of the pause is digital silence.
+    fixture.audio = vec![
+        (28_672, true),
+        (28_864, false),
+        (61_184, false),
+        (70_000, false),
+    ];
+    Ok(fixture)
+}
+
+/// `:tail 1s effect=delay` at Edit 18 with no pause selected: a new 30-frame
+/// freeze whose 300 ms echo of the click (28,781) repeats inside the pause
+/// at 43,181 and, at half level, 57,581: 60 frames.
+pub fn tail_echo(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "tail-echo")?;
+    project.shorten()?;
+    project.run_semantic(
+        json!([{"type":"tail","length":{"unit":"frames","frames":30},"effect":"delay"}]),
+        18,
+        None,
+    )?;
+    let expectations = vec![(17, original(29)), (18, original(29)), (48, original(30))];
+    let mut fixture = project.finish(vec!["Tails"], expectations, Vec::new())?;
+    fixture.audio = vec![
+        (28_672, true),
+        (30_000, false),
+        (43_008, true),
+        (50_000, false),
+        (64_000, false),
+    ];
+    Ok(fixture)
+}
+
+/// `:hold 12f video=black` at Edit 15 captioned `:caption Hello? at=center`,
+/// then `:caption Are we done? at=top delay=4f` on the base beat before it,
+/// both through the headless semantic path: captions over Original and black
+/// pictures, with every picture and sound unchanged: 30 + 12 = 42 frames.
+pub fn delayed_caption(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "delayed-caption")?;
+    project.shorten()?;
+    project.run_semantic(
+        json!([
+            {"type":"insert_pause","length":{"unit":"frames","frames":12},"black":true},
+            {"type":"set_caption","text":"Hello?","placement":"center"}
+        ]),
+        15,
+        None,
+    )?;
+    let document = project.document()?;
+    let (first, _) = root_child_at(&document, 0)?;
+    let saved = project.run_semantic(
+        json!([{"type":"set_caption","text":"Are we done?","placement":"top",
+            "delay":{"unit":"frames","frames":4}}]),
+        0,
+        Some(&first),
+    )?;
+    if saved.duration()?.frames() != 42 {
+        return Err("captions must not change timing".into());
+    }
+    let expectations = vec![
+        (0, base(0)),
+        (4, base(4)),
+        (14, base(14)),
+        (15, Expected::Background),
+        (26, Expected::Background),
+        (27, base(15)),
+        (41, base(29)),
+    ];
+    let mut fixture = project.finish(
+        vec!["Delayed caption"],
+        expectations,
+        vec!["captions drawn by the shared GPU pass over Original and black pictures".into()],
+    )?;
+    fixture.captions = vec![
+        (3, vec![]),
+        (4, vec!["Are we done?"]),
+        (14, vec!["Are we done?"]),
+        (15, vec!["Hello?"]),
+        (26, vec!["Hello?"]),
+        (27, vec![]),
+    ];
+    // The click (base 28,781) moves 12 frames later, to 48,000; the black
+    // pause is silent.
+    fixture.audio = vec![(24_576, false), (47_872, true), (52_000, false)];
+    Ok(fixture)
+}
+
+/// `:gag are-we-done register=r pause=12f` at Edit 15 through the headless
+/// semantic path: a 12-frame pause whose sound is the reverb tail of what
+/// precedes it while the picture cuts to the reaction in register `r`
+/// (Original moment [28, 31), holding 30), grouped: 30 + 12 = 42 frames.
+pub fn are_we_done(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "are-we-done")?;
+    project.shorten()?;
+    {
+        let mut store = ProjectStore::open(&project.package, AccessMode::ReadWrite)?;
+        let document = store.snapshot()?;
+        let record = &document.assets()[&project.asset];
+        store.save_register(
+            document.project_id(),
+            document.revision_id(),
+            RegisterName::new('r')?,
+            RegisterValue::Original {
+                revision: document.revision_id().clone(),
+                asset: project.asset.clone(),
+                qualification: record
+                    .source_qualification
+                    .clone()
+                    .ok_or("the Original is qualified")?,
+                ordinals: 28..31,
+            },
+        )?;
+    }
+    let saved = project.run_semantic(
+        json!([{"type":"gag","recipe":{"recipe":"are_we_done","version":1,
+            "pause":{"unit":"frames","frames":12},"register":"r"}}]),
+        15,
+        None,
+    )?;
+    let (group, _) = root_child_at(&saved, 15)?;
+    let label = &saved.nodes()[&group].label;
+    if label != "Are We Done? · v1 · pause 12f with a reverb tail, reaction from register r" {
+        return Err(format!("unexpected gag label {label:?}").into());
+    }
+    let expectations = vec![
+        (0, base(0)),
+        (14, original(26)),
+        (15, original(28)),
+        (16, original(29)),
+        (17, original(30)),
+        (26, original(30)),
+        (27, original(27)),
+        (41, original(41)),
+    ];
+    let mut fixture = project.finish(
+        vec!["Are We Done?", "Reaction cutaway", "Hanging tail"],
+        expectations,
+        Vec::new(),
+    )?;
+    // The two seconds before the pause hold no click, so its tail is quiet;
+    // the click moves 12 frames later, to 48,000.
+    fixture.audio = vec![(30_000, false), (47_872, true)];
+    Ok(fixture)
+}
+
+/// Visual Edit [10, 15) then `:lift` through the headless semantic path: the
+/// range is cut into register `l` and its five frames come back as a silent
+/// black pause, so the base keeps its 30 frames and every later picture and
+/// sound keeps its time.
+pub fn lift(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "lift")?;
+    project.shorten()?;
+    let saved = project.run_semantic(
+        json!([
+            {"type":"begin_selection"},
+            {"type":"move_frames","forward":true,"count":5},
+            {"type":"lift","register":"l"}
+        ]),
+        10,
+        None,
+    )?;
+    if saved.duration()?.frames() != 30 {
+        return Err("a lift keeps the total time".into());
+    }
+    let expectations = vec![
+        (0, base(0)),
+        (9, base(9)),
+        (10, Expected::Background),
+        (14, Expected::Background),
+        (15, base(15)),
+        (29, base(29)),
+    ];
+    let mut fixture = project.finish(vec!["Lift"], expectations, Vec::new())?;
+    // The lifted pause [B(10), B(15)) = [16,016, 24,024) is silent; the click
+    // at 28,781 keeps its time.
+    fixture.audio = vec![(16_384, false), (23_552, false), (28_672, true)];
+    Ok(fixture)
+}
+
+/// Visual Edit [15, 20) then `:bleep level=-3dB` through the headless
+/// semantic path: the range's pictures keep playing (Original 27..31) while
+/// its sound, which holds the click, becomes a 1 kHz tone; 30 frames.
+pub fn bleep(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "bleep")?;
+    project.shorten()?;
+    let saved = project.run_semantic(
+        json!([
+            {"type":"begin_selection"},
+            {"type":"move_frames","forward":true,"count":5},
+            {"type":"bleep","register":"b","level":-3000}
+        ]),
+        15,
+        None,
+    )?;
+    let (pause, _) = root_child_at(&saved, 15)?;
+    if !matches!(
+        &saved.nodes()[&pause].kind,
+        NodeKind::Hold { recipe } if matches!(
+            (&recipe.video, &recipe.audio),
+            (HoldVideo::Play { .. }, HoldAudio::Tone { frequency_hz: 1_000, .. })
+        )
+    ) {
+        return Err(format!("unexpected bleep pause {:?}", saved.nodes()[&pause].kind).into());
+    }
+    let expectations = [0u64, 14, 15, 17, 19, 20, 29]
+        .into_iter()
+        .map(|frame| (frame, base(frame)))
+        .collect();
+    let mut fixture = project.finish(vec!["Bleep"], expectations, Vec::new())?;
+    // The tone (-3 dBFS) fills [B(15), B(20)) = [24,024, 32,032) where the
+    // click was; the base is quiet on both sides.
+    fixture.audio = vec![
+        (20_000, false),
+        (24_576, true),
+        (28_672, true),
+        (31_488, true),
+        (33_024, false),
+    ];
+    Ok(fixture)
+}
+
 /// Build every fixture, each in its own subdirectory of `dir`.
 pub fn all(dir: &Path) -> Result<Vec<Fixture>> {
     type Builder = fn(&Path) -> Result<Fixture>;
-    let builders: [(&str, Builder); 16] = [
+    let builders: [(&str, Builder); 24] = [
+        ("bleep", bleep),
+        ("lift", lift),
+        ("are-we-done", are_we_done),
+        ("delayed-caption", delayed_caption),
+        ("reverse-hiccup", reverse_hiccup),
+        ("ping-pong", ping_pong),
+        ("hanging-tail", hanging_tail),
+        ("tail-echo", tail_echo),
         ("repeat-with-gap", repeat_with_gap),
         ("one-more-time", one_more_time),
         ("repeat-gaps-steps", repeat_gaps_steps),
@@ -1331,6 +1697,42 @@ pub fn reframe_and_attenuate(fixture: &Fixture, at: i64) -> Result<String> {
                 Vec::new(),
                 Vec::new(),
             )?),
+        })
+    })?;
+    Ok(saved.revision_id().to_string())
+}
+
+/// Commit, after export, the removal of every caption on the host shown at
+/// Edit frame `at`, changing nothing else. The earlier movie verified against
+/// the returned revision then differs exactly where that caption was drawn.
+pub fn clear_captions(fixture: &Fixture, at: i64) -> Result<String> {
+    let directory = fixture
+        .package
+        .parent()
+        .ok_or("fixture package has a parent")?
+        .to_owned();
+    let document = ProjectStore::open(&fixture.package, AccessMode::ReadOnly)?.snapshot()?;
+    let asset = document
+        .assets()
+        .iter()
+        .find(|(_, record)| record.video.is_some())
+        .map(|(id, _)| id.clone())
+        .ok_or("fixture has a picture asset")?;
+    let mut project = Project {
+        name: fixture.name,
+        directory,
+        package: fixture.package.clone(),
+        step: 90,
+        ids: 9000,
+        asset,
+    };
+    let saved = project.apply(|_, document, _| {
+        let (beat, _) = root_child_at(document, at)?;
+        let (host, _) =
+            deadpan_core::cutaway_host(document, &beat).ok_or("the beat hosts no captions")?;
+        Ok(Command::SetCaptions {
+            node: host,
+            captions: Vec::new(),
         })
     })?;
     Ok(saved.revision_id().to_string())

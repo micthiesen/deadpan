@@ -23,6 +23,9 @@ use sha2::{Digest, Sha256};
 
 const TIMEOUT: Duration = Duration::from_secs(10);
 
+#[path = "stages/hold_effects.rs"]
+mod hold_effects;
+
 #[path = "stages/insert_time.rs"]
 mod insert_time;
 
@@ -96,6 +99,7 @@ fn source(rate: FrameRate, frames: i64, selected: Range<i64>) -> BeatNode {
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -139,6 +143,7 @@ fn retime(child: &str, frames: i64, selected: Range<i64>, pitch: PitchPolicy) ->
             pitch,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -1229,6 +1234,7 @@ fn repeat_and_override_occurrences_do_not_alias_prepared_history() {
             escalation: None,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let planned = plan_with_overrides(
         rate,
@@ -1486,6 +1492,7 @@ fn nested_depth_and_native_long_input_limits_fail_without_decoding_originals() {
             escalation: None,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let mut renderer = StageAudio::new(plan(
         rate,
@@ -1516,11 +1523,11 @@ fn nested_depth_and_native_long_input_limits_fail_without_decoding_originals() {
 }
 
 #[test]
-fn unsupported_effect_tails_cannot_hide_between_input_grid_samples() {
+fn a_tail_inside_preserve_stages_is_an_invalid_document() {
     let rate = FrameRate::new(192_000, 1).unwrap();
     let policy = HoldAudio::Tail {
-        source: audio(0, 1),
         maximum: duration(1),
+        effect: Default::default(),
     };
     for nested in [false, true] {
         let mut nodes = vec![
@@ -1528,7 +1535,7 @@ fn unsupported_effect_tails_cannot_hide_between_input_grid_samples() {
             (
                 "policy",
                 BeatNode::hold(
-                    "Unsupported policy",
+                    "Tail policy",
                     HoldRecipe {
                         picture_context: None,
                         duration: duration(1),
@@ -1561,25 +1568,27 @@ fn unsupported_effect_tails_cannot_hide_between_input_grid_samples() {
         } else {
             "inner"
         };
-        let planned = plan(rate, &[root], nodes);
-        let mut provider = FixtureProvider::new();
-        let mut renderer = StageAudio::new(planned);
-        // The unsupported Hold is [0.25,0.5) on the input grid. Its
-        // final output interval is [2,4), or [4/3,8/3) when nested.
-        // In the nested case it owns no inner-output grid point either.
-        // A first-sample read still requires admission before any PCM.
-        assert!(matches!(
-            renderer.read(
-                &mut provider,
-                AudioSample(0),
-                1,
-                TIMEOUT,
-                &AtomicBool::new(false)
-            ),
-            Err(StageAudioError::Unsupported(_))
-        ));
-        assert_eq!(provider.calls, 0);
-        assert_eq!(renderer.cached_stage_count(), 0);
+        // A tail inside a speed change has no edit clock to be fed on, so
+        // the document is invalid before any plan or source read exists.
+        let mut wire = serde_json::to_value(document_with_asset(
+            rate,
+            &["filler"],
+            [("filler", source(rate, 1, 0..1))],
+            BTreeMap::new(),
+            audio(0, 8197).span,
+        ))
+        .unwrap();
+        let nodes: BTreeMap<_, _> = nodes
+            .into_iter()
+            .map(|(name, node)| (id(name), node))
+            .collect();
+        wire["nodes"].as_object_mut().unwrap().remove("filler");
+        for (name, node) in nodes {
+            wire["nodes"][name.as_str()] = serde_json::to_value(node).unwrap();
+        }
+        wire["nodes"]["root"]["kind"]["children"] = serde_json::json!([root]);
+        let error = ProjectDocument::from_json(&wire.to_string()).unwrap_err();
+        assert!(error.message.contains("speed change"), "{error:?}");
     }
 }
 
@@ -1607,6 +1616,7 @@ fn repeated_stage_plan() -> Arc<RenderPlan> {
                         escalation: None,
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
             ),
             ("outer", retime("repeat", 108, 0..72, PitchPolicy::Preserve)),
@@ -1826,6 +1836,54 @@ fn room_tone_keeps_fractional_44100_source_extent_and_long_hold_duration_across_
 }
 
 #[test]
+fn a_reversed_44100_span_with_fractional_extent_ends_exactly_one_mix_sample_before_its_end() {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    let planned = plan_with_asset(
+        rate,
+        &["reverse"],
+        [(
+            "reverse",
+            BeatNode::hold(
+                "Reversed",
+                HoldRecipe {
+                    picture_context: None,
+                    duration: duration(260),
+                    video: HoldVideo::Background,
+                    audio: HoldAudio::Reverse {
+                        source: audio_at_rate(100, 321, 44_100),
+                    },
+                },
+            ),
+        )],
+        BTreeMap::new(),
+        audio_at_rate(0, 44_117, 44_100).span,
+    );
+    let mut provider = FixtureProvider::from_fixture(
+        "pcm-mono-44100.wav",
+        AudioChannelLayout::Native {
+            channels: 1,
+            mask: 4,
+        },
+    );
+    let original = |at: i64| [(((at * 73) % 65_536 - 32_768) as f32) / 32_768.0; 2];
+    // 221 original samples span 35360/147 mix samples. Output sample n hears
+    // the source exactly n + 1 mix samples before the span's end, evaluated
+    // independently here one point at a time: 321 - (n + 1) * 147/160.
+    let step = ratio(147, 160);
+    let mut expected = Vec::new();
+    for n in 0..241_i64 {
+        let origin = ExactRatio::integer(321)
+            .checked_sub(ExactRatio::integer(n + 1).checked_mul(step).unwrap())
+            .unwrap();
+        expected.extend(sample_reference(100..321, origin, step, 1, original));
+    }
+    expected.resize(260, [0.0; 2]);
+    let mut renderer = StageAudio::new(planned);
+    let actual = read_all(&mut renderer, &mut provider, &[73, 256]);
+    assert_pcm_close(&actual, &expected);
+}
+
+#[test]
 fn repeated_room_tone_and_override_restart_locally_with_two_distinct_gap_caches() {
     let rate = FrameRate::new(48_000, 1).unwrap();
     let repeated = BeatNode {
@@ -1848,6 +1906,7 @@ fn repeated_room_tone_and_override_restart_locally_with_two_distinct_gap_caches(
             escalation: None,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let planned = plan_with_overrides(
         rate,
@@ -2371,6 +2430,7 @@ fn partition_inside_a_repeat_gap_keeps_its_full_room_tone_origin() {
             escalation: None,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let whole = plan(
         rate,
@@ -2597,6 +2657,7 @@ fn one_hard_repeat_override_and_room_tone_gap_edges_preserve_silence_masks() {
             escalation: None,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let planned = plan_with_overrides(
         rate,

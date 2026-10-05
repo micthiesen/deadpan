@@ -291,6 +291,7 @@ fn adjacent_tiles_reuse_exact_bus_context_and_revalidate_its_source_layout() {
             escalation: None,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let plan = plan(
         rate,

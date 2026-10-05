@@ -445,6 +445,10 @@ Build configuration: {configuration}\n",
 
     let _ = writeln!(
         text,
+        "{rule}\nInter 4.001 (variable font, embedded in the application)\n{rule}\nThe unmodified Inter variable font draws captions. It is licensed under the\nSIL Open Font License 1.1; the full text is inter/OFL.txt beside this file.\n"
+    );
+    let _ = writeln!(
+        text,
         "{rule}\nRust crates and vendored native code\n{rule}\nGenerated from Cargo metadata for the shipped binaries' normal dependency\nclosure ({} crates). Each entry reproduces the license files published with the\ncrate, including vendored native sources (for example whisper.cpp, SQLite and\nSignalsmith). Identical texts are reproduced once and referenced afterwards.\n",
         crates.len()
     );

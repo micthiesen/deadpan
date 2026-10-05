@@ -205,6 +205,7 @@ fn natural_picture_plan_selects_and_decodes_original_pixels_after_trim_rounding(
                                 },
                             },
                             cutaways: Vec::new(),
+                            captions: Vec::new(),
                         },
                     )]),
                 },

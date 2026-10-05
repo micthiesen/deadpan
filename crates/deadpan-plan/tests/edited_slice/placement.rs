@@ -181,6 +181,7 @@ fn repeat(child: &str, plays: u32, allocation: &str) -> BeatNode {
             escalation: None,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -199,6 +200,7 @@ fn preserve(child: &str) -> BeatNode {
             pitch: PitchPolicy::Preserve,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 

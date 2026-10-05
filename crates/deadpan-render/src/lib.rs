@@ -6,6 +6,7 @@
 //! This does not implement a timeline, HDR input, tone mapping, an encoder,
 //! ICC display management, effects beyond canvas framing, or native interop.
 
+mod caption;
 mod color;
 mod export;
 mod framing;
@@ -13,6 +14,7 @@ mod geometry;
 mod gpu;
 mod surface;
 
+pub use caption::{CAPTION_STYLE_ID, CaptionLine, CaptionOverlay};
 pub use color::{Primaries, SourceColor, Transfer, source_to_working, working_to_display};
 pub use export::{
     MAX_WORKING_FRAME_BYTES, Rec709Yuv420Frame, WorkingRgba16Frame, Yuv420Policy,
@@ -83,4 +85,8 @@ pub enum RenderError {
     Readback(String),
     #[error("GPU polling failed: {0}")]
     Poll(String),
+    #[error("caption rendering failed: {0}")]
+    Caption(&'static str),
+    #[error("a caption overlay must match its render target raster")]
+    CaptionRaster,
 }

@@ -222,6 +222,7 @@ pub(crate) fn partition(
         audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         cutaways: Vec::new(),
+        captions: Vec::new(),
     })
 }
 

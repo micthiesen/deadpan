@@ -238,7 +238,9 @@ impl DeadpanApp {
         let Some((key, activity)) = self.transcription.activity.unsaved.as_ref() else {
             return;
         };
-        if self.service.is_busy() {
+        // Saves use their own lane and never occupy the user-command slot,
+        // but still yield while a user command is pending.
+        if self.service.is_busy() || self.service.annotation_busy() {
             context.request_repaint_after(Duration::from_millis(100));
             return;
         }
@@ -255,7 +257,7 @@ impl DeadpanApp {
                 self.transcription.activity.unsaved = None;
                 self.transcription.activity.status = ActivityStatus::Saving(attempt);
             }
-            Err(_) if self.service.is_busy() => {
+            Err(_) if self.service.annotation_busy() => {
                 context.request_repaint_after(Duration::from_millis(100));
             }
             Err(error) => {

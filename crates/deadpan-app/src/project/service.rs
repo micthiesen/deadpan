@@ -200,6 +200,8 @@ pub(super) fn run(
         render_preview_refresh_failure: false,
     };
     let mut requests_connected = true;
+    #[cfg(any(test, feature = "ui-harness"))]
+    let mut held = std::collections::VecDeque::<ProjectRequest>::new();
     loop {
         let shutdown_changed = if service.shared.stopping.load(Ordering::Acquire)
             && (!service.shared.busy.load(Ordering::Acquire)
@@ -223,6 +225,7 @@ pub(super) fn run(
         service.pump_host_preparation();
         if service.shared.stopping.load(Ordering::Acquire)
             && !service.shared.busy.load(Ordering::Acquire)
+            && !service.shared.annotation.load(Ordering::Acquire)
             && service.pending_session_change.is_none()
             && service.render.is_none()
             && !service.generation.active()
@@ -236,7 +239,41 @@ pub(super) fn run(
             std::thread::park_timeout(Duration::from_millis(10));
             Err(RecvTimeoutError::Timeout)
         };
+        // Replay/tests can hold admitted requests, including one received by
+        // a wait that began before the hold, until they release it. Order is
+        // preserved; production never buffers. Shutdown and a disconnected
+        // mailbox override the hold so a failed check cannot strand an
+        // admitted command (and its busy flag) forever: buffered requests are
+        // drained in order before the disconnect is observed.
+        #[cfg(any(test, feature = "ui-harness"))]
+        let request = {
+            let request = match request {
+                Ok(request) => {
+                    held.push_back(request);
+                    Err(RecvTimeoutError::Timeout)
+                }
+                error => error,
+            };
+            let releasing = service.shared.stopping.load(Ordering::Acquire)
+                || matches!(request, Err(RecvTimeoutError::Disconnected));
+            if service.shared.requests_held.load(Ordering::Acquire) && !releasing {
+                Err(RecvTimeoutError::Timeout)
+            } else {
+                // A disconnect is observed again on the next empty receive.
+                held.pop_front().map_or(request, Ok)
+            }
+        };
         match request {
+            Ok(request) if request.is_annotation_save() => {
+                // Independent feedback: each save reports only through its
+                // own receipt, never a user command's error or completion.
+                service.annotation_command(request);
+                service.shared.annotation.store(false, Ordering::Release);
+                service.invalidate_changed_splice();
+                service.reconcile_slip();
+                service.reconcile_trim();
+                service.publish();
+            }
             Ok(request) => {
                 if service.dispatch_request(request) {
                     service.shared.busy.store(false, Ordering::Release);
@@ -295,6 +332,7 @@ pub(super) fn run(
     service.workspace = None;
     service.cached = None;
     service.shared.busy.store(false, Ordering::Release);
+    service.shared.annotation.store(false, Ordering::Release);
     let shared = service.shared.clone();
     drop(service);
     drop(results);
@@ -361,6 +399,31 @@ impl Service {
             .lock()
             .unwrap_or_else(|error| error.into_inner()) = Some(update);
         (self.shared.wake)();
+    }
+
+    /// Analysis saves record success or failure in their own receipt.
+    fn annotation_command(&mut self, request: ProjectRequest) {
+        match request {
+            ProjectRequest::SaveTranscript {
+                expected_session,
+                attempt,
+                key,
+                transcript,
+            } => self.save_transcript_command(expected_session, attempt, key, transcript),
+            ProjectRequest::SaveSpeechActivity {
+                expected_session,
+                attempt,
+                key,
+                activity,
+            } => self.save_speech_activity_command(expected_session, attempt, key, activity),
+            ProjectRequest::SaveShotAnalysis {
+                expected_session,
+                attempt,
+                key,
+                analysis,
+            } => self.save_shot_analysis_command(expected_session, attempt, key, analysis),
+            _ => unreachable!("only analysis saves use the annotation lane"),
+        }
     }
 
     fn command(&mut self, request: ProjectRequest) -> Result<()> {
@@ -939,6 +1002,7 @@ impl Service {
             | ProjectEdit::Repeat { node, .. }
             | ProjectEdit::WrapRepeat { node, .. }
             | ProjectEdit::SetCutaways { node, .. }
+            | ProjectEdit::SetCaptions { node, .. }
             | ProjectEdit::Retime { node, .. }
             | ProjectEdit::SetFraming { node, .. }
             | ProjectEdit::SetAudioTreatments { node, .. }
@@ -961,6 +1025,7 @@ impl Service {
                 | ProjectEdit::HoldAudio { .. }
                 | ProjectEdit::SetAudioTreatments { .. }
                 | ProjectEdit::SetCutaways { .. }
+                | ProjectEdit::SetCaptions { .. }
                 | ProjectEdit::AudioLag { .. }
         );
         let mut retime_message = None;
@@ -1049,6 +1114,25 @@ impl Service {
                     },
                     selected,
                     "Cutaways updated and saved",
+                )
+            }
+            ProjectEdit::SetCaptions {
+                node,
+                host,
+                captions,
+            } => {
+                if deadpan_core::cutaway_host(document, &node).map(|(host, _)| host)
+                    != Some(host.clone())
+                {
+                    return Err("The caption host is no longer under the selected beat.".into());
+                }
+                (
+                    Command::SetCaptions {
+                        node: host,
+                        captions,
+                    },
+                    selected,
+                    "Captions updated and saved",
                 )
             }
             ProjectEdit::Scoped { .. }

@@ -26,6 +26,7 @@ use crate::worker::{PreviewWorker, ProjectView, SourceSummary, Ticket, Work};
 mod ai_pause;
 mod camera;
 mod camera_fields;
+mod captions;
 mod cards;
 mod copied;
 mod cutaways;
@@ -39,6 +40,7 @@ mod groups;
 #[cfg(feature = "ui-harness")]
 pub(crate) mod harness;
 mod help_scroll;
+mod hold_effects;
 mod inspector;
 mod key_labels;
 mod macros;
@@ -1092,9 +1094,38 @@ impl DeadpanApp {
         }
     }
 
+    /// A user action that needs the project writer while another project
+    /// command (an edit, open/create, or a remote command) holds it. Say so
+    /// visibly and keep any earlier error instead of replacing it.
+    pub(super) fn refuse_while_busy(&mut self, action: &str) {
+        let refusal = format!(
+            "{action} did not start because another project command is still in progress. Try again when it finishes."
+        );
+        self.error = Some(match self.error.take() {
+            Some(previous) if previous.contains(&refusal) => previous,
+            Some(previous) => format!("{}. {refusal}", previous.trim_end_matches('.')),
+            None => refusal,
+        });
+    }
+
     fn begin_dialog(&mut self, kind: DialogKind, context: &egui::Context, preview_only: bool) {
         self.cancel_repeats("a file action was requested");
-        if self.dialogs.is_open() || self.service.is_busy() {
+        // An open dialog is itself visible; a busy writer must say why the
+        // request did nothing rather than drop it silently.
+        if self.dialogs.is_open() {
+            return;
+        }
+        if self.service.is_busy() {
+            let action = match kind {
+                DialogKind::CreateProject => "New project",
+                DialogKind::InitializeSource => "Choose Original",
+                DialogKind::OpenProject => "Open project",
+                DialogKind::ImportSound => "Import sound",
+                DialogKind::ImportMedia => "Import media",
+                DialogKind::Render => "Render",
+                DialogKind::Cookies => "Choose cookies",
+            };
+            self.refuse_while_busy(action);
             return;
         }
         self.cancel_camera();
@@ -1424,6 +1455,25 @@ impl DeadpanApp {
             }
             BeatEdit::Repeat(plays) => ProjectEdit::Repeat { node, plays },
             BeatEdit::Escalate(_) => unreachable!("Repeat changes handled above"),
+            BeatEdit::Cutaway(crate::navigation::cutaway::CutawayInput::Place {
+                register,
+                fit,
+            }) if self.macros.recording() => {
+                // A whole-beat cutaway records as one semantic instruction
+                // that resolves the register on replay.
+                let target = self.capture_macro_target();
+                let instruction = if self.selected_edit_range().is_some() {
+                    Err("Recording places a cutaway over the whole selected beat; clear the Edit range first.".to_owned())
+                } else {
+                    deadpan_core::RegisterName::new(
+                        register.or_else(|| self.copied.selected()).unwrap_or('"'),
+                    )
+                    .map(|register| deadpan_core::SemanticInstruction::SetCutaway { register, fit })
+                    .map_err(|error| error.message)
+                };
+                self.apply_recorded_instruction(target, instruction);
+                return;
+            }
             BeatEdit::Cutaway(input) => match self.cutaway_edit(&node, input) {
                 Ok(edit) => edit,
                 Err(error) => {
@@ -1848,6 +1898,14 @@ impl DeadpanApp {
             Action::GainStep(delta) => self.gain_step(delta, context),
             Action::Mute => self.mute_key(),
             Action::CutawayPicker => self.pick_cutaway(context),
+            Action::TailPicker => self.pick_tail(context),
+            Action::Lift => self.lift_selection(),
+            Action::Bleep {
+                frequency_hz,
+                level_millidecibels,
+            } => self.bleep_selection(frequency_hz, level_millidecibels),
+            Action::Reverse { length, bounce } => self.apply_reverse(length, bounce),
+            Action::Tail { length, effect } => self.apply_tail(length, effect),
             Action::SaveFraming(name) => self.save_framing_preset(name),
             Action::Framing(action) => self.framing_action(action, context),
             Action::New => self.begin_dialog(DialogKind::CreateProject, context, false),
@@ -2757,6 +2815,7 @@ impl DeadpanApp {
             Ok(navigation::command::Entry::Zoom(input)) => {
                 self.zoom_command(zoom_target, input, context)
             }
+            Ok(navigation::command::Entry::Caption(input)) => self.caption_command(input),
             Ok(navigation::command::Entry::Action(action)) => self.action(action, context),
             Ok(navigation::command::Entry::Source) => self.show_original(context),
             Ok(navigation::command::Entry::Sequence) => self.show_edit(context),
@@ -3769,6 +3828,31 @@ impl DeadpanApp {
                 ),
             ));
         }
+        // A split fragment lists its Source's captions over its own frames.
+        if !matches!(
+            node.kind,
+            deadpan_core::NodeKind::Source { .. } | deadpan_core::NodeKind::Hold { .. }
+        ) && let Some((host, offset)) = deadpan_core::cutaway_host(&workspace.document, &row.id)
+            && let Some(host) = workspace.document.nodes().get(&host)
+        {
+            let end = offset + row.frames as i64;
+            let visible: Vec<String> = host
+                .captions
+                .iter()
+                .filter(|caption| caption.range.start().0 < end && caption.range.end().0 > offset)
+                .map(|caption| {
+                    format!(
+                        "“{}” {}–{}",
+                        caption.text,
+                        (caption.range.start().0 - offset).max(0),
+                        (caption.range.end().0 - offset).min(row.frames as i64)
+                    )
+                })
+                .collect();
+            if !visible.is_empty() {
+                description.fields.push(("Captions", visible.join(", ")));
+            }
+        }
         // Independent gap Holds replace the default gap after their play.
         if let deadpan_core::NodeKind::Repeat {
             iterations, gap, ..
@@ -4248,7 +4332,9 @@ impl DeadpanApp {
         let Some(picture) = self.presentation.picture() else {
             return;
         };
-        if picture.frame.is_none() {
+        // Captions over an authored black picture render through the shared
+        // pass like any other picture; an uncaptioned one needs no target.
+        if picture.frame.is_none() && (picture.captions.is_empty() || picture.canvas.is_none()) {
             if self.presentation.needs_render() {
                 self.forget_target();
                 #[cfg(feature = "ui-harness")]
@@ -4301,19 +4387,39 @@ impl DeadpanApp {
             None
         };
         let picture = self.presentation.picture().expect("picture checked");
-        let frame = picture.frame.as_ref().expect("frame checked");
         let target = replacement
             .as_ref()
             .unwrap_or_else(|| &self.target.as_ref().expect("target exists").target);
-        let result = if let Some((width, height)) = picture.canvas {
+        let captions = match picture.canvas.map(|(width, height)| {
+            deadpan_cli::picture::caption_overlay(
+                &picture.captions,
+                [width, height],
+                [target.width(), target.height()],
+            )
+        }) {
+            Some(Ok(captions)) => captions,
+            None => None,
+            Some(Err(error)) => {
+                #[cfg(feature = "ui-harness")]
+                self.feedback
+                    .picture_failed(self.presentation.decoded_ticket());
+                self.presentation
+                    .render_failed(format!("Preview captions: {error}"));
+                return;
+            }
+        };
+        let result = if let Some(frame) = picture.frame.as_ref()
+            && let Some((width, height)) = picture.canvas
+        {
             match camera::render_layers(picture) {
-                Ok(layers) => self.renderer.render_composed(
+                Ok(layers) => self.renderer.render_composed_captioned(
                     frame,
                     target,
                     picture.picture_context.as_deref(),
                     [width, height],
                     FitMode::Fit,
                     &layers,
+                    captions.as_ref(),
                 ),
                 Err(error) => {
                     #[cfg(feature = "ui-harness")]
@@ -4323,8 +4429,11 @@ impl DeadpanApp {
                     return;
                 }
             }
-        } else {
+        } else if let Some(frame) = picture.frame.as_ref() {
             self.renderer.render(frame, target, FitMode::Fit)
+        } else {
+            self.renderer
+                .render_background_captioned(target, captions.as_ref())
         };
         match result {
             Ok(_) => {
@@ -4457,10 +4566,15 @@ impl DeadpanApp {
                         (format!("{} / {} · Visual or after {}/{}/{}", key(EditorKey::InnerGroup), key(EditorKey::AroundGroup), key(EditorKey::YankOperator), key(EditorKey::CutOperator), key(EditorKey::RepeatOperator)), "Select exact group contents or the whole group. An explicitly selected Sequence wins; otherwise use the containing nonroot group. Visual finish retains the object; moving while extending changes it into a time range. Whole-group edits return to the outer parent. Empty contents can receive a paste; an all-empty child forest still has exact owners. Macros and dot resolve the object in their current context.".to_owned()),
                         (":repeat 3".to_owned(), "Set total plays on the captured Repeat, preserving its gaps and surviving plays; wrap a different selected beat. Clear Visual selection first. Recording keeps the effective wrap or count-change instruction; dot reapplies a count change to the newly selected Repeat.".to_owned()),
                         (":cutaway register=r fit=hold|loop|gap".to_owned(), "Show a copied Original moment over the Edit range (or the whole selected beat) while that beat's sound continues. A short moment holds its last picture, loops or lets the beat show through. The cutaway belongs to the beat and moves, splits and copies with it. :cutaway clear removes cutaways there. One Undo.".to_owned()),
-                        (":gag long-answer · escalator · non-sequitur · one-more-time · nothing-happens".to_owned(), "Apply a built-in gag as one Undo: long-answer inserts a silent pause at the cursor and creeps in on it (pause=1.5s creep=1.35); escalator repeats the selected beat louder and closer each play (plays=3 gain-step=3dB zoom-step=0.08); non-sequitur cuts to register=r and straight back; one-more-time repeats the selected beat with a silent held gap that gets shorter each play (plays=3 gap=500ms shorten=200ms); nothing-happens holds the picture at the cursor with room tone from the Original moment in register=r, then cuts to true silence (tone=1s silence=1s). The result is an ordinary group labelled with the recipe, its version and parameters: edit any part, or ungroup to detach it.".to_owned()),
+                        (":gag long-answer · escalator · non-sequitur · one-more-time · nothing-happens · are-we-done".to_owned(), "Apply a built-in gag as one Undo: long-answer inserts a silent pause at the cursor and creeps in on it (pause=1.5s creep=1.35); escalator repeats the selected beat louder and closer each play (plays=3 gain-step=3dB zoom-step=0.08); non-sequitur cuts to register=r and straight back; one-more-time repeats the selected beat with a silent held gap that gets shorter each play (plays=3 gap=500ms shorten=200ms); nothing-happens holds the picture at the cursor with room tone from the Original moment in register=r, then cuts to true silence (tone=1s silence=1s); are-we-done pauses at the cursor while what was just said hangs on in a reverb tail and the picture cuts to the reaction in register=r (pause=1.5s). The result is an ordinary group labelled with the recipe, its version and parameters: edit any part, or ungroup to detach it.".to_owned()),
                         (key(EditorKey::EscalatingRepeat), "Wrap the selected beat or Visual range in three plays, each 3 dB louder and 0.08 closer than the last, as one Undo. Adjust it with :repeat 3 gap= gain-step= zoom-step=.".to_owned()),
                         (key(EditorKey::Mute), "Mute the Visual range inside the selected beat as a mute range, or toggle the whole beat's mute without a range (same as :gain-mute). The beat keeps its timing; one Undo.".to_owned()),
                         (key(EditorKey::CutawayPicker), "Pick a reaction: opens :cutaway register= on a register holding a copied Original moment and lists the others. Enter shows it over the selected beat or Visual range while the beat's sound continues.".to_owned()),
+                        (format!("{} / :tail 400ms effect=reverb|delay", key(EditorKey::Tail)), "Hanging tail: the reverb (or 300 ms echo) of what is heard just before a pause rings on into it, then fades to true silence. On a selected pause the length is how long it rings (at most the pause); otherwise a freeze pause of that length is inserted at the cursor. The key opens the command with the length ready to change. One Undo; recordable.".to_owned()),
+                        (format!("{} / :bleep 880Hz level=-6dB", key(EditorKey::Bleep)), "Bleep the Visual range (viw selects a word): its sound becomes a tone, 1 kHz at -10 dB unless given, with 2 ms ramps, while its pictures keep playing at their natural speed. The cut sound goes to the selected register. One continuous Original passage only. One Undo; recordable.".to_owned()),
+                        (":lift".to_owned(), "Lift the Visual range: cut it into the selected register (as d does) and put back a silent black pause of exactly the same length, so everything after it keeps its time. One Undo; recordable.".to_owned()),
+                        (":caption Are we done? at=top delay=12f reveal=3".to_owned(), "Caption the selected beat, or the Edit range inside it, with one line of text drawn over the picture in preview and export. at= places it at the bottom (default), top or center; delay= starts it later in the beat (a delayed caption); reveal=N waits for play N of an enclosing Repeat. The caption belongs to the beat's source or pause and moves, splits and copies with it. :caption clear removes captions there. One Undo; recordable without a range.".to_owned()),
+                        (":reverse 8f · :ping-pong 12f".to_owned(), "Insert a pause at the cursor that plays the stretch before it backwards, picture and sound (a reverse hiccup); forward content then continues. :ping-pong bounces back without showing the turning picture twice, so the pause is one frame shorter. Needs one continuous Original passage at its natural speed. One Undo; recordable.".to_owned()),
                         (":repeat 3 gap=120ms gain-step=3dB zoom-step=0.08".to_owned(), "Change the selected Repeat, or wrap a plain beat, in one Undo: the count sets total plays; gap= sets every gap between plays to a silent hold of the play's last picture (gap=0 removes them all; gap-step=-40ms makes each later gap 40 ms shorter as its own pause, up to 64 gaps); each play after the first adds the gain step and grows the centered picture scale by the zoom step (progression=multiply compounds it). Omitted parts keep their values and 0dB or 0 removes a step. Recordable in macros.".to_owned()),
                         (":wrap-repeat 3".to_owned(), "Always add an enclosing Repeat around the captured Visual range or selected beat, including nesting. Command entry captures the target; stale or missing targets refuse.".to_owned()),
                         (":retime 0.75 pitch=preserve".to_owned(), "Slow the selected beat to 0.75× input speed. Use pitch=tape to let pitch follow speed. Exact fractions such as 3/4 work too. The command shows its resolved duration before Enter; Escape cancels entry.".to_owned()),

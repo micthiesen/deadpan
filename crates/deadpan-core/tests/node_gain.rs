@@ -738,6 +738,7 @@ fn replacement_and_isolation_bound_transient_gain_without_rejecting_valid_final_
                     escalation: None,
                 },
                 cutaways: Vec::new(),
+                captions: Vec::new(),
             },
         ),
     ]);

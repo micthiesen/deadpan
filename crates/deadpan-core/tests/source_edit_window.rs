@@ -70,7 +70,7 @@ fn fixture() -> ProjectDocument {
         "assets":{"original":AssetRecord {label:"Original".into(),content_hash:"a".repeat(64),video:Some(span),audio:Some(span),still_image:false,frame_count:Some(frames(30)),source_qualification:None}},
         "nodes":{
             "root":BeatNode::sequence("Root",vec![id("source")]),
-            "source":BeatNode {label:"Source".into(),framing:None,audio_treatments:Default::default(),audio_editorial_edges: Default::default(), audio_edges:Default::default(),kind:NodeKind::Source {source}, cutaways: Vec::new() },
+            "source":BeatNode {label:"Source".into(),framing:None,audio_treatments:Default::default(),audio_editorial_edges: Default::default(), audio_edges:Default::default(),kind:NodeKind::Source {source}, cutaways: Vec::new(), captions: Vec::new() },
         },
     }).to_string()).unwrap()
 }

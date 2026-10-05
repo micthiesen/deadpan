@@ -53,6 +53,14 @@ pub enum GagRecipe {
         silence: PauseLength,
         register: RegisterName,
     },
+    /// A pause at the cursor where the sound before it hangs on in a reverb
+    /// tail while the picture cuts to a reaction from the same Original in
+    /// `register`.
+    AreWeDone {
+        version: u32,
+        pause: PauseLength,
+        register: RegisterName,
+    },
 }
 
 /// The only version of each recipe so far.
@@ -66,6 +74,7 @@ impl GagRecipe {
             Self::NonSequitur { .. } => "The Non-Sequitur",
             Self::OneMoreTime { .. } => "One More Time",
             Self::NothingHappens { .. } => "Nothing Happens",
+            Self::AreWeDone { .. } => "Are We Done?",
         }
     }
 
@@ -75,7 +84,8 @@ impl GagRecipe {
             | Self::Escalator { version, .. }
             | Self::NonSequitur { version, .. }
             | Self::OneMoreTime { version, .. }
-            | Self::NothingHappens { version, .. } => *version,
+            | Self::NothingHappens { version, .. }
+            | Self::AreWeDone { version, .. } => *version,
         }
     }
 
@@ -118,6 +128,13 @@ impl GagRecipe {
                 decimal(*zoom_step)
             ),
             Self::NonSequitur { register, .. } => format!("register {}", register.as_char()),
+            Self::AreWeDone {
+                pause, register, ..
+            } => format!(
+                "pause {} with a reverb tail, reaction from register {}",
+                length(*pause),
+                register.as_char()
+            ),
         };
         format!("{} · v{} · {parameters}", self.name(), self.version())
     }
@@ -125,7 +142,10 @@ impl GagRecipe {
     /// Whether the recipe edits and groups a pause it inserts, which must
     /// therefore be a direct child of the current group.
     pub fn frames_its_pause(&self) -> bool {
-        matches!(self, Self::LongAnswer { .. } | Self::NothingHappens { .. })
+        matches!(
+            self,
+            Self::LongAnswer { .. } | Self::NothingHappens { .. } | Self::AreWeDone { .. }
+        )
     }
 
     /// The gap lengths of One More Time, each resolved once from its exact
@@ -310,6 +330,22 @@ impl GagRecipe {
                     },
                 ]
             }
+            Self::AreWeDone {
+                pause, register, ..
+            } => vec![
+                SemanticInstruction::InsertPause {
+                    length: *pause,
+                    black: false,
+                },
+                SemanticInstruction::Tail {
+                    length: None,
+                    effect: crate::TailEffect::Reverb,
+                },
+                SemanticInstruction::SetCutaway {
+                    register: *register,
+                    fit: crate::CutawayFit::Hold,
+                },
+            ],
         };
         instructions.push(SemanticInstruction::Group {
             selector: group,

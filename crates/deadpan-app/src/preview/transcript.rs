@@ -312,7 +312,9 @@ impl DeadpanApp {
         let Some((key, transcript)) = self.transcription.unsaved.as_ref() else {
             return;
         };
-        if self.service.is_busy() {
+        // Saves use their own lane and never occupy the user-command slot,
+        // but still yield while a user command is pending.
+        if self.service.is_busy() || self.service.annotation_busy() {
             context.request_repaint_after(Duration::from_millis(100));
             return;
         }
@@ -329,8 +331,8 @@ impl DeadpanApp {
                 self.transcription.unsaved = None;
                 self.transcription.status = Status::Saving(attempt);
             }
-            // Lost a race with a user command; try again shortly.
-            Err(_) if self.service.is_busy() => {
+            // Another analysis save is still queued; try again shortly.
+            Err(_) if self.service.annotation_busy() => {
                 context.request_repaint_after(Duration::from_millis(100));
             }
             Err(error) => {

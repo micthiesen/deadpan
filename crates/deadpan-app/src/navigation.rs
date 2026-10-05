@@ -4,6 +4,7 @@ use eframe::egui::{Key, Modifiers};
 mod ai_tests;
 mod binding_trie;
 pub mod camera;
+pub mod caption;
 pub mod command;
 #[cfg(test)]
 mod delete_range_tests;
@@ -18,6 +19,7 @@ pub mod gain;
 mod group;
 #[cfg(test)]
 mod group_tests;
+pub mod hold_effects;
 #[cfg(test)]
 mod macro_tests;
 #[cfg(test)]
@@ -149,6 +151,30 @@ pub enum Action {
     /// `,r`: pick a register holding an Original moment for a reaction
     /// cutaway over the selected beat or Visual range.
     CutawayPicker,
+    /// `:lift`: cut the Visual range and refill its time with a silent black
+    /// pause of the same length.
+    Lift,
+    /// `,b` / `:bleep`: replace the Visual range's sound with a tone while
+    /// its pictures keep playing.
+    Bleep {
+        frequency_hz: u32,
+        level_millidecibels: i32,
+    },
+    /// `,t`: open `:tail` with its length ready to change, for the selected
+    /// pause or a new tail pause at the cursor.
+    TailPicker,
+    /// `:reverse D` / `:ping-pong D`: a pause that plays the `D` before the
+    /// cursor backwards; `bounce` leaves out the picture at the turn.
+    Reverse {
+        length: duration::DurationInput,
+        bounce: bool,
+    },
+    /// `:tail [D] [effect=…]`: a hanging effect tail on the selected pause,
+    /// or a new tail pause at the cursor.
+    Tail {
+        length: Option<duration::DurationInput>,
+        effect: deadpan_core::TailEffect,
+    },
     /// `:framing-save a`: keep the selected beat's framing as a reusable
     /// preset, a one-instruction macro applied with `@a`.
     SaveFraming(char),

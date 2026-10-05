@@ -10,6 +10,9 @@ description = "Bounded shared GPU picture baseline with explicit linear-light co
 
 [dependencies]
 deadpan-core.workspace = true
+# Caption glyph outlines from the bundled Inter font, with the same parser
+# version egui already uses; rasterization is Deadpan's own.
+skrifa = { version = "=0.44.0", default-features = false, features = ["std"] }
 thiserror.workspace = true
 wgpu.workspace = true
 

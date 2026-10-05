@@ -414,6 +414,7 @@ fn extending_a_captured_repeat_hold_keeps_each_surviving_play_clock() {
                         escalation: None,
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
             ),
         ],

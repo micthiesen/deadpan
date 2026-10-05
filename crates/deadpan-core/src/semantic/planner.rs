@@ -251,6 +251,22 @@ pub enum PauseSite {
     /// `frame`. Composition at and above the Repeat stays live on the gap and
     /// must not be captured again.
     RepeatGap { repeat: NodeId, frame: ProjectFrame },
+    /// A pause at `at` that plays the `frames` before it backwards. With
+    /// `bounce` it starts one picture earlier, so the picture before `at`
+    /// is not shown twice; the provider then covers `frames - 1`.
+    Reverse {
+        at: ProjectFrame,
+        frames: crate::FrameDuration,
+        bounce: bool,
+    },
+    /// A pause standing in for the `frames` before `at`: the same pictures
+    /// played forward, with a tone in place of their sound.
+    Bleep {
+        at: ProjectFrame,
+        frames: crate::FrameDuration,
+        frequency_hz: u32,
+        level: crate::GainDb,
+    },
 }
 
 /// The frozen picture a pause inserted at a boundary shows, resolved by the
@@ -259,6 +275,8 @@ pub enum PauseSite {
 pub struct PauseProvider {
     pub video: crate::HoldVideo,
     pub picture_context: Option<crate::CapturedFraming>,
+    /// Silence for an ordinary pause; reversed audio or a tail otherwise.
+    pub audio: crate::HoldAudio,
 }
 
 /// The error for word and sentence selectors without a transcript.
@@ -579,6 +597,33 @@ where
                 SemanticInstruction::SetRoomTone { register } => {
                     self.set_room_tone(index, *register)?;
                 }
+                SemanticInstruction::SetCutaway { register, fit } => {
+                    self.set_cutaway(index, *register, *fit)?;
+                }
+                SemanticInstruction::SetCaption {
+                    text,
+                    placement,
+                    delay,
+                    reveal,
+                } => {
+                    self.set_caption(index, text, *placement, *delay, *reveal)?;
+                }
+                SemanticInstruction::Bleep {
+                    register,
+                    frequency_hz,
+                    level,
+                } => {
+                    self.bleep(index, *register, *frequency_hz, *level)?;
+                }
+                SemanticInstruction::Lift { register } => {
+                    self.lift(index, *register)?;
+                }
+                SemanticInstruction::InsertReverse { length, bounce } => {
+                    self.insert_reverse(index, *length, *bounce)?;
+                }
+                SemanticInstruction::Tail { length, effect } => {
+                    self.tail(index, *length, *effect)?;
+                }
                 SemanticInstruction::Gag { recipe } => {
                     // The expansion runs as ordinary instructions on the
                     // staged document, with their own trace entries and fuel.
@@ -714,12 +759,18 @@ where
                     instruction,
                     SemanticInstruction::CutFrames { .. }
                         | SemanticInstruction::InsertPause { .. }
+                        | SemanticInstruction::InsertReverse { .. }
+                        | SemanticInstruction::Lift { .. }
+                        | SemanticInstruction::Bleep { .. }
+                        | SemanticInstruction::Tail { .. }
                         | SemanticInstruction::SetFraming { .. }
                         | SemanticInstruction::Yank { .. }
                         | SemanticInstruction::Cut { .. }
                         | SemanticInstruction::Repeat { .. }
                         | SemanticInstruction::SetRepeatPlays { .. }
                         | SemanticInstruction::SetRoomTone { .. }
+                        | SemanticInstruction::SetCutaway { .. }
+                        | SemanticInstruction::SetCaption { .. }
                         | SemanticInstruction::Group { .. }
                         | SemanticInstruction::Ungroup
                         | SemanticInstruction::YankBeat { .. }

@@ -320,6 +320,14 @@ impl DeadpanApp {
                 | Action::Ungroup
                 | Action::EscalatingRepeat
                 | Action::Gag(_)
+                | Action::Reverse { .. }
+                | Action::Tail { .. }
+                | Action::Lift
+                | Action::Bleep { .. }
+                | Action::TailPicker
+                | Action::Edit(BeatEdit::Cutaway(
+                    crate::navigation::cutaway::CutawayInput::Place { .. }
+                ))
                 | Action::Edit(BeatEdit::InsertHold(_) | BeatEdit::InsertBlack(_))
                 | Action::Framing(
                     crate::navigation::FramingAction::PunchIn
@@ -340,7 +348,7 @@ impl DeadpanApp {
                 | Action::Invalid(_)
                 | Action::OfferInsert
         ) {
-            self.error = Some("This action cannot be recorded yet. Macros support pauses, punch-ins and creeps, frame, beat, word, sentence, pause and shot motions, group boundaries, word, sentence, pause and shot objects, Visual selections, cuts, copies, Repeat wraps, count, gap and escalation changes, gags, grouping, ungrouping, register pastes and named calls. Save or cancel recording first.".into());
+            self.error = Some("This action cannot be recorded yet. Macros support pauses, reverses, tails, whole-beat cutaways and captions, punch-ins and creeps, frame, beat, word, sentence, pause and shot motions, group boundaries, word, sentence, pause and shot objects, Visual selections, cuts, copies, Repeat wraps, count, gap and escalation changes, gags, grouping, ungrouping, register pastes and named calls. Save or cancel recording first.".into());
             return false;
         }
         if matches!(
@@ -365,6 +373,13 @@ impl DeadpanApp {
                 | Action::Ungroup
                 | Action::EscalatingRepeat
                 | Action::Gag(_)
+                | Action::Reverse { .. }
+                | Action::Tail { .. }
+                | Action::Lift
+                | Action::Bleep { .. }
+                | Action::Edit(BeatEdit::Cutaway(
+                    crate::navigation::cutaway::CutawayInput::Place { .. }
+                ))
                 | Action::Edit(BeatEdit::InsertHold(_) | BeatEdit::InsertBlack(_))
                 | Action::Framing(
                     crate::navigation::FramingAction::PunchIn
@@ -416,6 +431,13 @@ impl DeadpanApp {
             // Recorded as the framing it commits, like ,z and ,c.
             Ok(navigation::command::Entry::Zoom(_)) => self
                 .macro_action_allowed(Action::Framing(crate::navigation::FramingAction::PunchIn)),
+            // Recorded as one semantic caption, checked like a whole-beat cutaway.
+            Ok(navigation::command::Entry::Caption(_)) => self.macro_action_allowed(Action::Edit(
+                BeatEdit::Cutaway(crate::navigation::cutaway::CutawayInput::Place {
+                    register: None,
+                    fit: deadpan_core::CutawayFit::Hold,
+                }),
+            )),
             Ok(_) if self.macros.recording() || self.macros.is_pending() => {
                 self.error =
                     Some("This command cannot be recorded. Save or cancel the macro first.".into());

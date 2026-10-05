@@ -30,6 +30,8 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "cutaway",
     "gags",
     "recipes",
+    "hold-effects",
+    "captions",
     "zoom",
     "original-layout",
     "original-layout-long",

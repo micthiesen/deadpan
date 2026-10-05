@@ -15,6 +15,7 @@ fn fixture() -> ProjectDocument {
             escalation: None,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let before = document(
         &[

@@ -64,6 +64,7 @@ fn source(frames: i64) -> BeatNode {
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -94,10 +95,19 @@ fn retime(child: &str, frames: i64, start: i64, end: i64, pitch: PitchPolicy) ->
             purpose: RetimePurpose::Edit,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
 fn document(rate: FrameRate, children: &[&str], nodes: Vec<(&str, BeatNode)>) -> ProjectDocument {
+    try_document(rate, children, nodes).unwrap()
+}
+
+fn try_document(
+    rate: FrameRate,
+    children: &[&str],
+    nodes: Vec<(&str, BeatNode)>,
+) -> Result<ProjectDocument, DocumentError> {
     let empty = ProjectDocument::new(
         ProjectId::new("reference-project").unwrap(),
         RevisionId::new("initial").unwrap(),
@@ -133,7 +143,7 @@ fn document(rate: FrameRate, children: &[&str], nodes: Vec<(&str, BeatNode)>) ->
         },
     )]))
     .unwrap();
-    ProjectDocument::from_json(&wire.to_string()).unwrap()
+    ProjectDocument::from_json(&wire.to_string())
 }
 
 fn compile(document: &ProjectDocument) -> AudioReferencePlan {
@@ -144,7 +154,21 @@ fn policy(content: &AudioContent) -> ReferenceAudioContent {
     match content {
         AudioContent::Source { .. } => ReferenceAudioContent::Source,
         AudioContent::RoomTone { .. } => ReferenceAudioContent::RoomTone,
-        AudioContent::Tail { maximum, .. } => ReferenceAudioContent::Tail { maximum: *maximum },
+        AudioContent::Tail {
+            maximum, effect, ..
+        } => ReferenceAudioContent::Tail {
+            maximum: *maximum,
+            effect: *effect,
+        },
+        AudioContent::Reverse { .. } => ReferenceAudioContent::Reverse,
+        AudioContent::Tone {
+            frequency_hz,
+            level,
+            ..
+        } => ReferenceAudioContent::Tone {
+            frequency_hz: *frequency_hz,
+            level: *level,
+        },
         AudioContent::Silence { reason } => ReferenceAudioContent::Silence { reason: *reason },
     }
 }
@@ -354,8 +378,8 @@ fn tiny_zero_allocated_leaves_and_source_placement_remain_explicit() {
                 hold(
                     2,
                     HoldAudio::Tail {
-                        source: audio(),
                         maximum: duration(2),
+                        effect: Default::default(),
                     },
                 ),
             ),
@@ -389,7 +413,8 @@ fn tiny_zero_allocated_leaves_and_source_placement_remain_explicit() {
             (
                 samples(10, 12),
                 ReferenceAudioContent::Tail {
-                    maximum: duration(2)
+                    maximum: duration(2),
+                    effect: Default::default(),
                 }
             ),
         ]
@@ -850,6 +875,7 @@ fn copy_lineage_keeps_compact_repeat_paths_and_gap_identity_explicit() {
                         escalation: None,
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
             ),
             ("a", source(6)),
@@ -917,6 +943,7 @@ fn nested_occurrence_split_retains_copy_lineage_without_expanding_repeats() {
                         escalation: None,
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
             ),
             (
@@ -934,6 +961,7 @@ fn nested_occurrence_split_retains_copy_lineage_without_expanding_repeats() {
                         escalation: None,
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
             ),
             ("a", source(6)),
@@ -1051,10 +1079,10 @@ fn copied_preserve_lineage_does_not_merge_distinct_preparation_clocks() {
 }
 
 #[test]
-fn tail_maximum_retains_local_hold_and_gap_units_through_retime() {
+fn a_tail_hold_or_gap_under_a_speed_change_is_an_invalid_document() {
     let tail = HoldAudio::Tail {
-        source: audio(),
         maximum: duration(2),
+        effect: Default::default(),
     };
     for gap in [false, true] {
         let (frames, nodes) = if gap {
@@ -1085,6 +1113,7 @@ fn tail_maximum_retains_local_hold_and_gap_units_through_retime() {
                                 escalation: None,
                             },
                             cutaways: Vec::new(),
+                            captions: Vec::new(),
                         },
                     ),
                     ("a", source(2)),
@@ -1098,74 +1127,10 @@ fn tail_maximum_retains_local_hold_and_gap_units_through_retime() {
             "preserve",
             retime("context", frames / 2, 0, frames, PitchPolicy::Preserve),
         ));
-        let doc = document(FrameRate::new(24, 1).unwrap(), &["preserve"], nodes);
-        let frozen = compile(&doc);
-        let live = RenderPlan::compile(&doc).unwrap();
-        let root = frozen.root_clock();
-        let query = root
-            .query(
-                samples(0, root.sample_count().unwrap().0),
-                Default::default(),
-            )
-            .unwrap();
-        let expected = live
-            .audio(
-                AudioSample(0)..AudioSample(root.sample_count().unwrap().0),
-                Default::default(),
-            )
-            .unwrap();
-        for (actual, expected) in query.spans.iter().zip(expected.spans) {
-            assert_eq!(actual.content, policy(&expected.content));
-        }
-        let retained = query
-            .spans
-            .iter()
-            .find(|span| matches!(span.content, ReferenceAudioContent::Tail { .. }))
-            .unwrap();
-        assert_eq!(
-            retained.content,
-            ReferenceAudioContent::Tail {
-                maximum: duration(2)
-            }
-        );
-        assert_eq!(
-            retained.allocated_samples.end.0 - retained.allocated_samples.start.0,
-            8000
-        );
-        assert_eq!(retained.gap_after.is_some(), gap);
-        // The final sample still reports policy, even beyond the maximum. The
-        // reference planner does not implement the currently unsupported DSP.
-        let final_tail_sample = retained.samples.end.0 - 1;
-        assert_eq!(
-            at(
-                &root
-                    .query(
-                        samples(final_tail_sample, final_tail_sample + 1),
-                        Default::default()
-                    )
-                    .unwrap()
-                    .spans,
-                final_tail_sample
-            ),
-            retained.content
-        );
-        for clock in [
-            frozen.preserve_input_clock(&instance("preserve")).unwrap(),
-            frozen.preserve_output_clock(&instance("preserve")).unwrap(),
-        ] {
-            let query = clock
-                .query(
-                    samples(0, clock.sample_count().unwrap().0),
-                    Default::default(),
-                )
-                .unwrap();
-            let tail = query
-                .spans
-                .iter()
-                .find(|span| matches!(span.content, ReferenceAudioContent::Tail { .. }))
-                .unwrap();
-            assert_eq!(tail.content, retained.content);
-        }
+        // A live tail is fed on the edit clock; under a nonunity Retime it
+        // would be stretched, so the document is refused before compiling.
+        let error = try_document(FrameRate::new(24, 1).unwrap(), &["preserve"], nodes).unwrap_err();
+        assert!(error.message.contains("speed change"), "{error:?}");
     }
 }
 
@@ -1196,6 +1161,7 @@ fn billion_play_reference_keeps_old_order_gap_identity_after_current_edits() {
                         escalation: None,
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
             ),
             ("a", source(1)),
@@ -1338,6 +1304,7 @@ fn sparse_override_clock_validates_its_effective_play_and_retains_partition_allo
                         escalation: None,
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
             ),
             ("default", retime("a", 2, 0, 4, PitchPolicy::Preserve)),
@@ -1469,6 +1436,7 @@ fn invalid_owner_paths_ranges_and_budgets_fail_before_results() {
                         escalation: None,
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
             ),
             ("preserve", retime("a", 2, 0, 4, PitchPolicy::Preserve)),

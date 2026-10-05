@@ -247,7 +247,14 @@ impl DeadpanApp {
         let Some(workspace) = self.workspace.clone() else {
             return;
         };
-        if self.service.is_busy() || self.dialogs.is_open() {
+        // An open dialog owns input visibly. Playback of a revision that a
+        // pending command is about to replace would be stopped on arrival,
+        // so refuse with a reason instead.
+        if self.dialogs.is_open() {
+            return;
+        }
+        if self.service.is_busy() {
+            self.refuse_while_busy("Playback");
             return;
         }
         if !self.sound_focused() {

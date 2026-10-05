@@ -78,6 +78,7 @@ fn source(rate: FrameRate, frames: i64, selected: Range<i64>, sample_rate: u32) 
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -109,6 +110,7 @@ fn retime(child: &str, frames: i64, selected: Range<i64>, pitch: PitchPolicy) ->
             pitch,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -789,6 +791,7 @@ fn hidden_room_tone_gap_keeps_its_loop_origin_and_rechecks_cached_admission() {
                         escalation: None,
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
             ),
             ("crop", partition("repeat", 199..746)),

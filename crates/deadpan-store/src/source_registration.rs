@@ -1288,12 +1288,23 @@ pub(crate) fn validate_hold_audio_source(
             edit: deadpan_core::ScopedNodeEdit::SetHoldAudio { audio },
             ..
         } => audio,
+        // A new pause can carry reversed audio, which reads qualified
+        // Original samples. (Room tone has always been chosen with
+        // SetHoldAudio, so earlier histories keep their admission; tails and
+        // tones read no stored samples.)
+        Command::InsertTime { hold, .. }
+            if matches!(hold.audio, deadpan_core::HoldAudio::Reverse { .. }) =>
+        {
+            &hold.audio
+        }
         _ => return Ok(()),
     };
     let source = match audio {
-        deadpan_core::HoldAudio::Silence => return Ok(()),
+        deadpan_core::HoldAudio::Silence
+        | deadpan_core::HoldAudio::Tone { .. }
+        | deadpan_core::HoldAudio::Tail { .. } => return Ok(()),
         deadpan_core::HoldAudio::RoomTone { source }
-        | deadpan_core::HoldAudio::Tail { source, .. } => source,
+        | deadpan_core::HoldAudio::Reverse { source } => source,
     };
     let record = current
         .assets()

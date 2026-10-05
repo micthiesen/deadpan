@@ -3,7 +3,7 @@ use std::ops::Range;
 use deadpan_core::{
     AudioSample, ExactRatio, FrameDuration, HoldAudio, InsertionBias, InstancePath, IterationId,
     MIX_SAMPLE_RATE, NodeId, PitchPolicy, ProjectFrame, ProjectId, RepeatInstance, RetimePurpose,
-    RevisionId, SourceAudio, SourcePoint, TimeError,
+    RevisionId, SourceAudio, SourcePoint, TailEffect, TimeError,
 };
 use serde::Serialize;
 
@@ -119,9 +119,25 @@ pub enum AudioContent {
     },
     /// Retain the policy and maximum in the Hold's local clock. A renderer must
     /// implement this explicitly, never substitute ordinary speech or silence.
+    /// Live: the renderer feeds the effect with the processed Original sound
+    /// heard over two seconds before this occurrence's root position.
     Tail {
-        source: SourceAudio,
         maximum: FrameDuration,
+        effect: TailEffect,
+        /// Full intrinsic Hold duration in its local clock, before any crop.
+        duration: FrameDuration,
+    },
+    /// The source span played backwards from the Hold's local start, then
+    /// silence. `duration` is the full intrinsic Hold duration, before crops.
+    Reverse {
+        source: SourceAudio,
+        duration: FrameDuration,
+    },
+    /// A synthesized sine for the whole intrinsic Hold duration.
+    Tone {
+        frequency_hz: u32,
+        level: deadpan_core::GainDb,
+        duration: FrameDuration,
     },
 }
 
@@ -135,9 +151,22 @@ impl AudioContent {
                 source: source.clone(),
                 duration,
             },
-            HoldAudio::Tail { source, maximum } => Self::Tail {
-                source: source.clone(),
+            HoldAudio::Tail { maximum, effect } => Self::Tail {
                 maximum: *maximum,
+                effect: *effect,
+                duration,
+            },
+            HoldAudio::Reverse { source } => Self::Reverse {
+                source: source.clone(),
+                duration,
+            },
+            HoldAudio::Tone {
+                frequency_hz,
+                level,
+            } => Self::Tone {
+                frequency_hz: *frequency_hz,
+                level: *level,
+                duration,
             },
         }
     }

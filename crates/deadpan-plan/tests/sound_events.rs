@@ -63,6 +63,7 @@ fn document() -> ProjectDocument {
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     })
     .unwrap();
     let event = SoundEvent {

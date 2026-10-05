@@ -58,6 +58,7 @@ fn source(frames: i64, start: i64, end: i64) -> BeatNode {
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 fn gap(frames: i64) -> Option<HoldRecipe> {
@@ -82,6 +83,7 @@ fn repeat(child: &str, plays: u32, gap_frames: i64, allocation: &str) -> BeatNod
             escalation: None,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 fn retime(child: &str, frames: i64, start: i64, end: i64) -> BeatNode {
@@ -99,6 +101,7 @@ fn retime(child: &str, frames: i64, start: i64, end: i64) -> BeatNode {
             pitch: PitchPolicy::Preserve,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 fn document(

@@ -98,6 +98,7 @@ fn source(rate: FrameRate, duration: i64) -> BeatNode {
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -127,6 +128,7 @@ fn repeat(child: &str, plays: u32) -> BeatNode {
             escalation: None,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -146,6 +148,7 @@ fn partition(child: &str, selected: Range<i64>) -> BeatNode {
             purpose: RetimePurpose::Partition,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 

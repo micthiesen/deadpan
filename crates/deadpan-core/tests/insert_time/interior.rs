@@ -20,6 +20,7 @@ fn composite_suffix(lead: BeatNode, plays: u32) -> ProjectDocument {
                         escalation: None,
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
             ),
             ("inner", source(2)),

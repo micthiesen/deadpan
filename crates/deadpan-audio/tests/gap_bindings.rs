@@ -10,7 +10,7 @@ use std::time::Duration;
 
 use deadpan_audio::{
     AudioSourceProvider, PcmWindow, PreparationError, PreparedSource, ResampleRecipe, Resampler,
-    StageAudio, StageAudioError, StereoMatrix,
+    StageAudio, StereoMatrix,
 };
 use deadpan_core::*;
 use deadpan_dsp::{CanonicalRecipe, CanonicalStretch, StereoPcm, StretchRate};
@@ -104,6 +104,7 @@ fn repeated(plays: u32, recipe: HoldRecipe) -> BeatNode {
             escalation: None,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 fn partition(child: &str, selected: Range<i64>) -> BeatNode {
@@ -122,6 +123,7 @@ fn partition(child: &str, selected: Range<i64>) -> BeatNode {
             purpose: RetimePurpose::Partition,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 fn preserve(child: &str, input: i64, output: i64) -> BeatNode {
@@ -742,28 +744,26 @@ fn moved_gap_uses_current_duration_media_and_policy_without_recapturing_phase() 
         gap(
             3,
             HoldAudio::Tail {
-                source: audio(700..921),
                 maximum: frames(2),
+                effect: Default::default(),
             },
         ),
     );
     assert_eq!(tail.audio_bindings(), room.audio_bindings());
     let mut actual = renderer(&tail, &mut provider);
-    let calls = provider.calls;
-    assert!(matches!(
-        actual.read(
+    let tail = actual
+        .read(
             &mut provider,
             AudioSample(1602),
             1,
             TIMEOUT,
-            &AtomicBool::new(false)
-        ),
-        Err(StageAudioError::Unsupported("effect tails"))
-    ));
-    assert_eq!(
-        provider.calls, calls,
-        "live Tail must fail before source I/O"
-    );
+            &AtomicBool::new(false),
+        )
+        .expect("a permitted tail renders its effect");
+    // A live gap tail uses the current policy: it rings the sound heard
+    // before the gap, which here is only silent Holds, so it is silent too.
+    assert_eq!(tail.samples, vec![[0.0; 2]]);
+    assert!(tail.suppressed.is_empty());
 }
 
 fn stretch(input: &[[f32; 2]], output: u32, denominator: u64) -> Vec<[f32; 2]> {

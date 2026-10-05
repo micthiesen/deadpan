@@ -152,7 +152,7 @@ fn tape_reads_reject_foreign_handles_bad_ranges_and_cancellation() {
 #[test]
 fn tape_preflights_all_runs_and_shares_preparation_limits_between_them() {
     let rate = FrameRate::new(48_000, 1).unwrap();
-    let unsupported = document(
+    let with_tail = document(
         rate,
         &["a", "tail"],
         [
@@ -162,33 +162,32 @@ fn tape_preflights_all_runs_and_shares_preparation_limits_between_them() {
                 hold(
                     2,
                     HoldAudio::Tail {
-                        source: audio(512..514),
                         maximum: frames(2),
+                        effect: Default::default(),
                     },
                 ),
             ),
         ],
         BTreeMap::new(),
     );
-    let plan = compile(&unsupported, false);
+    let plan = compile(&with_tail, false);
     let tape = divided_root(&plan, 2, 4);
     let mut provider = FixtureProvider::new();
-    assert!(matches!(
-        StageAudio::new(Arc::clone(&plan)).read_tape(
+    // A tail read on a point grid has no edit position: it is silent there
+    // (it rings only on the root grid) and never makes the read fail.
+    let block = StageAudio::new(Arc::clone(&plan))
+        .read_tape(
             &mut provider,
             &tape,
             SignalSample(0),
             4,
             TIMEOUT,
             &AtomicBool::new(false),
-        ),
-        Err(StageAudioError::Unsupported("effect tails"))
-    ));
-    assert_eq!(
-        provider.calls, 0,
-        "the second run must preflight before the first reads media"
-    );
+        )
+        .unwrap();
+    assert_eq!(block.samples.len(), 4);
 
+    let mut provider = FixtureProvider::new();
     let doc = document(
         rate,
         &["a", "b"],

@@ -222,6 +222,7 @@ fn complete_composites_are_admitted_but_partial_or_clocked_ancestry_is_rejected(
                         audio_edges: Default::default(),
                         kind,
                         cutaways: Vec::new(),
+                        captions: Vec::new(),
                     },
                 ),
                 ("group", BeatNode::sequence("Group", vec![id("whole")])),

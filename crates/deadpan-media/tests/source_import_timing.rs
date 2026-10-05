@@ -237,6 +237,7 @@ fn measured_av_candidates_drive_picture_plans_through_leading_and_trailing_holds
                                     source: timing.source_node(asset),
                                 },
                                 cutaways: Vec::new(),
+                                captions: Vec::new(),
                             },
                         )]),
                     },

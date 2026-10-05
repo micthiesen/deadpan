@@ -111,6 +111,7 @@ fn document(
             audio_editorial_edges: Default::default(),
             audio_edges: Default::default(),
             cutaways: Vec::new(),
+            captions: Vec::new(),
         });
     }
     wire["nodes"]["root"] = json!(BeatNode::sequence("root", children));

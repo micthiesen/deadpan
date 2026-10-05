@@ -168,9 +168,80 @@ to 9 by a second gap edit landed at sample 14,415 instead of B(9) = 14,414.
 successive gap edits and their inverses. The `recipes` native replay drives
 these operations through the production router (75 checks).
 
+## Reverse, tails, captions, bleep and lift (same day)
+
+Eight more fixtures, run with the same command on the same machine (3 passed
+in 51.0 s; all 24 fixtures passed, the earlier sixteen unchanged). Source tree
+at commit `f5201ec6` plus the uncommitted Gate D changes. Each runs through the
+headless semantic `macro` path the native keys use:
+
+| Fixture | Construction | Frames |
+| --- | --- | --- |
+| reverse-hiccup | `InsertReverse { 8f }` at Edit 20: Edit [12, 20) (Original 24..32) backwards, picture and sound | 38 |
+| ping-pong | `InsertReverse { 12f, bounce }` at Edit 24: Original 34 down to 24, the turning picture 35 not repeated | 41 |
+| hanging-tail | `InsertPause 30f` then `Tail { 20f }` (reverb) at Edit 18, just after the click | 60 |
+| tail-echo | `Tail { 30f, delay }` inserting a tail pause at Edit 18 | 60 |
+| are-we-done | `:gag are-we-done register=r pause=12f` at Edit 15, register `r` = Original moment [28, 31) | 42 |
+| delayed-caption | black `InsertPause 12f` at Edit 15 captioned `Hello?` (center), then `Are we done?` (top, delay 4f) on the first beat | 42 |
+| bleep | Visual Edit [15, 20) then `Bleep { level=-3dB }`: the same pictures played forward over a 1 kHz tone | 30 |
+| lift | Visual Edit [10, 15) then `Lift`: a 5-frame silent black pause in its place | 30 |
+
+Independently derived checks before export (plan pictures and `inspect-audio
+--limited` windows): the reversed pause hears source samples [38,439, 51,251)
+backwards, so the click at 48,000 lands 3,250 samples in (35,282); the
+ping-pong's click lands 8,055 samples into its pause (46,493); the echo repeats
+the click 14,400 samples later at its own level (43,181); the reverb ring has
+faded to exact silence by 60,861; the bleep's tone fills [24,024, 32,032) where
+the click was while every picture stays the base picture; the lift's pause is
+silent and later sound keeps its time; caption text at each checked frame
+matches `inspect-plan`.
+
+| Fixture | Pictures | Min Y PSNR dB | Min Cb/Cr PSNR dB | Max thumbnail MAD | Min neighbor margin dB | Audio windows (signal) | Gated blocks | Min block SNR dB | Max block level dB | Offset status | Render s | Verify s | Passed |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| reverse-hiccup | 38 | 62.2 | 58.3 | 0.019 | 0.0 | 1 (1) | 2 | 30.6 | 0.07 | verified_zero | 1.27 | 0.40 | yes |
+| ping-pong | 41 | 62.2 | 58.3 | 0.019 | 37.6 | 1 (1) | 2 | 53.5 | 0.01 | verified_zero | 1.35 | 0.54 | yes |
+| hanging-tail | 60 | 62.2 | 57.2 | 0.019 | 0.0 | 2 (1) | 29 | 13.7 | 0.38 | verified_zero, not_applicable | 1.66 | 0.86 | yes |
+| tail-echo | 60 | 62.2 | 57.2 | 0.019 | 0.0 | 2 (2) | 4 | 33.5 | 0.05 | verified_zero ×2 | 1.61 | 0.83 | yes |
+| are-we-done | 42 | 62.2 | 58.3 | 0.019 | 0.0 | 1 (1) | 1 | 40.3 | 0.03 | verified_zero | 1.25 | 0.36 | yes |
+| delayed-caption | 42 | 57.3 | 58.3 | 0.019 | 0.0 | 1 (1) | 1 | 40.3 | 0.03 | verified_zero | 1.20 | 0.35 | yes |
+| bleep | 30 | 62.2 | 57.7 | 0.019 | 37.6 | 1 (1) | 17 | 42.6 | 0.03 | verified_zero | 1.20 | 0.34 | yes |
+| lift | 30 | 57.3 | 57.7 | 0.033 | 0.0 | 1 (1) | 1 | 55.2 | 0.01 | verified_zero | 1.17 | 0.32 | yes |
+
+The caption picture comparison shares one picture session with the encoder, so
+it proves encoding of whatever the session drew. The independent caption check
+is a negative: verifying the `delayed-caption` movie against a later revision
+whose first beat has no caption flags frame 8 (captioned) and passes frames 2,
+20 and 30, so the exported pixels carry the caption exactly where authored.
+The [captions](../CAPTIONS.md) Metal test and `captions` replay check the
+composited white fill and dark outline directly. The reverb ring's 29 gated
+blocks (13.7 dB minimum SNR, above the 1.5 dB gate) verify the tail itself.
+The `hold-effects` and `captions` native replays (50 and 34 checks) passed with
+seven related replays (`recipes`, `gags`, `macros`, `cutaway`, `nested-pause`,
+`keymap`, `room-tone`; 918 checks across the nine) against binary
+`a91d06f1…`.
+
+Rerun after the review fixes (2026-10-05): live tails reading the processed
+Original sound before the pause from the current plan, frozen audio context
+schema 7, exact fractional 44.1 kHz reversal, caption raster memoization and
+upload reuse. All 24 fixtures passed again (3 tests in 51.3 s) with the same
+metrics as the table above, including `hanging-tail` (29 gated blocks, 13.7 dB)
+and `tail-echo`: these fixtures' preceding window is unprocessed Original
+sound, so the live input equals the former frozen one. The liveness itself
+(gain, mute and edits before the pause; tails not chaining) is covered by
+`StageAudio` tests, not by an export fixture. The `hold-effects`, `captions`
+and `recipes` replays passed (159 checks) against binary `5a3c8a34…`.
+
+A second review round (2026-10-05) made gain shared by a tail and the sound
+before it apply once, made point-grid reads hear a tail as silence instead of
+failing, made a tail under a speed change an invalid document, and derived the
+tail's start from its own sampling map. All 24 fixtures passed again with the
+same metrics (3 tests in 51.5 s); the fixtures have no shared gain, so their
+tails are unchanged. The `hold-effects` and `recipes` replays passed (125
+checks) against binary `aad6a114…`.
+
 ## Not covered
 
 Accepted Generated Holds (no headless accepted fixture exists without the
-development model runtime), tails, gain envelopes,
+development model runtime), effect sends, gain envelopes,
 per-play overrides, native key paths, odd canvases, nonzero export ranges,
 HDR, longer or higher-resolution media, and physical display/listening.

@@ -713,7 +713,10 @@ fn node_assets(node: &BeatNode, output: &mut BTreeSet<AssetId>) {
 }
 fn hold_assets(recipe: &HoldRecipe, output: &mut BTreeSet<AssetId>) {
     match &recipe.video {
-        HoldVideo::Freeze { asset, .. } | HoldVideo::Accepted { asset, .. } => {
+        HoldVideo::Freeze { asset, .. }
+        | HoldVideo::Accepted { asset, .. }
+        | HoldVideo::Reverse { asset, .. }
+        | HoldVideo::Play { asset, .. } => {
             output.insert(asset.clone());
         }
         HoldVideo::Generated { accepted } => {
@@ -726,10 +729,10 @@ fn hold_assets(recipe: &HoldRecipe, output: &mut BTreeSet<AssetId>) {
         HoldVideo::Background => {}
     }
     match &recipe.audio {
-        HoldAudio::RoomTone { source } | HoldAudio::Tail { source, .. } => {
+        HoldAudio::RoomTone { source } | HoldAudio::Reverse { source } => {
             output.insert(source.asset.clone());
         }
-        HoldAudio::Silence => {}
+        HoldAudio::Silence | HoldAudio::Tone { .. } | HoldAudio::Tail { .. } => {}
     }
 }
 fn invalid(message: &str) -> EditError {

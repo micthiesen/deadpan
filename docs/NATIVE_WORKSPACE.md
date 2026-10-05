@@ -147,6 +147,21 @@ matching committed wrapper, with its fresh revision, selected node and scope.
 An idle writer alone never authorizes continuation. The mailbox stays bounded
 to one command and its normal revision guards remain mandatory.
 
+Background analysis saves (transcript, speech activity, shots) use a separate
+one-request annotation lane in the same two-slot mailbox. They yield while a
+user command is pending, never occupy the user-command slot and never replace
+a user command's error, message or completion. A user command or Repeat
+continuation submitted while a save is in flight waits behind it instead of
+being refused. Each save reports only through its own receipt.
+
+While another project command holds the writer (an edit, open/create or a
+remote command), file pickers (Cmd+O and others), playback start and room-tone
+actions are refused with a visible reason that keeps any earlier error. Camera,
+macros and Render already refuse visibly. Gain, Slip, Trim, splice, render
+history and YouTube open are per-frame dispatchers: they retain their pending
+work and submit it when the writer is free. A replay hold on the mailbox is
+released by shutdown or disconnect, and held requests drain in order.
+
 The notice shows the waiting count and Escape hint. Escape, another resolved
 action, navigation, pointer context change, a modal, window blur or close cancels
 waiting wraps and reports their count; the submitted edit may finish. Overflow

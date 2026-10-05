@@ -44,6 +44,7 @@ fn native_range_delete_nested_partitions_commit_once_and_reopen_with_undo_redo()
                     purpose: RetimePurpose::Partition,
                 },
                 cutaways: Vec::new(),
+                captions: Vec::new(),
             },
         );
     }

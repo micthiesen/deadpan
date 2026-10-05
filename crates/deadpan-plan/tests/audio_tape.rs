@@ -59,6 +59,7 @@ fn source(length: i64) -> BeatNode {
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -109,6 +110,7 @@ fn make_plan(rate: FrameRate, source_frames: i64) -> RenderPlan {
                     purpose: RetimePurpose::Partition,
                 },
                 cutaways: Vec::new(),
+                captions: Vec::new(),
             },
         ),
     ]);

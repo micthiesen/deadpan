@@ -221,7 +221,31 @@ pub(super) fn applied_text(instruction: &deadpan_core::SemanticInstruction) -> O
             return Some(format!("Repeat set: {}", parts.join("; ")));
         }
         I::SetRoomTone { .. } => return Some("Room tone applied".into()),
+        I::Bleep { frequency_hz, .. } => {
+            return Some(format!("Bleeped the range with a {frequency_hz} Hz tone"));
+        }
+        I::Lift { .. } => {
+            return Some("Lifted the range: its time is now a silent black pause".into());
+        }
+        I::SetCaption { text, .. } => {
+            return Some(format!("Captioned the beat: “{text}”"));
+        }
+        I::SetCutaway { register, .. } => {
+            return Some(format!(
+                "Cutaway from register {} placed",
+                register.as_char()
+            ));
+        }
         I::InsertPause { .. } => return Some("Inserted a pause".into()),
+        I::InsertReverse { bounce: false, .. } => {
+            return Some("Inserted a reverse: the moment before the cursor plays backwards".into());
+        }
+        I::InsertReverse { bounce: true, .. } => {
+            return Some("Inserted a ping-pong: the moment before the cursor bounces back".into());
+        }
+        I::Tail { effect, .. } => {
+            return Some(format!("Added a {} tail", effect.name()));
+        }
         I::SetFraming { .. } => return Some("Framed the beat".into()),
         I::Group { selector, label } => {
             return (!matches!(selector, SemanticSelector::VisualSelection))

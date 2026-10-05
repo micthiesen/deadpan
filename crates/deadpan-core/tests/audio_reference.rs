@@ -118,6 +118,7 @@ fn fixture(plays: u32) -> ProjectDocument {
                     },
                 },
                 cutaways: Vec::new(),
+                captions: Vec::new(),
             },
         ),
         (
@@ -136,6 +137,7 @@ fn fixture(plays: u32) -> ProjectDocument {
                     purpose: RetimePurpose::Edit,
                 },
                 cutaways: Vec::new(),
+                captions: Vec::new(),
             },
         ),
     ]);
@@ -160,6 +162,7 @@ fn fixture(plays: u32) -> ProjectDocument {
                 escalation: None,
             },
             cutaways: Vec::new(),
+            captions: Vec::new(),
         },
     );
     let overrides = BTreeMap::from([(
@@ -671,19 +674,19 @@ fn depth_budget_is_enforced_on_flat_wire_without_recursive_json() {
 #[test]
 fn tail_capture_preserves_local_maximum_for_holds_and_repeat_gaps_without_media() {
     let mut value = serde_json::to_value(fixture(9)).unwrap();
-    let source = value["nodes"]["source"]["kind"]["source"]["audio"].clone();
+    // A live tail reads no stored source.
     value["nodes"]["tail"]["kind"]["recipe"]["audio"] = json!({
-        "type":"tail", "source":source, "maximum":2
+        "type":"tail", "maximum":2
     });
     value["nodes"]["repeat"]["kind"]["gap"]["audio"] = json!({
-        "type":"tail", "source":source, "maximum":1
+        "type":"tail", "maximum":1
     });
     let document = ProjectDocument::from_json(&value.to_string()).unwrap();
     let frozen = FrozenAudioLayout::capture(&document).unwrap();
     assert!(matches!(frozen.nodes()[&id("tail")].kind,
-        FrozenAudioKind::Hold { audio: ReferenceAudibility::Tail { maximum } } if maximum == duration(2)));
+        FrozenAudioKind::Hold { audio: ReferenceAudibility::Tail { maximum, .. } } if maximum == duration(2)));
     assert!(matches!(frozen.nodes()[&id("repeat")].kind,
-        FrozenAudioKind::Repeat { gap_audio: ReferenceAudibility::Tail { maximum }, .. } if maximum == duration(1)));
+        FrozenAudioKind::Repeat { gap_audio: ReferenceAudibility::Tail { maximum, .. }, .. } if maximum == duration(1)));
     let encoded = frozen.to_json().unwrap();
     assert_eq!(FrozenAudioLayout::from_json(&encoded).unwrap(), frozen);
     let inspection: Value = serde_json::from_str(&encoded).unwrap();
@@ -729,6 +732,7 @@ fn reference_audibility_has_closed_tagged_grammar_and_checked_tail_limits() {
         ReferenceAudibility::RoomTone,
         ReferenceAudibility::Tail {
             maximum: duration(1),
+            effect: Default::default(),
         },
     ] {
         assert_eq!(

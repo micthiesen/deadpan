@@ -108,19 +108,23 @@ pub(super) fn step(
     ) as usize)
 }
 
+/// Rows are ordered, non-overlapping and usually contiguous, so the first row
+/// ending after the cursor is found by binary search: O(log n) per cursor move
+/// and per painted cursor marker, independent of a 10,000-beat outline.
 pub(super) fn at_boundary(rows: &[BeatRow], cursor: u64) -> Option<usize> {
     let last = rows.last()?;
     let end = last.start.checked_add(last.frames)?;
     if cursor >= end {
         return Some(rows.len() - 1);
     }
-    rows.iter().position(|row| {
-        row.start <= cursor
-            && row
-                .start
-                .checked_add(row.frames)
-                .is_some_and(|end| cursor < end)
-    })
+    let index = rows.partition_point(|row| {
+        row.start
+            .checked_add(row.frames)
+            .is_some_and(|end| end <= cursor)
+    });
+    rows.get(index)
+        .filter(|row| row.start <= cursor)
+        .map(|_| index)
 }
 
 pub(super) fn split_boundary(
@@ -335,6 +339,44 @@ mod tests {
             (100, 2),
         ] {
             assert_eq!(at_boundary(&rows, boundary), Some(expected));
+        }
+    }
+
+    #[test]
+    fn indexed_boundary_lookup_matches_a_linear_scan() {
+        fn linear(rows: &[BeatRow], cursor: u64) -> Option<usize> {
+            let last = rows.last()?;
+            if cursor >= last.start + last.frames {
+                return Some(rows.len() - 1);
+            }
+            rows.iter()
+                .position(|row| row.start <= cursor && cursor < row.start + row.frames)
+        }
+        let mut state = 0x2545_f491_u64;
+        for case in 0..300 {
+            let durations: Vec<u64> = (0..(case % 23))
+                .map(|_| {
+                    state = state
+                        .wrapping_mul(6_364_136_223_846_793_005)
+                        .wrapping_add(1);
+                    (state >> 61) % 4
+                })
+                .collect();
+            // Rows are one flat scope; a nested scope's rows start at its
+            // absolute offset rather than zero.
+            let mut scoped = rows(&durations);
+            let offset = (case % 5) as u64 * 7;
+            for row in &mut scoped {
+                row.start += offset;
+            }
+            let total = durations.iter().sum::<u64>() + offset;
+            for cursor in 0..=total + 2 {
+                assert_eq!(
+                    at_boundary(&scoped, cursor),
+                    linear(&scoped, cursor),
+                    "{durations:?} offset {offset} cursor {cursor}"
+                );
+            }
         }
     }
 

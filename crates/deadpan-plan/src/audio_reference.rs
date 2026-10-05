@@ -28,6 +28,12 @@ pub enum ReferenceAudioContent {
     /// metadata, not a scaled output duration or implemented tail expiry.
     Tail {
         maximum: FrameDuration,
+        effect: deadpan_core::TailEffect,
+    },
+    Reverse,
+    Tone {
+        frequency_hz: u32,
+        level: deadpan_core::GainDb,
     },
     Silence {
         reason: SilenceReason,
@@ -805,7 +811,17 @@ fn content(audio: ReferenceAudibility) -> ReferenceAudioContent {
             reason: SilenceReason::SilentHold,
         },
         ReferenceAudibility::RoomTone => ReferenceAudioContent::RoomTone,
-        ReferenceAudibility::Tail { maximum } => ReferenceAudioContent::Tail { maximum },
+        ReferenceAudibility::Tail { maximum, effect } => {
+            ReferenceAudioContent::Tail { maximum, effect }
+        }
+        ReferenceAudibility::Reverse => ReferenceAudioContent::Reverse,
+        ReferenceAudibility::Tone {
+            frequency_hz,
+            level,
+        } => ReferenceAudioContent::Tone {
+            frequency_hz,
+            level,
+        },
     }
 }
 

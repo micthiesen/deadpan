@@ -11,6 +11,7 @@ use super::*;
 use crate::ui_harness::{Options, gpu::Offscreen, report::*};
 
 mod ai_pause;
+mod captions;
 mod cutaway;
 mod delete_range;
 mod edit_latency;
@@ -19,6 +20,7 @@ mod gain;
 mod generated_picture;
 mod group_pixels;
 mod groups;
+mod hold_effects;
 mod keymap;
 mod macros;
 mod marks;
@@ -856,6 +858,7 @@ impl Driver<'_> {
             "footer_bottom":app.feedback.footer_bottom,
             "footer_command_open":app.feedback.footer_command_open,
         });
+        snapshot["annotation_busy"] = json!(app.service.annotation_busy());
         snapshot["scoped"] = json!(app.scoped_target().ok().flatten().map(|target| json!({
             "root":target.root,"target":target.target,"presentation":target.presentation,
             "cursor":target.cursor,"revision":target.revision,
@@ -1079,6 +1082,7 @@ impl Driver<'_> {
     fn settled(&mut self) -> Result<(), String> {
         self.wait_for("Project and picture settled", |app| {
             !app.service.is_busy()
+                && !app.service.annotation_busy()
                 && !app.repeat_queue.active()
                 && !app.presentation.loading()
                 && !app.presentation.needs_render()

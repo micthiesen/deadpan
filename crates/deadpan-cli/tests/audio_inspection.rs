@@ -456,6 +456,7 @@ fn mapped_inspection_prepares_preserve_from_historical_aac_without_writing() -> 
                                 pitch: PitchPolicy::Preserve,
                             },
                             cutaways: Vec::new(),
+                            captions: Vec::new(),
                         },
                     ),
                 ]),

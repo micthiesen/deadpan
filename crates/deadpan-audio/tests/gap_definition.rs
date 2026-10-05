@@ -106,6 +106,7 @@ fn document(rate: FrameRate, recipe: Option<HoldRecipe>, revision: &str) -> Proj
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let repeat = BeatNode {
         framing: None,
@@ -120,6 +121,7 @@ fn document(rate: FrameRate, recipe: Option<HoldRecipe>, revision: &str) -> Proj
             escalation: None,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let mut wire = serde_json::to_value(empty).unwrap();
     wire["nodes"] = serde_json::to_value(BTreeMap::from([
@@ -840,7 +842,7 @@ fn gap_reads_recheck_cached_admission_and_enforce_preparation_limits_and_cancell
 }
 
 #[test]
-fn missing_and_zero_gaps_are_rejected_and_tail_remains_explicitly_unsupported() {
+fn missing_and_zero_gaps_are_rejected_and_a_tail_gap_definition_is_silent() {
     let rate = FrameRate::new(30_000, 1001).unwrap();
     let plan = compile(&document(rate, None, "r0"), false);
     assert!(plan.audio_definition(selector()).is_err());
@@ -859,8 +861,8 @@ fn missing_and_zero_gaps_are_rejected_and_tail_remains_explicitly_unsupported() 
             Some(gap(
                 3,
                 HoldAudio::Tail {
-                    source: audio(100..321),
                     maximum: FrameDuration::new(2).unwrap(),
+                    effect: Default::default(),
                 },
             )),
             "r0",
@@ -870,16 +872,19 @@ fn missing_and_zero_gaps_are_rejected_and_tail_remains_explicitly_unsupported() 
     let definition = plan.audio_definition(selector()).unwrap();
     let mut provider = FixtureProvider::new("r0");
     let mut renderer = StageAudio::new(plan.clone());
-    assert!(matches!(
-        renderer.read_definition(
+    // A tail definition has no edit position: on its point grid it is
+    // silent (it rings only where the gap is heard on the root clock), and
+    // the read neither fails nor touches media.
+    let block = renderer
+        .read_definition(
             &mut provider,
             &definition,
             SignalSample(0),
             128,
             TIMEOUT,
-            &AtomicBool::new(false)
-        ),
-        Err(StageAudioError::Unsupported("effect tails"))
-    ));
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+    assert!(block.samples.iter().all(|frame| *frame == [0.0; 2]));
     assert_eq!(provider.calls, 0);
 }

@@ -808,6 +808,7 @@ pub(super) fn prepare(
                         purpose: RetimePurpose::Partition,
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
             );
             children.push(wrapper);

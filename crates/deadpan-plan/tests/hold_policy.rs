@@ -52,6 +52,7 @@ fn repeat(child: &str, count: u32, gap: Option<i64>) -> BeatNode {
             escalation: None,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 fn retime(child: &str, length: i64, start: i64, end: i64, pitch: PitchPolicy) -> BeatNode {
@@ -69,6 +70,7 @@ fn retime(child: &str, length: i64, start: i64, end: i64, pitch: PitchPolicy) ->
             purpose: RetimePurpose::Edit,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 fn audio() -> SourceAudio {
@@ -110,6 +112,7 @@ fn source(length: i64, audio: Option<SourceAudio>, mapping: SourceAudioMapping) 
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 fn document(
@@ -543,8 +546,8 @@ fn source_absence_exhaustion_room_tone_and_tail_do_not_issue_silent_hold_rules()
                     recipe(
                         2,
                         HoldAudio::Tail {
-                            source: audio(),
                             maximum: frames(2),
+                            effect: Default::default(),
                         },
                     ),
                 ),

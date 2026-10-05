@@ -126,3 +126,106 @@ fn saved_shots_are_published_carried_across_edits_and_reloaded() {
         analysis(120)
     );
 }
+
+/// A background analysis save must never take the user-command slot. With
+/// the writer's mailbox held, the save and a user edit are both admitted in
+/// the same busy window; both then complete in order, and neither replaces
+/// the other's feedback.
+#[test]
+fn analysis_save_in_flight_never_refuses_a_user_command() {
+    let scratch = tempfile::tempdir().unwrap();
+    let service = ProjectService::start(
+        Arc::new(|| {}),
+        Some(ProjectLibrary::from_documents(scratch.path().join("Documents")).unwrap()),
+    )
+    .unwrap();
+    service
+        .submit(ProjectRequest::CreateFromSource {
+            path: fixture("cfr-bframes.mp4"),
+        })
+        .unwrap();
+    let initialized = wait(&service, |update| {
+        update.import.as_ref().is_some_and(|status| {
+            matches!(status.stage, ImportStage::Complete | ImportStage::Failed)
+        })
+    });
+    let before = initialized.workspace.unwrap();
+    let Some(SingleSourceState::Ready { asset, node, .. }) = &before.single_source else {
+        panic!("original not initialized")
+    };
+    let key = deadpan_store::ShotAnalysisKey {
+        content: before.sources[asset]
+            .receipt
+            .original()
+            .content()
+            .to_string(),
+        video_stream: 0,
+        signature_version: SIGNATURE_VERSION.into(),
+    };
+    let save = |attempt| ProjectRequest::SaveShotAnalysis {
+        expected_session: before.session,
+        attempt,
+        key: key.clone(),
+        analysis: Arc::new(analysis(120)),
+    };
+
+    service.hold_requests_for_check(true);
+    service.submit(save(7)).unwrap();
+    assert!(service.annotation_busy() && !service.is_busy());
+    // A second background save waits for its own lane, without touching the
+    // user-command slot.
+    assert_eq!(
+        service.submit(save(8)).unwrap_err(),
+        "An analysis save is already queued"
+    );
+    assert!(!service.is_busy());
+    service
+        .submit(edit_request(
+            &before,
+            ProjectEdit::WrapRepeat {
+                node: node.clone(),
+                plays: 2,
+            },
+        ))
+        .unwrap();
+    assert!(service.is_busy() && service.annotation_busy());
+    // The user-command slot itself stays single.
+    assert_eq!(
+        service
+            .submit(ProjectRequest::Undo {
+                expected_revision: before.document.revision_id().clone(),
+            })
+            .unwrap_err(),
+        "Project command is busy"
+    );
+    let _ = service.take_update();
+    service.hold_requests_for_check(false);
+
+    let done = wait(&service, |update| {
+        update
+            .committed
+            .as_ref()
+            .is_some_and(|commit| &commit.revision != before.document.revision_id())
+            && update
+                .shot_save
+                .as_ref()
+                .is_some_and(|save| save.attempt == 7)
+    });
+    assert!(done.error.is_none(), "{:?}", done.error);
+    assert_eq!(done.shot_save.as_ref().unwrap().error, None);
+    let workspace = done.workspace.unwrap();
+    assert_ne!(
+        workspace.document.revision_id(),
+        before.document.revision_id()
+    );
+    assert_eq!(
+        &done.committed.unwrap().revision,
+        workspace.document.revision_id()
+    );
+    // The edit ran after the save, so its workspace carries the analysis.
+    assert_eq!(
+        workspace.shot_analysis.as_ref().unwrap().analysis,
+        analysis(120)
+    );
+    assert!(!service.is_busy() && !service.annotation_busy());
+}

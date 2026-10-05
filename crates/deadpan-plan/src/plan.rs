@@ -7,7 +7,7 @@ use deadpan_core::{
     AssetId, CapturedFraming, EndpointPolicy, ExactRatio, FrameDuration, FrameRange, HoldAudio,
     HoldRecipe, HoldVideo, InsertionBias, InstancePath, NodeId, NodeKind, PitchPolicy,
     PresentationBasis, ProjectDocument, ProjectFrame, ProjectId, RepeatInstance, RepeatLayout,
-    RetimePurpose, RevisionId, SourceAudio, SourceFrameId, SourcePoint, SourceTimeBase,
+    RetimePurpose, RevisionId, SourceAudio, SourceFrameId, SourcePoint, SourceSpan, SourceTimeBase,
     SourceVideo, TimeError,
 };
 use serde::Serialize;
@@ -318,6 +318,7 @@ struct PlanNode {
     framing: Option<deadpan_core::Framing>,
     /// Picture-only cutaways, each with its asset's full video context.
     cutaways: Vec<(deadpan_core::Cutaway, deadpan_core::SourceSpan)>,
+    captions: Vec<deadpan_core::Caption>,
 }
 
 #[derive(Debug, Clone)]
@@ -396,6 +397,16 @@ enum CompiledHold {
         time_base: SourceTimeBase,
         frames: FrameRange,
     },
+    /// The span played at the project rate, backwards from its end or
+    /// forward from its start.
+    Original {
+        asset: AssetId,
+        /// Full measured picture stream, the affine context of the selection.
+        context: SourceSpan,
+        span: SourceSpan,
+        ticks_per_frame: ExactRatio,
+        reverse: bool,
+    },
 }
 
 impl CompiledHold {
@@ -439,6 +450,28 @@ impl CompiledHold {
                 // Resizing selects its prefix, without resampling that map.
                 frames: FrameRange::new(ProjectFrame(0), ProjectFrame(recipe.duration.frames()))?,
             },
+            HoldVideo::Reverse { asset, span } | HoldVideo::Play { asset, span } => {
+                let base = span.start().time_base;
+                let rate = document.presentation_basis().frame_rate;
+                Self::Original {
+                    reverse: matches!(recipe.video, HoldVideo::Reverse { .. }),
+                    asset: asset.clone(),
+                    context: document
+                        .assets()
+                        .get(asset)
+                        .and_then(|record| record.video)
+                        .ok_or(PlanError::InvalidPlan(
+                            "reversed picture has no video stream",
+                        ))?,
+                    span: *span,
+                    // Source ticks per project frame:
+                    // (fps_den / fps_num) / (tb_num / tb_den).
+                    ticks_per_frame: ExactRatio::new(
+                        i128::from(rate.denominator()) * i128::from(base.denominator()),
+                        i128::from(rate.numerator()) * i128::from(base.numerator()),
+                    )?,
+                }
+            }
         })
     }
 
@@ -471,6 +504,55 @@ impl CompiledHold {
                     frame: SourceFrameId(
                         u64::try_from(position.floor()).map_err(|_| TimeError::Overflow)?,
                     ),
+                }
+            }
+            Self::Original {
+                asset,
+                context,
+                span,
+                ticks_per_frame,
+                reverse,
+            } => {
+                let time_base = span.start().time_base;
+                let start = ExactRatio::integer(span.start().ticks);
+                let end = ExactRatio::integer(span.end().ticks);
+                let elapsed = local.checked_mul(*ticks_per_frame)?;
+                // Local positions are picture centers. Past the span's other
+                // end the first (reversed) or last (forward) selected picture
+                // holds under the adjacent-hold endpoint policy.
+                let point = if *reverse {
+                    let point = end.checked_sub(elapsed)?;
+                    if point.compare(start).is_lt() {
+                        start
+                    } else {
+                        point
+                    }
+                } else {
+                    let point = start.checked_add(elapsed)?;
+                    if point.compare(end).is_lt() {
+                        point
+                    } else {
+                        end
+                    }
+                };
+                Picture::Source {
+                    asset: asset.clone(),
+                    span: *context,
+                    selection: deadpan_core::ExactSourceSpan::new(
+                        SourcePoint {
+                            ticks: start,
+                            time_base,
+                        },
+                        SourcePoint {
+                            ticks: ExactRatio::integer(span.end().ticks),
+                            time_base,
+                        },
+                    )?,
+                    endpoints: deadpan_core::EndpointPolicy::HoldAdjacent,
+                    point: SourcePoint {
+                        ticks: point,
+                        time_base,
+                    },
                 }
             }
         })
@@ -651,6 +733,7 @@ impl RenderPlan {
                             .ok_or(PlanError::InvalidPlan("cutaway asset has no video"))
                     })
                     .collect::<Result<_, _>>()?,
+                captions: node.captions.clone(),
             });
         }
         let root = by_id[document.root()];
@@ -973,6 +1056,9 @@ impl RenderPlan {
         let mut repeats = Vec::new();
         let mut lookup = LookupStats::default();
         let mut framing = Vec::new();
+        let mut captions = Vec::new();
+        // The zero-based play of the innermost enclosing Repeat, for reveals.
+        let mut play = None;
         // Follow layers resolve once the picture's source time is known.
         let mut follows = Vec::new();
         let (picture, picture_context, gap_after) = loop {
@@ -1008,6 +1094,15 @@ impl RenderPlan {
                     .transpose()?,
                 escalation: false,
             });
+            captions.extend(
+                node.captions
+                    .iter()
+                    .filter(|caption| caption.shows(local, play))
+                    .map(|caption| crate::PictureCaption {
+                        text: caption.text.clone(),
+                        placement: caption.placement,
+                    }),
+            );
             // A cutaway replaces this beat's provider picture inside its range;
             // this beat's framing and its ancestors' still apply.
             if let Some((cutaway, context)) =
@@ -1115,6 +1210,7 @@ impl RenderPlan {
                     let location = layout.locate(local, InsertionBias::Right)?;
                     lookup.iteration_run_comparisons += location.comparisons;
                     local = location.position;
+                    play = Some(location.play.index);
                     // A play and the gap following it share that play's
                     // escalation, applied inside the Repeat's own framing.
                     if let Some(pose) = escalation
@@ -1175,6 +1271,7 @@ impl RenderPlan {
             picture,
             picture_context,
             framing,
+            captions,
             lookup,
         })
     }

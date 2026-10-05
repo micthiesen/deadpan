@@ -128,8 +128,8 @@ fn hold_audio_policy_history_is_atomic_durable_and_timing_neutral() -> Result {
         "tail",
         setter(
             HoldAudio::Tail {
-                source: selected,
                 maximum: FrameDuration::new(1)?,
+                effect: Default::default(),
             },
             true,
         )?,
@@ -173,9 +173,8 @@ fn direct_occurrence_and_scoped_policy_commands_recheck_receipt_and_original_bin
             HoldAudio::RoomTone {
                 source: source(&baseline)?,
             },
-            HoldAudio::Tail {
+            HoldAudio::Reverse {
                 source: source(&baseline)?,
-                maximum: FrameDuration::new(1)?,
             },
         ] {
             let command = if mode == 2 {
@@ -376,5 +375,103 @@ fn legacy_unqualified_hold_survives_unrelated_edits_but_cannot_author_a_new_sour
     ));
     drop(store);
     assert!(ProjectStore::open(&path, AccessMode::ReadOnly).is_err());
+    Ok(())
+}
+
+#[test]
+fn pauses_inserted_with_reversed_audio_need_admitted_source_samples() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let (_path, mut store) = project(scratch.path())?;
+    let original = retain(&mut store, "offset-bframes.mp4")?;
+    let decoded = decode(&store, &original)?;
+    let input = request(&store, &original, "import", "camera", Some("clip"))?;
+    store.register_source(&input, &decoded, None, limits(), &active())?;
+    let baseline = store.snapshot()?;
+    let selected = source(&baseline)?;
+    let insert = |document: &ProjectDocument, audio: HoldAudio, name: &str| {
+        edit(
+            document,
+            name,
+            Command::InsertTime {
+                at: ProjectFrame(0),
+                hold: HoldRecipe {
+                    duration: FrameDuration::new(3).unwrap(),
+                    video: HoldVideo::Background,
+                    audio,
+                    picture_context: None,
+                },
+                id: NodeId::new("hold").unwrap(),
+                identities: SplitIdentities::default(),
+                timing: AudioTimingId {
+                    allocation: revision(name),
+                    ordinal: 0,
+                },
+            },
+        )
+    };
+    // An asset without a measured qualification cannot feed either kind.
+    let legacy_span = SourceSpan::new(
+        SourceTimestamp {
+            ticks: 1,
+            time_base: SourceTimeBase::new(1, 48_000)?,
+        },
+        SourceTimestamp {
+            ticks: 4_801,
+            time_base: SourceTimeBase::new(1, 48_000)?,
+        },
+    )?;
+    store.commit(&edit(
+        &baseline,
+        "legacy-asset",
+        Command::AddAsset {
+            id: id("legacy"),
+            asset: AssetRecord {
+                label: "Evidence-free audio".into(),
+                content_hash: "a".repeat(64),
+                video: None,
+                audio: Some(legacy_span),
+                still_image: false,
+                frame_count: None,
+                source_qualification: None,
+            },
+        },
+    ))?;
+    let baseline = store.snapshot()?;
+    let off_grid = SourceAudio {
+        asset: id("legacy"),
+        span: legacy_span,
+    };
+    assert!(matches!(
+        store.commit(&insert(
+            &baseline,
+            HoldAudio::Reverse { source: off_grid },
+            "refused"
+        )),
+        Err(StoreError::SourceRegistration(_))
+    ));
+    assert_eq!(store.snapshot()?, baseline);
+    // A live tail reads no stored samples, so it needs no source admission.
+    store.preview(&insert(
+        &baseline,
+        HoldAudio::Tail {
+            maximum: FrameDuration::new(3)?,
+            effect: deadpan_core::TailEffect::Delay,
+        },
+        "tail",
+    ))?;
+    // Exact admitted samples insert the pause as one ordinary edit.
+    store.commit(&insert(
+        &baseline,
+        HoldAudio::Reverse {
+            source: selected.clone(),
+        },
+        "reverse",
+    ))?;
+    let reversed = store.snapshot()?;
+    assert_eq!(
+        reversed.duration()?.frames(),
+        baseline.duration()?.frames() + 3
+    );
+    store.validate()?;
     Ok(())
 }

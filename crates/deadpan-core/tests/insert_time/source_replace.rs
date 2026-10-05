@@ -323,6 +323,7 @@ fn replacement_rejects_repeat_and_retime_ancestors_without_descending() {
                         audio_edges: Default::default(),
                         kind,
                         cutaways: Vec::new(),
+                        captions: Vec::new(),
                     },
                 ),
                 ("group", BeatNode::sequence("Group", vec![id("leaf")])),

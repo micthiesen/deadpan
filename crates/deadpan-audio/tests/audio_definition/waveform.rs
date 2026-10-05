@@ -143,6 +143,7 @@ fn waveform_repeat_gap_and_selection_exhaustion_use_intrinsic_definition_clocks(
                         escalation: None,
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
             ),
         ],

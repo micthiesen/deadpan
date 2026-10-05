@@ -80,6 +80,7 @@ fn source(rate: FrameRate, duration: i64, selected: Range<i64>) -> BeatNode {
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -111,6 +112,7 @@ fn retime(child: &str, duration: i64, selection: Range<i64>, pitch: PitchPolicy)
             pitch,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -120,6 +122,15 @@ fn document(
     nodes: impl IntoIterator<Item = (&'static str, BeatNode)>,
     overrides: BTreeMap<NodeId, PlayOverrides>,
 ) -> ProjectDocument {
+    try_document(rate, children, nodes, overrides).unwrap()
+}
+
+fn try_document(
+    rate: FrameRate,
+    children: &[&str],
+    nodes: impl IntoIterator<Item = (&'static str, BeatNode)>,
+    overrides: BTreeMap<NodeId, PlayOverrides>,
+) -> Result<ProjectDocument, DocumentError> {
     let empty = ProjectDocument::new(
         ProjectId::new("definition-project").unwrap(),
         RevisionId::new("definition-revision").unwrap(),
@@ -160,7 +171,15 @@ fn document(
         (AssetId::new("picture").unwrap(), picture),
     ]))
     .unwrap();
-    ProjectDocument::from_json(&wire.to_string()).unwrap()
+    ProjectDocument::from_json(&wire.to_string())
+}
+
+/// A live tail is fed on the edit clock; inside a speed change the document
+/// itself is invalid, so no point-grid reader can meet one there.
+fn assert_tail_in_speed_change_is_invalid(document: Result<ProjectDocument, DocumentError>) {
+    let error = document.unwrap_err();
+    assert_eq!(error.code, DocumentErrorCode::InvalidTree);
+    assert!(error.message.contains("speed change"), "{error:?}");
 }
 
 fn compile(document: &ProjectDocument, frozen: bool) -> Arc<RenderPlan> {
@@ -376,6 +395,7 @@ fn all_overridden_repeat_still_renders_its_unheard_default_definition() {
                         escalation: None,
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
             ),
         ],
@@ -1089,6 +1109,7 @@ fn owned_nested_preserve_uses_edited_room_tone_in_the_same_root_clock() {
                         escalation: None,
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
             ),
             (

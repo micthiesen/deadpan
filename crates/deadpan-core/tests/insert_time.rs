@@ -60,6 +60,7 @@ fn source(frames: i64) -> BeatNode {
         audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 fn source_span() -> SourceSpan {
@@ -596,6 +597,7 @@ fn sequence_interiors_and_root_composite_seams_preserve_their_owners() {
             escalation: None,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let repeated = tree(
         &["repeat"],
@@ -651,6 +653,7 @@ fn composite_seam_moves_root_marks_once_and_retains_occurrence_and_source_clocks
                         escalation: None,
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
             ),
             ("inner", source(2)),
@@ -740,6 +743,7 @@ fn billion_play_seam_insertion_keeps_one_step_per_owned_recipe() {
                         escalation: None,
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
             ),
             ("inner", source(2)),
@@ -848,5 +852,5 @@ fn duration_overflow_and_nonfallback_provider_are_rejected_before_capture() {
     };
     let error = apply(&before, &request).unwrap_err();
     assert_eq!(error.code, EditErrorCode::InvalidCommand);
-    assert!(error.message.contains("Background or Freeze"));
+    assert!(error.message.contains("Background, Freeze or Reverse"));
 }

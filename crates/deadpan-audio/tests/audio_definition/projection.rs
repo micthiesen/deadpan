@@ -347,9 +347,9 @@ fn nested_projection_enforces_depth_and_residency_then_recovers() {
 }
 
 #[test]
-fn projected_input_is_preflighted_even_when_output_policy_omits_unsupported_tail() {
+fn a_tail_inside_a_projected_preserve_stage_is_an_invalid_document() {
     let rate = FrameRate::new(48_000, 1).unwrap();
-    let doc = document(
+    assert_tail_in_speed_change_is_invalid(try_document(
         rate,
         &["stage"],
         [
@@ -359,8 +359,8 @@ fn projected_input_is_preflighted_even_when_output_policy_omits_unsupported_tail
                 hold(
                     1024,
                     HoldAudio::Tail {
-                        source: audio(512..1536),
                         maximum: frames(1024),
+                        effect: Default::default(),
                     },
                 ),
             ),
@@ -374,39 +374,7 @@ fn projected_input_is_preflighted_even_when_output_policy_omits_unsupported_tail
             ),
         ],
         BTreeMap::new(),
-    );
-    let plan = compile(&doc, false);
-    let current = stage(plan.audio_signal());
-    let signal = current.input_signal();
-    let tape = |length: i128, end: i128| {
-        AudioSignalTape::new(
-            &plan,
-            ExactRatio::ZERO..ratio(length, 1),
-            vec![AudioSignalTapeRun::new(
-                ExactRatio::ZERO..ratio(length, 1),
-                ExactRatio::ZERO..ratio(end, 1),
-                signal.clone(),
-            )],
-        )
-        .unwrap()
-    };
-    let projected =
-        AudioStageProjection::new(current, tape(2048, 2048), tape(1024, 1024), frames(1024))
-            .unwrap();
-    let tape = output(&plan, projected);
-    let mut provider = FixtureProvider::new();
-    assert!(matches!(
-        StageAudio::new(Arc::clone(&plan)).read_tape(
-            &mut provider,
-            &tape,
-            SignalSample(0),
-            1,
-            TIMEOUT,
-            &AtomicBool::new(false)
-        ),
-        Err(StageAudioError::Unsupported("effect tails"))
     ));
-    assert_eq!(provider.calls, 0);
 }
 
 #[test]
@@ -895,14 +863,9 @@ fn projected_memo_rechecks_source_admission_within_one_read() {
 }
 
 #[test]
-fn projected_input_preflights_hidden_history_of_an_ordinary_nested_stage() {
-    assert_hidden_history_preflight(false);
-    assert_hidden_history_preflight(true);
-}
-
-fn assert_hidden_history_preflight(bound_child: bool) {
+fn a_tail_hidden_in_nested_preserve_stages_is_an_invalid_document() {
     let rate = FrameRate::new(48_000, 1).unwrap();
-    let doc = document(
+    assert_tail_in_speed_change_is_invalid(try_document(
         rate,
         &["outer"],
         [
@@ -913,8 +876,8 @@ fn assert_hidden_history_preflight(bound_child: bool) {
                 hold(
                     1024,
                     HoldAudio::Tail {
-                        source: audio(512..1536),
                         maximum: frames(1024),
+                        effect: Default::default(),
                     },
                 ),
             ),
@@ -936,80 +899,5 @@ fn assert_hidden_history_preflight(bound_child: bool) {
             ),
         ],
         BTreeMap::new(),
-    );
-    let doc = if bound_child {
-        let captured = capture_unbound_audio_bindings(
-            &doc,
-            AudioTimingId {
-                allocation: RevisionId::new("projection-binding").unwrap(),
-                ordinal: 0,
-            },
-        )
-        .unwrap();
-        let binding = captured.bindings()[&id("inner")].clone();
-        let bindings = AudioBindingState::new(
-            captured
-                .timings()
-                .iter()
-                .map(|(id, layout)| AudioTimingRecord {
-                    id: id.clone(),
-                    layout: layout.clone(),
-                })
-                .collect(),
-            BTreeMap::from([(id("inner"), binding)]),
-        )
-        .unwrap();
-        let mut wire = serde_json::to_value(doc).unwrap();
-        wire["audio_bindings"] = serde_json::to_value(bindings).unwrap();
-        ProjectDocument::from_json(&wire.to_string()).unwrap()
-    } else {
-        doc
-    };
-    let plan = compile(&doc, false);
-    let current = stage(plan.audio_signal());
-    let signal = current.input_signal();
-    let input = AudioSignalTape::new(
-        &plan,
-        ExactRatio::ZERO..ratio(1280, 1),
-        vec![
-            AudioSignalTapeRun::new(
-                ExactRatio::ZERO..ratio(256, 1),
-                ExactRatio::ZERO..ratio(256, 1),
-                signal.clone(),
-            ),
-            AudioSignalTapeRun::new(
-                ratio(256, 1)..ratio(1280, 1),
-                ratio(256, 1)..ratio(512, 1),
-                signal.clone(),
-            ),
-        ],
-    )
-    .unwrap();
-    let policy = AudioSignalTape::new(
-        &plan,
-        ExactRatio::ZERO..ratio(640, 1),
-        vec![AudioSignalTapeRun::new(
-            ExactRatio::ZERO..ratio(640, 1),
-            ExactRatio::ZERO..ratio(256, 1),
-            signal,
-        )],
-    )
-    .unwrap();
-    let projection = AudioStageProjection::new(current, input, policy, frames(640)).unwrap();
-    let mut provider = FixtureProvider::new();
-    assert!(matches!(
-        StageAudio::new(Arc::clone(&plan)).read_tape(
-            &mut provider,
-            &output(&plan, projection),
-            SignalSample(0),
-            1,
-            TIMEOUT,
-            &AtomicBool::new(false)
-        ),
-        Err(StageAudioError::Unsupported("effect tails"))
     ));
-    assert_eq!(
-        provider.calls, 0,
-        "hidden child history must preflight before the earlier raw prefix"
-    );
 }

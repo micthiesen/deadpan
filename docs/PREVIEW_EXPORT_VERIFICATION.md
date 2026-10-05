@@ -28,7 +28,7 @@ report. Unusable inputs fail with `ExportVerificationMovie`,
 - **Pictures** come from `ProjectPictureSession`: the committed `RenderPlan`
   sample, `select_source_frame`, and the shared `source_to_render_frame`,
   `fill_canvas_aspect` and `render_layers` helpers that the native preview
-  worker also calls, rendered by the shared `PictureRenderer::render_composed`
+  worker also calls, rendered by the shared `PictureRenderer::render_composed_captioned`
   with the same framing layers and captured context. The app worker's own
   session caching and admission code is not exercised. The harness reads the
   composed linear Rec.2020 working target back and converts it at the
@@ -167,7 +167,8 @@ them with public `render` and verify them with `verify-export`:
   on the previous ordinal, the last ordinal missing); and the original movie
   against the shorter pre-pause revision (range, frame count and audio edit
   duration all reported).
-- `every_recipe_export_matches_its_committed_preview` exports all nine recipes.
+- `every_recipe_export_matches_its_committed_preview` exports every recipe
+  fixture (24).
   Debug renders cost about four seconds per output second, so it is ignored in
   debug builds. The release-mode gate is
   `cargo test --release --locked -p deadpan-cli --test preview_export` (about
@@ -178,5 +179,8 @@ Measured results are in the
 [qualification record](qualification/preview-export-2026-10-04.md). The harness
 does not cover HDR, native key paths (fixtures use the headless command API that
 the keys resolve to), accepted Generated Holds (no headless fixture exists
-without the model runtime), tails, or physical playback/listening; device audio
-and display remain separate qualification.
+without the model runtime), or physical playback/listening; device audio
+and display remain separate qualification. Captions are drawn by the shared
+picture session on both sides; the `delayed-caption` fixture additionally
+verifies its movie against a later caption-free revision and requires exactly
+the captioned frame to be flagged.

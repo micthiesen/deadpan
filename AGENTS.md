@@ -557,6 +557,32 @@ See [combined Trim](docs/COMBINED_TRIM.md#native-trim),
 Broader target admission and complete editor, physical-input, IME, accessibility
 and listening acceptance remain open; no requirement or gate is complete.
 
+Reverse, effect tails and bleeps are Hold providers, not Retime directions or
+node kinds. `HoldVideo::Reverse`/`Play` play a measured Original span backwards
+or forward as exact `Picture::Source` points; `HoldAudio::Reverse`, `Tail` and
+`Tone` prepare one canonical cached block per Hold occurrence (Tone reads no
+media). Bleep and Lift resolve pictures before cutting, then refill the exact
+cut length at the join in the same compound.
+Resolve them only through the shared pause resolver; a passage that is not one
+continuous natural-rate Original leaf refuses, as does heard sound under a
+stretched mapping or speed stage. A Tail is a live reference with no stored
+source: on the root grid it reads the processed Original voice over the two
+seconds before its occurrence from the current plan, with other tails silent
+in that window so tails never chain. Owners shared with the tail apply their
+gain once, on its output. Point-grid reads hear a tail as silence and never
+fail; a tail under a nonunity Retime is an invalid document.
+`,t` on an existing pause changes only its sound. Tails ring for their
+maximum, fade to exact zero and stay silent; never add a send bus implicitly.
+Frozen audio context 7 carries Reverse/Tone/Tail; older schemas reject them.
+Bound reversed spans to the one-block DSP limit at document validation. See
+[reversed pauses and tails](docs/REVERSE_AND_TAILS.md).
+
+Captions live on Source/Hold hosts like cutaways and change no timing, picture
+identity or sound. Draw them only through `CaptionOverlay` and the captioned
+renderer passes, after framing and before display/encoder readback, so the
+viewer, export and `verify-export` share one raster rule. See
+[captions](docs/CAPTIONS.md).
+
 Durable render jobs capture immutable project/revision/document/range/policy
 intent outside authored undo/redo. Require fresh attempt IDs and cancellation
 tokens, exact transition sequences and one active attempt per project. Retain
@@ -938,7 +964,7 @@ Keep this exception specific to explicit wraps; setters and unrelated commands
 retain their normal rejection and revision behavior. See
 [the workspace contract](docs/NATIVE_WORKSPACE.md).
 
-The native UI submits typed project requests through one bounded service mailbox. Import preparation never owns SQLite. Cached insertion, current-depth editing and history may proceed while a new import prepares; an uncached insertion preserves its captured revision/target and fails if stale. Beat edits capture session, revision, absolute cursor and Sequence scope; reject non-direct targets and resolve through core/store commands. Consume explicit committed revisions and resulting selection, including an explicit clear, never infer completion from progress text. Preserve these markers across background updates and deduplicate them by revision. Repeat setters retain omitted gap parameters; explicit wrap-repeat always nests. Cancel pending keyboard operators when context, pane, selection or revision changes, except for a matching completion in the UI-owned explicit Repeat chain. Keep Source context non-destructive. Preview requests carry their immutable workspace, so cancellation of an earlier open cannot strand a later frame. Construct native dialogs on the main application thread, poll without blocking, and retain text focus until same-frame text and IME events are processed.
+The native UI submits typed project requests through one bounded service mailbox. Background analysis saves use their own one-request lane and never occupy the user-command slot or its error. User actions refused while another project command holds the writer (file pickers, playback, room tone) state why; per-frame dispatchers retain and retry their work. Import preparation never owns SQLite. Cached insertion, current-depth editing and history may proceed while a new import prepares; an uncached insertion preserves its captured revision/target and fails if stale. Beat edits capture session, revision, absolute cursor and Sequence scope; reject non-direct targets and resolve through core/store commands. Consume explicit committed revisions and resulting selection, including an explicit clear, never infer completion from progress text. Preserve these markers across background updates and deduplicate them by revision. Repeat setters retain omitted gap parameters; explicit wrap-repeat always nests. Cancel pending keyboard operators when context, pane, selection or revision changes, except for a matching completion in the UI-owned explicit Repeat chain. Keep Source context non-destructive. Preview requests carry their immutable workspace, so cancellation of an earlier open cannot strand a later frame. Construct native dialogs on the main application thread, poll without blocking, and retain text focus until same-frame text and IME events are processed.
 
 Keyboard routing precedes widget drawing. Use persistent `egui::Popup` state for
 menu ownership; the current-pass `Context::any_popup_open` is empty at that point.
@@ -1332,6 +1358,12 @@ Playback real-media tests acquire the shared PCM permit before fixture work and
 retain it through the engine's shared callback until both workers exit. Keep
 that reservation bounded and keep production deadlines and PCM assertions
 intact. `Engine::drop` and `Stopped` alone do not establish worker teardown.
+
+Measure Section 25 targets with `cargo xtask perf` ([performance](docs/PERFORMANCE.md)).
+It copies the named fixture packages and never opens them writable. Cite each
+result with its summary's binary hashes, load and cache state. A target with no
+measured workload is open, never passed. Diagnostics counters are bounded and
+process-local, and never enter authored state.
 
 Use the [UI feedback loop](docs/UI_FEEDBACK.md) for every meaningful UI change.
 Meaningful UI milestones also run `cargo xtask replays`, which replays every

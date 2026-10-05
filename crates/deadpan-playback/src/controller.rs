@@ -1,6 +1,6 @@
 use std::io;
 use std::panic::{AssertUnwindSafe, catch_unwind};
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -109,10 +109,72 @@ impl State {
     }
 }
 
+/// Cumulative device-delivery counters for diagnostics since the engine was
+/// created. They are observations only: they never enter authored state and
+/// never change a playback decision. A starved or faulted report still ends
+/// its generation explicitly; these counts make that attributable.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct Diagnostics {
+    /// Output generations activated on the device.
+    pub generations: u64,
+    /// Device reports observed for an active generation.
+    pub reports: u64,
+    /// Reports whose queue ran dry while playing (audio underruns).
+    pub starved: u64,
+    /// Device faults: faulted reports, error flags or lost report records.
+    pub faults: u64,
+    /// Silent padding frames rendered for an active generation.
+    pub silent_frames: u64,
+    /// Largest measured kernel render cost of one device callback.
+    pub max_render_cost_ns: u64,
+}
+
+#[derive(Default)]
+struct Counters {
+    generations: AtomicU64,
+    reports: AtomicU64,
+    starved: AtomicU64,
+    faults: AtomicU64,
+    silent_frames: AtomicU64,
+    max_render_cost_ns: AtomicU64,
+}
+
+impl Counters {
+    fn observe(&self, report: &DeviceReport) {
+        self.reports.fetch_add(1, Ordering::Relaxed);
+        match report.render.status {
+            RenderStatus::Starved => {
+                self.starved.fetch_add(1, Ordering::Relaxed);
+            }
+            RenderStatus::Fault => {
+                self.faults.fetch_add(1, Ordering::Relaxed);
+            }
+            RenderStatus::Paused | RenderStatus::Playing | RenderStatus::Ended => {}
+        }
+        self.silent_frames.fetch_add(
+            u64::try_from(report.render.silent_frames).unwrap_or(u64::MAX),
+            Ordering::Relaxed,
+        );
+        self.max_render_cost_ns
+            .fetch_max(report.render_cost_ns, Ordering::Relaxed);
+    }
+    fn snapshot(&self) -> Diagnostics {
+        Diagnostics {
+            generations: self.generations.load(Ordering::Relaxed),
+            reports: self.reports.load(Ordering::Relaxed),
+            starved: self.starved.load(Ordering::Relaxed),
+            faults: self.faults.load(Ordering::Relaxed),
+            silent_frames: self.silent_frames.load(Ordering::Relaxed),
+            max_render_cost_ns: self.max_render_cost_ns.load(Ordering::Relaxed),
+        }
+    }
+}
+
 pub(crate) struct Shared {
     state: Mutex<State>,
     pub wake: Condvar,
     repaint: Arc<dyn Fn() + Send + Sync>,
+    counters: Counters,
     #[cfg(test)]
     pub preparation_observer: Mutex<Option<preparation::Observer>>,
 }
@@ -256,6 +318,7 @@ impl Engine {
             }),
             wake: Condvar::new(),
             repaint,
+            counters: Counters::default(),
             #[cfg(test)]
             preparation_observer: Mutex::new(None),
         });
@@ -390,6 +453,10 @@ impl Engine {
     }
     pub fn poll(&self) -> Option<Update> {
         self.shared.lock().update.take()
+    }
+    /// Cumulative delivery counters; cheap atomic loads, safe from any thread.
+    pub fn diagnostics(&self) -> Diagnostics {
+        self.shared.counters.snapshot()
     }
     pub fn shutdown(&self) {
         self.shared.stop(true, true);
@@ -535,9 +602,11 @@ impl Active {
             return Ok(Some(Phase::Stopped));
         }
         if self.device.error_flags() != 0 {
+            shared.counters.faults.fetch_add(1, Ordering::Relaxed);
             return Err("audio device faulted".into());
         }
         if self.device.dropped_reports() != 0 {
+            shared.counters.faults.fetch_add(1, Ordering::Relaxed);
             return Err("audio delivery reports were lost".into());
         }
         if self.last_route.elapsed() >= Duration::from_millis(250) {
@@ -553,6 +622,7 @@ impl Active {
             if report.render.generation != self.generation || !self.activated {
                 continue;
             }
+            shared.counters.observe(&report);
             if report.render.status == RenderStatus::Fault {
                 return Err("audio output has faulted".into());
             }
@@ -709,6 +779,7 @@ impl Active {
                 .map_err(|e| e.to_string())?;
             self.device.start()?;
             self.activated = true;
+            shared.counters.generations.fetch_add(1, Ordering::Relaxed);
             self.last_report = Instant::now();
         }
         Ok(())

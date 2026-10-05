@@ -108,6 +108,8 @@ pub enum BindingId {
     GainDown,
     Mute,
     CutawayPicker,
+    Tail,
+    Bleep,
     Camera,
     PunchIn,
     Creep,
@@ -128,7 +130,7 @@ pub enum BindingId {
 }
 
 impl BindingId {
-    pub const ALL: [Self; 73] = [
+    pub const ALL: [Self; 75] = [
         Self::FramePrevious,
         Self::FrameNext,
         Self::BeatPrevious,
@@ -185,6 +187,8 @@ impl BindingId {
         Self::GainDown,
         Self::Mute,
         Self::CutawayPicker,
+        Self::Tail,
+        Self::Bleep,
         Self::Camera,
         Self::PunchIn,
         Self::Creep,
@@ -261,6 +265,8 @@ impl BindingId {
             Self::GainDown => "gain.down",
             Self::Mute => "gain.mute",
             Self::CutawayPicker => "cutaway.pick",
+            Self::Tail => "tail",
+            Self::Bleep => "bleep",
             Self::Camera => "camera",
             Self::PunchIn => "punch_in",
             Self::Creep => "creep",
@@ -667,6 +673,8 @@ impl Rule {
             Action::GainStep(_) => I::GainDown,
             Action::Mute => I::Mute,
             Action::CutawayPicker => I::CutawayPicker,
+            Action::TailPicker => I::Tail,
+            Action::Bleep { .. } => I::Bleep,
             Action::Framing(FramingAction::EnterCamera) => I::Camera,
             Action::Framing(FramingAction::PunchIn) => I::PunchIn,
             Action::Framing(FramingAction::Creep) => I::Creep,
@@ -1256,7 +1264,10 @@ fn enabled(id: BindingId, visual: bool, domain: RoutingDomain) -> bool {
     if id == BindingId::GenerateAi {
         return domain == RoutingDomain::Edit && !visual;
     }
-    if matches!(id, BindingId::Mute | BindingId::CutawayPicker) {
+    if matches!(
+        id,
+        BindingId::Mute | BindingId::CutawayPicker | BindingId::Tail | BindingId::Bleep
+    ) {
         return domain == RoutingDomain::Edit;
     }
     !matches!(
@@ -2059,6 +2070,21 @@ fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
             Action::CutawayPicker,
             C::Refuse("Pick one cutaway register, without a count."),
             "reaction cutaway",
+        ),
+        (
+            Key::T,
+            Action::TailPicker,
+            C::Refuse("Add one tail, without a count; :tail sets its length."),
+            "reverb tail",
+        ),
+        (
+            Key::B,
+            Action::Bleep {
+                frequency_hz: deadpan_core::DEFAULT_BLEEP_FREQUENCY_HZ,
+                level_millidecibels: deadpan_core::DEFAULT_BLEEP_LEVEL_MILLIDECIBELS,
+            },
+            C::Refuse("Bleep once, without a count."),
+            "bleep",
         ),
     ] {
         add(

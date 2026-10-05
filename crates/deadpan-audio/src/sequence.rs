@@ -78,7 +78,9 @@ pub(crate) fn resolve_source<'a>(
 pub enum SequenceAudioError {
     #[error("source PCM inspection requires 1..256 samples inside the sequence")]
     Range,
-    #[error("source PCM stage cannot render {feature} at node {node}")]
+    #[error(
+        "the source PCM stage (before Hold effects, voices and gain) cannot render {feature} at node {node}; the processed stages can (inspect-audio --time-mapped, --edge-faded, --authored-bus or --limited)"
+    )]
     Unsupported { node: NodeId, feature: &'static str },
     #[error(transparent)]
     Plan(#[from] PlanError),
@@ -204,7 +206,11 @@ impl SequenceAudio {
         match &span.content {
             AudioContent::Silence { .. } => Ok(()),
             AudioContent::RoomTone { .. } => Err(unsupported("room tone")),
-            AudioContent::Tail { .. } => Err(unsupported("effect tails")),
+            AudioContent::Tail { .. } => Err(unsupported(
+                "a hanging tail (an effect of the sound before it)",
+            )),
+            AudioContent::Reverse { .. } => Err(unsupported("reversed Hold audio")),
+            AudioContent::Tone { .. } => Err(unsupported("synthesized tones")),
             AudioContent::Source {
                 source, duration, ..
             } => {

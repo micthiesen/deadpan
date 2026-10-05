@@ -57,7 +57,7 @@ pub(crate) fn apply(
     }
     if !ordinary_hold(hold) {
         return Err(invalid(
-            "inserted pause needs a Background or Freeze fallback",
+            "inserted pause needs a Background, Freeze or Reverse picture",
         ));
     }
     if &timing.allocation != allocation {
@@ -459,7 +459,10 @@ fn insert_leaf_at(
 fn ordinary_hold(recipe: &HoldRecipe) -> bool {
     matches!(
         recipe.video,
-        HoldVideo::Background | HoldVideo::Freeze { .. }
+        HoldVideo::Background
+            | HoldVideo::Freeze { .. }
+            | HoldVideo::Reverse { .. }
+            | HoldVideo::Play { .. }
     )
 }
 

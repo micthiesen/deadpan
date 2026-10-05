@@ -1,6 +1,17 @@
 use crate::CliError;
 use deadpan_core::{FrameRate, MIX_SAMPLE_RATE, ProjectFrame};
 
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+mod project;
+
+/// The capability report plus read-only diagnostics for one package.
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub fn project_report(package: &std::path::Path) -> Result<serde_json::Value, CliError> {
+    let mut report = report()?;
+    report["project"] = project::report(package)?;
+    Ok(report)
+}
+
 pub fn report() -> Result<serde_json::Value, CliError> {
     let rate = FrameRate::new(30_000, 1_001)?;
     Ok(serde_json::json!({

@@ -265,6 +265,21 @@ pub enum HoldVideo {
     Generated {
         accepted: Box<AcceptedGeneration>,
     },
+    /// Plays an Original picture span backwards at its natural rate, starting
+    /// from the span's end. Local frame `k` shows the picture at
+    /// `span.end - (k + 1/2)` project frames; past the span's start the first
+    /// picture holds. No new media exists: the span is the measured Original.
+    Reverse {
+        asset: AssetId,
+        span: SourceSpan,
+    },
+    /// Plays an Original picture span forward at its natural rate from its
+    /// start, holding its last picture past its end: the picture of a bleep,
+    /// whose own sound is replaced.
+    Play {
+        asset: AssetId,
+        span: SourceSpan,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -291,11 +306,64 @@ pub enum HoldAudio {
     RoomTone {
         source: SourceAudio,
     },
-    /// A permitted source tail is distinct from room tone or digital silence.
+    /// A hanging effect tail: the wet output of `effect` fed with the two
+    /// seconds of processed Original sound heard just before this Hold
+    /// occurrence in the current edit (after time mapping, edges, gain and
+    /// mute), heard from the moment that sound ends. A live reference, not a
+    /// captured recording: edits before the pause change what rings. It rings
+    /// for `maximum` frames, fades to exact digital silence and stays silent
+    /// for the rest of the Hold; the dry sound itself is never repeated.
     Tail {
-        source: SourceAudio,
         maximum: FrameDuration,
+        #[serde(default, skip_serializing_if = "TailEffect::is_reverb")]
+        effect: TailEffect,
     },
+    /// Plays the source audio backwards at its natural rate from the Hold's
+    /// start: Hold-local sample `n` hears the source sample `n` before its
+    /// span end. Silence follows once the span is exhausted.
+    Reverse {
+        source: SourceAudio,
+    },
+    /// A synthesized sine tone for the whole Hold (a bleep), with 2 ms linear
+    /// ramps at both ends. Reads no media.
+    Tone {
+        frequency_hz: u32,
+        level: crate::GainDb,
+    },
+}
+
+/// Hold effects prepare their whole input in one bounded block.
+pub const MAX_HOLD_EFFECT_INPUT_SAMPLES: i128 = 1_048_576;
+
+/// Bleep tones are audible-range sines at or below full scale.
+pub const TONE_FREQUENCY_HZ: std::ops::RangeInclusive<u32> = 20..=20_000;
+
+/// The fixed, versioned effect that produces a hanging tail. Parameters are
+/// part of the effect identity so preview and export render the same bytes.
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+)]
+#[serde(rename_all = "snake_case")]
+pub enum TailEffect {
+    /// A dense deterministic room reverb (per-channel comb/all-pass network;
+    /// its impulse response falls 60 dB in about 1.1 s).
+    #[default]
+    Reverb,
+    /// A feedback echo of 300 ms repeats, each 6 dB quieter.
+    Delay,
+}
+
+impl TailEffect {
+    pub fn is_reverb(&self) -> bool {
+        *self == Self::Reverb
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Reverb => "reverb",
+            Self::Delay => "delay",
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -396,6 +464,9 @@ pub struct BeatNode {
     /// Picture-only attachments in this beat's local clock.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub cutaways: Vec<crate::Cutaway>,
+    /// Text drawn over the picture in this beat's local clock.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub captions: Vec<crate::Caption>,
 }
 
 impl BeatNode {
@@ -408,6 +479,7 @@ impl BeatNode {
             audio_editorial_edges: Default::default(),
             framing: None,
             cutaways: Vec::new(),
+            captions: Vec::new(),
         }
     }
     pub fn hold(label: impl Into<String>, recipe: HoldRecipe) -> Self {
@@ -419,6 +491,7 @@ impl BeatNode {
             audio_editorial_edges: Default::default(),
             framing: None,
             cutaways: Vec::new(),
+            captions: Vec::new(),
         }
     }
 }
@@ -604,6 +677,7 @@ impl ProjectDocument {
                 audio_edges: Default::default(),
                 kind: NodeKind::Source { source },
                 cutaways: Vec::new(),
+                captions: Vec::new(),
             },
         );
         view.validate()?;
@@ -769,16 +843,18 @@ impl ProjectDocument {
         crate::sound_allowance::validate(self)?;
         crate::framing::validate_document(self)?;
         for node in self.nodes.values() {
-            if !node.cutaways.is_empty()
+            if !(node.cutaways.is_empty() && node.captions.is_empty())
                 && !matches!(node.kind, NodeKind::Source { .. } | NodeKind::Hold { .. })
             {
                 return Err(DocumentError::new(
                     DocumentErrorCode::InvalidTree,
-                    "cutaways belong to a Source or Hold beat, whose local clock is its content",
+                    "cutaways and captions belong to a Source or Hold beat, whose local clock is its content",
                 ));
             }
             crate::cutaway::validate(&node.cutaways, &self.assets)?;
+            crate::caption::validate(&node.captions)?;
         }
+        self.validate_tails_outside_speed_stages()?;
         crate::target::validate_targets(&self.targets, &self.assets)?;
         crate::audio_gain::validate_document(self, gain_limit)?;
         crate::picture_context::validate_nodes_with_limit(self.nodes.values(), context_limit)?;
@@ -787,6 +863,45 @@ impl ProjectDocument {
         self.audio_bindings.validate_for(self)?;
         crate::marks::validate_marks(self, &durations)?;
         Ok(durations)
+    }
+
+    /// A hanging tail is fed by what is heard before it on the edit clock.
+    /// Inside a speed change (a nonunity Retime, either pitch policy) that
+    /// clock does not exist and the ring would be stretched or pitch-shifted,
+    /// so a tail Hold or Repeat gap there is invalid. Transparent Partitions
+    /// and unity Retimes keep the edit clock.
+    fn validate_tails_outside_speed_stages(&self) -> Result<(), DocumentError> {
+        let tail = |audio: &HoldAudio| matches!(audio, HoldAudio::Tail { .. });
+        let mut stack = vec![(self.root.clone(), false)];
+        while let Some((id, inside)) = stack.pop() {
+            let Some(node) = self.nodes.get(&id) else {
+                continue;
+            };
+            let carried = match &node.kind {
+                NodeKind::Hold { recipe } => inside && tail(&recipe.audio),
+                NodeKind::Repeat { gap, .. } => {
+                    inside && gap.as_ref().is_some_and(|gap| tail(&gap.audio))
+                }
+                _ => false,
+            };
+            if carried {
+                return Err(DocumentError::new(
+                    DocumentErrorCode::InvalidTree,
+                    format!(
+                        "a hanging tail cannot sit inside a speed change (at {id}); put the pause outside the Retime"
+                    ),
+                ));
+            }
+            let speed = matches!(
+                &node.kind,
+                NodeKind::Retime { duration, mapping, purpose, .. }
+                    if purpose.is_edit() && *duration != mapping.duration()
+            );
+            for child in self.children(&id) {
+                stack.push((child.clone(), inside || speed));
+            }
+        }
+        Ok(())
     }
 
     /// Structural validation precedes mark transforms; no anchor validation
@@ -1175,12 +1290,51 @@ impl ProjectDocument {
             HoldVideo::Generated { accepted } => {
                 self.validate_generated(recipe.duration, accepted)?;
             }
+            HoldVideo::Reverse { asset, span } | HoldVideo::Play { asset, span } => {
+                self.validate_video_span(asset, *span)?
+            }
         }
         match &recipe.audio {
             HoldAudio::Silence => {}
+            HoldAudio::Tone {
+                frequency_hz,
+                level,
+            } => {
+                if !TONE_FREQUENCY_HZ.contains(frequency_hz) || level.millidecibels() > 0 {
+                    return Err(DocumentError::new(
+                        DocumentErrorCode::SourceRangeInvalid,
+                        "a tone is 20 Hz to 20 kHz at or below full scale",
+                    ));
+                }
+            }
             HoldAudio::RoomTone { source } => self.validate_audio(source)?,
-            HoldAudio::Tail { source, maximum } => {
+            HoldAudio::Reverse { source } => {
                 self.validate_audio(source)?;
+                // The reversal reads its whole span in one bounded block.
+                let base = source.span.start().time_base;
+                let seconds = crate::ExactRatio::new(
+                    i128::from(source.span.end().ticks - source.span.start().ticks)
+                        * i128::from(base.numerator()),
+                    i128::from(base.denominator()),
+                )
+                .map_err(|_| {
+                    DocumentError::new(DocumentErrorCode::SourceRangeInvalid, "reverse span")
+                })?;
+                if seconds
+                    .checked_mul(crate::ExactRatio::integer(i64::from(
+                        crate::MIX_SAMPLE_RATE,
+                    )))
+                    .ok()
+                    .and_then(|samples| samples.ceil().ok())
+                    .is_none_or(|samples| samples > MAX_HOLD_EFFECT_INPUT_SAMPLES)
+                {
+                    return Err(DocumentError::new(
+                        DocumentErrorCode::SourceRangeInvalid,
+                        "a reversed span is at most 1,048,576 samples at 48 kHz (about 21.8 s)",
+                    ));
+                }
+            }
+            HoldAudio::Tail { maximum, .. } => {
                 positive(*maximum, "tail maximum")?;
                 if *maximum > recipe.duration {
                     return Err(DocumentError::new(

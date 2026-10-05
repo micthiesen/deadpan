@@ -15,7 +15,9 @@ use crate::{
     RevisionId, SourceAudio, SourceAudioMapping,
 };
 
-const AUDIO_CONTEXT_SCHEMA: u32 = 6;
+/// Schema 7 adds reversed and tone Hold audio, the tail effect, and live
+/// tails without a retained source input. Older schemas reject all of them.
+const AUDIO_CONTEXT_SCHEMA: u32 = 7;
 
 /// Full authored audio input. Source mapping and signed mix offset are retained
 /// because their effective placement need not fit SourceAudioMapping::Placement.
@@ -328,6 +330,25 @@ impl FrozenAudioContext {
                 "legacy audio context cannot contain dormant source support",
             ));
         }
+        if self.schema_version < 7 {
+            for node in self.layout.nodes().values() {
+                let audio = match &node.kind {
+                    FrozenAudioKind::Hold { audio } => Some(audio),
+                    FrozenAudioKind::Repeat { gap_audio, .. } => Some(gap_audio),
+                    _ => None,
+                };
+                if let Some(
+                    ReferenceAudibility::Reverse
+                    | ReferenceAudibility::Tone { .. }
+                    | ReferenceAudibility::Tail { .. },
+                ) = audio
+                {
+                    return Err(invalid(
+                        "a schema-6 or older audio context cannot contain reversed, tone or tail Hold audio",
+                    ));
+                }
+            }
+        }
         self.validate_treatments()?;
         if self.inputs.len() > MAX_DOCUMENT_NODES || self.assets.len() > MAX_DOCUMENT_ASSETS {
             return Err(limit("audio context inventory exceeds document limits"));
@@ -337,10 +358,10 @@ impl FrozenAudioContext {
             match &node.kind {
                 FrozenAudioKind::Source { placement: Some(_) }
                 | FrozenAudioKind::Hold {
-                    audio: ReferenceAudibility::RoomTone | ReferenceAudibility::Tail { .. },
+                    audio: ReferenceAudibility::RoomTone | ReferenceAudibility::Reverse,
                 }
                 | FrozenAudioKind::Repeat {
-                    gap_audio: ReferenceAudibility::RoomTone | ReferenceAudibility::Tail { .. },
+                    gap_audio: ReferenceAudibility::RoomTone | ReferenceAudibility::Reverse,
                     ..
                 } => {
                     expected_inputs.insert(id.clone());
@@ -409,10 +430,10 @@ impl FrozenAudioContext {
                 }
                 (
                     FrozenAudioKind::Hold {
-                        audio: ReferenceAudibility::RoomTone | ReferenceAudibility::Tail { .. },
+                        audio: ReferenceAudibility::RoomTone | ReferenceAudibility::Reverse,
                     }
                     | FrozenAudioKind::Repeat {
-                        gap_audio: ReferenceAudibility::RoomTone | ReferenceAudibility::Tail { .. },
+                        gap_audio: ReferenceAudibility::RoomTone | ReferenceAudibility::Reverse,
                         ..
                     },
                     FrozenAudioInput::Hold { .. },
@@ -520,8 +541,8 @@ impl<'de> Deserialize<'de> for TreatmentMap {
 
 fn hold_source(audio: &HoldAudio) -> Option<&SourceAudio> {
     match audio {
-        HoldAudio::Silence => None,
-        HoldAudio::RoomTone { source } | HoldAudio::Tail { source, .. } => Some(source),
+        HoldAudio::Silence | HoldAudio::Tone { .. } | HoldAudio::Tail { .. } => None,
+        HoldAudio::RoomTone { source } | HoldAudio::Reverse { source } => Some(source),
     }
 }
 fn invalid(message: &str) -> DocumentError {

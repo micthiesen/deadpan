@@ -100,7 +100,7 @@ fn fixture(audio: Option<(i64, i64)>, offset: i64) -> ProjectDocument {
         "basis_state":{"rate_origin":"explicit","geometry_origin":"explicit","primary":null},
         "root":"root","marks":{},"overrides":{},
         "assets":{"original":AssetRecord {label:"Original".into(),content_hash:"a".repeat(64),video:Some(picture),audio:sound,still_image:false,frame_count:Some(frames(100)),source_qualification:Some(SourceQualificationId::new("b".repeat(64)).unwrap())}},
-        "nodes":{"root":BeatNode::sequence("Root",vec![id("source")]),"source":BeatNode {label:"Source".into(),framing:None,audio_treatments:Default::default(),audio_editorial_edges: Default::default(), audio_edges:Default::default(),kind:NodeKind::Source {source}, cutaways: Vec::new() }},
+        "nodes":{"root":BeatNode::sequence("Root",vec![id("source")]),"source":BeatNode {label:"Source".into(),framing:None,audio_treatments:Default::default(),audio_editorial_edges: Default::default(), audio_edges:Default::default(),kind:NodeKind::Source {source}, cutaways: Vec::new(), captions: Vec::new() }},
     }).to_string()).unwrap()
 }
 fn source(document: &ProjectDocument) -> &SourceNode {
@@ -290,6 +290,7 @@ fn neutral_partition_uses_visible_handles_and_preserves_hidden_owner_context() {
                 purpose: RetimePurpose::Partition,
             },
             cutaways: Vec::new(),
+            captions: Vec::new(),
         })
         .unwrap();
     });
@@ -348,6 +349,7 @@ fn slip_marks_both_incident_joins_across_groups_without_changing_clocks_or_polic
                         purpose: RetimePurpose::Partition,
                     },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 })
                 .unwrap();
                 "view"
@@ -764,6 +766,7 @@ fn treated_nested_and_authored_retimes_are_explicitly_unsupported() {
             purpose: RetimePurpose::Partition,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     for variant in 0..3 {
         let before = modify(&base, |v| {
@@ -791,6 +794,7 @@ fn treated_nested_and_authored_retimes_are_explicitly_unsupported() {
                             purpose: RetimePurpose::Partition,
                         },
                         cutaways: Vec::new(),
+                        captions: Vec::new(),
                     })
                     .unwrap();
                     v["nodes"]["root"]["kind"]["children"] = json!(["outer"]);

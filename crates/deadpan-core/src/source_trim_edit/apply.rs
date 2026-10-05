@@ -267,9 +267,12 @@ fn install(
             .map_err(crate::audio_gain::invalid)?;
     }
     if side.physical_prefix != FrameDuration::ZERO {
-        // Cutaways stay on the host content they were placed over.
+        // Cutaways and captions stay on the host content they were placed over.
         physical.cutaways =
             crate::cutaways_with_owner_prefix(&physical.cutaways, side.physical_prefix)
+                .map_err(crate::DocumentError::from)?;
+        physical.captions =
+            crate::captions_with_owner_prefix(&physical.captions, side.physical_prefix)
                 .map_err(crate::DocumentError::from)?;
     }
     physical.kind = NodeKind::Source {

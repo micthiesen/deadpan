@@ -7,11 +7,15 @@
 //! `bundle-audit` and `bundle-verify` check one (docs/PACKAGING.md).
 //! `cargo xtask replays` builds the ui-harness app once and replays every
 //! UI scenario in its own report directory (docs/UI_FEEDBACK.md).
+//! `cargo xtask perf` runs the release Section 25 benchmark suite on copied
+//! fixtures (docs/PERFORMANCE.md).
 
 use std::path::Path;
 use std::process::{Command, ExitCode};
 
 mod bundle;
+mod percentile;
+mod perf;
 mod replays;
 mod target_hygiene;
 
@@ -27,7 +31,8 @@ fn main() -> ExitCode {
         Some("bundle-audit") => bundle::audit_command(rest),
         Some("bundle-verify") => bundle::verify::run(rest),
         Some("replays") => replays::run(rest),
-        _ => Err("usage: cargo xtask gate | hygiene | replays [--scenario a,b] [--output <new dir>] [--jobs N] | bundle --output <dir> | bundle-audit <Deadpan.app> | bundle-verify <Deadpan.app>".into()),
+        Some("perf") => perf::run(rest),
+        _ => Err("usage: cargo xtask gate | hygiene | replays [--scenario a,b] [--output <new dir>] [--jobs N] | perf [--fixture NAME=PACKAGE]... [--generate] [--ui] [--output <new dir>] | bundle --output <dir> | bundle-audit <Deadpan.app> | bundle-verify <Deadpan.app>".into()),
     };
     match result {
         Ok(()) => ExitCode::SUCCESS,

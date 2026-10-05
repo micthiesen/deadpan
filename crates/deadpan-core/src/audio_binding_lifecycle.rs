@@ -586,6 +586,7 @@ mod tests {
                     escalation: None,
                 },
                 cutaways: Vec::new(),
+                captions: Vec::new(),
             },
         );
         document.nodes.insert(
@@ -706,6 +707,7 @@ mod tests {
                 escalation: None,
             },
             cutaways: Vec::new(),
+            captions: Vec::new(),
         }
     }
 
@@ -897,6 +899,7 @@ mod tests {
                 purpose: RetimePurpose::Edit,
             },
             cutaways: Vec::new(),
+            captions: Vec::new(),
         };
         let mut before = capture_document(
             &["outside", "tail"],

@@ -52,7 +52,11 @@ Source's clock; a group, Repeat or speed change is refused with guidance to
 open it and select a source or pause beat. Other `audio=` values are refused because a cutaway never changes
 sound. An overlap with an existing cutaway is refused; `:cutaway clear`
 removes the cutaways overlapping the range. The inspector lists the beat's
-cutaway ranges.
+cutaway ranges. While recording a macro, a whole-beat `:cutaway` records the
+semantic `SetCutaway { register, fit }`, which resolves the register's Original
+moment and the selected beat when replayed; `:gag are-we-done` uses the same
+instruction over its tail pause. A ranged cutaway refuses while recording.
+[Captions](CAPTIONS.md) follow the same host and lifecycle rules.
 
 ## Tests
 

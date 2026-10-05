@@ -180,6 +180,47 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.changed(&before)?;
     d.check("Escape never rolls back the already submitted wrap", stage_count(d, start, "command_admitted") == 1 && d.app().sequence_length() == initial_duration * 2, json!({"admitted":1,"duration":initial_duration * 2}), json!({"admitted":stage_count(d, start, "command_admitted"),"duration":d.app().sequence_length()}))?;
     undo(d, &baseline, initial_duration, 1)?;
+
+    // Holding the writer's mailbox makes its busy window deterministic. A file
+    // action during that window must refuse visibly instead of vanishing.
+    let before = d.revision();
+    d.app().service.hold_requests_for_check(true);
+    burst(d, 1)?;
+    d.check(
+        "A held wrap keeps the project command slot busy",
+        d.app().service.is_busy() && d.revision() == before,
+        json!({"busy":true,"revision":before}),
+        d.snapshot(),
+    )?;
+    let dialogs = std::mem::replace(
+        &mut d.app_mut().dialogs,
+        Dialogs::scripted(vec![(DialogKind::OpenProject, None)]),
+    );
+    d.key_modified(Key::O, egui::Modifiers::COMMAND)?;
+    let refused = "Open project did not start because another project command is still in progress";
+    d.check(
+        "Cmd+O during a busy save is refused with a visible reason",
+        !d.app().dialogs.is_open()
+            && d.app()
+                .error
+                .as_deref()
+                .is_some_and(|error| error.contains(refused)),
+        json!({"dialog_open":false,"error":refused}),
+        d.snapshot(),
+    )?;
+    d.step("Paint busy Open refusal", true)?;
+    visible_status(d, "Open project did not start")?;
+    d.capture("Busy writer refuses Open visibly")?;
+    d.app_mut().dialogs = dialogs;
+    d.app().service.hold_requests_for_check(false);
+    d.changed(&before)?;
+    d.check(
+        "The held wrap still commits after the refused Open",
+        d.app().sequence_length() == initial_duration * 2,
+        json!(initial_duration * 2),
+        json!(d.app().sequence_length()),
+    )?;
+    undo(d, &baseline, initial_duration, 1)?;
     d.report.skipped.push("Repeat boundary checks delay delivery of real SQLite updates; the writer and production event router remain live. Physical key delivery is not exercised.".into());
     Ok(())
 }

@@ -656,3 +656,112 @@ fn visual_wire_is_closed_and_keeps_oriented_context_explicit() {
         .is_err()
     );
 }
+
+#[test]
+fn lift_cuts_the_range_and_refills_its_time_with_a_silent_black_pause() {
+    let document = fixture(10);
+    let lift = SemanticInstruction::Lift {
+        register: name('l'),
+    };
+    let planned = plan(
+        &document,
+        with_visual(7, 2, 7, false),
+        vec![lift.clone()],
+        &BTreeMap::new(),
+    )
+    .unwrap();
+    // Same total time; the cut content is in register l.
+    assert_eq!(planned.document.duration().unwrap().frames(), 10);
+    assert_eq!(copied(&planned, 'l').range(), range(2, 7));
+    let pause = planned.context.selected_child.clone().unwrap();
+    let NodeKind::Hold { recipe } = &planned.document.nodes()[&pause].kind else {
+        panic!("the lift selects its pause")
+    };
+    assert_eq!(recipe.duration.frames(), 5);
+    assert_eq!(recipe.video, HoldVideo::Background);
+    assert_eq!(recipe.audio, HoldAudio::Silence);
+    assert_eq!(planned.context.cursor, ProjectFrame(2));
+    assert!(planned.context.visual_selection.is_none());
+    // Two leaves under one compound, reversible exactly.
+    let request = planned.request.as_ref().unwrap();
+    let reverted = crate::apply(&document, request)
+        .unwrap()
+        .inverse
+        .apply(&planned.document)
+        .unwrap();
+    assert_eq!(reverted, document);
+    // Without a Visual range there is nothing to lift.
+    assert!(plan(&document, context("root", 3), vec![lift], &BTreeMap::new()).is_err());
+}
+
+#[test]
+fn bleep_resolves_the_range_pictures_before_cutting_and_refills_its_time() {
+    let document = fixture(10);
+    let sites = std::cell::RefCell::new(Vec::new());
+    let level = crate::GainDb::new(-10_000).unwrap();
+    let planned = plan_semantic_with_speech(
+        &document,
+        &with_visual(7, 2, 7, false),
+        &program(vec![SemanticInstruction::Bleep {
+            register: name('b'),
+            frequency_hz: 1_000,
+            level,
+        }]),
+        SemanticRegisterBank {
+            entries: &BTreeMap::new(),
+            version: 7,
+        },
+        revision("outer"),
+        allocate,
+        no_original,
+        |_| Err(crate::speech_unavailable()),
+        |staged, site| {
+            // The site is resolved on the document that still holds the range.
+            assert_eq!(staged.duration().unwrap().frames(), 10);
+            sites.borrow_mut().push(site);
+            Ok(crate::PauseProvider {
+                video: HoldVideo::Background,
+                picture_context: None,
+                audio: HoldAudio::Tone {
+                    frequency_hz: 1_000,
+                    level,
+                },
+            })
+        },
+    )
+    .unwrap();
+    assert_eq!(
+        sites.into_inner(),
+        vec![crate::PauseSite::Bleep {
+            at: ProjectFrame(7),
+            frames: FrameDuration::new(5).unwrap(),
+            frequency_hz: 1_000,
+            level,
+        }]
+    );
+    assert_eq!(planned.document.duration().unwrap().frames(), 10);
+    assert_eq!(copied(&planned, 'b').range(), range(2, 7));
+    let pause = planned.context.selected_child.clone().unwrap();
+    let NodeKind::Hold { recipe } = &planned.document.nodes()[&pause].kind else {
+        panic!("the bleep selects its pause")
+    };
+    assert_eq!(recipe.duration.frames(), 5);
+    assert!(matches!(
+        recipe.audio,
+        HoldAudio::Tone {
+            frequency_hz: 1_000,
+            ..
+        }
+    ));
+    // Defaults on the wire: 1 kHz at -10 dB.
+    let wire: SemanticInstruction =
+        serde_json::from_value(serde_json::json!({"type":"bleep","register":"b"})).unwrap();
+    assert_eq!(
+        wire,
+        SemanticInstruction::Bleep {
+            register: name('b'),
+            frequency_hz: 1_000,
+            level,
+        }
+    );
+}

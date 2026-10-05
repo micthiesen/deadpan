@@ -267,6 +267,7 @@ fn repeat_child_restarts_and_repeat_gain_spans_plays_and_roomtone_gaps_once() {
             escalation: None,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let base = document_with_asset(
         rate,
@@ -338,6 +339,7 @@ fn repeat_escalation_adds_its_step_to_each_later_play_and_its_gap() {
             escalation,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let document = |escalation| {
         document_with_asset(

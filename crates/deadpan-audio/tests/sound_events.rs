@@ -165,6 +165,7 @@ fn many_original_dependencies(count: u32, routed: bool) -> Arc<RenderPlan> {
                     },
                 },
                 cutaways: Vec::new(),
+                captions: Vec::new(),
             },
         );
         children.push(id);
@@ -189,6 +190,7 @@ fn many_original_dependencies(count: u32, routed: bool) -> Arc<RenderPlan> {
                 purpose: RetimePurpose::Edit,
             },
             cutaways: Vec::new(),
+            captions: Vec::new(),
         },
     );
     planned(

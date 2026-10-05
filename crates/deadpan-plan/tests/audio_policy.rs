@@ -42,6 +42,7 @@ fn dense_bound_repeat_inventory_uses_shared_work_not_output_span_capacity() {
             escalation: None,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     })
     .unwrap();
     let unbound = ProjectDocument::from_json(&wire.to_string()).unwrap();

@@ -119,6 +119,8 @@ pub struct Picture {
     /// The asset and exact source time `Follow` layers and target overlays
     /// evaluate at; None for pictures that show no Original moment.
     pub follow_point: Option<(AssetId, deadpan_core::SourcePoint)>,
+    /// Caption lines drawn over the composed picture, as in export.
+    pub captions: Vec<deadpan_plan::PictureCaption>,
 }
 
 pub struct Reply {
@@ -509,6 +511,7 @@ fn perform(
         framing_gap: false,
         follow_point: None,
         picture_context: None,
+        captions: Vec::new(),
     })
 }
 
@@ -559,7 +562,9 @@ fn media_picture(
                 deadpan_plan::Picture::Source { asset, .. }
                 | deadpan_plan::Picture::Freeze { asset, .. } => asset,
                 deadpan_plan::Picture::Blank | deadpan_plan::Picture::Background => {
-                    return Ok(background_picture(canvas));
+                    let mut picture = background_picture(canvas);
+                    picture.captions = sample.captions;
+                    return Ok(picture);
                 }
                 deadpan_plan::Picture::Still { .. } => {
                     return Err("Still-image preview is not yet qualified.".into());
@@ -586,6 +591,7 @@ fn media_picture(
                     picture.framing = sample.framing;
                     picture.framing_gap = sample.gap_after.is_some();
                     picture.picture_context = sample.picture_context;
+                    picture.captions = sample.captions;
                     return Ok(picture);
                 }
                 deadpan_plan::Picture::Accepted {
@@ -615,6 +621,7 @@ fn media_picture(
             picture.framing = sample.framing;
             picture.framing_gap = sample.gap_after.is_some();
             picture.picture_context = sample.picture_context;
+            picture.captions = sample.captions;
             return Ok(picture);
         }
     };
@@ -666,6 +673,7 @@ fn background_picture(canvas: Option<(u32, u32)>) -> Picture {
         framing_gap: false,
         follow_point: None,
         picture_context: None,
+        captions: Vec::new(),
     }
 }
 
@@ -731,6 +739,7 @@ fn generated_picture(
         framing_gap: false,
         follow_point: None,
         picture_context: None,
+        captions: Vec::new(),
     })
 }
 
@@ -873,6 +882,7 @@ fn registered_picture(
         framing_gap: false,
         follow_point: None,
         picture_context: None,
+        captions: Vec::new(),
     })
 }
 

@@ -97,6 +97,7 @@ fn document(
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let empty = ProjectDocument::new(
         ProjectId::new("dormant-source").unwrap(),

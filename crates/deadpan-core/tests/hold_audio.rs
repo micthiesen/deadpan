@@ -60,6 +60,11 @@ fn edit(document: &ProjectDocument, command: Command) -> (ProjectDocument, EditT
 }
 
 fn fixture() -> ProjectDocument {
+    fixture_with_audio(88_200)
+}
+
+/// The fixture with an Original `ticks` long at 44.1 kHz.
+fn fixture_with_audio(ticks: i64) -> ProjectDocument {
     let document = ProjectDocument::new(
         ProjectId::new("hold-audio").unwrap(),
         RevisionId::new("r").unwrap(),
@@ -79,8 +84,8 @@ fn fixture() -> ProjectDocument {
             asset: AssetRecord {
                 label: "Original".into(),
                 content_hash: "a".repeat(64),
-                video: Some(span(0, 88_200, 44_100)),
-                audio: Some(span(0, 88_200, 44_100)),
+                video: Some(span(0, ticks, 44_100)),
+                audio: Some(span(0, ticks, 44_100)),
                 still_image: false,
                 frame_count: None,
                 source_qualification: Some(SourceQualificationId::new("b".repeat(64)).unwrap()),
@@ -271,8 +276,8 @@ fn invalid_audio_and_targets_fail_without_mutating_the_document() {
 fn existing_tail_validation_and_revision_guards_still_apply() {
     let before = fixture();
     let audio = HoldAudio::Tail {
-        source: source(100, 1000),
         maximum: frames(60),
+        effect: Default::default(),
     };
     let (tail, _) = edit(
         &before,
@@ -290,8 +295,8 @@ fn existing_tail_validation_and_revision_guards_still_apply() {
                 Command::SetHoldAudio {
                     node: node("hold"),
                     audio: HoldAudio::Tail {
-                        source: source(100, 1000),
                         maximum: frames(61),
+                        effect: Default::default(),
                     },
                 }
             )
@@ -309,4 +314,169 @@ fn existing_tail_validation_and_revision_guards_still_apply() {
         apply(&tail, &stale).unwrap_err().code,
         EditErrorCode::RevisionConflict
     );
+}
+
+#[test]
+fn shortening_a_tail_hold_shortens_its_ring_and_new_providers_validate() {
+    let before = fixture();
+    let (tail, _) = edit(
+        &before,
+        Command::SetHoldAudio {
+            node: node("hold"),
+            audio: HoldAudio::Tail {
+                maximum: frames(60),
+                effect: TailEffect::Delay,
+            },
+        },
+    );
+    let (short, _) = edit(
+        &tail,
+        Command::SetHoldDuration {
+            node: node("hold"),
+            duration: frames(20),
+        },
+    );
+    let NodeKind::Hold { recipe } = &short.nodes()[&node("hold")].kind else {
+        panic!("still a Hold")
+    };
+    assert_eq!(
+        recipe.audio,
+        HoldAudio::Tail {
+            maximum: frames(20),
+            effect: TailEffect::Delay,
+        }
+    );
+    // Reversed audio and tones validate; an inaudible or boosted tone does not.
+    for (audio, valid) in [
+        (
+            HoldAudio::Reverse {
+                source: source(100, 1000),
+            },
+            true,
+        ),
+        (
+            HoldAudio::Tone {
+                frequency_hz: 1_000,
+                level: GainDb::new(-10_000).unwrap(),
+            },
+            true,
+        ),
+        (
+            HoldAudio::Tone {
+                frequency_hz: 10,
+                level: GainDb::new(-10_000).unwrap(),
+            },
+            false,
+        ),
+        (
+            HoldAudio::Tone {
+                frequency_hz: 1_000,
+                level: GainDb::new(3_000).unwrap(),
+            },
+            false,
+        ),
+    ] {
+        let applied = apply(
+            &before,
+            &request(
+                &before,
+                Command::SetHoldAudio {
+                    node: node("hold"),
+                    audio,
+                },
+            ),
+        );
+        assert_eq!(applied.is_ok(), valid);
+    }
+}
+
+#[test]
+fn a_reversed_span_is_bounded_by_the_one_block_dsp_limit() {
+    let before = fixture_with_audio(44_100 * 30);
+    // 1,048,576 mix samples are 963,379.2 ticks at 44.1 kHz; the extent
+    // is rounded up to whole mix samples.
+    for (end, valid) in [(963_379, true), (963_380, false), (44_100 * 30, false)] {
+        let applied = apply(
+            &before,
+            &request(
+                &before,
+                Command::SetHoldAudio {
+                    node: node("hold"),
+                    audio: HoldAudio::Reverse {
+                        source: source(0, end),
+                    },
+                },
+            ),
+        );
+        assert_eq!(applied.is_ok(), valid, "{end}");
+    }
+}
+
+#[test]
+fn a_tail_cannot_be_wrapped_in_or_moved_into_a_speed_change() {
+    let before = fixture();
+    let (tail, _) = edit(
+        &before,
+        Command::SetHoldAudio {
+            node: node("hold"),
+            audio: HoldAudio::Tail {
+                maximum: frames(30),
+                effect: TailEffect::Reverb,
+            },
+        },
+    );
+    for pitch in [PitchPolicy::Preserve, PitchPolicy::FollowSpeed] {
+        let wrap = request(
+            &tail,
+            Command::WrapRetime {
+                node: node("hold"),
+                id: node("speed"),
+                duration: frames(120),
+                pitch,
+            },
+        );
+        let error = apply(&tail, &wrap).unwrap_err();
+        assert!(error.message.contains("speed change"), "{error:?}");
+    }
+    // A unity Retime keeps the edit clock, so the tail may stay inside it,
+    // but making it a speed change is refused.
+    let (unity, _) = edit(
+        &tail,
+        Command::WrapRetime {
+            node: node("hold"),
+            id: node("speed"),
+            duration: frames(60),
+            pitch: PitchPolicy::Preserve,
+        },
+    );
+    let faster = request(
+        &unity,
+        Command::SetRetime {
+            node: node("speed"),
+            duration: frames(30),
+            pitch: PitchPolicy::Preserve,
+        },
+    );
+    assert!(apply(&unity, &faster).is_err());
+    // A silent pause inside a speed change cannot become a tail either.
+    let (slowed, _) = edit(
+        &before,
+        Command::WrapRetime {
+            node: node("hold"),
+            id: node("speed"),
+            duration: frames(120),
+            pitch: PitchPolicy::FollowSpeed,
+        },
+    );
+    let set = request(
+        &slowed,
+        Command::SetHoldAudio {
+            node: node("hold"),
+            audio: HoldAudio::Tail {
+                maximum: frames(30),
+                effect: TailEffect::Reverb,
+            },
+        },
+    );
+    assert!(apply(&slowed, &set).is_err());
 }

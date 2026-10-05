@@ -28,18 +28,41 @@ impl Inspector {
                         HoldVideo::Freeze { .. } => "Freeze",
                         HoldVideo::Accepted { .. } => "Accepted media",
                         HoldVideo::Generated { .. } => "Accepted AI",
+                        HoldVideo::Reverse { .. } => "Reversed",
+                        HoldVideo::Play { .. } => "Original",
                     }
                     .into(),
                 ));
                 fields.push((
                     "Sound",
                     match &recipe.audio {
-                        HoldAudio::Silence => "Silence",
-                        HoldAudio::RoomTone { .. } => "Room tone",
-                        HoldAudio::Tail { .. } => "Permitted tail",
-                    }
-                    .into(),
+                        HoldAudio::Silence => "Silence".into(),
+                        HoldAudio::RoomTone { .. } => "Room tone".into(),
+                        HoldAudio::Reverse { .. } => "Reversed".into(),
+                        HoldAudio::Tone {
+                            frequency_hz,
+                            level,
+                        } => format!(
+                            "Bleep {frequency_hz} Hz {:.0} dB",
+                            f64::from(level.millidecibels()) / 1000.0
+                        ),
+                        HoldAudio::Tail {
+                            maximum, effect, ..
+                        } => format!(
+                            "{} tail {} f",
+                            match effect {
+                                deadpan_core::TailEffect::Reverb => "Reverb",
+                                deadpan_core::TailEffect::Delay => "Delay",
+                            },
+                            maximum.frames()
+                        ),
+                    },
                 ));
+                if matches!(recipe.audio, HoldAudio::Tail { .. }) {
+                    // The tail is fed live by what is heard before it, so
+                    // edits there change it.
+                    fields.push(("Tail of", "Live 2 s before".into()));
+                }
                 if recipe.picture_context.is_some() {
                     fields.push(("Captured view", "Framing preserved".into()));
                 }
@@ -219,6 +242,23 @@ impl Inspector {
                     .join(", "),
             ));
         }
+        if !node.captions.is_empty() {
+            fields.push((
+                "Captions",
+                node.captions
+                    .iter()
+                    .map(|caption| {
+                        format!(
+                            "“{}” {}–{}",
+                            caption.text,
+                            caption.range.start().0,
+                            caption.range.end().0
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join(", "),
+            ));
+        }
         Self {
             label: node.label.clone(),
             kind,
@@ -256,6 +296,7 @@ mod tests {
                 },
             },
             cutaways: Vec::new(),
+            captions: Vec::new(),
         };
         let inspector = Inspector::describe(&node, 132, 11);
         assert_eq!(inspector.duration, "11 f");
@@ -286,6 +327,7 @@ mod tests {
                 escalation: None,
             },
             cutaways: Vec::new(),
+            captions: Vec::new(),
         };
         let inspector = Inspector::describe(&node, 143, 72);
         assert_eq!(
@@ -329,6 +371,7 @@ mod tests {
                 purpose: deadpan_core::RetimePurpose::Edit,
             },
             cutaways: Vec::new(),
+            captions: Vec::new(),
         };
         let inspector = Inspector::describe(&node, 22, 3);
         let command = inspector.parameter.unwrap().1;

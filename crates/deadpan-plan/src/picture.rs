@@ -195,5 +195,16 @@ pub struct PictureSample {
     /// provider clip, then this list beginning with the Repeat's operation.
     /// An explicit gap branch retains its provider and ancestor scopes.
     pub framing: Vec<PictureFraming>,
+    /// Text drawn over the composed picture, outermost host first. Captions
+    /// never change the picture identity a decoder selects.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub captions: Vec<PictureCaption>,
     pub lookup: LookupStats,
+}
+
+/// One caption line a frame shows and where it sits on the canvas.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
+pub struct PictureCaption {
+    pub text: String,
+    pub placement: deadpan_core::CaptionPlacement,
 }

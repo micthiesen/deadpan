@@ -544,6 +544,10 @@ impl DeadpanApp {
             return;
         }
         if self.service.is_busy() {
+            let refusal = "Room tone did not change because another project command is still in progress. Try again when it finishes.";
+            if let Some(draft) = &mut self.room_tone {
+                draft.error = Some(refusal.into());
+            }
             return;
         }
         if matches!(action, SheetAction::UseCopied) {

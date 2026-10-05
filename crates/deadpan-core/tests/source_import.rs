@@ -167,6 +167,7 @@ fn import_registers_and_inserts_in_one_reversible_edit_without_changing_basis() 
                 source: insertion.source
             },
             cutaways: Vec::new(),
+            captions: Vec::new(),
         }
     );
     assert_eq!(after.presentation_basis(), before.presentation_basis());

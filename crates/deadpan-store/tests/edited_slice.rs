@@ -83,6 +83,7 @@ fn document() -> Result<ProjectDocument> {
                     escalation: None,
                 },
                 cutaways: Vec::new(),
+                captions: Vec::new(),
             },
         ),
         (node("echo"), BeatNode::hold("Echo", recipe(2))),

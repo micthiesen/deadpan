@@ -69,6 +69,23 @@ fn check(fixture: &Fixture) -> Result {
             fixture.name, sample["sample"]["picture"]
         );
     }
+    for (frame, expected) in &fixture.captions {
+        let sample = success(&["inspect-plan", path, "--frame", &frame.to_string()])?;
+        let shown: Vec<&str> = sample["sample"]["captions"]
+            .as_array()
+            .map(|captions| {
+                captions
+                    .iter()
+                    .filter_map(|caption| caption["text"].as_str())
+                    .collect()
+            })
+            .unwrap_or_default();
+        assert_eq!(
+            &shown, expected,
+            "{} captions at frame {frame}",
+            fixture.name
+        );
+    }
     for (start, loud) in &fixture.audio {
         let end = (start + 256).to_string();
         let audio = success(&[
@@ -458,6 +475,40 @@ fn every_recipe_export_matches_its_committed_preview() -> Result {
             failed.push(fixture.name);
         }
         rows.push(row);
+        if fixture.name == "delayed-caption" {
+            // The exported pictures carry the caption: against a revision
+            // without it, only the captioned frames differ.
+            let cleared = recipes::clear_captions(&fixture, 0)?;
+            let (stale, passed) = verify(
+                &fixture,
+                &movie,
+                &cleared,
+                &["--frames", "2,8,20,30", "--no-audio"],
+            )?;
+            let flagged = |frame: u64| -> bool {
+                stale["pictures"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .find(|picture| picture["output_frame"] == frame)
+                    .is_some_and(|picture| {
+                        picture["flags"]
+                            .as_array()
+                            .is_some_and(|flags| !flags.is_empty())
+                    })
+            };
+            assert!(!passed, "{stale}");
+            assert!(
+                flagged(8),
+                "captioned frame 8 matches an uncaptioned reference: {stale}"
+            );
+            for frame in [2, 20, 30] {
+                assert!(
+                    !flagged(frame),
+                    "frame {frame} changed without a caption edit: {stale}"
+                );
+            }
+        }
     }
     if let Some(path) = std::env::var_os("DEADPAN_PREVIEW_EXPORT_RESULTS") {
         std::fs::write(path, serde_json::to_vec_pretty(&rows)?)?;

@@ -297,6 +297,7 @@ fn interior_splice_never_descends_a_repeat_or_authored_retime() {
                         audio_edges: Default::default(),
                         kind,
                         cutaways: Vec::new(),
+                        captions: Vec::new(),
                     },
                 ),
                 ("group", BeatNode::sequence("Group", vec![id("lead")])),

@@ -61,6 +61,8 @@ The 16-key bound also applies to each composed operator-plus-motion path.
 | `repeat.escalating` | `,e`: wrap the selected beat or Visual range in three plays, each 3 dB louder and 0.08 closer, as one Undo |
 | `gain.mute` | `,m`: mute the Visual range inside the selected beat as a mute range, or toggle the whole beat's mute (`:gain-mute`); Your edit only, no count |
 | `cutaway.pick` | `,r`: open `:cutaway register=` on a register holding a copied Original moment, listing the others; Your edit only, no count |
+| `bleep` | `,b`: bleep the Visual range (`viw` for a word): its pictures keep playing over a 1 kHz tone at -10 dB as one Undo; `:bleep 880Hz level=-6dB` chooses the tone; Your edit only, no count |
+| `tail` | `,t`: open `:tail` with the selected pause's length (or 1s) and `effect=reverb` ready to change; Enter gives that pause a hanging tail or inserts a tail pause at the cursor; Your edit only, no count |
 | `object.inner_shot`, `object.around_shot` | `iS` / `aS`: Visual shot occurrence at the Edit cursor (hard cuts carry no transition handles, so they match); also compose after `y`, `d`, `r` |
 | `first`, `last` | Start and end |
 | `undo` | Undo; native undo/redo alternatives remain fixed |

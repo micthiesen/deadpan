@@ -51,6 +51,7 @@ fn fixture() -> Result<(ProjectDocument, FrozenAudioLayout)> {
         audio_edges: Default::default(),
         kind: NodeKind::Source { source },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let empty = ProjectDocument::new(
         ProjectId::new("source-origin-history")?,
@@ -154,6 +155,7 @@ fn fixture() -> Result<(ProjectDocument, FrozenAudioLayout)> {
             purpose: RetimePurpose::Partition,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     })?;
     wire["nodes"]["root"] = serde_json::to_value(BeatNode::sequence(
         "Root",

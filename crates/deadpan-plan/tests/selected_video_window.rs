@@ -70,6 +70,7 @@ fn beat(kind: NodeKind) -> BeatNode {
         label: "Selected picture fixture".into(),
         kind,
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 

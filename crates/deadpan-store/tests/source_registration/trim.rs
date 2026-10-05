@@ -72,6 +72,7 @@ fn ready_trim(parent: &Path) -> Result<(PathBuf, ProjectStore)> {
                         audio_edges: Default::default(),
                         kind: NodeKind::Source { source },
                         cutaways: Vec::new(),
+                        captions: Vec::new(),
                     },
                 )]),
                 overrides: Default::default(),

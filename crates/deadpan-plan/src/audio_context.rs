@@ -200,6 +200,7 @@ impl RenderPlan {
                 audio_treatments: Default::default(),
                 framing: None,
                 cutaways: Vec::new(),
+                captions: Vec::new(),
             });
         }
 
@@ -410,6 +411,7 @@ impl RenderPlan {
                     .unwrap_or_default(),
                 framing: None,
                 cutaways: Vec::new(),
+                captions: Vec::new(),
             });
         }
         Ok(Self {
@@ -468,9 +470,14 @@ fn retained_hold_audio(
     Ok(match audio {
         ReferenceAudibility::Silence => HoldAudio::Silence,
         ReferenceAudibility::RoomTone => HoldAudio::RoomTone { source: source()? },
-        ReferenceAudibility::Tail { maximum } => HoldAudio::Tail {
-            source: source()?,
-            maximum,
+        ReferenceAudibility::Tail { maximum, effect } => HoldAudio::Tail { maximum, effect },
+        ReferenceAudibility::Reverse => HoldAudio::Reverse { source: source()? },
+        ReferenceAudibility::Tone {
+            frequency_hz,
+            level,
+        } => HoldAudio::Tone {
+            frequency_hz,
+            level,
         },
     })
 }

@@ -41,7 +41,18 @@ impl ExactFrameRange {
 pub enum ReferenceAudibility {
     Silence,
     RoomTone,
-    Tail { maximum: FrameDuration },
+    Tail {
+        maximum: FrameDuration,
+        #[serde(skip_serializing_if = "crate::TailEffect::is_reverb")]
+        effect: crate::TailEffect,
+    },
+    /// Source audio played backwards from the Hold's start.
+    Reverse,
+    /// A synthesized tone; no source input.
+    Tone {
+        frequency_hz: u32,
+        level: crate::GainDb,
+    },
 }
 
 #[derive(Deserialize)]
@@ -49,7 +60,16 @@ pub enum ReferenceAudibility {
 enum AudibilityWire {
     Silence {},
     RoomTone {},
-    Tail { maximum: FrameDuration },
+    Tail {
+        maximum: FrameDuration,
+        #[serde(default)]
+        effect: crate::TailEffect,
+    },
+    Reverse {},
+    Tone {
+        frequency_hz: u32,
+        level: crate::GainDb,
+    },
 }
 
 impl<'de> Deserialize<'de> for ReferenceAudibility {
@@ -57,7 +77,15 @@ impl<'de> Deserialize<'de> for ReferenceAudibility {
         let audio = match AudibilityWire::deserialize(deserializer)? {
             AudibilityWire::Silence {} => Self::Silence,
             AudibilityWire::RoomTone {} => Self::RoomTone,
-            AudibilityWire::Tail { maximum } => Self::Tail { maximum },
+            AudibilityWire::Tail { maximum, effect } => Self::Tail { maximum, effect },
+            AudibilityWire::Reverse {} => Self::Reverse,
+            AudibilityWire::Tone {
+                frequency_hz,
+                level,
+            } => Self::Tone {
+                frequency_hz,
+                level,
+            },
         };
         audio.validate().map_err(serde::de::Error::custom)?;
         Ok(audio)
@@ -69,7 +97,8 @@ impl ReferenceAudibility {
         if matches!(
             self,
             Self::Tail {
-                maximum: FrameDuration::ZERO
+                maximum: FrameDuration::ZERO,
+                ..
             }
         ) {
             return Err(invalid("frozen Tail maximum must be positive"));
@@ -79,7 +108,7 @@ impl ReferenceAudibility {
 
     fn validate_duration(self, duration: FrameDuration) -> Result<(), DocumentError> {
         self.validate()?;
-        if let Self::Tail { maximum } = self
+        if let Self::Tail { maximum, .. } = self
             && maximum > duration
         {
             return Err(invalid(
@@ -95,7 +124,20 @@ impl From<&HoldAudio> for ReferenceAudibility {
         match audio {
             HoldAudio::Silence => Self::Silence,
             HoldAudio::RoomTone { .. } => Self::RoomTone,
-            HoldAudio::Tail { maximum, .. } => Self::Tail { maximum: *maximum },
+            HoldAudio::Tail {
+                maximum, effect, ..
+            } => Self::Tail {
+                maximum: *maximum,
+                effect: *effect,
+            },
+            HoldAudio::Reverse { .. } => Self::Reverse,
+            HoldAudio::Tone {
+                frequency_hz,
+                level,
+            } => Self::Tone {
+                frequency_hz: *frequency_hz,
+                level: *level,
+            },
         }
     }
 }

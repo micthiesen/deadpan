@@ -49,6 +49,7 @@ fn node(kind: NodeKind) -> BeatNode {
         label: "Fixture".into(),
         kind,
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 fn background(frames: i64) -> HoldRecipe {
@@ -384,6 +385,142 @@ fn a_cutaway_replaces_the_host_picture_in_its_range_and_holds_its_last_picture()
         5005,
         "the final selected picture, never the next one"
     );
+}
+
+#[test]
+fn a_reversed_hold_plays_its_span_backwards_then_holds_the_first_picture() {
+    let reverse = node(NodeKind::Hold {
+        recipe: HoldRecipe {
+            duration: duration(6),
+            // Four pictures, 2002..6006, at the project rate.
+            video: HoldVideo::Reverse {
+                asset: asset_id("video"),
+                span: span(2002, 6006),
+            },
+            picture_context: None,
+            audio: HoldAudio::Silence,
+        },
+    });
+    let document = document(
+        &["forward", "reverse"],
+        vec![("forward", source(4, 2002, 6006)), ("reverse", reverse)],
+    );
+    let plan = RenderPlan::compile(&document).unwrap();
+    let pts: Vec<i64> = (-10..100).map(|picture| picture * 1001).collect();
+    let pictures = index("video", clock(), &pts, 100_100);
+    let shown = |frame: i64| {
+        let picture = plan.picture(ProjectFrame(frame)).unwrap().picture;
+        let selected = picture.select_source_frame(&pictures).unwrap();
+        pictures.frames()[usize::try_from(selected.identity.0).unwrap()].pts
+    };
+    assert_eq!(
+        (0..4).map(shown).collect::<Vec<_>>(),
+        vec![2002, 3003, 4004, 5005],
+        "forward"
+    );
+    assert_eq!(
+        (4..10).map(shown).collect::<Vec<_>>(),
+        vec![5005, 4004, 3003, 2002, 2002, 2002],
+        "backwards, then the first picture holds"
+    );
+    // Picture centers stay exact; nothing is rounded to a frame.
+    assert_eq!(
+        ticks(&plan.picture(ProjectFrame(4)).unwrap().picture),
+        ExactRatio::new(6006 * 2 - 1001, 2).unwrap()
+    );
+}
+
+#[test]
+fn a_bleep_pause_plays_its_span_forward_then_holds_the_last_picture() {
+    let play = node(NodeKind::Hold {
+        recipe: HoldRecipe {
+            duration: duration(6),
+            video: HoldVideo::Play {
+                asset: asset_id("video"),
+                span: span(2002, 6006),
+            },
+            picture_context: None,
+            audio: HoldAudio::Silence,
+        },
+    });
+    let document = document(&["play"], vec![("play", play)]);
+    let plan = RenderPlan::compile(&document).unwrap();
+    let pts: Vec<i64> = (-10..100).map(|picture| picture * 1001).collect();
+    let pictures = index("video", clock(), &pts, 100_100);
+    let shown: Vec<i64> = (0..6)
+        .map(|frame| {
+            let picture = plan.picture(ProjectFrame(frame)).unwrap().picture;
+            let selected = picture.select_source_frame(&pictures).unwrap();
+            pictures.frames()[usize::try_from(selected.identity.0).unwrap()].pts
+        })
+        .collect();
+    assert_eq!(shown, vec![2002, 3003, 4004, 5005, 5005, 5005]);
+}
+
+#[test]
+fn captions_show_in_their_host_range_from_their_reveal_play_without_changing_pictures() {
+    let mut host = source(4, 2002, 6006);
+    host.captions = vec![
+        Caption {
+            range: range(1, 3),
+            text: "Wait".into(),
+            placement: CaptionPlacement::Bottom,
+            reveal: None,
+        },
+        Caption {
+            range: range(2, 4),
+            text: "Again?".into(),
+            placement: CaptionPlacement::Top,
+            reveal: std::num::NonZeroU32::new(2),
+        },
+    ];
+    let captioned = document(
+        &["repeat"],
+        vec![("host", host), ("repeat", repeat("host", 2, 0, "plays"))],
+    );
+    let plain = {
+        let mut wire = serde_json::to_value(&captioned).unwrap();
+        wire["nodes"]["host"]
+            .as_object_mut()
+            .unwrap()
+            .remove("captions");
+        ProjectDocument::from_json(&wire.to_string()).unwrap()
+    };
+    let (plan, without) = (
+        RenderPlan::compile(&captioned).unwrap(),
+        RenderPlan::compile(&plain).unwrap(),
+    );
+    let texts = |frame: i64| -> Vec<String> {
+        plan.picture(ProjectFrame(frame))
+            .unwrap()
+            .captions
+            .into_iter()
+            .map(|caption| caption.text)
+            .collect()
+    };
+    let shown: Vec<_> = (0..8).map(texts).collect();
+    assert_eq!(
+        shown,
+        vec![
+            vec![],
+            vec!["Wait".to_owned()],
+            vec!["Wait".to_owned()],
+            vec![],
+            vec![],
+            vec!["Wait".to_owned()],
+            vec!["Wait".to_owned(), "Again?".to_owned()],
+            vec!["Again?".to_owned()],
+        ],
+        "the delayed caption in both plays, the revealed one only in the second"
+    );
+    for frame in 0..8 {
+        let (with, plain) = (
+            plan.picture(ProjectFrame(frame)).unwrap(),
+            without.picture(ProjectFrame(frame)).unwrap(),
+        );
+        assert_eq!(with.picture, plain.picture, "frame {frame}");
+        assert_eq!(with.framing, plain.framing, "frame {frame}");
+    }
 }
 
 #[test]

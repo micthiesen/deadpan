@@ -507,6 +507,7 @@ fn independent_stream_mappings_use_headless_commands_and_durable_undo() -> Resul
                             },
                         },
                         cutaways: Vec::new(),
+                        captions: Vec::new(),
                     },
                 )]),
             },

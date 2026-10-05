@@ -167,6 +167,7 @@ fn fixture(offset: AudioSample, mapping: SourceAudioMapping) -> ProjectDocument 
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let picture_only = BeatNode {
         audio_treatments: Default::default(),
@@ -190,16 +191,18 @@ fn fixture(offset: AudioSample, mapping: SourceAudioMapping) -> ProjectDocument 
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
+    // A source-reading Hold policy every context schema can carry. Live
+    // tails, reversal and tones are schema 7 (see the gating test below).
     let hold = BeatNode::hold(
         "tail",
         HoldRecipe {
             picture_context: None,
             duration: frames(3),
             video: HoldVideo::Background,
-            audio: HoldAudio::Tail {
+            audio: HoldAudio::RoomTone {
                 source: source.clone(),
-                maximum: frames(2),
             },
         },
     );
@@ -224,6 +227,7 @@ fn fixture(offset: AudioSample, mapping: SourceAudioMapping) -> ProjectDocument 
             escalation: None,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     edit(
         &document,
@@ -361,7 +365,7 @@ fn selected_context_keeps_full_phase_mapping_and_captures_only_its_audible_exten
         context
     );
     let mut wire = serde_json::to_value(context).unwrap();
-    assert_eq!(wire["schema_version"], json!(6));
+    assert_eq!(wire["schema_version"], json!(7));
     wire["schema_version"] = json!(1);
     assert!(FrozenAudioContext::from_json(&wire.to_string()).is_err());
     let escaped = wire
@@ -394,7 +398,7 @@ fn ingress_rejects_open_or_inconsistent_inventory() {
         FrozenAudioContext::capture(&fixture(AudioSample(0), SourceAudioMapping::FitBeat)).unwrap();
     let mut value: Value = serde_json::from_str(&context.to_json().unwrap()).unwrap();
     let baseline = value.clone();
-    value["schema_version"] = json!(7);
+    value["schema_version"] = json!(8);
     assert_eq!(
         FrozenAudioContext::from_json(&value.to_string())
             .unwrap_err()
@@ -443,8 +447,8 @@ fn ingress_rejects_open_or_inconsistent_inventory() {
         DocumentErrorCode::LimitExceeded
     );
     let duplicate = context.to_json().unwrap().replacen(
-        "\"schema_version\":6",
-        "\"schema_version\":6,\"schema_version\":6",
+        "\"schema_version\":7",
+        "\"schema_version\":7,\"schema_version\":7",
         1,
     );
     assert!(FrozenAudioContext::from_json(&duplicate).is_err());
@@ -745,7 +749,7 @@ fn dormant_context_keeps_input_asset_offset_and_distinguishes_absent_audio() {
         context
     );
     let wire = serde_json::to_value(&context).unwrap();
-    assert_eq!(wire["schema_version"], json!(6));
+    assert_eq!(wire["schema_version"], json!(7));
     for version in 1..=4 {
         let mut forged = wire.clone();
         forged["schema_version"] = json!(version);
@@ -781,6 +785,53 @@ fn positive_audio_context_support_keeps_all_pre_dormant_versions_readable() {
             } else {
                 assert!(result.unwrap().matches_document(&document).unwrap());
             }
+        }
+    }
+}
+
+#[test]
+fn reverse_tone_and_live_tail_need_context_schema_seven() {
+    let base = fixture(AudioSample(0), SourceAudioMapping::FitBeat);
+    let NodeKind::Hold { recipe } = &base.nodes()[&node("hold")].kind else {
+        panic!("fixture Hold")
+    };
+    let HoldAudio::RoomTone { source } = recipe.audio.clone() else {
+        panic!("fixture room tone")
+    };
+    for audio in [
+        HoldAudio::Reverse { source },
+        HoldAudio::Tone {
+            frequency_hz: 1_000,
+            level: GainDb::new(-10_000).unwrap(),
+        },
+        HoldAudio::Tail {
+            maximum: frames(2),
+            effect: TailEffect::Reverb,
+        },
+        HoldAudio::Tail {
+            maximum: frames(2),
+            effect: TailEffect::Delay,
+        },
+    ] {
+        let document = edit(
+            &base,
+            Command::SetHoldAudio {
+                node: node("hold"),
+                audio: audio.clone(),
+            },
+        );
+        let current = FrozenAudioContext::capture(&document)
+            .unwrap()
+            .to_json()
+            .unwrap();
+        assert!(FrozenAudioContext::from_json(&current).is_ok(), "{audio:?}");
+        let mut wire: serde_json::Value = serde_json::from_str(&current).unwrap();
+        for version in 1..=6 {
+            wire["schema_version"] = version.into();
+            assert!(
+                FrozenAudioContext::from_json(&wire.to_string()).is_err(),
+                "schema {version} must refuse {audio:?}"
+            );
         }
     }
 }

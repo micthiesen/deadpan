@@ -595,6 +595,7 @@ mod tests {
                     escalation: None,
                 },
                 cutaways: Vec::new(),
+                captions: Vec::new(),
             },
         );
         document.nodes.insert(

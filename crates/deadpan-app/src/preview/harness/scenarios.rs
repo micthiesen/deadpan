@@ -22,6 +22,8 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "cutaway" => super::cutaway::run(d),
         "gags" => super::gags::run(d),
         "recipes" => super::recipes::run(d),
+        "hold-effects" => super::hold_effects::run(d),
+        "captions" => super::captions::run(d),
         "zoom" => super::zoom::run(d),
         "original-layout" | "original-layout-long" => super::original_layout::run(d),
         "place-slice" => super::splice::run(d),

@@ -22,6 +22,7 @@ never changes existing projects or recorded macros.
 | `escalator` (`plays=3 gain-step=3dB zoom-step=0.08`) | The Visual range or selected beat as an escalating Repeat ([Repeat escalation](REPEAT_ESCALATION.md)), grouped. |
 | `non-sequitur` (`register=r`) | The register's content pasted at the cursor (a hard cut to it and straight back), grouped. |
 | `one-more-time` (`plays=3 gap=500ms shorten=200ms`) | The Visual range or selected beat as a Repeat whose silent freeze gaps get shorter: `gap - k·shorten` after play `k + 1`, each resolved once from its exact value. The first gap is the Repeat's default gap; later gaps are independent gap Holds ([editable Repeat gaps](REPEAT_GAP_BRANCHES.md)). Gap and shorten share a unit; a gap that would reach zero refuses. Grouped. |
+| `are-we-done` (`register=r pause=1.5s`) | A freeze pause at the cursor whose sound is the reverb tail of what is heard just before it, ringing for the whole pause, with a reaction cutaway from the Original moment in the register over it (`InsertPause`, `Tail`, `SetCutaway`). Grouped. See [reversed pauses and tails](REVERSE_AND_TAILS.md). |
 | `nothing-happens` (`register=r tone=1s silence=1s`) | Two silent freeze pauses at the cursor holding the same picture: the first loops room tone from the exact audio of the Original moment in the register, the second is true silence. Grouped over both pauses. |
 
 One More Time adds the general `SetRepeat { plays, gaps, escalation }`
@@ -45,7 +46,7 @@ refuses a pause at a boundary that belongs to an enclosing group.
 
 ## Commands
 
-`:gag long-answer|escalator|non-sequitur|one-more-time|nothing-happens
+`:gag long-answer|escalator|non-sequitur|one-more-time|nothing-happens|are-we-done
 [parameters]` applies a recipe at the Edit cursor or selected beat.
 `:repeat [N] gap=120ms [gap-step=-40ms] [gain-step=3dB] [zoom-step=0.08]`
 changes the selected Repeat's plays, gaps and escalation together, or wraps a
@@ -81,12 +82,14 @@ recordable yet.
   default-gap permissions.
 - Replay (`recipes`): both gags through the command line, the `:repeat` gap
   ladder and its inspector row, each with one Undo.
+- Core (Are We Done?): one group holding a pause with a whole-pause reverb
+  tail and a full-pause reaction cutaway, with an exact inverse.
 - Export: the `one-more-time` fixture runs the recipe through the headless
-  semantic path; `nothing-happens` exports its ordinary parts
+  semantic path; `are-we-done` does too; `nothing-happens` exports its ordinary parts
   ([preview/export verification](PREVIEW_EXPORT_VERIFICATION.md)).
 
 ## Remaining
 
-"Are We Done?" (cutaway with a tail), saving a modified group as a local
+Saving a modified group as a local
 recipe and inspecting an expansion before applying it, a gag-aware inspector
 (the label is currently shown as a Sequence label), and seeded variation.

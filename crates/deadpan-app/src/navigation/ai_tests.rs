@@ -83,9 +83,10 @@ fn ai_commands_parse_without_arguments() {
 }
 
 #[test]
-fn comma_m_mutes_and_comma_r_picks_a_cutaway_in_your_edit_only() {
+fn comma_m_mutes_comma_r_picks_a_cutaway_and_comma_t_adds_a_tail_in_your_edit_only() {
     assert_eq!(BindingId::Mute.as_str(), "gain.mute");
     assert_eq!(BindingId::CutawayPicker.as_str(), "cutaway.pick");
+    assert_eq!(BindingId::Tail.as_str(), "tail");
     for (key, action, id, label) in [
         (Key::M, Action::Mute, BindingId::Mute, ",m"),
         (
@@ -94,6 +95,7 @@ fn comma_m_mutes_and_comma_r_picks_a_cutaway_in_your_edit_only() {
             BindingId::CutawayPicker,
             ",r",
         ),
+        (Key::T, Action::TailPicker, BindingId::Tail, ",t"),
     ] {
         let mut bindings = Bindings::default();
         assert_eq!(bindings.key_label(id), label);

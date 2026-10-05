@@ -283,6 +283,7 @@ fn document(
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let mut wire = serde_json::to_value(empty).unwrap();
     wire["nodes"]["root"] =

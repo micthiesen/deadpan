@@ -78,3 +78,15 @@ fn display(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f32> {
     // Rgba8Unorm is intentional: transfer encoding occurs exactly once here.
     return vec4(srgb_encode(linear.r), srgb_encode(linear.g), srgb_encode(linear.b), 1.0);
 }
+
+// Caption overlay: red is fill coverage and green outline coverage at the
+// exact target raster. The output is premultiplied over the working composite
+// (blend One, OneMinusSrcAlpha; destination alpha kept): a black outline,
+// then white fill, in linear working light.
+@fragment
+fn caption(@builtin(position) position: vec4<f32>) -> @location(0) vec4<f32> {
+    let coverage = textureLoad(picture, vec2<i32>(position.xy), 0);
+    let fill = coverage.r;
+    let alpha = 1.0 - (1.0 - coverage.g) * (1.0 - fill);
+    return vec4(vec3(fill), alpha);
+}

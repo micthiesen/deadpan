@@ -72,6 +72,7 @@ fn hold(frames: i64) -> ProjectDocument {
             }
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     });
     ProjectDocument::from_json(&wire.to_string()).unwrap()
 }
@@ -683,6 +684,14 @@ fn starvation_keeps_its_submitted_prefix_clock_then_fails_without_resume() {
     assert!(!device.started.load(Ordering::Acquire));
     thread::sleep(Duration::from_millis(20));
     assert_eq!(engine.poll(), None, "starvation must not silently resume");
+    // The underrun is counted once, with its silent padding and callback cost.
+    let diagnostics = engine.diagnostics();
+    assert_eq!(diagnostics.generations, 1);
+    assert_eq!(diagnostics.starved, 1);
+    assert_eq!(diagnostics.faults, 0);
+    assert!(diagnostics.reports >= 2, "{diagnostics:?}");
+    assert!(diagnostics.silent_frames >= 240, "{diagnostics:?}");
+    assert!(diagnostics.max_render_cost_ns >= 1, "{diagnostics:?}");
 }
 
 #[test]
@@ -775,6 +784,7 @@ fn canonical_playback_consumes_pause_bindings_and_a_real_preserve_stage() {
             purpose: RetimePurpose::Edit,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     });
     let edited = Arc::new(Snapshot::committed(
         captured.session,

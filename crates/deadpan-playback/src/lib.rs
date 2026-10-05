@@ -7,7 +7,7 @@ mod sources;
 mod target;
 mod waveform;
 
-pub use controller::{Engine, Phase, RequestError, StopHandle, Update};
+pub use controller::{Diagnostics, Engine, Phase, RequestError, StopHandle, Update};
 pub use sources::{ContentIdentity, Snapshot, SnapshotError, SourceEntry};
 pub use target::{AudioRange, Original, Sound, Target, Window};
 pub use waveform::{

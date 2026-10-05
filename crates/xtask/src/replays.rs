@@ -261,7 +261,7 @@ fn snapshot(built: &[(String, PathBuf)], directory: &Path) -> Result<(PathBuf, V
     Ok((directory.join(APP), Value::Object(binaries)))
 }
 
-fn sha256(path: &Path) -> Result<String, String> {
+pub(crate) fn sha256(path: &Path) -> Result<String, String> {
     let mut file =
         std::fs::File::open(path).map_err(|error| format!("open {}: {error}", path.display()))?;
     let mut hasher = Sha256::new();

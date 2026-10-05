@@ -90,6 +90,7 @@ fn ready(parent: &Path, ordinals: Range<u64>) -> Result<(PathBuf, ProjectStore)>
                         audio_edges: Default::default(),
                         kind: NodeKind::Source { source },
                         cutaways: Vec::new(),
+                        captions: Vec::new(),
                     },
                 )]),
                 overrides: Default::default(),

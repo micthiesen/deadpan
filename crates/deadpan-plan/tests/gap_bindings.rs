@@ -68,6 +68,7 @@ fn captured(plays: u32) -> ProjectDocument {
                     escalation: None,
                 },
                 cutaways: Vec::new(),
+                captions: Vec::new(),
             },
         ),
     ] {

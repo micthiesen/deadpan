@@ -74,6 +74,7 @@ pub(super) fn ready(directory: &Path) -> Result<PathBuf> {
                                 source: timing.source_node(asset_id),
                             },
                             cutaways: Vec::new(),
+                            captions: Vec::new(),
                         },
                     )]),
                     overrides: Default::default(),

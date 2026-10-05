@@ -87,6 +87,7 @@ fn source(frames: i64, start: i64, end: i64) -> BeatNode {
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -612,6 +613,7 @@ fn full_repeat_overrides_gaps_and_preserve_retime_keep_exact_picture_clocks() {
             escalation: None,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let retime = BeatNode {
         label: String::new(),
@@ -627,6 +629,7 @@ fn full_repeat_overrides_gaps_and_preserve_retime_keep_exact_picture_clocks() {
             pitch: PitchPolicy::Preserve,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let mut before = document(
         &["prefix", "scope", "suffix"],

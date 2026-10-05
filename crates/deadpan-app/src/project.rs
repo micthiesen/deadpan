@@ -536,6 +536,12 @@ pub enum ProjectEdit {
         host: NodeId,
         cutaways: Vec<deadpan_core::Cutaway>,
     },
+    /// Replace a beat's captions without changing timing or pictures.
+    SetCaptions {
+        node: NodeId,
+        host: NodeId,
+        captions: Vec<deadpan_core::Caption>,
+    },
     Delete {
         node: NodeId,
     },
@@ -574,6 +580,19 @@ pub struct MomentPaste {
     pub scope: SequenceScope,
     pub parent: NodeId,
     pub destination: splice::Destination,
+}
+
+impl ProjectRequest {
+    /// Background analysis saves use their own admission lane so they never
+    /// occupy the single user-command slot. Each lane admits one request.
+    pub fn is_annotation_save(&self) -> bool {
+        matches!(
+            self,
+            Self::SaveTranscript { .. }
+                | Self::SaveSpeechActivity { .. }
+                | Self::SaveShotAnalysis { .. }
+        )
+    }
 }
 
 pub enum ProjectRequest {
@@ -694,8 +713,17 @@ pub enum ProjectRequest {
     },
 }
 
+/// One user command and one annotation save may be queued at once.
+const REQUEST_LANES: usize = 2;
+
 struct Shared {
+    /// The single user-command slot.
     busy: AtomicBool,
+    /// The single background annotation-save slot, queued independently.
+    annotation: AtomicBool,
+    /// Deterministic replay/tests: leave admitted requests in the mailbox.
+    #[cfg(any(test, feature = "ui-harness"))]
+    requests_held: AtomicBool,
     preview_active: AtomicBool,
     stopping: AtomicBool,
     shutdown_complete: AtomicBool,
@@ -752,6 +780,9 @@ impl ProjectService {
     ) -> io::Result<Self> {
         let shared = Arc::new(Shared {
             busy: AtomicBool::new(false),
+            annotation: AtomicBool::new(false),
+            #[cfg(any(test, feature = "ui-harness"))]
+            requests_held: AtomicBool::new(false),
             preview_active: AtomicBool::new(false),
             stopping: AtomicBool::new(false),
             shutdown_complete: AtomicBool::new(false),
@@ -772,7 +803,7 @@ impl ProjectService {
             update: Mutex::new(None),
             wake,
         });
-        let (requests, receive) = mpsc::sync_channel(1);
+        let (requests, receive) = mpsc::sync_channel(REQUEST_LANES);
         let (jobs, results, worker) = worker::spawn()?;
         let state = shared.clone();
         std::thread::Builder::new()
@@ -785,23 +816,33 @@ impl ProjectService {
         Ok(Self { requests, shared })
     }
 
-    /// One pending/in-flight user command. Import preparation is independent.
+    /// One pending/in-flight user command plus, independently, one pending
+    /// annotation save. A background save therefore never makes a user
+    /// command busy; the user command waits behind it in the mailbox.
+    /// Import preparation is independent of both.
     pub fn submit(&self, request: ProjectRequest) -> Result<(), String> {
         if self.shared.stopping.load(Ordering::Acquire) {
             return Err("Project service is shutting down".into());
         }
-        self.shared
-            .busy
-            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
-            .map_err(|_| "Project command is busy".to_owned())?;
-        // Once admitted, busy keeps the service alive through shutdown until
-        // this command completes. A stop that won before admission rejects it.
+        let (lane, busy) = if request.is_annotation_save() {
+            (
+                &self.shared.annotation,
+                "An analysis save is already queued",
+            )
+        } else {
+            (&self.shared.busy, "Project command is busy")
+        };
+        lane.compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+            .map_err(|_| busy.to_owned())?;
+        // Once admitted, a lane keeps the service alive through shutdown until
+        // its request completes. A stop that won before admission rejects it.
         if self.shared.stopping.load(Ordering::Acquire) {
-            self.shared.busy.store(false, Ordering::Release);
+            lane.store(false, Ordering::Release);
             return Err("Project service is shutting down".into());
         }
+        // Capacity equals the lane count, so an admitted request always fits.
         if let Err(error) = self.requests.try_send(request) {
-            self.shared.busy.store(false, Ordering::Release);
+            lane.store(false, Ordering::Release);
             return Err(format!("Project command was not queued: {error}"));
         }
         Ok(())
@@ -811,8 +852,22 @@ impl ProjectService {
         self.shared.update.try_lock().ok()?.take()
     }
 
+    /// A user command is pending or in flight. Background annotation saves
+    /// are reported separately and never block user commands.
     pub fn is_busy(&self) -> bool {
         self.shared.busy.load(Ordering::Acquire)
+    }
+
+    /// An analysis save is pending or in flight.
+    pub fn annotation_busy(&self) -> bool {
+        self.shared.annotation.load(Ordering::Acquire)
+    }
+
+    /// Leave newly admitted requests in the mailbox, creating a deterministic
+    /// busy window for replay and tests. Release with `false`.
+    #[cfg(any(test, feature = "ui-harness"))]
+    pub fn hold_requests_for_check(&self, held: bool) {
+        self.shared.requests_held.store(held, Ordering::Release);
     }
 
     /// Publish before opening any temporary editor, and clear only after the

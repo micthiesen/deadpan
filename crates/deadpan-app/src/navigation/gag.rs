@@ -1,4 +1,4 @@
-//! `:gag long-answer|escalator|non-sequitur|one-more-time|nothing-happens
+//! `:gag long-answer|escalator|non-sequitur|one-more-time|nothing-happens|are-we-done
 //! [parameters]`: apply a built-in recipe at the cursor or selected beat as
 //! one Undo.
 
@@ -8,7 +8,7 @@ use deadpan_core::{ExactRatio, GainDb, RegisterName};
 
 use super::duration::DurationInput;
 
-pub const USAGE: &str = "Use :gag long-answer [pause=1.5s] [creep=1.35], :gag escalator [plays=3] [gain-step=3dB] [zoom-step=0.08], :gag non-sequitur [register=r], :gag one-more-time [plays=3] [gap=500ms] [shorten=200ms] or :gag nothing-happens [register=r] [tone=1s] [silence=1s].";
+pub const USAGE: &str = "Use :gag long-answer [pause=1.5s] [creep=1.35], :gag escalator [plays=3] [gain-step=3dB] [zoom-step=0.08], :gag non-sequitur [register=r], :gag one-more-time [plays=3] [gap=500ms] [shorten=200ms], :gag nothing-happens [register=r] [tone=1s] [silence=1s] or :gag are-we-done [register=r] [pause=1.5s].";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum GagInput {
@@ -32,6 +32,10 @@ pub enum GagInput {
     NothingHappens {
         tone: DurationInput,
         silence: DurationInput,
+        register: RegisterName,
+    },
+    AreWeDone {
+        pause: DurationInput,
         register: RegisterName,
     },
 }
@@ -77,6 +81,11 @@ impl GagInput {
                 version,
                 tone: tone.pause_length(rate)?,
                 silence: silence.pause_length(rate)?,
+                register,
+            },
+            Self::AreWeDone { pause, register } => deadpan_core::GagRecipe::AreWeDone {
+                version,
+                pause: pause.pause_length(rate)?,
                 register,
             },
         })
@@ -163,6 +172,11 @@ pub fn parse(arguments: &[&str]) -> Result<GagInput, String> {
             tone: take("tone").map_or(Ok(DurationInput::half_seconds(2)), DurationInput::parse)?,
             silence: take("silence")
                 .map_or(Ok(DurationInput::half_seconds(2)), DurationInput::parse)?,
+        },
+        "are-we-done" => GagInput::AreWeDone {
+            register: register(take("register"))?,
+            pause: take("pause")
+                .map_or(Ok(DurationInput::half_seconds(3)), DurationInput::parse)?,
         },
         other => return Err(format!("Unknown gag {other}. {USAGE}")),
     };
@@ -251,9 +265,24 @@ mod tests {
                 register: RegisterName::new('t').unwrap(),
             }
         );
+        assert_eq!(
+            parse(&["are-we-done", "register=r", "pause=20f"]).unwrap(),
+            GagInput::AreWeDone {
+                pause: DurationInput::parse("20f").unwrap(),
+                register: RegisterName::new('r').unwrap(),
+            }
+        );
+        assert!(matches!(
+            parse(&["are-we-done"]).unwrap().recipe(rate).unwrap(),
+            deadpan_core::GagRecipe::AreWeDone { pause, .. }
+                if pause == deadpan_core::PauseLength::Milliseconds {
+                    milliseconds: NonZeroU32::new(1500).unwrap()
+                }
+        ));
         for bad in [
             vec![],
             vec!["shrug"],
+            vec!["are-we-done", "tone=1s"],
             vec!["one-more-time", "plays=1"],
             vec!["one-more-time", "creep=1.2"],
             vec!["nothing-happens", "register=tt"],

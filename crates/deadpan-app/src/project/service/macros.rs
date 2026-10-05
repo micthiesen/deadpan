@@ -165,10 +165,21 @@ impl Service {
                             SemanticInstruction::SetRepeatPlays { .. } => "Set Repeat plays",
                             SemanticInstruction::SetRepeat { .. } => "Change Repeat",
                             SemanticInstruction::SetRoomTone { .. } => "Set room tone",
+                            SemanticInstruction::SetCutaway { .. } => "Place cutaway",
+                            SemanticInstruction::SetCaption { .. } => "Add caption",
                             SemanticInstruction::Group { .. } => "Group beats",
                             SemanticInstruction::Ungroup => "Ungroup beats",
                             SemanticInstruction::Gag { .. } => "Apply gag",
                             SemanticInstruction::InsertPause { .. } => "Insert pause",
+                            SemanticInstruction::InsertReverse { bounce: false, .. } => {
+                                "Insert reverse"
+                            }
+                            SemanticInstruction::InsertReverse { bounce: true, .. } => {
+                                "Insert ping-pong"
+                            }
+                            SemanticInstruction::Tail { .. } => "Add tail",
+                            SemanticInstruction::Lift { .. } => "Lift selection",
+                            SemanticInstruction::Bleep { .. } => "Bleep selection",
                             SemanticInstruction::SetFraming { .. } => "Frame beat",
                             _ => "Recorded action",
                         }

@@ -65,6 +65,7 @@ fn source(frames: i64, start: i64, end: i64, mapping: SourceAudioMapping) -> Bea
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -96,6 +97,7 @@ fn retime(child: &str, frames: i64, start: i64, end: i64, pitch: PitchPolicy) ->
             pitch,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -120,6 +122,7 @@ fn repeat(child: &str, plays: u32, gap: i64) -> BeatNode {
             escalation: None,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -984,8 +987,8 @@ fn hold_policies_and_repeat_gap_metadata_remain_explicit_in_signal_queries() {
                     hold_recipe(
                         4,
                         HoldAudio::Tail {
-                            source: audio(200, 400),
                             maximum: duration(2),
+                            effect: Default::default(),
                         },
                     ),
                 ),
@@ -1023,8 +1026,9 @@ fn hold_policies_and_repeat_gap_metadata_remain_explicit_in_signal_queries() {
     assert_eq!(
         query.spans[3].content,
         AudioSignalContent::Leaf(AudioContent::Tail {
-            source: audio(200, 400),
-            maximum: duration(2)
+            maximum: duration(2),
+            effect: Default::default(),
+            duration: duration(4),
         })
     );
     assert_eq!(

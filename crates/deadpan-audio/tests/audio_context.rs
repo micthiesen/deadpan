@@ -70,6 +70,7 @@ fn source(length: i64, selection: SourceAudio, offset: i64) -> BeatNode {
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -120,6 +121,7 @@ fn retime(
             pitch,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -567,7 +569,7 @@ fn cached_context_stages_recheck_admission_before_returning_pcm() {
 }
 
 #[test]
-fn tail_context_remains_explicitly_unsupported() {
+fn tail_context_retains_its_effect_and_renders_the_live_tail() {
     let empty = document();
     let mut wire = serde_json::to_value(&empty).unwrap();
     let mut nodes: BTreeMap<NodeId, BeatNode> =
@@ -575,10 +577,10 @@ fn tail_context_remains_explicitly_unsupported() {
     nodes.insert(
         id("room"),
         hold(
-            16,
+            2048,
             HoldAudio::Tail {
-                source: audio(512, 640),
-                maximum: frames(8),
+                maximum: frames(2000),
+                effect: TailEffect::Reverb,
             },
         ),
     );
@@ -595,14 +597,86 @@ fn tail_context_remains_explicitly_unsupported() {
         RenderPlan::compile_audio_context(&context).unwrap(),
     ));
     let mut provider = FixtureProvider::new(&doc);
-    assert!(matches!(
-        stage.read(
+    let retained = stage
+        .read(
             &mut provider,
-            AudioSample(64),
-            1,
+            AudioSample(1152),
+            256,
             TIMEOUT,
-            &AtomicBool::new(false)
-        ),
-        Err(StageAudioError::Unsupported(_))
-    ));
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+    // The frozen context keeps the effect choice, so the retained Hold
+    // renders exactly the live document's tail.
+    let mut live = StageAudio::new(Arc::new(RenderPlan::compile(&doc).unwrap()));
+    let mut provider = FixtureProvider::new(&doc);
+    let current = live
+        .read(
+            &mut provider,
+            AudioSample(1152),
+            256,
+            TIMEOUT,
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+    // The reverb's first reflections reach the pause after its shortest
+    // comb delay; the retained and live renders are the same bytes.
+    assert!(current.samples.iter().any(|frame| *frame != [0.0; 2]));
+    assert_eq!(retained.samples, current.samples);
+}
+
+/// A frozen context of a document whose Hold `room` carries `audio` renders
+/// the same samples at `at` as the live document.
+fn retained_hold_matches_live(audio: HoldAudio, at: i64) -> Vec<[f32; 2]> {
+    let empty = document();
+    let mut wire = serde_json::to_value(&empty).unwrap();
+    let mut nodes: BTreeMap<NodeId, BeatNode> =
+        serde_json::from_value(wire["nodes"].clone()).unwrap();
+    nodes.insert(id("room"), hold(2048, audio));
+    wire["nodes"] = serde_json::to_value(nodes).unwrap();
+    let doc = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let context = FrozenAudioContext::from_json(
+        &FrozenAudioContext::capture(&doc)
+            .unwrap()
+            .to_json()
+            .unwrap(),
+    )
+    .unwrap();
+    let read = |plan: RenderPlan| {
+        let mut stage = StageAudio::new(Arc::new(plan));
+        let mut provider = FixtureProvider::new(&doc);
+        stage
+            .read(
+                &mut provider,
+                AudioSample(at),
+                256,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .unwrap()
+            .samples
+    };
+    let retained = read(RenderPlan::compile_audio_context(&context).unwrap());
+    let current = read(RenderPlan::compile(&doc).unwrap());
+    assert_eq!(retained, current);
+    current
+}
+
+#[test]
+fn reversed_and_tone_contexts_render_the_live_hold() {
+    let reversed = retained_hold_matches_live(
+        HoldAudio::Reverse {
+            source: audio(512, 640),
+        },
+        64,
+    );
+    assert!(reversed.iter().any(|frame| *frame != [0.0; 2]));
+    let tone = retained_hold_matches_live(
+        HoldAudio::Tone {
+            frequency_hz: 1_000,
+            level: GainDb::new(-6_000).unwrap(),
+        },
+        512,
+    );
+    assert!(tone.iter().any(|frame| frame[0].abs() > 0.4));
 }

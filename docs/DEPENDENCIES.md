@@ -27,6 +27,7 @@ requires an explicit pinned FFmpeg developer prefix; see [Development](DEVELOPME
 | objc2-core-video | 0.3.2 | Zlib OR Apache-2.0 OR MIT | macOS-only, in `deadpan-track` only: owned BGRA `CVPixelBuffer` creation and locking for Vision input. |
 | objc2-core-foundation | 0.3.2 | Zlib OR Apache-2.0 OR MIT | Existing locked dependency, now direct in `deadpan-track` only for `CGRect` and `CFRetained` ownership of pixel buffers. |
 | wgpu | 30.0.1 | MIT OR Apache-2.0 | Already locked through eframe; direct Metal/WGSL dependency for the shared picture baseline. |
+| skrifa | 0.44.0 | MIT OR Apache-2.0 | Already locked through epaint; direct in `deadpan-render` (default features disabled, `std`) to read caption glyph outlines and metrics from the embedded Inter variable font (SIL OFL 1.1, `assets/brand/source`). Rasterization and compositing are Deadpan's own ([captions](CAPTIONS.md)). |
 | pollster | 1.0.1 | Apache-2.0 OR MIT | Already locked; development-only offscreen GPU qualification. |
 | serde | 1.0.229 | MIT OR Apache-2.0 | Validated domain, transaction, and protocol serialization. |
 | serde_json | 1.0.151 | MIT OR Apache-2.0 | Bounded project/command JSON and diagnostics. Core enables `raw_value` for borrowed retained-audio layout/input preflight before typed materialization. |

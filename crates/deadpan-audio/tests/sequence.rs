@@ -76,6 +76,7 @@ fn source(rate: FrameRate, frames: i64, selected: Range<i64>, offset: i64) -> Be
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -108,6 +109,7 @@ fn retime(child: &str, frames: i64, selected: Range<i64>, pitch: PitchPolicy) ->
             pitch,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -138,6 +140,7 @@ fn repeat(child: &str, plays: u32, gap: i64) -> BeatNode {
             escalation: None,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 
@@ -731,8 +734,8 @@ fn unsupported_audio_policies_fail_before_any_source_is_requested() {
                 hold_recipe(
                     8,
                     HoldAudio::Tail {
-                        source: audio(100, 108),
                         maximum: duration(4),
+                        effect: Default::default(),
                     },
                 ),
             ),

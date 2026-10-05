@@ -144,6 +144,7 @@ fn with_source_base(document: &ProjectDocument) -> ProjectDocument {
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let mut wire = serde_json::to_value(document).unwrap();
     wire["nodes"]["base"] = serde_json::to_value(source).unwrap();

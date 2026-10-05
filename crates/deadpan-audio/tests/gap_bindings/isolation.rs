@@ -162,6 +162,7 @@ fn materialized_gap_retains_distinct_outer_play_clocks_and_definition_birth() {
             escalation: None,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let original = document(
         ntsc(),

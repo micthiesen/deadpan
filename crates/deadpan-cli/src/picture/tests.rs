@@ -203,6 +203,17 @@ fn real_cut_frames_stay_exact_across_live_deletion_undo_and_writer_close() -> Re
     let expected = (38..43)
         .map(|at| original.prepare(ProjectFrame(at), &active()))
         .collect::<std::result::Result<Vec<_>, _>>()?;
+    // One cold admission, then the retained decoder serves every later frame.
+    let stats = original.stats();
+    assert_eq!(
+        (
+            stats.source_opens,
+            stats.source_reuses,
+            stats.decoded_frames
+        ),
+        (1, 4, 5)
+    );
+    assert_eq!(stats.background_frames, 0);
     fixture.edit(
         "cut",
         Command::Split {
@@ -502,6 +513,13 @@ fn blank_and_background_are_explicit_and_ranges_hdr_and_bounds_reject() -> Resul
     assert_eq!(picture.project_frame, ProjectFrame(2));
     assert_eq!(picture.framing.len(), 2);
     assert!(session.retained.is_none());
+    assert_eq!(
+        session.stats(),
+        PictureSessionStats {
+            background_frames: 1,
+            ..PictureSessionStats::default()
+        }
+    );
     // Canonical geometry is preserved here; codec-even normalization belongs
     // to the later automatic output policy, not preparation of a saved frame.
     let mut odd_wire = serde_json::to_value(store.snapshot()?)?;
@@ -644,6 +662,7 @@ fn unqualified_source_still_and_accepted_providers_fail_without_fallback() -> Re
                     },
                 },
                 cutaways: Vec::new(),
+                captions: Vec::new(),
             }
         } else {
             BeatNode::hold(

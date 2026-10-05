@@ -21,6 +21,7 @@ fn crop(a: i64, b: i64) -> BeatNode {
             purpose: RetimePurpose::Partition,
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 #[test]
@@ -86,6 +87,7 @@ fn source_endpoint_anchor_projects_outside_final_crop_without_clamping() {
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     })
     .unwrap();
     wire["assets"]["media"] = serde_json::to_value(AssetRecord {

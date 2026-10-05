@@ -62,6 +62,7 @@ fn document(hold_start: i64) -> ProjectDocument {
             },
         },
         cutaways: Vec::new(),
+        captions: Vec::new(),
     };
     let empty = ProjectDocument::new(
         ProjectId::new("reference-mask").unwrap(),
@@ -94,6 +95,7 @@ fn document(hold_start: i64) -> ProjectDocument {
                     purpose: RetimePurpose::Edit,
                 },
                 cutaways: Vec::new(),
+                captions: Vec::new(),
             },
         ),
         (

@@ -283,6 +283,7 @@ fn inserted_repeat_cannot_reserve_a_future_revision_and_revive_retired_plays() {
                                 escalation: None,
                             },
                             cutaways: Vec::new(),
+                            captions: Vec::new(),
                         },
                     ),
                 ]),
@@ -698,6 +699,7 @@ fn source_streams_retain_timestamps_and_validate_bounds_independently() {
                     label: "Source".into(),
                     kind: NodeKind::Source { source },
                     cutaways: Vec::new(),
+                    captions: Vec::new(),
                 },
             )]),
         },
@@ -856,6 +858,7 @@ fn retime_range_is_in_child_clock_and_overflow_is_rejected() {
                 pitch: PitchPolicy::Preserve,
             },
             cutaways: Vec::new(),
+            captions: Vec::new(),
         },
     );
     let (document, _) = edited(

@@ -55,6 +55,7 @@ fn source() -> BeatNode {
         audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 fn hold(frames: i64) -> BeatNode {
@@ -85,6 +86,7 @@ fn repeat(child: &str, plays: u32) -> BeatNode {
         audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 fn retime(child: &str, input: i64, output: i64) -> BeatNode {
@@ -102,6 +104,7 @@ fn retime(child: &str, input: i64, output: i64) -> BeatNode {
         audio_editorial_edges: Default::default(),
         audio_edges: Default::default(),
         cutaways: Vec::new(),
+        captions: Vec::new(),
     }
 }
 fn tree(children: &[&str], entries: Vec<(&str, BeatNode)>) -> ProjectDocument {

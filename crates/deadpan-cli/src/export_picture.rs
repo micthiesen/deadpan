@@ -129,6 +129,7 @@ pub struct ExportPictureSession {
     renderer: PictureRenderer,
     target: RenderTarget,
     outstanding: Arc<AtomicBool>,
+    captions: crate::picture::CaptionMemo,
 }
 
 impl ExportPictureSession {
@@ -149,6 +150,7 @@ impl ExportPictureSession {
             renderer,
             target,
             outstanding: Arc::new(AtomicBool::new(false)),
+            captions: Default::default(),
         })
     }
 
@@ -176,6 +178,11 @@ impl ExportPictureSession {
         }
         check_control(cancelled, deadline)?;
         let layers = prepared.render_layers()?;
+        let captions = self.captions.overlay(
+            &prepared.captions,
+            prepared.canvas,
+            [self.target.width(), self.target.height()],
+        )?;
         let source = match prepared.picture {
             PreparedPicture::Frame {
                 asset,
@@ -183,13 +190,14 @@ impl ExportPictureSession {
                 id,
                 frame,
             } => {
-                self.renderer.render_composed(
+                self.renderer.render_composed_captioned(
                     &frame,
                     &self.target,
                     prepared.picture_context.as_deref(),
                     prepared.canvas,
                     FitMode::Fit,
                     &layers,
+                    captions,
                 )?;
                 ExportPictureSource::Original {
                     asset,
@@ -203,13 +211,14 @@ impl ExportPictureSession {
                 id,
                 frame,
             } => {
-                self.renderer.render_composed(
+                self.renderer.render_composed_captioned(
                     &frame,
                     &self.target,
                     prepared.picture_context.as_deref(),
                     prepared.canvas,
                     FitMode::Fit,
                     &layers,
+                    captions,
                 )?;
                 ExportPictureSource::Generated {
                     artifact,
@@ -218,7 +227,8 @@ impl ExportPictureSession {
                 }
             }
             PreparedPicture::Background => {
-                self.renderer.render_background(&self.target)?;
+                self.renderer
+                    .render_background_captioned(&self.target, captions)?;
                 ExportPictureSource::Background
             }
         };

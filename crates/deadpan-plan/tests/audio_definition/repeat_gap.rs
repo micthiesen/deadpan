@@ -356,12 +356,13 @@ fn gap_policies_follow_current_recipe_and_exact_gap_edges_without_node_edges() {
         ),
         (
             HoldAudio::Tail {
-                source: room_source(),
                 maximum: frames(2),
+                effect: Default::default(),
             },
             AudioContent::Tail {
-                source: room_source(),
                 maximum: frames(2),
+                effect: Default::default(),
+                duration: frames(4),
             },
         ),
     ] {

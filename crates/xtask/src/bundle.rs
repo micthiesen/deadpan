@@ -390,6 +390,17 @@ fn native_components(workspace: &Path, crates: &[notices::Crate]) -> Result<Vec<
             "properties": [{ "name": "deadpan:revision", "value": pin["revision"] }],
         }));
     }
+    // The caption font embedded in deadpan-render.
+    let font = workspace.join("assets/brand/source/Inter-Variable.ttf");
+    components.push(json!({
+        "type": "file", "bom-ref": "font:inter", "name": "Inter",
+        "version": "4.001", "licenses": [{ "license": { "id": "OFL-1.1" } }],
+        "hashes": [{ "alg": "SHA-256", "content": sha256_file(&font)? }],
+        "properties": [
+            { "name": "deadpan:embedded-by", "value": "deadpan-render (captions)" },
+            { "name": "deadpan:notice", "value": "inter/OFL.txt" },
+        ],
+    }));
     Ok(components)
 }
 

@@ -217,6 +217,41 @@ pub enum SemanticInstruction {
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         black: bool,
     },
+    /// Bleep the Visual selection (`,b`, `:bleep`): cut it into `register`
+    /// and put back a pause of exactly its length that plays the same
+    /// pictures forward with a tone in place of their sound.
+    Bleep {
+        register: RegisterName,
+        #[serde(default = "default_bleep_frequency")]
+        frequency_hz: u32,
+        #[serde(default = "default_bleep_level")]
+        level: crate::GainDb,
+    },
+    /// Lift the Visual selection (`:lift`): cut it into `register` as `d`
+    /// does and put back a silent black pause of exactly its length, so later
+    /// content keeps its time.
+    Lift {
+        register: RegisterName,
+    },
+    /// Insert at the cursor a pause that plays the `length` before it
+    /// backwards, picture and sound (`:reverse`, a reverse hiccup). With
+    /// `bounce` the picture at the cursor is not shown twice: the pause
+    /// starts one picture earlier and is one frame shorter (`:ping-pong`).
+    InsertReverse {
+        length: PauseLength,
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        bounce: bool,
+    },
+    /// A hanging effect tail (`,t`, `:tail`). On a selected direct-child Hold
+    /// its sound becomes the tail of the audio heard just before it, ringing
+    /// for `length` (the whole Hold when omitted). Otherwise a freeze pause of
+    /// `length` is inserted at the cursor with that tail.
+    Tail {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        length: Option<PauseLength>,
+        #[serde(default, skip_serializing_if = "crate::TailEffect::is_reverb")]
+        effect: crate::TailEffect,
+    },
     /// Replace the selected direct child's framing (`,c`, `,z`).
     SetFraming {
         framing: Option<Box<crate::Framing>>,
@@ -245,6 +280,27 @@ pub enum SemanticInstruction {
     /// the Original moment held in `register`.
     SetRoomTone {
         register: RegisterName,
+    },
+    /// Show the Original moment held in `register` over the whole selected
+    /// direct child while its own sound continues (`:cutaway register=`).
+    /// The cutaway belongs to the beat's Source or Hold.
+    SetCutaway {
+        register: RegisterName,
+        #[serde(default, skip_serializing_if = "is_hold_fit")]
+        fit: crate::CutawayFit,
+    },
+    /// Caption the whole selected direct child with one line of text
+    /// (`:caption`), starting `delay` after its first frame and, inside a
+    /// Repeat, from play `reveal` on. The caption belongs to the beat's
+    /// Source or Hold.
+    SetCaption {
+        text: String,
+        #[serde(default, skip_serializing_if = "crate::CaptionPlacement::is_bottom")]
+        placement: crate::CaptionPlacement,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        delay: Option<PauseLength>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        reveal: Option<NonZeroU32>,
     },
     CutFrames {
         operation: FrameCut,
@@ -320,6 +376,23 @@ impl SemanticInstruction {
     }
 }
 
+/// The classic censor bleep: 1 kHz.
+pub const DEFAULT_BLEEP_FREQUENCY_HZ: u32 = 1_000;
+/// -10 dBFS: clearly heard, below speech peaks.
+pub const DEFAULT_BLEEP_LEVEL_MILLIDECIBELS: i32 = -10_000;
+
+fn default_bleep_frequency() -> u32 {
+    DEFAULT_BLEEP_FREQUENCY_HZ
+}
+
+fn default_bleep_level() -> crate::GainDb {
+    crate::GainDb::new(DEFAULT_BLEEP_LEVEL_MILLIDECIBELS).expect("constant level")
+}
+
+fn is_hold_fit(fit: &crate::CutawayFit) -> bool {
+    *fit == crate::CutawayFit::Hold
+}
+
 // Internally tagged unit variants otherwise ignore unknown fields in Serde.
 pub(super) fn deserialize_empty<'de, D: serde::Deserializer<'de>>(
     deserializer: D,
@@ -368,6 +441,9 @@ impl SemanticProgram {
             }
             if let SemanticInstruction::Group { label, .. } = instruction {
                 crate::validate_group_label(label)?;
+            }
+            if let SemanticInstruction::SetCaption { text, .. } = instruction {
+                crate::validate_caption_text(text).map_err(EditError::from)?;
             }
             if let SemanticInstruction::SetRepeat {
                 plays,

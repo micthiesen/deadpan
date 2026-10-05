@@ -44,6 +44,8 @@ pub enum Entry {
     TrackCancel,
     /// `:zoom` and `:creep`: authored framing on the selected beat.
     Zoom(super::zoom::ZoomInput),
+    /// `:caption`: a line of text over the selected beat or Edit range.
+    Caption(super::caption::CaptionInput),
     Empty,
 }
 
@@ -121,6 +123,9 @@ pub fn parse(input: &str) -> Result<Entry, String> {
     }
     if verb.eq_ignore_ascii_case("creep") {
         return super::zoom::parse_creep(&input[verb.len()..]).map(Entry::Zoom);
+    }
+    if verb.eq_ignore_ascii_case("caption") {
+        return super::caption::parse(&input[verb.len()..]).map(Entry::Caption);
     }
     let verb = verb.to_ascii_lowercase();
     if verb == "scope" {
@@ -207,6 +212,28 @@ pub fn parse(input: &str) -> Result<Entry, String> {
     }
     if verb == "hold" {
         return hold(words);
+    }
+    if verb == "reverse" || verb == "ping-pong" {
+        let arguments: Vec<&str> = words.collect();
+        let bounce = verb == "ping-pong";
+        return super::hold_effects::parse_reverse(&arguments, bounce)
+            .map(|length| Entry::Action(Action::Reverse { length, bounce }));
+    }
+    if verb == "bleep" {
+        let arguments: Vec<&str> = words.collect();
+        return super::hold_effects::parse_bleep(&arguments).map(
+            |(frequency_hz, level_millidecibels)| {
+                Entry::Action(Action::Bleep {
+                    frequency_hz,
+                    level_millidecibels,
+                })
+            },
+        );
+    }
+    if verb == "tail" {
+        let arguments: Vec<&str> = words.collect();
+        return super::hold_effects::parse_tail(&arguments)
+            .map(|(length, effect)| Entry::Action(Action::Tail { length, effect }));
     }
     if verb == "repeat" {
         let arguments: Vec<&str> = words.clone().collect();
@@ -332,6 +359,7 @@ pub fn parse(input: &str) -> Result<Entry, String> {
         "paste" => Action::PasteMoment { before: false },
         "paste-before" => Action::PasteMoment { before: true },
         "split" => Action::Edit(BeatEdit::Split),
+        "lift" => Action::Lift,
         "delete" => Action::Edit(BeatEdit::Delete),
         "undo" => Action::Undo,
         "redo" => Action::Redo,
